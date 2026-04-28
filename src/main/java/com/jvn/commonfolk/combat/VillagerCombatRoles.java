@@ -38,7 +38,7 @@ public final class VillagerCombatRoles {
     public static float meleeDamage(Villager villager) {
         VillagerProfession profession = villager.getVillagerData().getProfession();
         if (profession == VillagerProfession.WEAPONSMITH) {
-            return 4.0F;
+            return 5.0F;
         }
         if (profession == VillagerProfession.TOOLSMITH || profession == VillagerProfession.BUTCHER) {
             return 3.5F;
@@ -54,5 +54,37 @@ public final class VillagerCombatRoles {
         }
 
         return 1.0F;
+    }
+
+    public static double movementSpeed(Villager villager) {
+        VillagerProfession profession = villager.getVillagerData().getProfession();
+        if (profession == VillagerProfession.WEAPONSMITH) {
+            return 1.3D;
+        }
+        if (profession == VillagerProfession.FLETCHER) {
+            return 1.1D;
+        }
+
+        return 1.15D;
+    }
+
+    public static int attackCooldown(Villager villager) {
+        return villager.getVillagerData().getProfession() == VillagerProfession.WEAPONSMITH ? 16 : 20;
+    }
+
+    public static boolean isArmorer(Villager villager) {
+        return villager.getVillagerData().getProfession() == VillagerProfession.ARMORER;
+    }
+
+    public static boolean isCleric(Villager villager) {
+        return villager.getVillagerData().getProfession() == VillagerProfession.CLERIC;
+    }
+
+    public static boolean isFarmer(Villager villager) {
+        return villager.getVillagerData().getProfession() == VillagerProfession.FARMER;
+    }
+
+    public static boolean isFletcher(Villager villager) {
+        return villager.getVillagerData().getProfession() == VillagerProfession.FLETCHER;
     }
 }
