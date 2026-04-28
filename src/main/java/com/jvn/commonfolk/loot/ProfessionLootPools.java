@@ -123,7 +123,6 @@ public final class ProfessionLootPools {
                 stack(Items.BEEF, 1, 4), stack(Items.PORKCHOP, 1, 4), stack(Items.CHICKEN, 1, 3),
                 stack(Items.MUTTON, 1, 3), stack(Items.RABBIT, 1, 2), stack(Items.LEATHER, 1, 2));
         addRare(random, drops, new ItemStack(Items.SMOKER));
-        addRare(random, drops, CommonfolkItemUtil.withRandomDamage(new ItemStack(Items.IRON_AXE), random));
         return drops;
     }
 
@@ -148,7 +147,7 @@ public final class ProfessionLootPools {
 
     private static List<ItemStack> toolsmith(Villager villager, RandomSource random) {
         List<ItemStack> drops = rollCommon(random, 2, 4,
-                damaged(randomItem(Items.IRON_PICKAXE, Items.IRON_AXE, Items.IRON_SHOVEL, Items.IRON_HOE)),
+                damaged(randomItem(Items.IRON_PICKAXE, Items.IRON_SHOVEL, Items.IRON_HOE)),
                 stack(Items.IRON_INGOT, 1, 5), stack(Items.COAL, 1, 8), stack(Items.STICK, 1, 3), stack(Items.FLINT, 1, 2));
         addRare(random, drops, new ItemStack(Items.SMITHING_TABLE));
         return drops;
@@ -156,7 +155,6 @@ public final class ProfessionLootPools {
 
     private static List<ItemStack> weaponsmith(Villager villager, RandomSource random) {
         List<ItemStack> drops = rollCommon(random, 2, 4,
-                damaged(randomItem(Items.IRON_SWORD, Items.IRON_AXE)),
                 stack(Items.IRON_INGOT, 1, 5), stack(Items.COAL, 1, 8), stack(Items.STICK, 1, 3));
         addRare(random, drops, new ItemStack(Items.GRINDSTONE));
         return drops;
@@ -172,7 +170,7 @@ public final class ProfessionLootPools {
 
     private static List<ItemStack> fletcher(Villager villager, RandomSource random) {
         return rollCommon(random, 3, 5,
-                damaged(Items.BOW), damaged(Items.CROSSBOW), stack(Items.ARROW, 1, 3), stack(Items.FLINT, 1, 2),
+                stack(Items.ARROW, 1, 3), stack(Items.FLINT, 1, 2),
                 stack(Items.FEATHER, 1, 4), stack(Items.STICK, 1, 8), stack(Items.STRING, 1, 2), stack(Items.TRIPWIRE_HOOK, 1, 2));
     }
 

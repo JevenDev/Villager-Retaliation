@@ -118,15 +118,16 @@ public class CommonfolkVillagerModel<T extends Villager> extends BaseVillagerMod
 
         ArmPose pose = this.resolvePose(villager);
         if (pose == ArmPose.ATTACKING) {
+            float attackProgress = this.attackTime;
             if (this.isUnarmed(villager)) {
-                if (villager.swinging || this.attackTime > 0.0F) {
-                    this.animateUnarmedPunch(villager);
+                if (villager.swinging || attackProgress > 0.0F) {
+                    this.animateUnarmedPunch(villager, attackProgress);
                 }
             } else {
                 if (this.isAttackingWithMainHand(villager)) {
-                    AnimationUtils.swingWeaponDown(this.rightArm, this.leftArm, villager, this.attackTime, ageInTicks);
+                    AnimationUtils.swingWeaponDown(this.rightArm, this.leftArm, villager, attackProgress, ageInTicks);
                 } else {
-                    AnimationUtils.swingWeaponDown(this.leftArm, this.rightArm, villager, this.attackTime, ageInTicks);
+                    AnimationUtils.swingWeaponDown(this.leftArm, this.rightArm, villager, attackProgress, ageInTicks);
                 }
             }
         } else if (pose == ArmPose.CROSSBOW_HOLD) {
@@ -185,14 +186,14 @@ public class CommonfolkVillagerModel<T extends Villager> extends BaseVillagerMod
         return villager.getMainHandItem().isEmpty() && villager.getOffhandItem().isEmpty();
     }
 
-    private void animateUnarmedPunch(T villager) {
+    private void animateUnarmedPunch(T villager, float attackProgress) {
         ModelPart punchArm = this.isAttackingWithMainHand(villager)
                 ? (villager.getMainArm() == HumanoidArm.RIGHT ? this.rightArm : this.leftArm)
                 : (villager.getMainArm() == HumanoidArm.RIGHT ? this.leftArm : this.rightArm);
         ModelPart supportArm = punchArm == this.rightArm ? this.leftArm : this.rightArm;
 
-        float punch = Mth.sin(this.attackTime * (float) Math.PI);
-        float punchRecovery = Mth.sin((1.0F - (1.0F - this.attackTime) * (1.0F - this.attackTime)) * (float) Math.PI);
+        float punch = Mth.sin(attackProgress * (float) Math.PI);
+        float punchRecovery = Mth.sin((1.0F - (1.0F - attackProgress) * (1.0F - attackProgress)) * (float) Math.PI);
         float yawDirection = punchArm == this.rightArm ? 1.0F : -1.0F;
 
         punchArm.yRot += yawDirection * (0.1F - punch * 0.6F);

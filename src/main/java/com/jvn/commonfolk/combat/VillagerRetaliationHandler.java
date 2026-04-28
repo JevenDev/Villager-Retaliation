@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import net.minecraft.world.Difficulty;
+import net.minecraft.world.DifficultyInstance;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -21,6 +23,8 @@ import net.minecraft.world.entity.projectile.Arrow;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.providers.VanillaEnchantmentProviders;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
@@ -31,6 +35,8 @@ public final class VillagerRetaliationHandler {
     private static final Map<UUID, Long> NEXT_ATTACK_TICKS = new HashMap<>();
     private static final Map<UUID, Long> NEXT_SPECIAL_TICKS = new HashMap<>();
     private static final Map<UUID, TemporaryWeaponState> TEMPORARY_WEAPONS = new HashMap<>();
+    private static final float COMBAT_WEAPON_DROP_CHANCE = Mob.DEFAULT_EQUIPMENT_DROP_CHANCE;
+    private static final float HARD_MODE_WEAPON_ENCHANT_CHANCE = 0.25F;
 
     private VillagerRetaliationHandler() {
     }
@@ -51,14 +57,18 @@ public final class VillagerRetaliationHandler {
     }
 
     public static void onLivingDeath(LivingDeathEvent event) {
+        if (!(event.getEntity() instanceof Villager villager)) {
+            return;
+        }
+
+        // Keep temporary combat weapons equipped on death so vanilla equipment drops can roll.
+        clearAnger(villager, false);
         if (!CommonfolkConfig.ENABLE_VILLAGER_RETALIATION.get()
                 || !CommonfolkConfig.KILLING_VILLAGER_AGGROS_NEARBY_VILLAGERS.get()
-                || !(event.getEntity() instanceof Villager villager)
                 || villager.isBaby()
                 || !(villager.level() instanceof ServerLevel level)) {
             return;
         }
-        clearAnger(villager);
 
         Optional<LivingEntity> attacker = resolveAttacker(event.getSource());
         if (attacker.isEmpty() || shouldIgnoreAttacker(attacker.get())) {
@@ -85,7 +95,12 @@ public final class VillagerRetaliationHandler {
     }
 
     public static void onEntityTickPost(EntityTickEvent.Post event) {
-        if (!(event.getEntity() instanceof Villager villager) || villager.level().isClientSide) {
+        if (!(event.getEntity() instanceof Villager villager)) {
+            return;
+        }
+
+        updateVillagerSwing(villager);
+        if (villager.level().isClientSide) {
             return;
         }
 
@@ -128,7 +143,7 @@ public final class VillagerRetaliationHandler {
 
         villager.getNavigation().moveTo(target, VillagerCombatRoles.movementSpeed(villager));
         if (canMeleeHit(villager, target) && attackReady(villager, level.getGameTime())) {
-            villager.swing(selectAttackHand(villager));
+            villager.swing(selectAttackHand(villager), true);
             target.hurt(villager.damageSources().mobAttack(villager), VillagerCombatRoles.meleeDamage(villager));
             NEXT_ATTACK_TICKS.put(villager.getUUID(), level.getGameTime() + VillagerCombatRoles.attackCooldown(villager));
         }
@@ -144,10 +159,18 @@ public final class VillagerRetaliationHandler {
     }
 
     private static void clearAnger(Villager villager) {
+        clearAnger(villager, true);
+    }
+
+    private static void clearAnger(Villager villager, boolean restoreWeapon) {
         ANGER_TARGETS.remove(villager.getUUID());
         NEXT_ATTACK_TICKS.remove(villager.getUUID());
         NEXT_SPECIAL_TICKS.remove(villager.getUUID());
-        restoreTemporaryWeapon(villager);
+        if (restoreWeapon) {
+            restoreTemporaryWeapon(villager);
+        } else {
+            TEMPORARY_WEAPONS.remove(villager.getUUID());
+        }
         villager.setAggressive(false);
         villager.setChasing(false);
         villager.setTarget(null);
@@ -226,7 +249,7 @@ public final class VillagerRetaliationHandler {
         double horizontal = Math.sqrt(dx * dx + dz * dz);
         arrow.shoot(dx, dy + horizontal * 0.2D, dz, 1.6F, 8.0F);
         level.addFreshEntity(arrow);
-        villager.swing(selectAttackHand(villager));
+        villager.swing(selectAttackHand(villager), true);
         NEXT_SPECIAL_TICKS.put(villager.getUUID(), level.getGameTime() + 35L);
         return true;
     }
@@ -237,12 +260,27 @@ public final class VillagerRetaliationHandler {
                 : InteractionHand.MAIN_HAND;
     }
 
+    private static void updateVillagerSwing(Villager villager) {
+        int swingDuration = Math.max(1, villager.getCurrentSwingDuration());
+        if (villager.swinging) {
+            villager.swingTime++;
+            if (villager.swingTime >= swingDuration) {
+                villager.swingTime = 0;
+                villager.swinging = false;
+            }
+        } else {
+            villager.swingTime = 0;
+        }
+
+        villager.attackAnim = (float) villager.swingTime / (float) swingDuration;
+    }
+
     private static void equipCombatWeapon(Villager villager) {
         TemporaryWeaponState state = TEMPORARY_WEAPONS.get(villager.getUUID());
         if (state != null) {
             if (!ItemStack.isSameItemSameComponents(villager.getMainHandItem(), state.equippedWeapon())) {
                 villager.setItemSlot(EquipmentSlot.MAINHAND, state.equippedWeapon().copy());
-                villager.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
+                villager.setDropChance(EquipmentSlot.MAINHAND, COMBAT_WEAPON_DROP_CHANCE);
             }
             return;
         }
@@ -253,11 +291,11 @@ public final class VillagerRetaliationHandler {
         }
 
         ItemStack previousMainHand = villager.getMainHandItem().copy();
-        ItemStack equippedWeapon = weapon.copy();
+        ItemStack equippedWeapon = prepareCombatWeapon(villager, weapon.copy());
         float previousDropChance = Mob.DEFAULT_EQUIPMENT_DROP_CHANCE;
         TEMPORARY_WEAPONS.put(villager.getUUID(), new TemporaryWeaponState(previousMainHand, equippedWeapon.copy(), previousDropChance));
         villager.setItemSlot(EquipmentSlot.MAINHAND, equippedWeapon);
-        villager.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
+        villager.setDropChance(EquipmentSlot.MAINHAND, COMBAT_WEAPON_DROP_CHANCE);
     }
 
     private static void restoreTemporaryWeapon(Villager villager) {
@@ -270,6 +308,25 @@ public final class VillagerRetaliationHandler {
             villager.setItemSlot(EquipmentSlot.MAINHAND, state.previousMainHand().copy());
         }
         villager.setDropChance(EquipmentSlot.MAINHAND, state.previousDropChance());
+    }
+
+    private static ItemStack prepareCombatWeapon(Villager villager, ItemStack weapon) {
+        if (!(villager.level() instanceof ServerLevel level) || level.getDifficulty() != Difficulty.HARD) {
+            return weapon;
+        }
+
+        DifficultyInstance difficulty = level.getCurrentDifficultyAt(villager.blockPosition());
+        if (villager.getRandom().nextFloat() < HARD_MODE_WEAPON_ENCHANT_CHANCE * difficulty.getSpecialMultiplier()) {
+            EnchantmentHelper.enchantItemFromProvider(
+                    weapon,
+                    level.registryAccess(),
+                    VanillaEnchantmentProviders.MOB_SPAWN_EQUIPMENT,
+                    difficulty,
+                    villager.getRandom()
+            );
+        }
+
+        return weapon;
     }
 
     private record AngerTarget(UUID targetId, long expiresAt) {
