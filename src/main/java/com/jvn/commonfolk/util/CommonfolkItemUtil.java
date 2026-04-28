@@ -13,7 +13,8 @@ public final class CommonfolkItemUtil {
         }
 
         int maxDamage = stack.getMaxDamage();
-        int damage = CommonfolkRandomUtil.between(random, maxDamage / 5, Math.max(maxDamage / 5, maxDamage - 1));
+        // Mirror vanilla mob equipment-drop wear roll (Mob#dropCustomDeathLoot).
+        int damage = maxDamage - random.nextInt(1 + random.nextInt(Math.max(maxDamage - 3, 1)));
         stack.setDamageValue(damage);
         return stack;
     }

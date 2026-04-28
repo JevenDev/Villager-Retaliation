@@ -2,6 +2,7 @@ package com.jvn.commonfolk.loot;
 
 import com.jvn.commonfolk.combat.VillagerCombatRoles;
 import com.jvn.commonfolk.config.CommonfolkConfig;
+import com.jvn.commonfolk.util.CommonfolkItemUtil;
 import com.jvn.commonfolk.util.CommonfolkLootUtil;
 import com.jvn.commonfolk.util.CommonfolkRandomUtil;
 import net.minecraft.world.Difficulty;
@@ -59,7 +60,7 @@ public final class VillagerLootHandler {
             return;
         }
 
-        ItemStack drop = maybeEnchantLootWeapon(villager, weapon.copy(), random);
+        ItemStack drop = maybeEnchantLootWeapon(villager, CommonfolkItemUtil.withRandomDamage(weapon.copy(), random), random);
         CommonfolkLootUtil.addDrop(event, drop);
     }
 
