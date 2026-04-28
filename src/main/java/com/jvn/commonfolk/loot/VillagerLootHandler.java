@@ -37,8 +37,7 @@ public final class VillagerLootHandler {
             return;
         }
 
-        VillagerProfession profession = villager.getVillagerData().getProfession();
-        for (ItemStack stack : ProfessionLootPools.roll(profession, random)) {
+        for (ItemStack stack : ProfessionLootPools.roll(villager, random)) {
             CommonfolkLootUtil.addDrop(event, stack);
         }
     }
