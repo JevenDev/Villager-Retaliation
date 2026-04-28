@@ -70,14 +70,23 @@ public final class VillagerCombatRoles {
         if (profession == VillagerProfession.ARMORER) {
             return new ItemStack(Items.IRON_SWORD);
         }
+        if (profession == VillagerProfession.FARMER && CommonfolkConfig.FARMERS_USE_BREAD.get()) {
+            return new ItemStack(Items.BREAD);
+        }
+        if (profession == VillagerProfession.LIBRARIAN) {
+            return new ItemStack(Items.BOOK);
+        }
 
         return ItemStack.EMPTY;
     }
 
     public static ItemStack preferredLootWeapon(Villager villager, RandomSource random) {
-        ItemStack weapon = preferredWeapon(villager);
-        if (!weapon.isEmpty()) {
-            return weapon;
+        VillagerProfession profession = villager.getVillagerData().getProfession();
+        if (profession == VillagerProfession.WEAPONSMITH
+                || profession == VillagerProfession.TOOLSMITH
+                || profession == VillagerProfession.BUTCHER
+                || profession == VillagerProfession.ARMORER) {
+            return preferredWeapon(villager);
         }
 
         if (isFletcher(villager)) {

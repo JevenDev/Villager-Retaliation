@@ -309,6 +309,10 @@ public final class VillagerRetaliationHandler {
     }
 
     private static ItemStack prepareCombatWeapon(Villager villager, ItemStack weapon) {
+        if (weapon.is(Items.BOOK) || weapon.is(Items.BREAD)) {
+            return weapon;
+        }
+
         if (!(villager.level() instanceof ServerLevel level) || level.getDifficulty() != Difficulty.HARD) {
             return weapon;
         }

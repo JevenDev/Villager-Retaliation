@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
@@ -27,6 +28,8 @@ import net.minecraft.world.item.component.SuspiciousStewEffects;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentInstance;
 import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.item.trading.MerchantOffer;
+import net.minecraft.world.item.trading.MerchantOffers;
 
 public final class ProfessionLootPools {
     @FunctionalInterface
@@ -105,7 +108,7 @@ public final class ProfessionLootPools {
                 stack(Items.PAPER, 1, 5), stack(Items.BOOK, 1, 3), stack(Items.INK_SAC, 1, 1), stack(Items.FEATHER, 1, 1));
         addRare(random, drops, new ItemStack(Items.BOOKSHELF));
         if (CommonfolkRandomUtil.chance(random, CommonfolkConfig.VERY_RARE_DROP_CHANCE.get())) {
-            drops.add(enchantedBook(villager, random));
+            drops.add(soldLibrarianEnchantedBook(villager, random).orElseGet(() -> enchantedBook(villager, random)));
         }
         return drops;
     }
@@ -270,6 +273,27 @@ public final class ProfessionLootPools {
         Registry<Enchantment> registry = villager.registryAccess().registryOrThrow(Registries.ENCHANTMENT);
         Holder.Reference<Enchantment> enchantment = registry.getHolderOrThrow(key);
         return EnchantedBookItem.createForEnchantment(new EnchantmentInstance(enchantment, 1));
+    }
+
+    private static Optional<ItemStack> soldLibrarianEnchantedBook(Villager villager, RandomSource random) {
+        MerchantOffers offers = villager.getOffers();
+        if (offers.isEmpty()) {
+            return Optional.empty();
+        }
+
+        List<ItemStack> enchantedBookOffers = new ArrayList<>();
+        for (MerchantOffer offer : offers) {
+            ItemStack result = offer.getResult();
+            if (result.is(Items.ENCHANTED_BOOK)) {
+                enchantedBookOffers.add(result.copy());
+            }
+        }
+
+        if (enchantedBookOffers.isEmpty()) {
+            return Optional.empty();
+        }
+
+        return Optional.of(enchantedBookOffers.get(random.nextInt(enchantedBookOffers.size())));
     }
 
     private static Item randomDyeItem(RandomSource random) {
