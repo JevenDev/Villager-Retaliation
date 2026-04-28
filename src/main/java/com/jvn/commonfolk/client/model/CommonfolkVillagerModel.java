@@ -16,6 +16,7 @@ import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.Items;
+import com.mojang.blaze3d.vertex.PoseStack;
 
 public class CommonfolkVillagerModel<T extends Villager> extends BaseVillagerModel<T> {
     public static final ModelLayerLocation LAYER_LOCATION =
@@ -152,6 +153,11 @@ public class CommonfolkVillagerModel<T extends Villager> extends BaseVillagerMod
         this.brim.visible = visible;
     }
 
+    public void translateToHand(HumanoidArm arm, PoseStack poseStack) {
+        this.body.translateAndRotate(poseStack);
+        this.getArm(arm).translateAndRotate(poseStack);
+    }
+
     private ArmPose resolvePose(T villager) {
         if (villager.isUsingItem()
                 && villager.getUseItem().is(Items.CROSSBOW)
@@ -194,5 +200,9 @@ public class CommonfolkVillagerModel<T extends Villager> extends BaseVillagerMod
 
         supportArm.yRot = yawDirection * 0.2F;
         supportArm.xRot *= 0.5F;
+    }
+
+    private ModelPart getArm(HumanoidArm arm) {
+        return arm == HumanoidArm.LEFT ? this.leftArm : this.rightArm;
     }
 }

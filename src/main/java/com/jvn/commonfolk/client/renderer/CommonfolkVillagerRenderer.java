@@ -4,12 +4,13 @@ import com.jvn.commonfolk.Commonfolk;
 import com.jvn.commonfolk.client.model.BaseVillagerModel;
 import com.jvn.commonfolk.client.model.CommonfolkVillagerModel;
 import com.jvn.commonfolk.client.model.VanillaVillagerModelAdapter;
+import com.jvn.commonfolk.client.renderer.layer.CombatItemInHandLayer;
+import com.jvn.commonfolk.client.renderer.layer.VillagerCrossedArmsItemLayer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.MobRenderer;
-import net.minecraft.client.renderer.entity.layers.CrossedArmsItemLayer;
 import net.minecraft.client.renderer.entity.layers.CustomHeadLayer;
 import net.minecraft.client.renderer.entity.layers.VillagerProfessionLayer;
 import net.minecraft.resources.ResourceLocation;
@@ -28,7 +29,8 @@ public class CommonfolkVillagerRenderer extends MobRenderer<Villager, BaseVillag
         this.combatModel = new CommonfolkVillagerModel<>(context.bakeLayer(CommonfolkVillagerModel.LAYER_LOCATION));
         this.addLayer(new CustomHeadLayer<>(this, context.getModelSet(), context.getItemInHandRenderer()));
         this.addLayer(new VillagerProfessionLayer<>(this, context.getResourceManager(), "villager"));
-        this.addLayer(new CrossedArmsItemLayer<>(this, context.getItemInHandRenderer()));
+        this.addLayer(new VillagerCrossedArmsItemLayer(this, context.getItemInHandRenderer()));
+        this.addLayer(new CombatItemInHandLayer(this, context.getItemInHandRenderer()));
     }
 
     @Override

@@ -12,7 +12,9 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Arrow;
@@ -28,6 +30,7 @@ public final class VillagerRetaliationHandler {
     private static final Map<UUID, AngerTarget> ANGER_TARGETS = new HashMap<>();
     private static final Map<UUID, Long> NEXT_ATTACK_TICKS = new HashMap<>();
     private static final Map<UUID, Long> NEXT_SPECIAL_TICKS = new HashMap<>();
+    private static final Map<UUID, TemporaryWeaponState> TEMPORARY_WEAPONS = new HashMap<>();
 
     private VillagerRetaliationHandler() {
     }
@@ -107,6 +110,7 @@ public final class VillagerRetaliationHandler {
         }
 
         suppressVanillaPanic(villager);
+        equipCombatWeapon(villager);
         villager.setAggressive(true);
         villager.setChasing(true);
         villager.setTarget(target);
@@ -143,6 +147,7 @@ public final class VillagerRetaliationHandler {
         ANGER_TARGETS.remove(villager.getUUID());
         NEXT_ATTACK_TICKS.remove(villager.getUUID());
         NEXT_SPECIAL_TICKS.remove(villager.getUUID());
+        restoreTemporaryWeapon(villager);
         villager.setAggressive(false);
         villager.setChasing(false);
         villager.setTarget(null);
@@ -232,6 +237,44 @@ public final class VillagerRetaliationHandler {
                 : InteractionHand.MAIN_HAND;
     }
 
+    private static void equipCombatWeapon(Villager villager) {
+        TemporaryWeaponState state = TEMPORARY_WEAPONS.get(villager.getUUID());
+        if (state != null) {
+            if (!ItemStack.isSameItemSameComponents(villager.getMainHandItem(), state.equippedWeapon())) {
+                villager.setItemSlot(EquipmentSlot.MAINHAND, state.equippedWeapon().copy());
+                villager.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
+            }
+            return;
+        }
+
+        ItemStack weapon = VillagerCombatRoles.preferredWeapon(villager);
+        if (weapon.isEmpty()) {
+            return;
+        }
+
+        ItemStack previousMainHand = villager.getMainHandItem().copy();
+        ItemStack equippedWeapon = weapon.copy();
+        float previousDropChance = Mob.DEFAULT_EQUIPMENT_DROP_CHANCE;
+        TEMPORARY_WEAPONS.put(villager.getUUID(), new TemporaryWeaponState(previousMainHand, equippedWeapon.copy(), previousDropChance));
+        villager.setItemSlot(EquipmentSlot.MAINHAND, equippedWeapon);
+        villager.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
+    }
+
+    private static void restoreTemporaryWeapon(Villager villager) {
+        TemporaryWeaponState state = TEMPORARY_WEAPONS.remove(villager.getUUID());
+        if (state == null) {
+            return;
+        }
+
+        if (ItemStack.isSameItemSameComponents(villager.getMainHandItem(), state.equippedWeapon())) {
+            villager.setItemSlot(EquipmentSlot.MAINHAND, state.previousMainHand().copy());
+        }
+        villager.setDropChance(EquipmentSlot.MAINHAND, state.previousDropChance());
+    }
+
     private record AngerTarget(UUID targetId, long expiresAt) {
+    }
+
+    private record TemporaryWeaponState(ItemStack previousMainHand, ItemStack equippedWeapon, float previousDropChance) {
     }
 }
