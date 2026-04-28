@@ -16,6 +16,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Arrow;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.AABB;
@@ -106,6 +107,9 @@ public final class VillagerRetaliationHandler {
         }
 
         suppressVanillaPanic(villager);
+        villager.setAggressive(true);
+        villager.setChasing(true);
+        villager.setTarget(target);
         if (villager.getAttribute(Attributes.MOVEMENT_SPEED) != null) {
             villager.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.75D);
         }
@@ -120,6 +124,7 @@ public final class VillagerRetaliationHandler {
 
         villager.getNavigation().moveTo(target, VillagerCombatRoles.movementSpeed(villager));
         if (canMeleeHit(villager, target) && attackReady(villager, level.getGameTime())) {
+            villager.swing(selectAttackHand(villager));
             target.hurt(villager.damageSources().mobAttack(villager), VillagerCombatRoles.meleeDamage(villager));
             NEXT_ATTACK_TICKS.put(villager.getUUID(), level.getGameTime() + VillagerCombatRoles.attackCooldown(villager));
         }
@@ -138,6 +143,9 @@ public final class VillagerRetaliationHandler {
         ANGER_TARGETS.remove(villager.getUUID());
         NEXT_ATTACK_TICKS.remove(villager.getUUID());
         NEXT_SPECIAL_TICKS.remove(villager.getUUID());
+        villager.setAggressive(false);
+        villager.setChasing(false);
+        villager.setTarget(null);
         villager.getNavigation().stop();
     }
 
@@ -213,8 +221,15 @@ public final class VillagerRetaliationHandler {
         double horizontal = Math.sqrt(dx * dx + dz * dz);
         arrow.shoot(dx, dy + horizontal * 0.2D, dz, 1.6F, 8.0F);
         level.addFreshEntity(arrow);
+        villager.swing(selectAttackHand(villager));
         NEXT_SPECIAL_TICKS.put(villager.getUUID(), level.getGameTime() + 35L);
         return true;
+    }
+
+    private static InteractionHand selectAttackHand(Villager villager) {
+        return villager.getMainHandItem().isEmpty() && !villager.getOffhandItem().isEmpty()
+                ? InteractionHand.OFF_HAND
+                : InteractionHand.MAIN_HAND;
     }
 
     private record AngerTarget(UUID targetId, long expiresAt) {
