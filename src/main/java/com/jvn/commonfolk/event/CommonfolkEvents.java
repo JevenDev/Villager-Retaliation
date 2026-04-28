@@ -1,10 +1,14 @@
 package com.jvn.commonfolk.event;
 
+import com.jvn.commonfolk.combat.VillagerRetaliationHandler;
 import com.jvn.commonfolk.loot.VillagerLootHandler;
 import com.jvn.commonfolk.loot.WanderingTraderLootHandler;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.WanderingTrader;
+import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
+import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
 public final class CommonfolkEvents {
     private CommonfolkEvents() {
@@ -16,5 +20,17 @@ public final class CommonfolkEvents {
         } else if (event.getEntity() instanceof WanderingTrader wanderingTrader) {
             WanderingTraderLootHandler.addDrops(wanderingTrader, event);
         }
+    }
+
+    public static void onLivingDamage(LivingDamageEvent.Post event) {
+        VillagerRetaliationHandler.onLivingDamage(event);
+    }
+
+    public static void onLivingDeath(LivingDeathEvent event) {
+        VillagerRetaliationHandler.onLivingDeath(event);
+    }
+
+    public static void onEntityTick(EntityTickEvent.Post event) {
+        VillagerRetaliationHandler.onEntityTick(event);
     }
 }
