@@ -52,6 +52,7 @@ public final class VillagerRetaliationHandler {
                 || !(villager.level() instanceof ServerLevel level)) {
             return;
         }
+        clearAnger(villager);
 
         Optional<LivingEntity> attacker = resolveAttacker(event.getSource());
         if (attacker.isEmpty() || shouldIgnoreAttacker(attacker.get())) {
