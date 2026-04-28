@@ -30,7 +30,11 @@ public final class CommonfolkEvents {
         VillagerRetaliationHandler.onLivingDeath(event);
     }
 
-    public static void onEntityTick(EntityTickEvent.Post event) {
-        VillagerRetaliationHandler.onEntityTick(event);
+    public static void onEntityTickPre(EntityTickEvent.Pre event) {
+        VillagerRetaliationHandler.onEntityTickPre(event);
+    }
+
+    public static void onEntityTickPost(EntityTickEvent.Post event) {
+        VillagerRetaliationHandler.onEntityTickPost(event);
     }
 }

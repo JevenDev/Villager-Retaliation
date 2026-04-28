@@ -9,6 +9,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.Villager;
@@ -68,7 +70,17 @@ public final class VillagerRetaliationHandler {
         }
     }
 
-    public static void onEntityTick(EntityTickEvent.Post event) {
+    public static void onEntityTickPre(EntityTickEvent.Pre event) {
+        if (!(event.getEntity() instanceof Villager villager) || villager.level().isClientSide) {
+            return;
+        }
+
+        if (ANGER_TARGETS.containsKey(villager.getUUID())) {
+            suppressVanillaPanic(villager);
+        }
+    }
+
+    public static void onEntityTickPost(EntityTickEvent.Post event) {
         if (!(event.getEntity() instanceof Villager villager) || villager.level().isClientSide) {
             return;
         }
@@ -93,6 +105,11 @@ public final class VillagerRetaliationHandler {
             return;
         }
 
+        suppressVanillaPanic(villager);
+        if (villager.getAttribute(Attributes.MOVEMENT_SPEED) != null) {
+            villager.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.75D);
+        }
+
         handleDefensiveRole(villager, level.getGameTime());
 
         double distanceSqr = villager.distanceToSqr(target);
@@ -102,7 +119,7 @@ public final class VillagerRetaliationHandler {
         }
 
         villager.getNavigation().moveTo(target, VillagerCombatRoles.movementSpeed(villager));
-        if (distanceSqr <= 4.0D && attackReady(villager, level.getGameTime())) {
+        if (canMeleeHit(villager, target) && attackReady(villager, level.getGameTime())) {
             target.hurt(villager.damageSources().mobAttack(villager), VillagerCombatRoles.meleeDamage(villager));
             NEXT_ATTACK_TICKS.put(villager.getUUID(), level.getGameTime() + VillagerCombatRoles.attackCooldown(villager));
         }
@@ -146,6 +163,17 @@ public final class VillagerRetaliationHandler {
 
     private static boolean attackReady(Villager villager, long gameTime) {
         return gameTime >= NEXT_ATTACK_TICKS.getOrDefault(villager.getUUID(), 0L);
+    }
+
+    private static boolean canMeleeHit(Villager villager, LivingEntity target) {
+        // Use hitbox-based reach so contact is consistent regardless of center-point offsets.
+        return villager.getBoundingBox().inflate(1.0D).intersects(target.getBoundingBox());
+    }
+
+    private static void suppressVanillaPanic(Villager villager) {
+        villager.getBrain().eraseMemory(MemoryModuleType.HURT_BY);
+        villager.getBrain().eraseMemory(MemoryModuleType.HURT_BY_ENTITY);
+        villager.getBrain().eraseMemory(MemoryModuleType.NEAREST_HOSTILE);
     }
 
     private static void handleDefensiveRole(Villager villager, long gameTime) {

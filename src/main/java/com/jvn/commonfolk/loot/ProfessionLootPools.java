@@ -202,7 +202,7 @@ public final class ProfessionLootPools {
     }
 
     private static List<ItemStack> rollCommon(RandomSource random, int minRolls, int maxRolls, Entry... entries) {
-        int rolls = CommonfolkRandomUtil.between(random, minRolls, maxRolls);
+        int rolls = Math.max(1, CommonfolkRandomUtil.between(random, minRolls, maxRolls) - 1);
         List<ItemStack> drops = new ArrayList<>();
         for (int i = 0; i < rolls; i++) {
             drops.add(entries[random.nextInt(entries.length)].create(random));

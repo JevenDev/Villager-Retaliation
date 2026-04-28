@@ -25,14 +25,7 @@ public final class VillagerCombatRoles {
         if (profession == VillagerProfession.BUTCHER) {
             return CommonfolkConfig.BUTCHERS_FIGHT_BACK.get();
         }
-        if (profession == VillagerProfession.CLERIC) {
-            return CommonfolkConfig.CLERICS_USE_POTIONS.get();
-        }
-        if (profession == VillagerProfession.FARMER) {
-            return CommonfolkConfig.FARMERS_USE_BREAD.get();
-        }
-
-        return false;
+        return true;
     }
 
     public static float meleeDamage(Villager villager) {
@@ -57,15 +50,7 @@ public final class VillagerCombatRoles {
     }
 
     public static double movementSpeed(Villager villager) {
-        VillagerProfession profession = villager.getVillagerData().getProfession();
-        if (profession == VillagerProfession.WEAPONSMITH) {
-            return 1.3D;
-        }
-        if (profession == VillagerProfession.FLETCHER) {
-            return 1.1D;
-        }
-
-        return 1.15D;
+        return 0.5D;
     }
 
     public static int attackCooldown(Villager villager) {
