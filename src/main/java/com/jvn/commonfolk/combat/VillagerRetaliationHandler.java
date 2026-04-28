@@ -35,8 +35,6 @@ public final class VillagerRetaliationHandler {
     private static final Map<UUID, Long> NEXT_ATTACK_TICKS = new HashMap<>();
     private static final Map<UUID, Long> NEXT_SPECIAL_TICKS = new HashMap<>();
     private static final Map<UUID, TemporaryWeaponState> TEMPORARY_WEAPONS = new HashMap<>();
-    private static final float COMBAT_WEAPON_DROP_CHANCE = Mob.DEFAULT_EQUIPMENT_DROP_CHANCE;
-    private static final float HARD_MODE_WEAPON_ENCHANT_CHANCE = 0.25F;
 
     private VillagerRetaliationHandler() {
     }
@@ -280,7 +278,7 @@ public final class VillagerRetaliationHandler {
         if (state != null) {
             if (!ItemStack.isSameItemSameComponents(villager.getMainHandItem(), state.equippedWeapon())) {
                 villager.setItemSlot(EquipmentSlot.MAINHAND, state.equippedWeapon().copy());
-                villager.setDropChance(EquipmentSlot.MAINHAND, COMBAT_WEAPON_DROP_CHANCE);
+                villager.setDropChance(EquipmentSlot.MAINHAND, currentCombatWeaponDropChance());
             }
             return;
         }
@@ -295,7 +293,7 @@ public final class VillagerRetaliationHandler {
         float previousDropChance = Mob.DEFAULT_EQUIPMENT_DROP_CHANCE;
         TEMPORARY_WEAPONS.put(villager.getUUID(), new TemporaryWeaponState(previousMainHand, equippedWeapon.copy(), previousDropChance));
         villager.setItemSlot(EquipmentSlot.MAINHAND, equippedWeapon);
-        villager.setDropChance(EquipmentSlot.MAINHAND, COMBAT_WEAPON_DROP_CHANCE);
+        villager.setDropChance(EquipmentSlot.MAINHAND, currentCombatWeaponDropChance());
     }
 
     private static void restoreTemporaryWeapon(Villager villager) {
@@ -316,7 +314,7 @@ public final class VillagerRetaliationHandler {
         }
 
         DifficultyInstance difficulty = level.getCurrentDifficultyAt(villager.blockPosition());
-        if (villager.getRandom().nextFloat() < HARD_MODE_WEAPON_ENCHANT_CHANCE * difficulty.getSpecialMultiplier()) {
+        if (villager.getRandom().nextFloat() < currentCombatWeaponEnchantChance()) {
             EnchantmentHelper.enchantItemFromProvider(
                     weapon,
                     level.registryAccess(),
@@ -327,6 +325,14 @@ public final class VillagerRetaliationHandler {
         }
 
         return weapon;
+    }
+
+    private static float currentCombatWeaponDropChance() {
+        return CommonfolkConfig.COMBAT_WEAPON_DROP_CHANCE.get().floatValue();
+    }
+
+    private static float currentCombatWeaponEnchantChance() {
+        return CommonfolkConfig.COMBAT_WEAPON_ENCHANT_CHANCE.get().floatValue();
     }
 
     private record AngerTarget(UUID targetId, long expiresAt) {
