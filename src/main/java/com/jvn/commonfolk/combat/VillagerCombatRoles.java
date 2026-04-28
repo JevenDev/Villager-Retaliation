@@ -1,6 +1,7 @@
 package com.jvn.commonfolk.combat;
 
 import com.jvn.commonfolk.config.CommonfolkConfig;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.npc.Villager;
@@ -68,6 +69,19 @@ public final class VillagerCombatRoles {
         }
         if (profession == VillagerProfession.ARMORER) {
             return new ItemStack(Items.IRON_SWORD);
+        }
+
+        return ItemStack.EMPTY;
+    }
+
+    public static ItemStack preferredLootWeapon(Villager villager, RandomSource random) {
+        ItemStack weapon = preferredWeapon(villager);
+        if (!weapon.isEmpty()) {
+            return weapon;
+        }
+
+        if (isFletcher(villager)) {
+            return new ItemStack(Items.BOW);
         }
 
         return ItemStack.EMPTY;
