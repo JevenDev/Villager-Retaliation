@@ -2,6 +2,7 @@ package com.jvn.commonfolk.combat;
 
 import com.jvn.commonfolk.config.CommonfolkConfig;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -19,10 +20,16 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.entity.projectile.Arrow;
+import net.minecraft.world.entity.projectile.AbstractArrow;
+import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.BowItem;
+import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.component.ChargedProjectiles;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.providers.VanillaEnchantmentProviders;
 import net.minecraft.world.phys.AABB;
@@ -35,6 +42,12 @@ public final class VillagerRetaliationHandler {
     private static final Map<UUID, Long> NEXT_ATTACK_TICKS = new HashMap<>();
     private static final Map<UUID, Long> NEXT_SPECIAL_TICKS = new HashMap<>();
     private static final Map<UUID, TemporaryWeaponState> TEMPORARY_WEAPONS = new HashMap<>();
+    private static final Map<UUID, Integer> FLETCHER_SEE_TIME = new HashMap<>();
+    private static final Map<UUID, Integer> FLETCHER_ATTACK_DELAY = new HashMap<>();
+    private static final Map<UUID, CrossbowState> FLETCHER_CROSSBOW_STATE = new HashMap<>();
+    private static final double FLETCHER_MAX_RANGED_DISTANCE_SQR = 225.0D;
+    private static final int FLETCHER_BOW_DRAW_TICKS = 20;
+    private static final int FLETCHER_BOW_ATTACK_INTERVAL = 20;
 
     private VillagerRetaliationHandler() {
     }
@@ -104,6 +117,7 @@ public final class VillagerRetaliationHandler {
 
         AngerTarget angerTarget = ANGER_TARGETS.get(villager.getUUID());
         if (angerTarget == null) {
+            clearFletcherRangedState(villager);
             return;
         }
 
@@ -135,12 +149,12 @@ public final class VillagerRetaliationHandler {
 
         double distanceSqr = villager.distanceToSqr(target);
         villager.getLookControl().setLookAt(target, 30.0F, 30.0F);
-        if (tryFletcherShot(villager, target, level, distanceSqr)) {
+        if (tryFletcherRangedAttack(villager, target, level, distanceSqr)) {
             return;
         }
 
         villager.getNavigation().moveTo(target, VillagerCombatRoles.movementSpeed(villager));
-        if (canMeleeHit(villager, target) && attackReady(villager, level.getGameTime())) {
+        if (!VillagerCombatRoles.isFletcher(villager) && canMeleeHit(villager, target) && attackReady(villager, level.getGameTime())) {
             villager.swing(selectAttackHand(villager), true);
             target.hurt(villager.damageSources().mobAttack(villager), VillagerCombatRoles.meleeDamage(villager));
             NEXT_ATTACK_TICKS.put(villager.getUUID(), level.getGameTime() + VillagerCombatRoles.attackCooldown(villager));
@@ -164,6 +178,7 @@ public final class VillagerRetaliationHandler {
         ANGER_TARGETS.remove(villager.getUUID());
         NEXT_ATTACK_TICKS.remove(villager.getUUID());
         NEXT_SPECIAL_TICKS.remove(villager.getUUID());
+        clearFletcherRangedState(villager);
         if (restoreWeapon) {
             restoreTemporaryWeapon(villager);
         } else {
@@ -228,28 +243,175 @@ public final class VillagerRetaliationHandler {
         }
     }
 
-    private static boolean tryFletcherShot(Villager villager, LivingEntity target, ServerLevel level, double distanceSqr) {
+    private static boolean tryFletcherRangedAttack(Villager villager, LivingEntity target, ServerLevel level, double distanceSqr) {
         if (!VillagerCombatRoles.isFletcher(villager)
                 || !CommonfolkConfig.FLETCHERS_FIGHT_BACK.get()
-                || distanceSqr < 16.0D
-                || distanceSqr > 225.0D
-                || !villager.hasLineOfSight(target)
-                || level.getGameTime() < NEXT_SPECIAL_TICKS.getOrDefault(villager.getUUID(), 0L)) {
+                || distanceSqr > FLETCHER_MAX_RANGED_DISTANCE_SQR) {
             return false;
         }
 
-        villager.getNavigation().stop();
-        Arrow arrow = new Arrow(level, villager, new ItemStack(Items.ARROW), new ItemStack(Items.BOW));
-        arrow.setBaseDamage(2.0D);
+        boolean hasLineOfSight = villager.hasLineOfSight(target);
+        int seeTime = updateFletcherSeeTime(villager, hasLineOfSight);
+
+        ItemStack rangedWeapon = villager.getMainHandItem().isEmpty() ? villager.getOffhandItem() : villager.getMainHandItem();
+        boolean usingCrossbow = rangedWeapon.is(Items.CROSSBOW);
+        boolean usingBow = rangedWeapon.is(Items.BOW);
+        if (!usingCrossbow && !usingBow) {
+            return false;
+        }
+
+        if (usingCrossbow) {
+            handleCrossbowAttack(villager, target, level, distanceSqr, hasLineOfSight, seeTime);
+        } else {
+            handleBowAttack(villager, target, level, distanceSqr, hasLineOfSight, seeTime);
+        }
+        return true;
+    }
+
+    private static int updateFletcherSeeTime(Villager villager, boolean hasLineOfSight) {
+        int seeTime = FLETCHER_SEE_TIME.getOrDefault(villager.getUUID(), 0);
+        boolean couldSeeLastTick = seeTime > 0;
+        if (hasLineOfSight != couldSeeLastTick) {
+            seeTime = 0;
+        }
+
+        seeTime += hasLineOfSight ? 1 : -1;
+        FLETCHER_SEE_TIME.put(villager.getUUID(), seeTime);
+        return seeTime;
+    }
+
+    private static void handleBowAttack(
+            Villager villager,
+            LivingEntity target,
+            ServerLevel level,
+            double distanceSqr,
+            boolean hasLineOfSight,
+            int seeTime
+    ) {
+        if (distanceSqr <= 100.0D && seeTime >= 20) {
+            villager.getNavigation().stop();
+        } else {
+            villager.getNavigation().moveTo(target, VillagerCombatRoles.movementSpeed(villager));
+        }
+
+        if (villager.isUsingItem()) {
+            if (!hasLineOfSight && seeTime < -60) {
+                villager.stopUsingItem();
+                return;
+            }
+
+            if (hasLineOfSight) {
+                int drawTicks = villager.getTicksUsingItem();
+                if (drawTicks >= FLETCHER_BOW_DRAW_TICKS) {
+                    villager.stopUsingItem();
+                    fireBowLikeIllusioner(villager, target, level, BowItem.getPowerForTime(drawTicks));
+                    villager.swing(selectAttackHand(villager), true);
+                    FLETCHER_ATTACK_DELAY.put(villager.getUUID(), FLETCHER_BOW_ATTACK_INTERVAL);
+                }
+            }
+            return;
+        }
+
+        int attackDelay = FLETCHER_ATTACK_DELAY.getOrDefault(villager.getUUID(), 0);
+        if (attackDelay > 0) {
+            FLETCHER_ATTACK_DELAY.put(villager.getUUID(), attackDelay - 1);
+            return;
+        }
+
+        if (seeTime >= -60) {
+            villager.startUsingItem(ProjectileUtil.getWeaponHoldingHand(villager, item -> item instanceof BowItem));
+        }
+    }
+
+    private static void fireBowLikeIllusioner(Villager villager, LivingEntity target, ServerLevel level, float power) {
+        ItemStack bowStack = villager.getItemInHand(ProjectileUtil.getWeaponHoldingHand(villager, item -> item instanceof BowItem));
+        ItemStack ammo = villager.getProjectile(bowStack);
+        if (ammo.isEmpty()) {
+            ammo = new ItemStack(Items.ARROW);
+        }
+
+        AbstractArrow arrow = ProjectileUtil.getMobArrow(villager, ammo, power, bowStack);
+        if (bowStack.getItem() instanceof BowItem bowItem) {
+            arrow = bowItem.customArrow(arrow, ammo, bowStack);
+        }
+
         double dx = target.getX() - villager.getX();
-        double dy = target.getEyeY() - arrow.getY();
+        double dy = target.getY(0.3333333333333333D) - arrow.getY();
         double dz = target.getZ() - villager.getZ();
         double horizontal = Math.sqrt(dx * dx + dz * dz);
-        arrow.shoot(dx, dy + horizontal * 0.2D, dz, 1.6F, 8.0F);
+        arrow.shoot(dx, dy + horizontal * 0.2D, dz, 1.6F, (float) (14 - level.getDifficulty().getId() * 4));
+        villager.playSound(SoundEvents.SKELETON_SHOOT, 1.0F, 1.0F / (villager.getRandom().nextFloat() * 0.4F + 0.8F));
         level.addFreshEntity(arrow);
-        villager.swing(selectAttackHand(villager), true);
-        NEXT_SPECIAL_TICKS.put(villager.getUUID(), level.getGameTime() + 35L);
-        return true;
+    }
+
+    private static void handleCrossbowAttack(
+            Villager villager,
+            LivingEntity target,
+            ServerLevel level,
+            double distanceSqr,
+            boolean hasLineOfSight,
+            int seeTime
+    ) {
+        int attackDelay = FLETCHER_ATTACK_DELAY.getOrDefault(villager.getUUID(), 0);
+        CrossbowState state = FLETCHER_CROSSBOW_STATE.getOrDefault(villager.getUUID(), CrossbowState.UNCHARGED);
+        boolean shouldMove = (distanceSqr > 64.0D || seeTime < 5) && attackDelay == 0;
+        if (shouldMove) {
+            villager.getNavigation().moveTo(target, state == CrossbowState.UNCHARGED ? VillagerCombatRoles.movementSpeed(villager) : 0.25D);
+        } else {
+            villager.getNavigation().stop();
+        }
+
+        if (state == CrossbowState.UNCHARGED) {
+            if (!shouldMove) {
+                villager.startUsingItem(ProjectileUtil.getWeaponHoldingHand(villager, item -> item instanceof CrossbowItem));
+                FLETCHER_CROSSBOW_STATE.put(villager.getUUID(), CrossbowState.CHARGING);
+            }
+            return;
+        }
+
+        if (state == CrossbowState.CHARGING) {
+            if (!villager.isUsingItem()) {
+                FLETCHER_CROSSBOW_STATE.put(villager.getUUID(), CrossbowState.UNCHARGED);
+                return;
+            }
+
+            ItemStack using = villager.getUseItem();
+            int chargeTicks = villager.getTicksUsingItem();
+            if (chargeTicks >= CrossbowItem.getChargeDuration(using, villager)) {
+                villager.releaseUsingItem();
+                FLETCHER_CROSSBOW_STATE.put(villager.getUUID(), CrossbowState.CHARGED);
+                FLETCHER_ATTACK_DELAY.put(villager.getUUID(), 20 + villager.getRandom().nextInt(20));
+            }
+            return;
+        }
+
+        if (state == CrossbowState.CHARGED) {
+            if (attackDelay > 0) {
+                FLETCHER_ATTACK_DELAY.put(villager.getUUID(), attackDelay - 1);
+                return;
+            }
+            FLETCHER_CROSSBOW_STATE.put(villager.getUUID(), CrossbowState.READY_TO_ATTACK);
+        }
+
+        if (FLETCHER_CROSSBOW_STATE.get(villager.getUUID()) == CrossbowState.READY_TO_ATTACK && hasLineOfSight) {
+            fireCrossbowLikePillager(villager, target, level);
+            villager.swing(selectAttackHand(villager), true);
+            FLETCHER_CROSSBOW_STATE.put(villager.getUUID(), CrossbowState.UNCHARGED);
+        }
+    }
+
+    private static void fireCrossbowLikePillager(Villager villager, LivingEntity target, ServerLevel level) {
+        InteractionHand hand = ProjectileUtil.getWeaponHoldingHand(villager, item -> item instanceof CrossbowItem);
+        ItemStack weapon = villager.getItemInHand(hand);
+        if (!(weapon.getItem() instanceof CrossbowItem crossbowItem)) {
+            return;
+        }
+
+        if (!CrossbowItem.isCharged(weapon)) {
+            weapon.set(DataComponents.CHARGED_PROJECTILES, ChargedProjectiles.of(List.of(new ItemStack(Items.ARROW))));
+        }
+
+        crossbowItem.performShooting(level, villager, hand, weapon, 1.6F, (float) (14 - level.getDifficulty().getId() * 4), target);
     }
 
     private static InteractionHand selectAttackHand(Villager villager) {
@@ -339,9 +501,25 @@ public final class VillagerRetaliationHandler {
         return CommonfolkConfig.COMBAT_WEAPON_ENCHANT_CHANCE.get().floatValue();
     }
 
+    private static void clearFletcherRangedState(Villager villager) {
+        FLETCHER_SEE_TIME.remove(villager.getUUID());
+        FLETCHER_ATTACK_DELAY.remove(villager.getUUID());
+        FLETCHER_CROSSBOW_STATE.remove(villager.getUUID());
+        if (villager.isUsingItem()) {
+            villager.stopUsingItem();
+        }
+    }
+
     private record AngerTarget(UUID targetId, long expiresAt) {
     }
 
     private record TemporaryWeaponState(ItemStack previousMainHand, ItemStack equippedWeapon, float previousDropChance) {
+    }
+
+    private enum CrossbowState {
+        UNCHARGED,
+        CHARGING,
+        CHARGED,
+        READY_TO_ATTACK
     }
 }

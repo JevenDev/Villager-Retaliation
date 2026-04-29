@@ -37,6 +37,7 @@ public class CommonfolkVillagerModel<T extends Villager> extends BaseVillagerMod
     private enum ArmPose {
         NEUTRAL,
         ATTACKING,
+        BOW_AND_ARROW,
         CROSSBOW_HOLD,
         CROSSBOW_CHARGE
     }
@@ -130,6 +131,8 @@ public class CommonfolkVillagerModel<T extends Villager> extends BaseVillagerMod
                     AnimationUtils.swingWeaponDown(this.leftArm, this.rightArm, villager, attackProgress, ageInTicks);
                 }
             }
+        } else if (pose == ArmPose.BOW_AND_ARROW) {
+            this.animateBowAndArrow(villager);
         } else if (pose == ArmPose.CROSSBOW_HOLD) {
             AnimationUtils.animateCrossbowHold(this.rightArm, this.leftArm, this.head, this.isRightHanded(villager));
         } else if (pose == ArmPose.CROSSBOW_CHARGE) {
@@ -164,6 +167,11 @@ public class CommonfolkVillagerModel<T extends Villager> extends BaseVillagerMod
                 && villager.getUseItem().is(Items.CROSSBOW)
                 && villager.getUsedItemHand() == InteractionHand.MAIN_HAND) {
             return ArmPose.CROSSBOW_CHARGE;
+        }
+        if (villager.isUsingItem()
+                && villager.getUseItem().is(Items.BOW)
+                && villager.getUsedItemHand() == InteractionHand.MAIN_HAND) {
+            return ArmPose.BOW_AND_ARROW;
         }
         if (villager.isHolding(stack -> stack.is(Items.CROSSBOW))) {
             return ArmPose.CROSSBOW_HOLD;
@@ -201,6 +209,24 @@ public class CommonfolkVillagerModel<T extends Villager> extends BaseVillagerMod
 
         supportArm.yRot = yawDirection * 0.2F;
         supportArm.xRot *= 0.5F;
+    }
+
+    private void animateBowAndArrow(T villager) {
+        if (this.isRightHanded(villager)) {
+            // Match Illusioner bow-use pose so draw/aim reads like vanilla ranged mobs.
+            this.rightArm.yRot = -0.1F + this.head.yRot;
+            this.rightArm.xRot = (-(float) Math.PI / 2F) + this.head.xRot;
+            this.leftArm.xRot = -0.9424779F + this.head.xRot;
+            this.leftArm.yRot = this.head.yRot - 0.4F;
+            this.leftArm.zRot = (float) (Math.PI / 2.0);
+            return;
+        }
+
+        this.leftArm.yRot = 0.1F + this.head.yRot;
+        this.leftArm.xRot = (-(float) Math.PI / 2F) + this.head.xRot;
+        this.rightArm.xRot = -0.9424779F + this.head.xRot;
+        this.rightArm.yRot = this.head.yRot + 0.4F;
+        this.rightArm.zRot = (float) (-Math.PI / 2.0);
     }
 
     private ModelPart getArm(HumanoidArm arm) {

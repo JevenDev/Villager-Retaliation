@@ -70,6 +70,9 @@ public final class VillagerCombatRoles {
         if (profession == VillagerProfession.ARMORER) {
             return new ItemStack(Items.IRON_SWORD);
         }
+        if (profession == VillagerProfession.FLETCHER) {
+            return fletcherRangedWeapon(villager);
+        }
         if (profession == VillagerProfession.FARMER && CommonfolkConfig.FARMERS_USE_BREAD.get()) {
             return new ItemStack(Items.BREAD);
         }
@@ -90,7 +93,7 @@ public final class VillagerCombatRoles {
         }
 
         if (isFletcher(villager)) {
-            return new ItemStack(Items.BOW);
+            return fletcherRangedWeapon(villager);
         }
 
         return ItemStack.EMPTY;
@@ -118,5 +121,10 @@ public final class VillagerCombatRoles {
 
     public static boolean isFletcher(Villager villager) {
         return villager.getVillagerData().getProfession() == VillagerProfession.FLETCHER;
+    }
+
+    private static ItemStack fletcherRangedWeapon(Villager villager) {
+        boolean usesCrossbow = (villager.getUUID().getLeastSignificantBits() & 1L) == 0L;
+        return new ItemStack(usesCrossbow ? Items.CROSSBOW : Items.BOW);
     }
 }
