@@ -11,8 +11,7 @@ public final class CommonfolkVillagerRules {
     public static boolean shouldKeepFleeingBehavior(Villager villager) {
         return villager.isBaby()
                 || villager.getVillagerData().getProfession() == VillagerProfession.NITWIT
-                || (!VillagerCombatRoles.canUseTemporaryCombatLoadout(villager)
-                && !CommonfolkVillagerWeapons.hasUsableWeapon(villager));
+                && !CommonfolkVillagerWeapons.hasUsableWeapon(villager);
     }
 
     public static boolean shouldSuppressFleeingBehavior(Villager villager) {

@@ -191,7 +191,7 @@ public final class VillagerRetaliationHandler {
     private static boolean tryAcquireGroundWeapon(Villager villager) {
         if (!villager.isAlive()
                 || !CommonfolkVillagerRules.shouldSuppressFleeingBehavior(villager)
-                || !VillagerCombatRoles.canUseTemporaryCombatLoadout(villager)
+                || !VillagerCombatRoles.canScavengeGroundWeapons(villager)
                 || CommonfolkVillagerWeapons.hasUsableWeapon(villager)
                 || !CommonfolkVillagerCombatUtil.isThreatened(villager)) {
             return false;

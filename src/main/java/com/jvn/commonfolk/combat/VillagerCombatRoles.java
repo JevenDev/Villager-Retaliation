@@ -35,11 +35,11 @@ public final class VillagerCombatRoles {
     }
 
     public static boolean canFightBack(Villager villager) {
-        if (villager.isBaby() || profession(villager) == VillagerProfession.NITWIT) {
+        if (villager.isBaby()) {
             return false;
         }
 
-        return canUseTemporaryCombatLoadout(villager) || CommonfolkVillagerWeapons.hasUsableWeapon(villager);
+        return profession(villager) != VillagerProfession.NITWIT || CommonfolkVillagerWeapons.hasUsableWeapon(villager);
     }
 
     public static boolean canUseTemporaryCombatLoadout(Villager villager) {
@@ -117,6 +117,19 @@ public final class VillagerCombatRoles {
 
     public static boolean isFletcher(Villager villager) {
         return profession(villager) == VillagerProfession.FLETCHER;
+    }
+
+    public static boolean canScavengeGroundWeapons(Villager villager) {
+        if (villager.isBaby()) {
+            return false;
+        }
+
+        return !usesDedicatedRoleCombatItem(villager);
+    }
+
+    public static boolean usesDedicatedRoleCombatItem(Villager villager) {
+        return isFletcher(villager) && CommonfolkConfig.FLETCHERS_FIGHT_BACK.get()
+                || isCleric(villager) && CommonfolkConfig.CLERICS_USE_POTIONS.get();
     }
 
     private static VillagerProfession profession(Villager villager) {
