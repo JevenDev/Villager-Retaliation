@@ -12,6 +12,8 @@ import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.alchemy.PotionContents;
+import net.minecraft.world.item.alchemy.Potions;
 
 public final class VillagerCombatRoles {
     public static final float PLAYER_FIST_DAMAGE = 1.0F;
@@ -120,6 +122,9 @@ public final class VillagerCombatRoles {
         rules.put(VillagerProfession.BUTCHER, ignored -> new ItemStack(Items.IRON_AXE));
         rules.put(VillagerProfession.FLETCHER, VillagerCombatRoles::fletcherRangedWeapon);
         rules.put(VillagerProfession.FARMER, ignored -> CommonfolkConfig.FARMERS_USE_BREAD.get() ? new ItemStack(Items.BREAD) : ItemStack.EMPTY);
+        rules.put(VillagerProfession.CLERIC, ignored -> CommonfolkConfig.CLERICS_USE_POTIONS.get()
+                ? PotionContents.createItemStack(Items.SPLASH_POTION, Potions.HARMING)
+                : ItemStack.EMPTY);
         rules.put(VillagerProfession.LIBRARIAN, ignored -> new ItemStack(Items.BOOK));
         return Map.copyOf(rules);
     }

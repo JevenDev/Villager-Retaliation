@@ -30,6 +30,9 @@ public final class DefaultVillagerPoseProvider implements VillagerPoseProvider<V
         if (isHoldingRangedWeapon(villager)) {
             return villager.swinging || attackTime > 0.0F ? VillagerArmPose.MELEE_WEAPON : VillagerArmPose.NONE;
         }
+        if (isHoldingPotionItem(villager)) {
+            return villager.swinging || attackTime > 0.0F ? VillagerArmPose.THROWING_ITEM : VillagerArmPose.HOLDING_ITEM;
+        }
         if (villager.swinging || villager.isAggressive() || villager.isChasing() || villager.getTarget() != null) {
             return VillagerArmPose.MELEE_WEAPON;
         }
@@ -38,7 +41,7 @@ public final class DefaultVillagerPoseProvider implements VillagerPoseProvider<V
 
     @Override
     public boolean shouldUseCombatModel(Villager villager) {
-        if (villager.isUsingItem() && villager.getUseItem().is(Items.CROSSBOW)) {
+        if (villager.isUsingItem() && (villager.getUseItem().is(Items.CROSSBOW) || villager.getUseItem().is(Items.POTION))) {
             return true;
         }
 
@@ -46,7 +49,8 @@ public final class DefaultVillagerPoseProvider implements VillagerPoseProvider<V
                 || villager.isChasing()
                 || villager.getTarget() != null
                 || villager.swinging
-                || isHoldingChargedCrossbow(villager);
+                || isHoldingChargedCrossbow(villager)
+                || isHoldingPotionItem(villager);
     }
 
     @Override
@@ -66,5 +70,9 @@ public final class DefaultVillagerPoseProvider implements VillagerPoseProvider<V
 
         ItemStack offHand = villager.getOffhandItem();
         return offHand.is(Items.CROSSBOW) && CrossbowItem.isCharged(offHand);
+    }
+
+    private static boolean isHoldingPotionItem(Villager villager) {
+        return villager.isHolding(stack -> stack.is(Items.POTION) || stack.is(Items.SPLASH_POTION) || stack.is(Items.LINGERING_POTION));
     }
 }

@@ -25,7 +25,8 @@ public final class VillagerPoseAnimator {
             case BOW_AND_ARROW -> applyBowPose(villager, head, rightArm, leftArm);
             case CROSSBOW_HOLD -> applyCrossbowPose(head, rightArm, leftArm, villager.getMainArm() == HumanoidArm.RIGHT);
             case CROSSBOW_CHARGE -> applyCrossbowCharge(villager, rightArm, leftArm, villager.getMainArm() == HumanoidArm.RIGHT);
-            case THROWING_ITEM, CASTING_OR_POTION -> applyPotionPose(head, rightArm, leftArm, villager.getMainArm() == HumanoidArm.RIGHT);
+            case THROWING_ITEM -> applyThrowingPose(head, rightArm, leftArm, villager.getMainArm() == HumanoidArm.RIGHT);
+            case CASTING_OR_POTION -> applyPotionPose(head, rightArm, leftArm, villager.getMainArm() == HumanoidArm.RIGHT);
             case NONE, HOLDING_ITEM -> {
             }
         }
@@ -84,6 +85,7 @@ public final class VillagerPoseAnimator {
     }
 
     public static void applyPotionPose(ModelPart head, ModelPart rightArm, ModelPart leftArm, boolean rightHanded) {
+        // Keep the bottle close to the mouth like vanilla potion drinkers.
         ModelPart useArm = rightHanded ? rightArm : leftArm;
         ModelPart supportArm = rightHanded ? leftArm : rightArm;
         float direction = rightHanded ? 1.0F : -1.0F;
@@ -91,6 +93,19 @@ public final class VillagerPoseAnimator {
         useArm.yRot = head.yRot - direction * 0.35F;
         supportArm.xRot = -0.35F + Mth.cos(head.yRot * 0.5F) * 0.1F;
         supportArm.yRot = head.yRot + direction * 0.2F;
+    }
+
+    public static void applyThrowingPose(ModelPart head, ModelPart rightArm, ModelPart leftArm, boolean rightHanded) {
+        // Inspired by witch-style overhead lob posture for splash potion throws.
+        ModelPart throwArm = rightHanded ? rightArm : leftArm;
+        ModelPart supportArm = rightHanded ? leftArm : rightArm;
+        float direction = rightHanded ? 1.0F : -1.0F;
+        throwArm.xRot = -1.6F + head.xRot * 0.4F;
+        throwArm.yRot = head.yRot - direction * 0.35F;
+        throwArm.zRot = direction * 0.15F;
+        supportArm.xRot = -0.2F;
+        supportArm.yRot = head.yRot + direction * 0.15F;
+        supportArm.zRot = -direction * 0.1F;
     }
 
     private static boolean isAttackingWithMainHand(Villager villager) {

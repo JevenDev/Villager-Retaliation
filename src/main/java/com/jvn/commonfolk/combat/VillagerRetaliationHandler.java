@@ -22,6 +22,7 @@ import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
+import net.minecraft.world.entity.projectile.ThrownPotion;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.BowItem;
 import net.minecraft.world.item.CrossbowItem;
@@ -30,6 +31,8 @@ import net.minecraft.world.item.Items;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.component.ChargedProjectiles;
+import net.minecraft.world.item.alchemy.PotionContents;
+import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.providers.VanillaEnchantmentProviders;
 import net.minecraft.world.phys.AABB;
@@ -45,12 +48,19 @@ public final class VillagerRetaliationHandler {
     private static final Map<UUID, Integer> FLETCHER_SEE_TIME = new HashMap<>();
     private static final Map<UUID, Integer> FLETCHER_ATTACK_DELAY = new HashMap<>();
     private static final Map<UUID, CrossbowState> FLETCHER_CROSSBOW_STATE = new HashMap<>();
+    private static final Map<UUID, Integer> CLERIC_ATTACK_DELAY = new HashMap<>();
+    private static final Map<UUID, ClericSelfPotion> CLERIC_DRINKING_POTIONS = new HashMap<>();
     private static final double FLETCHER_MAX_RANGED_DISTANCE_SQR = 225.0D;
     private static final int FLETCHER_BOW_DRAW_TICKS = 20;
     private static final int FLETCHER_BOW_ATTACK_INTERVAL = 20;
     private static final int FLETCHER_INITIAL_RANGED_WINDUP_TICKS = 2;
     private static final int FLETCHER_CROSSBOW_POST_LOAD_DELAY_BASE_TICKS = 20;
     private static final int FLETCHER_CROSSBOW_POST_LOAD_DELAY_RANDOM_TICKS = 20;
+    private static final double CLERIC_MAX_THROW_DISTANCE_SQR = 144.0D;
+    private static final int CLERIC_THROW_INTERVAL_TICKS = 60;
+    private static final int CLERIC_DRINK_COOLDOWN_TICKS = 60;
+    private static final int CLERIC_FIRE_RESISTANCE_TICKS = 20 * 20;
+    private static final int CLERIC_SWIFTNESS_TICKS = 20 * 15;
 
     private VillagerRetaliationHandler() {
     }
@@ -121,6 +131,7 @@ public final class VillagerRetaliationHandler {
         AngerTarget angerTarget = ANGER_TARGETS.get(villager.getUUID());
         if (angerTarget == null) {
             clearFletcherRangedState(villager);
+            clearClericPotionState(villager);
             return;
         }
 
@@ -155,6 +166,9 @@ public final class VillagerRetaliationHandler {
         if (tryFletcherRangedAttack(villager, target, level, distanceSqr)) {
             return;
         }
+        if (tryClericPotionCombat(villager, target, level, distanceSqr)) {
+            return;
+        }
 
         villager.getNavigation().moveTo(target, VillagerCombatRoles.movementSpeed(villager));
         if (!VillagerCombatRoles.isFletcher(villager) && canMeleeHit(villager, target) && attackReady(villager, level.getGameTime())) {
@@ -182,6 +196,7 @@ public final class VillagerRetaliationHandler {
         NEXT_ATTACK_TICKS.remove(villager.getUUID());
         NEXT_SPECIAL_TICKS.remove(villager.getUUID());
         clearFletcherRangedState(villager);
+        clearClericPotionState(villager);
         if (restoreWeapon) {
             restoreTemporaryWeapon(villager);
         } else {
@@ -238,11 +253,6 @@ public final class VillagerRetaliationHandler {
                 && villager.getHealth() < villager.getMaxHealth() * 0.6F) {
             villager.heal(4.0F);
             NEXT_SPECIAL_TICKS.put(villager.getUUID(), gameTime + 120L);
-        } else if (VillagerCombatRoles.isCleric(villager)
-                && CommonfolkConfig.CLERICS_USE_POTIONS.get()
-                && villager.getHealth() < villager.getMaxHealth() * 0.7F) {
-            villager.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 100, 0));
-            NEXT_SPECIAL_TICKS.put(villager.getUUID(), gameTime + 180L);
         }
     }
 
@@ -417,6 +427,135 @@ public final class VillagerRetaliationHandler {
         crossbowItem.performShooting(level, villager, hand, weapon, 1.6F, (float) (14 - level.getDifficulty().getId() * 4), target);
     }
 
+    private static boolean tryClericPotionCombat(Villager villager, LivingEntity target, ServerLevel level, double distanceSqr) {
+        if (!VillagerCombatRoles.isCleric(villager) || !CommonfolkConfig.CLERICS_USE_POTIONS.get()) {
+            return false;
+        }
+
+        if (villager.isUsingItem()) {
+            return tickClericPotionDrinking(villager);
+        }
+
+        ClericSelfPotion selfPotion = chooseClericSelfPotion(villager, distanceSqr);
+        if (selfPotion != ClericSelfPotion.NONE) {
+            startClericPotionDrinking(villager, selfPotion);
+            return true;
+        }
+
+        int attackDelay = CLERIC_ATTACK_DELAY.getOrDefault(villager.getUUID(), 0);
+        if (attackDelay > 0) {
+            CLERIC_ATTACK_DELAY.put(villager.getUUID(), attackDelay - 1);
+            villager.getNavigation().moveTo(target, VillagerCombatRoles.movementSpeed(villager) * 0.8D);
+            return true;
+        }
+
+        if (!villager.hasLineOfSight(target) || distanceSqr > CLERIC_MAX_THROW_DISTANCE_SQR) {
+            villager.getNavigation().moveTo(target, VillagerCombatRoles.movementSpeed(villager));
+            return true;
+        }
+
+        ItemStack splashPotion = selectClericSplashPotion(villager, target, distanceSqr);
+        throwSplashPotionLikeWitch(villager, target, level, splashPotion);
+        CLERIC_ATTACK_DELAY.put(villager.getUUID(), nextClericAttackDelay(villager));
+        return true;
+    }
+
+    private static boolean tickClericPotionDrinking(Villager villager) {
+        ClericSelfPotion potion = CLERIC_DRINKING_POTIONS.get(villager.getUUID());
+        if (potion == null) {
+            return true;
+        }
+        if (!villager.isUsingItem() || !villager.getUseItem().is(Items.POTION)) {
+            CLERIC_DRINKING_POTIONS.remove(villager.getUUID());
+            villager.setItemSlot(EquipmentSlot.MAINHAND, PotionContents.createItemStack(Items.SPLASH_POTION, Potions.HARMING));
+            return true;
+        }
+
+        ItemStack useItem = villager.getUseItem();
+        if (villager.getTicksUsingItem() < useItem.getUseDuration(villager)) {
+            return true;
+        }
+
+        villager.stopUsingItem();
+        CLERIC_DRINKING_POTIONS.remove(villager.getUUID());
+        applyClericSelfPotion(villager, potion);
+        CLERIC_ATTACK_DELAY.put(villager.getUUID(), CLERIC_DRINK_COOLDOWN_TICKS);
+        villager.setItemSlot(EquipmentSlot.MAINHAND, PotionContents.createItemStack(Items.SPLASH_POTION, Potions.HARMING));
+        return true;
+    }
+
+    private static void startClericPotionDrinking(Villager villager, ClericSelfPotion potion) {
+        ItemStack drinkStack = switch (potion) {
+            case FIRE_RESISTANCE -> PotionContents.createItemStack(Items.POTION, Potions.FIRE_RESISTANCE);
+            case SWIFTNESS -> PotionContents.createItemStack(Items.POTION, Potions.SWIFTNESS);
+            case HEALING -> PotionContents.createItemStack(Items.POTION, Potions.HEALING);
+            case NONE -> ItemStack.EMPTY;
+        };
+        if (drinkStack.isEmpty()) {
+            return;
+        }
+
+        villager.getNavigation().stop();
+        villager.setItemSlot(EquipmentSlot.MAINHAND, drinkStack);
+        CLERIC_DRINKING_POTIONS.put(villager.getUUID(), potion);
+        villager.startUsingItem(InteractionHand.MAIN_HAND);
+        villager.playSound(SoundEvents.WITCH_DRINK, 1.0F, 0.8F + villager.getRandom().nextFloat() * 0.4F);
+    }
+
+    private static ClericSelfPotion chooseClericSelfPotion(Villager villager, double distanceSqr) {
+        if (villager.isOnFire() && !villager.hasEffect(MobEffects.FIRE_RESISTANCE)) {
+            return ClericSelfPotion.FIRE_RESISTANCE;
+        }
+        if (villager.getHealth() < villager.getMaxHealth() * 0.55F) {
+            return ClericSelfPotion.HEALING;
+        }
+        if (distanceSqr > 121.0D && !villager.hasEffect(MobEffects.MOVEMENT_SPEED) && villager.getRandom().nextFloat() < 0.5F) {
+            return ClericSelfPotion.SWIFTNESS;
+        }
+        return ClericSelfPotion.NONE;
+    }
+
+    private static void applyClericSelfPotion(Villager villager, ClericSelfPotion potion) {
+        switch (potion) {
+            case FIRE_RESISTANCE -> villager.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, CLERIC_FIRE_RESISTANCE_TICKS, 0));
+            case SWIFTNESS -> villager.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, CLERIC_SWIFTNESS_TICKS, 0));
+            case HEALING -> villager.heal(8.0F);
+            case NONE -> {
+            }
+        }
+    }
+
+    private static ItemStack selectClericSplashPotion(Villager villager, LivingEntity target, double distanceSqr) {
+        if (distanceSqr >= 64.0D && !target.hasEffect(MobEffects.MOVEMENT_SLOWDOWN)) {
+            return PotionContents.createItemStack(Items.SPLASH_POTION, Potions.SLOWNESS);
+        }
+        if (target.getHealth() >= 8.0F && !target.hasEffect(MobEffects.POISON)) {
+            return PotionContents.createItemStack(Items.SPLASH_POTION, Potions.POISON);
+        }
+        if (distanceSqr <= 9.0D && !target.hasEffect(MobEffects.WEAKNESS) && villager.getRandom().nextFloat() < 0.25F) {
+            return PotionContents.createItemStack(Items.SPLASH_POTION, Potions.WEAKNESS);
+        }
+        return PotionContents.createItemStack(Items.SPLASH_POTION, Potions.HARMING);
+    }
+
+    private static void throwSplashPotionLikeWitch(Villager villager, LivingEntity target, ServerLevel level, ItemStack potionStack) {
+        ThrownPotion thrownPotion = new ThrownPotion(level, villager);
+        thrownPotion.setItem(potionStack);
+        double dx = target.getX() + target.getDeltaMovement().x - villager.getX();
+        double dy = target.getY(0.3333333333333333D) - thrownPotion.getY();
+        double dz = target.getZ() + target.getDeltaMovement().z - villager.getZ();
+        double horizontal = Math.sqrt(dx * dx + dz * dz);
+        thrownPotion.shoot(dx, dy + horizontal * 0.2D, dz, 0.75F, 8.0F);
+        level.addFreshEntity(thrownPotion);
+        villager.swing(InteractionHand.MAIN_HAND, true);
+        villager.playSound(SoundEvents.WITCH_THROW, 1.0F, 0.8F + villager.getRandom().nextFloat() * 0.4F);
+        villager.setItemSlot(EquipmentSlot.MAINHAND, PotionContents.createItemStack(Items.SPLASH_POTION, Potions.HARMING));
+    }
+
+    private static int nextClericAttackDelay(Villager villager) {
+        return CLERIC_THROW_INTERVAL_TICKS;
+    }
+
     private static InteractionHand selectAttackHand(Villager villager) {
         return villager.getMainHandItem().isEmpty() && !villager.getOffhandItem().isEmpty()
                 ? InteractionHand.OFF_HAND
@@ -441,6 +580,9 @@ public final class VillagerRetaliationHandler {
     private static void equipCombatWeapon(Villager villager) {
         TemporaryWeaponState state = TEMPORARY_WEAPONS.get(villager.getUUID());
         if (state != null) {
+            if (isClericActivelyHandlingPotion(villager)) {
+                return;
+            }
             // Preserve runtime components (charged projectiles, durability) while angry.
             if (!ItemStack.isSameItem(villager.getMainHandItem(), state.equippedWeapon())) {
                 villager.setItemSlot(EquipmentSlot.MAINHAND, state.equippedWeapon().copy());
@@ -515,6 +657,23 @@ public final class VillagerRetaliationHandler {
         }
     }
 
+    private static void clearClericPotionState(Villager villager) {
+        CLERIC_ATTACK_DELAY.remove(villager.getUUID());
+        CLERIC_DRINKING_POTIONS.remove(villager.getUUID());
+    }
+
+    private static boolean isClericActivelyHandlingPotion(Villager villager) {
+        if (!VillagerCombatRoles.isCleric(villager) || !CommonfolkConfig.CLERICS_USE_POTIONS.get()) {
+            return false;
+        }
+        if (villager.isUsingItem() && villager.getUseItem().is(Items.POTION)) {
+            return true;
+        }
+
+        ItemStack mainHand = villager.getMainHandItem();
+        return mainHand.is(Items.POTION) || mainHand.is(Items.SPLASH_POTION) || mainHand.is(Items.LINGERING_POTION);
+    }
+
     private static void seedInitialFletcherRangedDelay(Villager villager, ItemStack equippedWeapon) {
         if (!VillagerCombatRoles.isFletcher(villager) || (!equippedWeapon.is(Items.BOW) && !equippedWeapon.is(Items.CROSSBOW))) {
             return;
@@ -547,5 +706,12 @@ public final class VillagerRetaliationHandler {
         CHARGING,
         CHARGED,
         READY_TO_ATTACK
+    }
+
+    private enum ClericSelfPotion {
+        NONE,
+        FIRE_RESISTANCE,
+        SWIFTNESS,
+        HEALING
     }
 }
