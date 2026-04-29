@@ -6,6 +6,7 @@ import com.jvn.commonfolk.util.CommonfolkItemUtil;
 import com.jvn.commonfolk.util.CommonfolkVillagerCombatUtil;
 import com.jvn.commonfolk.util.CommonfolkLootUtil;
 import com.jvn.commonfolk.util.CommonfolkRandomUtil;
+import com.jvn.commonfolk.villager.CommonfolkVillagerWeapons;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.server.level.ServerLevel;
@@ -27,6 +28,8 @@ public final class VillagerLootHandler {
                 || villager.isBaby() && !CommonfolkConfig.BABY_VILLAGERS_DROP_LOOT.get()) {
             return;
         }
+
+        CommonfolkVillagerWeapons.ensurePickedMainHandDrop(villager, event);
 
         RandomSource random = villager.getRandom();
         if (CommonfolkRandomUtil.chance(random, CommonfolkConfig.VILLAGER_EMERALD_DROP_CHANCE.get())) {

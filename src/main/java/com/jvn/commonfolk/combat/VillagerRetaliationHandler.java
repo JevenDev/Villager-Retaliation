@@ -319,7 +319,7 @@ public final class VillagerRetaliationHandler {
     }
 
     private static void equipCombatWeapon(Villager villager) {
-        if (CommonfolkVillagerWeapons.isUsableWeaponInMainHand(villager)) {
+        if (CommonfolkVillagerWeapons.maintainAcquiredWeaponAuthority(villager)) {
             discardTemporaryWeapon(villager);
             return;
         }
@@ -334,6 +334,10 @@ public final class VillagerRetaliationHandler {
                 villager.setItemSlot(EquipmentSlot.MAINHAND, state.equippedWeapon().copy());
                 villager.setDropChance(EquipmentSlot.MAINHAND, currentCombatWeaponDropChance());
             }
+            return;
+        }
+
+        if (CommonfolkVillagerWeapons.hasUsableWeapon(villager)) {
             return;
         }
 

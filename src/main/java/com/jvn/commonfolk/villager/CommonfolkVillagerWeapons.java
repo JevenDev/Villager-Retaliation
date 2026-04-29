@@ -1,8 +1,12 @@
 package com.jvn.commonfolk.villager;
 
 import com.jvn.commonfolk.combat.VillagerCombatRoles;
+import com.jvn.commonfolk.util.CommonfolkLootUtil;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.function.Predicate;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -15,10 +19,12 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.TridentItem;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.common.Tags;
+import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 
 public final class CommonfolkVillagerWeapons {
     public static final double WEAPON_SEARCH_RADIUS = 12.0D;
     public static final double WEAPON_PICKUP_REACH_SQR = 2.25D;
+    private static final Map<UUID, ItemStack> PICKED_UP_MAINHAND_ITEMS = new HashMap<>();
 
     private CommonfolkVillagerWeapons() {
     }
@@ -81,11 +87,59 @@ public final class CommonfolkVillagerWeapons {
         villager.take(itemEntity, 1);
         villager.setItemSlot(EquipmentSlot.MAINHAND, equippedStack);
         villager.setGuaranteedDrop(EquipmentSlot.MAINHAND);
+        PICKED_UP_MAINHAND_ITEMS.put(villager.getUUID(), equippedStack.copy());
 
         groundStack.shrink(1);
         if (groundStack.isEmpty()) {
             itemEntity.discard();
         }
+    }
+
+    public static void ensurePickedMainHandDrop(Villager villager, LivingDropsEvent event) {
+        ItemStack trackedPickup = PICKED_UP_MAINHAND_ITEMS.remove(villager.getUUID());
+        if (trackedPickup == null) {
+            return;
+        }
+
+        ItemStack mainHand = villager.getMainHandItem();
+        if (!mainHand.isEmpty() && ItemStack.isSameItem(mainHand, trackedPickup)) {
+            CommonfolkLootUtil.addDropIfNoMatchingItem(event, mainHand.copy());
+            return;
+        }
+
+        CommonfolkLootUtil.addDropIfNoMatchingItem(event, trackedPickup.copy());
+    }
+
+    public static boolean maintainAcquiredWeaponAuthority(Villager villager) {
+        ItemStack trackedPickup = PICKED_UP_MAINHAND_ITEMS.get(villager.getUUID());
+        if (trackedPickup == null || trackedPickup.isEmpty()) {
+            return false;
+        }
+
+        ItemStack mainHand = villager.getMainHandItem();
+        if (ItemStack.isSameItem(mainHand, trackedPickup)) {
+            PICKED_UP_MAINHAND_ITEMS.put(villager.getUUID(), mainHand.copy());
+            villager.setGuaranteedDrop(EquipmentSlot.MAINHAND);
+            return true;
+        }
+
+        if (isUsableWeapon(mainHand)) {
+            PICKED_UP_MAINHAND_ITEMS.put(villager.getUUID(), mainHand.copy());
+            villager.setGuaranteedDrop(EquipmentSlot.MAINHAND);
+            return true;
+        }
+
+        if (!mainHand.isEmpty()) {
+            ItemStack displacedMainHand = mainHand.copy();
+            ItemStack remainder = villager.getInventory().addItem(displacedMainHand);
+            if (!remainder.isEmpty()) {
+                villager.spawnAtLocation(remainder);
+            }
+        }
+
+        villager.setItemSlot(EquipmentSlot.MAINHAND, trackedPickup.copy());
+        villager.setGuaranteedDrop(EquipmentSlot.MAINHAND);
+        return true;
     }
 
     public static boolean isRangedWeapon(ItemStack stack) {
