@@ -209,6 +209,11 @@ final class VillagerRangedCombatHelper {
     ) {
         int attackDelay = ATTACK_DELAY.getOrDefault(villager.getUUID(), 0);
         CrossbowState state = CROSSBOW_STATE.getOrDefault(villager.getUUID(), CrossbowState.UNCHARGED);
+        if (state == CrossbowState.UNCHARGED && isHoldingChargedCrossbow(villager)) {
+            state = attackDelay > 0 ? CrossbowState.CHARGED : CrossbowState.READY_TO_ATTACK;
+            CROSSBOW_STATE.put(villager.getUUID(), state);
+        }
+
         boolean shouldMove = (distanceSqr > 64.0D || seeTime < 5) && attackDelay == 0;
         if (shouldMove) {
             villager.getNavigation().moveTo(target, state == CrossbowState.UNCHARGED ? VillagerCombatRoles.movementSpeed(villager) : 0.25D);
@@ -279,6 +284,12 @@ final class VillagerRangedCombatHelper {
     private static int nextCrossbowPostLoadDelay(Villager villager) {
         return CROSSBOW_POST_LOAD_DELAY_BASE_TICKS
                 + villager.getRandom().nextInt(CROSSBOW_POST_LOAD_DELAY_RANDOM_TICKS);
+    }
+
+    private static boolean isHoldingChargedCrossbow(Villager villager) {
+        InteractionHand hand = CommonfolkVillagerWeapons.getHoldingHand(villager, CommonfolkVillagerWeapons::isCrossbowWeapon);
+        ItemStack weapon = villager.getItemInHand(hand);
+        return weapon.getItem() instanceof CrossbowItem && CrossbowItem.isCharged(weapon);
     }
 
     private static void ensureCrossbowMarkedCharged(Villager villager) {

@@ -65,8 +65,17 @@ public final class VillagerLootHandler {
             return;
         }
 
-        ItemStack drop = maybeEnchantLootWeapon(villager, CommonfolkItemUtil.withRandomDamage(weapon.copy(), random), random);
+        ItemStack drop = resolveOutOfCombatWeaponDrop(villager, weapon, random);
         CommonfolkLootUtil.addDropIfNoMatchingItem(event, drop);
+    }
+
+    private static ItemStack resolveOutOfCombatWeaponDrop(Villager villager, ItemStack preferredWeapon, RandomSource random) {
+        ItemStack mainHand = villager.getMainHandItem();
+        if (!mainHand.isEmpty() && ItemStack.isSameItem(mainHand, preferredWeapon)) {
+            return mainHand.copy();
+        }
+
+        return maybeEnchantLootWeapon(villager, CommonfolkItemUtil.withRandomDamage(preferredWeapon.copy(), random), random);
     }
 
     private static ItemStack maybeEnchantLootWeapon(Villager villager, ItemStack weapon, RandomSource random) {
