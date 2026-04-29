@@ -1,5 +1,6 @@
 package com.jvn.commonfolk.villager;
 
+import com.jvn.commonfolk.combat.VillagerCombatRoles;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 
@@ -8,11 +9,13 @@ public final class CommonfolkVillagerRules {
     }
 
     public static boolean shouldKeepFleeingBehavior(Villager villager) {
-        return villager.isBaby() || villager.getVillagerData().getProfession() == VillagerProfession.NITWIT;
+        return villager.isBaby()
+                || villager.getVillagerData().getProfession() == VillagerProfession.NITWIT
+                || (!VillagerCombatRoles.canUseTemporaryCombatLoadout(villager)
+                && !CommonfolkVillagerWeapons.hasUsableWeapon(villager));
     }
 
     public static boolean shouldSuppressFleeingBehavior(Villager villager) {
         return !shouldKeepFleeingBehavior(villager);
     }
 }
-

@@ -3,6 +3,7 @@ package com.jvn.commonfolk.loot;
 import com.jvn.commonfolk.combat.VillagerCombatRoles;
 import com.jvn.commonfolk.config.CommonfolkConfig;
 import com.jvn.commonfolk.util.CommonfolkItemUtil;
+import com.jvn.commonfolk.util.CommonfolkVillagerCombatUtil;
 import com.jvn.commonfolk.util.CommonfolkLootUtil;
 import com.jvn.commonfolk.util.CommonfolkRandomUtil;
 import net.minecraft.world.Difficulty;
@@ -22,7 +23,8 @@ public final class VillagerLootHandler {
     }
 
     public static void addDrops(Villager villager, LivingDropsEvent event) {
-        if (!CommonfolkConfig.ENABLE_VILLAGER_DROPS.get() || villager.isBaby()) {
+        if (!CommonfolkConfig.ENABLE_VILLAGER_DROPS.get()
+                || villager.isBaby() && !CommonfolkConfig.BABY_VILLAGERS_DROP_LOOT.get()) {
             return;
         }
 
@@ -83,6 +85,6 @@ public final class VillagerLootHandler {
     }
 
     private static boolean isInCombat(Villager villager) {
-        return villager.isAggressive() || villager.isChasing() || villager.getTarget() != null || villager.swinging;
+        return CommonfolkVillagerCombatUtil.isInCombat(villager);
     }
 }

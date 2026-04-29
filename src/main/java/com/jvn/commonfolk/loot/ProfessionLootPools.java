@@ -43,6 +43,35 @@ public final class ProfessionLootPools {
         }
     }
 
+    private static final Item[] ALL_DYES = {
+            Items.WHITE_DYE, Items.ORANGE_DYE, Items.MAGENTA_DYE, Items.LIGHT_BLUE_DYE,
+            Items.YELLOW_DYE, Items.LIME_DYE, Items.PINK_DYE, Items.GRAY_DYE,
+            Items.LIGHT_GRAY_DYE, Items.CYAN_DYE, Items.PURPLE_DYE, Items.BLUE_DYE,
+            Items.BROWN_DYE, Items.GREEN_DYE, Items.RED_DYE, Items.BLACK_DYE
+    };
+    private static final Item[] ALL_WOOL = {
+            Items.WHITE_WOOL, Items.ORANGE_WOOL, Items.MAGENTA_WOOL, Items.LIGHT_BLUE_WOOL,
+            Items.YELLOW_WOOL, Items.LIME_WOOL, Items.PINK_WOOL, Items.GRAY_WOOL,
+            Items.LIGHT_GRAY_WOOL, Items.CYAN_WOOL, Items.PURPLE_WOOL, Items.BLUE_WOOL,
+            Items.BROWN_WOOL, Items.GREEN_WOOL, Items.RED_WOOL, Items.BLACK_WOOL
+    };
+    private static final Item[] ALL_CARPETS = {
+            Items.WHITE_CARPET, Items.ORANGE_CARPET, Items.MAGENTA_CARPET, Items.LIGHT_BLUE_CARPET,
+            Items.YELLOW_CARPET, Items.LIME_CARPET, Items.PINK_CARPET, Items.GRAY_CARPET,
+            Items.LIGHT_GRAY_CARPET, Items.CYAN_CARPET, Items.PURPLE_CARPET, Items.BLUE_CARPET,
+            Items.BROWN_CARPET, Items.GREEN_CARPET, Items.RED_CARPET, Items.BLACK_CARPET
+    };
+    private static final Item[] ALL_BANNERS = {
+            Items.WHITE_BANNER, Items.ORANGE_BANNER, Items.MAGENTA_BANNER, Items.LIGHT_BLUE_BANNER,
+            Items.YELLOW_BANNER, Items.LIME_BANNER, Items.PINK_BANNER, Items.GRAY_BANNER,
+            Items.LIGHT_GRAY_BANNER, Items.CYAN_BANNER, Items.PURPLE_BANNER, Items.BLUE_BANNER,
+            Items.BROWN_BANNER, Items.GREEN_BANNER, Items.RED_BANNER, Items.BLACK_BANNER
+    };
+    private static final Item[] ALL_FLOWERS = {
+            Items.DANDELION, Items.POPPY, Items.BLUE_ORCHID, Items.ALLIUM, Items.AZURE_BLUET,
+            Items.RED_TULIP, Items.ORANGE_TULIP, Items.WHITE_TULIP, Items.PINK_TULIP, Items.OXEYE_DAISY,
+            Items.CORNFLOWER, Items.LILY_OF_THE_VALLEY
+    };
     private static final Map<VillagerProfession, ProfessionLootPool> POOLS = new HashMap<>();
 
     static {
@@ -87,7 +116,7 @@ public final class ProfessionLootPools {
         List<ItemStack> drops = rollCommon(random, 2, 3,
                 stack(Items.LEATHER, 1, 5), stack(Items.RABBIT_HIDE, 1, 3),
                 damaged(randomItem(Items.LEATHER_HELMET, Items.LEATHER_CHESTPLATE, Items.LEATHER_LEGGINGS, Items.LEATHER_BOOTS)),
-                weightedDye(Items.BROWN_DYE, Items.BLACK_DYE, Items.WHITE_DYE, Items.RED_DYE, Items.GRAY_DYE));
+                preferredDyeStack(Items.BROWN_DYE, Items.BLACK_DYE, Items.WHITE_DYE, Items.RED_DYE, Items.GRAY_DYE));
         addVeryRare(random, drops, new ItemStack(Items.SADDLE));
         return drops;
     }
@@ -203,7 +232,7 @@ public final class ProfessionLootPools {
     }
 
     private static List<ItemStack> rollCommon(RandomSource random, int minRolls, int maxRolls, Entry... entries) {
-        int rolls = Math.max(1, CommonfolkRandomUtil.between(random, minRolls, maxRolls) - 1);
+        int rolls = Math.max(1, CommonfolkRandomUtil.between(random, minRolls, maxRolls));
         List<ItemStack> drops = new ArrayList<>();
         for (int i = 0; i < rolls; i++) {
             drops.add(entries[random.nextInt(entries.length)].create(random));
@@ -244,7 +273,7 @@ public final class ProfessionLootPools {
         return entry(random -> new ItemStack(randomDyeItem(random), CommonfolkRandomUtil.between(random, 1, 3)));
     }
 
-    private static Entry weightedDye(Item... preferred) {
+    private static Entry preferredDyeStack(Item... preferred) {
         return entry(random -> new ItemStack(preferred[random.nextInt(preferred.length)], CommonfolkRandomUtil.between(random, 1, 2)));
     }
 
@@ -297,51 +326,26 @@ public final class ProfessionLootPools {
     }
 
     private static Item randomDyeItem(RandomSource random) {
-        Item[] dyes = {
-                Items.WHITE_DYE, Items.ORANGE_DYE, Items.MAGENTA_DYE, Items.LIGHT_BLUE_DYE,
-                Items.YELLOW_DYE, Items.LIME_DYE, Items.PINK_DYE, Items.GRAY_DYE,
-                Items.LIGHT_GRAY_DYE, Items.CYAN_DYE, Items.PURPLE_DYE, Items.BLUE_DYE,
-                Items.BROWN_DYE, Items.GREEN_DYE, Items.RED_DYE, Items.BLACK_DYE
-        };
-        return dyes[random.nextInt(dyes.length)];
+        return randomEntry(random, ALL_DYES);
     }
 
     private static Item randomWool(RandomSource random) {
-        Item[] wool = {
-                Items.WHITE_WOOL, Items.ORANGE_WOOL, Items.MAGENTA_WOOL, Items.LIGHT_BLUE_WOOL,
-                Items.YELLOW_WOOL, Items.LIME_WOOL, Items.PINK_WOOL, Items.GRAY_WOOL,
-                Items.LIGHT_GRAY_WOOL, Items.CYAN_WOOL, Items.PURPLE_WOOL, Items.BLUE_WOOL,
-                Items.BROWN_WOOL, Items.GREEN_WOOL, Items.RED_WOOL, Items.BLACK_WOOL
-        };
-        return wool[random.nextInt(wool.length)];
+        return randomEntry(random, ALL_WOOL);
     }
 
     private static Item randomCarpet(RandomSource random) {
-        Item[] carpet = {
-                Items.WHITE_CARPET, Items.ORANGE_CARPET, Items.MAGENTA_CARPET, Items.LIGHT_BLUE_CARPET,
-                Items.YELLOW_CARPET, Items.LIME_CARPET, Items.PINK_CARPET, Items.GRAY_CARPET,
-                Items.LIGHT_GRAY_CARPET, Items.CYAN_CARPET, Items.PURPLE_CARPET, Items.BLUE_CARPET,
-                Items.BROWN_CARPET, Items.GREEN_CARPET, Items.RED_CARPET, Items.BLACK_CARPET
-        };
-        return carpet[random.nextInt(carpet.length)];
+        return randomEntry(random, ALL_CARPETS);
     }
 
     private static Item randomBanner(RandomSource random) {
-        Item[] banners = {
-                Items.WHITE_BANNER, Items.ORANGE_BANNER, Items.MAGENTA_BANNER, Items.LIGHT_BLUE_BANNER,
-                Items.YELLOW_BANNER, Items.LIME_BANNER, Items.PINK_BANNER, Items.GRAY_BANNER,
-                Items.LIGHT_GRAY_BANNER, Items.CYAN_BANNER, Items.PURPLE_BANNER, Items.BLUE_BANNER,
-                Items.BROWN_BANNER, Items.GREEN_BANNER, Items.RED_BANNER, Items.BLACK_BANNER
-        };
-        return banners[random.nextInt(banners.length)];
+        return randomEntry(random, ALL_BANNERS);
     }
 
     private static Item randomFlower(RandomSource random) {
-        Item[] flowers = {
-                Items.DANDELION, Items.POPPY, Items.BLUE_ORCHID, Items.ALLIUM, Items.AZURE_BLUET,
-                Items.RED_TULIP, Items.ORANGE_TULIP, Items.WHITE_TULIP, Items.PINK_TULIP, Items.OXEYE_DAISY,
-                Items.CORNFLOWER, Items.LILY_OF_THE_VALLEY
-        };
-        return flowers[random.nextInt(flowers.length)];
+        return randomEntry(random, ALL_FLOWERS);
+    }
+
+    private static Item randomEntry(RandomSource random, Item[] items) {
+        return items[random.nextInt(items.length)];
     }
 }

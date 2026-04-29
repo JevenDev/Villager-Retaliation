@@ -1,5 +1,7 @@
 package com.jvn.commonfolk.client.pose;
 
+import com.jvn.commonfolk.util.CommonfolkVillagerCombatUtil;
+import com.jvn.commonfolk.villager.CommonfolkVillagerWeapons;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.ItemStack;
@@ -15,10 +17,10 @@ public final class DefaultVillagerPoseProvider implements VillagerPoseProvider<V
     public VillagerArmPose getArmPose(Villager villager, float attackTime) {
         if (villager.isUsingItem()) {
             ItemStack useItem = villager.getUseItem();
-            if (useItem.is(Items.CROSSBOW)) {
+            if (CommonfolkVillagerWeapons.isCrossbowWeapon(useItem)) {
                 return VillagerArmPose.CROSSBOW_CHARGE;
             }
-            if (useItem.is(Items.BOW)) {
+            if (CommonfolkVillagerWeapons.isBowWeapon(useItem)) {
                 return VillagerArmPose.BOW_AND_ARROW;
             }
             return VillagerPoseRegistry.itemUsePose(villager).orElse(VillagerArmPose.HOLDING_ITEM);
@@ -29,6 +31,9 @@ public final class DefaultVillagerPoseProvider implements VillagerPoseProvider<V
         }
         if (isHoldingCrossbow(villager) && isInCombat(villager)) {
             return VillagerArmPose.CROSSBOW_HOLD;
+        }
+        if (CommonfolkVillagerWeapons.hasUsableWeapon(villager)) {
+            return isInCombat(villager) ? VillagerArmPose.MELEE_WEAPON : VillagerArmPose.HOLDING_ITEM;
         }
         if (isHoldingRangedWeapon(villager)) {
             return villager.swinging || attackTime > 0.0F ? VillagerArmPose.MELEE_WEAPON : VillagerArmPose.NONE;
@@ -44,14 +49,13 @@ public final class DefaultVillagerPoseProvider implements VillagerPoseProvider<V
 
     @Override
     public boolean shouldUseCombatModel(Villager villager) {
-        if (villager.isUsingItem() && (villager.getUseItem().is(Items.CROSSBOW) || villager.getUseItem().is(Items.POTION))) {
+        if (villager.isUsingItem()
+                && (CommonfolkVillagerWeapons.isCrossbowWeapon(villager.getUseItem()) || villager.getUseItem().is(Items.POTION))) {
             return true;
         }
 
-        return villager.isAggressive()
-                || villager.isChasing()
-                || villager.getTarget() != null
-                || villager.swinging
+        return CommonfolkVillagerCombatUtil.isInCombat(villager)
+                || CommonfolkVillagerWeapons.hasUsableWeapon(villager)
                 || isHoldingChargedCrossbow(villager)
                 || isHoldingPotionItem(villager);
     }
@@ -62,21 +66,23 @@ public final class DefaultVillagerPoseProvider implements VillagerPoseProvider<V
     }
 
     private static boolean isHoldingRangedWeapon(Villager villager) {
-        return villager.isHolding(stack -> stack.is(Items.BOW) || stack.is(Items.CROSSBOW));
+        return villager.isHolding(CommonfolkVillagerWeapons::isRangedWeapon);
     }
 
     private static boolean isHoldingCrossbow(Villager villager) {
-        return villager.isHolding(stack -> stack.is(Items.CROSSBOW));
+        return villager.isHolding(CommonfolkVillagerWeapons::isCrossbowWeapon);
     }
 
     private static boolean isHoldingChargedCrossbow(Villager villager) {
         ItemStack mainHand = villager.getMainHandItem();
-        if (mainHand.is(Items.CROSSBOW) && CrossbowItem.isCharged(mainHand)) {
+        if (CommonfolkVillagerWeapons.isCrossbowWeapon(mainHand) && mainHand.getItem() instanceof CrossbowItem && CrossbowItem.isCharged(mainHand)) {
             return true;
         }
 
         ItemStack offHand = villager.getOffhandItem();
-        return offHand.is(Items.CROSSBOW) && CrossbowItem.isCharged(offHand);
+        return CommonfolkVillagerWeapons.isCrossbowWeapon(offHand)
+                && offHand.getItem() instanceof CrossbowItem
+                && CrossbowItem.isCharged(offHand);
     }
 
     private static boolean isHoldingPotionItem(Villager villager) {
@@ -84,6 +90,6 @@ public final class DefaultVillagerPoseProvider implements VillagerPoseProvider<V
     }
 
     private static boolean isInCombat(Villager villager) {
-        return villager.swinging || villager.isAggressive() || villager.isChasing() || villager.getTarget() != null;
+        return CommonfolkVillagerCombatUtil.isInCombat(villager);
     }
 }

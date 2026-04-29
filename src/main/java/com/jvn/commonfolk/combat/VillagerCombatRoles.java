@@ -1,6 +1,7 @@
 package com.jvn.commonfolk.combat;
 
 import com.jvn.commonfolk.config.CommonfolkConfig;
+import com.jvn.commonfolk.villager.CommonfolkVillagerWeapons;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -34,11 +35,31 @@ public final class VillagerCombatRoles {
     }
 
     public static boolean canFightBack(Villager villager) {
-        return FIGHT_BACK_RULES.getOrDefault(profession(villager), () -> true).getAsBoolean();
+        if (villager.isBaby() || profession(villager) == VillagerProfession.NITWIT) {
+            return false;
+        }
+
+        return canUseTemporaryCombatLoadout(villager) || CommonfolkVillagerWeapons.hasUsableWeapon(villager);
+    }
+
+    public static boolean canUseTemporaryCombatLoadout(Villager villager) {
+        VillagerProfession profession = profession(villager);
+        BooleanSupplier configuredRule = FIGHT_BACK_RULES.get(profession);
+        if (configuredRule != null) {
+            return configuredRule.getAsBoolean();
+        }
+
+        if (profession == VillagerProfession.FARMER) {
+            return CommonfolkConfig.FARMERS_USE_BREAD.get();
+        }
+        if (profession == VillagerProfession.CLERIC) {
+            return CommonfolkConfig.CLERICS_USE_POTIONS.get();
+        }
+        return profession == VillagerProfession.LIBRARIAN;
     }
 
     public static float meleeDamage(Villager villager) {
-        ItemStack weapon = villager.getMainHandItem().isEmpty() ? villager.getOffhandItem() : villager.getMainHandItem();
+        ItemStack weapon = CommonfolkVillagerWeapons.getPrimaryWeapon(villager);
         if (weapon.isEmpty()) {
             return PLAYER_FIST_DAMAGE;
         }
