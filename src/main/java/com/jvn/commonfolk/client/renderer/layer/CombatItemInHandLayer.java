@@ -2,6 +2,8 @@ package com.jvn.commonfolk.client.renderer.layer;
 
 import com.jvn.commonfolk.client.model.BaseVillagerModel;
 import com.jvn.commonfolk.client.model.CommonfolkVillagerModel;
+import com.jvn.commonfolk.client.pose.DefaultVillagerPoseProvider;
+import com.jvn.commonfolk.client.pose.VillagerPoseProvider;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.renderer.ItemInHandRenderer;
@@ -15,10 +17,20 @@ import net.minecraft.world.item.ItemStack;
 
 public class CombatItemInHandLayer extends RenderLayer<Villager, BaseVillagerModel<Villager>> {
     private final ItemInHandRenderer itemInHandRenderer;
+    private final VillagerPoseProvider<Villager> poseProvider;
 
     public CombatItemInHandLayer(RenderLayerParent<Villager, BaseVillagerModel<Villager>> renderer, ItemInHandRenderer itemInHandRenderer) {
+        this(renderer, itemInHandRenderer, DefaultVillagerPoseProvider.INSTANCE);
+    }
+
+    public CombatItemInHandLayer(
+            RenderLayerParent<Villager, BaseVillagerModel<Villager>> renderer,
+            ItemInHandRenderer itemInHandRenderer,
+            VillagerPoseProvider<Villager> poseProvider
+    ) {
         super(renderer);
         this.itemInHandRenderer = itemInHandRenderer;
+        this.poseProvider = poseProvider;
     }
 
     @Override
@@ -35,6 +47,9 @@ public class CombatItemInHandLayer extends RenderLayer<Villager, BaseVillagerMod
             float headPitch
     ) {
         if (!(this.getParentModel() instanceof CommonfolkVillagerModel<?> combatModel)) {
+            return;
+        }
+        if (!this.poseProvider.shouldRenderHeldItem(villager)) {
             return;
         }
 

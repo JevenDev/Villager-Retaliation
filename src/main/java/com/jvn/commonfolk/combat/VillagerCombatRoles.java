@@ -1,6 +1,11 @@
 package com.jvn.commonfolk.combat;
 
 import com.jvn.commonfolk.config.CommonfolkConfig;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.BooleanSupplier;
+import java.util.function.Function;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.npc.Villager;
@@ -10,28 +15,23 @@ import net.minecraft.world.item.Items;
 
 public final class VillagerCombatRoles {
     public static final float PLAYER_FIST_DAMAGE = 1.0F;
+    private static final Map<VillagerProfession, BooleanSupplier> FIGHT_BACK_RULES = createFightBackRules();
+    private static final Map<VillagerProfession, Function<Villager, ItemStack>> PREFERRED_WEAPON_RULES = createPreferredWeaponRules();
+    private static final Set<VillagerProfession> LOOT_WEAPON_PROFESSIONS = Set.of(
+            VillagerProfession.WEAPONSMITH,
+            VillagerProfession.TOOLSMITH,
+            VillagerProfession.BUTCHER,
+            VillagerProfession.ARMORER
+    );
+    private static final Map<VillagerProfession, Integer> ATTACK_COOLDOWNS = Map.of(
+            VillagerProfession.WEAPONSMITH, 16
+    );
 
     private VillagerCombatRoles() {
     }
 
     public static boolean canFightBack(Villager villager) {
-        VillagerProfession profession = villager.getVillagerData().getProfession();
-        if (profession == VillagerProfession.WEAPONSMITH) {
-            return CommonfolkConfig.WEAPONSMITHS_FIGHT_BACK.get();
-        }
-        if (profession == VillagerProfession.TOOLSMITH) {
-            return CommonfolkConfig.TOOLSMITHS_FIGHT_BACK.get();
-        }
-        if (profession == VillagerProfession.ARMORER) {
-            return CommonfolkConfig.ARMORERS_FIGHT_BACK.get();
-        }
-        if (profession == VillagerProfession.FLETCHER) {
-            return CommonfolkConfig.FLETCHERS_FIGHT_BACK.get();
-        }
-        if (profession == VillagerProfession.BUTCHER) {
-            return CommonfolkConfig.BUTCHERS_FIGHT_BACK.get();
-        }
-        return true;
+        return FIGHT_BACK_RULES.getOrDefault(profession(villager), () -> true).getAsBoolean();
     }
 
     public static float meleeDamage(Villager villager) {
@@ -59,35 +59,11 @@ public final class VillagerCombatRoles {
     }
 
     public static ItemStack preferredWeapon(Villager villager) {
-        VillagerProfession profession = villager.getVillagerData().getProfession();
-        if (profession == VillagerProfession.WEAPONSMITH) {
-            return new ItemStack(Items.IRON_SWORD);
-        }
-        if (profession == VillagerProfession.TOOLSMITH || profession == VillagerProfession.BUTCHER) {
-            return new ItemStack(Items.IRON_AXE);
-        }
-        if (profession == VillagerProfession.ARMORER) {
-            return new ItemStack(Items.IRON_SWORD);
-        }
-        if (profession == VillagerProfession.FLETCHER) {
-            return fletcherRangedWeapon(villager);
-        }
-        if (profession == VillagerProfession.FARMER && CommonfolkConfig.FARMERS_USE_BREAD.get()) {
-            return new ItemStack(Items.BREAD);
-        }
-        if (profession == VillagerProfession.LIBRARIAN) {
-            return new ItemStack(Items.BOOK);
-        }
-
-        return ItemStack.EMPTY;
+        return PREFERRED_WEAPON_RULES.getOrDefault(profession(villager), ignored -> ItemStack.EMPTY).apply(villager);
     }
 
     public static ItemStack preferredLootWeapon(Villager villager) {
-        VillagerProfession profession = villager.getVillagerData().getProfession();
-        if (profession == VillagerProfession.WEAPONSMITH
-                || profession == VillagerProfession.TOOLSMITH
-                || profession == VillagerProfession.BUTCHER
-                || profession == VillagerProfession.ARMORER) {
+        if (LOOT_WEAPON_PROFESSIONS.contains(profession(villager))) {
             return preferredWeapon(villager);
         }
 
@@ -103,23 +79,49 @@ public final class VillagerCombatRoles {
     }
 
     public static int attackCooldown(Villager villager) {
-        return villager.getVillagerData().getProfession() == VillagerProfession.WEAPONSMITH ? 16 : 20;
+        return ATTACK_COOLDOWNS.getOrDefault(profession(villager), 20);
     }
 
     public static boolean isArmorer(Villager villager) {
-        return villager.getVillagerData().getProfession() == VillagerProfession.ARMORER;
+        return profession(villager) == VillagerProfession.ARMORER;
     }
 
     public static boolean isCleric(Villager villager) {
-        return villager.getVillagerData().getProfession() == VillagerProfession.CLERIC;
+        return profession(villager) == VillagerProfession.CLERIC;
     }
 
     public static boolean isFarmer(Villager villager) {
-        return villager.getVillagerData().getProfession() == VillagerProfession.FARMER;
+        return profession(villager) == VillagerProfession.FARMER;
     }
 
     public static boolean isFletcher(Villager villager) {
-        return villager.getVillagerData().getProfession() == VillagerProfession.FLETCHER;
+        return profession(villager) == VillagerProfession.FLETCHER;
+    }
+
+    private static VillagerProfession profession(Villager villager) {
+        return villager.getVillagerData().getProfession();
+    }
+
+    private static Map<VillagerProfession, BooleanSupplier> createFightBackRules() {
+        Map<VillagerProfession, BooleanSupplier> rules = new HashMap<>();
+        rules.put(VillagerProfession.WEAPONSMITH, CommonfolkConfig.WEAPONSMITHS_FIGHT_BACK::get);
+        rules.put(VillagerProfession.TOOLSMITH, CommonfolkConfig.TOOLSMITHS_FIGHT_BACK::get);
+        rules.put(VillagerProfession.ARMORER, CommonfolkConfig.ARMORERS_FIGHT_BACK::get);
+        rules.put(VillagerProfession.FLETCHER, CommonfolkConfig.FLETCHERS_FIGHT_BACK::get);
+        rules.put(VillagerProfession.BUTCHER, CommonfolkConfig.BUTCHERS_FIGHT_BACK::get);
+        return Map.copyOf(rules);
+    }
+
+    private static Map<VillagerProfession, Function<Villager, ItemStack>> createPreferredWeaponRules() {
+        Map<VillagerProfession, Function<Villager, ItemStack>> rules = new HashMap<>();
+        rules.put(VillagerProfession.WEAPONSMITH, ignored -> new ItemStack(Items.IRON_SWORD));
+        rules.put(VillagerProfession.ARMORER, ignored -> new ItemStack(Items.IRON_SWORD));
+        rules.put(VillagerProfession.TOOLSMITH, ignored -> new ItemStack(Items.IRON_AXE));
+        rules.put(VillagerProfession.BUTCHER, ignored -> new ItemStack(Items.IRON_AXE));
+        rules.put(VillagerProfession.FLETCHER, VillagerCombatRoles::fletcherRangedWeapon);
+        rules.put(VillagerProfession.FARMER, ignored -> CommonfolkConfig.FARMERS_USE_BREAD.get() ? new ItemStack(Items.BREAD) : ItemStack.EMPTY);
+        rules.put(VillagerProfession.LIBRARIAN, ignored -> new ItemStack(Items.BOOK));
+        return Map.copyOf(rules);
     }
 
     private static ItemStack fletcherRangedWeapon(Villager villager) {

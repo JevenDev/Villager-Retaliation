@@ -48,6 +48,9 @@ public final class VillagerRetaliationHandler {
     private static final double FLETCHER_MAX_RANGED_DISTANCE_SQR = 225.0D;
     private static final int FLETCHER_BOW_DRAW_TICKS = 20;
     private static final int FLETCHER_BOW_ATTACK_INTERVAL = 20;
+    private static final int FLETCHER_INITIAL_RANGED_WINDUP_TICKS = 2;
+    private static final int FLETCHER_CROSSBOW_POST_LOAD_DELAY_BASE_TICKS = 20;
+    private static final int FLETCHER_CROSSBOW_POST_LOAD_DELAY_RANDOM_TICKS = 20;
 
     private VillagerRetaliationHandler() {
     }
@@ -305,7 +308,6 @@ public final class VillagerRetaliationHandler {
                 if (drawTicks >= FLETCHER_BOW_DRAW_TICKS) {
                     villager.stopUsingItem();
                     fireBowLikeIllusioner(villager, target, level, BowItem.getPowerForTime(drawTicks));
-                    villager.swing(selectAttackHand(villager), true);
                     FLETCHER_ATTACK_DELAY.put(villager.getUUID(), FLETCHER_BOW_ATTACK_INTERVAL);
                 }
             }
@@ -379,8 +381,9 @@ public final class VillagerRetaliationHandler {
             int chargeTicks = villager.getTicksUsingItem();
             if (chargeTicks >= CrossbowItem.getChargeDuration(using, villager)) {
                 villager.releaseUsingItem();
+                ensureCrossbowMarkedCharged(villager);
                 FLETCHER_CROSSBOW_STATE.put(villager.getUUID(), CrossbowState.CHARGED);
-                FLETCHER_ATTACK_DELAY.put(villager.getUUID(), 20 + villager.getRandom().nextInt(20));
+                FLETCHER_ATTACK_DELAY.put(villager.getUUID(), nextCrossbowPostLoadDelay(villager));
             }
             return;
         }
@@ -391,11 +394,11 @@ public final class VillagerRetaliationHandler {
                 return;
             }
             FLETCHER_CROSSBOW_STATE.put(villager.getUUID(), CrossbowState.READY_TO_ATTACK);
+            return;
         }
 
         if (FLETCHER_CROSSBOW_STATE.get(villager.getUUID()) == CrossbowState.READY_TO_ATTACK && hasLineOfSight) {
             fireCrossbowLikePillager(villager, target, level);
-            villager.swing(selectAttackHand(villager), true);
             FLETCHER_CROSSBOW_STATE.put(villager.getUUID(), CrossbowState.UNCHARGED);
         }
     }
@@ -438,7 +441,8 @@ public final class VillagerRetaliationHandler {
     private static void equipCombatWeapon(Villager villager) {
         TemporaryWeaponState state = TEMPORARY_WEAPONS.get(villager.getUUID());
         if (state != null) {
-            if (!ItemStack.isSameItemSameComponents(villager.getMainHandItem(), state.equippedWeapon())) {
+            // Preserve runtime components (charged projectiles, durability) while angry.
+            if (!ItemStack.isSameItem(villager.getMainHandItem(), state.equippedWeapon())) {
                 villager.setItemSlot(EquipmentSlot.MAINHAND, state.equippedWeapon().copy());
                 villager.setDropChance(EquipmentSlot.MAINHAND, currentCombatWeaponDropChance());
             }
@@ -456,6 +460,7 @@ public final class VillagerRetaliationHandler {
         TEMPORARY_WEAPONS.put(villager.getUUID(), new TemporaryWeaponState(previousMainHand, equippedWeapon.copy(), previousDropChance));
         villager.setItemSlot(EquipmentSlot.MAINHAND, equippedWeapon);
         villager.setDropChance(EquipmentSlot.MAINHAND, currentCombatWeaponDropChance());
+        seedInitialFletcherRangedDelay(villager, equippedWeapon);
     }
 
     private static void restoreTemporaryWeapon(Villager villager) {
@@ -507,6 +512,27 @@ public final class VillagerRetaliationHandler {
         FLETCHER_CROSSBOW_STATE.remove(villager.getUUID());
         if (villager.isUsingItem()) {
             villager.stopUsingItem();
+        }
+    }
+
+    private static void seedInitialFletcherRangedDelay(Villager villager, ItemStack equippedWeapon) {
+        if (!VillagerCombatRoles.isFletcher(villager) || (!equippedWeapon.is(Items.BOW) && !equippedWeapon.is(Items.CROSSBOW))) {
+            return;
+        }
+
+        FLETCHER_ATTACK_DELAY.put(villager.getUUID(), FLETCHER_INITIAL_RANGED_WINDUP_TICKS);
+    }
+
+    private static int nextCrossbowPostLoadDelay(Villager villager) {
+        return FLETCHER_CROSSBOW_POST_LOAD_DELAY_BASE_TICKS
+                + villager.getRandom().nextInt(FLETCHER_CROSSBOW_POST_LOAD_DELAY_RANDOM_TICKS);
+    }
+
+    private static void ensureCrossbowMarkedCharged(Villager villager) {
+        InteractionHand hand = ProjectileUtil.getWeaponHoldingHand(villager, item -> item instanceof CrossbowItem);
+        ItemStack weapon = villager.getItemInHand(hand);
+        if (weapon.is(Items.CROSSBOW) && !CrossbowItem.isCharged(weapon)) {
+            weapon.set(DataComponents.CHARGED_PROJECTILES, ChargedProjectiles.of(List.of(new ItemStack(Items.ARROW))));
         }
     }
 

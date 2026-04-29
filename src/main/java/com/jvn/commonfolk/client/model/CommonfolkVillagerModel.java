@@ -1,7 +1,10 @@
 package com.jvn.commonfolk.client.model;
 
 import com.jvn.commonfolk.Commonfolk;
-import net.minecraft.client.model.AnimationUtils;
+import com.jvn.commonfolk.client.pose.DefaultVillagerPoseProvider;
+import com.jvn.commonfolk.client.pose.VillagerArmPose;
+import com.jvn.commonfolk.client.pose.VillagerPoseAnimator;
+import com.jvn.commonfolk.client.pose.VillagerPoseProvider;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
@@ -13,9 +16,7 @@ import net.minecraft.client.model.geom.builders.PartDefinition;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.HumanoidArm;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.npc.Villager;
-import net.minecraft.world.item.Items;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 public class CommonfolkVillagerModel<T extends Villager> extends BaseVillagerModel<T> {
@@ -33,16 +34,13 @@ public class CommonfolkVillagerModel<T extends Villager> extends BaseVillagerMod
     private final ModelPart leftArm;
     private final ModelPart rightLeg;
     private final ModelPart leftLeg;
-
-    private enum ArmPose {
-        NEUTRAL,
-        ATTACKING,
-        BOW_AND_ARROW,
-        CROSSBOW_HOLD,
-        CROSSBOW_CHARGE
-    }
+    private final VillagerPoseProvider<Villager> poseProvider;
 
     public CommonfolkVillagerModel(ModelPart root) {
+        this(root, DefaultVillagerPoseProvider.INSTANCE);
+    }
+
+    public CommonfolkVillagerModel(ModelPart root, VillagerPoseProvider<Villager> poseProvider) {
         this.root = root;
         this.body = root.getChild("body");
         this.head = this.body.getChild("head");
@@ -53,6 +51,7 @@ public class CommonfolkVillagerModel<T extends Villager> extends BaseVillagerMod
         this.leftArm = this.body.getChild("LeftArm");
         this.rightLeg = this.body.getChild("RightLeg");
         this.leftLeg = this.body.getChild("LeftLeg");
+        this.poseProvider = poseProvider;
     }
 
     public static LayerDefinition createBodyLayer() {
@@ -117,27 +116,8 @@ public class CommonfolkVillagerModel<T extends Villager> extends BaseVillagerMod
         this.leftLeg.yRot = 0.0F;
         this.leftLeg.zRot = 0.0F;
 
-        ArmPose pose = this.resolvePose(villager);
-        if (pose == ArmPose.ATTACKING) {
-            float attackProgress = this.attackTime;
-            if (this.isUnarmed(villager)) {
-                if (villager.swinging || attackProgress > 0.0F) {
-                    this.animateUnarmedPunch(villager, attackProgress);
-                }
-            } else {
-                if (this.isAttackingWithMainHand(villager)) {
-                    AnimationUtils.swingWeaponDown(this.rightArm, this.leftArm, villager, attackProgress, ageInTicks);
-                } else {
-                    AnimationUtils.swingWeaponDown(this.leftArm, this.rightArm, villager, attackProgress, ageInTicks);
-                }
-            }
-        } else if (pose == ArmPose.BOW_AND_ARROW) {
-            this.animateBowAndArrow(villager);
-        } else if (pose == ArmPose.CROSSBOW_HOLD) {
-            AnimationUtils.animateCrossbowHold(this.rightArm, this.leftArm, this.head, this.isRightHanded(villager));
-        } else if (pose == ArmPose.CROSSBOW_CHARGE) {
-            AnimationUtils.animateCrossbowCharge(this.rightArm, this.leftArm, villager, this.isRightHanded(villager));
-        }
+        VillagerArmPose pose = this.poseProvider.getArmPose(villager, this.attackTime);
+        VillagerPoseAnimator.applyPose(pose, villager, this.head, this.rightArm, this.leftArm, this.attackTime, ageInTicks);
     }
 
     @Override
@@ -160,73 +140,6 @@ public class CommonfolkVillagerModel<T extends Villager> extends BaseVillagerMod
     public void translateToHand(HumanoidArm arm, PoseStack poseStack) {
         this.body.translateAndRotate(poseStack);
         this.getArm(arm).translateAndRotate(poseStack);
-    }
-
-    private ArmPose resolvePose(T villager) {
-        if (villager.isUsingItem()
-                && villager.getUseItem().is(Items.CROSSBOW)
-                && villager.getUsedItemHand() == InteractionHand.MAIN_HAND) {
-            return ArmPose.CROSSBOW_CHARGE;
-        }
-        if (villager.isUsingItem()
-                && villager.getUseItem().is(Items.BOW)
-                && villager.getUsedItemHand() == InteractionHand.MAIN_HAND) {
-            return ArmPose.BOW_AND_ARROW;
-        }
-        if (villager.isHolding(stack -> stack.is(Items.CROSSBOW))) {
-            return ArmPose.CROSSBOW_HOLD;
-        }
-        if (villager.swinging || villager.isAggressive() || villager.isChasing() || villager.getTarget() != null) {
-            return ArmPose.ATTACKING;
-        }
-        return ArmPose.NEUTRAL;
-    }
-
-    private boolean isRightHanded(T villager) {
-        return villager.getMainArm() == HumanoidArm.RIGHT;
-    }
-
-    private boolean isAttackingWithMainHand(T villager) {
-        return villager.swingingArm != InteractionHand.OFF_HAND;
-    }
-
-    private boolean isUnarmed(T villager) {
-        return villager.getMainHandItem().isEmpty() && villager.getOffhandItem().isEmpty();
-    }
-
-    private void animateUnarmedPunch(T villager, float attackProgress) {
-        ModelPart punchArm = this.isAttackingWithMainHand(villager)
-                ? (villager.getMainArm() == HumanoidArm.RIGHT ? this.rightArm : this.leftArm)
-                : (villager.getMainArm() == HumanoidArm.RIGHT ? this.leftArm : this.rightArm);
-        ModelPart supportArm = punchArm == this.rightArm ? this.leftArm : this.rightArm;
-
-        float punch = Mth.sin(attackProgress * (float) Math.PI);
-        float punchRecovery = Mth.sin((1.0F - (1.0F - attackProgress) * (1.0F - attackProgress)) * (float) Math.PI);
-        float yawDirection = punchArm == this.rightArm ? 1.0F : -1.0F;
-
-        punchArm.yRot += yawDirection * (0.1F - punch * 0.6F);
-        punchArm.xRot -= punch * 1.2F + punchRecovery * 0.4F;
-
-        supportArm.yRot = yawDirection * 0.2F;
-        supportArm.xRot *= 0.5F;
-    }
-
-    private void animateBowAndArrow(T villager) {
-        if (this.isRightHanded(villager)) {
-            // Match Illusioner bow-use pose so draw/aim reads like vanilla ranged mobs.
-            this.rightArm.yRot = -0.1F + this.head.yRot;
-            this.rightArm.xRot = (-(float) Math.PI / 2F) + this.head.xRot;
-            this.leftArm.xRot = -0.9424779F + this.head.xRot;
-            this.leftArm.yRot = this.head.yRot - 0.4F;
-            this.leftArm.zRot = (float) (Math.PI / 2.0);
-            return;
-        }
-
-        this.leftArm.yRot = 0.1F + this.head.yRot;
-        this.leftArm.xRot = (-(float) Math.PI / 2F) + this.head.xRot;
-        this.rightArm.xRot = -0.9424779F + this.head.xRot;
-        this.rightArm.yRot = this.head.yRot + 0.4F;
-        this.rightArm.zRot = (float) (-Math.PI / 2.0);
     }
 
     private ModelPart getArm(HumanoidArm arm) {
