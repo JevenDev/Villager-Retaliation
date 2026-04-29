@@ -55,13 +55,13 @@ public final class VillagerLootHandler {
             return;
         }
 
-        ItemStack weapon = VillagerCombatRoles.preferredLootWeapon(villager, random);
+        ItemStack weapon = VillagerCombatRoles.preferredLootWeapon(villager);
         if (weapon.isEmpty()) {
             return;
         }
 
         ItemStack drop = maybeEnchantLootWeapon(villager, CommonfolkItemUtil.withRandomDamage(weapon.copy(), random), random);
-        CommonfolkLootUtil.addDrop(event, drop);
+        CommonfolkLootUtil.addDropIfNoMatchingItem(event, drop);
     }
 
     private static ItemStack maybeEnchantLootWeapon(Villager villager, ItemStack weapon, RandomSource random) {

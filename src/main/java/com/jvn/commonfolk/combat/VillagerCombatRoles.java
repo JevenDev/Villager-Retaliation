@@ -1,7 +1,6 @@
 package com.jvn.commonfolk.combat;
 
 import com.jvn.commonfolk.config.CommonfolkConfig;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.npc.Villager;
@@ -83,7 +82,7 @@ public final class VillagerCombatRoles {
         return ItemStack.EMPTY;
     }
 
-    public static ItemStack preferredLootWeapon(Villager villager, RandomSource random) {
+    public static ItemStack preferredLootWeapon(Villager villager) {
         VillagerProfession profession = villager.getVillagerData().getProfession();
         if (profession == VillagerProfession.WEAPONSMITH
                 || profession == VillagerProfession.TOOLSMITH

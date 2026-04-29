@@ -33,7 +33,7 @@ public final class WanderingTraderLootHandler {
 
         if (CommonfolkConfig.WANDERER_DROP_RANDOM_CURRENT_TRADE.get()
                 && CommonfolkRandomUtil.chance(random, CommonfolkConfig.WANDERER_RANDOM_TRADE_DROP_CHANCE.get())) {
-            rollTradeResult(trader, random).ifPresent(stack -> CommonfolkLootUtil.addDrop(event, stack));
+            rollTradeResult(trader, random).ifPresent(stack -> CommonfolkLootUtil.addDropIfNoMatchingItem(event, stack));
         }
     }
 
