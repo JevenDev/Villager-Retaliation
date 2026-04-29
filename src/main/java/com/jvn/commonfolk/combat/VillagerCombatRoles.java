@@ -17,6 +17,7 @@ import net.minecraft.world.item.alchemy.Potions;
 
 public final class VillagerCombatRoles {
     public static final float PLAYER_FIST_DAMAGE = 1.0F;
+    private static final double VINDICATOR_STYLE_WEAPON_BASE_DAMAGE = 5.0D;
     private static final Map<VillagerProfession, BooleanSupplier> FIGHT_BACK_RULES = createFightBackRules();
     private static final Map<VillagerProfession, Function<Villager, ItemStack>> PREFERRED_WEAPON_RULES = createPreferredWeaponRules();
     private static final Set<VillagerProfession> LOOT_WEAPON_PROFESSIONS = Set.of(
@@ -42,22 +43,19 @@ public final class VillagerCombatRoles {
             return PLAYER_FIST_DAMAGE;
         }
 
-        double baseDamage = PLAYER_FIST_DAMAGE;
-        double[] totalDamage = new double[]{baseDamage};
+        boolean[] hasAttackDamageModifier = new boolean[]{false};
         weapon.forEachModifier(EquipmentSlot.MAINHAND, (attribute, modifier) -> {
-            if (!attribute.equals(Attributes.ATTACK_DAMAGE)) {
-                return;
-            }
-
-            double amount = modifier.amount();
-            switch (modifier.operation()) {
-                case ADD_VALUE -> totalDamage[0] += amount;
-                case ADD_MULTIPLIED_BASE -> totalDamage[0] += amount * baseDamage;
-                case ADD_MULTIPLIED_TOTAL -> totalDamage[0] += amount * totalDamage[0];
+            if (attribute.equals(Attributes.ATTACK_DAMAGE)) {
+                hasAttackDamageModifier[0] = true;
             }
         });
 
-        return (float) Math.max(0.0D, totalDamage[0]);
+        if (!hasAttackDamageModifier[0]) {
+            return PLAYER_FIST_DAMAGE;
+        }
+
+        double totalDamage = weapon.getAttributeModifiers().compute(VINDICATOR_STYLE_WEAPON_BASE_DAMAGE, EquipmentSlot.MAINHAND);
+        return (float) Math.max(0.0D, totalDamage);
     }
 
     public static ItemStack preferredWeapon(Villager villager) {
