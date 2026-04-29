@@ -3,6 +3,7 @@ package com.jvn.commonfolk.event;
 import com.jvn.commonfolk.combat.VillagerRetaliationHandler;
 import com.jvn.commonfolk.loot.VillagerLootHandler;
 import com.jvn.commonfolk.loot.WanderingTraderLootHandler;
+import com.jvn.commonfolk.villager.VillagerFleeBehaviorHandler;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.WanderingTrader;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
@@ -31,10 +32,12 @@ public final class CommonfolkEvents {
     }
 
     public static void onEntityTickPre(EntityTickEvent.Pre event) {
+        VillagerFleeBehaviorHandler.onEntityTickPre(event);
         VillagerRetaliationHandler.onEntityTickPre(event);
     }
 
     public static void onEntityTickPost(EntityTickEvent.Post event) {
         VillagerRetaliationHandler.onEntityTickPost(event);
+        VillagerFleeBehaviorHandler.onEntityTickPost(event);
     }
 }

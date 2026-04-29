@@ -1,6 +1,7 @@
 package com.jvn.commonfolk.combat;
 
 import com.jvn.commonfolk.config.CommonfolkConfig;
+import com.jvn.commonfolk.villager.CommonfolkVillagerRules;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -113,7 +114,7 @@ public final class VillagerRetaliationHandler {
             return;
         }
 
-        if (ANGER_TARGETS.containsKey(villager.getUUID())) {
+        if (ANGER_TARGETS.containsKey(villager.getUUID()) && CommonfolkVillagerRules.shouldSuppressFleeingBehavior(villager)) {
             suppressVanillaPanic(villager);
         }
     }
@@ -126,6 +127,10 @@ public final class VillagerRetaliationHandler {
         updateVillagerSwing(villager);
         if (villager.level().isClientSide) {
             return;
+        }
+
+        if (CommonfolkConfig.ENABLE_VILLAGER_RETALIATION.get()) {
+            tryAcquireHostileTarget(villager);
         }
 
         AngerTarget angerTarget = ANGER_TARGETS.get(villager.getUUID());
@@ -185,6 +190,20 @@ public final class VillagerRetaliationHandler {
 
         long expiresAt = villager.level().getGameTime() + CommonfolkConfig.AGGRO_DURATION_TICKS.get();
         ANGER_TARGETS.put(villager.getUUID(), new AngerTarget(attacker.getUUID(), expiresAt));
+    }
+
+    private static void tryAcquireHostileTarget(Villager villager) {
+        if (ANGER_TARGETS.containsKey(villager.getUUID())
+                || !villager.isAlive()
+                || !CommonfolkVillagerRules.shouldSuppressFleeingBehavior(villager)
+                || !VillagerCombatRoles.canFightBack(villager)) {
+            return;
+        }
+
+        villager.getBrain().getMemory(MemoryModuleType.NEAREST_HOSTILE)
+                .filter(LivingEntity::isAlive)
+                .filter(target -> target != villager)
+                .ifPresent(target -> anger(villager, target));
     }
 
     private static void clearAnger(Villager villager) {
