@@ -30,6 +30,7 @@ final class VillagerRangedCombatHelper {
     private static final int BOW_DRAW_TICKS = 20;
     private static final int BOW_ATTACK_INTERVAL_TICKS = 20;
     private static final int INITIAL_RANGED_WINDUP_TICKS = 2;
+    private static final int CROSSBOW_ATTACK_INTERVAL_TICKS = 40;
     private static final int CROSSBOW_POST_LOAD_DELAY_BASE_TICKS = 20;
     private static final int CROSSBOW_POST_LOAD_DELAY_RANDOM_TICKS = 20;
     private static final double TRIDENT_MAX_DISTANCE_SQR = 144.0D;
@@ -209,6 +210,11 @@ final class VillagerRangedCombatHelper {
             int seeTime
     ) {
         int attackDelay = ATTACK_DELAY.getOrDefault(villager.getUUID(), 0);
+        if (attackDelay > 0) {
+            attackDelay--;
+            ATTACK_DELAY.put(villager.getUUID(), attackDelay);
+        }
+
         CrossbowState state = CROSSBOW_STATE.getOrDefault(villager.getUUID(), CrossbowState.UNCHARGED);
         if (state == CrossbowState.UNCHARGED && isHoldingChargedCrossbow(villager)) {
             state = attackDelay > 0 ? CrossbowState.CHARGED : CrossbowState.READY_TO_ATTACK;
@@ -255,7 +261,6 @@ final class VillagerRangedCombatHelper {
 
         if (state == CrossbowState.CHARGED) {
             if (attackDelay > 0) {
-                ATTACK_DELAY.put(villager.getUUID(), attackDelay - 1);
                 return;
             }
             CROSSBOW_STATE.put(villager.getUUID(), CrossbowState.READY_TO_ATTACK);
@@ -264,6 +269,7 @@ final class VillagerRangedCombatHelper {
 
         if (CROSSBOW_STATE.get(villager.getUUID()) == CrossbowState.READY_TO_ATTACK && hasLineOfSight) {
             fireCrossbowLikePillager(villager, target, level);
+            ATTACK_DELAY.put(villager.getUUID(), CROSSBOW_ATTACK_INTERVAL_TICKS);
             CROSSBOW_STATE.put(villager.getUUID(), CrossbowState.UNCHARGED);
         }
     }
@@ -283,6 +289,7 @@ final class VillagerRangedCombatHelper {
         clampToSingleChargedProjectile(weapon);
 
         crossbowItem.performShooting(level, villager, hand, weapon, 1.6F, (float) (14 - level.getDifficulty().getId() * 4), target);
+        weapon.set(DataComponents.CHARGED_PROJECTILES, ChargedProjectiles.EMPTY);
         villager.setItemInHand(hand, weapon.copy());
     }
 

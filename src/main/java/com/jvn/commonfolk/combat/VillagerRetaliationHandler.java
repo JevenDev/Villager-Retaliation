@@ -164,7 +164,7 @@ public final class VillagerRetaliationHandler {
 
         double distanceSqr = villager.distanceToSqr(target);
         villager.getLookControl().setLookAt(target, 30.0F, 30.0F);
-        if (VillagerRangedCombatHelper.tryAttack(villager, target, level, distanceSqr)) {
+        if (isUsingRangedCombatMode(villager) && VillagerRangedCombatHelper.tryAttack(villager, target, level, distanceSqr)) {
             return;
         }
         if (VillagerClericPotionHelper.tryCombat(villager, target, level, distanceSqr)) {
@@ -172,7 +172,7 @@ public final class VillagerRetaliationHandler {
         }
 
         villager.getNavigation().moveTo(target, VillagerCombatRoles.movementSpeed(villager));
-        if (!VillagerCombatRoles.isFletcher(villager) && canMeleeHit(villager, target) && attackReady(villager, gameTime)) {
+        if (canUseMeleeCombatMode(villager) && canMeleeHit(villager, target) && attackReady(villager, gameTime)) {
             villager.swing(selectAttackHand(villager), true);
             target.hurt(villager.damageSources().mobAttack(villager), VillagerCombatRoles.meleeDamage(villager));
             NEXT_ATTACK_TICKS.put(villager.getUUID(), gameTime + VillagerCombatRoles.attackCooldown(villager));
@@ -277,6 +277,14 @@ public final class VillagerRetaliationHandler {
 
     private static boolean attackReady(Villager villager, long gameTime) {
         return gameTime >= NEXT_ATTACK_TICKS.getOrDefault(villager.getUUID(), 0L);
+    }
+
+    private static boolean isUsingRangedCombatMode(Villager villager) {
+        return CommonfolkVillagerWeapons.isRangedWeapon(CommonfolkVillagerWeapons.getPrimaryWeapon(villager));
+    }
+
+    private static boolean canUseMeleeCombatMode(Villager villager) {
+        return !isUsingRangedCombatMode(villager);
     }
 
     private static boolean canMeleeHit(Villager villager, LivingEntity target) {
