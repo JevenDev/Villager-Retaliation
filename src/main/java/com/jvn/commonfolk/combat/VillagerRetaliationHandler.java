@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.server.level.ServerLevel;
@@ -26,8 +27,10 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.npc.WanderingTrader;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -41,6 +44,9 @@ import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
 public final class VillagerRetaliationHandler {
+    private static final String PERSISTENT_TAG_ROOT = "CommonfolkPersistentHostility";
+    private static final String PERSISTENT_TARGET_UUID = "Target";
+    private static final String PERSISTENT_LAST_SEEN_TICK = "LastSeenTick";
     private static final Map<UUID, AngerTarget> ANGER_TARGETS = new HashMap<>();
     private static final Map<UUID, Long> NEXT_ATTACK_TICKS = new HashMap<>();
     private static final Map<UUID, Long> NEXT_SPECIAL_TICKS = new HashMap<>();
@@ -81,8 +87,13 @@ public final class VillagerRetaliationHandler {
     public static void onLivingDamage(LivingDamageEvent.Post event) {
         if (!CommonfolkConfig.ENABLE_VILLAGER_RETALIATION.get()
                 || event.getNewDamage() <= 0.0F
-                || !(event.getEntity() instanceof Villager villager)
-                || villager.isBaby()) {
+                || !(event.getEntity() instanceof Villager villager)) {
+            return;
+        }
+
+        if (villager.isBaby()) {
+            resolveAttacker(event.getSource()).ifPresent(attacker ->
+                    rallyNearbyVillagers(villager, attacker, CommonfolkConfig.VILLAGER_KILL_AGGRO_RADIUS.get()));
             return;
         }
 
@@ -91,6 +102,11 @@ public final class VillagerRetaliationHandler {
         }
 
         resolveAttacker(event.getSource()).ifPresent(attacker -> {
+            if (isNitwitAlarm(villager)) {
+                rallyNearbyVillagers(villager, attacker, CommonfolkConfig.VILLAGER_KILL_AGGRO_RADIUS.get());
+                return;
+            }
+
             anger(villager, attacker);
             if (!CommonfolkConfig.ATTACK_AGGROS_ONLY_HIT_VILLAGER.get()) {
                 angerNearbyVillagers(villager, attacker, CommonfolkConfig.VILLAGER_KILL_AGGRO_RADIUS.get());
@@ -100,6 +116,7 @@ public final class VillagerRetaliationHandler {
 
     public static void onLivingDeath(LivingDeathEvent event) {
         Entity deceased = event.getEntity();
+        boolean deceasedIsVillager = deceased instanceof Villager;
         if (deceased instanceof Villager villager) {
             // Keep temporary combat weapons equipped on death so vanilla equipment drops can roll.
             clearAnger(villager, false);
@@ -117,11 +134,18 @@ public final class VillagerRetaliationHandler {
         }
 
         Optional<LivingEntity> attacker = resolveAttacker(event.getSource());
+        if (deceasedIsVillager) {
+            triggerNitwitWitnessedDeathFlee(deceased, attacker.orElse(null), CommonfolkConfig.VILLAGER_KILL_AGGRO_RADIUS.get());
+        }
+
         if (attacker.isEmpty() || shouldIgnoreAttacker(attacker.get())) {
             return;
         }
 
-        angerNearbyVillagers(deceased, attacker.get(), CommonfolkConfig.VILLAGER_KILL_AGGRO_RADIUS.get());
+        LivingEntity resolvedAttacker = attacker.get();
+        double radius = CommonfolkConfig.VILLAGER_KILL_AGGRO_RADIUS.get();
+        angerNearbyVillagers(deceased, resolvedAttacker, radius);
+        rallyFromNearbyNitwits(deceased, resolvedAttacker, radius);
     }
 
     public static void onEntityTickPre(EntityTickEvent.Pre event) {
@@ -145,6 +169,7 @@ public final class VillagerRetaliationHandler {
         }
 
         if (CommonfolkConfig.ENABLE_VILLAGER_RETALIATION.get()) {
+            restorePersistedAngerIfNeeded(villager);
             tryAcquireHostileTarget(villager);
         }
 
@@ -169,8 +194,15 @@ public final class VillagerRetaliationHandler {
             return;
         }
 
+        long gameTime = level.getGameTime();
         Entity entity = level.getEntity(angerTarget.targetId());
-        if (!(entity instanceof LivingEntity target) || !target.isAlive() || shouldIgnoreAttacker(target)) {
+        if (!(entity instanceof LivingEntity target)) {
+            if (gameTime - angerTarget.lastSeenGameTick() >= CommonfolkConfig.AGGRO_DURATION_TICKS.get()) {
+                clearAnger(villager);
+            }
+            return;
+        }
+        if (!target.isAlive() || shouldIgnoreAttacker(target)) {
             clearAnger(villager);
             return;
         }
@@ -185,9 +217,10 @@ public final class VillagerRetaliationHandler {
         villager.setChasing(true);
         villager.setTarget(target);
 
-        long gameTime = level.getGameTime();
         if (villager.hasLineOfSight(target)) {
-            ANGER_TARGETS.put(villager.getUUID(), angerTarget.withLastSeenGameTick(gameTime));
+            AngerTarget refreshedTarget = angerTarget.withLastSeenGameTick(gameTime);
+            ANGER_TARGETS.put(villager.getUUID(), refreshedTarget);
+            persistAnger(villager, refreshedTarget);
         } else if (gameTime - angerTarget.lastSeenGameTick() >= CommonfolkConfig.AGGRO_DURATION_TICKS.get()) {
             clearAnger(villager);
             return;
@@ -237,7 +270,9 @@ public final class VillagerRetaliationHandler {
         }
 
         long gameTime = villager.level().getGameTime();
-        ANGER_TARGETS.put(villager.getUUID(), new AngerTarget(attacker.getUUID(), gameTime));
+        AngerTarget angerTarget = new AngerTarget(attacker.getUUID(), gameTime);
+        ANGER_TARGETS.put(villager.getUUID(), angerTarget);
+        persistAnger(villager, angerTarget);
     }
 
     private static void tryAcquireHostileTarget(Villager villager) {
@@ -291,6 +326,7 @@ public final class VillagerRetaliationHandler {
 
     private static void clearAnger(Villager villager, boolean restoreWeapon) {
         ANGER_TARGETS.remove(villager.getUUID());
+        clearPersistedAnger(villager);
         NEXT_ATTACK_TICKS.remove(villager.getUUID());
         NEXT_SPECIAL_TICKS.remove(villager.getUUID());
         VillagerRangedCombatHelper.clearState(villager);
@@ -343,8 +379,9 @@ public final class VillagerRetaliationHandler {
     }
 
     private static boolean canMeleeHit(Villager villager, LivingEntity target) {
-        // Use hitbox-based reach so contact is consistent regardless of center-point offsets.
-        return villager.getBoundingBox().inflate(1.0D).intersects(target.getBoundingBox());
+        // Keep armed villagers close to vanilla-like contact reach while requiring truly close contact when unarmed.
+        double reachInflation = CommonfolkVillagerWeapons.hasUsableWeapon(villager) ? 1.0D : 0.6D;
+        return villager.getBoundingBox().inflate(reachInflation).intersects(target.getBoundingBox());
     }
 
     private static void syncMeleeAttackAttributes(Villager villager) {
@@ -372,10 +409,97 @@ public final class VillagerRetaliationHandler {
         }
     }
 
+    private static void rallyNearbyVillagers(Villager alarmVillager, LivingEntity attacker, double radius) {
+        // Keep alarm villagers in panic/flee behavior while still spreading the threat to fighters.
+        long gameTime = alarmVillager.level().getGameTime();
+        alarmVillager.getBrain().setActiveActivityIfPossible(Activity.PANIC);
+        alarmVillager.getBrain().setMemory(MemoryModuleType.HEARD_BELL_TIME, gameTime);
+        alarmVillager.getBrain().setMemory(MemoryModuleType.NEAREST_HOSTILE, attacker);
+        angerNearbyVillagers(alarmVillager, attacker, radius);
+    }
+
+    private static void rallyFromNearbyNitwits(Entity sourceEntity, LivingEntity attacker, double radius) {
+        if (!(sourceEntity.level() instanceof ServerLevel level)) {
+            return;
+        }
+
+        AABB area = sourceEntity.getBoundingBox().inflate(radius);
+        for (Villager nearby : level.getEntitiesOfClass(Villager.class, area)) {
+            if (isNitwitAlarm(nearby)) {
+                rallyNearbyVillagers(nearby, attacker, radius);
+            }
+        }
+    }
+
+    private static void triggerNitwitWitnessedDeathFlee(Entity deceased, LivingEntity attacker, double radius) {
+        if (!(deceased.level() instanceof ServerLevel level)) {
+            return;
+        }
+
+        AABB area = deceased.getBoundingBox().inflate(radius);
+        long gameTime = level.getGameTime();
+        for (Villager nearby : level.getEntitiesOfClass(Villager.class, area)) {
+            if (!isWitnessAlarmVillager(nearby) || !nearby.hasLineOfSight(deceased)) {
+                continue;
+            }
+
+            nearby.getBrain().setActiveActivityIfPossible(Activity.PANIC);
+            nearby.getBrain().setMemory(MemoryModuleType.HEARD_BELL_TIME, gameTime);
+            if (attacker != null && attacker.isAlive()) {
+                nearby.getBrain().setMemory(MemoryModuleType.NEAREST_HOSTILE, attacker);
+            }
+        }
+    }
+
+    private static boolean isNitwitAlarm(Villager villager) {
+        return !villager.isBaby() && villager.getVillagerData().getProfession() == VillagerProfession.NITWIT;
+    }
+
+    private static boolean isWitnessAlarmVillager(Villager villager) {
+        return villager.isBaby() || isNitwitAlarm(villager);
+    }
+
     private static void suppressVanillaPanic(Villager villager) {
         villager.getBrain().eraseMemory(MemoryModuleType.HURT_BY);
         villager.getBrain().eraseMemory(MemoryModuleType.HURT_BY_ENTITY);
         villager.getBrain().eraseMemory(MemoryModuleType.NEAREST_HOSTILE);
+    }
+
+    private static void restorePersistedAngerIfNeeded(Villager villager) {
+        if (ANGER_TARGETS.containsKey(villager.getUUID())) {
+            return;
+        }
+
+        CompoundTag persistentData = villager.getPersistentData();
+        if (!persistentData.contains(PERSISTENT_TAG_ROOT, CompoundTag.TAG_COMPOUND)) {
+            return;
+        }
+
+        CompoundTag hostilityTag = persistentData.getCompound(PERSISTENT_TAG_ROOT);
+        if (!hostilityTag.hasUUID(PERSISTENT_TARGET_UUID) || !hostilityTag.contains(PERSISTENT_LAST_SEEN_TICK)) {
+            clearPersistedAnger(villager);
+            return;
+        }
+
+        long lastSeenTick = hostilityTag.getLong(PERSISTENT_LAST_SEEN_TICK);
+        long gameTime = villager.level().getGameTime();
+        if (gameTime - lastSeenTick >= CommonfolkConfig.AGGRO_DURATION_TICKS.get()) {
+            clearPersistedAnger(villager);
+            return;
+        }
+
+        ANGER_TARGETS.put(villager.getUUID(), new AngerTarget(hostilityTag.getUUID(PERSISTENT_TARGET_UUID), lastSeenTick));
+    }
+
+    private static void persistAnger(Villager villager, AngerTarget angerTarget) {
+        CompoundTag hostilityTag = new CompoundTag();
+        hostilityTag.putUUID(PERSISTENT_TARGET_UUID, angerTarget.targetId());
+        hostilityTag.putLong(PERSISTENT_LAST_SEEN_TICK, angerTarget.lastSeenGameTick());
+        villager.getPersistentData().put(PERSISTENT_TAG_ROOT, hostilityTag);
+    }
+
+    private static void clearPersistedAnger(Villager villager) {
+        villager.getPersistentData().remove(PERSISTENT_TAG_ROOT);
     }
 
     private static void handleDefensiveRole(Villager villager, long gameTime) {
