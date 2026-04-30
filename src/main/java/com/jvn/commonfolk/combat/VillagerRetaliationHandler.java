@@ -16,6 +16,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.behavior.BehaviorUtils;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -223,8 +224,12 @@ public final class VillagerRetaliationHandler {
             return false;
         }
 
-        villager.getNavigation().moveTo(itemEntity, VillagerCombatRoles.movementSpeed(villager));
-        villager.getLookControl().setLookAt(itemEntity, 30.0F, 30.0F);
+        BehaviorUtils.setWalkAndLookTargetMemories(
+                villager,
+                itemEntity,
+                (float) VillagerCombatRoles.movementSpeed(villager),
+                0
+        );
         return true;
     }
 
