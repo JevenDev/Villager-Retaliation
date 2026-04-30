@@ -17,7 +17,7 @@ import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.alchemy.Potions;
 
 public final class VillagerCombatRoles {
-    public static final float PLAYER_FIST_DAMAGE = 1.0F;
+    public static final double PLAYER_FIST_DAMAGE = 1.0D;
     private static final double VINDICATOR_STYLE_WEAPON_BASE_DAMAGE = 5.0D;
     private static final float FARMER_BREAD_WEAPON_CHANCE = 0.12F;
     private static final Map<VillagerProfession, BooleanSupplier> FIGHT_BACK_RULES = createFightBackRules();
@@ -59,25 +59,17 @@ public final class VillagerCombatRoles {
         return profession == VillagerProfession.LIBRARIAN;
     }
 
-    public static float meleeDamage(Villager villager) {
-        ItemStack weapon = CommonfolkVillagerWeapons.getPrimaryWeapon(villager);
+    public static double meleeAttackDamageBase(Villager villager) {
+        ItemStack weapon = villager.getMainHandItem();
         if (weapon.isEmpty()) {
             return PLAYER_FIST_DAMAGE;
         }
 
-        boolean[] hasAttackDamageModifier = new boolean[]{false};
-        weapon.forEachModifier(EquipmentSlot.MAINHAND, (attribute, modifier) -> {
-            if (attribute.equals(Attributes.ATTACK_DAMAGE)) {
-                hasAttackDamageModifier[0] = true;
-            }
-        });
-
-        if (!hasAttackDamageModifier[0]) {
+        if (!hasAttackDamageModifier(weapon)) {
             return PLAYER_FIST_DAMAGE;
         }
 
-        double totalDamage = weapon.getAttributeModifiers().compute(VINDICATOR_STYLE_WEAPON_BASE_DAMAGE, EquipmentSlot.MAINHAND);
-        return (float) Math.max(0.0D, totalDamage);
+        return VINDICATOR_STYLE_WEAPON_BASE_DAMAGE;
     }
 
     public static ItemStack preferredWeapon(Villager villager) {
@@ -174,5 +166,15 @@ public final class VillagerCombatRoles {
     private static ItemStack fletcherRangedWeapon(Villager villager) {
         boolean usesCrossbow = (villager.getUUID().getLeastSignificantBits() & 1L) == 0L;
         return new ItemStack(usesCrossbow ? Items.CROSSBOW : Items.BOW);
+    }
+
+    private static boolean hasAttackDamageModifier(ItemStack stack) {
+        boolean[] hasAttackDamageModifier = new boolean[]{false};
+        stack.forEachModifier(EquipmentSlot.MAINHAND, (attribute, modifier) -> {
+            if (attribute.equals(Attributes.ATTACK_DAMAGE)) {
+                hasAttackDamageModifier[0] = true;
+            }
+        });
+        return hasAttackDamageModifier[0];
     }
 }

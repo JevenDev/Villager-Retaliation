@@ -15,6 +15,7 @@ import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.behavior.BehaviorUtils;
@@ -32,8 +33,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.providers.VanillaEnchantmentProviders;
-import net.minecraft.util.Mth;
 import net.minecraft.world.phys.AABB;
+import net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
@@ -47,6 +48,15 @@ public final class VillagerRetaliationHandler {
     private static final Map<UUID, TemporaryWeaponState> TEMPORARY_WEAPONS = new HashMap<>();
 
     private VillagerRetaliationHandler() {
+    }
+
+    public static void onEntityAttributeModification(EntityAttributeModificationEvent event) {
+        if (!event.has(EntityType.VILLAGER, Attributes.ATTACK_DAMAGE)) {
+            event.add(EntityType.VILLAGER, Attributes.ATTACK_DAMAGE, VillagerCombatRoles.PLAYER_FIST_DAMAGE);
+        }
+        if (!event.has(EntityType.VILLAGER, Attributes.ATTACK_KNOCKBACK)) {
+            event.add(EntityType.VILLAGER, Attributes.ATTACK_KNOCKBACK, 0.0D);
+        }
     }
 
     public static void onLivingDamagePre(LivingIncomingDamageEvent event) {
@@ -215,7 +225,8 @@ public final class VillagerRetaliationHandler {
         if (canUseMeleeCombatMode(villager) && canMeleeHit(villager, target) && attackReady(villager, gameTime)) {
             InteractionHand attackHand = selectAttackHand(villager);
             villager.swing(attackHand, true);
-            performMeleeAttack(villager, target, attackHand);
+            syncMeleeAttackAttributes(villager);
+            villager.doHurtTarget(target);
             NEXT_ATTACK_TICKS.put(villager.getUUID(), gameTime + VillagerCombatRoles.attackCooldown(villager));
         }
     }
@@ -336,38 +347,16 @@ public final class VillagerRetaliationHandler {
         return villager.getBoundingBox().inflate(1.0D).intersects(target.getBoundingBox());
     }
 
-    private static void performMeleeAttack(Villager villager, LivingEntity target, InteractionHand attackHand) {
-        ItemStack weapon = villager.getItemInHand(attackHand);
-        if (weapon.isEmpty()) {
-            weapon = villager.getWeaponItem();
-        }
-
-        DamageSource damageSource = villager.damageSources().mobAttack(villager);
-        float damage = VillagerCombatRoles.meleeDamage(villager);
-        float knockback = 0.0F;
-        if (villager.level() instanceof ServerLevel serverLevel) {
-            damage = EnchantmentHelper.modifyDamage(serverLevel, weapon, target, damageSource, damage);
-            knockback = EnchantmentHelper.modifyKnockback(serverLevel, weapon, target, damageSource, knockback);
-        }
-
-        boolean hit = target.hurt(damageSource, damage);
-        if (!hit) {
+    private static void syncMeleeAttackAttributes(Villager villager) {
+        AttributeInstance attackDamage = villager.getAttribute(Attributes.ATTACK_DAMAGE);
+        if (attackDamage == null) {
             return;
         }
 
-        if (knockback > 0.0F) {
-            target.knockback(
-                    knockback * 0.5F,
-                    Mth.sin(villager.getYRot() * ((float) Math.PI / 180.0F)),
-                    -Mth.cos(villager.getYRot() * ((float) Math.PI / 180.0F))
-            );
-            villager.setDeltaMovement(villager.getDeltaMovement().multiply(0.6D, 1.0D, 0.6D));
+        double desiredBaseDamage = VillagerCombatRoles.meleeAttackDamageBase(villager);
+        if (attackDamage.getBaseValue() != desiredBaseDamage) {
+            attackDamage.setBaseValue(desiredBaseDamage);
         }
-
-        if (villager.level() instanceof ServerLevel serverLevel) {
-            EnchantmentHelper.doPostAttackEffectsWithItemSource(serverLevel, target, damageSource, weapon);
-        }
-        villager.setLastHurtMob(target);
     }
 
     private static void angerNearbyVillagers(Entity sourceEntity, LivingEntity attacker, double radius) {
