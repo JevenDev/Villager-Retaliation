@@ -280,9 +280,24 @@ final class VillagerRangedCombatHelper {
             villager.setItemInHand(hand, weapon.copy());
             weapon = villager.getItemInHand(hand);
         }
+        clampToSingleChargedProjectile(weapon);
 
         crossbowItem.performShooting(level, villager, hand, weapon, 1.6F, (float) (14 - level.getDifficulty().getId() * 4), target);
         villager.setItemInHand(hand, weapon.copy());
+    }
+
+    private static void clampToSingleChargedProjectile(ItemStack weapon) {
+        ChargedProjectiles chargedProjectiles = weapon.getOrDefault(DataComponents.CHARGED_PROJECTILES, ChargedProjectiles.EMPTY);
+        if (chargedProjectiles.isEmpty()) {
+            return;
+        }
+
+        List<ItemStack> projectiles = chargedProjectiles.getItems();
+        if (projectiles.size() <= 1) {
+            return;
+        }
+
+        weapon.set(DataComponents.CHARGED_PROJECTILES, ChargedProjectiles.of(projectiles.get(0).copyWithCount(1)));
     }
 
     private static int nextCrossbowPostLoadDelay(Villager villager) {

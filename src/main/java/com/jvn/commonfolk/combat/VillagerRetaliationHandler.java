@@ -219,6 +219,7 @@ public final class VillagerRetaliationHandler {
         if (villager.distanceToSqr(itemEntity) <= CommonfolkVillagerWeapons.WEAPON_PICKUP_REACH_SQR) {
             discardTemporaryWeapon(villager);
             CommonfolkVillagerWeapons.equipGroundWeapon(villager, itemEntity);
+            VillagerRangedCombatHelper.seedInitialAttackDelay(villager, villager.getMainHandItem());
             return false;
         }
 
