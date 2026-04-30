@@ -12,6 +12,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -264,6 +265,19 @@ public final class VillagerRetaliationHandler {
         }
     }
 
+    public static boolean blockTradingIfHostile(Villager villager, Player player) {
+        if (villager.level().isClientSide || !villager.isAlive() || !player.isAlive()) {
+            return false;
+        }
+
+        if (!isHostileTowards(villager, player)) {
+            return false;
+        }
+
+        spawnMadParticles(villager);
+        return true;
+    }
+
     private static void anger(Villager villager, LivingEntity attacker) {
         if (shouldIgnoreAttacker(attacker) || !villager.isAlive() || villager.isBaby() || attacker == villager) {
             return;
@@ -491,6 +505,22 @@ public final class VillagerRetaliationHandler {
         ANGER_TARGETS.put(villager.getUUID(), new AngerTarget(hostilityTag.getUUID(PERSISTENT_TARGET_UUID), lastSeenTick));
     }
 
+    private static boolean isHostileTowards(Villager villager, Player player) {
+        restorePersistedAngerIfNeeded(villager);
+        AngerTarget angerTarget = ANGER_TARGETS.get(villager.getUUID());
+        if (angerTarget == null) {
+            return false;
+        }
+
+        long gameTime = villager.level().getGameTime();
+        if (gameTime - angerTarget.lastSeenGameTick() >= CommonfolkConfig.AGGRO_DURATION_TICKS.get()) {
+            clearAnger(villager);
+            return false;
+        }
+
+        return angerTarget.targetId().equals(player.getUUID());
+    }
+
     private static void persistAnger(Villager villager, AngerTarget angerTarget) {
         CompoundTag hostilityTag = new CompoundTag();
         hostilityTag.putUUID(PERSISTENT_TARGET_UUID, angerTarget.targetId());
@@ -500,6 +530,15 @@ public final class VillagerRetaliationHandler {
 
     private static void clearPersistedAnger(Villager villager) {
         villager.getPersistentData().remove(PERSISTENT_TAG_ROOT);
+    }
+
+    private static void spawnMadParticles(Villager villager) {
+        if (!(villager.level() instanceof ServerLevel level)) {
+            return;
+        }
+
+        double y = villager.getY() + villager.getBbHeight() + 0.2D;
+        level.sendParticles(ParticleTypes.ANGRY_VILLAGER, villager.getX(), y, villager.getZ(), 5, 0.25D, 0.15D, 0.25D, 0.01D);
     }
 
     private static void handleDefensiveRole(Villager villager, long gameTime) {

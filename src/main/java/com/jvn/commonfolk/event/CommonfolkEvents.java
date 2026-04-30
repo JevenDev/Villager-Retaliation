@@ -6,11 +6,14 @@ import com.jvn.commonfolk.loot.WanderingTraderLootHandler;
 import com.jvn.commonfolk.villager.VillagerFleeBehaviorHandler;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.WanderingTrader;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.InteractionResult;
 import net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
 public final class CommonfolkEvents {
@@ -49,5 +52,17 @@ public final class CommonfolkEvents {
     public static void onEntityTickPost(EntityTickEvent.Post event) {
         VillagerRetaliationHandler.onEntityTickPost(event);
         VillagerFleeBehaviorHandler.onEntityTickPost(event);
+    }
+
+    public static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {
+        if (!(event.getTarget() instanceof Villager villager)
+                || !(event.getEntity() instanceof Player player)) {
+            return;
+        }
+
+        if (VillagerRetaliationHandler.blockTradingIfHostile(villager, player)) {
+            event.setCanceled(true);
+            event.setCancellationResult(InteractionResult.FAIL);
+        }
     }
 }
