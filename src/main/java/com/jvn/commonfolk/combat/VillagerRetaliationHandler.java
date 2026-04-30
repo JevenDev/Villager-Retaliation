@@ -144,6 +144,10 @@ public final class VillagerRetaliationHandler {
                 restoreCombatMovement(villager);
                 return;
             }
+            if (VillagerClericPotionHelper.tryOutOfCombatMilk(villager)) {
+                restoreCombatMovement(villager);
+                return;
+            }
             VillagerClericPotionHelper.clearState(villager);
             restoreCombatMovement(villager);
             return;

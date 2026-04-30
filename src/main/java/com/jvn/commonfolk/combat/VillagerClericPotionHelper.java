@@ -9,6 +9,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -40,12 +41,17 @@ final class VillagerClericPotionHelper {
     }
 
     static boolean tryCombat(Villager villager, LivingEntity target, ServerLevel level, double distanceSqr) {
-        if (!VillagerCombatRoles.isCleric(villager) || !CommonfolkConfig.CLERICS_USE_POTIONS.get()) {
-            return false;
-        }
-
         if (isDrinkingPotion(villager)) {
             return tickPotionDrinking(villager);
+        }
+
+        if (canUseMilkBucket(villager) && hasMilkCurableHarmfulEffect(villager)) {
+            startPotionDrinking(villager, ClericSelfPotion.MILK_BUCKET);
+            return true;
+        }
+
+        if (!canUseClericPotions(villager)) {
+            return false;
         }
 
         ClericSelfPotion selfPotion = chooseSelfPotion(villager, distanceSqr);
@@ -84,19 +90,34 @@ final class VillagerClericPotionHelper {
         return tickPotionDrinking(villager);
     }
 
+    static boolean tryOutOfCombatMilk(Villager villager) {
+        if (!canUseOutOfCombatMilk(villager)) {
+            return false;
+        }
+        if (isDrinkingPotion(villager)) {
+            return tickPotionDrinking(villager);
+        }
+        if (!hasMilkCurableHarmfulEffect(villager)) {
+            return false;
+        }
+
+        startPotionDrinking(villager, ClericSelfPotion.MILK_BUCKET);
+        return true;
+    }
+
     static boolean isActivelyHandlingPotion(Villager villager) {
-        if (!VillagerCombatRoles.isCleric(villager) || !CommonfolkConfig.CLERICS_USE_POTIONS.get()) {
+        if (!canUseMilkBucket(villager) && !canUseClericPotions(villager)) {
             return false;
         }
         if (isDrinkingPotion(villager)) {
             return true;
         }
-        if (CommonfolkPotionUtil.isUsingPotion(villager)) {
+        if (villager.isUsingItem() && CommonfolkPotionUtil.isDrinkableCombatConsumable(villager.getUseItem())) {
             return true;
         }
 
         ItemStack mainHand = villager.getMainHandItem();
-        return CommonfolkPotionUtil.isPotion(mainHand);
+        return CommonfolkPotionUtil.isPotion(mainHand) || mainHand.is(Items.MILK_BUCKET);
     }
 
     static boolean isDrinkingPotion(Villager villager) {
@@ -130,7 +151,7 @@ final class VillagerClericPotionHelper {
         if (potion == ClericSelfPotion.HEALING && villager.level() instanceof ServerLevel serverLevel) {
             HEALING_REDRINK_COOLDOWN_UNTIL.put(villager.getUUID(), serverLevel.getGameTime() + HEALING_REDRINK_COOLDOWN_TICKS);
         }
-        villager.setItemSlot(EquipmentSlot.MAINHAND, PotionContents.createItemStack(Items.SPLASH_POTION, Potions.HARMING));
+        villager.setItemSlot(EquipmentSlot.MAINHAND, defaultCombatHeldItem(villager));
     }
 
     private static void startPotionDrinking(Villager villager, ClericSelfPotion potion) {
@@ -178,6 +199,7 @@ final class VillagerClericPotionHelper {
 
     private static void applySelfPotion(Villager villager, ClericSelfPotion potion) {
         switch (potion) {
+            case MILK_BUCKET -> villager.removeAllEffects();
             case FIRE_RESISTANCE -> villager.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, FIRE_RESISTANCE_TICKS, 0));
             case WATER_BREATHING -> villager.addEffect(new MobEffectInstance(MobEffects.WATER_BREATHING, WATER_BREATHING_TICKS, 0));
             case SWIFTNESS -> villager.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, SWIFTNESS_TICKS, 0));
@@ -189,6 +211,7 @@ final class VillagerClericPotionHelper {
 
     private static ItemStack createDrinkStack(ClericSelfPotion potion) {
         return switch (potion) {
+            case MILK_BUCKET -> new ItemStack(Items.MILK_BUCKET);
             case FIRE_RESISTANCE -> PotionContents.createItemStack(Items.POTION, Potions.FIRE_RESISTANCE);
             case WATER_BREATHING -> PotionContents.createItemStack(Items.POTION, Potions.WATER_BREATHING);
             case SWIFTNESS -> PotionContents.createItemStack(Items.POTION, Potions.SWIFTNESS);
@@ -199,13 +222,43 @@ final class VillagerClericPotionHelper {
 
     private static void ensureDrinkVisualState(Villager villager, ClericSelfPotion potion) {
         ItemStack mainHand = villager.getMainHandItem();
-        if (!CommonfolkPotionUtil.isDrinkablePotion(mainHand)) {
+        if (!CommonfolkPotionUtil.isDrinkableCombatConsumable(mainHand)) {
             villager.setItemSlot(EquipmentSlot.MAINHAND, createDrinkStack(potion));
         }
 
-        if (!villager.isUsingItem() || !CommonfolkPotionUtil.isDrinkablePotion(villager.getUseItem())) {
+        if (!villager.isUsingItem() || !CommonfolkPotionUtil.isDrinkableCombatConsumable(villager.getUseItem())) {
             villager.startUsingItem(InteractionHand.MAIN_HAND);
         }
+    }
+
+    private static boolean hasMilkCurableHarmfulEffect(Villager villager) {
+        for (MobEffectInstance effectInstance : villager.getActiveEffects()) {
+            if (effectInstance.getEffect().value().getCategory() != MobEffectCategory.HARMFUL) {
+                continue;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean canUseClericPotions(Villager villager) {
+        return VillagerCombatRoles.isCleric(villager) && CommonfolkConfig.CLERICS_USE_POTIONS.get();
+    }
+
+    private static boolean canUseMilkBucket(Villager villager) {
+        return canUseClericPotions(villager)
+                || VillagerCombatRoles.isFarmer(villager) && CommonfolkConfig.FARMERS_USE_BREAD.get();
+    }
+
+    private static boolean canUseOutOfCombatMilk(Villager villager) {
+        return canUseMilkBucket(villager);
+    }
+
+    private static ItemStack defaultCombatHeldItem(Villager villager) {
+        if (canUseClericPotions(villager)) {
+            return PotionContents.createItemStack(Items.SPLASH_POTION, Potions.HARMING);
+        }
+        return ItemStack.EMPTY;
     }
 
     private static ItemStack selectSplashPotion(Villager villager, LivingEntity target, double distanceSqr) {
@@ -237,6 +290,7 @@ final class VillagerClericPotionHelper {
 
     private enum ClericSelfPotion {
         NONE,
+        MILK_BUCKET,
         FIRE_RESISTANCE,
         WATER_BREATHING,
         SWIFTNESS,

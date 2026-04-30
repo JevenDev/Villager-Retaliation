@@ -20,6 +20,10 @@ public final class CommonfolkPotionUtil {
         return stack.is(Items.POTION);
     }
 
+    public static boolean isDrinkableCombatConsumable(ItemStack stack) {
+        return isDrinkablePotion(stack) || stack.is(Items.MILK_BUCKET);
+    }
+
     public static boolean isHealingPotion(ItemStack stack) {
         PotionContents contents = stack.getOrDefault(DataComponents.POTION_CONTENTS, PotionContents.EMPTY);
         return isPotion(stack) && contents.is(Potions.HEALING);
@@ -31,6 +35,8 @@ public final class CommonfolkPotionUtil {
 
     public static boolean shouldSuppressCombatWhileUsingPotion(Villager villager) {
         return VillagerClericPotionHelper.isDrinkingPotion(villager)
-                || isUsingPotion(villager) && VillagerCombatRoles.isCleric(villager);
+                || villager.isUsingItem()
+                && isDrinkableCombatConsumable(villager.getUseItem())
+                && (VillagerCombatRoles.isCleric(villager) || VillagerCombatRoles.isFarmer(villager));
     }
 }

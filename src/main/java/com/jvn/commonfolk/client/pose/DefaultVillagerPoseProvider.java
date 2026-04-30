@@ -46,7 +46,7 @@ public final class DefaultVillagerPoseProvider implements VillagerPoseProvider<V
             return villager.swinging || attackTime > 0.0F ? VillagerArmPose.MELEE_WEAPON : VillagerArmPose.NONE;
         }
         if (isHoldingPotionItem(villager)) {
-            if (isHoldingDrinkablePotion(villager)) {
+            if (isHoldingDrinkableCombatConsumable(villager)) {
                 return VillagerArmPose.CASTING_OR_POTION;
             }
             return villager.swinging || attackTime > 0.0F ? VillagerArmPose.THROWING_ITEM : VillagerArmPose.HOLDING_ITEM;
@@ -60,7 +60,8 @@ public final class DefaultVillagerPoseProvider implements VillagerPoseProvider<V
     @Override
     public boolean shouldUseCombatModel(Villager villager) {
         if (villager.isUsingItem()
-                && (CommonfolkVillagerWeapons.isCrossbowWeapon(villager.getUseItem()) || villager.getUseItem().is(Items.POTION))) {
+                && (CommonfolkVillagerWeapons.isCrossbowWeapon(villager.getUseItem())
+                || CommonfolkPotionUtil.isDrinkableCombatConsumable(villager.getUseItem()))) {
             return true;
         }
 
@@ -104,11 +105,11 @@ public final class DefaultVillagerPoseProvider implements VillagerPoseProvider<V
     }
 
     private static boolean isHoldingPotionItem(Villager villager) {
-        return villager.isHolding(CommonfolkPotionUtil::isPotion);
+        return villager.isHolding(stack -> CommonfolkPotionUtil.isPotion(stack) || stack.is(Items.MILK_BUCKET));
     }
 
-    private static boolean isHoldingDrinkablePotion(Villager villager) {
-        return villager.isHolding(CommonfolkPotionUtil::isDrinkablePotion);
+    private static boolean isHoldingDrinkableCombatConsumable(Villager villager) {
+        return villager.isHolding(CommonfolkPotionUtil::isDrinkableCombatConsumable);
     }
 
     private static boolean isInCombat(Villager villager) {
