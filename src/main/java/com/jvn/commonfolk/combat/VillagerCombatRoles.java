@@ -19,6 +19,7 @@ import net.minecraft.world.item.alchemy.Potions;
 public final class VillagerCombatRoles {
     public static final float PLAYER_FIST_DAMAGE = 1.0F;
     private static final double VINDICATOR_STYLE_WEAPON_BASE_DAMAGE = 5.0D;
+    private static final float FARMER_BREAD_WEAPON_CHANCE = 0.12F;
     private static final Map<VillagerProfession, BooleanSupplier> FIGHT_BACK_RULES = createFightBackRules();
     private static final Map<VillagerProfession, Function<Villager, ItemStack>> PREFERRED_WEAPON_RULES = createPreferredWeaponRules();
     private static final Set<VillagerProfession> LOOT_WEAPON_PROFESSIONS = Set.of(
@@ -140,6 +141,7 @@ public final class VillagerCombatRoles {
         Map<VillagerProfession, BooleanSupplier> rules = new HashMap<>();
         rules.put(VillagerProfession.WEAPONSMITH, CommonfolkConfig.WEAPONSMITHS_FIGHT_BACK::get);
         rules.put(VillagerProfession.TOOLSMITH, CommonfolkConfig.TOOLSMITHS_FIGHT_BACK::get);
+        rules.put(VillagerProfession.MASON, CommonfolkConfig.TOOLSMITHS_FIGHT_BACK::get);
         rules.put(VillagerProfession.ARMORER, CommonfolkConfig.ARMORERS_FIGHT_BACK::get);
         rules.put(VillagerProfession.FLETCHER, CommonfolkConfig.FLETCHERS_FIGHT_BACK::get);
         rules.put(VillagerProfession.BUTCHER, CommonfolkConfig.BUTCHERS_FIGHT_BACK::get);
@@ -151,9 +153,17 @@ public final class VillagerCombatRoles {
         rules.put(VillagerProfession.WEAPONSMITH, ignored -> new ItemStack(Items.IRON_SWORD));
         rules.put(VillagerProfession.ARMORER, ignored -> new ItemStack(Items.IRON_SWORD));
         rules.put(VillagerProfession.TOOLSMITH, ignored -> new ItemStack(Items.IRON_AXE));
+        rules.put(VillagerProfession.MASON, ignored -> new ItemStack(Items.IRON_PICKAXE));
         rules.put(VillagerProfession.BUTCHER, ignored -> new ItemStack(Items.IRON_AXE));
         rules.put(VillagerProfession.FLETCHER, VillagerCombatRoles::fletcherRangedWeapon);
-        rules.put(VillagerProfession.FARMER, ignored -> CommonfolkConfig.FARMERS_USE_BREAD.get() ? new ItemStack(Items.BREAD) : ItemStack.EMPTY);
+        rules.put(VillagerProfession.FARMER, villager -> {
+            if (!CommonfolkConfig.FARMERS_USE_BREAD.get()) {
+                return ItemStack.EMPTY;
+            }
+            return villager.getRandom().nextFloat() < FARMER_BREAD_WEAPON_CHANCE
+                    ? new ItemStack(Items.BREAD)
+                    : new ItemStack(Items.IRON_HOE);
+        });
         rules.put(VillagerProfession.CLERIC, ignored -> CommonfolkConfig.CLERICS_USE_POTIONS.get()
                 ? PotionContents.createItemStack(Items.SPLASH_POTION, Potions.HARMING)
                 : ItemStack.EMPTY);
