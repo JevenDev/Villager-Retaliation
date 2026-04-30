@@ -8,6 +8,7 @@ import java.util.UUID;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.util.Unit;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -275,10 +276,13 @@ final class VillagerRangedCombatHelper {
         }
 
         if (!CrossbowItem.isCharged(weapon)) {
-            weapon.set(DataComponents.CHARGED_PROJECTILES, ChargedProjectiles.of(List.of(new ItemStack(Items.ARROW))));
+            weapon.set(DataComponents.CHARGED_PROJECTILES, ChargedProjectiles.of(List.of(resolveDefaultCrossbowProjectile(villager, weapon))));
+            villager.setItemInHand(hand, weapon.copy());
+            weapon = villager.getItemInHand(hand);
         }
 
         crossbowItem.performShooting(level, villager, hand, weapon, 1.6F, (float) (14 - level.getDifficulty().getId() * 4), target);
+        villager.setItemInHand(hand, weapon.copy());
     }
 
     private static int nextCrossbowPostLoadDelay(Villager villager) {
@@ -296,8 +300,20 @@ final class VillagerRangedCombatHelper {
         InteractionHand hand = CommonfolkVillagerWeapons.getHoldingHand(villager, CommonfolkVillagerWeapons::isCrossbowWeapon);
         ItemStack weapon = villager.getItemInHand(hand);
         if (weapon.getItem() instanceof CrossbowItem && !CrossbowItem.isCharged(weapon)) {
-            weapon.set(DataComponents.CHARGED_PROJECTILES, ChargedProjectiles.of(List.of(new ItemStack(Items.ARROW))));
+            weapon.set(DataComponents.CHARGED_PROJECTILES, ChargedProjectiles.of(List.of(resolveDefaultCrossbowProjectile(villager, weapon))));
+            villager.setItemInHand(hand, weapon.copy());
         }
+    }
+
+    private static ItemStack resolveDefaultCrossbowProjectile(Villager villager, ItemStack crossbow) {
+        ItemStack projectile = villager.getProjectile(crossbow);
+        if (projectile.isEmpty()) {
+            projectile = new ItemStack(Items.ARROW);
+        } else {
+            projectile = projectile.copyWithCount(1);
+        }
+        projectile.set(DataComponents.INTANGIBLE_PROJECTILE, Unit.INSTANCE);
+        return projectile;
     }
 
     private enum CrossbowState {

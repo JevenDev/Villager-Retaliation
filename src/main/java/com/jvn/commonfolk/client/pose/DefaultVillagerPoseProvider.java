@@ -30,7 +30,13 @@ public final class DefaultVillagerPoseProvider implements VillagerPoseProvider<V
             return VillagerArmPose.CROSSBOW_HOLD;
         }
         if (isHoldingCrossbow(villager) && isInCombat(villager)) {
-            return VillagerArmPose.CROSSBOW_HOLD;
+            return VillagerArmPose.HOLDING_ITEM;
+        }
+        if (isHoldingBow(villager) && isInCombat(villager)) {
+            return VillagerArmPose.HOLDING_ITEM;
+        }
+        if (isHoldingTrident(villager) && isInCombat(villager)) {
+            return villager.swinging || attackTime > 0.0F ? VillagerArmPose.MELEE_WEAPON : VillagerArmPose.HOLDING_ITEM;
         }
         if (CommonfolkVillagerWeapons.hasUsableWeapon(villager)) {
             return isInCombat(villager) ? VillagerArmPose.MELEE_WEAPON : VillagerArmPose.HOLDING_ITEM;
@@ -71,6 +77,14 @@ public final class DefaultVillagerPoseProvider implements VillagerPoseProvider<V
 
     private static boolean isHoldingCrossbow(Villager villager) {
         return villager.isHolding(CommonfolkVillagerWeapons::isCrossbowWeapon);
+    }
+
+    private static boolean isHoldingBow(Villager villager) {
+        return villager.isHolding(CommonfolkVillagerWeapons::isBowWeapon);
+    }
+
+    private static boolean isHoldingTrident(Villager villager) {
+        return villager.isHolding(CommonfolkVillagerWeapons::isTridentWeapon);
     }
 
     private static boolean isHoldingChargedCrossbow(Villager villager) {
