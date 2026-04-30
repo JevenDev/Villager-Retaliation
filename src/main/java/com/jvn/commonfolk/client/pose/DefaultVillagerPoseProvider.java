@@ -1,5 +1,6 @@
 package com.jvn.commonfolk.client.pose;
 
+import com.jvn.commonfolk.combat.CommonfolkPotionUtil;
 import com.jvn.commonfolk.util.CommonfolkVillagerCombatUtil;
 import com.jvn.commonfolk.villager.CommonfolkVillagerWeapons;
 import net.minecraft.world.entity.npc.Villager;
@@ -45,6 +46,9 @@ public final class DefaultVillagerPoseProvider implements VillagerPoseProvider<V
             return villager.swinging || attackTime > 0.0F ? VillagerArmPose.MELEE_WEAPON : VillagerArmPose.NONE;
         }
         if (isHoldingPotionItem(villager)) {
+            if (isHoldingDrinkablePotion(villager)) {
+                return VillagerArmPose.CASTING_OR_POTION;
+            }
             return villager.swinging || attackTime > 0.0F ? VillagerArmPose.THROWING_ITEM : VillagerArmPose.HOLDING_ITEM;
         }
         if (villager.swinging || villager.isAggressive() || villager.isChasing() || villager.getTarget() != null) {
@@ -100,7 +104,11 @@ public final class DefaultVillagerPoseProvider implements VillagerPoseProvider<V
     }
 
     private static boolean isHoldingPotionItem(Villager villager) {
-        return villager.isHolding(stack -> stack.is(Items.POTION) || stack.is(Items.SPLASH_POTION) || stack.is(Items.LINGERING_POTION));
+        return villager.isHolding(CommonfolkPotionUtil::isPotion);
+    }
+
+    private static boolean isHoldingDrinkablePotion(Villager villager) {
+        return villager.isHolding(CommonfolkPotionUtil::isDrinkablePotion);
     }
 
     private static boolean isInCombat(Villager villager) {

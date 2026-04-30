@@ -11,6 +11,7 @@ import java.util.UUID;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -34,6 +35,7 @@ import net.minecraft.world.item.enchantment.providers.VanillaEnchantmentProvider
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
 public final class VillagerRetaliationHandler {
@@ -44,6 +46,25 @@ public final class VillagerRetaliationHandler {
     private static final Map<UUID, TemporaryWeaponState> TEMPORARY_WEAPONS = new HashMap<>();
 
     private VillagerRetaliationHandler() {
+    }
+
+    public static void onLivingDamagePre(LivingIncomingDamageEvent event) {
+        if (!(event.getEntity() instanceof Villager villager)) {
+            return;
+        }
+        if (!VillagerCombatRoles.isCleric(villager) || !CommonfolkConfig.CLERICS_USE_POTIONS.get()) {
+            return;
+        }
+
+        float damage = event.getAmount();
+        DamageSource source = event.getSource();
+        if (source.getEntity() == villager) {
+            event.setAmount(0.0F);
+            return;
+        }
+        if (source.is(DamageTypeTags.WITCH_RESISTANT_TO)) {
+            event.setAmount(damage * 0.15F);
+        }
     }
 
     public static void onLivingDamage(LivingDamageEvent.Post event) {
@@ -119,6 +140,10 @@ public final class VillagerRetaliationHandler {
         AngerTarget angerTarget = ANGER_TARGETS.get(villager.getUUID());
         if (angerTarget == null) {
             VillagerRangedCombatHelper.clearState(villager);
+            if (VillagerClericPotionHelper.tickDrinkingIfActive(villager)) {
+                restoreCombatMovement(villager);
+                return;
+            }
             VillagerClericPotionHelper.clearState(villager);
             restoreCombatMovement(villager);
             return;
@@ -158,16 +183,26 @@ public final class VillagerRetaliationHandler {
         }
 
         equipCombatWeapon(villager);
+
+        double distanceSqr = villager.distanceToSqr(target);
+        villager.getLookControl().setLookAt(target, 30.0F, 30.0F);
+        if (VillagerClericPotionHelper.tickDrinkingIfActive(villager)) {
+            return;
+        }
+
         boostCombatMovement(villager);
 
         handleDefensiveRole(villager, gameTime);
 
-        double distanceSqr = villager.distanceToSqr(target);
-        villager.getLookControl().setLookAt(target, 30.0F, 30.0F);
+        if (VillagerClericPotionHelper.tryCombat(villager, target, level, distanceSqr)) {
+            return;
+        }
         if (isUsingRangedCombatMode(villager) && VillagerRangedCombatHelper.tryAttack(villager, target, level, distanceSqr)) {
             return;
         }
-        if (VillagerClericPotionHelper.tryCombat(villager, target, level, distanceSqr)) {
+
+        if (CommonfolkPotionUtil.shouldSuppressCombatWhileUsingPotion(villager)) {
+            villager.getNavigation().stop();
             return;
         }
 
@@ -242,9 +277,12 @@ public final class VillagerRetaliationHandler {
         NEXT_ATTACK_TICKS.remove(villager.getUUID());
         NEXT_SPECIAL_TICKS.remove(villager.getUUID());
         VillagerRangedCombatHelper.clearState(villager);
-        VillagerClericPotionHelper.clearState(villager);
+        boolean preservePotionUse = VillagerClericPotionHelper.tickDrinkingIfActive(villager);
+        if (!preservePotionUse) {
+            VillagerClericPotionHelper.clearState(villager);
+        }
         restoreCombatMovement(villager);
-        if (restoreWeapon) {
+        if (restoreWeapon && !preservePotionUse) {
             restoreTemporaryWeapon(villager);
         } else {
             TEMPORARY_WEAPONS.remove(villager.getUUID());
@@ -346,6 +384,10 @@ public final class VillagerRetaliationHandler {
     }
 
     private static void equipCombatWeapon(Villager villager) {
+        if (VillagerClericPotionHelper.isActivelyHandlingPotion(villager)) {
+            return;
+        }
+
         if (CommonfolkVillagerWeapons.maintainAcquiredWeaponAuthority(villager)) {
             discardTemporaryWeapon(villager);
             return;
@@ -353,9 +395,6 @@ public final class VillagerRetaliationHandler {
 
         TemporaryWeaponState state = TEMPORARY_WEAPONS.get(villager.getUUID());
         if (state != null) {
-            if (VillagerClericPotionHelper.isActivelyHandlingPotion(villager)) {
-                return;
-            }
             // Preserve runtime components (charged projectiles, durability) while angry.
             if (!ItemStack.isSameItem(villager.getMainHandItem(), state.equippedWeapon())) {
                 villager.setItemSlot(EquipmentSlot.MAINHAND, state.equippedWeapon().copy());

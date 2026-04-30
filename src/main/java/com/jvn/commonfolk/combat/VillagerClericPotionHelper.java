@@ -6,6 +6,8 @@ import java.util.Map;
 import java.util.UUID;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.tags.DamageTypeTags;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -20,12 +22,19 @@ import net.minecraft.world.item.alchemy.Potions;
 
 final class VillagerClericPotionHelper {
     private static final Map<UUID, Integer> ATTACK_DELAY = new HashMap<>();
-    private static final Map<UUID, ClericSelfPotion> DRINKING_POTIONS = new HashMap<>();
+    private static final Map<UUID, PotionUseState> DRINKING_POTIONS = new HashMap<>();
+    private static final Map<UUID, Long> HEALING_REDRINK_COOLDOWN_UNTIL = new HashMap<>();
     private static final double MAX_THROW_DISTANCE_SQR = 144.0D;
     private static final int THROW_INTERVAL_TICKS = 60;
-    private static final int DRINK_COOLDOWN_TICKS = 60;
-    private static final int FIRE_RESISTANCE_TICKS = 20 * 20;
-    private static final int SWIFTNESS_TICKS = 20 * 15;
+    private static final int DRINK_COOLDOWN_TICKS = 0;
+    private static final int HEALING_REDRINK_COOLDOWN_TICKS = 40;
+    private static final int FIRE_RESISTANCE_TICKS = 20 * 180;
+    private static final int WATER_BREATHING_TICKS = 20 * 180;
+    private static final int SWIFTNESS_TICKS = 20 * 180;
+    private static final float FIRE_RESISTANCE_TRIGGER_CHANCE = 0.15F;
+    private static final float WATER_BREATHING_TRIGGER_CHANCE = 0.15F;
+    private static final float HEALING_TRIGGER_CHANCE = 0.05F;
+    private static final float SWIFTNESS_TRIGGER_CHANCE = 0.5F;
 
     private VillagerClericPotionHelper() {
     }
@@ -35,7 +44,7 @@ final class VillagerClericPotionHelper {
             return false;
         }
 
-        if (villager.isUsingItem()) {
+        if (isDrinkingPotion(villager)) {
             return tickPotionDrinking(villager);
         }
 
@@ -68,68 +77,100 @@ final class VillagerClericPotionHelper {
         DRINKING_POTIONS.remove(villager.getUUID());
     }
 
+    static boolean tickDrinkingIfActive(Villager villager) {
+        if (!isDrinkingPotion(villager)) {
+            return false;
+        }
+        return tickPotionDrinking(villager);
+    }
+
     static boolean isActivelyHandlingPotion(Villager villager) {
         if (!VillagerCombatRoles.isCleric(villager) || !CommonfolkConfig.CLERICS_USE_POTIONS.get()) {
             return false;
         }
-        if (villager.isUsingItem() && villager.getUseItem().is(Items.POTION)) {
+        if (isDrinkingPotion(villager)) {
+            return true;
+        }
+        if (CommonfolkPotionUtil.isUsingPotion(villager)) {
             return true;
         }
 
         ItemStack mainHand = villager.getMainHandItem();
-        return mainHand.is(Items.POTION) || mainHand.is(Items.SPLASH_POTION) || mainHand.is(Items.LINGERING_POTION);
+        return CommonfolkPotionUtil.isPotion(mainHand);
+    }
+
+    static boolean isDrinkingPotion(Villager villager) {
+        return DRINKING_POTIONS.containsKey(villager.getUUID());
     }
 
     private static boolean tickPotionDrinking(Villager villager) {
-        ClericSelfPotion potion = DRINKING_POTIONS.get(villager.getUUID());
-        if (potion == null) {
-            return true;
-        }
-        if (!villager.isUsingItem() || !villager.getUseItem().is(Items.POTION)) {
+        PotionUseState state = DRINKING_POTIONS.get(villager.getUUID());
+        if (state == null || !villager.isAlive()) {
             DRINKING_POTIONS.remove(villager.getUUID());
-            villager.setItemSlot(EquipmentSlot.MAINHAND, PotionContents.createItemStack(Items.SPLASH_POTION, Potions.HARMING));
+            return false;
+        }
+
+        ensureDrinkVisualState(villager, state.potion());
+        int ticksLeft = state.ticksLeft() - 1;
+        if (ticksLeft <= 0) {
+            finishPotionDrinking(villager, state.potion());
             return true;
         }
 
-        ItemStack useItem = villager.getUseItem();
-        if (villager.getTicksUsingItem() < useItem.getUseDuration(villager)) {
-            return true;
-        }
+        villager.getNavigation().stop();
+        DRINKING_POTIONS.put(villager.getUUID(), state.withTicksLeft(ticksLeft));
+        return true;
+    }
 
+    private static void finishPotionDrinking(Villager villager, ClericSelfPotion potion) {
         villager.stopUsingItem();
         DRINKING_POTIONS.remove(villager.getUUID());
         applySelfPotion(villager, potion);
         ATTACK_DELAY.put(villager.getUUID(), DRINK_COOLDOWN_TICKS);
+        if (potion == ClericSelfPotion.HEALING && villager.level() instanceof ServerLevel serverLevel) {
+            HEALING_REDRINK_COOLDOWN_UNTIL.put(villager.getUUID(), serverLevel.getGameTime() + HEALING_REDRINK_COOLDOWN_TICKS);
+        }
         villager.setItemSlot(EquipmentSlot.MAINHAND, PotionContents.createItemStack(Items.SPLASH_POTION, Potions.HARMING));
-        return true;
     }
 
     private static void startPotionDrinking(Villager villager, ClericSelfPotion potion) {
-        ItemStack drinkStack = switch (potion) {
-            case FIRE_RESISTANCE -> PotionContents.createItemStack(Items.POTION, Potions.FIRE_RESISTANCE);
-            case SWIFTNESS -> PotionContents.createItemStack(Items.POTION, Potions.SWIFTNESS);
-            case HEALING -> PotionContents.createItemStack(Items.POTION, Potions.HEALING);
-            case NONE -> ItemStack.EMPTY;
-        };
+        ItemStack drinkStack = createDrinkStack(potion);
         if (drinkStack.isEmpty()) {
             return;
         }
 
         villager.getNavigation().stop();
         villager.setItemSlot(EquipmentSlot.MAINHAND, drinkStack);
-        DRINKING_POTIONS.put(villager.getUUID(), potion);
         villager.startUsingItem(InteractionHand.MAIN_HAND);
+        int useDuration = Math.max(2, drinkStack.getUseDuration(villager));
+        int manualDrinkDuration = useDuration - 1;
+        DRINKING_POTIONS.put(villager.getUUID(), new PotionUseState(potion, manualDrinkDuration, villager.getHealth()));
         villager.playSound(SoundEvents.WITCH_DRINK, 1.0F, 0.8F + villager.getRandom().nextFloat() * 0.4F);
     }
 
     private static ClericSelfPotion chooseSelfPotion(Villager villager, double distanceSqr) {
-        if (villager.isOnFire() && !villager.hasEffect(MobEffects.FIRE_RESISTANCE)) {
+        if (villager.getRandom().nextFloat() < WATER_BREATHING_TRIGGER_CHANCE
+                && villager.isEyeInFluid(FluidTags.WATER)
+                && !villager.hasEffect(MobEffects.WATER_BREATHING)) {
+            return ClericSelfPotion.WATER_BREATHING;
+        }
+        if (villager.getRandom().nextFloat() < FIRE_RESISTANCE_TRIGGER_CHANCE
+                && (villager.isOnFire()
+                || villager.getLastDamageSource() != null && villager.getLastDamageSource().is(DamageTypeTags.IS_FIRE))
+                && !villager.hasEffect(MobEffects.FIRE_RESISTANCE)) {
             return ClericSelfPotion.FIRE_RESISTANCE;
         }
-        if (villager.getHealth() < villager.getMaxHealth() * 0.55F) {
+        if (villager.getRandom().nextFloat() < HEALING_TRIGGER_CHANCE
+                && villager.level() instanceof ServerLevel serverLevel
+                && serverLevel.getGameTime() >= HEALING_REDRINK_COOLDOWN_UNTIL.getOrDefault(villager.getUUID(), 0L)
+                && villager.getHealth() < villager.getMaxHealth()) {
             return ClericSelfPotion.HEALING;
         }
-        if (distanceSqr > 121.0D && !villager.hasEffect(MobEffects.MOVEMENT_SPEED) && villager.getRandom().nextFloat() < 0.5F) {
+        if (villager.getRandom().nextFloat() < SWIFTNESS_TRIGGER_CHANCE
+                && villager.getTarget() != null
+                && distanceSqr > 121.0D
+                && !villager.hasEffect(MobEffects.MOVEMENT_SPEED)
+        ) {
             return ClericSelfPotion.SWIFTNESS;
         }
         return ClericSelfPotion.NONE;
@@ -138,10 +179,32 @@ final class VillagerClericPotionHelper {
     private static void applySelfPotion(Villager villager, ClericSelfPotion potion) {
         switch (potion) {
             case FIRE_RESISTANCE -> villager.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, FIRE_RESISTANCE_TICKS, 0));
+            case WATER_BREATHING -> villager.addEffect(new MobEffectInstance(MobEffects.WATER_BREATHING, WATER_BREATHING_TICKS, 0));
             case SWIFTNESS -> villager.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, SWIFTNESS_TICKS, 0));
             case HEALING -> villager.heal(8.0F);
             case NONE -> {
             }
+        }
+    }
+
+    private static ItemStack createDrinkStack(ClericSelfPotion potion) {
+        return switch (potion) {
+            case FIRE_RESISTANCE -> PotionContents.createItemStack(Items.POTION, Potions.FIRE_RESISTANCE);
+            case WATER_BREATHING -> PotionContents.createItemStack(Items.POTION, Potions.WATER_BREATHING);
+            case SWIFTNESS -> PotionContents.createItemStack(Items.POTION, Potions.SWIFTNESS);
+            case HEALING -> PotionContents.createItemStack(Items.POTION, Potions.HEALING);
+            case NONE -> ItemStack.EMPTY;
+        };
+    }
+
+    private static void ensureDrinkVisualState(Villager villager, ClericSelfPotion potion) {
+        ItemStack mainHand = villager.getMainHandItem();
+        if (!CommonfolkPotionUtil.isDrinkablePotion(mainHand)) {
+            villager.setItemSlot(EquipmentSlot.MAINHAND, createDrinkStack(potion));
+        }
+
+        if (!villager.isUsingItem() || !CommonfolkPotionUtil.isDrinkablePotion(villager.getUseItem())) {
+            villager.startUsingItem(InteractionHand.MAIN_HAND);
         }
     }
 
@@ -175,7 +238,14 @@ final class VillagerClericPotionHelper {
     private enum ClericSelfPotion {
         NONE,
         FIRE_RESISTANCE,
+        WATER_BREATHING,
         SWIFTNESS,
         HEALING
+    }
+
+    private record PotionUseState(ClericSelfPotion potion, int ticksLeft, float startHealth) {
+        private PotionUseState withTicksLeft(int ticksLeft) {
+            return new PotionUseState(this.potion, ticksLeft, this.startHealth);
+        }
     }
 }

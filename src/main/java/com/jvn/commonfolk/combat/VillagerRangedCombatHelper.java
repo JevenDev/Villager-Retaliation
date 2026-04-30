@@ -40,6 +40,11 @@ final class VillagerRangedCombatHelper {
     }
 
     static boolean tryAttack(Villager villager, LivingEntity target, ServerLevel level, double distanceSqr) {
+        if (CommonfolkPotionUtil.shouldSuppressCombatWhileUsingPotion(villager)) {
+            villager.getNavigation().stop();
+            return true;
+        }
+
         ItemStack rangedWeapon = CommonfolkVillagerWeapons.getPrimaryWeapon(villager);
         if (rangedWeapon.isEmpty() || !CommonfolkVillagerWeapons.isRangedWeapon(rangedWeapon)) {
             return false;
@@ -73,7 +78,10 @@ final class VillagerRangedCombatHelper {
         ATTACK_DELAY.remove(villager.getUUID());
         CROSSBOW_STATE.remove(villager.getUUID());
         if (villager.isUsingItem()) {
-            villager.stopUsingItem();
+            ItemStack using = villager.getUseItem();
+            if (CommonfolkVillagerWeapons.isBowWeapon(using) || CommonfolkVillagerWeapons.isCrossbowWeapon(using)) {
+                villager.stopUsingItem();
+            }
         }
     }
 

@@ -14,6 +14,7 @@ public class Commonfolk {
 
     public Commonfolk(IEventBus modEventBus, ModContainer modContainer) {
         modContainer.registerConfig(ModConfig.Type.COMMON, CommonfolkConfig.SPEC);
+        NeoForge.EVENT_BUS.addListener(CommonfolkEvents::onLivingDamagePre);
         NeoForge.EVENT_BUS.addListener(CommonfolkEvents::onLivingDamage);
         NeoForge.EVENT_BUS.addListener(CommonfolkEvents::onLivingDeath);
         NeoForge.EVENT_BUS.addListener(CommonfolkEvents::onLivingDrops);

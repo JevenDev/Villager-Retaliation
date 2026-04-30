@@ -9,6 +9,7 @@ import net.minecraft.world.entity.npc.WanderingTrader;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
+import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
 public final class CommonfolkEvents {
@@ -25,6 +26,10 @@ public final class CommonfolkEvents {
 
     public static void onLivingDamage(LivingDamageEvent.Post event) {
         VillagerRetaliationHandler.onLivingDamage(event);
+    }
+
+    public static void onLivingDamagePre(LivingIncomingDamageEvent event) {
+        VillagerRetaliationHandler.onLivingDamagePre(event);
     }
 
     public static void onLivingDeath(LivingDeathEvent event) {
