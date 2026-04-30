@@ -23,6 +23,7 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.WanderingTrader;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
@@ -65,16 +66,20 @@ public final class VillagerRetaliationHandler {
     }
 
     public static void onLivingDeath(LivingDeathEvent event) {
-        if (!(event.getEntity() instanceof Villager villager)) {
+        Entity deceased = event.getEntity();
+        if (deceased instanceof Villager villager) {
+            // Keep temporary combat weapons equipped on death so vanilla equipment drops can roll.
+            clearAnger(villager, false);
+        } else if (!(deceased instanceof WanderingTrader)) {
             return;
         }
 
-        // Keep temporary combat weapons equipped on death so vanilla equipment drops can roll.
-        clearAnger(villager, false);
         if (!CommonfolkConfig.ENABLE_VILLAGER_RETALIATION.get()
                 || !CommonfolkConfig.KILLING_VILLAGER_AGGROS_NEARBY_VILLAGERS.get()
-                || villager.isBaby()
-                || !(villager.level() instanceof ServerLevel level)) {
+                || !(deceased.level() instanceof ServerLevel level)) {
+            return;
+        }
+        if (deceased instanceof Villager villager && villager.isBaby()) {
             return;
         }
 
@@ -83,7 +88,7 @@ public final class VillagerRetaliationHandler {
             return;
         }
 
-        angerNearbyVillagers(villager, attacker.get(), CommonfolkConfig.VILLAGER_KILL_AGGRO_RADIUS.get());
+        angerNearbyVillagers(deceased, attacker.get(), CommonfolkConfig.VILLAGER_KILL_AGGRO_RADIUS.get());
     }
 
     public static void onEntityTickPre(EntityTickEvent.Pre event) {
@@ -118,7 +123,7 @@ public final class VillagerRetaliationHandler {
             return;
         }
 
-        if (!(villager.level() instanceof ServerLevel level) || level.getGameTime() >= angerTarget.expiresAt()) {
+        if (!(villager.level() instanceof ServerLevel level)) {
             clearAnger(villager);
             return;
         }
@@ -139,6 +144,14 @@ public final class VillagerRetaliationHandler {
         villager.setChasing(true);
         villager.setTarget(target);
 
+        long gameTime = level.getGameTime();
+        if (villager.hasLineOfSight(target)) {
+            ANGER_TARGETS.put(villager.getUUID(), angerTarget.withLastSeenGameTick(gameTime));
+        } else if (gameTime - angerTarget.lastSeenGameTick() >= CommonfolkConfig.AGGRO_DURATION_TICKS.get()) {
+            clearAnger(villager);
+            return;
+        }
+
         if (tryAcquireGroundWeapon(villager)) {
             return;
         }
@@ -146,7 +159,7 @@ public final class VillagerRetaliationHandler {
         equipCombatWeapon(villager);
         boostCombatMovement(villager);
 
-        handleDefensiveRole(villager, level.getGameTime());
+        handleDefensiveRole(villager, gameTime);
 
         double distanceSqr = villager.distanceToSqr(target);
         villager.getLookControl().setLookAt(target, 30.0F, 30.0F);
@@ -158,10 +171,10 @@ public final class VillagerRetaliationHandler {
         }
 
         villager.getNavigation().moveTo(target, VillagerCombatRoles.movementSpeed(villager));
-        if (!VillagerCombatRoles.isFletcher(villager) && canMeleeHit(villager, target) && attackReady(villager, level.getGameTime())) {
+        if (!VillagerCombatRoles.isFletcher(villager) && canMeleeHit(villager, target) && attackReady(villager, gameTime)) {
             villager.swing(selectAttackHand(villager), true);
             target.hurt(villager.damageSources().mobAttack(villager), VillagerCombatRoles.meleeDamage(villager));
-            NEXT_ATTACK_TICKS.put(villager.getUUID(), level.getGameTime() + VillagerCombatRoles.attackCooldown(villager));
+            NEXT_ATTACK_TICKS.put(villager.getUUID(), gameTime + VillagerCombatRoles.attackCooldown(villager));
         }
     }
 
@@ -170,8 +183,8 @@ public final class VillagerRetaliationHandler {
             return;
         }
 
-        long expiresAt = villager.level().getGameTime() + CommonfolkConfig.AGGRO_DURATION_TICKS.get();
-        ANGER_TARGETS.put(villager.getUUID(), new AngerTarget(attacker.getUUID(), expiresAt));
+        long gameTime = villager.level().getGameTime();
+        ANGER_TARGETS.put(villager.getUUID(), new AngerTarget(attacker.getUUID(), gameTime));
     }
 
     private static void tryAcquireHostileTarget(Villager villager) {
@@ -265,14 +278,14 @@ public final class VillagerRetaliationHandler {
         return villager.getBoundingBox().inflate(1.0D).intersects(target.getBoundingBox());
     }
 
-    private static void angerNearbyVillagers(Villager sourceVillager, LivingEntity attacker, double radius) {
-        if (!(sourceVillager.level() instanceof ServerLevel level)) {
+    private static void angerNearbyVillagers(Entity sourceEntity, LivingEntity attacker, double radius) {
+        if (!(sourceEntity.level() instanceof ServerLevel level)) {
             return;
         }
 
-        AABB area = sourceVillager.getBoundingBox().inflate(radius);
+        AABB area = sourceEntity.getBoundingBox().inflate(radius);
         for (Villager nearby : level.getEntitiesOfClass(Villager.class, area)) {
-            if (nearby != sourceVillager && !nearby.isBaby()) {
+            if (nearby != sourceEntity && !nearby.isBaby()) {
                 anger(nearby, attacker);
             }
         }
@@ -423,7 +436,13 @@ public final class VillagerRetaliationHandler {
         }
     }
 
-    private record AngerTarget(UUID targetId, long expiresAt) {
+    private record AngerTarget(UUID targetId, long lastSeenGameTick) {
+        private AngerTarget withLastSeenGameTick(long gameTime) {
+            if (gameTime == this.lastSeenGameTick) {
+                return this;
+            }
+            return new AngerTarget(this.targetId, gameTime);
+        }
     }
 
     private record TemporaryWeaponState(ItemStack previousMainHand, ItemStack equippedWeapon, float previousDropChance) {
