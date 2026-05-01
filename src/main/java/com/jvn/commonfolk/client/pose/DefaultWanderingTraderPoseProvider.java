@@ -28,11 +28,20 @@ public final class DefaultWanderingTraderPoseProvider implements VillagerPosePro
         if (isHoldingChargedCrossbow(trader)) {
             return VillagerArmPose.CROSSBOW_HOLD;
         }
-        if (CommonfolkVillagerWeapons.isRangedWeapon(primaryHeldItem(trader)) && isInCombat(trader)) {
+        if (isHoldingCrossbow(trader) && isInCombat(trader)) {
             return VillagerArmPose.HOLDING_ITEM;
+        }
+        if (isHoldingBow(trader) && isInCombat(trader)) {
+            return VillagerArmPose.HOLDING_ITEM;
+        }
+        if (isHoldingTrident(trader) && isInCombat(trader)) {
+            return trader.swinging || attackTime > 0.0F ? VillagerArmPose.MELEE_WEAPON : VillagerArmPose.HOLDING_ITEM;
         }
         if (hasUsableWeapon(trader)) {
             return isInCombat(trader) ? VillagerArmPose.MELEE_WEAPON : VillagerArmPose.HOLDING_ITEM;
+        }
+        if (isHoldingRangedWeapon(trader)) {
+            return trader.swinging || attackTime > 0.0F ? VillagerArmPose.MELEE_WEAPON : VillagerArmPose.NONE;
         }
         if (trader.swinging || trader.isAggressive() || trader.getTarget() != null) {
             return VillagerArmPose.MELEE_WEAPON;
@@ -62,6 +71,22 @@ public final class DefaultWanderingTraderPoseProvider implements VillagerPosePro
         }
 
         return !main.isEmpty() ? main : off;
+    }
+
+    private static boolean isHoldingRangedWeapon(WanderingTrader trader) {
+        return CommonfolkVillagerWeapons.isRangedWeapon(primaryHeldItem(trader));
+    }
+
+    private static boolean isHoldingCrossbow(WanderingTrader trader) {
+        return CommonfolkVillagerWeapons.isCrossbowWeapon(primaryHeldItem(trader));
+    }
+
+    private static boolean isHoldingBow(WanderingTrader trader) {
+        return CommonfolkVillagerWeapons.isBowWeapon(primaryHeldItem(trader));
+    }
+
+    private static boolean isHoldingTrident(WanderingTrader trader) {
+        return CommonfolkVillagerWeapons.isTridentWeapon(primaryHeldItem(trader));
     }
 
     private static boolean hasUsableWeapon(WanderingTrader trader) {
