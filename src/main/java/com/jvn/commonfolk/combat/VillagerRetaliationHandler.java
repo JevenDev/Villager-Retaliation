@@ -134,6 +134,7 @@ public final class VillagerRetaliationHandler {
         LivingEntity resolvedAttacker = attacker.get();
         double radius = CommonfolkConfig.VILLAGER_KILL_AGGRO_RADIUS.get();
         angerNearbyVillagers(deceased, resolvedAttacker, radius);
+        WanderingTraderRetaliationHandler.angerNearbyTradersFrom(deceased, resolvedAttacker, radius);
         rallyFromNearbyNitwits(deceased, resolvedAttacker, radius);
     }
 
@@ -265,6 +266,7 @@ public final class VillagerRetaliationHandler {
         if (!villager.isAlive()
                 || !CommonfolkVillagerRules.shouldSuppressFleeingBehavior(villager)
                 || !VillagerCombatRoles.canScavengeGroundWeapons(villager)
+                || CommonfolkVillagerWeapons.hasTrackedPickup(villager)
                 || CommonfolkVillagerWeapons.hasUsableWeapon(villager)
                 || !CommonfolkVillagerCombatUtil.isThreatened(villager)) {
             return false;
@@ -338,6 +340,7 @@ public final class VillagerRetaliationHandler {
         alarmVillager.getBrain().setMemory(MemoryModuleType.HEARD_BELL_TIME, gameTime);
         alarmVillager.getBrain().setMemory(MemoryModuleType.NEAREST_HOSTILE, attacker);
         angerNearbyVillagers(alarmVillager, attacker, radius);
+        WanderingTraderRetaliationHandler.angerNearbyTradersFrom(alarmVillager, attacker, radius);
     }
 
     private static void rallyFromNearbyNitwits(Entity sourceEntity, LivingEntity attacker, double radius) {

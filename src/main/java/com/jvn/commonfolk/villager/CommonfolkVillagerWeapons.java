@@ -35,6 +35,10 @@ public final class CommonfolkVillagerWeapons {
         return isUsableWeapon(villager.getMainHandItem()) || isUsableWeapon(villager.getOffhandItem());
     }
 
+    public static boolean hasTrackedPickup(AbstractVillager villager) {
+        return !getTrackedPickup(villager).isEmpty();
+    }
+
     public static ItemStack getPrimaryWeapon(AbstractVillager villager) {
         ItemStack mainHand = villager.getMainHandItem();
         if (isUsableWeapon(mainHand)) {
@@ -83,6 +87,10 @@ public final class CommonfolkVillagerWeapons {
     }
 
     public static void equipGroundWeapon(AbstractVillager villager, ItemEntity itemEntity) {
+        if (hasTrackedPickup(villager)) {
+            return;
+        }
+
         ItemStack groundStack = itemEntity.getItem();
         if (groundStack.isEmpty()) {
             return;
@@ -133,12 +141,6 @@ public final class CommonfolkVillagerWeapons {
 
         ItemStack mainHand = villager.getMainHandItem();
         if (ItemStack.isSameItem(mainHand, trackedPickup)) {
-            setTrackedPickup(villager, mainHand.copy());
-            villager.setGuaranteedDrop(EquipmentSlot.MAINHAND);
-            return true;
-        }
-
-        if (isUsableWeapon(mainHand)) {
             setTrackedPickup(villager, mainHand.copy());
             villager.setGuaranteedDrop(EquipmentSlot.MAINHAND);
             return true;

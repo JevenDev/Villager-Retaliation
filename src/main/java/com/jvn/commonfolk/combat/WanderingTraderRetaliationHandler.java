@@ -172,6 +172,10 @@ public final class WanderingTraderRetaliationHandler {
         return true;
     }
 
+    public static void angerNearbyTradersFrom(Entity sourceEntity, LivingEntity attacker, double radius) {
+        angerNearbyTraders(sourceEntity, attacker, radius);
+    }
+
     private static void anger(WanderingTrader trader, LivingEntity attacker) {
         RETALIATION.anger(trader, attacker);
     }
@@ -192,6 +196,7 @@ public final class WanderingTraderRetaliationHandler {
     private static boolean tryAcquireGroundWeapon(WanderingTrader trader, long gameTime) {
         if (!trader.isAlive()
                 || !WanderingTraderCombatRoles.canScavengeGroundWeapons(trader)
+                || CommonfolkVillagerWeapons.hasTrackedPickup(trader)
                 || CommonfolkVillagerWeapons.hasUsableWeapon(trader)
                 || !CommonfolkVillagerCombatUtil.isThreatened(trader)) {
             return false;
