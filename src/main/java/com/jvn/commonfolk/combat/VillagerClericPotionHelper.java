@@ -15,11 +15,13 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.WanderingTrader;
 import net.minecraft.world.entity.projectile.ThrownPotion;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.alchemy.Potions;
+import net.minecraft.world.phys.AABB;
 
 final class VillagerClericPotionHelper {
     private static final Map<UUID, Integer> ATTACK_DELAY = new HashMap<>();
@@ -35,6 +37,9 @@ final class VillagerClericPotionHelper {
     private static final float WATER_BREATHING_TRIGGER_CHANCE = 0.15F;
     private static final float HEALING_TRIGGER_CHANCE = 0.05F;
     private static final float SWIFTNESS_TRIGGER_CHANCE = 0.5F;
+    private static final double SPLASH_RADIUS = 4.0D;
+    private static final float SUPPORT_HEAL_HEALTH_RATIO = 0.6F;
+    private static final float SUPPORT_HEAL_MIN_MISSING_HEALTH = 4.0F;
 
     private VillagerClericPotionHelper() {
     }
@@ -59,20 +64,33 @@ final class VillagerClericPotionHelper {
             return true;
         }
 
+        PotionThrowPlan throwPlan = chooseThrowPlan(villager, target, level, distanceSqr);
         int attackDelay = ATTACK_DELAY.getOrDefault(villager.getUUID(), 0);
         if (attackDelay > 0) {
             ATTACK_DELAY.put(villager.getUUID(), attackDelay - 1);
-            villager.getNavigation().moveTo(target, VillagerCombatRoles.movementSpeed(villager) * 0.8D);
+            villager.getNavigation().moveTo(
+                    throwPlan != null ? throwPlan.aimTarget() : target,
+                    VillagerCombatRoles.movementSpeed(villager) * 0.8D
+            );
             return true;
         }
 
-        if (!villager.hasLineOfSight(target) || distanceSqr > MAX_THROW_DISTANCE_SQR) {
-            villager.getNavigation().moveTo(target, VillagerCombatRoles.movementSpeed(villager));
+        if (throwPlan == null) {
+            if (!villager.hasLineOfSight(target) || distanceSqr > MAX_THROW_DISTANCE_SQR) {
+                villager.getNavigation().moveTo(target, VillagerCombatRoles.movementSpeed(villager));
+                return true;
+            }
+            return false;
+        }
+
+        LivingEntity aimTarget = throwPlan.aimTarget();
+        double aimDistanceSqr = villager.distanceToSqr(aimTarget);
+        if (!villager.hasLineOfSight(aimTarget) || aimDistanceSqr > MAX_THROW_DISTANCE_SQR) {
+            villager.getNavigation().moveTo(aimTarget, VillagerCombatRoles.movementSpeed(villager));
             return true;
         }
 
-        ItemStack splashPotion = selectSplashPotion(villager, target, distanceSqr);
-        throwSplashPotionLikeWitch(villager, target, level, splashPotion);
+        throwSplashPotionLikeWitch(villager, aimTarget, level, throwPlan.potionStack());
         ATTACK_DELAY.put(villager.getUUID(), THROW_INTERVAL_TICKS);
         return true;
     }
@@ -106,6 +124,55 @@ final class VillagerClericPotionHelper {
         }
 
         startPotionDrinking(villager, ClericSelfPotion.MILK_BUCKET);
+        return true;
+    }
+
+    static boolean tryOutOfCombatSupport(Villager villager, ServerLevel level) {
+        if (!canUseClericPotions(villager)) {
+            return false;
+        }
+        if (isDrinkingPotion(villager)) {
+            return tickPotionDrinking(villager);
+        }
+
+        ClericSelfPotion selfPotion = chooseSelfPotion(villager, 0.0D);
+        if (selfPotion != ClericSelfPotion.NONE) {
+            startPotionDrinking(villager, selfPotion);
+            return true;
+        }
+
+        double passiveRange = CommonfolkConfig.PASSIVE_CLERIC_ALLY_HEAL_RANGE.get();
+        LivingEntity supportTarget = findSupportTarget(
+                villager,
+                level,
+                passiveRange * passiveRange,
+                CommonfolkConfig.PASSIVE_CLERIC_ALLY_HEAL_HEALTH_THRESHOLD.get().floatValue(),
+                CommonfolkConfig.PASSIVE_CLERIC_ALLY_HEAL_REQUIRES_LINE_OF_SIGHT.get()
+        );
+        if (supportTarget == null) {
+            return false;
+        }
+
+        int attackDelay = ATTACK_DELAY.getOrDefault(villager.getUUID(), 0);
+        if (attackDelay > 0) {
+            ATTACK_DELAY.put(villager.getUUID(), attackDelay - 1);
+            villager.getNavigation().moveTo(supportTarget, VillagerCombatRoles.movementSpeed(villager) * 0.6D);
+            return true;
+        }
+
+        double distanceSqr = villager.distanceToSqr(supportTarget);
+        if (!villager.hasLineOfSight(supportTarget) || distanceSqr > MAX_THROW_DISTANCE_SQR) {
+            villager.getNavigation().moveTo(supportTarget, VillagerCombatRoles.movementSpeed(villager) * 0.6D);
+            return true;
+        }
+
+        throwSplashPotionLikeWitch(
+                villager,
+                supportTarget,
+                level,
+                PotionContents.createItemStack(Items.SPLASH_POTION, Potions.HEALING)
+        );
+        ATTACK_DELAY.put(villager.getUUID(), THROW_INTERVAL_TICKS);
         return true;
     }
 
@@ -277,7 +344,85 @@ final class VillagerClericPotionHelper {
         return canUseMilkBucket(villager);
     }
 
+    private static PotionThrowPlan chooseThrowPlan(Villager villager, LivingEntity target, ServerLevel level, double distanceSqr) {
+        LivingEntity supportTarget = findSupportTarget(
+                villager,
+                level,
+                MAX_THROW_DISTANCE_SQR,
+                SUPPORT_HEAL_HEALTH_RATIO,
+                false
+        );
+        if (supportTarget != null && isSafeSupportThrow(villager, supportTarget, target)) {
+            return new PotionThrowPlan(
+                    supportTarget,
+                    PotionContents.createItemStack(Items.SPLASH_POTION, Potions.HEALING)
+            );
+        }
+
+        ItemStack splashPotion = selectSplashPotion(villager, target, distanceSqr);
+        if (splashPotion.isEmpty() || !isSafeOffensiveThrow(villager, target, splashPotion)) {
+            return null;
+        }
+
+        return new PotionThrowPlan(target, splashPotion);
+    }
+
+    private static LivingEntity findSupportTarget(
+            Villager villager,
+            ServerLevel level,
+            double maxDistanceSqr,
+            float healthThreshold,
+            boolean requireLineOfSight
+    ) {
+        AABB searchArea = villager.getBoundingBox().inflate(Math.sqrt(maxDistanceSqr));
+        LivingEntity bestTarget = null;
+        float bestScore = Float.NEGATIVE_INFINITY;
+        for (LivingEntity candidate : level.getEntitiesOfClass(
+                LivingEntity.class,
+                searchArea,
+                entity -> isSupportTarget(villager, entity, healthThreshold, requireLineOfSight)
+        )) {
+            if (villager.distanceToSqr(candidate) > maxDistanceSqr) {
+                continue;
+            }
+            float missingHealth = candidate.getMaxHealth() - candidate.getHealth();
+            float healthRatio = candidate.getHealth() / candidate.getMaxHealth();
+            float score = missingHealth + (1.0F - healthRatio) * 8.0F;
+            if (score > bestScore
+                    || score == bestScore && bestTarget != null && villager.distanceToSqr(candidate) < villager.distanceToSqr(bestTarget)) {
+                bestTarget = candidate;
+                bestScore = score;
+            }
+        }
+        return bestTarget;
+    }
+
+    private static boolean isSupportTarget(Villager villager, LivingEntity entity, float healthThreshold, boolean requireLineOfSight) {
+        if (entity == villager || !entity.isAlive() || entity.isInvertedHealAndHarm()) {
+            return false;
+        }
+        if (!(entity instanceof Villager) && !(entity instanceof WanderingTrader)) {
+            return false;
+        }
+        if (requireLineOfSight && !villager.hasLineOfSight(entity)) {
+            return false;
+        }
+
+        float missingHealth = entity.getMaxHealth() - entity.getHealth();
+        return entity.getHealth() <= entity.getMaxHealth() * healthThreshold
+                || missingHealth >= SUPPORT_HEAL_MIN_MISSING_HEALTH;
+    }
+
     private static ItemStack selectSplashPotion(Villager villager, LivingEntity target, double distanceSqr) {
+        if (target.isInvertedHealAndHarm()) {
+            if (distanceSqr >= 64.0D && !target.hasEffect(MobEffects.MOVEMENT_SLOWDOWN)) {
+                return PotionContents.createItemStack(Items.SPLASH_POTION, Potions.SLOWNESS);
+            }
+            if (distanceSqr <= 9.0D && !target.hasEffect(MobEffects.WEAKNESS) && villager.getRandom().nextFloat() < 0.25F) {
+                return PotionContents.createItemStack(Items.SPLASH_POTION, Potions.WEAKNESS);
+            }
+            return PotionContents.createItemStack(Items.SPLASH_POTION, Potions.HEALING);
+        }
         if (distanceSqr >= 64.0D && !target.hasEffect(MobEffects.MOVEMENT_SLOWDOWN)) {
             return PotionContents.createItemStack(Items.SPLASH_POTION, Potions.SLOWNESS);
         }
@@ -288,6 +433,38 @@ final class VillagerClericPotionHelper {
             return PotionContents.createItemStack(Items.SPLASH_POTION, Potions.WEAKNESS);
         }
         return PotionContents.createItemStack(Items.SPLASH_POTION, Potions.HARMING);
+    }
+
+    private static boolean isSafeOffensiveThrow(Villager villager, LivingEntity target, ItemStack potionStack) {
+        if (isFriendlySafePotion(potionStack)) {
+            return true;
+        }
+
+        AABB splashArea = target.getBoundingBox().inflate(SPLASH_RADIUS);
+        for (LivingEntity nearby : villager.level().getEntitiesOfClass(LivingEntity.class, splashArea, entity -> isFriendlyCivilian(villager, entity))) {
+            return false;
+        }
+        return true;
+    }
+
+    private static boolean isSafeSupportThrow(Villager villager, LivingEntity supportTarget, LivingEntity hostileTarget) {
+        if (!hostileTarget.isAlive() || hostileTarget.isInvertedHealAndHarm()) {
+            return true;
+        }
+
+        double maxDistance = SPLASH_RADIUS + hostileTarget.getBbWidth();
+        return supportTarget.distanceToSqr(hostileTarget) > maxDistance * maxDistance;
+    }
+
+    private static boolean isFriendlyCivilian(Villager villager, LivingEntity entity) {
+        return entity != villager
+                && entity.isAlive()
+                && (entity instanceof Villager || entity instanceof WanderingTrader);
+    }
+
+    private static boolean isFriendlySafePotion(ItemStack potionStack) {
+        PotionContents contents = potionStack.getOrDefault(net.minecraft.core.component.DataComponents.POTION_CONTENTS, PotionContents.EMPTY);
+        return contents.is(Potions.HEALING);
     }
 
     private static void throwSplashPotionLikeWitch(Villager villager, LivingEntity target, ServerLevel level, ItemStack potionStack) {
@@ -321,5 +498,8 @@ final class VillagerClericPotionHelper {
         private PotionUseState withResumeMainHand(ItemStack resumeMainHand) {
             return new PotionUseState(this.potion, this.ticksLeft, resumeMainHand.copy());
         }
+    }
+
+    private record PotionThrowPlan(LivingEntity aimTarget, ItemStack potionStack) {
     }
 }

@@ -473,6 +473,10 @@ public final class VillagerRetaliationHandler {
         if (VillagerClericPotionHelper.tryOutOfCombatMilk(villager)) {
             return;
         }
+        if (villager.level() instanceof ServerLevel level
+                && VillagerClericPotionHelper.tryOutOfCombatSupport(villager, level)) {
+            return;
+        }
 
         VillagerClericPotionHelper.clearState(villager);
     }

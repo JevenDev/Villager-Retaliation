@@ -32,6 +32,9 @@ public final class CommonfolkConfig {
     public static final ModConfigSpec.DoubleValue COMBAT_WEAPON_ENCHANT_CHANCE;
     public static final ModConfigSpec.BooleanValue FARMERS_USE_BREAD;
     public static final ModConfigSpec.BooleanValue CLERICS_USE_POTIONS;
+    public static final ModConfigSpec.DoubleValue PASSIVE_CLERIC_ALLY_HEAL_RANGE;
+    public static final ModConfigSpec.DoubleValue PASSIVE_CLERIC_ALLY_HEAL_HEALTH_THRESHOLD;
+    public static final ModConfigSpec.BooleanValue PASSIVE_CLERIC_ALLY_HEAL_REQUIRES_LINE_OF_SIGHT;
 
     public static final ModConfigSpec.BooleanValue WANDERER_DROP_EMERALDS;
     public static final ModConfigSpec.BooleanValue WANDERER_DROP_INVISIBILITY_POTION;
@@ -130,6 +133,15 @@ public final class CommonfolkConfig {
         CLERICS_USE_POTIONS = BUILDER.comment("Allows clerics to retaliate defensively and use regeneration when hurt.")
                 .translation("commonfolk.configuration.combat.clericsUsePotions")
                 .define("clericsUsePotions", true);
+        PASSIVE_CLERIC_ALLY_HEAL_RANGE = BUILDER.comment("Maximum range in blocks for idle clerics to look for injured villagers or wandering traders.")
+                .translation("commonfolk.configuration.combat.passiveClericAllyHealRange")
+                .defineInRange("passiveClericAllyHealRange", 12.0D, 1.0D, 64.0D);
+        PASSIVE_CLERIC_ALLY_HEAL_HEALTH_THRESHOLD = BUILDER.comment("Health ratio below which idle clerics consider an ally injured enough to heal.")
+                .translation("commonfolk.configuration.combat.passiveClericAllyHealHealthThreshold")
+                .defineInRange("passiveClericAllyHealHealthThreshold", 0.60D, 0.05D, 1.0D);
+        PASSIVE_CLERIC_ALLY_HEAL_REQUIRES_LINE_OF_SIGHT = BUILDER.comment("When true, idle clerics only heal allies they can already see, preventing long wall-hugging path attempts.")
+                .translation("commonfolk.configuration.combat.passiveClericAllyHealRequiresLineOfSight")
+                .define("passiveClericAllyHealRequiresLineOfSight", true);
         BUILDER.pop();
 
         BUILDER.push("wanderer");

@@ -38,6 +38,9 @@
   "commonfolk.configuration.combat.combatWeaponEnchantChance": "Combat Weapon Enchant Chance",
   "commonfolk.configuration.combat.farmersUseBread": "Farmers Use Bread",
   "commonfolk.configuration.combat.clericsUsePotions": "Clerics Use Potions",
+  "commonfolk.configuration.combat.passiveClericAllyHealRange": "Passive Cleric Ally Heal Range",
+  "commonfolk.configuration.combat.passiveClericAllyHealHealthThreshold": "Passive Cleric Ally Heal Health Threshold",
+  "commonfolk.configuration.combat.passiveClericAllyHealRequiresLineOfSight": "Passive Cleric Ally Heal Requires Line Of Sight",
 
   "commonfolk.configuration.wanderer.dropEmeralds": "Wanderer Drop Emeralds",
   "commonfolk.configuration.wanderer.dropInvisibilityPotion": "Wanderer Drop Invisibility Potion",
