@@ -1,18 +1,23 @@
 package com.jvn.commonfolk.combat;
 
+import com.jvn.commonfolk.Commonfolk;
 import com.jvn.commonfolk.config.CommonfolkConfig;
 import com.jvn.commonfolk.util.CommonfolkVillagerCombatUtil;
 import com.jvn.commonfolk.villager.CommonfolkVillagerWeapons;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Predicate;
+import javax.annotation.Nullable;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.behavior.BehaviorUtils;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -23,6 +28,10 @@ import net.minecraft.world.item.ItemStack;
 public final class CommonfolkRetaliationUtil {
     private static final String PERSISTENT_TARGET_UUID = "Target";
     private static final String PERSISTENT_LAST_SEEN_TICK = "LastSeenTick";
+    private static final ResourceLocation COMBAT_MOVEMENT_SPEED_MODIFIER_ID =
+            ResourceLocation.fromNamespaceAndPath(Commonfolk.MOD_ID, "combat_movement_speed");
+    private static final AttributeModifier COMBAT_MOVEMENT_SPEED_MODIFIER =
+            new AttributeModifier(COMBAT_MOVEMENT_SPEED_MODIFIER_ID, 0.25D, AttributeModifier.Operation.ADD_VALUE);
 
     private CommonfolkRetaliationUtil() {
     }
@@ -147,6 +156,51 @@ public final class CommonfolkRetaliationUtil {
         return gameTime >= nextAttackTicks.getOrDefault(villager.getUUID(), 0L);
     }
 
+    @Nullable
+    public static <T extends AbstractVillager> ActiveRetaliationTarget resolveActiveRetaliationTarget(
+            T villager,
+            CommonfolkRetaliationRuntime<T> retaliationRuntime,
+            Predicate<T> canFightBack,
+            Runnable clearAnger
+    ) {
+        retaliationRuntime.restorePersistedAngerIfNeeded(villager);
+        AngerTarget angerTarget = retaliationRuntime.angerTarget(villager);
+        if (angerTarget == null) {
+            return null;
+        }
+
+        if (!(villager.level() instanceof ServerLevel level)) {
+            clearAnger.run();
+            return null;
+        }
+
+        long gameTime = level.getGameTime();
+        var entity = level.getEntity(angerTarget.targetId());
+        if (!(entity instanceof LivingEntity target)) {
+            if (hasExpiredAnger(angerTarget, gameTime)) {
+                clearAnger.run();
+            }
+            return null;
+        }
+        if (!target.isAlive() || CommonfolkVillagerCombatUtil.shouldIgnoreAttacker(target)) {
+            clearAnger.run();
+            return null;
+        }
+        if (!canFightBack.test(villager)) {
+            clearAnger.run();
+            return null;
+        }
+
+        if (villager.hasLineOfSight(target)) {
+            retaliationRuntime.refreshAngerTarget(villager, angerTarget, gameTime);
+        } else if (hasExpiredAnger(angerTarget, gameTime)) {
+            clearAnger.run();
+            return null;
+        }
+
+        return new ActiveRetaliationTarget(level, target, gameTime);
+    }
+
     public static boolean isUsingRangedCombatMode(AbstractVillager villager) {
         return CommonfolkVillagerWeapons.isRangedWeapon(CommonfolkVillagerWeapons.getPrimaryWeapon(villager));
     }
@@ -216,26 +270,20 @@ public final class CommonfolkRetaliationUtil {
     }
 
     public static <T extends AbstractVillager> void boostCombatMovement(
-            T villager,
-            Map<UUID, Double> originalMovementSpeeds
+            T villager
     ) {
         AttributeInstance movementSpeed = villager.getAttribute(Attributes.MOVEMENT_SPEED);
         if (movementSpeed == null) {
             return;
         }
 
-        originalMovementSpeeds.putIfAbsent(villager.getUUID(), movementSpeed.getBaseValue());
-        movementSpeed.setBaseValue(0.75D);
+        movementSpeed.addOrUpdateTransientModifier(COMBAT_MOVEMENT_SPEED_MODIFIER);
     }
 
-    public static <T extends AbstractVillager> void restoreCombatMovement(
-            T villager,
-            Map<UUID, Double> originalMovementSpeeds
-    ) {
+    public static <T extends AbstractVillager> void restoreCombatMovement(T villager) {
         AttributeInstance movementSpeed = villager.getAttribute(Attributes.MOVEMENT_SPEED);
-        Double originalBaseSpeed = originalMovementSpeeds.remove(villager.getUUID());
-        if (movementSpeed != null && originalBaseSpeed != null) {
-            movementSpeed.setBaseValue(originalBaseSpeed);
+        if (movementSpeed != null) {
+            movementSpeed.removeModifier(COMBAT_MOVEMENT_SPEED_MODIFIER_ID);
         }
     }
 
@@ -250,6 +298,10 @@ public final class CommonfolkRetaliationUtil {
         return CommonfolkConfig.COMBAT_WEAPON_DROP_CHANCE.get().floatValue();
     }
 
+    private static boolean hasExpiredAnger(AngerTarget angerTarget, long gameTime) {
+        return gameTime - angerTarget.lastSeenGameTick() >= CommonfolkConfig.AGGRO_DURATION_TICKS.get();
+    }
+
     public record AngerTarget(UUID targetId, long lastSeenGameTick) {
         public AngerTarget withLastSeenGameTick(long gameTime) {
             if (gameTime == this.lastSeenGameTick) {
@@ -260,5 +312,8 @@ public final class CommonfolkRetaliationUtil {
     }
 
     public record TemporaryWeaponState(ItemStack previousMainHand, ItemStack equippedWeapon, float previousDropChance) {
+    }
+
+    public record ActiveRetaliationTarget(ServerLevel level, LivingEntity target, long gameTime) {
     }
 }

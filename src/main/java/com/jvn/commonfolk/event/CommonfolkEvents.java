@@ -9,6 +9,7 @@ import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.WanderingTrader;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.InteractionResult;
+import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
@@ -77,5 +78,10 @@ public final class CommonfolkEvents {
             event.setCanceled(true);
             event.setCancellationResult(InteractionResult.FAIL);
         }
+    }
+
+    public static void onEntityLeaveLevel(EntityLeaveLevelEvent event) {
+        VillagerRetaliationHandler.onEntityLeaveLevel(event);
+        WanderingTraderRetaliationHandler.onEntityLeaveLevel(event);
     }
 }

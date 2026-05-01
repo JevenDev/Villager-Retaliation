@@ -1,72 +1,47 @@
 package com.jvn.commonfolk.client.pose;
 
 import com.jvn.commonfolk.combat.CommonfolkPotionUtil;
-import com.jvn.commonfolk.villager.CommonfolkVillagerWeapons;
 import net.minecraft.world.entity.npc.Villager;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
-public final class DefaultVillagerPoseProvider implements VillagerPoseProvider<Villager> {
+public final class DefaultVillagerPoseProvider extends AbstractCombatVillagerPoseProvider<Villager> {
     public static final DefaultVillagerPoseProvider INSTANCE = new DefaultVillagerPoseProvider();
 
     private DefaultVillagerPoseProvider() {
     }
 
     @Override
-    public VillagerArmPose getArmPose(Villager villager, float attackTime) {
-        if (villager.isUsingItem()) {
-            ItemStack useItem = villager.getUseItem();
-            if (CommonfolkVillagerWeapons.isCrossbowWeapon(useItem)) {
-                return VillagerArmPose.CROSSBOW_CHARGE;
-            }
-            if (CommonfolkVillagerWeapons.isBowWeapon(useItem)) {
-                return VillagerArmPose.BOW_AND_ARROW;
-            }
-            return VillagerPoseRegistry.itemUsePose(villager).orElse(VillagerArmPose.HOLDING_ITEM);
-        }
-
-        if (isHoldingChargedCrossbow(villager)) {
-            return VillagerArmPose.CROSSBOW_HOLD;
-        }
-        if (isHoldingCrossbow(villager) && isInCombat(villager)) {
-            return VillagerArmPose.HOLDING_ITEM;
-        }
-        if (isHoldingBow(villager) && isInCombat(villager)) {
-            return VillagerArmPose.HOLDING_ITEM;
-        }
-        if (isHoldingTrident(villager) && isInCombat(villager)) {
-            return villager.swinging || attackTime > 0.0F ? VillagerArmPose.MELEE_WEAPON : VillagerArmPose.HOLDING_ITEM;
-        }
-        if (hasUsableWeapon(villager)) {
-            return isInCombat(villager) ? VillagerArmPose.MELEE_WEAPON : VillagerArmPose.HOLDING_ITEM;
-        }
-        if (isHoldingRangedWeapon(villager)) {
-            return villager.swinging || attackTime > 0.0F ? VillagerArmPose.MELEE_WEAPON : VillagerArmPose.NONE;
-        }
-        if (isHoldingPotionItem(villager)) {
-            if (isHoldingDrinkableCombatConsumable(villager)) {
-                return VillagerArmPose.CASTING_OR_POTION;
-            }
-            return villager.swinging || attackTime > 0.0F ? VillagerArmPose.THROWING_ITEM : VillagerArmPose.HOLDING_ITEM;
-        }
-        if (villager.swinging || villager.isAggressive() || villager.isChasing() || villager.getTarget() != null) {
-            return VillagerArmPose.MELEE_WEAPON;
-        }
-        return VillagerArmPose.NONE;
+    protected VillagerArmPose usingItemPose(Villager villager) {
+        return VillagerPoseRegistry.itemUsePose(villager).orElse(VillagerArmPose.HOLDING_ITEM);
     }
 
     @Override
-    public boolean shouldUseCombatModel(Villager villager) {
-        if (villager.isUsingItem()
-                && (CommonfolkVillagerWeapons.isCrossbowWeapon(villager.getUseItem())
-                || CommonfolkPotionUtil.isDrinkableCombatConsumable(villager.getUseItem()))) {
-            return true;
-        }
+    protected boolean hasCustomHeldItemPose(Villager villager) {
+        return isHoldingPotionItem(villager);
+    }
 
-        return isInCombat(villager)
-                || hasUsableWeapon(villager)
-                || isHoldingChargedCrossbow(villager)
-                || isHoldingPotionItem(villager);
+    @Override
+    protected VillagerArmPose heldItemPose(Villager villager, float attackTime) {
+        if (isHoldingDrinkableCombatConsumable(villager)) {
+            return VillagerArmPose.CASTING_OR_POTION;
+        }
+        return villager.swinging || attackTime > 0.0F ? VillagerArmPose.THROWING_ITEM : VillagerArmPose.HOLDING_ITEM;
+    }
+
+    @Override
+    protected boolean shouldUseCombatModelWhileUsingItem(Villager villager, net.minecraft.world.item.ItemStack useItem) {
+        return super.shouldUseCombatModelWhileUsingItem(villager, useItem)
+                || CommonfolkPotionUtil.isDrinkableCombatConsumable(useItem);
+    }
+
+    @Override
+    protected boolean shouldUseCombatModelForHeldItem(Villager villager) {
+        return isHoldingPotionItem(villager);
+    }
+
+    @Override
+    protected boolean isAggressivelyPostured(Villager villager) {
+        return villager.isAggressive() || villager.isChasing() || villager.getTarget() != null;
     }
 
     private static boolean isHoldingPotionItem(Villager villager) {

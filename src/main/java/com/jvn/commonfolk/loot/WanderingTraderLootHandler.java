@@ -19,11 +19,11 @@ public final class WanderingTraderLootHandler {
     }
 
     public static void addDrops(WanderingTrader trader, LivingDropsEvent event) {
+        CommonfolkVillagerWeapons.ensurePickedMainHandDrop(trader, event);
+
         if (!CommonfolkConfig.ENABLE_WANDERING_TRADER_DROPS.get()) {
             return;
         }
-
-        CommonfolkVillagerWeapons.ensurePickedMainHandDrop(trader, event);
 
         RandomSource random = trader.getRandom();
         if (CommonfolkConfig.WANDERER_DROP_EMERALDS.get()) {

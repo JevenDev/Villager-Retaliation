@@ -22,5 +22,6 @@ public class Commonfolk {
         NeoForge.EVENT_BUS.addListener(CommonfolkEvents::onEntityTickPre);
         NeoForge.EVENT_BUS.addListener(CommonfolkEvents::onEntityTickPost);
         NeoForge.EVENT_BUS.addListener(CommonfolkEvents::onEntityInteract);
+        NeoForge.EVENT_BUS.addListener(CommonfolkEvents::onEntityLeaveLevel);
     }
 }

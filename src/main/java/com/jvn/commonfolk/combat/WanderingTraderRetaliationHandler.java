@@ -1,14 +1,10 @@
 package com.jvn.commonfolk.combat;
 
 import com.jvn.commonfolk.config.CommonfolkConfig;
-import com.jvn.commonfolk.combat.CommonfolkRetaliationUtil.AngerTarget;
-import com.jvn.commonfolk.combat.CommonfolkRetaliationUtil.TemporaryWeaponState;
+import com.jvn.commonfolk.combat.CommonfolkRetaliationUtil.ActiveRetaliationTarget;
 import com.jvn.commonfolk.util.CommonfolkVillagerCombatUtil;
+import com.jvn.commonfolk.villager.CommonfolkVillagerBrainUtil;
 import com.jvn.commonfolk.villager.CommonfolkVillagerWeapons;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -21,6 +17,7 @@ import net.minecraft.world.entity.npc.WanderingTrader;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
+import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
@@ -28,12 +25,8 @@ import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
 public final class WanderingTraderRetaliationHandler {
     private static final String PERSISTENT_TAG_ROOT = "CommonfolkPersistentTraderHostility";
-    private static final String PERSISTENT_TARGET_UUID = "Target";
-    private static final String PERSISTENT_LAST_SEEN_TICK = "LastSeenTick";
-    private static final Map<UUID, AngerTarget> ANGER_TARGETS = new HashMap<>();
-    private static final Map<UUID, Long> NEXT_ATTACK_TICKS = new HashMap<>();
-    private static final Map<UUID, Double> ORIGINAL_MOVEMENT_SPEEDS = new HashMap<>();
-    private static final Map<UUID, TemporaryWeaponState> TEMPORARY_WEAPONS = new HashMap<>();
+    private static final CommonfolkRetaliationRuntime<WanderingTrader> RETALIATION =
+            new CommonfolkRetaliationRuntime<>(PERSISTENT_TAG_ROOT);
 
     private WanderingTraderRetaliationHandler() {
     }
@@ -96,7 +89,7 @@ public final class WanderingTraderRetaliationHandler {
             return;
         }
 
-        if (ANGER_TARGETS.containsKey(trader.getUUID())) {
+        if (RETALIATION.hasAnger(trader)) {
             suppressVanillaPanic(trader);
         }
     }
@@ -116,52 +109,30 @@ public final class WanderingTraderRetaliationHandler {
             return;
         }
 
-        restorePersistedAngerIfNeeded(trader);
+        RETALIATION.restorePersistedAngerIfNeeded(trader);
         tryAcquireHostileTarget(trader);
-
-        AngerTarget angerTarget = ANGER_TARGETS.get(trader.getUUID());
-        if (angerTarget == null) {
+        ActiveRetaliationTarget retaliationTarget = CommonfolkRetaliationUtil.resolveActiveRetaliationTarget(
+                trader,
+                RETALIATION,
+                WanderingTraderCombatRoles::canFightBack,
+                () -> clearAnger(trader)
+        );
+        if (retaliationTarget == null) {
             VillagerRangedCombatHelper.clearState(trader);
-            CommonfolkRetaliationUtil.restoreCombatMovement(trader, ORIGINAL_MOVEMENT_SPEEDS);
-            CommonfolkRetaliationUtil.restoreTemporaryWeapon(trader, TEMPORARY_WEAPONS);
+            CommonfolkRetaliationUtil.restoreCombatMovement(trader);
+            RETALIATION.restoreTemporaryWeapon(trader);
             return;
         }
 
-        if (!(trader.level() instanceof ServerLevel level)) {
-            clearAnger(trader);
-            return;
-        }
-
-        long gameTime = level.getGameTime();
-        Entity entity = level.getEntity(angerTarget.targetId());
-        if (!(entity instanceof LivingEntity target)) {
-            if (gameTime - angerTarget.lastSeenGameTick() >= CommonfolkConfig.AGGRO_DURATION_TICKS.get()) {
-                clearAnger(trader);
-            }
-            return;
-        }
-        if (!target.isAlive() || CommonfolkVillagerCombatUtil.shouldIgnoreAttacker(target)) {
-            clearAnger(trader);
-            return;
-        }
-
-        if (!WanderingTraderCombatRoles.canFightBack(trader)) {
-            clearAnger(trader);
-            return;
-        }
+        ServerLevel level = retaliationTarget.level();
+        LivingEntity target = retaliationTarget.target();
+        long gameTime = retaliationTarget.gameTime();
 
         suppressVanillaPanic(trader);
         trader.setAggressive(true);
         trader.setTarget(target);
 
-        if (trader.hasLineOfSight(target)) {
-            CommonfolkRetaliationUtil.refreshAngerTarget(trader, angerTarget, gameTime, ANGER_TARGETS, PERSISTENT_TAG_ROOT);
-        } else if (gameTime - angerTarget.lastSeenGameTick() >= CommonfolkConfig.AGGRO_DURATION_TICKS.get()) {
-            clearAnger(trader);
-            return;
-        }
-
-        if (tryAcquireGroundWeapon(trader)) {
+        if (tryAcquireGroundWeapon(trader, gameTime)) {
             return;
         }
 
@@ -169,7 +140,7 @@ public final class WanderingTraderRetaliationHandler {
 
         double distanceSqr = trader.distanceToSqr(target);
         trader.getLookControl().setLookAt(target, 30.0F, 30.0F);
-        CommonfolkRetaliationUtil.boostCombatMovement(trader, ORIGINAL_MOVEMENT_SPEEDS);
+        CommonfolkRetaliationUtil.boostCombatMovement(trader);
 
         if (CommonfolkRetaliationUtil.isUsingRangedCombatMode(trader)
                 && VillagerRangedCombatHelper.tryAttack(trader, target, level, distanceSqr)) {
@@ -179,12 +150,12 @@ public final class WanderingTraderRetaliationHandler {
         trader.getNavigation().moveTo(target, WanderingTraderCombatRoles.movementSpeed(trader));
         if (CommonfolkRetaliationUtil.canUseMeleeCombatMode(trader)
                 && CommonfolkRetaliationUtil.canMeleeHit(trader, target)
-                && CommonfolkRetaliationUtil.isAttackReady(trader, NEXT_ATTACK_TICKS, gameTime)) {
+                && RETALIATION.isAttackReady(trader, gameTime)) {
             var attackHand = CommonfolkVillagerCombatUtil.selectAttackHand(trader);
             trader.swing(attackHand, true);
             syncMeleeAttackAttributes(trader);
             trader.doHurtTarget(target);
-            NEXT_ATTACK_TICKS.put(trader.getUUID(), gameTime + WanderingTraderCombatRoles.attackCooldown(trader));
+            RETALIATION.setNextAttackTick(trader, gameTime + WanderingTraderCombatRoles.attackCooldown(trader));
         }
     }
 
@@ -193,7 +164,7 @@ public final class WanderingTraderRetaliationHandler {
             return false;
         }
 
-        if (!CommonfolkRetaliationUtil.isHostileTowards(trader, player, ANGER_TARGETS, PERSISTENT_TAG_ROOT, () -> clearAnger(trader))) {
+        if (!RETALIATION.isHostileTowards(trader, player, () -> clearAnger(trader))) {
             return false;
         }
 
@@ -202,11 +173,11 @@ public final class WanderingTraderRetaliationHandler {
     }
 
     private static void anger(WanderingTrader trader, LivingEntity attacker) {
-        CommonfolkRetaliationUtil.tryAnger(trader, attacker, ANGER_TARGETS, PERSISTENT_TAG_ROOT);
+        RETALIATION.anger(trader, attacker);
     }
 
     private static void tryAcquireHostileTarget(WanderingTrader trader) {
-        if (ANGER_TARGETS.containsKey(trader.getUUID())
+        if (RETALIATION.hasAnger(trader)
                 || !trader.isAlive()
                 || !WanderingTraderCombatRoles.canFightBack(trader)) {
             return;
@@ -218,7 +189,7 @@ public final class WanderingTraderRetaliationHandler {
                 .ifPresent(target -> anger(trader, target));
     }
 
-    private static boolean tryAcquireGroundWeapon(WanderingTrader trader) {
+    private static boolean tryAcquireGroundWeapon(WanderingTrader trader, long gameTime) {
         if (!trader.isAlive()
                 || !WanderingTraderCombatRoles.canScavengeGroundWeapons(trader)
                 || CommonfolkVillagerWeapons.hasUsableWeapon(trader)
@@ -226,10 +197,11 @@ public final class WanderingTraderRetaliationHandler {
             return false;
         }
 
-        return CommonfolkRetaliationUtil.tryAcquireGroundWeapon(
+        return RETALIATION.tryAcquireGroundWeapon(
                 trader,
                 WanderingTraderCombatRoles.movementSpeed(trader),
-                () -> CommonfolkRetaliationUtil.discardTemporaryWeapon(trader, TEMPORARY_WEAPONS)
+                () -> RETALIATION.discardTemporaryWeapon(trader),
+                gameTime
         );
     }
 
@@ -238,16 +210,15 @@ public final class WanderingTraderRetaliationHandler {
     }
 
     private static void clearAnger(WanderingTrader trader, boolean restoreWeapon) {
-        ANGER_TARGETS.remove(trader.getUUID());
-        clearPersistedAnger(trader);
-        NEXT_ATTACK_TICKS.remove(trader.getUUID());
+        RETALIATION.clearPersistentAnger(trader);
         VillagerRangedCombatHelper.clearState(trader);
-        CommonfolkRetaliationUtil.restoreCombatMovement(trader, ORIGINAL_MOVEMENT_SPEEDS);
+        CommonfolkRetaliationUtil.restoreCombatMovement(trader);
         if (restoreWeapon) {
-            CommonfolkRetaliationUtil.restoreTemporaryWeapon(trader, TEMPORARY_WEAPONS);
+            RETALIATION.restoreTemporaryWeapon(trader);
         } else {
-            TEMPORARY_WEAPONS.remove(trader.getUUID());
+            RETALIATION.discardTemporaryWeapon(trader);
         }
+        RETALIATION.clearTransientState(trader);
         trader.setAggressive(false);
         trader.setTarget(null);
         trader.getNavigation().stop();
@@ -279,26 +250,16 @@ public final class WanderingTraderRetaliationHandler {
     }
 
     private static void suppressVanillaPanic(WanderingTrader trader) {
-        CommonfolkVillagerCombatUtil.eraseMemoryIfRegistered(trader, MemoryModuleType.HURT_BY);
-        CommonfolkVillagerCombatUtil.eraseMemoryIfRegistered(trader, MemoryModuleType.HURT_BY_ENTITY);
-        CommonfolkVillagerCombatUtil.eraseMemoryIfRegistered(trader, MemoryModuleType.NEAREST_HOSTILE);
-    }
-
-    private static void restorePersistedAngerIfNeeded(WanderingTrader trader) {
-        CommonfolkRetaliationUtil.restorePersistedAngerIfNeeded(trader, ANGER_TARGETS, PERSISTENT_TAG_ROOT);
-    }
-
-    private static void clearPersistedAnger(WanderingTrader trader) {
-        CommonfolkRetaliationUtil.clearPersistentAnger(trader, PERSISTENT_TAG_ROOT);
+        CommonfolkVillagerBrainUtil.clearThreatMemories(trader);
     }
 
     private static void equipCombatWeapon(WanderingTrader trader) {
         if (CommonfolkVillagerWeapons.maintainAcquiredWeaponAuthority(trader)) {
-            CommonfolkRetaliationUtil.discardTemporaryWeapon(trader, TEMPORARY_WEAPONS);
+            RETALIATION.discardTemporaryWeapon(trader);
             return;
         }
 
-        if (CommonfolkRetaliationUtil.maintainTemporaryWeapon(trader, TEMPORARY_WEAPONS)) {
+        if (RETALIATION.maintainTemporaryWeapon(trader)) {
             return;
         }
 
@@ -312,6 +273,26 @@ public final class WanderingTraderRetaliationHandler {
             return;
         }
 
-        CommonfolkRetaliationUtil.equipTemporaryWeapon(trader, TEMPORARY_WEAPONS, weapon);
+        RETALIATION.equipTemporaryWeapon(trader, weapon);
+    }
+
+    public static void onEntityLeaveLevel(EntityLeaveLevelEvent event) {
+        if (!(event.getEntity() instanceof WanderingTrader trader)) {
+            return;
+        }
+
+        VillagerRangedCombatHelper.clearState(trader);
+        CommonfolkRetaliationUtil.restoreCombatMovement(trader);
+        if (trader.isAlive()) {
+            RETALIATION.restoreTemporaryWeapon(trader);
+        } else {
+            RETALIATION.discardTemporaryWeapon(trader);
+        }
+        RETALIATION.clearTransientState(trader);
+        if (trader.isAlive()) {
+            CommonfolkVillagerWeapons.clearTrackedPickupCache(trader);
+        } else {
+            CommonfolkVillagerWeapons.clearTrackedPickup(trader);
+        }
     }
 }

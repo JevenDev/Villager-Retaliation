@@ -20,12 +20,12 @@ public final class VillagerLootHandler {
     }
 
     public static void addDrops(Villager villager, LivingDropsEvent event) {
+        CommonfolkVillagerWeapons.ensurePickedMainHandDrop(villager, event);
+
         if (!CommonfolkConfig.ENABLE_VILLAGER_DROPS.get()
                 || villager.isBaby() && !CommonfolkConfig.BABY_VILLAGERS_DROP_LOOT.get()) {
             return;
         }
-
-        CommonfolkVillagerWeapons.ensurePickedMainHandDrop(villager, event);
 
         RandomSource random = villager.getRandom();
         if (CommonfolkRandomUtil.chance(random, CommonfolkConfig.VILLAGER_EMERALD_DROP_CHANCE.get())) {

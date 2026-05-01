@@ -36,7 +36,7 @@ public final class VillagerFleeBehaviorHandler {
                 || shouldSuppressActiveRaidHide(level, villager, brain)
                 || hasFleeMemory(brain);
 
-        clearImmediateFleeMemories(villager);
+        CommonfolkVillagerBrainUtil.clearThreatMemories(villager);
         brain.eraseMemory(MemoryModuleType.HEARD_BELL_TIME);
         brain.eraseMemory(MemoryModuleType.HIDING_PLACE);
 
@@ -52,16 +52,11 @@ public final class VillagerFleeBehaviorHandler {
     }
 
     private static void clearImmediateFleeMemories(Villager villager) {
-        Brain<Villager> brain = villager.getBrain();
-        brain.eraseMemory(MemoryModuleType.HURT_BY);
-        brain.eraseMemory(MemoryModuleType.HURT_BY_ENTITY);
-        brain.eraseMemory(MemoryModuleType.NEAREST_HOSTILE);
+        CommonfolkVillagerBrainUtil.clearThreatMemories(villager);
     }
 
     private static boolean hasFleeMemory(Brain<Villager> brain) {
-        return brain.hasMemoryValue(MemoryModuleType.HURT_BY)
-                || brain.hasMemoryValue(MemoryModuleType.HURT_BY_ENTITY)
-                || brain.hasMemoryValue(MemoryModuleType.NEAREST_HOSTILE)
+        return CommonfolkVillagerBrainUtil.hasThreatMemories(brain)
                 || brain.hasMemoryValue(MemoryModuleType.HEARD_BELL_TIME)
                 || brain.hasMemoryValue(MemoryModuleType.HIDING_PLACE);
     }
