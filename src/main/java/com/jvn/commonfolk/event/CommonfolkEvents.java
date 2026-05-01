@@ -9,6 +9,7 @@ import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.WanderingTrader;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
@@ -65,11 +66,26 @@ public final class CommonfolkEvents {
         if (!(event.getEntity() instanceof Player player)) {
             return;
         }
+        ItemStack interactionStack = player.getItemInHand(event.getHand());
+
+        if (event.getTarget() instanceof Villager villager
+                && VillagerRetaliationHandler.tryPacifyWithEmeralds(villager, player, interactionStack)) {
+            event.setCanceled(true);
+            event.setCancellationResult(InteractionResult.SUCCESS);
+            return;
+        }
 
         if (event.getTarget() instanceof Villager villager
                 && VillagerRetaliationHandler.blockTradingIfHostile(villager, player)) {
             event.setCanceled(true);
             event.setCancellationResult(InteractionResult.FAIL);
+            return;
+        }
+
+        if (event.getTarget() instanceof WanderingTrader trader
+                && WanderingTraderRetaliationHandler.tryPacifyWithEmeralds(trader, player, interactionStack)) {
+            event.setCanceled(true);
+            event.setCancellationResult(InteractionResult.SUCCESS);
             return;
         }
 

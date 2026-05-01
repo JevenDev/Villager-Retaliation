@@ -16,6 +16,7 @@ import net.minecraft.world.entity.animal.horse.TraderLlama;
 import net.minecraft.world.entity.npc.WanderingTrader;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent;
@@ -178,6 +179,29 @@ public final class WanderingTraderRetaliationHandler {
         }
 
         CommonfolkRetaliationUtil.spawnMadParticles(trader);
+        return true;
+    }
+
+    public static boolean tryPacifyWithEmeralds(WanderingTrader trader, Player player, ItemStack interactionStack) {
+        if (trader.level().isClientSide
+                || !trader.isAlive()
+                || !player.isAlive()
+                || !interactionStack.is(Items.EMERALD)
+                || !RETALIATION.isHostileTowards(trader, player, () -> clearAnger(trader))) {
+            return false;
+        }
+
+        int requiredEmeralds = CommonfolkRetaliationUtil.pacifyEmeraldCost(trader);
+        if (interactionStack.getCount() < requiredEmeralds) {
+            CommonfolkRetaliationUtil.spawnPacifyFailureParticles(trader);
+            return true;
+        }
+
+        if (!player.hasInfiniteMaterials()) {
+            interactionStack.shrink(requiredEmeralds);
+        }
+        clearAnger(trader);
+        CommonfolkRetaliationUtil.spawnPacifySuccessParticles(trader);
         return true;
     }
 

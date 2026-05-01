@@ -25,6 +25,8 @@ import net.minecraft.world.entity.npc.WanderingTrader;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent;
@@ -246,6 +248,29 @@ public final class VillagerRetaliationHandler {
         }
 
         CommonfolkRetaliationUtil.spawnMadParticles(villager);
+        return true;
+    }
+
+    public static boolean tryPacifyWithEmeralds(Villager villager, Player player, ItemStack interactionStack) {
+        if (villager.level().isClientSide
+                || !villager.isAlive()
+                || !player.isAlive()
+                || !interactionStack.is(Items.EMERALD)
+                || !RETALIATION.isHostileTowards(villager, player, () -> clearAnger(villager))) {
+            return false;
+        }
+
+        int requiredEmeralds = CommonfolkRetaliationUtil.pacifyEmeraldCost(villager);
+        if (interactionStack.getCount() < requiredEmeralds) {
+            CommonfolkRetaliationUtil.spawnPacifyFailureParticles(villager);
+            return true;
+        }
+
+        if (!player.hasInfiniteMaterials()) {
+            interactionStack.shrink(requiredEmeralds);
+        }
+        clearAnger(villager);
+        CommonfolkRetaliationUtil.spawnPacifySuccessParticles(villager);
         return true;
     }
 
