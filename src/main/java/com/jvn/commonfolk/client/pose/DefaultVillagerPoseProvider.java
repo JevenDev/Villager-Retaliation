@@ -1,10 +1,8 @@
 package com.jvn.commonfolk.client.pose;
 
 import com.jvn.commonfolk.combat.CommonfolkPotionUtil;
-import com.jvn.commonfolk.util.CommonfolkVillagerCombatUtil;
 import com.jvn.commonfolk.villager.CommonfolkVillagerWeapons;
 import net.minecraft.world.entity.npc.Villager;
-import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
@@ -39,7 +37,7 @@ public final class DefaultVillagerPoseProvider implements VillagerPoseProvider<V
         if (isHoldingTrident(villager) && isInCombat(villager)) {
             return villager.swinging || attackTime > 0.0F ? VillagerArmPose.MELEE_WEAPON : VillagerArmPose.HOLDING_ITEM;
         }
-        if (CommonfolkVillagerWeapons.hasUsableWeapon(villager)) {
+        if (hasUsableWeapon(villager)) {
             return isInCombat(villager) ? VillagerArmPose.MELEE_WEAPON : VillagerArmPose.HOLDING_ITEM;
         }
         if (isHoldingRangedWeapon(villager)) {
@@ -65,43 +63,10 @@ public final class DefaultVillagerPoseProvider implements VillagerPoseProvider<V
             return true;
         }
 
-        return CommonfolkVillagerCombatUtil.isInCombat(villager)
-                || CommonfolkVillagerWeapons.hasUsableWeapon(villager)
+        return isInCombat(villager)
+                || hasUsableWeapon(villager)
                 || isHoldingChargedCrossbow(villager)
                 || isHoldingPotionItem(villager);
-    }
-
-    @Override
-    public boolean shouldRenderHeldItem(Villager villager) {
-        return !villager.getMainHandItem().isEmpty() || !villager.getOffhandItem().isEmpty();
-    }
-
-    private static boolean isHoldingRangedWeapon(Villager villager) {
-        return villager.isHolding(CommonfolkVillagerWeapons::isRangedWeapon);
-    }
-
-    private static boolean isHoldingCrossbow(Villager villager) {
-        return villager.isHolding(CommonfolkVillagerWeapons::isCrossbowWeapon);
-    }
-
-    private static boolean isHoldingBow(Villager villager) {
-        return villager.isHolding(CommonfolkVillagerWeapons::isBowWeapon);
-    }
-
-    private static boolean isHoldingTrident(Villager villager) {
-        return villager.isHolding(CommonfolkVillagerWeapons::isTridentWeapon);
-    }
-
-    private static boolean isHoldingChargedCrossbow(Villager villager) {
-        ItemStack mainHand = villager.getMainHandItem();
-        if (CommonfolkVillagerWeapons.isCrossbowWeapon(mainHand) && mainHand.getItem() instanceof CrossbowItem && CrossbowItem.isCharged(mainHand)) {
-            return true;
-        }
-
-        ItemStack offHand = villager.getOffhandItem();
-        return CommonfolkVillagerWeapons.isCrossbowWeapon(offHand)
-                && offHand.getItem() instanceof CrossbowItem
-                && CrossbowItem.isCharged(offHand);
     }
 
     private static boolean isHoldingPotionItem(Villager villager) {
@@ -110,9 +75,5 @@ public final class DefaultVillagerPoseProvider implements VillagerPoseProvider<V
 
     private static boolean isHoldingDrinkableCombatConsumable(Villager villager) {
         return villager.isHolding(CommonfolkPotionUtil::isDrinkableCombatConsumable);
-    }
-
-    private static boolean isInCombat(Villager villager) {
-        return CommonfolkVillagerCombatUtil.isInCombat(villager);
     }
 }

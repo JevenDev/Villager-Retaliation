@@ -57,10 +57,6 @@ public final class CommonfolkVillagerWeapons {
         return isMeleeWeapon(stack) || isRangedWeapon(stack);
     }
 
-    public static boolean isUsableWeaponInMainHand(AbstractVillager villager) {
-        return isUsableWeapon(villager.getMainHandItem());
-    }
-
     public static Optional<ItemEntity> findNearestWeapon(AbstractVillager villager) {
         AABB searchBox = villager.getBoundingBox().inflate(WEAPON_SEARCH_RADIUS);
         return villager.level().getEntitiesOfClass(ItemEntity.class, searchBox, CommonfolkVillagerWeapons::canBePickedUp).stream()

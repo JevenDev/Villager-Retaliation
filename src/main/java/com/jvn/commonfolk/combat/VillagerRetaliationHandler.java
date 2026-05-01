@@ -1,6 +1,8 @@
 package com.jvn.commonfolk.combat;
 
 import com.jvn.commonfolk.config.CommonfolkConfig;
+import com.jvn.commonfolk.combat.CommonfolkRetaliationUtil.AngerTarget;
+import com.jvn.commonfolk.combat.CommonfolkRetaliationUtil.TemporaryWeaponState;
 import com.jvn.commonfolk.util.CommonfolkVillagerCombatUtil;
 import com.jvn.commonfolk.villager.CommonfolkVillagerRules;
 import com.jvn.commonfolk.villager.CommonfolkVillagerWeapons;
@@ -8,9 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -18,19 +18,14 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.ai.behavior.BehaviorUtils;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.npc.WanderingTrader;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.schedule.Activity;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.AABB;
@@ -88,7 +83,7 @@ public final class VillagerRetaliationHandler {
         }
 
         if (event.getEntity() instanceof WanderingTrader trader) {
-            resolveAttacker(event.getSource()).ifPresent(attacker ->
+            CommonfolkVillagerCombatUtil.resolveAttacker(event.getSource()).ifPresent(attacker ->
                     angerNearbyVillagers(trader, attacker, CommonfolkConfig.VILLAGER_KILL_AGGRO_RADIUS.get()));
             return;
         }
@@ -97,7 +92,7 @@ public final class VillagerRetaliationHandler {
         }
 
         if (villager.isBaby()) {
-            resolveAttacker(event.getSource()).ifPresent(attacker ->
+            CommonfolkVillagerCombatUtil.resolveAttacker(event.getSource()).ifPresent(attacker ->
                     rallyNearbyVillagers(villager, attacker, CommonfolkConfig.VILLAGER_KILL_AGGRO_RADIUS.get()));
             return;
         }
@@ -106,7 +101,7 @@ public final class VillagerRetaliationHandler {
             villager.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 80, 0));
         }
 
-        resolveAttacker(event.getSource()).ifPresent(attacker -> {
+        CommonfolkVillagerCombatUtil.resolveAttacker(event.getSource()).ifPresent(attacker -> {
             if (isNitwitAlarm(villager)) {
                 rallyNearbyVillagers(villager, attacker, CommonfolkConfig.VILLAGER_KILL_AGGRO_RADIUS.get());
                 return;
@@ -138,12 +133,12 @@ public final class VillagerRetaliationHandler {
             return;
         }
 
-        Optional<LivingEntity> attacker = resolveAttacker(event.getSource());
+        Optional<LivingEntity> attacker = CommonfolkVillagerCombatUtil.resolveAttacker(event.getSource());
         if (deceasedIsVillager) {
             triggerNitwitWitnessedDeathFlee(deceased, attacker.orElse(null), CommonfolkConfig.VILLAGER_KILL_AGGRO_RADIUS.get());
         }
 
-        if (attacker.isEmpty() || shouldIgnoreAttacker(attacker.get())) {
+        if (attacker.isEmpty() || CommonfolkVillagerCombatUtil.shouldIgnoreAttacker(attacker.get())) {
             return;
         }
 
@@ -168,7 +163,7 @@ public final class VillagerRetaliationHandler {
             return;
         }
 
-        updateVillagerSwing(villager);
+        CommonfolkVillagerCombatUtil.updateSwingAnimation(villager);
         if (villager.level().isClientSide) {
             return;
         }
@@ -182,15 +177,15 @@ public final class VillagerRetaliationHandler {
         if (angerTarget == null) {
             VillagerRangedCombatHelper.clearState(villager);
             if (VillagerClericPotionHelper.tickDrinkingIfActive(villager)) {
-                restoreCombatMovement(villager);
+                CommonfolkRetaliationUtil.restoreCombatMovement(villager, ORIGINAL_MOVEMENT_SPEEDS);
                 return;
             }
             if (VillagerClericPotionHelper.tryOutOfCombatMilk(villager)) {
-                restoreCombatMovement(villager);
+                CommonfolkRetaliationUtil.restoreCombatMovement(villager, ORIGINAL_MOVEMENT_SPEEDS);
                 return;
             }
             VillagerClericPotionHelper.clearState(villager);
-            restoreCombatMovement(villager);
+            CommonfolkRetaliationUtil.restoreCombatMovement(villager, ORIGINAL_MOVEMENT_SPEEDS);
             return;
         }
 
@@ -207,7 +202,7 @@ public final class VillagerRetaliationHandler {
             }
             return;
         }
-        if (!target.isAlive() || shouldIgnoreAttacker(target)) {
+        if (!target.isAlive() || CommonfolkVillagerCombatUtil.shouldIgnoreAttacker(target)) {
             clearAnger(villager);
             return;
         }
@@ -223,9 +218,7 @@ public final class VillagerRetaliationHandler {
         villager.setTarget(target);
 
         if (villager.hasLineOfSight(target)) {
-            AngerTarget refreshedTarget = angerTarget.withLastSeenGameTick(gameTime);
-            ANGER_TARGETS.put(villager.getUUID(), refreshedTarget);
-            persistAnger(villager, refreshedTarget);
+            CommonfolkRetaliationUtil.refreshAngerTarget(villager, angerTarget, gameTime, ANGER_TARGETS, PERSISTENT_TAG_ROOT);
         } else if (gameTime - angerTarget.lastSeenGameTick() >= CommonfolkConfig.AGGRO_DURATION_TICKS.get()) {
             clearAnger(villager);
             return;
@@ -243,14 +236,15 @@ public final class VillagerRetaliationHandler {
             return;
         }
 
-        boostCombatMovement(villager);
+        CommonfolkRetaliationUtil.boostCombatMovement(villager, ORIGINAL_MOVEMENT_SPEEDS);
 
         handleDefensiveRole(villager, gameTime);
 
         if (VillagerClericPotionHelper.tryCombat(villager, target, level, distanceSqr)) {
             return;
         }
-        if (isUsingRangedCombatMode(villager) && VillagerRangedCombatHelper.tryAttack(villager, target, level, distanceSqr)) {
+        if (CommonfolkRetaliationUtil.isUsingRangedCombatMode(villager)
+                && VillagerRangedCombatHelper.tryAttack(villager, target, level, distanceSqr)) {
             return;
         }
 
@@ -260,8 +254,10 @@ public final class VillagerRetaliationHandler {
         }
 
         villager.getNavigation().moveTo(target, VillagerCombatRoles.movementSpeed(villager));
-        if (canUseMeleeCombatMode(villager) && canMeleeHit(villager, target) && attackReady(villager, gameTime)) {
-            InteractionHand attackHand = selectAttackHand(villager);
+        if (CommonfolkRetaliationUtil.canUseMeleeCombatMode(villager)
+                && CommonfolkRetaliationUtil.canMeleeHit(villager, target)
+                && CommonfolkRetaliationUtil.isAttackReady(villager, NEXT_ATTACK_TICKS, gameTime)) {
+            var attackHand = CommonfolkVillagerCombatUtil.selectAttackHand(villager);
             villager.swing(attackHand, true);
             syncMeleeAttackAttributes(villager);
             villager.doHurtTarget(target);
@@ -274,23 +270,19 @@ public final class VillagerRetaliationHandler {
             return false;
         }
 
-        if (!isHostileTowards(villager, player)) {
+        if (!CommonfolkRetaliationUtil.isHostileTowards(villager, player, ANGER_TARGETS, PERSISTENT_TAG_ROOT, () -> clearAnger(villager))) {
             return false;
         }
 
-        spawnMadParticles(villager);
+        CommonfolkRetaliationUtil.spawnMadParticles(villager);
         return true;
     }
 
     private static void anger(Villager villager, LivingEntity attacker) {
-        if (shouldIgnoreAttacker(attacker) || !villager.isAlive() || villager.isBaby() || attacker == villager) {
+        if (villager.isBaby()) {
             return;
         }
-
-        long gameTime = villager.level().getGameTime();
-        AngerTarget angerTarget = new AngerTarget(attacker.getUUID(), gameTime);
-        ANGER_TARGETS.put(villager.getUUID(), angerTarget);
-        persistAnger(villager, angerTarget);
+        CommonfolkRetaliationUtil.tryAnger(villager, attacker, ANGER_TARGETS, PERSISTENT_TAG_ROOT);
     }
 
     private static void tryAcquireHostileTarget(Villager villager) {
@@ -316,26 +308,11 @@ public final class VillagerRetaliationHandler {
             return false;
         }
 
-        Optional<ItemEntity> nearestWeapon = CommonfolkVillagerWeapons.findNearestWeapon(villager);
-        if (nearestWeapon.isEmpty()) {
-            return false;
-        }
-
-        ItemEntity itemEntity = nearestWeapon.get();
-        if (villager.distanceToSqr(itemEntity) <= CommonfolkVillagerWeapons.WEAPON_PICKUP_REACH_SQR) {
-            discardTemporaryWeapon(villager);
-            CommonfolkVillagerWeapons.equipGroundWeapon(villager, itemEntity);
-            VillagerRangedCombatHelper.seedInitialAttackDelay(villager, villager.getMainHandItem());
-            return false;
-        }
-
-        BehaviorUtils.setWalkAndLookTargetMemories(
+        return CommonfolkRetaliationUtil.tryAcquireGroundWeapon(
                 villager,
-                itemEntity,
-                (float) VillagerCombatRoles.movementSpeed(villager),
-                0
+                VillagerCombatRoles.movementSpeed(villager),
+                () -> CommonfolkRetaliationUtil.discardTemporaryWeapon(villager, TEMPORARY_WEAPONS)
         );
-        return true;
     }
 
     private static void clearAnger(Villager villager) {
@@ -352,9 +329,9 @@ public final class VillagerRetaliationHandler {
         if (!preservePotionUse) {
             VillagerClericPotionHelper.clearState(villager);
         }
-        restoreCombatMovement(villager);
+        CommonfolkRetaliationUtil.restoreCombatMovement(villager, ORIGINAL_MOVEMENT_SPEEDS);
         if (restoreWeapon && !preservePotionUse) {
-            restoreTemporaryWeapon(villager);
+            CommonfolkRetaliationUtil.restoreTemporaryWeapon(villager, TEMPORARY_WEAPONS);
         } else {
             TEMPORARY_WEAPONS.remove(villager.getUUID());
         }
@@ -362,44 +339,6 @@ public final class VillagerRetaliationHandler {
         villager.setChasing(false);
         villager.setTarget(null);
         villager.getNavigation().stop();
-    }
-
-    private static Optional<LivingEntity> resolveAttacker(DamageSource source) {
-        Entity attacker = source.getEntity();
-        if (attacker instanceof LivingEntity livingEntity) {
-            return Optional.of(livingEntity);
-        }
-
-        Entity direct = source.getDirectEntity();
-        if (direct instanceof LivingEntity livingEntity) {
-            return Optional.of(livingEntity);
-        }
-
-        return Optional.empty();
-    }
-
-    private static boolean shouldIgnoreAttacker(LivingEntity attacker) {
-        return attacker instanceof Player player
-                && (player.isSpectator()
-                || CommonfolkConfig.NEARBY_VILLAGERS_IGNORE_CREATIVE_PLAYERS.get() && player.isCreative());
-    }
-
-    private static boolean attackReady(Villager villager, long gameTime) {
-        return gameTime >= NEXT_ATTACK_TICKS.getOrDefault(villager.getUUID(), 0L);
-    }
-
-    private static boolean isUsingRangedCombatMode(Villager villager) {
-        return CommonfolkVillagerWeapons.isRangedWeapon(CommonfolkVillagerWeapons.getPrimaryWeapon(villager));
-    }
-
-    private static boolean canUseMeleeCombatMode(Villager villager) {
-        return !isUsingRangedCombatMode(villager);
-    }
-
-    private static boolean canMeleeHit(Villager villager, LivingEntity target) {
-        // Keep armed villagers close to vanilla-like contact reach while requiring truly close contact when unarmed.
-        double reachInflation = CommonfolkVillagerWeapons.hasUsableWeapon(villager) ? 1.0D : 0.6D;
-        return villager.getBoundingBox().inflate(reachInflation).intersects(target.getBoundingBox());
     }
 
     private static void syncMeleeAttackAttributes(Villager villager) {
@@ -478,71 +417,17 @@ public final class VillagerRetaliationHandler {
     }
 
     private static void suppressVanillaPanic(Villager villager) {
-        villager.getBrain().eraseMemory(MemoryModuleType.HURT_BY);
-        villager.getBrain().eraseMemory(MemoryModuleType.HURT_BY_ENTITY);
-        villager.getBrain().eraseMemory(MemoryModuleType.NEAREST_HOSTILE);
+        CommonfolkVillagerCombatUtil.eraseMemoryIfRegistered(villager, MemoryModuleType.HURT_BY);
+        CommonfolkVillagerCombatUtil.eraseMemoryIfRegistered(villager, MemoryModuleType.HURT_BY_ENTITY);
+        CommonfolkVillagerCombatUtil.eraseMemoryIfRegistered(villager, MemoryModuleType.NEAREST_HOSTILE);
     }
 
     private static void restorePersistedAngerIfNeeded(Villager villager) {
-        if (ANGER_TARGETS.containsKey(villager.getUUID())) {
-            return;
-        }
-
-        CompoundTag persistentData = villager.getPersistentData();
-        if (!persistentData.contains(PERSISTENT_TAG_ROOT, CompoundTag.TAG_COMPOUND)) {
-            return;
-        }
-
-        CompoundTag hostilityTag = persistentData.getCompound(PERSISTENT_TAG_ROOT);
-        if (!hostilityTag.hasUUID(PERSISTENT_TARGET_UUID) || !hostilityTag.contains(PERSISTENT_LAST_SEEN_TICK)) {
-            clearPersistedAnger(villager);
-            return;
-        }
-
-        long lastSeenTick = hostilityTag.getLong(PERSISTENT_LAST_SEEN_TICK);
-        long gameTime = villager.level().getGameTime();
-        if (gameTime - lastSeenTick >= CommonfolkConfig.AGGRO_DURATION_TICKS.get()) {
-            clearPersistedAnger(villager);
-            return;
-        }
-
-        ANGER_TARGETS.put(villager.getUUID(), new AngerTarget(hostilityTag.getUUID(PERSISTENT_TARGET_UUID), lastSeenTick));
-    }
-
-    private static boolean isHostileTowards(Villager villager, Player player) {
-        restorePersistedAngerIfNeeded(villager);
-        AngerTarget angerTarget = ANGER_TARGETS.get(villager.getUUID());
-        if (angerTarget == null) {
-            return false;
-        }
-
-        long gameTime = villager.level().getGameTime();
-        if (gameTime - angerTarget.lastSeenGameTick() >= CommonfolkConfig.AGGRO_DURATION_TICKS.get()) {
-            clearAnger(villager);
-            return false;
-        }
-
-        return angerTarget.targetId().equals(player.getUUID());
-    }
-
-    private static void persistAnger(Villager villager, AngerTarget angerTarget) {
-        CompoundTag hostilityTag = new CompoundTag();
-        hostilityTag.putUUID(PERSISTENT_TARGET_UUID, angerTarget.targetId());
-        hostilityTag.putLong(PERSISTENT_LAST_SEEN_TICK, angerTarget.lastSeenGameTick());
-        villager.getPersistentData().put(PERSISTENT_TAG_ROOT, hostilityTag);
+        CommonfolkRetaliationUtil.restorePersistedAngerIfNeeded(villager, ANGER_TARGETS, PERSISTENT_TAG_ROOT);
     }
 
     private static void clearPersistedAnger(Villager villager) {
-        villager.getPersistentData().remove(PERSISTENT_TAG_ROOT);
-    }
-
-    private static void spawnMadParticles(Villager villager) {
-        if (!(villager.level() instanceof ServerLevel level)) {
-            return;
-        }
-
-        double y = villager.getY() + villager.getBbHeight() + 0.2D;
-        level.sendParticles(ParticleTypes.ANGRY_VILLAGER, villager.getX(), y, villager.getZ(), 5, 0.25D, 0.15D, 0.25D, 0.01D);
+        CommonfolkRetaliationUtil.clearPersistentAnger(villager, PERSISTENT_TAG_ROOT);
     }
 
     private static void handleDefensiveRole(Villager villager, long gameTime) {
@@ -558,44 +443,17 @@ public final class VillagerRetaliationHandler {
         }
     }
 
-    private static InteractionHand selectAttackHand(Villager villager) {
-        return villager.getMainHandItem().isEmpty() && !villager.getOffhandItem().isEmpty()
-                ? InteractionHand.OFF_HAND
-                : InteractionHand.MAIN_HAND;
-    }
-
-    private static void updateVillagerSwing(Villager villager) {
-        int swingDuration = Math.max(1, villager.getCurrentSwingDuration());
-        if (villager.swinging) {
-            villager.swingTime++;
-            if (villager.swingTime >= swingDuration) {
-                villager.swingTime = 0;
-                villager.swinging = false;
-            }
-        } else {
-            villager.swingTime = 0;
-        }
-
-        villager.attackAnim = (float) villager.swingTime / (float) swingDuration;
-    }
-
     private static void equipCombatWeapon(Villager villager) {
         if (VillagerClericPotionHelper.isActivelyHandlingPotion(villager)) {
             return;
         }
 
         if (CommonfolkVillagerWeapons.maintainAcquiredWeaponAuthority(villager)) {
-            discardTemporaryWeapon(villager);
+            CommonfolkRetaliationUtil.discardTemporaryWeapon(villager, TEMPORARY_WEAPONS);
             return;
         }
 
-        TemporaryWeaponState state = TEMPORARY_WEAPONS.get(villager.getUUID());
-        if (state != null) {
-            // Preserve runtime components (charged projectiles, durability) while angry.
-            if (!ItemStack.isSameItem(villager.getMainHandItem(), state.equippedWeapon())) {
-                villager.setItemSlot(EquipmentSlot.MAINHAND, state.equippedWeapon().copy());
-                villager.setDropChance(EquipmentSlot.MAINHAND, currentCombatWeaponDropChance());
-            }
+        if (CommonfolkRetaliationUtil.maintainTemporaryWeapon(villager, TEMPORARY_WEAPONS)) {
             return;
         }
 
@@ -608,65 +466,6 @@ public final class VillagerRetaliationHandler {
             return;
         }
 
-        ItemStack previousMainHand = villager.getMainHandItem().copy();
-        ItemStack equippedWeapon = CommonfolkCombatWeaponFactory.prepareEquippedCombatWeapon(villager, weapon.copy());
-        float previousDropChance = Mob.DEFAULT_EQUIPMENT_DROP_CHANCE;
-        TEMPORARY_WEAPONS.put(villager.getUUID(), new TemporaryWeaponState(previousMainHand, equippedWeapon.copy(), previousDropChance));
-        villager.setItemSlot(EquipmentSlot.MAINHAND, equippedWeapon);
-        villager.setDropChance(EquipmentSlot.MAINHAND, currentCombatWeaponDropChance());
-        VillagerRangedCombatHelper.seedInitialAttackDelay(villager, equippedWeapon);
-    }
-
-    private static void restoreTemporaryWeapon(Villager villager) {
-        TemporaryWeaponState state = TEMPORARY_WEAPONS.remove(villager.getUUID());
-        if (state == null) {
-            return;
-        }
-
-        if (ItemStack.isSameItemSameComponents(villager.getMainHandItem(), state.equippedWeapon())) {
-            villager.setItemSlot(EquipmentSlot.MAINHAND, state.previousMainHand().copy());
-        }
-        villager.setDropChance(EquipmentSlot.MAINHAND, state.previousDropChance());
-    }
-
-    private static void discardTemporaryWeapon(Villager villager) {
-        TemporaryWeaponState state = TEMPORARY_WEAPONS.remove(villager.getUUID());
-        if (state != null) {
-            villager.setDropChance(EquipmentSlot.MAINHAND, state.previousDropChance());
-        }
-    }
-
-    private static float currentCombatWeaponDropChance() {
-        return CommonfolkConfig.COMBAT_WEAPON_DROP_CHANCE.get().floatValue();
-    }
-
-    private static void boostCombatMovement(Villager villager) {
-        AttributeInstance movementSpeed = villager.getAttribute(Attributes.MOVEMENT_SPEED);
-        if (movementSpeed == null) {
-            return;
-        }
-
-        ORIGINAL_MOVEMENT_SPEEDS.putIfAbsent(villager.getUUID(), movementSpeed.getBaseValue());
-        movementSpeed.setBaseValue(0.75D);
-    }
-
-    private static void restoreCombatMovement(Villager villager) {
-        AttributeInstance movementSpeed = villager.getAttribute(Attributes.MOVEMENT_SPEED);
-        Double originalBaseSpeed = ORIGINAL_MOVEMENT_SPEEDS.remove(villager.getUUID());
-        if (movementSpeed != null && originalBaseSpeed != null) {
-            movementSpeed.setBaseValue(originalBaseSpeed);
-        }
-    }
-
-    private record AngerTarget(UUID targetId, long lastSeenGameTick) {
-        private AngerTarget withLastSeenGameTick(long gameTime) {
-            if (gameTime == this.lastSeenGameTick) {
-                return this;
-            }
-            return new AngerTarget(this.targetId, gameTime);
-        }
-    }
-
-    private record TemporaryWeaponState(ItemStack previousMainHand, ItemStack equippedWeapon, float previousDropChance) {
+        CommonfolkRetaliationUtil.equipTemporaryWeapon(villager, TEMPORARY_WEAPONS, weapon);
     }
 }
