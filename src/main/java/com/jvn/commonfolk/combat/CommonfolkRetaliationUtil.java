@@ -145,6 +145,10 @@ public final class CommonfolkRetaliationUtil {
             return false;
         }
 
+        if (angerTarget.targetId().equals(player.getUUID()) && CommonfolkVillagerCombatUtil.shouldIgnoreAttacker(player)) {
+            return false;
+        }
+
         long gameTime = villager.level().getGameTime();
         if (gameTime - angerTarget.lastSeenGameTick() >= CommonfolkConfig.AGGRO_DURATION_TICKS.get()) {
             clearAnger.run();
@@ -197,13 +201,21 @@ public final class CommonfolkRetaliationUtil {
             }
             return null;
         }
-        if (!target.isAlive() || CommonfolkVillagerCombatUtil.shouldIgnoreAttacker(target)) {
+        if (!target.isAlive()) {
             clearAnger.run();
             return null;
         }
         if (!canFightBack.test(villager)) {
             clearAnger.run();
             return null;
+        }
+
+        boolean targetCurrentlyHostile = !CommonfolkVillagerCombatUtil.shouldIgnoreAttacker(target);
+        if (!targetCurrentlyHostile) {
+            if (villager.hasLineOfSight(target)) {
+                retaliationRuntime.refreshAngerTarget(villager, angerTarget, gameTime);
+            }
+            return new ActiveRetaliationTarget(level, target, gameTime, false);
         }
 
         if (villager.hasLineOfSight(target)) {
@@ -213,7 +225,7 @@ public final class CommonfolkRetaliationUtil {
             return null;
         }
 
-        return new ActiveRetaliationTarget(level, target, gameTime);
+        return new ActiveRetaliationTarget(level, target, gameTime, true);
     }
 
     public static boolean isUsingRangedCombatMode(AbstractVillager villager) {
@@ -329,6 +341,6 @@ public final class CommonfolkRetaliationUtil {
     public record TemporaryWeaponState(ItemStack previousMainHand, ItemStack equippedWeapon, float previousDropChance) {
     }
 
-    public record ActiveRetaliationTarget(ServerLevel level, LivingEntity target, long gameTime) {
+    public record ActiveRetaliationTarget(ServerLevel level, LivingEntity target, long gameTime, boolean targetCurrentlyHostile) {
     }
 }

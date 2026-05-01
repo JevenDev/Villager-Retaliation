@@ -181,6 +181,14 @@ public final class VillagerRetaliationHandler {
         ServerLevel level = retaliationTarget.level();
         LivingEntity target = retaliationTarget.target();
         long gameTime = retaliationTarget.gameTime();
+        if (!retaliationTarget.targetCurrentlyHostile()) {
+            villager.setAggressive(false);
+            villager.setChasing(false);
+            villager.setTarget(null);
+            handlePassivePotionState(villager);
+            villager.getNavigation().stop();
+            return;
+        }
 
         suppressVanillaPanic(villager);
         villager.setAggressive(true);

@@ -127,6 +127,15 @@ public final class WanderingTraderRetaliationHandler {
         ServerLevel level = retaliationTarget.level();
         LivingEntity target = retaliationTarget.target();
         long gameTime = retaliationTarget.gameTime();
+        if (!retaliationTarget.targetCurrentlyHostile()) {
+            trader.setAggressive(false);
+            trader.setTarget(null);
+            VillagerRangedCombatHelper.clearState(trader);
+            CommonfolkRetaliationUtil.restoreCombatMovement(trader);
+            RETALIATION.restoreTemporaryWeapon(trader);
+            trader.getNavigation().stop();
+            return;
+        }
 
         suppressVanillaPanic(trader);
         trader.setAggressive(true);
