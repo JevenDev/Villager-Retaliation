@@ -1,5 +1,6 @@
 package com.jvn.commonfolk.client.pose;
 
+import com.jvn.commonfolk.util.CommonfolkVillagerCombatUtil;
 import com.jvn.commonfolk.villager.CommonfolkVillagerWeapons;
 import net.minecraft.world.entity.npc.WanderingTrader;
 import net.minecraft.world.item.CrossbowItem;
@@ -83,6 +84,6 @@ public final class DefaultWanderingTraderPoseProvider implements VillagerPosePro
     }
 
     private static boolean isInCombat(WanderingTrader trader) {
-        return trader.swinging || trader.isAggressive() || trader.getTarget() != null;
+        return CommonfolkVillagerCombatUtil.isInCombat(trader);
     }
 }

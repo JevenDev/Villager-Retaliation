@@ -10,12 +10,13 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Unit;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.WanderingTrader;
 import net.minecraft.world.entity.projectile.AbstractArrow;
-import net.minecraft.world.entity.projectile.ThrownTrident;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
+import net.minecraft.world.entity.projectile.ThrownTrident;
 import net.minecraft.world.item.BowItem;
 import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.ItemStack;
@@ -44,14 +45,21 @@ final class VillagerRangedCombatHelper {
             villager.getNavigation().stop();
             return true;
         }
+        return tryAttack(villager, target, level, distanceSqr, VillagerCombatRoles.movementSpeed(villager));
+    }
 
+    static boolean tryAttack(WanderingTrader trader, LivingEntity target, ServerLevel level, double distanceSqr) {
+        return tryAttack(trader, target, level, distanceSqr, WanderingTraderCombatRoles.movementSpeed(trader));
+    }
+
+    static boolean tryAttack(AbstractVillager villager, LivingEntity target, ServerLevel level, double distanceSqr, double movementSpeed) {
         ItemStack rangedWeapon = CommonfolkVillagerWeapons.getPrimaryWeapon(villager);
         if (rangedWeapon.isEmpty() || !CommonfolkVillagerWeapons.isRangedWeapon(rangedWeapon)) {
             return false;
         }
 
         if (CommonfolkVillagerWeapons.isTridentWeapon(rangedWeapon)) {
-            return tryTridentAttack(villager, target, level, distanceSqr);
+            return tryTridentAttack(villager, target, level, distanceSqr, movementSpeed);
         }
 
         if (distanceSqr > MAX_BOW_OR_CROSSBOW_DISTANCE_SQR) {
@@ -62,18 +70,18 @@ final class VillagerRangedCombatHelper {
         int seeTime = updateSeeTime(villager, hasLineOfSight);
 
         if (CommonfolkVillagerWeapons.isCrossbowWeapon(rangedWeapon)) {
-            handleCrossbowAttack(villager, target, level, distanceSqr, hasLineOfSight, seeTime);
+            handleCrossbowAttack(villager, target, level, distanceSqr, hasLineOfSight, seeTime, movementSpeed);
             return true;
         }
         if (CommonfolkVillagerWeapons.isBowWeapon(rangedWeapon)) {
-            handleBowAttack(villager, target, level, distanceSqr, hasLineOfSight, seeTime);
+            handleBowAttack(villager, target, level, distanceSqr, hasLineOfSight, seeTime, movementSpeed);
             return true;
         }
 
         return false;
     }
 
-    static void clearState(Villager villager) {
+    static void clearState(AbstractVillager villager) {
         SEE_TIME.remove(villager.getUUID());
         ATTACK_DELAY.remove(villager.getUUID());
         CROSSBOW_STATE.remove(villager.getUUID());
@@ -85,14 +93,20 @@ final class VillagerRangedCombatHelper {
         }
     }
 
-    static void seedInitialAttackDelay(Villager villager, ItemStack equippedWeapon) {
+    static void seedInitialAttackDelay(AbstractVillager villager, ItemStack equippedWeapon) {
         if (CommonfolkVillagerWeapons.isBowWeapon(equippedWeapon)
                 || CommonfolkVillagerWeapons.isCrossbowWeapon(equippedWeapon)) {
             ATTACK_DELAY.put(villager.getUUID(), INITIAL_RANGED_WINDUP_TICKS);
         }
     }
 
-    private static boolean tryTridentAttack(Villager villager, LivingEntity target, ServerLevel level, double distanceSqr) {
+    private static boolean tryTridentAttack(
+            AbstractVillager villager,
+            LivingEntity target,
+            ServerLevel level,
+            double distanceSqr,
+            double movementSpeed
+    ) {
         if (distanceSqr > TRIDENT_MAX_DISTANCE_SQR) {
             return false;
         }
@@ -100,12 +114,12 @@ final class VillagerRangedCombatHelper {
         int attackDelay = ATTACK_DELAY.getOrDefault(villager.getUUID(), 0);
         if (attackDelay > 0) {
             ATTACK_DELAY.put(villager.getUUID(), attackDelay - 1);
-            villager.getNavigation().moveTo(target, VillagerCombatRoles.movementSpeed(villager) * 0.85D);
+            villager.getNavigation().moveTo(target, movementSpeed * 0.85D);
             return true;
         }
 
         if (!villager.hasLineOfSight(target)) {
-            villager.getNavigation().moveTo(target, VillagerCombatRoles.movementSpeed(villager));
+            villager.getNavigation().moveTo(target, movementSpeed);
             return true;
         }
 
@@ -133,7 +147,7 @@ final class VillagerRangedCombatHelper {
         return true;
     }
 
-    private static int updateSeeTime(Villager villager, boolean hasLineOfSight) {
+    private static int updateSeeTime(AbstractVillager villager, boolean hasLineOfSight) {
         int seeTime = SEE_TIME.getOrDefault(villager.getUUID(), 0);
         boolean couldSeeLastTick = seeTime > 0;
         if (hasLineOfSight != couldSeeLastTick) {
@@ -146,17 +160,18 @@ final class VillagerRangedCombatHelper {
     }
 
     private static void handleBowAttack(
-            Villager villager,
+            AbstractVillager villager,
             LivingEntity target,
             ServerLevel level,
             double distanceSqr,
             boolean hasLineOfSight,
-            int seeTime
+            int seeTime,
+            double movementSpeed
     ) {
         if (distanceSqr <= 100.0D && seeTime >= 20) {
             villager.getNavigation().stop();
         } else {
-            villager.getNavigation().moveTo(target, VillagerCombatRoles.movementSpeed(villager));
+            villager.getNavigation().moveTo(target, movementSpeed);
         }
 
         if (villager.isUsingItem()) {
@@ -187,7 +202,7 @@ final class VillagerRangedCombatHelper {
         }
     }
 
-    private static void fireBowLikeIllusioner(Villager villager, LivingEntity target, ServerLevel level, float power) {
+    private static void fireBowLikeIllusioner(AbstractVillager villager, LivingEntity target, ServerLevel level, float power) {
         InteractionHand hand = CommonfolkVillagerWeapons.getHoldingHand(villager, CommonfolkVillagerWeapons::isBowWeapon);
         ItemStack bowStack = villager.getItemInHand(hand);
         ItemStack ammo = villager.getProjectile(bowStack);
@@ -210,12 +225,13 @@ final class VillagerRangedCombatHelper {
     }
 
     private static void handleCrossbowAttack(
-            Villager villager,
+            AbstractVillager villager,
             LivingEntity target,
             ServerLevel level,
             double distanceSqr,
             boolean hasLineOfSight,
-            int seeTime
+            int seeTime,
+            double movementSpeed
     ) {
         int attackDelay = ATTACK_DELAY.getOrDefault(villager.getUUID(), 0);
         if (attackDelay > 0) {
@@ -231,7 +247,7 @@ final class VillagerRangedCombatHelper {
 
         boolean shouldMove = (distanceSqr > 64.0D || seeTime < 5) && attackDelay == 0;
         if (shouldMove) {
-            villager.getNavigation().moveTo(target, state == CrossbowState.UNCHARGED ? VillagerCombatRoles.movementSpeed(villager) : 0.25D);
+            villager.getNavigation().moveTo(target, state == CrossbowState.UNCHARGED ? movementSpeed : 0.25D);
         } else {
             villager.getNavigation().stop();
         }
@@ -282,7 +298,7 @@ final class VillagerRangedCombatHelper {
         }
     }
 
-    private static void fireCrossbowLikePillager(Villager villager, LivingEntity target, ServerLevel level) {
+    private static void fireCrossbowLikePillager(AbstractVillager villager, LivingEntity target, ServerLevel level) {
         InteractionHand hand = CommonfolkVillagerWeapons.getHoldingHand(villager, CommonfolkVillagerWeapons::isCrossbowWeapon);
         ItemStack weapon = villager.getItemInHand(hand);
         if (!(weapon.getItem() instanceof CrossbowItem crossbowItem)) {
@@ -315,18 +331,18 @@ final class VillagerRangedCombatHelper {
         weapon.set(DataComponents.CHARGED_PROJECTILES, ChargedProjectiles.of(projectiles.get(0).copyWithCount(1)));
     }
 
-    private static int nextCrossbowPostLoadDelay(Villager villager) {
+    private static int nextCrossbowPostLoadDelay(AbstractVillager villager) {
         return CROSSBOW_POST_LOAD_DELAY_BASE_TICKS
                 + villager.getRandom().nextInt(CROSSBOW_POST_LOAD_DELAY_RANDOM_TICKS);
     }
 
-    private static boolean isHoldingChargedCrossbow(Villager villager) {
+    private static boolean isHoldingChargedCrossbow(AbstractVillager villager) {
         InteractionHand hand = CommonfolkVillagerWeapons.getHoldingHand(villager, CommonfolkVillagerWeapons::isCrossbowWeapon);
         ItemStack weapon = villager.getItemInHand(hand);
         return weapon.getItem() instanceof CrossbowItem && CrossbowItem.isCharged(weapon);
     }
 
-    private static void ensureCrossbowMarkedCharged(Villager villager) {
+    private static void ensureCrossbowMarkedCharged(AbstractVillager villager) {
         InteractionHand hand = CommonfolkVillagerWeapons.getHoldingHand(villager, CommonfolkVillagerWeapons::isCrossbowWeapon);
         ItemStack weapon = villager.getItemInHand(hand);
         if (weapon.getItem() instanceof CrossbowItem && !CrossbowItem.isCharged(weapon)) {
@@ -335,7 +351,7 @@ final class VillagerRangedCombatHelper {
         }
     }
 
-    private static ItemStack resolveDefaultCrossbowProjectile(Villager villager, ItemStack crossbow) {
+    private static ItemStack resolveDefaultCrossbowProjectile(AbstractVillager villager, ItemStack crossbow) {
         ItemStack projectile = villager.getProjectile(crossbow);
         if (projectile.isEmpty()) {
             projectile = new ItemStack(Items.ARROW);

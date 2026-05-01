@@ -1,5 +1,6 @@
 package com.jvn.commonfolk.loot;
 
+import com.jvn.commonfolk.combat.CommonfolkCombatWeaponFactory;
 import com.jvn.commonfolk.combat.VillagerCombatRoles;
 import com.jvn.commonfolk.config.CommonfolkConfig;
 import com.jvn.commonfolk.util.CommonfolkItemUtil;
@@ -7,16 +8,11 @@ import com.jvn.commonfolk.util.CommonfolkVillagerCombatUtil;
 import com.jvn.commonfolk.util.CommonfolkLootUtil;
 import com.jvn.commonfolk.util.CommonfolkRandomUtil;
 import com.jvn.commonfolk.villager.CommonfolkVillagerWeapons;
-import net.minecraft.world.Difficulty;
-import net.minecraft.world.DifficultyInstance;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.enchantment.EnchantmentHelper;
-import net.minecraft.world.item.enchantment.providers.VanillaEnchantmentProviders;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 
 public final class VillagerLootHandler {
@@ -79,21 +75,7 @@ public final class VillagerLootHandler {
     }
 
     private static ItemStack maybeEnchantLootWeapon(Villager villager, ItemStack weapon, RandomSource random) {
-        if (!(villager.level() instanceof ServerLevel level)
-                || level.getDifficulty() != Difficulty.HARD
-                || !CommonfolkRandomUtil.chance(random, CommonfolkConfig.COMBAT_WEAPON_ENCHANT_CHANCE.get())) {
-            return weapon;
-        }
-
-        DifficultyInstance difficulty = level.getCurrentDifficultyAt(villager.blockPosition());
-        EnchantmentHelper.enchantItemFromProvider(
-                weapon,
-                level.registryAccess(),
-                VanillaEnchantmentProviders.MOB_SPAWN_EQUIPMENT,
-                difficulty,
-                random
-        );
-        return weapon;
+        return CommonfolkCombatWeaponFactory.maybeEnchantCombatWeapon(villager, weapon, random);
     }
 
     private static boolean isInCombat(Villager villager) {

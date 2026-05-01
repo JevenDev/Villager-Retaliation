@@ -3,6 +3,7 @@ package com.jvn.commonfolk.loot;
 import com.jvn.commonfolk.config.CommonfolkConfig;
 import com.jvn.commonfolk.util.CommonfolkLootUtil;
 import com.jvn.commonfolk.util.CommonfolkRandomUtil;
+import com.jvn.commonfolk.villager.CommonfolkVillagerWeapons;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.npc.WanderingTrader;
 import net.minecraft.world.item.ItemStack;
@@ -21,6 +22,8 @@ public final class WanderingTraderLootHandler {
         if (!CommonfolkConfig.ENABLE_WANDERING_TRADER_DROPS.get()) {
             return;
         }
+
+        CommonfolkVillagerWeapons.ensurePickedMainHandDrop(trader, event);
 
         RandomSource random = trader.getRandom();
         if (CommonfolkConfig.WANDERER_DROP_EMERALDS.get()) {

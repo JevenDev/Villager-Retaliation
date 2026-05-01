@@ -9,8 +9,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.world.Difficulty;
-import net.minecraft.world.DifficultyInstance;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.tags.DamageTypeTags;
@@ -35,8 +33,6 @@ import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.enchantment.EnchantmentHelper;
-import net.minecraft.world.item.enchantment.providers.VanillaEnchantmentProviders;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
@@ -613,7 +609,7 @@ public final class VillagerRetaliationHandler {
         }
 
         ItemStack previousMainHand = villager.getMainHandItem().copy();
-        ItemStack equippedWeapon = prepareCombatWeapon(villager, weapon.copy());
+        ItemStack equippedWeapon = CommonfolkCombatWeaponFactory.prepareEquippedCombatWeapon(villager, weapon.copy());
         float previousDropChance = Mob.DEFAULT_EQUIPMENT_DROP_CHANCE;
         TEMPORARY_WEAPONS.put(villager.getUUID(), new TemporaryWeaponState(previousMainHand, equippedWeapon.copy(), previousDropChance));
         villager.setItemSlot(EquipmentSlot.MAINHAND, equippedWeapon);
@@ -640,35 +636,8 @@ public final class VillagerRetaliationHandler {
         }
     }
 
-    private static ItemStack prepareCombatWeapon(Villager villager, ItemStack weapon) {
-        if (weapon.is(Items.BOOK) || weapon.is(Items.BREAD)) {
-            return weapon;
-        }
-
-        if (!(villager.level() instanceof ServerLevel level) || level.getDifficulty() != Difficulty.HARD) {
-            return weapon;
-        }
-
-        DifficultyInstance difficulty = level.getCurrentDifficultyAt(villager.blockPosition());
-        if (villager.getRandom().nextFloat() < currentCombatWeaponEnchantChance()) {
-            EnchantmentHelper.enchantItemFromProvider(
-                    weapon,
-                    level.registryAccess(),
-                    VanillaEnchantmentProviders.MOB_SPAWN_EQUIPMENT,
-                    difficulty,
-                    villager.getRandom()
-            );
-        }
-
-        return weapon;
-    }
-
     private static float currentCombatWeaponDropChance() {
         return CommonfolkConfig.COMBAT_WEAPON_DROP_CHANCE.get().floatValue();
-    }
-
-    private static float currentCombatWeaponEnchantChance() {
-        return CommonfolkConfig.COMBAT_WEAPON_ENCHANT_CHANCE.get().floatValue();
     }
 
     private static void boostCombatMovement(Villager villager) {

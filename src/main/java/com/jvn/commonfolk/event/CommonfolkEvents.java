@@ -51,6 +51,7 @@ public final class CommonfolkEvents {
     public static void onEntityTickPre(EntityTickEvent.Pre event) {
         VillagerFleeBehaviorHandler.onEntityTickPre(event);
         VillagerRetaliationHandler.onEntityTickPre(event);
+        WanderingTraderRetaliationHandler.onEntityTickPre(event);
     }
 
     public static void onEntityTickPost(EntityTickEvent.Post event) {

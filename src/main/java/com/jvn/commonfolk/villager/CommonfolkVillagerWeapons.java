@@ -10,7 +10,9 @@ import java.util.UUID;
 import java.util.function.Predicate;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.BowItem;
 import net.minecraft.world.item.CrossbowItem;
@@ -29,11 +31,11 @@ public final class CommonfolkVillagerWeapons {
     private CommonfolkVillagerWeapons() {
     }
 
-    public static boolean hasUsableWeapon(Villager villager) {
+    public static boolean hasUsableWeapon(AbstractVillager villager) {
         return isUsableWeapon(villager.getMainHandItem()) || isUsableWeapon(villager.getOffhandItem());
     }
 
-    public static ItemStack getPrimaryWeapon(Villager villager) {
+    public static ItemStack getPrimaryWeapon(AbstractVillager villager) {
         ItemStack mainHand = villager.getMainHandItem();
         if (isUsableWeapon(mainHand)) {
             return mainHand;
@@ -47,19 +49,19 @@ public final class CommonfolkVillagerWeapons {
         return !mainHand.isEmpty() ? mainHand : offHand;
     }
 
-    public static InteractionHand getHoldingHand(Villager villager, Predicate<ItemStack> predicate) {
-        return predicate.test(villager.getMainHandItem()) ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
+    public static InteractionHand getHoldingHand(LivingEntity entity, Predicate<ItemStack> predicate) {
+        return predicate.test(entity.getMainHandItem()) ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
     }
 
     public static boolean isUsableWeapon(ItemStack stack) {
         return isMeleeWeapon(stack) || isRangedWeapon(stack);
     }
 
-    public static boolean isUsableWeaponInMainHand(Villager villager) {
+    public static boolean isUsableWeaponInMainHand(AbstractVillager villager) {
         return isUsableWeapon(villager.getMainHandItem());
     }
 
-    public static Optional<ItemEntity> findNearestWeapon(Villager villager) {
+    public static Optional<ItemEntity> findNearestWeapon(AbstractVillager villager) {
         AABB searchBox = villager.getBoundingBox().inflate(WEAPON_SEARCH_RADIUS);
         return villager.level().getEntitiesOfClass(ItemEntity.class, searchBox, CommonfolkVillagerWeapons::canBePickedUp).stream()
                 .filter(itemEntity -> isUsableWeapon(itemEntity.getItem()))
@@ -68,7 +70,7 @@ public final class CommonfolkVillagerWeapons {
                         .thenComparingDouble(villager::distanceToSqr));
     }
 
-    public static void equipGroundWeapon(Villager villager, ItemEntity itemEntity) {
+    public static void equipGroundWeapon(AbstractVillager villager, ItemEntity itemEntity) {
         ItemStack groundStack = itemEntity.getItem();
         if (groundStack.isEmpty()) {
             return;
@@ -95,7 +97,7 @@ public final class CommonfolkVillagerWeapons {
         }
     }
 
-    public static void ensurePickedMainHandDrop(Villager villager, LivingDropsEvent event) {
+    public static void ensurePickedMainHandDrop(AbstractVillager villager, LivingDropsEvent event) {
         ItemStack trackedPickup = PICKED_UP_MAINHAND_ITEMS.remove(villager.getUUID());
         if (trackedPickup == null) {
             return;
@@ -110,7 +112,7 @@ public final class CommonfolkVillagerWeapons {
         CommonfolkLootUtil.addDropIfNoMatchingItem(event, trackedPickup.copy());
     }
 
-    public static boolean maintainAcquiredWeaponAuthority(Villager villager) {
+    public static boolean maintainAcquiredWeaponAuthority(AbstractVillager villager) {
         ItemStack trackedPickup = PICKED_UP_MAINHAND_ITEMS.get(villager.getUUID());
         if (trackedPickup == null || trackedPickup.isEmpty()) {
             return false;
