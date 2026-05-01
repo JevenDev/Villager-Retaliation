@@ -76,11 +76,6 @@ public final class VillagerRetaliationHandler {
             return;
         }
 
-        if (event.getEntity() instanceof WanderingTrader trader) {
-            CommonfolkVillagerCombatUtil.resolveAttacker(event.getSource()).ifPresent(attacker ->
-                    angerNearbyVillagers(trader, attacker, CommonfolkConfig.VILLAGER_KILL_AGGRO_RADIUS.get()));
-            return;
-        }
         if (!(event.getEntity() instanceof Villager villager)) {
             return;
         }

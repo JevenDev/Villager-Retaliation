@@ -2,10 +2,12 @@ package com.jvn.commonfolk.combat;
 
 import com.jvn.commonfolk.combat.CommonfolkRetaliationUtil.AngerTarget;
 import com.jvn.commonfolk.combat.CommonfolkRetaliationUtil.TemporaryWeaponState;
+import com.jvn.commonfolk.villager.CommonfolkVillagerWeapons;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -17,6 +19,7 @@ final class CommonfolkRetaliationRuntime<T extends AbstractVillager> {
     private final Map<UUID, AngerTarget> angerTargets = new HashMap<>();
     private final Map<UUID, Long> nextAttackTicks = new HashMap<>();
     private final Map<UUID, Long> nextGroundWeaponScanTicks = new HashMap<>();
+    private final Map<UUID, UUID> pursuedGroundWeaponIds = new HashMap<>();
     private final Map<UUID, TemporaryWeaponState> temporaryWeapons = new HashMap<>();
 
     CommonfolkRetaliationRuntime(String persistentTagRoot) {
@@ -61,12 +64,32 @@ final class CommonfolkRetaliationRuntime<T extends AbstractVillager> {
 
     boolean tryAcquireGroundWeapon(T villager, double movementSpeed, Runnable beforeEquip, long gameTime) {
         UUID villagerId = villager.getUUID();
+        ItemEntity pursuedWeapon = currentPursuedGroundWeapon(villager);
+        if (pursuedWeapon != null) {
+            if (CommonfolkRetaliationUtil.tryAcquireGroundWeapon(villager, pursuedWeapon, movementSpeed, beforeEquip)) {
+                return true;
+            }
+            this.pursuedGroundWeaponIds.remove(villagerId);
+        }
+
         if (gameTime < this.nextGroundWeaponScanTicks.getOrDefault(villagerId, 0L)) {
             return false;
         }
 
         this.nextGroundWeaponScanTicks.put(villagerId, gameTime + GROUND_WEAPON_SCAN_COOLDOWN_TICKS);
-        return CommonfolkRetaliationUtil.tryAcquireGroundWeapon(villager, movementSpeed, beforeEquip);
+        return CommonfolkVillagerWeapons.findNearestWeapon(villager)
+                .map(itemEntity -> {
+                    this.pursuedGroundWeaponIds.put(villagerId, itemEntity.getUUID());
+                    boolean pursuing = CommonfolkRetaliationUtil.tryAcquireGroundWeapon(villager, itemEntity, movementSpeed, beforeEquip);
+                    if (!pursuing) {
+                        this.pursuedGroundWeaponIds.remove(villagerId);
+                    }
+                    return pursuing;
+                })
+                .orElseGet(() -> {
+                    this.pursuedGroundWeaponIds.remove(villagerId);
+                    return false;
+                });
     }
 
     boolean hasTemporaryWeapon(T villager) {
@@ -99,6 +122,17 @@ final class CommonfolkRetaliationRuntime<T extends AbstractVillager> {
         this.angerTargets.remove(villagerId);
         this.nextAttackTicks.remove(villagerId);
         this.nextGroundWeaponScanTicks.remove(villagerId);
+        this.pursuedGroundWeaponIds.remove(villagerId);
         this.temporaryWeapons.remove(villagerId);
+    }
+
+    private ItemEntity currentPursuedGroundWeapon(T villager) {
+        UUID weaponId = this.pursuedGroundWeaponIds.get(villager.getUUID());
+        if (weaponId == null || !(villager.level() instanceof net.minecraft.server.level.ServerLevel level)) {
+            return null;
+        }
+
+        var entity = level.getEntity(weaponId);
+        return entity instanceof ItemEntity itemEntity ? itemEntity : null;
     }
 }

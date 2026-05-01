@@ -63,7 +63,22 @@ public final class CommonfolkRetaliationUtil {
             return false;
         }
 
-        ItemEntity itemEntity = nearestWeapon.get();
+        return tryAcquireGroundWeapon(villager, nearestWeapon.get(), movementSpeed, beforeEquip);
+    }
+
+    public static <T extends AbstractVillager> boolean tryAcquireGroundWeapon(
+            T villager,
+            ItemEntity itemEntity,
+            double movementSpeed,
+            Runnable beforeEquip
+    ) {
+        if (!itemEntity.isAlive()
+                || itemEntity.hasPickUpDelay()
+                || itemEntity.getItem().isEmpty()
+                || !CommonfolkVillagerWeapons.isUsableWeapon(itemEntity.getItem())) {
+            return false;
+        }
+
         if (villager.distanceToSqr(itemEntity) <= CommonfolkVillagerWeapons.WEAPON_PICKUP_REACH_SQR) {
             beforeEquip.run();
             CommonfolkVillagerWeapons.equipGroundWeapon(villager, itemEntity);
