@@ -2,7 +2,6 @@ package com.jvn.commonfolk.client.renderer.layer;
 
 import com.jvn.commonfolk.client.model.BaseVillagerModel;
 import com.jvn.commonfolk.client.model.CommonfolkVillagerModel;
-import com.jvn.commonfolk.client.pose.DefaultVillagerPoseProvider;
 import com.jvn.commonfolk.client.pose.VillagerPoseProvider;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
@@ -11,22 +10,18 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.world.entity.HumanoidArm;
-import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 
-public class CombatItemInHandLayer extends RenderLayer<Villager, BaseVillagerModel<Villager>> {
+public class CombatItemInHandLayer<T extends AbstractVillager> extends RenderLayer<T, BaseVillagerModel<T>> {
     private final ItemInHandRenderer itemInHandRenderer;
-    private final VillagerPoseProvider<Villager> poseProvider;
-
-    public CombatItemInHandLayer(RenderLayerParent<Villager, BaseVillagerModel<Villager>> renderer, ItemInHandRenderer itemInHandRenderer) {
-        this(renderer, itemInHandRenderer, DefaultVillagerPoseProvider.INSTANCE);
-    }
+    private final VillagerPoseProvider<T> poseProvider;
 
     public CombatItemInHandLayer(
-            RenderLayerParent<Villager, BaseVillagerModel<Villager>> renderer,
+            RenderLayerParent<T, BaseVillagerModel<T>> renderer,
             ItemInHandRenderer itemInHandRenderer,
-            VillagerPoseProvider<Villager> poseProvider
+            VillagerPoseProvider<T> poseProvider
     ) {
         super(renderer);
         this.itemInHandRenderer = itemInHandRenderer;
@@ -38,7 +33,7 @@ public class CombatItemInHandLayer extends RenderLayer<Villager, BaseVillagerMod
             PoseStack poseStack,
             MultiBufferSource buffer,
             int packedLight,
-            Villager villager,
+            T villager,
             float limbSwing,
             float limbSwingAmount,
             float partialTicks,
@@ -66,14 +61,16 @@ public class CombatItemInHandLayer extends RenderLayer<Villager, BaseVillagerMod
             poseStack.scale(0.5F, 0.5F, 0.5F);
         }
 
-        this.renderArmWithItem(villager, combatModel, rightHandItem, ItemDisplayContext.THIRD_PERSON_RIGHT_HAND, HumanoidArm.RIGHT, poseStack, buffer, packedLight);
-        this.renderArmWithItem(villager, combatModel, leftHandItem, ItemDisplayContext.THIRD_PERSON_LEFT_HAND, HumanoidArm.LEFT, poseStack, buffer, packedLight);
+        @SuppressWarnings("unchecked")
+        CommonfolkVillagerModel<T> typedModel = (CommonfolkVillagerModel<T>) combatModel;
+        this.renderArmWithItem(villager, typedModel, rightHandItem, ItemDisplayContext.THIRD_PERSON_RIGHT_HAND, HumanoidArm.RIGHT, poseStack, buffer, packedLight);
+        this.renderArmWithItem(villager, typedModel, leftHandItem, ItemDisplayContext.THIRD_PERSON_LEFT_HAND, HumanoidArm.LEFT, poseStack, buffer, packedLight);
         poseStack.popPose();
     }
 
     private void renderArmWithItem(
-            Villager villager,
-            CommonfolkVillagerModel<?> model,
+            T villager,
+            CommonfolkVillagerModel<T> model,
             ItemStack itemStack,
             ItemDisplayContext displayContext,
             HumanoidArm arm,

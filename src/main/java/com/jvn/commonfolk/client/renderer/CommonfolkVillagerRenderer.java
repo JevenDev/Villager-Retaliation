@@ -33,8 +33,8 @@ public class CommonfolkVillagerRenderer extends MobRenderer<Villager, BaseVillag
         this.combatModel = new CommonfolkVillagerModel<>(context.bakeLayer(CommonfolkVillagerModel.LAYER_LOCATION), this.poseProvider);
         this.addLayer(new CustomHeadLayer<>(this, context.getModelSet(), context.getItemInHandRenderer()));
         this.addLayer(new VillagerProfessionLayer<>(this, context.getResourceManager(), "villager"));
-        this.addLayer(new VillagerCrossedArmsItemLayer(this, context.getItemInHandRenderer()));
-        this.addLayer(new CombatItemInHandLayer(this, context.getItemInHandRenderer(), this.poseProvider));
+        this.addLayer(new VillagerCrossedArmsItemLayer<>(this, context.getItemInHandRenderer()));
+        this.addLayer(new CombatItemInHandLayer<>(this, context.getItemInHandRenderer(), this.poseProvider));
     }
 
     @Override

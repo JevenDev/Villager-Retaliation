@@ -2,9 +2,9 @@ package com.jvn.commonfolk.client.model;
 
 import net.minecraft.client.model.VillagerModel;
 import net.minecraft.client.model.geom.ModelPart;
-import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.AbstractVillager;
 
-public class VanillaVillagerModelAdapter<T extends Villager> extends BaseVillagerModel<T> {
+public class VanillaVillagerModelAdapter<T extends AbstractVillager> extends BaseVillagerModel<T> {
     private final VillagerModel<T> vanillaModel;
 
     public VanillaVillagerModelAdapter(ModelPart root) {

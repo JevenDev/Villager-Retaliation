@@ -1,6 +1,7 @@
 package com.jvn.commonfolk.event;
 
 import com.jvn.commonfolk.combat.VillagerRetaliationHandler;
+import com.jvn.commonfolk.combat.WanderingTraderRetaliationHandler;
 import com.jvn.commonfolk.loot.VillagerLootHandler;
 import com.jvn.commonfolk.loot.WanderingTraderLootHandler;
 import com.jvn.commonfolk.villager.VillagerFleeBehaviorHandler;
@@ -22,6 +23,7 @@ public final class CommonfolkEvents {
 
     public static void onEntityAttributeModification(EntityAttributeModificationEvent event) {
         VillagerRetaliationHandler.onEntityAttributeModification(event);
+        WanderingTraderRetaliationHandler.onEntityAttributeModification(event);
     }
 
     public static void onLivingDrops(LivingDropsEvent event) {
@@ -34,6 +36,7 @@ public final class CommonfolkEvents {
 
     public static void onLivingDamage(LivingDamageEvent.Post event) {
         VillagerRetaliationHandler.onLivingDamage(event);
+        WanderingTraderRetaliationHandler.onLivingDamage(event);
     }
 
     public static void onLivingDamagePre(LivingIncomingDamageEvent event) {
@@ -42,6 +45,7 @@ public final class CommonfolkEvents {
 
     public static void onLivingDeath(LivingDeathEvent event) {
         VillagerRetaliationHandler.onLivingDeath(event);
+        WanderingTraderRetaliationHandler.onLivingDeath(event);
     }
 
     public static void onEntityTickPre(EntityTickEvent.Pre event) {
@@ -51,16 +55,24 @@ public final class CommonfolkEvents {
 
     public static void onEntityTickPost(EntityTickEvent.Post event) {
         VillagerRetaliationHandler.onEntityTickPost(event);
+        WanderingTraderRetaliationHandler.onEntityTickPost(event);
         VillagerFleeBehaviorHandler.onEntityTickPost(event);
     }
 
     public static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {
-        if (!(event.getTarget() instanceof Villager villager)
-                || !(event.getEntity() instanceof Player player)) {
+        if (!(event.getEntity() instanceof Player player)) {
             return;
         }
 
-        if (VillagerRetaliationHandler.blockTradingIfHostile(villager, player)) {
+        if (event.getTarget() instanceof Villager villager
+                && VillagerRetaliationHandler.blockTradingIfHostile(villager, player)) {
+            event.setCanceled(true);
+            event.setCancellationResult(InteractionResult.FAIL);
+            return;
+        }
+
+        if (event.getTarget() instanceof WanderingTrader trader
+                && WanderingTraderRetaliationHandler.blockTradingIfHostile(trader, player)) {
             event.setCanceled(true);
             event.setCancellationResult(InteractionResult.FAIL);
         }

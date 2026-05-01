@@ -87,8 +87,16 @@ public final class VillagerRetaliationHandler {
 
     public static void onLivingDamage(LivingDamageEvent.Post event) {
         if (!CommonfolkConfig.ENABLE_VILLAGER_RETALIATION.get()
-                || event.getNewDamage() <= 0.0F
-                || !(event.getEntity() instanceof Villager villager)) {
+                || event.getNewDamage() <= 0.0F) {
+            return;
+        }
+
+        if (event.getEntity() instanceof WanderingTrader trader) {
+            resolveAttacker(event.getSource()).ifPresent(attacker ->
+                    angerNearbyVillagers(trader, attacker, CommonfolkConfig.VILLAGER_KILL_AGGRO_RADIUS.get()));
+            return;
+        }
+        if (!(event.getEntity() instanceof Villager villager)) {
             return;
         }
 

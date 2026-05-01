@@ -5,13 +5,13 @@ import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.HumanoidArm;
-import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.AbstractVillager;
 
 public final class VillagerPoseAnimator {
     private VillagerPoseAnimator() {
     }
 
-    public static <T extends Villager> void applyPose(
+    public static <T extends AbstractVillager> void applyPose(
             VillagerArmPose pose,
             T villager,
             ModelPart head,
@@ -32,7 +32,7 @@ public final class VillagerPoseAnimator {
         }
     }
 
-    public static <T extends Villager> void applyMeleePose(
+    public static <T extends AbstractVillager> void applyMeleePose(
             T villager,
             ModelPart rightArm,
             ModelPart leftArm,
@@ -54,7 +54,7 @@ public final class VillagerPoseAnimator {
     }
 
     public static void applyBowPose(
-            Villager villager,
+            AbstractVillager villager,
             ModelPart head,
             ModelPart rightArm,
             ModelPart leftArm
@@ -80,7 +80,7 @@ public final class VillagerPoseAnimator {
         AnimationUtils.animateCrossbowHold(rightArm, leftArm, head, rightHanded);
     }
 
-    public static void applyCrossbowCharge(Villager villager, ModelPart rightArm, ModelPart leftArm, boolean rightHanded) {
+    public static void applyCrossbowCharge(AbstractVillager villager, ModelPart rightArm, ModelPart leftArm, boolean rightHanded) {
         AnimationUtils.animateCrossbowCharge(rightArm, leftArm, villager, rightHanded);
     }
 
@@ -108,15 +108,15 @@ public final class VillagerPoseAnimator {
         supportArm.zRot = -direction * 0.1F;
     }
 
-    private static boolean isAttackingWithMainHand(Villager villager) {
+    private static boolean isAttackingWithMainHand(AbstractVillager villager) {
         return villager.swingingArm != InteractionHand.OFF_HAND;
     }
 
-    private static boolean isUnarmed(Villager villager) {
+    private static boolean isUnarmed(AbstractVillager villager) {
         return villager.getMainHandItem().isEmpty() && villager.getOffhandItem().isEmpty();
     }
 
-    private static void animateUnarmedPunch(Villager villager, ModelPart rightArm, ModelPart leftArm, float attackProgress) {
+    private static void animateUnarmedPunch(AbstractVillager villager, ModelPart rightArm, ModelPart leftArm, float attackProgress) {
         ModelPart punchArm = isAttackingWithMainHand(villager)
                 ? (villager.getMainArm() == HumanoidArm.RIGHT ? rightArm : leftArm)
                 : (villager.getMainArm() == HumanoidArm.RIGHT ? leftArm : rightArm);

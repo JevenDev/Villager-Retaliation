@@ -1,7 +1,6 @@
 package com.jvn.commonfolk.client.model;
 
 import com.jvn.commonfolk.Commonfolk;
-import com.jvn.commonfolk.client.pose.DefaultVillagerPoseProvider;
 import com.jvn.commonfolk.client.pose.VillagerArmPose;
 import com.jvn.commonfolk.client.pose.VillagerPoseAnimator;
 import com.jvn.commonfolk.client.pose.VillagerPoseProvider;
@@ -16,10 +15,10 @@ import net.minecraft.client.model.geom.builders.PartDefinition;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.HumanoidArm;
-import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.AbstractVillager;
 import com.mojang.blaze3d.vertex.PoseStack;
 
-public class CommonfolkVillagerModel<T extends Villager> extends BaseVillagerModel<T> {
+public class CommonfolkVillagerModel<T extends AbstractVillager> extends BaseVillagerModel<T> {
     public static final ModelLayerLocation LAYER_LOCATION =
             new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(Commonfolk.MOD_ID, "villager"), "main");
 
@@ -34,13 +33,13 @@ public class CommonfolkVillagerModel<T extends Villager> extends BaseVillagerMod
     private final ModelPart leftArm;
     private final ModelPart rightLeg;
     private final ModelPart leftLeg;
-    private final VillagerPoseProvider<Villager> poseProvider;
+    private final VillagerPoseProvider<T> poseProvider;
 
     public CommonfolkVillagerModel(ModelPart root) {
-        this(root, DefaultVillagerPoseProvider.INSTANCE);
+        this(root, null);
     }
 
-    public CommonfolkVillagerModel(ModelPart root, VillagerPoseProvider<Villager> poseProvider) {
+    public CommonfolkVillagerModel(ModelPart root, VillagerPoseProvider<T> poseProvider) {
         this.root = root;
         this.body = root.getChild("body");
         this.head = this.body.getChild("head");
@@ -116,7 +115,9 @@ public class CommonfolkVillagerModel<T extends Villager> extends BaseVillagerMod
         this.leftLeg.yRot = 0.0F;
         this.leftLeg.zRot = 0.0F;
 
-        VillagerArmPose pose = this.poseProvider.getArmPose(villager, this.attackTime);
+        VillagerArmPose pose = this.poseProvider == null
+                ? VillagerArmPose.NONE
+                : this.poseProvider.getArmPose(villager, this.attackTime);
         VillagerPoseAnimator.applyPose(pose, villager, this.head, this.rightArm, this.leftArm, this.attackTime, ageInTicks);
     }
 

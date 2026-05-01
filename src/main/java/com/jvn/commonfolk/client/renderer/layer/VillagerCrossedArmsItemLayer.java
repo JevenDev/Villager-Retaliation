@@ -9,15 +9,15 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 
-public class VillagerCrossedArmsItemLayer extends RenderLayer<Villager, BaseVillagerModel<Villager>> {
+public class VillagerCrossedArmsItemLayer<T extends AbstractVillager> extends RenderLayer<T, BaseVillagerModel<T>> {
     private final ItemInHandRenderer itemInHandRenderer;
 
     public VillagerCrossedArmsItemLayer(
-            RenderLayerParent<Villager, BaseVillagerModel<Villager>> renderer,
+            RenderLayerParent<T, BaseVillagerModel<T>> renderer,
             ItemInHandRenderer itemInHandRenderer
     ) {
         super(renderer);
@@ -29,7 +29,7 @@ public class VillagerCrossedArmsItemLayer extends RenderLayer<Villager, BaseVill
             PoseStack poseStack,
             MultiBufferSource buffer,
             int packedLight,
-            Villager villager,
+            T villager,
             float limbSwing,
             float limbSwingAmount,
             float partialTicks,
