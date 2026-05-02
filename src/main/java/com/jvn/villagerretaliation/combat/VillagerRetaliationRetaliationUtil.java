@@ -1,0 +1,370 @@
+package com.jvn.villagerretaliation.combat;
+
+import com.jvn.villagerretaliation.VillagerRetaliation;
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
+import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.function.Predicate;
+import javax.annotation.Nullable;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.behavior.BehaviorUtils;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.npc.AbstractVillager;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+
+public final class VillagerRetaliationRetaliationUtil {
+    private static final String PERSISTENT_TARGET_UUID = "Target";
+    private static final String PERSISTENT_LAST_SEEN_TICK = "LastSeenTick";
+    private static final int PACIFY_EMERALD_MIN_COST = 3;
+    private static final int PACIFY_EMERALD_MAX_COST = 32;
+    private static final ResourceLocation COMBAT_MOVEMENT_SPEED_MODIFIER_ID =
+            ResourceLocation.fromNamespaceAndPath(VillagerRetaliation.MOD_ID, "combat_movement_speed");
+    private static final AttributeModifier COMBAT_MOVEMENT_SPEED_MODIFIER =
+            new AttributeModifier(COMBAT_MOVEMENT_SPEED_MODIFIER_ID, 0.25D, AttributeModifier.Operation.ADD_VALUE);
+
+    private VillagerRetaliationRetaliationUtil() {
+    }
+
+    public static <T extends AbstractVillager> boolean tryAnger(
+            T villager,
+            LivingEntity attacker,
+            Map<UUID, AngerTarget> angerTargets,
+            String persistentTagRoot
+    ) {
+        if (VillagerRetaliationVillagerCombatUtil.shouldIgnoreAttacker(attacker) || !villager.isAlive() || attacker == villager) {
+            return false;
+        }
+
+        long gameTime = villager.level().getGameTime();
+        AngerTarget angerTarget = new AngerTarget(attacker.getUUID(), gameTime);
+        angerTargets.put(villager.getUUID(), angerTarget);
+        persistAnger(villager, persistentTagRoot, angerTarget);
+        return true;
+    }
+
+    public static <T extends AbstractVillager> boolean tryAcquireGroundWeapon(
+            T villager,
+            double movementSpeed,
+            Runnable beforeEquip
+    ) {
+        Optional<ItemEntity> nearestWeapon = VillagerRetaliationVillagerWeapons.findNearestWeapon(villager);
+        if (nearestWeapon.isEmpty()) {
+            return false;
+        }
+
+        return tryAcquireGroundWeapon(villager, nearestWeapon.get(), movementSpeed, beforeEquip);
+    }
+
+    public static <T extends AbstractVillager> boolean tryAcquireGroundWeapon(
+            T villager,
+            ItemEntity itemEntity,
+            double movementSpeed,
+            Runnable beforeEquip
+    ) {
+        if (!itemEntity.isAlive()
+                || itemEntity.hasPickUpDelay()
+                || itemEntity.getItem().isEmpty()
+                || !VillagerRetaliationVillagerWeapons.isUsableWeapon(itemEntity.getItem())) {
+            return false;
+        }
+
+        if (villager.distanceToSqr(itemEntity) <= VillagerRetaliationVillagerWeapons.WEAPON_PICKUP_REACH_SQR) {
+            beforeEquip.run();
+            VillagerRetaliationVillagerWeapons.equipGroundWeapon(villager, itemEntity);
+            VillagerRangedCombatHelper.seedInitialAttackDelay(villager, villager.getMainHandItem());
+            return false;
+        }
+
+        BehaviorUtils.setWalkAndLookTargetMemories(villager, itemEntity, (float) movementSpeed, 0);
+        return true;
+    }
+
+    public static <T extends AbstractVillager> void restorePersistedAngerIfNeeded(
+            T villager,
+            Map<UUID, AngerTarget> angerTargets,
+            String persistentTagRoot
+    ) {
+        if (angerTargets.containsKey(villager.getUUID())) {
+            return;
+        }
+
+        CompoundTag persistentData = villager.getPersistentData();
+        if (!persistentData.contains(persistentTagRoot, CompoundTag.TAG_COMPOUND)) {
+            return;
+        }
+
+        CompoundTag hostilityTag = persistentData.getCompound(persistentTagRoot);
+        if (!hostilityTag.hasUUID(PERSISTENT_TARGET_UUID) || !hostilityTag.contains(PERSISTENT_LAST_SEEN_TICK)) {
+            clearPersistentAnger(villager, persistentTagRoot);
+            return;
+        }
+
+        long lastSeenTick = hostilityTag.getLong(PERSISTENT_LAST_SEEN_TICK);
+        long gameTime = villager.level().getGameTime();
+        if (gameTime - lastSeenTick >= VillagerRetaliationConfig.AGGRO_DURATION_TICKS.get()) {
+            clearPersistentAnger(villager, persistentTagRoot);
+            return;
+        }
+
+        angerTargets.put(villager.getUUID(), new AngerTarget(hostilityTag.getUUID(PERSISTENT_TARGET_UUID), lastSeenTick));
+    }
+
+    public static <T extends AbstractVillager> void refreshAngerTarget(
+            T villager,
+            AngerTarget angerTarget,
+            long gameTime,
+            Map<UUID, AngerTarget> angerTargets,
+            String persistentTagRoot
+    ) {
+        AngerTarget refreshedTarget = angerTarget.withLastSeenGameTick(gameTime);
+        angerTargets.put(villager.getUUID(), refreshedTarget);
+        persistAnger(villager, persistentTagRoot, refreshedTarget);
+    }
+
+    public static <T extends AbstractVillager> boolean isHostileTowards(
+            T villager,
+            Player player,
+            Map<UUID, AngerTarget> angerTargets,
+            String persistentTagRoot,
+            Runnable clearAnger
+    ) {
+        restorePersistedAngerIfNeeded(villager, angerTargets, persistentTagRoot);
+        AngerTarget angerTarget = angerTargets.get(villager.getUUID());
+        if (angerTarget == null) {
+            return false;
+        }
+
+        if (angerTarget.targetId().equals(player.getUUID()) && VillagerRetaliationVillagerCombatUtil.shouldIgnoreAttacker(player)) {
+            return false;
+        }
+
+        long gameTime = villager.level().getGameTime();
+        if (gameTime - angerTarget.lastSeenGameTick() >= VillagerRetaliationConfig.AGGRO_DURATION_TICKS.get()) {
+            clearAnger.run();
+            return false;
+        }
+
+        return angerTarget.targetId().equals(player.getUUID());
+    }
+
+    public static <T extends AbstractVillager> void clearPersistentAnger(T villager, String persistentTagRoot) {
+        villager.getPersistentData().remove(persistentTagRoot);
+    }
+
+    public static void spawnMadParticles(AbstractVillager villager) {
+        if (!(villager.level() instanceof ServerLevel level)) {
+            return;
+        }
+
+        double y = villager.getY() + villager.getBbHeight() + 0.2D;
+        level.sendParticles(ParticleTypes.ANGRY_VILLAGER, villager.getX(), y, villager.getZ(), 5, 0.25D, 0.15D, 0.25D, 0.01D);
+    }
+
+    public static void spawnPacifySuccessParticles(AbstractVillager villager) {
+        if (!(villager.level() instanceof ServerLevel level)) {
+            return;
+        }
+
+        double y = villager.getY() + villager.getBbHeight() + 0.2D;
+        level.sendParticles(ParticleTypes.HAPPY_VILLAGER, villager.getX(), y, villager.getZ(), 6, 0.3D, 0.2D, 0.3D, 0.01D);
+    }
+
+    public static void spawnPacifyFailureParticles(AbstractVillager villager) {
+        if (!(villager.level() instanceof ServerLevel level)) {
+            return;
+        }
+
+        double y = villager.getY() + villager.getBbHeight() + 0.2D;
+        level.sendParticles(ParticleTypes.SMOKE, villager.getX(), y, villager.getZ(), 6, 0.2D, 0.15D, 0.2D, 0.01D);
+    }
+
+    public static int pacifyEmeraldCost(AbstractVillager villager) {
+        return PACIFY_EMERALD_MIN_COST + villager.getRandom().nextInt(PACIFY_EMERALD_MAX_COST - PACIFY_EMERALD_MIN_COST + 1);
+    }
+
+    public static boolean isAttackReady(AbstractVillager villager, Map<UUID, Long> nextAttackTicks, long gameTime) {
+        return gameTime >= nextAttackTicks.getOrDefault(villager.getUUID(), 0L);
+    }
+
+    @Nullable
+    public static <T extends AbstractVillager> ActiveRetaliationTarget resolveActiveRetaliationTarget(
+            T villager,
+            VillagerRetaliationRetaliationRuntime<T> retaliationRuntime,
+            Predicate<T> canFightBack,
+            Runnable clearAnger
+    ) {
+        retaliationRuntime.restorePersistedAngerIfNeeded(villager);
+        AngerTarget angerTarget = retaliationRuntime.angerTarget(villager);
+        if (angerTarget == null) {
+            return null;
+        }
+
+        if (!(villager.level() instanceof ServerLevel level)) {
+            clearAnger.run();
+            return null;
+        }
+
+        long gameTime = level.getGameTime();
+        var entity = level.getEntity(angerTarget.targetId());
+        if (!(entity instanceof LivingEntity target)) {
+            if (hasExpiredAnger(angerTarget, gameTime)) {
+                clearAnger.run();
+            }
+            return null;
+        }
+        if (!target.isAlive()) {
+            clearAnger.run();
+            return null;
+        }
+        if (!canFightBack.test(villager)) {
+            clearAnger.run();
+            return null;
+        }
+
+        boolean targetCurrentlyHostile = !VillagerRetaliationVillagerCombatUtil.shouldIgnoreAttacker(target);
+        if (!targetCurrentlyHostile) {
+            if (villager.hasLineOfSight(target)) {
+                retaliationRuntime.refreshAngerTarget(villager, angerTarget, gameTime);
+            }
+            return new ActiveRetaliationTarget(level, target, gameTime, false);
+        }
+
+        if (villager.hasLineOfSight(target)) {
+            retaliationRuntime.refreshAngerTarget(villager, angerTarget, gameTime);
+        } else if (hasExpiredAnger(angerTarget, gameTime)) {
+            clearAnger.run();
+            return null;
+        }
+
+        return new ActiveRetaliationTarget(level, target, gameTime, true);
+    }
+
+    public static boolean isUsingRangedCombatMode(AbstractVillager villager) {
+        return VillagerRetaliationVillagerWeapons.isRangedWeapon(VillagerRetaliationVillagerWeapons.getPrimaryWeapon(villager));
+    }
+
+    public static boolean canUseMeleeCombatMode(AbstractVillager villager) {
+        return !isUsingRangedCombatMode(villager);
+    }
+
+    public static boolean canMeleeHit(AbstractVillager villager, LivingEntity target) {
+        double reachInflation = VillagerRetaliationVillagerWeapons.hasUsableWeapon(villager) ? 1.0D : 0.6D;
+        return villager.getBoundingBox().inflate(reachInflation).intersects(target.getBoundingBox());
+    }
+
+    public static <T extends AbstractVillager> boolean maintainTemporaryWeapon(
+            T villager,
+            Map<UUID, TemporaryWeaponState> temporaryWeapons
+    ) {
+        TemporaryWeaponState state = temporaryWeapons.get(villager.getUUID());
+        if (state == null) {
+            return false;
+        }
+
+        if (!ItemStack.isSameItem(villager.getMainHandItem(), state.equippedWeapon())) {
+            villager.setItemSlot(EquipmentSlot.MAINHAND, state.equippedWeapon().copy());
+            villager.setDropChance(EquipmentSlot.MAINHAND, currentCombatWeaponDropChance());
+        }
+        return true;
+    }
+
+    public static <T extends AbstractVillager> void equipTemporaryWeapon(
+            T villager,
+            Map<UUID, TemporaryWeaponState> temporaryWeapons,
+            ItemStack weapon
+    ) {
+        ItemStack previousMainHand = villager.getMainHandItem().copy();
+        ItemStack equippedWeapon = VillagerRetaliationCombatWeaponFactory.prepareEquippedCombatWeapon(villager, weapon.copy());
+        float previousDropChance = Mob.DEFAULT_EQUIPMENT_DROP_CHANCE;
+        temporaryWeapons.put(villager.getUUID(), new TemporaryWeaponState(previousMainHand, equippedWeapon.copy(), previousDropChance));
+        villager.setItemSlot(EquipmentSlot.MAINHAND, equippedWeapon);
+        villager.setDropChance(EquipmentSlot.MAINHAND, currentCombatWeaponDropChance());
+        VillagerRangedCombatHelper.seedInitialAttackDelay(villager, equippedWeapon);
+    }
+
+    public static <T extends AbstractVillager> void restoreTemporaryWeapon(
+            T villager,
+            Map<UUID, TemporaryWeaponState> temporaryWeapons
+    ) {
+        TemporaryWeaponState state = temporaryWeapons.remove(villager.getUUID());
+        if (state == null) {
+            return;
+        }
+
+        if (ItemStack.isSameItemSameComponents(villager.getMainHandItem(), state.equippedWeapon())) {
+            villager.setItemSlot(EquipmentSlot.MAINHAND, state.previousMainHand().copy());
+        }
+        villager.setDropChance(EquipmentSlot.MAINHAND, state.previousDropChance());
+    }
+
+    public static <T extends AbstractVillager> void discardTemporaryWeapon(
+            T villager,
+            Map<UUID, TemporaryWeaponState> temporaryWeapons
+    ) {
+        TemporaryWeaponState state = temporaryWeapons.remove(villager.getUUID());
+        if (state != null) {
+            villager.setDropChance(EquipmentSlot.MAINHAND, state.previousDropChance());
+        }
+    }
+
+    public static <T extends AbstractVillager> void boostCombatMovement(
+            T villager
+    ) {
+        AttributeInstance movementSpeed = villager.getAttribute(Attributes.MOVEMENT_SPEED);
+        if (movementSpeed == null) {
+            return;
+        }
+
+        movementSpeed.addOrUpdateTransientModifier(COMBAT_MOVEMENT_SPEED_MODIFIER);
+    }
+
+    public static <T extends AbstractVillager> void restoreCombatMovement(T villager) {
+        AttributeInstance movementSpeed = villager.getAttribute(Attributes.MOVEMENT_SPEED);
+        if (movementSpeed != null) {
+            movementSpeed.removeModifier(COMBAT_MOVEMENT_SPEED_MODIFIER_ID);
+        }
+    }
+
+    private static void persistAnger(AbstractVillager villager, String persistentTagRoot, AngerTarget angerTarget) {
+        CompoundTag hostilityTag = new CompoundTag();
+        hostilityTag.putUUID(PERSISTENT_TARGET_UUID, angerTarget.targetId());
+        hostilityTag.putLong(PERSISTENT_LAST_SEEN_TICK, angerTarget.lastSeenGameTick());
+        villager.getPersistentData().put(persistentTagRoot, hostilityTag);
+    }
+
+    private static float currentCombatWeaponDropChance() {
+        return VillagerRetaliationConfig.COMBAT_WEAPON_DROP_CHANCE.get().floatValue();
+    }
+
+    private static boolean hasExpiredAnger(AngerTarget angerTarget, long gameTime) {
+        return gameTime - angerTarget.lastSeenGameTick() >= VillagerRetaliationConfig.AGGRO_DURATION_TICKS.get();
+    }
+
+    public record AngerTarget(UUID targetId, long lastSeenGameTick) {
+        public AngerTarget withLastSeenGameTick(long gameTime) {
+            if (gameTime == this.lastSeenGameTick) {
+                return this;
+            }
+            return new AngerTarget(this.targetId, gameTime);
+        }
+    }
+
+    public record TemporaryWeaponState(ItemStack previousMainHand, ItemStack equippedWeapon, float previousDropChance) {
+    }
+
+    public record ActiveRetaliationTarget(ServerLevel level, LivingEntity target, long gameTime, boolean targetCurrentlyHostile) {
+    }
+}

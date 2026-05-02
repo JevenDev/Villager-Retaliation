@@ -1,0 +1,49 @@
+{
+  "villagerretaliation.mod_name": "VillagerRetaliation",
+
+  "villagerretaliation.configuration.title": "%s Configuration",
+  "villagerretaliation.configuration.section.villagerretaliation.common.toml": "%s Settings",
+  "villagerretaliation.configuration.section.villagerretaliation.common.toml.title": "%s Settings",
+
+  "villagerretaliation.configuration.general": "General",
+  "villagerretaliation.configuration.balance": "Balance",
+  "villagerretaliation.configuration.retaliation": "Retaliation",
+  "villagerretaliation.configuration.combat": "Combat",
+  "villagerretaliation.configuration.wanderer": "Wanderer",
+
+  "villagerretaliation.configuration.general.enableVillagerDrops": "Enable Villager Drops",
+  "villagerretaliation.configuration.general.enableWanderingTraderDrops": "Enable Wandering Trader Drops",
+  "villagerretaliation.configuration.general.enableVillagerRetaliation": "Enable Villager Retaliation",
+
+  "villagerretaliation.configuration.balance.babyVillagersDropLoot": "Baby Villagers Drop Loot",
+  "villagerretaliation.configuration.balance.requirePlayerKillForProfessionLoot": "Require Player Kill For Profession Loot",
+  "villagerretaliation.configuration.balance.villagerEmeraldDropChance": "Villager Emerald Drop Chance",
+  "villagerretaliation.configuration.balance.villagerBreadDropChance": "Villager Bread Drop Chance",
+  "villagerretaliation.configuration.balance.professionDropChance": "Profession Drop Chance",
+  "villagerretaliation.configuration.balance.rareDropChance": "Rare Drop Chance",
+  "villagerretaliation.configuration.balance.veryRareDropChance": "Very Rare Drop Chance",
+
+  "villagerretaliation.configuration.retaliation.attackAggrosOnlyHitVillager": "Attack Aggros Only Hit Villager",
+  "villagerretaliation.configuration.retaliation.killingVillagerAggrosNearbyVillagers": "Killing Villager Aggros Nearby Villagers",
+  "villagerretaliation.configuration.retaliation.villagerKillAggroRadius": "Villager Kill Aggro Radius",
+  "villagerretaliation.configuration.retaliation.aggroDurationTicks": "Aggro Duration Ticks",
+  "villagerretaliation.configuration.retaliation.nearbyVillagersIgnoreCreativePlayers": "Nearby Villagers Ignore Creative Players",
+
+  "villagerretaliation.configuration.combat.weaponsmithsFightBack": "Weaponsmiths Fight Back",
+  "villagerretaliation.configuration.combat.toolsmithsFightBack": "Toolsmiths Fight Back",
+  "villagerretaliation.configuration.combat.armorersFightBack": "Armorers Fight Back",
+  "villagerretaliation.configuration.combat.fletchersFightBack": "Fletchers Fight Back",
+  "villagerretaliation.configuration.combat.butchersFightBack": "Butchers Fight Back",
+  "villagerretaliation.configuration.combat.combatWeaponDropChance": "Combat Weapon Drop Chance",
+  "villagerretaliation.configuration.combat.combatWeaponEnchantChance": "Combat Weapon Enchant Chance",
+  "villagerretaliation.configuration.combat.farmersUseBread": "Farmers Use Bread",
+  "villagerretaliation.configuration.combat.clericsUsePotions": "Clerics Use Potions",
+  "villagerretaliation.configuration.combat.passiveClericAllyHealRange": "Passive Cleric Ally Heal Range",
+  "villagerretaliation.configuration.combat.passiveClericAllyHealHealthThreshold": "Passive Cleric Ally Heal Health Threshold",
+  "villagerretaliation.configuration.combat.passiveClericAllyHealRequiresLineOfSight": "Passive Cleric Ally Heal Requires Line Of Sight",
+
+  "villagerretaliation.configuration.wanderer.dropEmeralds": "Wanderer Drop Emeralds",
+  "villagerretaliation.configuration.wanderer.dropInvisibilityPotion": "Wanderer Drop Invisibility Potion",
+  "villagerretaliation.configuration.wanderer.dropRandomCurrentTrade": "Wanderer Drop Random Current Trade",
+  "villagerretaliation.configuration.wanderer.randomTradeDropChance": "Wanderer Random Trade Drop Chance"
+}
