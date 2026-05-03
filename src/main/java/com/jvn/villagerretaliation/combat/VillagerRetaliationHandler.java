@@ -6,8 +6,10 @@ import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerRules;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
@@ -35,10 +37,12 @@ import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
 public final class VillagerRetaliationHandler {
+    private static final long NATURAL_TARGET_SCAN_INTERVAL_TICKS = 20L;
     private static final String PERSISTENT_TAG_ROOT = "VillagerRetaliationPersistentHostility";
     private static final VillagerRetaliationRetaliationRuntime<Villager> RETALIATION =
             new VillagerRetaliationRetaliationRuntime<>(PERSISTENT_TAG_ROOT);
-    private static final Map<java.util.UUID, Long> NEXT_SPECIAL_TICKS = new java.util.HashMap<>();
+    private static final Map<UUID, Long> NEXT_SPECIAL_TICKS = new HashMap<>();
+    private static final Map<UUID, Long> NEXT_NATURAL_TARGET_SCAN_TICKS = new HashMap<>();
 
     private VillagerRetaliationHandler() {
     }
@@ -288,9 +292,22 @@ public final class VillagerRetaliationHandler {
             return;
         }
 
-        VillagerRetaliationVillagerCombatUtil.getMemoryIfRegistered(villager, MemoryModuleType.NEAREST_HOSTILE)
+        Optional<LivingEntity> memoryTarget = VillagerRetaliationVillagerCombatUtil.getMemoryIfRegistered(villager, MemoryModuleType.NEAREST_HOSTILE)
                 .filter(LivingEntity::isAlive)
-                .filter(target -> target != villager)
+                .filter(target -> target != villager);
+        if (memoryTarget.isPresent()) {
+            anger(villager, memoryTarget.get());
+            return;
+        }
+
+        long gameTime = villager.level().getGameTime();
+        if (gameTime < NEXT_NATURAL_TARGET_SCAN_TICKS.getOrDefault(villager.getUUID(), 0L)) {
+            return;
+        }
+
+        NEXT_NATURAL_TARGET_SCAN_TICKS.put(villager.getUUID(), gameTime + NATURAL_TARGET_SCAN_INTERVAL_TICKS);
+        double naturalDefenseRadius = VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get();
+        VillagerRetaliationVillagerCombatUtil.findNearestNaturalHostile(villager, naturalDefenseRadius)
                 .ifPresent(target -> anger(villager, target));
     }
 
@@ -319,6 +336,7 @@ public final class VillagerRetaliationHandler {
     private static void clearAnger(Villager villager, boolean restoreWeapon) {
         RETALIATION.clearPersistentAnger(villager);
         NEXT_SPECIAL_TICKS.remove(villager.getUUID());
+        NEXT_NATURAL_TARGET_SCAN_TICKS.remove(villager.getUUID());
         VillagerRangedCombatHelper.clearState(villager);
         boolean preservePotionUse = VillagerClericPotionHelper.isDrinkingPotion(villager);
         if (preservePotionUse && RETALIATION.hasTemporaryWeapon(villager)) {
@@ -495,6 +513,7 @@ public final class VillagerRetaliationHandler {
         }
         RETALIATION.clearTransientState(villager);
         NEXT_SPECIAL_TICKS.remove(villager.getUUID());
+        NEXT_NATURAL_TARGET_SCAN_TICKS.remove(villager.getUUID());
         if (villager.isAlive()) {
             VillagerRetaliationVillagerWeapons.clearTrackedPickupCache(villager);
         } else {

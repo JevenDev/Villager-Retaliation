@@ -5,6 +5,10 @@ import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil.Act
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -25,9 +29,11 @@ import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
 public final class WanderingTraderRetaliationHandler {
+    private static final long NATURAL_TARGET_SCAN_INTERVAL_TICKS = 20L;
     private static final String PERSISTENT_TAG_ROOT = "VillagerRetaliationPersistentTraderHostility";
     private static final VillagerRetaliationRetaliationRuntime<WanderingTrader> RETALIATION =
             new VillagerRetaliationRetaliationRuntime<>(PERSISTENT_TAG_ROOT);
+    private static final Map<UUID, Long> NEXT_NATURAL_TARGET_SCAN_TICKS = new HashMap<>();
 
     private WanderingTraderRetaliationHandler() {
     }
@@ -220,9 +226,22 @@ public final class WanderingTraderRetaliationHandler {
             return;
         }
 
-        VillagerRetaliationVillagerCombatUtil.getMemoryIfRegistered(trader, MemoryModuleType.NEAREST_HOSTILE)
+        Optional<LivingEntity> memoryTarget = VillagerRetaliationVillagerCombatUtil.getMemoryIfRegistered(trader, MemoryModuleType.NEAREST_HOSTILE)
                 .filter(LivingEntity::isAlive)
-                .filter(target -> target != trader)
+                .filter(target -> target != trader);
+        if (memoryTarget.isPresent()) {
+            anger(trader, memoryTarget.get());
+            return;
+        }
+
+        long gameTime = trader.level().getGameTime();
+        if (gameTime < NEXT_NATURAL_TARGET_SCAN_TICKS.getOrDefault(trader.getUUID(), 0L)) {
+            return;
+        }
+
+        NEXT_NATURAL_TARGET_SCAN_TICKS.put(trader.getUUID(), gameTime + NATURAL_TARGET_SCAN_INTERVAL_TICKS);
+        double naturalDefenseRadius = VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get();
+        VillagerRetaliationVillagerCombatUtil.findNearestNaturalHostile(trader, naturalDefenseRadius)
                 .ifPresent(target -> anger(trader, target));
     }
 
@@ -249,6 +268,7 @@ public final class WanderingTraderRetaliationHandler {
 
     private static void clearAnger(WanderingTrader trader, boolean restoreWeapon) {
         RETALIATION.clearPersistentAnger(trader);
+        NEXT_NATURAL_TARGET_SCAN_TICKS.remove(trader.getUUID());
         VillagerRangedCombatHelper.clearState(trader);
         VillagerRetaliationRetaliationUtil.restoreCombatMovement(trader);
         if (restoreWeapon) {
@@ -332,5 +352,6 @@ public final class WanderingTraderRetaliationHandler {
         } else {
             VillagerRetaliationVillagerWeapons.clearTrackedPickup(trader);
         }
+        NEXT_NATURAL_TARGET_SCAN_TICKS.remove(trader.getUUID());
     }
 }
