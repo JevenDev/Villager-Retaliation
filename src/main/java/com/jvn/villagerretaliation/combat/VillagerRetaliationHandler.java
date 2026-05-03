@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.combat;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil.ActiveRetaliationTarget;
+import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerRules;
@@ -355,7 +356,8 @@ public final class VillagerRetaliationHandler {
             return false;
         }
 
-        if (!RETALIATION.isHostileTowards(villager, player, () -> clearAnger(villager))) {
+        if (!RETALIATION.isHostileTowards(villager, player, () -> clearAnger(villager))
+                && !isDespisedBy(villager, player)) {
             return false;
         }
 
@@ -372,6 +374,11 @@ public final class VillagerRetaliationHandler {
             return false;
         }
 
+        if (isDespisedBy(villager, player)) {
+            VillagerRetaliationRetaliationUtil.spawnMadParticles(villager);
+            return true;
+        }
+
         int requiredEmeralds = VillagerRetaliationRetaliationUtil.pacifyEmeraldCost(villager);
         if (interactionStack.getCount() < requiredEmeralds) {
             VillagerRetaliationRetaliationUtil.spawnPacifyFailureParticles(villager);
@@ -384,6 +391,12 @@ public final class VillagerRetaliationHandler {
         clearAnger(villager);
         VillagerRetaliationRetaliationUtil.spawnPacifySuccessParticles(villager);
         return true;
+    }
+
+    private static boolean isDespisedBy(Villager villager, Player player) {
+        return VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()
+                && villager.level() instanceof ServerLevel level
+                && VillagerReputationManager.isDespised(level, villager, player);
     }
 
     public static void forceAnger(Villager villager, LivingEntity attacker) {

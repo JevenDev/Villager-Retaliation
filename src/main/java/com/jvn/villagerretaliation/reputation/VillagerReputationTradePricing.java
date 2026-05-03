@@ -22,17 +22,15 @@ public final class VillagerReputationTradePricing {
             return;
         }
 
-        int vanillaReputation = villager.getPlayerReputation(player);
         int modReputation = VillagerReputationManager.getReputation(level, villager, player.getUUID());
-        double scaledModReputation = modReputation * VillagerRetaliationConfig.REPUTATION_TRADE_PRICE_SCALE.get();
+        int scaledModReputation = Mth.floor((float) (modReputation * VillagerRetaliationConfig.REPUTATION_TRADE_PRICE_SCALE.get()));
+        VillagerReputationLevel modReputationLevel = VillagerReputationManager.getReputationLevel(level, villager, player.getUUID());
+        int tierReputationEquivalent = resolveTierReputationEquivalent(modReputationLevel, scaledModReputation);
 
         for (MerchantOffer offer : villager.getOffers()) {
             offer.resetSpecialPriceDiff();
-            if (vanillaReputation != 0) {
-                offer.addToSpecialPriceDiff(-Mth.floor(vanillaReputation * offer.getPriceMultiplier()));
-            }
-            if (scaledModReputation != 0.0D) {
-                offer.addToSpecialPriceDiff(-Mth.floor((float) scaledModReputation * offer.getPriceMultiplier()));
+            if (tierReputationEquivalent != 0) {
+                offer.addToSpecialPriceDiff(-Mth.floor(tierReputationEquivalent * offer.getPriceMultiplier()));
             }
             applyHeroDiscount(player, offer);
         }
@@ -48,6 +46,17 @@ public final class VillagerReputationTradePricing {
                     villager.canRestock()
             );
         }
+    }
+
+    private static int resolveTierReputationEquivalent(VillagerReputationLevel level, int scaledReputation) {
+        int tierReputation = level.tradeReputationEquivalent();
+        if (tierReputation > 0) {
+            return Math.max(tierReputation, scaledReputation);
+        }
+        if (tierReputation < 0) {
+            return Math.min(tierReputation, scaledReputation);
+        }
+        return scaledReputation;
     }
 
     private static void applyHeroDiscount(Player player, MerchantOffer offer) {
