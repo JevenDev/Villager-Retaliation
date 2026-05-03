@@ -23,6 +23,7 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.BooleanValue ATTACK_AGGROS_ONLY_HIT_VILLAGER;
     public static final ModConfigSpec.BooleanValue KILLING_VILLAGER_AGGROS_NEARBY_VILLAGERS;
     public static final ModConfigSpec.DoubleValue VILLAGER_KILL_AGGRO_RADIUS;
+    public static final ModConfigSpec.BooleanValue RETALIATION_WITNESSES_REQUIRE_LINE_OF_SIGHT;
     public static final ModConfigSpec.IntValue AGGRO_DURATION_TICKS;
     public static final ModConfigSpec.BooleanValue NEARBY_VILLAGERS_IGNORE_CREATIVE_PLAYERS;
 
@@ -145,6 +146,10 @@ public final class VillagerRetaliationConfig {
                 .comment("Radius in blocks for nearby villager aggro after a villager is killed.")
                 .translation("villagerretaliation.configuration.retaliation.villagerKillAggroRadius")
                 .defineInRange("villagerKillAggroRadius", 24.0D, 0.0D, 128.0D);
+        RETALIATION_WITNESSES_REQUIRE_LINE_OF_SIGHT = BUILDER
+                .comment("When true, nearby villagers and wandering traders only aggro from witnessed attacks or kills they can see.")
+                .translation("villagerretaliation.configuration.retaliation.retaliationWitnessesRequireLineOfSight")
+                .define("retaliationWitnessesRequireLineOfSight", true);
         AGGRO_DURATION_TICKS = BUILDER
                 .comment("How long, in ticks, temporary villager anger lasts.")
                 .translation("villagerretaliation.configuration.retaliation.aggroDurationTicks")

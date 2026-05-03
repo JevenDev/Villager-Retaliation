@@ -494,7 +494,7 @@ public final class VillagerRetaliationHandler {
 
         AABB area = sourceEntity.getBoundingBox().inflate(radius);
         for (Villager nearby : level.getEntitiesOfClass(Villager.class, area)) {
-            if (nearby != sourceEntity && !nearby.isBaby()) {
+            if (nearby != sourceEntity && !nearby.isBaby() && canWitnessRetaliationEvent(nearby, sourceEntity)) {
                 anger(nearby, attacker);
             }
         }
@@ -517,7 +517,7 @@ public final class VillagerRetaliationHandler {
 
         AABB area = sourceEntity.getBoundingBox().inflate(radius);
         for (Villager nearby : level.getEntitiesOfClass(Villager.class, area)) {
-            if (isNitwitAlarm(nearby)) {
+            if (isNitwitAlarm(nearby) && canWitnessRetaliationEvent(nearby, sourceEntity)) {
                 rallyNearbyVillagers(nearby, attacker, radius);
             }
         }
@@ -531,7 +531,7 @@ public final class VillagerRetaliationHandler {
         AABB area = deceased.getBoundingBox().inflate(radius);
         long gameTime = level.getGameTime();
         for (Villager nearby : level.getEntitiesOfClass(Villager.class, area)) {
-            if (!isWitnessAlarmVillager(nearby) || !nearby.hasLineOfSight(deceased)) {
+            if (!isWitnessAlarmVillager(nearby) || !canWitnessRetaliationEvent(nearby, deceased)) {
                 continue;
             }
 
@@ -549,6 +549,11 @@ public final class VillagerRetaliationHandler {
 
     private static boolean isWitnessAlarmVillager(Villager villager) {
         return villager.isBaby() || isNitwitAlarm(villager);
+    }
+
+    private static boolean canWitnessRetaliationEvent(Villager witness, Entity sourceEntity) {
+        return !VillagerRetaliationConfig.RETALIATION_WITNESSES_REQUIRE_LINE_OF_SIGHT.get()
+                || witness.hasLineOfSight(sourceEntity);
     }
 
     private static void suppressVanillaPanic(Villager villager) {

@@ -301,10 +301,15 @@ public final class WanderingTraderRetaliationHandler {
 
         AABB area = sourceEntity.getBoundingBox().inflate(radius);
         for (WanderingTrader nearby : level.getEntitiesOfClass(WanderingTrader.class, area)) {
-            if (nearby != sourceEntity) {
+            if (nearby != sourceEntity && canWitnessRetaliationEvent(nearby, sourceEntity)) {
                 anger(nearby, attacker);
             }
         }
+    }
+
+    private static boolean canWitnessRetaliationEvent(WanderingTrader witness, Entity sourceEntity) {
+        return !VillagerRetaliationConfig.RETALIATION_WITNESSES_REQUIRE_LINE_OF_SIGHT.get()
+                || witness.hasLineOfSight(sourceEntity);
     }
 
     private static void suppressVanillaPanic(WanderingTrader trader) {

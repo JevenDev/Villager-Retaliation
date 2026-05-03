@@ -11,6 +11,7 @@ The mod still keeps the village fantasy intact: babies and unarmed nitwits remai
 - Adult villagers can retaliate when damaged.
 - By default, hitting a villager only angers that specific villager.
 - Killing an adult villager can anger nearby adult villagers within a configurable radius.
+- Nearby attack/kill retaliation can require witnesses to have line of sight, so enclosed kills do not alert villagers outside unless they can see through openings.
 - Anger expires after a configurable duration.
 - Villagers remember their retaliation target through the mod's persistent hostility data.
 - Creative and spectator players can be ignored by retaliation when configured.
@@ -147,6 +148,7 @@ The mod registers a common config with grouped settings.
 - Configure whether attacks only anger the hit villager.
 - Configure whether killing a villager angers nearby villagers.
 - Configure the nearby kill aggro radius.
+- Configure whether nearby retaliation witnesses require line of sight.
 - Configure anger duration in ticks.
 - Configure whether nearby villagers ignore creative/spectator players.
 
