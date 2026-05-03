@@ -386,6 +386,13 @@ public final class VillagerRetaliationHandler {
         return true;
     }
 
+    public static void forceAnger(Villager villager, LivingEntity attacker) {
+        if (villager.level().isClientSide || villager.isBaby()) {
+            return;
+        }
+        anger(villager, attacker);
+    }
+
     private static void anger(Villager villager, LivingEntity attacker) {
         if (villager.isBaby()) {
             return;

@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.combat;
 
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import java.util.Map;
@@ -152,7 +153,10 @@ public final class VillagerRetaliationRetaliationUtil {
         }
 
         long gameTime = villager.level().getGameTime();
-        if (gameTime - angerTarget.lastSeenGameTick() >= VillagerRetaliationConfig.AGGRO_DURATION_TICKS.get()) {
+        double durationMultiplier = villager instanceof net.minecraft.world.entity.npc.Villager reputationVillager
+                ? VillagerAggressionPolicy.getAngerDurationMultiplier(reputationVillager, player)
+                : 1.0D;
+        if (gameTime - angerTarget.lastSeenGameTick() >= Math.max(1L, Math.round(VillagerRetaliationConfig.AGGRO_DURATION_TICKS.get() * durationMultiplier))) {
             clearAnger.run();
             return false;
         }
@@ -244,7 +248,7 @@ public final class VillagerRetaliationRetaliationUtil {
 
         if (villager.hasLineOfSight(target)) {
             retaliationRuntime.refreshAngerTarget(villager, angerTarget, gameTime);
-        } else if (hasExpiredAnger(angerTarget, gameTime)) {
+        } else if (hasExpiredAnger(villager, target, angerTarget, gameTime)) {
             clearAnger.run();
             return null;
         }
@@ -351,6 +355,13 @@ public final class VillagerRetaliationRetaliationUtil {
 
     private static boolean hasExpiredAnger(AngerTarget angerTarget, long gameTime) {
         return gameTime - angerTarget.lastSeenGameTick() >= VillagerRetaliationConfig.AGGRO_DURATION_TICKS.get();
+    }
+
+    private static boolean hasExpiredAnger(AbstractVillager villager, LivingEntity target, AngerTarget angerTarget, long gameTime) {
+        double durationMultiplier = target instanceof Player player && villager instanceof net.minecraft.world.entity.npc.Villager reputationVillager
+                ? VillagerAggressionPolicy.getAngerDurationMultiplier(reputationVillager, player)
+                : 1.0D;
+        return gameTime - angerTarget.lastSeenGameTick() >= Math.max(1L, Math.round(VillagerRetaliationConfig.AGGRO_DURATION_TICKS.get() * durationMultiplier));
     }
 
     public record AngerTarget(UUID targetId, long lastSeenGameTick) {

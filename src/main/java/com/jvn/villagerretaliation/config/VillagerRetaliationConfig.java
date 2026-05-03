@@ -8,6 +8,9 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.BooleanValue ENABLE_VILLAGER_DROPS;
     public static final ModConfigSpec.BooleanValue ENABLE_WANDERING_TRADER_DROPS;
     public static final ModConfigSpec.BooleanValue ENABLE_VILLAGER_RETALIATION;
+    public static final ModConfigSpec.BooleanValue ENABLE_VILLAGER_REPUTATION;
+    public static final ModConfigSpec.BooleanValue ENABLE_VANILLA_GOSSIP_INTEGRATION;
+    public static final ModConfigSpec.BooleanValue ENABLE_DESPISED_KILL_ON_SIGHT;
 
     public static final ModConfigSpec.BooleanValue BABY_VILLAGERS_DROP_LOOT;
     public static final ModConfigSpec.BooleanValue REQUIRE_PLAYER_KILL_FOR_PROFESSION_LOOT;
@@ -22,6 +25,42 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.DoubleValue VILLAGER_KILL_AGGRO_RADIUS;
     public static final ModConfigSpec.IntValue AGGRO_DURATION_TICKS;
     public static final ModConfigSpec.BooleanValue NEARBY_VILLAGERS_IGNORE_CREATIVE_PLAYERS;
+
+    public static final ModConfigSpec.IntValue DIRECT_HIT_PENALTY;
+    public static final ModConfigSpec.IntValue WITNESSED_HIT_PENALTY;
+    public static final ModConfigSpec.IntValue WITNESSED_KILL_PENALTY;
+    public static final ModConfigSpec.IntValue WITNESSED_BABY_KILL_PENALTY;
+    public static final ModConfigSpec.IntValue WITNESSED_IRON_GOLEM_KILL_PENALTY;
+    public static final ModConfigSpec.IntValue TRADE_REPUTATION_GAIN;
+    public static final ModConfigSpec.IntValue MAX_TRADE_REPUTATION_GAIN_PER_VILLAGER_PER_DAY;
+    public static final ModConfigSpec.IntValue HEAL_VILLAGER_GAIN;
+    public static final ModConfigSpec.IntValue SAVE_VILLAGER_GAIN;
+    public static final ModConfigSpec.IntValue POSITIVE_WITNESS_GAIN;
+    public static final ModConfigSpec.DoubleValue HOSTILE_MOB_ASSIST_REPUTATION_MULTIPLIER;
+    public static final ModConfigSpec.DoubleValue GOSSIP_REPUTATION_MULTIPLIER;
+    public static final ModConfigSpec.IntValue REVERED_THRESHOLD;
+    public static final ModConfigSpec.IntValue RESPECTED_THRESHOLD;
+    public static final ModConfigSpec.IntValue TRUSTED_THRESHOLD;
+    public static final ModConfigSpec.IntValue SUSPICIOUS_THRESHOLD;
+    public static final ModConfigSpec.IntValue HOSTILE_THRESHOLD;
+    public static final ModConfigSpec.IntValue DESPISED_THRESHOLD;
+    public static final ModConfigSpec.DoubleValue WITNESS_RADIUS;
+    public static final ModConfigSpec.DoubleValue GOSSIP_RADIUS;
+    public static final ModConfigSpec.DoubleValue DESPISED_SIGHT_RADIUS;
+    public static final ModConfigSpec.BooleanValue REPUTATION_DECAY_ENABLED;
+    public static final ModConfigSpec.IntValue REPUTATION_DECAY_INTERVAL;
+    public static final ModConfigSpec.IntValue REPUTATION_DECAY_AMOUNT;
+    public static final ModConfigSpec.IntValue PRUNE_NEUTRAL_ENTRIES_AFTER_DAYS;
+    public static final ModConfigSpec.BooleanValue VANILLA_GOSSIP_REQUIRES_LINE_OF_SIGHT;
+    public static final ModConfigSpec.BooleanValue ENABLE_REPUTATION_TRADE_PRICING;
+    public static final ModConfigSpec.DoubleValue REPUTATION_TRADE_PRICE_SCALE;
+
+    public static final ModConfigSpec.BooleanValue SHOW_VILLAGER_REPUTATION_DEBUG_OVERLAY;
+    public static final ModConfigSpec.DoubleValue REPUTATION_DEBUG_OVERLAY_MAX_DISTANCE;
+    public static final ModConfigSpec.BooleanValue REPUTATION_DEBUG_OVERLAY_SHOW_TIER;
+    public static final ModConfigSpec.BooleanValue REPUTATION_DEBUG_OVERLAY_SHOW_NUMBER;
+    public static final ModConfigSpec.BooleanValue REPUTATION_DEBUG_OVERLAY_REQUIRE_ADVANCED_TOOLTIPS;
+    public static final ModConfigSpec.BooleanValue REPUTATION_DEBUG_OVERLAY_ONLY_WHEN_SNEAKING;
 
     public static final ModConfigSpec.BooleanValue WEAPONSMITHS_FIGHT_BACK;
     public static final ModConfigSpec.BooleanValue TOOLSMITHS_FIGHT_BACK;
@@ -58,6 +97,18 @@ public final class VillagerRetaliationConfig {
                 .comment("Enables temporary villager retaliation behavior.")
                 .translation("villagerretaliation.configuration.general.enableVillagerRetaliation")
                 .define("enableVillagerRetaliation", true);
+        ENABLE_VILLAGER_REPUTATION = BUILDER
+                .comment("Enables persistent per-villager, per-player reputation memory.")
+                .translation("villagerretaliation.configuration.general.enableVillagerReputation")
+                .define("enableVillagerReputation", true);
+        ENABLE_VANILLA_GOSSIP_INTEGRATION = BUILDER
+                .comment("Allows reputation events to supplement vanilla villager gossip where integration is available.")
+                .translation("villagerretaliation.configuration.general.enableVanillaGossipIntegration")
+                .define("enableVanillaGossipIntegration", true);
+        ENABLE_DESPISED_KILL_ON_SIGHT = BUILDER
+                .comment("Allows villagers who personally DESPISE a player to target that player on sight.")
+                .translation("villagerretaliation.configuration.general.enableDespisedKillOnSight")
+                .define("enableDespisedKillOnSight", true);
         BUILDER.pop();
 
         BUILDER.push("balance");
@@ -102,6 +153,86 @@ public final class VillagerRetaliationConfig {
                 .comment("When true, creative and spectator players are ignored as retaliation targets.")
                 .translation("villagerretaliation.configuration.retaliation.nearbyVillagersIgnoreCreativePlayers")
                 .define("nearbyVillagersIgnoreCreativePlayers", true);
+        BUILDER.pop();
+
+        BUILDER.push("reputation");
+        DIRECT_HIT_PENALTY = BUILDER.comment("Reputation change applied to a villager directly hit by a player.")
+                .defineInRange("directHitPenalty", -25, -1000, 1000);
+        WITNESSED_HIT_PENALTY = BUILDER.comment("Reputation change applied to nearby villagers witnessing a player hit another villager.")
+                .defineInRange("witnessedHitPenalty", -8, -1000, 1000);
+        WITNESSED_KILL_PENALTY = BUILDER.comment("Reputation change applied to nearby villagers witnessing an adult villager kill.")
+                .defineInRange("witnessedKillPenalty", -60, -1000, 1000);
+        WITNESSED_BABY_KILL_PENALTY = BUILDER.comment("Reputation change applied to nearby villagers witnessing a baby villager kill.")
+                .defineInRange("witnessedBabyKillPenalty", -120, -1000, 1000);
+        WITNESSED_IRON_GOLEM_KILL_PENALTY = BUILDER.comment("Reputation change applied to nearby villagers witnessing an iron golem kill.")
+                .defineInRange("witnessedIronGolemKillPenalty", -60, -1000, 1000);
+        TRADE_REPUTATION_GAIN = BUILDER.comment("Reputation gained by trading with a specific villager.")
+                .defineInRange("tradeReputationGain", 2, -1000, 1000);
+        MAX_TRADE_REPUTATION_GAIN_PER_VILLAGER_PER_DAY = BUILDER.comment("Maximum positive trade reputation gain per villager per Minecraft day.")
+                .defineInRange("maxTradeReputationGainPerVillagerPerDay", 8, 0, 1000);
+        HEAL_VILLAGER_GAIN = BUILDER.comment("Reserved gain for detectable villager healing hooks.")
+                .defineInRange("healVillagerGain", 10, -1000, 1000);
+        SAVE_VILLAGER_GAIN = BUILDER.comment("Reserved gain for detectable villager rescue hooks.")
+                .defineInRange("saveVillagerGain", 15, -1000, 1000);
+        POSITIVE_WITNESS_GAIN = BUILDER.comment("Reserved gain for witnessing village defense by a player.")
+                .defineInRange("positiveWitnessGain", 10, -1000, 1000);
+        HOSTILE_MOB_ASSIST_REPUTATION_MULTIPLIER = BUILDER.comment("Multiplier for positive reputation when the player damaged a hostile mob but did not receive kill credit.")
+                .defineInRange("hostileMobAssistReputationMultiplier", 0.5D, 0.0D, 1.0D);
+        GOSSIP_REPUTATION_MULTIPLIER = BUILDER.comment("Multiplier applied when reputation spreads by gossip.")
+                .defineInRange("gossipReputationMultiplier", 0.25D, 0.0D, 1.0D);
+        REVERED_THRESHOLD = BUILDER.comment("Reputation at or above this value is REVERED.")
+                .defineInRange("reveredThreshold", 400, -10000, 10000);
+        RESPECTED_THRESHOLD = BUILDER.comment("Reputation at or above this value is RESPECTED unless REVERED.")
+                .defineInRange("respectedThreshold", 250, -10000, 10000);
+        TRUSTED_THRESHOLD = BUILDER.comment("Reputation at or above this value is TRUSTED unless RESPECTED.")
+                .defineInRange("trustedThreshold", 75, -10000, 10000);
+        SUSPICIOUS_THRESHOLD = BUILDER.comment("Reputation at or below this value is SUSPICIOUS unless lower.")
+                .defineInRange("suspiciousThreshold", -25, -10000, 10000);
+        HOSTILE_THRESHOLD = BUILDER.comment("Reputation at or below this value is HOSTILE unless DESPISED.")
+                .defineInRange("hostileThreshold", -75, -10000, 10000);
+        DESPISED_THRESHOLD = BUILDER.comment("Reputation at or below this value is DESPISED.")
+                .defineInRange("despisedThreshold", -150, -10000, 10000);
+        WITNESS_RADIUS = BUILDER.comment("Radius in blocks for witnessed reputation events.")
+                .defineInRange("witnessRadius", 24.0D, 0.0D, 128.0D);
+        GOSSIP_RADIUS = BUILDER.comment("Radius in blocks for villager-to-villager reputation gossip.")
+                .defineInRange("gossipRadius", 16.0D, 0.0D, 128.0D);
+        DESPISED_SIGHT_RADIUS = BUILDER.comment("Radius in blocks for DESPISED kill-on-sight checks.")
+                .defineInRange("despisedSightRadius", 24.0D, 0.0D, 128.0D);
+        REPUTATION_DECAY_ENABLED = BUILDER.comment("Enables lightweight pruning of old neutral reputation entries.")
+                .define("reputationDecayEnabled", true);
+        REPUTATION_DECAY_INTERVAL = BUILDER.comment("Tick interval for reputation maintenance.")
+                .defineInRange("reputationDecayInterval", 24000, 20, 24000 * 30);
+        REPUTATION_DECAY_AMOUNT = BUILDER.comment("Reserved amount for future active reputation decay.")
+                .defineInRange("reputationDecayAmount", 1, 0, 1000);
+        PRUNE_NEUTRAL_ENTRIES_AFTER_DAYS = BUILDER.comment("Old neutral entries are pruned after this many Minecraft days.")
+                .defineInRange("pruneNeutralEntriesAfterDays", 30, 0, 3650);
+        VANILLA_GOSSIP_REQUIRES_LINE_OF_SIGHT = BUILDER.comment("When true, witnessed reputation changes require line of sight.")
+                .define("witnessReputationRequiresLineOfSight", false);
+        ENABLE_REPUTATION_TRADE_PRICING = BUILDER.comment("When true, per-villager reputation dynamically adjusts trade prices for that player.")
+                .define("enableReputationTradePricing", true);
+        REPUTATION_TRADE_PRICE_SCALE = BUILDER.comment("Multiplier converting mod reputation into vanilla-style special price adjustments.")
+                .defineInRange("reputationTradePriceScale", 0.25D, 0.0D, 10.0D);
+        BUILDER.pop();
+
+        BUILDER.push("debugOverlay");
+        SHOW_VILLAGER_REPUTATION_DEBUG_OVERLAY = BUILDER
+                .comment("Renders per-villager reputation toward the local player above villager heads. Disabled by default.")
+                .define("showVillagerReputationDebugOverlay", false);
+        REPUTATION_DEBUG_OVERLAY_MAX_DISTANCE = BUILDER
+                .comment("Maximum distance in blocks for the reputation debug overlay.")
+                .defineInRange("reputationDebugOverlayMaxDistance", 32.0D, 0.0D, 128.0D);
+        REPUTATION_DEBUG_OVERLAY_SHOW_TIER = BUILDER
+                .comment("Shows the reputation tier in the debug overlay.")
+                .define("reputationDebugOverlayShowTier", true);
+        REPUTATION_DEBUG_OVERLAY_SHOW_NUMBER = BUILDER
+                .comment("Shows the reputation number in the debug overlay.")
+                .define("reputationDebugOverlayShowNumber", true);
+        REPUTATION_DEBUG_OVERLAY_REQUIRE_ADVANCED_TOOLTIPS = BUILDER
+                .comment("Requires advanced tooltips (F3+H) for the reputation debug overlay.")
+                .define("reputationDebugOverlayRequireAdvancedTooltips", false);
+        REPUTATION_DEBUG_OVERLAY_ONLY_WHEN_SNEAKING = BUILDER
+                .comment("Requires the local player to be sneaking for the reputation debug overlay.")
+                .define("reputationDebugOverlayOnlyWhenSneaking", false);
         BUILDER.pop();
 
         BUILDER.push("combat");
