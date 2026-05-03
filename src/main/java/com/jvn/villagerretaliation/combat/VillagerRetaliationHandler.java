@@ -47,7 +47,7 @@ public final class VillagerRetaliationHandler {
     private static final long NATURAL_TARGET_SCAN_INTERVAL_TICKS = 20L;
     private static final long ARMORER_SHIELD_AXE_BREAK_TICKS = 100L;
     private static final int ARMORER_COUNTER_SWINGS_AFTER_BLOCK = 1;
-    private static final int ARMORER_COUNTER_ATTACK_DELAY_MIN_TICKS = 15;
+    private static final int ARMORER_COUNTER_ATTACK_DELAY_MIN_TICKS = 10;
     private static final int ARMORER_COUNTER_ATTACK_DELAY_MAX_TICKS = 30;
     private static final double ARMORER_BLOCKING_SPEED_FACTOR = 0.45D;
     private static final double ARMORER_SHIELD_TRIGGER_RANGE = 7.0D;
