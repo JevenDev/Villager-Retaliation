@@ -3,6 +3,10 @@ package com.jvn.villagerretaliation.reputation;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 
 public enum VillagerReputationLevel {
+    ROYALTY(4,
+            150,
+            "A villager now treats you like royalty.",
+            "A villager no longer sees you as royalty."),
     REVERED(3,
             100,
             "A villager now reveres you.",
@@ -30,7 +34,11 @@ public enum VillagerReputationLevel {
     DESPISED(-3,
             0,
             "A villager's hatred for you has softened.",
-            "You feel a villager come to despise you.");
+            "You feel a villager come to despise you."),
+    FEARED(-4,
+            0,
+            "A villager no longer fears you completely.",
+            "A villager now fears you.");
 
     private final int trustRank;
     private final int tradeReputationEquivalent;
@@ -45,6 +53,9 @@ public enum VillagerReputationLevel {
     }
 
     public static VillagerReputationLevel fromReputation(int reputation) {
+        if (reputation >= VillagerRetaliationConfig.ROYALTY_THRESHOLD.get()) {
+            return ROYALTY;
+        }
         if (reputation >= VillagerRetaliationConfig.REVERED_THRESHOLD.get()) {
             return REVERED;
         }
@@ -53,6 +64,9 @@ public enum VillagerReputationLevel {
         }
         if (reputation >= VillagerRetaliationConfig.TRUSTED_THRESHOLD.get()) {
             return TRUSTED;
+        }
+        if (reputation <= VillagerRetaliationConfig.FEARED_THRESHOLD.get()) {
+            return FEARED;
         }
         if (reputation <= VillagerRetaliationConfig.DESPISED_THRESHOLD.get()) {
             return DESPISED;

@@ -19,6 +19,18 @@ public final class VillagerAggressionPolicy {
         return !witness.isBaby();
     }
 
+    public static boolean shouldAggroFromWitnessedPlayerCrime(Villager witness, Player player) {
+        return shouldAggroFromWitnessedPlayerCrime(witness, player, 0);
+    }
+
+    public static boolean shouldAggroFromWitnessedPlayerCrime(Villager witness, Player player, int pendingReputationChange) {
+        if (witness.isBaby() || !(witness.level() instanceof ServerLevel level)) {
+            return false;
+        }
+        int reputation = VillagerReputationManager.getReputation(level, witness, player.getUUID());
+        return VillagerReputationLevel.fromReputation(reputation + pendingReputationChange) != VillagerReputationLevel.FEARED;
+    }
+
     public static boolean shouldAttackOnSight(Villager villager, Player player) {
         if (!VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()
                 || !VillagerRetaliationConfig.ENABLE_DESPISED_KILL_ON_SIGHT.get()
@@ -52,10 +64,12 @@ public final class VillagerAggressionPolicy {
         }
         return switch (VillagerReputationManager.getReputationLevel(level, villager, player.getUUID())) {
             case REVERED -> 0.25D;
+            case ROYALTY -> 0.15D;
             case RESPECTED -> 0.35D;
             case TRUSTED -> 0.65D;
             case HOSTILE -> 1.25D;
             case DESPISED -> 2.0D;
+            case FEARED -> 2.0D;
             default -> 1.0D;
         };
     }

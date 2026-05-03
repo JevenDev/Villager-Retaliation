@@ -16,6 +16,7 @@ public final class VillagerReputationNetworking {
     public static void registerPayloads(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar("1");
         registrar.playToClient(VillagerReputationSyncPayload.TYPE, VillagerReputationSyncPayload.STREAM_CODEC, VillagerReputationNetworking::handleClientSync);
+        registrar.playToClient(FearedVillagerPulsePayload.TYPE, FearedVillagerPulsePayload.STREAM_CODEC, VillagerReputationNetworking::handleClientFearedPulse);
     }
 
     public static void sendReputation(ServerPlayer player, Villager villager, int reputation) {
@@ -27,9 +28,19 @@ public final class VillagerReputationNetworking {
         ));
     }
 
+    public static void sendFearedPulse(Villager villager, int ticks) {
+        PacketDistributor.sendToPlayersTrackingEntity(villager, new FearedVillagerPulsePayload(villager.getId(), ticks));
+    }
+
     private static void handleClientSync(VillagerReputationSyncPayload payload, IPayloadContext context) {
         if (FMLEnvironment.dist.isClient()) {
             context.enqueueWork(() -> com.jvn.villagerretaliation.client.reputation.VillagerReputationClientCache.accept(payload));
+        }
+    }
+
+    private static void handleClientFearedPulse(FearedVillagerPulsePayload payload, IPayloadContext context) {
+        if (FMLEnvironment.dist.isClient()) {
+            context.enqueueWork(() -> com.jvn.villagerretaliation.client.reputation.FearedVillagerAnimationClientCache.accept(payload));
         }
     }
 }

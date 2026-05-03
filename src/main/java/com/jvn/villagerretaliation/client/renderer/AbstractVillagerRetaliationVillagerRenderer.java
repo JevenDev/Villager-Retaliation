@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.client.model.BaseVillagerModel;
 import com.jvn.villagerretaliation.client.model.VillagerRetaliationVillagerModel;
 import com.jvn.villagerretaliation.client.model.VanillaVillagerModelAdapter;
 import com.jvn.villagerretaliation.client.pose.VillagerPoseProvider;
+import com.jvn.villagerretaliation.client.reputation.FearedVillagerAnimationClientCache;
 import com.jvn.villagerretaliation.client.renderer.layer.CombatItemInHandLayer;
 import com.jvn.villagerretaliation.client.renderer.layer.VillagerCrossedArmsItemLayer;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -49,5 +50,10 @@ public abstract class AbstractVillagerRetaliationVillagerRenderer<T extends Abst
     @Override
     public ResourceLocation getTextureLocation(T villager) {
         return this.poseProvider.shouldUseCombatModel(villager) ? this.combatTexture : this.vanillaTexture;
+    }
+
+    @Override
+    protected boolean isShaking(T villager) {
+        return super.isShaking(villager) || FearedVillagerAnimationClientCache.isShaking(villager);
     }
 }

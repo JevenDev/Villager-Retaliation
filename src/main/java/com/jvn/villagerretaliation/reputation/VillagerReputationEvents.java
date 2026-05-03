@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.reputation;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -26,6 +27,9 @@ public final class VillagerReputationEvents {
     private static final long SIGHT_SCAN_INTERVAL_TICKS = 20L;
     private static final long DEBUG_SYNC_INTERVAL_TICKS = 40L;
     private static final long HOSTILE_CONTRIBUTION_TTL_TICKS = 20L * 30L;
+    private static final double FEARED_CONVERSION_SHAKE_RADIUS = 5.0D;
+    private static final double FEARED_CONVERSION_SHAKE_RADIUS_SQR = FEARED_CONVERSION_SHAKE_RADIUS * FEARED_CONVERSION_SHAKE_RADIUS;
+    private static final int FEARED_CONVERSION_SHAKE_TICKS = 30;
     private static final Map<UUID, PlayerContribution> HOSTILE_PLAYER_CONTRIBUTIONS = new HashMap<>();
 
     private VillagerReputationEvents() {
@@ -124,6 +128,7 @@ public final class VillagerReputationEvents {
         long gameTime = level.getGameTime();
         if (gameTime % SIGHT_SCAN_INTERVAL_TICKS == Math.floorMod(villager.getUUID().getLeastSignificantBits(), SIGHT_SCAN_INTERVAL_TICKS)) {
             scanDespisedSight(level, villager);
+            scanFearedProximity(level, villager);
         }
         if (VillagerRetaliationConfig.SHOW_VILLAGER_REPUTATION_DEBUG_OVERLAY.get()
                 && gameTime % DEBUG_SYNC_INTERVAL_TICKS == Math.floorMod(villager.getUUID().getMostSignificantBits(), DEBUG_SYNC_INTERVAL_TICKS)) {
@@ -217,6 +222,22 @@ public final class VillagerReputationEvents {
             }
             if (VillagerAggressionPolicy.shouldAttackOnSight(villager, player)) {
                 com.jvn.villagerretaliation.combat.VillagerRetaliationHandler.forceAnger(villager, player);
+                return;
+            }
+        }
+    }
+
+    private static void scanFearedProximity(ServerLevel level, Villager villager) {
+        AABB area = villager.getBoundingBox().inflate(FEARED_CONVERSION_SHAKE_RADIUS);
+        for (Player player : level.getEntitiesOfClass(Player.class, area)) {
+            if (!player.isAlive() || player.isCreative() || player.isSpectator()) {
+                continue;
+            }
+            if (villager.distanceToSqr(player) > FEARED_CONVERSION_SHAKE_RADIUS_SQR) {
+                continue;
+            }
+            if (VillagerReputationManager.isFeared(level, villager, player)) {
+                VillagerReputationNetworking.sendFearedPulse(villager, FEARED_CONVERSION_SHAKE_TICKS);
                 return;
             }
         }

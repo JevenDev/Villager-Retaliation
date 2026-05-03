@@ -78,9 +78,15 @@ public final class VillagerReputationManager {
         return getReputationLevel(level, villager, player.getUUID()) == VillagerReputationLevel.DESPISED;
     }
 
+    public static boolean isFeared(ServerLevel level, Villager villager, Player player) {
+        return getReputationLevel(level, villager, player.getUUID()) == VillagerReputationLevel.FEARED;
+    }
+
     public static boolean isRespected(ServerLevel level, Villager villager, Player player) {
         VillagerReputationLevel levelForPlayer = getReputationLevel(level, villager, player.getUUID());
-        return levelForPlayer == VillagerReputationLevel.RESPECTED || levelForPlayer == VillagerReputationLevel.REVERED;
+        return levelForPlayer == VillagerReputationLevel.RESPECTED
+                || levelForPlayer == VillagerReputationLevel.REVERED
+                || levelForPlayer == VillagerReputationLevel.ROYALTY;
     }
 
     public static void pruneOldEntries(ServerLevel level) {

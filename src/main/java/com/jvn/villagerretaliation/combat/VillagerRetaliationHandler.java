@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.combat;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil.ActiveRetaliationTarget;
+import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
@@ -239,7 +240,7 @@ public final class VillagerRetaliationHandler {
 
         LivingEntity resolvedAttacker = attacker.get();
         double radius = VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get();
-        angerNearbyVillagers(deceased, resolvedAttacker, radius);
+        angerNearbyVillagers(deceased, resolvedAttacker, radius, deceasedIsVillager);
         WanderingTraderRetaliationHandler.angerNearbyTradersFrom(deceased, resolvedAttacker, radius);
         rallyFromNearbyNitwits(deceased, resolvedAttacker, radius);
     }
@@ -501,16 +502,31 @@ public final class VillagerRetaliationHandler {
     }
 
     private static void angerNearbyVillagers(Entity sourceEntity, LivingEntity attacker, double radius) {
+        angerNearbyVillagers(sourceEntity, attacker, radius, false);
+    }
+
+    private static void angerNearbyVillagers(Entity sourceEntity, LivingEntity attacker, double radius, boolean witnessedVillagerKill) {
         if (!(sourceEntity.level() instanceof ServerLevel level)) {
             return;
         }
 
         AABB area = sourceEntity.getBoundingBox().inflate(radius);
         for (Villager nearby : level.getEntitiesOfClass(Villager.class, area)) {
-            if (nearby != sourceEntity && !nearby.isBaby() && canWitnessRetaliationEvent(nearby, sourceEntity)) {
+            if (nearby != sourceEntity
+                    && !nearby.isBaby()
+                    && canWitnessRetaliationEvent(nearby, sourceEntity)
+                    && shouldAggroFromWitness(nearby, attacker, witnessedVillagerKill)) {
                 anger(nearby, attacker);
             }
         }
+    }
+
+    private static boolean shouldAggroFromWitness(Villager witness, LivingEntity attacker, boolean witnessedVillagerKill) {
+        if (!(attacker instanceof Player player)) {
+            return true;
+        }
+        int pendingReputationChange = witnessedVillagerKill ? VillagerRetaliationConfig.WITNESSED_KILL_PENALTY.get() : 0;
+        return VillagerAggressionPolicy.shouldAggroFromWitnessedPlayerCrime(witness, player, pendingReputationChange);
     }
 
     private static void rallyNearbyVillagers(Villager alarmVillager, LivingEntity attacker, double radius) {
