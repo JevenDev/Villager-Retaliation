@@ -22,7 +22,7 @@ abstract class AbstractCombatVillagerPoseProvider<T extends AbstractVillager> im
             return VillagerArmPose.CROSSBOW_HOLD;
         }
         if (isHoldingCrossbow(villager) && isInCombat(villager)) {
-            return VillagerArmPose.HOLDING_ITEM;
+            return VillagerArmPose.CROSSBOW_HOLD;
         }
         if (isHoldingBow(villager) && isInCombat(villager)) {
             return VillagerArmPose.HOLDING_ITEM;
