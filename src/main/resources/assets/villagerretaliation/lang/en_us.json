@@ -36,6 +36,7 @@
   "villagerretaliation.configuration.combat.butchersFightBack": "Butchers Fight Back",
   "villagerretaliation.configuration.combat.combatWeaponDropChance": "Combat Weapon Drop Chance",
   "villagerretaliation.configuration.combat.combatWeaponEnchantChance": "Combat Weapon Enchant Chance",
+  "villagerretaliation.configuration.combat.armorerShieldChanceHard": "Armorer Shield Chance (Hard)",
   "villagerretaliation.configuration.combat.farmersUseBread": "Farmers Use Bread",
   "villagerretaliation.configuration.combat.clericsUsePotions": "Clerics Use Potions",
   "villagerretaliation.configuration.combat.passiveClericAllyHealRange": "Passive Cleric Ally Heal Range",

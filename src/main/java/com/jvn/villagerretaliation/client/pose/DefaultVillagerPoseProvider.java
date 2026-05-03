@@ -31,6 +31,7 @@ public final class DefaultVillagerPoseProvider extends AbstractCombatVillagerPos
     @Override
     protected boolean shouldUseCombatModelWhileUsingItem(Villager villager, net.minecraft.world.item.ItemStack useItem) {
         return super.shouldUseCombatModelWhileUsingItem(villager, useItem)
+                || useItem.is(Items.SHIELD)
                 || VillagerRetaliationPotionUtil.isDrinkableCombatConsumable(useItem);
     }
 

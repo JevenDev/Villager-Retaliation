@@ -21,6 +21,7 @@ public class VillagerRetaliation {
         NeoForge.EVENT_BUS.addListener(VillagerRetaliationEvents::onLivingDrops);
         NeoForge.EVENT_BUS.addListener(VillagerRetaliationEvents::onEntityTickPre);
         NeoForge.EVENT_BUS.addListener(VillagerRetaliationEvents::onEntityTickPost);
+        NeoForge.EVENT_BUS.addListener(VillagerRetaliationEvents::onEntityJoinLevel);
         NeoForge.EVENT_BUS.addListener(VillagerRetaliationEvents::onEntityInteract);
         NeoForge.EVENT_BUS.addListener(VillagerRetaliationEvents::onEntityLeaveLevel);
     }

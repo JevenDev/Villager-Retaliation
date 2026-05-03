@@ -11,11 +11,16 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.util.Mth;
+import net.minecraft.world.Difficulty;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
@@ -26,9 +31,11 @@ import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.npc.WanderingTrader;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.schedule.Activity;
+import net.minecraft.world.item.AxeItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.AABB;
+import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
@@ -38,11 +45,22 @@ import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
 public final class VillagerRetaliationHandler {
     private static final long NATURAL_TARGET_SCAN_INTERVAL_TICKS = 20L;
+    private static final long ARMORER_SHIELD_AXE_BREAK_TICKS = 100L;
+    private static final int ARMORER_COUNTER_SWINGS_AFTER_BLOCK = 1;
+    private static final int ARMORER_COUNTER_ATTACK_DELAY_MIN_TICKS = 15;
+    private static final int ARMORER_COUNTER_ATTACK_DELAY_MAX_TICKS = 30;
+    private static final double ARMORER_BLOCKING_SPEED_FACTOR = 0.45D;
+    private static final double ARMORER_SHIELD_TRIGGER_RANGE = 7.0D;
+    private static final double ARMORER_SHIELD_TRIGGER_RANGE_SQR = ARMORER_SHIELD_TRIGGER_RANGE * ARMORER_SHIELD_TRIGGER_RANGE;
     private static final String PERSISTENT_TAG_ROOT = "VillagerRetaliationPersistentHostility";
+    private static final String PERSISTENT_ARMORER_SHIELD_ROLLED_TAG = "VillagerRetaliationArmorerShieldRolled";
     private static final VillagerRetaliationRetaliationRuntime<Villager> RETALIATION =
             new VillagerRetaliationRetaliationRuntime<>(PERSISTENT_TAG_ROOT);
     private static final Map<UUID, Long> NEXT_SPECIAL_TICKS = new HashMap<>();
     private static final Map<UUID, Long> NEXT_NATURAL_TARGET_SCAN_TICKS = new HashMap<>();
+    private static final Map<UUID, Long> ARMORER_SHIELD_DISABLED_UNTIL_TICKS = new HashMap<>();
+    private static final Map<UUID, Integer> ARMORER_PENDING_COUNTER_SWINGS = new HashMap<>();
+    private static final Map<UUID, Long> ARMORER_COUNTER_ATTACK_READY_TICKS = new HashMap<>();
 
     private VillagerRetaliationHandler() {
     }
@@ -56,8 +74,23 @@ public final class VillagerRetaliationHandler {
         }
     }
 
+    public static void onEntityJoinLevel(EntityJoinLevelEvent event) {
+        if (!(event.getEntity() instanceof Villager villager)
+                || villager.level().isClientSide
+                || villager.isBaby()
+                || !VillagerCombatRoles.isArmorer(villager)
+                || !VillagerRetaliationConfig.ARMORERS_FIGHT_BACK.get()
+                || !isHardMode(villager)) {
+            return;
+        }
+        tryRollArmorerSpawnShield(villager);
+    }
+
     public static void onLivingDamagePre(LivingIncomingDamageEvent event) {
         if (!(event.getEntity() instanceof Villager villager)) {
+            return;
+        }
+        if (tryHandleArmorerShieldBlock(villager, event)) {
             return;
         }
         if (!VillagerCombatRoles.isCleric(villager) || !VillagerRetaliationConfig.CLERICS_USE_POTIONS.get()) {
@@ -73,6 +106,73 @@ public final class VillagerRetaliationHandler {
         if (source.is(DamageTypeTags.WITCH_RESISTANT_TO)) {
             event.setAmount(damage * 0.15F);
         }
+    }
+
+    private static boolean tryHandleArmorerShieldBlock(Villager villager, LivingIncomingDamageEvent event) {
+        if (!VillagerCombatRoles.isArmorer(villager)
+                || !VillagerRetaliationConfig.ARMORERS_FIGHT_BACK.get()
+                || !isArmorerActivelyBlocking(villager)) {
+            return false;
+        }
+
+        DamageSource source = event.getSource();
+        if (!villager.isDamageSourceBlocked(source)) {
+            return false;
+        }
+
+        float incomingDamage = event.getAmount();
+        event.setCanceled(true);
+        event.setAmount(0.0F);
+        villager.playSound(SoundEvents.SHIELD_BLOCK, 1.0F, 0.8F + villager.getRandom().nextFloat() * 0.4F);
+
+        boolean shieldBroke = applyShieldDurabilityDamage(villager, incomingDamage);
+        boolean disabledByAxe = false;
+        Optional<LivingEntity> attacker = VillagerRetaliationVillagerCombatUtil.resolveAttacker(source);
+        if (attacker.isPresent()) {
+            LivingEntity resolvedAttacker = attacker.get();
+            anger(villager, resolvedAttacker);
+            if (!VillagerRetaliationConfig.ATTACK_AGGROS_ONLY_HIT_VILLAGER.get()) {
+                angerNearbyVillagers(villager, resolvedAttacker, VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get());
+            }
+
+            if (!shieldBroke && isAxeAttacker(resolvedAttacker)) {
+                disabledByAxe = true;
+                breakArmorerShieldGuard(villager);
+            }
+        }
+        if (!shieldBroke && !disabledByAxe) {
+            UUID villagerId = villager.getUUID();
+            ARMORER_PENDING_COUNTER_SWINGS.put(villagerId, ARMORER_COUNTER_SWINGS_AFTER_BLOCK);
+            ARMORER_COUNTER_ATTACK_READY_TICKS.put(villagerId, villager.level().getGameTime() + nextCounterAttackDelayTicks(villager));
+            ensureArmorerShieldBlocking(villager);
+        }
+        return true;
+    }
+
+    private static boolean applyShieldDurabilityDamage(Villager villager, float blockedDamage) {
+        ItemStack shield = villager.getOffhandItem();
+        if (!shield.is(Items.SHIELD)) {
+            return false;
+        }
+
+        int durabilityLoss = blockedDamage >= 3.0F ? 1 + Mth.floor(blockedDamage) : 1;
+        shield.hurtAndBreak(durabilityLoss, villager, EquipmentSlot.OFFHAND);
+        return !villager.getOffhandItem().is(Items.SHIELD);
+    }
+
+    private static boolean isAxeAttacker(LivingEntity attacker) {
+        return attacker.getMainHandItem().getItem() instanceof AxeItem
+                || attacker.getOffhandItem().getItem() instanceof AxeItem;
+    }
+
+    private static void breakArmorerShieldGuard(Villager villager) {
+        long gameTime = villager.level().getGameTime();
+        UUID villagerId = villager.getUUID();
+        ARMORER_SHIELD_DISABLED_UNTIL_TICKS.put(villagerId, gameTime + ARMORER_SHIELD_AXE_BREAK_TICKS);
+        ARMORER_PENDING_COUNTER_SWINGS.remove(villagerId);
+        ARMORER_COUNTER_ATTACK_READY_TICKS.remove(villagerId);
+        stopArmorerShieldBlocking(villager);
+        villager.playSound(SoundEvents.SHIELD_BREAK, 0.8F, 0.8F + villager.getRandom().nextFloat() * 0.4F);
     }
 
     public static void onLivingDamage(LivingDamageEvent.Post event) {
@@ -163,6 +263,8 @@ public final class VillagerRetaliationHandler {
             return;
         }
 
+        ensureArmorerSpawnShieldRoll(villager);
+
         if (!VillagerRetaliationConfig.ENABLE_VILLAGER_RETALIATION.get()) {
             clearAnger(villager);
             handlePassivePotionState(villager);
@@ -190,6 +292,7 @@ public final class VillagerRetaliationHandler {
             villager.setAggressive(false);
             villager.setChasing(false);
             villager.setTarget(null);
+            resetArmorerShieldState(villager);
             handlePassivePotionState(villager);
             villager.getNavigation().stop();
             return;
@@ -215,6 +318,8 @@ public final class VillagerRetaliationHandler {
         VillagerRetaliationRetaliationUtil.boostCombatMovement(villager);
 
         handleDefensiveRole(villager, gameTime);
+        boolean meleeAttackReady = RETALIATION.isAttackReady(villager, gameTime);
+        boolean allowMeleeAttack = handleArmorerShieldCombatTactics(villager, target, distanceSqr, gameTime, meleeAttackReady);
 
         if (VillagerClericPotionHelper.tryCombat(villager, target, level, distanceSqr)) {
             return;
@@ -229,15 +334,19 @@ public final class VillagerRetaliationHandler {
             return;
         }
 
-        villager.getNavigation().moveTo(target, VillagerCombatRoles.movementSpeed(villager));
+        double movementSpeed = VillagerCombatRoles.movementSpeed(villager)
+                * (isArmorerActivelyBlocking(villager) ? ARMORER_BLOCKING_SPEED_FACTOR : 1.0D);
+        villager.getNavigation().moveTo(target, movementSpeed);
         if (VillagerRetaliationRetaliationUtil.canUseMeleeCombatMode(villager)
                 && VillagerRetaliationRetaliationUtil.canMeleeHit(villager, target)
-                && RETALIATION.isAttackReady(villager, gameTime)) {
+                && allowMeleeAttack
+                && meleeAttackReady) {
             var attackHand = VillagerRetaliationVillagerCombatUtil.selectAttackHand(villager);
             villager.swing(attackHand, true);
             syncMeleeAttackAttributes(villager);
             villager.doHurtTarget(target);
             RETALIATION.setNextAttackTick(villager, gameTime + VillagerCombatRoles.attackCooldown(villager));
+            onArmorerMeleeAttackCommitted(villager);
         }
     }
 
@@ -337,6 +446,7 @@ public final class VillagerRetaliationHandler {
         RETALIATION.clearPersistentAnger(villager);
         NEXT_SPECIAL_TICKS.remove(villager.getUUID());
         NEXT_NATURAL_TARGET_SCAN_TICKS.remove(villager.getUUID());
+        resetArmorerShieldState(villager);
         VillagerRangedCombatHelper.clearState(villager);
         boolean preservePotionUse = VillagerClericPotionHelper.isDrinkingPotion(villager);
         if (preservePotionUse && RETALIATION.hasTemporaryWeapon(villager)) {
@@ -477,7 +587,106 @@ public final class VillagerRetaliationHandler {
         RETALIATION.equipTemporaryWeapon(villager, weapon);
     }
 
+    private static boolean handleArmorerShieldCombatTactics(Villager villager, LivingEntity target, double distanceSqr, long gameTime, boolean meleeAttackReady) {
+        if (!VillagerCombatRoles.isArmorer(villager)
+                || !VillagerRetaliationConfig.ARMORERS_FIGHT_BACK.get()
+                || !isHardMode(villager)
+                || VillagerRetaliationRetaliationUtil.isUsingRangedCombatMode(villager)) {
+            clearArmorerShieldTacticState(villager, true);
+            return true;
+        }
+
+        if (!hasArmorerShield(villager)) {
+            clearArmorerShieldTacticState(villager, true);
+            return true;
+        }
+
+        boolean inMeleeRange = VillagerRetaliationRetaliationUtil.canUseMeleeCombatMode(villager)
+                && VillagerRetaliationRetaliationUtil.canMeleeHit(villager, target);
+        boolean inShieldTriggerRange = distanceSqr <= ARMORER_SHIELD_TRIGGER_RANGE_SQR;
+
+        UUID villagerId = villager.getUUID();
+        long shieldDisabledUntil = ARMORER_SHIELD_DISABLED_UNTIL_TICKS.getOrDefault(villagerId, 0L);
+        if (gameTime < shieldDisabledUntil) {
+            stopArmorerShieldBlocking(villager);
+            return true;
+        }
+        if (shieldDisabledUntil != 0L) {
+            ARMORER_SHIELD_DISABLED_UNTIL_TICKS.remove(villagerId);
+        }
+
+        int pendingCounterSwings = ARMORER_PENDING_COUNTER_SWINGS.getOrDefault(villagerId, 0);
+        if (pendingCounterSwings > 0) {
+            long counterAttackReadyTick = ARMORER_COUNTER_ATTACK_READY_TICKS.getOrDefault(villagerId, gameTime);
+            if (gameTime < counterAttackReadyTick || !meleeAttackReady || !inMeleeRange) {
+                if (!inShieldTriggerRange) {
+                    stopArmorerShieldBlocking(villager);
+                    return true;
+                }
+                ensureArmorerShieldBlocking(villager);
+                return false;
+            }
+            return true;
+        }
+
+        if (!inShieldTriggerRange) {
+            stopArmorerShieldBlocking(villager);
+            return true;
+        }
+
+        ensureArmorerShieldBlocking(villager);
+        return false;
+    }
+
+    private static void ensureArmorerShieldBlocking(Villager villager) {
+        if (!isArmorerActivelyBlocking(villager) && hasArmorerShield(villager)) {
+            villager.startUsingItem(InteractionHand.OFF_HAND);
+        }
+    }
+
+    private static void stopArmorerShieldBlocking(Villager villager) {
+        if (villager.isUsingItem() && villager.getUsedItemHand() == InteractionHand.OFF_HAND) {
+            villager.stopUsingItem();
+        }
+    }
+
+    private static void clearArmorerShieldTacticState(Villager villager, boolean stopBlocking) {
+        UUID villagerId = villager.getUUID();
+        ARMORER_SHIELD_DISABLED_UNTIL_TICKS.remove(villagerId);
+        ARMORER_PENDING_COUNTER_SWINGS.remove(villagerId);
+        ARMORER_COUNTER_ATTACK_READY_TICKS.remove(villagerId);
+        if (stopBlocking) {
+            stopArmorerShieldBlocking(villager);
+        }
+    }
+
+    private static boolean isArmorerActivelyBlocking(Villager villager) {
+        return villager.isUsingItem()
+                && villager.getUsedItemHand() == InteractionHand.OFF_HAND
+                && hasArmorerShield(villager);
+    }
+
+    private static void onArmorerMeleeAttackCommitted(Villager villager) {
+        if (!VillagerCombatRoles.isArmorer(villager) || !hasArmorerShield(villager)) {
+            return;
+        }
+
+        UUID villagerId = villager.getUUID();
+        int pendingCounterSwings = ARMORER_PENDING_COUNTER_SWINGS.getOrDefault(villagerId, 0);
+        if (pendingCounterSwings > 0) {
+            ARMORER_PENDING_COUNTER_SWINGS.put(villagerId, pendingCounterSwings - 1);
+            ARMORER_COUNTER_ATTACK_READY_TICKS.remove(villagerId);
+        }
+        stopArmorerShieldBlocking(villager);
+    }
+
+    private static int nextCounterAttackDelayTicks(Villager villager) {
+        return ARMORER_COUNTER_ATTACK_DELAY_MIN_TICKS
+                + villager.getRandom().nextInt(ARMORER_COUNTER_ATTACK_DELAY_MAX_TICKS - ARMORER_COUNTER_ATTACK_DELAY_MIN_TICKS + 1);
+    }
+
     private static void handlePassivePotionState(Villager villager) {
+        resetArmorerShieldState(villager);
         VillagerRangedCombatHelper.clearState(villager);
         if (VillagerClericPotionHelper.tickDrinkingIfActive(villager)) {
             villager.getNavigation().stop();
@@ -503,6 +712,7 @@ public final class VillagerRetaliationHandler {
             return;
         }
 
+        resetArmorerShieldState(villager);
         VillagerRangedCombatHelper.clearState(villager);
         VillagerClericPotionHelper.restoreHeldItemAndClearState(villager);
         VillagerRetaliationRetaliationUtil.restoreCombatMovement(villager);
@@ -519,5 +729,42 @@ public final class VillagerRetaliationHandler {
         } else {
             VillagerRetaliationVillagerWeapons.clearTrackedPickup(villager);
         }
+    }
+
+    private static boolean isHardMode(Villager villager) {
+        return villager.level().getDifficulty() == Difficulty.HARD;
+    }
+
+    private static void ensureArmorerSpawnShieldRoll(Villager villager) {
+        if (villager.isBaby()
+                || !VillagerCombatRoles.isArmorer(villager)
+                || !VillagerRetaliationConfig.ARMORERS_FIGHT_BACK.get()
+                || !isHardMode(villager)) {
+            return;
+        }
+
+        tryRollArmorerSpawnShield(villager);
+    }
+
+    private static void tryRollArmorerSpawnShield(Villager villager) {
+        var persistentData = villager.getPersistentData();
+        if (persistentData.getBoolean(PERSISTENT_ARMORER_SHIELD_ROLLED_TAG)) {
+            return;
+        }
+        persistentData.putBoolean(PERSISTENT_ARMORER_SHIELD_ROLLED_TAG, true);
+
+        if (villager.getOffhandItem().isEmpty()
+                && villager.getRandom().nextDouble() < VillagerRetaliationConfig.ARMORER_SHIELD_CHANCE_HARD.get()) {
+            villager.setItemSlot(EquipmentSlot.OFFHAND, new ItemStack(Items.SHIELD));
+        }
+    }
+
+    private static boolean hasArmorerShield(Villager villager) {
+        return villager.getOffhandItem().is(Items.SHIELD);
+    }
+
+    private static void resetArmorerShieldState(Villager villager) {
+        stopArmorerShieldBlocking(villager);
+        clearArmorerShieldTacticState(villager, false);
     }
 }

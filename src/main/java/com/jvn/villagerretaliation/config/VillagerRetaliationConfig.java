@@ -30,6 +30,7 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.BooleanValue BUTCHERS_FIGHT_BACK;
     public static final ModConfigSpec.DoubleValue COMBAT_WEAPON_DROP_CHANCE;
     public static final ModConfigSpec.DoubleValue COMBAT_WEAPON_ENCHANT_CHANCE;
+    public static final ModConfigSpec.DoubleValue ARMORER_SHIELD_CHANCE_HARD;
     public static final ModConfigSpec.BooleanValue FARMERS_USE_BREAD;
     public static final ModConfigSpec.BooleanValue CLERICS_USE_POTIONS;
     public static final ModConfigSpec.DoubleValue PASSIVE_CLERIC_ALLY_HEAL_RANGE;
@@ -127,6 +128,10 @@ public final class VillagerRetaliationConfig {
         COMBAT_WEAPON_ENCHANT_CHANCE = BUILDER
                 .translation("villagerretaliation.configuration.combat.combatWeaponEnchantChance")
                 .defineInRange("combatWeaponEnchantChance", 0.25D, 0.0D, 1.0D);
+        BUILDER.comment("Chance for armorers to spawn with an offhand shield (hard mode only).");
+        ARMORER_SHIELD_CHANCE_HARD = BUILDER
+                .translation("villagerretaliation.configuration.combat.armorerShieldChanceHard")
+                .defineInRange("armorerShieldChanceHard", 0.35D, 0.0D, 1.0D);
         FARMERS_USE_BREAD = BUILDER.comment("Allows farmers to retaliate defensively and heal themselves when hurt.")
                 .translation("villagerretaliation.configuration.combat.farmersUseBread")
                 .define("farmersUseBread", true);

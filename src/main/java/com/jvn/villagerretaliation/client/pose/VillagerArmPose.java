@@ -7,6 +7,8 @@ public enum VillagerArmPose {
     BOW_AND_ARROW,
     CROSSBOW_HOLD,
     CROSSBOW_CHARGE,
+    SHIELD_BLOCK,
+    SHIELD_LOWERED,
     THROWING_ITEM,
     CASTING_OR_POTION
 }

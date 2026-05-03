@@ -6,6 +6,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.npc.AbstractVillager;
+import net.minecraft.world.item.Items;
 
 public final class VillagerPoseAnimator {
     private VillagerPoseAnimator() {
@@ -25,6 +26,8 @@ public final class VillagerPoseAnimator {
             case BOW_AND_ARROW -> applyBowPose(villager, head, rightArm, leftArm);
             case CROSSBOW_HOLD -> applyCrossbowPose(head, rightArm, leftArm, villager.getMainArm() == HumanoidArm.RIGHT);
             case CROSSBOW_CHARGE -> applyCrossbowCharge(villager, rightArm, leftArm, villager.getMainArm() == HumanoidArm.RIGHT);
+            case SHIELD_BLOCK -> applyShieldBlockPose(villager, head, rightArm, leftArm);
+            case SHIELD_LOWERED -> applyShieldLoweredPose(villager, head, rightArm, leftArm);
             case THROWING_ITEM -> applyThrowingPose(head, rightArm, leftArm, villager.getMainArm() == HumanoidArm.RIGHT);
             case CASTING_OR_POTION -> applyPotionPose(head, rightArm, leftArm, villager.getMainArm() == HumanoidArm.RIGHT);
             case NONE, HOLDING_ITEM -> {
@@ -82,6 +85,58 @@ public final class VillagerPoseAnimator {
 
     public static void applyCrossbowCharge(AbstractVillager villager, ModelPart rightArm, ModelPart leftArm, boolean rightHanded) {
         AnimationUtils.animateCrossbowCharge(rightArm, leftArm, villager, rightHanded);
+    }
+
+    public static void applyShieldBlockPose(
+            AbstractVillager villager,
+            ModelPart head,
+            ModelPart rightArm,
+            ModelPart leftArm
+    ) {
+        boolean usingOffhand = isShieldInOffhand(villager);
+        boolean mainArmRight = villager.getMainArm() == HumanoidArm.RIGHT;
+        boolean blockArmRight = usingOffhand ? !mainArmRight : mainArmRight;
+
+        ModelPart blockArm = blockArmRight ? rightArm : leftArm;
+        ModelPart supportArm = blockArmRight ? leftArm : rightArm;
+        float yawDirection = blockArmRight ? -1.0F : 1.0F;
+
+        blockArm.xRot = -0.95F + head.xRot * 0.35F;
+        blockArm.yRot = head.yRot + yawDirection * 0.55F;
+        blockArm.zRot = yawDirection * 0.08F;
+
+        supportArm.xRot = -0.25F;
+        supportArm.yRot = head.yRot - yawDirection * 0.2F;
+        supportArm.zRot = -yawDirection * 0.05F;
+    }
+
+    public static void applyShieldLoweredPose(
+            AbstractVillager villager,
+            ModelPart head,
+            ModelPart rightArm,
+            ModelPart leftArm
+    ) {
+        boolean shieldOnOffhand = isShieldInOffhand(villager);
+        boolean mainArmRight = villager.getMainArm() == HumanoidArm.RIGHT;
+        boolean shieldArmRight = shieldOnOffhand ? !mainArmRight : mainArmRight;
+
+        ModelPart shieldArm = shieldArmRight ? rightArm : leftArm;
+        ModelPart weaponArm = shieldArmRight ? leftArm : rightArm;
+        float shieldDirection = shieldArmRight ? -1.0F : 1.0F;
+        float weaponDirection = -shieldDirection;
+
+        shieldArm.xRot = -0.08F;
+        shieldArm.yRot = shieldDirection * 0.12F;
+        shieldArm.zRot = shieldDirection * 0.04F;
+
+        weaponArm.xRot = -0.35F + head.xRot * 0.15F;
+        weaponArm.yRot = head.yRot + weaponDirection * 0.18F;
+        weaponArm.zRot = weaponDirection * 0.03F;
+    }
+
+    private static boolean isShieldInOffhand(AbstractVillager villager) {
+        return villager.getOffhandItem().is(Items.SHIELD)
+                || !villager.getMainHandItem().is(Items.SHIELD) && villager.getUsedItemHand() == InteractionHand.OFF_HAND;
     }
 
     public static void applyPotionPose(ModelPart head, ModelPart rightArm, ModelPart leftArm, boolean rightHanded) {

@@ -11,6 +11,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
+import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
@@ -62,8 +63,18 @@ public final class VillagerRetaliationEvents {
         VillagerFleeBehaviorHandler.onEntityTickPost(event);
     }
 
+    public static void onEntityJoinLevel(EntityJoinLevelEvent event) {
+        VillagerRetaliationHandler.onEntityJoinLevel(event);
+    }
+
     public static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {
         if (!(event.getEntity() instanceof Player player)) {
+            return;
+        }
+        if ((event.getTarget() instanceof Villager || event.getTarget() instanceof WanderingTrader)
+                && !player.getOffhandItem().isEmpty()) {
+            event.setCanceled(true);
+            event.setCancellationResult(InteractionResult.FAIL);
             return;
         }
         ItemStack interactionStack = player.getItemInHand(event.getHand());
