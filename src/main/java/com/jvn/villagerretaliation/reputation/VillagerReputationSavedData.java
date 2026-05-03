@@ -138,6 +138,10 @@ public class VillagerReputationSavedData extends SavedData {
             return this.reputation;
         }
 
+        void setReputation(int reputation) {
+            this.reputation = reputation;
+        }
+
         void addReputation(int amount) {
             this.reputation += amount;
         }

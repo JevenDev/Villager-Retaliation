@@ -89,6 +89,26 @@ public final class VillagerReputationManager {
                 || levelForPlayer == VillagerReputationLevel.ROYALTY;
     }
 
+    public static boolean setReputationForDebug(ServerLevel level, Villager villager, UUID playerId, int reputation) {
+        VillagerReputationSavedData data = VillagerReputationSavedData.get(level);
+        VillagerReputationSavedData.ReputationEntry entry = data.getOrCreate(villager.getUUID(), playerId);
+        int previousReputation = entry.reputation();
+        if (previousReputation == reputation) {
+            syncToTrackingPlayer(level, villager, playerId);
+            return false;
+        }
+
+        entry.setReputation(reputation);
+        entry.setLastInteractionGameTime(level.getGameTime());
+        entry.setLastKnownVillagerPosition(villager.blockPosition());
+        data.setDirty();
+        if (level.getPlayerByUUID(playerId) instanceof Player player) {
+            VillagerReputationTradePricing.refreshPricesForPlayer(level, villager, player);
+        }
+        syncToTrackingPlayer(level, villager, playerId);
+        return true;
+    }
+
     public static void pruneOldEntries(ServerLevel level) {
         if (!VillagerRetaliationConfig.REPUTATION_DECAY_ENABLED.get()) {
             return;

@@ -109,6 +109,7 @@ public final class ProfessionLootPools {
                 stack(Items.WHEAT, 1, 10), stack(Items.BEETROOT, 1, 6), stack(Items.CARROT, 1, 8),
                 stack(Items.POTATO, 1, 6), stack(Items.APPLE, 1, 2), stack(Items.PUMPKIN_SEEDS, 1, 1),
                 stack(Items.MELON_SEEDS, 1, 1), stack(Items.WHEAT_SEEDS, 1, 12), entry(ProfessionLootPools::suspiciousStew));
+        addRare(random, drops, new ItemStack(Items.MILK_BUCKET));
         return drops;
     }
 

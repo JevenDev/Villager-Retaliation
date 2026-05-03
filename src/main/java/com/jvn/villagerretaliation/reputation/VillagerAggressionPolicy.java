@@ -44,10 +44,16 @@ public final class VillagerAggressionPolicy {
     }
 
     public static boolean shouldFleeFromPlayer(Villager villager, Player player) {
-        if (!(villager.level() instanceof ServerLevel level)) {
+        if (!(villager.level() instanceof ServerLevel level)
+                || !VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()) {
             return false;
         }
-        return VillagerReputationManager.isDespised(level, villager, player)
+
+        VillagerReputationLevel reputationLevel = VillagerReputationManager.getReputationLevel(level, villager, player.getUUID());
+        boolean lowEnoughToFlee = reputationLevel == VillagerReputationLevel.HOSTILE
+                || reputationLevel == VillagerReputationLevel.DESPISED
+                || reputationLevel == VillagerReputationLevel.FEARED;
+        return lowEnoughToFlee
                 && (villager.isBaby()
                 || villager.getVillagerData().getProfession() == VillagerProfession.NITWIT
                 || !VillagerCombatRoles.canFightBack(villager));

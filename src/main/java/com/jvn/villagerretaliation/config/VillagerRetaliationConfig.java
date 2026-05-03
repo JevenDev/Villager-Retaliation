@@ -78,6 +78,9 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.DoubleValue PASSIVE_CLERIC_ALLY_HEAL_RANGE;
     public static final ModConfigSpec.DoubleValue PASSIVE_CLERIC_ALLY_HEAL_HEALTH_THRESHOLD;
     public static final ModConfigSpec.BooleanValue PASSIVE_CLERIC_ALLY_HEAL_REQUIRES_LINE_OF_SIGHT;
+    public static final ModConfigSpec.BooleanValue HOSTILE_TIER_HARASS_THROW_ENABLED;
+    public static final ModConfigSpec.IntValue HOSTILE_TIER_HARASS_THROW_MIN_INTERVAL_TICKS;
+    public static final ModConfigSpec.IntValue HOSTILE_TIER_HARASS_THROW_MAX_INTERVAL_TICKS;
 
     public static final ModConfigSpec.BooleanValue WANDERER_DROP_EMERALDS;
     public static final ModConfigSpec.BooleanValue WANDERER_DROP_INVISIBILITY_POTION;
@@ -325,6 +328,15 @@ public final class VillagerRetaliationConfig {
         PASSIVE_CLERIC_ALLY_HEAL_REQUIRES_LINE_OF_SIGHT = BUILDER.comment("When true, idle clerics only heal allies they can already see, preventing long wall-hugging path attempts.")
                 .translation("villagerretaliation.configuration.combat.passiveClericAllyHealRequiresLineOfSight")
                 .define("passiveClericAllyHealRequiresLineOfSight", true);
+        HOSTILE_TIER_HARASS_THROW_ENABLED = BUILDER.comment("Allows villagers who view a player as HOSTILE or worse to occasionally throw harmless eggs or poisonous potatoes.")
+                .translation("villagerretaliation.configuration.combat.hostileTierHarassThrowEnabled")
+                .define("hostileTierHarassThrowEnabled", true);
+        HOSTILE_TIER_HARASS_THROW_MIN_INTERVAL_TICKS = BUILDER.comment("Minimum ticks between hostile-tier harassment throws.")
+                .translation("villagerretaliation.configuration.combat.hostileTierHarassThrowMinIntervalTicks")
+                .defineInRange("hostileTierHarassThrowMinIntervalTicks", 200, 20, 20 * 60 * 10);
+        HOSTILE_TIER_HARASS_THROW_MAX_INTERVAL_TICKS = BUILDER.comment("Maximum ticks between hostile-tier harassment throws.")
+                .translation("villagerretaliation.configuration.combat.hostileTierHarassThrowMaxIntervalTicks")
+                .defineInRange("hostileTierHarassThrowMaxIntervalTicks", 360, 20, 20 * 60 * 10);
         BUILDER.pop();
 
         BUILDER.push("wanderer");

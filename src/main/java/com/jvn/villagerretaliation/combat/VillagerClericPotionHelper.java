@@ -1,6 +1,8 @@
 package com.jvn.villagerretaliation.combat;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
+import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -16,6 +18,7 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.WanderingTrader;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ThrownPotion;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -401,7 +404,12 @@ final class VillagerClericPotionHelper {
         if (entity == villager || !entity.isAlive() || entity.isInvertedHealAndHarm()) {
             return false;
         }
-        if (!(entity instanceof Villager) && !(entity instanceof WanderingTrader)) {
+        if (!(entity instanceof Villager)
+                && !(entity instanceof WanderingTrader)
+                && !(entity instanceof Player)) {
+            return false;
+        }
+        if (entity instanceof Player player && !canSupportPlayer(villager, player)) {
             return false;
         }
         if (requireLineOfSight && !villager.hasLineOfSight(entity)) {
@@ -411,6 +419,21 @@ final class VillagerClericPotionHelper {
         float missingHealth = entity.getMaxHealth() - entity.getHealth();
         return entity.getHealth() <= entity.getMaxHealth() * healthThreshold
                 || missingHealth >= SUPPORT_HEAL_MIN_MISSING_HEALTH;
+    }
+
+    private static boolean canSupportPlayer(Villager villager, Player player) {
+        if (player.isCreative() || player.isSpectator()) {
+            return false;
+        }
+        if (!(villager.level() instanceof ServerLevel level) || !VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()) {
+            return false;
+        }
+
+        VillagerReputationLevel reputationLevel = VillagerReputationManager.getReputationLevel(level, villager, player.getUUID());
+        return reputationLevel == VillagerReputationLevel.TRUSTED
+                || reputationLevel == VillagerReputationLevel.RESPECTED
+                || reputationLevel == VillagerReputationLevel.REVERED
+                || reputationLevel == VillagerReputationLevel.ROYALTY;
     }
 
     private static ItemStack selectSplashPotion(Villager villager, LivingEntity target, double distanceSqr) {

@@ -11,9 +11,12 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.animal.IronGolem;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.inventory.MerchantMenu;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
@@ -128,6 +131,7 @@ public final class VillagerReputationEvents {
         long gameTime = level.getGameTime();
         if (gameTime % SIGHT_SCAN_INTERVAL_TICKS == Math.floorMod(villager.getUUID().getLeastSignificantBits(), SIGHT_SCAN_INTERVAL_TICKS)) {
             scanDespisedSight(level, villager);
+            scanReputationDrivenFlee(level, villager);
             scanFearedProximity(level, villager);
         }
         if (VillagerRetaliationConfig.SHOW_VILLAGER_REPUTATION_DEBUG_OVERLAY.get()
@@ -224,6 +228,33 @@ public final class VillagerReputationEvents {
                 com.jvn.villagerretaliation.combat.VillagerRetaliationHandler.forceAnger(villager, player);
                 return;
             }
+        }
+    }
+
+    private static void scanReputationDrivenFlee(ServerLevel level, Villager villager) {
+        if (!villager.isBaby() && villager.getVillagerData().getProfession() != VillagerProfession.NITWIT) {
+            return;
+        }
+
+        double radius = VillagerRetaliationConfig.DESPISED_SIGHT_RADIUS.get();
+        double radiusSqr = radius * radius;
+        AABB area = villager.getBoundingBox().inflate(radius);
+        for (Player player : level.getEntitiesOfClass(Player.class, area)) {
+            if (!player.isAlive() || player.isCreative() || player.isSpectator()) {
+                continue;
+            }
+            if (villager.distanceToSqr(player) > radiusSqr || !villager.hasLineOfSight(player)) {
+                continue;
+            }
+            if (!VillagerAggressionPolicy.shouldFleeFromPlayer(villager, player)) {
+                continue;
+            }
+
+            long gameTime = level.getGameTime();
+            villager.getBrain().setActiveActivityIfPossible(Activity.PANIC);
+            villager.getBrain().setMemory(MemoryModuleType.HEARD_BELL_TIME, gameTime);
+            villager.getBrain().setMemory(MemoryModuleType.NEAREST_HOSTILE, player);
+            return;
         }
     }
 

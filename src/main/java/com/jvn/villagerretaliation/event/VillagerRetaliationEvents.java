@@ -10,6 +10,7 @@ import net.minecraft.world.entity.npc.WanderingTrader;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent;
@@ -71,16 +72,11 @@ public final class VillagerRetaliationEvents {
         if (!(event.getEntity() instanceof Player player)) {
             return;
         }
-        if ((event.getTarget() instanceof Villager || event.getTarget() instanceof WanderingTrader)
-                && !player.getOffhandItem().isEmpty()) {
-            event.setCanceled(true);
-            event.setCancellationResult(InteractionResult.FAIL);
-            return;
-        }
         ItemStack interactionStack = player.getItemInHand(event.getHand());
+        ItemStack pacifyStack = interactionStack.is(Items.EMERALD) ? interactionStack : player.getOffhandItem();
 
         if (event.getTarget() instanceof Villager villager
-                && VillagerRetaliationHandler.tryPacifyWithEmeralds(villager, player, interactionStack)) {
+                && VillagerRetaliationHandler.tryPacifyWithEmeralds(villager, player, pacifyStack)) {
             event.setCanceled(true);
             event.setCancellationResult(InteractionResult.SUCCESS);
             return;
@@ -94,7 +90,7 @@ public final class VillagerRetaliationEvents {
         }
 
         if (event.getTarget() instanceof WanderingTrader trader
-                && WanderingTraderRetaliationHandler.tryPacifyWithEmeralds(trader, player, interactionStack)) {
+                && WanderingTraderRetaliationHandler.tryPacifyWithEmeralds(trader, player, pacifyStack)) {
             event.setCanceled(true);
             event.setCancellationResult(InteractionResult.SUCCESS);
             return;

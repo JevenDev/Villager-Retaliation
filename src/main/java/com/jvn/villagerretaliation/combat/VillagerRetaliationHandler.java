@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.combat;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil.ActiveRetaliationTarget;
 import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
+import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
@@ -32,6 +33,9 @@ import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.npc.WanderingTrader;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.Snowball;
+import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
+import net.minecraft.world.entity.projectile.ThrownEgg;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.item.AxeItem;
 import net.minecraft.world.item.ItemStack;
@@ -47,6 +51,7 @@ import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
 public final class VillagerRetaliationHandler {
     private static final long NATURAL_TARGET_SCAN_INTERVAL_TICKS = 20L;
+    private static final double HOSTILE_HARASS_THROW_MAX_DISTANCE_SQR = 144.0D;
     private static final long ARMORER_SHIELD_AXE_BREAK_TICKS = 100L;
     private static final int ARMORER_COUNTER_SWINGS_AFTER_BLOCK = 1;
     private static final int ARMORER_COUNTER_ATTACK_DELAY_MIN_TICKS = 10;
@@ -60,6 +65,7 @@ public final class VillagerRetaliationHandler {
             new VillagerRetaliationRetaliationRuntime<>(PERSISTENT_TAG_ROOT);
     private static final Map<UUID, Long> NEXT_SPECIAL_TICKS = new HashMap<>();
     private static final Map<UUID, Long> NEXT_NATURAL_TARGET_SCAN_TICKS = new HashMap<>();
+    private static final Map<UUID, Long> NEXT_HOSTILE_HARASS_THROW_TICKS = new HashMap<>();
     private static final Map<UUID, Long> ARMORER_SHIELD_DISABLED_UNTIL_TICKS = new HashMap<>();
     private static final Map<UUID, Integer> ARMORER_PENDING_COUNTER_SWINGS = new HashMap<>();
     private static final Map<UUID, Long> ARMORER_COUNTER_ATTACK_READY_TICKS = new HashMap<>();
@@ -335,6 +341,9 @@ public final class VillagerRetaliationHandler {
             villager.getNavigation().stop();
             return;
         }
+        if (tryHostileTierHarassThrow(villager, target, level, gameTime, distanceSqr)) {
+            return;
+        }
 
         double movementSpeed = VillagerCombatRoles.movementSpeed(villager)
                 * (isArmorerActivelyBlocking(villager) ? ARMORER_BLOCKING_SPEED_FACTOR : 1.0D);
@@ -467,6 +476,7 @@ public final class VillagerRetaliationHandler {
         RETALIATION.clearPersistentAnger(villager);
         NEXT_SPECIAL_TICKS.remove(villager.getUUID());
         NEXT_NATURAL_TARGET_SCAN_TICKS.remove(villager.getUUID());
+        NEXT_HOSTILE_HARASS_THROW_TICKS.remove(villager.getUUID());
         resetArmorerShieldState(villager);
         VillagerRangedCombatHelper.clearState(villager);
         boolean preservePotionUse = VillagerClericPotionHelper.isDrinkingPotion(villager);
@@ -600,6 +610,78 @@ public final class VillagerRetaliationHandler {
             villager.heal(4.0F);
             NEXT_SPECIAL_TICKS.put(villager.getUUID(), gameTime + 120L);
         }
+    }
+
+    private static boolean tryHostileTierHarassThrow(
+            Villager villager,
+            LivingEntity target,
+            ServerLevel level,
+            long gameTime,
+            double distanceSqr
+    ) {
+        if (!VillagerRetaliationConfig.HOSTILE_TIER_HARASS_THROW_ENABLED.get()
+                || !(target instanceof Player player)
+                || !player.isAlive()
+                || player.isCreative()
+                || player.isSpectator()
+                || distanceSqr > HOSTILE_HARASS_THROW_MAX_DISTANCE_SQR
+                || !villager.hasLineOfSight(player)
+                || !isHostileTierAgainstPlayer(villager, player)) {
+            return false;
+        }
+
+        if (gameTime < NEXT_HOSTILE_HARASS_THROW_TICKS.getOrDefault(villager.getUUID(), 0L)) {
+            return false;
+        }
+
+        NEXT_HOSTILE_HARASS_THROW_TICKS.put(villager.getUUID(), gameTime + nextHarassThrowDelayTicks(villager));
+        if (villager.getRandom().nextBoolean()) {
+            ThrownEgg egg = new ThrownEgg(level, villager);
+            egg.setItem(new ItemStack(Items.EGG));
+            shootHarassProjectile(villager, egg, player, level);
+        } else {
+            Snowball poisonousPotato = new Snowball(level, villager);
+            poisonousPotato.setItem(new ItemStack(Items.POISONOUS_POTATO));
+            shootHarassProjectile(villager, poisonousPotato, player, level);
+        }
+        return true;
+    }
+
+    private static void shootHarassProjectile(
+            Villager villager,
+            ThrowableItemProjectile projectile,
+            Player target,
+            ServerLevel level
+    ) {
+        double dx = target.getX() + target.getDeltaMovement().x - villager.getX();
+        double dy = target.getY(0.3333333333333333D) - projectile.getY();
+        double dz = target.getZ() + target.getDeltaMovement().z - villager.getZ();
+        double horizontal = Math.sqrt(dx * dx + dz * dz);
+        projectile.shoot(dx, dy + horizontal * 0.2D, dz, 1.1F, (float) (16 - level.getDifficulty().getId() * 4));
+        level.addFreshEntity(projectile);
+        villager.swing(InteractionHand.MAIN_HAND, true);
+        villager.playSound(SoundEvents.EGG_THROW, 1.0F, 0.8F + villager.getRandom().nextFloat() * 0.4F);
+    }
+
+    private static boolean isHostileTierAgainstPlayer(Villager villager, Player player) {
+        if (!(villager.level() instanceof ServerLevel level) || !VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()) {
+            return false;
+        }
+        VillagerReputationLevel reputationLevel = VillagerReputationManager.getReputationLevel(level, villager, player.getUUID());
+        return reputationLevel == VillagerReputationLevel.HOSTILE
+                || reputationLevel == VillagerReputationLevel.DESPISED
+                || reputationLevel == VillagerReputationLevel.FEARED;
+    }
+
+    private static int nextHarassThrowDelayTicks(Villager villager) {
+        int minDelay = Math.max(1, VillagerRetaliationConfig.HOSTILE_TIER_HARASS_THROW_MIN_INTERVAL_TICKS.get());
+        int maxDelay = Math.max(1, VillagerRetaliationConfig.HOSTILE_TIER_HARASS_THROW_MAX_INTERVAL_TICKS.get());
+        if (maxDelay < minDelay) {
+            int swap = minDelay;
+            minDelay = maxDelay;
+            maxDelay = swap;
+        }
+        return minDelay + villager.getRandom().nextInt(maxDelay - minDelay + 1);
     }
 
     private static void equipCombatWeapon(Villager villager) {
@@ -765,6 +847,7 @@ public final class VillagerRetaliationHandler {
         RETALIATION.clearTransientState(villager);
         NEXT_SPECIAL_TICKS.remove(villager.getUUID());
         NEXT_NATURAL_TARGET_SCAN_TICKS.remove(villager.getUUID());
+        NEXT_HOSTILE_HARASS_THROW_TICKS.remove(villager.getUUID());
         if (villager.isAlive()) {
             VillagerRetaliationVillagerWeapons.clearTrackedPickupCache(villager);
         } else {

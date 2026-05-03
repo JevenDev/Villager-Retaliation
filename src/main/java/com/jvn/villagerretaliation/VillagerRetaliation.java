@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation;
 
+import com.jvn.villagerretaliation.command.VillagerRetaliationCommands;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.event.VillagerRetaliationEvents;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
@@ -18,6 +19,7 @@ public class VillagerRetaliation {
         modContainer.registerConfig(ModConfig.Type.COMMON, VillagerRetaliationConfig.SPEC);
         modEventBus.addListener(VillagerRetaliationEvents::onEntityAttributeModification);
         modEventBus.addListener(VillagerReputationNetworking::registerPayloads);
+        NeoForge.EVENT_BUS.addListener(VillagerRetaliationCommands::onRegisterCommands);
         NeoForge.EVENT_BUS.addListener(VillagerRetaliationEvents::onLivingDamagePre);
         NeoForge.EVENT_BUS.addListener(VillagerRetaliationEvents::onLivingDamage);
         NeoForge.EVENT_BUS.addListener(VillagerReputationEvents::onLivingDamage);
