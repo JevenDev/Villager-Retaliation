@@ -1,182 +1,238 @@
-# Villager Retaliation
+<div align="center">
 
-**Villager Retaliation** is a Vanilla+ NeoForge mod for Minecraft 1.21.1 that makes villagers and wandering traders feel less helpless. Adult villagers can drop profession-flavoured loot, defend themselves when threatened, rally nearby allies after a kill, and use role-specific combat behaviour inspired by vanilla illagers and witches.
+<h2><strong>Villagers remember. Villagers fight back.</strong></h2>
 
-The mod still keeps the village fantasy intact: babies and unarmed nitwits remain non-combatants, retaliation is temporary, and angry villagers only remember the actual attacker instead of turning every village into a permanent hostile zone.
+</div>
 
-## Features
+<div align="center">
 
-### Villager retaliation
+<a href="https://modrinth.com/mod/Villager-Retaliation/settings/versions?l=neoforge"><img src="https://raw.githubusercontent.com/intergrav/devins-badges/refs/heads/v3/assets/cozy/supported/neoforge_64h.png" alt="Available for NeoForge"></a><br>
+<a href="https://modrinth.com/mod/Villager-Retaliation" target="_blank" rel="noopener noreferrer"><img src="https://raw.githubusercontent.com/intergrav/devins-badges/refs/heads/v3/assets/compact-minimal/available/modrinth_46h.png" alt="Available on Modrinth"></a>
+<a href="https://github.com/JevenDev/Villager-Retaliation" target="_blank" rel="noopener noreferrer"><img src="https://raw.githubusercontent.com/intergrav/devins-badges/refs/heads/v3/assets/compact-minimal/available/github_46h.png" alt="Available on GitHub"></a>
 
-- Adult villagers can retaliate when damaged.
-- By default, hitting a villager only angers that specific villager.
-- Killing an adult villager can anger nearby adult villagers within a configurable radius.
-- Nearby attack/kill retaliation can require witnesses to have line of sight, so enclosed kills do not alert villagers outside unless they can see through openings.
-- Anger expires after a configurable duration.
-- Villagers remember their retaliation target through the mod's persistent hostility data.
-- Creative and spectator players can be ignored by retaliation when configured.
-- Trading is blocked while a villager or wandering trader is hostile toward the player.
-- Hostile villagers and wandering traders can be pacified by interacting with them using enough emeralds.
-- Baby villagers never fight back.
-- Nitwits act as alarm villagers unless they have acquired a usable weapon.
+</div>
 
-### Profession combat roles
+**Villager Retaliation** is a Vanilla+ NeoForge mod for Minecraft 1.21.1 that makes villagers and wandering traders less helpless.
 
-Different professions can respond with different temporary combat loadouts or defensive behaviours:
+Adult villagers can now defend themselves, rally nearby allies, use profession-based combat roles, remember how players treat them, and react differently depending on their reputation toward you.
+
+The goal is not to turn villages into permanent warzones. Retaliation is temporary, reputation is personal, and village behaviour still tries to feel like Minecraft.
+
+- **Attack a villager** and that villager can fight back
+- **Kill a villager in public** and nearby villagers may rally against you
+- **Build trust** through trading and positive actions
+- **Lose trust** through violence, witnessed crimes, and village harm
+- **Make villagers despise or fear you** if you push things too far
+- **Keep baby villagers harmless**
+- **Keep nitwits cowardly by default**, unless they find a usable weapon
+
+![features](https://cdn.modrinth.com/data/cached_images/ec0e4dc78ec1a652eb11b233dd2926f7461fe770.png)
+
+## Villager retaliation
+
+Villagers are no longer completely passive when threatened.
+
+- Adult villagers can retaliate when damaged
+- Hitting a villager only angers that villager by default
+- Killing an adult villager can anger nearby witnesses
+- Witnesses can require **line of sight**, so enclosed attacks do not alert villagers through walls
+- Anger expires after a configurable duration
+- Creative and spectator players can be ignored
+- Trading is blocked while a villager or wandering trader is hostile toward the player
+- Hostile villagers and wandering traders can be pacified with emeralds
+- Baby villagers never fight back
+- Unarmed nitwits keep their fleeing behaviour by default
+
+## Reputation system
+
+Villagers can now remember how each player treats them.
+
+Reputation is tracked **per villager** and **per player**, meaning one villager can trust you while another despises you. Reputation can affect trade prices, pacification, fleeing, aggression, and special behaviours.
+
+### Reputation tiers
+
+Positive reputation:
+
+- **Royalty**
+- **Revered**
+- **Respected**
+- **Trusted**
+- **Neutral**
+
+Negative reputation:
+
+- **Suspicious**
+- **Hostile**
+- **Despised**
+- **Feared**
+
+At higher reputation, villagers may treat you more favourably. At lower reputation, villagers may refuse peace, attack on sight, throw harmless items at you, or even visibly shake when they fear you.
+
+## Profession combat roles
+
+Villagers fight in ways that match their profession.
 
 | Profession | Behaviour |
 | --- | --- |
-| Weaponsmith | Fights with an iron sword and has a slightly faster attack cooldown. |
-| Armorer | Fights with an iron sword and gains brief Resistance when hurt. |
-| Toolsmith | Fights with an iron axe. |
-| Mason | Fights with an iron pickaxe. |
-| Butcher | Fights with an iron axe. |
-| Fletcher | Uses a bow or crossbow. |
-| Farmer | Uses an iron hoe, with a small chance to hold bread, and can heal with bread while hurt. |
-| Cleric | Uses splash potions and self-support potions. |
-| Librarian | Can fight with a book. |
-| Nitwit | Normally keeps fleeing behaviour unless holding a usable weapon. |
+| **Weaponsmith** | Uses stronger melee behaviour, usually with a sword |
+| **Armorer** | Can fight defensively, gain resistance, and use shields in hard mode |
+| **Toolsmith** | Uses tool-based melee behaviour |
+| **Mason** | Uses mining-tool style melee behaviour |
+| **Butcher** | Uses axe-based melee behaviour |
+| **Fletcher** | Uses bows or crossbows |
+| **Farmer** | Can defend themselves and heal with bread |
+| **Cleric** | Uses potions for defense, attacks, and ally healing |
+| **Librarian** | Can fight with book-themed behaviour |
+| **Nitwit** | Usually flees unless holding a usable weapon |
+| **Unemployed** | Uses basic defensive behaviour when applicable |
 
-### Ranged combat
+## Ranged combat
 
-- Fletchers and any villager/trader holding a valid ranged weapon can use ranged combat.
-- Supports bows, crossbows, and tridents.
-- Bow behaviour is inspired by illusioners.
-- Crossbow behaviour is inspired by pillagers, including charge, hold, and fire states.
-- Crossbows fall back to a default arrow when no projectile is available.
-- Tridents are thrown with a Drowned-style attack and damage the held trident after use.
+Fletchers and other villagers holding ranged weapons can use ranged combat.
 
-### Cleric potion behaviour
+Supported weapons include:
 
-Clerics have the most advanced support kit:
+- **Bows**
+- **Crossbows**
+- **Tridents**
 
-- Can drink defensive/self-support potions while threatened.
-- Can throw harmful or slowing splash potions at attackers.
-- Uses safer potion selection against undead or inverted-healing targets.
-- Reduces witch-resistant damage types against clerics.
-- Avoids throwing offensive splash potions when friendly civilians are inside the splash radius.
-- Can heal injured villagers or wandering traders with splash healing potions.
-- Idle clerics can passively look for injured allies and heal them out of combat.
-- Passive healing range, health threshold, and line-of-sight requirement are configurable.
+Crossbows use proper charge, hold, and fire states. Tridents use a thrown attack inspired by drowned behaviour.
 
-### Fleeing behaviour changes
+## Armorer shields
 
-- Adult non-nitwit villagers suppress vanilla panic/flee/hide behaviour so they can stand their ground.
-- Baby villagers keep vanilla fleeing behaviour.
-- Unarmed nitwits keep vanilla fleeing behaviour.
-- Nitwits and baby villagers can still act as alarm witnesses, causing nearby adult villagers to rally after attacks or deaths.
-- Raid/hide/panic memories are cleared for villagers that should fight instead of flee.
+Armorers can become defensive frontliners.
 
-### Weapon pickup and temporary weapons
+- Armorers may spawn with an offhand shield in hard mode
+- Shield chance is configurable
+- Shields can block incoming damage
+- Axe hits can disable blocking temporarily
+- Armorers use shield blocking and lowered-shield poses
 
-- Villagers and wandering traders can search nearby dropped items for usable weapons when threatened.
-- Ranged weapons are prioritized over melee weapons when scavenging.
-- Picked-up weapons are tracked and restored across state changes.
-- Picked-up weapons are guaranteed to drop back on death.
-- Temporary profession weapons are restored or discarded correctly when retaliation ends.
-- Combat weapons can roll as drops outside combat, with configurable drop and enchant chances.
+## Cleric support
 
-## Villager drops
+Clerics have the most advanced support kit.
 
-Villager Retaliation adds configurable Vanilla+ drops for adult villagers.
+They can:
 
-### Base drops
+- drink defensive potions while threatened
+- throw harmful or slowing splash potions at attackers
+- avoid bad potion choices against undead or inverted-healing targets
+- avoid splashing friendly civilians when attacking
+- heal injured villagers and wandering traders
+- passively look for injured allies while idle
+- support trusted-or-better players depending on reputation
 
-- 1-5 emeralds, controlled by config chance.
-- 1-3 bread, controlled by config chance.
-- Baby villagers do not drop custom loot by default.
-- Profession-specific loot can require a player-caused kill.
+Passive cleric healing has configurable range, health threshold, and line-of-sight rules.
 
-### Profession loot pools
+## Hostile reputation behaviour
 
-Profession loot is rolled from themed pools instead of dropping everything at once.
+Villagers who dislike you enough can do more than simply raise prices.
 
-| Profession | Possible drops |
-| --- | --- |
-| Farmer | Wheat, beetroot, carrots, potatoes, apples, pumpkin seeds, melon seeds, wheat seeds, suspicious stew. |
-| Leatherworker | Leather, rabbit hide, damaged leather armor, dyes, very rare saddle. |
-| Fisherman | Cod, salmon, damaged fishing rod, string, sticks, rare tropical fish, rare pufferfish, rare lily pad, very rare nautilus shell. |
-| Librarian | Paper, books, ink sacs, feathers, rare bookshelf, very rare enchanted book, including possible sold enchanted books. |
-| Shepherd | Wool, random wool, damaged shears, wheat, dyes, carpets, rare banners. |
-| Butcher | Beef, porkchop, chicken, mutton, rabbit, leather, rare smoker. |
-| Cleric | Rotten flesh, redstone, lapis lazuli, glowstone dust, rare bottles o' enchanting, rare healing/regeneration potions, very rare ender pearl. |
-| Cartographer | Paper, filled maps, compass, map, ink sacs, feathers, rare cartography table. |
-| Toolsmith | Damaged iron pickaxe/shovel/hoe, iron ingots, coal, sticks, flint, rare smithing table. |
-| Weaponsmith | Iron ingots, coal, sticks, rare grindstone. |
-| Armorer | Damaged iron armor, iron ingots, coal, chains, rare blast furnace. |
-| Fletcher | Arrows, flint, feathers, sticks, string, tripwire hooks. |
-| Mason | Clay balls, bricks, quartz, stone, terracotta, rare flower pot, rare stonecutter. |
-| Nitwit | Bread, sticks, poisonous potato, flowers, dirt, rare emeralds. |
-| Unemployed | Bread, sticks, wheat seeds, rare emeralds, rare apple. |
+Depending on config and reputation:
 
-## Wandering traders
+- **Hostile** villagers randomly throw eggs or poisonous potatoes at you
+- **Despised** villagers attack on sight
+- **Feared** villagers visibly shake around you
+- Villagers who despise you refuse pacification with emeralds
+- Reputation influences retaliation and fleeing behaviour
 
-Wandering traders are included in both drop and retaliation systems.
+![keybinds](https://cdn.modrinth.com/data/cached_images/201d5ce49ba16974e3c3b0b562c392e03f38e35f.png)
 
-- Can retaliate when attacked.
-- Can rally nearby wandering traders.
-- Can become hostile when their trader llama is attacked.
-- Can block trading while hostile.
-- Can be pacified with emeralds.
-- Can pick up and use weapons when threatened.
-- Can drop 1-5 emeralds.
-- Can drop an invisibility potion.
-- Can drop a safe copy of one current trade result, with the count capped by the amount sold by that trade.
+## Commands
 
-## Configuration
+### Set nearby reputation
 
-The mod registers a common config with grouped settings.
+Requires operator permissions.
 
-### `general`
+```mcfunction
+/villagerretaliation setNearbyReputation <value>
+```
 
-- Enable or disable villager drops.
-- Enable or disable wandering trader drops.
-- Enable or disable villager/trader retaliation.
+This sets the reputation value for nearby villagers toward the executing player.
 
-### `balance`
+Useful for testing:
 
-- Toggle baby villager custom loot support. Disabled by default.
-- Require player kills for profession loot.
-- Configure emerald drop chance.
-- Configure bread drop chance.
-- Configure profession loot chance.
-- Configure rare drop chance.
-- Configure very rare drop chance.
+- reputation tiers
+- trade pricing
+- despised behaviour
+- feared behaviour
+- debug overlay display
+- pacification rules
 
-### `retaliation`
+Example:
 
-- Configure whether attacks only anger the hit villager.
-- Configure whether killing a villager angers nearby villagers.
-- Configure the nearby kill aggro radius.
-- Configure whether nearby retaliation witnesses require line of sight.
-- Configure anger duration in ticks.
-- Configure whether nearby villagers ignore creative/spectator players.
+```mcfunction
+/villagerretaliation setNearbyReputation -150
+```
 
-### `combat`
+## Debug overlay
 
-- Toggle combat roles for weaponsmiths, toolsmiths, armorers, fletchers, and butchers.
-- Configure temporary combat weapon drop chance.
-- Configure hard-mode combat weapon enchant chance.
-- Toggle farmer bread/self-healing behaviour.
-- Toggle cleric potion behaviour.
-- Configure passive cleric ally healing range.
-- Configure passive cleric ally healing health threshold.
-- Configure whether passive cleric ally healing requires line of sight.
+Villager Retaliation includes an optional client debug overlay for testing reputation.
 
-### `wanderer`
+When enabled, it can show:
 
-- Toggle wandering trader emerald drops.
-- Toggle wandering trader invisibility potion drops.
-- Toggle wandering trader random current trade drops.
-- Configure random current trade drop chance.
+- villager reputation tier
+- exact reputation number
+- reputation above villager heads
+- configurable max display distance
+- optional sneaking requirement
+- optional advanced tooltip requirement
 
-## Compatibility notes
+This is mainly intended for development, testing, and balancing.
 
-- Built for NeoForge 1.21.1.
-- Uses vanilla entity events and AI/memory adjustments rather than replacing villager entities.
-- Uses NeoForge item tags for melee, mining, bow, spear, and mace weapon detection where possible.
-- Retaliation is temporary and target-specific; the mod does not make all villagers permanently hostile.
+![compatibility](https://cdn.modrinth.com/data/cached_images/1252c11050b7daf8b8621712b58dd1005e7ba982.png)
+
+## Compatibility
+
+Villager Retaliation is designed to work with vanilla villager systems instead of replacing them.
+
+- Built for **NeoForge 1.21.1**
+- Uses vanilla-style entity events and AI memory adjustments
+- Uses gossip integration where enabled
+- Uses NeoForge item tags for weapon detection where possible
+- Does not replace villager entities
+- Should work best with mods that respect vanilla villager behaviour and item tags
+
+<div align="center">
+  <p><strong><em>Note: If another mod heavily replaces villager AI, trading, or villager entity classes, compatibility may vary.</em></strong></p>
+</div>
+
+![roadmap](https://cdn.modrinth.com/data/cached_images/04825ea0e2e5462ffa075e783ca38b0c63a36d34.png)
+
+## Version and loaders
+
+- ✅ **NeoForge 1.21.1** [Active development]
+- ⛔ **NeoForge 1.20.1** [Not planned]
+- ⛔ **Forge 1.21.1** [Not planned]
+- ⛔ **Forge 1.20.1** [Not planned]
+- 🚧 **Fabric 1.21.1** [Possible future port]
+- ⛔ **Fabric 1.20.1** [Not planned]
+
+## Planned / possible features
+
+- More reputation-driven villager reactions
+- More profession-specific combat polish
+- More config options for pack makers
+- Expanded compatibility testing with villager-related mods
+- Additional debug tools for reputation and retaliation
+- More passive village defense behaviours
+
+![credits & license](https://cdn.modrinth.com/data/cached_images/5fd3ad80e342e6985dd6ebda1f7afd9c48749fce.png)
+
+## Credits
+
+Created by **jvn** (me!).
 
 ## License
 
-GNU General Public License v3.0.
+This project is licensed under the **[GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.en.html)**.
+
+Feel free to use this mod in modpacks, videos, etc. Just provide a link back to this page if possible :)
+
+For general questions, bug reports, or feature requests, use the **[GitHub issue tracker](https://github.com/JevenDev/Villager-Retaliation/issues)** or contact me on Discord.
+
+<div align="center">
+
+  <p><strong>⚠ <em>This mod ONLY exists on Modrinth and GitHub unless stated otherwise. Any other sites hosting this mod are not official releases.</em> ⚠</strong></p>
+
+</div>
