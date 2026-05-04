@@ -23,6 +23,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.behavior.BehaviorUtils;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.AbstractVillager;
+import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
@@ -153,9 +154,7 @@ public final class VillagerRetaliationRetaliationUtil {
         }
 
         long gameTime = villager.level().getGameTime();
-        double durationMultiplier = villager instanceof net.minecraft.world.entity.npc.Villager reputationVillager
-                ? VillagerAggressionPolicy.getAngerDurationMultiplier(reputationVillager, player)
-                : 1.0D;
+        double durationMultiplier = VillagerAggressionPolicy.getAngerDurationMultiplier(villager, player);
         if (gameTime - angerTarget.lastSeenGameTick() >= Math.max(1L, Math.round(VillagerRetaliationConfig.AGGRO_DURATION_TICKS.get() * durationMultiplier))) {
             clearAnger.run();
             return false;
@@ -265,6 +264,9 @@ public final class VillagerRetaliationRetaliationUtil {
     }
 
     public static boolean canMeleeHit(AbstractVillager villager, LivingEntity target) {
+        if (villager instanceof Villager) {
+            return villager.isWithinMeleeAttackRange(target);
+        }
         double reachInflation = VillagerRetaliationVillagerWeapons.hasUsableWeapon(villager) ? 1.0D : 0.6D;
         return villager.getBoundingBox().inflate(reachInflation).intersects(target.getBoundingBox());
     }
@@ -358,9 +360,9 @@ public final class VillagerRetaliationRetaliationUtil {
     }
 
     private static boolean hasExpiredAnger(AbstractVillager villager, LivingEntity target, AngerTarget angerTarget, long gameTime) {
-        double durationMultiplier = target instanceof Player player && villager instanceof net.minecraft.world.entity.npc.Villager reputationVillager
-                ? VillagerAggressionPolicy.getAngerDurationMultiplier(reputationVillager, player)
-                : 1.0D;
+        double durationMultiplier = target instanceof Player player
+            ? VillagerAggressionPolicy.getAngerDurationMultiplier(villager, player)
+            : 1.0D;
         return gameTime - angerTarget.lastSeenGameTick() >= Math.max(1L, Math.round(VillagerRetaliationConfig.AGGRO_DURATION_TICKS.get() * durationMultiplier));
     }
 

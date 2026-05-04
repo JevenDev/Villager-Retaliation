@@ -54,7 +54,7 @@ public final class WanderingTraderCombatRoles {
     }
 
     public static double movementSpeed(WanderingTrader trader) {
-        return 0.5D;
+        return 0.4D;
     }
 
     public static int attackCooldown(WanderingTrader trader) {

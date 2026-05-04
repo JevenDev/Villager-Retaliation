@@ -1,11 +1,13 @@
 package com.jvn.villagerretaliation.reputation;
 
 import com.jvn.villagerretaliation.combat.VillagerCombatRoles;
+import com.jvn.villagerretaliation.combat.WanderingTraderCombatRoles;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
+import net.minecraft.world.entity.npc.WanderingTrader;
 import net.minecraft.world.entity.player.Player;
 
 public final class VillagerAggressionPolicy {
@@ -33,14 +35,23 @@ public final class VillagerAggressionPolicy {
     }
 
     public static boolean shouldAttackOnSight(Villager villager, Player player) {
+        return shouldAttackOnSight((AbstractVillager) villager, player);
+    }
+
+    public static boolean shouldAttackOnSight(AbstractVillager villager, Player player) {
         if (!VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()
                 || !VillagerRetaliationConfig.ENABLE_DESPISED_KILL_ON_SIGHT.get()
                 || !(villager.level() instanceof ServerLevel level)
                 || villager.isBaby()
-                || villager.getVillagerData().getProfession() == VillagerProfession.NITWIT
-                || !VillagerCombatRoles.canFightBack(villager)) {
+                || !canFightBack(villager)) {
             return false;
         }
+
+        if (villager instanceof Villager villageResident
+                && villageResident.getVillagerData().getProfession() == VillagerProfession.NITWIT) {
+            return false;
+        }
+
         return VillagerReputationManager.isDespised(level, villager, player);
     }
 
@@ -66,6 +77,10 @@ public final class VillagerAggressionPolicy {
     }
 
     public static double getAngerDurationMultiplier(Villager villager, Player player) {
+        return getAngerDurationMultiplier((AbstractVillager) villager, player);
+    }
+
+    public static double getAngerDurationMultiplier(AbstractVillager villager, Player player) {
         if (!(villager.level() instanceof ServerLevel level)) {
             return 1.0D;
         }
@@ -79,5 +94,15 @@ public final class VillagerAggressionPolicy {
             case FEARED -> 2.0D;
             default -> 1.0D;
         };
+    }
+
+    private static boolean canFightBack(AbstractVillager villager) {
+        if (villager instanceof Villager villageResident) {
+            return VillagerCombatRoles.canFightBack(villageResident);
+        }
+        if (villager instanceof WanderingTrader trader) {
+            return WanderingTraderCombatRoles.canFightBack(trader);
+        }
+        return false;
     }
 }

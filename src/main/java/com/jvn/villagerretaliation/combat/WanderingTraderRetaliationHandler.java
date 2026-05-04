@@ -2,6 +2,8 @@ package com.jvn.villagerretaliation.combat;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil.ActiveRetaliationTarget;
+import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
+import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
@@ -180,7 +182,8 @@ public final class WanderingTraderRetaliationHandler {
             return false;
         }
 
-        if (!RETALIATION.isHostileTowards(trader, player, () -> clearAnger(trader))) {
+        if (!RETALIATION.isHostileTowards(trader, player, () -> clearAnger(trader))
+                && !isDespisedBy(trader, player)) {
             return false;
         }
 
@@ -197,6 +200,11 @@ public final class WanderingTraderRetaliationHandler {
             return false;
         }
 
+        if (isDespisedBy(trader, player)) {
+            VillagerRetaliationRetaliationUtil.spawnMadParticles(trader);
+            return true;
+        }
+
         int requiredEmeralds = VillagerRetaliationRetaliationUtil.pacifyEmeraldCost(trader);
         if (interactionStack.getCount() < requiredEmeralds) {
             VillagerRetaliationRetaliationUtil.spawnPacifyFailureParticles(trader);
@@ -209,6 +217,12 @@ public final class WanderingTraderRetaliationHandler {
         clearAnger(trader);
         VillagerRetaliationRetaliationUtil.spawnPacifySuccessParticles(trader);
         return true;
+    }
+
+    private static boolean isDespisedBy(WanderingTrader trader, Player player) {
+        return VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()
+                && trader.level() instanceof ServerLevel level
+                && VillagerReputationManager.isDespised(level, trader, player);
     }
 
     public static void angerNearbyTradersFrom(Entity sourceEntity, LivingEntity attacker, double radius) {
@@ -240,9 +254,38 @@ public final class WanderingTraderRetaliationHandler {
         }
 
         NEXT_NATURAL_TARGET_SCAN_TICKS.put(trader.getUUID(), gameTime + NATURAL_TARGET_SCAN_INTERVAL_TICKS);
+        if (tryAcquireReputationTarget(trader)) {
+            return;
+        }
+
         double naturalDefenseRadius = VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get();
         VillagerRetaliationVillagerCombatUtil.findNearestNaturalHostile(trader, naturalDefenseRadius)
                 .ifPresent(target -> anger(trader, target));
+    }
+
+    private static boolean tryAcquireReputationTarget(WanderingTrader trader) {
+        if (!VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()
+                || !VillagerRetaliationConfig.ENABLE_DESPISED_KILL_ON_SIGHT.get()
+                || !(trader.level() instanceof ServerLevel level)) {
+            return false;
+        }
+
+        double radius = VillagerRetaliationConfig.DESPISED_SIGHT_RADIUS.get();
+        AABB area = trader.getBoundingBox().inflate(radius);
+        for (Player player : level.getEntitiesOfClass(Player.class, area)) {
+            if (!player.isAlive() || player.isCreative() || player.isSpectator()) {
+                continue;
+            }
+            if (!trader.hasLineOfSight(player)) {
+                continue;
+            }
+            if (VillagerAggressionPolicy.shouldAttackOnSight(trader, player)) {
+                anger(trader, player);
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static boolean tryAcquireGroundWeapon(WanderingTrader trader, long gameTime) {
