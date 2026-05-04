@@ -24,6 +24,7 @@ public class VillagerReputationSavedData extends SavedData {
     private static final String TAG_WITNESSED_CRIMES = "WitnessedCrimes";
     private static final String TAG_LAST_TRADE_DAY = "LastTradeDay";
     private static final String TAG_TRADES_TODAY = "TradesToday";
+    private static final String TAG_LAST_GIFT_DAY = "LastGiftDay";
     private static final String TAG_LAST_POS = "LastKnownVillagerPosition";
 
     private final Map<UUID, Map<UUID, ReputationEntry>> entries = new HashMap<>();
@@ -54,6 +55,7 @@ public class VillagerReputationSavedData extends SavedData {
             entry.witnessedCrimes = entryTag.getInt(TAG_WITNESSED_CRIMES);
             entry.lastTradeDay = entryTag.getLong(TAG_LAST_TRADE_DAY);
             entry.tradesToday = entryTag.getInt(TAG_TRADES_TODAY);
+            entry.lastGiftDay = entryTag.getLong(TAG_LAST_GIFT_DAY);
             if (entryTag.contains(TAG_LAST_POS, Tag.TAG_COMPOUND)) {
                 CompoundTag posTag = entryTag.getCompound(TAG_LAST_POS);
                 entry.lastKnownVillagerPosition = new BlockPos(posTag.getInt("X"), posTag.getInt("Y"), posTag.getInt("Z"));
@@ -79,6 +81,7 @@ public class VillagerReputationSavedData extends SavedData {
                 entryTag.putInt(TAG_WITNESSED_CRIMES, entry.witnessedCrimes);
                 entryTag.putLong(TAG_LAST_TRADE_DAY, entry.lastTradeDay);
                 entryTag.putInt(TAG_TRADES_TODAY, entry.tradesToday);
+                entryTag.putLong(TAG_LAST_GIFT_DAY, entry.lastGiftDay);
                 if (entry.lastKnownVillagerPosition != null) {
                     CompoundTag posTag = new CompoundTag();
                     posTag.putInt("X", entry.lastKnownVillagerPosition.getX());
@@ -132,6 +135,7 @@ public class VillagerReputationSavedData extends SavedData {
         private int witnessedCrimes;
         private long lastTradeDay = Long.MIN_VALUE;
         private int tradesToday;
+        private long lastGiftDay = Long.MIN_VALUE;
         private BlockPos lastKnownVillagerPosition;
 
         public int reputation() {
@@ -173,6 +177,14 @@ public class VillagerReputationSavedData extends SavedData {
 
         void incrementTradesToday() {
             this.tradesToday++;
+        }
+
+        public long lastGiftDay() {
+            return this.lastGiftDay;
+        }
+
+        void setLastGiftDay(long day) {
+            this.lastGiftDay = day;
         }
 
         void setLastKnownVillagerPosition(BlockPos lastKnownVillagerPosition) {

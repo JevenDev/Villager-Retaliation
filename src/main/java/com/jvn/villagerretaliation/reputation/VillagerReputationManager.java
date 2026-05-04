@@ -91,6 +91,35 @@ public final class VillagerReputationManager {
                 || levelForPlayer == VillagerReputationLevel.ROYALTY;
     }
 
+    public static boolean canGiveHighReputationGift(ServerLevel level, AbstractVillager villager, Player player) {
+        if (!VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()) {
+            return false;
+        }
+
+        VillagerReputationSavedData.ReputationEntry entry = VillagerReputationSavedData.get(level).get(villager.getUUID(), player.getUUID());
+        if (entry == null) {
+            return false;
+        }
+
+        VillagerReputationLevel reputationLevel = VillagerReputationLevel.fromReputation(entry.reputation());
+        if (reputationLevel != VillagerReputationLevel.REVERED && reputationLevel != VillagerReputationLevel.ROYALTY) {
+            return false;
+        }
+
+        long day = level.getDayTime() / DAY_TICKS;
+        return entry.lastGiftDay() != day;
+    }
+
+    public static void markHighReputationGiftGiven(ServerLevel level, AbstractVillager villager, Player player) {
+        VillagerReputationSavedData data = VillagerReputationSavedData.get(level);
+        VillagerReputationSavedData.ReputationEntry entry = data.getOrCreate(villager.getUUID(), player.getUUID());
+        long day = level.getDayTime() / DAY_TICKS;
+        entry.setLastGiftDay(day);
+        entry.setLastInteractionGameTime(level.getGameTime());
+        entry.setLastKnownVillagerPosition(villager.blockPosition());
+        data.setDirty();
+    }
+
     public static boolean setReputationForDebug(ServerLevel level, AbstractVillager villager, UUID playerId, int reputation) {
         VillagerReputationSavedData data = VillagerReputationSavedData.get(level);
         VillagerReputationSavedData.ReputationEntry entry = data.getOrCreate(villager.getUUID(), playerId);
