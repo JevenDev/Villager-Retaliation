@@ -147,6 +147,7 @@ public final class VillagerReputationEvents {
                 scanReputationDrivenFlee(level, villageResident);
             }
             scanFearedProximity(level, villager);
+            scanNegativeReputationGolemAggro(level, villager);
         }
         if (VillagerRetaliationConfig.SHOW_VILLAGER_REPUTATION_DEBUG_OVERLAY.get()
                 && gameTime % DEBUG_SYNC_INTERVAL_TICKS == Math.floorMod(villager.getUUID().getMostSignificantBits(), DEBUG_SYNC_INTERVAL_TICKS)) {
@@ -294,6 +295,46 @@ public final class VillagerReputationEvents {
                 return;
             }
         }
+    }
+
+    private static void scanNegativeReputationGolemAggro(ServerLevel level, AbstractVillager villager) {
+        double radius = VillagerRetaliationConfig.DESPISED_SIGHT_RADIUS.get();
+        double radiusSqr = radius * radius;
+        AABB area = villager.getBoundingBox().inflate(radius);
+        for (Player player : level.getEntitiesOfClass(Player.class, area)) {
+            if (!player.isAlive() || player.isCreative() || player.isSpectator()) {
+                continue;
+            }
+            if (villager.distanceToSqr(player) > radiusSqr || !villager.hasLineOfSight(player)) {
+                continue;
+            }
+            if (!VillagerAggressionPolicy.shouldIronGolemsTargetNegativeReputationPlayer(villager, player)) {
+                continue;
+            }
+            if (aggroNearbyIronGolems(villager, player, radius, radiusSqr)) {
+                VillagerReputationLevel reputationLevel = VillagerReputationManager.getReputationLevel(level, villager, player.getUUID());
+                triggerNegativeReputationBell(level, villager, reputationLevel);
+                return;
+            }
+        }
+    }
+
+    private static boolean aggroNearbyIronGolems(AbstractVillager villager, Player player, double radius, double radiusSqr) {
+        ServerLevel level = (ServerLevel) villager.level();
+        AABB area = villager.getBoundingBox().inflate(radius);
+        boolean aggroedAny = false;
+        for (IronGolem ironGolem : level.getEntitiesOfClass(IronGolem.class, area)) {
+            if (!ironGolem.isAlive()
+                    || ironGolem.distanceToSqr(player) > radiusSqr
+                    || !ironGolem.hasLineOfSight(player)) {
+                continue;
+            }
+            ironGolem.setTarget(player);
+            ironGolem.setPersistentAngerTarget(player.getUUID());
+            ironGolem.startPersistentAngerTimer();
+            aggroedAny = true;
+        }
+        return aggroedAny;
     }
 
     private static boolean isBellAlertTier(VillagerReputationLevel reputationLevel) {

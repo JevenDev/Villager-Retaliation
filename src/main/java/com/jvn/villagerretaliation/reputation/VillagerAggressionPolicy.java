@@ -55,6 +55,16 @@ public final class VillagerAggressionPolicy {
         return VillagerReputationManager.isDespised(level, villager, player);
     }
 
+    public static boolean shouldIronGolemsTargetNegativeReputationPlayer(AbstractVillager villager, Player player) {
+        if (!VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()
+                || !(villager.level() instanceof ServerLevel level)) {
+            return false;
+        }
+
+        VillagerReputationLevel reputationLevel = VillagerReputationManager.getReputationLevel(level, villager, player.getUUID());
+        return reputationLevel == VillagerReputationLevel.DESPISED || reputationLevel == VillagerReputationLevel.FEARED;
+    }
+
     public static boolean shouldFleeFromPlayer(Villager villager, Player player) {
         if (!(villager.level() instanceof ServerLevel level)
                 || !VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()) {

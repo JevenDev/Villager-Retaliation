@@ -29,6 +29,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.npc.WanderingTrader;
@@ -59,6 +60,10 @@ public final class VillagerRetaliationHandler {
     private static final double ARMORER_BLOCKING_SPEED_FACTOR = 0.45D;
     private static final double ARMORER_SHIELD_TRIGGER_RANGE = 7.0D;
     private static final double ARMORER_SHIELD_TRIGGER_RANGE_SQR = ARMORER_SHIELD_TRIGGER_RANGE * ARMORER_SHIELD_TRIGGER_RANGE;
+    private static final long SMITH_IRON_GOLEM_REPAIR_COOLDOWN_TICKS = 6000L;
+    private static final double SMITH_IRON_GOLEM_REPAIR_SEARCH_RADIUS = 12.0D;
+    private static final double SMITH_IRON_GOLEM_REPAIR_REACH_SQR = 9.0D;
+    private static final float SMITH_IRON_GOLEM_REPAIR_HEAL_AMOUNT = 25.0F;
     private static final String PERSISTENT_TAG_ROOT = "VillagerRetaliationPersistentHostility";
     private static final String PERSISTENT_ARMORER_SHIELD_ROLLED_TAG = "VillagerRetaliationArmorerShieldRolled";
     private static final VillagerRetaliationRetaliationRuntime<Villager> RETALIATION =
@@ -69,6 +74,7 @@ public final class VillagerRetaliationHandler {
     private static final Map<UUID, Long> ARMORER_SHIELD_DISABLED_UNTIL_TICKS = new HashMap<>();
     private static final Map<UUID, Integer> ARMORER_PENDING_COUNTER_SWINGS = new HashMap<>();
     private static final Map<UUID, Long> ARMORER_COUNTER_ATTACK_READY_TICKS = new HashMap<>();
+    private static final Map<UUID, Long> NEXT_IRON_GOLEM_REPAIR_TICKS = new HashMap<>();
 
     private VillagerRetaliationHandler() {
     }
@@ -826,8 +832,59 @@ public final class VillagerRetaliationHandler {
                 && VillagerClericPotionHelper.tryOutOfCombatSupport(villager, level)) {
             return;
         }
+        if (villager.level() instanceof ServerLevel level
+                && tryRepairNearbyIronGolem(villager, level, level.getGameTime())) {
+            return;
+        }
 
         VillagerClericPotionHelper.clearState(villager);
+    }
+
+    private static boolean tryRepairNearbyIronGolem(Villager villager, ServerLevel level, long gameTime) {
+        if (!canProfessionRepairIronGolems(villager)
+                || gameTime < NEXT_IRON_GOLEM_REPAIR_TICKS.getOrDefault(villager.getUUID(), 0L)) {
+            return false;
+        }
+
+        IronGolem ironGolem = findNearbyDamagedIronGolem(villager, level);
+        if (ironGolem == null) {
+            return false;
+        }
+
+        if (!villager.hasLineOfSight(ironGolem)
+                || villager.distanceToSqr(ironGolem) > SMITH_IRON_GOLEM_REPAIR_REACH_SQR) {
+            villager.getNavigation().moveTo(ironGolem, VillagerCombatRoles.movementSpeed(villager) * 0.6D);
+            return true;
+        }
+
+        ironGolem.heal(SMITH_IRON_GOLEM_REPAIR_HEAL_AMOUNT);
+        villager.swing(InteractionHand.MAIN_HAND, true);
+        NEXT_IRON_GOLEM_REPAIR_TICKS.put(villager.getUUID(), gameTime + SMITH_IRON_GOLEM_REPAIR_COOLDOWN_TICKS);
+        return true;
+    }
+
+    private static IronGolem findNearbyDamagedIronGolem(Villager villager, ServerLevel level) {
+        AABB area = villager.getBoundingBox().inflate(SMITH_IRON_GOLEM_REPAIR_SEARCH_RADIUS);
+        IronGolem bestTarget = null;
+        float mostMissingHealth = 0.0F;
+        for (IronGolem candidate : level.getEntitiesOfClass(IronGolem.class, area, ironGolem -> ironGolem.isAlive() && ironGolem.getHealth() < ironGolem.getMaxHealth())) {
+            float missingHealth = candidate.getMaxHealth() - candidate.getHealth();
+            if (missingHealth > mostMissingHealth
+                    || (missingHealth == mostMissingHealth
+                    && bestTarget != null
+                    && villager.distanceToSqr(candidate) < villager.distanceToSqr(bestTarget))) {
+                mostMissingHealth = missingHealth;
+                bestTarget = candidate;
+            }
+        }
+        return bestTarget;
+    }
+
+    private static boolean canProfessionRepairIronGolems(Villager villager) {
+        VillagerProfession profession = villager.getVillagerData().getProfession();
+        return profession == VillagerProfession.ARMORER
+                || profession == VillagerProfession.WEAPONSMITH
+                || profession == VillagerProfession.TOOLSMITH;
     }
 
     public static void onEntityLeaveLevel(EntityLeaveLevelEvent event) {
@@ -848,6 +905,7 @@ public final class VillagerRetaliationHandler {
         NEXT_SPECIAL_TICKS.remove(villager.getUUID());
         NEXT_NATURAL_TARGET_SCAN_TICKS.remove(villager.getUUID());
         NEXT_HOSTILE_HARASS_THROW_TICKS.remove(villager.getUUID());
+        NEXT_IRON_GOLEM_REPAIR_TICKS.remove(villager.getUUID());
         if (villager.isAlive()) {
             VillagerRetaliationVillagerWeapons.clearTrackedPickupCache(villager);
         } else {
