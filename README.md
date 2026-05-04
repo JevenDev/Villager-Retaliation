@@ -51,6 +51,8 @@ Reputation is tracked **per villager** and **per player**, meaning one villager 
 
 ### Reputation tiers
 
+Thresholds are configurable in `villagerretaliation-common.toml`; values below are defaults.
+
 Positive reputation:
 
 - **Royalty** [+750]
@@ -66,7 +68,24 @@ Negative reputation:
 - **Despised** [-250]
 - **Feared** [-750]
 
-At higher reputation, villagers may treat you more favourably. At lower reputation, villagers may refuse peace, attack on sight, throw harmless items at you, or even visibly shake when they fear you.
+### What each tier does
+
+| Tier | Gameplay effect |
+| --- | --- |
+| **Royalty** | Strongest positive trade-price effect (tier equivalent `+150`), very short anger duration (`15%` of base), and clerics can support you with helpful splash potions. |
+| **Revered** | Strong positive trade-price effect (`+100`), short anger duration (`25%` of base), and clerics can support you. |
+| **Respected** | Positive trade-price effect (`+70`), shorter anger duration (`35%` of base), cleric support enabled, and accidental hits are partially forgiven (direct reputation penalty reduced). |
+| **Trusted** | Positive trade-price effect (`+35`), mildly reduced anger duration (`65%` of base), and cleric support enabled. |
+| **Neutral** | No tier-specific bonus or penalty by itself. |
+| **Suspicious** | Mild negative trade-pressure floor (`-20`) and no special hostile tier behavior. |
+| **Hostile** | Stronger negative trade-pressure floor (`-50`), longer anger duration (`125%` of base), hostile-tier harassment throws (eggs / poisonous potatoes), and flee behavior for non-combat villagers (babies, nitwits, or villagers that cannot fight). |
+| **Despised** | Attack-on-sight behavior for eligible combat villagers (if enabled), villager trading blocked even when not currently enraged, villager emerald pacification refused, longer anger duration (`200%` of base), hostile-tier harassment throws, and non-combat villagers flee. |
+| **Feared** | Feared shake pulse behavior when near villagers, villagers do not join witnessed-crime retaliation at this tier, longer anger duration (`200%` of base), hostile-tier harassment throws, and non-combat villagers flee. |
+
+Notes:
+
+- Wandering trader pacification and trade blocking are based on active hostility, not despised-tier refusal.
+- Trade pricing still uses reputation value in addition to tier handling.
 
 ## Profession combat roles
 
@@ -142,13 +161,14 @@ Depending on config and reputation:
 
 ### Set nearby reputation
 
-Requires operator permissions.
+Requires permission level 2 (operator).
 
 ```mcfunction
-/villagerretaliation setNearbyReputation <value>
+/villagerretaliation setNearbyReputation <integer>
 ```
 
-This sets the reputation value for nearby villagers toward the executing player.
+This sets the reputation value for nearby villagers and wandering traders toward the executing player.
+The command affects entities in the configured witness radius (24 blocks by default).
 
 Useful for testing:
 
@@ -179,6 +199,22 @@ When enabled, it can show:
 - optional advanced tooltip requirement
 
 This is mainly intended for development, testing, and balancing.
+
+## Configuration
+
+Main config file:
+
+- Singleplayer / client: `config/villagerretaliation-common.toml`
+- Dedicated server: `<server root>/config/villagerretaliation-common.toml`
+
+Notable config categories:
+
+- `general`: master feature toggles (retaliation, reputation, vanilla gossip integration)
+- `retaliation`: aggro radius, duration, line-of-sight witness behavior
+- `reputation`: penalties/gains, tier thresholds, gossip scaling, trade price scaling
+- `combat`: profession combat toggles, armorer shield chance, cleric support behavior
+- `debugOverlay`: reputation text visibility, distance, tooltip/sneak requirements
+- `wanderer`: wandering trader drop behavior
 
 ![compatibility](https://cdn.modrinth.com/data/cached_images/1252c11050b7daf8b8621712b58dd1005e7ba982.png)
 
