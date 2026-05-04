@@ -210,12 +210,9 @@ public final class VillagerReputationManager {
     }
 
     public static void syncToTrackingPlayer(ServerLevel level, Villager villager, UUID playerId) {
-        if (!VillagerRetaliationConfig.SHOW_VILLAGER_REPUTATION_DEBUG_OVERLAY.get()) {
-            return;
-        }
         if (level.getPlayerByUUID(playerId) instanceof ServerPlayer serverPlayer
-                && serverPlayer.distanceToSqr(villager) <= VillagerRetaliationConfig.REPUTATION_DEBUG_OVERLAY_MAX_DISTANCE.get()
-                * VillagerRetaliationConfig.REPUTATION_DEBUG_OVERLAY_MAX_DISTANCE.get()) {
+                && serverPlayer.distanceToSqr(villager) <= VillagerRetaliationConfig.WITNESS_RADIUS.get()
+                * VillagerRetaliationConfig.WITNESS_RADIUS.get()) {
             int reputation = getReputation(level, villager, playerId);
             VillagerReputationNetworking.sendReputation(serverPlayer, villager, reputation);
         }

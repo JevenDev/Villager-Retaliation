@@ -116,6 +116,7 @@ public final class VillagerReputationEvents {
         for (Villager villager : level.getEntitiesOfClass(Villager.class, area)) {
             if (villager.getTradingPlayer() == player) {
                 VillagerReputationTradePricing.refreshPricesForPlayer(level, villager, player);
+                VillagerReputationManager.syncToTrackingPlayer(level, villager, player.getUUID());
                 return;
             }
         }

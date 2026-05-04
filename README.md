@@ -53,18 +53,18 @@ Reputation is tracked **per villager** and **per player**, meaning one villager 
 
 Positive reputation:
 
-- **Royalty**
-- **Revered**
-- **Respected**
-- **Trusted**
-- **Neutral**
+- **Royalty** [+750]
+- **Revered** [+400]
+- **Respected** [+250]
+- **Trusted** [+75]
+- **Neutral** [0]
 
 Negative reputation:
 
-- **Suspicious**
-- **Hostile**
-- **Despised**
-- **Feared**
+- **Suspicious** [-75]
+- **Hostile** [-100]
+- **Despised** [-250]
+- **Feared** [-750]
 
 At higher reputation, villagers may treat you more favourably. At lower reputation, villagers may refuse peace, attack on sight, throw harmless items at you, or even visibly shake when they fear you.
 

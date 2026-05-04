@@ -204,7 +204,7 @@ public final class VillagerRetaliationConfig {
                 .defineInRange("gossipReputationMultiplier", 0.25D, 0.0D, 1.0D);
         ROYALTY_THRESHOLD = BUILDER.comment("Reputation at or above this value is ROYALTY.")
                 .translation("villagerretaliation.configuration.reputation.royaltyThreshold")
-                .defineInRange("royaltyThreshold", 1000, -10000, 10000);
+                .defineInRange("royaltyThreshold", 750, -10000, 10000);
         REVERED_THRESHOLD = BUILDER.comment("Reputation at or above this value is REVERED unless ROYALTY.")
                 .translation("villagerretaliation.configuration.reputation.reveredThreshold")
                 .defineInRange("reveredThreshold", 400, -10000, 10000);
@@ -216,16 +216,16 @@ public final class VillagerRetaliationConfig {
                 .defineInRange("trustedThreshold", 75, -10000, 10000);
         SUSPICIOUS_THRESHOLD = BUILDER.comment("Reputation at or below this value is SUSPICIOUS unless lower.")
                 .translation("villagerretaliation.configuration.reputation.suspiciousThreshold")
-                .defineInRange("suspiciousThreshold", -25, -10000, 10000);
+                .defineInRange("suspiciousThreshold", -75, -10000, 10000);
         HOSTILE_THRESHOLD = BUILDER.comment("Reputation at or below this value is HOSTILE unless DESPISED.")
                 .translation("villagerretaliation.configuration.reputation.hostileThreshold")
-                .defineInRange("hostileThreshold", -75, -10000, 10000);
+                .defineInRange("hostileThreshold", -100, -10000, 10000);
         DESPISED_THRESHOLD = BUILDER.comment("Reputation at or below this value is DESPISED unless FEARED.")
                 .translation("villagerretaliation.configuration.reputation.despisedThreshold")
-                .defineInRange("despisedThreshold", -150, -10000, 10000);
+                .defineInRange("despisedThreshold", -250, -10000, 10000);
         FEARED_THRESHOLD = BUILDER.comment("Reputation at or below this value is FEARED.")
                 .translation("villagerretaliation.configuration.reputation.fearedThreshold")
-                .defineInRange("fearedThreshold", -1000, -10000, 10000);
+                .defineInRange("fearedThreshold", -750, -10000, 10000);
         WITNESS_RADIUS = BUILDER.comment("Radius in blocks for witnessed reputation events.")
                 .translation("villagerretaliation.configuration.reputation.witnessRadius")
                 .defineInRange("witnessRadius", 24.0D, 0.0D, 128.0D);
