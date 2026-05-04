@@ -7,6 +7,7 @@ import com.jvn.villagerretaliation.loot.WanderingTraderLootHandler;
 import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
+import com.jvn.villagerretaliation.util.VillagerRetaliationHazardAttribution;
 import com.jvn.villagerretaliation.util.VillagerRetaliationRandomUtil;
 import com.jvn.villagerretaliation.villager.VillagerFleeBehaviorHandler;
 import net.minecraft.core.particles.ParticleTypes;
@@ -129,6 +130,16 @@ public final class VillagerRetaliationEvents {
             event.setCanceled(true);
             event.setCancellationResult(InteractionResult.FAIL);
         }
+    }
+
+    public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
+        VillagerRetaliationHazardAttribution.rememberPlayerPlacedHazard(
+                event.getEntity(),
+                event.getLevel(),
+                event.getPos(),
+                event.getFace(),
+                event.getItemStack()
+        );
     }
 
     private static void tryGiveHighReputationGift(Villager villager, Player player, InteractionHand hand) {

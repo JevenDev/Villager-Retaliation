@@ -1,7 +1,6 @@
 package com.jvn.villagerretaliation.combat;
 
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -27,10 +26,6 @@ public final class VillagerRetaliationPotionUtil {
     public static boolean isHealingPotion(ItemStack stack) {
         PotionContents contents = stack.getOrDefault(DataComponents.POTION_CONTENTS, PotionContents.EMPTY);
         return isPotion(stack) && contents.is(Potions.HEALING);
-    }
-
-    public static boolean isUsingPotion(LivingEntity entity) {
-        return entity.isUsingItem() && isPotion(entity.getUseItem());
     }
 
     public static boolean shouldSuppressCombatWhileUsingPotion(Villager villager) {

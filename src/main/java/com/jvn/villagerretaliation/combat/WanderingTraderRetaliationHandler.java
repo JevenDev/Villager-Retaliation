@@ -55,7 +55,7 @@ public final class WanderingTraderRetaliationHandler {
         }
 
         if (event.getEntity() instanceof WanderingTrader trader) {
-            VillagerRetaliationVillagerCombatUtil.resolveAttacker(event.getSource()).ifPresent(attacker -> {
+            VillagerRetaliationVillagerCombatUtil.resolveAttacker(trader, event.getSource()).ifPresent(attacker -> {
                 anger(trader, attacker);
                 if (!VillagerRetaliationConfig.ATTACK_AGGROS_ONLY_HIT_VILLAGER.get()) {
                     angerNearbyTraders(trader, attacker, VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get());
@@ -69,7 +69,7 @@ public final class WanderingTraderRetaliationHandler {
             return;
         }
 
-        VillagerRetaliationVillagerCombatUtil.resolveAttacker(event.getSource()).ifPresent(attacker -> {
+        VillagerRetaliationVillagerCombatUtil.resolveAttacker(traderLlama, event.getSource()).ifPresent(attacker -> {
             anger(trader, attacker);
             if (!VillagerRetaliationConfig.ATTACK_AGGROS_ONLY_HIT_VILLAGER.get()) {
                 angerNearbyTraders(trader, attacker, VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get());
@@ -88,7 +88,7 @@ public final class WanderingTraderRetaliationHandler {
             return;
         }
 
-        VillagerRetaliationVillagerCombatUtil.resolveAttacker(event.getSource())
+        VillagerRetaliationVillagerCombatUtil.resolveAttacker(trader, event.getSource())
                 .filter(attacker -> !VillagerRetaliationVillagerCombatUtil.shouldIgnoreAttacker(attacker))
                 .ifPresent(attacker -> angerNearbyTraders(trader, attacker, VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get()));
     }

@@ -82,6 +82,16 @@ public final class VillagerRetaliationVillagerCombatUtil {
         return Optional.empty();
     }
 
+    public static Optional<LivingEntity> resolveAttacker(LivingEntity victim, DamageSource source) {
+        Optional<LivingEntity> directAttacker = resolveAttacker(source);
+        if (directAttacker.isPresent()) {
+            return directAttacker;
+        }
+
+        return VillagerRetaliationHazardAttribution.resolvePlayerOwner(victim, source)
+                .map(LivingEntity.class::cast);
+    }
+
     public static boolean shouldIgnoreAttacker(LivingEntity attacker) {
         if (attacker instanceof AbstractVillager) {
             return true;

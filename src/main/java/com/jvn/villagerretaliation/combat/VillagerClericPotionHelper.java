@@ -486,8 +486,7 @@ final class VillagerClericPotionHelper {
     }
 
     private static boolean isFriendlySafePotion(ItemStack potionStack) {
-        PotionContents contents = potionStack.getOrDefault(net.minecraft.core.component.DataComponents.POTION_CONTENTS, PotionContents.EMPTY);
-        return contents.is(Potions.HEALING);
+        return VillagerRetaliationPotionUtil.isHealingPotion(potionStack);
     }
 
     private static void throwSplashPotionLikeWitch(Villager villager, LivingEntity target, ServerLevel level, ItemStack potionStack) {

@@ -80,6 +80,13 @@ public final class VillagerReputationAdvancements {
         }
     }
 
+    public static void onVillagerEnvironmentalDamage(ServerLevel level, ServerPlayer player, AbstractVillager villager) {
+        award(player, HANDS_OFF);
+        if (hasWitnesses(level, villager, VILLAGE_HAS_EYES_WITNESSES)) {
+            award(player, THE_VILLAGE_HAS_EYES);
+        }
+    }
+
     public static void onVillagerDeath(ServerLevel level, AbstractVillager villager, ServerPlayer player, boolean directDamageSource) {
         if (hasWitnesses(level, villager, VILLAGE_HAS_EYES_WITNESSES)) {
             award(player, THE_VILLAGE_HAS_EYES);

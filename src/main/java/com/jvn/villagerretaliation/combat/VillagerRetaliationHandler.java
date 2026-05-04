@@ -141,7 +141,7 @@ public final class VillagerRetaliationHandler {
 
         boolean shieldBroke = applyShieldDurabilityDamage(villager, incomingDamage);
         boolean disabledByAxe = false;
-        Optional<LivingEntity> attacker = VillagerRetaliationVillagerCombatUtil.resolveAttacker(source);
+        Optional<LivingEntity> attacker = VillagerRetaliationVillagerCombatUtil.resolveAttacker(villager, source);
         if (attacker.isPresent()) {
             LivingEntity resolvedAttacker = attacker.get();
             anger(villager, resolvedAttacker);
@@ -200,7 +200,7 @@ public final class VillagerRetaliationHandler {
         }
 
         if (villager.isBaby()) {
-            VillagerRetaliationVillagerCombatUtil.resolveAttacker(event.getSource()).ifPresent(attacker ->
+            VillagerRetaliationVillagerCombatUtil.resolveAttacker(villager, event.getSource()).ifPresent(attacker ->
                     rallyNearbyVillagers(villager, attacker, VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get()));
             return;
         }
@@ -209,7 +209,7 @@ public final class VillagerRetaliationHandler {
             villager.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 80, 0));
         }
 
-        VillagerRetaliationVillagerCombatUtil.resolveAttacker(event.getSource()).ifPresent(attacker -> {
+        VillagerRetaliationVillagerCombatUtil.resolveAttacker(villager, event.getSource()).ifPresent(attacker -> {
             if (isNitwitAlarm(villager)) {
                 rallyNearbyVillagers(villager, attacker, VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get());
                 return;
@@ -241,7 +241,9 @@ public final class VillagerRetaliationHandler {
             return;
         }
 
-        Optional<LivingEntity> attacker = VillagerRetaliationVillagerCombatUtil.resolveAttacker(event.getSource());
+        Optional<LivingEntity> attacker = event.getEntity() instanceof LivingEntity livingEntity
+                ? VillagerRetaliationVillagerCombatUtil.resolveAttacker(livingEntity, event.getSource())
+                : VillagerRetaliationVillagerCombatUtil.resolveAttacker(event.getSource());
         if (deceasedIsVillager) {
             triggerNitwitWitnessedDeathFlee(deceased, attacker.orElse(null), VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get());
         }

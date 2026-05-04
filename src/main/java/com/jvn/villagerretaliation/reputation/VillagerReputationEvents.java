@@ -2,6 +2,8 @@ package com.jvn.villagerretaliation.reputation;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
+import com.jvn.villagerretaliation.util.VillagerRetaliationHazardAttribution;
+import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -54,7 +56,8 @@ public final class VillagerReputationEvents {
         if (!VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()
                 || event.getNewDamage() <= 0.0F
                 || !(event.getEntity().level() instanceof ServerLevel level)
-                || !(event.getSource().getEntity() instanceof Player player)) {
+                || !(event.getEntity() instanceof LivingEntity damaged)
+                || !(VillagerRetaliationVillagerCombatUtil.resolveAttacker(damaged, event.getSource()).orElse(null) instanceof Player player)) {
             return;
         }
 
@@ -74,17 +77,28 @@ public final class VillagerReputationEvents {
             return;
         }
 
+        boolean attributedHazardDamage = VillagerRetaliationHazardAttribution.isPlayerAttributedHazardDamage(damaged, event.getSource());
         if (player instanceof ServerPlayer serverPlayer) {
-            VillagerReputationAdvancements.onVillagerDirectlyDamaged(level, serverPlayer, villager);
+            if (attributedHazardDamage) {
+                VillagerReputationAdvancements.onVillagerEnvironmentalDamage(level, serverPlayer, villager);
+            } else {
+                VillagerReputationAdvancements.onVillagerDirectlyDamaged(level, serverPlayer, villager);
+            }
         }
 
         int directPenalty = VillagerAggressionPolicy.shouldForgiveAccidentalHit(villager, player)
                 ? Math.min(-1, VillagerRetaliationConfig.DIRECT_HIT_PENALTY.get() / 4)
                 : VillagerRetaliationConfig.DIRECT_HIT_PENALTY.get();
+        if (attributedHazardDamage) {
+            directPenalty = halfReputationChange(directPenalty);
+        }
+        int witnessedPenalty = attributedHazardDamage
+                ? halfReputationChange(VillagerRetaliationConfig.WITNESSED_HIT_PENALTY.get())
+                : VillagerRetaliationConfig.WITNESSED_HIT_PENALTY.get();
         VillagerReputationManager.addDirectReputation(level, villager, player.getUUID(), directPenalty);
-        applyWitnessed(level, villager, player, VillagerRetaliationConfig.WITNESSED_HIT_PENALTY.get());
+        applyWitnessed(level, villager, player, witnessedPenalty);
         if (villager instanceof Villager gossipSource) {
-            VillagerGossipHooks.spreadReputation(level, gossipSource, player.getUUID(), VillagerRetaliationConfig.WITNESSED_HIT_PENALTY.get());
+            VillagerGossipHooks.spreadReputation(level, gossipSource, player.getUUID(), witnessedPenalty);
         }
     }
 
@@ -108,6 +122,9 @@ public final class VillagerReputationEvents {
                     ? VillagerRetaliationConfig.WITNESSED_BABY_KILL_PENALTY.get()
                     : VillagerRetaliationConfig.WITNESSED_KILL_PENALTY.get();
             Player player = creditedPlayer.get().player();
+            if (!creditedPlayer.get().fullKillCredit()) {
+                penalty = halfReputationChange(penalty);
+            }
             if (player instanceof ServerPlayer serverPlayer) {
                 boolean directDamageSource = event.getSource().getEntity() instanceof Player;
                 VillagerReputationAdvancements.onVillagerDeath(level, villager, serverPlayer, directDamageSource);
@@ -120,7 +137,10 @@ public final class VillagerReputationEvents {
             if (creditedPlayer.isEmpty()) {
                 return;
             }
-            applyWitnessed(level, deceased, creditedPlayer.get().player(), VillagerRetaliationConfig.WITNESSED_IRON_GOLEM_KILL_PENALTY.get());
+            int penalty = creditedPlayer.get().fullKillCredit()
+                    ? VillagerRetaliationConfig.WITNESSED_IRON_GOLEM_KILL_PENALTY.get()
+                    : halfReputationChange(VillagerRetaliationConfig.WITNESSED_IRON_GOLEM_KILL_PENALTY.get());
+            applyWitnessed(level, deceased, creditedPlayer.get().player(), penalty);
         } else if (deceased instanceof Enemy) {
             HOSTILE_PLAYER_CONTRIBUTIONS.remove(deceased.getUUID());
             if (creditedPlayer.isEmpty()) {
@@ -261,8 +281,13 @@ public final class VillagerReputationEvents {
     }
 
     private static Optional<PlayerCredit> creditedPlayer(ServerLevel level, LivingDeathEvent event) {
-        if (event.getSource().getEntity() instanceof Player player) {
+        if (event.getEntity() instanceof LivingEntity livingEntity
+                && event.getSource().getEntity() instanceof Player player) {
             return Optional.of(new PlayerCredit(player, true));
+        }
+        if (event.getEntity() instanceof LivingEntity livingEntity
+                && VillagerRetaliationHazardAttribution.resolvePlayerOwner(livingEntity, event.getSource()).orElse(null) instanceof Player player) {
+            return Optional.of(new PlayerCredit(player, false));
         }
         if (event.getEntity() instanceof LivingEntity livingEntity
                 && livingEntity.getKillCredit() instanceof Player player) {
@@ -275,6 +300,15 @@ public final class VillagerReputationEvents {
         }
         Player player = level.getPlayerByUUID(contribution.playerId());
         return player == null ? Optional.empty() : Optional.of(new PlayerCredit(player, false));
+    }
+
+    private static int halfReputationChange(int amount) {
+        if (amount == 0) {
+            return 0;
+        }
+
+        int halved = Math.round(amount / 2.0F);
+        return amount > 0 ? Math.max(1, halved) : Math.min(-1, halved);
     }
 
     private static int positiveWitnessGain(PlayerCredit credit) {
