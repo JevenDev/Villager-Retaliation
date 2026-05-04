@@ -1,6 +1,6 @@
 <div align="center">
 
-<h2><strong>Villagers remember. Villagers fight back.</strong></h2>
+<h2><strong>Villagers remember, villagers fight back.</strong></h2>
 
 </div>
 
@@ -11,6 +11,8 @@
 <a href="https://github.com/JevenDev/Villager-Retaliation" target="_blank" rel="noopener noreferrer"><img src="https://raw.githubusercontent.com/intergrav/devins-badges/refs/heads/v3/assets/compact-minimal/available/github_46h.png" alt="Available on GitHub"></a>
 
 </div>
+
+![villagers chasing a player](https://cdn.modrinth.com/data/cached_images/16269e99f4ef7ac15b6d24f3b523e5fa5778d5f5.png)
 
 Villager Retaliation! is a Vanilla+ NeoForge mod that makes villagers and wandering traders less helpless without turning villages into warzones.
 
@@ -25,6 +27,8 @@ Adult villagers can defend themselves, react to crimes they witness, use profess
 - Keep babies defenseless and nitwits cowardly as intended
 
 ![features](https://cdn.modrinth.com/data/cached_images/ec0e4dc78ec1a652eb11b233dd2926f7461fe770.png)
+
+![villagers carrying profession based weapons](https://cdn.modrinth.com/data/cached_images/44e64c624e3bad762345ee5f8df5d91c5ef5f6cd.png)
 
 ## Main Features
 
@@ -57,6 +61,8 @@ Default tiers:
 | Feared | -750 |
 
 Reputation changes are configurable. By default, direct villager hits are punished more than witnessed hits, villager kills are punished heavily, and player-attributed lava/fire damage counts for half the normal reputation penalty.
+
+![villagers retaliating against a player that killed another villager](https://i.imgur.com/6c3vdac.gif)
 
 ### Profession Combat
 
@@ -92,6 +98,8 @@ Player-placed hazards can count as aggression.
 If a player places lava, uses flint and steel, or uses a fire charge, nearby lava/fire damage can be attributed to that player for a short window. This allows "accidental" environmental attacks to still matter for retaliation, reputation, and advancements.
 
 The default attribution window is 2 real-time minutes. Natural lava, old hazards, worldgen hazards, and untracked hazards are not meant to count.
+
+![A player using lava to kill a villager, and being attributed to the kill](https://i.imgur.com/GSgbQr8.gif)
 
 ## Reputation Behavior
 
@@ -242,6 +250,6 @@ For any general queries/unlisted questions, DM me on Twitter (@prodbyjvn) / Disc
 
 <div align="center">
 
-  <p><strong>⚠ <em>This mod ONLY exists on Modrinth & CurseForge as of April 2026. Any sites hosting this mod outside of Modrinth/CurseForge are not official releases.</em> ⚠</strong></p>
+  <p><strong>⚠ <em>This mod ONLY exists on Modrinth & CurseForge as of May 2026. Any sites hosting this mod outside of Modrinth/CurseForge are not official releases.</em> ⚠</strong></p>
 
 </div>
