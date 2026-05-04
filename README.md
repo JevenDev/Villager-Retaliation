@@ -12,82 +12,115 @@
 
 </div>
 
-**Villager Retaliation** is a Vanilla+ NeoForge mod for Minecraft 1.21.1 that makes villagers and wandering traders less helpless.
+Villager Retaliation! is a Vanilla+ NeoForge mod that makes villagers and wandering traders less helpless without turning villages into warzones.
 
-Adult villagers can now defend themselves, rally nearby allies, use profession-based combat roles, remember how players treat them, and react differently depending on their reputation toward you.
+Adult villagers can defend themselves, react to crimes they witness, use profession-based combat roles, and remember how each player treats them through a personal reputation system.
 
-The goal is not to turn villages into permanent warzones. Retaliation is temporary, reputation is personal, and village behaviour still tries to feel like Minecraft.
-
-- **Attack a villager** and that villager can fight back
-- **Kill a villager in public** and nearby villagers may rally against you
-- **Build trust** through trading and positive actions
-- **Lose trust** through violence, witnessed crimes, and village harm
-- **Make villagers despise or fear you** if you push things too far
-- **Keep baby villagers harmless**
-- **Keep nitwits cowardly by default**, unless they find a usable weapon
+- Attack a villager and that villager can fight back
+- Kill a villager in public and nearby villagers may rally
+- Player-placed lava and fire can count as aggression for a short attribution window
+- Build trust through trade and positive village defense
+- Lose trust through attacks, witnessed crimes, and village harm
+- Make villagers suspicious, hostile, despised, or feared if you push things too far
+- Keep babies defenseless and nitwits cowardly as intended
 
 ![features](https://cdn.modrinth.com/data/cached_images/ec0e4dc78ec1a652eb11b233dd2926f7461fe770.png)
 
-## Villager retaliation
+## Main Features
 
-Villagers are no longer completely passive when threatened.
+### Retaliation
 
-- Adult villagers can retaliate when damaged
-- Hitting a villager only angers that villager by default
-- Killing an adult villager can anger nearby witnesses
-- Witnesses can require **line of sight**, so enclosed attacks do not alert villagers through walls
-- Anger expires after a configurable duration
-- Creative and spectator players can be ignored
-- Trading is blocked while a villager or wandering trader is hostile toward the player
-- Hostile villagers and wandering traders can be pacified with emeralds
-- Baby villagers never fight back
-- Unarmed nitwits keep their fleeing behaviour by default
+Villagers are neutral instead of purely passive.
 
-## Reputation system
+By default, hitting a villager only angers that villager. Killing an adult villager can anger nearby adult villagers if they can witness it. Anger expires after a configurable duration, and creative/spectator players can be ignored.
 
-Villagers can now remember how each player treats them.
+Villagers and wandering traders can also block trading while hostile. Hostile villagers can be pacified with emeralds, unless your reputation has fallen too low.
 
-Reputation is tracked **per villager** and **per player**, meaning one villager can trust you while another despises you. Reputation can affect trade prices, pacification, fleeing, aggression, and special behaviours.
+### Reputation
 
-### Reputation tiers
+Reputation is tracked per villager and per player.
 
-Thresholds are configurable in `villagerretaliation-common.toml`; values below are defaults.
+That means one villager can trust you while another despises you. Reputation can affect trade prices, pacification, anger duration, fleeing, despised attack-on-sight behavior, cleric support, and advancement progression.
 
-Positive reputation:
+Default tiers:
 
-- **Royalty** [+750]
-- **Revered** [+400]
-- **Respected** [+250]
-- **Trusted** [+75]
-- **Neutral** [0]
+| Tier | Default threshold |
+| --- | ---: |
+| Royalty | 750 |
+| Revered | 400 |
+| Respected | 250 |
+| Trusted | 75 |
+| Neutral | 0 |
+| Suspicious | -75 |
+| Hostile | -100 |
+| Despised | -250 |
+| Feared | -750 |
 
-Negative reputation:
+Reputation changes are configurable. By default, direct villager hits are punished more than witnessed hits, villager kills are punished heavily, and player-attributed lava/fire damage counts for half the normal reputation penalty.
 
-- **Suspicious** [-75]
-- **Hostile** [-100]
-- **Despised** [-250]
-- **Feared** [-750]
+### Profession Combat
 
-### What each tier does
+Villagers fight in ways that match their profession.
 
-| Tier | Gameplay effect |
+| Profession | Behavior |
 | --- | --- |
-| **Royalty** | Strongest positive trade-price effect (tier equivalent `+150`), very short anger duration (`15%` of base), and clerics can support you with helpful splash potions. |
-| **Revered** | Strong positive trade-price effect (`+100`), short anger duration (`25%` of base), and clerics can support you. |
-| **Respected** | Positive trade-price effect (`+70`), shorter anger duration (`35%` of base), cleric support enabled, and accidental hits are partially forgiven (direct reputation penalty reduced). |
-| **Trusted** | Positive trade-price effect (`+35`), mildly reduced anger duration (`65%` of base), and cleric support enabled. |
-| **Neutral** | No tier-specific bonus or penalty by itself. |
-| **Suspicious** | Mild negative trade-pressure floor (`-20`) and no special hostile tier behavior. |
-| **Hostile** | Stronger negative trade-pressure floor (`-50`), longer anger duration (`125%` of base), hostile-tier harassment throws (eggs / poisonous potatoes), and flee behavior for non-combat villagers (babies, nitwits, or villagers that cannot fight). |
-| **Despised** | Attack-on-sight behavior for eligible combat villagers (if enabled), villager trading blocked even when not currently enraged, villager emerald pacification refused, longer anger duration (`200%` of base), hostile-tier harassment throws, and non-combat villagers flee. |
-| **Feared** | Feared shake pulse behavior when near villagers, villagers do not join witnessed-crime retaliation at this tier, longer anger duration (`200%` of base), hostile-tier harassment throws, and non-combat villagers flee. |
+| Weaponsmith | Uses stronger melee behavior with swords |
+| Armorer | Can fight defensively, gain resistance, and use shields in hard mode |
+| Toolsmith | Uses tool-based melee |
+| Mason | Uses mining-tool style melee |
+| Butcher | Uses axe-based melee |
+| Fletcher | Uses bows or crossbows |
+| Farmer | Can defend themselves and heal with bread |
+| Cleric | Uses potions for defense, attacks, and ally support |
+| Librarian | Can fight with book-themed |
+| Nitwit | Usually flees unless holding a usable weapon |
 
-Notes:
+Fletchers and other villagers holding ranged weapons can use bows, crossbows, and tridents. Crossbows use charge/hold/fire states, and tridents use a thrown attack.
 
-- Wandering trader pacification and trade blocking are based on active hostility, not despised-tier refusal.
-- Trade pricing still uses reputation value in addition to tier handling.
+### Cleric Support
+
+Clerics have the most advanced combat role.
+
+They can drink defensive potions, throw harmful or slowing splash potions, avoid friendly splash damage where possible, heal injured villagers and wandering traders, and support trusted-or-better players.
+
+Passive cleric healing has configurable range, health threshold, and line-of-sight rules.
+
+### Hazard Attribution
+
+Player-placed hazards can count as aggression.
+
+If a player places lava, uses flint and steel, or uses a fire charge, nearby lava/fire damage can be attributed to that player for a short window. This allows "accidental" environmental attacks to still matter for retaliation, reputation, and advancements.
+
+The default attribution window is 2 real-time minutes. Natural lava, old hazards, worldgen hazards, and untracked hazards are not meant to count.
+
+## Reputation Behavior
+
+Higher trust can reduce anger duration, improve trade pricing, and unlock helpful cleric support.
+
+Lower trust can make villagers more dangerous or less willing to deal with you:
+
+- Suspicious villagers apply negative trade pressure
+- Hostile villagers can harass you with eggs or poisonous potatoes
+- Despised villagers can attack on sight when enabled
+- Feared villagers visibly react when you get close
+- Despised or feared villagers may refuse emerald pacification
+- Babies, nitwits, and non-combat villagers can flee from hated players
+
+## Loot
+
+Villager Retaliation! adds configurable drops for villagers and wandering traders.
+
+- Villagers can drop emeralds and bread
+- Adult villagers can roll profession-themed loot
+- Combat weapons can drop at configurable rates
+- Baby villager loot is disabled by default
+- Wandering traders can drop emeralds, invisibility potions, and safe copies of current trade results
+
+Profession loot generally requires player kill credit by default.
 
 ## Advancements
+
+The mod includes a full reputation advancement tab.
 
 <details>
 <summary><strong>All Advancements (Click to Expand)</strong></summary>
@@ -96,124 +129,44 @@ Notes:
 
 | Advancement | Type | Criteria | Hidden |
 | --- | --- | --- | --- |
-| **Village Relations** | Task (Tab Root) | Automatically granted when any Villager Retaliation advancement is awarded. | No |
-| **Commonfolk** | Task | Interact with any villager, or enter a village. | No |
-| **I'm Sorry!** | Task | Pacify a hostile villager with emeralds. | No |
-| **A Familiar Face** | Task | Reach TRUSTED reputation with any villager. | No |
-| **Respect Is Earned** | Task | Reach RESPECTED reputation with any villager. | No |
-| **Friend of the Village** | Goal | Reach TRUSTED with 5 villagers in one village area. | No |
-| **Local Legend** | Challenge | Reach REVERED reputation with any villager. | No |
-| **Crowned by the Village** | Challenge | Reach ROYALTY reputation with any villager. | No |
-| **Second Chance** | Goal | Cure a zombie villager that retains known reputation data for you. | No |
-| **The Village Remembers** | Goal | Move from SUSPICIOUS (or lower) back to NEUTRAL or higher. | No |
-| **Bad First Impression** | Task | Reach SUSPICIOUS reputation with any villager. | No |
-| **Hands Off** | Task | Damage a villager directly. | No |
-| **The Village Has Eyes** | Goal | Harm or kill a villager while at least 3 adult villagers can witness it. | No |
-| **Marked** | Challenge | Reach FEARED (lowest tier) with any villager. | No |
-| **Village Enemy** | Challenge | Have 5+ villagers targeting you at the same time. | No |
-| **Mob Justice** | Challenge | Have 8 villagers targeting you at the same time. | No |
-| **Regular Customer** | Goal | Complete 10 trades with the same villager. | No |
-| **Community Support** | Goal | Trade with 5 different villagers in one village area. | No |
-| **Price of Trust** | Goal | Reach a positive trust tier with a villager after trading with them. | No |
-| **Refused Service** | Task | Attempt to trade with a villager that blocks interaction due to low reputation. | No |
-| **Hero, Not Menace** | Goal | While distrusted by nearby villagers, gain positive reputation by defending against hostiles. | No |
-| **An Unwise Decision** | Goal | Damage an iron golem associated with a village. | No |
-| **Peace Offering** | Challenge | After being HOSTILE or worse with a villager, return to NEUTRAL or higher with that villager. | Yes |
-| **Accidentally, Of Course** | Challenge | A villager dies from player-attributed environmental hazard without direct player damage. | Yes |
+| Village Relations | Task (Tab Root) | Automatically granted when any Villager Retaliation advancement is awarded. | No |
+| Commonfolk | Task | Interact with any villager, or enter a village. | No |
+| I'm Sorry! | Task | Pacify a hostile villager with emeralds. | No |
+| A Familiar Face | Task | Reach Trusted reputation with any villager. | No |
+| Respect Is Earned | Task | Reach Respected reputation with any villager. | No |
+| Friend of the Village | Goal | Reach Trusted with 5 villagers in one village area. | No |
+| Local Legend | Challenge | Reach Revered reputation with any villager. | No |
+| Crowned by the Village | Challenge | Reach Royalty reputation with any villager. | No |
+| Second Chance | Goal | Cure a zombie villager that retains known reputation data for you. | No |
+| The Village Remembers | Goal | Move from Suspicious or lower back to Neutral or higher. | No |
+| Bad First Impression | Task | Reach Suspicious reputation with any villager. | No |
+| Hands Off | Task | Damage a villager. | No |
+| The Village Has Eyes | Goal | Harm or kill a villager while at least 3 adult villagers can witness it. | No |
+| Marked | Challenge | Reach Feared reputation with any villager. | No |
+| Village Enemy | Challenge | Have 5 or more villagers targeting you at the same time. | No |
+| Mob Justice | Challenge | Have 8 or more villagers targeting you at the same time. | No |
+| Regular Customer | Goal | Complete 10 trades with the same villager. | No |
+| Community Support | Goal | Trade with 5 different villagers in one village area. | No |
+| Price of Trust | Goal | Reach a positive trust tier with a villager after trading with them. | No |
+| Refused Service | Task | Attempt to trade with a villager that blocks interaction due to low reputation. | No |
+| Hero, Not Menace | Goal | While distrusted by nearby villagers, gain positive reputation by defending against hostiles. | No |
+| An Unwise Decision | Goal | Damage an iron golem associated with a village. | No |
+| Peace Offering | Challenge | After being Hostile or worse with a villager, return to Neutral or higher with that villager. | Yes |
+| Accidentally, Of Course | Challenge | A villager dies from a player-attributed environmental hazard without direct player damage. | Yes |
 
 </details>
-
-## Profession combat roles
-
-Villagers fight in ways that match their profession.
-
-| Profession | Behaviour |
-| --- | --- |
-| **Weaponsmith** | Uses stronger melee behaviour, usually with a sword |
-| **Armorer** | Can fight defensively, gain resistance, and use shields in hard mode |
-| **Toolsmith** | Uses tool-based melee behaviour |
-| **Mason** | Uses mining-tool style melee behaviour |
-| **Butcher** | Uses axe-based melee behaviour |
-| **Fletcher** | Uses bows or crossbows |
-| **Farmer** | Can defend themselves and heal with bread |
-| **Cleric** | Uses potions for defense, attacks, and ally healing |
-| **Librarian** | Can fight with book-themed behaviour |
-| **Nitwit** | Usually flees unless holding a usable weapon |
-| **Unemployed** | Uses basic defensive behaviour when applicable |
-
-## Ranged combat
-
-Fletchers and other villagers holding ranged weapons can use ranged combat.
-
-Supported weapons include:
-
-- **Bows**
-- **Crossbows**
-- **Tridents**
-
-Crossbows use proper charge, hold, and fire states. Tridents use a thrown attack inspired by drowned behaviour.
-
-## Armorer shields
-
-Armorers can become defensive frontliners.
-
-- Armorers may spawn with an offhand shield in hard mode
-- Shield chance is configurable
-- Shields can block incoming damage
-- Axe hits can disable blocking temporarily
-- Armorers use shield blocking and lowered-shield poses
-
-## Cleric support
-
-Clerics have the most advanced support kit.
-
-They can:
-
-- drink defensive potions while threatened
-- throw harmful or slowing splash potions at attackers
-- avoid bad potion choices against undead or inverted-healing targets
-- avoid splashing friendly civilians when attacking
-- heal injured villagers and wandering traders
-- passively look for injured allies while idle
-- support trusted-or-better players depending on reputation
-
-Passive cleric healing has configurable range, health threshold, and line-of-sight rules.
-
-## Hostile reputation behaviour
-
-Villagers who dislike you enough can do more than simply raise prices.
-
-Depending on config and reputation:
-
-- **Hostile** villagers randomly throw eggs or poisonous potatoes at you
-- **Despised** villagers attack on sight
-- **Feared** villagers visibly shake around you
-- Villagers who despise you refuse pacification with emeralds
-- Reputation influences retaliation and fleeing behaviour
 
 ![keybinds](https://cdn.modrinth.com/data/cached_images/201d5ce49ba16974e3c3b0b562c392e03f38e35f.png)
 
 ## Commands
 
-### Set nearby reputation
-
-Requires permission level 2 (operator).
+Requires operator.
 
 ```mcfunction
 /villagerretaliation setNearbyReputation <integer>
 ```
 
-This sets the reputation value for nearby villagers and wandering traders toward the executing player.
-The command affects entities in the configured witness radius (24 blocks by default).
-
-Useful for testing:
-
-- reputation tiers
-- trade pricing
-- despised behaviour
-- feared behaviour
-- debug overlay display
-- pacification rules
+This sets nearby villagers' and wandering traders' reputation toward the executing player. It is mainly useful for testing tiers, trade pricing, despised behavior, feared behavior, pacification, and the debug overlay.
 
 Example:
 
@@ -221,79 +174,61 @@ Example:
 /villagerretaliation setNearbyReputation -150
 ```
 
-## Debug overlay
-
-Villager Retaliation includes an optional client debug overlay for testing reputation.
-
-When enabled, it can show:
-
-- villager reputation tier
-- exact reputation number
-- reputation above villager heads
-- configurable max display distance
-- optional sneaking requirement
-- optional advanced tooltip requirement
-
-This is mainly intended for development, testing, and balancing.
-
 ## Configuration
 
 Main config file:
 
-- Singleplayer / client: `config/villagerretaliation-common.toml`
+- Singleplayer/client: `config/villagerretaliation-common.toml`
 - Dedicated server: `<server root>/config/villagerretaliation-common.toml`
 
-Notable config categories:
+Config categories include:
 
-- `general`: master feature toggles (retaliation, reputation, vanilla gossip integration)
-- `retaliation`: aggro radius, duration, line-of-sight witness behavior
-- `reputation`: penalties/gains, tier thresholds, gossip scaling, trade price scaling
-- `combat`: profession combat toggles, armorer shield chance, cleric support behavior
-- `debugOverlay`: reputation text visibility, distance, tooltip/sneak requirements
-- `wanderer`: wandering trader drop behavior
+- `general` - master feature toggles
+- `balance` - loot and drop rates
+- `retaliation` - anger rules, aggro radius, duration, line-of-sight witnesses
+- `reputation` - penalties, gains, thresholds, gossip, trade pricing
+- `combat` - profession combat toggles, armorer shields, clerics, farmers
+- `debugOverlay` - optional reputation display for testing
+- `wanderer` - wandering trader drop behavior
+
+## Debug Overlay
+
+There is an optional client-side debug overlay for testing reputation.
+
+When enabled, it can show the villager's reputation tier and/or exact reputation value above their head. It can be limited by distance, sneaking, or advanced tooltips.
+
+This is disabled by default and is mainly intended for testing and balancing.
 
 ![compatibility](https://cdn.modrinth.com/data/cached_images/1252c11050b7daf8b8621712b58dd1005e7ba982.png)
 
 ## Compatibility
 
-Villager Retaliation is designed to work with vanilla villager systems instead of replacing them.
+Villager Retaliation! is designed to work with vanilla villager systems rather than replacing villager entities.
 
-- Built for **NeoForge 1.21.1**
+- Built for NeoForge 1.21.1
 - Uses vanilla-style entity events and AI memory adjustments
-- Uses gossip integration where enabled
+- Uses vanilla gossip integration where enabled
 - Uses NeoForge item tags for weapon detection where possible
-- Does not replace villager entities
-- Should work best with mods that respect vanilla villager behaviour and item tags
+- Does not replace the villager entity type
 
-<div align="center">
-  <p><strong><em>Note: If another mod heavily replaces villager AI, trading, or villager entity classes, compatibility may vary.</em></strong></p>
-</div>
+Compatibility may vary with mods that heavily replace villager AI, trading, combat, or entity classes.
 
-![roadmap](https://cdn.modrinth.com/data/cached_images/04825ea0e2e5462ffa075e783ca38b0c63a36d34.png)
+## Version and Loaders
 
-## Version and loaders
-
-- ✅ **NeoForge 1.21.1** [Active development]
-- ⛔ **NeoForge 1.20.1** [Not planned]
-- ⛔ **Forge 1.21.1** [Not planned]
-- ⛔ **Forge 1.20.1** [Not planned]
-- 🚧 **Fabric 1.21.1** [Possible future port]
-- ⛔ **Fabric 1.20.1** [Not planned]
-
-## Planned / possible features
-
-- More reputation-driven villager reactions
-- More profession-specific combat polish
-- More config options for pack makers
-- Expanded compatibility testing with villager-related mods
-- Additional debug tools for reputation and retaliation
-- More passive village defense behaviours
+- NeoForge 1.21.1 - active development
+- Forge - not planned anytime soon, don't ask please :)
+- Fabric - possible future port, not anytime soon
+- Older Minecraft versions - not planned
 
 ![credits & license](https://cdn.modrinth.com/data/cached_images/5fd3ad80e342e6985dd6ebda1f7afd9c48749fce.png)
 
+## Modpacks
+
+You may use this mod in modpacks, videos, servers, and other projects. A link back to the Modrinth page is appreciated.
+
 ## Credits
 
-Created by **jvn** (me!).
+Created by me :D
 
 ## License
 
@@ -301,10 +236,12 @@ This project is licensed under the **[GNU General Public License v3.0](https://w
 
 Feel free to use this mod in modpacks, videos, etc. Just provide a link back to this page if possible :)
 
-For general questions, bug reports, or feature requests, use the **[GitHub issue tracker](https://github.com/JevenDev/Villager-Retaliation/issues)** or contact me on Discord.
+Looking to port the mod to your favourite loader/version outside of my scope? Feel free to, and let me know so I can add a sub-section to direct users to it!
+
+For any general queries/unlisted questions, DM me on Twitter (@prodbyjvn) / Discord (ijvn).
 
 <div align="center">
 
-  <p><strong>⚠ <em>This mod ONLY exists on Modrinth and GitHub unless stated otherwise. Any other sites hosting this mod are not official releases.</em> ⚠</strong></p>
+  <p><strong>⚠ <em>This mod ONLY exists on Modrinth & CurseForge as of April 2026. Any sites hosting this mod outside of Modrinth/CurseForge are not official releases.</em> ⚠</strong></p>
 
 </div>
