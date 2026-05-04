@@ -87,6 +87,42 @@ Notes:
 - Wandering trader pacification and trade blocking are based on active hostility, not despised-tier refusal.
 - Trade pricing still uses reputation value in addition to tier handling.
 
+## Advancements
+
+<details>
+<summary><strong>All Advancements (Click to Expand)</strong></summary>
+
+<br>
+
+| Advancement | Type | Criteria | Hidden |
+| --- | --- | --- | --- |
+| **Village Relations** | Task (Tab Root) | Automatically granted when any Villager Retaliation advancement is awarded. | No |
+| **Commonfolk** | Task | Interact with any villager, or enter a village. | No |
+| **I'm Sorry!** | Task | Pacify a hostile villager with emeralds. | No |
+| **A Familiar Face** | Task | Reach TRUSTED reputation with any villager. | No |
+| **Respect Is Earned** | Task | Reach RESPECTED reputation with any villager. | No |
+| **Friend of the Village** | Goal | Reach TRUSTED with 5 villagers in one village area. | No |
+| **Local Legend** | Challenge | Reach REVERED reputation with any villager. | No |
+| **Crowned by the Village** | Challenge | Reach ROYALTY reputation with any villager. | No |
+| **Second Chance** | Goal | Cure a zombie villager that retains known reputation data for you. | No |
+| **The Village Remembers** | Goal | Move from SUSPICIOUS (or lower) back to NEUTRAL or higher. | No |
+| **Bad First Impression** | Task | Reach SUSPICIOUS reputation with any villager. | No |
+| **Hands Off** | Task | Damage a villager directly. | No |
+| **The Village Has Eyes** | Goal | Harm or kill a villager while at least 3 adult villagers can witness it. | No |
+| **Marked** | Challenge | Reach FEARED (lowest tier) with any villager. | No |
+| **Village Enemy** | Challenge | Have 5+ villagers targeting you at the same time. | No |
+| **Mob Justice** | Challenge | Have 8 villagers targeting you at the same time. | No |
+| **Regular Customer** | Goal | Complete 10 trades with the same villager. | No |
+| **Community Support** | Goal | Trade with 5 different villagers in one village area. | No |
+| **Price of Trust** | Goal | Reach a positive trust tier with a villager after trading with them. | No |
+| **Refused Service** | Task | Attempt to trade with a villager that blocks interaction due to low reputation. | No |
+| **Hero, Not Menace** | Goal | While distrusted by nearby villagers, gain positive reputation by defending against hostiles. | No |
+| **An Unwise Decision** | Goal | Damage an iron golem associated with a village. | No |
+| **Peace Offering** | Challenge | After being HOSTILE or worse with a villager, return to NEUTRAL or higher with that villager. | Yes |
+| **Accidentally, Of Course** | Challenge | A villager dies from player-attributed environmental hazard without direct player damage. | Yes |
+
+</details>
+
 ## Profession combat roles
 
 Villagers fight in ways that match their profession.
