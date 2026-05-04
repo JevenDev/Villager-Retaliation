@@ -390,7 +390,7 @@ public final class VillagerRetaliationHandler {
             return false;
         }
 
-        if (isDespisedBy(villager, player)) {
+        if (isPacificationBlockedByReputation(villager, player)) {
             VillagerRetaliationRetaliationUtil.spawnMadParticles(villager);
             return true;
         }
@@ -413,6 +413,13 @@ public final class VillagerRetaliationHandler {
         return VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()
                 && villager.level() instanceof ServerLevel level
                 && VillagerReputationManager.isDespised(level, villager, player);
+    }
+
+    private static boolean isPacificationBlockedByReputation(Villager villager, Player player) {
+        return VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()
+                && villager.level() instanceof ServerLevel level
+                && (VillagerReputationManager.isDespised(level, villager, player)
+                || VillagerReputationManager.isFeared(level, villager, player));
     }
 
     public static void forceAnger(Villager villager, LivingEntity attacker) {

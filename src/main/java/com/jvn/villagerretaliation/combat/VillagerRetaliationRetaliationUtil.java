@@ -26,6 +26,10 @@ import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 
 public final class VillagerRetaliationRetaliationUtil {
     private static final String PERSISTENT_TARGET_UUID = "Target";
@@ -264,11 +268,33 @@ public final class VillagerRetaliationRetaliationUtil {
     }
 
     public static boolean canMeleeHit(AbstractVillager villager, LivingEntity target) {
-        if (villager instanceof Villager) {
-            return villager.isWithinMeleeAttackRange(target);
+        if (!target.isAlive() || !villager.hasLineOfSight(target)) {
+            return false;
         }
-        double reachInflation = VillagerRetaliationVillagerWeapons.hasUsableWeapon(villager) ? 1.0D : 0.6D;
-        return villager.getBoundingBox().inflate(reachInflation).intersects(target.getBoundingBox());
+
+        boolean inMeleeRange;
+        if (villager instanceof Villager) {
+            inMeleeRange = villager.isWithinMeleeAttackRange(target);
+        } else {
+            double reachInflation = VillagerRetaliationVillagerWeapons.hasUsableWeapon(villager) ? 1.0D : 0.6D;
+            inMeleeRange = villager.getBoundingBox().inflate(reachInflation).intersects(target.getBoundingBox());
+        }
+
+        return inMeleeRange && hasClearMeleeLine(villager, target);
+    }
+
+    private static boolean hasClearMeleeLine(AbstractVillager villager, LivingEntity target) {
+        Vec3 origin = villager.getEyePosition();
+        Vec3 targetCenter = target.getBoundingBox().getCenter();
+        // Validate both center mass and lower body to reject corner-peek wall hits.
+        Vec3 targetLowerBody = target.position().add(0.0D, target.getBbHeight() * 0.35D, 0.0D);
+        return !isWallBlocking(villager, origin, targetCenter)
+                && !isWallBlocking(villager, origin, targetLowerBody);
+    }
+
+    private static boolean isWallBlocking(AbstractVillager villager, Vec3 start, Vec3 end) {
+        BlockHitResult hitResult = villager.level().clip(new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, villager));
+        return hitResult.getType() == HitResult.Type.BLOCK;
     }
 
     public static <T extends AbstractVillager> boolean maintainTemporaryWeapon(

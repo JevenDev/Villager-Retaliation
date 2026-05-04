@@ -200,7 +200,7 @@ public final class WanderingTraderRetaliationHandler {
             return false;
         }
 
-        if (isDespisedBy(trader, player)) {
+        if (isPacificationBlockedByReputation(trader, player)) {
             VillagerRetaliationRetaliationUtil.spawnMadParticles(trader);
             return true;
         }
@@ -223,6 +223,13 @@ public final class WanderingTraderRetaliationHandler {
         return VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()
                 && trader.level() instanceof ServerLevel level
                 && VillagerReputationManager.isDespised(level, trader, player);
+    }
+
+    private static boolean isPacificationBlockedByReputation(WanderingTrader trader, Player player) {
+        return VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()
+                && trader.level() instanceof ServerLevel level
+                && (VillagerReputationManager.isDespised(level, trader, player)
+                || VillagerReputationManager.isFeared(level, trader, player));
     }
 
     public static void angerNearbyTradersFrom(Entity sourceEntity, LivingEntity attacker, double radius) {
