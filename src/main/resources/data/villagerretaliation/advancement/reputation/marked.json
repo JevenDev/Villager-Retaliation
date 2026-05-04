@@ -1,0 +1,23 @@
+{
+  "parent": "villagerretaliation:reputation/bad_first_impression",
+  "display": {
+    "icon": {
+      "id": "minecraft:wither_rose"
+    },
+    "title": {
+      "translate": "advancements.villagerretaliation.reputation.marked.title"
+    },
+    "description": {
+      "translate": "advancements.villagerretaliation.reputation.marked.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

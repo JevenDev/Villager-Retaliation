@@ -1,0 +1,23 @@
+{
+  "parent": "villagerretaliation:reputation/respect_is_earned",
+  "display": {
+    "icon": {
+      "id": "minecraft:bell"
+    },
+    "title": {
+      "translate": "advancements.villagerretaliation.reputation.friend_of_the_village.title"
+    },
+    "description": {
+      "translate": "advancements.villagerretaliation.reputation.friend_of_the_village.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

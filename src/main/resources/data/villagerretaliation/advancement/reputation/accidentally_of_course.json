@@ -1,0 +1,23 @@
+{
+  "parent": "villagerretaliation:reputation/hands_off",
+  "display": {
+    "icon": {
+      "id": "minecraft:lava_bucket"
+    },
+    "title": {
+      "translate": "advancements.villagerretaliation.reputation.accidentally_of_course.title"
+    },
+    "description": {
+      "translate": "advancements.villagerretaliation.reputation.accidentally_of_course.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

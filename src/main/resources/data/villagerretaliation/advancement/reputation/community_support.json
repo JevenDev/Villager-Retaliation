@@ -1,0 +1,23 @@
+{
+  "parent": "villagerretaliation:reputation/regular_customer",
+  "display": {
+    "icon": {
+      "id": "minecraft:chest"
+    },
+    "title": {
+      "translate": "advancements.villagerretaliation.reputation.community_support.title"
+    },
+    "description": {
+      "translate": "advancements.villagerretaliation.reputation.community_support.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

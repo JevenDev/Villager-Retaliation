@@ -4,12 +4,14 @@ import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
 import com.jvn.villagerretaliation.combat.WanderingTraderRetaliationHandler;
 import com.jvn.villagerretaliation.loot.VillagerLootHandler;
 import com.jvn.villagerretaliation.loot.WanderingTraderLootHandler;
+import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.util.VillagerRetaliationRandomUtil;
 import com.jvn.villagerretaliation.villager.VillagerFleeBehaviorHandler;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.npc.Villager;
@@ -80,11 +82,19 @@ public final class VillagerRetaliationEvents {
         if (!(event.getEntity() instanceof Player player)) {
             return;
         }
+
+        if (event.getTarget() instanceof Villager && player instanceof ServerPlayer serverPlayer) {
+            VillagerReputationAdvancements.onVillagerInteraction(serverPlayer);
+        }
+
         ItemStack interactionStack = player.getItemInHand(event.getHand());
         ItemStack pacifyStack = interactionStack.is(Items.EMERALD) ? interactionStack : player.getOffhandItem();
 
         if (event.getTarget() instanceof Villager villager
                 && VillagerRetaliationHandler.tryPacifyWithEmeralds(villager, player, pacifyStack)) {
+            if (player instanceof ServerPlayer serverPlayer) {
+                VillagerReputationAdvancements.onVillagerPacified(serverPlayer);
+            }
             event.setCanceled(true);
             event.setCancellationResult(InteractionResult.SUCCESS);
             return;
@@ -92,6 +102,12 @@ public final class VillagerRetaliationEvents {
 
         if (event.getTarget() instanceof Villager villager
                 && VillagerRetaliationHandler.blockTradingIfHostile(villager, player)) {
+            if (player instanceof ServerPlayer serverPlayer
+                    && villager.level() instanceof ServerLevel level
+                    && VillagerReputationManager.getReputationLevel(level, villager, player.getUUID()).trustRank()
+                    <= VillagerReputationLevel.HOSTILE.trustRank()) {
+                VillagerReputationAdvancements.onTradeRefusedDueToLowReputation(serverPlayer);
+            }
             event.setCanceled(true);
             event.setCancellationResult(InteractionResult.FAIL);
             return;

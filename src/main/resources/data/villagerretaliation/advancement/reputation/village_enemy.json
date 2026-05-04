@@ -1,0 +1,23 @@
+{
+  "parent": "villagerretaliation:reputation/marked",
+  "display": {
+    "icon": {
+      "id": "minecraft:bell"
+    },
+    "title": {
+      "translate": "advancements.villagerretaliation.reputation.village_enemy.title"
+    },
+    "description": {
+      "translate": "advancements.villagerretaliation.reputation.village_enemy.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

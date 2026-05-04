@@ -1,0 +1,23 @@
+{
+  "parent": "villagerretaliation:reputation/respect_is_earned",
+  "display": {
+    "icon": {
+      "id": "minecraft:emerald_block"
+    },
+    "title": {
+      "translate": "advancements.villagerretaliation.reputation.local_legend.title"
+    },
+    "description": {
+      "translate": "advancements.villagerretaliation.reputation.local_legend.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

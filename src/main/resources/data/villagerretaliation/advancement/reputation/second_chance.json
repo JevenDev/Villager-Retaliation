@@ -1,0 +1,23 @@
+{
+  "parent": "villagerretaliation:reputation/commonfolk",
+  "display": {
+    "icon": {
+      "id": "minecraft:splash_potion"
+    },
+    "title": {
+      "translate": "advancements.villagerretaliation.reputation.second_chance.title"
+    },
+    "description": {
+      "translate": "advancements.villagerretaliation.reputation.second_chance.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

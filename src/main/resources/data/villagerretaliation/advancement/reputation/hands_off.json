@@ -1,0 +1,23 @@
+{
+  "parent": "villagerretaliation:reputation/bad_first_impression",
+  "display": {
+    "icon": {
+      "id": "minecraft:wooden_sword"
+    },
+    "title": {
+      "translate": "advancements.villagerretaliation.reputation.hands_off.title"
+    },
+    "description": {
+      "translate": "advancements.villagerretaliation.reputation.hands_off.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

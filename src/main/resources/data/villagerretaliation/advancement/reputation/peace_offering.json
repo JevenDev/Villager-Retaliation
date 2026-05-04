@@ -1,0 +1,23 @@
+{
+  "parent": "villagerretaliation:reputation/marked",
+  "display": {
+    "icon": {
+      "id": "minecraft:poppy"
+    },
+    "title": {
+      "translate": "advancements.villagerretaliation.reputation.peace_offering.title"
+    },
+    "description": {
+      "translate": "advancements.villagerretaliation.reputation.peace_offering.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

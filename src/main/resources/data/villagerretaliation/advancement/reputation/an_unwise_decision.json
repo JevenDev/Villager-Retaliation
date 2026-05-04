@@ -1,0 +1,23 @@
+{
+  "parent": "villagerretaliation:reputation/bad_first_impression",
+  "display": {
+    "icon": {
+      "id": "minecraft:iron_axe"
+    },
+    "title": {
+      "translate": "advancements.villagerretaliation.reputation.an_unwise_decision.title"
+    },
+    "description": {
+      "translate": "advancements.villagerretaliation.reputation.an_unwise_decision.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

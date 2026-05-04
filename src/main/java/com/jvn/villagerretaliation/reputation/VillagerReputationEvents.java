@@ -7,7 +7,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.Enemy;
@@ -16,6 +18,7 @@ import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
+import net.minecraft.world.entity.monster.ZombieVillager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.inventory.MerchantMenu;
@@ -24,6 +27,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.neoforged.neoforge.event.entity.living.LivingConversionEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerContainerEvent;
 import net.neoforged.neoforge.event.entity.player.TradeWithVillagerEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
@@ -36,6 +40,7 @@ public final class VillagerReputationEvents {
     private static final double FEARED_CONVERSION_SHAKE_RADIUS = 5.0D;
     private static final double FEARED_CONVERSION_SHAKE_RADIUS_SQR = FEARED_CONVERSION_SHAKE_RADIUS * FEARED_CONVERSION_SHAKE_RADIUS;
     private static final int FEARED_CONVERSION_SHAKE_TICKS = 30;
+    private static final long COMMONFOLK_VILLAGE_SCAN_INTERVAL_TICKS = 40L;
     private static final long NEGATIVE_REPUTATION_BELL_COOLDOWN_TICKS = 20L * 10L;
     private static final int NEGATIVE_REPUTATION_BELL_SEARCH_HORIZONTAL_RADIUS = 32;
     private static final int NEGATIVE_REPUTATION_BELL_SEARCH_VERTICAL_RADIUS = 8;
@@ -58,8 +63,19 @@ public final class VillagerReputationEvents {
             return;
         }
 
+        if (event.getEntity() instanceof IronGolem ironGolem) {
+            if (player instanceof ServerPlayer serverPlayer) {
+                VillagerReputationAdvancements.onIronGolemDamaged(level, serverPlayer, ironGolem);
+            }
+            return;
+        }
+
         if (!(event.getEntity() instanceof AbstractVillager villager)) {
             return;
+        }
+
+        if (player instanceof ServerPlayer serverPlayer) {
+            VillagerReputationAdvancements.onVillagerDirectlyDamaged(level, serverPlayer, villager);
         }
 
         int directPenalty = VillagerAggressionPolicy.shouldForgiveAccidentalHit(villager, player)
@@ -82,12 +98,20 @@ public final class VillagerReputationEvents {
         Optional<PlayerCredit> creditedPlayer = creditedPlayer(level, event);
         if (deceased instanceof AbstractVillager villager) {
             if (creditedPlayer.isEmpty()) {
+                if (!(event.getSource().getEntity() instanceof Player)) {
+                    findLikelyHazardAttributionPlayer(level, villager)
+                            .ifPresent(player -> VillagerReputationAdvancements.onVillagerDeath(level, villager, player, false));
+                }
                 return;
             }
             int penalty = villager instanceof Villager villageResident && villageResident.isBaby()
                     ? VillagerRetaliationConfig.WITNESSED_BABY_KILL_PENALTY.get()
                     : VillagerRetaliationConfig.WITNESSED_KILL_PENALTY.get();
             Player player = creditedPlayer.get().player();
+            if (player instanceof ServerPlayer serverPlayer) {
+                boolean directDamageSource = event.getSource().getEntity() instanceof Player;
+                VillagerReputationAdvancements.onVillagerDeath(level, villager, serverPlayer, directDamageSource);
+            }
             applyWitnessed(level, villager, player, penalty);
             if (villager instanceof Villager gossipSource) {
                 VillagerGossipHooks.spreadReputation(level, gossipSource, player.getUUID(), penalty);
@@ -104,15 +128,37 @@ public final class VillagerReputationEvents {
             }
             PlayerCredit credit = creditedPlayer.get();
             int gain = positiveWitnessGain(credit);
+            boolean hadDistrustedVillagerNearby = credit.player() instanceof ServerPlayer serverPlayer
+                    && VillagerReputationAdvancements.hasDistrustedVillagerNearby(level, deceased.blockPosition(), serverPlayer);
             applyWitnessed(level, deceased, credit.player(), gain);
             spreadWitnessGossip(level, deceased, credit.player(), gain);
+            if (gain > 0 && hadDistrustedVillagerNearby && credit.player() instanceof ServerPlayer serverPlayer) {
+                VillagerReputationAdvancements.onHeroicDefenseReputationGain(serverPlayer);
+            }
         }
+    }
+
+    private static Optional<ServerPlayer> findLikelyHazardAttributionPlayer(ServerLevel level, AbstractVillager villager) {
+        AABB area = villager.getBoundingBox().inflate(VillagerRetaliationConfig.WITNESS_RADIUS.get());
+        for (ServerPlayer player : level.getEntitiesOfClass(ServerPlayer.class, area)) {
+            if (!player.isAlive() || player.isCreative() || player.isSpectator()) {
+                continue;
+            }
+            VillagerReputationLevel reputationLevel = VillagerReputationManager.getReputationLevel(level, villager, player.getUUID());
+            if (reputationLevel.trustRank() <= VillagerReputationLevel.SUSPICIOUS.trustRank()) {
+                return Optional.of(player);
+            }
+        }
+        return Optional.empty();
     }
 
     public static void onTradeWithVillager(TradeWithVillagerEvent event) {
         AbstractVillager villager = event.getAbstractVillager();
         if (villager.level() instanceof ServerLevel level) {
             VillagerReputationManager.addTradeReputation(level, villager, event.getEntity());
+            if (event.getEntity() instanceof ServerPlayer serverPlayer) {
+                VillagerReputationAdvancements.onTradeCompleted(level, serverPlayer, villager);
+            }
         }
     }
 
@@ -162,6 +208,56 @@ public final class VillagerReputationEvents {
 
     public static void onServerTickPost(ServerTickEvent.Post event) {
         VillagerReputationManager.flushTierChangeMessages(event.getServer());
+
+        long gameTime = event.getServer().overworld().getGameTime();
+        if (gameTime % COMMONFOLK_VILLAGE_SCAN_INTERVAL_TICKS == 0L) {
+            for (ServerPlayer player : event.getServer().getPlayerList().getPlayers()) {
+                VillagerReputationAdvancements.onVillagePresenceCheck(player);
+            }
+        }
+
+        if (gameTime % SIGHT_SCAN_INTERVAL_TICKS == 0L) {
+            for (ServerPlayer player : event.getServer().getPlayerList().getPlayers()) {
+                VillagerReputationAdvancements.onPlayerHostilityCheck(player.serverLevel(), player);
+            }
+        }
+    }
+
+    public static void onLivingConversionPost(LivingConversionEvent.Post event) {
+        if (!(event.getEntity().level() instanceof ServerLevel level)) {
+            return;
+        }
+
+        LivingEntity source = event.getEntity();
+        LivingEntity outcome = event.getOutcome();
+        boolean villagerFormConversion = (source instanceof Villager || source instanceof ZombieVillager)
+                && (outcome instanceof Villager || outcome instanceof ZombieVillager);
+        if (!villagerFormConversion) {
+            return;
+        }
+
+        UUID curingPlayerId = null;
+        boolean hadKnownReputationBeforeCure = false;
+        if (source instanceof ZombieVillager zombieVillager) {
+            CompoundTag zombieTag = new CompoundTag();
+            zombieVillager.saveWithoutId(zombieTag);
+            if (zombieTag.hasUUID("ConversionPlayer")) {
+                curingPlayerId = zombieTag.getUUID("ConversionPlayer");
+            }
+            if (curingPlayerId != null) {
+                hadKnownReputationBeforeCure = VillagerReputationManager.hasStoredReputation(level, source.getUUID(), curingPlayerId);
+            }
+        }
+
+        VillagerReputationManager.transferVillagerIdentity(level, source.getUUID(), outcome.getUUID());
+
+        if (source instanceof ZombieVillager
+                && outcome instanceof Villager
+                && hadKnownReputationBeforeCure
+                && curingPlayerId != null
+                && level.getPlayerByUUID(curingPlayerId) instanceof ServerPlayer serverPlayer) {
+            VillagerReputationAdvancements.onCuredKnownZombieVillager(serverPlayer);
+        }
     }
 
     private static Optional<PlayerCredit> creditedPlayer(ServerLevel level, LivingDeathEvent event) {

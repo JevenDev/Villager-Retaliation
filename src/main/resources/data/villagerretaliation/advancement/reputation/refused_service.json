@@ -1,0 +1,23 @@
+{
+  "parent": "villagerretaliation:reputation/bad_first_impression",
+  "display": {
+    "icon": {
+      "id": "minecraft:barrier"
+    },
+    "title": {
+      "translate": "advancements.villagerretaliation.reputation.refused_service.title"
+    },
+    "description": {
+      "translate": "advancements.villagerretaliation.reputation.refused_service.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

@@ -30,6 +30,7 @@ public class VillagerRetaliation {
         NeoForge.EVENT_BUS.addListener(VillagerRetaliationEvents::onEntityTickPost);
         NeoForge.EVENT_BUS.addListener(VillagerReputationEvents::onEntityTickPost);
         NeoForge.EVENT_BUS.addListener(VillagerReputationEvents::onServerTickPost);
+        NeoForge.EVENT_BUS.addListener(VillagerReputationEvents::onLivingConversionPost);
         NeoForge.EVENT_BUS.addListener(VillagerRetaliationEvents::onEntityJoinLevel);
         NeoForge.EVENT_BUS.addListener(VillagerRetaliationEvents::onEntityInteract);
         NeoForge.EVENT_BUS.addListener(VillagerReputationEvents::onTradeWithVillager);

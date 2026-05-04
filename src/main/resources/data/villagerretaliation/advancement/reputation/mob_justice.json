@@ -1,0 +1,23 @@
+{
+  "parent": "villagerretaliation:reputation/village_enemy",
+  "display": {
+    "icon": {
+      "id": "minecraft:iron_golem_spawn_egg"
+    },
+    "title": {
+      "translate": "advancements.villagerretaliation.reputation.mob_justice.title"
+    },
+    "description": {
+      "translate": "advancements.villagerretaliation.reputation.mob_justice.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

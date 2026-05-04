@@ -1,0 +1,23 @@
+{
+  "parent": "villagerretaliation:reputation/root",
+  "display": {
+    "icon": {
+      "id": "minecraft:emerald"
+    },
+    "title": {
+      "translate": "advancements.villagerretaliation.reputation.commonfolk.title"
+    },
+    "description": {
+      "translate": "advancements.villagerretaliation.reputation.commonfolk.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

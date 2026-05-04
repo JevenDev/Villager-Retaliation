@@ -84,6 +84,10 @@ public enum VillagerReputationLevel {
         return this.trustRank > other.trustRank;
     }
 
+    public int trustRank() {
+        return this.trustRank;
+    }
+
     public int tradeReputationEquivalent() {
         return this.tradeReputationEquivalent;
     }

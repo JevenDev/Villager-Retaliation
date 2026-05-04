@@ -1,0 +1,23 @@
+{
+  "parent": "villagerretaliation:reputation/root",
+  "display": {
+    "icon": {
+      "id": "minecraft:rotten_flesh"
+    },
+    "title": {
+      "translate": "advancements.villagerretaliation.reputation.bad_first_impression.title"
+    },
+    "description": {
+      "translate": "advancements.villagerretaliation.reputation.bad_first_impression.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

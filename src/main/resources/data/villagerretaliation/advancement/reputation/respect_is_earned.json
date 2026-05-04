@@ -1,0 +1,23 @@
+{
+  "parent": "villagerretaliation:reputation/familiar_face",
+  "display": {
+    "icon": {
+      "id": "minecraft:emerald"
+    },
+    "title": {
+      "translate": "advancements.villagerretaliation.reputation.respect_is_earned.title"
+    },
+    "description": {
+      "translate": "advancements.villagerretaliation.reputation.respect_is_earned.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

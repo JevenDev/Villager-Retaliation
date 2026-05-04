@@ -106,6 +106,30 @@ public class VillagerReputationSavedData extends SavedData {
         return playerEntries == null ? null : playerEntries.get(playerId);
     }
 
+    public boolean hasEntry(UUID villagerId, UUID playerId) {
+        Map<UUID, ReputationEntry> playerEntries = this.entries.get(villagerId);
+        return playerEntries != null && playerEntries.containsKey(playerId);
+    }
+
+    public boolean transferVillagerEntries(UUID sourceVillagerId, UUID targetVillagerId) {
+        if (sourceVillagerId.equals(targetVillagerId)) {
+            return false;
+        }
+
+        Map<UUID, ReputationEntry> sourceEntries = this.entries.remove(sourceVillagerId);
+        if (sourceEntries == null || sourceEntries.isEmpty()) {
+            return false;
+        }
+
+        Map<UUID, ReputationEntry> targetEntries = this.entries.computeIfAbsent(targetVillagerId, ignored -> new HashMap<>());
+        for (Map.Entry<UUID, ReputationEntry> sourceEntry : sourceEntries.entrySet()) {
+            targetEntries.merge(sourceEntry.getKey(), sourceEntry.getValue(), VillagerReputationSavedData::preferMostRecentEntry);
+        }
+
+        setDirty();
+        return true;
+    }
+
     public void pruneOldNeutralEntries(long olderThanGameTime) {
         boolean changed = false;
         Iterator<Map.Entry<UUID, Map<UUID, ReputationEntry>>> villagerIterator = this.entries.entrySet().iterator();
@@ -126,6 +150,10 @@ public class VillagerReputationSavedData extends SavedData {
         if (changed) {
             setDirty();
         }
+    }
+
+    private static ReputationEntry preferMostRecentEntry(ReputationEntry existing, ReputationEntry incoming) {
+        return incoming.lastInteractionGameTime >= existing.lastInteractionGameTime ? incoming : existing;
     }
 
     public static class ReputationEntry {

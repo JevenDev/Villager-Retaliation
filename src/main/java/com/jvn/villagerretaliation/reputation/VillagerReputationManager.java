@@ -140,6 +140,14 @@ public final class VillagerReputationManager {
         return true;
     }
 
+    public static boolean hasStoredReputation(ServerLevel level, UUID villagerId, UUID playerId) {
+        return VillagerReputationSavedData.get(level).hasEntry(villagerId, playerId);
+    }
+
+    public static boolean transferVillagerIdentity(ServerLevel level, UUID sourceVillagerId, UUID targetVillagerId) {
+        return VillagerReputationSavedData.get(level).transferVillagerEntries(sourceVillagerId, targetVillagerId);
+    }
+
     public static void pruneOldEntries(ServerLevel level) {
         if (!VillagerRetaliationConfig.REPUTATION_DECAY_ENABLED.get()) {
             return;
@@ -190,6 +198,9 @@ public final class VillagerReputationManager {
 
         notifyTierChange(player, resolveTierChangeMessage(villager, previousLevel, newLevel));
         spawnTierChangeParticles(level, villager, previousLevel, newLevel);
+        if (player instanceof ServerPlayer serverPlayer) {
+            VillagerReputationAdvancements.onReputationTierChanged(level, villager, serverPlayer, previousLevel, newLevel);
+        }
     }
 
     private static void notifyTierChange(Player player, String message) {
