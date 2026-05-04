@@ -51,7 +51,7 @@ public final class VillagerReputationEvents {
             return;
         }
 
-        if (!(event.getEntity() instanceof Villager villager)) {
+        if (!(event.getEntity() instanceof AbstractVillager villager)) {
             return;
         }
 
@@ -60,7 +60,9 @@ public final class VillagerReputationEvents {
                 : VillagerRetaliationConfig.DIRECT_HIT_PENALTY.get();
         VillagerReputationManager.addDirectReputation(level, villager, player.getUUID(), directPenalty);
         applyWitnessed(level, villager, player, VillagerRetaliationConfig.WITNESSED_HIT_PENALTY.get());
-        VillagerGossipHooks.spreadReputation(level, villager, player.getUUID(), VillagerRetaliationConfig.WITNESSED_HIT_PENALTY.get());
+        if (villager instanceof Villager gossipSource) {
+            VillagerGossipHooks.spreadReputation(level, gossipSource, player.getUUID(), VillagerRetaliationConfig.WITNESSED_HIT_PENALTY.get());
+        }
     }
 
     public static void onLivingDeath(LivingDeathEvent event) {
@@ -71,16 +73,18 @@ public final class VillagerReputationEvents {
 
         Entity deceased = event.getEntity();
         Optional<PlayerCredit> creditedPlayer = creditedPlayer(level, event);
-        if (deceased instanceof Villager villager) {
+        if (deceased instanceof AbstractVillager villager) {
             if (creditedPlayer.isEmpty()) {
                 return;
             }
-            int penalty = villager.isBaby()
+            int penalty = villager instanceof Villager villageResident && villageResident.isBaby()
                     ? VillagerRetaliationConfig.WITNESSED_BABY_KILL_PENALTY.get()
                     : VillagerRetaliationConfig.WITNESSED_KILL_PENALTY.get();
             Player player = creditedPlayer.get().player();
             applyWitnessed(level, villager, player, penalty);
-            VillagerGossipHooks.spreadReputation(level, villager, player.getUUID(), penalty);
+            if (villager instanceof Villager gossipSource) {
+                VillagerGossipHooks.spreadReputation(level, gossipSource, player.getUUID(), penalty);
+            }
         } else if (deceased instanceof IronGolem) {
             if (creditedPlayer.isEmpty()) {
                 return;
@@ -99,8 +103,8 @@ public final class VillagerReputationEvents {
     }
 
     public static void onTradeWithVillager(TradeWithVillagerEvent event) {
-        if (event.getAbstractVillager() instanceof Villager villager
-                && villager.level() instanceof ServerLevel level) {
+        AbstractVillager villager = event.getAbstractVillager();
+        if (villager.level() instanceof ServerLevel level) {
             VillagerReputationManager.addTradeReputation(level, villager, event.getEntity());
         }
     }
@@ -113,7 +117,7 @@ public final class VillagerReputationEvents {
 
         Player player = event.getEntity();
         AABB area = player.getBoundingBox().inflate(8.0D);
-        for (Villager villager : level.getEntitiesOfClass(Villager.class, area)) {
+        for (AbstractVillager villager : level.getEntitiesOfClass(AbstractVillager.class, area)) {
             if (villager.getTradingPlayer() == player) {
                 VillagerReputationTradePricing.refreshPricesForPlayer(level, villager, player);
                 VillagerReputationManager.syncToTrackingPlayer(level, villager, player.getUUID());
@@ -123,7 +127,7 @@ public final class VillagerReputationEvents {
     }
 
     public static void onEntityTickPost(EntityTickEvent.Post event) {
-        if (!(event.getEntity() instanceof Villager villager)
+        if (!(event.getEntity() instanceof AbstractVillager villager)
                 || !(villager.level() instanceof ServerLevel level)
                 || !VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()) {
             return;
@@ -131,8 +135,10 @@ public final class VillagerReputationEvents {
 
         long gameTime = level.getGameTime();
         if (gameTime % SIGHT_SCAN_INTERVAL_TICKS == Math.floorMod(villager.getUUID().getLeastSignificantBits(), SIGHT_SCAN_INTERVAL_TICKS)) {
-            scanDespisedSight(level, villager);
-            scanReputationDrivenFlee(level, villager);
+            if (villager instanceof Villager villageResident) {
+                scanDespisedSight(level, villageResident);
+                scanReputationDrivenFlee(level, villageResident);
+            }
             scanFearedProximity(level, villager);
         }
         if (VillagerRetaliationConfig.SHOW_VILLAGER_REPUTATION_DEBUG_OVERLAY.get()
@@ -188,7 +194,7 @@ public final class VillagerReputationEvents {
 
     private static void applyWitnessed(ServerLevel level, Entity source, Player player, int amount) {
         AABB area = source.getBoundingBox().inflate(VillagerRetaliationConfig.WITNESS_RADIUS.get());
-        for (Villager witness : level.getEntitiesOfClass(Villager.class, area)) {
+        for (AbstractVillager witness : level.getEntitiesOfClass(AbstractVillager.class, area)) {
             if (witness == source || !witness.isAlive()) {
                 continue;
             }
@@ -259,7 +265,7 @@ public final class VillagerReputationEvents {
         }
     }
 
-    private static void scanFearedProximity(ServerLevel level, Villager villager) {
+    private static void scanFearedProximity(ServerLevel level, AbstractVillager villager) {
         AABB area = villager.getBoundingBox().inflate(FEARED_CONVERSION_SHAKE_RADIUS);
         for (Player player : level.getEntitiesOfClass(Player.class, area)) {
             if (!player.isAlive() || player.isCreative() || player.isSpectator()) {
@@ -275,7 +281,7 @@ public final class VillagerReputationEvents {
         }
     }
 
-    private static void syncNearbyDebug(ServerLevel level, Villager villager) {
+    private static void syncNearbyDebug(ServerLevel level, AbstractVillager villager) {
         double radius = VillagerRetaliationConfig.REPUTATION_DEBUG_OVERLAY_MAX_DISTANCE.get();
         AABB area = villager.getBoundingBox().inflate(radius);
         for (Player player : level.getEntitiesOfClass(Player.class, area)) {

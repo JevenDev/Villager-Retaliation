@@ -9,7 +9,7 @@ import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityAttachment;
-import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.client.event.RenderNameTagEvent;
 import org.joml.Matrix4f;
@@ -20,7 +20,7 @@ public final class VillagerReputationDebugOverlay {
 
     public static void onRenderNameTag(RenderNameTagEvent event) {
         if (!VillagerRetaliationConfig.SHOW_VILLAGER_REPUTATION_DEBUG_OVERLAY.get()
-                || !(event.getEntity() instanceof Villager villager)) {
+                || !(event.getEntity() instanceof AbstractVillager villager)) {
             return;
         }
 
@@ -71,7 +71,7 @@ public final class VillagerReputationDebugOverlay {
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private static void renderOverlay(RenderNameTagEvent event, Villager villager, String text) {
+    private static void renderOverlay(RenderNameTagEvent event, AbstractVillager villager, String text) {
         if (text.isEmpty()) {
             return;
         }

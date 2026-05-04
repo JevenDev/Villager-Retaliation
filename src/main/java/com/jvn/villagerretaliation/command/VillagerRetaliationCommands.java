@@ -12,7 +12,7 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
@@ -46,7 +46,7 @@ public final class VillagerRetaliationCommands {
         int changedCount = 0;
         int foundCount = 0;
 
-        for (Villager villager : level.getEntitiesOfClass(Villager.class, area, Villager::isAlive)) {
+        for (AbstractVillager villager : level.getEntitiesOfClass(AbstractVillager.class, area, AbstractVillager::isAlive)) {
             foundCount++;
             if (VillagerReputationManager.setReputationForDebug(level, villager, player.getUUID(), reputation)) {
                 changedCount++;
@@ -56,8 +56,8 @@ public final class VillagerRetaliationCommands {
         final int totalFound = foundCount;
         final int totalChanged = changedCount;
         source.sendSuccess(
-                () -> Component.literal("Set nearby villager reputation to " + reputation
-                        + " for " + totalFound + " villagers (" + totalChanged + " changed)."),
+            () -> Component.literal("Set nearby villager/trader reputation to " + reputation
+                + " for " + totalFound + " merchants (" + totalChanged + " changed)."),
                 true
         );
         return changedCount;

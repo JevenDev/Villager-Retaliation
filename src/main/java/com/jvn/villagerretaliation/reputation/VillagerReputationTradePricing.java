@@ -6,6 +6,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.MerchantMenu;
@@ -15,7 +16,7 @@ public final class VillagerReputationTradePricing {
     private VillagerReputationTradePricing() {
     }
 
-    public static void refreshPricesForPlayer(ServerLevel level, Villager villager, Player player) {
+    public static void refreshPricesForPlayer(ServerLevel level, AbstractVillager villager, Player player) {
         if (!VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()
                 || !VillagerRetaliationConfig.ENABLE_REPUTATION_TRADE_PRICING.get()
                 || villager.getOffers().isEmpty()) {
@@ -36,14 +37,25 @@ public final class VillagerReputationTradePricing {
         }
 
         if (player instanceof ServerPlayer serverPlayer && serverPlayer.containerMenu instanceof MerchantMenu menu) {
+            int merchantLevel = 0;
+            int merchantXp = 0;
+            boolean showProgressBar = false;
+            boolean canRestock = false;
+            if (villager instanceof Villager villageResident) {
+                merchantLevel = villageResident.getVillagerData().getLevel();
+                merchantXp = villageResident.getVillagerXp();
+                showProgressBar = villageResident.showProgressBar();
+                canRestock = villageResident.canRestock();
+            }
+
             menu.setOffers(villager.getOffers());
             serverPlayer.sendMerchantOffers(
                     menu.containerId,
                     villager.getOffers(),
-                    villager.getVillagerData().getLevel(),
-                    villager.getVillagerXp(),
-                    villager.showProgressBar(),
-                    villager.canRestock()
+                    merchantLevel,
+                    merchantXp,
+                    showProgressBar,
+                    canRestock
             );
         }
     }

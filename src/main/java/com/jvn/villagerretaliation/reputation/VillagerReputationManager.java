@@ -13,7 +13,9 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.ai.gossip.GossipType;
+import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.WanderingTrader;
 import net.minecraft.world.entity.player.Player;
 
 public final class VillagerReputationManager {
@@ -23,11 +25,11 @@ public final class VillagerReputationManager {
     private VillagerReputationManager() {
     }
 
-    public static void addDirectReputation(ServerLevel level, Villager villager, UUID playerId, int amount) {
+    public static void addDirectReputation(ServerLevel level, AbstractVillager villager, UUID playerId, int amount) {
         addReputation(level, villager, playerId, amount, ReputationEventType.DIRECT_HIT, villager.blockPosition());
     }
 
-    public static void addWitnessedReputation(ServerLevel level, Villager witness, UUID playerId, int amount, BlockPos eventPos) {
+    public static void addWitnessedReputation(ServerLevel level, AbstractVillager witness, UUID playerId, int amount, BlockPos eventPos) {
         addReputation(level, witness, playerId, amount, ReputationEventType.WITNESSED_HIT, eventPos);
     }
 
@@ -38,7 +40,7 @@ public final class VillagerReputationManager {
         addReputation(level, receiver, playerId, amount, ReputationEventType.GOSSIP, receiver.blockPosition());
     }
 
-    public static void addTradeReputation(ServerLevel level, Villager villager, Player player) {
+    public static void addTradeReputation(ServerLevel level, AbstractVillager villager, Player player) {
         if (!VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()) {
             return;
         }
@@ -65,31 +67,31 @@ public final class VillagerReputationManager {
         syncToTrackingPlayer(level, villager, player.getUUID());
     }
 
-    public static int getReputation(ServerLevel level, Villager villager, UUID playerId) {
+    public static int getReputation(ServerLevel level, AbstractVillager villager, UUID playerId) {
         VillagerReputationSavedData.ReputationEntry entry = VillagerReputationSavedData.get(level).get(villager.getUUID(), playerId);
         return entry == null ? 0 : entry.reputation();
     }
 
-    public static VillagerReputationLevel getReputationLevel(ServerLevel level, Villager villager, UUID playerId) {
+    public static VillagerReputationLevel getReputationLevel(ServerLevel level, AbstractVillager villager, UUID playerId) {
         return VillagerReputationLevel.fromReputation(getReputation(level, villager, playerId));
     }
 
-    public static boolean isDespised(ServerLevel level, Villager villager, Player player) {
+    public static boolean isDespised(ServerLevel level, AbstractVillager villager, Player player) {
         return getReputationLevel(level, villager, player.getUUID()) == VillagerReputationLevel.DESPISED;
     }
 
-    public static boolean isFeared(ServerLevel level, Villager villager, Player player) {
+    public static boolean isFeared(ServerLevel level, AbstractVillager villager, Player player) {
         return getReputationLevel(level, villager, player.getUUID()) == VillagerReputationLevel.FEARED;
     }
 
-    public static boolean isRespected(ServerLevel level, Villager villager, Player player) {
+    public static boolean isRespected(ServerLevel level, AbstractVillager villager, Player player) {
         VillagerReputationLevel levelForPlayer = getReputationLevel(level, villager, player.getUUID());
         return levelForPlayer == VillagerReputationLevel.RESPECTED
                 || levelForPlayer == VillagerReputationLevel.REVERED
                 || levelForPlayer == VillagerReputationLevel.ROYALTY;
     }
 
-    public static boolean setReputationForDebug(ServerLevel level, Villager villager, UUID playerId, int reputation) {
+    public static boolean setReputationForDebug(ServerLevel level, AbstractVillager villager, UUID playerId, int reputation) {
         VillagerReputationSavedData data = VillagerReputationSavedData.get(level);
         VillagerReputationSavedData.ReputationEntry entry = data.getOrCreate(villager.getUUID(), playerId);
         int previousReputation = entry.reputation();
@@ -120,7 +122,7 @@ public final class VillagerReputationManager {
         VillagerReputationSavedData.get(level).pruneOldNeutralEntries(level.getGameTime() - days * DAY_TICKS);
     }
 
-    private static void addReputation(ServerLevel level, Villager villager, UUID playerId, int amount, ReputationEventType eventType, BlockPos eventPos) {
+    private static void addReputation(ServerLevel level, AbstractVillager villager, UUID playerId, int amount, ReputationEventType eventType, BlockPos eventPos) {
         if (!VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get() || amount == 0) {
             return;
         }
@@ -152,22 +154,45 @@ public final class VillagerReputationManager {
         syncToTrackingPlayer(level, villager, playerId);
     }
 
-    private static void handleTierChange(ServerLevel level, Villager villager, Player player, VillagerReputationLevel previousLevel, VillagerReputationLevel newLevel) {
+    private static void handleTierChange(ServerLevel level, AbstractVillager villager, Player player, VillagerReputationLevel previousLevel, VillagerReputationLevel newLevel) {
         if (previousLevel == newLevel) {
             return;
         }
 
-        notifyTierChange(player, previousLevel, newLevel);
+        notifyTierChange(player, resolveTierChangeMessage(villager, previousLevel, newLevel));
         spawnTierChangeParticles(level, villager, previousLevel, newLevel);
     }
 
-    private static void notifyTierChange(Player player, VillagerReputationLevel previousLevel, VillagerReputationLevel newLevel) {
-        if (previousLevel == newLevel) {
-            return;
+    private static void notifyTierChange(Player player, String message) {
+        PENDING_TIER_MESSAGES.computeIfAbsent(player.getUUID(), ignored -> new LinkedHashMap<>())
+                .merge(message, 1, Integer::sum);
+    }
+
+    private static String resolveTierChangeMessage(AbstractVillager villager, VillagerReputationLevel previousLevel, VillagerReputationLevel newLevel) {
+        String message = newLevel.transitionMessageFrom(previousLevel);
+        if (villager.hasCustomName()) {
+            String name = villager.getName().getString();
+            String possessiveName = toPossessive(name);
+            return message
+                    .replace("A villager's", possessiveName)
+                    .replace("A villager", name)
+                    .replace("a villager's", possessiveName)
+                    .replace("a villager", name);
         }
 
-        PENDING_TIER_MESSAGES.computeIfAbsent(player.getUUID(), ignored -> new LinkedHashMap<>())
-                .merge(newLevel.transitionMessageFrom(previousLevel), 1, Integer::sum);
+        if (!(villager instanceof WanderingTrader)) {
+            return message;
+        }
+
+        return message
+                .replace("A villager's", "A wandering trader's")
+                .replace("A villager", "A wandering trader")
+                .replace("a villager's", "a wandering trader's")
+                .replace("a villager", "a wandering trader");
+    }
+
+    private static String toPossessive(String name) {
+        return name.endsWith("s") || name.endsWith("S") ? name + "'" : name + "'s";
     }
 
     public static void flushTierChangeMessages(MinecraftServer server) {
@@ -191,7 +216,7 @@ public final class VillagerReputationManager {
         }
     }
 
-    private static void spawnTierChangeParticles(ServerLevel level, Villager villager, VillagerReputationLevel previousLevel, VillagerReputationLevel newLevel) {
+    private static void spawnTierChangeParticles(ServerLevel level, AbstractVillager villager, VillagerReputationLevel previousLevel, VillagerReputationLevel newLevel) {
         double x = villager.getX();
         double y = villager.getY() + villager.getBbHeight() + 0.25D;
         double z = villager.getZ();
@@ -203,13 +228,15 @@ public final class VillagerReputationManager {
         }
     }
 
-    private static void addVanillaGossip(Villager villager, UUID playerId, GossipType type, int value) {
-        if (VillagerRetaliationConfig.ENABLE_VANILLA_GOSSIP_INTEGRATION.get() && value > 0) {
-            villager.getGossips().add(playerId, type, value);
+    private static void addVanillaGossip(AbstractVillager villager, UUID playerId, GossipType type, int value) {
+        if (VillagerRetaliationConfig.ENABLE_VANILLA_GOSSIP_INTEGRATION.get()
+                && value > 0
+                && villager instanceof Villager villageResident) {
+            villageResident.getGossips().add(playerId, type, value);
         }
     }
 
-    public static void syncToTrackingPlayer(ServerLevel level, Villager villager, UUID playerId) {
+    public static void syncToTrackingPlayer(ServerLevel level, AbstractVillager villager, UUID playerId) {
         if (level.getPlayerByUUID(playerId) instanceof ServerPlayer serverPlayer
                 && serverPlayer.distanceToSqr(villager) <= VillagerRetaliationConfig.WITNESS_RADIUS.get()
                 * VillagerRetaliationConfig.WITNESS_RADIUS.get()) {

@@ -2,7 +2,7 @@ package com.jvn.villagerretaliation.network;
 
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.AbstractVillager;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
@@ -19,7 +19,7 @@ public final class VillagerReputationNetworking {
         registrar.playToClient(FearedVillagerPulsePayload.TYPE, FearedVillagerPulsePayload.STREAM_CODEC, VillagerReputationNetworking::handleClientFearedPulse);
     }
 
-    public static void sendReputation(ServerPlayer player, Villager villager, int reputation) {
+    public static void sendReputation(ServerPlayer player, AbstractVillager villager, int reputation) {
         PacketDistributor.sendToPlayer(player, new VillagerReputationSyncPayload(
                 villager.getId(),
                 villager.getUUID(),
@@ -28,7 +28,7 @@ public final class VillagerReputationNetworking {
         ));
     }
 
-    public static void sendFearedPulse(Villager villager, int ticks) {
+    public static void sendFearedPulse(AbstractVillager villager, int ticks) {
         PacketDistributor.sendToPlayersTrackingEntity(villager, new FearedVillagerPulsePayload(villager.getId(), ticks));
     }
 

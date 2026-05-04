@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.reputation;
 import com.jvn.villagerretaliation.combat.VillagerCombatRoles;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.player.Player;
@@ -15,15 +16,15 @@ public final class VillagerAggressionPolicy {
         return true;
     }
 
-    public static boolean shouldNearbyVillagerAssist(Villager witness, Player player, ReputationEventType eventType) {
+    public static boolean shouldNearbyVillagerAssist(AbstractVillager witness, Player player, ReputationEventType eventType) {
         return !witness.isBaby();
     }
 
-    public static boolean shouldAggroFromWitnessedPlayerCrime(Villager witness, Player player) {
+    public static boolean shouldAggroFromWitnessedPlayerCrime(AbstractVillager witness, Player player) {
         return shouldAggroFromWitnessedPlayerCrime(witness, player, 0);
     }
 
-    public static boolean shouldAggroFromWitnessedPlayerCrime(Villager witness, Player player, int pendingReputationChange) {
+    public static boolean shouldAggroFromWitnessedPlayerCrime(AbstractVillager witness, Player player, int pendingReputationChange) {
         if (witness.isBaby() || !(witness.level() instanceof ServerLevel level)) {
             return false;
         }
@@ -59,7 +60,7 @@ public final class VillagerAggressionPolicy {
                 || !VillagerCombatRoles.canFightBack(villager));
     }
 
-    public static boolean shouldForgiveAccidentalHit(Villager villager, Player player) {
+    public static boolean shouldForgiveAccidentalHit(AbstractVillager villager, Player player) {
         return villager.level() instanceof ServerLevel level
                 && VillagerReputationManager.isRespected(level, villager, player);
     }

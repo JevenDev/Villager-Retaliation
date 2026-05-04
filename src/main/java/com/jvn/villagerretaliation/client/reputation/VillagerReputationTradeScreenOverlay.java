@@ -11,7 +11,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.MerchantScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.client.event.ScreenEvent;
 
@@ -34,7 +34,7 @@ public final class VillagerReputationTradeScreenOverlay {
             return;
         }
 
-        Optional<VillagerReputationClientCache.DisplayEntry> entry = findClosestCachedVillagerEntry(minecraft);
+        Optional<VillagerReputationClientCache.DisplayEntry> entry = findCachedTradingMerchantEntry(minecraft);
         if (entry.isEmpty()) {
             return;
         }
@@ -42,14 +42,17 @@ public final class VillagerReputationTradeScreenOverlay {
         renderIconAndTooltip(event, screen, minecraft, entry.get());
     }
 
-    private static Optional<VillagerReputationClientCache.DisplayEntry> findClosestCachedVillagerEntry(Minecraft minecraft) {
+    private static Optional<VillagerReputationClientCache.DisplayEntry> findCachedTradingMerchantEntry(Minecraft minecraft) {
         AABB searchArea = minecraft.player.getBoundingBox().inflate(TRADING_LOOKUP_RADIUS);
         VillagerReputationClientCache.DisplayEntry closest = null;
         double closestDistance = Double.MAX_VALUE;
-        for (Villager villager : minecraft.level.getEntitiesOfClass(Villager.class, searchArea)) {
+        for (AbstractVillager villager : minecraft.level.getEntitiesOfClass(AbstractVillager.class, searchArea)) {
             Optional<VillagerReputationClientCache.DisplayEntry> entry = VillagerReputationClientCache.get(villager.getUUID(), villager.getId());
             if (entry.isEmpty()) {
                 continue;
+            }
+            if (villager.getTradingPlayer() == minecraft.player) {
+                return entry;
             }
             double distance = minecraft.player.distanceToSqr(villager);
             if (distance < closestDistance) {
