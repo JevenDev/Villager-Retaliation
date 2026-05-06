@@ -114,12 +114,12 @@ final class VillagerRangedCombatHelper {
         int attackDelay = ATTACK_DELAY.getOrDefault(villager.getUUID(), 0);
         if (attackDelay > 0) {
             ATTACK_DELAY.put(villager.getUUID(), attackDelay - 1);
-            villager.getNavigation().moveTo(target, movementSpeed * 0.85D);
+            VillagerRetaliationRetaliationUtil.moveTowardReachableRetaliationTarget(villager, target, movementSpeed * 0.85D);
             return true;
         }
 
         if (!villager.hasLineOfSight(target)) {
-            villager.getNavigation().moveTo(target, movementSpeed);
+            VillagerRetaliationRetaliationUtil.moveTowardReachableRetaliationTarget(villager, target, movementSpeed);
             return true;
         }
 
@@ -171,7 +171,7 @@ final class VillagerRangedCombatHelper {
         if (distanceSqr <= 100.0D && seeTime >= 20) {
             villager.getNavigation().stop();
         } else {
-            villager.getNavigation().moveTo(target, movementSpeed);
+            VillagerRetaliationRetaliationUtil.moveTowardReachableRetaliationTarget(villager, target, movementSpeed);
         }
 
         if (villager.isUsingItem()) {
@@ -247,7 +247,11 @@ final class VillagerRangedCombatHelper {
 
         boolean shouldMove = (distanceSqr > 64.0D || seeTime < 5) && attackDelay == 0;
         if (shouldMove) {
-            villager.getNavigation().moveTo(target, state == CrossbowState.UNCHARGED ? movementSpeed : 0.25D);
+            VillagerRetaliationRetaliationUtil.moveTowardReachableRetaliationTarget(
+                    villager,
+                    target,
+                    state == CrossbowState.UNCHARGED ? movementSpeed : 0.25D
+            );
         } else {
             villager.getNavigation().stop();
         }

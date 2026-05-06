@@ -136,6 +136,7 @@ public final class WanderingTraderRetaliationHandler {
         ServerLevel level = retaliationTarget.level();
         LivingEntity target = retaliationTarget.target();
         long gameTime = retaliationTarget.gameTime();
+        double distanceSqr = trader.distanceToSqr(target);
         if (!retaliationTarget.targetCurrentlyHostile()) {
             trader.setAggressive(false);
             trader.setTarget(null);
@@ -143,6 +144,10 @@ public final class WanderingTraderRetaliationHandler {
             VillagerRetaliationRetaliationUtil.restoreCombatMovement(trader);
             RETALIATION.restoreTemporaryWeapon(trader);
             trader.getNavigation().stop();
+            return;
+        }
+        if (!VillagerRetaliationRetaliationUtil.isWithinRetaliationPursuitRange(trader, target)) {
+            clearAnger(trader);
             return;
         }
 
@@ -156,7 +161,6 @@ public final class WanderingTraderRetaliationHandler {
 
         equipCombatWeapon(trader);
 
-        double distanceSqr = trader.distanceToSqr(target);
         trader.getLookControl().setLookAt(target, 30.0F, 30.0F);
         VillagerRetaliationRetaliationUtil.boostCombatMovement(trader);
 
@@ -165,7 +169,7 @@ public final class WanderingTraderRetaliationHandler {
             return;
         }
 
-        trader.getNavigation().moveTo(target, WanderingTraderCombatRoles.movementSpeed(trader));
+        VillagerRetaliationRetaliationUtil.moveTowardReachableRetaliationTarget(trader, target, WanderingTraderCombatRoles.movementSpeed(trader));
         if (VillagerRetaliationRetaliationUtil.canUseMeleeCombatMode(trader)
                 && VillagerRetaliationRetaliationUtil.canMeleeHit(trader, target)
                 && RETALIATION.isAttackReady(trader, gameTime)) {
@@ -299,7 +303,6 @@ public final class WanderingTraderRetaliationHandler {
         if (!trader.isAlive()
                 || !WanderingTraderCombatRoles.canScavengeGroundWeapons(trader)
                 || VillagerRetaliationVillagerWeapons.hasTrackedPickup(trader)
-                || VillagerRetaliationVillagerWeapons.hasUsableWeapon(trader)
                 || !VillagerRetaliationVillagerCombatUtil.isThreatened(trader)) {
             return false;
         }

@@ -45,8 +45,6 @@ public final class VillagerRetaliationVillagerCombatUtil {
         AABB searchArea = villager.getBoundingBox().inflate(radius);
         LivingEntity closestVisible = null;
         double closestVisibleDistance = Double.MAX_VALUE;
-        LivingEntity closestAny = null;
-        double closestAnyDistance = Double.MAX_VALUE;
 
         for (LivingEntity candidate : level.getEntitiesOfClass(
                 LivingEntity.class,
@@ -54,18 +52,13 @@ public final class VillagerRetaliationVillagerCombatUtil {
                 target -> isNaturalHostileTarget(villager, target)
         )) {
             double distance = villager.distanceToSqr(candidate);
-            if (distance < closestAnyDistance) {
-                closestAnyDistance = distance;
-                closestAny = candidate;
-            }
-
             if (villager.hasLineOfSight(candidate) && distance < closestVisibleDistance) {
                 closestVisibleDistance = distance;
                 closestVisible = candidate;
             }
         }
 
-        return Optional.ofNullable(closestVisible != null ? closestVisible : closestAny);
+        return Optional.ofNullable(closestVisible);
     }
 
     public static Optional<LivingEntity> resolveAttacker(DamageSource source) {

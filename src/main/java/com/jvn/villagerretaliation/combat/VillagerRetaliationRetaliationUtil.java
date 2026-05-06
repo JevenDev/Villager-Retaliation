@@ -27,6 +27,7 @@ import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -34,6 +35,7 @@ import net.minecraft.world.phys.Vec3;
 public final class VillagerRetaliationRetaliationUtil {
     private static final String PERSISTENT_TARGET_UUID = "Target";
     private static final String PERSISTENT_LAST_SEEN_TICK = "LastSeenTick";
+    private static final double MAX_RETALIATION_PURSUIT_DISTANCE_SQR = 1024.0D;
     private static final int PACIFY_EMERALD_MIN_COST = 3;
     private static final int PACIFY_EMERALD_MAX_COST = 32;
     private static final ResourceLocation COMBAT_MOVEMENT_SPEED_MODIFIER_ID =
@@ -83,7 +85,7 @@ public final class VillagerRetaliationRetaliationUtil {
         if (!itemEntity.isAlive()
                 || itemEntity.hasPickUpDelay()
                 || itemEntity.getItem().isEmpty()
-                || !VillagerRetaliationVillagerWeapons.isUsableWeapon(itemEntity.getItem())) {
+                || !VillagerRetaliationVillagerWeapons.shouldPathfindForWeapon(villager, itemEntity.getItem())) {
             return false;
         }
 
@@ -281,6 +283,25 @@ public final class VillagerRetaliationRetaliationUtil {
         }
 
         return inMeleeRange && hasClearMeleeLine(villager, target);
+    }
+
+    public static boolean isWithinRetaliationPursuitRange(AbstractVillager villager, LivingEntity target) {
+        return villager.distanceToSqr(target) <= MAX_RETALIATION_PURSUIT_DISTANCE_SQR;
+    }
+
+    public static boolean moveTowardReachableRetaliationTarget(AbstractVillager villager, LivingEntity target, double movementSpeed) {
+        if (!isWithinRetaliationPursuitRange(villager, target)) {
+            villager.getNavigation().stop();
+            return false;
+        }
+
+        Path path = villager.getNavigation().createPath(target, 0);
+        if (path == null || !path.canReach()) {
+            villager.getNavigation().stop();
+            return false;
+        }
+
+        return villager.getNavigation().moveTo(path, movementSpeed);
     }
 
     private static boolean hasClearMeleeLine(AbstractVillager villager, LivingEntity target) {

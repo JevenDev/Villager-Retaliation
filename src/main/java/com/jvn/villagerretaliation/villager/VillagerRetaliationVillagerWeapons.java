@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Predicate;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -62,23 +63,30 @@ public final class VillagerRetaliationVillagerWeapons {
 
     public static Optional<ItemEntity> findNearestWeapon(AbstractVillager villager) {
         AABB searchBox = villager.getBoundingBox().inflate(WEAPON_SEARCH_RADIUS);
+        ItemStack equippedWeapon = getPrimaryWeapon(villager);
         ItemEntity bestWeapon = null;
         int bestPriority = Integer.MAX_VALUE;
+        int bestTier = Integer.MIN_VALUE;
+        boolean bestEnchanted = false;
         double bestDistanceSqr = Double.MAX_VALUE;
         for (ItemEntity itemEntity : villager.level().getEntitiesOfClass(ItemEntity.class, searchBox, VillagerRetaliationVillagerWeapons::canBePickedUp)) {
             ItemStack itemStack = itemEntity.getItem();
-            if (!isUsableWeapon(itemStack)) {
+            if (!shouldPathfindForWeapon(villager, equippedWeapon, itemStack)) {
                 continue;
             }
 
             int priority = pickupPriority(itemStack);
+            int tier = weaponTier(itemStack);
+            boolean enchanted = itemStack.isEnchanted();
             double distanceSqr = villager.distanceToSqr(itemEntity);
-            if (bestWeapon != null && (priority > bestPriority || priority == bestPriority && distanceSqr >= bestDistanceSqr)) {
+            if (bestWeapon != null && !isBetterPickupCandidate(priority, tier, enchanted, distanceSqr, bestPriority, bestTier, bestEnchanted, bestDistanceSqr)) {
                 continue;
             }
 
             bestWeapon = itemEntity;
             bestPriority = priority;
+            bestTier = tier;
+            bestEnchanted = enchanted;
             bestDistanceSqr = distanceSqr;
         }
 
@@ -185,6 +193,10 @@ public final class VillagerRetaliationVillagerWeapons {
         return stack.is(Tags.Items.TOOLS_SPEAR) || stack.is(Items.TRIDENT) || stack.getItem() instanceof TridentItem;
     }
 
+    public static boolean shouldPathfindForWeapon(AbstractVillager villager, ItemStack groundWeapon) {
+        return shouldPathfindForWeapon(villager, getPrimaryWeapon(villager), groundWeapon);
+    }
+
     private static boolean isMeleeWeapon(ItemStack stack) {
         return stack.is(Tags.Items.MELEE_WEAPON_TOOLS)
                 || stack.is(Tags.Items.MINING_TOOL_TOOLS)
@@ -218,6 +230,58 @@ public final class VillagerRetaliationVillagerWeapons {
         villager.getPersistentData().put(PERSISTENT_PICKED_UP_MAINHAND_TAG, (CompoundTag) trackedPickup.saveOptional(villager.level().registryAccess()));
     }
 
+    private static boolean shouldPathfindForWeapon(AbstractVillager villager, ItemStack equippedWeapon, ItemStack groundWeapon) {
+        if (!isUsableWeapon(groundWeapon) || hasTrackedPickup(villager)) {
+            return false;
+        }
+
+        if (!isUsableWeapon(equippedWeapon)) {
+            return true;
+        }
+
+        int equippedPriority = pickupPriority(equippedWeapon);
+        int groundPriority = pickupPriority(groundWeapon);
+        if (groundPriority < equippedPriority) {
+            return true;
+        }
+        if (groundPriority > equippedPriority) {
+            return false;
+        }
+
+        int equippedTier = weaponTier(equippedWeapon);
+        int groundTier = weaponTier(groundWeapon);
+        if (groundTier > equippedTier) {
+            return true;
+        }
+        if (groundTier < equippedTier) {
+            return false;
+        }
+
+        return groundWeapon.isEnchanted() && !equippedWeapon.isEnchanted();
+    }
+
+    private static boolean isBetterPickupCandidate(
+            int priority,
+            int tier,
+            boolean enchanted,
+            double distanceSqr,
+            int bestPriority,
+            int bestTier,
+            boolean bestEnchanted,
+            double bestDistanceSqr
+    ) {
+        if (priority != bestPriority) {
+            return priority < bestPriority;
+        }
+        if (tier != bestTier) {
+            return tier > bestTier;
+        }
+        if (enchanted != bestEnchanted) {
+            return enchanted;
+        }
+        return distanceSqr < bestDistanceSqr;
+    }
+
     private static int pickupPriority(ItemStack stack) {
         if (isRangedWeapon(stack)) {
             return 0;
@@ -226,5 +290,35 @@ public final class VillagerRetaliationVillagerWeapons {
             return 1;
         }
         return 2;
+    }
+
+    private static int weaponTier(ItemStack stack) {
+        if (isTridentWeapon(stack)) {
+            return 4;
+        }
+        if (isCrossbowWeapon(stack)) {
+            return 2;
+        }
+        if (isBowWeapon(stack)) {
+            return 1;
+        }
+
+        String itemPath = BuiltInRegistries.ITEM.getKey(stack.getItem()).getPath();
+        if (itemPath.startsWith("netherite_")) {
+            return 4;
+        }
+        if (itemPath.startsWith("diamond_")) {
+            return 3;
+        }
+        if (itemPath.startsWith("iron_")) {
+            return 2;
+        }
+        if (itemPath.startsWith("stone_")) {
+            return 1;
+        }
+        if (itemPath.startsWith("wooden_") || itemPath.startsWith("golden_")) {
+            return 0;
+        }
+        return 0;
     }
 }

@@ -304,6 +304,7 @@ public final class VillagerRetaliationHandler {
         ServerLevel level = retaliationTarget.level();
         LivingEntity target = retaliationTarget.target();
         long gameTime = retaliationTarget.gameTime();
+        double distanceSqr = villager.distanceToSqr(target);
         if (!retaliationTarget.targetCurrentlyHostile()) {
             villager.setAggressive(false);
             villager.setChasing(false);
@@ -313,13 +314,17 @@ public final class VillagerRetaliationHandler {
             villager.getNavigation().stop();
             return;
         }
+        if (!VillagerRetaliationRetaliationUtil.isWithinRetaliationPursuitRange(villager, target)) {
+            clearAnger(villager);
+            handlePassivePotionState(villager);
+            return;
+        }
 
         suppressVanillaPanic(villager);
         villager.setAggressive(true);
         villager.setChasing(true);
         villager.setTarget(target);
 
-        double distanceSqr = villager.distanceToSqr(target);
         villager.getLookControl().setLookAt(target, 30.0F, 30.0F);
         if (VillagerClericPotionHelper.tickDrinkingIfActive(villager)) {
             villager.getNavigation().stop();
@@ -355,7 +360,7 @@ public final class VillagerRetaliationHandler {
 
         double movementSpeed = VillagerCombatRoles.movementSpeed(villager)
                 * (isArmorerActivelyBlocking(villager) ? ARMORER_BLOCKING_SPEED_FACTOR : 1.0D);
-        villager.getNavigation().moveTo(target, movementSpeed);
+        VillagerRetaliationRetaliationUtil.moveTowardReachableRetaliationTarget(villager, target, movementSpeed);
         if (VillagerRetaliationRetaliationUtil.canUseMeleeCombatMode(villager)
                 && VillagerRetaliationRetaliationUtil.canMeleeHit(villager, target)
                 && allowMeleeAttack
@@ -470,7 +475,6 @@ public final class VillagerRetaliationHandler {
                 || !VillagerRetaliationVillagerRules.shouldSuppressFleeingBehavior(villager)
                 || !VillagerCombatRoles.canScavengeGroundWeapons(villager)
                 || VillagerRetaliationVillagerWeapons.hasTrackedPickup(villager)
-                || VillagerRetaliationVillagerWeapons.hasUsableWeapon(villager)
                 || !VillagerRetaliationVillagerCombatUtil.isThreatened(villager)) {
             return false;
         }
