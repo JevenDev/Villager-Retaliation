@@ -9,12 +9,16 @@ import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.util.VillagerRetaliationHazardAttribution;
 import com.jvn.villagerretaliation.util.VillagerRetaliationRandomUtil;
+import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.villager.VillagerFleeBehaviorHandler;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.npc.WanderingTrader;
@@ -55,6 +59,11 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onLivingDamagePre(LivingIncomingDamageEvent event) {
+        if (shouldCancelVillagerGolemDamage(event.getEntity(), event.getSource().getEntity(), event.getSource().getDirectEntity())) {
+            event.setCanceled(true);
+            event.setAmount(0.0F);
+            return;
+        }
         VillagerRetaliationHandler.onLivingDamagePre(event);
     }
 
@@ -70,6 +79,7 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onEntityTickPost(EntityTickEvent.Post event) {
+        clearIronGolemTargetingVillagers(event.getEntity());
         VillagerRetaliationHandler.onEntityTickPost(event);
         WanderingTraderRetaliationHandler.onEntityTickPost(event);
         VillagerFleeBehaviorHandler.onEntityTickPost(event);
@@ -243,5 +253,26 @@ public final class VillagerRetaliationEvents {
     public static void onEntityLeaveLevel(EntityLeaveLevelEvent event) {
         VillagerRetaliationHandler.onEntityLeaveLevel(event);
         WanderingTraderRetaliationHandler.onEntityLeaveLevel(event);
+    }
+
+    private static boolean shouldCancelVillagerGolemDamage(Entity victim, Entity attacker, Entity directAttacker) {
+        return VillagerRetaliationVillagerCombatUtil.isVillagerGolemConflict(victim, attacker)
+                || VillagerRetaliationVillagerCombatUtil.isVillagerGolemConflict(victim, directAttacker);
+    }
+
+    private static void clearIronGolemTargetingVillagers(Entity entity) {
+        if (!(entity instanceof IronGolem ironGolem)) {
+            return;
+        }
+
+        LivingEntity target = ironGolem.getTarget();
+        if (target == null || !VillagerRetaliationVillagerCombatUtil.isVillagerGolemConflict(ironGolem, target)) {
+            return;
+        }
+
+        ironGolem.setTarget(null);
+        ironGolem.setLastHurtByMob(null);
+        ironGolem.setPersistentAngerTarget(null);
+        ironGolem.stopBeingAngry();
     }
 }

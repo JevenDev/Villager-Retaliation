@@ -7,6 +7,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.npc.AbstractVillager;
@@ -86,13 +87,18 @@ public final class VillagerRetaliationVillagerCombatUtil {
     }
 
     public static boolean shouldIgnoreAttacker(LivingEntity attacker) {
-        if (attacker instanceof AbstractVillager) {
+        if (attacker instanceof AbstractVillager || attacker instanceof IronGolem) {
             return true;
         }
 
         return attacker instanceof Player player
                 && (player.isSpectator()
                 || VillagerRetaliationConfig.NEARBY_VILLAGERS_IGNORE_CREATIVE_PLAYERS.get() && player.isCreative());
+    }
+
+    public static boolean isVillagerGolemConflict(Entity first, Entity second) {
+        return first instanceof IronGolem && second instanceof AbstractVillager
+                || first instanceof AbstractVillager && second instanceof IronGolem;
     }
 
     public static InteractionHand selectAttackHand(AbstractVillager villager) {
