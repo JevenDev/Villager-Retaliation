@@ -340,6 +340,6 @@ public final class VillagerReputationAdvancements {
     }
 
     private static ResourceLocation advancementId(String path) {
-        return ResourceLocation.fromNamespaceAndPath(VillagerRetaliation.MOD_ID, path);
+        return VillagerRetaliation.id(path);
     }
 }

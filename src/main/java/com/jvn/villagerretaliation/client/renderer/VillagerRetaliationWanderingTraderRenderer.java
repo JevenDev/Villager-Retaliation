@@ -12,7 +12,7 @@ public class VillagerRetaliationWanderingTraderRenderer extends AbstractVillager
     private static final ResourceLocation VANILLA_TRADER_SKIN =
             ResourceLocation.withDefaultNamespace("textures/entity/wandering_trader.png");
     private static final ResourceLocation TRADER_SKIN =
-            ResourceLocation.fromNamespaceAndPath(VillagerRetaliation.MOD_ID, "textures/entity/wandering_trader/wandering_trader.png");
+            VillagerRetaliation.id("textures/entity/wandering_trader/wandering_trader.png");
 
     public VillagerRetaliationWanderingTraderRenderer(EntityRendererProvider.Context context) {
         super(context, ModelLayers.WANDERING_TRADER, DefaultWanderingTraderPoseProvider.INSTANCE, VANILLA_TRADER_SKIN, TRADER_SKIN);

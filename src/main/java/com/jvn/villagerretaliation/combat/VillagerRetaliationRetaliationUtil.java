@@ -39,7 +39,7 @@ public final class VillagerRetaliationRetaliationUtil {
     private static final int PACIFY_EMERALD_MIN_COST = 3;
     private static final int PACIFY_EMERALD_MAX_COST = 32;
     private static final ResourceLocation COMBAT_MOVEMENT_SPEED_MODIFIER_ID =
-            ResourceLocation.fromNamespaceAndPath(VillagerRetaliation.MOD_ID, "combat_movement_speed");
+            VillagerRetaliation.id("combat_movement_speed");
     private static final AttributeModifier COMBAT_MOVEMENT_SPEED_MODIFIER =
             new AttributeModifier(COMBAT_MOVEMENT_SPEED_MODIFIER_ID, 0.25D, AttributeModifier.Operation.ADD_VALUE);
 

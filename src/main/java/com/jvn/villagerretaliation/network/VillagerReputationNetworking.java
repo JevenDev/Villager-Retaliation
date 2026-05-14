@@ -1,22 +1,33 @@
 package com.jvn.villagerretaliation.network;
 
+import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
+import com.jvn.toucanlib.neoforge.network.ToucanNetwork;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.npc.AbstractVillager;
-import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
-import net.neoforged.neoforge.network.handling.IPayloadContext;
-import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
 public final class VillagerReputationNetworking {
+    private static final String PROTOCOL_VERSION = "1";
+
     private VillagerReputationNetworking() {
     }
 
     public static void registerPayloads(RegisterPayloadHandlersEvent event) {
-        PayloadRegistrar registrar = event.registrar("1");
-        registrar.playToClient(VillagerReputationSyncPayload.TYPE, VillagerReputationSyncPayload.STREAM_CODEC, VillagerReputationNetworking::handleClientSync);
-        registrar.playToClient(FearedVillagerPulsePayload.TYPE, FearedVillagerPulsePayload.STREAM_CODEC, VillagerReputationNetworking::handleClientFearedPulse);
+        ToucanNetwork network = ToucanNetwork.create(VillagerRetaliation.MOD_ID, PROTOCOL_VERSION, event);
+        network.safePlayToClientThreaded(
+                VillagerReputationSyncPayload.TYPE,
+                VillagerReputationSyncPayload.STREAM_CODEC,
+                "com.jvn.villagerretaliation.client.reputation.VillagerReputationClientCache",
+                "accept"
+        );
+        network.safePlayToClientThreaded(
+                FearedVillagerPulsePayload.TYPE,
+                FearedVillagerPulsePayload.STREAM_CODEC,
+                "com.jvn.villagerretaliation.client.reputation.FearedVillagerAnimationClientCache",
+                "accept"
+        );
     }
 
     public static void sendReputation(ServerPlayer player, AbstractVillager villager, int reputation) {
@@ -30,17 +41,5 @@ public final class VillagerReputationNetworking {
 
     public static void sendFearedPulse(AbstractVillager villager, int ticks) {
         PacketDistributor.sendToPlayersTrackingEntity(villager, new FearedVillagerPulsePayload(villager.getId(), ticks));
-    }
-
-    private static void handleClientSync(VillagerReputationSyncPayload payload, IPayloadContext context) {
-        if (FMLEnvironment.dist.isClient()) {
-            context.enqueueWork(() -> com.jvn.villagerretaliation.client.reputation.VillagerReputationClientCache.accept(payload));
-        }
-    }
-
-    private static void handleClientFearedPulse(FearedVillagerPulsePayload payload, IPayloadContext context) {
-        if (FMLEnvironment.dist.isClient()) {
-            context.enqueueWork(() -> com.jvn.villagerretaliation.client.reputation.FearedVillagerAnimationClientCache.accept(payload));
-        }
     }
 }

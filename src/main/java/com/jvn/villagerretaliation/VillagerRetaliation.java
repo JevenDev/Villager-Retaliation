@@ -5,37 +5,46 @@ import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.event.VillagerRetaliationEvents;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.reputation.VillagerReputationEvents;
+import com.jvn.toucanlib.neoforge.event.ToucanEventBuses;
+import com.jvn.toucanlib.util.ToucanIds;
+import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
-import net.neoforged.neoforge.common.NeoForge;
 
 @Mod(VillagerRetaliation.MOD_ID)
 public class VillagerRetaliation {
     public static final String MOD_ID = "villagerretaliation";
+    private static final ToucanIds IDS = ToucanIds.create(MOD_ID);
+
+    public static ResourceLocation id(String path) {
+        return IDS.id(path);
+    }
 
     public VillagerRetaliation(IEventBus modEventBus, ModContainer modContainer) {
         modContainer.registerConfig(ModConfig.Type.COMMON, VillagerRetaliationConfig.SPEC);
-        modEventBus.addListener(VillagerRetaliationEvents::onEntityAttributeModification);
-        modEventBus.addListener(VillagerReputationNetworking::registerPayloads);
-        NeoForge.EVENT_BUS.addListener(VillagerRetaliationCommands::onRegisterCommands);
-        NeoForge.EVENT_BUS.addListener(VillagerRetaliationEvents::onLivingDamagePre);
-        NeoForge.EVENT_BUS.addListener(VillagerRetaliationEvents::onLivingDamage);
-        NeoForge.EVENT_BUS.addListener(VillagerReputationEvents::onLivingDamage);
-        NeoForge.EVENT_BUS.addListener(VillagerRetaliationEvents::onLivingDeath);
-        NeoForge.EVENT_BUS.addListener(VillagerReputationEvents::onLivingDeath);
-        NeoForge.EVENT_BUS.addListener(VillagerRetaliationEvents::onLivingDrops);
-        NeoForge.EVENT_BUS.addListener(VillagerRetaliationEvents::onEntityTickPre);
-        NeoForge.EVENT_BUS.addListener(VillagerRetaliationEvents::onEntityTickPost);
-        NeoForge.EVENT_BUS.addListener(VillagerReputationEvents::onEntityTickPost);
-        NeoForge.EVENT_BUS.addListener(VillagerReputationEvents::onServerTickPost);
-        NeoForge.EVENT_BUS.addListener(VillagerReputationEvents::onLivingConversionPost);
-        NeoForge.EVENT_BUS.addListener(VillagerRetaliationEvents::onEntityJoinLevel);
-        NeoForge.EVENT_BUS.addListener(VillagerRetaliationEvents::onEntityInteract);
-        NeoForge.EVENT_BUS.addListener(VillagerRetaliationEvents::onRightClickBlock);
-        NeoForge.EVENT_BUS.addListener(VillagerReputationEvents::onTradeWithVillager);
-        NeoForge.EVENT_BUS.addListener(VillagerReputationEvents::onContainerOpen);
-        NeoForge.EVENT_BUS.addListener(VillagerRetaliationEvents::onEntityLeaveLevel);
+        ToucanEventBuses.on(modEventBus)
+                .listener(VillagerRetaliationEvents::onEntityAttributeModification)
+                .listener(VillagerReputationNetworking::registerPayloads);
+        ToucanEventBuses.game()
+                .listener(VillagerRetaliationCommands::onRegisterCommands)
+                .listener(VillagerRetaliationEvents::onLivingDamagePre)
+                .listener(VillagerRetaliationEvents::onLivingDamage)
+                .listener(VillagerReputationEvents::onLivingDamage)
+                .listener(VillagerRetaliationEvents::onLivingDeath)
+                .listener(VillagerReputationEvents::onLivingDeath)
+                .listener(VillagerRetaliationEvents::onLivingDrops)
+                .listener(VillagerRetaliationEvents::onEntityTickPre)
+                .listener(VillagerRetaliationEvents::onEntityTickPost)
+                .listener(VillagerReputationEvents::onEntityTickPost)
+                .listener(VillagerReputationEvents::onServerTickPost)
+                .listener(VillagerReputationEvents::onLivingConversionPost)
+                .listener(VillagerRetaliationEvents::onEntityJoinLevel)
+                .listener(VillagerRetaliationEvents::onEntityInteract)
+                .listener(VillagerRetaliationEvents::onRightClickBlock)
+                .listener(VillagerReputationEvents::onTradeWithVillager)
+                .listener(VillagerReputationEvents::onContainerOpen)
+                .listener(VillagerRetaliationEvents::onEntityLeaveLevel);
     }
 }

@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation;
 
+import com.jvn.toucanlib.neoforge.config.ToucanConfigScreens;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -11,7 +12,7 @@ import net.neoforged.neoforge.common.NeoForge;
 @Mod(value = VillagerRetaliation.MOD_ID, dist = Dist.CLIENT)
 public final class VillagerRetaliationClient {
     public VillagerRetaliationClient(IEventBus modEventBus, ModContainer modContainer) {
-        modContainer.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
+        ToucanConfigScreens.register(modContainer, (IConfigScreenFactory) ConfigurationScreen::new);
         modEventBus.addListener(com.jvn.villagerretaliation.client.VillagerRetaliationClientRenderers::registerRenderers);
         modEventBus.addListener(com.jvn.villagerretaliation.client.VillagerRetaliationClientRenderers::registerLayerDefinitions);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.reputation.VillagerReputationDebugOverlay::onRenderNameTag);

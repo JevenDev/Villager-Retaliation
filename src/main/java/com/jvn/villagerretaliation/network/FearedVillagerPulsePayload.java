@@ -4,11 +4,10 @@ import com.jvn.villagerretaliation.VillagerRetaliation;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
 
 public record FearedVillagerPulsePayload(int entityId, int ticks) implements CustomPacketPayload {
     public static final Type<FearedVillagerPulsePayload> TYPE = new Type<>(
-            ResourceLocation.fromNamespaceAndPath(VillagerRetaliation.MOD_ID, "feared_villager_pulse")
+            VillagerRetaliation.id("feared_villager_pulse")
     );
     public static final StreamCodec<RegistryFriendlyByteBuf, FearedVillagerPulsePayload> STREAM_CODEC =
             StreamCodec.of(FearedVillagerPulsePayload::encode, FearedVillagerPulsePayload::decode);

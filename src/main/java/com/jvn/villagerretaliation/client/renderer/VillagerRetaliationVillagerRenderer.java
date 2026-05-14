@@ -12,7 +12,7 @@ import net.minecraft.world.entity.npc.Villager;
 public class VillagerRetaliationVillagerRenderer extends AbstractVillagerRetaliationVillagerRenderer<Villager> {
     private static final ResourceLocation VANILLA_VILLAGER_SKIN = ResourceLocation.withDefaultNamespace("textures/entity/villager/villager.png");
     private static final ResourceLocation COMBAT_VILLAGER_SKIN =
-            ResourceLocation.fromNamespaceAndPath(VillagerRetaliation.MOD_ID, "textures/entity/villager/villager.png");
+            VillagerRetaliation.id("textures/entity/villager/villager.png");
 
     public VillagerRetaliationVillagerRenderer(EntityRendererProvider.Context context) {
         super(context, ModelLayers.VILLAGER, DefaultVillagerPoseProvider.INSTANCE, VANILLA_VILLAGER_SKIN, COMBAT_VILLAGER_SKIN);

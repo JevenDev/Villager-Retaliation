@@ -12,7 +12,6 @@ import net.minecraft.client.model.geom.builders.CubeListBuilder;
 import net.minecraft.client.model.geom.builders.LayerDefinition;
 import net.minecraft.client.model.geom.builders.MeshDefinition;
 import net.minecraft.client.model.geom.builders.PartDefinition;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.npc.AbstractVillager;
@@ -20,7 +19,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 
 public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extends BaseVillagerModel<T> {
     public static final ModelLayerLocation LAYER_LOCATION =
-            new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(VillagerRetaliation.MOD_ID, "villager"), "main");
+            new ModelLayerLocation(VillagerRetaliation.id("villager"), "main");
 
     private final ModelPart root;
     private final ModelPart body;

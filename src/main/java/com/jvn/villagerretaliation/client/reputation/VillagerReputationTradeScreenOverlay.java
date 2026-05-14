@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.client.reputation;
 
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
+import com.jvn.toucanlib.client.ToucanScreenRects;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -77,7 +78,7 @@ public final class VillagerReputationTradeScreenOverlay {
 
         int mouseX = event.getMouseX();
         int mouseY = event.getMouseY();
-        if (!isHovering(iconX, iconY, ICON_SIZE, ICON_SIZE, mouseX, mouseY)) {
+        if (!ToucanScreenRects.contains(mouseX, mouseY, iconX, iconY, ICON_SIZE, ICON_SIZE)) {
             return;
         }
 
@@ -85,10 +86,6 @@ public final class VillagerReputationTradeScreenOverlay {
         Component tierAndValue = Component.literal(formatLevel(entry.level()) + ": " + entry.reputation())
                 .withStyle(colorFor(entry.level()));
         guiGraphics.renderTooltip(minecraft.font, List.of(title, tierAndValue), Optional.empty(), mouseX, mouseY);
-    }
-
-    private static boolean isHovering(int x, int y, int width, int height, int mouseX, int mouseY) {
-        return mouseX >= x && mouseX < x + width && mouseY >= y && mouseY < y + height;
     }
 
     private static String formatLevel(VillagerReputationLevel level) {
@@ -125,9 +122,6 @@ public final class VillagerReputationTradeScreenOverlay {
     }
 
     private static ResourceLocation icon(String name) {
-        return ResourceLocation.fromNamespaceAndPath(
-                VillagerRetaliation.MOD_ID,
-                "textures/gui/container/icons/" + name + ".png"
-        );
+        return VillagerRetaliation.id("textures/gui/container/icons/" + name + ".png");
     }
 }
