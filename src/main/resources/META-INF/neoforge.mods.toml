@@ -27,3 +27,10 @@ type="required"
 versionRange="${minecraft_version_range}"
 ordering="NONE"
 side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="toucanlib"
+type="required"
+versionRange="[${toucanlib_version},)"
+ordering="NONE"
+side="BOTH"
