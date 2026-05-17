@@ -193,6 +193,5 @@ public final class VillagerInteractionService {
 
     private static void focusVillagerOnPlayer(Villager villager, ServerPlayer player) {
         villager.getLookControl().setLookAt(player, 30.0F, 30.0F);
-        villager.lookAt(player, 30.0F, 30.0F);
     }
 }

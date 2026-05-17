@@ -6,7 +6,6 @@ import com.jvn.villagerretaliation.network.VillagerDialogueRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerTradeRequestPayload;
 import java.util.ArrayList;
 import java.util.List;
-import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
@@ -302,8 +301,6 @@ public class VillagerInteractionScreen extends Screen {
         Entity entity = minecraft.level.getEntity(this.villagerEntityId);
         if (entity instanceof Villager villager) {
             villager.getLookControl().setLookAt(minecraft.player, 30.0F, 30.0F);
-            villager.lookAt(EntityAnchorArgument.Anchor.EYES, minecraft.player.getEyePosition());
-            villager.setYBodyRot(villager.getYHeadRot());
         }
         // TODO: Add subtle client-only camera/FOV easing once it can be tested across first- and third-person safely.
     }

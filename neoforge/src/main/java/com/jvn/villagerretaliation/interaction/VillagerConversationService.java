@@ -141,7 +141,6 @@ public final class VillagerConversationService {
 
     private static void holdVillager(Villager villager, ServerPlayer player) {
         villager.getLookControl().setLookAt(player, 30.0F, 30.0F);
-        villager.lookAt(player, 30.0F, 30.0F);
         if (VillagerRetaliationConfig.FREEZE_VILLAGER_DURING_DIALOGUE.get()) {
             villager.getNavigation().stop();
         }
