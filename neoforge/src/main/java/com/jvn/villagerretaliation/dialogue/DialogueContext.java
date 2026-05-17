@@ -17,7 +17,13 @@ public record DialogueContext(
         int reputation,
         VillagerReputationLevel reputationLevel,
         boolean firstConversation,
+        WeatherState weather,
         List<VillageEventMemory.MemoryEvent> recentEvents,
         RandomSource random
 ) {
+    public enum WeatherState {
+        CLEAR,
+        RAIN,
+        THUNDER
+    }
 }

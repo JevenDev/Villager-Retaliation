@@ -16,7 +16,10 @@ import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.particles.ParticleOptions;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -87,6 +90,7 @@ public final class VillagerInteractionService {
                 reputation,
                 reputationLevel,
                 interactionState.firstConversation(),
+                weatherState(level, villager),
                 VillageEventMemory.recentNear(level, villager.blockPosition()),
                 villager.getRandom()
         );
@@ -96,6 +100,7 @@ public final class VillagerInteractionService {
                 interactionState.recentDialogueIds()
         );
         DialogueReputationEffect reputationEffect = DialogueReputationService.apply(context, requestType, interactionState);
+        playDialogueFeedback(level, villager, reputationEffect);
         String responseText = reputationEffect.responseOverride() == null ? result.text() : reputationEffect.responseOverride();
         VillagerInteractionTracker.rememberDialogue(level, villager, player, requestType, result.lineId());
         PacketDistributor.sendToPlayer(player, new VillagerDialogueResponsePayload(villager.getId(), requestType, responseText));
@@ -192,6 +197,46 @@ public final class VillagerInteractionService {
             }
         }
         return builder.toString();
+    }
+
+    private static DialogueContext.WeatherState weatherState(ServerLevel level, Villager villager) {
+        if (level.isThundering()) {
+            return DialogueContext.WeatherState.THUNDER;
+        }
+        if (level.isRainingAt(villager.blockPosition())) {
+            return DialogueContext.WeatherState.RAIN;
+        }
+        return DialogueContext.WeatherState.CLEAR;
+    }
+
+    private static void playDialogueFeedback(ServerLevel level, Villager villager, DialogueReputationEffect reputationEffect) {
+        if (reputationEffect.applied() && reputationEffect.reputationDelta() > 0) {
+            spawnDialogueParticles(level, villager, ParticleTypes.HAPPY_VILLAGER, 6, 0.02D);
+            villager.playSound(SoundEvents.VILLAGER_YES, 0.7F, 0.9F + villager.getRandom().nextFloat() * 0.25F);
+            return;
+        }
+        if (reputationEffect.applied() && reputationEffect.reputationDelta() < 0) {
+            spawnDialogueParticles(level, villager, ParticleTypes.ANGRY_VILLAGER, 5, 0.01D);
+            villager.playSound(SoundEvents.VILLAGER_NO, 0.75F, 0.85F + villager.getRandom().nextFloat() * 0.25F);
+            return;
+        }
+        if (!reputationEffect.blockedByCooldown()) {
+            villager.playSound(SoundEvents.VILLAGER_AMBIENT, 0.45F, 0.9F + villager.getRandom().nextFloat() * 0.2F);
+        }
+    }
+
+    private static void spawnDialogueParticles(ServerLevel level, Villager villager, ParticleOptions particle, int count, double speed) {
+        level.sendParticles(
+                particle,
+                villager.getX(),
+                villager.getY() + villager.getBbHeight() + 0.25D,
+                villager.getZ(),
+                count,
+                0.3D,
+                0.2D,
+                0.3D,
+                speed
+        );
     }
 
     private static void focusVillagerOnPlayer(Villager villager, ServerPlayer player) {

@@ -12,6 +12,7 @@ public record DialogueLine(
         DialogueRequestType requestType,
         Set<VillagerProfession> professions,
         Set<DialogueDisposition> dispositions,
+        Set<DialogueContext.WeatherState> weatherStates,
         Set<VillageEventMemory.EventTag> eventTags,
         boolean firstConversationOnly,
         int weight
@@ -27,6 +28,9 @@ public record DialogueLine(
             return false;
         }
         if (!this.dispositions.isEmpty() && !this.dispositions.contains(disposition)) {
+            return false;
+        }
+        if (!this.weatherStates.isEmpty() && !this.weatherStates.contains(context.weather())) {
             return false;
         }
         if (!this.eventTags.isEmpty() && context.recentEvents().stream().noneMatch(event -> this.eventTags.contains(event.tag()))) {
@@ -51,6 +55,9 @@ public record DialogueLine(
         if (!this.eventTags.isEmpty()) {
             score += 4;
         }
+        if (!this.weatherStates.isEmpty()) {
+            score += 4;
+        }
         if (this.firstConversationOnly) {
             score += 2;
         }
@@ -67,6 +74,7 @@ public record DialogueLine(
         private final String text;
         private final Set<VillagerProfession> professions = java.util.HashSet.newHashSet(1);
         private final Set<DialogueDisposition> dispositions = EnumSet.noneOf(DialogueDisposition.class);
+        private final Set<DialogueContext.WeatherState> weatherStates = EnumSet.noneOf(DialogueContext.WeatherState.class);
         private final Set<VillageEventMemory.EventTag> eventTags = EnumSet.noneOf(VillageEventMemory.EventTag.class);
         private boolean firstConversationOnly;
         private int weight = 10;
@@ -92,6 +100,11 @@ public record DialogueLine(
             return this;
         }
 
+        public Builder weatherStates(DialogueContext.WeatherState... weatherStates) {
+            this.weatherStates.addAll(java.util.List.of(weatherStates));
+            return this;
+        }
+
         public Builder firstConversationOnly() {
             this.firstConversationOnly = true;
             return this;
@@ -109,6 +122,7 @@ public record DialogueLine(
                     this.requestType,
                     Set.copyOf(this.professions),
                     Set.copyOf(this.dispositions),
+                    Set.copyOf(this.weatherStates),
                     Set.copyOf(this.eventTags),
                     this.firstConversationOnly,
                     this.weight

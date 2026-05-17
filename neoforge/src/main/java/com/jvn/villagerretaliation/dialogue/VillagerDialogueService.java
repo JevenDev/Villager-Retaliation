@@ -150,8 +150,100 @@ public final class VillagerDialogueService {
 
         addGlobalMoodLines(lines);
         addProfessionMoodLines(lines);
+        addWeatherLines(lines);
 
         return List.copyOf(lines);
+    }
+
+    private static void addWeatherLines(List<DialogueLine> lines) {
+        addGlobalWeatherLines(lines);
+        addProfessionWeatherLines(lines);
+    }
+
+    private static void addGlobalWeatherLines(List<DialogueLine> lines) {
+        String[] rainLines = {
+                "It's raining today. The roads complain, but the gardens look pleased.",
+                "Rain makes everyone speak softer. Even the village bell sounds damp.",
+                "A wet day keeps tempers indoors, mostly.",
+                "If you're tracking mud through the village, at least bring news with it.",
+                "The rain is good for the wells, less good for anyone with leaky boots.",
+                "Listen to that roof. Sounds like the whole village is thinking.",
+                "Rain has a way of showing which roofs need mending.",
+                "No shame in staying under an awning today.",
+                "The village smells cleaner after rain. For a little while, anyway.",
+                "Careful on the paths. Wet stone has no manners."
+        };
+        String[] thunderLines = {
+                "Storm's close. Even the bravest folk count the seconds after lightning.",
+                "Thunder makes the whole village remember how small it is.",
+                "If the sky keeps shouting, I may let it handle the talking.",
+                "Keep an eye out. Bad things like noisy weather.",
+                "The bell and thunder are arguing over who gets to be louder.",
+                "That storm has teeth. Best not wander far.",
+                "Lightning makes every shadow look suspicious.",
+                "A storm like this sends everyone checking doors twice.",
+                "If you hear thunder, the roofs heard it first.",
+                "Some days the sky sounds angrier than the village."
+        };
+        for (int index = 0; index < rainLines.length; index++) {
+            add(lines, "weather_rain_global_" + index, requestForIndex(index), rainLines[index])
+                    .weatherStates(DialogueContext.WeatherState.RAIN)
+                    .weight(28)
+                    .build();
+        }
+        for (int index = 0; index < thunderLines.length; index++) {
+            add(lines, "weather_thunder_global_" + index, requestForIndex(index), thunderLines[index])
+                    .weatherStates(DialogueContext.WeatherState.THUNDER)
+                    .weight(32)
+                    .build();
+        }
+    }
+
+    private static void addProfessionWeatherLines(List<DialogueLine> lines) {
+        for (ProfessionDialogue profile : professionProfiles()) {
+            for (int index = 0; index < 10; index++) {
+                add(lines, profile.key() + "_rain_" + index, requestForIndex(index), professionRainText(profile, index))
+                        .professions(profile.profession())
+                        .weatherStates(DialogueContext.WeatherState.RAIN)
+                        .weight(34)
+                        .build();
+                add(lines, profile.key() + "_thunder_" + index, requestForIndex(index), professionThunderText(profile, index))
+                        .professions(profile.profession())
+                        .weatherStates(DialogueContext.WeatherState.THUNDER)
+                        .weight(38)
+                        .build();
+            }
+        }
+    }
+
+    private static String professionRainText(ProfessionDialogue profile, int index) {
+        return switch (index) {
+            case 0 -> "Rain on the " + profile.workplace() + " changes the whole rhythm of my day.";
+            case 1 -> "It's raining today. Good for some work, miserable for " + profile.craft() + ".";
+            case 2 -> "Weather like this makes " + profile.concern() + " harder to ignore.";
+            case 3 -> "Rain jokes? Mine all involve " + profile.gift() + " getting soaked.";
+            case 4 -> "If you came to mock the rain, take it up with the clouds.";
+            case 5 -> "The rain keeps most folk close to home. That can be a blessing.";
+            case 6 -> "Ask me after the rain stops; half my thoughts are on " + profile.warning() + ".";
+            case 7 -> "A wet day tests " + profile.pride() + " more than people think.";
+            case 8 -> profile.joke() + " Rain makes even that sound soggy.";
+            default -> "Careful with wet boots near the " + profile.workplace() + ".";
+        };
+    }
+
+    private static String professionThunderText(ProfessionDialogue profile, int index) {
+        return switch (index) {
+            case 0 -> "Thunder over the " + profile.workplace() + " makes every tool sound guilty.";
+            case 1 -> "Storms are bad for " + profile.craft() + ". Worse for steady hands.";
+            case 2 -> "When thunder rolls, " + profile.concern() + " starts feeling less ordinary.";
+            case 3 -> "I had a storm joke about " + profile.gift() + ", but the sky interrupted.";
+            case 4 -> "Insults sound smaller when thunder is doing the shouting.";
+            case 5 -> "Stay near shelter. A " + profile.role() + " knows when work can wait.";
+            case 6 -> "If you're asking about " + profile.warning() + ", thunder is already an answer.";
+            case 7 -> "Storms make me double-check " + profile.pride() + ".";
+            case 8 -> profile.joke() + " The thunder gave it better timing.";
+            default -> "Not today. The storm has made everyone sharp enough already.";
+        };
     }
 
     private static void addGlobalMoodLines(List<DialogueLine> lines) {
