@@ -166,7 +166,30 @@ public final class VillagerRetaliationEvents {
         }
     }
 
+    public static void onEntityInteractSpecific(PlayerInteractEvent.EntityInteractSpecific event) {
+        if (event.getTarget() instanceof Villager villager
+                && event.getEntity() instanceof ServerPlayer serverPlayer
+                && VillagerInteractionService.shouldHandleSleepingInteraction(villager, serverPlayer, event.getHand())) {
+            event.setCancellationResult(VillagerInteractionService.handleSleepingVillagerInteraction(villager, serverPlayer));
+            event.setCanceled(true);
+        }
+    }
+
     public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
+        if (event.getEntity() instanceof ServerPlayer serverPlayer && event.getLevel() instanceof ServerLevel level) {
+            InteractionResult sleepingResult = VillagerInteractionService.handleSleepingVillagerBedInteraction(
+                    level,
+                    serverPlayer,
+                    event.getPos(),
+                    event.getHand()
+            );
+            if (sleepingResult.consumesAction()) {
+                event.setCanceled(true);
+                event.setCancellationResult(sleepingResult);
+                return;
+            }
+        }
+
         VillagerRetaliationHazardAttribution.rememberPlayerPlacedHazard(
                 event.getEntity(),
                 event.getLevel(),

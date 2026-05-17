@@ -45,6 +45,7 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.IntValue DIALOGUE_POSITIVE_REPUTATION_COOLDOWN_DAYS;
     public static final ModConfigSpec.IntValue REPEATED_QUESTION_POSITIVE_LIMIT;
     public static final ModConfigSpec.IntValue REPEATED_QUESTION_REPUTATION_LOSS;
+    public static final ModConfigSpec.IntValue SLEEPING_VILLAGER_BOTHER_REPUTATION_LOSS;
     public static final ModConfigSpec.IntValue GREETING_REPUTATION_GAIN;
     public static final ModConfigSpec.IntValue QUESTION_REPUTATION_GAIN;
     public static final ModConfigSpec.IntValue STORY_REPUTATION_GAIN;
@@ -147,17 +148,17 @@ public final class VillagerRetaliationConfig {
                 .translation("villagerretaliation.configuration.general.enableDialogueReputationEffects")
                 .define("enableDialogueReputationEffects", true);
         ENABLE_DIALOGUE_CAMERA_FOCUS = BUILDER
-                .comment("Reserved for subtle client-side dialogue camera polish. Phase 1 keeps this conservative and does not force player view changes.")
+                .comment("Enables a subtle client-side FOV zoom while the Villager Retaliation dialogue screen is open.")
                 .translation("villagerretaliation.configuration.general.enableDialogueCameraFocus")
                 .define("enableDialogueCameraFocus", true);
         DIALOGUE_CAMERA_ZOOM_AMOUNT = BUILDER
-                .comment("Reserved subtle dialogue zoom amount for future camera polish.")
+                .comment("FOV zoom amount used while the Villager Retaliation dialogue screen is open.")
                 .translation("villagerretaliation.configuration.general.dialogueCameraZoomAmount")
                 .defineInRange("dialogueCameraZoomAmount", 0.04D, 0.0D, 0.25D);
         DIALOGUE_CAMERA_TRANSITION_TICKS = BUILDER
-                .comment("Reserved transition duration for future dialogue camera polish.")
+                .comment("Ticks used to ease into the dialogue FOV zoom.")
                 .translation("villagerretaliation.configuration.general.dialogueCameraTransitionTicks")
-                .defineInRange("dialogueCameraTransitionTicks", 10, 1, 40);
+                .defineInRange("dialogueCameraTransitionTicks", 3, 1, 40);
         FREEZE_VILLAGER_DURING_DIALOGUE = BUILDER
                 .comment("Stops villager navigation while a Villager Retaliation dialogue conversation is active.")
                 .translation("villagerretaliation.configuration.general.freezeVillagerDuringDialogue")
@@ -247,6 +248,9 @@ public final class VillagerRetaliationConfig {
         REPEATED_QUESTION_REPUTATION_LOSS = BUILDER.comment("Reputation lost when the player keeps repeating Question dialogue after the positive limit.")
                 .translation("villagerretaliation.configuration.reputation.repeatedQuestionReputationLoss")
                 .defineInRange("repeatedQuestionReputationLoss", -1, -1000, 0);
+        SLEEPING_VILLAGER_BOTHER_REPUTATION_LOSS = BUILDER.comment("Reputation lost when a player tries to interact with a sleeping villager.")
+                .translation("villagerretaliation.configuration.reputation.sleepingVillagerBotherReputationLoss")
+                .defineInRange("sleepingVillagerBotherReputationLoss", -2, -1000, 0);
         GREETING_REPUTATION_GAIN = BUILDER.comment("Reputation gained from an eligible friendly greeting.")
                 .translation("villagerretaliation.configuration.reputation.greetingReputationGain")
                 .defineInRange("greetingReputationGain", 1, 0, 1000);

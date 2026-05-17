@@ -18,6 +18,7 @@ public record DialogueContext(
         VillagerReputationLevel reputationLevel,
         boolean firstConversation,
         WeatherState weather,
+        TimeOfDay timeOfDay,
         List<VillageEventMemory.MemoryEvent> recentEvents,
         RandomSource random
 ) {
@@ -25,5 +26,12 @@ public record DialogueContext(
         CLEAR,
         RAIN,
         THUNDER
+    }
+
+    public enum TimeOfDay {
+        MORNING,
+        AFTERNOON,
+        EVENING,
+        NIGHT
     }
 }

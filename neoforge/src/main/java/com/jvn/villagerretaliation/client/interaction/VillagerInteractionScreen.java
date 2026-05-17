@@ -313,7 +313,6 @@ public class VillagerInteractionScreen extends Screen {
         if (entity instanceof Villager villager) {
             villager.getLookControl().setLookAt(minecraft.player, 30.0F, 30.0F);
         }
-        // TODO: Add subtle client-only camera/FOV easing once it can be tested across first- and third-person safely.
     }
 
     private static String displayName(VillagerReputationLevel level) {

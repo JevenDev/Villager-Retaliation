@@ -51,6 +51,19 @@ public final class VillagerInteractionTracker {
         data.setDirty();
     }
 
+    public static boolean hasDisturbedSleepThisNight(ServerLevel level, Villager villager, ServerPlayer player, long night) {
+        return VillagerInteractionSavedData.get(level)
+                .getOrCreate(villager.getUUID(), player.getUUID())
+                .hasDisturbedSleepThisNight(night);
+    }
+
+    public static void rememberSleepDisturbance(ServerLevel level, Villager villager, ServerPlayer player, long night) {
+        VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
+        VillagerInteractionSavedData.InteractionEntry entry = data.getOrCreate(villager.getUUID(), player.getUUID());
+        entry.rememberSleepDisturbance(night);
+        data.setDirty();
+    }
+
     public record InteractionState(
             boolean firstConversation,
             List<String> recentDialogueIds,

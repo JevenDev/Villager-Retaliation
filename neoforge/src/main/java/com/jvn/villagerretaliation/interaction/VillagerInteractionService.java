@@ -15,11 +15,11 @@ import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
-import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -28,6 +28,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class VillagerInteractionService {
@@ -38,10 +39,22 @@ public final class VillagerInteractionService {
         return hand == InteractionHand.MAIN_HAND
                 && VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get()
                 && !player.getItemInHand(hand).is(Items.VILLAGER_SPAWN_EGG)
-                && canUseInteractionSystem(player, villager);
+                && canUseInteractionTarget(player, villager, true);
+    }
+
+    public static boolean shouldHandleSleepingInteraction(Villager villager, ServerPlayer player, InteractionHand hand) {
+        return hand == InteractionHand.MAIN_HAND
+                && VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get()
+                && !player.getItemInHand(hand).is(Items.VILLAGER_SPAWN_EGG)
+                && villager.isSleeping()
+                && canUseInteractionTarget(player, villager, true);
     }
 
     public static InteractionResult handleAdultVillagerRightClick(Villager villager, ServerPlayer player) {
+        if (villager.isSleeping()) {
+            return handleSleepingVillagerInteraction(villager, player);
+        }
+
         if (player.isShiftKeyDown() && VillagerRetaliationConfig.SHIFT_RIGHT_CLICK_BYPASSES_INTERACTION_SCREEN.get()) {
             return openTrading(player, villager, true);
         }
@@ -91,6 +104,7 @@ public final class VillagerInteractionService {
                 reputationLevel,
                 interactionState.firstConversation(),
                 weatherState(level, villager),
+                timeOfDay(level),
                 VillageEventMemory.recentNear(level, villager.blockPosition()),
                 villager.getRandom()
         );
@@ -163,10 +177,14 @@ public final class VillagerInteractionService {
     }
 
     public static boolean canUseInteractionSystem(ServerPlayer player, Villager villager) {
+        return canUseInteractionTarget(player, villager, false);
+    }
+
+    private static boolean canUseInteractionTarget(ServerPlayer player, Villager villager, boolean allowSleeping) {
         double maxDistance = VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get();
         return villager.isAlive()
                 && !villager.isBaby()
-                && !villager.isSleeping()
+                && (allowSleeping || !villager.isSleeping())
                 && !villager.isTrading()
                 && player.isAlive()
                 && !player.isSpectator()
@@ -175,7 +193,6 @@ public final class VillagerInteractionService {
 
     private static void sendNotice(ServerPlayer player, int entityId, String text) {
         PacketDistributor.sendToPlayer(player, new VillagerInteractionNoticePayload(entityId, text));
-        player.sendSystemMessage(Component.literal(text).withStyle(ChatFormatting.GRAY));
     }
 
     private static String professionName(VillagerProfession profession) {
@@ -207,6 +224,82 @@ public final class VillagerInteractionService {
             return DialogueContext.WeatherState.RAIN;
         }
         return DialogueContext.WeatherState.CLEAR;
+    }
+
+    private static DialogueContext.TimeOfDay timeOfDay(ServerLevel level) {
+        long dayTime = level.getDayTime() % 24000L;
+        if (dayTime < 6000L) {
+            return DialogueContext.TimeOfDay.MORNING;
+        }
+        if (dayTime < 12000L) {
+            return DialogueContext.TimeOfDay.AFTERNOON;
+        }
+        if (dayTime < 14000L) {
+            return DialogueContext.TimeOfDay.EVENING;
+        }
+        return DialogueContext.TimeOfDay.NIGHT;
+    }
+
+    public static InteractionResult handleSleepingVillagerInteraction(Villager villager, ServerPlayer player) {
+        if (!(villager.level() instanceof ServerLevel level)) {
+            return InteractionResult.FAIL;
+        }
+        long night = level.getDayTime() / 24000L;
+        boolean alreadyDisturbedThisNight = VillagerInteractionTracker.hasDisturbedSleepThisNight(level, villager, player, night);
+        if (!alreadyDisturbedThisNight) {
+            VillagerInteractionTracker.rememberSleepDisturbance(level, villager, player, night);
+            int reputationLoss = VillagerRetaliationConfig.SLEEPING_VILLAGER_BOTHER_REPUTATION_LOSS.get();
+            if (reputationLoss < 0 && VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()) {
+                VillagerReputationManager.addDialogueReputation(level, villager, player, reputationLoss);
+            }
+            villager.stopSleeping();
+        }
+        spawnDialogueParticles(level, villager, ParticleTypes.ANGRY_VILLAGER, 4, 0.01D);
+        villager.playSound(SoundEvents.VILLAGER_NO, 0.75F, 0.75F + villager.getRandom().nextFloat() * 0.2F);
+        sendNotice(player, villager.getId(), sleepingResponse(villager, alreadyDisturbedThisNight));
+        return InteractionResult.SUCCESS;
+    }
+
+    public static InteractionResult handleSleepingVillagerBedInteraction(ServerLevel level, ServerPlayer player, BlockPos pos, InteractionHand hand) {
+        if (hand != InteractionHand.MAIN_HAND
+                || !VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get()
+                || player.getItemInHand(hand).is(Items.VILLAGER_SPAWN_EGG)
+                || !level.getBlockState(pos).is(BlockTags.BEDS)) {
+            return InteractionResult.PASS;
+        }
+
+        AABB searchArea = AABB.ofSize(pos.getCenter(), 3.0D, 2.0D, 3.0D);
+        Villager sleepingVillager = null;
+        double closestDistanceSqr = Double.MAX_VALUE;
+        for (Villager candidate : level.getEntitiesOfClass(Villager.class, searchArea, villager -> villager.isAlive() && !villager.isBaby() && villager.isSleeping())) {
+            double distanceSqr = candidate.distanceToSqr(pos.getCenter());
+            if (distanceSqr < closestDistanceSqr) {
+                closestDistanceSqr = distanceSqr;
+                sleepingVillager = candidate;
+            }
+        }
+
+        if (sleepingVillager == null || !canUseInteractionTarget(player, sleepingVillager, true)) {
+            return InteractionResult.PASS;
+        }
+        return handleSleepingVillagerInteraction(sleepingVillager, player);
+    }
+
+    private static String sleepingResponse(Villager villager, boolean alreadyDisturbedThisNight) {
+        if (alreadyDisturbedThisNight) {
+            return switch (villager.getRandom().nextInt(4)) {
+                case 0 -> "I already woke up once for you tonight.";
+                case 1 -> "No. Morning. Come back in the morning.";
+                case 2 -> "Stop. I am not getting up again.";
+                default -> "You've bothered me enough for one night.";
+            };
+        }
+        return switch (villager.getRandom().nextInt(4)) {
+            case 0 -> "Mmph... let me sleep.";
+            case 1 -> "Not now. It's the middle of the night.";
+            case 2 -> "Come back when the sun is up.";
+            default -> "Stop bothering me. I'm sleeping.";
+        };
     }
 
     private static void playDialogueFeedback(ServerLevel level, Villager villager, DialogueReputationEffect reputationEffect) {

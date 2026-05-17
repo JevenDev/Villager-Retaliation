@@ -151,8 +151,105 @@ public final class VillagerDialogueService {
         addGlobalMoodLines(lines);
         addProfessionMoodLines(lines);
         addWeatherLines(lines);
+        addTimeOfDayLines(lines);
 
         return List.copyOf(lines);
+    }
+
+    private static void addTimeOfDayLines(List<DialogueLine> lines) {
+        addGlobalTimeOfDayLines(lines);
+        addProfessionTimeOfDayLines(lines);
+    }
+
+    private static void addGlobalTimeOfDayLines(List<DialogueLine> lines) {
+        for (DialogueContext.TimeOfDay timeOfDay : DialogueContext.TimeOfDay.values()) {
+            for (int index = 0; index < 5; index++) {
+                add(lines, "time_" + timeOfDay.name().toLowerCase() + "_global_" + index, requestForIndex(index), globalTimeOfDayText(timeOfDay, index))
+                        .timeOfDays(timeOfDay)
+                        .weight(24)
+                        .build();
+            }
+        }
+    }
+
+    private static void addProfessionTimeOfDayLines(List<DialogueLine> lines) {
+        for (ProfessionDialogue profile : professionProfiles()) {
+            for (DialogueContext.TimeOfDay timeOfDay : DialogueContext.TimeOfDay.values()) {
+                for (int index = 0; index < 5; index++) {
+                    add(lines, profile.key() + "_" + timeOfDay.name().toLowerCase() + "_" + index, requestForIndex(index), professionTimeOfDayText(profile, timeOfDay, index))
+                            .professions(profile.profession())
+                            .timeOfDays(timeOfDay)
+                            .weight(30)
+                            .build();
+                }
+            }
+        }
+    }
+
+    private static String globalTimeOfDayText(DialogueContext.TimeOfDay timeOfDay, int index) {
+        return switch (timeOfDay) {
+            case MORNING -> switch (index) {
+                case 0 -> "Morning. The village is still deciding what kind of day this will be.";
+                case 1 -> "Early questions get better answers than late ones.";
+                case 2 -> "Mornings make every chore look possible for about ten minutes.";
+                case 3 -> "A morning joke? Bold. Some of us are still waking up.";
+                default -> "Careful with sharp words before breakfast.";
+            };
+            case AFTERNOON -> switch (index) {
+                case 0 -> "Afternoon already. The day's work has teeth now.";
+                case 1 -> "Ask quickly. This is when tasks start chasing each other.";
+                case 2 -> "By afternoon, every village knows what it forgot in the morning.";
+                case 3 -> "If your joke is good, it might carry me to supper.";
+                default -> "That's an afternoon sort of insult: tired, but still pointed.";
+            };
+            case EVENING -> switch (index) {
+                case 0 -> "Evening's coming. People start counting doors and beds.";
+                case 1 -> "Ask now if you must. Soon everyone will be heading in.";
+                case 2 -> "Evening makes the village honest. You can hear who is worried.";
+                case 3 -> "A joke before dusk? Fine, but keep it friendly.";
+                default -> "Not every thought needs to follow someone into the evening.";
+            };
+            case NIGHT -> switch (index) {
+                case 0 -> "Keep your voice down. Night belongs to sleepers and things we avoid.";
+                case 1 -> "Questions at night feel heavier.";
+                case 2 -> "At night, every sound outside the door becomes a story.";
+                case 3 -> "A joke after dark? It had better be quiet.";
+                default -> "Insults travel farther at night. So do consequences.";
+            };
+        };
+    }
+
+    private static String professionTimeOfDayText(ProfessionDialogue profile, DialogueContext.TimeOfDay timeOfDay, int index) {
+        return switch (timeOfDay) {
+            case MORNING -> switch (index) {
+                case 0 -> "Morning at the " + profile.workplace() + ". Best time to start " + profile.craft() + ".";
+                case 1 -> "Ask now. A " + profile.role() + "'s patience is freshest before the work piles up.";
+                case 2 -> "Every morning, " + profile.pride() + " starts as a plan and becomes a negotiation.";
+                case 3 -> profile.joke() + " That one is easier before I'm tired.";
+                default -> "Mock a " + profile.role() + " before breakfast and see how short the day gets.";
+            };
+            case AFTERNOON -> switch (index) {
+                case 0 -> "Afternoon at the " + profile.workplace() + " is when mistakes get expensive.";
+                case 1 -> "If this is about " + profile.craft() + ", ask before my hands are full again.";
+                case 2 -> "By now, " + profile.concern() + " has either appeared or is waiting until I relax.";
+                case 3 -> "A joke now? Good. The " + profile.workplace() + " could use one.";
+                default -> "I've spent all day on " + profile.pride() + ". Choose your words well.";
+            };
+            case EVENING -> switch (index) {
+                case 0 -> "Evening means cleaning the " + profile.workplace() + " and hoping nothing was missed.";
+                case 1 -> "Questions about " + profile.warning() + " feel different near dusk.";
+                case 2 -> "A " + profile.role() + " measures the day by what can safely wait until morning.";
+                case 3 -> "If your joke involves " + profile.gift() + ", tell it before everyone goes inside.";
+                default -> "Evening is a poor time to insult the work that got us through the day.";
+            };
+            case NIGHT -> switch (index) {
+                case 0 -> "Night is no hour for the " + profile.workplace() + ". Speak softly.";
+                case 1 -> "Ask tomorrow about " + profile.craft() + ". Night makes bad answers.";
+                case 2 -> "When it gets dark, " + profile.warning() + " starts sounding too close.";
+                case 3 -> "A quiet joke, then. The sleeping folk outrank both of us.";
+                default -> "Do not bring insults to a " + profile.role() + " after dark.";
+            };
+        };
     }
 
     private static void addWeatherLines(List<DialogueLine> lines) {

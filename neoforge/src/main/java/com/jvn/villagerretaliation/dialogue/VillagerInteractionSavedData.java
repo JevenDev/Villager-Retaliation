@@ -31,6 +31,7 @@ public class VillagerInteractionSavedData extends SavedData {
     private static final String TAG_LAST_REQUEST_TYPE_DIALOGUE = "LastRequestTypeDialogue";
     private static final String TAG_CONSECUTIVE_REQUEST_TYPE = "ConsecutiveRequestType";
     private static final String TAG_CONSECUTIVE_REQUEST_COUNT = "ConsecutiveRequestCount";
+    private static final String TAG_LAST_SLEEP_DISTURBANCE_NIGHT = "LastSleepDisturbanceNight";
     private static final String TAG_REQUEST_TYPE = "RequestType";
     private static final String TAG_GAME_TIME = "GameTime";
     private static final String TAG_BAD_FIRST_IMPRESSION = "BadFirstImpression";
@@ -61,6 +62,7 @@ public class VillagerInteractionSavedData extends SavedData {
             entry.lastPositiveDialogueReputationDay = readOptionalLong(entryTag, TAG_LAST_POSITIVE_DIALOGUE_REPUTATION_DAY);
             entry.lastNegativeDialogueReputationGameTime = readOptionalLong(entryTag, TAG_LAST_NEGATIVE_DIALOGUE_REPUTATION);
             entry.lastJokeReputationGameTime = readOptionalLong(entryTag, TAG_LAST_JOKE_REPUTATION);
+            entry.lastSleepDisturbanceNight = readOptionalLong(entryTag, TAG_LAST_SLEEP_DISTURBANCE_NIGHT);
             entry.badFirstImpression = entryTag.getBoolean(TAG_BAD_FIRST_IMPRESSION);
             if (entryTag.contains(TAG_CONSECUTIVE_REQUEST_TYPE, Tag.TAG_STRING)) {
                 try {
@@ -120,6 +122,7 @@ public class VillagerInteractionSavedData extends SavedData {
                 entryTag.putLong(TAG_LAST_POSITIVE_DIALOGUE_REPUTATION_DAY, playerEntry.getValue().lastPositiveDialogueReputationDay);
                 entryTag.putLong(TAG_LAST_NEGATIVE_DIALOGUE_REPUTATION, playerEntry.getValue().lastNegativeDialogueReputationGameTime);
                 entryTag.putLong(TAG_LAST_JOKE_REPUTATION, playerEntry.getValue().lastJokeReputationGameTime);
+                entryTag.putLong(TAG_LAST_SLEEP_DISTURBANCE_NIGHT, playerEntry.getValue().lastSleepDisturbanceNight);
                 entryTag.putBoolean(TAG_BAD_FIRST_IMPRESSION, playerEntry.getValue().badFirstImpression);
                 if (playerEntry.getValue().consecutiveRequestType != null) {
                     entryTag.putString(TAG_CONSECUTIVE_REQUEST_TYPE, playerEntry.getValue().consecutiveRequestType.name());
@@ -164,6 +167,7 @@ public class VillagerInteractionSavedData extends SavedData {
         private long lastPositiveDialogueReputationDay = Long.MIN_VALUE;
         private long lastNegativeDialogueReputationGameTime = Long.MIN_VALUE;
         private long lastJokeReputationGameTime = Long.MIN_VALUE;
+        private long lastSleepDisturbanceNight = Long.MIN_VALUE;
         private boolean badFirstImpression;
         private DialogueRequestType consecutiveRequestType;
         private int consecutiveRequestCount;
@@ -209,6 +213,14 @@ public class VillagerInteractionSavedData extends SavedData {
 
         public boolean badFirstImpression() {
             return this.badFirstImpression;
+        }
+
+        public boolean hasDisturbedSleepThisNight(long night) {
+            return this.lastSleepDisturbanceNight == night;
+        }
+
+        public void rememberSleepDisturbance(long night) {
+            this.lastSleepDisturbanceNight = night;
         }
 
         public int consecutiveRequestCount(DialogueRequestType requestType) {
