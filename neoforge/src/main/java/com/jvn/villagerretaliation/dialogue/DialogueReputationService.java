@@ -6,7 +6,7 @@ import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 
 public final class DialogueReputationService {
-    private static final int JOKE_REPUTATION_COOLDOWN_TICKS = 20 * 60 * 4;
+    private static final long DAY_TICKS = 24000L;
 
     private DialogueReputationService() {
     }
@@ -17,13 +17,13 @@ public final class DialogueReputationService {
             return DialogueReputationEffect.none(requestType);
         }
 
-        PlannedEffect plannedEffect = planEffect(context, requestType, interactionState.firstConversation());
+        PlannedEffect plannedEffect = planEffect(context, requestType, interactionState);
         if (plannedEffect.delta() == 0) {
             return DialogueReputationEffect.none(requestType);
         }
 
-        long gameTime = context.level().getGameTime();
-        if (isBlockedByCooldown(context, requestType, interactionState, plannedEffect, gameTime)) {
+        long day = context.level().getDayTime() / DAY_TICKS;
+        if (isBlockedByCooldown(interactionState, plannedEffect, day)) {
             return new DialogueReputationEffect(
                     requestType,
                     0,
@@ -57,13 +57,13 @@ public final class DialogueReputationService {
         );
     }
 
-    private static PlannedEffect planEffect(DialogueContext context, DialogueRequestType requestType, boolean firstConversation) {
+    private static PlannedEffect planEffect(DialogueContext context, DialogueRequestType requestType, VillagerInteractionTracker.InteractionState interactionState) {
         return switch (requestType) {
-            case GREETING -> planGreeting(context, firstConversation);
-            case QUESTION -> planQuestion(context);
+            case GREETING -> planGreeting(context, interactionState.firstConversation());
+            case QUESTION -> planQuestion(context, interactionState);
             case STORY -> planStory(context);
             case JOKE -> planJoke(context);
-            case INSULT -> planInsult(context, firstConversation);
+            case INSULT -> planInsult(context, interactionState.firstConversation());
         };
     }
 
@@ -88,6 +88,19 @@ public final class DialogueReputationService {
         return context.random().nextInt(100) < chance
                 ? positive(VillagerRetaliationConfig.QUESTION_REPUTATION_GAIN.get(), "question", occasionalPositiveResponse(context))
                 : PlannedEffect.none();
+    }
+
+    private static PlannedEffect planQuestion(DialogueContext context, VillagerInteractionTracker.InteractionState interactionState) {
+        if (interactionState.consecutiveQuestionCount() >= VillagerRetaliationConfig.REPEATED_QUESTION_POSITIVE_LIMIT.get()) {
+            return new PlannedEffect(
+                    VillagerRetaliationConfig.REPEATED_QUESTION_REPUTATION_LOSS.get(),
+                    "repeated_question",
+                    DialogueReputationEffect.CooldownCategory.NEGATIVE,
+                    false,
+                    annoyedQuestionResponse(context)
+            );
+        }
+        return planQuestion(context);
     }
 
     private static PlannedEffect planStory(DialogueContext context) {
@@ -154,39 +167,22 @@ public final class DialogueReputationService {
         );
     }
 
-    private static boolean isBlockedByCooldown(DialogueContext context, DialogueRequestType requestType, VillagerInteractionTracker.InteractionState interactionState, PlannedEffect plannedEffect, long gameTime) {
-        long sameTypeCooldown = plannedEffect.delta() < 0
-                ? VillagerRetaliationConfig.DIALOGUE_NEGATIVE_REPUTATION_COOLDOWN_TICKS.get()
-                : VillagerRetaliationConfig.DIALOGUE_POSITIVE_REPUTATION_COOLDOWN_TICKS.get();
-        long lastSameTypeDialogueTime = VillagerInteractionTracker.lastDialogueGameTime(context.level(), context.villager(), context.player(), requestType);
-        if (!hasCooldownElapsed(gameTime, lastSameTypeDialogueTime, sameTypeCooldown)) {
-            return true;
+    private static boolean isBlockedByCooldown(VillagerInteractionTracker.InteractionState interactionState, PlannedEffect plannedEffect, long day) {
+        if (plannedEffect.delta() < 0) {
+            return false;
         }
-        long lastSameTypeTime = VillagerInteractionTracker.lastReputationGameTime(context.level(), context.villager(), context.player(), requestType);
-        if (!hasCooldownElapsed(gameTime, lastSameTypeTime, sameTypeCooldown)) {
-            return true;
-        }
-
-        if (plannedEffect.cooldownCategory() == DialogueReputationEffect.CooldownCategory.JOKE) {
-            int jokeCooldown = Math.min(VillagerRetaliationConfig.DIALOGUE_POSITIVE_REPUTATION_COOLDOWN_TICKS.get(), JOKE_REPUTATION_COOLDOWN_TICKS);
-            return !hasCooldownElapsed(gameTime, interactionState.lastJokeReputationGameTime(), jokeCooldown);
-        }
-        if (plannedEffect.delta() > 0) {
-            return !hasCooldownElapsed(
-                    gameTime,
-                    interactionState.lastPositiveDialogueReputationGameTime(),
-                    VillagerRetaliationConfig.DIALOGUE_POSITIVE_REPUTATION_COOLDOWN_TICKS.get()
-            );
-        }
-        return !hasCooldownElapsed(
-                gameTime,
-                interactionState.lastNegativeDialogueReputationGameTime(),
-                VillagerRetaliationConfig.DIALOGUE_NEGATIVE_REPUTATION_COOLDOWN_TICKS.get()
+        return !hasDayCooldownElapsed(
+                day,
+                interactionState.lastPositiveDialogueReputationDay(),
+                VillagerRetaliationConfig.DIALOGUE_POSITIVE_REPUTATION_COOLDOWN_DAYS.get()
         );
     }
 
-    private static boolean hasCooldownElapsed(long gameTime, long lastGameTime, long cooldownTicks) {
-        return lastGameTime == Long.MIN_VALUE || gameTime >= lastGameTime + cooldownTicks;
+    private static boolean hasDayCooldownElapsed(long day, long lastDay, int cooldownDays) {
+        if (cooldownDays <= 0 || lastDay == Long.MIN_VALUE) {
+            return true;
+        }
+        return day >= lastDay + cooldownDays;
     }
 
     private static PlannedEffect positive(int delta, String reason, String responseOverride) {
@@ -209,6 +205,14 @@ public final class DialogueReputationService {
             case 0 -> "I should have known better than to speak with you.";
             case 1 -> "Careful. Villages remember cruelty.";
             default -> "Say that again and see who still trades with you.";
+        };
+    }
+
+    private static String annoyedQuestionResponse(DialogueContext context) {
+        return switch (context.random().nextInt(3)) {
+            case 0 -> "You've asked enough questions for one day.";
+            case 1 -> "Again with that? My patience has limits.";
+            default -> "I have work to do. Ask something else.";
         };
     }
 

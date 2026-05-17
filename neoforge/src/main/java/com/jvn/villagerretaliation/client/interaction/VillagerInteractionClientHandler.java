@@ -15,7 +15,9 @@ public final class VillagerInteractionClientHandler {
         Minecraft.getInstance().setScreen(new VillagerInteractionScreen(
                 payload.entityId(),
                 payload.villagerName(),
-                payload.professionName()
+                payload.professionName(),
+                payload.reputation(),
+                payload.reputationLevel()
         ));
     }
 

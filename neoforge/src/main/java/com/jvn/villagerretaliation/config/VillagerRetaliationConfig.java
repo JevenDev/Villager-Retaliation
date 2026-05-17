@@ -42,8 +42,9 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.IntValue WITNESSED_IRON_GOLEM_KILL_PENALTY;
     public static final ModConfigSpec.IntValue TRADE_REPUTATION_GAIN;
     public static final ModConfigSpec.IntValue MAX_TRADE_REPUTATION_GAIN_PER_VILLAGER_PER_DAY;
-    public static final ModConfigSpec.IntValue DIALOGUE_POSITIVE_REPUTATION_COOLDOWN_TICKS;
-    public static final ModConfigSpec.IntValue DIALOGUE_NEGATIVE_REPUTATION_COOLDOWN_TICKS;
+    public static final ModConfigSpec.IntValue DIALOGUE_POSITIVE_REPUTATION_COOLDOWN_DAYS;
+    public static final ModConfigSpec.IntValue REPEATED_QUESTION_POSITIVE_LIMIT;
+    public static final ModConfigSpec.IntValue REPEATED_QUESTION_REPUTATION_LOSS;
     public static final ModConfigSpec.IntValue GREETING_REPUTATION_GAIN;
     public static final ModConfigSpec.IntValue QUESTION_REPUTATION_GAIN;
     public static final ModConfigSpec.IntValue STORY_REPUTATION_GAIN;
@@ -237,12 +238,15 @@ public final class VillagerRetaliationConfig {
         MAX_TRADE_REPUTATION_GAIN_PER_VILLAGER_PER_DAY = BUILDER.comment("Maximum positive trade reputation gain per villager per Minecraft day.")
                 .translation("villagerretaliation.configuration.reputation.maxTradeReputationGainPerVillagerPerDay")
                 .defineInRange("maxTradeReputationGainPerVillagerPerDay", 8, 0, 1000);
-        DIALOGUE_POSITIVE_REPUTATION_COOLDOWN_TICKS = BUILDER.comment("Minimum ticks between positive dialogue reputation gains for the same player and villager.")
-                .translation("villagerretaliation.configuration.reputation.dialoguePositiveReputationCooldownTicks")
-                .defineInRange("dialoguePositiveReputationCooldownTicks", 12000, 20, 24000 * 7);
-        DIALOGUE_NEGATIVE_REPUTATION_COOLDOWN_TICKS = BUILDER.comment("Minimum ticks between negative dialogue reputation losses for the same player and villager.")
-                .translation("villagerretaliation.configuration.reputation.dialogueNegativeReputationCooldownTicks")
-                .defineInRange("dialogueNegativeReputationCooldownTicks", 600, 20, 24000);
+        DIALOGUE_POSITIVE_REPUTATION_COOLDOWN_DAYS = BUILDER.comment("Minimum Minecraft day changes between positive dialogue reputation gains for the same player and villager.")
+                .translation("villagerretaliation.configuration.reputation.dialoguePositiveReputationCooldownDays")
+                .defineInRange("dialoguePositiveReputationCooldownDays", 1, 0, 30);
+        REPEATED_QUESTION_POSITIVE_LIMIT = BUILDER.comment("Consecutive Question dialogue uses that can still grant positive reputation before the villager gets tired of it.")
+                .translation("villagerretaliation.configuration.reputation.repeatedQuestionPositiveLimit")
+                .defineInRange("repeatedQuestionPositiveLimit", 5, 0, 100);
+        REPEATED_QUESTION_REPUTATION_LOSS = BUILDER.comment("Reputation lost when the player keeps repeating Question dialogue after the positive limit.")
+                .translation("villagerretaliation.configuration.reputation.repeatedQuestionReputationLoss")
+                .defineInRange("repeatedQuestionReputationLoss", -1, -1000, 0);
         GREETING_REPUTATION_GAIN = BUILDER.comment("Reputation gained from an eligible friendly greeting.")
                 .translation("villagerretaliation.configuration.reputation.greetingReputationGain")
                 .defineInRange("greetingReputationGain", 1, 0, 1000);

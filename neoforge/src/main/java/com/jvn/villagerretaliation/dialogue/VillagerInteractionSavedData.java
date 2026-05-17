@@ -24,10 +24,13 @@ public class VillagerInteractionSavedData extends SavedData {
     private static final String TAG_HAS_TALKED = "HasTalked";
     private static final String TAG_RECENT_LINES = "RecentLines";
     private static final String TAG_LAST_POSITIVE_DIALOGUE_REPUTATION = "LastPositiveDialogueReputation";
+    private static final String TAG_LAST_POSITIVE_DIALOGUE_REPUTATION_DAY = "LastPositiveDialogueReputationDay";
     private static final String TAG_LAST_NEGATIVE_DIALOGUE_REPUTATION = "LastNegativeDialogueReputation";
     private static final String TAG_LAST_JOKE_REPUTATION = "LastJokeReputation";
     private static final String TAG_LAST_REQUEST_TYPE_REPUTATION = "LastRequestTypeReputation";
     private static final String TAG_LAST_REQUEST_TYPE_DIALOGUE = "LastRequestTypeDialogue";
+    private static final String TAG_CONSECUTIVE_REQUEST_TYPE = "ConsecutiveRequestType";
+    private static final String TAG_CONSECUTIVE_REQUEST_COUNT = "ConsecutiveRequestCount";
     private static final String TAG_REQUEST_TYPE = "RequestType";
     private static final String TAG_GAME_TIME = "GameTime";
     private static final String TAG_BAD_FIRST_IMPRESSION = "BadFirstImpression";
@@ -55,9 +58,19 @@ public class VillagerInteractionSavedData extends SavedData {
             InteractionEntry entry = new InteractionEntry();
             entry.hasTalked = entryTag.getBoolean(TAG_HAS_TALKED);
             entry.lastPositiveDialogueReputationGameTime = readOptionalLong(entryTag, TAG_LAST_POSITIVE_DIALOGUE_REPUTATION);
+            entry.lastPositiveDialogueReputationDay = readOptionalLong(entryTag, TAG_LAST_POSITIVE_DIALOGUE_REPUTATION_DAY);
             entry.lastNegativeDialogueReputationGameTime = readOptionalLong(entryTag, TAG_LAST_NEGATIVE_DIALOGUE_REPUTATION);
             entry.lastJokeReputationGameTime = readOptionalLong(entryTag, TAG_LAST_JOKE_REPUTATION);
             entry.badFirstImpression = entryTag.getBoolean(TAG_BAD_FIRST_IMPRESSION);
+            if (entryTag.contains(TAG_CONSECUTIVE_REQUEST_TYPE, Tag.TAG_STRING)) {
+                try {
+                    entry.consecutiveRequestType = DialogueRequestType.valueOf(entryTag.getString(TAG_CONSECUTIVE_REQUEST_TYPE));
+                    entry.consecutiveRequestCount = entryTag.getInt(TAG_CONSECUTIVE_REQUEST_COUNT);
+                } catch (IllegalArgumentException ignored) {
+                    entry.consecutiveRequestType = null;
+                    entry.consecutiveRequestCount = 0;
+                }
+            }
             ListTag recentLines = entryTag.getList(TAG_RECENT_LINES, Tag.TAG_STRING);
             for (Tag rawLine : recentLines) {
                 entry.recentDialogueIds.addLast(rawLine.getAsString());
@@ -104,9 +117,14 @@ public class VillagerInteractionSavedData extends SavedData {
                 entryTag.putUUID(TAG_PLAYER, playerEntry.getKey());
                 entryTag.putBoolean(TAG_HAS_TALKED, playerEntry.getValue().hasTalked);
                 entryTag.putLong(TAG_LAST_POSITIVE_DIALOGUE_REPUTATION, playerEntry.getValue().lastPositiveDialogueReputationGameTime);
+                entryTag.putLong(TAG_LAST_POSITIVE_DIALOGUE_REPUTATION_DAY, playerEntry.getValue().lastPositiveDialogueReputationDay);
                 entryTag.putLong(TAG_LAST_NEGATIVE_DIALOGUE_REPUTATION, playerEntry.getValue().lastNegativeDialogueReputationGameTime);
                 entryTag.putLong(TAG_LAST_JOKE_REPUTATION, playerEntry.getValue().lastJokeReputationGameTime);
                 entryTag.putBoolean(TAG_BAD_FIRST_IMPRESSION, playerEntry.getValue().badFirstImpression);
+                if (playerEntry.getValue().consecutiveRequestType != null) {
+                    entryTag.putString(TAG_CONSECUTIVE_REQUEST_TYPE, playerEntry.getValue().consecutiveRequestType.name());
+                    entryTag.putInt(TAG_CONSECUTIVE_REQUEST_COUNT, playerEntry.getValue().consecutiveRequestCount);
+                }
                 ListTag recentLines = new ListTag();
                 for (String lineId : playerEntry.getValue().recentDialogueIds) {
                     recentLines.add(StringTag.valueOf(lineId));
@@ -143,9 +161,12 @@ public class VillagerInteractionSavedData extends SavedData {
     public static class InteractionEntry {
         private boolean hasTalked;
         private long lastPositiveDialogueReputationGameTime = Long.MIN_VALUE;
+        private long lastPositiveDialogueReputationDay = Long.MIN_VALUE;
         private long lastNegativeDialogueReputationGameTime = Long.MIN_VALUE;
         private long lastJokeReputationGameTime = Long.MIN_VALUE;
         private boolean badFirstImpression;
+        private DialogueRequestType consecutiveRequestType;
+        private int consecutiveRequestCount;
         private final ArrayDeque<String> recentDialogueIds = new ArrayDeque<>();
         private final Map<DialogueRequestType, Long> lastReputationByRequestType = new EnumMap<>(DialogueRequestType.class);
         private final Map<DialogueRequestType, Long> lastDialogueByRequestType = new EnumMap<>(DialogueRequestType.class);
@@ -164,6 +185,10 @@ public class VillagerInteractionSavedData extends SavedData {
 
         public long lastPositiveDialogueReputationGameTime() {
             return this.lastPositiveDialogueReputationGameTime;
+        }
+
+        public long lastPositiveDialogueReputationDay() {
+            return this.lastPositiveDialogueReputationDay;
         }
 
         public long lastNegativeDialogueReputationGameTime() {
@@ -186,9 +211,14 @@ public class VillagerInteractionSavedData extends SavedData {
             return this.badFirstImpression;
         }
 
-        public void rememberDialogueReputation(DialogueRequestType requestType, int delta, long gameTime, boolean badFirstImpression) {
+        public int consecutiveRequestCount(DialogueRequestType requestType) {
+            return this.consecutiveRequestType == requestType ? this.consecutiveRequestCount : 0;
+        }
+
+        public void rememberDialogueReputation(DialogueRequestType requestType, int delta, long gameTime, long day, boolean badFirstImpression) {
             if (delta > 0) {
                 this.lastPositiveDialogueReputationGameTime = gameTime;
+                this.lastPositiveDialogueReputationDay = day;
             } else if (delta < 0) {
                 this.lastNegativeDialogueReputationGameTime = gameTime;
             }
@@ -200,6 +230,12 @@ public class VillagerInteractionSavedData extends SavedData {
         }
 
         public void rememberDialogueId(DialogueRequestType requestType, String dialogueId, long gameTime) {
+            if (this.consecutiveRequestType == requestType) {
+                this.consecutiveRequestCount++;
+            } else {
+                this.consecutiveRequestType = requestType;
+                this.consecutiveRequestCount = 1;
+            }
             this.recentDialogueIds.remove(dialogueId);
             this.recentDialogueIds.addLast(dialogueId);
             this.lastDialogueByRequestType.put(requestType, gameTime);

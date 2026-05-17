@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
 import com.jvn.villagerretaliation.network.VillagerConversationEndRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerDialogueRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerTradeRequestPayload;
+import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.Minecraft;
@@ -27,16 +28,20 @@ public class VillagerInteractionScreen extends Screen {
     private final int villagerEntityId;
     private final String villagerName;
     private final String professionName;
+    private final int reputation;
+    private final VillagerReputationLevel reputationLevel;
     private final List<DialogueOption> options = new ArrayList<>();
     private DialoguePage page = DialoguePage.ROOT;
     private int selectedOption;
     private boolean closingFromServer;
 
-    public VillagerInteractionScreen(int villagerEntityId, String villagerName, String professionName) {
+    public VillagerInteractionScreen(int villagerEntityId, String villagerName, String professionName, int reputation, VillagerReputationLevel reputationLevel) {
         super(Component.literal("Villager Interaction"));
         this.villagerEntityId = villagerEntityId;
         this.villagerName = villagerName;
         this.professionName = professionName;
+        this.reputation = reputation;
+        this.reputationLevel = reputationLevel;
         ClientVillagerConversationState.start(villagerEntityId);
     }
 
@@ -235,10 +240,16 @@ public class VillagerInteractionScreen extends Screen {
 
         String speaker = this.villagerName;
         String profession = this.professionName;
+        String mood = "Mood: " + displayName(this.reputationLevel);
+        String reputation = "Reputation: " + this.reputation;
         int nameX = dividerX - 28 - this.font.width(speaker);
-        graphics.drawString(this.font, speaker, nameX, centerY - 7, 0xFFFFFFFF, true);
+        graphics.drawString(this.font, speaker, nameX, centerY - 18, 0xFFFFFFFF, true);
         int professionX = dividerX - 28 - this.font.width(profession);
-        graphics.drawString(this.font, profession, professionX, centerY + 8, 0x88FFFFFF, true);
+        graphics.drawString(this.font, profession, professionX, centerY - 3, 0x88FFFFFF, true);
+        int moodX = dividerX - 28 - this.font.width(mood);
+        graphics.drawString(this.font, mood, moodX, centerY + 11, moodColor(this.reputationLevel), true);
+        int reputationX = dividerX - 28 - this.font.width(reputation);
+        graphics.drawString(this.font, reputation, reputationX, centerY + 24, 0x88FFFFFF, true);
     }
 
     private void renderResponse(GuiGraphics graphics) {
@@ -303,6 +314,34 @@ public class VillagerInteractionScreen extends Screen {
             villager.getLookControl().setLookAt(minecraft.player, 30.0F, 30.0F);
         }
         // TODO: Add subtle client-only camera/FOV easing once it can be tested across first- and third-person safely.
+    }
+
+    private static String displayName(VillagerReputationLevel level) {
+        String rawName = level.name();
+        StringBuilder builder = new StringBuilder(rawName.length());
+        boolean capitalizeNext = true;
+        for (char character : rawName.replace('_', ' ').toLowerCase().toCharArray()) {
+            if (Character.isWhitespace(character)) {
+                capitalizeNext = true;
+                builder.append(character);
+            } else if (capitalizeNext) {
+                builder.append(Character.toUpperCase(character));
+                capitalizeNext = false;
+            } else {
+                builder.append(character);
+            }
+        }
+        return builder.toString();
+    }
+
+    private static int moodColor(VillagerReputationLevel level) {
+        if (level.trustRank() > VillagerReputationLevel.NEUTRAL.trustRank()) {
+            return 0xAA80FFB0;
+        }
+        if (level.trustRank() < VillagerReputationLevel.NEUTRAL.trustRank()) {
+            return 0xAAFF8A7A;
+        }
+        return 0xAAFFFFFF;
     }
 
     private enum DialoguePage {

@@ -53,10 +53,13 @@ public final class VillagerInteractionService {
     }
 
     public static void openInteractionScreen(ServerPlayer player, Villager villager) {
+        int reputation = VillagerReputationManager.getReputation(player.serverLevel(), villager, player.getUUID());
         PacketDistributor.sendToPlayer(player, new OpenVillagerInteractionPayload(
                 villager.getId(),
                 villager.getDisplayName().getString(),
-                professionName(villager.getVillagerData().getProfession())
+                professionName(villager.getVillagerData().getProfession()),
+                reputation,
+                VillagerReputationLevel.fromReputation(reputation)
         ));
     }
 

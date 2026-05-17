@@ -16,9 +16,11 @@ public final class VillagerInteractionTracker {
                 !entry.hasTalked(),
                 entry.recentDialogueIds(),
                 entry.lastPositiveDialogueReputationGameTime(),
+                entry.lastPositiveDialogueReputationDay(),
                 entry.lastNegativeDialogueReputationGameTime(),
                 entry.lastJokeReputationGameTime(),
-                entry.badFirstImpression()
+                entry.badFirstImpression(),
+                entry.consecutiveRequestCount(DialogueRequestType.QUESTION)
         );
     }
 
@@ -45,7 +47,7 @@ public final class VillagerInteractionTracker {
     public static void rememberDialogueReputation(ServerLevel level, Villager villager, ServerPlayer player, DialogueRequestType requestType, int delta, boolean badFirstImpression) {
         VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
         VillagerInteractionSavedData.InteractionEntry entry = data.getOrCreate(villager.getUUID(), player.getUUID());
-        entry.rememberDialogueReputation(requestType, delta, level.getGameTime(), badFirstImpression);
+        entry.rememberDialogueReputation(requestType, delta, level.getGameTime(), level.getDayTime() / 24000L, badFirstImpression);
         data.setDirty();
     }
 
@@ -53,9 +55,11 @@ public final class VillagerInteractionTracker {
             boolean firstConversation,
             List<String> recentDialogueIds,
             long lastPositiveDialogueReputationGameTime,
+            long lastPositiveDialogueReputationDay,
             long lastNegativeDialogueReputationGameTime,
             long lastJokeReputationGameTime,
-            boolean badFirstImpression
+            boolean badFirstImpression,
+            int consecutiveQuestionCount
     ) {
     }
 }
