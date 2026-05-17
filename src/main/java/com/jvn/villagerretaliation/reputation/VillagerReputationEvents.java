@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.util.VillagerRetaliationHazardAttribution;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
+import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -401,10 +402,7 @@ public final class VillagerReputationEvents {
                 triggerNegativeReputationBell(level, villager, reputationLevel);
             }
 
-            long gameTime = level.getGameTime();
-            villager.getBrain().setActiveActivityIfPossible(Activity.PANIC);
-            villager.getBrain().setMemory(MemoryModuleType.HEARD_BELL_TIME, gameTime);
-            villager.getBrain().setMemory(MemoryModuleType.NEAREST_HOSTILE, player);
+            VillagerRetaliationVillagerBrainUtil.enterFleeState(villager, player, level.getGameTime());
             return;
         }
     }

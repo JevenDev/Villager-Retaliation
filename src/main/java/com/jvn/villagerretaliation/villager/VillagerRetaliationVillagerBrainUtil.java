@@ -2,10 +2,21 @@ package com.jvn.villagerretaliation.villager;
 
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import net.minecraft.world.entity.ai.Brain;
+import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.ai.util.LandRandomPos;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.AbstractVillager;
+import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.schedule.Activity;
+import net.minecraft.world.phys.Vec3;
+import javax.annotation.Nullable;
 
 public final class VillagerRetaliationVillagerBrainUtil {
+    private static final float FLEE_SPEED_MODIFIER = 0.75F;
+    private static final int FLEE_HORIZONTAL_RANGE = 16;
+    private static final int FLEE_VERTICAL_RANGE = 7;
+
     private VillagerRetaliationVillagerBrainUtil() {
     }
 
@@ -19,5 +30,45 @@ public final class VillagerRetaliationVillagerBrainUtil {
         return brain.hasMemoryValue(MemoryModuleType.HURT_BY)
                 || brain.hasMemoryValue(MemoryModuleType.HURT_BY_ENTITY)
                 || brain.hasMemoryValue(MemoryModuleType.NEAREST_HOSTILE);
+    }
+
+    public static void enterFleeState(Villager villager, @Nullable LivingEntity hostile, long gameTime) {
+        Brain<Villager> brain = villager.getBrain();
+        if (hostile != null && hostile.isAlive()) {
+            brain.setMemory(MemoryModuleType.NEAREST_HOSTILE, hostile);
+            seedWalkTargetAwayFrom(villager, hostile);
+        }
+        brain.setMemory(MemoryModuleType.HEARD_BELL_TIME, gameTime);
+        brain.setActiveActivityIfPossible(Activity.PANIC);
+    }
+
+    private static void seedWalkTargetAwayFrom(Villager villager, LivingEntity hostile) {
+        if (hasAwayFromHostileWalkTarget(villager, hostile)) {
+            return;
+        }
+
+        Vec3 fleeTarget = LandRandomPos.getPosAway(
+                villager,
+                FLEE_HORIZONTAL_RANGE,
+                FLEE_VERTICAL_RANGE,
+                hostile.position()
+        );
+        if (fleeTarget != null) {
+            villager.getBrain().setMemory(MemoryModuleType.WALK_TARGET, new WalkTarget(fleeTarget, FLEE_SPEED_MODIFIER, 0));
+        }
+    }
+
+    private static boolean hasAwayFromHostileWalkTarget(Villager villager, LivingEntity hostile) {
+        return villager.getBrain()
+                .getMemory(MemoryModuleType.WALK_TARGET)
+                .map(walkTarget -> isTargetAwayFromHostile(villager, hostile, walkTarget))
+                .orElse(false);
+    }
+
+    private static boolean isTargetAwayFromHostile(Villager villager, LivingEntity hostile, WalkTarget walkTarget) {
+        Vec3 villagerPosition = villager.position();
+        Vec3 walkDirection = walkTarget.getTarget().currentPosition().subtract(villagerPosition);
+        Vec3 hostileDirection = hostile.position().subtract(villagerPosition);
+        return walkDirection.dot(hostileDirection) < 0.0D;
     }
 }
