@@ -19,6 +19,8 @@
   "villagerretaliation.configuration.general.enableVillagerReputation": "Enable Villager Reputation",
   "villagerretaliation.configuration.general.enableVanillaGossipIntegration": "Enable Vanilla Gossip Integration",
   "villagerretaliation.configuration.general.enableDespisedKillOnSight": "Enable Despised Kill On Sight",
+  "villagerretaliation.configuration.general.enableInteractionScreen": "Enable Interaction Screen",
+  "villagerretaliation.configuration.general.shiftRightClickBypassesInteractionScreen": "Shift Right Click Bypasses Interaction Screen",
 
   "villagerretaliation.configuration.balance.babyVillagersDropLoot": "Baby Villagers Drop Loot",
   "villagerretaliation.configuration.balance.requirePlayerKillForProfessionLoot": "Require Player Kill For Profession Loot",

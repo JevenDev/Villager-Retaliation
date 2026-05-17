@@ -11,6 +11,8 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.BooleanValue ENABLE_VILLAGER_REPUTATION;
     public static final ModConfigSpec.BooleanValue ENABLE_VANILLA_GOSSIP_INTEGRATION;
     public static final ModConfigSpec.BooleanValue ENABLE_DESPISED_KILL_ON_SIGHT;
+    public static final ModConfigSpec.BooleanValue ENABLE_INTERACTION_SCREEN;
+    public static final ModConfigSpec.BooleanValue SHIFT_RIGHT_CLICK_BYPASSES_INTERACTION_SCREEN;
 
     public static final ModConfigSpec.BooleanValue BABY_VILLAGERS_DROP_LOOT;
     public static final ModConfigSpec.BooleanValue REQUIRE_PLAYER_KILL_FOR_PROFESSION_LOOT;
@@ -115,6 +117,14 @@ public final class VillagerRetaliationConfig {
                 .comment("Allows villagers who personally DESPISE a player to target that player on sight.")
                 .translation("villagerretaliation.configuration.general.enableDespisedKillOnSight")
                 .define("enableDespisedKillOnSight", true);
+        ENABLE_INTERACTION_SCREEN = BUILDER
+                .comment("Opens Villager Retaliation's interaction screen before adult villager trading.")
+                .translation("villagerretaliation.configuration.general.enableInteractionScreen")
+                .define("enableInteractionScreen", true);
+        SHIFT_RIGHT_CLICK_BYPASSES_INTERACTION_SCREEN = BUILDER
+                .comment("Allows sneaking while right-clicking an adult villager to bypass the interaction screen and open normal trading.")
+                .translation("villagerretaliation.configuration.general.shiftRightClickBypassesInteractionScreen")
+                .define("shiftRightClickBypassesInteractionScreen", true);
         BUILDER.pop();
 
         BUILDER.push("balance");
