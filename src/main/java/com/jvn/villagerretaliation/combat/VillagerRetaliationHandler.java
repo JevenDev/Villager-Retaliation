@@ -30,6 +30,7 @@ import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.animal.IronGolem;
+import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.npc.WanderingTrader;
@@ -297,6 +298,10 @@ public final class VillagerRetaliationHandler {
                 () -> clearAnger(villager)
         );
         if (retaliationTarget == null) {
+            if (tryFleeVisibleCreeper(villager)) {
+                handlePassivePotionState(villager);
+                return;
+            }
             handlePassivePotionState(villager);
             return;
         }
@@ -305,6 +310,12 @@ public final class VillagerRetaliationHandler {
         LivingEntity target = retaliationTarget.target();
         long gameTime = retaliationTarget.gameTime();
         double distanceSqr = villager.distanceToSqr(target);
+        if (shouldAvoidVisibleCreeper(villager, target)) {
+            clearAnger(villager, true, false);
+            enterCreeperAvoidanceState(villager, target, gameTime);
+            handlePassivePotionState(villager);
+            return;
+        }
         if (!retaliationTarget.targetCurrentlyHostile()) {
             villager.setAggressive(false);
             villager.setChasing(false);
@@ -440,6 +451,10 @@ public final class VillagerRetaliationHandler {
         if (villager.isBaby()) {
             return;
         }
+        if (attacker instanceof Creeper creeper) {
+            enterCreeperAvoidanceState(villager, creeper, villager.level().getGameTime());
+            return;
+        }
         RETALIATION.anger(villager, attacker);
     }
 
@@ -453,7 +468,8 @@ public final class VillagerRetaliationHandler {
 
         Optional<LivingEntity> memoryTarget = VillagerRetaliationVillagerCombatUtil.getMemoryIfRegistered(villager, MemoryModuleType.NEAREST_HOSTILE)
                 .filter(LivingEntity::isAlive)
-                .filter(target -> target != villager);
+                .filter(target -> target != villager)
+                .filter(target -> !shouldAvoidVisibleCreeper(villager, target));
         if (memoryTarget.isPresent()) {
             anger(villager, memoryTarget.get());
             return;
@@ -467,7 +483,31 @@ public final class VillagerRetaliationHandler {
         NEXT_NATURAL_TARGET_SCAN_TICKS.put(villager.getUUID(), gameTime + NATURAL_TARGET_SCAN_INTERVAL_TICKS);
         double naturalDefenseRadius = VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get();
         VillagerRetaliationVillagerCombatUtil.findNearestNaturalHostile(villager, naturalDefenseRadius)
+                .filter(target -> !shouldAvoidVisibleCreeper(villager, target))
                 .ifPresent(target -> anger(villager, target));
+    }
+
+    private static boolean shouldAvoidVisibleCreeper(Villager villager, LivingEntity target) {
+        return target instanceof Creeper && villager.hasLineOfSight(target);
+    }
+
+    private static boolean tryFleeVisibleCreeper(Villager villager) {
+        double creeperThreatRadius = VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get();
+        Optional<Creeper> visibleCreeper = VillagerRetaliationVillagerCombatUtil.findNearestVisibleCreeper(villager, creeperThreatRadius);
+        if (visibleCreeper.isEmpty()) {
+            return false;
+        }
+
+        clearAnger(villager, true, false);
+        enterCreeperAvoidanceState(villager, visibleCreeper.get(), villager.level().getGameTime());
+        return true;
+    }
+
+    private static void enterCreeperAvoidanceState(Villager villager, LivingEntity creeper, long gameTime) {
+        VillagerRetaliationVillagerBrainUtil.enterFleeState(villager, creeper, gameTime);
+        villager.setAggressive(false);
+        villager.setChasing(false);
+        villager.setTarget(null);
     }
 
     private static boolean tryAcquireGroundWeapon(Villager villager, long gameTime) {
@@ -488,10 +528,14 @@ public final class VillagerRetaliationHandler {
     }
 
     private static void clearAnger(Villager villager) {
-        clearAnger(villager, true);
+        clearAnger(villager, true, true);
     }
 
     private static void clearAnger(Villager villager, boolean restoreWeapon) {
+        clearAnger(villager, restoreWeapon, true);
+    }
+
+    private static void clearAnger(Villager villager, boolean restoreWeapon, boolean stopNavigation) {
         RETALIATION.clearPersistentAnger(villager);
         NEXT_SPECIAL_TICKS.remove(villager.getUUID());
         NEXT_NATURAL_TARGET_SCAN_TICKS.remove(villager.getUUID());
@@ -515,7 +559,9 @@ public final class VillagerRetaliationHandler {
         villager.setAggressive(false);
         villager.setChasing(false);
         villager.setTarget(null);
-        villager.getNavigation().stop();
+        if (stopNavigation) {
+            villager.getNavigation().stop();
+        }
     }
 
     private static void syncMeleeAttackAttributes(Villager villager) {
@@ -561,9 +607,7 @@ public final class VillagerRetaliationHandler {
     private static void rallyNearbyVillagers(Villager alarmVillager, LivingEntity attacker, double radius) {
         // Keep alarm villagers in panic/flee behavior while still spreading the threat to fighters.
         long gameTime = alarmVillager.level().getGameTime();
-        alarmVillager.getBrain().setActiveActivityIfPossible(Activity.PANIC);
-        alarmVillager.getBrain().setMemory(MemoryModuleType.HEARD_BELL_TIME, gameTime);
-        alarmVillager.getBrain().setMemory(MemoryModuleType.NEAREST_HOSTILE, attacker);
+        VillagerRetaliationVillagerBrainUtil.enterFleeState(alarmVillager, attacker, gameTime);
         angerNearbyVillagers(alarmVillager, attacker, radius);
         WanderingTraderRetaliationHandler.angerNearbyTradersFrom(alarmVillager, attacker, radius);
     }
@@ -593,11 +637,7 @@ public final class VillagerRetaliationHandler {
                 continue;
             }
 
-            nearby.getBrain().setActiveActivityIfPossible(Activity.PANIC);
-            nearby.getBrain().setMemory(MemoryModuleType.HEARD_BELL_TIME, gameTime);
-            if (attacker != null && attacker.isAlive()) {
-                nearby.getBrain().setMemory(MemoryModuleType.NEAREST_HOSTILE, attacker);
-            }
+            VillagerRetaliationVillagerBrainUtil.enterFleeState(nearby, attacker, gameTime);
         }
     }
 

@@ -9,6 +9,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
@@ -56,6 +57,32 @@ public final class VillagerRetaliationVillagerCombatUtil {
             if (villager.hasLineOfSight(candidate) && distance < closestVisibleDistance) {
                 closestVisibleDistance = distance;
                 closestVisible = candidate;
+            }
+        }
+
+        return Optional.ofNullable(closestVisible);
+    }
+
+    public static boolean hasVisibleCreeperThreat(AbstractVillager villager, double radius) {
+        return findNearestVisibleCreeper(villager, radius).isPresent();
+    }
+
+    public static Optional<Creeper> findNearestVisibleCreeper(AbstractVillager villager, double radius) {
+        if (!(villager.level() instanceof ServerLevel level)
+                || !villager.isAlive()
+                || radius <= 0.0D) {
+            return Optional.empty();
+        }
+
+        AABB searchArea = villager.getBoundingBox().inflate(radius);
+        Creeper closestVisible = null;
+        double closestVisibleDistance = Double.MAX_VALUE;
+
+        for (Creeper creeper : level.getEntitiesOfClass(Creeper.class, searchArea, LivingEntity::isAlive)) {
+            double distance = villager.distanceToSqr(creeper);
+            if (villager.hasLineOfSight(creeper) && distance < closestVisibleDistance) {
+                closestVisibleDistance = distance;
+                closestVisible = creeper;
             }
         }
 
@@ -149,6 +176,7 @@ public final class VillagerRetaliationVillagerCombatUtil {
         return target != villager
                 && target.isAlive()
                 && target instanceof Enemy
+                && !(target instanceof Creeper)
                 && !target.isAlliedTo(villager)
                 && !VillagerRetaliationVillagerCombatUtil.shouldIgnoreAttacker(target);
     }
