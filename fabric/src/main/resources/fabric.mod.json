@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "${mod_id}",
+  "version": "${mod_version}",
+  "name": "${mod_name}",
+  "description": "${mod_description} Fabric support is scaffolded only and does not implement gameplay yet.",
+  "authors": [
+    "${mod_authors}"
+  ],
+  "contact": {
+    "homepage": "${mod_display_url}",
+    "issues": "${mod_issue_tracker}"
+  },
+  "license": "${mod_license}",
+  "icon": "villager_retaliation_cover.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "${mod_package}.fabric.VillagerRetaliationFabric"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=${fabric_loader_version}",
+    "fabric-api": ">=${fabric_api_version}",
+    "minecraft": "${minecraft_version}",
+    "architectury": ">=${architectury_version}"
+  }
+}

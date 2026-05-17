@@ -1,40 +1,36 @@
-### Gradle ###
-.gradle
+# Gradle
+.gradle/
+.architectury-transformer/
 build/
-!gradle/wrapper/gradle-wrapper.jar
-!**/src/**/build/
+*/build/
+repo/
 
-### IntelliJ IDEA ###
+# Java and IDEs
+out/
 .idea/
 *.iws
 *.iml
 *.ipr
-out/
-!**/src/**/out/
-
-.run/
-
-### Eclipse ###
-.apt_generated
 .classpath
-.eclipse/
-.factorypath
 .project
-.settings
-.springBeans
-.sts4-cache
-bin/
-!**/src/**/bin/
-
-### VS Code ###
+.settings/
+.eclipse/
+.apt_generated/
+.factorypath
 .vscode/
 
-### Mac OS ###
-.DS_Store
-
-### Minecraft Modding ###
+# Minecraft runtime output
 run/
-!**/src/**/run/
+runs/
+logs/
+crash-reports/
 **/src/generated/**/.cache/
-repo/
-!**/src/**/repo/
+phases.md
+
+# Generated mod artifacts
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+
+# OS files
+.DS_Store
+Thumbs.db
