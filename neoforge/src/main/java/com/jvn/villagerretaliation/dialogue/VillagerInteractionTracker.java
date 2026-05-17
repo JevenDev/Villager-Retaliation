@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.dialogue;
 
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import java.util.List;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -12,6 +13,9 @@ public final class VillagerInteractionTracker {
     public static InteractionState getState(ServerLevel level, Villager villager, ServerPlayer player) {
         VillagerInteractionSavedData.InteractionEntry entry = VillagerInteractionSavedData.get(level)
                 .getOrCreate(villager.getUUID(), player.getUUID());
+        long gameTime = level.getGameTime();
+        long day = level.getDayTime() / 24000L;
+        long optionResetTicks = VillagerRetaliationConfig.REPEATED_DIALOGUE_OPTION_RESET_TICKS.get();
         return new InteractionState(
                 !entry.hasTalked(),
                 entry.recentDialogueIds(),
@@ -20,7 +24,12 @@ public final class VillagerInteractionTracker {
                 entry.lastNegativeDialogueReputationGameTime(),
                 entry.lastJokeReputationGameTime(),
                 entry.badFirstImpression(),
-                entry.consecutiveRequestCount(DialogueRequestType.QUESTION),
+                entry.requestUseCount(DialogueRequestType.CHAT, gameTime, day, optionResetTicks),
+                entry.requestUseCount(DialogueRequestType.GREETING, gameTime, day, optionResetTicks),
+                entry.requestUseCount(DialogueRequestType.QUESTION, gameTime, day, optionResetTicks),
+                entry.requestUseCount(DialogueRequestType.STORY, gameTime, day, optionResetTicks),
+                entry.requestUseCount(DialogueRequestType.JOKE, gameTime, day, optionResetTicks),
+                entry.requestUseCount(DialogueRequestType.INSULT, gameTime, day, optionResetTicks),
                 entry.lastDirectHitGameTime(),
                 entry.lastDirectHitWeapon()
         );
@@ -30,7 +39,13 @@ public final class VillagerInteractionTracker {
         VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
         VillagerInteractionSavedData.InteractionEntry entry = data.getOrCreate(villager.getUUID(), player.getUUID());
         entry.markTalked();
-        entry.rememberDialogueId(requestType, dialogueId, level.getGameTime());
+        entry.rememberDialogueId(
+                requestType,
+                dialogueId,
+                level.getGameTime(),
+                level.getDayTime() / 24000L,
+                VillagerRetaliationConfig.REPEATED_DIALOGUE_OPTION_RESET_TICKS.get()
+        );
         data.setDirty();
     }
 
@@ -81,9 +96,24 @@ public final class VillagerInteractionTracker {
             long lastNegativeDialogueReputationGameTime,
             long lastJokeReputationGameTime,
             boolean badFirstImpression,
-            int consecutiveQuestionCount,
+            int chatUseCount,
+            int greetingUseCount,
+            int questionUseCount,
+            int storyUseCount,
+            int jokeUseCount,
+            int insultUseCount,
             long lastDirectHitGameTime,
             String lastDirectHitWeapon
     ) {
+        public int requestUseCount(DialogueRequestType requestType) {
+            return switch (requestType) {
+                case CHAT -> this.chatUseCount;
+                case GREETING -> this.greetingUseCount;
+                case QUESTION -> this.questionUseCount;
+                case STORY -> this.storyUseCount;
+                case JOKE -> this.jokeUseCount;
+                case INSULT -> this.insultUseCount;
+            };
+        }
     }
 }

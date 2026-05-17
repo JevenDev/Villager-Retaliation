@@ -45,6 +45,7 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.IntValue DIALOGUE_POSITIVE_REPUTATION_COOLDOWN_DAYS;
     public static final ModConfigSpec.IntValue REPEATED_QUESTION_POSITIVE_LIMIT;
     public static final ModConfigSpec.IntValue REPEATED_QUESTION_REPUTATION_LOSS;
+    public static final ModConfigSpec.IntValue REPEATED_DIALOGUE_OPTION_RESET_TICKS;
     public static final ModConfigSpec.IntValue SLEEPING_VILLAGER_BOTHER_REPUTATION_LOSS;
     public static final ModConfigSpec.IntValue GREETING_REPUTATION_GAIN;
     public static final ModConfigSpec.IntValue QUESTION_REPUTATION_GAIN;
@@ -248,6 +249,9 @@ public final class VillagerRetaliationConfig {
         REPEATED_QUESTION_REPUTATION_LOSS = BUILDER.comment("Reputation lost when the player keeps repeating Question dialogue after the positive limit.")
                 .translation("villagerretaliation.configuration.reputation.repeatedQuestionReputationLoss")
                 .defineInRange("repeatedQuestionReputationLoss", -1, -1000, 0);
+        REPEATED_DIALOGUE_OPTION_RESET_TICKS = BUILDER.comment("Game ticks before repeated dialogue option usage resets. Usage also resets at the start of each Minecraft day.")
+                .translation("villagerretaliation.configuration.reputation.repeatedDialogueOptionResetTicks")
+                .defineInRange("repeatedDialogueOptionResetTicks", 6000, 1, 24000);
         SLEEPING_VILLAGER_BOTHER_REPUTATION_LOSS = BUILDER.comment("Reputation lost when a player tries to interact with a sleeping villager.")
                 .translation("villagerretaliation.configuration.reputation.sleepingVillagerBotherReputationLoss")
                 .defineInRange("sleepingVillagerBotherReputationLoss", -2, -1000, 0);

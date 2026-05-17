@@ -53,6 +53,7 @@
   "villagerretaliation.configuration.reputation.dialoguePositiveReputationCooldownDays": "Dialogue Positive Reputation Cooldown Days",
   "villagerretaliation.configuration.reputation.repeatedQuestionPositiveLimit": "Repeated Question Positive Limit",
   "villagerretaliation.configuration.reputation.repeatedQuestionReputationLoss": "Repeated Question Reputation Loss",
+  "villagerretaliation.configuration.reputation.repeatedDialogueOptionResetTicks": "Repeated Dialogue Option Reset Ticks",
   "villagerretaliation.configuration.reputation.sleepingVillagerBotherReputationLoss": "Sleeping Villager Bother Reputation Loss",
   "villagerretaliation.configuration.reputation.greetingReputationGain": "Greeting Reputation Gain",
   "villagerretaliation.configuration.reputation.questionReputationGain": "Question Reputation Gain",
