@@ -19,10 +19,12 @@ public final class VillagerDialogueService {
                 .filter(line -> line.matches(context, requestType, disposition))
                 .sorted(Comparator.comparingInt(line -> recentDialogueIds.contains(line.id()) ? 1 : 0))
                 .toList();
+        candidates = preferDirectHitMemoryCandidates(context, requestType, candidates);
         if (candidates.isEmpty()) {
             candidates = LINES.stream()
                     .filter(line -> line.matches(context, requestType, DialogueDisposition.NEUTRAL))
                     .toList();
+            candidates = preferDirectHitMemoryCandidates(context, requestType, candidates);
         }
         if (candidates.isEmpty()) {
             return new DialogueResult("fallback", "They stare at you, unsure what to say.");
@@ -40,12 +42,12 @@ public final class VillagerDialogueService {
         for (DialogueLine candidate : candidates) {
             selected -= effectiveWeight(candidate);
             if (selected < 0) {
-                return new DialogueResult(candidate.id(), candidate.text());
+                return new DialogueResult(candidate.id(), resolveText(candidate.text(), context));
             }
         }
 
         DialogueLine fallback = candidates.getLast();
-        return new DialogueResult(fallback.id(), fallback.text());
+        return new DialogueResult(fallback.id(), resolveText(fallback.text(), context));
     }
 
     public static DialogueDisposition dispositionFor(VillagerReputationLevel reputationLevel) {
@@ -62,6 +64,32 @@ public final class VillagerDialogueService {
 
     private static int effectiveWeight(DialogueLine line) {
         return line.weight() + line.specificityScore() * 8;
+    }
+
+    private static List<DialogueLine> preferDirectHitMemoryCandidates(
+            DialogueContext context,
+            DialogueRequestType requestType,
+            List<DialogueLine> candidates) {
+        if (!context.hasRecentDirectHitMemory() || candidates.isEmpty()) {
+            return candidates;
+        }
+
+        List<DialogueLine> directHitCandidates = candidates.stream()
+                .filter(DialogueLine::requiresRecentDirectHitMemory)
+                .toList();
+        if (directHitCandidates.isEmpty()) {
+            return candidates;
+        }
+
+        return switch (requestType) {
+            case GREETING, QUESTION, INSULT -> directHitCandidates;
+            case CHAT -> context.random().nextInt(100) < 45 ? directHitCandidates : candidates;
+            default -> candidates;
+        };
+    }
+
+    private static String resolveText(String text, DialogueContext context) {
+        return text.replace("{attack_weapon}", context.rememberedAttackWeapon());
     }
 
     private static List<DialogueLine> createLines() {
@@ -86,6 +114,16 @@ public final class VillagerDialogueService {
                 .dispositions(DialogueDisposition.RUDE, DialogueDisposition.HOSTILE).build();
         add(lines, "greeting_low_quick", DialogueRequestType.GREETING, "Make it quick. I don't trust you.")
                 .dispositions(DialogueDisposition.RUDE, DialogueDisposition.HOSTILE, DialogueDisposition.FEARFUL).build();
+        add(lines, "greeting_hit_apology", DialogueRequestType.GREETING, "Here to apologize for attacking me?")
+                .requiresRecentDirectHitMemory()
+                .dispositions(DialogueDisposition.CAUTIOUS, DialogueDisposition.RUDE, DialogueDisposition.HOSTILE, DialogueDisposition.FEARFUL)
+                .weight(44)
+                .build();
+        add(lines, "greeting_hit_bruise", DialogueRequestType.GREETING, "Still have a bruise from when you hit me with that {attack_weapon}.")
+                .requiresRecentDirectHitMemory()
+                .dispositions(DialogueDisposition.CAUTIOUS, DialogueDisposition.RUDE, DialogueDisposition.HOSTILE, DialogueDisposition.FEARFUL)
+                .weight(44)
+                .build();
 
         add(lines, "chat_respectful_welcome", DialogueRequestType.CHAT, "Stay a while. It's nice having someone around who doesn't make the village tense.")
                 .dispositions(DialogueDisposition.RESPECTFUL, DialogueDisposition.FRIENDLY).weight(34).build();
@@ -103,6 +141,22 @@ public final class VillagerDialogueService {
                 .dispositions(DialogueDisposition.FEARFUL).weight(34).build();
         add(lines, "chat_fearful_smalltalk", DialogueRequestType.CHAT, "Small talk is easier when nobody is shouting.")
                 .dispositions(DialogueDisposition.FEARFUL).weight(34).build();
+        add(lines, "chat_hit_memory", DialogueRequestType.CHAT, "Casual conversation is harder when I remember getting struck with that {attack_weapon}.")
+                .requiresRecentDirectHitMemory()
+                .weight(52)
+                .build();
+        add(lines, "chat_hit_memory_2", DialogueRequestType.CHAT, "You hit me once already. Makes friendly chatter feel a bit thin.")
+                .requiresRecentDirectHitMemory()
+                .weight(52)
+                .build();
+        add(lines, "chat_hit_memory_3", DialogueRequestType.CHAT, "We can call this a chat, but I still remember that {attack_weapon} connecting.")
+                .requiresRecentDirectHitMemory()
+                .weight(52)
+                .build();
+        add(lines, "chat_hit_memory_4", DialogueRequestType.CHAT, "Hard to make small talk when I'm still thinking about being hit with your {attack_weapon}.")
+                .requiresRecentDirectHitMemory()
+                .weight(34)
+                .build();
         add(lines, "chat_general_well", DialogueRequestType.CHAT, "The well, the paths, the crops, the gossip. That's a village, more or less.")
                 .weight(28).build();
         add(lines, "chat_general_day", DialogueRequestType.CHAT, "Some days all anyone wants is a quiet street and a door that stays shut at night.")
@@ -163,6 +217,11 @@ public final class VillagerDialogueService {
                 .eventTags(VillageEventMemory.EventTag.RAID).weight(40).build();
         add(lines, "question_attack", DialogueRequestType.QUESTION, "People remember raised hands. They remember lowered ones too.")
                 .eventTags(VillageEventMemory.EventTag.VILLAGER_ATTACKED, VillageEventMemory.EventTag.PLAYER_ATTACKED_VILLAGER).weight(35).build();
+        add(lines, "question_attack_weapon", DialogueRequestType.QUESTION, "Why should I answer calmly when the last thing you brought me was a {attack_weapon}?")
+                .requiresRecentDirectHitMemory()
+                .dispositions(DialogueDisposition.CAUTIOUS, DialogueDisposition.RUDE, DialogueDisposition.HOSTILE, DialogueDisposition.FEARFUL)
+                .weight(40)
+                .build();
 
         add(lines, "joke_farmer_carrot", DialogueRequestType.JOKE, "Why did the carrot blush? Too many eyes on it.")
                 .professions(VillagerProfession.FARMER).build();
@@ -183,6 +242,11 @@ public final class VillagerDialogueService {
                 .dispositions(DialogueDisposition.RESPECTFUL, DialogueDisposition.FRIENDLY).build();
         add(lines, "insult_neutral_hat", DialogueRequestType.INSULT, "I've traded with fence posts that listened better.")
                 .dispositions(DialogueDisposition.NEUTRAL, DialogueDisposition.CAUTIOUS).build();
+        add(lines, "insult_after_hit", DialogueRequestType.INSULT, "You've already made your point with that {attack_weapon}. Use words for once.")
+                .requiresRecentDirectHitMemory()
+                .dispositions(DialogueDisposition.CAUTIOUS, DialogueDisposition.RUDE, DialogueDisposition.HOSTILE, DialogueDisposition.FEARFUL)
+                .weight(40)
+                .build();
 
         add(lines, "question_general", DialogueRequestType.QUESTION, "A village is mostly small tasks, done before they become large problems.")
                 .build();

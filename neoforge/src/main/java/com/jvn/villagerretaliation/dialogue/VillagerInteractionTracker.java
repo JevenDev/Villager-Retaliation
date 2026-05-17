@@ -20,7 +20,9 @@ public final class VillagerInteractionTracker {
                 entry.lastNegativeDialogueReputationGameTime(),
                 entry.lastJokeReputationGameTime(),
                 entry.badFirstImpression(),
-                entry.consecutiveRequestCount(DialogueRequestType.QUESTION)
+                entry.consecutiveRequestCount(DialogueRequestType.QUESTION),
+                entry.lastDirectHitGameTime(),
+                entry.lastDirectHitWeapon()
         );
     }
 
@@ -64,6 +66,13 @@ public final class VillagerInteractionTracker {
         data.setDirty();
     }
 
+    public static void rememberDirectHit(ServerLevel level, Villager villager, ServerPlayer player, String weapon) {
+        VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
+        VillagerInteractionSavedData.InteractionEntry entry = data.getOrCreate(villager.getUUID(), player.getUUID());
+        entry.rememberDirectHit(level.getGameTime(), weapon);
+        data.setDirty();
+    }
+
     public record InteractionState(
             boolean firstConversation,
             List<String> recentDialogueIds,
@@ -72,7 +81,9 @@ public final class VillagerInteractionTracker {
             long lastNegativeDialogueReputationGameTime,
             long lastJokeReputationGameTime,
             boolean badFirstImpression,
-            int consecutiveQuestionCount
+            int consecutiveQuestionCount,
+            long lastDirectHitGameTime,
+            String lastDirectHitWeapon
     ) {
     }
 }

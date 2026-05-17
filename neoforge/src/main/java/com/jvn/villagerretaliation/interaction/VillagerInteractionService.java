@@ -105,6 +105,8 @@ public final class VillagerInteractionService {
                 interactionState.firstConversation(),
                 weatherState(level, villager),
                 timeOfDay(level),
+                interactionState.lastDirectHitGameTime(),
+                interactionState.lastDirectHitWeapon(),
                 VillageEventMemory.recentNear(level, villager.blockPosition()),
                 villager.getRandom()
         );

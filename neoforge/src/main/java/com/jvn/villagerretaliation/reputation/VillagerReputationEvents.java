@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.reputation;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.util.VillagerRetaliationHazardAttribution;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
@@ -25,6 +26,7 @@ import net.minecraft.world.entity.monster.ZombieVillager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.inventory.MerchantMenu;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.BellBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -85,6 +87,9 @@ public final class VillagerReputationEvents {
                 VillagerReputationAdvancements.onVillagerEnvironmentalDamage(level, serverPlayer, villager);
             } else {
                 VillagerReputationAdvancements.onVillagerDirectlyDamaged(level, serverPlayer, villager);
+                if (villager instanceof Villager villageResident) {
+                    VillagerInteractionTracker.rememberDirectHit(level, villageResident, serverPlayer, describeHeldWeapon(player.getMainHandItem()));
+                }
             }
         }
 
@@ -329,6 +334,14 @@ public final class VillagerReputationEvents {
             return Math.min(-1, assistedGain);
         }
         return 0;
+    }
+
+    private static String describeHeldWeapon(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) {
+            return "fists";
+        }
+        String name = stack.getHoverName().getString().trim();
+        return name.isEmpty() ? "fists" : name;
     }
 
     private static void pruneHostileContributions(long gameTime) {
