@@ -8,6 +8,7 @@ public enum ReputationEventType {
     WITNESSED_IRON_GOLEM_KILL,
     POSITIVE_WITNESS,
     TRADE,
+    DIALOGUE,
     HEAL,
     SAVE,
     GOSSIP

@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.reputation;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
+import com.jvn.villagerretaliation.village.VillageEventMemory;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -61,10 +62,15 @@ public final class VillagerReputationManager {
         entry.setLastInteractionGameTime(level.getGameTime());
         entry.setLastKnownVillagerPosition(villager.blockPosition());
         data.setDirty();
+        VillageEventMemory.remember(level, VillageEventMemory.EventTag.REPUTATION_CHANGED, villager.blockPosition(), villager, player);
         addVanillaGossip(villager, player.getUUID(), GossipType.TRADING, VillagerRetaliationConfig.TRADE_REPUTATION_GAIN.get());
         handleTierChange(level, villager, player, previousLevel, newLevel);
         VillagerReputationTradePricing.refreshPricesForPlayer(level, villager, player);
         syncToTrackingPlayer(level, villager, player.getUUID());
+    }
+
+    public static void addDialogueReputation(ServerLevel level, AbstractVillager villager, Player player, int amount) {
+        addReputation(level, villager, player.getUUID(), amount, ReputationEventType.DIALOGUE, villager.blockPosition());
     }
 
     public static int getReputation(ServerLevel level, AbstractVillager villager, UUID playerId) {
@@ -174,7 +180,7 @@ public final class VillagerReputationManager {
         if (eventType == ReputationEventType.DIRECT_HIT) {
             entry.incrementDirectHits();
             addVanillaGossip(villager, playerId, GossipType.MINOR_NEGATIVE, Math.max(1, Math.abs(amount) / 5));
-        } else if (amount < 0 && eventType != ReputationEventType.GOSSIP) {
+        } else if (amount < 0 && eventType != ReputationEventType.GOSSIP && eventType != ReputationEventType.DIALOGUE) {
             entry.incrementWitnessedCrimes();
             GossipType gossipType = amount <= VillagerRetaliationConfig.WITNESSED_KILL_PENALTY.get()
                     ? GossipType.MAJOR_NEGATIVE
@@ -184,6 +190,7 @@ public final class VillagerReputationManager {
             addVanillaGossip(villager, playerId, GossipType.MINOR_POSITIVE, Math.max(1, amount / 5));
         }
         data.setDirty();
+        VillageEventMemory.remember(level, VillageEventMemory.EventTag.REPUTATION_CHANGED, eventPos, villager, level.getPlayerByUUID(playerId));
         if (level.getPlayerByUUID(playerId) instanceof Player player) {
             handleTierChange(level, villager, player, previousLevel, newLevel);
             VillagerReputationTradePricing.refreshPricesForPlayer(level, villager, player);

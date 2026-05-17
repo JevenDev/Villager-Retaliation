@@ -2,6 +2,8 @@ package com.jvn.villagerretaliation.event;
 
 import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
 import com.jvn.villagerretaliation.combat.WanderingTraderRetaliationHandler;
+import com.jvn.villagerretaliation.interaction.VillagerConversationService;
+import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.loot.VillagerLootHandler;
 import com.jvn.villagerretaliation.loot.WanderingTraderLootHandler;
 import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
@@ -10,6 +12,7 @@ import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.util.VillagerRetaliationHazardAttribution;
 import com.jvn.villagerretaliation.util.VillagerRetaliationRandomUtil;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
+import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerFleeBehaviorHandler;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
@@ -19,6 +22,8 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.animal.IronGolem;
+import net.minecraft.world.entity.monster.Enemy;
+import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.npc.WanderingTrader;
@@ -56,6 +61,10 @@ public final class VillagerRetaliationEvents {
     public static void onLivingDamage(LivingDamageEvent.Post event) {
         VillagerRetaliationHandler.onLivingDamage(event);
         WanderingTraderRetaliationHandler.onLivingDamage(event);
+        rememberVillageDamageEvent(event);
+        if (event.getEntity() instanceof Villager villager && event.getNewDamage() > 0.0F) {
+            VillagerConversationService.endForVillager(villager, true);
+        }
     }
 
     public static void onLivingDamagePre(LivingIncomingDamageEvent event) {
@@ -70,9 +79,16 @@ public final class VillagerRetaliationEvents {
     public static void onLivingDeath(LivingDeathEvent event) {
         VillagerRetaliationHandler.onLivingDeath(event);
         WanderingTraderRetaliationHandler.onLivingDeath(event);
+        rememberVillageDeathEvent(event);
+        if (event.getEntity() instanceof Villager villager) {
+            VillagerConversationService.endForVillager(villager, true);
+        }
     }
 
     public static void onEntityTickPre(EntityTickEvent.Pre event) {
+        if (event.getEntity() instanceof Villager villager) {
+            VillagerConversationService.tickVillager(villager);
+        }
         VillagerFleeBehaviorHandler.onEntityTickPre(event);
         VillagerRetaliationHandler.onEntityTickPre(event);
         WanderingTraderRetaliationHandler.onEntityTickPre(event);
@@ -111,6 +127,18 @@ public final class VillagerRetaliationEvents {
             return;
         }
 
+        if (event.getTarget() instanceof Villager villager) {
+            tryGiveHighReputationGift(villager, player, event.getHand());
+        }
+
+        if (event.getTarget() instanceof Villager villager
+                && player instanceof ServerPlayer serverPlayer
+                && VillagerInteractionService.shouldHandleInteraction(villager, serverPlayer, event.getHand())) {
+            event.setCancellationResult(VillagerInteractionService.handleAdultVillagerRightClick(villager, serverPlayer));
+            event.setCanceled(true);
+            return;
+        }
+
         if (event.getTarget() instanceof Villager villager
                 && VillagerRetaliationHandler.blockTradingIfHostile(villager, player)) {
             if (player instanceof ServerPlayer serverPlayer
@@ -122,10 +150,6 @@ public final class VillagerRetaliationEvents {
             event.setCanceled(true);
             event.setCancellationResult(InteractionResult.FAIL);
             return;
-        }
-
-        if (event.getTarget() instanceof Villager villager) {
-            tryGiveHighReputationGift(villager, player, event.getHand());
         }
 
         if (event.getTarget() instanceof WanderingTrader trader
@@ -142,7 +166,30 @@ public final class VillagerRetaliationEvents {
         }
     }
 
+    public static void onEntityInteractSpecific(PlayerInteractEvent.EntityInteractSpecific event) {
+        if (event.getTarget() instanceof Villager villager
+                && event.getEntity() instanceof ServerPlayer serverPlayer
+                && VillagerInteractionService.shouldHandleSleepingInteraction(villager, serverPlayer, event.getHand())) {
+            event.setCancellationResult(VillagerInteractionService.handleSleepingVillagerInteraction(villager, serverPlayer));
+            event.setCanceled(true);
+        }
+    }
+
     public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
+        if (event.getEntity() instanceof ServerPlayer serverPlayer && event.getLevel() instanceof ServerLevel level) {
+            InteractionResult sleepingResult = VillagerInteractionService.handleSleepingVillagerBedInteraction(
+                    level,
+                    serverPlayer,
+                    event.getPos(),
+                    event.getHand()
+            );
+            if (sleepingResult.consumesAction()) {
+                event.setCanceled(true);
+                event.setCancellationResult(sleepingResult);
+                return;
+            }
+        }
+
         VillagerRetaliationHazardAttribution.rememberPlayerPlacedHazard(
                 event.getEntity(),
                 event.getLevel(),
@@ -253,6 +300,41 @@ public final class VillagerRetaliationEvents {
     public static void onEntityLeaveLevel(EntityLeaveLevelEvent event) {
         VillagerRetaliationHandler.onEntityLeaveLevel(event);
         WanderingTraderRetaliationHandler.onEntityLeaveLevel(event);
+        VillagerConversationService.endForEntityLeaving(event.getEntity(), true);
+    }
+
+    private static void rememberVillageDamageEvent(LivingDamageEvent.Post event) {
+        if (!(event.getEntity().level() instanceof ServerLevel level)
+                || event.getNewDamage() <= 0.0F
+                || !(event.getEntity() instanceof AbstractVillager villager)) {
+            return;
+        }
+
+        Entity attacker = event.getSource().getEntity();
+        VillageEventMemory.remember(level, VillageEventMemory.EventTag.VILLAGER_ATTACKED, villager.blockPosition(), villager, attacker);
+        if (attacker instanceof Player) {
+            VillageEventMemory.remember(level, VillageEventMemory.EventTag.PLAYER_ATTACKED_VILLAGER, villager.blockPosition(), villager, attacker);
+        }
+    }
+
+    private static void rememberVillageDeathEvent(LivingDeathEvent event) {
+        if (!(event.getEntity().level() instanceof ServerLevel level)) {
+            return;
+        }
+
+        Entity deceased = event.getEntity();
+        Entity attacker = event.getSource().getEntity();
+        if (deceased instanceof AbstractVillager villager) {
+            VillageEventMemory.remember(level, VillageEventMemory.EventTag.VILLAGER_DEATH, villager.blockPosition(), villager, attacker);
+        } else if (deceased instanceof IronGolem golem) {
+            VillageEventMemory.remember(level, VillageEventMemory.EventTag.GOLEM_KILLED, golem.blockPosition(), golem, attacker);
+        } else if (deceased instanceof Enemy) {
+            if (attacker instanceof IronGolem) {
+                VillageEventMemory.remember(level, VillageEventMemory.EventTag.IRON_GOLEM_DEFEATED_MOB, deceased.blockPosition(), deceased, attacker);
+            } else if (attacker instanceof Player) {
+                VillageEventMemory.remember(level, VillageEventMemory.EventTag.PLAYER_DEFENDED_VILLAGE, deceased.blockPosition(), deceased, attacker);
+            }
+        }
     }
 
     private static boolean shouldCancelVillagerGolemDamage(Entity victim, Entity attacker, Entity directAttacker) {

@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.network;
 
 import com.jvn.villagerretaliation.VillagerRetaliation;
+import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.toucanlib.neoforge.network.ToucanNetwork;
 import net.minecraft.server.level.ServerPlayer;
@@ -27,6 +28,58 @@ public final class VillagerReputationNetworking {
                 FearedVillagerPulsePayload.STREAM_CODEC,
                 "com.jvn.villagerretaliation.client.reputation.FearedVillagerAnimationClientCache",
                 "accept"
+        );
+        network.safePlayToClientThreaded(
+                OpenVillagerInteractionPayload.TYPE,
+                OpenVillagerInteractionPayload.STREAM_CODEC,
+                "com.jvn.villagerretaliation.client.interaction.VillagerInteractionClientHandler",
+                "open"
+        );
+        network.safePlayToClientThreaded(
+                VillagerDialogueResponsePayload.TYPE,
+                VillagerDialogueResponsePayload.STREAM_CODEC,
+                "com.jvn.villagerretaliation.client.interaction.VillagerInteractionClientHandler",
+                "acceptDialogue"
+        );
+        network.safePlayToClientThreaded(
+                VillagerInteractionNoticePayload.TYPE,
+                VillagerInteractionNoticePayload.STREAM_CODEC,
+                "com.jvn.villagerretaliation.client.interaction.VillagerInteractionClientHandler",
+                "acceptNotice"
+        );
+        network.safePlayToClientThreaded(
+                VillagerConversationEndedPayload.TYPE,
+                VillagerConversationEndedPayload.STREAM_CODEC,
+                "com.jvn.villagerretaliation.client.interaction.VillagerInteractionClientHandler",
+                "acceptConversationEnded"
+        );
+        network.playToServer(
+                VillagerDialogueRequestPayload.TYPE,
+                VillagerDialogueRequestPayload.STREAM_CODEC,
+                (payload, context) -> ToucanNetwork.enqueue(context, () ->
+                        ToucanNetwork.withServerPlayer(context, player -> VillagerInteractionService.handleDialogueRequest(
+                            player,
+                            payload.entityId(),
+                            payload.requestType()
+                    )))
+        );
+        network.playToServer(
+                VillagerTradeRequestPayload.TYPE,
+                VillagerTradeRequestPayload.STREAM_CODEC,
+                (payload, context) -> ToucanNetwork.enqueue(context, () ->
+                        ToucanNetwork.withServerPlayer(context, player -> VillagerInteractionService.handleTradeRequest(
+                            player,
+                            payload.entityId()
+                    )))
+        );
+        network.playToServer(
+                VillagerConversationEndRequestPayload.TYPE,
+                VillagerConversationEndRequestPayload.STREAM_CODEC,
+                (payload, context) -> ToucanNetwork.enqueue(context, () ->
+                        ToucanNetwork.withServerPlayer(context, player -> VillagerInteractionService.handleConversationEndRequest(
+                            player,
+                            payload.entityId()
+                    )))
         );
     }
 

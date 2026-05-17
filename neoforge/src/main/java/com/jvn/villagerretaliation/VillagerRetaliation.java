@@ -42,6 +42,7 @@ public class VillagerRetaliation {
                 .listener(VillagerReputationEvents::onLivingConversionPost)
                 .listener(VillagerRetaliationEvents::onEntityJoinLevel)
                 .listener(VillagerRetaliationEvents::onEntityInteract)
+                .listener(VillagerRetaliationEvents::onEntityInteractSpecific)
                 .listener(VillagerRetaliationEvents::onRightClickBlock)
                 .listener(VillagerReputationEvents::onTradeWithVillager)
                 .listener(VillagerReputationEvents::onContainerOpen)
