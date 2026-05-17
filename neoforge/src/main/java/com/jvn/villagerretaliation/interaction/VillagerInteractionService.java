@@ -4,6 +4,8 @@ import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
+import com.jvn.villagerretaliation.dialogue.DialogueReputationEffect;
+import com.jvn.villagerretaliation.dialogue.DialogueReputationService;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueService;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.network.OpenVillagerInteractionPayload;
@@ -84,8 +86,10 @@ public final class VillagerInteractionService {
                 requestType,
                 interactionState.recentDialogueIds()
         );
-        VillagerInteractionTracker.rememberDialogue(level, villager, player, result.lineId());
-        PacketDistributor.sendToPlayer(player, new VillagerDialogueResponsePayload(villager.getId(), requestType, result.text()));
+        DialogueReputationEffect reputationEffect = DialogueReputationService.apply(context, requestType, interactionState);
+        String responseText = reputationEffect.responseOverride() == null ? result.text() : reputationEffect.responseOverride();
+        VillagerInteractionTracker.rememberDialogue(level, villager, player, requestType, result.lineId());
+        PacketDistributor.sendToPlayer(player, new VillagerDialogueResponsePayload(villager.getId(), requestType, responseText));
     }
 
     public static void handleTradeRequest(ServerPlayer player, int entityId) {

@@ -12,17 +12,50 @@ public final class VillagerInteractionTracker {
     public static InteractionState getState(ServerLevel level, Villager villager, ServerPlayer player) {
         VillagerInteractionSavedData.InteractionEntry entry = VillagerInteractionSavedData.get(level)
                 .getOrCreate(villager.getUUID(), player.getUUID());
-        return new InteractionState(!entry.hasTalked(), entry.recentDialogueIds());
+        return new InteractionState(
+                !entry.hasTalked(),
+                entry.recentDialogueIds(),
+                entry.lastPositiveDialogueReputationGameTime(),
+                entry.lastNegativeDialogueReputationGameTime(),
+                entry.lastJokeReputationGameTime(),
+                entry.badFirstImpression()
+        );
     }
 
-    public static void rememberDialogue(ServerLevel level, Villager villager, ServerPlayer player, String dialogueId) {
+    public static void rememberDialogue(ServerLevel level, Villager villager, ServerPlayer player, DialogueRequestType requestType, String dialogueId) {
         VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
         VillagerInteractionSavedData.InteractionEntry entry = data.getOrCreate(villager.getUUID(), player.getUUID());
         entry.markTalked();
-        entry.rememberDialogueId(dialogueId);
+        entry.rememberDialogueId(requestType, dialogueId, level.getGameTime());
         data.setDirty();
     }
 
-    public record InteractionState(boolean firstConversation, List<String> recentDialogueIds) {
+    public static long lastReputationGameTime(ServerLevel level, Villager villager, ServerPlayer player, DialogueRequestType requestType) {
+        return VillagerInteractionSavedData.get(level)
+                .getOrCreate(villager.getUUID(), player.getUUID())
+                .lastReputationGameTime(requestType);
+    }
+
+    public static long lastDialogueGameTime(ServerLevel level, Villager villager, ServerPlayer player, DialogueRequestType requestType) {
+        return VillagerInteractionSavedData.get(level)
+                .getOrCreate(villager.getUUID(), player.getUUID())
+                .lastDialogueGameTime(requestType);
+    }
+
+    public static void rememberDialogueReputation(ServerLevel level, Villager villager, ServerPlayer player, DialogueRequestType requestType, int delta, boolean badFirstImpression) {
+        VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
+        VillagerInteractionSavedData.InteractionEntry entry = data.getOrCreate(villager.getUUID(), player.getUUID());
+        entry.rememberDialogueReputation(requestType, delta, level.getGameTime(), badFirstImpression);
+        data.setDirty();
+    }
+
+    public record InteractionState(
+            boolean firstConversation,
+            List<String> recentDialogueIds,
+            long lastPositiveDialogueReputationGameTime,
+            long lastNegativeDialogueReputationGameTime,
+            long lastJokeReputationGameTime,
+            boolean badFirstImpression
+    ) {
     }
 }

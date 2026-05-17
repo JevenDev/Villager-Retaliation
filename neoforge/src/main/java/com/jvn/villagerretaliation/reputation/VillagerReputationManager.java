@@ -69,6 +69,10 @@ public final class VillagerReputationManager {
         syncToTrackingPlayer(level, villager, player.getUUID());
     }
 
+    public static void addDialogueReputation(ServerLevel level, AbstractVillager villager, Player player, int amount) {
+        addReputation(level, villager, player.getUUID(), amount, ReputationEventType.DIALOGUE, villager.blockPosition());
+    }
+
     public static int getReputation(ServerLevel level, AbstractVillager villager, UUID playerId) {
         VillagerReputationSavedData.ReputationEntry entry = VillagerReputationSavedData.get(level).get(villager.getUUID(), playerId);
         return entry == null ? 0 : entry.reputation();
@@ -176,7 +180,7 @@ public final class VillagerReputationManager {
         if (eventType == ReputationEventType.DIRECT_HIT) {
             entry.incrementDirectHits();
             addVanillaGossip(villager, playerId, GossipType.MINOR_NEGATIVE, Math.max(1, Math.abs(amount) / 5));
-        } else if (amount < 0 && eventType != ReputationEventType.GOSSIP) {
+        } else if (amount < 0 && eventType != ReputationEventType.GOSSIP && eventType != ReputationEventType.DIALOGUE) {
             entry.incrementWitnessedCrimes();
             GossipType gossipType = amount <= VillagerRetaliationConfig.WITNESSED_KILL_PENALTY.get()
                     ? GossipType.MAJOR_NEGATIVE

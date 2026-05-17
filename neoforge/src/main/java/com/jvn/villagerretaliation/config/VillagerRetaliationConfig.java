@@ -13,6 +13,7 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.BooleanValue ENABLE_DESPISED_KILL_ON_SIGHT;
     public static final ModConfigSpec.BooleanValue ENABLE_INTERACTION_SCREEN;
     public static final ModConfigSpec.BooleanValue SHIFT_RIGHT_CLICK_BYPASSES_INTERACTION_SCREEN;
+    public static final ModConfigSpec.BooleanValue ENABLE_DIALOGUE_REPUTATION_EFFECTS;
 
     public static final ModConfigSpec.BooleanValue BABY_VILLAGERS_DROP_LOOT;
     public static final ModConfigSpec.BooleanValue REQUIRE_PLAYER_KILL_FOR_PROFESSION_LOOT;
@@ -36,6 +37,16 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.IntValue WITNESSED_IRON_GOLEM_KILL_PENALTY;
     public static final ModConfigSpec.IntValue TRADE_REPUTATION_GAIN;
     public static final ModConfigSpec.IntValue MAX_TRADE_REPUTATION_GAIN_PER_VILLAGER_PER_DAY;
+    public static final ModConfigSpec.IntValue DIALOGUE_POSITIVE_REPUTATION_COOLDOWN_TICKS;
+    public static final ModConfigSpec.IntValue DIALOGUE_NEGATIVE_REPUTATION_COOLDOWN_TICKS;
+    public static final ModConfigSpec.IntValue GREETING_REPUTATION_GAIN;
+    public static final ModConfigSpec.IntValue QUESTION_REPUTATION_GAIN;
+    public static final ModConfigSpec.IntValue STORY_REPUTATION_GAIN;
+    public static final ModConfigSpec.IntValue JOKE_REPUTATION_GAIN;
+    public static final ModConfigSpec.IntValue JOKE_REPUTATION_LOSS;
+    public static final ModConfigSpec.IntValue INSULT_REPUTATION_LOSS;
+    public static final ModConfigSpec.IntValue FIRST_GREETING_REPUTATION_GAIN;
+    public static final ModConfigSpec.IntValue FIRST_INSULT_REPUTATION_LOSS;
     public static final ModConfigSpec.IntValue HEAL_VILLAGER_GAIN;
     public static final ModConfigSpec.IntValue SAVE_VILLAGER_GAIN;
     public static final ModConfigSpec.IntValue POSITIVE_WITNESS_GAIN;
@@ -125,6 +136,10 @@ public final class VillagerRetaliationConfig {
                 .comment("Allows sneaking while right-clicking an adult villager to bypass the interaction screen and open normal trading.")
                 .translation("villagerretaliation.configuration.general.shiftRightClickBypassesInteractionScreen")
                 .define("shiftRightClickBypassesInteractionScreen", true);
+        ENABLE_DIALOGUE_REPUTATION_EFFECTS = BUILDER
+                .comment("Allows villager dialogue choices to apply small reputation changes.")
+                .translation("villagerretaliation.configuration.general.enableDialogueReputationEffects")
+                .define("enableDialogueReputationEffects", true);
         BUILDER.pop();
 
         BUILDER.push("balance");
@@ -197,6 +212,36 @@ public final class VillagerRetaliationConfig {
         MAX_TRADE_REPUTATION_GAIN_PER_VILLAGER_PER_DAY = BUILDER.comment("Maximum positive trade reputation gain per villager per Minecraft day.")
                 .translation("villagerretaliation.configuration.reputation.maxTradeReputationGainPerVillagerPerDay")
                 .defineInRange("maxTradeReputationGainPerVillagerPerDay", 8, 0, 1000);
+        DIALOGUE_POSITIVE_REPUTATION_COOLDOWN_TICKS = BUILDER.comment("Minimum ticks between positive dialogue reputation gains for the same player and villager.")
+                .translation("villagerretaliation.configuration.reputation.dialoguePositiveReputationCooldownTicks")
+                .defineInRange("dialoguePositiveReputationCooldownTicks", 12000, 20, 24000 * 7);
+        DIALOGUE_NEGATIVE_REPUTATION_COOLDOWN_TICKS = BUILDER.comment("Minimum ticks between negative dialogue reputation losses for the same player and villager.")
+                .translation("villagerretaliation.configuration.reputation.dialogueNegativeReputationCooldownTicks")
+                .defineInRange("dialogueNegativeReputationCooldownTicks", 600, 20, 24000);
+        GREETING_REPUTATION_GAIN = BUILDER.comment("Reputation gained from an eligible friendly greeting.")
+                .translation("villagerretaliation.configuration.reputation.greetingReputationGain")
+                .defineInRange("greetingReputationGain", 1, 0, 1000);
+        QUESTION_REPUTATION_GAIN = BUILDER.comment("Reputation gained from an eligible question.")
+                .translation("villagerretaliation.configuration.reputation.questionReputationGain")
+                .defineInRange("questionReputationGain", 1, 0, 1000);
+        STORY_REPUTATION_GAIN = BUILDER.comment("Reputation gained from an eligible story interaction.")
+                .translation("villagerretaliation.configuration.reputation.storyReputationGain")
+                .defineInRange("storyReputationGain", 1, 0, 1000);
+        JOKE_REPUTATION_GAIN = BUILDER.comment("Reputation gained when a joke lands well.")
+                .translation("villagerretaliation.configuration.reputation.jokeReputationGain")
+                .defineInRange("jokeReputationGain", 1, 0, 1000);
+        JOKE_REPUTATION_LOSS = BUILDER.comment("Reputation lost when a joke lands badly.")
+                .translation("villagerretaliation.configuration.reputation.jokeReputationLoss")
+                .defineInRange("jokeReputationLoss", -1, -1000, 0);
+        INSULT_REPUTATION_LOSS = BUILDER.comment("Reputation lost from an insult.")
+                .translation("villagerretaliation.configuration.reputation.insultReputationLoss")
+                .defineInRange("insultReputationLoss", -3, -1000, 0);
+        FIRST_GREETING_REPUTATION_GAIN = BUILDER.comment("Reputation gained from an eligible first greeting.")
+                .translation("villagerretaliation.configuration.reputation.firstGreetingReputationGain")
+                .defineInRange("firstGreetingReputationGain", 1, 0, 1000);
+        FIRST_INSULT_REPUTATION_LOSS = BUILDER.comment("Reputation lost when the first conversation starts with an insult.")
+                .translation("villagerretaliation.configuration.reputation.firstInsultReputationLoss")
+                .defineInRange("firstInsultReputationLoss", -5, -1000, 0);
         HEAL_VILLAGER_GAIN = BUILDER.comment("Reserved gain for detectable villager healing hooks.")
                 .translation("villagerretaliation.configuration.reputation.healVillagerGain")
                 .defineInRange("healVillagerGain", 10, -1000, 1000);

@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.dialogue;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +23,14 @@ public class VillagerInteractionSavedData extends SavedData {
     private static final String TAG_PLAYER = "Player";
     private static final String TAG_HAS_TALKED = "HasTalked";
     private static final String TAG_RECENT_LINES = "RecentLines";
+    private static final String TAG_LAST_POSITIVE_DIALOGUE_REPUTATION = "LastPositiveDialogueReputation";
+    private static final String TAG_LAST_NEGATIVE_DIALOGUE_REPUTATION = "LastNegativeDialogueReputation";
+    private static final String TAG_LAST_JOKE_REPUTATION = "LastJokeReputation";
+    private static final String TAG_LAST_REQUEST_TYPE_REPUTATION = "LastRequestTypeReputation";
+    private static final String TAG_LAST_REQUEST_TYPE_DIALOGUE = "LastRequestTypeDialogue";
+    private static final String TAG_REQUEST_TYPE = "RequestType";
+    private static final String TAG_GAME_TIME = "GameTime";
+    private static final String TAG_BAD_FIRST_IMPRESSION = "BadFirstImpression";
     private static final int MAX_RECENT_LINES = 5;
 
     private final Map<UUID, Map<UUID, InteractionEntry>> entries = new HashMap<>();
@@ -45,14 +54,44 @@ public class VillagerInteractionSavedData extends SavedData {
 
             InteractionEntry entry = new InteractionEntry();
             entry.hasTalked = entryTag.getBoolean(TAG_HAS_TALKED);
+            entry.lastPositiveDialogueReputationGameTime = readOptionalLong(entryTag, TAG_LAST_POSITIVE_DIALOGUE_REPUTATION);
+            entry.lastNegativeDialogueReputationGameTime = readOptionalLong(entryTag, TAG_LAST_NEGATIVE_DIALOGUE_REPUTATION);
+            entry.lastJokeReputationGameTime = readOptionalLong(entryTag, TAG_LAST_JOKE_REPUTATION);
+            entry.badFirstImpression = entryTag.getBoolean(TAG_BAD_FIRST_IMPRESSION);
             ListTag recentLines = entryTag.getList(TAG_RECENT_LINES, Tag.TAG_STRING);
             for (Tag rawLine : recentLines) {
                 entry.recentDialogueIds.addLast(rawLine.getAsString());
+            }
+            ListTag requestTypeTimes = entryTag.getList(TAG_LAST_REQUEST_TYPE_REPUTATION, Tag.TAG_COMPOUND);
+            for (Tag rawRequestTypeTime : requestTypeTimes) {
+                if (!(rawRequestTypeTime instanceof CompoundTag requestTypeTag)) {
+                    continue;
+                }
+                try {
+                    DialogueRequestType requestType = DialogueRequestType.valueOf(requestTypeTag.getString(TAG_REQUEST_TYPE));
+                    entry.lastReputationByRequestType.put(requestType, requestTypeTag.getLong(TAG_GAME_TIME));
+                } catch (IllegalArgumentException ignored) {
+                }
+            }
+            ListTag requestTypeDialogueTimes = entryTag.getList(TAG_LAST_REQUEST_TYPE_DIALOGUE, Tag.TAG_COMPOUND);
+            for (Tag rawRequestTypeTime : requestTypeDialogueTimes) {
+                if (!(rawRequestTypeTime instanceof CompoundTag requestTypeTag)) {
+                    continue;
+                }
+                try {
+                    DialogueRequestType requestType = DialogueRequestType.valueOf(requestTypeTag.getString(TAG_REQUEST_TYPE));
+                    entry.lastDialogueByRequestType.put(requestType, requestTypeTag.getLong(TAG_GAME_TIME));
+                } catch (IllegalArgumentException ignored) {
+                }
             }
             data.entries.computeIfAbsent(entryTag.getUUID(TAG_VILLAGER), ignored -> new HashMap<>())
                     .put(entryTag.getUUID(TAG_PLAYER), entry);
         }
         return data;
+    }
+
+    private static long readOptionalLong(CompoundTag tag, String key) {
+        return tag.contains(key, Tag.TAG_LONG) ? tag.getLong(key) : Long.MIN_VALUE;
     }
 
     @Override
@@ -64,11 +103,31 @@ public class VillagerInteractionSavedData extends SavedData {
                 entryTag.putUUID(TAG_VILLAGER, villagerEntry.getKey());
                 entryTag.putUUID(TAG_PLAYER, playerEntry.getKey());
                 entryTag.putBoolean(TAG_HAS_TALKED, playerEntry.getValue().hasTalked);
+                entryTag.putLong(TAG_LAST_POSITIVE_DIALOGUE_REPUTATION, playerEntry.getValue().lastPositiveDialogueReputationGameTime);
+                entryTag.putLong(TAG_LAST_NEGATIVE_DIALOGUE_REPUTATION, playerEntry.getValue().lastNegativeDialogueReputationGameTime);
+                entryTag.putLong(TAG_LAST_JOKE_REPUTATION, playerEntry.getValue().lastJokeReputationGameTime);
+                entryTag.putBoolean(TAG_BAD_FIRST_IMPRESSION, playerEntry.getValue().badFirstImpression);
                 ListTag recentLines = new ListTag();
                 for (String lineId : playerEntry.getValue().recentDialogueIds) {
                     recentLines.add(StringTag.valueOf(lineId));
                 }
                 entryTag.put(TAG_RECENT_LINES, recentLines);
+                ListTag requestTypeTimes = new ListTag();
+                for (Map.Entry<DialogueRequestType, Long> requestTypeEntry : playerEntry.getValue().lastReputationByRequestType.entrySet()) {
+                    CompoundTag requestTypeTag = new CompoundTag();
+                    requestTypeTag.putString(TAG_REQUEST_TYPE, requestTypeEntry.getKey().name());
+                    requestTypeTag.putLong(TAG_GAME_TIME, requestTypeEntry.getValue());
+                    requestTypeTimes.add(requestTypeTag);
+                }
+                entryTag.put(TAG_LAST_REQUEST_TYPE_REPUTATION, requestTypeTimes);
+                ListTag requestTypeDialogueTimes = new ListTag();
+                for (Map.Entry<DialogueRequestType, Long> requestTypeEntry : playerEntry.getValue().lastDialogueByRequestType.entrySet()) {
+                    CompoundTag requestTypeTag = new CompoundTag();
+                    requestTypeTag.putString(TAG_REQUEST_TYPE, requestTypeEntry.getKey().name());
+                    requestTypeTag.putLong(TAG_GAME_TIME, requestTypeEntry.getValue());
+                    requestTypeDialogueTimes.add(requestTypeTag);
+                }
+                entryTag.put(TAG_LAST_REQUEST_TYPE_DIALOGUE, requestTypeDialogueTimes);
                 entriesTag.add(entryTag);
             }
         }
@@ -83,7 +142,13 @@ public class VillagerInteractionSavedData extends SavedData {
 
     public static class InteractionEntry {
         private boolean hasTalked;
+        private long lastPositiveDialogueReputationGameTime = Long.MIN_VALUE;
+        private long lastNegativeDialogueReputationGameTime = Long.MIN_VALUE;
+        private long lastJokeReputationGameTime = Long.MIN_VALUE;
+        private boolean badFirstImpression;
         private final ArrayDeque<String> recentDialogueIds = new ArrayDeque<>();
+        private final Map<DialogueRequestType, Long> lastReputationByRequestType = new EnumMap<>(DialogueRequestType.class);
+        private final Map<DialogueRequestType, Long> lastDialogueByRequestType = new EnumMap<>(DialogueRequestType.class);
 
         public boolean hasTalked() {
             return this.hasTalked;
@@ -97,9 +162,47 @@ public class VillagerInteractionSavedData extends SavedData {
             return new ArrayList<>(this.recentDialogueIds);
         }
 
-        public void rememberDialogueId(String dialogueId) {
+        public long lastPositiveDialogueReputationGameTime() {
+            return this.lastPositiveDialogueReputationGameTime;
+        }
+
+        public long lastNegativeDialogueReputationGameTime() {
+            return this.lastNegativeDialogueReputationGameTime;
+        }
+
+        public long lastJokeReputationGameTime() {
+            return this.lastJokeReputationGameTime;
+        }
+
+        public long lastReputationGameTime(DialogueRequestType requestType) {
+            return this.lastReputationByRequestType.getOrDefault(requestType, Long.MIN_VALUE);
+        }
+
+        public long lastDialogueGameTime(DialogueRequestType requestType) {
+            return this.lastDialogueByRequestType.getOrDefault(requestType, Long.MIN_VALUE);
+        }
+
+        public boolean badFirstImpression() {
+            return this.badFirstImpression;
+        }
+
+        public void rememberDialogueReputation(DialogueRequestType requestType, int delta, long gameTime, boolean badFirstImpression) {
+            if (delta > 0) {
+                this.lastPositiveDialogueReputationGameTime = gameTime;
+            } else if (delta < 0) {
+                this.lastNegativeDialogueReputationGameTime = gameTime;
+            }
+            if (requestType == DialogueRequestType.JOKE) {
+                this.lastJokeReputationGameTime = gameTime;
+            }
+            this.lastReputationByRequestType.put(requestType, gameTime);
+            this.badFirstImpression = this.badFirstImpression || badFirstImpression;
+        }
+
+        public void rememberDialogueId(DialogueRequestType requestType, String dialogueId, long gameTime) {
             this.recentDialogueIds.remove(dialogueId);
             this.recentDialogueIds.addLast(dialogueId);
+            this.lastDialogueByRequestType.put(requestType, gameTime);
             while (this.recentDialogueIds.size() > MAX_RECENT_LINES) {
                 this.recentDialogueIds.removeFirst();
             }
