@@ -22,6 +22,11 @@
   "villagerretaliation.configuration.general.enableInteractionScreen": "Enable Interaction Screen",
   "villagerretaliation.configuration.general.shiftRightClickBypassesInteractionScreen": "Shift Right Click Bypasses Interaction Screen",
   "villagerretaliation.configuration.general.enableDialogueReputationEffects": "Enable Dialogue Reputation Effects",
+  "villagerretaliation.configuration.general.enableDialogueCameraFocus": "Enable Dialogue Camera Focus",
+  "villagerretaliation.configuration.general.dialogueCameraZoomAmount": "Dialogue Camera Zoom Amount",
+  "villagerretaliation.configuration.general.dialogueCameraTransitionTicks": "Dialogue Camera Transition Ticks",
+  "villagerretaliation.configuration.general.freezeVillagerDuringDialogue": "Freeze Villager During Dialogue",
+  "villagerretaliation.configuration.general.maxDialogueDistance": "Max Dialogue Distance",
 
   "villagerretaliation.configuration.balance.babyVillagersDropLoot": "Baby Villagers Drop Loot",
   "villagerretaliation.configuration.balance.requirePlayerKillForProfessionLoot": "Require Player Kill For Profession Loot",

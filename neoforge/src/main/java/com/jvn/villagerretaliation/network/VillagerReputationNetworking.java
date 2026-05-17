@@ -47,6 +47,12 @@ public final class VillagerReputationNetworking {
                 "com.jvn.villagerretaliation.client.interaction.VillagerInteractionClientHandler",
                 "acceptNotice"
         );
+        network.safePlayToClientThreaded(
+                VillagerConversationEndedPayload.TYPE,
+                VillagerConversationEndedPayload.STREAM_CODEC,
+                "com.jvn.villagerretaliation.client.interaction.VillagerInteractionClientHandler",
+                "acceptConversationEnded"
+        );
         network.playToServer(
                 VillagerDialogueRequestPayload.TYPE,
                 VillagerDialogueRequestPayload.STREAM_CODEC,
@@ -62,6 +68,15 @@ public final class VillagerReputationNetworking {
                 VillagerTradeRequestPayload.STREAM_CODEC,
                 (payload, context) -> ToucanNetwork.enqueue(context, () ->
                         ToucanNetwork.withServerPlayer(context, player -> VillagerInteractionService.handleTradeRequest(
+                            player,
+                            payload.entityId()
+                    )))
+        );
+        network.playToServer(
+                VillagerConversationEndRequestPayload.TYPE,
+                VillagerConversationEndRequestPayload.STREAM_CODEC,
+                (payload, context) -> ToucanNetwork.enqueue(context, () ->
+                        ToucanNetwork.withServerPlayer(context, player -> VillagerInteractionService.handleConversationEndRequest(
                             player,
                             payload.entityId()
                     )))

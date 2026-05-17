@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.event;
 
 import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
 import com.jvn.villagerretaliation.combat.WanderingTraderRetaliationHandler;
+import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.loot.VillagerLootHandler;
 import com.jvn.villagerretaliation.loot.WanderingTraderLootHandler;
@@ -61,6 +62,9 @@ public final class VillagerRetaliationEvents {
         VillagerRetaliationHandler.onLivingDamage(event);
         WanderingTraderRetaliationHandler.onLivingDamage(event);
         rememberVillageDamageEvent(event);
+        if (event.getEntity() instanceof Villager villager && event.getNewDamage() > 0.0F) {
+            VillagerConversationService.endForVillager(villager, true);
+        }
     }
 
     public static void onLivingDamagePre(LivingIncomingDamageEvent event) {
@@ -76,9 +80,15 @@ public final class VillagerRetaliationEvents {
         VillagerRetaliationHandler.onLivingDeath(event);
         WanderingTraderRetaliationHandler.onLivingDeath(event);
         rememberVillageDeathEvent(event);
+        if (event.getEntity() instanceof Villager villager) {
+            VillagerConversationService.endForVillager(villager, true);
+        }
     }
 
     public static void onEntityTickPre(EntityTickEvent.Pre event) {
+        if (event.getEntity() instanceof Villager villager) {
+            VillagerConversationService.tickVillager(villager);
+        }
         VillagerFleeBehaviorHandler.onEntityTickPre(event);
         VillagerRetaliationHandler.onEntityTickPre(event);
         WanderingTraderRetaliationHandler.onEntityTickPre(event);
@@ -267,6 +277,7 @@ public final class VillagerRetaliationEvents {
     public static void onEntityLeaveLevel(EntityLeaveLevelEvent event) {
         VillagerRetaliationHandler.onEntityLeaveLevel(event);
         WanderingTraderRetaliationHandler.onEntityLeaveLevel(event);
+        VillagerConversationService.endForEntityLeaving(event.getEntity(), true);
     }
 
     private static void rememberVillageDamageEvent(LivingDamageEvent.Post event) {

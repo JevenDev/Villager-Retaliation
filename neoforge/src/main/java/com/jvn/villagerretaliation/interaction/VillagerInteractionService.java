@@ -28,8 +28,6 @@ import net.minecraft.world.item.Items;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class VillagerInteractionService {
-    private static final double MAX_INTERACTION_DISTANCE_SQR = 6.0D * 6.0D;
-
     private VillagerInteractionService() {
     }
 
@@ -45,6 +43,10 @@ public final class VillagerInteractionService {
             return openTrading(player, villager, true);
         }
 
+        if (!VillagerConversationService.start(player, villager)) {
+            sendNotice(player, villager.getId(), "That villager is busy right now.");
+            return InteractionResult.FAIL;
+        }
         openInteractionScreen(player, villager);
         focusVillagerOnPlayer(villager, player);
         return InteractionResult.SUCCESS;
@@ -62,6 +64,10 @@ public final class VillagerInteractionService {
         Villager villager = resolveVillager(player, entityId);
         if (villager == null) {
             sendNotice(player, entityId, "That villager is no longer available.");
+            return;
+        }
+        if (!VillagerConversationService.validate(player, villager)) {
+            sendNotice(player, entityId, "The conversation has ended.");
             return;
         }
         focusVillagerOnPlayer(villager, player);
@@ -98,8 +104,17 @@ public final class VillagerInteractionService {
             sendNotice(player, entityId, "That villager cannot trade right now.");
             return;
         }
+        if (!VillagerConversationService.validate(player, villager)) {
+            sendNotice(player, entityId, "The conversation has ended.");
+            return;
+        }
         focusVillagerOnPlayer(villager, player);
+        VillagerConversationService.endForPlayer(player, true);
         openTrading(player, villager, true);
+    }
+
+    public static void handleConversationEndRequest(ServerPlayer player, int entityId) {
+        VillagerConversationService.endForPlayer(player, false);
     }
 
     public static InteractionResult openTrading(ServerPlayer player, Villager villager, boolean sendFailureMessage) {
@@ -139,14 +154,15 @@ public final class VillagerInteractionService {
         return villager;
     }
 
-    private static boolean canUseInteractionSystem(ServerPlayer player, Villager villager) {
+    public static boolean canUseInteractionSystem(ServerPlayer player, Villager villager) {
+        double maxDistance = VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get();
         return villager.isAlive()
                 && !villager.isBaby()
                 && !villager.isSleeping()
                 && !villager.isTrading()
                 && player.isAlive()
                 && !player.isSpectator()
-                && player.distanceToSqr(villager) <= MAX_INTERACTION_DISTANCE_SQR;
+                && player.distanceToSqr(villager) <= maxDistance * maxDistance;
     }
 
     private static void sendNotice(ServerPlayer player, int entityId, String text) {

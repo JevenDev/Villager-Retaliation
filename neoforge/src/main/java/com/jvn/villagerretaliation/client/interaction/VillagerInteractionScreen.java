@@ -1,42 +1,54 @@
 package com.jvn.villagerretaliation.client.interaction;
 
 import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
+import com.jvn.villagerretaliation.network.VillagerConversationEndRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerDialogueRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerTradeRequestPayload;
+import java.util.ArrayList;
+import java.util.List;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.Villager;
 import net.neoforged.neoforge.network.PacketDistributor;
+import org.lwjgl.glfw.GLFW;
 
 public class VillagerInteractionScreen extends Screen {
-    private static final int PANEL_WIDTH = 360;
-    private static final int PANEL_HEIGHT = 76;
-    private static final int BUTTON_WIDTH = 118;
-    private static final int BUTTON_HEIGHT = 20;
-    private static final int BUTTON_GAP = 6;
+    private static final int RESPONSE_WIDTH = 520;
+    private static final int OPTION_WIDTH = 220;
+    private static final int OPTION_HEIGHT = 16;
+    private static final int OPTION_GAP = 3;
+    private static final int DIVIDER_HEIGHT = 92;
 
     private final int villagerEntityId;
     private final String villagerName;
     private final String professionName;
-    private String dialogueText = "Choose an option.";
-    private boolean talkMenuOpen;
+    private final List<DialogueOption> options = new ArrayList<>();
+    private DialoguePage page = DialoguePage.ROOT;
+    private int selectedOption;
+    private boolean closingFromServer;
 
     public VillagerInteractionScreen(int villagerEntityId, String villagerName, String professionName) {
         super(Component.literal("Villager Interaction"));
         this.villagerEntityId = villagerEntityId;
         this.villagerName = villagerName;
         this.professionName = professionName;
+        ClientVillagerConversationState.start(villagerEntityId);
     }
 
     @Override
     protected void init() {
-        rebuildInteractionButtons();
+        rebuildOptions();
+    }
+
+    @Override
+    public void tick() {
+        ClientVillagerConversationState.tickCameraFocus();
     }
 
     @Override
@@ -48,25 +60,70 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     public void setDialogueText(String dialogueText) {
-        this.dialogueText = dialogueText;
+        ClientVillagerConversationState.setResponseText(dialogueText);
     }
 
     public void showNotice(String text) {
-        this.dialogueText = text;
+        ClientVillagerConversationState.setResponseText(text);
+    }
+
+    public void closeFromServer() {
+        this.closingFromServer = true;
+        this.minecraft.setScreen(null);
     }
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         focusVillagerOnPlayer();
-        int left = panelLeft();
-        int top = panelTop();
-        graphics.fill(left - 2, top - 2, left + PANEL_WIDTH + 2, top + PANEL_HEIGHT + 2, 0xCC050505);
-        graphics.fill(left, top, left + PANEL_WIDTH, top + PANEL_HEIGHT, 0xB8181818);
-        graphics.fill(left + 8, top + 20, left + PANEL_WIDTH - 8, top + 21, 0xAA8B7A58);
-        graphics.drawString(this.font, this.villagerName, left + 10, top + 8, 0xF6E7BC, false);
-        graphics.drawString(this.font, this.professionName, left + PANEL_WIDTH - 10 - this.font.width(this.professionName), top + 8, 0xB8B1A0, false);
-        graphics.drawWordWrap(this.font, Component.literal(this.dialogueText), left + 12, top + 31, PANEL_WIDTH - 24, 0xECE1C8);
-        super.render(graphics, mouseX, mouseY, partialTick);
+        updateMouseSelection(mouseX, mouseY);
+
+        renderConversationFocus(graphics);
+        renderOptions(graphics, mouseX, mouseY, optionsTop());
+        renderResponse(graphics);
+        renderHint(graphics);
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
+            leaveConversation();
+            return true;
+        }
+        if (keyCode == GLFW.GLFW_KEY_UP || keyCode == GLFW.GLFW_KEY_W) {
+            moveSelection(-1);
+            return true;
+        }
+        if (keyCode == GLFW.GLFW_KEY_DOWN || keyCode == GLFW.GLFW_KEY_S) {
+            moveSelection(1);
+            return true;
+        }
+        if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER || keyCode == GLFW.GLFW_KEY_SPACE) {
+            activateSelected();
+            return true;
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+            int hovered = optionAt(mouseX, mouseY, optionsTop());
+            if (hovered >= 0) {
+                this.selectedOption = hovered;
+                activateSelected();
+                return true;
+            }
+        }
+        return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    @Override
+    public void removed() {
+        ClientVillagerConversationState.clear();
+        if (!this.closingFromServer) {
+            PacketDistributor.sendToServer(new VillagerConversationEndRequestPayload(this.villagerEntityId));
+        }
+        super.removed();
     }
 
     @Override
@@ -74,57 +131,166 @@ public class VillagerInteractionScreen extends Screen {
         return false;
     }
 
-    private void rebuildInteractionButtons() {
-        clearWidgets();
-        int left = panelLeft();
-        int top = panelTop();
-        int buttonTop = top + PANEL_HEIGHT + 8;
-        if (this.talkMenuOpen) {
-            addDialogueButton("Greeting", DialogueRequestType.GREETING, left, buttonTop);
-            addDialogueButton("Question", DialogueRequestType.QUESTION, left + BUTTON_WIDTH + BUTTON_GAP, buttonTop);
-            addDialogueButton("Story", DialogueRequestType.STORY, left + (BUTTON_WIDTH + BUTTON_GAP) * 2, buttonTop);
-            addDialogueButton("Joke", DialogueRequestType.JOKE, left, buttonTop + BUTTON_HEIGHT + BUTTON_GAP);
-            addDialogueButton("Insult", DialogueRequestType.INSULT, left + BUTTON_WIDTH + BUTTON_GAP, buttonTop + BUTTON_HEIGHT + BUTTON_GAP);
-            addRenderableWidget(Button.builder(Component.literal("Back"), button -> {
-                this.talkMenuOpen = false;
-                rebuildInteractionButtons();
-            }).bounds(left + (BUTTON_WIDTH + BUTTON_GAP) * 2, buttonTop + BUTTON_HEIGHT + BUTTON_GAP, BUTTON_WIDTH, BUTTON_HEIGHT).build());
+    private void rebuildOptions() {
+        this.options.clear();
+        if (this.page == DialoguePage.TALK) {
+            this.options.add(DialogueOption.enabled("Greeting", () -> requestDialogue(DialogueRequestType.GREETING)));
+            this.options.add(DialogueOption.enabled("Question", () -> requestDialogue(DialogueRequestType.QUESTION)));
+            this.options.add(DialogueOption.enabled("Story", () -> requestDialogue(DialogueRequestType.STORY)));
+            this.options.add(DialogueOption.enabled("Joke", () -> requestDialogue(DialogueRequestType.JOKE)));
+            this.options.add(DialogueOption.enabled("Insult", () -> requestDialogue(DialogueRequestType.INSULT)));
+            this.options.add(DialogueOption.enabled("Back", () -> {
+                this.page = DialoguePage.ROOT;
+                rebuildOptions();
+            }));
+        } else {
+            this.options.add(DialogueOption.enabled("Talk", () -> {
+                this.page = DialoguePage.TALK;
+                rebuildOptions();
+            }));
+            this.options.add(DialogueOption.enabled("Trade", () ->
+                    PacketDistributor.sendToServer(new VillagerTradeRequestPayload(this.villagerEntityId))));
+            this.options.add(DialogueOption.disabled("Recruit", "Coming soon"));
+            this.options.add(DialogueOption.disabled("Inventory", "Coming soon"));
+            this.options.add(DialogueOption.enabled("Goodbye", this::leaveConversation));
+        }
+        this.selectedOption = firstEnabledOption();
+    }
+
+    private void requestDialogue(DialogueRequestType requestType) {
+        ClientVillagerConversationState.setResponseText("...");
+        PacketDistributor.sendToServer(new VillagerDialogueRequestPayload(this.villagerEntityId, requestType));
+    }
+
+    private void leaveConversation() {
+        this.minecraft.setScreen(null);
+    }
+
+    private void activateSelected() {
+        if (this.selectedOption < 0 || this.selectedOption >= this.options.size()) {
             return;
         }
-
-        addRenderableWidget(Button.builder(Component.literal("Talk"), button -> {
-            this.talkMenuOpen = true;
-            rebuildInteractionButtons();
-        }).bounds(left, buttonTop, BUTTON_WIDTH, BUTTON_HEIGHT).build());
-        addRenderableWidget(Button.builder(Component.literal("Trade"), button ->
-                PacketDistributor.sendToServer(new VillagerTradeRequestPayload(this.villagerEntityId))
-        ).bounds(left + BUTTON_WIDTH + BUTTON_GAP, buttonTop, BUTTON_WIDTH, BUTTON_HEIGHT).build());
-        Button recruit = disabledButton("Recruit", left + (BUTTON_WIDTH + BUTTON_GAP) * 2, buttonTop);
-        Button inventory = disabledButton("Inventory", left, buttonTop + BUTTON_HEIGHT + BUTTON_GAP);
-        addRenderableWidget(recruit);
-        addRenderableWidget(inventory);
+        DialogueOption option = this.options.get(this.selectedOption);
+        if (option.disabled()) {
+            return;
+        }
+        option.action().run();
     }
 
-    private void addDialogueButton(String label, DialogueRequestType requestType, int x, int y) {
-        addRenderableWidget(Button.builder(Component.literal(label), button -> {
-            this.dialogueText = "...";
-            PacketDistributor.sendToServer(new VillagerDialogueRequestPayload(this.villagerEntityId, requestType));
-        }).bounds(x, y, BUTTON_WIDTH, BUTTON_HEIGHT).build());
+    private void moveSelection(int direction) {
+        if (this.options.isEmpty()) {
+            return;
+        }
+        int next = this.selectedOption;
+        for (int steps = 0; steps < this.options.size(); steps++) {
+            next = Mth.positiveModulo(next + direction, this.options.size());
+            if (!this.options.get(next).disabled()) {
+                this.selectedOption = next;
+                return;
+            }
+        }
     }
 
-    private Button disabledButton(String label, int x, int y) {
-        Button button = Button.builder(Component.literal(label), ignored -> {
-        }).bounds(x, y, BUTTON_WIDTH, BUTTON_HEIGHT).tooltip(Tooltip.create(Component.literal("Coming soon"))).build();
-        button.active = false;
-        return button;
+    private int firstEnabledOption() {
+        for (int index = 0; index < this.options.size(); index++) {
+            if (!this.options.get(index).disabled()) {
+                return index;
+            }
+        }
+        return 0;
     }
 
-    private int panelLeft() {
-        return (this.width - PANEL_WIDTH) / 2;
+    private void renderOptions(GuiGraphics graphics, int mouseX, int mouseY, int top) {
+        int left = optionsLeft();
+        for (int index = 0; index < this.options.size(); index++) {
+            DialogueOption option = this.options.get(index);
+            int y = top + index * (OPTION_HEIGHT + OPTION_GAP);
+            boolean selected = index == this.selectedOption;
+            int textColor = option.disabled() ? 0x777777 : selected ? 0xFFFFFFFF : 0xBFC0C0C0;
+            if (selected && !option.disabled()) {
+                graphics.fill(left - 18, y - 1, left + OPTION_WIDTH, y + OPTION_HEIGHT, 0x33000000);
+                graphics.drawString(this.font, ">", left - 13, y + 4, 0xFFFFFFFF, true);
+            }
+            graphics.drawString(this.font, option.label(), left, y + 4, textColor, true);
+        }
+
+        int hovered = optionAt(mouseX, mouseY, top);
+        if (hovered >= 0 && this.options.get(hovered).tooltip() != null) {
+            graphics.renderTooltip(this.font, Component.literal(this.options.get(hovered).tooltip()), mouseX, mouseY);
+        }
     }
 
-    private int panelTop() {
-        return Math.max(18, this.height - PANEL_HEIGHT - 64);
+    private void renderHint(GuiGraphics graphics) {
+        String hint = "Esc: leave";
+        graphics.drawString(this.font, hint, this.width - this.font.width(hint) - 8, this.height - 14, 0x66FFFFFF, false);
+    }
+
+    private void renderConversationFocus(GuiGraphics graphics) {
+        int dividerX = dividerX();
+        int centerY = focusCenterY();
+        int dividerTop = centerY - DIVIDER_HEIGHT / 2;
+        int dividerBottom = centerY + DIVIDER_HEIGHT / 2;
+
+        graphics.fill(dividerX - 1, dividerTop, dividerX, dividerBottom, 0x66FFFFFF);
+        graphics.fill(dividerX, dividerTop, dividerX + 1, dividerBottom, 0x99000000);
+
+        String speaker = this.villagerName;
+        String profession = this.professionName;
+        int nameX = dividerX - 28 - this.font.width(speaker);
+        graphics.drawString(this.font, speaker, nameX, centerY - 7, 0xFFFFFFFF, true);
+        int professionX = dividerX - 28 - this.font.width(profession);
+        graphics.drawString(this.font, profession, professionX, centerY + 8, 0x88FFFFFF, true);
+    }
+
+    private void renderResponse(GuiGraphics graphics) {
+        List<FormattedCharSequence> lines = this.font.split(
+                Component.literal(ClientVillagerConversationState.responseText()),
+                Math.min(RESPONSE_WIDTH, this.width - 48)
+        );
+        int lineHeight = 11;
+        int top = this.height - 52 - Math.max(0, lines.size() - 1) * lineHeight;
+        for (int index = 0; index < lines.size(); index++) {
+            FormattedCharSequence line = lines.get(index);
+            int x = (this.width - this.font.width(line)) / 2;
+            graphics.drawString(this.font, line, x, top + index * lineHeight, 0xFFFFFFFF, true);
+        }
+    }
+
+    private void updateMouseSelection(int mouseX, int mouseY) {
+        int hovered = optionAt(mouseX, mouseY, optionsTop());
+        if (hovered >= 0) {
+            this.selectedOption = hovered;
+        }
+    }
+
+    private int optionAt(double mouseX, double mouseY, int top) {
+        int left = optionsLeft();
+        if (mouseX < left - 18 || mouseX > left + OPTION_WIDTH) {
+            return -1;
+        }
+        for (int index = 0; index < this.options.size(); index++) {
+            int y = top + index * (OPTION_HEIGHT + OPTION_GAP);
+            if (mouseY >= y - 2 && mouseY <= y + OPTION_HEIGHT) {
+                return index;
+            }
+        }
+        return -1;
+    }
+
+    private int optionsTop() {
+        return focusCenterY() - Math.min(DIVIDER_HEIGHT / 2 - 4, this.options.size() * (OPTION_HEIGHT + OPTION_GAP) / 2);
+    }
+
+    private int optionsLeft() {
+        return dividerX() + 28;
+    }
+
+    private int dividerX() {
+        return this.width / 2 + 16;
+    }
+
+    private int focusCenterY() {
+        return Math.max(72, this.height - 124);
     }
 
     private void focusVillagerOnPlayer() {
@@ -138,6 +304,23 @@ public class VillagerInteractionScreen extends Screen {
             villager.getLookControl().setLookAt(minecraft.player, 30.0F, 30.0F);
             villager.lookAt(EntityAnchorArgument.Anchor.EYES, minecraft.player.getEyePosition());
             villager.setYBodyRot(villager.getYHeadRot());
+        }
+        // TODO: Add subtle client-only camera/FOV easing once it can be tested across first- and third-person safely.
+    }
+
+    private enum DialoguePage {
+        ROOT,
+        TALK
+    }
+
+    private record DialogueOption(String label, boolean disabled, String tooltip, Runnable action) {
+        static DialogueOption enabled(String label, Runnable action) {
+            return new DialogueOption(label, false, null, action);
+        }
+
+        static DialogueOption disabled(String label, String tooltip) {
+            return new DialogueOption(label, true, tooltip, () -> {
+            });
         }
     }
 }

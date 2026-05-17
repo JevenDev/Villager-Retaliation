@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.client.interaction;
 
 import com.jvn.villagerretaliation.network.OpenVillagerInteractionPayload;
+import com.jvn.villagerretaliation.network.VillagerConversationEndedPayload;
 import com.jvn.villagerretaliation.network.VillagerDialogueResponsePayload;
 import com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload;
 import net.minecraft.client.Minecraft;
@@ -33,6 +34,13 @@ public final class VillagerInteractionClientHandler {
         }
         if (minecraft.player != null) {
             minecraft.player.displayClientMessage(Component.literal(payload.text()), false);
+        }
+    }
+
+    public static void acceptConversationEnded(VillagerConversationEndedPayload payload) {
+        if (Minecraft.getInstance().screen instanceof VillagerInteractionScreen screen
+                && screen.matchesVillager(payload.entityId())) {
+            screen.closeFromServer();
         }
     }
 }

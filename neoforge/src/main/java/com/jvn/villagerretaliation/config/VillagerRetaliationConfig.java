@@ -14,6 +14,11 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.BooleanValue ENABLE_INTERACTION_SCREEN;
     public static final ModConfigSpec.BooleanValue SHIFT_RIGHT_CLICK_BYPASSES_INTERACTION_SCREEN;
     public static final ModConfigSpec.BooleanValue ENABLE_DIALOGUE_REPUTATION_EFFECTS;
+    public static final ModConfigSpec.BooleanValue ENABLE_DIALOGUE_CAMERA_FOCUS;
+    public static final ModConfigSpec.DoubleValue DIALOGUE_CAMERA_ZOOM_AMOUNT;
+    public static final ModConfigSpec.IntValue DIALOGUE_CAMERA_TRANSITION_TICKS;
+    public static final ModConfigSpec.BooleanValue FREEZE_VILLAGER_DURING_DIALOGUE;
+    public static final ModConfigSpec.DoubleValue MAX_DIALOGUE_DISTANCE;
 
     public static final ModConfigSpec.BooleanValue BABY_VILLAGERS_DROP_LOOT;
     public static final ModConfigSpec.BooleanValue REQUIRE_PLAYER_KILL_FOR_PROFESSION_LOOT;
@@ -140,6 +145,26 @@ public final class VillagerRetaliationConfig {
                 .comment("Allows villager dialogue choices to apply small reputation changes.")
                 .translation("villagerretaliation.configuration.general.enableDialogueReputationEffects")
                 .define("enableDialogueReputationEffects", true);
+        ENABLE_DIALOGUE_CAMERA_FOCUS = BUILDER
+                .comment("Reserved for subtle client-side dialogue camera polish. Phase 1 keeps this conservative and does not force player view changes.")
+                .translation("villagerretaliation.configuration.general.enableDialogueCameraFocus")
+                .define("enableDialogueCameraFocus", true);
+        DIALOGUE_CAMERA_ZOOM_AMOUNT = BUILDER
+                .comment("Reserved subtle dialogue zoom amount for future camera polish.")
+                .translation("villagerretaliation.configuration.general.dialogueCameraZoomAmount")
+                .defineInRange("dialogueCameraZoomAmount", 0.04D, 0.0D, 0.25D);
+        DIALOGUE_CAMERA_TRANSITION_TICKS = BUILDER
+                .comment("Reserved transition duration for future dialogue camera polish.")
+                .translation("villagerretaliation.configuration.general.dialogueCameraTransitionTicks")
+                .defineInRange("dialogueCameraTransitionTicks", 10, 1, 40);
+        FREEZE_VILLAGER_DURING_DIALOGUE = BUILDER
+                .comment("Stops villager navigation while a Villager Retaliation dialogue conversation is active.")
+                .translation("villagerretaliation.configuration.general.freezeVillagerDuringDialogue")
+                .define("freezeVillagerDuringDialogue", true);
+        MAX_DIALOGUE_DISTANCE = BUILDER
+                .comment("Maximum player-to-villager distance in blocks before a dialogue conversation closes.")
+                .translation("villagerretaliation.configuration.general.maxDialogueDistance")
+                .defineInRange("maxDialogueDistance", 7.0D, 3.0D, 16.0D);
         BUILDER.pop();
 
         BUILDER.push("balance");
