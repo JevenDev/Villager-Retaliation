@@ -87,6 +87,27 @@ public final class VillagerDialogueService {
         add(lines, "greeting_low_quick", DialogueRequestType.GREETING, "Make it quick. I don't trust you.")
                 .dispositions(DialogueDisposition.RUDE, DialogueDisposition.HOSTILE, DialogueDisposition.FEARFUL).build();
 
+        add(lines, "chat_respectful_welcome", DialogueRequestType.CHAT, "Stay a while. It's nice having someone around who doesn't make the village tense.")
+                .dispositions(DialogueDisposition.RESPECTFUL, DialogueDisposition.FRIENDLY).weight(34).build();
+        add(lines, "chat_respectful_daily_life", DialogueRequestType.CHAT, "Most days are chores, bells, and neighbors. Good company improves all three.")
+                .dispositions(DialogueDisposition.RESPECTFUL, DialogueDisposition.FRIENDLY).weight(34).build();
+        add(lines, "chat_neutral_routine", DialogueRequestType.CHAT, "Nothing dramatic today. Just work, weather, and trying to stay ahead of both.")
+                .dispositions(DialogueDisposition.NEUTRAL, DialogueDisposition.CAUTIOUS).weight(34).build();
+        add(lines, "chat_neutral_street", DialogueRequestType.CHAT, "You hear a lot just standing in the street for a few minutes.")
+                .dispositions(DialogueDisposition.NEUTRAL, DialogueDisposition.CAUTIOUS).weight(34).build();
+        add(lines, "chat_rude_brisk", DialogueRequestType.CHAT, "If this is casual conversation, make it unusually good.")
+                .dispositions(DialogueDisposition.RUDE, DialogueDisposition.HOSTILE).weight(34).build();
+        add(lines, "chat_rude_short", DialogueRequestType.CHAT, "I've got work. Talk fast or talk elsewhere.")
+                .dispositions(DialogueDisposition.RUDE, DialogueDisposition.HOSTILE).weight(34).build();
+        add(lines, "chat_fearful_quiet", DialogueRequestType.CHAT, "If we're just talking, keep it calm. I prefer calm.")
+                .dispositions(DialogueDisposition.FEARFUL).weight(34).build();
+        add(lines, "chat_fearful_smalltalk", DialogueRequestType.CHAT, "Small talk is easier when nobody is shouting.")
+                .dispositions(DialogueDisposition.FEARFUL).weight(34).build();
+        add(lines, "chat_general_well", DialogueRequestType.CHAT, "The well, the paths, the crops, the gossip. That's a village, more or less.")
+                .weight(28).build();
+        add(lines, "chat_general_day", DialogueRequestType.CHAT, "Some days all anyone wants is a quiet street and a door that stays shut at night.")
+                .weight(28).build();
+
         add(lines, "farmer_question_soil", DialogueRequestType.QUESTION, "The soil's been kind lately. That's more than I can say for some visitors.")
                 .professions(VillagerProfession.FARMER).build();
         add(lines, "farmer_story_harvest", DialogueRequestType.STORY, "A good harvest keeps a village standing.")
@@ -116,6 +137,26 @@ public final class VillagerDialogueService {
                 .eventTags(VillageEventMemory.EventTag.BABY_BORN).weight(35).build();
         add(lines, "story_golem_defense", DialogueRequestType.STORY, "Our golem crushed a monster near the edge of town. Good iron, that one.")
                 .eventTags(VillageEventMemory.EventTag.IRON_GOLEM_DEFEATED_MOB, VillageEventMemory.EventTag.PLAYER_DEFENDED_VILLAGE).weight(35).build();
+        add(lines, "greeting_player_defended_village_1", DialogueRequestType.GREETING, "Thanks for fending off the mobs. The village is still standing because of it.")
+                .playerEventTags(VillageEventMemory.EventTag.PLAYER_DEFENDED_VILLAGE)
+                .dispositions(DialogueDisposition.RESPECTFUL, DialogueDisposition.FRIENDLY, DialogueDisposition.NEUTRAL)
+                .weight(42)
+                .build();
+        add(lines, "greeting_player_defended_village_2", DialogueRequestType.GREETING, "That zombie had it coming. You saved our skin.")
+                .playerEventTags(VillageEventMemory.EventTag.PLAYER_DEFENDED_VILLAGE)
+                .dispositions(DialogueDisposition.RESPECTFUL, DialogueDisposition.FRIENDLY, DialogueDisposition.NEUTRAL)
+                .weight(42)
+                .build();
+        add(lines, "story_player_defended_village_1", DialogueRequestType.STORY, "People are still talking about how you fought for us when the mobs closed in.")
+                .playerEventTags(VillageEventMemory.EventTag.PLAYER_DEFENDED_VILLAGE)
+                .dispositions(DialogueDisposition.RESPECTFUL, DialogueDisposition.FRIENDLY, DialogueDisposition.NEUTRAL)
+                .weight(40)
+                .build();
+        add(lines, "story_player_defended_village_2", DialogueRequestType.STORY, "We remember who stood between this village and the dark. That was you.")
+                .playerEventTags(VillageEventMemory.EventTag.PLAYER_DEFENDED_VILLAGE)
+                .dispositions(DialogueDisposition.RESPECTFUL, DialogueDisposition.FRIENDLY)
+                .weight(40)
+                .build();
         add(lines, "story_villager_death", DialogueRequestType.STORY, "We lost someone recently. The village is quieter now.")
                 .eventTags(VillageEventMemory.EventTag.VILLAGER_DEATH).weight(40).build();
         add(lines, "story_raid", DialogueRequestType.STORY, "The bells haven't sounded like that in a long time.")
@@ -148,12 +189,28 @@ public final class VillagerDialogueService {
         add(lines, "story_general", DialogueRequestType.STORY, "Once, the well ran dry for three days. Everyone learned how much a bucket matters.")
                 .build();
 
+        addProfessionChatLines(lines);
         addGlobalMoodLines(lines);
         addProfessionMoodLines(lines);
         addWeatherLines(lines);
         addTimeOfDayLines(lines);
 
         return List.copyOf(lines);
+    }
+
+    private static void addProfessionChatLines(List<DialogueLine> lines) {
+        for (ProfessionDialogue profile : professionProfiles()) {
+            add(lines, profile.key() + "_chat_work", DialogueRequestType.CHAT,
+                    "Most of my day is " + profile.craft() + ". It sounds simple until everything depends on it.")
+                    .professions(profile.profession())
+                    .weight(30)
+                    .build();
+            add(lines, profile.key() + "_chat_pride", DialogueRequestType.CHAT,
+                    "A good " + profile.role() + " thinks about " + profile.pride() + " even when nobody notices.")
+                    .professions(profile.profession())
+                    .weight(30)
+                    .build();
+        }
     }
 
     private static void addTimeOfDayLines(List<DialogueLine> lines) {

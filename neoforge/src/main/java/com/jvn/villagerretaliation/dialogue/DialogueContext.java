@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.dialogue;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import java.util.List;
+import java.util.UUID;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
@@ -22,6 +23,18 @@ public record DialogueContext(
         List<VillageEventMemory.MemoryEvent> recentEvents,
         RandomSource random
 ) {
+    public boolean hasRecentEvent(VillageEventMemory.EventTag... tags) {
+        return VillageEventMemory.hasAny(this.recentEvents, tags);
+    }
+
+    public boolean hasRecentPlayerEvent(VillageEventMemory.EventTag... tags) {
+        UUID playerId = this.player.getUUID();
+        return this.recentEvents.stream().anyMatch(event ->
+                event.playerId() != null
+                        && event.playerId().equals(playerId)
+                        && java.util.List.of(tags).contains(event.tag()));
+    }
+
     public enum WeatherState {
         CLEAR,
         RAIN,

@@ -138,6 +138,7 @@ public class VillagerInteractionScreen extends Screen {
     private void rebuildOptions() {
         this.options.clear();
         if (this.page == DialoguePage.TALK) {
+            this.options.add(DialogueOption.enabled("Chat", () -> requestDialogue(DialogueRequestType.CHAT)));
             this.options.add(DialogueOption.enabled("Greeting", () -> requestDialogue(DialogueRequestType.GREETING)));
             this.options.add(DialogueOption.enabled("Question", () -> requestDialogue(DialogueRequestType.QUESTION)));
             this.options.add(DialogueOption.enabled("Story", () -> requestDialogue(DialogueRequestType.STORY)));

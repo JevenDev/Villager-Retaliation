@@ -127,6 +127,10 @@ public final class VillagerReputationManager {
     }
 
     public static boolean setReputationForDebug(ServerLevel level, AbstractVillager villager, UUID playerId, int reputation) {
+        return setReputation(level, villager, playerId, reputation);
+    }
+
+    public static boolean setReputation(ServerLevel level, AbstractVillager villager, UUID playerId, int reputation) {
         VillagerReputationSavedData data = VillagerReputationSavedData.get(level);
         VillagerReputationSavedData.ReputationEntry entry = data.getOrCreate(villager.getUUID(), playerId);
         int previousReputation = entry.reputation();
@@ -135,11 +139,15 @@ public final class VillagerReputationManager {
             return false;
         }
 
+        VillagerReputationLevel previousLevel = VillagerReputationLevel.fromReputation(previousReputation);
         entry.setReputation(reputation);
+        VillagerReputationLevel newLevel = VillagerReputationLevel.fromReputation(reputation);
         entry.setLastInteractionGameTime(level.getGameTime());
         entry.setLastKnownVillagerPosition(villager.blockPosition());
         data.setDirty();
+        VillageEventMemory.remember(level, VillageEventMemory.EventTag.REPUTATION_CHANGED, villager.blockPosition(), villager, level.getPlayerByUUID(playerId));
         if (level.getPlayerByUUID(playerId) instanceof Player player) {
+            handleTierChange(level, villager, player, previousLevel, newLevel);
             VillagerReputationTradePricing.refreshPricesForPlayer(level, villager, player);
         }
         syncToTrackingPlayer(level, villager, playerId);

@@ -47,6 +47,7 @@ public final class VillagerReputationEvents {
     private static final long NEGATIVE_REPUTATION_BELL_COOLDOWN_TICKS = 20L * 10L;
     private static final int NEGATIVE_REPUTATION_BELL_SEARCH_HORIZONTAL_RADIUS = 32;
     private static final int NEGATIVE_REPUTATION_BELL_SEARCH_VERTICAL_RADIUS = 8;
+    private static final int CURED_VILLAGER_REPUTATION = 100;
     private static final Map<UUID, PlayerContribution> HOSTILE_PLAYER_CONTRIBUTIONS = new HashMap<>();
     private static final Map<UUID, Long> NEGATIVE_REPUTATION_BELL_COOLDOWNS = new HashMap<>();
 
@@ -273,11 +274,13 @@ public final class VillagerReputationEvents {
         VillagerReputationManager.transferVillagerIdentity(level, source.getUUID(), outcome.getUUID());
 
         if (source instanceof ZombieVillager
-                && outcome instanceof Villager
-                && hadKnownReputationBeforeCure
-                && curingPlayerId != null
-                && level.getPlayerByUUID(curingPlayerId) instanceof ServerPlayer serverPlayer) {
-            VillagerReputationAdvancements.onCuredKnownZombieVillager(serverPlayer);
+                && outcome instanceof Villager curedVillager
+                && curingPlayerId != null) {
+            VillagerReputationManager.setReputation(level, curedVillager, curingPlayerId, CURED_VILLAGER_REPUTATION);
+            if (hadKnownReputationBeforeCure
+                    && level.getPlayerByUUID(curingPlayerId) instanceof ServerPlayer serverPlayer) {
+                VillagerReputationAdvancements.onCuredKnownZombieVillager(serverPlayer);
+            }
         }
     }
 

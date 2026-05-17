@@ -59,6 +59,7 @@ public final class DialogueReputationService {
 
     private static PlannedEffect planEffect(DialogueContext context, DialogueRequestType requestType, VillagerInteractionTracker.InteractionState interactionState) {
         return switch (requestType) {
+            case CHAT -> PlannedEffect.none();
             case GREETING -> planGreeting(context, interactionState.firstConversation());
             case QUESTION -> planQuestion(context, interactionState);
             case STORY -> planStory(context);
