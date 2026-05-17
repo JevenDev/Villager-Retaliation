@@ -35,10 +35,10 @@ public final class VillagerDialogueService {
             candidates = freshCandidates;
         }
 
-        int totalWeight = candidates.stream().mapToInt(DialogueLine::weight).sum();
+        int totalWeight = candidates.stream().mapToInt(VillagerDialogueService::effectiveWeight).sum();
         int selected = context.random().nextInt(Math.max(1, totalWeight));
         for (DialogueLine candidate : candidates) {
-            selected -= candidate.weight();
+            selected -= effectiveWeight(candidate);
             if (selected < 0) {
                 return new DialogueResult(candidate.id(), candidate.text());
             }
@@ -58,6 +58,10 @@ public final class VillagerDialogueService {
             case DESPISED -> DialogueDisposition.HOSTILE;
             case FEARED -> DialogueDisposition.FEARFUL;
         };
+    }
+
+    private static int effectiveWeight(DialogueLine line) {
+        return line.weight() + line.specificityScore() * 8;
     }
 
     private static List<DialogueLine> createLines() {
@@ -144,7 +148,271 @@ public final class VillagerDialogueService {
         add(lines, "story_general", DialogueRequestType.STORY, "Once, the well ran dry for three days. Everyone learned how much a bucket matters.")
                 .build();
 
+        addGlobalMoodLines(lines);
+        addProfessionMoodLines(lines);
+
         return List.copyOf(lines);
+    }
+
+    private static void addGlobalMoodLines(List<DialogueLine> lines) {
+        for (DialogueDisposition disposition : DialogueDisposition.values()) {
+            for (int index = 0; index < 10; index++) {
+                add(lines, "global_" + disposition.name().toLowerCase() + "_" + index, requestForIndex(index), globalMoodText(disposition, index))
+                        .dispositions(disposition)
+                        .weight(18)
+                        .build();
+            }
+        }
+    }
+
+    private static void addProfessionMoodLines(List<DialogueLine> lines) {
+        for (ProfessionDialogue profile : professionProfiles()) {
+            for (DialogueDisposition disposition : DialogueDisposition.values()) {
+                for (int index = 0; index < 10; index++) {
+                    add(lines, profile.key() + "_" + disposition.name().toLowerCase() + "_" + index, requestForIndex(index), professionMoodText(profile, disposition, index))
+                            .professions(profile.profession())
+                            .dispositions(disposition)
+                            .weight(24)
+                            .build();
+                }
+            }
+        }
+    }
+
+    private static DialogueRequestType requestForIndex(int index) {
+        return switch (index % 5) {
+            case 0 -> DialogueRequestType.GREETING;
+            case 1 -> DialogueRequestType.QUESTION;
+            case 2 -> DialogueRequestType.STORY;
+            case 3 -> DialogueRequestType.JOKE;
+            default -> DialogueRequestType.INSULT;
+        };
+    }
+
+    private static String globalMoodText(DialogueDisposition disposition, int index) {
+        return switch (disposition) {
+            case RESPECTFUL -> switch (index) {
+                case 0 -> "You're welcome here. People stand a little taller when you visit.";
+                case 1 -> "If you're asking after the village, we're doing better because of you.";
+                case 2 -> "There are names folk say softly, with gratitude. Yours is one of them.";
+                case 3 -> "I could make a joke, but the bell already rings whenever you arrive.";
+                case 4 -> "Even heroes get told when they're blocking the path.";
+                case 5 -> "Good to see you again. The village remembers steady hands.";
+                case 6 -> "Need news? The best news is that you're not trouble.";
+                case 7 -> "Once trust takes root, it feeds more than one house.";
+                case 8 -> "If reputation bought bread, you'd own the bakery.";
+                default -> "Careful, friend. Admiration can sour if you step on it.";
+            };
+            case FRIENDLY -> switch (index) {
+                case 0 -> "There you are. I was hoping the day would bring a familiar face.";
+                case 1 -> "Ask away. I have a moment, and you usually listen.";
+                case 2 -> "A kind visitor changes the sound of a street.";
+                case 3 -> "Tell me your joke, but I reserve the right to groan loudly.";
+                case 4 -> "That's a bold thing to say to someone who still likes you.";
+                case 5 -> "Stay awhile if you can. The village feels less tense with you around.";
+                case 6 -> "Questions are easier from someone who has earned answers.";
+                case 7 -> "Small kindnesses stack higher than most walls.";
+                case 8 -> "If that joke has emeralds in it, I already approve.";
+                default -> "Mind your tongue. Goodwill is sturdy, not unbreakable.";
+            };
+            case NEUTRAL -> switch (index) {
+                case 0 -> "Morning. Or evening. Hard to tell when the work piles up.";
+                case 1 -> "What do you need to know?";
+                case 2 -> "Every village has two histories: what happened, and what people repeat.";
+                case 3 -> "A joke? Fine, but make it quick.";
+                case 4 -> "I've heard worse. Usually from traders.";
+                case 5 -> "Passing through, or making this our problem?";
+                case 6 -> "Questions are cheap. Useful answers cost attention.";
+                case 7 -> "Most days are ordinary until someone careless arrives.";
+                case 8 -> "If this is funny, I'll pretend I meant to laugh.";
+                default -> "That sounded sharper than it needed to.";
+            };
+            case CAUTIOUS -> switch (index) {
+                case 0 -> "Keep your hands where I can see them.";
+                case 1 -> "Why are you asking?";
+                case 2 -> "Trust leaves faster than it arrives. Villages learn that early.";
+                case 3 -> "A joke from you? This should be interesting.";
+                case 4 -> "You're not helping your case.";
+                case 5 -> "Say what you came to say.";
+                case 6 -> "I answer carefully around people I'm still measuring.";
+                case 7 -> "We notice patterns. Yours is not settled yet.";
+                case 8 -> "If I laugh, it is because I'm nervous.";
+                default -> "That is exactly the sort of thing people remember.";
+            };
+            case RUDE -> switch (index) {
+                case 0 -> "Make it quick. I have better uses for daylight.";
+                case 1 -> "You want answers after all that? Hm.";
+                case 2 -> "Some visitors leave footprints. Some leave warnings.";
+                case 3 -> "Go on then. Astonish me.";
+                case 4 -> "I've heard kinder sounds from a stuck door.";
+                case 5 -> "You're still here. Brave, or just stubborn.";
+                case 6 -> "Ask, but don't expect warmth.";
+                case 7 -> "A village can forgive. It does not forget for free.";
+                case 8 -> "That joke had the shape of humor and none of the taste.";
+                default -> "Careful. My patience is thinner than you think.";
+            };
+            case HOSTILE -> switch (index) {
+                case 0 -> "You should not be here.";
+                case 1 -> "Why would I tell you anything useful?";
+                case 2 -> "When people ask how trouble sounds, I describe your footsteps.";
+                case 3 -> "If this is a joke, it already failed.";
+                case 4 -> "You mistake fear for permission.";
+                case 5 -> "Leave before the village decides together.";
+                case 6 -> "No answer I give you will be for your benefit.";
+                case 7 -> "There are doors here that close because of you.";
+                case 8 -> "Funny thing: nobody laughs when you arrive.";
+                default -> "Say another word like that and see how many windows open.";
+            };
+            case FEARFUL -> switch (index) {
+                case 0 -> "Please. Just say what you need and go.";
+                case 1 -> "I don't know. Or I do, and I shouldn't say.";
+                case 2 -> "Fear makes every street feel narrower.";
+                case 3 -> "A joke? Now?";
+                case 4 -> "I won't answer that. I won't.";
+                case 5 -> "I am listening. Please don't make me regret it.";
+                case 6 -> "Questions from you feel like tests.";
+                case 7 -> "Some nights the village goes quiet all at once.";
+                case 8 -> "I might laugh if I knew it was safe.";
+                default -> "Please stop. That is enough.";
+            };
+        };
+    }
+
+    private static String professionMoodText(ProfessionDialogue profile, DialogueDisposition disposition, int index) {
+        return switch (disposition) {
+            case RESPECTFUL -> professionRespectful(profile, index);
+            case FRIENDLY -> professionFriendly(profile, index);
+            case NEUTRAL -> professionNeutral(profile, index);
+            case CAUTIOUS -> professionCautious(profile, index);
+            case RUDE -> professionRude(profile, index);
+            case HOSTILE -> professionHostile(profile, index);
+            case FEARFUL -> professionFearful(profile, index);
+        };
+    }
+
+    private static String professionRespectful(ProfessionDialogue profile, int index) {
+        return switch (index) {
+            case 0 -> "Welcome back. Even the " + profile.workplace() + " feels steadier when you're nearby.";
+            case 1 -> "You want to know about " + profile.craft() + "? For you, I'll answer plainly.";
+            case 2 -> "I once thought " + profile.concern() + " was our biggest worry. Then you proved people can help too.";
+            case 3 -> "My best joke involves " + profile.gift() + ", but you have already earned the good version.";
+            case 4 -> "If I tease you, it is only because you've earned familiar words.";
+            case 5 -> "A good day to you. The " + profile.role() + " notices who protects the village.";
+            case 6 -> "Ask about " + profile.warning() + " if you like. I trust you with the answer.";
+            case 7 -> "There is pride in " + profile.pride() + ", and some in knowing decent visitors still exist.";
+            case 8 -> profile.joke() + " That one is better with an audience I trust.";
+            default -> "Careful now. Even respected friends should not mock a " + profile.role() + "'s work.";
+        };
+    }
+
+    private static String professionFriendly(ProfessionDialogue profile, int index) {
+        return switch (index) {
+            case 0 -> "Good to see you. I was just thinking about " + profile.craft() + ".";
+            case 1 -> "Questions about " + profile.workplace() + "? I can spare a minute.";
+            case 2 -> "The trick to " + profile.pride() + " is patience, mostly. And not panicking.";
+            case 3 -> "I have a " + profile.role() + "'s joke about " + profile.gift() + ". It is only mostly terrible.";
+            case 4 -> "That jab had some bite. Lucky for you, I like you.";
+            case 5 -> "Pull up a patch of shade. The " + profile.workplace() + " can wait briefly.";
+            case 6 -> "If you're asking about " + profile.concern() + ", the answer changes by the hour.";
+            case 7 -> "People think " + profile.craft() + " is simple until they try it tired.";
+            case 8 -> profile.joke() + " See? Professionally funny.";
+            default -> "Mock the work if you must, but the village still needs it.";
+        };
+    }
+
+    private static String professionNeutral(ProfessionDialogue profile, int index) {
+        return switch (index) {
+            case 0 -> "Need the " + profile.role() + "? Say what you need.";
+            case 1 -> "Ask about " + profile.craft() + ", but keep it sensible.";
+            case 2 -> "Most days, " + profile.workplace() + " teaches the same lesson twice.";
+            case 3 -> "A joke about " + profile.gift() + "? I've heard worse starts.";
+            case 4 -> "If that was an insult, it needs more work.";
+            case 5 -> "I'm between tasks. Briefly.";
+            case 6 -> profile.concern() + " is the thing people ignore until it costs them.";
+            case 7 -> "You learn a lot as a " + profile.role() + ". Mostly who is patient.";
+            case 8 -> profile.joke() + " No refunds on laughter.";
+            default -> "Careful. The " + profile.workplace() + " has heard better complaints.";
+        };
+    }
+
+    private static String professionCautious(ProfessionDialogue profile, int index) {
+        return switch (index) {
+            case 0 -> "Keep back from the " + profile.workplace() + ". I mean it.";
+            case 1 -> "Why do you want to know about " + profile.craft() + "?";
+            case 2 -> "A " + profile.role() + " learns to spot trouble before it speaks.";
+            case 3 -> "If this joke involves " + profile.gift() + ", choose the gentle version.";
+            case 4 -> "That sounded like a warning wearing a smile.";
+            case 5 -> "I can talk, but I am watching your hands.";
+            case 6 -> profile.warning() + " is not something I discuss carelessly.";
+            case 7 -> "The village depends on " + profile.pride() + ". Don't make that harder.";
+            case 8 -> profile.joke() + " I laugh quieter around uncertain company.";
+            default -> "Insult me if you want, but leave the " + profile.workplace() + " out of it.";
+        };
+    }
+
+    private static String professionRude(ProfessionDialogue profile, int index) {
+        return switch (index) {
+            case 0 -> "The " + profile.role() + " is busy. You are not the reason I stop.";
+            case 1 -> "You want " + profile.craft() + " explained? Try earning a lesson.";
+            case 2 -> "I have seen " + profile.concern() + " handled with more grace than you manage walking.";
+            case 3 -> "Tell the joke. The " + profile.workplace() + " could use a warning sound.";
+            case 4 -> "That insult was duller than bad " + profile.gift() + ".";
+            case 5 -> "Make it quick. I have " + profile.pride() + " to keep alive.";
+            case 6 -> "My advice about " + profile.warning() + "? Don't be the cause of it.";
+            case 7 -> "A " + profile.role() + " remembers who makes work harder.";
+            case 8 -> profile.joke() + " Still better than talking to you.";
+            default -> "If you came to sneer at my work, stand where I can ignore you.";
+        };
+    }
+
+    private static String professionHostile(ProfessionDialogue profile, int index) {
+        return switch (index) {
+            case 0 -> "Step away from the " + profile.workplace() + ". Now.";
+            case 1 -> "I will not teach you anything about " + profile.craft() + ".";
+            case 2 -> "Every " + profile.role() + " knows what damage looks like. You qualify.";
+            case 3 -> "No joke from you belongs near my " + profile.gift() + ".";
+            case 4 -> "Threats sound cheap from someone already unwelcome.";
+            case 5 -> "Leave before " + profile.warning() + " becomes the day's work.";
+            case 6 -> "You ask like a thief measuring a door.";
+            case 7 -> "The village needs " + profile.pride() + ", not whatever you bring.";
+            case 8 -> profile.joke() + " There. More warmth than you deserve.";
+            default -> "Insult a " + profile.role() + " again and listen for the bell.";
+        };
+    }
+
+    private static String professionFearful(ProfessionDialogue profile, int index) {
+        return switch (index) {
+            case 0 -> "Please don't come closer to the " + profile.workplace() + ".";
+            case 1 -> "I can answer about " + profile.craft() + ", but please don't be angry.";
+            case 2 -> "When " + profile.concern() + " happens, I know what to do. With you, I am less sure.";
+            case 3 -> "A joke about " + profile.gift() + "? I can try to laugh.";
+            case 4 -> "Please don't mock the work. It is all I have steady.";
+            case 5 -> "I am only a " + profile.role() + ". Say what you need.";
+            case 6 -> profile.warning() + " already keeps me awake. Don't add to it.";
+            case 7 -> "I focus on " + profile.pride() + " so my hands stop shaking.";
+            case 8 -> profile.joke() + " Was that alright?";
+            default -> "Please. Not the " + profile.workplace() + ". Not today.";
+        };
+    }
+
+    private static List<ProfessionDialogue> professionProfiles() {
+        return List.of(
+                new ProfessionDialogue(VillagerProfession.ARMORER, "armorer", "armorer", "forge", "fitting mail and shields", "cracked plates after a raid", "iron plates", "broken armor", "keeping people standing", "Armor jokes are hard to land; they usually need padding."),
+                new ProfessionDialogue(VillagerProfession.BUTCHER, "butcher", "butcher", "smokehouse", "keeping meat salted and safe", "empty hooks before supper", "smoked cuts", "spoiled stores", "feeding hungry neighbors", "A butcher's joke has good timing, or it gets carved up."),
+                new ProfessionDialogue(VillagerProfession.CARTOGRAPHER, "cartographer", "cartographer", "map table", "reading roads and borders", "blank edges on a map", "fresh parchment", "lost paths", "helping people find their way", "Map jokes go nowhere unless you fold them right."),
+                new ProfessionDialogue(VillagerProfession.CLERIC, "cleric", "cleric", "brewing stand", "mixing remedies and prayers", "wounds that won't close", "glass bottles", "bad omens", "keeping hope from curdling", "A cleric's joke is medicinal: bitter first, useful later."),
+                new ProfessionDialogue(VillagerProfession.FARMER, "farmer", "farmer", "fields", "coaxing food from stubborn soil", "dry rows and trampled crops", "fresh bread", "ruined harvests", "making tomorrow edible", "A farmer's joke grows on you, if watered properly."),
+                new ProfessionDialogue(VillagerProfession.FISHERMAN, "fisherman", "fisherman", "dock", "reading water and weather", "empty nets at dusk", "good twine", "snapped lines", "bringing in enough for stew", "Fisher jokes are all about the delivery, and the line."),
+                new ProfessionDialogue(VillagerProfession.FLETCHER, "fletcher", "fletcher", "fletching table", "balancing arrows true", "warped shafts", "clean feathers", "missed shots", "making trouble keep its distance", "A fletcher's joke flies better with proper feathers."),
+                new ProfessionDialogue(VillagerProfession.LEATHERWORKER, "leatherworker", "leatherworker", "tannery", "curing leather without wasting hide", "bad stitching in the rain", "soft leather", "split seams", "making gear that lasts", "Leather jokes need a thick skin."),
+                new ProfessionDialogue(VillagerProfession.LIBRARIAN, "librarian", "librarian", "lectern", "keeping records and stories straight", "missing pages", "ink and paper", "forgotten warnings", "remembering what others rush past", "A librarian's joke has footnotes, but I will spare you."),
+                new ProfessionDialogue(VillagerProfession.MASON, "mason", "mason", "stonecutter", "setting stone that stays set", "walls with weak corners", "smooth stone", "falling masonry", "building what outlives panic", "Mason jokes are solid, if a little dense."),
+                new ProfessionDialogue(VillagerProfession.NITWIT, "nitwit", "nitwit", "sunny corner", "finding odd jobs and stranger thoughts", "forgetting why I came outside", "a nice stick", "serious faces", "noticing what others miss", "My joke wandered off. It may return with snacks."),
+                new ProfessionDialogue(VillagerProfession.NONE, "unemployed", "unemployed villager", "job site I haven't found yet", "looking useful before anyone notices", "not knowing where I fit", "a fair chance", "being dismissed", "finding the right work", "Unemployed jokes are flexible. So am I, apparently."),
+                new ProfessionDialogue(VillagerProfession.SHEPHERD, "shepherd", "shepherd", "loom", "turning wool into warmth", "scattered sheep", "clean wool", "wolves near the pens", "keeping the flock calm", "Shepherd jokes are best when nobody pulls the wool over them."),
+                new ProfessionDialogue(VillagerProfession.TOOLSMITH, "toolsmith", "toolsmith", "smithing table", "making tools that don't fail", "cracked handles", "good handles", "dull edges", "putting strength in careful hands", "Tool jokes work better when they have a point."),
+                new ProfessionDialogue(VillagerProfession.WEAPONSMITH, "weaponsmith", "weaponsmith", "grindstone", "keeping blades honest", "rust on a sword", "tempered steel", "unready guards", "making danger think twice", "Weapon jokes are sharp; I keep the dull ones for strangers.")
+        );
     }
 
     private static DialogueLine.Builder add(List<DialogueLine> lines, String id, DialogueRequestType requestType, String text) {
@@ -152,6 +420,20 @@ public final class VillagerDialogueService {
     }
 
     public record DialogueResult(String lineId, String text) {
+    }
+
+    private record ProfessionDialogue(
+            VillagerProfession profession,
+            String key,
+            String role,
+            String workplace,
+            String craft,
+            String concern,
+            String gift,
+            String warning,
+            String pride,
+            String joke
+    ) {
     }
 
     private static final class AutoAddingBuilder extends DialogueLine.Builder {

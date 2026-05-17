@@ -40,6 +40,23 @@ public record DialogueLine(
         return this.dispositions.isEmpty() || this.dispositions.contains(disposition);
     }
 
+    public int specificityScore() {
+        int score = 0;
+        if (!this.professions.isEmpty()) {
+            score += 3;
+        }
+        if (!this.dispositions.isEmpty()) {
+            score += 2;
+        }
+        if (!this.eventTags.isEmpty()) {
+            score += 4;
+        }
+        if (this.firstConversationOnly) {
+            score += 2;
+        }
+        return score;
+    }
+
     public static Builder builder(String id, DialogueRequestType requestType, String text) {
         return new Builder(id, requestType, text);
     }
