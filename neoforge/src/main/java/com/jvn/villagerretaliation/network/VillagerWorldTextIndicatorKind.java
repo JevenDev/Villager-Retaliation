@@ -6,5 +6,6 @@ public enum VillagerWorldTextIndicatorKind {
     POSITIVE,
     NEGATIVE,
     TRADE,
-    DIALOGUE
+    DIALOGUE,
+    SLEEP
 }

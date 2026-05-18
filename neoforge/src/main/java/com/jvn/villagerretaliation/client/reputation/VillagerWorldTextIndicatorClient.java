@@ -24,6 +24,7 @@ public final class VillagerWorldTextIndicatorClient {
     private static final int NEGATIVE_COLOR = 0xFFFF7A7A;
     private static final int TRADE_COLOR = 0xFF6BFFB4;
     private static final int DIALOGUE_COLOR = 0xFFD7C7FF;
+    private static final int SLEEP_COLOR = 0xFFA9E8FF;
     private static long pausedAtMillis = -1L;
     private static long pausedDurationMillis;
 
@@ -67,6 +68,11 @@ public final class VillagerWorldTextIndicatorClient {
         }
 
         ToucanWorldTextStyle style = style(payload.text(), payload.kind());
+        if (payload.kind() == VillagerWorldTextIndicatorKind.SLEEP) {
+            addSleepEntry(villager, payload.text(), style);
+            return;
+        }
+
         addFlowEntry(minecraft, villager, style, payload.kind(), 1.0D);
         spawnAccentParticles(minecraft.level, villager, payload.kind());
 
@@ -82,12 +88,156 @@ public final class VillagerWorldTextIndicatorClient {
             case NEGATIVE -> new ToucanWorldTextStyle(text, NEGATIVE_COLOR, true, TEXT_LIFETIME_MILLIS + 20, BASE_SCALE * 0.84F, 0.0D, 0.0D, 0.0D, 1.75F, 0.014F, 0.028F, 7.0F);
             case TRADE -> new ToucanWorldTextStyle(text, TRADE_COLOR, false, TEXT_LIFETIME_MILLIS + 35, BASE_SCALE * 0.80F, 0.0D, 0.0D, 0.0D, 1.55F, 0.012F, 0.022F, 5.0F);
             case DIALOGUE -> new ToucanWorldTextStyle(text, DIALOGUE_COLOR, false, TEXT_LIFETIME_MILLIS - 40, BASE_SCALE * 0.76F, 0.0D, 0.0D, 0.0D, 1.45F, 0.012F, 0.020F, 4.5F);
+            case SLEEP -> new ToucanWorldTextStyle(text, SLEEP_COLOR, true, 1650, BASE_SCALE * 0.72F, 0.0D, 0.0D, 0.0D, 1.10F, 0.026F, 0.018F, 3.0F);
             default -> new ToucanWorldTextStyle(text, MURMUR_COLOR, true, TEXT_LIFETIME_MILLIS, BASE_SCALE * 0.70F, 0.0D, 0.0D, 0.0D, 1.20F, 0.008F, 0.016F, 4.0F);
         };
     }
 
     private static ToucanWorldTextStyle alertAccentStyle() {
         return new ToucanWorldTextStyle("!", 0xFFFF8A5B, false, 360, BASE_SCALE * 0.78F, 0.0D, 0.0D, 0.0D, 2.45F, 0.0F, 0.010F, 10.0F);
+    }
+
+    private static void addSleepEntry(AbstractVillager villager, String text, ToucanWorldTextStyle style) {
+        if ("ZZZ".equalsIgnoreCase(text)) {
+            addSleepZSequence(villager);
+            return;
+        }
+        if ("*snores*".equalsIgnoreCase(text)) {
+            spawnSnoreBubblePop(villager);
+            return;
+        }
+        addSleepText(villager, style, 0L, 0.0D);
+    }
+
+    private static void addSleepZSequence(AbstractVillager villager) {
+        Minecraft minecraft = Minecraft.getInstance();
+        Vec3 center = villager.position().add(0.0D, villager.getBbHeight() * 0.78D, 0.0D);
+        Vec3 horizontalToCamera = new Vec3(1.0D, 0.0D, 0.0D);
+        if (minecraft.level != null) {
+            Vec3 toCamera = minecraft.gameRenderer.getMainCamera().getPosition().subtract(center);
+            horizontalToCamera = new Vec3(toCamera.x, 0.0D, toCamera.z);
+            if (horizontalToCamera.lengthSqr() < 1.0E-4D) {
+                horizontalToCamera = new Vec3(1.0D, 0.0D, 0.0D);
+            }
+        }
+
+        Vec3 side = new Vec3(0.0D, 1.0D, 0.0D).cross(horizontalToCamera).normalize();
+        Vec3 away = horizontalToCamera.normalize().scale(-1.0D);
+        double sideSign = (villager.getId() & 1) == 0 ? 1.0D : -1.0D;
+        Vec3 angled = side.scale((0.28D + Math.random() * 0.08D) * sideSign)
+                .add(away.scale(0.08D + Math.random() * 0.06D))
+                .add(0.0D, 0.78D + Math.random() * 0.08D, 0.0D)
+                .normalize();
+        Vec3 horizontalNormal = new Vec3(angled.z, 0.0D, -angled.x);
+        if (horizontalNormal.lengthSqr() < 1.0E-4D) {
+            horizontalNormal = side;
+        } else {
+            horizontalNormal = horizontalNormal.normalize();
+        }
+
+        double pathOffset = villager.getBbWidth() * 0.40D + 0.08D;
+        double lateralOffset = (Math.random() - 0.5D) * 0.035D;
+        Vec3 offset = angled.scale(pathOffset).add(horizontalNormal.scale(lateralOffset));
+        Vec3 drift = angled.scale(0.86D + pathOffset * 0.08D).add(0.0D, 0.12D + pathOffset * 0.04D, 0.0D);
+        float tilt = (float) ((5.0D + Math.random() * 2.0D) * -sideSign);
+        float direction = tilt < 0.0F ? 1.0F : -1.0F;
+        float phase = (float) (Math.random() * Mth.TWO_PI);
+        double arcHeight = 0.18D + Math.random() * 0.04D;
+        for (int index = 0; index < 3; index++) {
+            ToucanWorldTextStyle zStyle = new ToucanWorldTextStyle(
+                    "Z",
+                    SLEEP_COLOR,
+                    true,
+                    3200,
+                    BASE_SCALE * 0.58F,
+                    0.0D,
+                    0.0D,
+                    0.0D,
+                    1.0F,
+                    0.022F,
+                    0.012F,
+                    Math.abs(tilt)
+            );
+            addSleepText(villager, zStyle, index * 720L, offset, drift, direction, phase, arcHeight);
+        }
+    }
+
+    private static void spawnSnoreBubblePop(AbstractVillager villager) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null) {
+            return;
+        }
+
+        double sideSign = Math.random() < 0.5D ? -1.0D : 1.0D;
+        Vec3 base = villager.position().add(
+                sideSign * (villager.getBbWidth() * 0.28D + 0.08D),
+                villager.getBbHeight() * 0.96D + 0.10D,
+                0.0D
+        );
+        for (int index = 0; index < 4; index++) {
+            double step = index * 0.075D;
+            double x = base.x + sideSign * step + (Math.random() - 0.5D) * 0.035D;
+            double y = base.y + index * 0.065D + Math.random() * 0.035D;
+            double z = base.z + (Math.random() - 0.5D) * 0.06D;
+            double dx = sideSign * (0.008D + index * 0.004D);
+            double dy = 0.018D + index * 0.004D;
+            double dz = (Math.random() - 0.5D) * 0.008D;
+            minecraft.level.addParticle(ParticleTypes.BUBBLE, x, y, z, dx, dy, dz);
+            if (index >= 2) {
+                minecraft.level.addParticle(
+                        ParticleTypes.BUBBLE_POP,
+                        x + sideSign * 0.035D,
+                        y + 0.045D,
+                        z,
+                        dx * 0.4D,
+                        dy * 0.3D,
+                        dz * 0.4D
+                );
+            }
+        }
+    }
+
+    private static void addSleepText(AbstractVillager villager, ToucanWorldTextStyle style, long delayMillis, double sequenceOffset) {
+        addSleepText(villager, style, delayMillis, sequenceOffset, 0.0D);
+    }
+
+    private static void addSleepText(AbstractVillager villager, ToucanWorldTextStyle style, long delayMillis, double sequenceOffset, double extraRise) {
+        double sideSign = Math.random() < 0.5D ? -1.0D : 1.0D;
+        double sideOffset = (0.04D + sequenceOffset + Math.random() * 0.08D) * sideSign;
+        Vec3 offset = new Vec3(sideOffset, 0.16D + sequenceOffset + Math.random() * 0.06D, 0.0D);
+        Vec3 drift = new Vec3(sideSign * (0.018D + Math.random() * 0.035D), 0.34D + extraRise + sequenceOffset + Math.random() * 0.10D, 0.0D);
+        addSleepText(
+                villager,
+                style,
+                delayMillis,
+                offset,
+                drift,
+                sideSign > 0.0D ? 1.0F : -1.0F,
+                (float) (Math.random() * Mth.TWO_PI),
+                0.16D + Math.random() * 0.10D
+        );
+    }
+
+    private static void addSleepText(
+            AbstractVillager villager,
+            ToucanWorldTextStyle style,
+            long delayMillis,
+            Vec3 offset,
+            Vec3 drift,
+            float direction,
+            float phase,
+            double arcHeight) {
+        WORLD_TEXT.addAnchoredDirected(
+                villager,
+                offset,
+                drift,
+                style,
+                direction,
+                phase,
+                arcHeight,
+                0.96D,
+                now() + delayMillis
+        );
     }
 
     private static void addFlowEntry(

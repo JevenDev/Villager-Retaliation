@@ -28,6 +28,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.AABB;
@@ -40,14 +41,14 @@ public final class VillagerInteractionService {
     public static boolean shouldHandleInteraction(Villager villager, ServerPlayer player, InteractionHand hand) {
         return hand == InteractionHand.MAIN_HAND
                 && VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get()
-                && !player.getItemInHand(hand).is(Items.VILLAGER_SPAWN_EGG)
+                && !shouldBypassInteractionScreen(player.getItemInHand(hand))
                 && canUseInteractionTarget(player, villager, true);
     }
 
     public static boolean shouldHandleSleepingInteraction(Villager villager, ServerPlayer player, InteractionHand hand) {
         return hand == InteractionHand.MAIN_HAND
                 && VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get()
-                && !player.getItemInHand(hand).is(Items.VILLAGER_SPAWN_EGG)
+                && !shouldBypassInteractionScreen(player.getItemInHand(hand))
                 && villager.isSleeping()
                 && canUseInteractionTarget(player, villager, true);
     }
@@ -236,6 +237,14 @@ public final class VillagerInteractionService {
 
     public static boolean canUseInteractionSystem(ServerPlayer player, Villager villager) {
         return canUseInteractionTarget(player, villager, false);
+    }
+
+    public static boolean shouldStayConversable(ServerPlayer player, Villager villager) {
+        return canUseInteractionTarget(player, villager, true);
+    }
+
+    private static boolean shouldBypassInteractionScreen(ItemStack stack) {
+        return stack.is(Items.VILLAGER_SPAWN_EGG) || stack.is(Items.NAME_TAG);
     }
 
     private static boolean canUseInteractionTarget(ServerPlayer player, Villager villager, boolean allowSleeping) {

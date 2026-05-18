@@ -155,7 +155,7 @@ public final class VillagerRetaliationConfig {
         DIALOGUE_CAMERA_ZOOM_AMOUNT = BUILDER
                 .comment("FOV zoom amount used while the Villager Retaliation dialogue screen is open.")
                 .translation("villagerretaliation.configuration.general.dialogueCameraZoomAmount")
-                .defineInRange("dialogueCameraZoomAmount", 0.04D, 0.0D, 0.25D);
+                .defineInRange("dialogueCameraZoomAmount", 0.15D, 0.0D, 0.25D);
         DIALOGUE_CAMERA_TRANSITION_TICKS = BUILDER
                 .comment("Ticks used to ease into the dialogue FOV zoom.")
                 .translation("villagerretaliation.configuration.general.dialogueCameraTransitionTicks")
