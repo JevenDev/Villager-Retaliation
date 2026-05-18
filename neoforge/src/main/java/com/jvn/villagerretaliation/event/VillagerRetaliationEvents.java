@@ -105,6 +105,9 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onEntityTickPost(EntityTickEvent.Post event) {
+        if (event.getEntity() instanceof Villager villager) {
+            VillagerConversationService.tickVillager(villager);
+        }
         clearIronGolemTargetingVillagers(event.getEntity());
         VillagerRetaliationHandler.onEntityTickPost(event);
         WanderingTraderRetaliationHandler.onEntityTickPost(event);

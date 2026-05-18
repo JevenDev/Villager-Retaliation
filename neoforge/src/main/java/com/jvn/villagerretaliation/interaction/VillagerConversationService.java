@@ -129,7 +129,7 @@ public final class VillagerConversationService {
         if (player.level().dimension() != session.dimension()) {
             return false;
         }
-        if (!VillagerInteractionService.canUseInteractionSystem(player, villager)) {
+        if (!VillagerInteractionService.shouldStayConversable(player, villager)) {
             return false;
         }
         if (villager.getTarget() != null || villager.getLastHurtByMob() != null) {
@@ -140,6 +140,9 @@ public final class VillagerConversationService {
     }
 
     private static void holdVillager(Villager villager, ServerPlayer player) {
+        if (villager.isSleeping()) {
+            villager.stopSleeping();
+        }
         villager.getLookControl().setLookAt(player, 30.0F, 30.0F);
         if (VillagerRetaliationConfig.FREEZE_VILLAGER_DURING_DIALOGUE.get()) {
             villager.getNavigation().stop();
