@@ -1,17 +1,13 @@
 package com.jvn.villagerretaliation.client.reputation;
 
-import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.toucanlib.client.ToucanScreenRects;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.MerchantScreen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.client.event.ScreenEvent;
@@ -74,7 +70,7 @@ public final class VillagerReputationTradeScreenOverlay {
         int iconX = screen.getGuiLeft() + screen.getXSize() - ICON_SIZE - ICON_MARGIN_RIGHT;
         int iconY = screen.getGuiTop() + ICON_MARGIN_TOP;
 
-        guiGraphics.blit(iconFor(entry.level()), iconX, iconY, 0, 0, ICON_SIZE, ICON_SIZE, ICON_SIZE, ICON_SIZE);
+        guiGraphics.blit(VillagerReputationIconSet.iconFor(entry.level()), iconX, iconY, 0, 0, ICON_SIZE, ICON_SIZE, ICON_SIZE, ICON_SIZE);
 
         int mouseX = event.getMouseX();
         int mouseY = event.getMouseY();
@@ -83,45 +79,8 @@ public final class VillagerReputationTradeScreenOverlay {
         }
 
         Component title = Component.literal("Reputation");
-        Component tierAndValue = Component.literal(formatLevel(entry.level()) + ": " + entry.reputation())
-                .withStyle(colorFor(entry.level()));
+        Component tierAndValue = Component.literal(VillagerReputationIconSet.formatLevel(entry.level()) + ": " + entry.reputation())
+                .withStyle(VillagerReputationIconSet.colorFor(entry.level()));
         guiGraphics.renderTooltip(minecraft.font, List.of(title, tierAndValue), Optional.empty(), mouseX, mouseY);
-    }
-
-    private static String formatLevel(VillagerReputationLevel level) {
-        String lower = level.name().toLowerCase(Locale.ROOT);
-        return Character.toUpperCase(lower.charAt(0)) + lower.substring(1);
-    }
-
-    private static ChatFormatting colorFor(VillagerReputationLevel level) {
-        return switch (level) {
-            case ROYALTY -> ChatFormatting.YELLOW;
-            case REVERED -> ChatFormatting.GOLD;
-            case RESPECTED -> ChatFormatting.AQUA;
-            case TRUSTED -> ChatFormatting.GREEN;
-            case NEUTRAL -> ChatFormatting.GRAY;
-            case SUSPICIOUS -> ChatFormatting.GRAY;
-            case HOSTILE -> ChatFormatting.RED;
-            case DESPISED -> ChatFormatting.DARK_RED;
-            case FEARED -> ChatFormatting.LIGHT_PURPLE;
-        };
-    }
-
-    private static ResourceLocation iconFor(VillagerReputationLevel level) {
-        return switch (level) {
-            case ROYALTY -> icon("royalty");
-            case REVERED -> icon("revered");
-            case RESPECTED -> icon("respected");
-            case TRUSTED -> icon("trusted");
-            case NEUTRAL -> icon("neutral");
-            case SUSPICIOUS -> icon("suspicious");
-            case HOSTILE -> icon("hostile");
-            case DESPISED -> icon("despised");
-            case FEARED -> icon("feared");
-        };
-    }
-
-    private static ResourceLocation icon(String name) {
-        return VillagerRetaliation.id("textures/gui/container/icons/" + name + ".png");
     }
 }
