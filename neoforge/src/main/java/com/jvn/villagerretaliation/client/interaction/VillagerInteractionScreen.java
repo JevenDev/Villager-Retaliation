@@ -28,8 +28,8 @@ public class VillagerInteractionScreen extends Screen {
     private final int villagerEntityId;
     private final String villagerName;
     private final String professionName;
-    private final int reputation;
-    private final VillagerReputationLevel reputationLevel;
+    private int reputation;
+    private VillagerReputationLevel reputationLevel;
     private final List<DialogueOption> options = new ArrayList<>();
     private DialoguePage page = DialoguePage.ROOT;
     private int selectedOption;
@@ -65,6 +65,11 @@ public class VillagerInteractionScreen extends Screen {
 
     public void setDialogueText(String dialogueText) {
         ClientVillagerConversationState.setResponseText(dialogueText);
+    }
+
+    public void updateReputation(int reputation, VillagerReputationLevel reputationLevel) {
+        this.reputation = reputation;
+        this.reputationLevel = reputationLevel;
     }
 
     public void showNotice(String text) {

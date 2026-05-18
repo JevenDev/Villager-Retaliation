@@ -61,6 +61,12 @@ public final class VillagerInteractionService {
             return openTrading(player, villager, true);
         }
 
+        if (VillagerRetaliationHandler.isHostileTowards(villager, player)) {
+            VillagerAmbientIndicatorService.onTradeRefused(villager);
+            sendNotice(player, villager.getId(), "This villager is too angry to talk.");
+            return InteractionResult.FAIL;
+        }
+
         if (!VillagerConversationService.start(player, villager)) {
             sendNotice(player, villager.getId(), "That villager is busy right now.");
             return InteractionResult.FAIL;
@@ -119,7 +125,14 @@ public final class VillagerInteractionService {
         VillagerAmbientIndicatorService.onDialogueResponse(villager, requestType, reputationEffect);
         String responseText = reputationEffect.responseOverride() == null ? result.text() : reputationEffect.responseOverride();
         VillagerInteractionTracker.rememberDialogue(level, villager, player, requestType, result.lineId());
-        PacketDistributor.sendToPlayer(player, new VillagerDialogueResponsePayload(villager.getId(), requestType, responseText));
+        int updatedReputation = VillagerReputationManager.getReputation(level, villager, player.getUUID());
+        PacketDistributor.sendToPlayer(player, new VillagerDialogueResponsePayload(
+                villager.getId(),
+                requestType,
+                responseText,
+                updatedReputation,
+                VillagerReputationLevel.fromReputation(updatedReputation)
+        ));
     }
 
     public static void handleTradeRequest(ServerPlayer player, int entityId) {
@@ -231,6 +244,7 @@ public final class VillagerInteractionService {
                 && !villager.isBaby()
                 && (allowSleeping || !villager.isSleeping())
                 && !villager.isTrading()
+                && !VillagerRetaliationHandler.isHostileTowards(villager, player)
                 && player.isAlive()
                 && !player.isSpectator()
                 && player.distanceToSqr(villager) <= maxDistance * maxDistance;

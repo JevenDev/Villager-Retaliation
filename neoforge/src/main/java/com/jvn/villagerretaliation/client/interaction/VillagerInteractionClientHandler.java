@@ -26,6 +26,7 @@ public final class VillagerInteractionClientHandler {
         if (Minecraft.getInstance().screen instanceof VillagerInteractionScreen screen
                 && screen.matchesVillager(payload.entityId())) {
             screen.setDialogueText(payload.text());
+            screen.updateReputation(payload.reputation(), payload.reputationLevel());
         }
     }
 
