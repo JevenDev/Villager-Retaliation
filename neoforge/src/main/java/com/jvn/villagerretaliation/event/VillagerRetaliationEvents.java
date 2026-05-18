@@ -95,6 +95,9 @@ public final class VillagerRetaliationEvents {
     public static void onEntityTickPre(EntityTickEvent.Pre event) {
         if (event.getEntity() instanceof Villager villager) {
             VillagerConversationService.tickVillager(villager);
+            if (villager.level() instanceof ServerLevel level) {
+                VillagerAmbientIndicatorService.maybeEmitSleepIndicator(level, villager);
+            }
         }
         VillagerFleeBehaviorHandler.onEntityTickPre(event);
         VillagerRetaliationHandler.onEntityTickPre(event);
