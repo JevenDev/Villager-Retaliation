@@ -183,6 +183,7 @@ public final class VillagerReputationEvents {
         AbstractVillager villager = event.getAbstractVillager();
         if (villager.level() instanceof ServerLevel level) {
             VillagerReputationManager.addTradeReputation(level, villager, event.getEntity());
+            VillagerAmbientIndicatorService.onTradeCompleted(level, villager, event.getEntity());
             if (event.getEntity() instanceof ServerPlayer serverPlayer) {
                 VillagerReputationAdvancements.onTradeCompleted(level, serverPlayer, villager);
             }
@@ -222,6 +223,7 @@ public final class VillagerReputationEvents {
             scanFearedProximity(level, villager);
             scanNegativeReputationGolemAggro(level, villager);
         }
+        VillagerAmbientIndicatorService.maybeMurmurNearPlayers(level, villager);
         if (VillagerRetaliationConfig.SHOW_VILLAGER_REPUTATION_DEBUG_OVERLAY.get()
                 && gameTime % DEBUG_SYNC_INTERVAL_TICKS == Math.floorMod(villager.getUUID().getMostSignificantBits(), DEBUG_SYNC_INTERVAL_TICKS)) {
             syncNearbyDebug(level, villager);

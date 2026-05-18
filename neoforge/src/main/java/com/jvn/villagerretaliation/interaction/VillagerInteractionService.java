@@ -13,6 +13,7 @@ import com.jvn.villagerretaliation.network.VillagerConversationEndedPayload;
 import com.jvn.villagerretaliation.network.VillagerDialogueResponsePayload;
 import com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload;
 import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
+import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
@@ -115,6 +116,7 @@ public final class VillagerInteractionService {
         );
         DialogueReputationEffect reputationEffect = DialogueReputationService.apply(context, requestType, interactionState);
         playDialogueFeedback(level, villager, reputationEffect);
+        VillagerAmbientIndicatorService.onDialogueResponse(villager, requestType, reputationEffect);
         String responseText = reputationEffect.responseOverride() == null ? result.text() : reputationEffect.responseOverride();
         VillagerInteractionTracker.rememberDialogue(level, villager, player, requestType, result.lineId());
         PacketDistributor.sendToPlayer(player, new VillagerDialogueResponsePayload(villager.getId(), requestType, responseText));
@@ -197,6 +199,7 @@ public final class VillagerInteractionService {
             if (sendFailureMessage) {
                 sendNotice(player, villager.getId(), "This villager refuses to trade with you.");
             }
+            VillagerAmbientIndicatorService.onTradeRefused(villager);
             return InteractionResult.FAIL;
         }
         if (villager.getOffers().isEmpty()) {

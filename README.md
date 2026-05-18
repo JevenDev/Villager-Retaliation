@@ -61,10 +61,10 @@ villagerretaliation
 
 ## ToucanLib
 
-ToucanLib resolves from the published CurseMaven artifact by default:
+ToucanLib resolves from the published Modrinth artifact by default:
 
 ```gradle
-curse.maven:toucanlib-1542666:8089151
+maven.modrinth:toucan:0.1.4-neoforge
 ```
 
 CI and release builds should use the default published dependency. Do not rely on a local ToucanLib project, local jars, `flatDir`, included builds, or `mavenLocal()` for release builds.
