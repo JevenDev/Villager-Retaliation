@@ -244,10 +244,15 @@ public final class VillagerInteractionService {
                 && !villager.isBaby()
                 && (allowSleeping || !villager.isSleeping())
                 && !villager.isTrading()
+                && !isCombatBusy(villager)
                 && !VillagerRetaliationHandler.isHostileTowards(villager, player)
                 && player.isAlive()
                 && !player.isSpectator()
                 && player.distanceToSqr(villager) <= maxDistance * maxDistance;
+    }
+
+    private static boolean isCombatBusy(Villager villager) {
+        return villager.getTarget() != null || villager.getLastHurtByMob() != null;
     }
 
     private static void sendNotice(ServerPlayer player, int entityId, String text) {

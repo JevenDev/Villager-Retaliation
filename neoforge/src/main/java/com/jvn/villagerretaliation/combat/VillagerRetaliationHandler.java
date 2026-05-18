@@ -567,6 +567,7 @@ public final class VillagerRetaliationHandler {
         villager.setAggressive(false);
         villager.setChasing(false);
         villager.setTarget(null);
+        villager.setLastHurtByMob(null);
         if (stopNavigation) {
             villager.getNavigation().stop();
         }
