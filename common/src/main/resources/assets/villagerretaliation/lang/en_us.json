@@ -27,6 +27,7 @@
   "villagerretaliation.configuration.general.dialogueCameraTransitionTicks": "Dialogue Camera Transition Ticks",
   "villagerretaliation.configuration.general.freezeVillagerDuringDialogue": "Freeze Villager During Dialogue",
   "villagerretaliation.configuration.general.maxDialogueDistance": "Max Dialogue Distance",
+  "villagerretaliation.configuration.general.villagerReputationHoverTooltipRequiresEmerald": "Villager Reputation Hover Tooltip Requires Emerald",
 
   "villagerretaliation.configuration.balance.babyVillagersDropLoot": "Baby Villagers Drop Loot",
   "villagerretaliation.configuration.balance.requirePlayerKillForProfessionLoot": "Require Player Kill For Profession Loot",

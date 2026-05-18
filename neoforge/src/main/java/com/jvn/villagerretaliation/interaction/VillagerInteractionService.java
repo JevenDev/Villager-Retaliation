@@ -12,6 +12,7 @@ import com.jvn.villagerretaliation.network.OpenVillagerInteractionPayload;
 import com.jvn.villagerretaliation.network.VillagerConversationEndedPayload;
 import com.jvn.villagerretaliation.network.VillagerDialogueResponsePayload;
 import com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload;
+import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
@@ -149,6 +150,24 @@ public final class VillagerInteractionService {
         focusVillagerOnPlayer(villager, player);
         VillagerConversationService.endForPlayer(player, true);
         openTrading(player, villager, true);
+    }
+
+    public static void handleReputationRequest(ServerPlayer player, int entityId) {
+        Entity entity = player.serverLevel().getEntity(entityId);
+        if (!(entity instanceof Villager villager) || !villager.isAlive() || villager.isBaby()) {
+            return;
+        }
+
+        double maxDistance = Math.max(
+                VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get(),
+                VillagerRetaliationConfig.WITNESS_RADIUS.get()
+        );
+        if (player.distanceToSqr(villager) > maxDistance * maxDistance) {
+            return;
+        }
+
+        int reputation = VillagerReputationManager.getReputation(player.serverLevel(), villager, player.getUUID());
+        VillagerReputationNetworking.sendReputation(player, villager, reputation);
     }
 
     public static void handleConversationEndRequest(ServerPlayer player, int entityId) {

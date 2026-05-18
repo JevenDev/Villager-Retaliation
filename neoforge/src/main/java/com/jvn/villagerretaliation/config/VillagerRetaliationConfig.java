@@ -19,6 +19,7 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.IntValue DIALOGUE_CAMERA_TRANSITION_TICKS;
     public static final ModConfigSpec.BooleanValue FREEZE_VILLAGER_DURING_DIALOGUE;
     public static final ModConfigSpec.DoubleValue MAX_DIALOGUE_DISTANCE;
+    public static final ModConfigSpec.BooleanValue VILLAGER_REPUTATION_HOVER_TOOLTIP_REQUIRES_EMERALD;
 
     public static final ModConfigSpec.BooleanValue BABY_VILLAGERS_DROP_LOOT;
     public static final ModConfigSpec.BooleanValue REQUIRE_PLAYER_KILL_FOR_PROFESSION_LOOT;
@@ -168,6 +169,10 @@ public final class VillagerRetaliationConfig {
                 .comment("Maximum player-to-villager distance in blocks before a dialogue conversation closes.")
                 .translation("villagerretaliation.configuration.general.maxDialogueDistance")
                 .defineInRange("maxDialogueDistance", 7.0D, 3.0D, 16.0D);
+        VILLAGER_REPUTATION_HOVER_TOOLTIP_REQUIRES_EMERALD = BUILDER
+                .comment("Requires the player to hold an emerald before the villager reputation hover tooltip appears.")
+                .translation("villagerretaliation.configuration.general.villagerReputationHoverTooltipRequiresEmerald")
+                .define("villagerReputationHoverTooltipRequiresEmerald", true);
         BUILDER.pop();
 
         BUILDER.push("balance");

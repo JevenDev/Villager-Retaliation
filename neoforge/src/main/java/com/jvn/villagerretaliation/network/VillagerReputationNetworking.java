@@ -60,6 +60,15 @@ public final class VillagerReputationNetworking {
                 "accept"
         );
         network.playToServer(
+                VillagerReputationRequestPayload.TYPE,
+                VillagerReputationRequestPayload.STREAM_CODEC,
+                (payload, context) -> ToucanNetwork.enqueue(context, () ->
+                        ToucanNetwork.withServerPlayer(context, player -> VillagerInteractionService.handleReputationRequest(
+                            player,
+                            payload.entityId()
+                    )))
+        );
+        network.playToServer(
                 VillagerDialogueRequestPayload.TYPE,
                 VillagerDialogueRequestPayload.STREAM_CODEC,
                 (payload, context) -> ToucanNetwork.enqueue(context, () ->
