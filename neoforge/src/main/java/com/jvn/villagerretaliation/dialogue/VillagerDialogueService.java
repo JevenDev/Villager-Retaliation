@@ -50,6 +50,14 @@ public final class VillagerDialogueService {
         return new DialogueResult(fallback.id(), resolveText(fallback.text(), context));
     }
 
+    public static String selectOpeningGreeting(DialogueContext context) {
+        return selectConversationLine(context, "hello", globalHelloLines(context), professionHelloLines(context.profession()));
+    }
+
+    public static String selectClosingGoodbye(DialogueContext context) {
+        return selectConversationLine(context, "goodbye", globalGoodbyeLines(context), professionGoodbyeLines(context.profession()));
+    }
+
     public static DialogueDisposition dispositionFor(VillagerReputationLevel reputationLevel) {
         return switch (reputationLevel) {
             case ROYALTY, REVERED -> DialogueDisposition.RESPECTFUL;
@@ -90,6 +98,91 @@ public final class VillagerDialogueService {
 
     private static String resolveText(String text, DialogueContext context) {
         return text.replace("{attack_weapon}", context.rememberedAttackWeapon());
+    }
+
+    private static String selectConversationLine(
+            DialogueContext context,
+            String fallback,
+            List<String> globalLines,
+            List<String> professionLines) {
+        List<String> candidates = new ArrayList<>(globalLines);
+        candidates.addAll(professionLines);
+        if (candidates.isEmpty()) {
+            return fallback;
+        }
+        return candidates.get(context.random().nextInt(candidates.size()));
+    }
+
+    private static List<String> globalHelloLines(DialogueContext context) {
+        return switch (dispositionFor(context.reputationLevel())) {
+            case RESPECTFUL, FRIENDLY -> List.of(
+                    "Good to see you. What can I do for you?",
+                    "Welcome back. The village has room for a friendly face."
+            );
+            case CAUTIOUS, RUDE -> List.of(
+                    "Say what you came to say.",
+                    "Keep this brief, and keep it civil."
+            );
+            case HOSTILE -> List.of(
+                    "You should make this quick.",
+                    "I am listening, against my better judgment."
+            );
+            case FEARFUL -> List.of(
+                    "Please, just say what you need.",
+                    "I am listening. Carefully."
+            );
+            default -> List.of(
+                    "Need something?",
+                    "Hello. What brings you here?"
+            );
+        };
+    }
+
+    private static List<String> globalGoodbyeLines(DialogueContext context) {
+        return switch (dispositionFor(context.reputationLevel())) {
+            case RESPECTFUL, FRIENDLY -> List.of(
+                    "Safe travels. Come by again.",
+                    "Take care out there."
+            );
+            case CAUTIOUS, RUDE -> List.of(
+                    "Good. That is enough for now.",
+                    "We're done here."
+            );
+            case HOSTILE -> List.of(
+                    "Leave, then.",
+                    "Try not to make the village regret this conversation."
+            );
+            case FEARFUL -> List.of(
+                    "Goodbye. Please let that be all.",
+                    "Go safely. Away from here, preferably."
+            );
+            default -> List.of(
+                    "Goodbye.",
+                    "Until next time."
+            );
+        };
+    }
+
+    private static List<String> professionHelloLines(VillagerProfession profession) {
+        ProfessionDialogue profile = profileFor(profession);
+        if (profile == null) {
+            return List.of();
+        }
+        return List.of(
+                "Mind the " + profile.workplace() + ". What do you need?",
+                "I was just working on " + profile.craft() + ". You have a moment?"
+        );
+    }
+
+    private static List<String> professionGoodbyeLines(VillagerProfession profession) {
+        ProfessionDialogue profile = profileFor(profession);
+        if (profile == null) {
+            return List.of();
+        }
+        return List.of(
+                "Back to " + profile.craft() + ", then.",
+                "If you need the " + profile.role() + ", you know where to find me."
+        );
     }
 
     private static List<DialogueLine> createLines() {
@@ -723,6 +816,15 @@ public final class VillagerDialogueService {
                 new ProfessionDialogue(VillagerProfession.TOOLSMITH, "toolsmith", "toolsmith", "smithing table", "making tools that don't fail", "cracked handles", "good handles", "dull edges", "putting strength in careful hands", "Tool jokes work better when they have a point."),
                 new ProfessionDialogue(VillagerProfession.WEAPONSMITH, "weaponsmith", "weaponsmith", "grindstone", "keeping blades honest", "rust on a sword", "tempered steel", "unready guards", "making danger think twice", "Weapon jokes are sharp; I keep the dull ones for strangers.")
         );
+    }
+
+    private static ProfessionDialogue profileFor(VillagerProfession profession) {
+        for (ProfessionDialogue profile : professionProfiles()) {
+            if (profile.profession() == profession) {
+                return profile;
+            }
+        }
+        return null;
     }
 
     private static DialogueLine.Builder add(List<DialogueLine> lines, String id, DialogueRequestType requestType, String text) {

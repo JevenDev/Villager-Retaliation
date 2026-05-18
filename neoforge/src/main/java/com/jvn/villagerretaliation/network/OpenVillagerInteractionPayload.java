@@ -6,7 +6,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
-public record OpenVillagerInteractionPayload(int entityId, String villagerName, String professionName, int reputation, VillagerReputationLevel reputationLevel)
+public record OpenVillagerInteractionPayload(int entityId, String villagerName, String professionName, int reputation, VillagerReputationLevel reputationLevel, String greetingText)
         implements CustomPacketPayload {
     public static final Type<OpenVillagerInteractionPayload> TYPE = new Type<>(
             VillagerRetaliation.id("open_villager_interaction")
@@ -20,6 +20,7 @@ public record OpenVillagerInteractionPayload(int entityId, String villagerName, 
         buffer.writeUtf(payload.professionName());
         buffer.writeVarInt(payload.reputation());
         buffer.writeEnum(payload.reputationLevel());
+        buffer.writeUtf(payload.greetingText(), 512);
     }
 
     private static OpenVillagerInteractionPayload decode(RegistryFriendlyByteBuf buffer) {
@@ -28,7 +29,8 @@ public record OpenVillagerInteractionPayload(int entityId, String villagerName, 
                 buffer.readUtf(),
                 buffer.readUtf(),
                 buffer.readVarInt(),
-                buffer.readEnum(VillagerReputationLevel.class)
+                buffer.readEnum(VillagerReputationLevel.class),
+                buffer.readUtf(512)
         );
     }
 

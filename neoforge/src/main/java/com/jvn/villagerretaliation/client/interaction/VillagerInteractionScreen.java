@@ -35,14 +35,14 @@ public class VillagerInteractionScreen extends Screen {
     private int selectedOption;
     private boolean closingFromServer;
 
-    public VillagerInteractionScreen(int villagerEntityId, String villagerName, String professionName, int reputation, VillagerReputationLevel reputationLevel) {
+    public VillagerInteractionScreen(int villagerEntityId, String villagerName, String professionName, int reputation, VillagerReputationLevel reputationLevel, String greetingText) {
         super(Component.literal("Villager Interaction"));
         this.villagerEntityId = villagerEntityId;
         this.villagerName = villagerName;
         this.professionName = professionName;
         this.reputation = reputation;
         this.reputationLevel = reputationLevel;
-        ClientVillagerConversationState.start(villagerEntityId);
+        ClientVillagerConversationState.start(villagerEntityId, greetingText);
     }
 
     @Override

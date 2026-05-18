@@ -13,9 +13,9 @@ public final class ClientVillagerConversationState {
     private ClientVillagerConversationState() {
     }
 
-    public static void start(int entityId) {
+    public static void start(int entityId, String initialResponseText) {
         focusedVillagerEntityId = entityId;
-        responseText = "Choose an option.";
+        responseText = initialResponseText == null || initialResponseText.isBlank() ? "Choose an option." : initialResponseText;
         cameraFocusTicks = 0;
         cameraReleaseTicks = 0;
     }
