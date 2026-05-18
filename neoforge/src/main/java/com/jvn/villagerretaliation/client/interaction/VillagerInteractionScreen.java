@@ -28,21 +28,21 @@ public class VillagerInteractionScreen extends Screen {
     private final int villagerEntityId;
     private final String villagerName;
     private final String professionName;
-    private final int reputation;
-    private final VillagerReputationLevel reputationLevel;
+    private int reputation;
+    private VillagerReputationLevel reputationLevel;
     private final List<DialogueOption> options = new ArrayList<>();
     private DialoguePage page = DialoguePage.ROOT;
     private int selectedOption;
     private boolean closingFromServer;
 
-    public VillagerInteractionScreen(int villagerEntityId, String villagerName, String professionName, int reputation, VillagerReputationLevel reputationLevel) {
+    public VillagerInteractionScreen(int villagerEntityId, String villagerName, String professionName, int reputation, VillagerReputationLevel reputationLevel, String greetingText) {
         super(Component.literal("Villager Interaction"));
         this.villagerEntityId = villagerEntityId;
         this.villagerName = villagerName;
         this.professionName = professionName;
         this.reputation = reputation;
         this.reputationLevel = reputationLevel;
-        ClientVillagerConversationState.start(villagerEntityId);
+        ClientVillagerConversationState.start(villagerEntityId, greetingText);
     }
 
     @Override
@@ -65,6 +65,11 @@ public class VillagerInteractionScreen extends Screen {
 
     public void setDialogueText(String dialogueText) {
         ClientVillagerConversationState.setResponseText(dialogueText);
+    }
+
+    public void updateReputation(int reputation, VillagerReputationLevel reputationLevel) {
+        this.reputation = reputation;
+        this.reputationLevel = reputationLevel;
     }
 
     public void showNotice(String text) {
@@ -138,6 +143,7 @@ public class VillagerInteractionScreen extends Screen {
     private void rebuildOptions() {
         this.options.clear();
         if (this.page == DialoguePage.TALK) {
+            this.options.add(DialogueOption.enabled("Chat", () -> requestDialogue(DialogueRequestType.CHAT)));
             this.options.add(DialogueOption.enabled("Greeting", () -> requestDialogue(DialogueRequestType.GREETING)));
             this.options.add(DialogueOption.enabled("Question", () -> requestDialogue(DialogueRequestType.QUESTION)));
             this.options.add(DialogueOption.enabled("Story", () -> requestDialogue(DialogueRequestType.STORY)));

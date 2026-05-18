@@ -19,10 +19,12 @@ public final class VillagerDialogueService {
                 .filter(line -> line.matches(context, requestType, disposition))
                 .sorted(Comparator.comparingInt(line -> recentDialogueIds.contains(line.id()) ? 1 : 0))
                 .toList();
+        candidates = preferDirectHitMemoryCandidates(context, requestType, candidates);
         if (candidates.isEmpty()) {
             candidates = LINES.stream()
                     .filter(line -> line.matches(context, requestType, DialogueDisposition.NEUTRAL))
                     .toList();
+            candidates = preferDirectHitMemoryCandidates(context, requestType, candidates);
         }
         if (candidates.isEmpty()) {
             return new DialogueResult("fallback", "They stare at you, unsure what to say.");
@@ -40,12 +42,20 @@ public final class VillagerDialogueService {
         for (DialogueLine candidate : candidates) {
             selected -= effectiveWeight(candidate);
             if (selected < 0) {
-                return new DialogueResult(candidate.id(), candidate.text());
+                return new DialogueResult(candidate.id(), resolveText(candidate.text(), context));
             }
         }
 
         DialogueLine fallback = candidates.getLast();
-        return new DialogueResult(fallback.id(), fallback.text());
+        return new DialogueResult(fallback.id(), resolveText(fallback.text(), context));
+    }
+
+    public static String selectOpeningGreeting(DialogueContext context) {
+        return selectConversationLine(context, "hello", globalHelloLines(context), professionHelloLines(context.profession()));
+    }
+
+    public static String selectClosingGoodbye(DialogueContext context) {
+        return selectConversationLine(context, "goodbye", globalGoodbyeLines(context), professionGoodbyeLines(context.profession()));
     }
 
     public static DialogueDisposition dispositionFor(VillagerReputationLevel reputationLevel) {
@@ -62,6 +72,117 @@ public final class VillagerDialogueService {
 
     private static int effectiveWeight(DialogueLine line) {
         return line.weight() + line.specificityScore() * 8;
+    }
+
+    private static List<DialogueLine> preferDirectHitMemoryCandidates(
+            DialogueContext context,
+            DialogueRequestType requestType,
+            List<DialogueLine> candidates) {
+        if (!context.hasRecentDirectHitMemory() || candidates.isEmpty()) {
+            return candidates;
+        }
+
+        List<DialogueLine> directHitCandidates = candidates.stream()
+                .filter(DialogueLine::requiresRecentDirectHitMemory)
+                .toList();
+        if (directHitCandidates.isEmpty()) {
+            return candidates;
+        }
+
+        return switch (requestType) {
+            case GREETING, QUESTION, INSULT -> directHitCandidates;
+            case CHAT -> context.random().nextInt(100) < 45 ? directHitCandidates : candidates;
+            default -> candidates;
+        };
+    }
+
+    private static String resolveText(String text, DialogueContext context) {
+        return text.replace("{attack_weapon}", context.rememberedAttackWeapon());
+    }
+
+    private static String selectConversationLine(
+            DialogueContext context,
+            String fallback,
+            List<String> globalLines,
+            List<String> professionLines) {
+        List<String> candidates = new ArrayList<>(globalLines);
+        candidates.addAll(professionLines);
+        if (candidates.isEmpty()) {
+            return fallback;
+        }
+        return candidates.get(context.random().nextInt(candidates.size()));
+    }
+
+    private static List<String> globalHelloLines(DialogueContext context) {
+        return switch (dispositionFor(context.reputationLevel())) {
+            case RESPECTFUL, FRIENDLY -> List.of(
+                    "Good to see you. What can I do for you?",
+                    "Welcome back. The village has room for a friendly face."
+            );
+            case CAUTIOUS, RUDE -> List.of(
+                    "Say what you came to say.",
+                    "Keep this brief, and keep it civil."
+            );
+            case HOSTILE -> List.of(
+                    "You should make this quick.",
+                    "I am listening, against my better judgment."
+            );
+            case FEARFUL -> List.of(
+                    "Please, just say what you need.",
+                    "I am listening. Carefully."
+            );
+            default -> List.of(
+                    "Need something?",
+                    "Hello. What brings you here?"
+            );
+        };
+    }
+
+    private static List<String> globalGoodbyeLines(DialogueContext context) {
+        return switch (dispositionFor(context.reputationLevel())) {
+            case RESPECTFUL, FRIENDLY -> List.of(
+                    "Safe travels. Come by again.",
+                    "Take care out there."
+            );
+            case CAUTIOUS, RUDE -> List.of(
+                    "Good. That is enough for now.",
+                    "We're done here."
+            );
+            case HOSTILE -> List.of(
+                    "Leave, then.",
+                    "Try not to make the village regret this conversation."
+            );
+            case FEARFUL -> List.of(
+                    "Goodbye. Please let that be all.",
+                    "Go safely. Away from here, preferably."
+            );
+            default -> List.of(
+                    "Goodbye.",
+                    "Until next time."
+            );
+        };
+    }
+
+    private static List<String> professionHelloLines(VillagerProfession profession) {
+        ProfessionDialogue profile = profileFor(profession);
+        if (profile == null) {
+            return List.of();
+        }
+        return List.of(
+                "Mind the " + profile.workplace() + ". What do you need?",
+                "I was just working on " + profile.craft() + ". You have a moment?"
+        );
+    }
+
+    private static List<String> professionGoodbyeLines(VillagerProfession profession) {
+        ProfessionDialogue profile = profileFor(profession);
+        if (profile == null) {
+            return List.of();
+        }
+        return List.of(
+                "Back to " + profile.craft() + ", then.",
+                "If you need the " + profile.role() + ", you know where to find me."
+        );
     }
 
     private static List<DialogueLine> createLines() {
@@ -86,6 +207,53 @@ public final class VillagerDialogueService {
                 .dispositions(DialogueDisposition.RUDE, DialogueDisposition.HOSTILE).build();
         add(lines, "greeting_low_quick", DialogueRequestType.GREETING, "Make it quick. I don't trust you.")
                 .dispositions(DialogueDisposition.RUDE, DialogueDisposition.HOSTILE, DialogueDisposition.FEARFUL).build();
+        add(lines, "greeting_hit_apology", DialogueRequestType.GREETING, "Here to apologize for attacking me?")
+                .requiresRecentDirectHitMemory()
+                .dispositions(DialogueDisposition.CAUTIOUS, DialogueDisposition.RUDE, DialogueDisposition.HOSTILE, DialogueDisposition.FEARFUL)
+                .weight(44)
+                .build();
+        add(lines, "greeting_hit_bruise", DialogueRequestType.GREETING, "Still have a bruise from when you hit me with that {attack_weapon}.")
+                .requiresRecentDirectHitMemory()
+                .dispositions(DialogueDisposition.CAUTIOUS, DialogueDisposition.RUDE, DialogueDisposition.HOSTILE, DialogueDisposition.FEARFUL)
+                .weight(44)
+                .build();
+
+        add(lines, "chat_respectful_welcome", DialogueRequestType.CHAT, "Stay a while. It's nice having someone around who doesn't make the village tense.")
+                .dispositions(DialogueDisposition.RESPECTFUL, DialogueDisposition.FRIENDLY).weight(34).build();
+        add(lines, "chat_respectful_daily_life", DialogueRequestType.CHAT, "Most days are chores, bells, and neighbors. Good company improves all three.")
+                .dispositions(DialogueDisposition.RESPECTFUL, DialogueDisposition.FRIENDLY).weight(34).build();
+        add(lines, "chat_neutral_routine", DialogueRequestType.CHAT, "Nothing dramatic today. Just work, weather, and trying to stay ahead of both.")
+                .dispositions(DialogueDisposition.NEUTRAL, DialogueDisposition.CAUTIOUS).weight(34).build();
+        add(lines, "chat_neutral_street", DialogueRequestType.CHAT, "You hear a lot just standing in the street for a few minutes.")
+                .dispositions(DialogueDisposition.NEUTRAL, DialogueDisposition.CAUTIOUS).weight(34).build();
+        add(lines, "chat_rude_brisk", DialogueRequestType.CHAT, "If this is casual conversation, make it unusually good.")
+                .dispositions(DialogueDisposition.RUDE, DialogueDisposition.HOSTILE).weight(34).build();
+        add(lines, "chat_rude_short", DialogueRequestType.CHAT, "I've got work. Talk fast or talk elsewhere.")
+                .dispositions(DialogueDisposition.RUDE, DialogueDisposition.HOSTILE).weight(34).build();
+        add(lines, "chat_fearful_quiet", DialogueRequestType.CHAT, "If we're just talking, keep it calm. I prefer calm.")
+                .dispositions(DialogueDisposition.FEARFUL).weight(34).build();
+        add(lines, "chat_fearful_smalltalk", DialogueRequestType.CHAT, "Small talk is easier when nobody is shouting.")
+                .dispositions(DialogueDisposition.FEARFUL).weight(34).build();
+        add(lines, "chat_hit_memory", DialogueRequestType.CHAT, "Casual conversation is harder when I remember getting struck with that {attack_weapon}.")
+                .requiresRecentDirectHitMemory()
+                .weight(52)
+                .build();
+        add(lines, "chat_hit_memory_2", DialogueRequestType.CHAT, "You hit me once already. Makes friendly chatter feel a bit thin.")
+                .requiresRecentDirectHitMemory()
+                .weight(52)
+                .build();
+        add(lines, "chat_hit_memory_3", DialogueRequestType.CHAT, "We can call this a chat, but I still remember that {attack_weapon} connecting.")
+                .requiresRecentDirectHitMemory()
+                .weight(52)
+                .build();
+        add(lines, "chat_hit_memory_4", DialogueRequestType.CHAT, "Hard to make small talk when I'm still thinking about being hit with your {attack_weapon}.")
+                .requiresRecentDirectHitMemory()
+                .weight(34)
+                .build();
+        add(lines, "chat_general_well", DialogueRequestType.CHAT, "The well, the paths, the crops, the gossip. That's a village, more or less.")
+                .weight(28).build();
+        add(lines, "chat_general_day", DialogueRequestType.CHAT, "Some days all anyone wants is a quiet street and a door that stays shut at night.")
+                .weight(28).build();
 
         add(lines, "farmer_question_soil", DialogueRequestType.QUESTION, "The soil's been kind lately. That's more than I can say for some visitors.")
                 .professions(VillagerProfession.FARMER).build();
@@ -116,12 +284,37 @@ public final class VillagerDialogueService {
                 .eventTags(VillageEventMemory.EventTag.BABY_BORN).weight(35).build();
         add(lines, "story_golem_defense", DialogueRequestType.STORY, "Our golem crushed a monster near the edge of town. Good iron, that one.")
                 .eventTags(VillageEventMemory.EventTag.IRON_GOLEM_DEFEATED_MOB, VillageEventMemory.EventTag.PLAYER_DEFENDED_VILLAGE).weight(35).build();
+        add(lines, "greeting_player_defended_village_1", DialogueRequestType.GREETING, "Thanks for fending off the mobs. The village is still standing because of it.")
+                .playerEventTags(VillageEventMemory.EventTag.PLAYER_DEFENDED_VILLAGE)
+                .dispositions(DialogueDisposition.RESPECTFUL, DialogueDisposition.FRIENDLY, DialogueDisposition.NEUTRAL)
+                .weight(42)
+                .build();
+        add(lines, "greeting_player_defended_village_2", DialogueRequestType.GREETING, "That zombie had it coming. You saved our skin.")
+                .playerEventTags(VillageEventMemory.EventTag.PLAYER_DEFENDED_VILLAGE)
+                .dispositions(DialogueDisposition.RESPECTFUL, DialogueDisposition.FRIENDLY, DialogueDisposition.NEUTRAL)
+                .weight(42)
+                .build();
+        add(lines, "story_player_defended_village_1", DialogueRequestType.STORY, "People are still talking about how you fought for us when the mobs closed in.")
+                .playerEventTags(VillageEventMemory.EventTag.PLAYER_DEFENDED_VILLAGE)
+                .dispositions(DialogueDisposition.RESPECTFUL, DialogueDisposition.FRIENDLY, DialogueDisposition.NEUTRAL)
+                .weight(40)
+                .build();
+        add(lines, "story_player_defended_village_2", DialogueRequestType.STORY, "We remember who stood between this village and the dark. That was you.")
+                .playerEventTags(VillageEventMemory.EventTag.PLAYER_DEFENDED_VILLAGE)
+                .dispositions(DialogueDisposition.RESPECTFUL, DialogueDisposition.FRIENDLY)
+                .weight(40)
+                .build();
         add(lines, "story_villager_death", DialogueRequestType.STORY, "We lost someone recently. The village is quieter now.")
                 .eventTags(VillageEventMemory.EventTag.VILLAGER_DEATH).weight(40).build();
         add(lines, "story_raid", DialogueRequestType.STORY, "The bells haven't sounded like that in a long time.")
                 .eventTags(VillageEventMemory.EventTag.RAID).weight(40).build();
         add(lines, "question_attack", DialogueRequestType.QUESTION, "People remember raised hands. They remember lowered ones too.")
                 .eventTags(VillageEventMemory.EventTag.VILLAGER_ATTACKED, VillageEventMemory.EventTag.PLAYER_ATTACKED_VILLAGER).weight(35).build();
+        add(lines, "question_attack_weapon", DialogueRequestType.QUESTION, "Why should I answer calmly when the last thing you brought me was a {attack_weapon}?")
+                .requiresRecentDirectHitMemory()
+                .dispositions(DialogueDisposition.CAUTIOUS, DialogueDisposition.RUDE, DialogueDisposition.HOSTILE, DialogueDisposition.FEARFUL)
+                .weight(40)
+                .build();
 
         add(lines, "joke_farmer_carrot", DialogueRequestType.JOKE, "Why did the carrot blush? Too many eyes on it.")
                 .professions(VillagerProfession.FARMER).build();
@@ -142,18 +335,39 @@ public final class VillagerDialogueService {
                 .dispositions(DialogueDisposition.RESPECTFUL, DialogueDisposition.FRIENDLY).build();
         add(lines, "insult_neutral_hat", DialogueRequestType.INSULT, "I've traded with fence posts that listened better.")
                 .dispositions(DialogueDisposition.NEUTRAL, DialogueDisposition.CAUTIOUS).build();
+        add(lines, "insult_after_hit", DialogueRequestType.INSULT, "You've already made your point with that {attack_weapon}. Use words for once.")
+                .requiresRecentDirectHitMemory()
+                .dispositions(DialogueDisposition.CAUTIOUS, DialogueDisposition.RUDE, DialogueDisposition.HOSTILE, DialogueDisposition.FEARFUL)
+                .weight(40)
+                .build();
 
         add(lines, "question_general", DialogueRequestType.QUESTION, "A village is mostly small tasks, done before they become large problems.")
                 .build();
         add(lines, "story_general", DialogueRequestType.STORY, "Once, the well ran dry for three days. Everyone learned how much a bucket matters.")
                 .build();
 
+        addProfessionChatLines(lines);
         addGlobalMoodLines(lines);
         addProfessionMoodLines(lines);
         addWeatherLines(lines);
         addTimeOfDayLines(lines);
 
         return List.copyOf(lines);
+    }
+
+    private static void addProfessionChatLines(List<DialogueLine> lines) {
+        for (ProfessionDialogue profile : professionProfiles()) {
+            add(lines, profile.key() + "_chat_work", DialogueRequestType.CHAT,
+                    "Most of my day is " + profile.craft() + ". It sounds simple until everything depends on it.")
+                    .professions(profile.profession())
+                    .weight(30)
+                    .build();
+            add(lines, profile.key() + "_chat_pride", DialogueRequestType.CHAT,
+                    "A good " + profile.role() + " thinks about " + profile.pride() + " even when nobody notices.")
+                    .professions(profile.profession())
+                    .weight(30)
+                    .build();
+        }
     }
 
     private static void addTimeOfDayLines(List<DialogueLine> lines) {
@@ -602,6 +816,15 @@ public final class VillagerDialogueService {
                 new ProfessionDialogue(VillagerProfession.TOOLSMITH, "toolsmith", "toolsmith", "smithing table", "making tools that don't fail", "cracked handles", "good handles", "dull edges", "putting strength in careful hands", "Tool jokes work better when they have a point."),
                 new ProfessionDialogue(VillagerProfession.WEAPONSMITH, "weaponsmith", "weaponsmith", "grindstone", "keeping blades honest", "rust on a sword", "tempered steel", "unready guards", "making danger think twice", "Weapon jokes are sharp; I keep the dull ones for strangers.")
         );
+    }
+
+    private static ProfessionDialogue profileFor(VillagerProfession profession) {
+        for (ProfessionDialogue profile : professionProfiles()) {
+            if (profile.profession() == profession) {
+                return profile;
+            }
+        }
+        return null;
     }
 
     private static DialogueLine.Builder add(List<DialogueLine> lines, String id, DialogueRequestType requestType, String text) {

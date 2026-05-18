@@ -72,7 +72,13 @@ configurations {
 }
 
 dependencies {
-    implementation "curse.maven:toucanlib-${rootProject.toucanlib_curse_project_id}:${rootProject.toucanlib_curse_file_id}"
+    if (rootProject.enable_toucanlib.toBoolean()) {
+        if (rootProject.useLocalToucanLib.toBoolean()) {
+            implementation "com.jvn.toucanlib:toucanlib-neoforge-${rootProject.minecraft_version}:${rootProject.toucanlib_version}"
+        } else {
+            implementation "maven.modrinth:${rootProject.toucanlib_modrinth_slug}:${rootProject.toucanlib_neoforge_version}"
+        }
+    }
 }
 
 tasks.named('processResources', ProcessResources).configure {

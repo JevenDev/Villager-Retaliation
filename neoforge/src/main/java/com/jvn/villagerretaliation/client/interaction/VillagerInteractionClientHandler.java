@@ -17,7 +17,8 @@ public final class VillagerInteractionClientHandler {
                 payload.villagerName(),
                 payload.professionName(),
                 payload.reputation(),
-                payload.reputationLevel()
+                payload.reputationLevel(),
+                payload.greetingText()
         ));
     }
 
@@ -25,6 +26,7 @@ public final class VillagerInteractionClientHandler {
         if (Minecraft.getInstance().screen instanceof VillagerInteractionScreen screen
                 && screen.matchesVillager(payload.entityId())) {
             screen.setDialogueText(payload.text());
+            screen.updateReputation(payload.reputation(), payload.reputationLevel());
         }
     }
 
@@ -40,9 +42,13 @@ public final class VillagerInteractionClientHandler {
     }
 
     public static void acceptConversationEnded(VillagerConversationEndedPayload payload) {
-        if (Minecraft.getInstance().screen instanceof VillagerInteractionScreen screen
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.screen instanceof VillagerInteractionScreen screen
                 && screen.matchesVillager(payload.entityId())) {
             screen.closeFromServer();
+        }
+        if (minecraft.player != null && !payload.goodbyeText().isBlank()) {
+            minecraft.player.displayClientMessage(Component.literal(payload.goodbyeText()), false);
         }
     }
 }

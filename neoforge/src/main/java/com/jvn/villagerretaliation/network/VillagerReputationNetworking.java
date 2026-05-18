@@ -53,6 +53,12 @@ public final class VillagerReputationNetworking {
                 "com.jvn.villagerretaliation.client.interaction.VillagerInteractionClientHandler",
                 "acceptConversationEnded"
         );
+        network.safePlayToClientThreaded(
+                VillagerWorldTextIndicatorPayload.TYPE,
+                VillagerWorldTextIndicatorPayload.STREAM_CODEC,
+                "com.jvn.villagerretaliation.client.reputation.VillagerWorldTextIndicatorClient",
+                "accept"
+        );
         network.playToServer(
                 VillagerDialogueRequestPayload.TYPE,
                 VillagerDialogueRequestPayload.STREAM_CODEC,
@@ -94,5 +100,12 @@ public final class VillagerReputationNetworking {
 
     public static void sendFearedPulse(AbstractVillager villager, int ticks) {
         PacketDistributor.sendToPlayersTrackingEntity(villager, new FearedVillagerPulsePayload(villager.getId(), ticks));
+    }
+
+    public static void sendWorldTextIndicator(AbstractVillager villager, String text, VillagerWorldTextIndicatorKind kind) {
+        PacketDistributor.sendToPlayersTrackingEntity(
+                villager,
+                new VillagerWorldTextIndicatorPayload(villager.getId(), text, kind)
+        );
     }
 }

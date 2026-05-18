@@ -58,9 +58,19 @@ public final class DialogueReputationService {
     }
 
     private static PlannedEffect planEffect(DialogueContext context, DialogueRequestType requestType, VillagerInteractionTracker.InteractionState interactionState) {
+        if (isDialogueOptionExhausted(requestType, interactionState)) {
+            return new PlannedEffect(
+                    VillagerRetaliationConfig.REPEATED_QUESTION_REPUTATION_LOSS.get(),
+                    "repeated_" + requestType.name().toLowerCase(java.util.Locale.ROOT),
+                    DialogueReputationEffect.CooldownCategory.NEGATIVE,
+                    false,
+                    annoyedOptionResponse(context, requestType)
+            );
+        }
         return switch (requestType) {
+            case CHAT -> PlannedEffect.none();
             case GREETING -> planGreeting(context, interactionState.firstConversation());
-            case QUESTION -> planQuestion(context, interactionState);
+            case QUESTION -> planQuestion(context);
             case STORY -> planStory(context);
             case JOKE -> planJoke(context);
             case INSULT -> planInsult(context, interactionState.firstConversation());
@@ -90,17 +100,12 @@ public final class DialogueReputationService {
                 : PlannedEffect.none();
     }
 
-    private static PlannedEffect planQuestion(DialogueContext context, VillagerInteractionTracker.InteractionState interactionState) {
-        if (interactionState.consecutiveQuestionCount() >= VillagerRetaliationConfig.REPEATED_QUESTION_POSITIVE_LIMIT.get()) {
-            return new PlannedEffect(
-                    VillagerRetaliationConfig.REPEATED_QUESTION_REPUTATION_LOSS.get(),
-                    "repeated_question",
-                    DialogueReputationEffect.CooldownCategory.NEGATIVE,
-                    false,
-                    annoyedQuestionResponse(context)
-            );
+    private static boolean isDialogueOptionExhausted(DialogueRequestType requestType, VillagerInteractionTracker.InteractionState interactionState) {
+        if (requestType == DialogueRequestType.INSULT) {
+            return false;
         }
-        return planQuestion(context);
+        int limit = VillagerRetaliationConfig.REPEATED_QUESTION_POSITIVE_LIMIT.get();
+        return limit >= 0 && interactionState.requestUseCount(requestType) >= limit;
     }
 
     private static PlannedEffect planStory(DialogueContext context) {
@@ -208,11 +213,18 @@ public final class DialogueReputationService {
         };
     }
 
-    private static String annoyedQuestionResponse(DialogueContext context) {
+    private static String annoyedOptionResponse(DialogueContext context, DialogueRequestType requestType) {
+        if (requestType == DialogueRequestType.QUESTION) {
+            return switch (context.random().nextInt(3)) {
+                case 0 -> "You've asked enough questions for one day.";
+                case 1 -> "Again with that? My patience has limits.";
+                default -> "I have work to do. Ask something else.";
+            };
+        }
         return switch (context.random().nextInt(3)) {
-            case 0 -> "You've asked enough questions for one day.";
-            case 1 -> "Again with that? My patience has limits.";
-            default -> "I have work to do. Ask something else.";
+            case 0 -> "Enough of that for now.";
+            case 1 -> "Try something else. My patience has limits.";
+            default -> "I have work to do. Not this again.";
         };
     }
 

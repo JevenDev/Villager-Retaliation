@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.reputation;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.util.VillagerRetaliationHazardAttribution;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
@@ -25,6 +26,7 @@ import net.minecraft.world.entity.monster.ZombieVillager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.inventory.MerchantMenu;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.BellBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -47,6 +49,7 @@ public final class VillagerReputationEvents {
     private static final long NEGATIVE_REPUTATION_BELL_COOLDOWN_TICKS = 20L * 10L;
     private static final int NEGATIVE_REPUTATION_BELL_SEARCH_HORIZONTAL_RADIUS = 32;
     private static final int NEGATIVE_REPUTATION_BELL_SEARCH_VERTICAL_RADIUS = 8;
+    private static final int CURED_VILLAGER_REPUTATION = 100;
     private static final Map<UUID, PlayerContribution> HOSTILE_PLAYER_CONTRIBUTIONS = new HashMap<>();
     private static final Map<UUID, Long> NEGATIVE_REPUTATION_BELL_COOLDOWNS = new HashMap<>();
 
@@ -84,6 +87,9 @@ public final class VillagerReputationEvents {
                 VillagerReputationAdvancements.onVillagerEnvironmentalDamage(level, serverPlayer, villager);
             } else {
                 VillagerReputationAdvancements.onVillagerDirectlyDamaged(level, serverPlayer, villager);
+                if (villager instanceof Villager villageResident) {
+                    VillagerInteractionTracker.rememberDirectHit(level, villageResident, serverPlayer, describeHeldWeapon(player.getMainHandItem()));
+                }
             }
         }
 
@@ -177,6 +183,7 @@ public final class VillagerReputationEvents {
         AbstractVillager villager = event.getAbstractVillager();
         if (villager.level() instanceof ServerLevel level) {
             VillagerReputationManager.addTradeReputation(level, villager, event.getEntity());
+            VillagerAmbientIndicatorService.onTradeCompleted(level, villager, event.getEntity());
             if (event.getEntity() instanceof ServerPlayer serverPlayer) {
                 VillagerReputationAdvancements.onTradeCompleted(level, serverPlayer, villager);
             }
@@ -216,6 +223,7 @@ public final class VillagerReputationEvents {
             scanFearedProximity(level, villager);
             scanNegativeReputationGolemAggro(level, villager);
         }
+        VillagerAmbientIndicatorService.maybeMurmurNearPlayers(level, villager);
         if (VillagerRetaliationConfig.SHOW_VILLAGER_REPUTATION_DEBUG_OVERLAY.get()
                 && gameTime % DEBUG_SYNC_INTERVAL_TICKS == Math.floorMod(villager.getUUID().getMostSignificantBits(), DEBUG_SYNC_INTERVAL_TICKS)) {
             syncNearbyDebug(level, villager);
@@ -273,11 +281,13 @@ public final class VillagerReputationEvents {
         VillagerReputationManager.transferVillagerIdentity(level, source.getUUID(), outcome.getUUID());
 
         if (source instanceof ZombieVillager
-                && outcome instanceof Villager
-                && hadKnownReputationBeforeCure
-                && curingPlayerId != null
-                && level.getPlayerByUUID(curingPlayerId) instanceof ServerPlayer serverPlayer) {
-            VillagerReputationAdvancements.onCuredKnownZombieVillager(serverPlayer);
+                && outcome instanceof Villager curedVillager
+                && curingPlayerId != null) {
+            VillagerReputationManager.setReputation(level, curedVillager, curingPlayerId, CURED_VILLAGER_REPUTATION);
+            if (hadKnownReputationBeforeCure
+                    && level.getPlayerByUUID(curingPlayerId) instanceof ServerPlayer serverPlayer) {
+                VillagerReputationAdvancements.onCuredKnownZombieVillager(serverPlayer);
+            }
         }
     }
 
@@ -326,6 +336,14 @@ public final class VillagerReputationEvents {
             return Math.min(-1, assistedGain);
         }
         return 0;
+    }
+
+    private static String describeHeldWeapon(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) {
+            return "fists";
+        }
+        String name = stack.getHoverName().getString().trim();
+        return name.isEmpty() ? "fists" : name;
     }
 
     private static void pruneHostileContributions(long gameTime) {

@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.loot.VillagerLootHandler;
 import com.jvn.villagerretaliation.loot.WanderingTraderLootHandler;
+import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
@@ -65,6 +66,9 @@ public final class VillagerRetaliationEvents {
         if (event.getEntity() instanceof Villager villager && event.getNewDamage() > 0.0F) {
             VillagerConversationService.endForVillager(villager, true);
         }
+        if (event.getEntity() instanceof AbstractVillager villager && event.getNewDamage() > 0.0F && villager.level() instanceof ServerLevel level) {
+            VillagerAmbientIndicatorService.onVillagerDamaged(level, villager, event.getSource().getEntity());
+        }
     }
 
     public static void onLivingDamagePre(LivingIncomingDamageEvent event) {
@@ -82,6 +86,9 @@ public final class VillagerRetaliationEvents {
         rememberVillageDeathEvent(event);
         if (event.getEntity() instanceof Villager villager) {
             VillagerConversationService.endForVillager(villager, true);
+        }
+        if (event.getEntity() instanceof AbstractVillager villager && villager.level() instanceof ServerLevel level) {
+            VillagerAmbientIndicatorService.onVillagerKilled(level, villager, event.getSource().getEntity());
         }
     }
 
@@ -147,6 +154,7 @@ public final class VillagerRetaliationEvents {
                     <= VillagerReputationLevel.HOSTILE.trustRank()) {
                 VillagerReputationAdvancements.onTradeRefusedDueToLowReputation(serverPlayer);
             }
+            VillagerAmbientIndicatorService.onTradeRefused(villager);
             event.setCanceled(true);
             event.setCancellationResult(InteractionResult.FAIL);
             return;
@@ -220,6 +228,7 @@ public final class VillagerRetaliationEvents {
         }
 
         VillagerReputationManager.markHighReputationGiftGiven(level, villager, player);
+        VillagerAmbientIndicatorService.onHighReputationGift(villager);
         villager.playSound(SoundEvents.VILLAGER_YES, 0.8F, 0.85F + villager.getRandom().nextFloat() * 0.25F);
         level.sendParticles(
                 ParticleTypes.HAPPY_VILLAGER,

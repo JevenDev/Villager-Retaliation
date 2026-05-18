@@ -42,6 +42,17 @@ allprojects {
         exclusiveContent {
             forRepository {
                 maven {
+                    name = 'Modrinth'
+                    url = 'https://api.modrinth.com/maven'
+                }
+            }
+            filter {
+                includeGroup 'maven.modrinth'
+            }
+        }
+        exclusiveContent {
+            forRepository {
+                maven {
                     name = 'CurseMaven'
                     url = 'https://cursemaven.com/'
                 }

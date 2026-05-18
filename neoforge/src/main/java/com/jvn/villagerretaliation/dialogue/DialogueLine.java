@@ -15,6 +15,8 @@ public record DialogueLine(
         Set<DialogueContext.WeatherState> weatherStates,
         Set<DialogueContext.TimeOfDay> timeOfDays,
         Set<VillageEventMemory.EventTag> eventTags,
+        Set<VillageEventMemory.EventTag> playerEventTags,
+        boolean requiresRecentDirectHitMemory,
         boolean firstConversationOnly,
         int weight
 ) {
@@ -40,6 +42,12 @@ public record DialogueLine(
         if (!this.eventTags.isEmpty() && context.recentEvents().stream().noneMatch(event -> this.eventTags.contains(event.tag()))) {
             return false;
         }
+        if (!this.playerEventTags.isEmpty() && !context.hasRecentPlayerEvent(this.playerEventTags.toArray(VillageEventMemory.EventTag[]::new))) {
+            return false;
+        }
+        if (this.requiresRecentDirectHitMemory && !context.hasRecentDirectHitMemory()) {
+            return false;
+        }
         return this.weight > 0;
     }
 
@@ -58,6 +66,12 @@ public record DialogueLine(
         }
         if (!this.eventTags.isEmpty()) {
             score += 4;
+        }
+        if (!this.playerEventTags.isEmpty()) {
+            score += 5;
+        }
+        if (this.requiresRecentDirectHitMemory) {
+            score += 5;
         }
         if (!this.weatherStates.isEmpty()) {
             score += 4;
@@ -84,6 +98,8 @@ public record DialogueLine(
         private final Set<DialogueContext.WeatherState> weatherStates = EnumSet.noneOf(DialogueContext.WeatherState.class);
         private final Set<DialogueContext.TimeOfDay> timeOfDays = EnumSet.noneOf(DialogueContext.TimeOfDay.class);
         private final Set<VillageEventMemory.EventTag> eventTags = EnumSet.noneOf(VillageEventMemory.EventTag.class);
+        private final Set<VillageEventMemory.EventTag> playerEventTags = EnumSet.noneOf(VillageEventMemory.EventTag.class);
+        private boolean requiresRecentDirectHitMemory;
         private boolean firstConversationOnly;
         private int weight = 10;
 
@@ -105,6 +121,16 @@ public record DialogueLine(
 
         public Builder eventTags(VillageEventMemory.EventTag... eventTags) {
             this.eventTags.addAll(java.util.List.of(eventTags));
+            return this;
+        }
+
+        public Builder playerEventTags(VillageEventMemory.EventTag... eventTags) {
+            this.playerEventTags.addAll(java.util.List.of(eventTags));
+            return this;
+        }
+
+        public Builder requiresRecentDirectHitMemory() {
+            this.requiresRecentDirectHitMemory = true;
             return this;
         }
 
@@ -138,6 +164,8 @@ public record DialogueLine(
                     Set.copyOf(this.weatherStates),
                     Set.copyOf(this.timeOfDays),
                     Set.copyOf(this.eventTags),
+                    Set.copyOf(this.playerEventTags),
+                    this.requiresRecentDirectHitMemory,
                     this.firstConversationOnly,
                     this.weight
             );

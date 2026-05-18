@@ -390,13 +390,21 @@ public final class VillagerRetaliationHandler {
             return false;
         }
 
-        if (!RETALIATION.isHostileTowards(villager, player, () -> clearAnger(villager))
-                && !isDespisedBy(villager, player)) {
+        if (!isHostileTowards(villager, player)) {
             return false;
         }
 
         VillagerRetaliationRetaliationUtil.spawnMadParticles(villager);
         return true;
+    }
+
+    public static boolean isHostileTowards(Villager villager, Player player) {
+        if (villager.level().isClientSide || !villager.isAlive() || !player.isAlive()) {
+            return false;
+        }
+
+        return RETALIATION.isHostileTowards(villager, player, () -> clearAnger(villager))
+                || isDespisedBy(villager, player);
     }
 
     public static boolean tryPacifyWithEmeralds(Villager villager, Player player, ItemStack interactionStack) {
@@ -559,6 +567,7 @@ public final class VillagerRetaliationHandler {
         villager.setAggressive(false);
         villager.setChasing(false);
         villager.setTarget(null);
+        villager.setLastHurtByMob(null);
         if (stopNavigation) {
             villager.getNavigation().stop();
         }

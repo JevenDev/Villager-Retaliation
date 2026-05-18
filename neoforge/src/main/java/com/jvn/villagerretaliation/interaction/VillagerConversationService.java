@@ -121,7 +121,7 @@ public final class VillagerConversationService {
         SESSIONS_BY_PLAYER.remove(player.getUUID());
         PLAYER_BY_VILLAGER.remove(session.villagerId());
         if (notifyClient) {
-            PacketDistributor.sendToPlayer(player, new VillagerConversationEndedPayload(session.villagerEntityId()));
+            PacketDistributor.sendToPlayer(player, new VillagerConversationEndedPayload(session.villagerEntityId(), ""));
         }
     }
 

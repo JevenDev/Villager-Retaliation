@@ -31,9 +31,15 @@ public class VillagerInteractionSavedData extends SavedData {
     private static final String TAG_LAST_REQUEST_TYPE_DIALOGUE = "LastRequestTypeDialogue";
     private static final String TAG_CONSECUTIVE_REQUEST_TYPE = "ConsecutiveRequestType";
     private static final String TAG_CONSECUTIVE_REQUEST_COUNT = "ConsecutiveRequestCount";
+    private static final String TAG_REQUEST_TYPE_USES = "RequestTypeUses";
     private static final String TAG_LAST_SLEEP_DISTURBANCE_NIGHT = "LastSleepDisturbanceNight";
+    private static final String TAG_LAST_DIRECT_HIT_GAME_TIME = "LastDirectHitGameTime";
+    private static final String TAG_LAST_DIRECT_HIT_WEAPON = "LastDirectHitWeapon";
     private static final String TAG_REQUEST_TYPE = "RequestType";
     private static final String TAG_GAME_TIME = "GameTime";
+    private static final String TAG_COUNT = "Count";
+    private static final String TAG_WINDOW_START_GAME_TIME = "WindowStartGameTime";
+    private static final String TAG_WINDOW_DAY = "WindowDay";
     private static final String TAG_BAD_FIRST_IMPRESSION = "BadFirstImpression";
     private static final int MAX_RECENT_LINES = 5;
 
@@ -64,6 +70,10 @@ public class VillagerInteractionSavedData extends SavedData {
             entry.lastJokeReputationGameTime = readOptionalLong(entryTag, TAG_LAST_JOKE_REPUTATION);
             entry.lastSleepDisturbanceNight = readOptionalLong(entryTag, TAG_LAST_SLEEP_DISTURBANCE_NIGHT);
             entry.badFirstImpression = entryTag.getBoolean(TAG_BAD_FIRST_IMPRESSION);
+            entry.lastDirectHitGameTime = readOptionalLong(entryTag, TAG_LAST_DIRECT_HIT_GAME_TIME);
+            if (entryTag.contains(TAG_LAST_DIRECT_HIT_WEAPON, Tag.TAG_STRING)) {
+                entry.lastDirectHitWeapon = entryTag.getString(TAG_LAST_DIRECT_HIT_WEAPON);
+            }
             if (entryTag.contains(TAG_CONSECUTIVE_REQUEST_TYPE, Tag.TAG_STRING)) {
                 try {
                     entry.consecutiveRequestType = DialogueRequestType.valueOf(entryTag.getString(TAG_CONSECUTIVE_REQUEST_TYPE));
@@ -99,6 +109,21 @@ public class VillagerInteractionSavedData extends SavedData {
                 } catch (IllegalArgumentException ignored) {
                 }
             }
+            ListTag requestTypeUses = entryTag.getList(TAG_REQUEST_TYPE_USES, Tag.TAG_COMPOUND);
+            for (Tag rawRequestTypeUse : requestTypeUses) {
+                if (!(rawRequestTypeUse instanceof CompoundTag requestTypeTag)) {
+                    continue;
+                }
+                try {
+                    DialogueRequestType requestType = DialogueRequestType.valueOf(requestTypeTag.getString(TAG_REQUEST_TYPE));
+                    entry.requestUseWindows.put(requestType, new RequestUseWindow(
+                            requestTypeTag.getInt(TAG_COUNT),
+                            readOptionalLong(requestTypeTag, TAG_WINDOW_START_GAME_TIME),
+                            readOptionalLong(requestTypeTag, TAG_WINDOW_DAY)
+                    ));
+                } catch (IllegalArgumentException ignored) {
+                }
+            }
             data.entries.computeIfAbsent(entryTag.getUUID(TAG_VILLAGER), ignored -> new HashMap<>())
                     .put(entryTag.getUUID(TAG_PLAYER), entry);
         }
@@ -124,6 +149,10 @@ public class VillagerInteractionSavedData extends SavedData {
                 entryTag.putLong(TAG_LAST_JOKE_REPUTATION, playerEntry.getValue().lastJokeReputationGameTime);
                 entryTag.putLong(TAG_LAST_SLEEP_DISTURBANCE_NIGHT, playerEntry.getValue().lastSleepDisturbanceNight);
                 entryTag.putBoolean(TAG_BAD_FIRST_IMPRESSION, playerEntry.getValue().badFirstImpression);
+                entryTag.putLong(TAG_LAST_DIRECT_HIT_GAME_TIME, playerEntry.getValue().lastDirectHitGameTime);
+                if (playerEntry.getValue().lastDirectHitWeapon != null && !playerEntry.getValue().lastDirectHitWeapon.isBlank()) {
+                    entryTag.putString(TAG_LAST_DIRECT_HIT_WEAPON, playerEntry.getValue().lastDirectHitWeapon);
+                }
                 if (playerEntry.getValue().consecutiveRequestType != null) {
                     entryTag.putString(TAG_CONSECUTIVE_REQUEST_TYPE, playerEntry.getValue().consecutiveRequestType.name());
                     entryTag.putInt(TAG_CONSECUTIVE_REQUEST_COUNT, playerEntry.getValue().consecutiveRequestCount);
@@ -149,6 +178,17 @@ public class VillagerInteractionSavedData extends SavedData {
                     requestTypeDialogueTimes.add(requestTypeTag);
                 }
                 entryTag.put(TAG_LAST_REQUEST_TYPE_DIALOGUE, requestTypeDialogueTimes);
+                ListTag requestTypeUses = new ListTag();
+                for (Map.Entry<DialogueRequestType, RequestUseWindow> requestTypeEntry : playerEntry.getValue().requestUseWindows.entrySet()) {
+                    CompoundTag requestTypeTag = new CompoundTag();
+                    RequestUseWindow window = requestTypeEntry.getValue();
+                    requestTypeTag.putString(TAG_REQUEST_TYPE, requestTypeEntry.getKey().name());
+                    requestTypeTag.putInt(TAG_COUNT, window.count);
+                    requestTypeTag.putLong(TAG_WINDOW_START_GAME_TIME, window.windowStartGameTime);
+                    requestTypeTag.putLong(TAG_WINDOW_DAY, window.windowDay);
+                    requestTypeUses.add(requestTypeTag);
+                }
+                entryTag.put(TAG_REQUEST_TYPE_USES, requestTypeUses);
                 entriesTag.add(entryTag);
             }
         }
@@ -169,11 +209,14 @@ public class VillagerInteractionSavedData extends SavedData {
         private long lastJokeReputationGameTime = Long.MIN_VALUE;
         private long lastSleepDisturbanceNight = Long.MIN_VALUE;
         private boolean badFirstImpression;
+        private long lastDirectHitGameTime = Long.MIN_VALUE;
+        private String lastDirectHitWeapon;
         private DialogueRequestType consecutiveRequestType;
         private int consecutiveRequestCount;
         private final ArrayDeque<String> recentDialogueIds = new ArrayDeque<>();
         private final Map<DialogueRequestType, Long> lastReputationByRequestType = new EnumMap<>(DialogueRequestType.class);
         private final Map<DialogueRequestType, Long> lastDialogueByRequestType = new EnumMap<>(DialogueRequestType.class);
+        private final Map<DialogueRequestType, RequestUseWindow> requestUseWindows = new EnumMap<>(DialogueRequestType.class);
 
         public boolean hasTalked() {
             return this.hasTalked;
@@ -219,12 +262,33 @@ public class VillagerInteractionSavedData extends SavedData {
             return this.lastSleepDisturbanceNight == night;
         }
 
+        public long lastDirectHitGameTime() {
+            return this.lastDirectHitGameTime;
+        }
+
+        public String lastDirectHitWeapon() {
+            return this.lastDirectHitWeapon;
+        }
+
         public void rememberSleepDisturbance(long night) {
             this.lastSleepDisturbanceNight = night;
         }
 
+        public void rememberDirectHit(long gameTime, String weapon) {
+            this.lastDirectHitGameTime = gameTime;
+            this.lastDirectHitWeapon = weapon;
+        }
+
         public int consecutiveRequestCount(DialogueRequestType requestType) {
             return this.consecutiveRequestType == requestType ? this.consecutiveRequestCount : 0;
+        }
+
+        public int requestUseCount(DialogueRequestType requestType, long gameTime, long day, long resetTicks) {
+            RequestUseWindow window = this.requestUseWindows.get(requestType);
+            if (window == null || window.isExpired(gameTime, day, resetTicks)) {
+                return 0;
+            }
+            return window.count;
         }
 
         public void rememberDialogueReputation(DialogueRequestType requestType, int delta, long gameTime, long day, boolean badFirstImpression) {
@@ -241,19 +305,52 @@ public class VillagerInteractionSavedData extends SavedData {
             this.badFirstImpression = this.badFirstImpression || badFirstImpression;
         }
 
-        public void rememberDialogueId(DialogueRequestType requestType, String dialogueId, long gameTime) {
+        public void rememberDialogueId(DialogueRequestType requestType, String dialogueId, long gameTime, long day, long resetTicks) {
             if (this.consecutiveRequestType == requestType) {
                 this.consecutiveRequestCount++;
             } else {
                 this.consecutiveRequestType = requestType;
                 this.consecutiveRequestCount = 1;
             }
+            this.requestUseWindows
+                    .computeIfAbsent(requestType, ignored -> new RequestUseWindow())
+                    .recordUse(gameTime, day, resetTicks);
             this.recentDialogueIds.remove(dialogueId);
             this.recentDialogueIds.addLast(dialogueId);
             this.lastDialogueByRequestType.put(requestType, gameTime);
             while (this.recentDialogueIds.size() > MAX_RECENT_LINES) {
                 this.recentDialogueIds.removeFirst();
             }
+        }
+    }
+
+    private static class RequestUseWindow {
+        private int count;
+        private long windowStartGameTime = Long.MIN_VALUE;
+        private long windowDay = Long.MIN_VALUE;
+
+        private RequestUseWindow() {
+        }
+
+        private RequestUseWindow(int count, long windowStartGameTime, long windowDay) {
+            this.count = count;
+            this.windowStartGameTime = windowStartGameTime;
+            this.windowDay = windowDay;
+        }
+
+        private boolean isExpired(long gameTime, long day, long resetTicks) {
+            return this.windowStartGameTime == Long.MIN_VALUE
+                    || this.windowDay != day
+                    || gameTime - this.windowStartGameTime >= resetTicks;
+        }
+
+        private void recordUse(long gameTime, long day, long resetTicks) {
+            if (isExpired(gameTime, day, resetTicks)) {
+                this.count = 0;
+                this.windowStartGameTime = gameTime;
+                this.windowDay = day;
+            }
+            this.count++;
         }
     }
 }
