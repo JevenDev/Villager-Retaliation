@@ -6,26 +6,16 @@ public final class ClientVillagerConversationState {
     private static final int CAMERA_RELEASE_TICKS = 2;
 
     private static int focusedVillagerEntityId = -1;
-    private static String responseText = "Choose an option.";
     private static int cameraFocusTicks;
     private static int cameraReleaseTicks;
 
     private ClientVillagerConversationState() {
     }
 
-    public static void start(int entityId, String initialResponseText) {
+    public static void start(int entityId) {
         focusedVillagerEntityId = entityId;
-        responseText = initialResponseText == null || initialResponseText.isBlank() ? "Choose an option." : initialResponseText;
         cameraFocusTicks = 0;
         cameraReleaseTicks = 0;
-    }
-
-    public static void setResponseText(String text) {
-        responseText = text;
-    }
-
-    public static String responseText() {
-        return responseText;
     }
 
     public static int focusedVillagerEntityId() {
@@ -65,7 +55,6 @@ public final class ClientVillagerConversationState {
 
     public static void clear() {
         focusedVillagerEntityId = -1;
-        responseText = "Choose an option.";
         if (cameraFocusTicks > 0) {
             cameraReleaseTicks = CAMERA_RELEASE_TICKS;
         }

@@ -11,7 +11,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.Villager;
@@ -35,14 +34,14 @@ public class VillagerInteractionScreen extends Screen {
     private int selectedOption;
     private boolean closingFromServer;
 
-    public VillagerInteractionScreen(int villagerEntityId, String villagerName, String professionName, int reputation, VillagerReputationLevel reputationLevel, String greetingText) {
+    public VillagerInteractionScreen(int villagerEntityId, String villagerName, String professionName, int reputation, VillagerReputationLevel reputationLevel) {
         super(Component.literal("Villager Interaction"));
         this.villagerEntityId = villagerEntityId;
         this.villagerName = villagerName;
         this.professionName = professionName;
         this.reputation = reputation;
         this.reputationLevel = reputationLevel;
-        ClientVillagerConversationState.start(villagerEntityId, greetingText);
+        ClientVillagerConversationState.start(villagerEntityId);
     }
 
     @Override
@@ -63,17 +62,9 @@ public class VillagerInteractionScreen extends Screen {
         return this.villagerEntityId == entityId;
     }
 
-    public void setDialogueText(String dialogueText) {
-        ClientVillagerConversationState.setResponseText(dialogueText);
-    }
-
     public void updateReputation(int reputation, VillagerReputationLevel reputationLevel) {
         this.reputation = reputation;
         this.reputationLevel = reputationLevel;
-    }
-
-    public void showNotice(String text) {
-        ClientVillagerConversationState.setResponseText(text);
     }
 
     public void closeFromServer() {
@@ -88,7 +79,6 @@ public class VillagerInteractionScreen extends Screen {
 
         renderConversationFocus(graphics);
         renderOptions(graphics, mouseX, mouseY, optionsTop());
-        renderResponse(graphics);
         renderHint(graphics);
     }
 
@@ -168,7 +158,6 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     private void requestDialogue(DialogueRequestType requestType) {
-        ClientVillagerConversationState.setResponseText("...");
         PacketDistributor.sendToServer(new VillagerDialogueRequestPayload(this.villagerEntityId, requestType));
     }
 
@@ -256,20 +245,6 @@ public class VillagerInteractionScreen extends Screen {
         graphics.drawString(this.font, mood, moodX, centerY + 11, moodColor(this.reputationLevel), true);
         int reputationX = dividerX - 28 - this.font.width(reputation);
         graphics.drawString(this.font, reputation, reputationX, centerY + 24, 0x88FFFFFF, true);
-    }
-
-    private void renderResponse(GuiGraphics graphics) {
-        List<FormattedCharSequence> lines = this.font.split(
-                Component.literal(ClientVillagerConversationState.responseText()),
-                Math.min(RESPONSE_WIDTH, this.width - 48)
-        );
-        int lineHeight = 11;
-        int top = this.height - 52 - Math.max(0, lines.size() - 1) * lineHeight;
-        for (int index = 0; index < lines.size(); index++) {
-            FormattedCharSequence line = lines.get(index);
-            int x = (this.width - this.font.width(line)) / 2;
-            graphics.drawString(this.font, line, x, top + index * lineHeight, 0xFFFFFFFF, true);
-        }
     }
 
     private void updateMouseSelection(int mouseX, int mouseY) {

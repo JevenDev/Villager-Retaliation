@@ -20,28 +20,21 @@ public final class VillagerInteractionClientHandler {
                 payload.villagerName(),
                 payload.professionName(),
                 payload.reputation(),
-                payload.reputationLevel(),
-                payload.greetingText()
+                payload.reputationLevel()
         ));
+        pushVillagerChatMessage(Minecraft.getInstance(), payload.entityId(), payload.greetingText());
     }
 
     public static void acceptDialogue(VillagerDialogueResponsePayload payload) {
         if (Minecraft.getInstance().screen instanceof VillagerInteractionScreen screen
                 && screen.matchesVillager(payload.entityId())) {
-            screen.setDialogueText(payload.text());
             screen.updateReputation(payload.reputation(), payload.reputationLevel());
         }
+        pushVillagerChatMessage(Minecraft.getInstance(), payload.entityId(), payload.text());
     }
 
     public static void acceptNotice(VillagerInteractionNoticePayload payload) {
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.screen instanceof VillagerInteractionScreen screen && screen.matchesVillager(payload.entityId())) {
-            screen.showNotice(payload.text());
-            return;
-        }
-        if (minecraft.player != null) {
-            minecraft.player.displayClientMessage(formatVillagerChatMessage(minecraft, payload.entityId(), payload.text()), false);
-        }
+        pushVillagerChatMessage(Minecraft.getInstance(), payload.entityId(), payload.text());
     }
 
     public static void acceptConversationEnded(VillagerConversationEndedPayload payload) {
@@ -50,9 +43,14 @@ public final class VillagerInteractionClientHandler {
                 && screen.matchesVillager(payload.entityId())) {
             screen.closeFromServer();
         }
-        if (minecraft.player != null && !payload.goodbyeText().isBlank()) {
-            minecraft.player.displayClientMessage(formatVillagerChatMessage(minecraft, payload.entityId(), payload.goodbyeText()), false);
+        pushVillagerChatMessage(minecraft, payload.entityId(), payload.goodbyeText());
+    }
+
+    private static void pushVillagerChatMessage(Minecraft minecraft, int entityId, String text) {
+        if (minecraft.player == null || text == null || text.isBlank()) {
+            return;
         }
+        minecraft.player.displayClientMessage(formatVillagerChatMessage(minecraft, entityId, text), false);
     }
 
     private static Component formatVillagerChatMessage(Minecraft minecraft, int entityId, String text) {
@@ -69,11 +67,11 @@ public final class VillagerInteractionClientHandler {
         }
         String profession = professionName(villager.getVillagerData().getProfession());
         if (!villager.hasCustomName()) {
-            return profession + " Villager";
+            return profession.equals("Villager") ? "Villager" : profession + " Villager";
         }
         String customName = villager.getCustomName() == null ? "" : villager.getCustomName().getString().trim();
         if (customName.isBlank()) {
-            return profession + " Villager";
+            return profession.equals("Villager") ? "Villager" : profession + " Villager";
         }
         return profession + " " + customName;
     }
