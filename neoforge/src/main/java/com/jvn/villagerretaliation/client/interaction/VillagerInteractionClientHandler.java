@@ -6,6 +6,9 @@ import com.jvn.villagerretaliation.network.VillagerDialogueResponsePayload;
 import com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.VillagerProfession;
 
 public final class VillagerInteractionClientHandler {
     private VillagerInteractionClientHandler() {
@@ -37,7 +40,7 @@ public final class VillagerInteractionClientHandler {
             return;
         }
         if (minecraft.player != null) {
-            minecraft.player.displayClientMessage(Component.literal(payload.text()), false);
+            minecraft.player.displayClientMessage(formatVillagerChatMessage(minecraft, payload.entityId(), payload.text()), false);
         }
     }
 
@@ -48,7 +51,51 @@ public final class VillagerInteractionClientHandler {
             screen.closeFromServer();
         }
         if (minecraft.player != null && !payload.goodbyeText().isBlank()) {
-            minecraft.player.displayClientMessage(Component.literal(payload.goodbyeText()), false);
+            minecraft.player.displayClientMessage(formatVillagerChatMessage(minecraft, payload.entityId(), payload.goodbyeText()), false);
         }
+    }
+
+    private static Component formatVillagerChatMessage(Minecraft minecraft, int entityId, String text) {
+        return Component.literal("<" + resolveVillagerSpeakerName(minecraft, entityId) + "> " + text);
+    }
+
+    private static String resolveVillagerSpeakerName(Minecraft minecraft, int entityId) {
+        if (minecraft.level == null) {
+            return "Villager";
+        }
+        Entity entity = minecraft.level.getEntity(entityId);
+        if (!(entity instanceof Villager villager)) {
+            return "Villager";
+        }
+        String profession = professionName(villager.getVillagerData().getProfession());
+        if (!villager.hasCustomName()) {
+            return profession + " Villager";
+        }
+        String customName = villager.getCustomName() == null ? "" : villager.getCustomName().getString().trim();
+        if (customName.isBlank()) {
+            return profession + " Villager";
+        }
+        return profession + " " + customName;
+    }
+
+    private static String professionName(VillagerProfession profession) {
+        String rawName = profession == null ? null : profession.name();
+        if (rawName == null || rawName.isBlank() || "none".equals(rawName)) {
+            return "Villager";
+        }
+        StringBuilder builder = new StringBuilder(rawName.length());
+        boolean capitalizeNext = true;
+        for (char character : rawName.replace('_', ' ').toCharArray()) {
+            if (Character.isWhitespace(character)) {
+                capitalizeNext = true;
+                builder.append(character);
+            } else if (capitalizeNext) {
+                builder.append(Character.toUpperCase(character));
+                capitalizeNext = false;
+            } else {
+                builder.append(character);
+            }
+        }
+        return builder.toString();
     }
 }
