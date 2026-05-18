@@ -31,6 +31,7 @@ public class VillagerInteractionScreen extends Screen {
     private static final int OPTION_SCROLLBAR_HIT_WIDTH = 10;
     private static final int OPTIONS_DIVIDER_GAP = 18;
     private static final int DIVIDER_HEIGHT = 92;
+    private static final int INFO_PANEL_CHAT_PADDING = 20;
     private static final float OPTION_SCROLL_LERP = 0.32F;
     private static final float OPTION_SCROLL_STEP = 12.0F;
     private static final float OPTION_HOVER_SCALE = 0.055F;
@@ -57,6 +58,7 @@ public class VillagerInteractionScreen extends Screen {
     private float scrollbarDragOffset;
     private float optionScroll;
     private float targetOptionScroll;
+    private Double originalChatWidth;
 
     public VillagerInteractionScreen(int villagerEntityId, String villagerName, String professionName, int reputation, VillagerReputationLevel reputationLevel) {
         super(Component.literal("Villager Interaction"));
@@ -71,11 +73,13 @@ public class VillagerInteractionScreen extends Screen {
     @Override
     protected void init() {
         rebuildOptions();
+        applyChatWidthOverride();
     }
 
     @Override
     public void tick() {
         ClientVillagerConversationState.tickCameraFocus();
+        applyChatWidthOverride();
     }
 
     @Override
@@ -208,6 +212,7 @@ public class VillagerInteractionScreen extends Screen {
 
     @Override
     public void removed() {
+        restoreChatWidthOverride();
         ClientVillagerConversationState.clear();
         if (!this.closingFromServer) {
             PacketDistributor.sendToServer(new VillagerConversationEndRequestPayload(this.villagerEntityId));
@@ -500,6 +505,39 @@ public class VillagerInteractionScreen extends Screen {
 
     private int dividerX() {
         return this.width / 2 + 4;
+    }
+
+    int infoPanelLeft() {
+        return dividerX() - 28 - Math.max(
+                Math.max(this.font.width(this.villagerName), this.font.width(this.professionName)),
+                Math.max(
+                        this.font.width("Mood: " + displayName(this.reputationLevel)),
+                        this.font.width("Reputation " + this.reputation)
+                )
+        );
+    }
+
+    private void applyChatWidthOverride() {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.options == null) {
+            return;
+        }
+        if (this.originalChatWidth == null) {
+            this.originalChatWidth = (Double) minecraft.options.chatWidth().get();
+        }
+
+        int targetPixelWidth = Math.max(40, infoPanelLeft() - INFO_PANEL_CHAT_PADDING);
+        double targetChatWidth = Mth.clamp((targetPixelWidth - 40.0D) / 280.0D, 0.0D, this.originalChatWidth);
+        minecraft.options.chatWidth().set(targetChatWidth);
+    }
+
+    private void restoreChatWidthOverride() {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.options == null || this.originalChatWidth == null) {
+            return;
+        }
+        minecraft.options.chatWidth().set(this.originalChatWidth);
+        this.originalChatWidth = null;
     }
 
     private int focusCenterY() {
