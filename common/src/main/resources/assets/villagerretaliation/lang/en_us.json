@@ -22,6 +22,8 @@
   "villagerretaliation.configuration.general.enableDialogueCameraFocus": "Enable Dialogue Camera Focus",
   "villagerretaliation.configuration.general.dialogueCameraZoomAmount": "Dialogue Camera Zoom Amount",
   "villagerretaliation.configuration.general.dialogueCameraTransitionTicks": "Dialogue Camera Transition Ticks",
+  "villagerretaliation.configuration.general.reputationChangeDisplayMode": "Reputation Change Display Mode",
+  "villagerretaliation.configuration.general.reputationChangeHudPosition": "Reputation Change HUD Position",
   "villagerretaliation.configuration.general.freezeVillagerDuringDialogue": "Freeze Villager During Dialogue",
   "villagerretaliation.configuration.general.maxDialogueDistance": "Max Dialogue Distance",
   "villagerretaliation.configuration.general.villagerReputationHoverTooltipRequiresEmerald": "Villager Reputation Hover Tooltip Requires Emerald",

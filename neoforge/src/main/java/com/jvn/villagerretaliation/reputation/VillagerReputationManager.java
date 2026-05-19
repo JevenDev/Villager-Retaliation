@@ -8,8 +8,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
-import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Component;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -267,7 +265,7 @@ public final class VillagerReputationManager {
                 String message = messageEntry.getValue() > 1
                         ? messageEntry.getKey() + " x" + messageEntry.getValue()
                         : messageEntry.getKey();
-                player.sendSystemMessage(Component.literal(message).withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
+                VillagerReputationNetworking.sendTierNotice(player, message);
             }
         }
     }

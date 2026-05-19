@@ -17,6 +17,8 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.BooleanValue ENABLE_DIALOGUE_CAMERA_FOCUS;
     public static final ModConfigSpec.DoubleValue DIALOGUE_CAMERA_ZOOM_AMOUNT;
     public static final ModConfigSpec.IntValue DIALOGUE_CAMERA_TRANSITION_TICKS;
+    public static final ModConfigSpec.EnumValue<ReputationChangeDisplayMode> REPUTATION_CHANGE_DISPLAY_MODE;
+    public static final ModConfigSpec.EnumValue<ReputationChangeHudPosition> REPUTATION_CHANGE_HUD_POSITION;
     public static final ModConfigSpec.BooleanValue FREEZE_VILLAGER_DURING_DIALOGUE;
     public static final ModConfigSpec.DoubleValue MAX_DIALOGUE_DISTANCE;
     public static final ModConfigSpec.BooleanValue VILLAGER_REPUTATION_HOVER_TOOLTIP_REQUIRES_EMERALD;
@@ -162,6 +164,14 @@ public final class VillagerRetaliationConfig {
                 .comment("Ticks used to ease into the dialogue FOV zoom.")
                 .translation("villagerretaliation.configuration.general.dialogueCameraTransitionTicks")
                 .defineInRange("dialogueCameraTransitionTicks", 3, 1, 40);
+        REPUTATION_CHANGE_DISPLAY_MODE = BUILDER
+                .comment("Where villager reputation tier change messages appear: HUD, Chat, or Off.")
+                .translation("villagerretaliation.configuration.general.reputationChangeDisplayMode")
+                .defineEnum("reputationChangeDisplayMode", ReputationChangeDisplayMode.HUD);
+        REPUTATION_CHANGE_HUD_POSITION = BUILDER
+                .comment("Where the HUD reputation change feed is anchored on screen.")
+                .translation("villagerretaliation.configuration.general.reputationChangeHudPosition")
+                .defineEnum("reputationChangeHudPosition", ReputationChangeHudPosition.TOP_LEFT);
         FREEZE_VILLAGER_DURING_DIALOGUE = BUILDER
                 .comment("Stops villager navigation while a Villager Retaliation dialogue conversation is active.")
                 .translation("villagerretaliation.configuration.general.freezeVillagerDuringDialogue")

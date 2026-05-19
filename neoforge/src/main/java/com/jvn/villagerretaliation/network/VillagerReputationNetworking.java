@@ -24,6 +24,12 @@ public final class VillagerReputationNetworking {
                 "accept"
         );
         network.safePlayToClientThreaded(
+                VillagerReputationTierNoticePayload.TYPE,
+                VillagerReputationTierNoticePayload.STREAM_CODEC,
+                "com.jvn.villagerretaliation.client.reputation.VillagerReputationNotificationOverlay",
+                "accept"
+        );
+        network.safePlayToClientThreaded(
                 FearedVillagerPulsePayload.TYPE,
                 FearedVillagerPulsePayload.STREAM_CODEC,
                 "com.jvn.villagerretaliation.client.reputation.FearedVillagerAnimationClientCache",
@@ -109,6 +115,10 @@ public final class VillagerReputationNetworking {
 
     public static void sendFearedPulse(AbstractVillager villager, int ticks) {
         PacketDistributor.sendToPlayersTrackingEntity(villager, new FearedVillagerPulsePayload(villager.getId(), ticks));
+    }
+
+    public static void sendTierNotice(ServerPlayer player, String text) {
+        PacketDistributor.sendToPlayer(player, new VillagerReputationTierNoticePayload(text));
     }
 
     public static void sendWorldTextIndicator(AbstractVillager villager, String text, VillagerWorldTextIndicatorKind kind) {
