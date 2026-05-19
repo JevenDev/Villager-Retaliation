@@ -237,6 +237,20 @@ Resource packs that change villagers should include both the vanilla texture and
 
 The combat texture is separate because the combat model has independent animated arms for weapons, shields, bows, potions, and throwing poses. A vanilla villager texture alone does not contain enough arm layout information to support every combat pose cleanly.
 
+### Resource Pack Combat Model
+
+Resource packs can also override the combat model geometry at:
+
+```text
+assets/villagerretaliation/models/entity/villager/combat_villager.json
+```
+
+The model uses a small JSON format with `texture_width`, `texture_height`, and recursive `parts`. Each part can define `name`, `pivot`, `rotation` in degrees, `cubes`, and `children`. Cubes use `uv`, `origin`, `size`, optional `inflate`, and optional `mirror`.
+
+The animation system requires these part names to remain present: `body`, `head`, `RightArm`, `LeftArm`, `RightLeg`, and `LeftLeg`. Decorative children such as `nose`, `helmet`, and `brim` may be changed or removed, so packs can do things like remove the villager nose or shorten the head without code changes.
+
+If Entity Model Features (EMF) is installed, Villager Retaliation exposes its combat model through Minecraft's normal entity model layer instead. This lets EMF packs use the standard OptiFine CEM workflow and export a starter `.jem` from EMF's in-game model export tools. Entity Texture Features (ETF) is still optional and useful for random or emissive entity texture packs, but it is not required for the combat model override above.
+
 ## Version and Loaders
 
 - NeoForge 1.21.1 - active development
