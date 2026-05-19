@@ -334,6 +334,23 @@ public class VillagerInteractionSavedData extends SavedData {
                 this.recentDialogueIds.removeFirst();
             }
         }
+
+        public void reduceRepeatedDialogueUseCounts(int amount, long gameTime, long day, long resetTicks) {
+            if (amount <= 0) {
+                return;
+            }
+            if (this.consecutiveRequestType != null) {
+                this.consecutiveRequestCount = Math.max(0, this.consecutiveRequestCount - amount);
+                if (this.consecutiveRequestCount == 0) {
+                    this.consecutiveRequestType = null;
+                }
+            }
+            for (RequestUseWindow window : this.requestUseWindows.values()) {
+                if (!window.isExpired(gameTime, day, resetTicks)) {
+                    window.reduce(amount);
+                }
+            }
+        }
     }
 
     private static class RequestUseWindow {
@@ -363,6 +380,10 @@ public class VillagerInteractionSavedData extends SavedData {
                 this.windowDay = day;
             }
             this.count++;
+        }
+
+        private void reduce(int amount) {
+            this.count = Math.max(0, this.count - amount);
         }
     }
 }

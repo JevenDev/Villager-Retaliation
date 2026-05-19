@@ -69,6 +69,21 @@ public final class VillagerInteractionTracker {
         data.setDirty();
     }
 
+    public static void reduceRepeatedDialogueUseCounts(ServerLevel level, Villager villager, ServerPlayer player, int amount) {
+        if (amount <= 0) {
+            return;
+        }
+        VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
+        VillagerInteractionSavedData.InteractionEntry entry = data.getOrCreate(villager.getUUID(), player.getUUID());
+        entry.reduceRepeatedDialogueUseCounts(
+                amount,
+                level.getGameTime(),
+                level.getDayTime() / 24000L,
+                VillagerRetaliationConfig.REPEATED_DIALOGUE_OPTION_RESET_TICKS.get()
+        );
+        data.setDirty();
+    }
+
     public static boolean hasDisturbedSleepThisNight(ServerLevel level, Villager villager, ServerPlayer player, long night) {
         return VillagerInteractionSavedData.get(level)
                 .getOrCreate(villager.getUUID(), player.getUUID())

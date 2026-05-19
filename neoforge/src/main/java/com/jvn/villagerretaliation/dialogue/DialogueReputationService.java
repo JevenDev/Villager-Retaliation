@@ -58,7 +58,7 @@ public final class DialogueReputationService {
     }
 
     private static PlannedEffect planEffect(DialogueContext context, DialogueRequestType requestType, VillagerInteractionTracker.InteractionState interactionState) {
-        if (isDialogueOptionExhausted(requestType, interactionState)) {
+        if (isDialogueOptionExhausted(context, requestType, interactionState)) {
             return new PlannedEffect(
                     VillagerRetaliationConfig.REPEATED_QUESTION_REPUTATION_LOSS.get(),
                     "repeated_" + requestType.name().toLowerCase(java.util.Locale.ROOT),
@@ -100,12 +100,26 @@ public final class DialogueReputationService {
                 : PlannedEffect.none();
     }
 
-    private static boolean isDialogueOptionExhausted(DialogueRequestType requestType, VillagerInteractionTracker.InteractionState interactionState) {
+    private static boolean isDialogueOptionExhausted(DialogueContext context, DialogueRequestType requestType, VillagerInteractionTracker.InteractionState interactionState) {
         if (requestType == DialogueRequestType.INSULT) {
             return false;
         }
-        int limit = VillagerRetaliationConfig.REPEATED_QUESTION_POSITIVE_LIMIT.get();
+        int limit = repeatedDialogueLimit(context.reputationLevel());
         return limit >= 0 && interactionState.requestUseCount(requestType) >= limit;
+    }
+
+    private static int repeatedDialogueLimit(VillagerReputationLevel reputationLevel) {
+        int limit = VillagerRetaliationConfig.REPEATED_QUESTION_POSITIVE_LIMIT.get();
+        if (limit < 0) {
+            return limit;
+        }
+        return limit + switch (reputationLevel) {
+            case ROYALTY -> VillagerRetaliationConfig.ROYALTY_REPEATED_DIALOGUE_LIMIT_BONUS.get();
+            case REVERED -> VillagerRetaliationConfig.REVERED_REPEATED_DIALOGUE_LIMIT_BONUS.get();
+            case RESPECTED -> VillagerRetaliationConfig.RESPECTED_REPEATED_DIALOGUE_LIMIT_BONUS.get();
+            case TRUSTED -> VillagerRetaliationConfig.TRUSTED_REPEATED_DIALOGUE_LIMIT_BONUS.get();
+            default -> 0;
+        };
     }
 
     private static PlannedEffect planStory(DialogueContext context) {

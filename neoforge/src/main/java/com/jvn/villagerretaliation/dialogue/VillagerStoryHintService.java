@@ -133,8 +133,13 @@ public final class VillagerStoryHintService {
             return cached.get().nextTarget(context.random()).map(target -> {
                 String name = humanName(target.id());
                 HintPlacement placement = HintPlacement.from(origin, target.pos(), quality);
-                maybeGiveCartographerMap(context, target, name);
-                return new WorldHint(HintKind.STRUCTURE, structureText(context.random(), name, placement, quality));
+                boolean gaveMap = maybeGiveCartographerMap(context, target, name);
+                return new WorldHint(
+                        gaveMap ? HintKind.MAP : HintKind.STRUCTURE,
+                        gaveMap
+                                ? cartographerMapText(context.random(), name, placement)
+                                : structureText(context.random(), name, placement, quality)
+                );
             });
         }
 
@@ -147,10 +152,12 @@ public final class VillagerStoryHintService {
         CachedTarget target = targets.get(context.random().nextInt(targets.size()));
         String name = humanName(target.id());
         HintPlacement placement = HintPlacement.from(origin, target.pos(), quality);
-        maybeGiveCartographerMap(context, target, name);
+        boolean gaveMap = maybeGiveCartographerMap(context, target, name);
         return Optional.of(new WorldHint(
-                HintKind.STRUCTURE,
-                structureText(context.random(), name, placement, quality)
+                gaveMap ? HintKind.MAP : HintKind.STRUCTURE,
+                gaveMap
+                        ? cartographerMapText(context.random(), name, placement)
+                        : structureText(context.random(), name, placement, quality)
         ));
     }
 
@@ -190,18 +197,18 @@ public final class VillagerStoryHintService {
         return targets;
     }
 
-    private static void maybeGiveCartographerMap(DialogueContext context, CachedTarget target, String targetName) {
+    private static boolean maybeGiveCartographerMap(DialogueContext context, CachedTarget target, String targetName) {
         if (context.profession() != VillagerProfession.CARTOGRAPHER
                 || target.kind() != HintKind.STRUCTURE
                 || context.random().nextInt(100) >= cartographerMapChancePercent(context.reputationLevel())) {
-            return;
+            return false;
         }
 
         CartographerMapGiftKey giftKey = new CartographerMapGiftKey(context.player().getUUID(), context.villager().getUUID());
         long gameTime = context.level().getGameTime();
         Long nextGiftTime = CARTOGRAPHER_MAP_GIFTS.get(giftKey);
         if (nextGiftTime != null && nextGiftTime > gameTime) {
-            return;
+            return false;
         }
 
         ItemStack map = createExplorerMap(context.level(), target, targetName);
@@ -213,6 +220,7 @@ public final class VillagerStoryHintService {
         CARTOGRAPHER_MAP_GIFTS.put(giftKey, gameTime + CARTOGRAPHER_MAP_COOLDOWN_TICKS);
         context.villager().playSound(SoundEvents.UI_CARTOGRAPHY_TABLE_TAKE_RESULT, 0.8F, 0.9F + context.random().nextFloat() * 0.2F);
         pruneMapGiftCooldowns(gameTime);
+        return true;
     }
 
     private static ItemStack createExplorerMap(ServerLevel level, CachedTarget target, String targetName) {
@@ -331,6 +339,18 @@ public final class VillagerStoryHintService {
         );
     }
 
+    private static String cartographerMapText(RandomSource random, String name, HintPlacement placement) {
+        String vertical = placement.verticalPhrase();
+        return pick(random,
+                "Here. I marked " + article(name) + " on this map. It should sit about " + placement.distancePhrase() + " " + placement.direction + vertical + ".",
+                "Take this map. The red mark points to " + article(name) + ", roughly " + placement.distancePhrase() + " " + placement.direction + vertical + ".",
+                "I had a spare chart for " + article(name) + ". Follow the map " + placement.direction + " and mind the distance" + vertical + ".",
+                "This map should lead you to " + article(name) + ". I would start " + placement.direction + " and trust the red mark" + vertical + ".",
+                "You have earned a proper chart. The map marks " + article(name) + " about " + placement.distancePhrase() + " " + placement.direction + vertical + ".",
+                "I can do better than a rumor. This map marks " + article(name) + "; follow it " + placement.direction + vertical + "."
+        );
+    }
+
     private static String pick(RandomSource random, String... values) {
         return values[random.nextInt(values.length)];
     }
@@ -370,7 +390,8 @@ public final class VillagerStoryHintService {
 
     private enum HintKind {
         BIOME,
-        STRUCTURE
+        STRUCTURE,
+        MAP
     }
 
     private enum HintQuality {

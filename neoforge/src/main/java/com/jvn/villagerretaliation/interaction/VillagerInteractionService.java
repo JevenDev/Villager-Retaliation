@@ -182,6 +182,7 @@ public final class VillagerInteractionService {
         player.getInventory().setChanged();
         int reputationValue = VillagerGiftPreferences.reputationValue(villager.getVillagerData().getProfession(), giftedStack);
         VillagerReputationManager.addGiftReputation(level, villager, player, reputationValue);
+        reduceDialogueAnnoyanceFromGift(level, villager, player, reputationValue);
         focusVillagerOnPlayer(villager, player);
         playGiftFeedback(level, villager, reputationValue);
         VillagerAmbientIndicatorService.onGiftReceived(villager, reputationValue);
@@ -196,6 +197,15 @@ public final class VillagerInteractionService {
                 VillagerReputationLevel.fromReputation(updatedReputation)
         ));
         broadcastVillagerChat(level, villager, responseText);
+    }
+
+    private static void reduceDialogueAnnoyanceFromGift(ServerLevel level, Villager villager, ServerPlayer player, int reputationValue) {
+        int divisor = VillagerRetaliationConfig.GIFT_ANNOYANCE_REDUCTION_DIVISOR.get();
+        if (reputationValue <= 0 || divisor <= 0) {
+            return;
+        }
+        int reduction = Math.max(1, reputationValue / divisor);
+        VillagerInteractionTracker.reduceRepeatedDialogueUseCounts(level, villager, player, reduction);
     }
 
     public static void handleReputationRequest(ServerPlayer player, int entityId) {

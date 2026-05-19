@@ -47,8 +47,13 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.IntValue MAX_TRADE_REPUTATION_GAIN_PER_VILLAGER_PER_DAY;
     public static final ModConfigSpec.IntValue DIALOGUE_POSITIVE_REPUTATION_COOLDOWN_DAYS;
     public static final ModConfigSpec.IntValue REPEATED_QUESTION_POSITIVE_LIMIT;
+    public static final ModConfigSpec.IntValue TRUSTED_REPEATED_DIALOGUE_LIMIT_BONUS;
+    public static final ModConfigSpec.IntValue RESPECTED_REPEATED_DIALOGUE_LIMIT_BONUS;
+    public static final ModConfigSpec.IntValue REVERED_REPEATED_DIALOGUE_LIMIT_BONUS;
+    public static final ModConfigSpec.IntValue ROYALTY_REPEATED_DIALOGUE_LIMIT_BONUS;
     public static final ModConfigSpec.IntValue REPEATED_QUESTION_REPUTATION_LOSS;
     public static final ModConfigSpec.IntValue REPEATED_DIALOGUE_OPTION_RESET_TICKS;
+    public static final ModConfigSpec.IntValue GIFT_ANNOYANCE_REDUCTION_DIVISOR;
     public static final ModConfigSpec.IntValue SLEEPING_VILLAGER_BOTHER_REPUTATION_LOSS;
     public static final ModConfigSpec.IntValue SLEEPING_VILLAGER_BED_BREAK_REPUTATION_LOSS;
     public static final ModConfigSpec.IntValue GREETING_REPUTATION_GAIN;
@@ -193,12 +198,27 @@ public final class VillagerRetaliationConfig {
         REPEATED_QUESTION_POSITIVE_LIMIT = BUILDER.comment("Consecutive Question dialogue uses that can still grant positive reputation before the villager gets tired of it.")
                 .translation("villagerretaliation.configuration.dialogue.repeatedQuestionPositiveLimit")
                 .defineInRange("repeatedQuestionPositiveLimit", 5, 0, 100);
+        TRUSTED_REPEATED_DIALOGUE_LIMIT_BONUS = BUILDER.comment("Extra repeated dialogue uses allowed before Trusted villagers get annoyed.")
+                .translation("villagerretaliation.configuration.dialogue.trustedRepeatedDialogueLimitBonus")
+                .defineInRange("trustedRepeatedDialogueLimitBonus", 2, 0, 100);
+        RESPECTED_REPEATED_DIALOGUE_LIMIT_BONUS = BUILDER.comment("Extra repeated dialogue uses allowed before Respected villagers get annoyed.")
+                .translation("villagerretaliation.configuration.dialogue.respectedRepeatedDialogueLimitBonus")
+                .defineInRange("respectedRepeatedDialogueLimitBonus", 4, 0, 100);
+        REVERED_REPEATED_DIALOGUE_LIMIT_BONUS = BUILDER.comment("Extra repeated dialogue uses allowed before Revered villagers get annoyed.")
+                .translation("villagerretaliation.configuration.dialogue.reveredRepeatedDialogueLimitBonus")
+                .defineInRange("reveredRepeatedDialogueLimitBonus", 7, 0, 100);
+        ROYALTY_REPEATED_DIALOGUE_LIMIT_BONUS = BUILDER.comment("Extra repeated dialogue uses allowed before Royalty-tier villagers get annoyed.")
+                .translation("villagerretaliation.configuration.dialogue.royaltyRepeatedDialogueLimitBonus")
+                .defineInRange("royaltyRepeatedDialogueLimitBonus", 10, 0, 100);
         REPEATED_QUESTION_REPUTATION_LOSS = BUILDER.comment("Reputation lost when the player keeps repeating Question dialogue after the positive limit.")
                 .translation("villagerretaliation.configuration.dialogue.repeatedQuestionReputationLoss")
                 .defineInRange("repeatedQuestionReputationLoss", -1, -1000, 0);
         REPEATED_DIALOGUE_OPTION_RESET_TICKS = BUILDER.comment("Game ticks before repeated dialogue option usage resets. Usage also resets at the start of each Minecraft day.")
                 .translation("villagerretaliation.configuration.dialogue.repeatedDialogueOptionResetTicks")
                 .defineInRange("repeatedDialogueOptionResetTicks", 6000, 1, 24000);
+        GIFT_ANNOYANCE_REDUCTION_DIVISOR = BUILDER.comment("Positive gift reputation value needed to reduce repeated dialogue annoyance by one use. Set to 0 to disable gift annoyance reduction.")
+                .translation("villagerretaliation.configuration.dialogue.giftAnnoyanceReductionDivisor")
+                .defineInRange("giftAnnoyanceReductionDivisor", 8, 0, 1000);
         GREETING_REPUTATION_GAIN = BUILDER.comment("Reputation gained from an eligible friendly greeting.")
                 .translation("villagerretaliation.configuration.dialogue.greetingReputationGain")
                 .defineInRange("greetingReputationGain", 1, 0, 1000);
