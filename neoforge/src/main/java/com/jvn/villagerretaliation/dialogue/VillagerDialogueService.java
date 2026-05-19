@@ -20,11 +20,13 @@ public final class VillagerDialogueService {
                 .sorted(Comparator.comparingInt(line -> recentDialogueIds.contains(line.id()) ? 1 : 0))
                 .toList();
         candidates = preferDirectHitMemoryCandidates(context, requestType, candidates);
+        candidates = preferBrokenBedMemoryCandidates(context, requestType, candidates);
         if (candidates.isEmpty()) {
             candidates = LINES.stream()
                     .filter(line -> line.matches(context, requestType, DialogueDisposition.NEUTRAL))
                     .toList();
             candidates = preferDirectHitMemoryCandidates(context, requestType, candidates);
+            candidates = preferBrokenBedMemoryCandidates(context, requestType, candidates);
         }
         if (candidates.isEmpty()) {
             return new DialogueResult("fallback", "They stare at you, unsure what to say.");
@@ -92,6 +94,27 @@ public final class VillagerDialogueService {
         return switch (requestType) {
             case GREETING, QUESTION, INSULT -> directHitCandidates;
             case CHAT -> context.random().nextInt(100) < 45 ? directHitCandidates : candidates;
+            default -> candidates;
+        };
+    }
+
+    private static List<DialogueLine> preferBrokenBedMemoryCandidates(
+            DialogueContext context,
+            DialogueRequestType requestType,
+            List<DialogueLine> candidates) {
+        if (!context.hasRecentBrokenBedMemory() || candidates.isEmpty()) {
+            return candidates;
+        }
+
+        List<DialogueLine> brokenBedCandidates = candidates.stream()
+                .filter(DialogueLine::requiresRecentBrokenBedMemory)
+                .toList();
+        if (brokenBedCandidates.isEmpty()) {
+            return candidates;
+        }
+
+        return switch (requestType) {
+            case GREETING, QUESTION, CHAT, INSULT -> brokenBedCandidates;
             default -> candidates;
         };
     }
@@ -212,6 +235,16 @@ public final class VillagerDialogueService {
                 .dispositions(DialogueDisposition.CAUTIOUS, DialogueDisposition.RUDE, DialogueDisposition.HOSTILE, DialogueDisposition.FEARFUL)
                 .weight(44)
                 .build();
+        add(lines, "greeting_bed_break_1", DialogueRequestType.GREETING, "You smashed my bed. Why would I welcome you after that?")
+                .requiresRecentBrokenBedMemory()
+                .dispositions(DialogueDisposition.CAUTIOUS, DialogueDisposition.RUDE, DialogueDisposition.HOSTILE, DialogueDisposition.FEARFUL)
+                .weight(46)
+                .build();
+        add(lines, "greeting_bed_break_2", DialogueRequestType.GREETING, "A broken bed makes for a poor night's sleep. I have not forgotten.")
+                .requiresRecentBrokenBedMemory()
+                .dispositions(DialogueDisposition.CAUTIOUS, DialogueDisposition.RUDE, DialogueDisposition.HOSTILE, DialogueDisposition.FEARFUL)
+                .weight(46)
+                .build();
         add(lines, "greeting_hit_bruise", DialogueRequestType.GREETING, "Still have a bruise from when you hit me with that {attack_weapon}.")
                 .requiresRecentDirectHitMemory()
                 .dispositions(DialogueDisposition.CAUTIOUS, DialogueDisposition.RUDE, DialogueDisposition.HOSTILE, DialogueDisposition.FEARFUL)
@@ -249,6 +282,14 @@ public final class VillagerDialogueService {
         add(lines, "chat_hit_memory_4", DialogueRequestType.CHAT, "Hard to make small talk when I'm still thinking about being hit with your {attack_weapon}.")
                 .requiresRecentDirectHitMemory()
                 .weight(34)
+                .build();
+        add(lines, "chat_bed_break_1", DialogueRequestType.CHAT, "It's difficult to relax around someone who tears apart a sleeping villager's bed.")
+                .requiresRecentBrokenBedMemory()
+                .weight(42)
+                .build();
+        add(lines, "chat_bed_break_2", DialogueRequestType.CHAT, "I slept badly after you broke my bed. That sort of thing lingers.")
+                .requiresRecentBrokenBedMemory()
+                .weight(42)
                 .build();
         add(lines, "chat_general_well", DialogueRequestType.CHAT, "The well, the paths, the crops, the gossip. That's a village, more or less.")
                 .weight(28).build();
@@ -314,6 +355,16 @@ public final class VillagerDialogueService {
                 .requiresRecentDirectHitMemory()
                 .dispositions(DialogueDisposition.CAUTIOUS, DialogueDisposition.RUDE, DialogueDisposition.HOSTILE, DialogueDisposition.FEARFUL)
                 .weight(40)
+                .build();
+        add(lines, "question_bed_break_1", DialogueRequestType.QUESTION, "You broke the bed I was sleeping in. Start there if you want answers.")
+                .requiresRecentBrokenBedMemory()
+                .dispositions(DialogueDisposition.CAUTIOUS, DialogueDisposition.RUDE, DialogueDisposition.HOSTILE, DialogueDisposition.FEARFUL)
+                .weight(42)
+                .build();
+        add(lines, "question_bed_break_2", DialogueRequestType.QUESTION, "Ask me something useful, like whether smashing my bed was worth it.")
+                .requiresRecentBrokenBedMemory()
+                .dispositions(DialogueDisposition.RUDE, DialogueDisposition.HOSTILE, DialogueDisposition.FEARFUL)
+                .weight(42)
                 .build();
 
         add(lines, "joke_farmer_carrot", DialogueRequestType.JOKE, "Why did the carrot blush? Too many eyes on it.")

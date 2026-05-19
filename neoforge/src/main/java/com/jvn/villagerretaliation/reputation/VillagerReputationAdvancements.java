@@ -60,6 +60,7 @@ public final class VillagerReputationAdvancements {
     private static final ResourceLocation CROWNED_BY_THE_VILLAGE = advancementId("reputation/crowned_by_the_village");
     private static final ResourceLocation SECOND_CHANCE = advancementId("reputation/second_chance");
     private static final ResourceLocation THE_VILLAGE_REMEMBERS = advancementId("reputation/the_village_remembers");
+    private static final ResourceLocation NO_REST_FOR_THE_WICKED = advancementId("reputation/no_rest_for_the_wicked");
 
     private VillagerReputationAdvancements() {
     }
@@ -70,6 +71,10 @@ public final class VillagerReputationAdvancements {
 
     public static void onVillagerPacified(ServerPlayer player) {
         award(player, IM_SORRY);
+    }
+
+    public static void onSleepingVillagerBedBroken(ServerPlayer player) {
+        award(player, NO_REST_FOR_THE_WICKED);
     }
 
     public static void onVillagerDirectlyDamaged(ServerLevel level, ServerPlayer player, AbstractVillager villager) {

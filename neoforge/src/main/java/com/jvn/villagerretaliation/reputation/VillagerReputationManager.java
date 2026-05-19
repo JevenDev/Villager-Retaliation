@@ -3,12 +3,11 @@ package com.jvn.villagerretaliation.reputation;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
+import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
-import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Component;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -225,8 +224,8 @@ public final class VillagerReputationManager {
 
     private static String resolveTierChangeMessage(AbstractVillager villager, VillagerReputationLevel previousLevel, VillagerReputationLevel newLevel) {
         String message = newLevel.transitionMessageFrom(previousLevel);
-        if (villager.hasCustomName()) {
-            String name = villager.getName().getString();
+        String name = VillagerPresetNameRegistry.resolveDisplayName(villager).getString();
+        if (!name.isBlank() && (villager.hasCustomName() || !VillagerPresetNameRegistry.resolveNameTranslationKey(villager).isBlank())) {
             String possessiveName = toPossessive(name);
             return message
                     .replace("A villager's", possessiveName)
@@ -266,7 +265,7 @@ public final class VillagerReputationManager {
                 String message = messageEntry.getValue() > 1
                         ? messageEntry.getKey() + " x" + messageEntry.getValue()
                         : messageEntry.getKey();
-                player.sendSystemMessage(Component.literal(message).withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
+                VillagerReputationNetworking.sendTierNotice(player, message);
             }
         }
     }

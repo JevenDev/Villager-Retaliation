@@ -33,6 +33,7 @@ public class VillagerInteractionSavedData extends SavedData {
     private static final String TAG_CONSECUTIVE_REQUEST_COUNT = "ConsecutiveRequestCount";
     private static final String TAG_REQUEST_TYPE_USES = "RequestTypeUses";
     private static final String TAG_LAST_SLEEP_DISTURBANCE_NIGHT = "LastSleepDisturbanceNight";
+    private static final String TAG_LAST_BROKEN_BED_GAME_TIME = "LastBrokenBedGameTime";
     private static final String TAG_LAST_DIRECT_HIT_GAME_TIME = "LastDirectHitGameTime";
     private static final String TAG_LAST_DIRECT_HIT_WEAPON = "LastDirectHitWeapon";
     private static final String TAG_REQUEST_TYPE = "RequestType";
@@ -69,6 +70,7 @@ public class VillagerInteractionSavedData extends SavedData {
             entry.lastNegativeDialogueReputationGameTime = readOptionalLong(entryTag, TAG_LAST_NEGATIVE_DIALOGUE_REPUTATION);
             entry.lastJokeReputationGameTime = readOptionalLong(entryTag, TAG_LAST_JOKE_REPUTATION);
             entry.lastSleepDisturbanceNight = readOptionalLong(entryTag, TAG_LAST_SLEEP_DISTURBANCE_NIGHT);
+            entry.lastBrokenBedGameTime = readOptionalLong(entryTag, TAG_LAST_BROKEN_BED_GAME_TIME);
             entry.badFirstImpression = entryTag.getBoolean(TAG_BAD_FIRST_IMPRESSION);
             entry.lastDirectHitGameTime = readOptionalLong(entryTag, TAG_LAST_DIRECT_HIT_GAME_TIME);
             if (entryTag.contains(TAG_LAST_DIRECT_HIT_WEAPON, Tag.TAG_STRING)) {
@@ -148,6 +150,7 @@ public class VillagerInteractionSavedData extends SavedData {
                 entryTag.putLong(TAG_LAST_NEGATIVE_DIALOGUE_REPUTATION, playerEntry.getValue().lastNegativeDialogueReputationGameTime);
                 entryTag.putLong(TAG_LAST_JOKE_REPUTATION, playerEntry.getValue().lastJokeReputationGameTime);
                 entryTag.putLong(TAG_LAST_SLEEP_DISTURBANCE_NIGHT, playerEntry.getValue().lastSleepDisturbanceNight);
+                entryTag.putLong(TAG_LAST_BROKEN_BED_GAME_TIME, playerEntry.getValue().lastBrokenBedGameTime);
                 entryTag.putBoolean(TAG_BAD_FIRST_IMPRESSION, playerEntry.getValue().badFirstImpression);
                 entryTag.putLong(TAG_LAST_DIRECT_HIT_GAME_TIME, playerEntry.getValue().lastDirectHitGameTime);
                 if (playerEntry.getValue().lastDirectHitWeapon != null && !playerEntry.getValue().lastDirectHitWeapon.isBlank()) {
@@ -208,6 +211,7 @@ public class VillagerInteractionSavedData extends SavedData {
         private long lastNegativeDialogueReputationGameTime = Long.MIN_VALUE;
         private long lastJokeReputationGameTime = Long.MIN_VALUE;
         private long lastSleepDisturbanceNight = Long.MIN_VALUE;
+        private long lastBrokenBedGameTime = Long.MIN_VALUE;
         private boolean badFirstImpression;
         private long lastDirectHitGameTime = Long.MIN_VALUE;
         private String lastDirectHitWeapon;
@@ -266,12 +270,20 @@ public class VillagerInteractionSavedData extends SavedData {
             return this.lastDirectHitGameTime;
         }
 
+        public long lastBrokenBedGameTime() {
+            return this.lastBrokenBedGameTime;
+        }
+
         public String lastDirectHitWeapon() {
             return this.lastDirectHitWeapon;
         }
 
         public void rememberSleepDisturbance(long night) {
             this.lastSleepDisturbanceNight = night;
+        }
+
+        public void rememberBrokenBed(long gameTime) {
+            this.lastBrokenBedGameTime = gameTime;
         }
 
         public void rememberDirectHit(long gameTime, String weapon) {

@@ -1,0 +1,23 @@
+{
+  "parent": "villagerretaliation:reputation/hands_off",
+  "display": {
+    "icon": {
+      "id": "minecraft:red_bed"
+    },
+    "title": {
+      "translate": "advancements.villagerretaliation.reputation.no_rest_for_the_wicked.title"
+    },
+    "description": {
+      "translate": "advancements.villagerretaliation.reputation.no_rest_for_the_wicked.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

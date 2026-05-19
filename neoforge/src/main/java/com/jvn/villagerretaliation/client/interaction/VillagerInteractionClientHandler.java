@@ -1,10 +1,14 @@
 package com.jvn.villagerretaliation.client.interaction;
 
+import com.jvn.villagerretaliation.client.villager.VillagerNameClientCache;
 import com.jvn.villagerretaliation.network.OpenVillagerInteractionPayload;
+import com.jvn.villagerretaliation.network.VillagerNameSyncPayload;
 import com.jvn.villagerretaliation.network.VillagerConversationEndedPayload;
 import com.jvn.villagerretaliation.network.VillagerDialogueResponsePayload;
 import com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload;
+import java.util.UUID;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.Villager;
@@ -15,22 +19,36 @@ public final class VillagerInteractionClientHandler {
     }
 
     public static void open(OpenVillagerInteractionPayload payload) {
-        Minecraft.getInstance().setScreen(new VillagerInteractionScreen(
+        Minecraft minecraft = Minecraft.getInstance();
+        String villagerName = resolveVillagerName(payload.villagerNameKey(), payload.villagerNameFallback());
+        Entity entity = minecraft.level == null ? null : minecraft.level.getEntity(payload.entityId());
+        VillagerNameClientCache.accept(new VillagerNameSyncPayload(
                 payload.entityId(),
-                payload.villagerName(),
+                entity == null ? new UUID(0L, 0L) : entity.getUUID(),
+                payload.villagerNameKey(),
+                villagerName
+        ));
+        ClientVillagerConversationState.rememberSpeakerLabel(
+                payload.entityId(),
+                formatSpeakerLabel(villagerName, payload.professionName())
+        );
+        minecraft.setScreen(new VillagerInteractionScreen(
+                payload.entityId(),
+                villagerName,
                 payload.professionName(),
                 payload.reputation(),
                 payload.reputationLevel()
         ));
-        pushVillagerChatMessage(Minecraft.getInstance(), payload.entityId(), payload.greetingText());
+        pushVillagerChatMessage(minecraft, payload.entityId(), payload.greetingText());
     }
 
     public static void acceptDialogue(VillagerDialogueResponsePayload payload) {
-        if (Minecraft.getInstance().screen instanceof VillagerInteractionScreen screen
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.screen instanceof VillagerInteractionScreen screen
                 && screen.matchesVillager(payload.entityId())) {
             screen.updateReputation(payload.reputation(), payload.reputationLevel());
         }
-        pushVillagerChatMessage(Minecraft.getInstance(), payload.entityId(), payload.text());
+        pushVillagerChatMessage(minecraft, payload.entityId(), payload.text());
     }
 
     public static void acceptNotice(VillagerInteractionNoticePayload payload) {
@@ -44,6 +62,7 @@ public final class VillagerInteractionClientHandler {
             screen.closeFromServer();
         }
         pushVillagerChatMessage(minecraft, payload.entityId(), payload.goodbyeText());
+        ClientVillagerConversationState.forgetSpeakerLabel(payload.entityId());
     }
 
     private static void pushVillagerChatMessage(Minecraft minecraft, int entityId, String text) {
@@ -58,6 +77,10 @@ public final class VillagerInteractionClientHandler {
     }
 
     private static String resolveVillagerSpeakerName(Minecraft minecraft, int entityId) {
+        String cachedSpeakerLabel = ClientVillagerConversationState.resolveSpeakerLabel(entityId);
+        if (cachedSpeakerLabel != null && !cachedSpeakerLabel.isBlank()) {
+            return cachedSpeakerLabel;
+        }
         if (minecraft.level == null) {
             return "Villager";
         }
@@ -73,7 +96,21 @@ public final class VillagerInteractionClientHandler {
         if (customName.isBlank()) {
             return profession.equals("Villager") ? "Villager" : profession + " Villager";
         }
-        return profession + " " + customName;
+        return formatSpeakerLabel(customName, profession);
+    }
+
+    private static String resolveVillagerName(String villagerNameKey, String villagerNameFallback) {
+        if (villagerNameKey != null && !villagerNameKey.isBlank() && I18n.exists(villagerNameKey)) {
+            return I18n.get(villagerNameKey);
+        }
+        return villagerNameFallback == null || villagerNameFallback.isBlank() ? "Villager" : villagerNameFallback;
+    }
+
+    private static String formatSpeakerLabel(String villagerName, String profession) {
+        if (profession == null || profession.isBlank() || profession.equals("Villager")) {
+            return villagerName;
+        }
+        return profession + " " + villagerName;
     }
 
     private static String professionName(VillagerProfession profession) {

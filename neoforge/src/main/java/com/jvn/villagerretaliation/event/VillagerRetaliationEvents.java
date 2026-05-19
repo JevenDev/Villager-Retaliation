@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.loot.VillagerLootHandler;
 import com.jvn.villagerretaliation.loot.WanderingTraderLootHandler;
+import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
@@ -15,10 +16,12 @@ import com.jvn.villagerretaliation.util.VillagerRetaliationRandomUtil;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerFleeBehaviorHandler;
+import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -39,7 +42,9 @@ import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
 public final class VillagerRetaliationEvents {
@@ -116,6 +121,15 @@ public final class VillagerRetaliationEvents {
 
     public static void onEntityJoinLevel(EntityJoinLevelEvent event) {
         VillagerRetaliationHandler.onEntityJoinLevel(event);
+        if (event.getEntity() instanceof AbstractVillager villager && villager.level() instanceof ServerLevel) {
+            VillagerPresetNameRegistry.ensurePresetNameAssigned(villager);
+        }
+    }
+
+    public static void onPlayerStartTracking(PlayerEvent.StartTracking event) {
+        if (event.getEntity() instanceof ServerPlayer player && event.getTarget() instanceof AbstractVillager villager) {
+            VillagerReputationNetworking.sendName(player, villager);
+        }
     }
 
     public static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {
@@ -211,6 +225,14 @@ public final class VillagerRetaliationEvents {
                 event.getFace(),
                 event.getItemStack()
         );
+    }
+
+    public static void onBlockBreak(BlockEvent.BreakEvent event) {
+        if (event.getPlayer() instanceof ServerPlayer serverPlayer
+                && event.getLevel() instanceof ServerLevel level
+                && event.getState().is(BlockTags.BEDS)) {
+            VillagerInteractionService.handleSleepingVillagerBedBroken(level, serverPlayer, event.getPos());
+        }
     }
 
     private static void tryGiveHighReputationGift(Villager villager, Player player, InteractionHand hand) {

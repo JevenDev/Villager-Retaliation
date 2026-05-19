@@ -20,12 +20,14 @@ public record DialogueContext(
         boolean firstConversation,
         WeatherState weather,
         TimeOfDay timeOfDay,
+        long lastBrokenBedGameTime,
         long lastDirectHitGameTime,
         String lastDirectHitWeapon,
         List<VillageEventMemory.MemoryEvent> recentEvents,
         RandomSource random
 ) {
     private static final long DIRECT_HIT_MEMORY_TICKS = 20L * 60L * 20L;
+    private static final long BROKEN_BED_MEMORY_TICKS = 20L * 60L * 20L;
 
     public boolean hasRecentEvent(VillageEventMemory.EventTag... tags) {
         return VillageEventMemory.hasAny(this.recentEvents, tags);
@@ -42,6 +44,11 @@ public record DialogueContext(
     public boolean hasRecentDirectHitMemory() {
         return this.lastDirectHitGameTime != Long.MIN_VALUE
                 && this.level.getGameTime() - this.lastDirectHitGameTime <= DIRECT_HIT_MEMORY_TICKS;
+    }
+
+    public boolean hasRecentBrokenBedMemory() {
+        return this.lastBrokenBedGameTime != Long.MIN_VALUE
+                && this.level.getGameTime() - this.lastBrokenBedGameTime <= BROKEN_BED_MEMORY_TICKS;
     }
 
     public String rememberedAttackWeapon() {

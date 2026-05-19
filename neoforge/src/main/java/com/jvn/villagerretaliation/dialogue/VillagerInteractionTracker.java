@@ -30,6 +30,7 @@ public final class VillagerInteractionTracker {
                 entry.requestUseCount(DialogueRequestType.STORY, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.JOKE, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.INSULT, gameTime, day, optionResetTicks),
+                entry.lastBrokenBedGameTime(),
                 entry.lastDirectHitGameTime(),
                 entry.lastDirectHitWeapon()
         );
@@ -81,6 +82,13 @@ public final class VillagerInteractionTracker {
         data.setDirty();
     }
 
+    public static void rememberBrokenBed(ServerLevel level, Villager villager, ServerPlayer player) {
+        VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
+        VillagerInteractionSavedData.InteractionEntry entry = data.getOrCreate(villager.getUUID(), player.getUUID());
+        entry.rememberBrokenBed(level.getGameTime());
+        data.setDirty();
+    }
+
     public static void rememberDirectHit(ServerLevel level, Villager villager, ServerPlayer player, String weapon) {
         VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
         VillagerInteractionSavedData.InteractionEntry entry = data.getOrCreate(villager.getUUID(), player.getUUID());
@@ -102,6 +110,7 @@ public final class VillagerInteractionTracker {
             int storyUseCount,
             int jokeUseCount,
             int insultUseCount,
+            long lastBrokenBedGameTime,
             long lastDirectHitGameTime,
             String lastDirectHitWeapon
     ) {
