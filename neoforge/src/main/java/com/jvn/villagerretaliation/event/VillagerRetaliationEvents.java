@@ -20,6 +20,7 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -41,6 +42,7 @@ import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
 public final class VillagerRetaliationEvents {
@@ -215,6 +217,14 @@ public final class VillagerRetaliationEvents {
                 event.getFace(),
                 event.getItemStack()
         );
+    }
+
+    public static void onBlockBreak(BlockEvent.BreakEvent event) {
+        if (event.getPlayer() instanceof ServerPlayer serverPlayer
+                && event.getLevel() instanceof ServerLevel level
+                && event.getState().is(BlockTags.BEDS)) {
+            VillagerInteractionService.handleSleepingVillagerBedBroken(level, serverPlayer, event.getPos());
+        }
     }
 
     private static void tryGiveHighReputationGift(Villager villager, Player player, InteractionHand hand) {

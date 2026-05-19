@@ -2551,5 +2551,8 @@
   "villagerretaliation.villager_name.2397": "Vesta",
   "villagerretaliation.villager_name.2398": "Renita",
   "villagerretaliation.villager_name.2399": "India",
-  "villagerretaliation.villager_name.2400": "Delois"
+  "villagerretaliation.villager_name.2400": "Delois",
+  "villagerretaliation.configuration.reputation.sleepingVillagerBedBreakReputationLoss": "Sleeping Villager Bed Break Reputation Loss",
+  "advancements.villagerretaliation.reputation.no_rest_for_the_wicked.title": "No Rest For The Wicked",
+  "advancements.villagerretaliation.reputation.no_rest_for_the_wicked.description": "Break the bed of a sleeping villager."
 }

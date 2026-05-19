@@ -211,6 +211,7 @@ public final class VillagerInteractionService {
                 interactionState.firstConversation(),
                 weatherState(level, villager),
                 timeOfDay(level),
+                interactionState.lastBrokenBedGameTime(),
                 interactionState.lastDirectHitGameTime(),
                 interactionState.lastDirectHitWeapon(),
                 VillageEventMemory.recentNear(level, villager.blockPosition()),
@@ -362,6 +363,32 @@ public final class VillagerInteractionService {
             return InteractionResult.PASS;
         }
 
+        Villager sleepingVillager = findSleepingVillagerAtBed(level, pos);
+        if (sleepingVillager == null || !canUseInteractionTarget(player, sleepingVillager, true)) {
+            return InteractionResult.PASS;
+        }
+        return handleSleepingVillagerInteraction(sleepingVillager, player);
+    }
+
+    public static void handleSleepingVillagerBedBroken(ServerLevel level, ServerPlayer player, BlockPos pos) {
+        Villager sleepingVillager = findSleepingVillagerAtBed(level, pos);
+        if (sleepingVillager == null || !canUseInteractionTarget(player, sleepingVillager, true)) {
+            return;
+        }
+
+        VillagerInteractionTracker.rememberBrokenBed(level, sleepingVillager, player);
+        int reputationLoss = VillagerRetaliationConfig.SLEEPING_VILLAGER_BED_BREAK_REPUTATION_LOSS.get();
+        if (reputationLoss < 0 && VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()) {
+            VillagerReputationManager.addDialogueReputation(level, sleepingVillager, player, reputationLoss);
+        }
+        VillagerReputationAdvancements.onSleepingVillagerBedBroken(player);
+        sleepingVillager.stopSleeping();
+        spawnDialogueParticles(level, sleepingVillager, ParticleTypes.ANGRY_VILLAGER, 6, 0.01D);
+        sleepingVillager.playSound(SoundEvents.VILLAGER_NO, 0.85F, 0.7F + sleepingVillager.getRandom().nextFloat() * 0.2F);
+        sendNotice(player, sleepingVillager.getId(), brokenBedResponse(sleepingVillager));
+    }
+
+    private static Villager findSleepingVillagerAtBed(ServerLevel level, BlockPos pos) {
         AABB searchArea = AABB.ofSize(pos.getCenter(), 3.0D, 2.0D, 3.0D);
         Villager sleepingVillager = null;
         double closestDistanceSqr = Double.MAX_VALUE;
@@ -372,11 +399,7 @@ public final class VillagerInteractionService {
                 sleepingVillager = candidate;
             }
         }
-
-        if (sleepingVillager == null || !canUseInteractionTarget(player, sleepingVillager, true)) {
-            return InteractionResult.PASS;
-        }
-        return handleSleepingVillagerInteraction(sleepingVillager, player);
+        return sleepingVillager;
     }
 
     private static String sleepingResponse(Villager villager, boolean alreadyDisturbedThisNight) {
@@ -393,6 +416,15 @@ public final class VillagerInteractionService {
             case 1 -> "Not now. It's the middle of the night.";
             case 2 -> "Come back when the sun is up.";
             default -> "Stop bothering me. I'm sleeping.";
+        };
+    }
+
+    private static String brokenBedResponse(Villager villager) {
+        return switch (villager.getRandom().nextInt(4)) {
+            case 0 -> "My bed! What is wrong with you?";
+            case 1 -> "You broke my bed while I was sleeping in it!";
+            case 2 -> "Unbelievable. Now where am I supposed to sleep?";
+            default -> "That was my bed. I will remember this.";
         };
     }
 

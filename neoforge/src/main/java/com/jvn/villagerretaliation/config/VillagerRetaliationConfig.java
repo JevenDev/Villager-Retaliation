@@ -48,6 +48,7 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.IntValue REPEATED_QUESTION_REPUTATION_LOSS;
     public static final ModConfigSpec.IntValue REPEATED_DIALOGUE_OPTION_RESET_TICKS;
     public static final ModConfigSpec.IntValue SLEEPING_VILLAGER_BOTHER_REPUTATION_LOSS;
+    public static final ModConfigSpec.IntValue SLEEPING_VILLAGER_BED_BREAK_REPUTATION_LOSS;
     public static final ModConfigSpec.IntValue GREETING_REPUTATION_GAIN;
     public static final ModConfigSpec.IntValue QUESTION_REPUTATION_GAIN;
     public static final ModConfigSpec.IntValue STORY_REPUTATION_GAIN;
@@ -260,6 +261,9 @@ public final class VillagerRetaliationConfig {
         SLEEPING_VILLAGER_BOTHER_REPUTATION_LOSS = BUILDER.comment("Reputation lost when a player tries to interact with a sleeping villager.")
                 .translation("villagerretaliation.configuration.reputation.sleepingVillagerBotherReputationLoss")
                 .defineInRange("sleepingVillagerBotherReputationLoss", -2, -1000, 0);
+        SLEEPING_VILLAGER_BED_BREAK_REPUTATION_LOSS = BUILDER.comment("Reputation lost when a player breaks the bed of a sleeping villager.")
+                .translation("villagerretaliation.configuration.reputation.sleepingVillagerBedBreakReputationLoss")
+                .defineInRange("sleepingVillagerBedBreakReputationLoss", -15, -1000, 0);
         GREETING_REPUTATION_GAIN = BUILDER.comment("Reputation gained from an eligible friendly greeting.")
                 .translation("villagerretaliation.configuration.reputation.greetingReputationGain")
                 .defineInRange("greetingReputationGain", 1, 0, 1000);
