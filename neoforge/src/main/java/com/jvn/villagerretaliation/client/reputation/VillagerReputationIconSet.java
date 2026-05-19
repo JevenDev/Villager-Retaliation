@@ -2,7 +2,7 @@ package com.jvn.villagerretaliation.client.reputation;
 
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
-import java.util.Locale;
+import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.resources.ResourceLocation;
 
@@ -11,8 +11,7 @@ public final class VillagerReputationIconSet {
     }
 
     public static String formatLevel(VillagerReputationLevel level) {
-        String lower = level.name().toLowerCase(Locale.ROOT);
-        return Character.toUpperCase(lower.charAt(0)) + lower.substring(1);
+        return VillagerInteractionTextUtil.reputationLevelName(level);
     }
 
     public static ChatFormatting colorFor(VillagerReputationLevel level) {

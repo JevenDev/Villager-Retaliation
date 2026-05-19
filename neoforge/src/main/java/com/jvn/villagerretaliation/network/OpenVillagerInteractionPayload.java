@@ -1,6 +1,5 @@
 package com.jvn.villagerretaliation.network;
 
-import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -15,11 +14,9 @@ public record OpenVillagerInteractionPayload(
         int reputation,
         VillagerReputationLevel reputationLevel)
         implements CustomPacketPayload {
-    public static final Type<OpenVillagerInteractionPayload> TYPE = new Type<>(
-            VillagerRetaliation.id("open_villager_interaction")
-    );
+    public static final Type<OpenVillagerInteractionPayload> TYPE = VillagerPayloads.type("open_villager_interaction");
     public static final StreamCodec<RegistryFriendlyByteBuf, OpenVillagerInteractionPayload> STREAM_CODEC =
-            StreamCodec.of(OpenVillagerInteractionPayload::encode, OpenVillagerInteractionPayload::decode);
+            VillagerPayloads.codec(OpenVillagerInteractionPayload::encode, OpenVillagerInteractionPayload::decode);
 
     private static void encode(RegistryFriendlyByteBuf buffer, OpenVillagerInteractionPayload payload) {
         buffer.writeVarInt(payload.entityId());

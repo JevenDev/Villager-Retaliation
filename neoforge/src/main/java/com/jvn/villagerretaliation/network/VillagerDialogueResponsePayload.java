@@ -1,6 +1,5 @@
 package com.jvn.villagerretaliation.network;
 
-import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -11,11 +10,9 @@ public record VillagerDialogueResponsePayload(
         int reputation,
         VillagerReputationLevel reputationLevel)
         implements CustomPacketPayload {
-    public static final Type<VillagerDialogueResponsePayload> TYPE = new Type<>(
-            VillagerRetaliation.id("villager_dialogue_response")
-    );
+    public static final Type<VillagerDialogueResponsePayload> TYPE = VillagerPayloads.type("villager_dialogue_response");
     public static final StreamCodec<RegistryFriendlyByteBuf, VillagerDialogueResponsePayload> STREAM_CODEC =
-            StreamCodec.of(VillagerDialogueResponsePayload::encode, VillagerDialogueResponsePayload::decode);
+            VillagerPayloads.codec(VillagerDialogueResponsePayload::encode, VillagerDialogueResponsePayload::decode);
 
     private static void encode(RegistryFriendlyByteBuf buffer, VillagerDialogueResponsePayload payload) {
         buffer.writeVarInt(payload.entityId());

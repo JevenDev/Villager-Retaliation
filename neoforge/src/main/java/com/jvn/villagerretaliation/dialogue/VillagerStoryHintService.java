@@ -3,6 +3,8 @@ package com.jvn.villagerretaliation.dialogue;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
+import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
+import com.jvn.villagerretaliation.util.VillagerRetaliationRandomUtil;
 import com.mojang.datafixers.util.Pair;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -38,6 +40,7 @@ public final class VillagerStoryHintService {
     private static final long POSITIVE_CACHE_TICKS = 20L * 60L * 10L;
     private static final long NEGATIVE_CACHE_TICKS = 20L * 30L;
     private static final long CARTOGRAPHER_MAP_COOLDOWN_TICKS = 20L * 60L * 20L * 2L;
+    private static final double MIN_TARGET_SEPARATION_SQR = 96.0D * 96.0D;
     private static final Map<HintCacheKey, CachedLookup> CACHE = new HashMap<>();
     private static final Map<CartographerMapGiftKey, Long> CARTOGRAPHER_MAP_GIFTS = new HashMap<>();
 
@@ -82,7 +85,7 @@ public final class VillagerStoryHintService {
         Optional<CachedLookup> cached = getCached(level, cacheKey);
         if (cached.isPresent()) {
             return cached.get().nextTarget(context.random()).map(target -> {
-                String name = humanName(target.id());
+                String name = VillagerInteractionTextUtil.resourcePathName(target.id());
                 HintPlacement placement = HintPlacement.from(origin, target.pos(), quality);
                 return new WorldHint(HintKind.BIOME, biomeText(context.random(), name, placement, quality));
             });
@@ -95,7 +98,7 @@ public final class VillagerStoryHintService {
         }
 
         CachedTarget target = targets.get(context.random().nextInt(targets.size()));
-        String name = humanName(target.id());
+        String name = VillagerInteractionTextUtil.resourcePathName(target.id());
         HintPlacement placement = HintPlacement.from(origin, target.pos(), quality);
         return Optional.of(new WorldHint(HintKind.BIOME, biomeText(context.random(), name, placement, quality)));
     }
@@ -133,7 +136,7 @@ public final class VillagerStoryHintService {
         Optional<CachedLookup> cached = getCached(level, cacheKey);
         if (cached.isPresent()) {
             return cached.get().nextTarget(context.random()).map(target -> {
-                String name = humanName(target.id());
+                String name = VillagerInteractionTextUtil.resourcePathName(target.id());
                 HintPlacement placement = HintPlacement.from(origin, target.pos(), quality);
                 boolean gaveMap = maybeGiveCartographerMap(context, target, name);
                 return new WorldHint(
@@ -152,7 +155,7 @@ public final class VillagerStoryHintService {
         }
 
         CachedTarget target = targets.get(context.random().nextInt(targets.size()));
-        String name = humanName(target.id());
+        String name = VillagerInteractionTextUtil.resourcePathName(target.id());
         HintPlacement placement = HintPlacement.from(origin, target.pos(), quality);
         boolean gaveMap = maybeGiveCartographerMap(context, target, name);
         return Optional.of(new WorldHint(
@@ -275,9 +278,18 @@ public final class VillagerStoryHintService {
     }
 
     private static boolean isNewTarget(List<CachedTarget> targets, ResourceLocation id, int x, int z) {
-        return targets.stream().noneMatch(target ->
-                target.id().equals(id) || target.pos().distSqr(new BlockPos(x, target.pos().getY(), z)) < 96.0D * 96.0D
-        );
+        for (CachedTarget target : targets) {
+            if (target.id().equals(id) || horizontalDistanceSqr(target.pos(), x, z) < MIN_TARGET_SEPARATION_SQR) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static double horizontalDistanceSqr(BlockPos pos, int x, int z) {
+        double dx = pos.getX() - x;
+        double dz = pos.getZ() - z;
+        return dx * dx + dz * dz;
     }
 
     private static int cartographerMapChancePercent(VillagerReputationLevel reputationLevel) {
@@ -291,7 +303,7 @@ public final class VillagerStoryHintService {
 
     private static String biomeText(RandomSource random, String name, HintPlacement placement, HintQuality quality) {
         if (!quality.namesTargets) {
-            return pick(random,
+            return VillagerRetaliationRandomUtil.choose(random,
                     "I caught wind of different land " + placement.vagueDirectionPhrase() + ". Could be worth a walk.",
                     "Travelers keep arriving with mud on their boots from " + placement.vagueDirectionPhrase() + ".",
                     "There is a change in the air " + placement.vagueDirectionPhrase() + ". Different trees, different ground.",
@@ -301,95 +313,62 @@ public final class VillagerStoryHintService {
         }
 
         if (!quality.namesDistances) {
-            return pick(random,
-                    "I caught wind of " + article(name) + " " + placement.vagueDirectionPhrase() + ".",
-                    "Someone came through talking about " + article(name) + " " + placement.vagueDirectionPhrase() + ".",
-                    "If you head " + placement.direction + ", you may find " + article(name) + " before too long.",
-                    "The traders mention " + article(name) + " somewhere " + placement.vagueDirectionPhrase() + ".",
-                    "I keep hearing about " + article(name) + " off " + placement.vagueDirectionPhrase() + "."
+            return VillagerRetaliationRandomUtil.choose(random,
+                    "I caught wind of " + withArticle(name) + " " + placement.vagueDirectionPhrase() + ".",
+                    "Someone came through talking about " + withArticle(name) + " " + placement.vagueDirectionPhrase() + ".",
+                    "If you head " + placement.direction + ", you may find " + withArticle(name) + " before too long.",
+                    "The traders mention " + withArticle(name) + " somewhere " + placement.vagueDirectionPhrase() + ".",
+                    "I keep hearing about " + withArticle(name) + " off " + placement.vagueDirectionPhrase() + "."
             );
         }
 
-        return pick(random,
-                "I caught wind of " + article(name) + " about " + placement.distancePhrase() + " " + placement.direction + ".",
-                "A traveler swore there is " + article(name) + " roughly " + placement.distancePhrase() + " " + placement.direction + ".",
-                "Head " + placement.direction + " for about " + placement.distancePhrase() + " and the land should turn into " + article(name) + ".",
-                "The maps around here put " + article(name) + " near " + placement.distancePhrase() + " " + placement.direction + ".",
-                "If the gossip is right, " + article(name) + " sits about " + placement.distancePhrase() + " " + placement.direction + ".",
-                "A cart passed through with plants from " + article(name) + "; they said it was " + placement.distancePhrase() + " " + placement.direction + "."
+        return VillagerRetaliationRandomUtil.choose(random,
+                "I caught wind of " + withArticle(name) + " about " + placement.distancePhrase() + " " + placement.direction + ".",
+                "A traveler swore there is " + withArticle(name) + " roughly " + placement.distancePhrase() + " " + placement.direction + ".",
+                "Head " + placement.direction + " for about " + placement.distancePhrase() + " and the land should turn into " + withArticle(name) + ".",
+                "The maps around here put " + withArticle(name) + " near " + placement.distancePhrase() + " " + placement.direction + ".",
+                "If the gossip is right, " + withArticle(name) + " sits about " + placement.distancePhrase() + " " + placement.direction + ".",
+                "A cart passed through with plants from " + withArticle(name) + "; they said it was " + placement.distancePhrase() + " " + placement.direction + "."
         );
     }
 
     private static String structureText(RandomSource random, String name, HintPlacement placement, HintQuality quality) {
         String vertical = placement.verticalPhrase();
         if (!quality.namesDistances) {
-            return pick(random,
-                    "I keep hearing stories about " + article(name) + " somewhere " + placement.vagueDirectionPhrase() + vertical + ".",
-                    "The road talk says there is " + article(name) + " out " + placement.vagueDirectionPhrase() + vertical + ".",
-                    "Someone saw old stone " + placement.vagueDirectionPhrase() + vertical + ". Might have been " + article(name) + ".",
-                    "There are rumors of " + article(name) + " toward the " + placement.direction + vertical + ".",
-                    "A nervous miner mentioned " + article(name) + " off " + placement.vagueDirectionPhrase() + vertical + "."
+            return VillagerRetaliationRandomUtil.choose(random,
+                    "I keep hearing stories about " + withArticle(name) + " somewhere " + placement.vagueDirectionPhrase() + vertical + ".",
+                    "The road talk says there is " + withArticle(name) + " out " + placement.vagueDirectionPhrase() + vertical + ".",
+                    "Someone saw old stone " + placement.vagueDirectionPhrase() + vertical + ". Might have been " + withArticle(name) + ".",
+                    "There are rumors of " + withArticle(name) + " toward the " + placement.direction + vertical + ".",
+                    "A nervous miner mentioned " + withArticle(name) + " off " + placement.vagueDirectionPhrase() + vertical + "."
             );
         }
 
-        return pick(random,
-                "I keep hearing about " + article(name) + " around " + placement.distancePhrase() + " " + placement.direction + vertical + ".",
-                "A trader marked " + article(name) + " roughly " + placement.distancePhrase() + " " + placement.direction + vertical + ".",
-                "If you head " + placement.direction + " for about " + placement.distancePhrase() + ", watch for " + article(name) + vertical + ".",
-                "Someone heard strange echoes from " + article(name) + " nearly " + placement.distancePhrase() + " " + placement.direction + vertical + ".",
-                "The last patrol saw signs of " + article(name) + " about " + placement.distancePhrase() + " " + placement.direction + vertical + ".",
-                "I would not swear to it, but " + article(name) + " should be " + placement.distancePhrase() + " " + placement.direction + vertical + ".",
-                "Old path stones point " + placement.direction + ". Follow them " + placement.distancePhrase() + " or so and you may find " + article(name) + vertical + "."
+        return VillagerRetaliationRandomUtil.choose(random,
+                "I keep hearing about " + withArticle(name) + " around " + placement.distancePhrase() + " " + placement.direction + vertical + ".",
+                "A trader marked " + withArticle(name) + " roughly " + placement.distancePhrase() + " " + placement.direction + vertical + ".",
+                "If you head " + placement.direction + " for about " + placement.distancePhrase() + ", watch for " + withArticle(name) + vertical + ".",
+                "Someone heard strange echoes from " + withArticle(name) + " nearly " + placement.distancePhrase() + " " + placement.direction + vertical + ".",
+                "The last patrol saw signs of " + withArticle(name) + " about " + placement.distancePhrase() + " " + placement.direction + vertical + ".",
+                "I would not swear to it, but " + withArticle(name) + " should be " + placement.distancePhrase() + " " + placement.direction + vertical + ".",
+                "Old path stones point " + placement.direction + ". Follow them " + placement.distancePhrase() + " or so and you may find " + withArticle(name) + vertical + "."
         );
     }
 
     private static String cartographerMapText(RandomSource random, String name, HintPlacement placement) {
         String vertical = placement.verticalPhrase();
-        return pick(random,
-                "Here. I marked " + article(name) + " on this map. It should sit about " + placement.distancePhrase() + " " + placement.direction + vertical + ".",
-                "Take this map. The red mark points to " + article(name) + ", roughly " + placement.distancePhrase() + " " + placement.direction + vertical + ".",
-                "I had a spare chart for " + article(name) + ". Follow the map " + placement.direction + " and mind the distance" + vertical + ".",
-                "This map should lead you to " + article(name) + ". I would start " + placement.direction + " and trust the red mark" + vertical + ".",
-                "You have earned a proper chart. The map marks " + article(name) + " about " + placement.distancePhrase() + " " + placement.direction + vertical + ".",
-                "I can do better than a rumor. This map marks " + article(name) + "; follow it " + placement.direction + vertical + "."
+        return VillagerRetaliationRandomUtil.choose(random,
+                "Here. I marked " + withArticle(name) + " on this map. It should sit about " + placement.distancePhrase() + " " + placement.direction + vertical + ".",
+                "Take this map. The red mark points to " + withArticle(name) + ", roughly " + placement.distancePhrase() + " " + placement.direction + vertical + ".",
+                "I had a spare chart for " + withArticle(name) + ". Follow the map " + placement.direction + " and mind the distance" + vertical + ".",
+                "This map should lead you to " + withArticle(name) + ". I would start " + placement.direction + " and trust the red mark" + vertical + ".",
+                "You have earned a proper chart. The map marks " + withArticle(name) + " about " + placement.distancePhrase() + " " + placement.direction + vertical + ".",
+                "I can do better than a rumor. This map marks " + withArticle(name) + "; follow it " + placement.direction + vertical + "."
         );
     }
 
-    private static String pick(RandomSource random, String... values) {
-        return values[random.nextInt(values.length)];
-    }
-
-    private static String humanName(ResourceLocation id) {
-        String path = id.getPath();
-        int slash = path.lastIndexOf('/');
-        if (slash >= 0 && slash + 1 < path.length()) {
-            path = path.substring(slash + 1);
-        }
-
-        String[] words = path.replace('-', '_').split("_+");
-        StringBuilder builder = new StringBuilder();
-        for (String word : words) {
-            if (word.isBlank()) {
-                continue;
-            }
-            if (!builder.isEmpty()) {
-                builder.append(' ');
-            }
-            builder.append(Character.toUpperCase(word.charAt(0)));
-            if (word.length() > 1) {
-                builder.append(word.substring(1));
-            }
-        }
-        return builder.isEmpty() ? id.toString() : builder.toString();
-    }
-
-    private static String article(String name) {
-        if (name.isEmpty()) {
-            return "somewhere";
-        }
-        char first = Character.toLowerCase(name.charAt(0));
-        String article = first == 'a' || first == 'e' || first == 'i' || first == 'o' || first == 'u' ? "an " : "a ";
-        return article + name;
+    private static String withArticle(String name) {
+        return VillagerInteractionTextUtil.withIndefiniteArticle(name);
     }
 
     private enum HintKind {

@@ -1,11 +1,13 @@
 package com.jvn.villagerretaliation.dialogue;
 
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
+import com.jvn.villagerretaliation.util.VillagerRetaliationRandomUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 import net.minecraft.world.entity.npc.VillagerProfession;
 
 public final class VillagerDialogueService {
@@ -220,16 +222,11 @@ public final class VillagerDialogueService {
             DialogueContext context,
             DialogueRequestType requestType,
             List<DialogueLine> candidates) {
-        if (!context.hasRecentDirectHitMemory() || candidates.isEmpty()) {
-            return candidates;
-        }
-
-        List<DialogueLine> directHitCandidates = candidates.stream()
-                .filter(DialogueLine::requiresRecentDirectHitMemory)
-                .toList();
-        if (directHitCandidates.isEmpty()) {
-            return candidates;
-        }
+        List<DialogueLine> directHitCandidates = memoryCandidates(
+                candidates,
+                context.hasRecentDirectHitMemory(),
+                DialogueLine::requiresRecentDirectHitMemory
+        );
 
         return switch (requestType) {
             case GREETING, QUESTION, INSULT -> directHitCandidates;
@@ -242,21 +239,30 @@ public final class VillagerDialogueService {
             DialogueContext context,
             DialogueRequestType requestType,
             List<DialogueLine> candidates) {
-        if (!context.hasRecentBrokenBedMemory() || candidates.isEmpty()) {
-            return candidates;
-        }
-
-        List<DialogueLine> brokenBedCandidates = candidates.stream()
-                .filter(DialogueLine::requiresRecentBrokenBedMemory)
-                .toList();
-        if (brokenBedCandidates.isEmpty()) {
-            return candidates;
-        }
+        List<DialogueLine> brokenBedCandidates = memoryCandidates(
+                candidates,
+                context.hasRecentBrokenBedMemory(),
+                DialogueLine::requiresRecentBrokenBedMemory
+        );
 
         return switch (requestType) {
             case GREETING, QUESTION, CHAT, INSULT -> brokenBedCandidates;
             default -> candidates;
         };
+    }
+
+    private static List<DialogueLine> memoryCandidates(
+            List<DialogueLine> candidates,
+            boolean hasMemory,
+            Predicate<DialogueLine> requirement) {
+        if (!hasMemory || candidates.isEmpty()) {
+            return candidates;
+        }
+
+        List<DialogueLine> memoryCandidates = candidates.stream()
+                .filter(requirement)
+                .toList();
+        return memoryCandidates.isEmpty() ? candidates : memoryCandidates;
     }
 
     private static String resolveText(String text, DialogueContext context) {
@@ -273,12 +279,12 @@ public final class VillagerDialogueService {
         if (candidates.isEmpty()) {
             return fallback;
         }
-        return candidates.get(context.random().nextInt(candidates.size()));
+        return VillagerRetaliationRandomUtil.choose(context.random(), candidates);
     }
 
     private static DialogueResult selectBabyLine(DialogueContext context, DialogueRequestType requestType) {
         String[] lines = babyLines(context, requestType);
-        int index = context.random().nextInt(lines.length);
+        int index = VillagerRetaliationRandomUtil.index(context.random(), lines.length);
         return new DialogueResult("baby_" + requestType.name().toLowerCase() + "_" + index, lines[index]);
     }
 
@@ -300,7 +306,7 @@ public final class VillagerDialogueService {
                     "I can listen, but then I am going back inside."
             };
         };
-        return lines[context.random().nextInt(lines.length)];
+        return VillagerRetaliationRandomUtil.choose(context.random(), lines);
     }
 
     private static String selectBabyGoodbye(DialogueContext context) {
@@ -321,7 +327,7 @@ public final class VillagerDialogueService {
                     "I am going to find someone older."
             };
         };
-        return lines[context.random().nextInt(lines.length)];
+        return VillagerRetaliationRandomUtil.choose(context.random(), lines);
     }
 
     private static String[] babyLines(DialogueContext context, DialogueRequestType requestType) {

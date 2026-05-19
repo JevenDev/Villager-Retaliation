@@ -19,11 +19,20 @@ public final class VillagerRetaliationRandomUtil {
         return minInclusive + random.nextInt(maxInclusive - minInclusive + 1);
     }
 
-    public static <T> T choose(RandomSource random, List<T> values) {
-        if (values.isEmpty()) {
-            throw new IllegalArgumentException("Cannot choose from an empty list");
+    public static int index(RandomSource random, int size) {
+        if (size <= 0) {
+            throw new IllegalArgumentException("Cannot choose from an empty collection");
         }
 
-        return values.get(random.nextInt(values.size()));
+        return random.nextInt(size);
+    }
+
+    public static <T> T choose(RandomSource random, List<T> values) {
+        return values.get(index(random, values.size()));
+    }
+
+    @SafeVarargs
+    public static <T> T choose(RandomSource random, T... values) {
+        return values[index(random, values.length)];
     }
 }

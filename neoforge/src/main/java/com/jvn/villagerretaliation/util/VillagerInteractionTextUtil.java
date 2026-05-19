@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.util;
 
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import java.util.Locale;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.npc.VillagerProfession;
 
 public final class VillagerInteractionTextUtil {
@@ -20,7 +21,28 @@ public final class VillagerInteractionTextUtil {
         return titleCaseIdentifier(level.name());
     }
 
-    private static String titleCaseIdentifier(String rawName) {
+    public static String resourcePathName(ResourceLocation id) {
+        String path = id.getPath();
+        int slash = path.lastIndexOf('/');
+        if (slash >= 0 && slash + 1 < path.length()) {
+            path = path.substring(slash + 1);
+        }
+
+        String name = titleCaseIdentifier(path.replace('-', '_'));
+        return name.isBlank() ? id.toString() : name;
+    }
+
+    public static String withIndefiniteArticle(String name) {
+        if (name.isEmpty()) {
+            return "somewhere";
+        }
+
+        char first = Character.toLowerCase(name.charAt(0));
+        String article = first == 'a' || first == 'e' || first == 'i' || first == 'o' || first == 'u' ? "an " : "a ";
+        return article + name;
+    }
+
+    public static String titleCaseIdentifier(String rawName) {
         String normalizedName = rawName.replace('_', ' ').toLowerCase(Locale.ROOT);
         StringBuilder builder = new StringBuilder(normalizedName.length());
         boolean capitalizeNext = true;
