@@ -1,8 +1,8 @@
 package com.jvn.villagerretaliation.loot;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
-import com.jvn.villagerretaliation.util.VillagerRetaliationLootUtil;
-import com.jvn.villagerretaliation.util.VillagerRetaliationRandomUtil;
+import com.jvn.toucanlib.neoforge.loot.ToucanLivingDrops;
+import com.jvn.toucanlib.util.ToucanRandom;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.npc.WanderingTrader;
@@ -27,16 +27,16 @@ public final class WanderingTraderLootHandler {
 
         RandomSource random = trader.getRandom();
         if (VillagerRetaliationConfig.WANDERER_DROP_EMERALDS.get()) {
-            VillagerRetaliationLootUtil.addDrop(event, new ItemStack(Items.EMERALD, VillagerRetaliationRandomUtil.between(random, 1, 5)));
+            ToucanLivingDrops.addDrop(event, new ItemStack(Items.EMERALD, ToucanRandom.betweenInclusive(random, 1, 5)));
         }
 
         if (VillagerRetaliationConfig.WANDERER_DROP_INVISIBILITY_POTION.get()) {
-            VillagerRetaliationLootUtil.addDrop(event, PotionContents.createItemStack(Items.POTION, Potions.INVISIBILITY));
+            ToucanLivingDrops.addDrop(event, PotionContents.createItemStack(Items.POTION, Potions.INVISIBILITY));
         }
 
         if (VillagerRetaliationConfig.WANDERER_DROP_RANDOM_CURRENT_TRADE.get()
-                && VillagerRetaliationRandomUtil.chance(random, VillagerRetaliationConfig.WANDERER_RANDOM_TRADE_DROP_CHANCE.get())) {
-            rollTradeResult(trader, random).ifPresent(stack -> VillagerRetaliationLootUtil.addDropIfNoMatchingItem(event, stack));
+                && ToucanRandom.chance(random, VillagerRetaliationConfig.WANDERER_RANDOM_TRADE_DROP_CHANCE.get())) {
+            rollTradeResult(trader, random).ifPresent(stack -> ToucanLivingDrops.addDropIfNoMatchingItem(event, stack));
         }
     }
 
@@ -53,7 +53,7 @@ public final class WanderingTraderLootHandler {
         }
 
         ItemStack drop = result.copy();
-        drop.setCount(VillagerRetaliationRandomUtil.between(random, 1, Math.max(1, result.getCount())));
+        drop.setCount(ToucanRandom.betweenInclusive(random, 1, Math.max(1, result.getCount())));
         return java.util.Optional.of(drop);
     }
 }

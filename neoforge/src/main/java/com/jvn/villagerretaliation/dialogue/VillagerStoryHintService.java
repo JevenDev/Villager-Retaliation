@@ -4,7 +4,7 @@ import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
-import com.jvn.villagerretaliation.util.VillagerRetaliationRandomUtil;
+import com.jvn.toucanlib.util.ToucanRandom;
 import com.mojang.datafixers.util.Pair;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -303,7 +303,7 @@ public final class VillagerStoryHintService {
 
     private static String biomeText(RandomSource random, String name, HintPlacement placement, HintQuality quality) {
         if (!quality.namesTargets) {
-            return VillagerRetaliationRandomUtil.choose(random,
+            return ToucanRandom.choose(random,
                     "I caught wind of different land " + placement.vagueDirectionPhrase() + ". Could be worth a walk.",
                     "Travelers keep arriving with mud on their boots from " + placement.vagueDirectionPhrase() + ".",
                     "There is a change in the air " + placement.vagueDirectionPhrase() + ". Different trees, different ground.",
@@ -313,7 +313,7 @@ public final class VillagerStoryHintService {
         }
 
         if (!quality.namesDistances) {
-            return VillagerRetaliationRandomUtil.choose(random,
+            return ToucanRandom.choose(random,
                     "I caught wind of " + withArticle(name) + " " + placement.vagueDirectionPhrase() + ".",
                     "Someone came through talking about " + withArticle(name) + " " + placement.vagueDirectionPhrase() + ".",
                     "If you head " + placement.direction + ", you may find " + withArticle(name) + " before too long.",
@@ -322,7 +322,7 @@ public final class VillagerStoryHintService {
             );
         }
 
-        return VillagerRetaliationRandomUtil.choose(random,
+        return ToucanRandom.choose(random,
                 "I caught wind of " + withArticle(name) + " about " + placement.distancePhrase() + " " + placement.direction + ".",
                 "A traveler swore there is " + withArticle(name) + " roughly " + placement.distancePhrase() + " " + placement.direction + ".",
                 "Head " + placement.direction + " for about " + placement.distancePhrase() + " and the land should turn into " + withArticle(name) + ".",
@@ -335,7 +335,7 @@ public final class VillagerStoryHintService {
     private static String structureText(RandomSource random, String name, HintPlacement placement, HintQuality quality) {
         String vertical = placement.verticalPhrase();
         if (!quality.namesDistances) {
-            return VillagerRetaliationRandomUtil.choose(random,
+            return ToucanRandom.choose(random,
                     "I keep hearing stories about " + withArticle(name) + " somewhere " + placement.vagueDirectionPhrase() + vertical + ".",
                     "The road talk says there is " + withArticle(name) + " out " + placement.vagueDirectionPhrase() + vertical + ".",
                     "Someone saw old stone " + placement.vagueDirectionPhrase() + vertical + ". Might have been " + withArticle(name) + ".",
@@ -344,7 +344,7 @@ public final class VillagerStoryHintService {
             );
         }
 
-        return VillagerRetaliationRandomUtil.choose(random,
+        return ToucanRandom.choose(random,
                 "I keep hearing about " + withArticle(name) + " around " + placement.distancePhrase() + " " + placement.direction + vertical + ".",
                 "A trader marked " + withArticle(name) + " roughly " + placement.distancePhrase() + " " + placement.direction + vertical + ".",
                 "If you head " + placement.direction + " for about " + placement.distancePhrase() + ", watch for " + withArticle(name) + vertical + ".",
@@ -357,7 +357,7 @@ public final class VillagerStoryHintService {
 
     private static String cartographerMapText(RandomSource random, String name, HintPlacement placement) {
         String vertical = placement.verticalPhrase();
-        return VillagerRetaliationRandomUtil.choose(random,
+        return ToucanRandom.choose(random,
                 "Here. I marked " + withArticle(name) + " on this map. It should sit about " + placement.distancePhrase() + " " + placement.direction + vertical + ".",
                 "Take this map. The red mark points to " + withArticle(name) + ", roughly " + placement.distancePhrase() + " " + placement.direction + vertical + ".",
                 "I had a spare chart for " + withArticle(name) + ". Follow the map " + placement.direction + " and mind the distance" + vertical + ".",

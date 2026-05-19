@@ -3,10 +3,10 @@ package com.jvn.villagerretaliation.loot;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationCombatWeaponFactory;
 import com.jvn.villagerretaliation.combat.VillagerCombatRoles;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
-import com.jvn.villagerretaliation.util.VillagerRetaliationItemUtil;
+import com.jvn.toucanlib.util.ToucanItemStacks;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
-import com.jvn.villagerretaliation.util.VillagerRetaliationLootUtil;
-import com.jvn.villagerretaliation.util.VillagerRetaliationRandomUtil;
+import com.jvn.toucanlib.neoforge.loot.ToucanLivingDrops;
+import com.jvn.toucanlib.util.ToucanRandom;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.player.Player;
@@ -28,31 +28,31 @@ public final class VillagerLootHandler {
         }
 
         RandomSource random = villager.getRandom();
-        if (VillagerRetaliationRandomUtil.chance(random, VillagerRetaliationConfig.VILLAGER_EMERALD_DROP_CHANCE.get())) {
-            VillagerRetaliationLootUtil.addDrop(event, new ItemStack(Items.EMERALD, VillagerRetaliationRandomUtil.between(random, 1, 5)));
+        if (ToucanRandom.chance(random, VillagerRetaliationConfig.VILLAGER_EMERALD_DROP_CHANCE.get())) {
+            ToucanLivingDrops.addDrop(event, new ItemStack(Items.EMERALD, ToucanRandom.betweenInclusive(random, 1, 5)));
         }
 
-        if (VillagerRetaliationRandomUtil.chance(random, VillagerRetaliationConfig.VILLAGER_BREAD_DROP_CHANCE.get())) {
-            VillagerRetaliationLootUtil.addDrop(event, new ItemStack(Items.BREAD, VillagerRetaliationRandomUtil.between(random, 1, 3)));
+        if (ToucanRandom.chance(random, VillagerRetaliationConfig.VILLAGER_BREAD_DROP_CHANCE.get())) {
+            ToucanLivingDrops.addDrop(event, new ItemStack(Items.BREAD, ToucanRandom.betweenInclusive(random, 1, 3)));
         }
 
         if (VillagerRetaliationConfig.REQUIRE_PLAYER_KILL_FOR_PROFESSION_LOOT.get() && !(event.getSource().getEntity() instanceof Player)) {
             return;
         }
 
-        if (!VillagerRetaliationRandomUtil.chance(random, VillagerRetaliationConfig.PROFESSION_DROP_CHANCE.get())) {
+        if (!ToucanRandom.chance(random, VillagerRetaliationConfig.PROFESSION_DROP_CHANCE.get())) {
             return;
         }
 
         rollOutOfCombatWeaponDrop(villager, event, random);
 
         for (ItemStack stack : ProfessionLootPools.roll(villager, random)) {
-            VillagerRetaliationLootUtil.addDrop(event, stack);
+            ToucanLivingDrops.addDrop(event, stack);
         }
     }
 
     private static void rollOutOfCombatWeaponDrop(Villager villager, LivingDropsEvent event, RandomSource random) {
-        if (isInCombat(villager) || !VillagerRetaliationRandomUtil.chance(random, VillagerRetaliationConfig.COMBAT_WEAPON_DROP_CHANCE.get())) {
+        if (isInCombat(villager) || !ToucanRandom.chance(random, VillagerRetaliationConfig.COMBAT_WEAPON_DROP_CHANCE.get())) {
             return;
         }
 
@@ -62,7 +62,7 @@ public final class VillagerLootHandler {
         }
 
         ItemStack drop = resolveOutOfCombatWeaponDrop(villager, weapon, random);
-        VillagerRetaliationLootUtil.addDropIfNoMatchingItem(event, drop);
+        ToucanLivingDrops.addDropIfNoMatchingItem(event, drop);
     }
 
     private static ItemStack resolveOutOfCombatWeaponDrop(Villager villager, ItemStack preferredWeapon, RandomSource random) {
@@ -71,7 +71,7 @@ public final class VillagerLootHandler {
             return mainHand.copy();
         }
 
-        return maybeEnchantLootWeapon(villager, VillagerRetaliationItemUtil.withRandomDamage(preferredWeapon.copy(), random), random);
+        return maybeEnchantLootWeapon(villager, ToucanItemStacks.withRandomMobDropDamage(preferredWeapon.copy(), random), random);
     }
 
     private static ItemStack maybeEnchantLootWeapon(Villager villager, ItemStack weapon, RandomSource random) {

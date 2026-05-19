@@ -1,7 +1,7 @@
 package com.jvn.villagerretaliation.dialogue;
 
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
-import com.jvn.villagerretaliation.util.VillagerRetaliationRandomUtil;
+import com.jvn.toucanlib.util.ToucanRandom;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -279,12 +279,12 @@ public final class VillagerDialogueService {
         if (candidates.isEmpty()) {
             return fallback;
         }
-        return VillagerRetaliationRandomUtil.choose(context.random(), candidates);
+        return ToucanRandom.choose(context.random(), candidates);
     }
 
     private static DialogueResult selectBabyLine(DialogueContext context, DialogueRequestType requestType) {
         String[] lines = babyLines(context, requestType);
-        int index = VillagerRetaliationRandomUtil.index(context.random(), lines.length);
+        int index = ToucanRandom.index(context.random(), lines.length);
         return new DialogueResult("baby_" + requestType.name().toLowerCase() + "_" + index, lines[index]);
     }
 
@@ -306,7 +306,7 @@ public final class VillagerDialogueService {
                     "I can listen, but then I am going back inside."
             };
         };
-        return VillagerRetaliationRandomUtil.choose(context.random(), lines);
+        return ToucanRandom.choose(context.random(), lines);
     }
 
     private static String selectBabyGoodbye(DialogueContext context) {
@@ -327,7 +327,7 @@ public final class VillagerDialogueService {
                     "I am going to find someone older."
             };
         };
-        return VillagerRetaliationRandomUtil.choose(context.random(), lines);
+        return ToucanRandom.choose(context.random(), lines);
     }
 
     private static String[] babyLines(DialogueContext context, DialogueRequestType requestType) {

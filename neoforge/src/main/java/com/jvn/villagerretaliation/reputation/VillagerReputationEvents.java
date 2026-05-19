@@ -3,7 +3,7 @@ package com.jvn.villagerretaliation.reputation;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
-import com.jvn.villagerretaliation.util.VillagerRetaliationHazardAttribution;
+import com.jvn.toucanlib.util.ToucanHazardAttribution;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import java.util.HashMap;
@@ -81,7 +81,7 @@ public final class VillagerReputationEvents {
             return;
         }
 
-        boolean attributedHazardDamage = VillagerRetaliationHazardAttribution.isPlayerAttributedHazardDamage(damaged, event.getSource());
+        boolean attributedHazardDamage = ToucanHazardAttribution.isPlayerAttributedVanillaHazardDamage(damaged, event.getSource());
         if (player instanceof ServerPlayer serverPlayer) {
             if (attributedHazardDamage) {
                 VillagerReputationAdvancements.onVillagerEnvironmentalDamage(level, serverPlayer, villager);
@@ -297,7 +297,7 @@ public final class VillagerReputationEvents {
             return Optional.of(new PlayerCredit(player, true));
         }
         if (event.getEntity() instanceof LivingEntity livingEntity
-                && VillagerRetaliationHazardAttribution.resolvePlayerOwner(livingEntity, event.getSource()).orElse(null) instanceof Player player) {
+                && ToucanHazardAttribution.resolveVanillaHazardOwner(livingEntity, event.getSource()).orElse(null) instanceof Player player) {
             return Optional.of(new PlayerCredit(player, false));
         }
         if (event.getEntity() instanceof LivingEntity livingEntity

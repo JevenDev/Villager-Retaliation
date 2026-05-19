@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.util;
 
+import com.jvn.toucanlib.util.ToucanBrainMemories;
+import com.jvn.toucanlib.util.ToucanHazardAttribution;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import java.util.Optional;
 import net.minecraft.server.level.ServerLevel;
@@ -109,7 +111,7 @@ public final class VillagerRetaliationVillagerCombatUtil {
             return directAttacker;
         }
 
-        return VillagerRetaliationHazardAttribution.resolvePlayerOwner(victim, source)
+        return ToucanHazardAttribution.resolveVanillaHazardOwner(victim, source)
                 .map(LivingEntity.class::cast);
     }
 
@@ -150,26 +152,15 @@ public final class VillagerRetaliationVillagerCombatUtil {
     }
 
     public static <T> Optional<T> getMemoryIfRegistered(AbstractVillager villager, MemoryModuleType<T> memoryType) {
-        try {
-            return villager.getBrain().getMemory(memoryType);
-        } catch (IllegalStateException ignored) {
-            return Optional.empty();
-        }
+        return ToucanBrainMemories.getIfRegistered(villager.getBrain(), memoryType);
     }
 
     public static void eraseMemoryIfRegistered(AbstractVillager villager, MemoryModuleType<?> memoryType) {
-        try {
-            villager.getBrain().eraseMemory(memoryType);
-        } catch (IllegalStateException ignored) {
-        }
+        ToucanBrainMemories.eraseIfRegistered(villager.getBrain(), memoryType);
     }
 
     private static boolean hasMemoryValueIfRegistered(AbstractVillager villager, MemoryModuleType<?> memoryType) {
-        try {
-            return villager.getBrain().hasMemoryValue(memoryType);
-        } catch (IllegalStateException ignored) {
-            return false;
-        }
+        return ToucanBrainMemories.hasValueIfRegistered(villager.getBrain(), memoryType);
     }
 
     private static boolean isNaturalHostileTarget(AbstractVillager villager, LivingEntity target) {

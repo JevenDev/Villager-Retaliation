@@ -1,6 +1,6 @@
 package com.jvn.villagerretaliation.villager;
 
-import com.jvn.villagerretaliation.util.VillagerRetaliationLootUtil;
+import com.jvn.toucanlib.neoforge.loot.ToucanLivingDrops;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -133,11 +133,11 @@ public final class VillagerRetaliationVillagerWeapons {
 
         ItemStack mainHand = villager.getMainHandItem();
         if (!mainHand.isEmpty() && ItemStack.isSameItem(mainHand, trackedPickup)) {
-            VillagerRetaliationLootUtil.addDropIfNoMatchingItem(event, mainHand.copy());
+            ToucanLivingDrops.addDropIfNoMatchingItem(event, mainHand.copy());
             return;
         }
 
-        VillagerRetaliationLootUtil.addDropIfNoMatchingItem(event, trackedPickup.copy());
+        ToucanLivingDrops.addDropIfNoMatchingItem(event, trackedPickup.copy());
     }
 
     public static boolean maintainAcquiredWeaponAuthority(AbstractVillager villager) {
