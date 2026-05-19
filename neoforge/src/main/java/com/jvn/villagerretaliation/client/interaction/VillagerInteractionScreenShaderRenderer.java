@@ -17,6 +17,7 @@ import org.joml.Matrix4f;
 public final class VillagerInteractionScreenShaderRenderer {
     private static final ResourceLocation INTERACTION_VEIL_SHADER_ID = VillagerRetaliation.id("interaction_veil");
     private static final float DITHER_CELL_SIZE = 1.0F;
+    private static final float DITHER_ARC_DEPTH = 30.0F;
 
     private static ShaderInstance interactionVeilShader;
 
@@ -48,6 +49,12 @@ public final class VillagerInteractionScreenShaderRenderer {
         }
         if (interactionVeilShader.getUniform("CellSize") != null) {
             interactionVeilShader.getUniform("CellSize").set(DITHER_CELL_SIZE);
+        }
+        if (interactionVeilShader.getUniform("ScreenWidth") != null) {
+            interactionVeilShader.getUniform("ScreenWidth").set((float) width);
+        }
+        if (interactionVeilShader.getUniform("ArcDepth") != null) {
+            interactionVeilShader.getUniform("ArcDepth").set(DITHER_ARC_DEPTH);
         }
         Matrix4f pose = graphics.pose().last().pose();
         RenderSystem.enableBlend();

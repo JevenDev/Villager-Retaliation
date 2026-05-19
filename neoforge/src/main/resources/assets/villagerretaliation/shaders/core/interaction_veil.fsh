@@ -3,6 +3,8 @@
 uniform float VeilTop;
 uniform float FadeHeight;
 uniform float CellSize;
+uniform float ScreenWidth;
+uniform float ArcDepth;
 
 in vec2 vertexScreenPos;
 
@@ -24,7 +26,10 @@ float bayer4(ivec2 coord) {
 }
 
 void main() {
-    float fadeProgress = clamp((vertexScreenPos.y - VeilTop) / max(FadeHeight, 1.0), 0.0, 1.0);
+    float normalizedX = clamp(vertexScreenPos.x / max(ScreenWidth, 1.0), 0.0, 1.0);
+    float edgeDistance = abs(normalizedX * 2.0 - 1.0);
+    float arcedVeilTop = VeilTop + ArcDepth * edgeDistance * edgeDistance;
+    float fadeProgress = clamp((vertexScreenPos.y - arcedVeilTop) / max(FadeHeight, 1.0), 0.0, 1.0);
     if (fadeProgress <= 0.0) {
         discard;
     }
