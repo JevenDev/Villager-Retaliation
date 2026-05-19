@@ -140,30 +140,6 @@ public final class VillagerRetaliationConfig {
                 .comment("Allows villagers who personally DESPISE a player to target that player on sight.")
                 .translation("villagerretaliation.configuration.general.enableDespisedKillOnSight")
                 .define("enableDespisedKillOnSight", true);
-        ENABLE_INTERACTION_SCREEN = BUILDER
-                .comment("Opens Villager Retaliation's interaction screen before adult villager trading.")
-                .translation("villagerretaliation.configuration.general.enableInteractionScreen")
-                .define("enableInteractionScreen", true);
-        SHIFT_RIGHT_CLICK_BYPASSES_INTERACTION_SCREEN = BUILDER
-                .comment("Allows sneaking while right-clicking an adult villager to bypass the interaction screen and open normal trading.")
-                .translation("villagerretaliation.configuration.general.shiftRightClickBypassesInteractionScreen")
-                .define("shiftRightClickBypassesInteractionScreen", true);
-        ENABLE_DIALOGUE_REPUTATION_EFFECTS = BUILDER
-                .comment("Allows villager dialogue choices to apply small reputation changes.")
-                .translation("villagerretaliation.configuration.general.enableDialogueReputationEffects")
-                .define("enableDialogueReputationEffects", true);
-        ENABLE_DIALOGUE_CAMERA_FOCUS = BUILDER
-                .comment("Enables a subtle client-side FOV zoom while the Villager Retaliation dialogue screen is open.")
-                .translation("villagerretaliation.configuration.general.enableDialogueCameraFocus")
-                .define("enableDialogueCameraFocus", true);
-        DIALOGUE_CAMERA_ZOOM_AMOUNT = BUILDER
-                .comment("FOV zoom amount used while the Villager Retaliation dialogue screen is open.")
-                .translation("villagerretaliation.configuration.general.dialogueCameraZoomAmount")
-                .defineInRange("dialogueCameraZoomAmount", 0.15D, 0.0D, 0.25D);
-        DIALOGUE_CAMERA_TRANSITION_TICKS = BUILDER
-                .comment("Ticks used to ease into the dialogue FOV zoom.")
-                .translation("villagerretaliation.configuration.general.dialogueCameraTransitionTicks")
-                .defineInRange("dialogueCameraTransitionTicks", 3, 1, 40);
         REPUTATION_CHANGE_DISPLAY_MODE = BUILDER
                 .comment("Where villager reputation tier change messages appear: HUD, Chat, or Off.")
                 .translation("villagerretaliation.configuration.general.reputationChangeDisplayMode")
@@ -172,18 +148,81 @@ public final class VillagerRetaliationConfig {
                 .comment("Where the HUD reputation change feed is anchored on screen.")
                 .translation("villagerretaliation.configuration.general.reputationChangeHudPosition")
                 .defineEnum("reputationChangeHudPosition", ReputationChangeHudPosition.TOP_LEFT);
-        FREEZE_VILLAGER_DURING_DIALOGUE = BUILDER
-                .comment("Stops villager navigation while a Villager Retaliation dialogue conversation is active.")
-                .translation("villagerretaliation.configuration.general.freezeVillagerDuringDialogue")
-                .define("freezeVillagerDuringDialogue", true);
-        MAX_DIALOGUE_DISTANCE = BUILDER
-                .comment("Maximum player-to-villager distance in blocks before a dialogue conversation closes.")
-                .translation("villagerretaliation.configuration.general.maxDialogueDistance")
-                .defineInRange("maxDialogueDistance", 7.0D, 3.0D, 16.0D);
         VILLAGER_REPUTATION_HOVER_TOOLTIP_REQUIRES_EMERALD = BUILDER
                 .comment("Requires the player to hold an emerald before the villager reputation hover tooltip appears.")
                 .translation("villagerretaliation.configuration.general.villagerReputationHoverTooltipRequiresEmerald")
                 .define("villagerReputationHoverTooltipRequiresEmerald", true);
+        BUILDER.pop();
+
+        BUILDER.push("dialogue");
+        ENABLE_INTERACTION_SCREEN = BUILDER
+                .comment("Opens Villager Retaliation's interaction screen before adult villager trading.")
+                .translation("villagerretaliation.configuration.dialogue.enableInteractionScreen")
+                .define("enableInteractionScreen", true);
+        SHIFT_RIGHT_CLICK_BYPASSES_INTERACTION_SCREEN = BUILDER
+                .comment("Allows sneaking while right-clicking an adult villager to bypass the interaction screen and open normal trading.")
+                .translation("villagerretaliation.configuration.dialogue.shiftRightClickBypassesInteractionScreen")
+                .define("shiftRightClickBypassesInteractionScreen", true);
+        ENABLE_DIALOGUE_REPUTATION_EFFECTS = BUILDER
+                .comment("Allows villager dialogue choices to apply small reputation changes.")
+                .translation("villagerretaliation.configuration.dialogue.enableDialogueReputationEffects")
+                .define("enableDialogueReputationEffects", true);
+        ENABLE_DIALOGUE_CAMERA_FOCUS = BUILDER
+                .comment("Enables a subtle client-side FOV zoom while the Villager Retaliation dialogue screen is open.")
+                .translation("villagerretaliation.configuration.dialogue.enableDialogueCameraFocus")
+                .define("enableDialogueCameraFocus", true);
+        DIALOGUE_CAMERA_ZOOM_AMOUNT = BUILDER
+                .comment("FOV zoom amount used while the Villager Retaliation dialogue screen is open.")
+                .translation("villagerretaliation.configuration.dialogue.dialogueCameraZoomAmount")
+                .defineInRange("dialogueCameraZoomAmount", 0.15D, 0.0D, 0.25D);
+        DIALOGUE_CAMERA_TRANSITION_TICKS = BUILDER
+                .comment("Ticks used to ease into the dialogue FOV zoom.")
+                .translation("villagerretaliation.configuration.dialogue.dialogueCameraTransitionTicks")
+                .defineInRange("dialogueCameraTransitionTicks", 3, 1, 40);
+        FREEZE_VILLAGER_DURING_DIALOGUE = BUILDER
+                .comment("Stops villager navigation while a Villager Retaliation dialogue conversation is active.")
+                .translation("villagerretaliation.configuration.dialogue.freezeVillagerDuringDialogue")
+                .define("freezeVillagerDuringDialogue", true);
+        MAX_DIALOGUE_DISTANCE = BUILDER
+                .comment("Maximum player-to-villager distance in blocks before a dialogue conversation closes.")
+                .translation("villagerretaliation.configuration.dialogue.maxDialogueDistance")
+                .defineInRange("maxDialogueDistance", 7.0D, 3.0D, 16.0D);
+        DIALOGUE_POSITIVE_REPUTATION_COOLDOWN_DAYS = BUILDER.comment("Minimum Minecraft day changes between positive dialogue reputation gains for the same player and villager.")
+                .translation("villagerretaliation.configuration.dialogue.dialoguePositiveReputationCooldownDays")
+                .defineInRange("dialoguePositiveReputationCooldownDays", 1, 0, 30);
+        REPEATED_QUESTION_POSITIVE_LIMIT = BUILDER.comment("Consecutive Question dialogue uses that can still grant positive reputation before the villager gets tired of it.")
+                .translation("villagerretaliation.configuration.dialogue.repeatedQuestionPositiveLimit")
+                .defineInRange("repeatedQuestionPositiveLimit", 5, 0, 100);
+        REPEATED_QUESTION_REPUTATION_LOSS = BUILDER.comment("Reputation lost when the player keeps repeating Question dialogue after the positive limit.")
+                .translation("villagerretaliation.configuration.dialogue.repeatedQuestionReputationLoss")
+                .defineInRange("repeatedQuestionReputationLoss", -1, -1000, 0);
+        REPEATED_DIALOGUE_OPTION_RESET_TICKS = BUILDER.comment("Game ticks before repeated dialogue option usage resets. Usage also resets at the start of each Minecraft day.")
+                .translation("villagerretaliation.configuration.dialogue.repeatedDialogueOptionResetTicks")
+                .defineInRange("repeatedDialogueOptionResetTicks", 6000, 1, 24000);
+        GREETING_REPUTATION_GAIN = BUILDER.comment("Reputation gained from an eligible friendly greeting.")
+                .translation("villagerretaliation.configuration.dialogue.greetingReputationGain")
+                .defineInRange("greetingReputationGain", 1, 0, 1000);
+        QUESTION_REPUTATION_GAIN = BUILDER.comment("Reputation gained from an eligible question.")
+                .translation("villagerretaliation.configuration.dialogue.questionReputationGain")
+                .defineInRange("questionReputationGain", 1, 0, 1000);
+        STORY_REPUTATION_GAIN = BUILDER.comment("Reputation gained from an eligible story interaction.")
+                .translation("villagerretaliation.configuration.dialogue.storyReputationGain")
+                .defineInRange("storyReputationGain", 1, 0, 1000);
+        JOKE_REPUTATION_GAIN = BUILDER.comment("Reputation gained when a joke lands well.")
+                .translation("villagerretaliation.configuration.dialogue.jokeReputationGain")
+                .defineInRange("jokeReputationGain", 1, 0, 1000);
+        JOKE_REPUTATION_LOSS = BUILDER.comment("Reputation lost when a joke lands badly.")
+                .translation("villagerretaliation.configuration.dialogue.jokeReputationLoss")
+                .defineInRange("jokeReputationLoss", -1, -1000, 0);
+        INSULT_REPUTATION_LOSS = BUILDER.comment("Reputation lost from an insult.")
+                .translation("villagerretaliation.configuration.dialogue.insultReputationLoss")
+                .defineInRange("insultReputationLoss", -3, -1000, 0);
+        FIRST_GREETING_REPUTATION_GAIN = BUILDER.comment("Reputation gained from an eligible first greeting.")
+                .translation("villagerretaliation.configuration.dialogue.firstGreetingReputationGain")
+                .defineInRange("firstGreetingReputationGain", 1, 0, 1000);
+        FIRST_INSULT_REPUTATION_LOSS = BUILDER.comment("Reputation lost when the first conversation starts with an insult.")
+                .translation("villagerretaliation.configuration.dialogue.firstInsultReputationLoss")
+                .defineInRange("firstInsultReputationLoss", -5, -1000, 0);
         BUILDER.pop();
 
         BUILDER.push("balance");
@@ -256,48 +295,12 @@ public final class VillagerRetaliationConfig {
         MAX_TRADE_REPUTATION_GAIN_PER_VILLAGER_PER_DAY = BUILDER.comment("Maximum positive trade reputation gain per villager per Minecraft day.")
                 .translation("villagerretaliation.configuration.reputation.maxTradeReputationGainPerVillagerPerDay")
                 .defineInRange("maxTradeReputationGainPerVillagerPerDay", 8, 0, 1000);
-        DIALOGUE_POSITIVE_REPUTATION_COOLDOWN_DAYS = BUILDER.comment("Minimum Minecraft day changes between positive dialogue reputation gains for the same player and villager.")
-                .translation("villagerretaliation.configuration.reputation.dialoguePositiveReputationCooldownDays")
-                .defineInRange("dialoguePositiveReputationCooldownDays", 1, 0, 30);
-        REPEATED_QUESTION_POSITIVE_LIMIT = BUILDER.comment("Consecutive Question dialogue uses that can still grant positive reputation before the villager gets tired of it.")
-                .translation("villagerretaliation.configuration.reputation.repeatedQuestionPositiveLimit")
-                .defineInRange("repeatedQuestionPositiveLimit", 5, 0, 100);
-        REPEATED_QUESTION_REPUTATION_LOSS = BUILDER.comment("Reputation lost when the player keeps repeating Question dialogue after the positive limit.")
-                .translation("villagerretaliation.configuration.reputation.repeatedQuestionReputationLoss")
-                .defineInRange("repeatedQuestionReputationLoss", -1, -1000, 0);
-        REPEATED_DIALOGUE_OPTION_RESET_TICKS = BUILDER.comment("Game ticks before repeated dialogue option usage resets. Usage also resets at the start of each Minecraft day.")
-                .translation("villagerretaliation.configuration.reputation.repeatedDialogueOptionResetTicks")
-                .defineInRange("repeatedDialogueOptionResetTicks", 6000, 1, 24000);
         SLEEPING_VILLAGER_BOTHER_REPUTATION_LOSS = BUILDER.comment("Reputation lost when a player tries to interact with a sleeping villager.")
                 .translation("villagerretaliation.configuration.reputation.sleepingVillagerBotherReputationLoss")
                 .defineInRange("sleepingVillagerBotherReputationLoss", -2, -1000, 0);
         SLEEPING_VILLAGER_BED_BREAK_REPUTATION_LOSS = BUILDER.comment("Reputation lost when a player breaks the bed of a sleeping villager.")
                 .translation("villagerretaliation.configuration.reputation.sleepingVillagerBedBreakReputationLoss")
                 .defineInRange("sleepingVillagerBedBreakReputationLoss", -15, -1000, 0);
-        GREETING_REPUTATION_GAIN = BUILDER.comment("Reputation gained from an eligible friendly greeting.")
-                .translation("villagerretaliation.configuration.reputation.greetingReputationGain")
-                .defineInRange("greetingReputationGain", 1, 0, 1000);
-        QUESTION_REPUTATION_GAIN = BUILDER.comment("Reputation gained from an eligible question.")
-                .translation("villagerretaliation.configuration.reputation.questionReputationGain")
-                .defineInRange("questionReputationGain", 1, 0, 1000);
-        STORY_REPUTATION_GAIN = BUILDER.comment("Reputation gained from an eligible story interaction.")
-                .translation("villagerretaliation.configuration.reputation.storyReputationGain")
-                .defineInRange("storyReputationGain", 1, 0, 1000);
-        JOKE_REPUTATION_GAIN = BUILDER.comment("Reputation gained when a joke lands well.")
-                .translation("villagerretaliation.configuration.reputation.jokeReputationGain")
-                .defineInRange("jokeReputationGain", 1, 0, 1000);
-        JOKE_REPUTATION_LOSS = BUILDER.comment("Reputation lost when a joke lands badly.")
-                .translation("villagerretaliation.configuration.reputation.jokeReputationLoss")
-                .defineInRange("jokeReputationLoss", -1, -1000, 0);
-        INSULT_REPUTATION_LOSS = BUILDER.comment("Reputation lost from an insult.")
-                .translation("villagerretaliation.configuration.reputation.insultReputationLoss")
-                .defineInRange("insultReputationLoss", -3, -1000, 0);
-        FIRST_GREETING_REPUTATION_GAIN = BUILDER.comment("Reputation gained from an eligible first greeting.")
-                .translation("villagerretaliation.configuration.reputation.firstGreetingReputationGain")
-                .defineInRange("firstGreetingReputationGain", 1, 0, 1000);
-        FIRST_INSULT_REPUTATION_LOSS = BUILDER.comment("Reputation lost when the first conversation starts with an insult.")
-                .translation("villagerretaliation.configuration.reputation.firstInsultReputationLoss")
-                .defineInRange("firstInsultReputationLoss", -5, -1000, 0);
         HEAL_VILLAGER_GAIN = BUILDER.comment("Reserved gain for detectable villager healing hooks.")
                 .translation("villagerretaliation.configuration.reputation.healVillagerGain")
                 .defineInRange("healVillagerGain", 10, -1000, 1000);
