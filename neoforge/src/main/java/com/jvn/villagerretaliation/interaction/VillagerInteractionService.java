@@ -18,6 +18,7 @@ import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
+import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import net.minecraft.core.BlockPos;
@@ -96,10 +97,9 @@ public final class VillagerInteractionService {
                 villager.getId(),
                 VillagerPresetNameRegistry.resolveNameTranslationKey(villager),
                 VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
-                professionName(villager.getVillagerData().getProfession()),
+                VillagerInteractionTextUtil.professionName(villager.getVillagerData().getProfession(), "Unemployed"),
                 reputation,
-                reputationLevel,
-                greetingText
+                reputationLevel
         ));
         broadcastVillagerChat(level, villager, greetingText);
     }
@@ -134,8 +134,6 @@ public final class VillagerInteractionService {
         int updatedReputation = VillagerReputationManager.getReputation(level, villager, player.getUUID());
         PacketDistributor.sendToPlayer(player, new VillagerDialogueResponsePayload(
                 villager.getId(),
-                requestType,
-                responseText,
                 updatedReputation,
                 VillagerReputationLevel.fromReputation(updatedReputation)
         ));
@@ -182,8 +180,8 @@ public final class VillagerInteractionService {
         ItemStack giftedStack = player.getInventory().removeItem(inventorySlot, selectedStack.getCount());
         player.getInventory().setChanged();
         VillagerProfession profession = villager.getVillagerData().getProfession();
-        VillagerGiftPreferences.GiftReaction giftReaction = VillagerGiftPreferences.reactionFor(profession, giftedStack);
-        int reputationValue = VillagerGiftPreferences.reputationValue(profession, giftedStack);
+        VillagerGiftPreferences.GiftPreference giftPreference = VillagerGiftPreferences.evaluate(profession, giftedStack);
+        int reputationValue = giftPreference.reputationValue();
         VillagerReputationManager.addGiftReputation(level, villager, player, reputationValue);
         VillageEventMemory.rememberGift(
                 level,
@@ -192,7 +190,7 @@ public final class VillagerInteractionService {
                 player,
                 VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
                 itemName(giftedStack),
-                giftReaction,
+                giftPreference.reaction(),
                 reputationValue
         );
         reduceDialogueAnnoyanceFromGift(level, villager, player, reputationValue);
@@ -202,11 +200,9 @@ public final class VillagerInteractionService {
         VillagerAmbientIndicatorService.onGiftReceived(villager, reputationValue);
 
         int updatedReputation = VillagerReputationManager.getReputation(level, villager, player.getUUID());
-        String responseText = VillagerGiftPreferences.responseFor(profession, giftedStack, reputationValue);
+        String responseText = VillagerGiftPreferences.responseFor(profession, giftedStack, giftPreference);
         PacketDistributor.sendToPlayer(player, new VillagerDialogueResponsePayload(
                 villager.getId(),
-                DialogueRequestType.CHAT,
-                responseText,
                 updatedReputation,
                 VillagerReputationLevel.fromReputation(updatedReputation)
         ));
@@ -418,32 +414,11 @@ public final class VillagerInteractionService {
 
     private static String villagerSpeakerLabel(Villager villager) {
         String resolvedName = VillagerPresetNameRegistry.resolveDisplayName(villager).getString();
-        String profession = professionName(villager.getVillagerData().getProfession());
+        String profession = VillagerInteractionTextUtil.professionName(villager.getVillagerData().getProfession(), "Unemployed");
         if (profession == null || profession.isBlank() || profession.equals("Villager")) {
             return resolvedName;
         }
         return profession + " " + resolvedName;
-    }
-
-    private static String professionName(VillagerProfession profession) {
-        String rawName = profession.name();
-        if (rawName == null || rawName.isBlank() || "none".equals(rawName)) {
-            return "Unemployed";
-        }
-        StringBuilder builder = new StringBuilder(rawName.length());
-        boolean capitalizeNext = true;
-        for (char character : rawName.replace('_', ' ').toCharArray()) {
-            if (Character.isWhitespace(character)) {
-                capitalizeNext = true;
-                builder.append(character);
-            } else if (capitalizeNext) {
-                builder.append(Character.toUpperCase(character));
-                capitalizeNext = false;
-            } else {
-                builder.append(character);
-            }
-        }
-        return builder.toString();
     }
 
     private static DialogueContext.WeatherState weatherState(ServerLevel level, Villager villager) {

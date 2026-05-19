@@ -6,13 +6,13 @@ import com.jvn.villagerretaliation.network.VillagerNameSyncPayload;
 import com.jvn.villagerretaliation.network.VillagerConversationEndedPayload;
 import com.jvn.villagerretaliation.network.VillagerDialogueResponsePayload;
 import com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload;
+import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import java.util.UUID;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.Villager;
-import net.minecraft.world.entity.npc.VillagerProfession;
 
 public final class VillagerInteractionClientHandler {
     private VillagerInteractionClientHandler() {
@@ -88,7 +88,7 @@ public final class VillagerInteractionClientHandler {
         if (!(entity instanceof Villager villager)) {
             return "Villager";
         }
-        String profession = professionName(villager.getVillagerData().getProfession());
+        String profession = VillagerInteractionTextUtil.professionName(villager.getVillagerData().getProfession(), "Villager");
         if (!villager.hasCustomName()) {
             return profession.equals("Villager") ? "Villager" : profession + " Villager";
         }
@@ -111,26 +111,5 @@ public final class VillagerInteractionClientHandler {
             return villagerName;
         }
         return profession + " " + villagerName;
-    }
-
-    private static String professionName(VillagerProfession profession) {
-        String rawName = profession == null ? null : profession.name();
-        if (rawName == null || rawName.isBlank() || "none".equals(rawName)) {
-            return "Villager";
-        }
-        StringBuilder builder = new StringBuilder(rawName.length());
-        boolean capitalizeNext = true;
-        for (char character : rawName.replace('_', ' ').toCharArray()) {
-            if (Character.isWhitespace(character)) {
-                capitalizeNext = true;
-                builder.append(character);
-            } else if (capitalizeNext) {
-                builder.append(Character.toUpperCase(character));
-                capitalizeNext = false;
-            } else {
-                builder.append(character);
-            }
-        }
-        return builder.toString();
     }
 }

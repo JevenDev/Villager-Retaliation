@@ -7,6 +7,7 @@ import com.jvn.villagerretaliation.network.VillagerDialogueRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerGiftRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerTradeRequestPayload;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
+import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.Minecraft;
@@ -97,7 +98,7 @@ public class VillagerInteractionScreen extends Screen {
 
     @Override
     protected void init() {
-        this.giftButton = addRenderableWidget(Button.builder(Component.literal("Gift"), button -> requestGift())
+        this.giftButton = addRenderableWidget(Button.builder(Component.literal("Give"), button -> requestGift())
                 .bounds(0, 0, INVENTORY_BUTTON_WIDTH, INVENTORY_BUTTON_HEIGHT)
                 .build());
         this.giftButton.visible = false;
@@ -245,18 +246,18 @@ public class VillagerInteractionScreen extends Screen {
         } else if (this.page == DialoguePage.ROOT) {
             addRootOptions();
         }
-        this.selectedOption = firstEnabledOption();
+        this.selectedOption = this.options.isEmpty() ? -1 : 0;
         this.optionScroll = 0.0F;
         this.targetOptionScroll = 0.0F;
         ensureSelectedVisible();
     }
 
     private void addDialogueOptions() {
-        addDialogueOption("Chat", DialogueRequestType.CHAT);
-        addDialogueOption("Greeting", DialogueRequestType.GREETING);
-        addDialogueOption("Question", DialogueRequestType.QUESTION);
-        addDialogueOption("Story", DialogueRequestType.STORY);
-        addDialogueOption("Joke", DialogueRequestType.JOKE);
+        addDialogueOption("Small Talk", DialogueRequestType.CHAT);
+        addDialogueOption("Greet", DialogueRequestType.GREETING);
+        addDialogueOption("Ask Question", DialogueRequestType.QUESTION);
+        addDialogueOption("Ask for Story", DialogueRequestType.STORY);
+        addDialogueOption("Tell Joke", DialogueRequestType.JOKE);
         addDialogueOption("Insult", DialogueRequestType.INSULT);
     }
 
@@ -264,8 +265,6 @@ public class VillagerInteractionScreen extends Screen {
         this.options.add(DialogueOption.enabled("Talk", this::openTalkPage));
         this.options.add(DialogueOption.enabled("Trade", this::requestTrade));
         this.options.add(DialogueOption.enabled("Gift", this::openGiftPage));
-        this.options.add(DialogueOption.disabled("Recruit", "Coming soon"));
-        this.options.add(DialogueOption.disabled("Inventory", "Coming soon"));
         this.options.add(DialogueOption.enabled("Goodbye", this::leaveConversation));
     }
 
@@ -325,9 +324,6 @@ public class VillagerInteractionScreen extends Screen {
             return;
         }
         DialogueOption option = this.options.get(this.selectedOption);
-        if (option.disabled()) {
-            return;
-        }
         option.action().run();
     }
 
@@ -335,15 +331,8 @@ public class VillagerInteractionScreen extends Screen {
         if (this.options.isEmpty()) {
             return;
         }
-        int next = this.selectedOption;
-        for (int steps = 0; steps < this.options.size(); steps++) {
-            next = Mth.positiveModulo(next + direction, this.options.size());
-            if (!this.options.get(next).disabled()) {
-                this.selectedOption = next;
-                ensureSelectedVisible();
-                return;
-            }
-        }
+        this.selectedOption = Mth.positiveModulo(this.selectedOption + direction, this.options.size());
+        ensureSelectedVisible();
     }
 
     private void updateOptionScroll() {
@@ -351,15 +340,6 @@ public class VillagerInteractionScreen extends Screen {
         if (Math.abs(this.optionScroll - this.targetOptionScroll) < 0.15F) {
             this.optionScroll = this.targetOptionScroll;
         }
-    }
-
-    private int firstEnabledOption() {
-        for (int index = 0; index < this.options.size(); index++) {
-            if (!this.options.get(index).disabled()) {
-                return index;
-            }
-        }
-        return 0;
     }
 
     private void renderOptions(GuiGraphics graphics, int mouseX, int mouseY, int top) {
@@ -382,9 +362,6 @@ public class VillagerInteractionScreen extends Screen {
 
         renderScrollbar(graphics, left, top, viewportBottom);
 
-        if (hovered >= 0 && this.options.get(hovered).tooltip() != null) {
-            graphics.renderTooltip(this.font, Component.literal(this.options.get(hovered).tooltip()), mouseX, mouseY);
-        }
     }
 
     private void renderGiftPage(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
@@ -459,9 +436,15 @@ public class VillagerInteractionScreen extends Screen {
         GiftButtonBounds bounds = giftButtonBounds();
         boolean enabled = this.selectedInventorySlot >= 0 && !stackForInventorySlot(this.selectedInventorySlot).isEmpty();
         this.giftButton.setPosition(bounds.left(), bounds.top());
+        this.giftButton.setMessage(Component.literal(giftButtonLabel()));
         this.giftButton.active = enabled;
         this.giftButton.visible = true;
         this.giftButton.render(graphics, mouseX, mouseY, partialTick);
+    }
+
+    private String giftButtonLabel() {
+        ItemStack selectedStack = stackForInventorySlot(this.selectedInventorySlot);
+        return selectedStack.getCount() > 1 ? "Give Stack" : "Give";
     }
 
     private void renderOption(
@@ -479,16 +462,16 @@ public class VillagerInteractionScreen extends Screen {
         boolean selected = index == this.selectedOption;
         boolean isHovered = hovered == index;
         float hoverMix = isHovered ? hoverIntensity(mouseX, mouseY, left, y) : 0.0F;
-        float scale = optionScale(option, selected, hoverMix);
+        float scale = optionScale(selected, hoverMix);
         float cursorShiftX = isHovered ? hoverShift(mouseX, left, OPTION_WIDTH, 3.2F) * hoverMix : 0.0F;
         float cursorShiftY = isHovered ? hoverShift(mouseY, y, OPTION_HEIGHT, 1.6F) * hoverMix : 0.0F;
         float edgeAlpha = edgeFadeAlpha(y, viewportTop, viewportBottom);
-        int textColor = optionTextColor(option, selected, isHovered);
+        int textColor = optionTextColor(selected, isHovered);
 
         graphics.pose().pushPose();
         applyOptionTransform(graphics, left, y, scale, cursorShiftX, cursorShiftY);
-        renderOptionBackground(graphics, option, isHovered, left, y, edgeAlpha);
-        if (selected && !option.disabled()) {
+        renderOptionBackground(graphics, isHovered, left, y, edgeAlpha);
+        if (selected) {
             graphics.drawString(this.font, ">", left - 7, Mth.floor(y + 5.0F), withAlpha(0xFFFFFFFF, edgeAlpha), false);
         }
         graphics.drawString(this.font, option.label(), left + OPTION_TEXT_INSET, Mth.floor(y + 5.0F), withAlpha(textColor, edgeAlpha), false);
@@ -503,8 +486,8 @@ public class VillagerInteractionScreen extends Screen {
         graphics.pose().translate(-pivotX, -pivotY, 0.0F);
     }
 
-    private void renderOptionBackground(GuiGraphics graphics, DialogueOption option, boolean hovered, int left, float top, float edgeAlpha) {
-        if (option.disabled() || !hovered) {
+    private void renderOptionBackground(GuiGraphics graphics, boolean hovered, int left, float top, float edgeAlpha) {
+        if (!hovered) {
             return;
         }
 
@@ -515,17 +498,11 @@ public class VillagerInteractionScreen extends Screen {
         graphics.fill(bgLeft, bgTop, bgRight, bgBottom, withAlpha(0xFF000000, edgeAlpha * 0.16F));
     }
 
-    private static float optionScale(DialogueOption option, boolean selected, float hoverMix) {
-        if (option.disabled()) {
-            return 1.0F;
-        }
+    private static float optionScale(boolean selected, float hoverMix) {
         return 1.0F + (selected ? OPTION_SELECTED_SCALE : 0.0F) + hoverMix * OPTION_HOVER_SCALE;
     }
 
-    private static int optionTextColor(DialogueOption option, boolean selected, boolean hovered) {
-        if (option.disabled()) {
-            return 0x7C8A8A8A;
-        }
+    private static int optionTextColor(boolean selected, boolean hovered) {
         if (selected) {
             return 0xFFF8F8F4;
         }
@@ -733,11 +710,6 @@ public class VillagerInteractionScreen extends Screen {
             }
             return true;
         }
-
-        GiftButtonBounds giftButton = giftButtonBounds();
-        if (giftButton.contains(mouseX, mouseY)) {
-            return false;
-        }
         return false;
     }
 
@@ -784,10 +756,6 @@ public class VillagerInteractionScreen extends Screen {
 
     private int giftInventoryTop() {
         return conversationInfoTop();
-    }
-
-    private int giftInventoryHeight() {
-        return INVENTORY_TEXTURE_HEIGHT;
     }
 
     private GiftButtonBounds giftButtonBounds() {
@@ -864,7 +832,7 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     private String moodText() {
-        return "Mood: " + displayName(this.reputationLevel);
+        return "Mood: " + VillagerInteractionTextUtil.reputationLevelName(this.reputationLevel);
     }
 
     private String reputationText() {
@@ -1034,24 +1002,6 @@ public class VillagerInteractionScreen extends Screen {
         }
     }
 
-    private static String displayName(VillagerReputationLevel level) {
-        String rawName = level.name();
-        StringBuilder builder = new StringBuilder(rawName.length());
-        boolean capitalizeNext = true;
-        for (char character : rawName.replace('_', ' ').toLowerCase().toCharArray()) {
-            if (Character.isWhitespace(character)) {
-                capitalizeNext = true;
-                builder.append(character);
-            } else if (capitalizeNext) {
-                builder.append(Character.toUpperCase(character));
-                capitalizeNext = false;
-            } else {
-                builder.append(character);
-            }
-        }
-        return builder.toString();
-    }
-
     private static int moodColor(VillagerReputationLevel level) {
         if (level.trustRank() > VillagerReputationLevel.NEUTRAL.trustRank()) {
             return 0xD08BE0A9;
@@ -1068,14 +1018,9 @@ public class VillagerInteractionScreen extends Screen {
         GIFT
     }
 
-    private record DialogueOption(String label, boolean disabled, String tooltip, Runnable action) {
+    private record DialogueOption(String label, Runnable action) {
         static DialogueOption enabled(String label, Runnable action) {
-            return new DialogueOption(label, false, null, action);
-        }
-
-        static DialogueOption disabled(String label, String tooltip) {
-            return new DialogueOption(label, true, tooltip, () -> {
-            });
+            return new DialogueOption(label, action);
         }
     }
 
@@ -1096,11 +1041,5 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     private record GiftButtonBounds(int left, int top, int right, int bottom) {
-        boolean contains(double mouseX, double mouseY) {
-            return mouseX >= this.left
-                    && mouseX <= this.right
-                    && mouseY >= this.top
-                    && mouseY <= this.bottom;
-        }
     }
 }

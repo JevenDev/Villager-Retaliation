@@ -12,8 +12,7 @@ public record OpenVillagerInteractionPayload(
         String villagerNameFallback,
         String professionName,
         int reputation,
-        VillagerReputationLevel reputationLevel,
-        String greetingText)
+        VillagerReputationLevel reputationLevel)
         implements CustomPacketPayload {
     public static final Type<OpenVillagerInteractionPayload> TYPE = new Type<>(
             VillagerRetaliation.id("open_villager_interaction")
@@ -28,7 +27,6 @@ public record OpenVillagerInteractionPayload(
         buffer.writeUtf(payload.professionName());
         buffer.writeVarInt(payload.reputation());
         buffer.writeEnum(payload.reputationLevel());
-        buffer.writeUtf(payload.greetingText(), 512);
     }
 
     private static OpenVillagerInteractionPayload decode(RegistryFriendlyByteBuf buffer) {
@@ -38,8 +36,7 @@ public record OpenVillagerInteractionPayload(
                 buffer.readUtf(),
                 buffer.readUtf(),
                 buffer.readVarInt(),
-                buffer.readEnum(VillagerReputationLevel.class),
-                buffer.readUtf(512)
+                buffer.readEnum(VillagerReputationLevel.class)
         );
     }
 

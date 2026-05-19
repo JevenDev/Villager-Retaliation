@@ -13,41 +13,52 @@ public final class VillagerGiftPreferences {
     }
 
     public static int reputationValue(VillagerProfession profession, ItemStack stack) {
-        if (stack.isEmpty()) {
-            return 0;
-        }
-
-        int perItem = reactionFor(profession, stack).perItemReputation();
-        int value = perItem * stack.getCount();
-        return Math.clamp(value, MAX_NEGATIVE_REPUTATION, MAX_POSITIVE_REPUTATION);
+        return evaluate(profession, stack).reputationValue();
     }
 
     public static String responseFor(VillagerProfession profession, ItemStack stack, int reputationValue) {
-        GiftReaction preference = reactionFor(profession, stack);
-        boolean professionSpecific = professionPreference(profession, stack) != GiftReaction.NEUTRAL;
-        String itemName = stack.getHoverName().getString();
-        int variant = Math.floorMod(itemName.hashCode() + profession.hashCode() + stack.getCount(), 4);
+        return responseFor(profession, stack, evaluate(profession, stack).withReputationValue(reputationValue));
+    }
 
-        String specificResponse = specificResponse(profession, stack, preference, professionSpecific, itemName, variant);
+    public static String responseFor(VillagerProfession profession, ItemStack stack, GiftPreference preference) {
+        String itemName = stack.getHoverName().getString();
+        int professionHash = profession == null ? 0 : profession.hashCode();
+        int variant = Math.floorMod(itemName.hashCode() + professionHash + stack.getCount(), 4);
+
+        String specificResponse = specificResponse(profession, stack, preference.reaction(), preference.professionSpecific(), itemName, variant);
         if (specificResponse != null) {
             return specificResponse;
         }
 
-        return switch (preference) {
+        return switch (preference.reaction()) {
             case LOVED -> lovedResponse(itemName, variant);
             case LIKED -> likedResponse(itemName, variant);
-            case NEUTRAL -> neutralResponse(itemName, variant, reputationValue);
+            case NEUTRAL -> neutralResponse(itemName, variant, preference.reputationValue());
             case DISLIKED -> dislikedResponse(itemName, variant);
             case HATED -> hatedResponse(itemName, variant);
         };
     }
 
     public static GiftReaction reactionFor(VillagerProfession profession, ItemStack stack) {
+        return evaluate(profession, stack).reaction();
+    }
+
+    public static GiftPreference evaluate(VillagerProfession profession, ItemStack stack) {
+        if (stack.isEmpty()) {
+            return new GiftPreference(GiftReaction.NEUTRAL, false, 0);
+        }
+
         GiftReaction professionPreference = professionPreference(profession, stack);
         if (professionPreference != GiftReaction.NEUTRAL) {
-            return professionPreference;
+            return new GiftPreference(professionPreference, true, reputationValue(professionPreference, stack));
         }
-        return globalPreference(stack);
+        GiftReaction globalPreference = globalPreference(stack);
+        return new GiftPreference(globalPreference, false, reputationValue(globalPreference, stack));
+    }
+
+    private static int reputationValue(GiftReaction reaction, ItemStack stack) {
+        int value = reaction.perItemReputation() * stack.getCount();
+        return Math.clamp(value, MAX_NEGATIVE_REPUTATION, MAX_POSITIVE_REPUTATION);
     }
 
     private static GiftReaction globalPreference(ItemStack stack) {
@@ -227,7 +238,7 @@ public final class VillagerGiftPreferences {
             if (isAny(stack, Items.TNT, Items.TNT_MINECART, Items.FIRE_CHARGE, Items.LAVA_BUCKET)) {
                 return GiftReaction.HATED;
             }
-            if (isAny(stack, Items.ROTTEN_FLESH, Items.BONE, Items.SHEARS, Items.WITHER_ROSE, Items.DEAD_BUSH)) {
+            if (isAny(stack, Items.ROTTEN_FLESH, Items.BONE, Items.WITHER_ROSE, Items.DEAD_BUSH)) {
                 return GiftReaction.DISLIKED;
             }
         }
@@ -502,6 +513,12 @@ public final class VillagerGiftPreferences {
 
         private boolean isPositive() {
             return this.perItemReputation > 0;
+        }
+    }
+
+    public record GiftPreference(GiftReaction reaction, boolean professionSpecific, int reputationValue) {
+        private GiftPreference withReputationValue(int reputationValue) {
+            return new GiftPreference(this.reaction, this.professionSpecific, reputationValue);
         }
     }
 }
