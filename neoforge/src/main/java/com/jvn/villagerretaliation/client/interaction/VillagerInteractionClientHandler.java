@@ -39,7 +39,6 @@ public final class VillagerInteractionClientHandler {
                 payload.reputation(),
                 payload.reputationLevel()
         ));
-        pushVillagerChatMessage(minecraft, payload.entityId(), payload.greetingText());
     }
 
     public static void acceptDialogue(VillagerDialogueResponsePayload payload) {
@@ -48,11 +47,10 @@ public final class VillagerInteractionClientHandler {
                 && screen.matchesVillager(payload.entityId())) {
             screen.updateReputation(payload.reputation(), payload.reputationLevel());
         }
-        pushVillagerChatMessage(minecraft, payload.entityId(), payload.text());
     }
 
     public static void acceptNotice(VillagerInteractionNoticePayload payload) {
-        pushVillagerChatMessage(Minecraft.getInstance(), payload.entityId(), payload.text());
+        pushVillagerChatMessage(Minecraft.getInstance(), payload.entityId(), payload.text(), payload.speakerLabel());
     }
 
     public static void acceptConversationEnded(VillagerConversationEndedPayload payload) {
@@ -61,19 +59,21 @@ public final class VillagerInteractionClientHandler {
                 && screen.matchesVillager(payload.entityId())) {
             screen.closeFromServer();
         }
-        pushVillagerChatMessage(minecraft, payload.entityId(), payload.goodbyeText());
         ClientVillagerConversationState.forgetSpeakerLabel(payload.entityId());
     }
 
-    private static void pushVillagerChatMessage(Minecraft minecraft, int entityId, String text) {
+    private static void pushVillagerChatMessage(Minecraft minecraft, int entityId, String text, String speakerLabel) {
         if (minecraft.player == null || text == null || text.isBlank()) {
             return;
         }
-        minecraft.player.displayClientMessage(formatVillagerChatMessage(minecraft, entityId, text), false);
+        minecraft.player.displayClientMessage(formatVillagerChatMessage(minecraft, entityId, text, speakerLabel), false);
     }
 
-    private static Component formatVillagerChatMessage(Minecraft minecraft, int entityId, String text) {
-        return Component.literal("<" + resolveVillagerSpeakerName(minecraft, entityId) + "> " + text);
+    private static Component formatVillagerChatMessage(Minecraft minecraft, int entityId, String text, String speakerLabel) {
+        String resolvedSpeaker = speakerLabel == null || speakerLabel.isBlank()
+                ? resolveVillagerSpeakerName(minecraft, entityId)
+                : speakerLabel;
+        return Component.literal("<" + resolvedSpeaker + "> " + text);
     }
 
     private static String resolveVillagerSpeakerName(Minecraft minecraft, int entityId) {
