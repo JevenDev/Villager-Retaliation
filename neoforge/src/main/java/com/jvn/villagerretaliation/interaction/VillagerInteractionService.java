@@ -18,6 +18,7 @@ import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
+import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
@@ -92,7 +93,8 @@ public final class VillagerInteractionService {
         ));
         PacketDistributor.sendToPlayer(player, new OpenVillagerInteractionPayload(
                 villager.getId(),
-                villager.getDisplayName().getString(),
+                VillagerPresetNameRegistry.resolveNameTranslationKey(villager),
+                VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
                 professionName(villager.getVillagerData().getProfession()),
                 reputation,
                 reputationLevel,

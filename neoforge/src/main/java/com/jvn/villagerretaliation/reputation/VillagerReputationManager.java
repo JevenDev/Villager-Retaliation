@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.reputation;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
+import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -225,8 +226,8 @@ public final class VillagerReputationManager {
 
     private static String resolveTierChangeMessage(AbstractVillager villager, VillagerReputationLevel previousLevel, VillagerReputationLevel newLevel) {
         String message = newLevel.transitionMessageFrom(previousLevel);
-        if (villager.hasCustomName()) {
-            String name = villager.getName().getString();
+        String name = VillagerPresetNameRegistry.resolveDisplayName(villager).getString();
+        if (!name.isBlank() && (villager.hasCustomName() || !VillagerPresetNameRegistry.resolveNameTranslationKey(villager).isBlank())) {
             String possessiveName = toPossessive(name);
             return message
                     .replace("A villager's", possessiveName)

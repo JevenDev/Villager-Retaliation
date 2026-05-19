@@ -1,10 +1,13 @@
 package com.jvn.villagerretaliation.client.interaction;
 
+import java.util.HashMap;
+import java.util.Map;
 import net.minecraft.util.Mth;
 
 public final class ClientVillagerConversationState {
     private static final int CAMERA_RELEASE_TICKS = 2;
 
+    private static final Map<Integer, String> SPEAKER_LABELS = new HashMap<>();
     private static int focusedVillagerEntityId = -1;
     private static int cameraFocusTicks;
     private static int cameraReleaseTicks;
@@ -44,6 +47,18 @@ public final class ClientVillagerConversationState {
 
     public static int cameraFocusTicks() {
         return cameraFocusTicks;
+    }
+
+    public static void rememberSpeakerLabel(int entityId, String speakerLabel) {
+        if (speakerLabel == null || speakerLabel.isBlank()) {
+            SPEAKER_LABELS.remove(entityId);
+            return;
+        }
+        SPEAKER_LABELS.put(entityId, speakerLabel);
+    }
+
+    public static String resolveSpeakerLabel(int entityId) {
+        return SPEAKER_LABELS.get(entityId);
     }
 
     public static double cameraReleaseProgress(float partialTick) {

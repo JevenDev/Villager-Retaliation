@@ -15,6 +15,7 @@ import com.jvn.villagerretaliation.util.VillagerRetaliationRandomUtil;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerFleeBehaviorHandler;
+import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -116,6 +117,9 @@ public final class VillagerRetaliationEvents {
 
     public static void onEntityJoinLevel(EntityJoinLevelEvent event) {
         VillagerRetaliationHandler.onEntityJoinLevel(event);
+        if (event.getEntity() instanceof AbstractVillager villager && villager.level() instanceof ServerLevel) {
+            VillagerPresetNameRegistry.ensurePresetNameAssigned(villager);
+        }
     }
 
     public static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {
