@@ -72,6 +72,7 @@ public class VillagerInteractionScreen extends Screen {
     private final int villagerEntityId;
     private final String villagerName;
     private final String professionName;
+    private final boolean baby;
     private int reputation;
     private VillagerReputationLevel reputationLevel;
     private final List<DialogueOption> options = new ArrayList<>();
@@ -86,11 +87,12 @@ public class VillagerInteractionScreen extends Screen {
     private Button giftButton;
     private Double originalChatWidth;
 
-    public VillagerInteractionScreen(int villagerEntityId, String villagerName, String professionName, int reputation, VillagerReputationLevel reputationLevel) {
+    public VillagerInteractionScreen(int villagerEntityId, String villagerName, String professionName, boolean baby, int reputation, VillagerReputationLevel reputationLevel) {
         super(Component.literal("Villager Interaction"));
         this.villagerEntityId = villagerEntityId;
         this.villagerName = villagerName;
         this.professionName = professionName;
+        this.baby = baby;
         this.reputation = reputation;
         this.reputationLevel = reputationLevel;
         ClientVillagerConversationState.start(villagerEntityId);
@@ -253,18 +255,29 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     private void addDialogueOptions() {
-        addDialogueOption("Small Talk", DialogueRequestType.CHAT);
-        addDialogueOption("Greet", DialogueRequestType.GREETING);
-        addDialogueOption("Ask Question", DialogueRequestType.QUESTION);
-        addDialogueOption("Ask for Story", DialogueRequestType.STORY);
-        addDialogueOption("Tell Joke", DialogueRequestType.JOKE);
-        addDialogueOption("Insult", DialogueRequestType.INSULT);
+        if (this.baby) {
+            addDialogueOption("Say Hello", DialogueRequestType.GREETING);
+            addDialogueOption("Ask About Today", DialogueRequestType.CHAT);
+            addDialogueOption("Ask What They Know", DialogueRequestType.QUESTION);
+            addDialogueOption("Ask for a Story", DialogueRequestType.STORY);
+            addDialogueOption("Tell Joke", DialogueRequestType.JOKE);
+            addDialogueOption("Be Mean", DialogueRequestType.INSULT);
+        } else {
+            addDialogueOption("Small Talk", DialogueRequestType.CHAT);
+            addDialogueOption("Greet", DialogueRequestType.GREETING);
+            addDialogueOption("Ask Question", DialogueRequestType.QUESTION);
+            addDialogueOption("Ask for Story", DialogueRequestType.STORY);
+            addDialogueOption("Tell Joke", DialogueRequestType.JOKE);
+            addDialogueOption("Insult", DialogueRequestType.INSULT);
+        }
     }
 
     private void addRootOptions() {
         this.options.add(DialogueOption.enabled("Talk", this::openTalkPage));
-        this.options.add(DialogueOption.enabled("Trade", this::requestTrade));
-        this.options.add(DialogueOption.enabled("Gift", this::openGiftPage));
+        if (!this.baby) {
+            this.options.add(DialogueOption.enabled("Trade", this::requestTrade));
+            this.options.add(DialogueOption.enabled("Gift", this::openGiftPage));
+        }
         this.options.add(DialogueOption.enabled("Goodbye", this::leaveConversation));
     }
 
@@ -836,7 +849,7 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     private String reputationText() {
-        return "Reputation " + this.reputation;
+        return "Reputation: " + this.reputation;
     }
 
     private void applyChatWidthOverride() {

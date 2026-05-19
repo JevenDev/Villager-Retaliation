@@ -164,7 +164,7 @@ public final class VillagerRetaliationEvents {
         if (event.getTarget() instanceof Villager villager
                 && player instanceof ServerPlayer serverPlayer
                 && VillagerInteractionService.shouldHandleInteraction(villager, serverPlayer, event.getHand())) {
-            event.setCancellationResult(VillagerInteractionService.handleAdultVillagerRightClick(villager, serverPlayer));
+            event.setCancellationResult(VillagerInteractionService.handleVillagerRightClick(villager, serverPlayer));
             event.setCanceled(true);
             return;
         }

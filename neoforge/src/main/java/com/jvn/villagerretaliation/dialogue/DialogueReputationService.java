@@ -16,6 +16,9 @@ public final class DialogueReputationService {
                 || !VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()) {
             return DialogueReputationEffect.none(requestType);
         }
+        if (context.villager().isBaby() && requestType != DialogueRequestType.INSULT) {
+            return DialogueReputationEffect.none(requestType);
+        }
 
         PlannedEffect plannedEffect = planEffect(context, requestType, interactionState);
         if (plannedEffect.delta() == 0) {
@@ -58,6 +61,17 @@ public final class DialogueReputationService {
     }
 
     private static PlannedEffect planEffect(DialogueContext context, DialogueRequestType requestType, VillagerInteractionTracker.InteractionState interactionState) {
+        if (context.villager().isBaby()) {
+            return requestType == DialogueRequestType.INSULT
+                    ? new PlannedEffect(
+                    VillagerRetaliationConfig.INSULT_REPUTATION_LOSS.get(),
+                    "insult_child",
+                    DialogueReputationEffect.CooldownCategory.NEGATIVE,
+                    false,
+                    "That was mean. I am telling someone."
+            )
+                    : PlannedEffect.none();
+        }
         if (isDialogueOptionExhausted(context, requestType, interactionState)) {
             return new PlannedEffect(
                     VillagerRetaliationConfig.REPEATED_QUESTION_REPUTATION_LOSS.get(),

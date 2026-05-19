@@ -57,12 +57,14 @@ public final class VillagerInteractionService {
                 && canUseInteractionTarget(player, villager, true);
     }
 
-    public static InteractionResult handleAdultVillagerRightClick(Villager villager, ServerPlayer player) {
+    public static InteractionResult handleVillagerRightClick(Villager villager, ServerPlayer player) {
         if (villager.isSleeping()) {
             return handleSleepingVillagerInteraction(villager, player);
         }
 
-        if (player.isShiftKeyDown() && VillagerRetaliationConfig.SHIFT_RIGHT_CLICK_BYPASSES_INTERACTION_SCREEN.get()) {
+        if (!villager.isBaby()
+                && player.isShiftKeyDown()
+                && VillagerRetaliationConfig.SHIFT_RIGHT_CLICK_BYPASSES_INTERACTION_SCREEN.get()) {
             return openTrading(player, villager, true);
         }
 
@@ -97,7 +99,8 @@ public final class VillagerInteractionService {
                 villager.getId(),
                 VillagerPresetNameRegistry.resolveNameTranslationKey(villager),
                 VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
-                VillagerInteractionTextUtil.professionName(villager.getVillagerData().getProfession(), "Unemployed"),
+                villager.isBaby() ? "Child" : VillagerInteractionTextUtil.professionName(villager.getVillagerData().getProfession(), "Unemployed"),
+                villager.isBaby(),
                 reputation,
                 reputationLevel
         ));
@@ -163,6 +166,10 @@ public final class VillagerInteractionService {
         }
         if (!VillagerConversationService.validate(player, villager)) {
             sendVillagerNotice(player, villager, "The conversation has ended.");
+            return;
+        }
+        if (villager.isBaby()) {
+            sendVillagerNotice(player, villager, "I should ask a grown-up before taking that.");
             return;
         }
         if (inventorySlot < 0 || inventorySlot >= 36) {
@@ -303,6 +310,12 @@ public final class VillagerInteractionService {
             }
             return InteractionResult.FAIL;
         }
+        if (villager.isBaby()) {
+            if (sendFailureMessage) {
+                sendVillagerNotice(player, villager, "I do not know how to trade yet.");
+            }
+            return InteractionResult.FAIL;
+        }
         if (VillagerRetaliationHandler.blockTradingIfHostile(villager, player)) {
             if (villager.level() instanceof ServerLevel level
                     && VillagerReputationManager.getReputationLevel(level, villager, player.getUUID()).trustRank()
@@ -349,7 +362,6 @@ public final class VillagerInteractionService {
     private static boolean canUseInteractionTarget(ServerPlayer player, Villager villager, boolean allowSleeping) {
         double maxDistance = VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get();
         return villager.isAlive()
-                && !villager.isBaby()
                 && (allowSleeping || !villager.isSleeping())
                 && !villager.isTrading()
                 && !isCombatBusy(villager)
@@ -414,6 +426,9 @@ public final class VillagerInteractionService {
 
     private static String villagerSpeakerLabel(Villager villager) {
         String resolvedName = VillagerPresetNameRegistry.resolveDisplayName(villager).getString();
+        if (villager.isBaby()) {
+            return "Child " + resolvedName;
+        }
         String profession = VillagerInteractionTextUtil.professionName(villager.getVillagerData().getProfession(), "Unemployed");
         if (profession == null || profession.isBlank() || profession.equals("Villager")) {
             return resolvedName;

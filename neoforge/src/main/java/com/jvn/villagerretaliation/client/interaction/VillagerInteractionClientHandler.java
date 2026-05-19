@@ -36,6 +36,7 @@ public final class VillagerInteractionClientHandler {
                 payload.entityId(),
                 villagerName,
                 payload.professionName(),
+                payload.baby(),
                 payload.reputation(),
                 payload.reputationLevel()
         ));
@@ -87,6 +88,9 @@ public final class VillagerInteractionClientHandler {
         Entity entity = minecraft.level.getEntity(entityId);
         if (!(entity instanceof Villager villager)) {
             return "Villager";
+        }
+        if (villager.isBaby()) {
+            return "Child Villager";
         }
         String profession = VillagerInteractionTextUtil.professionName(villager.getVillagerData().getProfession(), "Villager");
         if (!villager.hasCustomName()) {

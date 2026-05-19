@@ -11,6 +11,7 @@ public record OpenVillagerInteractionPayload(
         String villagerNameKey,
         String villagerNameFallback,
         String professionName,
+        boolean baby,
         int reputation,
         VillagerReputationLevel reputationLevel)
         implements CustomPacketPayload {
@@ -25,6 +26,7 @@ public record OpenVillagerInteractionPayload(
         buffer.writeUtf(payload.villagerNameKey());
         buffer.writeUtf(payload.villagerNameFallback());
         buffer.writeUtf(payload.professionName());
+        buffer.writeBoolean(payload.baby());
         buffer.writeVarInt(payload.reputation());
         buffer.writeEnum(payload.reputationLevel());
     }
@@ -35,6 +37,7 @@ public record OpenVillagerInteractionPayload(
                 buffer.readUtf(),
                 buffer.readUtf(),
                 buffer.readUtf(),
+                buffer.readBoolean(),
                 buffer.readVarInt(),
                 buffer.readEnum(VillagerReputationLevel.class)
         );
