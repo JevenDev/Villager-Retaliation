@@ -8,24 +8,36 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
+import net.minecraft.core.QuartPos;
 import net.minecraft.core.Registry;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.npc.VillagerProfession;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.MapItem;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.levelgen.structure.Structure;
+import net.minecraft.world.level.saveddata.maps.MapDecorationTypes;
+import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 
 public final class VillagerStoryHintService {
     private static final int MIN_STRUCTURE_DISTANCE = 96;
     private static final int CACHE_REGION_SHIFT = 8;
     private static final long POSITIVE_CACHE_TICKS = 20L * 60L * 10L;
     private static final long NEGATIVE_CACHE_TICKS = 20L * 30L;
+    private static final long CARTOGRAPHER_MAP_COOLDOWN_TICKS = 20L * 60L * 20L * 2L;
     private static final Map<HintCacheKey, CachedLookup> CACHE = new HashMap<>();
+    private static final Map<CartographerMapGiftKey, Long> CARTOGRAPHER_MAP_GIFTS = new HashMap<>();
 
     private VillagerStoryHintService() {
     }
@@ -67,35 +79,49 @@ public final class VillagerStoryHintService {
         HintCacheKey cacheKey = HintCacheKey.create(level, origin, quality, HintKind.BIOME, keyLocation(currentBiome).orElse(null));
         Optional<CachedLookup> cached = getCached(level, cacheKey);
         if (cached.isPresent()) {
-            return cached.get().target().map(target -> {
+            return cached.get().nextTarget(context.random()).map(target -> {
                 String name = humanName(target.id());
                 HintPlacement placement = HintPlacement.from(origin, target.pos(), quality);
                 return new WorldHint(HintKind.BIOME, biomeText(context.random(), name, placement, quality));
             });
         }
 
-        Pair<BlockPos, Holder<Biome>> nearest = level.findClosestBiome3d(
-                biome -> !biome.is(currentBiome),
-                origin,
-                quality.biomeRadius,
-                32,
-                64
-        );
-        if (nearest == null) {
-            cache(level, cacheKey, Optional.empty());
+        List<CachedTarget> targets = locateBiomeTargets(context, quality, currentBiome);
+        cache(level, cacheKey, targets);
+        if (targets.isEmpty()) {
             return Optional.empty();
         }
 
-        ResourceLocation biomeId = keyLocation(nearest.getSecond()).orElse(null);
-        if (biomeId == null) {
-            cache(level, cacheKey, Optional.empty());
-            return Optional.empty();
-        }
-
-        cache(level, cacheKey, Optional.of(new CachedTarget(HintKind.BIOME, biomeId, nearest.getFirst())));
-        String name = humanName(biomeId);
-        HintPlacement placement = HintPlacement.from(origin, nearest.getFirst(), quality);
+        CachedTarget target = targets.get(context.random().nextInt(targets.size()));
+        String name = humanName(target.id());
+        HintPlacement placement = HintPlacement.from(origin, target.pos(), quality);
         return Optional.of(new WorldHint(HintKind.BIOME, biomeText(context.random(), name, placement, quality)));
+    }
+
+    private static List<CachedTarget> locateBiomeTargets(DialogueContext context, HintQuality quality, Holder<Biome> currentBiome) {
+        ServerLevel level = context.level();
+        BlockPos origin = context.villager().blockPosition();
+        List<CachedTarget> targets = new ArrayList<>();
+        int samplesPerRing = 12;
+        int ringStep = Math.max(160, quality.biomeRadius / 5);
+        double angleOffset = context.random().nextDouble() * Math.PI * 2.0D;
+        for (int radius = Math.max(160, quality.biomeMinRadius); radius <= quality.biomeRadius && targets.size() < quality.biomePoolSize; radius += ringStep) {
+            for (int sample = 0; sample < samplesPerRing && targets.size() < quality.biomePoolSize; sample++) {
+                double angle = angleOffset + (Math.PI * 2.0D * sample / samplesPerRing);
+                int x = origin.getX() + (int) Math.round(Math.cos(angle) * radius);
+                int z = origin.getZ() + (int) Math.round(Math.sin(angle) * radius);
+                Holder<Biome> biome = level.getUncachedNoiseBiome(
+                        QuartPos.fromBlock(x),
+                        QuartPos.fromBlock(origin.getY()),
+                        QuartPos.fromBlock(z)
+                );
+                ResourceLocation biomeId = keyLocation(biome).orElse(null);
+                if (biomeId != null && !biome.is(currentBiome) && isNewTarget(targets, biomeId, x, z)) {
+                    targets.add(new CachedTarget(HintKind.BIOME, biomeId, new BlockPos(x, origin.getY(), z)));
+                }
+            }
+        }
+        return targets;
     }
 
     private static Optional<WorldHint> findStructureHint(DialogueContext context, HintQuality quality) {
@@ -104,44 +130,104 @@ public final class VillagerStoryHintService {
         HintCacheKey cacheKey = HintCacheKey.create(level, origin, quality, HintKind.STRUCTURE, null);
         Optional<CachedLookup> cached = getCached(level, cacheKey);
         if (cached.isPresent()) {
-            return cached.get().target().map(target -> {
+            return cached.get().nextTarget(context.random()).map(target -> {
                 String name = humanName(target.id());
                 HintPlacement placement = HintPlacement.from(origin, target.pos(), quality);
+                maybeGiveCartographerMap(context, target, name);
                 return new WorldHint(HintKind.STRUCTURE, structureText(context.random(), name, placement, quality));
             });
         }
 
+        List<CachedTarget> targets = locateStructureTargets(context, quality);
+        cache(level, cacheKey, targets);
+        if (targets.isEmpty()) {
+            return Optional.empty();
+        }
+
+        CachedTarget target = targets.get(context.random().nextInt(targets.size()));
+        String name = humanName(target.id());
+        HintPlacement placement = HintPlacement.from(origin, target.pos(), quality);
+        maybeGiveCartographerMap(context, target, name);
+        return Optional.of(new WorldHint(
+                HintKind.STRUCTURE,
+                structureText(context.random(), name, placement, quality)
+        ));
+    }
+
+    private static List<CachedTarget> locateStructureTargets(DialogueContext context, HintQuality quality) {
+        ServerLevel level = context.level();
+        BlockPos origin = context.villager().blockPosition();
         Registry<Structure> registry = level.registryAccess().registryOrThrow(Registries.STRUCTURE);
         List<Holder.Reference<Structure>> structures = new ArrayList<>(registry.holders().toList());
         if (structures.isEmpty()) {
-            cache(level, cacheKey, Optional.empty());
-            return Optional.empty();
+            return List.of();
         }
 
-        Pair<BlockPos, Holder<Structure>> nearest = level.getChunkSource().getGenerator().findNearestMapStructure(
-                level,
-                HolderSet.direct(structures),
-                origin,
-                quality.structureRadius,
-                false
-        );
-        if (nearest == null) {
-            cache(level, cacheKey, Optional.empty());
-            return Optional.empty();
+        List<CachedTarget> targets = new ArrayList<>();
+        List<Holder.Reference<Structure>> remaining = new ArrayList<>(structures);
+        for (int index = 0; index < quality.structurePoolSize && !remaining.isEmpty(); index++) {
+            Pair<BlockPos, Holder<Structure>> nearest = level.getChunkSource().getGenerator().findNearestMapStructure(
+                    level,
+                    HolderSet.direct(remaining),
+                    origin,
+                    quality.structureRadius,
+                    false
+            );
+            if (nearest == null) {
+                break;
+            }
+
+            HintPlacement placement = HintPlacement.from(origin, nearest.getFirst(), quality);
+            ResourceLocation structureId = keyLocation(nearest.getSecond()).orElse(null);
+            if (placement.horizontalDistance >= MIN_STRUCTURE_DISTANCE
+                    && structureId != null
+                    && isNewTarget(targets, structureId, nearest.getFirst().getX(), nearest.getFirst().getZ())) {
+                targets.add(new CachedTarget(HintKind.STRUCTURE, structureId, nearest.getFirst()));
+            }
+            ResourceLocation foundStructureId = structureId;
+            remaining.removeIf(structure -> foundStructureId != null && keyLocation(structure).map(foundStructureId::equals).orElse(false));
+        }
+        return targets;
+    }
+
+    private static void maybeGiveCartographerMap(DialogueContext context, CachedTarget target, String targetName) {
+        if (context.profession() != VillagerProfession.CARTOGRAPHER
+                || target.kind() != HintKind.STRUCTURE
+                || context.random().nextInt(100) >= cartographerMapChancePercent(context.reputationLevel())) {
+            return;
         }
 
-        HintPlacement placement = HintPlacement.from(origin, nearest.getFirst(), quality);
-        ResourceLocation structureId = keyLocation(nearest.getSecond()).orElse(null);
-        if (placement.horizontalDistance < MIN_STRUCTURE_DISTANCE || structureId == null) {
-            cache(level, cacheKey, Optional.empty());
-            return Optional.empty();
+        CartographerMapGiftKey giftKey = new CartographerMapGiftKey(context.player().getUUID(), context.villager().getUUID());
+        long gameTime = context.level().getGameTime();
+        Long nextGiftTime = CARTOGRAPHER_MAP_GIFTS.get(giftKey);
+        if (nextGiftTime != null && nextGiftTime > gameTime) {
+            return;
         }
 
-        cache(level, cacheKey, Optional.of(new CachedTarget(HintKind.STRUCTURE, structureId, nearest.getFirst())));
-        return Optional.of(new WorldHint(
-                HintKind.STRUCTURE,
-                structureText(context.random(), humanName(structureId), placement, quality)
-        ));
+        ItemStack map = createExplorerMap(context.level(), target, targetName);
+        ItemStack remainder = map.copy();
+        if (!context.player().addItem(remainder) && !remainder.isEmpty()) {
+            context.player().drop(remainder, false);
+        }
+
+        CARTOGRAPHER_MAP_GIFTS.put(giftKey, gameTime + CARTOGRAPHER_MAP_COOLDOWN_TICKS);
+        context.villager().playSound(SoundEvents.UI_CARTOGRAPHY_TABLE_TAKE_RESULT, 0.8F, 0.9F + context.random().nextFloat() * 0.2F);
+        pruneMapGiftCooldowns(gameTime);
+    }
+
+    private static ItemStack createExplorerMap(ServerLevel level, CachedTarget target, String targetName) {
+        ItemStack map = MapItem.create(level, target.pos().getX(), target.pos().getZ(), (byte) 2, true, true);
+        MapItemSavedData.addTargetDecoration(map, target.pos(), "+", MapDecorationTypes.RED_X);
+        map.set(DataComponents.ITEM_NAME, Component.literal("Map to " + targetName));
+        MapItem.renderBiomePreviewMap(level, map);
+        return map;
+    }
+
+    private static void pruneMapGiftCooldowns(long gameTime) {
+        if (CARTOGRAPHER_MAP_GIFTS.size() <= 256) {
+            return;
+        }
+        CARTOGRAPHER_MAP_GIFTS.entrySet().removeIf(entry -> entry.getValue() <= gameTime);
     }
 
     private static Optional<CachedLookup> getCached(ServerLevel level, HintCacheKey cacheKey) {
@@ -157,9 +243,9 @@ public final class VillagerStoryHintService {
         return Optional.of(cached);
     }
 
-    private static void cache(ServerLevel level, HintCacheKey cacheKey, Optional<CachedTarget> target) {
-        long cacheTicks = target.isPresent() ? POSITIVE_CACHE_TICKS : NEGATIVE_CACHE_TICKS;
-        CACHE.put(cacheKey, new CachedLookup(target, level.getGameTime() + cacheTicks));
+    private static void cache(ServerLevel level, HintCacheKey cacheKey, List<CachedTarget> targets) {
+        long cacheTicks = targets.isEmpty() ? NEGATIVE_CACHE_TICKS : POSITIVE_CACHE_TICKS;
+        CACHE.put(cacheKey, new CachedLookup(List.copyOf(targets), level.getGameTime() + cacheTicks));
         if (CACHE.size() > 256) {
             pruneExpiredCache(level.getGameTime());
         }
@@ -174,6 +260,21 @@ public final class VillagerStoryHintService {
 
     private static Optional<ResourceLocation> keyLocation(Holder<?> holder) {
         return holder.unwrapKey().map(ResourceKey::location);
+    }
+
+    private static boolean isNewTarget(List<CachedTarget> targets, ResourceLocation id, int x, int z) {
+        return targets.stream().noneMatch(target ->
+                target.id().equals(id) || target.pos().distSqr(new BlockPos(x, target.pos().getY(), z)) < 96.0D * 96.0D
+        );
+    }
+
+    private static int cartographerMapChancePercent(VillagerReputationLevel reputationLevel) {
+        return switch (reputationLevel) {
+            case ROYALTY -> 9;
+            case REVERED -> 6;
+            case RESPECTED -> 3;
+            default -> 0;
+        };
     }
 
     private static String biomeText(RandomSource random, String name, HintPlacement placement, HintQuality quality) {
@@ -273,16 +374,19 @@ public final class VillagerStoryHintService {
     }
 
     private enum HintQuality {
-        NONE(0, 0, 0, 0, false, false, false),
-        VAGUE(12, 900, 0, 0, false, false, false),
-        BIOME_NAME(24, 1400, 0, 0, true, false, false),
-        PRECISE_BIOME(34, 2200, 0, 0, true, true, false),
-        STRUCTURE_RUMOR(46, 2600, 80, 7, true, false, true),
-        PRECISE_STRUCTURE(58, 3600, 120, 5, true, true, true);
+        NONE(0, 0, 0, 0, 0, 0, 0, false, false, false),
+        VAGUE(12, 700, 160, 0, 1, 0, 0, false, false, false),
+        BIOME_NAME(24, 1100, 220, 0, 2, 0, 0, true, false, false),
+        PRECISE_BIOME(34, 1800, 360, 0, 3, 0, 64, true, true, false),
+        STRUCTURE_RUMOR(46, 2400, 480, 96, 3, 2, 128, true, false, true),
+        PRECISE_STRUCTURE(58, 3600, 720, 160, 4, 3, 64, true, true, true);
 
         private final int chancePercent;
         private final int biomeRadius;
+        private final int biomeMinRadius;
         private final int structureRadius;
+        private final int biomePoolSize;
+        private final int structurePoolSize;
         private final int distanceRoundBlocks;
         private final boolean namesTargets;
         private final boolean namesDistances;
@@ -291,14 +395,20 @@ public final class VillagerStoryHintService {
         HintQuality(
                 int chancePercent,
                 int biomeRadius,
+                int biomeMinRadius,
                 int structureRadius,
+                int biomePoolSize,
+                int structurePoolSize,
                 int distanceRoundBlocks,
                 boolean namesTargets,
                 boolean namesDistances,
                 boolean canRevealStructures) {
             this.chancePercent = chancePercent;
             this.biomeRadius = biomeRadius;
+            this.biomeMinRadius = biomeMinRadius;
             this.structureRadius = structureRadius;
+            this.biomePoolSize = biomePoolSize;
+            this.structurePoolSize = structurePoolSize;
             this.distanceRoundBlocks = distanceRoundBlocks;
             this.namesTargets = namesTargets;
             this.namesDistances = namesDistances;
@@ -404,10 +514,36 @@ public final class VillagerStoryHintService {
         }
     }
 
-    private record CachedLookup(Optional<CachedTarget> target, long expiresAt) {
+    private static final class CachedLookup {
+        private final List<CachedTarget> targets;
+        private final long expiresAt;
+        private int nextIndex;
+
+        private CachedLookup(List<CachedTarget> targets, long expiresAt) {
+            this.targets = targets;
+            this.expiresAt = expiresAt;
+        }
+
+        private Optional<CachedTarget> nextTarget(RandomSource random) {
+            if (this.targets.isEmpty()) {
+                return Optional.empty();
+            }
+            int index = this.nextIndex++ % this.targets.size();
+            if (this.targets.size() > 2 && random.nextInt(100) < 20) {
+                index = random.nextInt(this.targets.size());
+            }
+            return Optional.of(this.targets.get(index));
+        }
+
+        private long expiresAt() {
+            return this.expiresAt;
+        }
     }
 
     private record CachedTarget(HintKind kind, ResourceLocation id, BlockPos pos) {
+    }
+
+    private record CartographerMapGiftKey(UUID playerId, UUID villagerId) {
     }
 
     private record WorldHint(HintKind kind, String text) {
