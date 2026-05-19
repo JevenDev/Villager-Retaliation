@@ -156,6 +156,10 @@ public final class VillagerReputationNetworking {
         PacketDistributor.sendToPlayer(player, new VillagerReputationTierNoticePayload(text));
     }
 
+    public static void sendNotice(ServerPlayer player, String text, VillagerReputationNoticeKind kind) {
+        PacketDistributor.sendToPlayer(player, new VillagerReputationTierNoticePayload(text, kind));
+    }
+
     public static void sendWorldTextIndicator(AbstractVillager villager, String text, VillagerWorldTextIndicatorKind kind) {
         PacketDistributor.sendToPlayersTrackingEntity(
                 villager,

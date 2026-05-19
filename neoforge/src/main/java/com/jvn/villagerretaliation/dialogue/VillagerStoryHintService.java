@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.dialogue;
 
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
+import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.mojang.datafixers.util.Pair;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -217,6 +218,7 @@ public final class VillagerStoryHintService {
         if (!context.player().addItem(remainder) && !remainder.isEmpty()) {
             context.player().drop(remainder, false);
         }
+        VillagerReputationAdvancements.rememberDialogueMapTarget(context.player(), context.level(), target.pos());
         VillagerInteractionService.sendReceivedItemNotice(context.player(), context.villager(), map);
 
         CARTOGRAPHER_MAP_GIFTS.put(giftKey, gameTime + CARTOGRAPHER_MAP_COOLDOWN_TICKS);

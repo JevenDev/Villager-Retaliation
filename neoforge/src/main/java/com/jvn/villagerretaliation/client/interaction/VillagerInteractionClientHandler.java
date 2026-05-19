@@ -7,7 +7,6 @@ import com.jvn.villagerretaliation.network.VillagerConversationEndedPayload;
 import com.jvn.villagerretaliation.network.VillagerDialogueResponsePayload;
 import com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload;
 import java.util.UUID;
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
@@ -51,7 +50,7 @@ public final class VillagerInteractionClientHandler {
     }
 
     public static void acceptNotice(VillagerInteractionNoticePayload payload) {
-        pushVillagerChatMessage(Minecraft.getInstance(), payload);
+        pushVillagerChatMessage(Minecraft.getInstance(), payload.entityId(), payload.text(), payload.speakerLabel());
     }
 
     public static void acceptConversationEnded(VillagerConversationEndedPayload payload) {
@@ -63,30 +62,18 @@ public final class VillagerInteractionClientHandler {
         ClientVillagerConversationState.forgetSpeakerLabel(payload.entityId());
     }
 
-    private static void pushVillagerChatMessage(Minecraft minecraft, VillagerInteractionNoticePayload payload) {
-        String text = payload.text();
+    private static void pushVillagerChatMessage(Minecraft minecraft, int entityId, String text, String speakerLabel) {
         if (minecraft.player == null || text == null || text.isBlank()) {
             return;
         }
-        minecraft.player.displayClientMessage(formatVillagerChatMessage(minecraft, payload), false);
+        minecraft.player.displayClientMessage(formatVillagerChatMessage(minecraft, entityId, text, speakerLabel), false);
     }
 
-    private static Component formatVillagerChatMessage(Minecraft minecraft, VillagerInteractionNoticePayload payload) {
-        String speakerLabel = payload.speakerLabel();
+    private static Component formatVillagerChatMessage(Minecraft minecraft, int entityId, String text, String speakerLabel) {
         String resolvedSpeaker = speakerLabel == null || speakerLabel.isBlank()
-                ? resolveVillagerSpeakerName(minecraft, payload.entityId())
+                ? resolveVillagerSpeakerName(minecraft, entityId)
                 : speakerLabel;
-        return Component.literal("<" + resolvedSpeaker + "> ")
-                .append(Component.literal(payload.text()).withStyle(colorFor(payload.kind())));
-    }
-
-    private static ChatFormatting colorFor(com.jvn.villagerretaliation.network.VillagerInteractionNoticeKind kind) {
-        return switch (kind) {
-            case RECEIVED_ITEM -> ChatFormatting.AQUA;
-            case GIFT_LIKED -> ChatFormatting.GREEN;
-            case GIFT_DISLIKED -> ChatFormatting.RED;
-            default -> ChatFormatting.WHITE;
-        };
+        return Component.literal("<" + resolvedSpeaker + "> " + text);
     }
 
     private static String resolveVillagerSpeakerName(Minecraft minecraft, int entityId) {

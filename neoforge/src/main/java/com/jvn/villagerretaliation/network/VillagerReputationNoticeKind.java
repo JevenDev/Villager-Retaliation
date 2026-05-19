@@ -1,6 +1,6 @@
 package com.jvn.villagerretaliation.network;
 
-public enum VillagerInteractionNoticeKind {
+public enum VillagerReputationNoticeKind {
     DEFAULT,
     RECEIVED_ITEM,
     GIFT_LIKED,
