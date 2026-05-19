@@ -11,8 +11,8 @@ import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
-import com.jvn.villagerretaliation.util.VillagerRetaliationHazardAttribution;
-import com.jvn.villagerretaliation.util.VillagerRetaliationRandomUtil;
+import com.jvn.toucanlib.util.ToucanHazardAttribution;
+import com.jvn.toucanlib.util.ToucanRandom;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerFleeBehaviorHandler;
@@ -110,6 +110,9 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onEntityTickPost(EntityTickEvent.Post event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            VillagerReputationAdvancements.onPlayerTick(player);
+        }
         if (event.getEntity() instanceof Villager villager) {
             VillagerConversationService.tickVillager(villager);
         }
@@ -161,7 +164,7 @@ public final class VillagerRetaliationEvents {
         if (event.getTarget() instanceof Villager villager
                 && player instanceof ServerPlayer serverPlayer
                 && VillagerInteractionService.shouldHandleInteraction(villager, serverPlayer, event.getHand())) {
-            event.setCancellationResult(VillagerInteractionService.handleAdultVillagerRightClick(villager, serverPlayer));
+            event.setCancellationResult(VillagerInteractionService.handleVillagerRightClick(villager, serverPlayer));
             event.setCanceled(true);
             return;
         }
@@ -218,7 +221,7 @@ public final class VillagerRetaliationEvents {
             }
         }
 
-        VillagerRetaliationHazardAttribution.rememberPlayerPlacedHazard(
+        ToucanHazardAttribution.rememberPlayerPlacedVanillaHazard(
                 event.getEntity(),
                 event.getLevel(),
                 event.getPos(),
@@ -254,6 +257,9 @@ public final class VillagerRetaliationEvents {
         if (!player.addItem(remainder) && !remainder.isEmpty()) {
             player.drop(remainder, false);
         }
+        if (player instanceof ServerPlayer serverPlayer) {
+            VillagerInteractionService.sendReceivedItemNotice(serverPlayer, villager, gift);
+        }
 
         VillagerReputationManager.markHighReputationGiftGiven(level, villager, player);
         VillagerAmbientIndicatorService.onHighReputationGift(villager);
@@ -282,56 +288,56 @@ public final class VillagerRetaliationEvents {
 
         if (profession == VillagerProfession.FARMER) {
             return new ItemStack(royalty ? Items.GOLDEN_CARROT : Items.BREAD,
-                    VillagerRetaliationRandomUtil.between(villager.getRandom(), lowTierCount, highTierCount + 1));
+                    ToucanRandom.betweenInclusive(villager.getRandom(), lowTierCount, highTierCount + 1));
         }
         if (profession == VillagerProfession.FISHERMAN) {
             return new ItemStack(royalty ? Items.COOKED_SALMON : Items.COD,
-                    VillagerRetaliationRandomUtil.between(villager.getRandom(), lowTierCount, highTierCount));
+                    ToucanRandom.betweenInclusive(villager.getRandom(), lowTierCount, highTierCount));
         }
         if (profession == VillagerProfession.LIBRARIAN) {
             return new ItemStack(royalty ? Items.BOOKSHELF : Items.BOOK,
-                    VillagerRetaliationRandomUtil.between(villager.getRandom(), 1, royalty ? 2 : 3));
+                    ToucanRandom.betweenInclusive(villager.getRandom(), 1, royalty ? 2 : 3));
         }
         if (profession == VillagerProfession.CLERIC) {
             return new ItemStack(royalty ? Items.GLOWSTONE_DUST : Items.REDSTONE,
-                    VillagerRetaliationRandomUtil.between(villager.getRandom(), lowTierCount, highTierCount));
+                    ToucanRandom.betweenInclusive(villager.getRandom(), lowTierCount, highTierCount));
         }
         if (profession == VillagerProfession.FLETCHER) {
             return new ItemStack(Items.ARROW,
-                    VillagerRetaliationRandomUtil.between(villager.getRandom(), royalty ? 6 : 4, royalty ? 12 : 8));
+                    ToucanRandom.betweenInclusive(villager.getRandom(), royalty ? 6 : 4, royalty ? 12 : 8));
         }
         if (profession == VillagerProfession.ARMORER
                 || profession == VillagerProfession.TOOLSMITH
                 || profession == VillagerProfession.WEAPONSMITH) {
             return new ItemStack(royalty ? Items.IRON_INGOT : Items.COAL,
-                    VillagerRetaliationRandomUtil.between(villager.getRandom(), lowTierCount, highTierCount));
+                    ToucanRandom.betweenInclusive(villager.getRandom(), lowTierCount, highTierCount));
         }
         if (profession == VillagerProfession.CARTOGRAPHER) {
             return new ItemStack(royalty ? Items.COMPASS : Items.MAP, 1);
         }
         if (profession == VillagerProfession.SHEPHERD) {
             return new ItemStack(royalty ? Items.WHITE_WOOL : Items.WHITE_CARPET,
-                    VillagerRetaliationRandomUtil.between(villager.getRandom(), lowTierCount + 1, highTierCount + 2));
+                    ToucanRandom.betweenInclusive(villager.getRandom(), lowTierCount + 1, highTierCount + 2));
         }
         if (profession == VillagerProfession.BUTCHER) {
             return new ItemStack(royalty ? Items.COOKED_BEEF : Items.BEEF,
-                    VillagerRetaliationRandomUtil.between(villager.getRandom(), lowTierCount, highTierCount));
+                    ToucanRandom.betweenInclusive(villager.getRandom(), lowTierCount, highTierCount));
         }
         if (profession == VillagerProfession.LEATHERWORKER) {
             return new ItemStack(royalty ? Items.LEATHER_HORSE_ARMOR : Items.LEATHER,
-                    royalty ? 1 : VillagerRetaliationRandomUtil.between(villager.getRandom(), lowTierCount, highTierCount));
+                    royalty ? 1 : ToucanRandom.betweenInclusive(villager.getRandom(), lowTierCount, highTierCount));
         }
         if (profession == VillagerProfession.MASON) {
             return new ItemStack(royalty ? Items.BRICKS : Items.CLAY_BALL,
-                    VillagerRetaliationRandomUtil.between(villager.getRandom(), lowTierCount, highTierCount + 1));
+                    ToucanRandom.betweenInclusive(villager.getRandom(), lowTierCount, highTierCount + 1));
         }
         if (profession == VillagerProfession.NITWIT || profession == VillagerProfession.NONE) {
             return new ItemStack(royalty ? Items.EMERALD : Items.APPLE,
-                    VillagerRetaliationRandomUtil.between(villager.getRandom(), lowTierCount, highTierCount));
+                    ToucanRandom.betweenInclusive(villager.getRandom(), lowTierCount, highTierCount));
         }
 
         return new ItemStack(Items.EMERALD,
-                VillagerRetaliationRandomUtil.between(villager.getRandom(), lowTierCount, highTierCount));
+                ToucanRandom.betweenInclusive(villager.getRandom(), lowTierCount, highTierCount));
     }
 
     public static void onEntityLeaveLevel(EntityLeaveLevelEvent event) {

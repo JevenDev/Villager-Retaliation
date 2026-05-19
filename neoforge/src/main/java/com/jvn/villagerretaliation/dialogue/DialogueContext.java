@@ -2,7 +2,9 @@ package com.jvn.villagerretaliation.dialogue;
 
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -39,6 +41,26 @@ public record DialogueContext(
                 event.playerId() != null
                         && event.playerId().equals(playerId)
                         && java.util.List.of(tags).contains(event.tag()));
+    }
+
+    public Optional<VillageEventMemory.MemoryEvent> recentGiftToThisVillager() {
+        UUID playerId = this.player.getUUID();
+        UUID villagerId = this.villager.getUUID();
+        return this.recentEvents.stream()
+                .filter(event -> event.gift() != null)
+                .filter(event -> playerId.equals(event.playerId()))
+                .filter(event -> villagerId.equals(event.sourceId()))
+                .max(Comparator.comparingLong(VillageEventMemory.MemoryEvent::gameTime));
+    }
+
+    public Optional<VillageEventMemory.MemoryEvent> recentGiftToAnotherVillager() {
+        UUID playerId = this.player.getUUID();
+        UUID villagerId = this.villager.getUUID();
+        return this.recentEvents.stream()
+                .filter(event -> event.gift() != null)
+                .filter(event -> playerId.equals(event.playerId()))
+                .filter(event -> !villagerId.equals(event.sourceId()))
+                .max(Comparator.comparingLong(VillageEventMemory.MemoryEvent::gameTime));
     }
 
     public boolean hasRecentDirectHitMemory() {

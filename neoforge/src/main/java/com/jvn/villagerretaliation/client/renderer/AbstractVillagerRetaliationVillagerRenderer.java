@@ -20,8 +20,10 @@ import net.minecraft.world.entity.npc.AbstractVillager;
 public abstract class AbstractVillagerRetaliationVillagerRenderer<T extends AbstractVillager> extends MobRenderer<T, BaseVillagerModel<T>> {
     private final EntityRendererProvider.Context context;
     private final VanillaVillagerModelAdapter<T> vanillaModel;
+    private BaseVillagerModel<T> nonCombatModel;
     private VillagerRetaliationVillagerModel<T> combatModel;
     private String combatModelSource;
+    private String nonCombatModelSource;
     private final VillagerPoseProvider<T> poseProvider;
     private final ResourceLocation vanillaTexture;
     private final ResourceLocation combatTexture;
@@ -40,6 +42,7 @@ public abstract class AbstractVillagerRetaliationVillagerRenderer<T extends Abst
         this.vanillaTexture = vanillaTexture;
         this.combatTexture = combatTexture;
         this.reloadCombatModel();
+        this.reloadNonCombatModel();
         this.addLayer(new CustomHeadLayer<>(this, context.getModelSet(), context.getItemInHandRenderer()));
         this.addLayer(new VillagerCrossedArmsItemLayer<>(this, context.getItemInHandRenderer()));
         this.addLayer(new CombatItemInHandLayer<>(this, context.getItemInHandRenderer(), poseProvider));
@@ -47,8 +50,8 @@ public abstract class AbstractVillagerRetaliationVillagerRenderer<T extends Abst
 
     @Override
     public void render(T villager, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
-        this.refreshCombatModel();
-        this.model = this.poseProvider.shouldUseCombatModel(villager) ? this.combatModel : this.vanillaModel;
+        this.refreshModels();
+        this.model = this.poseProvider.shouldUseCombatModel(villager) ? this.combatModel : this.nonCombatModel;
         super.render(villager, entityYaw, partialTick, poseStack, buffer, packedLight);
     }
 
@@ -62,10 +65,15 @@ public abstract class AbstractVillagerRetaliationVillagerRenderer<T extends Abst
         return super.isShaking(villager) || FearedVillagerAnimationClientCache.isShaking(villager);
     }
 
-    private void refreshCombatModel() {
+    private void refreshModels() {
         String currentModelSource = VillagerRetaliationEntityModelLoader.combatVillagerModelSource(this.context.getResourceManager());
         if (!currentModelSource.equals(this.combatModelSource)) {
             this.reloadCombatModel();
+        }
+
+        String currentNonCombatModelSource = VillagerRetaliationEntityModelLoader.nonCombatVillagerModelSource(this.context.getResourceManager());
+        if (!currentNonCombatModelSource.equals(this.nonCombatModelSource)) {
+            this.reloadNonCombatModel();
         }
     }
 
@@ -75,5 +83,12 @@ public abstract class AbstractVillagerRetaliationVillagerRenderer<T extends Abst
                 VillagerRetaliationEntityModelLoader.loadCombatVillagerModel(this.context),
                 this.poseProvider
         );
+    }
+
+    private void reloadNonCombatModel() {
+        this.nonCombatModelSource = VillagerRetaliationEntityModelLoader.nonCombatVillagerModelSource(this.context.getResourceManager());
+        this.nonCombatModel = VillagerRetaliationEntityModelLoader.loadNonCombatVillagerModel(this.context.getResourceManager())
+                .<BaseVillagerModel<T>>map(VillagerRetaliationVillagerModel::new)
+                .orElse(this.vanillaModel);
     }
 }

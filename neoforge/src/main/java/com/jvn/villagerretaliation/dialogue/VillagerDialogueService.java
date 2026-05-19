@@ -1,10 +1,13 @@
 package com.jvn.villagerretaliation.dialogue;
 
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
+import com.jvn.toucanlib.util.ToucanRandom;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Predicate;
 import net.minecraft.world.entity.npc.VillagerProfession;
 
 public final class VillagerDialogueService {
@@ -14,6 +17,20 @@ public final class VillagerDialogueService {
     }
 
     public static DialogueResult select(DialogueContext context, DialogueRequestType requestType, List<String> recentDialogueIds) {
+        if (context.villager().isBaby()) {
+            return selectBabyLine(context, requestType);
+        }
+        if (requestType == DialogueRequestType.STORY) {
+            Optional<DialogueResult> storyHint = VillagerStoryHintService.select(context);
+            if (storyHint.isPresent()) {
+                return storyHint.get();
+            }
+        }
+        Optional<DialogueResult> giftMemory = selectGiftMemoryLine(context, requestType, recentDialogueIds);
+        if (giftMemory.isPresent()) {
+            return giftMemory.get();
+        }
+
         DialogueDisposition disposition = dispositionFor(context.reputationLevel());
         List<DialogueLine> candidates = LINES.stream()
                 .filter(line -> line.matches(context, requestType, disposition))
@@ -53,10 +70,20 @@ public final class VillagerDialogueService {
     }
 
     public static String selectOpeningGreeting(DialogueContext context) {
+        if (context.villager().isBaby()) {
+            return selectBabyOpening(context);
+        }
+        Optional<String> giftMemory = selectOpeningGiftMemoryLine(context);
+        if (giftMemory.isPresent()) {
+            return giftMemory.get();
+        }
         return selectConversationLine(context, "hello", globalHelloLines(context), professionHelloLines(context.profession()));
     }
 
     public static String selectClosingGoodbye(DialogueContext context) {
+        if (context.villager().isBaby()) {
+            return selectBabyGoodbye(context);
+        }
         return selectConversationLine(context, "goodbye", globalGoodbyeLines(context), professionGoodbyeLines(context.profession()));
     }
 
@@ -76,20 +103,130 @@ public final class VillagerDialogueService {
         return line.weight() + line.specificityScore() * 8;
     }
 
+    private static Optional<DialogueResult> selectGiftMemoryLine(
+            DialogueContext context,
+            DialogueRequestType requestType,
+            List<String> recentDialogueIds) {
+        if (requestType != DialogueRequestType.CHAT && requestType != DialogueRequestType.GREETING) {
+            return Optional.empty();
+        }
+        int chance = requestType == DialogueRequestType.CHAT ? 45 : 35;
+        if (context.random().nextInt(100) >= chance) {
+            return Optional.empty();
+        }
+
+        Optional<VillageEventMemory.MemoryEvent> directGift = context.recentGiftToThisVillager();
+        if (directGift.isPresent()) {
+            String id = "gift_memory_direct_" + directGift.get().gift().reaction().name().toLowerCase();
+            if (!recentDialogueIds.contains(id)) {
+                return Optional.of(new DialogueResult(id, directGiftLine(directGift.get().gift(), context)));
+            }
+        }
+
+        Optional<VillageEventMemory.MemoryEvent> villageGift = context.recentGiftToAnotherVillager();
+        if (villageGift.isPresent()) {
+            String id = "gift_memory_village_" + villageGift.get().gift().reaction().name().toLowerCase();
+            if (!recentDialogueIds.contains(id)) {
+                return Optional.of(new DialogueResult(id, villageGiftLine(villageGift.get().gift(), context)));
+            }
+        }
+        return Optional.empty();
+    }
+
+    private static Optional<String> selectOpeningGiftMemoryLine(DialogueContext context) {
+        if (context.random().nextInt(100) >= 30) {
+            return Optional.empty();
+        }
+        Optional<VillageEventMemory.MemoryEvent> directGift = context.recentGiftToThisVillager();
+        if (directGift.isPresent()) {
+            return Optional.of(directGiftLine(directGift.get().gift(), context));
+        }
+        Optional<VillageEventMemory.MemoryEvent> villageGift = context.recentGiftToAnotherVillager();
+        return villageGift.map(memoryEvent -> villageGiftLine(memoryEvent.gift(), context));
+    }
+
+    private static String directGiftLine(VillageEventMemory.GiftMemory gift, DialogueContext context) {
+        int variant = context.random().nextInt(4);
+        return switch (gift.reaction()) {
+            case LOVED -> switch (variant) {
+                case 0 -> "Still thinking about the " + gift.itemName() + " you gave me. That was a real kindness.";
+                case 1 -> "You came back. I was just telling someone about that " + gift.itemName() + ".";
+                case 2 -> "A gift like that " + gift.itemName() + " is hard to forget.";
+                default -> "After the " + gift.itemName() + " you brought me, you are welcome here.";
+            };
+            case LIKED -> switch (variant) {
+                case 0 -> "That " + gift.itemName() + " you gave me was useful. Thank you again.";
+                case 1 -> "I put your " + gift.itemName() + " to good use.";
+                case 2 -> "You chose well with that " + gift.itemName() + ".";
+                default -> "I remember the gift. Practical kindness still counts.";
+            };
+            case NEUTRAL -> switch (variant) {
+                case 0 -> "I am still deciding what to do with that " + gift.itemName() + " you gave me.";
+                case 1 -> "About that " + gift.itemName() + "... an unusual gift, but not unwelcome.";
+                case 2 -> "You do give memorable gifts. Confusing, but memorable.";
+                default -> "I kept the " + gift.itemName() + ". Maybe it will find a purpose.";
+            };
+            case DISLIKED -> switch (variant) {
+                case 0 -> "I remember that " + gift.itemName() + ". Not fondly.";
+                case 1 -> "If this is about another gift like that " + gift.itemName() + ", spare me.";
+                case 2 -> "You gave me " + gift.itemName() + " and called it a gift. I am still sorting that out.";
+                default -> "A poor gift says more than people think.";
+            };
+            case HATED -> switch (variant) {
+                case 0 -> "I have not forgotten the " + gift.itemName() + " you handed me.";
+                case 1 -> "After that " + gift.itemName() + ", casual chat feels generous of me.";
+                case 2 -> "You called " + gift.itemName() + " a gift. I called it a warning.";
+                default -> "Bring better offerings if you want better words.";
+            };
+        };
+    }
+
+    private static String villageGiftLine(VillageEventMemory.GiftMemory gift, DialogueContext context) {
+        int variant = context.random().nextInt(4);
+        String villagerName = gift.villagerName() == null || gift.villagerName().isBlank() ? "someone here" : gift.villagerName();
+        return switch (gift.reaction()) {
+            case LOVED -> switch (variant) {
+                case 0 -> "I heard you gave " + villagerName + " " + gift.itemName() + ". That was kind of you.";
+                case 1 -> villagerName + " has been talking about your " + gift.itemName() + ". In a good way.";
+                case 2 -> "Word travels when someone brings a gift like " + gift.itemName() + ".";
+                default -> "A generous gift to " + villagerName + " makes the whole village warmer to you.";
+            };
+            case LIKED -> switch (variant) {
+                case 0 -> "I heard you gave " + villagerName + " " + gift.itemName() + ". Thoughtful enough.";
+                case 1 -> villagerName + " seemed pleased with that " + gift.itemName() + ".";
+                case 2 -> "A useful gift gets noticed around here.";
+                default -> "People remember who brings helpful things.";
+            };
+            case NEUTRAL -> switch (variant) {
+                case 0 -> "I heard about the " + gift.itemName() + " you gave " + villagerName + ". Interesting choice.";
+                case 1 -> villagerName + " is still wondering what to do with your " + gift.itemName() + ".";
+                case 2 -> "You have a strange sense for gifts, but no harm done.";
+                default -> "The village has heard of odder gifts than that " + gift.itemName() + ".";
+            };
+            case DISLIKED -> switch (variant) {
+                case 0 -> "I heard you gave " + villagerName + " " + gift.itemName() + ". That was not your finest moment.";
+                case 1 -> villagerName + " did not sound pleased about that " + gift.itemName() + ".";
+                case 2 -> "Bad gifts travel as gossip faster than good ones.";
+                default -> "Careful what you offer people. We talk.";
+            };
+            case HATED -> switch (variant) {
+                case 0 -> "I heard what you gave " + villagerName + ". Do not bring that sort of thing here.";
+                case 1 -> "That " + gift.itemName() + " gift made people nervous.";
+                case 2 -> "If you meant to scare " + villagerName + ", the village noticed.";
+                default -> "Some gifts sound a lot like threats.";
+            };
+        };
+    }
+
     private static List<DialogueLine> preferDirectHitMemoryCandidates(
             DialogueContext context,
             DialogueRequestType requestType,
             List<DialogueLine> candidates) {
-        if (!context.hasRecentDirectHitMemory() || candidates.isEmpty()) {
-            return candidates;
-        }
-
-        List<DialogueLine> directHitCandidates = candidates.stream()
-                .filter(DialogueLine::requiresRecentDirectHitMemory)
-                .toList();
-        if (directHitCandidates.isEmpty()) {
-            return candidates;
-        }
+        List<DialogueLine> directHitCandidates = memoryCandidates(
+                candidates,
+                context.hasRecentDirectHitMemory(),
+                DialogueLine::requiresRecentDirectHitMemory
+        );
 
         return switch (requestType) {
             case GREETING, QUESTION, INSULT -> directHitCandidates;
@@ -102,21 +239,30 @@ public final class VillagerDialogueService {
             DialogueContext context,
             DialogueRequestType requestType,
             List<DialogueLine> candidates) {
-        if (!context.hasRecentBrokenBedMemory() || candidates.isEmpty()) {
-            return candidates;
-        }
-
-        List<DialogueLine> brokenBedCandidates = candidates.stream()
-                .filter(DialogueLine::requiresRecentBrokenBedMemory)
-                .toList();
-        if (brokenBedCandidates.isEmpty()) {
-            return candidates;
-        }
+        List<DialogueLine> brokenBedCandidates = memoryCandidates(
+                candidates,
+                context.hasRecentBrokenBedMemory(),
+                DialogueLine::requiresRecentBrokenBedMemory
+        );
 
         return switch (requestType) {
             case GREETING, QUESTION, CHAT, INSULT -> brokenBedCandidates;
             default -> candidates;
         };
+    }
+
+    private static List<DialogueLine> memoryCandidates(
+            List<DialogueLine> candidates,
+            boolean hasMemory,
+            Predicate<DialogueLine> requirement) {
+        if (!hasMemory || candidates.isEmpty()) {
+            return candidates;
+        }
+
+        List<DialogueLine> memoryCandidates = candidates.stream()
+                .filter(requirement)
+                .toList();
+        return memoryCandidates.isEmpty() ? candidates : memoryCandidates;
     }
 
     private static String resolveText(String text, DialogueContext context) {
@@ -133,7 +279,263 @@ public final class VillagerDialogueService {
         if (candidates.isEmpty()) {
             return fallback;
         }
-        return candidates.get(context.random().nextInt(candidates.size()));
+        return ToucanRandom.choose(context.random(), candidates);
+    }
+
+    private static DialogueResult selectBabyLine(DialogueContext context, DialogueRequestType requestType) {
+        String[] lines = babyLines(context, requestType);
+        int index = ToucanRandom.index(context.random(), lines.length);
+        return new DialogueResult("baby_" + requestType.name().toLowerCase() + "_" + index, lines[index]);
+    }
+
+    private static String selectBabyOpening(DialogueContext context) {
+        String[] lines = switch (babyDisposition(context)) {
+            case FRIENDLY -> new String[] {
+                    "Hi! Did you come to visit?",
+                    "Oh, it's you! I was just running around.",
+                    "Hello! The grown-ups said you are nice."
+            };
+            case CAUTIOUS -> new String[] {
+                    "Um. Are you here to talk?",
+                    "I can talk, but I am staying close to home.",
+                    "Hello. Please do not be scary."
+            };
+            case AFRAID -> new String[] {
+                    "Please do not yell.",
+                    "I am only little. What do you want?",
+                    "I can listen, but then I am going back inside."
+            };
+        };
+        return ToucanRandom.choose(context.random(), lines);
+    }
+
+    private static String selectBabyGoodbye(DialogueContext context) {
+        String[] lines = switch (babyDisposition(context)) {
+            case FRIENDLY -> new String[] {
+                    "Bye! Come back later.",
+                    "I have to go practice running now.",
+                    "See you! I am going to tell someone I talked to you."
+            };
+            case CAUTIOUS -> new String[] {
+                    "Okay. Goodbye.",
+                    "I am going back near the grown-ups now.",
+                    "Bye. Please be nice to everyone."
+            };
+            case AFRAID -> new String[] {
+                    "Goodbye. I am leaving now.",
+                    "Please let me go.",
+                    "I am going to find someone older."
+            };
+        };
+        return ToucanRandom.choose(context.random(), lines);
+    }
+
+    private static String[] babyLines(DialogueContext context, DialogueRequestType requestType) {
+        BabyDisposition disposition = babyDisposition(context);
+        return switch (requestType) {
+            case CHAT -> babyChatLines(disposition);
+            case GREETING -> babyGreetingLines(disposition);
+            case QUESTION -> babyQuestionLines(context, disposition);
+            case STORY -> babyStoryLines(context, disposition);
+            case JOKE -> babyJokeLines(disposition);
+            case INSULT -> babyInsultLines(disposition);
+        };
+    }
+
+    private static BabyDisposition babyDisposition(DialogueContext context) {
+        if (context.reputationLevel().trustRank() >= VillagerReputationLevel.TRUSTED.trustRank()) {
+            return BabyDisposition.FRIENDLY;
+        }
+        if (context.reputationLevel().trustRank() <= VillagerReputationLevel.HOSTILE.trustRank()) {
+            return BabyDisposition.AFRAID;
+        }
+        return BabyDisposition.CAUTIOUS;
+    }
+
+    private static String[] babyChatLines(BabyDisposition disposition) {
+        return switch (disposition) {
+            case FRIENDLY -> new String[] {
+                    "I found a really good hiding place, but I cannot tell you or it stops being good.",
+                    "The bell is loud up close. I learned that by mistake.",
+                    "When I grow up, I might have the best job site. Maybe two.",
+                    "I can run from one path to the other without touching the garden.",
+                    "The grown-ups worry a lot. I try to help by not worrying."
+            };
+            case CAUTIOUS -> new String[] {
+                    "I am not supposed to wander too far.",
+                    "The paths are safer when everyone is watching.",
+                    "I know where the doors are. That is important.",
+                    "Sometimes I listen from behind the corner.",
+                    "I like quiet visitors best."
+            };
+            case AFRAID -> new String[] {
+                    "I do not want trouble.",
+                    "The grown-ups told me to stay away from you.",
+                    "I am going to stand where someone can see me.",
+                    "Please do not make the bell ring.",
+                    "I remember scary things, even when I try not to."
+            };
+        };
+    }
+
+    private static String[] babyGreetingLines(BabyDisposition disposition) {
+        return switch (disposition) {
+            case FRIENDLY -> new String[] {
+                    "Hi again!",
+                    "You came back!",
+                    "Hello! I am faster today.",
+                    "Good to see you. I think.",
+                    "Want to hear what I learned?"
+            };
+            case CAUTIOUS -> new String[] {
+                    "Hello.",
+                    "Are you staying long?",
+                    "I can say hello from here.",
+                    "The grown-ups are nearby.",
+                    "You look busy. Or maybe sneaky."
+            };
+            case AFRAID -> new String[] {
+                    "Please stay there.",
+                    "I see you.",
+                    "I am not coming closer.",
+                    "Do you need something?",
+                    "I should probably go."
+            };
+        };
+    }
+
+    private static String[] babyQuestionLines(DialogueContext context, BabyDisposition disposition) {
+        return switch (disposition) {
+            case FRIENDLY -> new String[] {
+                    "A question? I know three things: doors, bells, and which path has puddles.",
+                    "The best place in the village is wherever nobody has chores for you.",
+                    "If you ask a grown-up, they use more words. I use better ones.",
+                    "I saw someone hide bread once. I am not saying who.",
+                    timeAnswer(context)
+            };
+            case CAUTIOUS -> new String[] {
+                    "I do not know much. I know enough to stay near home.",
+                    "Ask a grown-up. They like sounding certain.",
+                    "The village is safe when people are careful.",
+                    "I know where to run if things get loud.",
+                    weatherAnswer(context)
+            };
+            case AFRAID -> new String[] {
+                    "I should not answer you.",
+                    "Please ask someone else.",
+                    "I know you have made people nervous.",
+                    "The safest answer is no answer.",
+                    "I am little, but I still notice who scares people."
+            };
+        };
+    }
+
+    private static String[] babyStoryLines(DialogueContext context, BabyDisposition disposition) {
+        return switch (disposition) {
+            case FRIENDLY -> new String[] {
+                    "Once I ran all the way around the well and did not fall in. That is the whole story, but it was very exciting.",
+                    "I saw a grown-up lose their work hat. They pretended they meant to put it there.",
+                    "One time the bell rang and everyone moved at once. It looked like a dance, except worried.",
+                    "I had a dream I was tall enough to see over every fence.",
+                    recentBabyStory(context)
+            };
+            case CAUTIOUS -> new String[] {
+                    "There is a story about staying close when strangers arrive. I like that one.",
+                    "I once heard footsteps outside at night. In the morning everyone said it was nothing, but nobody sounded sure.",
+                    "A path can feel very long when you are small.",
+                    "The grown-ups tell stories after scary days. They make the endings softer.",
+                    recentBabyStory(context)
+            };
+            case AFRAID -> new String[] {
+                    "I do not want to tell stories right now.",
+                    "The scary stories sound too much like real ones lately.",
+                    "Maybe another day, when everyone feels safer.",
+                    "I know a story about hiding, but I am using it.",
+                    "Some stories are for people who have been kinder."
+            };
+        };
+    }
+
+    private static String[] babyJokeLines(BabyDisposition disposition) {
+        return switch (disposition) {
+            case FRIENDLY -> new String[] {
+                    "Why did the bell ring? Because it had something important to say!",
+                    "I made up a joke, but I forgot the middle. The ending is me laughing.",
+                    "A grown-up told me a work joke. I did not understand it, so it must be very advanced.",
+                    "If I stand very still, chores cannot see me.",
+                    "That was funny. Or I decided it was."
+            };
+            case CAUTIOUS -> new String[] {
+                    "That is a joke? I think I need practice.",
+                    "I might laugh if it is not mean.",
+                    "Grown-up jokes have too many job sites in them.",
+                    "I know one joke, but it only works if you are short.",
+                    "Was that the funny part?"
+            };
+            case AFRAID -> new String[] {
+                    "I do not feel like laughing.",
+                    "Please do not make the joke scary.",
+                    "That sounded like a trick.",
+                    "Maybe tell that to someone older.",
+                    "I can smile a little. That is all."
+            };
+        };
+    }
+
+    private static String[] babyInsultLines(BabyDisposition disposition) {
+        return switch (disposition) {
+            case FRIENDLY -> new String[] {
+                    "That was not nice.",
+                    "Hey. I thought we were talking kindly.",
+                    "I am telling a grown-up you said that.",
+                    "You should use better words.",
+                    "I do not like that game."
+            };
+            case CAUTIOUS -> new String[] {
+                    "That is mean.",
+                    "Please stop.",
+                    "I knew I should have stayed farther away.",
+                    "Why would you say that?",
+                    "I am leaving if you keep doing that."
+            };
+            case AFRAID -> new String[] {
+                    "Please do not.",
+                    "I want to go now.",
+                    "You are being scary.",
+                    "I did not do anything to you.",
+                    "The village will hear about this."
+            };
+        };
+    }
+
+    private static String timeAnswer(DialogueContext context) {
+        return switch (context.timeOfDay()) {
+            case MORNING -> "Morning is best because nobody has remembered all their chores yet.";
+            case AFTERNOON -> "Afternoon is when everyone walks faster.";
+            case EVENING -> "Evening means doors, supper smells, and grown-ups counting heads.";
+            case NIGHT -> "Night is when I am supposed to be inside. Very inside.";
+        };
+    }
+
+    private static String weatherAnswer(DialogueContext context) {
+        return switch (context.weather()) {
+            case CLEAR -> "The sky is behaving today. That helps.";
+            case RAIN -> "Rain makes puddles, and puddles are important if nobody is watching.";
+            case THUNDER -> "Thunder is too loud. I do not like when the sky shouts.";
+        };
+    }
+
+    private static String recentBabyStory(DialogueContext context) {
+        if (context.hasRecentEvent(VillageEventMemory.EventTag.PLAYER_DEFENDED_VILLAGE)) {
+            return "Everyone talked about the fighting. I liked the part where the village was still here after.";
+        }
+        if (context.hasRecentEvent(VillageEventMemory.EventTag.VILLAGER_DEATH)) {
+            return "People got quiet recently. I do not like that kind of story.";
+        }
+        if (context.hasRecentEvent(VillageEventMemory.EventTag.BABY_BORN)) {
+            return "There is another little one around. Everyone pretends not to smile too much.";
+        }
+        return "Yesterday I learned that grown-ups say 'soon' when they do not know.";
     }
 
     private static List<String> globalHelloLines(DialogueContext context) {
@@ -398,6 +800,7 @@ public final class VillagerDialogueService {
                 .build();
 
         addProfessionChatLines(lines);
+        addVillageLifeLines(lines);
         addGlobalMoodLines(lines);
         addProfessionMoodLines(lines);
         addWeatherLines(lines);
@@ -419,6 +822,131 @@ public final class VillagerDialogueService {
                     .weight(30)
                     .build();
         }
+    }
+
+    private static void addVillageLifeLines(List<DialogueLine> lines) {
+        for (DialogueDisposition disposition : DialogueDisposition.values()) {
+            for (int index = 0; index < 12; index++) {
+                add(lines, "village_life_" + disposition.name().toLowerCase() + "_" + index, requestForVillageLifeIndex(index), villageLifeText(disposition, index))
+                        .dispositions(disposition)
+                        .weight(20)
+                        .build();
+            }
+        }
+    }
+
+    private static DialogueRequestType requestForVillageLifeIndex(int index) {
+        return switch (index % 6) {
+            case 0 -> DialogueRequestType.CHAT;
+            case 1 -> DialogueRequestType.GREETING;
+            case 2 -> DialogueRequestType.QUESTION;
+            case 3 -> DialogueRequestType.STORY;
+            case 4 -> DialogueRequestType.JOKE;
+            default -> DialogueRequestType.INSULT;
+        };
+    }
+
+    private static String villageLifeText(DialogueDisposition disposition, int index) {
+        return switch (disposition) {
+            case RESPECTFUL -> switch (index) {
+                case 0 -> "When you visit, even ordinary work feels less fragile.";
+                case 1 -> "There you are. The square brightens when trusted feet cross it.";
+                case 2 -> "Ask what you like. A good neighbor earns plain answers.";
+                case 3 -> "The best days here are quiet because someone kept them that way.";
+                case 4 -> "A village joke from you usually lands softer than a bell and better than a tax.";
+                case 5 -> "Even admired friends can step in the wrong furrow.";
+                case 6 -> "People notice who checks the roads before checking the prices.";
+                case 7 -> "Welcome. We have work, gossip, and fewer worries when you are near.";
+                case 8 -> "You want the truth? Villages survive on habit, help, and a little stubbornness.";
+                case 9 -> "I remember a season when kindness arrived late. Yours comes earlier.";
+                case 10 -> "If this is another joke, I am already giving it generous odds.";
+                default -> "Careful with that tongue. Respect is warm, not fireproof.";
+            };
+            case FRIENDLY -> switch (index) {
+                case 0 -> "Good company makes even sweeping the path feel like progress.";
+                case 1 -> "Hello again. You are becoming part of the village noise.";
+                case 2 -> "Ask away. I have a minute before the next chore finds me.";
+                case 3 -> "Once the well rope snapped at dawn. Everyone became an expert at once.";
+                case 4 -> "If the punchline has emeralds, I am listening with professional interest.";
+                case 5 -> "That was sharper than friendly talk needs to be.";
+                case 6 -> "A familiar face saves everyone the trouble of worrying first.";
+                case 7 -> "You arrive often enough that people have started guessing your errands.";
+                case 8 -> "Most answers here begin with 'it depends who saw it.'";
+                case 9 -> "One good favor can echo through three houses by supper.";
+                case 10 -> "Tell it, then. I have heard worse from tired traders.";
+                default -> "Mind yourself. Liking you is not the same as ignoring everything.";
+            };
+            case NEUTRAL -> switch (index) {
+                case 0 -> "The village keeps moving. People eat, work, argue, sleep, repeat.";
+                case 1 -> "Hello. Keep to the paths and we will get along.";
+                case 2 -> "Questions are welcome when they come with patience.";
+                case 3 -> "A missing bucket once caused more debate here than a raid warning.";
+                case 4 -> "Go on. I can spare one laugh if it is sturdy.";
+                case 5 -> "That sounded like practice for a worse insult.";
+                case 6 -> "Most days are ordinary. Ordinary is underrated.";
+                case 7 -> "Passing through? Then pass through politely.";
+                case 8 -> "A village is smaller than it looks and louder than it sounds.";
+                case 9 -> "Everyone has a story here. Most are about weather, work, or doors.";
+                case 10 -> "If I laugh, it counts as luck, not permission.";
+                default -> "Careful. Neutral ground can tilt.";
+            };
+            case CAUTIOUS -> switch (index) {
+                case 0 -> "People have started watching where you stand.";
+                case 1 -> "Say hello if you must. Keep your hands easy to see.";
+                case 2 -> "Why ask me? There are safer questions and safer questioners.";
+                case 3 -> "The village has learned to turn small warnings into habits.";
+                case 4 -> "A joke might help. A cruel one will not.";
+                case 5 -> "That is the sort of remark that gets repeated indoors.";
+                case 6 -> "Trust is not gone, but it is checking the exits.";
+                case 7 -> "You are welcome to speak. That is not the same as being welcome everywhere.";
+                case 8 -> "We keep lists in our heads, even when nobody writes them down.";
+                case 9 -> "Once a stranger smiled through every lie. People remember that.";
+                case 10 -> "Make it kind. I am measuring more than the joke.";
+                default -> "That did not help your case.";
+            };
+            case RUDE -> switch (index) {
+                case 0 -> "I have had friendlier conversations with locked doors.";
+                case 1 -> "You again. Make the interruption worthwhile.";
+                case 2 -> "Answers cost trust, and you are short on coin.";
+                case 3 -> "There is a story here about people who wore out their welcome. Guess the ending.";
+                case 4 -> "A joke from you? Fine. Surprise me by not making it worse.";
+                case 5 -> "You mistake patience for softness.";
+                case 6 -> "The village works harder when you are around. Not in the good way.";
+                case 7 -> "Speak, then. I was almost enjoying the quiet.";
+                case 8 -> "Every house here has a door. You are why people remember that.";
+                case 9 -> "Once we ignored a warning sign. We are less sentimental now.";
+                case 10 -> "That joke limped in and blamed the road.";
+                default -> "Careful. Even words can start bells ringing.";
+            };
+            case HOSTILE -> switch (index) {
+                case 0 -> "The village would breathe easier if you left.";
+                case 1 -> "Do not confuse my answer with welcome.";
+                case 2 -> "Why would anyone here help you understand us?";
+                case 3 -> "Our latest story is about keeping trouble at the edge of town.";
+                case 4 -> "I am sure you find yourself hilarious. That makes one of us.";
+                case 5 -> "You are standing on borrowed patience.";
+                case 6 -> "People lower their voices when you pass. That is not respect.";
+                case 7 -> "Make it fast. The village has endured enough of you.";
+                case 8 -> "The answer is no, unless the question is whether we remember.";
+                case 9 -> "There are names we speak as warnings. Yours is getting close.";
+                case 10 -> "Nothing you say sounds harmless anymore.";
+                default -> "Say less. Leave more.";
+            };
+            case FEARFUL -> switch (index) {
+                case 0 -> "I am answering because refusing feels worse.";
+                case 1 -> "Hello. Please keep your distance.";
+                case 2 -> "I do not know what answer will keep things calm.";
+                case 3 -> "Fear makes every ordinary sound seem planned.";
+                case 4 -> "I can try to laugh if that is what you want.";
+                case 5 -> "Please do not aim your cruelty here.";
+                case 6 -> "When you arrive, people count who is nearby.";
+                case 7 -> "I am listening. Carefully. Too carefully.";
+                case 8 -> "The safest answer is short.";
+                case 9 -> "Some stories get quiet in the telling. Yours does that.";
+                case 10 -> "Was that a joke? I cannot always tell with you.";
+                default -> "Please stop before someone gets hurt.";
+            };
+        };
     }
 
     private static void addTimeOfDayLines(List<DialogueLine> lines) {
@@ -897,6 +1425,12 @@ public final class VillagerDialogueService {
             String pride,
             String joke
     ) {
+    }
+
+    private enum BabyDisposition {
+        FRIENDLY,
+        CAUTIOUS,
+        AFRAID
     }
 
     private static final class AutoAddingBuilder extends DialogueLine.Builder {

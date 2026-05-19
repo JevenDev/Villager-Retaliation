@@ -1,16 +1,13 @@
 package com.jvn.villagerretaliation.network;
 
-import com.jvn.villagerretaliation.VillagerRetaliation;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 public record VillagerInteractionNoticePayload(int entityId, String text, String speakerLabel) implements CustomPacketPayload {
-    public static final Type<VillagerInteractionNoticePayload> TYPE = new Type<>(
-            VillagerRetaliation.id("villager_interaction_notice")
-    );
+    public static final Type<VillagerInteractionNoticePayload> TYPE = VillagerPayloads.type("villager_interaction_notice");
     public static final StreamCodec<RegistryFriendlyByteBuf, VillagerInteractionNoticePayload> STREAM_CODEC =
-            StreamCodec.of(VillagerInteractionNoticePayload::encode, VillagerInteractionNoticePayload::decode);
+            VillagerPayloads.codec(VillagerInteractionNoticePayload::encode, VillagerInteractionNoticePayload::decode);
 
     private static void encode(RegistryFriendlyByteBuf buffer, VillagerInteractionNoticePayload payload) {
         buffer.writeVarInt(payload.entityId());

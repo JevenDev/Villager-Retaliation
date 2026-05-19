@@ -148,8 +148,9 @@ public final class VillagerReputationManager {
         entry.setLastInteractionGameTime(level.getGameTime());
         entry.setLastKnownVillagerPosition(villager.blockPosition());
         data.setDirty();
-        VillageEventMemory.remember(level, VillageEventMemory.EventTag.REPUTATION_CHANGED, villager.blockPosition(), villager, level.getPlayerByUUID(playerId));
-        if (level.getPlayerByUUID(playerId) instanceof Player player) {
+        Player player = level.getPlayerByUUID(playerId);
+        VillageEventMemory.remember(level, VillageEventMemory.EventTag.REPUTATION_CHANGED, villager.blockPosition(), villager, player);
+        if (player != null) {
             handleTierChange(level, villager, player, previousLevel, newLevel);
             VillagerReputationTradePricing.refreshPricesForPlayer(level, villager, player);
         }
@@ -201,8 +202,9 @@ public final class VillagerReputationManager {
             addVanillaGossip(villager, playerId, GossipType.MINOR_POSITIVE, Math.max(1, amount / 5));
         }
         data.setDirty();
-        VillageEventMemory.remember(level, VillageEventMemory.EventTag.REPUTATION_CHANGED, eventPos, villager, level.getPlayerByUUID(playerId));
-        if (level.getPlayerByUUID(playerId) instanceof Player player) {
+        Player player = level.getPlayerByUUID(playerId);
+        VillageEventMemory.remember(level, VillageEventMemory.EventTag.REPUTATION_CHANGED, eventPos, villager, player);
+        if (player != null) {
             handleTierChange(level, villager, player, previousLevel, newLevel);
             VillagerReputationTradePricing.refreshPricesForPlayer(level, villager, player);
         }
@@ -295,9 +297,9 @@ public final class VillagerReputationManager {
     }
 
     public static void syncToTrackingPlayer(ServerLevel level, AbstractVillager villager, UUID playerId) {
+        double witnessRadius = VillagerRetaliationConfig.WITNESS_RADIUS.get();
         if (level.getPlayerByUUID(playerId) instanceof ServerPlayer serverPlayer
-                && serverPlayer.distanceToSqr(villager) <= VillagerRetaliationConfig.WITNESS_RADIUS.get()
-                * VillagerRetaliationConfig.WITNESS_RADIUS.get()) {
+                && serverPlayer.distanceToSqr(villager) <= witnessRadius * witnessRadius) {
             int reputation = getReputation(level, villager, playerId);
             VillagerReputationNetworking.sendReputation(serverPlayer, villager, reputation);
         }

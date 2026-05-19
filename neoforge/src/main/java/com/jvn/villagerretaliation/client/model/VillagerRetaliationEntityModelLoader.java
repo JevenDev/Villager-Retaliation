@@ -28,6 +28,10 @@ import java.util.Optional;
 public final class VillagerRetaliationEntityModelLoader {
     public static final ResourceLocation COMBAT_VILLAGER_MODEL =
             VillagerRetaliation.id("models/entity/villager/combat_villager.json");
+    public static final ResourceLocation NON_COMBAT_VILLAGER_MODEL =
+            VillagerRetaliation.id("models/entity/villager/non_combat_villager.json");
+    public static final ResourceLocation VILLAGER_MODEL_OPTIONS =
+            VillagerRetaliation.id("models/entity/villager/render_options.json");
 
     private static final String EMF_MOD_ID = "entity_model_features";
     private static final String MOD_RESOURCE_PACK_ID = "mod/" + VillagerRetaliation.MOD_ID;
@@ -39,7 +43,7 @@ public final class VillagerRetaliationEntityModelLoader {
 
     public static ModelPart loadCombatVillagerModel(EntityRendererProvider.Context context) {
         ResourceManager resourceManager = context.getResourceManager();
-        Optional<Resource> overrideResource = findResourcePackOverride(resourceManager);
+        Optional<Resource> overrideResource = findResourcePackOverride(resourceManager, COMBAT_VILLAGER_MODEL);
         if (overrideResource.isPresent()) {
             LOGGER.info("Loading combat villager model from json:{}", overrideResource.get().sourcePackId());
             return loadCombatVillagerModel(overrideResource.get());
@@ -53,11 +57,56 @@ public final class VillagerRetaliationEntityModelLoader {
     }
 
     public static String combatVillagerModelSource(ResourceManager resourceManager) {
-        Optional<Resource> overrideResource = findResourcePackOverride(resourceManager);
+        Optional<Resource> overrideResource = findResourcePackOverride(resourceManager, COMBAT_VILLAGER_MODEL);
         if (overrideResource.isPresent()) {
             return "json:" + overrideResource.get().sourcePackId();
         }
         return isEntityModelFeaturesLoaded() ? "emf:" + EMF_MOD_ID : "json:" + MOD_RESOURCE_PACK_ID;
+    }
+
+    public static Optional<ModelPart> loadNonCombatVillagerModel(ResourceManager resourceManager) {
+        if (!shouldUseCustomNonCombatModel(resourceManager)) {
+            return Optional.empty();
+        }
+
+        Optional<Resource> overrideResource = findResourcePackOverride(resourceManager, NON_COMBAT_VILLAGER_MODEL);
+        if (overrideResource.isEmpty()) {
+            LOGGER.warn(
+                    "Villager model options requested a custom non-combat model, but {} was not found. Falling back to vanilla crossed arms.",
+                    NON_COMBAT_VILLAGER_MODEL
+            );
+            return Optional.empty();
+        }
+
+        Resource resource = overrideResource.get();
+        LOGGER.info("Loading non-combat villager model from json:{}", resource.sourcePackId());
+        Optional<LayerDefinition> layerDefinition = loadLayerDefinition(resource, NON_COMBAT_VILLAGER_MODEL);
+        if (layerDefinition.isEmpty()) {
+            return Optional.empty();
+        }
+
+        ModelPart root = layerDefinition.get().bakeRoot();
+        if (hasRequiredCombatParts(root)) {
+            return Optional.of(root);
+        }
+
+        LOGGER.warn(
+                "Non-combat villager model from {} is missing required parts. Falling back to vanilla crossed arms.",
+                resource.sourcePackId()
+        );
+        return Optional.empty();
+    }
+
+    public static String nonCombatVillagerModelSource(ResourceManager resourceManager) {
+        NonCombatModelMode mode = getNonCombatModelMode(resourceManager);
+        if (mode != NonCombatModelMode.CUSTOM) {
+            return "vanilla:" + mode.serializedName;
+        }
+
+        Optional<Resource> overrideResource = findResourcePackOverride(resourceManager, NON_COMBAT_VILLAGER_MODEL);
+        return overrideResource
+                .map(resource -> "custom:" + resource.sourcePackId())
+                .orElse("custom:missing");
     }
 
     public static ModelPart loadCombatVillagerModel(ResourceManager resourceManager) {
@@ -73,7 +122,7 @@ public final class VillagerRetaliationEntityModelLoader {
     }
 
     private static ModelPart loadCombatVillagerModel(Resource resource) {
-        LayerDefinition layerDefinition = loadLayerDefinition(resource)
+        LayerDefinition layerDefinition = loadLayerDefinition(resource, COMBAT_VILLAGER_MODEL)
                 .orElseGet(VillagerRetaliationVillagerModel::createBodyLayer);
         ModelPart root = layerDefinition.bakeRoot();
         if (hasRequiredCombatParts(root)) {
@@ -94,6 +143,10 @@ public final class VillagerRetaliationEntityModelLoader {
     }
 
     private static Optional<LayerDefinition> loadLayerDefinition(Resource resource) {
+        return loadLayerDefinition(resource, COMBAT_VILLAGER_MODEL);
+    }
+
+    private static Optional<LayerDefinition> loadLayerDefinition(Resource resource, ResourceLocation modelLocation) {
         try (Reader reader = resource.openAsReader()) {
             JsonObject json = GSON.fromJson(reader, JsonObject.class);
             if (json == null) {
@@ -101,13 +154,13 @@ public final class VillagerRetaliationEntityModelLoader {
             }
             return Optional.of(parseLayerDefinition(json));
         } catch (Exception exception) {
-            LOGGER.warn("Failed to load combat villager model {}. Falling back to the built-in model.", COMBAT_VILLAGER_MODEL, exception);
+            LOGGER.warn("Failed to load villager model {}.", modelLocation, exception);
             return Optional.empty();
         }
     }
 
-    private static Optional<Resource> findResourcePackOverride(ResourceManager resourceManager) {
-        List<Resource> resourceStack = resourceManager.getResourceStack(COMBAT_VILLAGER_MODEL);
+    private static Optional<Resource> findResourcePackOverride(ResourceManager resourceManager, ResourceLocation location) {
+        List<Resource> resourceStack = resourceManager.getResourceStack(location);
         for (int i = resourceStack.size() - 1; i >= 0; i--) {
             Resource resource = resourceStack.get(i);
             if (!MOD_RESOURCE_PACK_ID.equals(resource.sourcePackId())) {
@@ -119,6 +172,36 @@ public final class VillagerRetaliationEntityModelLoader {
 
     private static boolean isEntityModelFeaturesLoaded() {
         return ModList.get().isLoaded(EMF_MOD_ID);
+    }
+
+    private static boolean shouldUseCustomNonCombatModel(ResourceManager resourceManager) {
+        return getNonCombatModelMode(resourceManager) == NonCombatModelMode.CUSTOM;
+    }
+
+    private static NonCombatModelMode getNonCombatModelMode(ResourceManager resourceManager) {
+        Optional<Resource> optionsResource = findResourcePackOverride(resourceManager, VILLAGER_MODEL_OPTIONS);
+        if (optionsResource.isEmpty()) {
+            return NonCombatModelMode.VANILLA;
+        }
+
+        Resource resource = optionsResource.get();
+        try (Reader reader = resource.openAsReader()) {
+            JsonObject json = GSON.fromJson(reader, JsonObject.class);
+            if (json == null) {
+                throw new JsonParseException("Options file is empty");
+            }
+
+            String value = getString(json, "non_combat_model");
+            return NonCombatModelMode.fromSerializedName(value);
+        } catch (Exception exception) {
+            LOGGER.warn(
+                    "Failed to load villager model options {} from {}. Falling back to vanilla crossed arms.",
+                    VILLAGER_MODEL_OPTIONS,
+                    resource.sourcePackId(),
+                    exception
+            );
+            return NonCombatModelMode.VANILLA;
+        }
     }
 
     private static LayerDefinition parseLayerDefinition(JsonObject json) {
@@ -277,5 +360,25 @@ public final class VillagerRetaliationEntityModelLoader {
 
     private static float degreesToRadians(float degrees) {
         return degrees * ((float) Math.PI / 180.0F);
+    }
+
+    private enum NonCombatModelMode {
+        VANILLA("vanilla"),
+        CUSTOM("custom");
+
+        private final String serializedName;
+
+        NonCombatModelMode(String serializedName) {
+            this.serializedName = serializedName;
+        }
+
+        private static NonCombatModelMode fromSerializedName(String name) {
+            for (NonCombatModelMode mode : values()) {
+                if (mode.serializedName.equals(name)) {
+                    return mode;
+                }
+            }
+            throw new JsonParseException("Unknown non_combat_model value '" + name + "'");
+        }
     }
 }

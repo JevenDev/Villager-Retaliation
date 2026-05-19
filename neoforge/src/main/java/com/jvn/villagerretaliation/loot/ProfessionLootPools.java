@@ -1,8 +1,8 @@
 package com.jvn.villagerretaliation.loot;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
-import com.jvn.villagerretaliation.util.VillagerRetaliationItemUtil;
-import com.jvn.villagerretaliation.util.VillagerRetaliationRandomUtil;
+import com.jvn.toucanlib.util.ToucanItemStacks;
+import com.jvn.toucanlib.util.ToucanRandom;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -137,7 +137,7 @@ public final class ProfessionLootPools {
         List<ItemStack> drops = rollCommon(random, 2, 4,
                 stack(Items.PAPER, 1, 5), stack(Items.BOOK, 1, 3), stack(Items.INK_SAC, 1, 1), stack(Items.FEATHER, 1, 1));
         addRare(random, drops, new ItemStack(Items.BOOKSHELF));
-        if (VillagerRetaliationRandomUtil.chance(random, VillagerRetaliationConfig.VERY_RARE_DROP_CHANCE.get())) {
+        if (ToucanRandom.chance(random, VillagerRetaliationConfig.VERY_RARE_DROP_CHANCE.get())) {
             drops.add(soldLibrarianEnchantedBook(villager, random).orElseGet(() -> enchantedBook(villager, random)));
         }
         return drops;
@@ -220,20 +220,20 @@ public final class ProfessionLootPools {
         List<ItemStack> drops = rollCommon(random, 2, 4,
                 stack(Items.BREAD, 1, 3), stack(Items.STICK, 1, 4), stack(Items.POISONOUS_POTATO, 1, 1),
                 stack(randomFlower(random), 1, 1), stack(Items.DIRT, 1, 1));
-        addRare(random, drops, new ItemStack(Items.EMERALD, VillagerRetaliationRandomUtil.between(random, 1, 2)));
+        addRare(random, drops, new ItemStack(Items.EMERALD, ToucanRandom.betweenInclusive(random, 1, 2)));
         return drops;
     }
 
     private static List<ItemStack> unemployed(Villager villager, RandomSource random) {
         List<ItemStack> drops = rollCommon(random, 2, 3,
                 stack(Items.BREAD, 1, 3), stack(Items.STICK, 1, 3), stack(Items.WHEAT_SEEDS, 1, 2));
-        addRare(random, drops, new ItemStack(Items.EMERALD, VillagerRetaliationRandomUtil.between(random, 1, 2)));
+        addRare(random, drops, new ItemStack(Items.EMERALD, ToucanRandom.betweenInclusive(random, 1, 2)));
         addRare(random, drops, new ItemStack(Items.APPLE));
         return drops;
     }
 
     private static List<ItemStack> rollCommon(RandomSource random, int minRolls, int maxRolls, Entry... entries) {
-        int rolls = Math.max(1, VillagerRetaliationRandomUtil.between(random, minRolls, maxRolls));
+        int rolls = Math.max(1, ToucanRandom.betweenInclusive(random, minRolls, maxRolls));
         List<ItemStack> drops = new ArrayList<>();
         for (int i = 0; i < rolls; i++) {
             drops.add(entries[random.nextInt(entries.length)].create(random));
@@ -243,27 +243,27 @@ public final class ProfessionLootPools {
     }
 
     private static void addRare(RandomSource random, List<ItemStack> drops, ItemStack stack) {
-        if (VillagerRetaliationRandomUtil.chance(random, VillagerRetaliationConfig.RARE_DROP_CHANCE.get())) {
+        if (ToucanRandom.chance(random, VillagerRetaliationConfig.RARE_DROP_CHANCE.get())) {
             drops.add(stack);
         }
     }
 
     private static void addVeryRare(RandomSource random, List<ItemStack> drops, ItemStack stack) {
-        if (VillagerRetaliationRandomUtil.chance(random, VillagerRetaliationConfig.VERY_RARE_DROP_CHANCE.get())) {
+        if (ToucanRandom.chance(random, VillagerRetaliationConfig.VERY_RARE_DROP_CHANCE.get())) {
             drops.add(stack);
         }
     }
 
     private static Entry stack(Item item, int minCount, int maxCount) {
-        return entry(random -> new ItemStack(item, VillagerRetaliationRandomUtil.between(random, minCount, maxCount)));
+        return entry(random -> new ItemStack(item, ToucanRandom.betweenInclusive(random, minCount, maxCount)));
     }
 
     private static Entry damaged(Item item) {
-        return entry(random -> VillagerRetaliationItemUtil.withRandomDamage(new ItemStack(item), random));
+        return entry(random -> ToucanItemStacks.withRandomMobDropDamage(new ItemStack(item), random));
     }
 
     private static Entry damaged(Entry itemEntry) {
-        return entry(random -> VillagerRetaliationItemUtil.withRandomDamage(itemEntry.create(random), random));
+        return entry(random -> ToucanItemStacks.withRandomMobDropDamage(itemEntry.create(random), random));
     }
 
     private static Entry randomItem(Item... items) {
@@ -271,11 +271,11 @@ public final class ProfessionLootPools {
     }
 
     private static Entry randomDye() {
-        return entry(random -> new ItemStack(randomDyeItem(random), VillagerRetaliationRandomUtil.between(random, 1, 3)));
+        return entry(random -> new ItemStack(randomDyeItem(random), ToucanRandom.betweenInclusive(random, 1, 3)));
     }
 
     private static Entry preferredDyeStack(Item... preferred) {
-        return entry(random -> new ItemStack(preferred[random.nextInt(preferred.length)], VillagerRetaliationRandomUtil.between(random, 1, 2)));
+        return entry(random -> new ItemStack(preferred[random.nextInt(preferred.length)], ToucanRandom.betweenInclusive(random, 1, 2)));
     }
 
     private static Entry entry(Function<RandomSource, ItemStack> factory) {
@@ -298,7 +298,7 @@ public final class ProfessionLootPools {
     }
 
     private static ItemStack enchantedBook(Villager villager, RandomSource random) {
-        ResourceKey<Enchantment> key = VillagerRetaliationRandomUtil.choose(random, List.of(
+        ResourceKey<Enchantment> key = ToucanRandom.choose(random, List.of(
                 Enchantments.UNBREAKING, Enchantments.EFFICIENCY, Enchantments.POWER, Enchantments.PROTECTION, Enchantments.LUCK_OF_THE_SEA));
         Registry<Enchantment> registry = villager.registryAccess().registryOrThrow(Registries.ENCHANTMENT);
         Holder.Reference<Enchantment> enchantment = registry.getHolderOrThrow(key);

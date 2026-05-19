@@ -12,6 +12,7 @@ import java.util.UUID;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -19,6 +20,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 
 public final class VillagerReputationAdvancements {
@@ -30,11 +32,14 @@ public final class VillagerReputationAdvancements {
     private static final int MOB_JUSTICE_HOSTILES = 8;
     private static final long DIRECT_HIT_MEMORY_TICKS = 20L * 40L;
     private static final double HOSTILITY_SCAN_RADIUS = 64.0D;
+    private static final double DIALOGUE_MAP_FOUND_RADIUS = 64.0D;
+    private static final long DIALOGUE_MAP_TARGET_TICKS = 20L * 60L * 60L * 6L;
 
     private static final Map<UUID, Map<UUID, Integer>> TRADE_COUNTS = new HashMap<>();
     private static final Map<UUID, Set<UUID>> TRADED_VILLAGERS = new HashMap<>();
     private static final Map<UUID, Map<UUID, Long>> RECENT_DIRECT_VILLAGER_HITS = new HashMap<>();
     private static final Map<UUID, Set<UUID>> HOSTILE_OR_WORSE_HISTORY = new HashMap<>();
+    private static final Map<UUID, DialogueMapTarget> DIALOGUE_MAP_TARGETS = new HashMap<>();
 
     private static final ResourceLocation ROOT = advancementId("reputation/root");
     private static final ResourceLocation COMMONFOLK = advancementId("reputation/commonfolk");
@@ -61,6 +66,7 @@ public final class VillagerReputationAdvancements {
     private static final ResourceLocation SECOND_CHANCE = advancementId("reputation/second_chance");
     private static final ResourceLocation THE_VILLAGE_REMEMBERS = advancementId("reputation/the_village_remembers");
     private static final ResourceLocation NO_REST_FOR_THE_WICKED = advancementId("reputation/no_rest_for_the_wicked");
+    private static final ResourceLocation TRUSTED_DIRECTIONS = advancementId("reputation/trusted_directions");
 
     private VillagerReputationAdvancements() {
     }
@@ -75,6 +81,36 @@ public final class VillagerReputationAdvancements {
 
     public static void onSleepingVillagerBedBroken(ServerPlayer player) {
         award(player, NO_REST_FOR_THE_WICKED);
+    }
+
+    public static void rememberDialogueMapTarget(ServerPlayer player, ServerLevel level, BlockPos targetPos) {
+        DIALOGUE_MAP_TARGETS.put(player.getUUID(), new DialogueMapTarget(
+                level.dimension(),
+                targetPos.immutable(),
+                level.getGameTime() + DIALOGUE_MAP_TARGET_TICKS
+        ));
+    }
+
+    public static void onPlayerTick(ServerPlayer player) {
+        DialogueMapTarget target = DIALOGUE_MAP_TARGETS.get(player.getUUID());
+        if (target == null) {
+            return;
+        }
+        ServerLevel level = player.serverLevel();
+        if (target.expiresAtGameTime() <= level.getGameTime()) {
+            DIALOGUE_MAP_TARGETS.remove(player.getUUID());
+            return;
+        }
+        if (!target.dimension().equals(level.dimension())) {
+            return;
+        }
+
+        double dx = player.getX() - (target.pos().getX() + 0.5D);
+        double dz = player.getZ() - (target.pos().getZ() + 0.5D);
+        if (dx * dx + dz * dz <= DIALOGUE_MAP_FOUND_RADIUS * DIALOGUE_MAP_FOUND_RADIUS) {
+            award(player, TRUSTED_DIRECTIONS);
+            DIALOGUE_MAP_TARGETS.remove(player.getUUID());
+        }
     }
 
     public static void onVillagerDirectlyDamaged(ServerLevel level, ServerPlayer player, AbstractVillager villager) {
@@ -346,5 +382,8 @@ public final class VillagerReputationAdvancements {
 
     private static ResourceLocation advancementId(String path) {
         return VillagerRetaliation.id(path);
+    }
+
+    private record DialogueMapTarget(ResourceKey<Level> dimension, BlockPos pos, long expiresAtGameTime) {
     }
 }

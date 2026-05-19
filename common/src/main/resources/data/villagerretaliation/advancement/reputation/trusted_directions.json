@@ -1,0 +1,23 @@
+{
+  "parent": "villagerretaliation:reputation/respect_is_earned",
+  "display": {
+    "icon": {
+      "id": "minecraft:filled_map"
+    },
+    "title": {
+      "translate": "advancements.villagerretaliation.reputation.trusted_directions.title"
+    },
+    "description": {
+      "translate": "advancements.villagerretaliation.reputation.trusted_directions.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

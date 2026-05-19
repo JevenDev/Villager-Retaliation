@@ -12,11 +12,13 @@ import com.jvn.villagerretaliation.network.OpenVillagerInteractionPayload;
 import com.jvn.villagerretaliation.network.VillagerConversationEndedPayload;
 import com.jvn.villagerretaliation.network.VillagerDialogueResponsePayload;
 import com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload;
+import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
+import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import net.minecraft.core.BlockPos;
@@ -55,12 +57,14 @@ public final class VillagerInteractionService {
                 && canUseInteractionTarget(player, villager, true);
     }
 
-    public static InteractionResult handleAdultVillagerRightClick(Villager villager, ServerPlayer player) {
+    public static InteractionResult handleVillagerRightClick(Villager villager, ServerPlayer player) {
         if (villager.isSleeping()) {
             return handleSleepingVillagerInteraction(villager, player);
         }
 
-        if (player.isShiftKeyDown() && VillagerRetaliationConfig.SHIFT_RIGHT_CLICK_BYPASSES_INTERACTION_SCREEN.get()) {
+        if (!villager.isBaby()
+                && player.isShiftKeyDown()
+                && VillagerRetaliationConfig.SHIFT_RIGHT_CLICK_BYPASSES_INTERACTION_SCREEN.get()) {
             return openTrading(player, villager, true);
         }
 
@@ -81,24 +85,23 @@ public final class VillagerInteractionService {
 
     public static void openInteractionScreen(ServerPlayer player, Villager villager) {
         ServerLevel level = player.serverLevel();
-        int reputation = VillagerReputationManager.getReputation(player.serverLevel(), villager, player.getUUID());
-        VillagerReputationLevel reputationLevel = VillagerReputationLevel.fromReputation(reputation);
+        ReputationSnapshot reputation = reputationSnapshot(level, villager, player);
         String greetingText = VillagerDialogueService.selectOpeningGreeting(createDialogueContext(
                 level,
                 player,
                 villager,
                 VillagerInteractionTracker.getState(level, villager, player),
-                reputation,
-                reputationLevel
+                reputation.value(),
+                reputation.level()
         ));
         PacketDistributor.sendToPlayer(player, new OpenVillagerInteractionPayload(
                 villager.getId(),
                 VillagerPresetNameRegistry.resolveNameTranslationKey(villager),
                 VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
-                professionName(villager.getVillagerData().getProfession()),
-                reputation,
-                reputationLevel,
-                greetingText
+                villager.isBaby() ? "Child" : VillagerInteractionTextUtil.professionName(villager.getVillagerData().getProfession(), "Unemployed"),
+                villager.isBaby(),
+                reputation.value(),
+                reputation.level()
         ));
         broadcastVillagerChat(level, villager, greetingText);
     }
@@ -117,9 +120,8 @@ public final class VillagerInteractionService {
 
         ServerLevel level = player.serverLevel();
         VillagerInteractionTracker.InteractionState interactionState = VillagerInteractionTracker.getState(level, villager, player);
-        int reputation = VillagerReputationManager.getReputation(level, villager, player.getUUID());
-        VillagerReputationLevel reputationLevel = VillagerReputationLevel.fromReputation(reputation);
-        DialogueContext context = createDialogueContext(level, player, villager, interactionState, reputation, reputationLevel);
+        ReputationSnapshot reputation = reputationSnapshot(level, villager, player);
+        DialogueContext context = createDialogueContext(level, player, villager, interactionState, reputation.value(), reputation.level());
         VillagerDialogueService.DialogueResult result = VillagerDialogueService.select(
                 context,
                 requestType,
@@ -130,14 +132,7 @@ public final class VillagerInteractionService {
         VillagerAmbientIndicatorService.onDialogueResponse(villager, requestType, reputationEffect);
         String responseText = reputationEffect.responseOverride() == null ? result.text() : reputationEffect.responseOverride();
         VillagerInteractionTracker.rememberDialogue(level, villager, player, requestType, result.lineId());
-        int updatedReputation = VillagerReputationManager.getReputation(level, villager, player.getUUID());
-        PacketDistributor.sendToPlayer(player, new VillagerDialogueResponsePayload(
-                villager.getId(),
-                requestType,
-                responseText,
-                updatedReputation,
-                VillagerReputationLevel.fromReputation(updatedReputation)
-        ));
+        sendDialogueReputation(player, villager, level);
         broadcastVillagerChat(level, villager, responseText);
     }
 
@@ -166,6 +161,10 @@ public final class VillagerInteractionService {
             sendVillagerNotice(player, villager, "The conversation has ended.");
             return;
         }
+        if (villager.isBaby()) {
+            sendVillagerNotice(player, villager, "I should ask a grown-up before taking that.");
+            return;
+        }
         if (inventorySlot < 0 || inventorySlot >= 36) {
             sendVillagerNotice(player, villager, "I cannot accept that.");
             return;
@@ -180,22 +179,50 @@ public final class VillagerInteractionService {
         ServerLevel level = player.serverLevel();
         ItemStack giftedStack = player.getInventory().removeItem(inventorySlot, selectedStack.getCount());
         player.getInventory().setChanged();
-        int reputationValue = VillagerGiftPreferences.reputationValue(villager.getVillagerData().getProfession(), giftedStack);
+        VillagerProfession profession = villager.getVillagerData().getProfession();
+        VillagerGiftPreferences.GiftPreference giftPreference = VillagerGiftPreferences.evaluate(profession, giftedStack);
+        int reputationValue = giftPreference.reputationValue();
         VillagerReputationManager.addGiftReputation(level, villager, player, reputationValue);
+        VillageEventMemory.rememberGift(
+                level,
+                villager.blockPosition(),
+                villager,
+                player,
+                VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
+                itemName(giftedStack),
+                giftPreference.reaction(),
+                reputationValue
+        );
+        reduceDialogueAnnoyanceFromGift(level, villager, player, reputationValue);
+        sendGiftNotice(player, villager, giftedStack, reputationValue);
         focusVillagerOnPlayer(villager, player);
         playGiftFeedback(level, villager, reputationValue);
         VillagerAmbientIndicatorService.onGiftReceived(villager, reputationValue);
 
-        int updatedReputation = VillagerReputationManager.getReputation(level, villager, player.getUUID());
-        String responseText = VillagerGiftPreferences.responseFor(reputationValue);
-        PacketDistributor.sendToPlayer(player, new VillagerDialogueResponsePayload(
-                villager.getId(),
-                DialogueRequestType.CHAT,
-                responseText,
-                updatedReputation,
-                VillagerReputationLevel.fromReputation(updatedReputation)
-        ));
+        String responseText = VillagerGiftPreferences.responseFor(profession, giftedStack, giftPreference);
+        sendDialogueReputation(player, villager, level);
         broadcastVillagerChat(level, villager, responseText);
+    }
+
+    private static void reduceDialogueAnnoyanceFromGift(ServerLevel level, Villager villager, ServerPlayer player, int reputationValue) {
+        int divisor = VillagerRetaliationConfig.GIFT_ANNOYANCE_REDUCTION_DIVISOR.get();
+        if (reputationValue <= 0 || divisor <= 0) {
+            return;
+        }
+        int reduction = Math.max(1, reputationValue / divisor);
+        VillagerInteractionTracker.reduceRepeatedDialogueUseCounts(level, villager, player, reduction);
+    }
+
+    private static void sendGiftNotice(ServerPlayer player, Villager villager, ItemStack giftedStack, int reputationValue) {
+        VillagerReputationNoticeKind kind = reputationValue < 0
+                ? VillagerReputationNoticeKind.GIFT_DISLIKED
+                : reputationValue > 0 ? VillagerReputationNoticeKind.GIFT_LIKED : VillagerReputationNoticeKind.GIFT_NEUTRAL;
+        String reaction = reputationValue < 0 ? "Disliked gift" : reputationValue > 0 ? "Liked gift" : "Accepted gift";
+        VillagerReputationNetworking.sendNotice(
+                player,
+                reaction + ": " + itemName(giftedStack),
+                kind
+        );
     }
 
     public static void handleReputationRequest(ServerPlayer player, int entityId) {
@@ -224,15 +251,14 @@ public final class VillagerInteractionService {
         }
 
         ServerLevel level = player.serverLevel();
-        int reputation = VillagerReputationManager.getReputation(level, villager, player.getUUID());
-        VillagerReputationLevel reputationLevel = VillagerReputationLevel.fromReputation(reputation);
+        ReputationSnapshot reputation = reputationSnapshot(level, villager, player);
         String goodbyeText = VillagerDialogueService.selectClosingGoodbye(createDialogueContext(
                 level,
                 player,
                 villager,
                 VillagerInteractionTracker.getState(level, villager, player),
-                reputation,
-                reputationLevel
+                reputation.value(),
+                reputation.level()
         ));
         PacketDistributor.sendToPlayer(player, new VillagerConversationEndedPayload(villager.getId(), goodbyeText));
         broadcastVillagerChat(level, villager, goodbyeText);
@@ -264,10 +290,30 @@ public final class VillagerInteractionService {
         );
     }
 
+    private static ReputationSnapshot reputationSnapshot(ServerLevel level, Villager villager, ServerPlayer player) {
+        int reputation = VillagerReputationManager.getReputation(level, villager, player.getUUID());
+        return new ReputationSnapshot(reputation, VillagerReputationLevel.fromReputation(reputation));
+    }
+
+    private static void sendDialogueReputation(ServerPlayer player, Villager villager, ServerLevel level) {
+        ReputationSnapshot reputation = reputationSnapshot(level, villager, player);
+        PacketDistributor.sendToPlayer(player, new VillagerDialogueResponsePayload(
+                villager.getId(),
+                reputation.value(),
+                reputation.level()
+        ));
+    }
+
     public static InteractionResult openTrading(ServerPlayer player, Villager villager, boolean sendFailureMessage) {
         if (!canUseInteractionSystem(player, villager)) {
             if (sendFailureMessage) {
                 sendVillagerNotice(player, villager, "I cannot trade right now.");
+            }
+            return InteractionResult.FAIL;
+        }
+        if (villager.isBaby()) {
+            if (sendFailureMessage) {
+                sendVillagerNotice(player, villager, "I do not know how to trade yet.");
             }
             return InteractionResult.FAIL;
         }
@@ -317,7 +363,6 @@ public final class VillagerInteractionService {
     private static boolean canUseInteractionTarget(ServerPlayer player, Villager villager, boolean allowSleeping) {
         double maxDistance = VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get();
         return villager.isAlive()
-                && !villager.isBaby()
                 && (allowSleeping || !villager.isSleeping())
                 && !villager.isTrading()
                 && !isCombatBusy(villager)
@@ -339,6 +384,17 @@ public final class VillagerInteractionService {
         PacketDistributor.sendToPlayer(
                 player,
                 new VillagerInteractionNoticePayload(villager.getId(), text, villagerSpeakerLabel(villager))
+        );
+    }
+
+    public static void sendReceivedItemNotice(ServerPlayer player, Villager villager, ItemStack stack) {
+        if (stack.isEmpty()) {
+            return;
+        }
+        VillagerReputationNetworking.sendNotice(
+                player,
+                "Received item: " + itemName(stack),
+                VillagerReputationNoticeKind.RECEIVED_ITEM
         );
     }
 
@@ -364,34 +420,21 @@ public final class VillagerInteractionService {
         }
     }
 
+    private static String itemName(ItemStack stack) {
+        String name = stack.getHoverName().getString();
+        return stack.getCount() > 1 ? stack.getCount() + "x " + name : name;
+    }
+
     private static String villagerSpeakerLabel(Villager villager) {
         String resolvedName = VillagerPresetNameRegistry.resolveDisplayName(villager).getString();
-        String profession = professionName(villager.getVillagerData().getProfession());
+        if (villager.isBaby()) {
+            return "Child " + resolvedName;
+        }
+        String profession = VillagerInteractionTextUtil.professionName(villager.getVillagerData().getProfession(), "Unemployed");
         if (profession == null || profession.isBlank() || profession.equals("Villager")) {
             return resolvedName;
         }
         return profession + " " + resolvedName;
-    }
-
-    private static String professionName(VillagerProfession profession) {
-        String rawName = profession.name();
-        if (rawName == null || rawName.isBlank() || "none".equals(rawName)) {
-            return "Unemployed";
-        }
-        StringBuilder builder = new StringBuilder(rawName.length());
-        boolean capitalizeNext = true;
-        for (char character : rawName.replace('_', ' ').toCharArray()) {
-            if (Character.isWhitespace(character)) {
-                capitalizeNext = true;
-                builder.append(character);
-            } else if (capitalizeNext) {
-                builder.append(Character.toUpperCase(character));
-                capitalizeNext = false;
-            } else {
-                builder.append(character);
-            }
-        }
-        return builder.toString();
     }
 
     private static DialogueContext.WeatherState weatherState(ServerLevel level, Villager villager) {
@@ -557,5 +600,8 @@ public final class VillagerInteractionService {
 
     private static void focusVillagerOnPlayer(Villager villager, ServerPlayer player) {
         villager.getLookControl().setLookAt(player, 30.0F, 30.0F);
+    }
+
+    private record ReputationSnapshot(int value, VillagerReputationLevel level) {
     }
 }

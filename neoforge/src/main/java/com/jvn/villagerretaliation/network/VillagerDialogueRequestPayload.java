@@ -1,17 +1,14 @@
 package com.jvn.villagerretaliation.network;
 
-import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 public record VillagerDialogueRequestPayload(int entityId, DialogueRequestType requestType) implements CustomPacketPayload {
-    public static final Type<VillagerDialogueRequestPayload> TYPE = new Type<>(
-            VillagerRetaliation.id("villager_dialogue_request")
-    );
+    public static final Type<VillagerDialogueRequestPayload> TYPE = VillagerPayloads.type("villager_dialogue_request");
     public static final StreamCodec<RegistryFriendlyByteBuf, VillagerDialogueRequestPayload> STREAM_CODEC =
-            StreamCodec.of(VillagerDialogueRequestPayload::encode, VillagerDialogueRequestPayload::decode);
+            VillagerPayloads.codec(VillagerDialogueRequestPayload::encode, VillagerDialogueRequestPayload::decode);
 
     private static void encode(RegistryFriendlyByteBuf buffer, VillagerDialogueRequestPayload payload) {
         buffer.writeVarInt(payload.entityId());

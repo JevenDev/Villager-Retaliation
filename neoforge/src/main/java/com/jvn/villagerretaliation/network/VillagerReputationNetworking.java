@@ -11,7 +11,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 public final class VillagerReputationNetworking {
-    private static final String PROTOCOL_VERSION = "1";
+    private static final String PROTOCOL_VERSION = "3";
 
     private VillagerReputationNetworking() {
     }
@@ -154,6 +154,10 @@ public final class VillagerReputationNetworking {
 
     public static void sendTierNotice(ServerPlayer player, String text) {
         PacketDistributor.sendToPlayer(player, new VillagerReputationTierNoticePayload(text));
+    }
+
+    public static void sendNotice(ServerPlayer player, String text, VillagerReputationNoticeKind kind) {
+        PacketDistributor.sendToPlayer(player, new VillagerReputationTierNoticePayload(text, kind));
     }
 
     public static void sendWorldTextIndicator(AbstractVillager villager, String text, VillagerWorldTextIndicatorKind kind) {

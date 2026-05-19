@@ -16,6 +16,9 @@ public final class DialogueReputationService {
                 || !VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()) {
             return DialogueReputationEffect.none(requestType);
         }
+        if (context.villager().isBaby() && requestType != DialogueRequestType.INSULT) {
+            return DialogueReputationEffect.none(requestType);
+        }
 
         PlannedEffect plannedEffect = planEffect(context, requestType, interactionState);
         if (plannedEffect.delta() == 0) {
@@ -58,7 +61,18 @@ public final class DialogueReputationService {
     }
 
     private static PlannedEffect planEffect(DialogueContext context, DialogueRequestType requestType, VillagerInteractionTracker.InteractionState interactionState) {
-        if (isDialogueOptionExhausted(requestType, interactionState)) {
+        if (context.villager().isBaby()) {
+            return requestType == DialogueRequestType.INSULT
+                    ? new PlannedEffect(
+                    VillagerRetaliationConfig.INSULT_REPUTATION_LOSS.get(),
+                    "insult_child",
+                    DialogueReputationEffect.CooldownCategory.NEGATIVE,
+                    false,
+                    "That was mean. I am telling someone."
+            )
+                    : PlannedEffect.none();
+        }
+        if (isDialogueOptionExhausted(context, requestType, interactionState)) {
             return new PlannedEffect(
                     VillagerRetaliationConfig.REPEATED_QUESTION_REPUTATION_LOSS.get(),
                     "repeated_" + requestType.name().toLowerCase(java.util.Locale.ROOT),
@@ -100,12 +114,26 @@ public final class DialogueReputationService {
                 : PlannedEffect.none();
     }
 
-    private static boolean isDialogueOptionExhausted(DialogueRequestType requestType, VillagerInteractionTracker.InteractionState interactionState) {
+    private static boolean isDialogueOptionExhausted(DialogueContext context, DialogueRequestType requestType, VillagerInteractionTracker.InteractionState interactionState) {
         if (requestType == DialogueRequestType.INSULT) {
             return false;
         }
-        int limit = VillagerRetaliationConfig.REPEATED_QUESTION_POSITIVE_LIMIT.get();
+        int limit = repeatedDialogueLimit(context.reputationLevel());
         return limit >= 0 && interactionState.requestUseCount(requestType) >= limit;
+    }
+
+    private static int repeatedDialogueLimit(VillagerReputationLevel reputationLevel) {
+        int limit = VillagerRetaliationConfig.REPEATED_QUESTION_POSITIVE_LIMIT.get();
+        if (limit < 0) {
+            return limit;
+        }
+        return limit + switch (reputationLevel) {
+            case ROYALTY -> VillagerRetaliationConfig.ROYALTY_REPEATED_DIALOGUE_LIMIT_BONUS.get();
+            case REVERED -> VillagerRetaliationConfig.REVERED_REPEATED_DIALOGUE_LIMIT_BONUS.get();
+            case RESPECTED -> VillagerRetaliationConfig.RESPECTED_REPEATED_DIALOGUE_LIMIT_BONUS.get();
+            case TRUSTED -> VillagerRetaliationConfig.TRUSTED_REPEATED_DIALOGUE_LIMIT_BONUS.get();
+            default -> 0;
+        };
     }
 
     private static PlannedEffect planStory(DialogueContext context) {
