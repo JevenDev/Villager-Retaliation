@@ -2,6 +2,8 @@ package com.jvn.villagerretaliation.client.interaction;
 
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
+import com.jvn.villagerretaliation.config.InteractionScreenBackdropStyle;
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.network.VillagerConversationEndRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerDialogueRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerTradeRequestPayload;
@@ -23,7 +25,7 @@ public class VillagerInteractionScreen extends Screen {
     private static final int RESPONSE_WIDTH = 520;
     private static final int OPTION_WIDTH = 180;
     private static final int OPTION_HEIGHT = 18;
-    private static final int OPTION_GAP = 5;
+    private static final int OPTION_GAP = 0;
     private static final int OPTION_VIEWPORT_ROWS = 5;
     private static final int OPTION_TEXT_INSET = 10;
     private static final int OPTION_SCROLLBAR_OFFSET = 2;
@@ -31,8 +33,12 @@ public class VillagerInteractionScreen extends Screen {
     private static final int OPTION_SCROLLBAR_HIT_WIDTH = 10;
     private static final int TOP_BACK_BUTTON_GAP = 12;
     private static final int OPTIONS_DIVIDER_GAP = 18;
-    private static final int DIVIDER_HEIGHT = 92;
+    private static final int DIVIDER_HEIGHT = 80;
     private static final int INFO_PANEL_CHAT_PADDING = 20;
+    private static final int VEIL_DITHER_START_OFFSET = OPTION_HEIGHT - 81;
+    private static final int DEFAULT_SCREEN_BOTTOM_MARGIN = 124;
+    private static final int VEIL_SCREEN_BOTTOM_MARGIN = 48;
+    private static final int VEIL_TOP_DITHER_HEIGHT = 64;
     private static final float OPTION_SCROLL_LERP = 0.32F;
     private static final float OPTION_SCROLL_STEP = 12.0F;
     private static final float OPTION_HOVER_SCALE = 0.055F;
@@ -383,6 +389,16 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     private void renderBackdrop(GuiGraphics graphics) {
+        InteractionScreenBackdropStyle backdropStyle = VillagerRetaliationConfig.INTERACTION_SCREEN_BACKDROP_STYLE.get();
+        if (backdropStyle == InteractionScreenBackdropStyle.VEIL) {
+            renderVeilBackdrop(graphics);
+            return;
+        }
+
+        renderFramedBackdrop(graphics);
+    }
+
+    private void renderFramedBackdrop(GuiGraphics graphics) {
         int centerY = focusCenterY();
         int bandTop = centerY - 68;
         int bandBottom = centerY + 74;
@@ -396,16 +412,19 @@ public class VillagerInteractionScreen extends Screen {
         fillBottomMist(graphics, centerY + 54, this.height - 18, 0x18000000);
     }
 
+    private void renderVeilBackdrop(GuiGraphics graphics) {
+        int veilTop = Math.max(0, optionsTop() + VEIL_DITHER_START_OFFSET);
+        VillagerInteractionScreenShaderRenderer.renderInteractionVeil(graphics, this.width, this.height, veilTop, VEIL_TOP_DITHER_HEIGHT);
+    }
+
     private void renderConversationFocus(GuiGraphics graphics) {
         int dividerX = dividerX();
-        int centerY = focusCenterY();
-
         String speaker = this.villagerName;
         String profession = this.professionName;
         String mood = "Mood: " + displayName(this.reputationLevel);
         String reputation = "Reputation " + this.reputation;
-        int infoBaseY = centerY - 21;
-        int infoLineGap = 16;
+        int infoBaseY = Mth.floor(optionTextTop(optionsTop()));
+        int infoLineGap = optionStride();
         int nameX = dividerX - 28 - this.font.width(speaker);
         graphics.drawString(this.font, speaker, nameX, infoBaseY, INFO_VALUE_COLOR, false);
         int professionX = dividerX - 28 - this.font.width(profession);
@@ -418,7 +437,7 @@ public class VillagerInteractionScreen extends Screen {
 
     private void renderDivider(GuiGraphics graphics, int optionsTop) {
         int dividerX = dividerX();
-        int dividerTop = optionsTop() - 24;
+        int dividerTop = optionsTop() - 12;
         int dividerBottom = optionsTop() + optionViewportHeight() + 2;
         int lineLeft = dividerX - 1;
         int lineRight = dividerX + 1;
@@ -545,7 +564,7 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     private int optionsTop() {
-        return focusCenterY() - Math.min(DIVIDER_HEIGHT / 2 - 4, optionViewportHeight() / 2);
+        return focusCenterY() - optionViewportHeight() / 2;
     }
 
     private int optionsLeft() {
@@ -553,7 +572,7 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     private int dividerX() {
-        return this.width / 2 + 4;
+        return this.width / 2;
     }
 
     int infoPanelLeft() {
@@ -590,7 +609,13 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     private int focusCenterY() {
-        return Math.max(72, this.height - 124);
+        return Math.max(72, this.height - screenBottomMargin());
+    }
+
+    private int screenBottomMargin() {
+        return VillagerRetaliationConfig.INTERACTION_SCREEN_BACKDROP_STYLE.get() == InteractionScreenBackdropStyle.VEIL
+                ? VEIL_SCREEN_BOTTOM_MARGIN
+                : DEFAULT_SCREEN_BOTTOM_MARGIN;
     }
 
     private int optionViewportHeight() {
