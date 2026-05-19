@@ -181,7 +181,8 @@ public final class VillagerInteractionService {
         ServerLevel level = player.serverLevel();
         ItemStack giftedStack = player.getInventory().removeItem(inventorySlot, selectedStack.getCount());
         player.getInventory().setChanged();
-        int reputationValue = VillagerGiftPreferences.reputationValue(villager.getVillagerData().getProfession(), giftedStack);
+        VillagerProfession profession = villager.getVillagerData().getProfession();
+        int reputationValue = VillagerGiftPreferences.reputationValue(profession, giftedStack);
         VillagerReputationManager.addGiftReputation(level, villager, player, reputationValue);
         reduceDialogueAnnoyanceFromGift(level, villager, player, reputationValue);
         sendGiftNotice(player, villager, giftedStack, reputationValue);
@@ -190,7 +191,7 @@ public final class VillagerInteractionService {
         VillagerAmbientIndicatorService.onGiftReceived(villager, reputationValue);
 
         int updatedReputation = VillagerReputationManager.getReputation(level, villager, player.getUUID());
-        String responseText = VillagerGiftPreferences.responseFor(reputationValue);
+        String responseText = VillagerGiftPreferences.responseFor(profession, giftedStack, reputationValue);
         PacketDistributor.sendToPlayer(player, new VillagerDialogueResponsePayload(
                 villager.getId(),
                 DialogueRequestType.CHAT,
@@ -214,7 +215,7 @@ public final class VillagerInteractionService {
         VillagerReputationNoticeKind kind = reputationValue < 0
                 ? VillagerReputationNoticeKind.GIFT_DISLIKED
                 : VillagerReputationNoticeKind.GIFT_LIKED;
-        String reaction = reputationValue < 0 ? "Disliked gift" : "Liked gift";
+        String reaction = reputationValue < 0 ? "Disliked gift" : reputationValue > 0 ? "Liked gift" : "Accepted gift";
         VillagerReputationNetworking.sendNotice(
                 player,
                 reaction + ": " + itemName(giftedStack),
