@@ -101,6 +101,16 @@ public final class VillagerReputationNetworking {
                     )))
         );
         network.playToServer(
+                VillagerGiftRequestPayload.TYPE,
+                VillagerGiftRequestPayload.STREAM_CODEC,
+                (payload, context) -> ToucanNetwork.enqueue(context, () ->
+                        ToucanNetwork.withServerPlayer(context, player -> VillagerInteractionService.handleGiftRequest(
+                            player,
+                            payload.entityId(),
+                            payload.inventorySlot()
+                    )))
+        );
+        network.playToServer(
                 VillagerConversationEndRequestPayload.TYPE,
                 VillagerConversationEndRequestPayload.STREAM_CODEC,
                 (payload, context) -> ToucanNetwork.enqueue(context, () ->

@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.client.renderer;
 
 import com.jvn.villagerretaliation.client.model.BaseVillagerModel;
+import com.jvn.villagerretaliation.client.model.VillagerRetaliationEntityModelLoader;
 import com.jvn.villagerretaliation.client.model.VillagerRetaliationVillagerModel;
 import com.jvn.villagerretaliation.client.model.VanillaVillagerModelAdapter;
 import com.jvn.villagerretaliation.client.pose.VillagerPoseProvider;
@@ -17,8 +18,10 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.npc.AbstractVillager;
 
 public abstract class AbstractVillagerRetaliationVillagerRenderer<T extends AbstractVillager> extends MobRenderer<T, BaseVillagerModel<T>> {
+    private final EntityRendererProvider.Context context;
     private final VanillaVillagerModelAdapter<T> vanillaModel;
-    private final VillagerRetaliationVillagerModel<T> combatModel;
+    private VillagerRetaliationVillagerModel<T> combatModel;
+    private String combatModelSource;
     private final VillagerPoseProvider<T> poseProvider;
     private final ResourceLocation vanillaTexture;
     private final ResourceLocation combatTexture;
@@ -31,11 +34,12 @@ public abstract class AbstractVillagerRetaliationVillagerRenderer<T extends Abst
             ResourceLocation combatTexture
     ) {
         super(context, new VanillaVillagerModelAdapter<>(context.bakeLayer(vanillaLayer)), 0.5F);
+        this.context = context;
         this.vanillaModel = (VanillaVillagerModelAdapter<T>) this.model;
         this.poseProvider = poseProvider;
         this.vanillaTexture = vanillaTexture;
         this.combatTexture = combatTexture;
-        this.combatModel = new VillagerRetaliationVillagerModel<>(context.bakeLayer(VillagerRetaliationVillagerModel.LAYER_LOCATION), poseProvider);
+        this.reloadCombatModel();
         this.addLayer(new CustomHeadLayer<>(this, context.getModelSet(), context.getItemInHandRenderer()));
         this.addLayer(new VillagerCrossedArmsItemLayer<>(this, context.getItemInHandRenderer()));
         this.addLayer(new CombatItemInHandLayer<>(this, context.getItemInHandRenderer(), poseProvider));
@@ -43,6 +47,7 @@ public abstract class AbstractVillagerRetaliationVillagerRenderer<T extends Abst
 
     @Override
     public void render(T villager, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
+        this.refreshCombatModel();
         this.model = this.poseProvider.shouldUseCombatModel(villager) ? this.combatModel : this.vanillaModel;
         super.render(villager, entityYaw, partialTick, poseStack, buffer, packedLight);
     }
@@ -55,5 +60,20 @@ public abstract class AbstractVillagerRetaliationVillagerRenderer<T extends Abst
     @Override
     protected boolean isShaking(T villager) {
         return super.isShaking(villager) || FearedVillagerAnimationClientCache.isShaking(villager);
+    }
+
+    private void refreshCombatModel() {
+        String currentModelSource = VillagerRetaliationEntityModelLoader.combatVillagerModelSource(this.context.getResourceManager());
+        if (!currentModelSource.equals(this.combatModelSource)) {
+            this.reloadCombatModel();
+        }
+    }
+
+    private void reloadCombatModel() {
+        this.combatModelSource = VillagerRetaliationEntityModelLoader.combatVillagerModelSource(this.context.getResourceManager());
+        this.combatModel = new VillagerRetaliationVillagerModel<>(
+                VillagerRetaliationEntityModelLoader.loadCombatVillagerModel(this.context),
+                this.poseProvider
+        );
     }
 }

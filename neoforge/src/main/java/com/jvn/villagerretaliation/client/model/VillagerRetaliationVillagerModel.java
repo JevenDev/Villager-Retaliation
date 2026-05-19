@@ -26,8 +26,6 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
     private final ModelPart head;
     private final ModelPart helmet;
     private final ModelPart brim;
-    @SuppressWarnings("unused")
-    private final ModelPart nose;
     private final ModelPart rightArm;
     private final ModelPart leftArm;
     private final ModelPart rightLeg;
@@ -42,9 +40,8 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
         this.root = root;
         this.body = root.getChild("body");
         this.head = this.body.getChild("head");
-        this.helmet = this.head.getChild("helmet");
-        this.brim = this.head.getChild("brim");
-        this.nose = this.head.getChild("nose");
+        this.helmet = getOptionalChild(this.head, "helmet");
+        this.brim = getOptionalChild(this.head, "brim");
         this.rightArm = this.body.getChild("RightArm");
         this.leftArm = this.body.getChild("LeftArm");
         this.rightLeg = this.body.getChild("RightLeg");
@@ -133,8 +130,8 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
     @Override
     public void hatVisible(boolean visible) {
         this.head.visible = visible;
-        this.helmet.visible = visible;
-        this.brim.visible = visible;
+        setVisible(this.helmet, visible);
+        setVisible(this.brim, visible);
     }
 
     public void translateToHand(HumanoidArm arm, PoseStack poseStack) {
@@ -144,5 +141,19 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
 
     private ModelPart getArm(HumanoidArm arm) {
         return arm == HumanoidArm.LEFT ? this.leftArm : this.rightArm;
+    }
+
+    private static ModelPart getOptionalChild(ModelPart parent, String name) {
+        try {
+            return parent.getChild(name);
+        } catch (Exception exception) {
+            return null;
+        }
+    }
+
+    private static void setVisible(ModelPart part, boolean visible) {
+        if (part != null) {
+            part.visible = visible;
+        }
     }
 }

@@ -24,6 +24,18 @@ side="BOTH"
 ${neoforge_toucanlib_dependency}
 
 [[dependencies."${mod_id}"]]
+modId="entity_model_features"
+type="optional"
+ordering="AFTER"
+side="CLIENT"
+
+[[dependencies."${mod_id}"]]
+modId="entity_texture_features"
+type="optional"
+ordering="NONE"
+side="CLIENT"
+
+[[dependencies."${mod_id}"]]
 modId="minecraft"
 type="required"
 versionRange="${minecraft_version_range}"

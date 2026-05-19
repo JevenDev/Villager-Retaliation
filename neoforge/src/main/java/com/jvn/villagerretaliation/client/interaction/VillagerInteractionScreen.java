@@ -4,24 +4,28 @@ import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
 import com.jvn.villagerretaliation.network.VillagerConversationEndRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerDialogueRequestPayload;
+import com.jvn.villagerretaliation.network.VillagerGiftRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerTradeRequestPayload;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.lwjgl.glfw.GLFW;
 
 public class VillagerInteractionScreen extends Screen {
     private static final String BACK_LABEL = "Back";
-    private static final String HINT_TEXT = "Esc: leave";
+    private static final String BACK_HINT_TEXT = "Esc: back";
+    private static final String LEAVE_HINT_TEXT = "Esc: leave";
     private static final int OPTION_WIDTH = 180;
     private static final int OPTION_HEIGHT = 18;
     private static final int OPTION_GAP = 0;
@@ -30,7 +34,7 @@ public class VillagerInteractionScreen extends Screen {
     private static final int OPTION_SCROLLBAR_OFFSET = 2;
     private static final int OPTION_SCROLLBAR_WIDTH = 2;
     private static final int OPTION_SCROLLBAR_HIT_WIDTH = 10;
-    private static final int TOP_BACK_BUTTON_GAP = 12;
+    private static final int TOP_BACK_BUTTON_GAP = 8;
     private static final int OPTIONS_DIVIDER_GAP = 18;
     private static final int DIVIDER_HEIGHT = 80;
     private static final int INFO_PANEL_CHAT_PADDING = 20;
@@ -45,8 +49,22 @@ public class VillagerInteractionScreen extends Screen {
     private static final int INFO_VALUE_COLOR = 0xFFF8F6EF;
     private static final int INFO_SECONDARY_COLOR = 0xB8D5D0C6;
     private static final int DIVIDER_CORE_COLOR = 0xFFFFFFFF;
+    private static final int INVENTORY_COLUMNS = 9;
+    private static final int INVENTORY_MAIN_ROWS = 3;
+    private static final int INVENTORY_SLOT_SIZE = 18;
+    private static final int INVENTORY_TEXTURE_WIDTH = 176;
+    private static final int INVENTORY_TEXTURE_HEIGHT = 90;
+    private static final int INVENTORY_SLOT_START_X = 7;
+    private static final int INVENTORY_SLOT_START_Y = 7;
+    private static final int INVENTORY_HOTBAR_Y = 65;
+    private static final int INVENTORY_ITEM_OFFSET = 1;
+    private static final int INVENTORY_BUTTON_WIDTH = 64;
+    private static final int INVENTORY_BUTTON_HEIGHT = 18;
+    private static final int INVENTORY_BUTTON_GAP = 4;
     private static final ResourceLocation DIVIDER_SELECT_TEXTURE =
             VillagerRetaliation.id("textures/gui/villager_interaction_screen/divider_select.png");
+    private static final ResourceLocation GIFT_INVENTORY_TEXTURE =
+            VillagerRetaliation.id("textures/gui/villager_interaction_screen/gift_inventory.png");
     private static final int DIVIDER_SELECT_WIDTH = 11;
     private static final int DIVIDER_SELECT_HEIGHT = 19;
 
@@ -63,6 +81,8 @@ public class VillagerInteractionScreen extends Screen {
     private float scrollbarDragOffset;
     private float optionScroll;
     private float targetOptionScroll;
+    private int selectedInventorySlot = -1;
+    private Button giftButton;
     private Double originalChatWidth;
 
     public VillagerInteractionScreen(int villagerEntityId, String villagerName, String professionName, int reputation, VillagerReputationLevel reputationLevel) {
@@ -77,6 +97,10 @@ public class VillagerInteractionScreen extends Screen {
 
     @Override
     protected void init() {
+        this.giftButton = addRenderableWidget(Button.builder(Component.literal("Gift"), button -> requestGift())
+                .bounds(0, 0, INVENTORY_BUTTON_WIDTH, INVENTORY_BUTTON_HEIGHT)
+                .build());
+        this.giftButton.visible = false;
         rebuildOptions();
         applyChatWidthOverride();
     }
@@ -112,10 +136,17 @@ public class VillagerInteractionScreen extends Screen {
         updateOptionScroll();
 
         int optionsTop = optionsTop();
-        renderConversationFocus(graphics, optionsTop);
+        renderConversationFocus(graphics, conversationInfoTop());
         renderDivider(graphics, optionsTop);
         renderTopBackButton(graphics, mouseX, mouseY);
-        renderOptions(graphics, mouseX, mouseY, optionsTop);
+        if (this.page == DialoguePage.GIFT) {
+            renderGiftPage(graphics, mouseX, mouseY, partialTick);
+        } else {
+            if (this.giftButton != null) {
+                this.giftButton.visible = false;
+            }
+            renderOptions(graphics, mouseX, mouseY, optionsTop);
+        }
         renderHint(graphics);
     }
 
@@ -123,7 +154,7 @@ public class VillagerInteractionScreen extends Screen {
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         return switch (keyCode) {
             case GLFW.GLFW_KEY_ESCAPE -> {
-                leaveConversation();
+                goBackOrLeaveConversation();
                 yield true;
             }
             case GLFW.GLFW_KEY_UP, GLFW.GLFW_KEY_W -> {
@@ -135,7 +166,11 @@ public class VillagerInteractionScreen extends Screen {
                 yield true;
             }
             case GLFW.GLFW_KEY_ENTER, GLFW.GLFW_KEY_KP_ENTER, GLFW.GLFW_KEY_SPACE -> {
-                activateSelected();
+                if (this.page == DialoguePage.GIFT) {
+                    requestGift();
+                } else {
+                    activateSelected();
+                }
                 yield true;
             }
             default -> super.keyPressed(keyCode, scanCode, modifiers);
@@ -146,6 +181,10 @@ public class VillagerInteractionScreen extends Screen {
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (!isLeftMouseButton(button)) {
             return super.mouseClicked(mouseX, mouseY, button);
+        }
+
+        if (this.page == DialoguePage.GIFT && tryClickGiftPage(mouseX, mouseY)) {
+            return true;
         }
 
         if (tryClickBackButton(mouseX, mouseY)
@@ -203,7 +242,7 @@ public class VillagerInteractionScreen extends Screen {
         this.options.clear();
         if (this.page == DialoguePage.TALK) {
             addDialogueOptions();
-        } else {
+        } else if (this.page == DialoguePage.ROOT) {
             addRootOptions();
         }
         this.selectedOption = firstEnabledOption();
@@ -224,6 +263,7 @@ public class VillagerInteractionScreen extends Screen {
     private void addRootOptions() {
         this.options.add(DialogueOption.enabled("Talk", this::openTalkPage));
         this.options.add(DialogueOption.enabled("Trade", this::requestTrade));
+        this.options.add(DialogueOption.enabled("Gift", this::openGiftPage));
         this.options.add(DialogueOption.disabled("Recruit", "Coming soon"));
         this.options.add(DialogueOption.disabled("Inventory", "Coming soon"));
         this.options.add(DialogueOption.enabled("Goodbye", this::leaveConversation));
@@ -238,8 +278,22 @@ public class VillagerInteractionScreen extends Screen {
         rebuildOptions();
     }
 
+    private void openGiftPage() {
+        this.page = DialoguePage.GIFT;
+        this.selectedInventorySlot = firstGiftableInventorySlot();
+        rebuildOptions();
+    }
+
     private void requestTrade() {
         PacketDistributor.sendToServer(new VillagerTradeRequestPayload(this.villagerEntityId));
+    }
+
+    private void requestGift() {
+        if (this.selectedInventorySlot < 0) {
+            return;
+        }
+        PacketDistributor.sendToServer(new VillagerGiftRequestPayload(this.villagerEntityId, this.selectedInventorySlot));
+        this.selectedInventorySlot = firstGiftableInventorySlot();
     }
 
     private void requestDialogue(DialogueRequestType requestType) {
@@ -249,7 +303,16 @@ public class VillagerInteractionScreen extends Screen {
     private void navigateToRootPage() {
         if (this.page != DialoguePage.ROOT) {
             this.page = DialoguePage.ROOT;
+            this.selectedInventorySlot = -1;
             rebuildOptions();
+        }
+    }
+
+    private void goBackOrLeaveConversation() {
+        if (canNavigateBack()) {
+            navigateToRootPage();
+        } else {
+            leaveConversation();
         }
     }
 
@@ -322,6 +385,83 @@ public class VillagerInteractionScreen extends Screen {
         if (hovered >= 0 && this.options.get(hovered).tooltip() != null) {
             graphics.renderTooltip(this.font, Component.literal(this.options.get(hovered).tooltip()), mouseX, mouseY);
         }
+    }
+
+    private void renderGiftPage(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        int left = giftInventoryLeft();
+        int top = giftInventoryTop();
+        int hoveredSlot = giftSlotAt(mouseX, mouseY);
+
+        renderGiftSlots(graphics, left, top, hoveredSlot);
+        renderGiftButton(graphics, mouseX, mouseY, partialTick);
+
+        ItemStack hoveredStack = stackForInventorySlot(hoveredSlot);
+        if (!hoveredStack.isEmpty()) {
+            graphics.renderTooltip(this.font, hoveredStack, mouseX, mouseY);
+        }
+    }
+
+    private void renderGiftSlots(GuiGraphics graphics, int left, int top, int hoveredSlot) {
+        graphics.blit(
+                GIFT_INVENTORY_TEXTURE,
+                left,
+                top,
+                0,
+                0,
+                INVENTORY_TEXTURE_WIDTH,
+                INVENTORY_TEXTURE_HEIGHT,
+                INVENTORY_TEXTURE_WIDTH,
+                INVENTORY_TEXTURE_HEIGHT
+        );
+
+        for (int row = 0; row < INVENTORY_MAIN_ROWS; row++) {
+            for (int column = 0; column < INVENTORY_COLUMNS; column++) {
+                int inventorySlot = 9 + row * INVENTORY_COLUMNS + column;
+                renderGiftSlot(
+                        graphics,
+                        inventorySlot,
+                        left + INVENTORY_SLOT_START_X + column * INVENTORY_SLOT_SIZE,
+                        top + INVENTORY_SLOT_START_Y + row * INVENTORY_SLOT_SIZE,
+                        hoveredSlot
+                );
+            }
+        }
+
+        for (int column = 0; column < INVENTORY_COLUMNS; column++) {
+            renderGiftSlot(
+                    graphics,
+                    column,
+                    left + INVENTORY_SLOT_START_X + column * INVENTORY_SLOT_SIZE,
+                    top + INVENTORY_HOTBAR_Y,
+                    hoveredSlot
+            );
+        }
+    }
+
+    private void renderGiftSlot(GuiGraphics graphics, int inventorySlot, int x, int y, int hoveredSlot) {
+        boolean selected = inventorySlot == this.selectedInventorySlot;
+        boolean hovered = inventorySlot == hoveredSlot;
+        ItemStack stack = stackForInventorySlot(inventorySlot);
+        if (!stack.isEmpty()) {
+            graphics.renderItem(stack, x + INVENTORY_ITEM_OFFSET, y + INVENTORY_ITEM_OFFSET);
+            graphics.renderItemDecorations(this.font, stack, x + INVENTORY_ITEM_OFFSET, y + INVENTORY_ITEM_OFFSET);
+        }
+        if (selected || hovered) {
+            int color = selected ? 0x88EAE6DC : 0x55FFFFFF;
+            graphics.fill(x + INVENTORY_ITEM_OFFSET, y + INVENTORY_ITEM_OFFSET, x + 16 + INVENTORY_ITEM_OFFSET, y + 16 + INVENTORY_ITEM_OFFSET, color);
+        }
+    }
+
+    private void renderGiftButton(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        if (this.giftButton == null) {
+            return;
+        }
+        GiftButtonBounds bounds = giftButtonBounds();
+        boolean enabled = this.selectedInventorySlot >= 0 && !stackForInventorySlot(this.selectedInventorySlot).isEmpty();
+        this.giftButton.setPosition(bounds.left(), bounds.top());
+        this.giftButton.active = enabled;
+        this.giftButton.visible = true;
+        this.giftButton.render(graphics, mouseX, mouseY, partialTick);
     }
 
     private void renderOption(
@@ -407,11 +547,12 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     private void renderHint(GuiGraphics graphics) {
-        graphics.drawString(this.font, HINT_TEXT, this.width - this.font.width(HINT_TEXT) - 8, this.height - 14, 0x66FFFFFF, false);
+        String hintText = canNavigateBack() ? BACK_HINT_TEXT : LEAVE_HINT_TEXT;
+        graphics.drawString(this.font, hintText, this.width - this.font.width(hintText) - 8, this.height - 14, 0x66FFFFFF, false);
     }
 
     void renderBackdropBehindChat(GuiGraphics graphics) {
-        int veilTop = Math.max(0, optionsTop() + VEIL_DITHER_START_OFFSET);
+        int veilTop = Math.max(0, conversationInfoTop() + VEIL_DITHER_START_OFFSET);
         VillagerInteractionScreenShaderRenderer.renderInteractionVeil(graphics, this.width, this.height, veilTop, VEIL_TOP_DITHER_HEIGHT);
     }
 
@@ -432,14 +573,14 @@ public class VillagerInteractionScreen extends Screen {
 
     private void renderDivider(GuiGraphics graphics, int optionsTop) {
         int dividerX = dividerX();
-        int dividerTop = optionsTop() - 12;
-        int dividerBottom = optionsTop() + optionViewportHeight() + 2;
+        int dividerTop = conversationInfoTop() - 12;
+        int dividerBottom = conversationInfoTop() + rootOptionViewportHeight() + 2;
         int lineLeft = dividerX - 1;
         int lineRight = dividerX + 1;
         int selectorTop = dividerTop + (DIVIDER_HEIGHT - DIVIDER_SELECT_HEIGHT) / 2;
         int selectorBottom = selectorTop + DIVIDER_SELECT_HEIGHT;
 
-        float selectorAnchorY = dividerSelectorAnchorY(optionsTop, dividerTop, dividerBottom);
+        float selectorAnchorY = this.page == DialoguePage.GIFT ? Float.NaN : dividerSelectorAnchorY(optionsTop, dividerTop, dividerBottom);
         if (!Float.isNaN(selectorAnchorY)) {
             selectorTop = Mth.floor(selectorAnchorY + OPTION_HEIGHT * 0.5F - DIVIDER_SELECT_HEIGHT * 0.5F);
             selectorTop = Mth.clamp(selectorTop, dividerTop, dividerBottom - DIVIDER_SELECT_HEIGHT);
@@ -583,6 +724,78 @@ public class VillagerInteractionScreen extends Screen {
         return true;
     }
 
+    private boolean tryClickGiftPage(double mouseX, double mouseY) {
+        int clickedSlot = giftSlotAt(mouseX, mouseY);
+        if (clickedSlot >= 0) {
+            ItemStack stack = stackForInventorySlot(clickedSlot);
+            if (!stack.isEmpty()) {
+                this.selectedInventorySlot = clickedSlot;
+            }
+            return true;
+        }
+
+        GiftButtonBounds giftButton = giftButtonBounds();
+        if (giftButton.contains(mouseX, mouseY)) {
+            return false;
+        }
+        return false;
+    }
+
+    private int giftSlotAt(double mouseX, double mouseY) {
+        int left = giftInventoryLeft();
+        int top = giftInventoryTop();
+        int slotLeft = left + INVENTORY_SLOT_START_X;
+        int mainTop = top + INVENTORY_SLOT_START_Y;
+        if (mouseX >= slotLeft && mouseX < slotLeft + INVENTORY_COLUMNS * INVENTORY_SLOT_SIZE
+                && mouseY >= mainTop && mouseY < mainTop + INVENTORY_MAIN_ROWS * INVENTORY_SLOT_SIZE) {
+            int column = Mth.floor((mouseX - slotLeft) / INVENTORY_SLOT_SIZE);
+            int row = Mth.floor((mouseY - mainTop) / INVENTORY_SLOT_SIZE);
+            return 9 + row * INVENTORY_COLUMNS + column;
+        }
+
+        int hotbarTop = top + INVENTORY_HOTBAR_Y;
+        if (mouseX >= slotLeft && mouseX < slotLeft + INVENTORY_COLUMNS * INVENTORY_SLOT_SIZE
+                && mouseY >= hotbarTop && mouseY < hotbarTop + INVENTORY_SLOT_SIZE) {
+            return Mth.floor((mouseX - slotLeft) / INVENTORY_SLOT_SIZE);
+        }
+        return -1;
+    }
+
+    private int firstGiftableInventorySlot() {
+        for (int slot = 0; slot < 36; slot++) {
+            if (!stackForInventorySlot(slot).isEmpty()) {
+                return slot;
+            }
+        }
+        return -1;
+    }
+
+    private ItemStack stackForInventorySlot(int inventorySlot) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.player == null || inventorySlot < 0 || inventorySlot >= 36) {
+            return ItemStack.EMPTY;
+        }
+        return minecraft.player.getInventory().getItem(inventorySlot);
+    }
+
+    private int giftInventoryLeft() {
+        return optionsLeft() + 10;
+    }
+
+    private int giftInventoryTop() {
+        return conversationInfoTop();
+    }
+
+    private int giftInventoryHeight() {
+        return INVENTORY_TEXTURE_HEIGHT;
+    }
+
+    private GiftButtonBounds giftButtonBounds() {
+        int left = giftInventoryLeft() + INVENTORY_TEXTURE_WIDTH - INVENTORY_BUTTON_WIDTH;
+        int top = giftInventoryTop() - INVENTORY_BUTTON_HEIGHT - INVENTORY_BUTTON_GAP;
+        return new GiftButtonBounds(left, top, left + INVENTORY_BUTTON_WIDTH, top + INVENTORY_BUTTON_HEIGHT);
+    }
+
     private boolean isPointInsideOptionScrollArea(double mouseX, double mouseY) {
         int left = optionsLeft() - 18;
         int right = optionsLeft() + OPTION_WIDTH + 4;
@@ -596,7 +809,11 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     private boolean isTopBackButtonVisible() {
-        return this.page == DialoguePage.TALK;
+        return canNavigateBack();
+    }
+
+    private boolean canNavigateBack() {
+        return this.page != DialoguePage.ROOT;
     }
 
     private boolean isPointInsideTopBackButton(double mouseX, double mouseY) {
@@ -613,15 +830,18 @@ public class VillagerInteractionScreen extends Screen {
 
     private TopBackButtonBounds topBackButtonBounds() {
         int textWidth = this.font.width(BACK_LABEL);
-        int right = optionsScrollbarLeft() + OPTION_SCROLLBAR_WIDTH;
-        int left = right - textWidth;
-        int top = optionsTop() - this.font.lineHeight - TOP_BACK_BUTTON_GAP;
+        int left = optionsLeft() + OPTION_TEXT_INSET;
+        int top = (this.page == DialoguePage.GIFT ? giftInventoryTop() : optionsTop()) - this.font.lineHeight - TOP_BACK_BUTTON_GAP;
         int bottom = top + this.font.lineHeight;
-        return new TopBackButtonBounds(left, right, top, bottom);
+        return new TopBackButtonBounds(left, left + textWidth, top, bottom);
     }
 
     private int optionsTop() {
         return focusCenterY() - optionViewportHeight() / 2;
+    }
+
+    private int conversationInfoTop() {
+        return focusCenterY() - rootOptionViewportHeight() / 2;
     }
 
     private int optionsLeft() {
@@ -681,6 +901,10 @@ public class VillagerInteractionScreen extends Screen {
     private int optionViewportHeight() {
         int visibleRows = Math.min(OPTION_VIEWPORT_ROWS, Math.max(1, this.options.size()));
         return visibleRows * OPTION_HEIGHT + Math.max(0, visibleRows - 1) * OPTION_GAP;
+    }
+
+    private int rootOptionViewportHeight() {
+        return OPTION_VIEWPORT_ROWS * OPTION_HEIGHT + Math.max(0, OPTION_VIEWPORT_ROWS - 1) * OPTION_GAP;
     }
 
     private float maxOptionScroll() {
@@ -840,7 +1064,8 @@ public class VillagerInteractionScreen extends Screen {
 
     private enum DialoguePage {
         ROOT,
-        TALK
+        TALK,
+        GIFT
     }
 
     private record DialogueOption(String label, boolean disabled, String tooltip, Runnable action) {
@@ -868,5 +1093,14 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     private record TopBackButtonBounds(int left, int right, int top, int bottom) {
+    }
+
+    private record GiftButtonBounds(int left, int top, int right, int bottom) {
+        boolean contains(double mouseX, double mouseY) {
+            return mouseX >= this.left
+                    && mouseX <= this.right
+                    && mouseY >= this.top
+                    && mouseY <= this.bottom;
+        }
     }
 }
