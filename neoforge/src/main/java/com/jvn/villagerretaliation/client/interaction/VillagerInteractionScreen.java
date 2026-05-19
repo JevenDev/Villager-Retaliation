@@ -21,14 +21,15 @@ import org.lwjgl.glfw.GLFW;
 
 public class VillagerInteractionScreen extends Screen {
     private static final int RESPONSE_WIDTH = 520;
-    private static final int OPTION_WIDTH = 224;
+    private static final int OPTION_WIDTH = 180;
     private static final int OPTION_HEIGHT = 18;
     private static final int OPTION_GAP = 5;
     private static final int OPTION_VIEWPORT_ROWS = 5;
     private static final int OPTION_TEXT_INSET = 10;
-    private static final int OPTION_SCROLLBAR_OFFSET = 6;
+    private static final int OPTION_SCROLLBAR_OFFSET = 2;
     private static final int OPTION_SCROLLBAR_WIDTH = 2;
     private static final int OPTION_SCROLLBAR_HIT_WIDTH = 10;
+    private static final int TOP_BACK_BUTTON_GAP = 12;
     private static final int OPTIONS_DIVIDER_GAP = 18;
     private static final int DIVIDER_HEIGHT = 92;
     private static final int INFO_PANEL_CHAT_PADDING = 20;
@@ -112,6 +113,7 @@ public class VillagerInteractionScreen extends Screen {
         renderBackdrop(graphics);
         renderConversationFocus(graphics);
         renderDivider(graphics, optionsTop());
+        renderTopBackButton(graphics, mouseX, mouseY);
         renderOptions(graphics, mouseX, mouseY, optionsTop());
         renderHint(graphics);
     }
@@ -140,6 +142,10 @@ public class VillagerInteractionScreen extends Screen {
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+            if (isTopBackButtonVisible() && isPointInsideTopBackButton(mouseX, mouseY)) {
+                navigateToRootPage();
+                return true;
+            }
             ScrollbarThumb scrollbarThumb = scrollbarThumb();
             if (scrollbarThumb != null
                     && mouseX >= scrollbarThumb.hitLeft()
@@ -234,10 +240,6 @@ public class VillagerInteractionScreen extends Screen {
             this.options.add(DialogueOption.enabled("Story", () -> requestDialogue(DialogueRequestType.STORY)));
             this.options.add(DialogueOption.enabled("Joke", () -> requestDialogue(DialogueRequestType.JOKE)));
             this.options.add(DialogueOption.enabled("Insult", () -> requestDialogue(DialogueRequestType.INSULT)));
-            this.options.add(DialogueOption.enabled("Back", () -> {
-                this.page = DialoguePage.ROOT;
-                rebuildOptions();
-            }));
         } else {
             this.options.add(DialogueOption.enabled("Talk", () -> {
                 this.page = DialoguePage.TALK;
@@ -257,6 +259,13 @@ public class VillagerInteractionScreen extends Screen {
 
     private void requestDialogue(DialogueRequestType requestType) {
         PacketDistributor.sendToServer(new VillagerDialogueRequestPayload(this.villagerEntityId, requestType));
+    }
+
+    private void navigateToRootPage() {
+        if (this.page != DialoguePage.ROOT) {
+            this.page = DialoguePage.ROOT;
+            rebuildOptions();
+        }
     }
 
     private void leaveConversation() {
@@ -352,6 +361,20 @@ public class VillagerInteractionScreen extends Screen {
         if (hovered >= 0 && this.options.get(hovered).tooltip() != null) {
             graphics.renderTooltip(this.font, Component.literal(this.options.get(hovered).tooltip()), mouseX, mouseY);
         }
+    }
+
+    private void renderTopBackButton(GuiGraphics graphics, int mouseX, int mouseY) {
+        if (!isTopBackButtonVisible()) {
+            return;
+        }
+
+        TopBackButtonBounds bounds = topBackButtonBounds();
+        boolean hovered = isPointInsideTopBackButton(mouseX, mouseY);
+        int textColor = hovered ? 0xFFF8F8F4 : 0xCFC7C8C5;
+        int backgroundColor = hovered ? 0x30000000 : 0x18000000;
+
+        graphics.fill(bounds.left() - 6, bounds.top() - 2, bounds.right() + 4, bounds.bottom() + 2, backgroundColor);
+        graphics.drawString(this.font, "Back", bounds.left(), bounds.top(), textColor, false);
     }
 
     private void renderHint(GuiGraphics graphics) {
@@ -495,6 +518,32 @@ public class VillagerInteractionScreen extends Screen {
         return -1;
     }
 
+    private boolean isTopBackButtonVisible() {
+        return this.page == DialoguePage.TALK;
+    }
+
+    private boolean isPointInsideTopBackButton(double mouseX, double mouseY) {
+        if (!isTopBackButtonVisible()) {
+            return false;
+        }
+
+        TopBackButtonBounds bounds = topBackButtonBounds();
+        return mouseX >= bounds.left()
+                && mouseX <= bounds.right()
+                && mouseY >= bounds.top() - 2
+                && mouseY <= bounds.bottom() + 2;
+    }
+
+    private TopBackButtonBounds topBackButtonBounds() {
+        String label = "Back";
+        int textWidth = this.font.width(label);
+        int right = optionsScrollbarLeft() + OPTION_SCROLLBAR_WIDTH;
+        int left = right - textWidth;
+        int top = optionsTop() - this.font.lineHeight - TOP_BACK_BUTTON_GAP;
+        int bottom = top + this.font.lineHeight;
+        return new TopBackButtonBounds(left, right, top, bottom);
+    }
+
     private int optionsTop() {
         return focusCenterY() - Math.min(DIVIDER_HEIGHT / 2 - 4, optionViewportHeight() / 2);
     }
@@ -632,7 +681,7 @@ public class VillagerInteractionScreen extends Screen {
 
         int viewportTop = optionsTop();
         int viewportHeight = optionViewportHeight();
-        int scrollbarLeft = optionsLeft() + OPTION_WIDTH + OPTION_SCROLLBAR_OFFSET;
+        int scrollbarLeft = optionsScrollbarLeft();
         int scrollbarRight = scrollbarLeft + OPTION_SCROLLBAR_WIDTH;
         int thumbHeight = Math.max(18, Mth.floor(viewportHeight * (viewportHeight / optionContentHeight())));
         float trackTravel = Math.max(0.0F, viewportHeight - thumbHeight);
@@ -641,6 +690,10 @@ public class VillagerInteractionScreen extends Screen {
         int hitLeft = scrollbarLeft - (OPTION_SCROLLBAR_HIT_WIDTH - OPTION_SCROLLBAR_WIDTH) / 2;
         int hitRight = hitLeft + OPTION_SCROLLBAR_HIT_WIDTH;
         return new ScrollbarThumb(scrollbarLeft, scrollbarRight, hitLeft, hitRight, thumbTop, thumbTop + thumbHeight, viewportTop, trackTravel);
+    }
+
+    private int optionsScrollbarLeft() {
+        return optionsLeft() + OPTION_WIDTH + OPTION_SCROLLBAR_OFFSET;
     }
 
     private static int withAlpha(int color, float alphaFactor) {
@@ -766,5 +819,8 @@ public class VillagerInteractionScreen extends Screen {
         int height() {
             return this.bottom - this.top;
         }
+    }
+
+    private record TopBackButtonBounds(int left, int right, int top, int bottom) {
     }
 }
