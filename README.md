@@ -224,6 +224,19 @@ Villager Retaliation! is designed to work with vanilla villager systems rather t
 
 Compatibility may vary with mods that heavily replace villager AI, trading, combat, or entity classes.
 
+### Resource Pack Textures
+
+Villagers and wandering traders use vanilla texture paths while idle, trading, or otherwise using the vanilla crossed-arms model. When they enter a combat posture, they use Villager Retaliation's combat model and a matching combat texture path.
+
+Resource packs that change villagers should include both the vanilla texture and the combat-state texture:
+
+| Entity | Normal texture | Combat texture |
+| --- | --- | --- |
+| Villager | `assets/minecraft/textures/entity/villager/villager.png` | `assets/villagerretaliation/textures/entity/villager/villager.png` |
+| Wandering Trader | `assets/minecraft/textures/entity/wandering_trader.png` | `assets/villagerretaliation/textures/entity/wandering_trader/wandering_trader.png` |
+
+The combat texture is separate because the combat model has independent animated arms for weapons, shields, bows, potions, and throwing poses. A vanilla villager texture alone does not contain enough arm layout information to support every combat pose cleanly.
+
 ## Version and Loaders
 
 - NeoForge 1.21.1 - active development
