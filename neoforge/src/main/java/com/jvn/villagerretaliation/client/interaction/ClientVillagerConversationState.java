@@ -61,6 +61,10 @@ public final class ClientVillagerConversationState {
         return SPEAKER_LABELS.get(entityId);
     }
 
+    public static void forgetSpeakerLabel(int entityId) {
+        SPEAKER_LABELS.remove(entityId);
+    }
+
     public static double cameraReleaseProgress(float partialTick) {
         if (active() || cameraReleaseTicks <= 0) {
             return 1.0D;

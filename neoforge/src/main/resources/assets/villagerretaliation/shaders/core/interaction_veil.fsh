@@ -1,3 +1,6 @@
+// Code derives from the lovely work by SamBigos
+// https://godotshaders.com/shader/dither-gradient-shader/
+
 #version 150
 
 uniform float VeilTop;

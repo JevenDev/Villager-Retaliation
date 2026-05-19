@@ -17,7 +17,6 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.BooleanValue ENABLE_DIALOGUE_CAMERA_FOCUS;
     public static final ModConfigSpec.DoubleValue DIALOGUE_CAMERA_ZOOM_AMOUNT;
     public static final ModConfigSpec.IntValue DIALOGUE_CAMERA_TRANSITION_TICKS;
-    public static final ModConfigSpec.EnumValue<InteractionScreenBackdropStyle> INTERACTION_SCREEN_BACKDROP_STYLE;
     public static final ModConfigSpec.EnumValue<ReputationChangeDisplayMode> REPUTATION_CHANGE_DISPLAY_MODE;
     public static final ModConfigSpec.EnumValue<ReputationChangeHudPosition> REPUTATION_CHANGE_HUD_POSITION;
     public static final ModConfigSpec.BooleanValue FREEZE_VILLAGER_DURING_DIALOGUE;
@@ -165,10 +164,6 @@ public final class VillagerRetaliationConfig {
                 .comment("Ticks used to ease into the dialogue FOV zoom.")
                 .translation("villagerretaliation.configuration.general.dialogueCameraTransitionTicks")
                 .defineInRange("dialogueCameraTransitionTicks", 3, 1, 40);
-        INTERACTION_SCREEN_BACKDROP_STYLE = BUILDER
-                .comment("Backdrop style used behind the villager interaction screen: Framed or Veil.")
-                .translation("villagerretaliation.configuration.general.interactionScreenBackdropStyle")
-                .defineEnum("interactionScreenBackdropStyle", InteractionScreenBackdropStyle.FRAMED);
         REPUTATION_CHANGE_DISPLAY_MODE = BUILDER
                 .comment("Where villager reputation tier change messages appear: HUD, Chat, or Off.")
                 .translation("villagerretaliation.configuration.general.reputationChangeDisplayMode")

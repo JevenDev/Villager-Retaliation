@@ -2,8 +2,6 @@ package com.jvn.villagerretaliation.client.interaction;
 
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
-import com.jvn.villagerretaliation.config.InteractionScreenBackdropStyle;
-import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.network.VillagerConversationEndRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerDialogueRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerTradeRequestPayload;
@@ -22,7 +20,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import org.lwjgl.glfw.GLFW;
 
 public class VillagerInteractionScreen extends Screen {
-    private static final int RESPONSE_WIDTH = 520;
+    private static final String BACK_LABEL = "Back";
+    private static final String HINT_TEXT = "Esc: leave";
     private static final int OPTION_WIDTH = 180;
     private static final int OPTION_HEIGHT = 18;
     private static final int OPTION_GAP = 0;
@@ -36,8 +35,7 @@ public class VillagerInteractionScreen extends Screen {
     private static final int DIVIDER_HEIGHT = 80;
     private static final int INFO_PANEL_CHAT_PADDING = 20;
     private static final int VEIL_DITHER_START_OFFSET = OPTION_HEIGHT - 81;
-    private static final int DEFAULT_SCREEN_BOTTOM_MARGIN = 124;
-    private static final int VEIL_SCREEN_BOTTOM_MARGIN = 48;
+    private static final int SCREEN_BOTTOM_MARGIN = 48;
     private static final int VEIL_TOP_DITHER_HEIGHT = 64;
     private static final float OPTION_SCROLL_LERP = 0.32F;
     private static final float OPTION_SCROLL_STEP = 12.0F;
@@ -111,78 +109,57 @@ public class VillagerInteractionScreen extends Screen {
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         focusVillagerOnPlayer();
         updateMouseSelection(mouseX, mouseY);
-        this.optionScroll = Mth.lerp(OPTION_SCROLL_LERP, this.optionScroll, this.targetOptionScroll);
-        if (Math.abs(this.optionScroll - this.targetOptionScroll) < 0.15F) {
-            this.optionScroll = this.targetOptionScroll;
-        }
+        updateOptionScroll();
 
-        renderBackdrop(graphics);
-        renderConversationFocus(graphics);
-        renderDivider(graphics, optionsTop());
+        int optionsTop = optionsTop();
+        renderConversationFocus(graphics, optionsTop);
+        renderDivider(graphics, optionsTop);
         renderTopBackButton(graphics, mouseX, mouseY);
-        renderOptions(graphics, mouseX, mouseY, optionsTop());
+        renderOptions(graphics, mouseX, mouseY, optionsTop);
         renderHint(graphics);
     }
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
-            leaveConversation();
-            return true;
-        }
-        if (keyCode == GLFW.GLFW_KEY_UP || keyCode == GLFW.GLFW_KEY_W) {
-            moveSelection(-1);
-            return true;
-        }
-        if (keyCode == GLFW.GLFW_KEY_DOWN || keyCode == GLFW.GLFW_KEY_S) {
-            moveSelection(1);
-            return true;
-        }
-        if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER || keyCode == GLFW.GLFW_KEY_SPACE) {
-            activateSelected();
-            return true;
-        }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return switch (keyCode) {
+            case GLFW.GLFW_KEY_ESCAPE -> {
+                leaveConversation();
+                yield true;
+            }
+            case GLFW.GLFW_KEY_UP, GLFW.GLFW_KEY_W -> {
+                moveSelection(-1);
+                yield true;
+            }
+            case GLFW.GLFW_KEY_DOWN, GLFW.GLFW_KEY_S -> {
+                moveSelection(1);
+                yield true;
+            }
+            case GLFW.GLFW_KEY_ENTER, GLFW.GLFW_KEY_KP_ENTER, GLFW.GLFW_KEY_SPACE -> {
+                activateSelected();
+                yield true;
+            }
+            default -> super.keyPressed(keyCode, scanCode, modifiers);
+        };
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
-            if (isTopBackButtonVisible() && isPointInsideTopBackButton(mouseX, mouseY)) {
-                navigateToRootPage();
-                return true;
-            }
-            ScrollbarThumb scrollbarThumb = scrollbarThumb();
-            if (scrollbarThumb != null
-                    && mouseX >= scrollbarThumb.hitLeft()
-                    && mouseX <= scrollbarThumb.hitRight()
-                    && mouseY >= scrollbarThumb.top()
-                    && mouseY <= scrollbarThumb.bottom()) {
-                this.draggingScrollbar = true;
-                this.scrollbarDragOffset = (float) mouseY - scrollbarThumb.top();
-                return true;
-            }
-            int hovered = optionAt(mouseX, mouseY);
-            if (hovered >= 0) {
-                this.selectedOption = hovered;
-                ensureSelectedVisible();
-                activateSelected();
-                return true;
-            }
+        if (!isLeftMouseButton(button)) {
+            return super.mouseClicked(mouseX, mouseY, button);
         }
+
+        if (tryClickBackButton(mouseX, mouseY)
+                || tryBeginScrollbarDrag(mouseX, mouseY)
+                || tryActivateHoveredOption(mouseX, mouseY)) {
+            return true;
+        }
+
         return super.mouseClicked(mouseX, mouseY, button);
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-        if (maxOptionScroll() <= 0.0F) {
-            return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
-        }
-        int left = optionsLeft() - 18;
-        int right = optionsLeft() + OPTION_WIDTH + 4;
-        int top = optionsTop();
-        int bottom = top + optionViewportHeight();
-        if (mouseX < left || mouseX > right || mouseY < top - 4 || mouseY > bottom + 4) {
+        if (maxOptionScroll() <= 0.0F || !isPointInsideOptionScrollArea(mouseX, mouseY)) {
             return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
         }
 
@@ -192,30 +169,15 @@ public class VillagerInteractionScreen extends Screen {
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.draggingScrollbar) {
-            ScrollbarThumb scrollbarThumb = scrollbarThumb();
-            if (scrollbarThumb == null) {
-                this.draggingScrollbar = false;
-                return false;
-            }
-
-            float trackTravel = scrollbarThumb.trackTravel();
-            if (trackTravel <= 0.0F) {
-                setTargetOptionScroll(0.0F);
-            } else {
-                float thumbTop = (float) mouseY - this.scrollbarDragOffset;
-                float ratio = Mth.clamp((thumbTop - scrollbarThumb.viewportTop()) / trackTravel, 0.0F, 1.0F);
-                setTargetOptionScroll(maxOptionScroll() * ratio);
-            }
-            this.optionScroll = this.targetOptionScroll;
-            return true;
+        if (isLeftMouseButton(button) && this.draggingScrollbar) {
+            return dragScrollbar(mouseY);
         }
         return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
     }
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && this.draggingScrollbar) {
+        if (isLeftMouseButton(button) && this.draggingScrollbar) {
             this.draggingScrollbar = false;
             return true;
         }
@@ -240,27 +202,44 @@ public class VillagerInteractionScreen extends Screen {
     private void rebuildOptions() {
         this.options.clear();
         if (this.page == DialoguePage.TALK) {
-            this.options.add(DialogueOption.enabled("Chat", () -> requestDialogue(DialogueRequestType.CHAT)));
-            this.options.add(DialogueOption.enabled("Greeting", () -> requestDialogue(DialogueRequestType.GREETING)));
-            this.options.add(DialogueOption.enabled("Question", () -> requestDialogue(DialogueRequestType.QUESTION)));
-            this.options.add(DialogueOption.enabled("Story", () -> requestDialogue(DialogueRequestType.STORY)));
-            this.options.add(DialogueOption.enabled("Joke", () -> requestDialogue(DialogueRequestType.JOKE)));
-            this.options.add(DialogueOption.enabled("Insult", () -> requestDialogue(DialogueRequestType.INSULT)));
+            addDialogueOptions();
         } else {
-            this.options.add(DialogueOption.enabled("Talk", () -> {
-                this.page = DialoguePage.TALK;
-                rebuildOptions();
-            }));
-            this.options.add(DialogueOption.enabled("Trade", () ->
-                    PacketDistributor.sendToServer(new VillagerTradeRequestPayload(this.villagerEntityId))));
-            this.options.add(DialogueOption.disabled("Recruit", "Coming soon"));
-            this.options.add(DialogueOption.disabled("Inventory", "Coming soon"));
-            this.options.add(DialogueOption.enabled("Goodbye", this::leaveConversation));
+            addRootOptions();
         }
         this.selectedOption = firstEnabledOption();
         this.optionScroll = 0.0F;
         this.targetOptionScroll = 0.0F;
         ensureSelectedVisible();
+    }
+
+    private void addDialogueOptions() {
+        addDialogueOption("Chat", DialogueRequestType.CHAT);
+        addDialogueOption("Greeting", DialogueRequestType.GREETING);
+        addDialogueOption("Question", DialogueRequestType.QUESTION);
+        addDialogueOption("Story", DialogueRequestType.STORY);
+        addDialogueOption("Joke", DialogueRequestType.JOKE);
+        addDialogueOption("Insult", DialogueRequestType.INSULT);
+    }
+
+    private void addRootOptions() {
+        this.options.add(DialogueOption.enabled("Talk", this::openTalkPage));
+        this.options.add(DialogueOption.enabled("Trade", this::requestTrade));
+        this.options.add(DialogueOption.disabled("Recruit", "Coming soon"));
+        this.options.add(DialogueOption.disabled("Inventory", "Coming soon"));
+        this.options.add(DialogueOption.enabled("Goodbye", this::leaveConversation));
+    }
+
+    private void addDialogueOption(String label, DialogueRequestType requestType) {
+        this.options.add(DialogueOption.enabled(label, () -> requestDialogue(requestType)));
+    }
+
+    private void openTalkPage() {
+        this.page = DialoguePage.TALK;
+        rebuildOptions();
+    }
+
+    private void requestTrade() {
+        PacketDistributor.sendToServer(new VillagerTradeRequestPayload(this.villagerEntityId));
     }
 
     private void requestDialogue(DialogueRequestType requestType) {
@@ -304,6 +283,13 @@ public class VillagerInteractionScreen extends Screen {
         }
     }
 
+    private void updateOptionScroll() {
+        this.optionScroll = Mth.lerp(OPTION_SCROLL_LERP, this.optionScroll, this.targetOptionScroll);
+        if (Math.abs(this.optionScroll - this.targetOptionScroll) < 0.15F) {
+            this.optionScroll = this.targetOptionScroll;
+        }
+    }
+
     private int firstEnabledOption() {
         for (int index = 0; index < this.options.size(); index++) {
             if (!this.options.get(index).disabled()) {
@@ -327,38 +313,7 @@ public class VillagerInteractionScreen extends Screen {
                 continue;
             }
 
-            boolean selected = index == this.selectedOption;
-            float hoverMix = hovered == index ? hoverIntensity(mouseX, mouseY, left, y) : 0.0F;
-            float scale = option.disabled()
-                    ? 1.0F
-                    : 1.0F + (selected ? OPTION_SELECTED_SCALE : 0.0F) + hoverMix * OPTION_HOVER_SCALE;
-            float cursorShiftX = hovered == index ? hoverShift(mouseX, left, OPTION_WIDTH, 3.2F) * hoverMix : 0.0F;
-            float cursorShiftY = hovered == index ? hoverShift(mouseY, y, OPTION_HEIGHT, 1.6F) * hoverMix : 0.0F;
-            int textColor = option.disabled() ? 0x7C8A8A8A : selected ? 0xFFF8F8F4 : hovered == index ? 0xFFE5E5DE : 0xCFC7C8C5;
-            int fadedTextColor = withAlpha(textColor, edgeFadeAlpha(y, top, viewportBottom));
-            int hoverBackgroundColor = option.disabled() || hovered != index
-                    ? 0
-                    : withAlpha(0xFF000000, edgeFadeAlpha(y, top, viewportBottom) * 0.16F);
-
-            graphics.pose().pushPose();
-            float pivotX = left + OPTION_WIDTH * 0.5F;
-            float pivotY = y + OPTION_HEIGHT * 0.5F;
-            graphics.pose().translate(pivotX + cursorShiftX, pivotY + cursorShiftY, 0.0F);
-            graphics.pose().scale(scale, scale, 1.0F);
-            graphics.pose().translate(-pivotX, -pivotY, 0.0F);
-
-            if (hoverBackgroundColor != 0) {
-                int bgLeft = left - 12;
-                int bgTop = Mth.floor(y + 1.0F);
-                int bgRight = left + OPTION_WIDTH - 8;
-                int bgBottom = bgTop + OPTION_HEIGHT - 1;
-                graphics.fill(bgLeft, bgTop, bgRight, bgBottom, hoverBackgroundColor);
-            }
-            if (selected && !option.disabled()) {
-                graphics.drawString(this.font, ">", left - 7, Mth.floor(y + 5.0F), withAlpha(0xFFFFFFFF, edgeFadeAlpha(y, top, viewportBottom)), false);
-            }
-            graphics.drawString(this.font, option.label(), left + OPTION_TEXT_INSET, Mth.floor(y + 5.0F), fadedTextColor, false);
-            graphics.pose().popPose();
+            renderOption(graphics, option, index, hovered, mouseX, mouseY, left, y, top, viewportBottom);
         }
         graphics.disableScissor();
 
@@ -367,6 +322,74 @@ public class VillagerInteractionScreen extends Screen {
         if (hovered >= 0 && this.options.get(hovered).tooltip() != null) {
             graphics.renderTooltip(this.font, Component.literal(this.options.get(hovered).tooltip()), mouseX, mouseY);
         }
+    }
+
+    private void renderOption(
+            GuiGraphics graphics,
+            DialogueOption option,
+            int index,
+            int hovered,
+            int mouseX,
+            int mouseY,
+            int left,
+            float y,
+            int viewportTop,
+            int viewportBottom
+    ) {
+        boolean selected = index == this.selectedOption;
+        boolean isHovered = hovered == index;
+        float hoverMix = isHovered ? hoverIntensity(mouseX, mouseY, left, y) : 0.0F;
+        float scale = optionScale(option, selected, hoverMix);
+        float cursorShiftX = isHovered ? hoverShift(mouseX, left, OPTION_WIDTH, 3.2F) * hoverMix : 0.0F;
+        float cursorShiftY = isHovered ? hoverShift(mouseY, y, OPTION_HEIGHT, 1.6F) * hoverMix : 0.0F;
+        float edgeAlpha = edgeFadeAlpha(y, viewportTop, viewportBottom);
+        int textColor = optionTextColor(option, selected, isHovered);
+
+        graphics.pose().pushPose();
+        applyOptionTransform(graphics, left, y, scale, cursorShiftX, cursorShiftY);
+        renderOptionBackground(graphics, option, isHovered, left, y, edgeAlpha);
+        if (selected && !option.disabled()) {
+            graphics.drawString(this.font, ">", left - 7, Mth.floor(y + 5.0F), withAlpha(0xFFFFFFFF, edgeAlpha), false);
+        }
+        graphics.drawString(this.font, option.label(), left + OPTION_TEXT_INSET, Mth.floor(y + 5.0F), withAlpha(textColor, edgeAlpha), false);
+        graphics.pose().popPose();
+    }
+
+    private void applyOptionTransform(GuiGraphics graphics, int left, float top, float scale, float shiftX, float shiftY) {
+        float pivotX = left + OPTION_WIDTH * 0.5F;
+        float pivotY = top + OPTION_HEIGHT * 0.5F;
+        graphics.pose().translate(pivotX + shiftX, pivotY + shiftY, 0.0F);
+        graphics.pose().scale(scale, scale, 1.0F);
+        graphics.pose().translate(-pivotX, -pivotY, 0.0F);
+    }
+
+    private void renderOptionBackground(GuiGraphics graphics, DialogueOption option, boolean hovered, int left, float top, float edgeAlpha) {
+        if (option.disabled() || !hovered) {
+            return;
+        }
+
+        int bgLeft = left - 12;
+        int bgTop = Mth.floor(top + 1.0F);
+        int bgRight = left + OPTION_WIDTH - 8;
+        int bgBottom = bgTop + OPTION_HEIGHT - 1;
+        graphics.fill(bgLeft, bgTop, bgRight, bgBottom, withAlpha(0xFF000000, edgeAlpha * 0.16F));
+    }
+
+    private static float optionScale(DialogueOption option, boolean selected, float hoverMix) {
+        if (option.disabled()) {
+            return 1.0F;
+        }
+        return 1.0F + (selected ? OPTION_SELECTED_SCALE : 0.0F) + hoverMix * OPTION_HOVER_SCALE;
+    }
+
+    private static int optionTextColor(DialogueOption option, boolean selected, boolean hovered) {
+        if (option.disabled()) {
+            return 0x7C8A8A8A;
+        }
+        if (selected) {
+            return 0xFFF8F8F4;
+        }
+        return hovered ? 0xFFE5E5DE : 0xCFC7C8C5;
     }
 
     private void renderTopBackButton(GuiGraphics graphics, int mouseX, int mouseY) {
@@ -380,59 +403,31 @@ public class VillagerInteractionScreen extends Screen {
         int backgroundColor = hovered ? 0x30000000 : 0x18000000;
 
         graphics.fill(bounds.left() - 6, bounds.top() - 2, bounds.right() + 4, bounds.bottom() + 2, backgroundColor);
-        graphics.drawString(this.font, "Back", bounds.left(), bounds.top(), textColor, false);
+        graphics.drawString(this.font, BACK_LABEL, bounds.left(), bounds.top(), textColor, false);
     }
 
     private void renderHint(GuiGraphics graphics) {
-        String hint = "Esc: leave";
-        graphics.drawString(this.font, hint, this.width - this.font.width(hint) - 8, this.height - 14, 0x66FFFFFF, false);
+        graphics.drawString(this.font, HINT_TEXT, this.width - this.font.width(HINT_TEXT) - 8, this.height - 14, 0x66FFFFFF, false);
     }
 
-    private void renderBackdrop(GuiGraphics graphics) {
-        InteractionScreenBackdropStyle backdropStyle = VillagerRetaliationConfig.INTERACTION_SCREEN_BACKDROP_STYLE.get();
-        if (backdropStyle == InteractionScreenBackdropStyle.VEIL) {
-            renderVeilBackdrop(graphics);
-            return;
-        }
-
-        renderFramedBackdrop(graphics);
-    }
-
-    private void renderFramedBackdrop(GuiGraphics graphics) {
-        int centerY = focusCenterY();
-        int bandTop = centerY - 68;
-        int bandBottom = centerY + 74;
-        int centerLeft = dividerX() - 122;
-        int centerRight = dividerX() + 130;
-        int sideInset = 26;
-
-        fillSoftRect(graphics, centerLeft, bandTop, centerRight, bandBottom, 0x30000000, 18);
-        fillSoftRect(graphics, 32, bandTop + 10, dividerX() - sideInset, bandBottom - 6, 0x22000000, 16);
-        fillSoftRect(graphics, dividerX() + sideInset, bandTop + 10, this.width - 32, bandBottom - 6, 0x22000000, 16);
-        fillBottomMist(graphics, centerY + 54, this.height - 18, 0x18000000);
-    }
-
-    private void renderVeilBackdrop(GuiGraphics graphics) {
+    void renderBackdropBehindChat(GuiGraphics graphics) {
         int veilTop = Math.max(0, optionsTop() + VEIL_DITHER_START_OFFSET);
         VillagerInteractionScreenShaderRenderer.renderInteractionVeil(graphics, this.width, this.height, veilTop, VEIL_TOP_DITHER_HEIGHT);
     }
 
-    private void renderConversationFocus(GuiGraphics graphics) {
+    private void renderConversationFocus(GuiGraphics graphics, int optionsTop) {
         int dividerX = dividerX();
-        String speaker = this.villagerName;
-        String profession = this.professionName;
-        String mood = "Mood: " + displayName(this.reputationLevel);
-        String reputation = "Reputation " + this.reputation;
-        int infoBaseY = Mth.floor(optionTextTop(optionsTop()));
+        int infoBaseY = Mth.floor(optionTextTop(optionsTop));
         int infoLineGap = optionStride();
-        int nameX = dividerX - 28 - this.font.width(speaker);
-        graphics.drawString(this.font, speaker, nameX, infoBaseY, INFO_VALUE_COLOR, false);
-        int professionX = dividerX - 28 - this.font.width(profession);
-        graphics.drawString(this.font, profession, professionX, infoBaseY + infoLineGap, INFO_SECONDARY_COLOR, false);
-        int moodX = dividerX - 28 - this.font.width(mood);
-        graphics.drawString(this.font, mood, moodX, infoBaseY + infoLineGap * 2, moodColor(this.reputationLevel), false);
-        int reputationX = dividerX - 28 - this.font.width(reputation);
-        graphics.drawString(this.font, reputation, reputationX, infoBaseY + infoLineGap * 3, INFO_LABEL_COLOR, false);
+
+        drawRightAlignedInfo(graphics, this.villagerName, infoBaseY, INFO_VALUE_COLOR, dividerX);
+        drawRightAlignedInfo(graphics, this.professionName, infoBaseY + infoLineGap, INFO_SECONDARY_COLOR, dividerX);
+        drawRightAlignedInfo(graphics, moodText(), infoBaseY + infoLineGap * 2, moodColor(this.reputationLevel), dividerX);
+        drawRightAlignedInfo(graphics, reputationText(), infoBaseY + infoLineGap * 3, INFO_LABEL_COLOR, dividerX);
+    }
+
+    private void drawRightAlignedInfo(GuiGraphics graphics, String text, int y, int color, int dividerX) {
+        graphics.drawString(this.font, text, dividerX - 28 - this.font.width(text), y, color, false);
     }
 
     private void renderDivider(GuiGraphics graphics, int optionsTop) {
@@ -537,6 +532,69 @@ public class VillagerInteractionScreen extends Screen {
         return -1;
     }
 
+    private boolean tryClickBackButton(double mouseX, double mouseY) {
+        if (!isTopBackButtonVisible() || !isPointInsideTopBackButton(mouseX, mouseY)) {
+            return false;
+        }
+
+        navigateToRootPage();
+        return true;
+    }
+
+    private boolean tryBeginScrollbarDrag(double mouseX, double mouseY) {
+        ScrollbarThumb scrollbarThumb = scrollbarThumb();
+        if (scrollbarThumb == null || !scrollbarThumb.contains(mouseX, mouseY)) {
+            return false;
+        }
+
+        this.draggingScrollbar = true;
+        this.scrollbarDragOffset = (float) mouseY - scrollbarThumb.top();
+        return true;
+    }
+
+    private boolean dragScrollbar(double mouseY) {
+        ScrollbarThumb scrollbarThumb = scrollbarThumb();
+        if (scrollbarThumb == null) {
+            this.draggingScrollbar = false;
+            return false;
+        }
+
+        float trackTravel = scrollbarThumb.trackTravel();
+        if (trackTravel <= 0.0F) {
+            setTargetOptionScroll(0.0F);
+        } else {
+            float thumbTop = (float) mouseY - this.scrollbarDragOffset;
+            float ratio = Mth.clamp((thumbTop - scrollbarThumb.viewportTop()) / trackTravel, 0.0F, 1.0F);
+            setTargetOptionScroll(maxOptionScroll() * ratio);
+        }
+        this.optionScroll = this.targetOptionScroll;
+        return true;
+    }
+
+    private boolean tryActivateHoveredOption(double mouseX, double mouseY) {
+        int hovered = optionAt(mouseX, mouseY);
+        if (hovered < 0) {
+            return false;
+        }
+
+        this.selectedOption = hovered;
+        ensureSelectedVisible();
+        activateSelected();
+        return true;
+    }
+
+    private boolean isPointInsideOptionScrollArea(double mouseX, double mouseY) {
+        int left = optionsLeft() - 18;
+        int right = optionsLeft() + OPTION_WIDTH + 4;
+        int top = optionsTop();
+        int bottom = top + optionViewportHeight();
+        return mouseX >= left && mouseX <= right && mouseY >= top - 4 && mouseY <= bottom + 4;
+    }
+
+    private static boolean isLeftMouseButton(int button) {
+        return button == GLFW.GLFW_MOUSE_BUTTON_LEFT;
+    }
+
     private boolean isTopBackButtonVisible() {
         return this.page == DialoguePage.TALK;
     }
@@ -554,8 +612,7 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     private TopBackButtonBounds topBackButtonBounds() {
-        String label = "Back";
-        int textWidth = this.font.width(label);
+        int textWidth = this.font.width(BACK_LABEL);
         int right = optionsScrollbarLeft() + OPTION_SCROLLBAR_WIDTH;
         int left = right - textWidth;
         int top = optionsTop() - this.font.lineHeight - TOP_BACK_BUTTON_GAP;
@@ -576,13 +633,22 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     int infoPanelLeft() {
-        return dividerX() - 28 - Math.max(
+        return dividerX() - 28 - infoPanelWidth();
+    }
+
+    private int infoPanelWidth() {
+        return Math.max(
                 Math.max(this.font.width(this.villagerName), this.font.width(this.professionName)),
-                Math.max(
-                        this.font.width("Mood: " + displayName(this.reputationLevel)),
-                        this.font.width("Reputation " + this.reputation)
-                )
+                Math.max(this.font.width(moodText()), this.font.width(reputationText()))
         );
+    }
+
+    private String moodText() {
+        return "Mood: " + displayName(this.reputationLevel);
+    }
+
+    private String reputationText() {
+        return "Reputation " + this.reputation;
     }
 
     private void applyChatWidthOverride() {
@@ -609,13 +675,7 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     private int focusCenterY() {
-        return Math.max(72, this.height - screenBottomMargin());
-    }
-
-    private int screenBottomMargin() {
-        return VillagerRetaliationConfig.INTERACTION_SCREEN_BACKDROP_STYLE.get() == InteractionScreenBackdropStyle.VEIL
-                ? VEIL_SCREEN_BOTTOM_MARGIN
-                : DEFAULT_SCREEN_BOTTOM_MARGIN;
+        return Math.max(72, this.height - SCREEN_BOTTOM_MARGIN);
     }
 
     private int optionViewportHeight() {
@@ -727,52 +787,6 @@ public class VillagerInteractionScreen extends Screen {
         return adjustedAlpha << 24 | color & 0x00FFFFFF;
     }
 
-    private void fillSoftRect(GuiGraphics graphics, int left, int top, int right, int bottom, int color, int feather) {
-        if (right <= left || bottom <= top) {
-            return;
-        }
-
-        int innerLeft = left + feather;
-        int innerRight = right - feather;
-        int innerTop = top + feather;
-        int innerBottom = bottom - feather;
-
-        if (innerRight > innerLeft && innerBottom > innerTop) {
-            graphics.fill(innerLeft, innerTop, innerRight, innerBottom, color);
-        }
-
-        for (int step = 0; step < feather; step++) {
-            float alphaFactor = (step + 1.0F) / feather;
-            int lineColor = withAlpha(color, alphaFactor);
-            graphics.fill(left + step, innerTop, left + step + 1, innerBottom, lineColor);
-            graphics.fill(right - step - 1, innerTop, right - step, innerBottom, lineColor);
-            graphics.fill(innerLeft, top + step, innerRight, top + step + 1, lineColor);
-            graphics.fill(innerLeft, bottom - step - 1, innerRight, bottom - step, lineColor);
-        }
-
-        for (int step = 0; step < feather; step++) {
-            float alphaFactor = ((step + 1.0F) / feather) * ((step + 1.0F) / feather);
-            int lineColor = withAlpha(color, alphaFactor);
-            graphics.fill(left + step, top + step, left + step + 1, top + step + 1, lineColor);
-            graphics.fill(right - step - 1, top + step, right - step, top + step + 1, lineColor);
-            graphics.fill(left + step, bottom - step - 1, left + step + 1, bottom - step, lineColor);
-            graphics.fill(right - step - 1, bottom - step - 1, right - step, bottom - step, lineColor);
-        }
-    }
-
-    private void fillBottomMist(GuiGraphics graphics, int top, int bottom, int color) {
-        if (bottom <= top) {
-            return;
-        }
-
-        int height = bottom - top;
-        for (int step = 0; step < height; step++) {
-            float progress = (step + 1.0F) / height;
-            float alphaFactor = progress * progress;
-            graphics.fill(0, top + step, this.width, top + step + 1, withAlpha(color, alphaFactor));
-        }
-    }
-
     private float hoverIntensity(double mouseX, double mouseY, int left, float top) {
         double normalizedX = Math.abs(((mouseX - left) / OPTION_WIDTH) * 2.0D - 1.0D);
         double normalizedY = Math.abs(((mouseY - top) / OPTION_HEIGHT) * 2.0D - 1.0D);
@@ -843,6 +857,13 @@ public class VillagerInteractionScreen extends Screen {
     private record ScrollbarThumb(int left, int right, int hitLeft, int hitRight, int top, int bottom, int viewportTop, float trackTravel) {
         int height() {
             return this.bottom - this.top;
+        }
+
+        boolean contains(double mouseX, double mouseY) {
+            return mouseX >= this.hitLeft
+                    && mouseX <= this.hitRight
+                    && mouseY >= this.top
+                    && mouseY <= this.bottom;
         }
     }
 

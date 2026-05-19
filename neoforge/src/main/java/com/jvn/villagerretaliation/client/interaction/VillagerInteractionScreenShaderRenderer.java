@@ -41,21 +41,11 @@ public final class VillagerInteractionScreenShaderRenderer {
             return;
         }
 
-        if (interactionVeilShader.getUniform("VeilTop") != null) {
-            interactionVeilShader.getUniform("VeilTop").set(veilTop);
-        }
-        if (interactionVeilShader.getUniform("FadeHeight") != null) {
-            interactionVeilShader.getUniform("FadeHeight").set(fadeHeight);
-        }
-        if (interactionVeilShader.getUniform("CellSize") != null) {
-            interactionVeilShader.getUniform("CellSize").set(DITHER_CELL_SIZE);
-        }
-        if (interactionVeilShader.getUniform("ScreenWidth") != null) {
-            interactionVeilShader.getUniform("ScreenWidth").set((float) width);
-        }
-        if (interactionVeilShader.getUniform("ArcDepth") != null) {
-            interactionVeilShader.getUniform("ArcDepth").set(DITHER_ARC_DEPTH);
-        }
+        setUniform(interactionVeilShader, "VeilTop", veilTop);
+        setUniform(interactionVeilShader, "FadeHeight", fadeHeight);
+        setUniform(interactionVeilShader, "CellSize", DITHER_CELL_SIZE);
+        setUniform(interactionVeilShader, "ScreenWidth", (float) width);
+        setUniform(interactionVeilShader, "ArcDepth", DITHER_ARC_DEPTH);
         Matrix4f pose = graphics.pose().last().pose();
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
@@ -69,5 +59,12 @@ public final class VillagerInteractionScreenShaderRenderer {
         BufferUploader.drawWithShader(bufferBuilder.buildOrThrow());
 
         RenderSystem.disableBlend();
+    }
+
+    private static void setUniform(ShaderInstance shader, String name, float value) {
+        var uniform = shader.getUniform(name);
+        if (uniform != null) {
+            uniform.set(value);
+        }
     }
 }

@@ -16,27 +16,29 @@ public final class VillagerInteractionClientHandler {
     }
 
     public static void open(OpenVillagerInteractionPayload payload) {
+        Minecraft minecraft = Minecraft.getInstance();
         String villagerName = resolveVillagerName(payload.villagerNameKey(), payload.villagerNameFallback());
         ClientVillagerConversationState.rememberSpeakerLabel(
                 payload.entityId(),
                 formatSpeakerLabel(villagerName, payload.professionName())
         );
-        Minecraft.getInstance().setScreen(new VillagerInteractionScreen(
+        minecraft.setScreen(new VillagerInteractionScreen(
                 payload.entityId(),
                 villagerName,
                 payload.professionName(),
                 payload.reputation(),
                 payload.reputationLevel()
         ));
-        pushVillagerChatMessage(Minecraft.getInstance(), payload.entityId(), payload.greetingText());
+        pushVillagerChatMessage(minecraft, payload.entityId(), payload.greetingText());
     }
 
     public static void acceptDialogue(VillagerDialogueResponsePayload payload) {
-        if (Minecraft.getInstance().screen instanceof VillagerInteractionScreen screen
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.screen instanceof VillagerInteractionScreen screen
                 && screen.matchesVillager(payload.entityId())) {
             screen.updateReputation(payload.reputation(), payload.reputationLevel());
         }
-        pushVillagerChatMessage(Minecraft.getInstance(), payload.entityId(), payload.text());
+        pushVillagerChatMessage(minecraft, payload.entityId(), payload.text());
     }
 
     public static void acceptNotice(VillagerInteractionNoticePayload payload) {
@@ -50,6 +52,7 @@ public final class VillagerInteractionClientHandler {
             screen.closeFromServer();
         }
         pushVillagerChatMessage(minecraft, payload.entityId(), payload.goodbyeText());
+        ClientVillagerConversationState.forgetSpeakerLabel(payload.entityId());
     }
 
     private static void pushVillagerChatMessage(Minecraft minecraft, int entityId, String text) {
