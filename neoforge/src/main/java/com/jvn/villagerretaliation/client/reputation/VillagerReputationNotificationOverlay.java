@@ -52,7 +52,7 @@ public final class VillagerReputationNotificationOverlay {
         ReputationChangeDisplayMode displayMode = VillagerRetaliationConfig.REPUTATION_CHANGE_DISPLAY_MODE.get();
         if (displayMode.showsChatMessage()) {
             minecraft.player.displayClientMessage(
-                    Component.literal(payload.text()).withStyle(chatColor(payload.kind()), ChatFormatting.ITALIC),
+                    chatMessage(payload),
                     false
             );
             return;
@@ -183,6 +183,20 @@ public final class VillagerReputationNotificationOverlay {
             case GIFT_DISLIKED -> ChatFormatting.RED;
             default -> ChatFormatting.GRAY;
         };
+    }
+
+    private static Component chatMessage(VillagerReputationTierNoticePayload payload) {
+        if (payload.kind() == VillagerReputationNoticeKind.RECEIVED_ITEM) {
+            String prefix = "Received item: ";
+            String text = payload.text();
+            if (text.startsWith(prefix) && text.length() > prefix.length()) {
+                return Component.literal(prefix)
+                        .withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC)
+                        .append(Component.literal(text.substring(prefix.length()))
+                                .withStyle(ChatFormatting.AQUA, ChatFormatting.ITALIC));
+            }
+        }
+        return Component.literal(payload.text()).withStyle(chatColor(payload.kind()), ChatFormatting.ITALIC);
     }
 
     private static int withAlpha(int color, float alphaFactor) {

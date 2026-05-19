@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.village;
 
+import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -29,7 +30,29 @@ public final class VillageEventMemory {
                 level.getGameTime(),
                 pos.immutable(),
                 source == null ? null : source.getUUID(),
-                player == null ? null : player.getUUID()
+                player == null ? null : player.getUUID(),
+                null
+        ));
+        prune(level);
+    }
+
+    public static void rememberGift(
+            ServerLevel level,
+            BlockPos pos,
+            Entity villager,
+            Entity player,
+            String villagerName,
+            String itemName,
+            VillagerGiftPreferences.GiftReaction reaction,
+            int reputationValue) {
+        ArrayDeque<MemoryEvent> events = EVENTS.computeIfAbsent(level.dimension(), ignored -> new ArrayDeque<>());
+        events.addLast(new MemoryEvent(
+                giftTag(reaction),
+                level.getGameTime(),
+                pos.immutable(),
+                villager == null ? null : villager.getUUID(),
+                player == null ? null : player.getUUID(),
+                new GiftMemory(villagerName, itemName, reaction, reputationValue)
         ));
         prune(level);
     }
@@ -78,9 +101,27 @@ public final class VillageEventMemory {
         GOLEM_CREATED,
         GOLEM_KILLED,
         NEARBY_HOSTILE_MOB,
-        REPUTATION_CHANGED
+        REPUTATION_CHANGED,
+        PLAYER_GAVE_LOVED_GIFT,
+        PLAYER_GAVE_LIKED_GIFT,
+        PLAYER_GAVE_NEUTRAL_GIFT,
+        PLAYER_GAVE_DISLIKED_GIFT,
+        PLAYER_GAVE_HATED_GIFT
     }
 
-    public record MemoryEvent(EventTag tag, long gameTime, BlockPos pos, UUID sourceId, UUID playerId) {
+    private static EventTag giftTag(VillagerGiftPreferences.GiftReaction reaction) {
+        return switch (reaction) {
+            case LOVED -> EventTag.PLAYER_GAVE_LOVED_GIFT;
+            case LIKED -> EventTag.PLAYER_GAVE_LIKED_GIFT;
+            case NEUTRAL -> EventTag.PLAYER_GAVE_NEUTRAL_GIFT;
+            case DISLIKED -> EventTag.PLAYER_GAVE_DISLIKED_GIFT;
+            case HATED -> EventTag.PLAYER_GAVE_HATED_GIFT;
+        };
+    }
+
+    public record MemoryEvent(EventTag tag, long gameTime, BlockPos pos, UUID sourceId, UUID playerId, GiftMemory gift) {
+    }
+
+    public record GiftMemory(String villagerName, String itemName, VillagerGiftPreferences.GiftReaction reaction, int reputationValue) {
     }
 }

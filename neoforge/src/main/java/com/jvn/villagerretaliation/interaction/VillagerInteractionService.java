@@ -182,8 +182,19 @@ public final class VillagerInteractionService {
         ItemStack giftedStack = player.getInventory().removeItem(inventorySlot, selectedStack.getCount());
         player.getInventory().setChanged();
         VillagerProfession profession = villager.getVillagerData().getProfession();
+        VillagerGiftPreferences.GiftReaction giftReaction = VillagerGiftPreferences.reactionFor(profession, giftedStack);
         int reputationValue = VillagerGiftPreferences.reputationValue(profession, giftedStack);
         VillagerReputationManager.addGiftReputation(level, villager, player, reputationValue);
+        VillageEventMemory.rememberGift(
+                level,
+                villager.blockPosition(),
+                villager,
+                player,
+                VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
+                itemName(giftedStack),
+                giftReaction,
+                reputationValue
+        );
         reduceDialogueAnnoyanceFromGift(level, villager, player, reputationValue);
         sendGiftNotice(player, villager, giftedStack, reputationValue);
         focusVillagerOnPlayer(villager, player);

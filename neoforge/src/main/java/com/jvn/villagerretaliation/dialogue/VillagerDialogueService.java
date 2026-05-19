@@ -21,6 +21,10 @@ public final class VillagerDialogueService {
                 return storyHint.get();
             }
         }
+        Optional<DialogueResult> giftMemory = selectGiftMemoryLine(context, requestType, recentDialogueIds);
+        if (giftMemory.isPresent()) {
+            return giftMemory.get();
+        }
 
         DialogueDisposition disposition = dispositionFor(context.reputationLevel());
         List<DialogueLine> candidates = LINES.stream()
@@ -61,6 +65,10 @@ public final class VillagerDialogueService {
     }
 
     public static String selectOpeningGreeting(DialogueContext context) {
+        Optional<String> giftMemory = selectOpeningGiftMemoryLine(context);
+        if (giftMemory.isPresent()) {
+            return giftMemory.get();
+        }
         return selectConversationLine(context, "hello", globalHelloLines(context), professionHelloLines(context.profession()));
     }
 
@@ -82,6 +90,121 @@ public final class VillagerDialogueService {
 
     private static int effectiveWeight(DialogueLine line) {
         return line.weight() + line.specificityScore() * 8;
+    }
+
+    private static Optional<DialogueResult> selectGiftMemoryLine(
+            DialogueContext context,
+            DialogueRequestType requestType,
+            List<String> recentDialogueIds) {
+        if (requestType != DialogueRequestType.CHAT && requestType != DialogueRequestType.GREETING) {
+            return Optional.empty();
+        }
+        int chance = requestType == DialogueRequestType.CHAT ? 45 : 35;
+        if (context.random().nextInt(100) >= chance) {
+            return Optional.empty();
+        }
+
+        Optional<VillageEventMemory.MemoryEvent> directGift = context.recentGiftToThisVillager();
+        if (directGift.isPresent()) {
+            String id = "gift_memory_direct_" + directGift.get().gift().reaction().name().toLowerCase();
+            if (!recentDialogueIds.contains(id)) {
+                return Optional.of(new DialogueResult(id, directGiftLine(directGift.get().gift(), context)));
+            }
+        }
+
+        Optional<VillageEventMemory.MemoryEvent> villageGift = context.recentGiftToAnotherVillager();
+        if (villageGift.isPresent()) {
+            String id = "gift_memory_village_" + villageGift.get().gift().reaction().name().toLowerCase();
+            if (!recentDialogueIds.contains(id)) {
+                return Optional.of(new DialogueResult(id, villageGiftLine(villageGift.get().gift(), context)));
+            }
+        }
+        return Optional.empty();
+    }
+
+    private static Optional<String> selectOpeningGiftMemoryLine(DialogueContext context) {
+        if (context.random().nextInt(100) >= 30) {
+            return Optional.empty();
+        }
+        Optional<VillageEventMemory.MemoryEvent> directGift = context.recentGiftToThisVillager();
+        if (directGift.isPresent()) {
+            return Optional.of(directGiftLine(directGift.get().gift(), context));
+        }
+        Optional<VillageEventMemory.MemoryEvent> villageGift = context.recentGiftToAnotherVillager();
+        return villageGift.map(memoryEvent -> villageGiftLine(memoryEvent.gift(), context));
+    }
+
+    private static String directGiftLine(VillageEventMemory.GiftMemory gift, DialogueContext context) {
+        int variant = context.random().nextInt(4);
+        return switch (gift.reaction()) {
+            case LOVED -> switch (variant) {
+                case 0 -> "Still thinking about the " + gift.itemName() + " you gave me. That was a real kindness.";
+                case 1 -> "You came back. I was just telling someone about that " + gift.itemName() + ".";
+                case 2 -> "A gift like that " + gift.itemName() + " is hard to forget.";
+                default -> "After the " + gift.itemName() + " you brought me, you are welcome here.";
+            };
+            case LIKED -> switch (variant) {
+                case 0 -> "That " + gift.itemName() + " you gave me was useful. Thank you again.";
+                case 1 -> "I put your " + gift.itemName() + " to good use.";
+                case 2 -> "You chose well with that " + gift.itemName() + ".";
+                default -> "I remember the gift. Practical kindness still counts.";
+            };
+            case NEUTRAL -> switch (variant) {
+                case 0 -> "I am still deciding what to do with that " + gift.itemName() + " you gave me.";
+                case 1 -> "About that " + gift.itemName() + "... an unusual gift, but not unwelcome.";
+                case 2 -> "You do give memorable gifts. Confusing, but memorable.";
+                default -> "I kept the " + gift.itemName() + ". Maybe it will find a purpose.";
+            };
+            case DISLIKED -> switch (variant) {
+                case 0 -> "I remember that " + gift.itemName() + ". Not fondly.";
+                case 1 -> "If this is about another gift like that " + gift.itemName() + ", spare me.";
+                case 2 -> "You gave me " + gift.itemName() + " and called it a gift. I am still sorting that out.";
+                default -> "A poor gift says more than people think.";
+            };
+            case HATED -> switch (variant) {
+                case 0 -> "I have not forgotten the " + gift.itemName() + " you handed me.";
+                case 1 -> "After that " + gift.itemName() + ", casual chat feels generous of me.";
+                case 2 -> "You called " + gift.itemName() + " a gift. I called it a warning.";
+                default -> "Bring better offerings if you want better words.";
+            };
+        };
+    }
+
+    private static String villageGiftLine(VillageEventMemory.GiftMemory gift, DialogueContext context) {
+        int variant = context.random().nextInt(4);
+        String villagerName = gift.villagerName() == null || gift.villagerName().isBlank() ? "someone here" : gift.villagerName();
+        return switch (gift.reaction()) {
+            case LOVED -> switch (variant) {
+                case 0 -> "I heard you gave " + villagerName + " " + gift.itemName() + ". That was kind of you.";
+                case 1 -> villagerName + " has been talking about your " + gift.itemName() + ". In a good way.";
+                case 2 -> "Word travels when someone brings a gift like " + gift.itemName() + ".";
+                default -> "A generous gift to " + villagerName + " makes the whole village warmer to you.";
+            };
+            case LIKED -> switch (variant) {
+                case 0 -> "I heard you gave " + villagerName + " " + gift.itemName() + ". Thoughtful enough.";
+                case 1 -> villagerName + " seemed pleased with that " + gift.itemName() + ".";
+                case 2 -> "A useful gift gets noticed around here.";
+                default -> "People remember who brings helpful things.";
+            };
+            case NEUTRAL -> switch (variant) {
+                case 0 -> "I heard about the " + gift.itemName() + " you gave " + villagerName + ". Interesting choice.";
+                case 1 -> villagerName + " is still wondering what to do with your " + gift.itemName() + ".";
+                case 2 -> "You have a strange sense for gifts, but no harm done.";
+                default -> "The village has heard of odder gifts than that " + gift.itemName() + ".";
+            };
+            case DISLIKED -> switch (variant) {
+                case 0 -> "I heard you gave " + villagerName + " " + gift.itemName() + ". That was not your finest moment.";
+                case 1 -> villagerName + " did not sound pleased about that " + gift.itemName() + ".";
+                case 2 -> "Bad gifts travel as gossip faster than good ones.";
+                default -> "Careful what you offer people. We talk.";
+            };
+            case HATED -> switch (variant) {
+                case 0 -> "I heard what you gave " + villagerName + ". Do not bring that sort of thing here.";
+                case 1 -> "That " + gift.itemName() + " gift made people nervous.";
+                case 2 -> "If you meant to scare " + villagerName + ", the village noticed.";
+                default -> "Some gifts sound a lot like threats.";
+            };
+        };
     }
 
     private static List<DialogueLine> preferDirectHitMemoryCandidates(

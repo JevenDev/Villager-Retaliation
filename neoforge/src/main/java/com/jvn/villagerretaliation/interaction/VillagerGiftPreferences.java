@@ -17,14 +17,14 @@ public final class VillagerGiftPreferences {
             return 0;
         }
 
-        int perItem = preferenceFor(profession, stack).perItemReputation();
+        int perItem = reactionFor(profession, stack).perItemReputation();
         int value = perItem * stack.getCount();
         return Math.clamp(value, MAX_NEGATIVE_REPUTATION, MAX_POSITIVE_REPUTATION);
     }
 
     public static String responseFor(VillagerProfession profession, ItemStack stack, int reputationValue) {
-        GiftPreference preference = preferenceFor(profession, stack);
-        boolean professionSpecific = professionPreference(profession, stack) != GiftPreference.NEUTRAL;
+        GiftReaction preference = reactionFor(profession, stack);
+        boolean professionSpecific = professionPreference(profession, stack) != GiftReaction.NEUTRAL;
         String itemName = stack.getHoverName().getString();
         int variant = Math.floorMod(itemName.hashCode() + profession.hashCode() + stack.getCount(), 4);
 
@@ -42,197 +42,197 @@ public final class VillagerGiftPreferences {
         };
     }
 
-    private static GiftPreference preferenceFor(VillagerProfession profession, ItemStack stack) {
-        GiftPreference professionPreference = professionPreference(profession, stack);
-        if (professionPreference != GiftPreference.NEUTRAL) {
+    public static GiftReaction reactionFor(VillagerProfession profession, ItemStack stack) {
+        GiftReaction professionPreference = professionPreference(profession, stack);
+        if (professionPreference != GiftReaction.NEUTRAL) {
             return professionPreference;
         }
         return globalPreference(stack);
     }
 
-    private static GiftPreference globalPreference(ItemStack stack) {
+    private static GiftReaction globalPreference(ItemStack stack) {
         if (isAny(stack,
                 Items.ROTTEN_FLESH, Items.POISONOUS_POTATO, Items.SPIDER_EYE, Items.FERMENTED_SPIDER_EYE,
                 Items.GUNPOWDER, Items.TNT)) {
-            return GiftPreference.HATED;
+            return GiftReaction.HATED;
         }
         if (isAny(stack,
                 Items.BONE, Items.BONE_MEAL, Items.DEAD_BUSH, Items.WITHER_ROSE,
                 Items.PUFFERFISH, Items.COD_BUCKET, Items.SALMON_BUCKET)) {
-            return GiftPreference.DISLIKED;
+            return GiftReaction.DISLIKED;
         }
         if (isAny(stack,
                 Items.EMERALD, Items.DIAMOND, Items.GOLD_INGOT, Items.GOLDEN_APPLE,
                 Items.ENCHANTED_GOLDEN_APPLE, Items.EXPERIENCE_BOTTLE)) {
-            return GiftPreference.LOVED;
+            return GiftReaction.LOVED;
         }
         if (isAny(stack,
                 Items.BREAD, Items.APPLE, Items.COOKIE, Items.CAKE, Items.PUMPKIN_PIE,
                 Items.HONEY_BOTTLE, Items.SWEET_BERRIES, Items.GLOW_BERRIES, Items.MILK_BUCKET)) {
-            return GiftPreference.LIKED;
+            return GiftReaction.LIKED;
         }
-        return GiftPreference.NEUTRAL;
+        return GiftReaction.NEUTRAL;
     }
 
-    private static GiftPreference professionPreference(VillagerProfession profession, ItemStack stack) {
+    private static GiftReaction professionPreference(VillagerProfession profession, ItemStack stack) {
         if (profession == VillagerProfession.ARMORER) {
             if (isAny(stack, Items.IRON_INGOT, Items.SHIELD, Items.IRON_CHESTPLATE, Items.DIAMOND_CHESTPLATE)) {
-                return GiftPreference.LOVED;
+                return GiftReaction.LOVED;
             }
             if (isAny(stack, Items.COAL, Items.BLAST_FURNACE, Items.IRON_HELMET, Items.IRON_BOOTS)) {
-                return GiftPreference.LIKED;
+                return GiftReaction.LIKED;
             }
             if (isAny(stack, Items.LEATHER_CHESTPLATE, Items.WOODEN_SWORD)) {
-                return GiftPreference.DISLIKED;
+                return GiftReaction.DISLIKED;
             }
         }
         if (profession == VillagerProfession.BUTCHER) {
             if (isAny(stack, Items.BEEF, Items.PORKCHOP, Items.MUTTON, Items.CHICKEN, Items.RABBIT)) {
-                return GiftPreference.LOVED;
+                return GiftReaction.LOVED;
             }
             if (isAny(stack, Items.COOKED_BEEF, Items.COOKED_PORKCHOP, Items.COOKED_MUTTON, Items.COOKED_CHICKEN, Items.SMOKER)) {
-                return GiftPreference.LIKED;
+                return GiftReaction.LIKED;
             }
             if (isAny(stack, Items.ROTTEN_FLESH, Items.POISONOUS_POTATO, Items.SPIDER_EYE)) {
-                return GiftPreference.HATED;
+                return GiftReaction.HATED;
             }
         }
         if (profession == VillagerProfession.CARTOGRAPHER) {
             if (isAny(stack, Items.MAP, Items.COMPASS, Items.CLOCK, Items.RECOVERY_COMPASS)) {
-                return GiftPreference.LOVED;
+                return GiftReaction.LOVED;
             }
             if (isAny(stack, Items.PAPER, Items.FEATHER, Items.INK_SAC, Items.CARTOGRAPHY_TABLE)) {
-                return GiftPreference.LIKED;
+                return GiftReaction.LIKED;
             }
             if (stack.is(Items.TNT)) {
-                return GiftPreference.HATED;
+                return GiftReaction.HATED;
             }
         }
         if (profession == VillagerProfession.CLERIC) {
             if (isAny(stack, Items.AMETHYST_SHARD, Items.GLOWSTONE_DUST, Items.EXPERIENCE_BOTTLE, Items.ENDER_PEARL)) {
-                return GiftPreference.LOVED;
+                return GiftReaction.LOVED;
             }
             if (isAny(stack, Items.REDSTONE, Items.LAPIS_LAZULI, Items.BLAZE_POWDER, Items.GHAST_TEAR, Items.BREWING_STAND)) {
-                return GiftPreference.LIKED;
+                return GiftReaction.LIKED;
             }
             if (isAny(stack, Items.ROTTEN_FLESH, Items.FERMENTED_SPIDER_EYE)) {
-                return GiftPreference.DISLIKED;
+                return GiftReaction.DISLIKED;
             }
         }
         if (profession == VillagerProfession.FARMER) {
             if (isAny(stack, Items.WHEAT_SEEDS, Items.CARROT, Items.POTATO, Items.BEETROOT_SEEDS, Items.PUMPKIN_SEEDS, Items.MELON_SEEDS)) {
-                return GiftPreference.LOVED;
+                return GiftReaction.LOVED;
             }
             if (isAny(stack, Items.WHEAT, Items.BEETROOT, Items.MELON_SLICE, Items.PUMPKIN, Items.HAY_BLOCK, Items.COMPOSTER)) {
-                return GiftPreference.LIKED;
+                return GiftReaction.LIKED;
             }
             if (isAny(stack, Items.POISONOUS_POTATO, Items.DEAD_BUSH)) {
-                return GiftPreference.HATED;
+                return GiftReaction.HATED;
             }
         }
         if (profession == VillagerProfession.FISHERMAN) {
             if (isAny(stack, Items.FISHING_ROD, Items.COD, Items.SALMON, Items.TROPICAL_FISH, Items.NAUTILUS_SHELL)) {
-                return GiftPreference.LOVED;
+                return GiftReaction.LOVED;
             }
             if (isAny(stack, Items.STRING, Items.KELP, Items.DRIED_KELP, Items.BARREL)) {
-                return GiftPreference.LIKED;
+                return GiftReaction.LIKED;
             }
             if (isAny(stack, Items.PUFFERFISH, Items.ROTTEN_FLESH)) {
-                return GiftPreference.DISLIKED;
+                return GiftReaction.DISLIKED;
             }
         }
         if (profession == VillagerProfession.FLETCHER) {
             if (isAny(stack, Items.FLINT, Items.FEATHER, Items.ARROW, Items.SPECTRAL_ARROW, Items.CROSSBOW)) {
-                return GiftPreference.LOVED;
+                return GiftReaction.LOVED;
             }
             if (isAny(stack, Items.STICK, Items.STRING, Items.TRIPWIRE_HOOK, Items.FLETCHING_TABLE)) {
-                return GiftPreference.LIKED;
+                return GiftReaction.LIKED;
             }
             if (isAny(stack, Items.SHIELD, Items.TNT)) {
-                return GiftPreference.DISLIKED;
+                return GiftReaction.DISLIKED;
             }
         }
         if (profession == VillagerProfession.LEATHERWORKER) {
             if (isAny(stack, Items.LEATHER, Items.RABBIT_HIDE, Items.SADDLE, Items.LEATHER_HORSE_ARMOR)) {
-                return GiftPreference.LOVED;
+                return GiftReaction.LOVED;
             }
             if (isAny(stack, Items.CAULDRON, Items.LEATHER_BOOTS, Items.LEATHER_HELMET, Items.LEAD)) {
-                return GiftPreference.LIKED;
+                return GiftReaction.LIKED;
             }
             if (isAny(stack, Items.ROTTEN_FLESH, Items.BONE)) {
-                return GiftPreference.DISLIKED;
+                return GiftReaction.DISLIKED;
             }
         }
         if (profession == VillagerProfession.LIBRARIAN) {
             if (isAny(stack, Items.BOOK, Items.WRITABLE_BOOK, Items.WRITTEN_BOOK, Items.BOOKSHELF, Items.ENCHANTED_BOOK)) {
-                return GiftPreference.LOVED;
+                return GiftReaction.LOVED;
             }
             if (isAny(stack, Items.PAPER, Items.INK_SAC, Items.FEATHER, Items.LECTERN, Items.NAME_TAG)) {
-                return GiftPreference.LIKED;
+                return GiftReaction.LIKED;
             }
             if (isAny(stack, Items.TNT, Items.FLINT_AND_STEEL)) {
-                return GiftPreference.HATED;
+                return GiftReaction.HATED;
             }
         }
         if (profession == VillagerProfession.MASON) {
             if (isAny(stack, Items.CLAY_BALL, Items.BRICK, Items.STONE, Items.SMOOTH_STONE, Items.QUARTZ)) {
-                return GiftPreference.LOVED;
+                return GiftReaction.LOVED;
             }
             if (isAny(stack, Items.GRANITE, Items.DIORITE, Items.ANDESITE, Items.TERRACOTTA, Items.STONECUTTER)) {
-                return GiftPreference.LIKED;
+                return GiftReaction.LIKED;
             }
             if (isAny(stack, Items.SAND, Items.GRAVEL)) {
-                return GiftPreference.DISLIKED;
+                return GiftReaction.DISLIKED;
             }
         }
         if (profession == VillagerProfession.SHEPHERD) {
             if (isAny(stack, Items.WHITE_WOOL, Items.SHEARS, Items.WHITE_DYE, Items.BLUE_DYE, Items.RED_DYE, Items.YELLOW_DYE)) {
-                return GiftPreference.LOVED;
+                return GiftReaction.LOVED;
             }
             if (isAny(stack, Items.BLACK_WOOL, Items.BROWN_WOOL, Items.PINK_WOOL, Items.LOOM, Items.LEAD)) {
-                return GiftPreference.LIKED;
+                return GiftReaction.LIKED;
             }
             if (isAny(stack, Items.ROTTEN_FLESH, Items.BONE)) {
-                return GiftPreference.DISLIKED;
+                return GiftReaction.DISLIKED;
             }
         }
         if (profession == VillagerProfession.TOOLSMITH) {
             if (isAny(stack, Items.IRON_INGOT, Items.DIAMOND, Items.ANVIL, Items.SMITHING_TABLE)) {
-                return GiftPreference.LOVED;
+                return GiftReaction.LOVED;
             }
             if (isAny(stack, Items.COAL, Items.FLINT, Items.IRON_PICKAXE, Items.IRON_AXE, Items.IRON_SHOVEL)) {
-                return GiftPreference.LIKED;
+                return GiftReaction.LIKED;
             }
             if (isAny(stack, Items.WOODEN_PICKAXE, Items.WOODEN_AXE, Items.WOODEN_SHOVEL)) {
-                return GiftPreference.DISLIKED;
+                return GiftReaction.DISLIKED;
             }
         }
         if (profession == VillagerProfession.WEAPONSMITH) {
             if (isAny(stack, Items.IRON_INGOT, Items.DIAMOND, Items.IRON_SWORD, Items.DIAMOND_SWORD, Items.GRINDSTONE)) {
-                return GiftPreference.LOVED;
+                return GiftReaction.LOVED;
             }
             if (isAny(stack, Items.COAL, Items.FLINT, Items.IRON_AXE, Items.CROSSBOW)) {
-                return GiftPreference.LIKED;
+                return GiftReaction.LIKED;
             }
             if (isAny(stack, Items.WOODEN_SWORD, Items.ROTTEN_FLESH)) {
-                return GiftPreference.DISLIKED;
+                return GiftReaction.DISLIKED;
             }
         }
         if (profession == VillagerProfession.NITWIT) {
             if (isAny(stack, Items.COOKIE, Items.CAKE, Items.PUMPKIN_PIE, Items.HONEY_BOTTLE)) {
-                return GiftPreference.LOVED;
+                return GiftReaction.LOVED;
             }
             if (isAny(stack, Items.SLIME_BALL, Items.SNOWBALL, Items.FLOWER_POT)) {
-                return GiftPreference.LIKED;
+                return GiftReaction.LIKED;
             }
             if (isAny(stack, Items.POISONOUS_POTATO, Items.TNT)) {
-                return GiftPreference.HATED;
+                return GiftReaction.HATED;
             }
         }
-        return GiftPreference.NEUTRAL;
+        return GiftReaction.NEUTRAL;
     }
 
-    private static String specificResponse(VillagerProfession profession, ItemStack stack, GiftPreference preference, boolean professionSpecific, String itemName, int variant) {
+    private static String specificResponse(VillagerProfession profession, ItemStack stack, GiftReaction preference, boolean professionSpecific, String itemName, int variant) {
         if (professionSpecific && profession == VillagerProfession.ARMORER && preference.isPositive()) {
             return switch (variant) {
                 case 0 -> "Fine material. I can hear the forge thanking you.";
@@ -361,7 +361,7 @@ public final class VillagerGiftPreferences {
                 default -> "Simple, useful, and welcome.";
             };
         }
-        if (preference == GiftPreference.HATED && isAny(stack, Items.TNT, Items.GUNPOWDER, Items.FLINT_AND_STEEL)) {
+        if (preference == GiftReaction.HATED && isAny(stack, Items.TNT, Items.GUNPOWDER, Items.FLINT_AND_STEEL)) {
             return switch (variant) {
                 case 0 -> "Do not bring danger and call it a present.";
                 case 1 -> "That belongs far from homes, beds, and children.";
@@ -369,7 +369,7 @@ public final class VillagerGiftPreferences {
                 default -> "Take that away before I call the others.";
             };
         }
-        if (preference == GiftPreference.HATED && isAny(stack, Items.ROTTEN_FLESH, Items.POISONOUS_POTATO, Items.SPIDER_EYE, Items.FERMENTED_SPIDER_EYE)) {
+        if (preference == GiftReaction.HATED && isAny(stack, Items.ROTTEN_FLESH, Items.POISONOUS_POTATO, Items.SPIDER_EYE, Items.FERMENTED_SPIDER_EYE)) {
             return switch (variant) {
                 case 0 -> "That is foul, and you know it.";
                 case 1 -> "I have seen compost with better manners.";
@@ -437,7 +437,7 @@ public final class VillagerGiftPreferences {
         return false;
     }
 
-    private enum GiftPreference {
+    public enum GiftReaction {
         LOVED(6),
         LIKED(3),
         NEUTRAL(0),
@@ -446,7 +446,7 @@ public final class VillagerGiftPreferences {
 
         private final int perItemReputation;
 
-        GiftPreference(int perItemReputation) {
+        GiftReaction(int perItemReputation) {
             this.perItemReputation = perItemReputation;
         }
 
@@ -459,3 +459,4 @@ public final class VillagerGiftPreferences {
         }
     }
 }
+
