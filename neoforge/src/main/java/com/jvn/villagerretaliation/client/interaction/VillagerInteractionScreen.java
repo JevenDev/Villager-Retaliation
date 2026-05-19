@@ -24,7 +24,8 @@ import org.lwjgl.glfw.GLFW;
 
 public class VillagerInteractionScreen extends Screen {
     private static final String BACK_LABEL = "Back";
-    private static final String HINT_TEXT = "Esc: leave";
+    private static final String BACK_HINT_TEXT = "Esc: back";
+    private static final String LEAVE_HINT_TEXT = "Esc: leave";
     private static final int OPTION_WIDTH = 180;
     private static final int OPTION_HEIGHT = 18;
     private static final int OPTION_GAP = 0;
@@ -153,7 +154,7 @@ public class VillagerInteractionScreen extends Screen {
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         return switch (keyCode) {
             case GLFW.GLFW_KEY_ESCAPE -> {
-                leaveConversation();
+                goBackOrLeaveConversation();
                 yield true;
             }
             case GLFW.GLFW_KEY_UP, GLFW.GLFW_KEY_W -> {
@@ -304,6 +305,14 @@ public class VillagerInteractionScreen extends Screen {
             this.page = DialoguePage.ROOT;
             this.selectedInventorySlot = -1;
             rebuildOptions();
+        }
+    }
+
+    private void goBackOrLeaveConversation() {
+        if (canNavigateBack()) {
+            navigateToRootPage();
+        } else {
+            leaveConversation();
         }
     }
 
@@ -538,7 +547,8 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     private void renderHint(GuiGraphics graphics) {
-        graphics.drawString(this.font, HINT_TEXT, this.width - this.font.width(HINT_TEXT) - 8, this.height - 14, 0x66FFFFFF, false);
+        String hintText = canNavigateBack() ? BACK_HINT_TEXT : LEAVE_HINT_TEXT;
+        graphics.drawString(this.font, hintText, this.width - this.font.width(hintText) - 8, this.height - 14, 0x66FFFFFF, false);
     }
 
     void renderBackdropBehindChat(GuiGraphics graphics) {
@@ -799,6 +809,10 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     private boolean isTopBackButtonVisible() {
+        return canNavigateBack();
+    }
+
+    private boolean canNavigateBack() {
         return this.page != DialoguePage.ROOT;
     }
 

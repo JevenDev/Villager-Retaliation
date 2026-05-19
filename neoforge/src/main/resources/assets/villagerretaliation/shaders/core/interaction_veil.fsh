@@ -45,5 +45,5 @@ void main() {
         discard;
     }
 
-    fragColor = vec4(0.0, 0.0, 0.0, 1.0);
+    fragColor = vec4(0.0, 0.0, 0.0, smoothstep(0.0, 1.0, fadeProgress));
 }
