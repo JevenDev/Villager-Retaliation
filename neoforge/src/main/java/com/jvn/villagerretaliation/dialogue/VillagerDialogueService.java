@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.village.VillageEventMemory;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import net.minecraft.world.entity.npc.VillagerProfession;
 
 public final class VillagerDialogueService {
@@ -14,6 +15,13 @@ public final class VillagerDialogueService {
     }
 
     public static DialogueResult select(DialogueContext context, DialogueRequestType requestType, List<String> recentDialogueIds) {
+        if (requestType == DialogueRequestType.STORY) {
+            Optional<DialogueResult> storyHint = VillagerStoryHintService.select(context);
+            if (storyHint.isPresent()) {
+                return storyHint.get();
+            }
+        }
+
         DialogueDisposition disposition = dispositionFor(context.reputationLevel());
         List<DialogueLine> candidates = LINES.stream()
                 .filter(line -> line.matches(context, requestType, disposition))

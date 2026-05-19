@@ -249,6 +249,26 @@ The model uses a small JSON format with `texture_width`, `texture_height`, and r
 
 The animation system requires these part names to remain present: `body`, `head`, `RightArm`, `LeftArm`, `RightLeg`, and `LeftLeg`. Decorative children such as `nose`, `helmet`, and `brim` may be changed or removed, so packs can do things like remove the villager nose or shorten the head without code changes.
 
+By default, idle villagers still use Minecraft's vanilla crossed-arms model. Packs that want their normal, non-combat villagers to use a custom arms-at-side model can opt in with:
+
+```text
+assets/villagerretaliation/models/entity/villager/render_options.json
+```
+
+```json
+{
+  "non_combat_model": "custom"
+}
+```
+
+Then provide the non-combat model at:
+
+```text
+assets/villagerretaliation/models/entity/villager/non_combat_villager.json
+```
+
+Use `"non_combat_model": "vanilla"` or omit `render_options.json` to keep the vanilla crossed-arms model.
+
 If Entity Model Features (EMF) is installed, Villager Retaliation exposes its combat model through Minecraft's normal entity model layer instead. This lets EMF packs use the standard OptiFine CEM workflow and export a starter `.jem` from EMF's in-game model export tools. Entity Texture Features (ETF) is still optional and useful for random or emissive entity texture packs, but it is not required for the combat model override above.
 
 ## Version and Loaders
