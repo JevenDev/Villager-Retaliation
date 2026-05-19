@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.loot.VillagerLootHandler;
 import com.jvn.villagerretaliation.loot.WanderingTraderLootHandler;
+import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
@@ -41,6 +42,7 @@ import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
@@ -121,6 +123,12 @@ public final class VillagerRetaliationEvents {
         VillagerRetaliationHandler.onEntityJoinLevel(event);
         if (event.getEntity() instanceof AbstractVillager villager && villager.level() instanceof ServerLevel) {
             VillagerPresetNameRegistry.ensurePresetNameAssigned(villager);
+        }
+    }
+
+    public static void onPlayerStartTracking(PlayerEvent.StartTracking event) {
+        if (event.getEntity() instanceof ServerPlayer player && event.getTarget() instanceof AbstractVillager villager) {
+            VillagerReputationNetworking.sendName(player, villager);
         }
     }
 

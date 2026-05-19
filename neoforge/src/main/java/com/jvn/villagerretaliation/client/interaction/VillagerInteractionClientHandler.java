@@ -1,9 +1,12 @@
 package com.jvn.villagerretaliation.client.interaction;
 
+import com.jvn.villagerretaliation.client.villager.VillagerNameClientCache;
 import com.jvn.villagerretaliation.network.OpenVillagerInteractionPayload;
+import com.jvn.villagerretaliation.network.VillagerNameSyncPayload;
 import com.jvn.villagerretaliation.network.VillagerConversationEndedPayload;
 import com.jvn.villagerretaliation.network.VillagerDialogueResponsePayload;
 import com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload;
+import java.util.UUID;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
@@ -18,6 +21,13 @@ public final class VillagerInteractionClientHandler {
     public static void open(OpenVillagerInteractionPayload payload) {
         Minecraft minecraft = Minecraft.getInstance();
         String villagerName = resolveVillagerName(payload.villagerNameKey(), payload.villagerNameFallback());
+        Entity entity = minecraft.level == null ? null : minecraft.level.getEntity(payload.entityId());
+        VillagerNameClientCache.accept(new VillagerNameSyncPayload(
+                payload.entityId(),
+                entity == null ? new UUID(0L, 0L) : entity.getUUID(),
+                payload.villagerNameKey(),
+                villagerName
+        ));
         ClientVillagerConversationState.rememberSpeakerLabel(
                 payload.entityId(),
                 formatSpeakerLabel(villagerName, payload.professionName())

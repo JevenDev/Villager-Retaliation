@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.network;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
+import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import com.jvn.toucanlib.neoforge.network.ToucanNetwork;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.npc.AbstractVillager;
@@ -33,6 +34,12 @@ public final class VillagerReputationNetworking {
                 FearedVillagerPulsePayload.TYPE,
                 FearedVillagerPulsePayload.STREAM_CODEC,
                 "com.jvn.villagerretaliation.client.reputation.FearedVillagerAnimationClientCache",
+                "accept"
+        );
+        network.safePlayToClientThreaded(
+                VillagerNameSyncPayload.TYPE,
+                VillagerNameSyncPayload.STREAM_CODEC,
+                "com.jvn.villagerretaliation.client.villager.VillagerNameClientCache",
                 "accept"
         );
         network.safePlayToClientThreaded(
@@ -115,6 +122,24 @@ public final class VillagerReputationNetworking {
 
     public static void sendFearedPulse(AbstractVillager villager, int ticks) {
         PacketDistributor.sendToPlayersTrackingEntity(villager, new FearedVillagerPulsePayload(villager.getId(), ticks));
+    }
+
+    public static void sendName(ServerPlayer player, AbstractVillager villager) {
+        if (villager.hasCustomName()) {
+            return;
+        }
+
+        String nameKey = VillagerPresetNameRegistry.resolveNameTranslationKey(villager);
+        if (nameKey.isBlank()) {
+            return;
+        }
+
+        PacketDistributor.sendToPlayer(player, new VillagerNameSyncPayload(
+                villager.getId(),
+                villager.getUUID(),
+                nameKey,
+                VillagerPresetNameRegistry.resolveDisplayName(villager).getString()
+        ));
     }
 
     public static void sendTierNotice(ServerPlayer player, String text) {

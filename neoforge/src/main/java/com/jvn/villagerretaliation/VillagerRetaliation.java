@@ -41,6 +41,7 @@ public class VillagerRetaliation {
                 .listener(VillagerReputationEvents::onServerTickPost)
                 .listener(VillagerReputationEvents::onLivingConversionPost)
                 .listener(VillagerRetaliationEvents::onEntityJoinLevel)
+                .listener(VillagerRetaliationEvents::onPlayerStartTracking)
                 .listener(VillagerRetaliationEvents::onEntityInteract)
                 .listener(VillagerRetaliationEvents::onEntityInteractSpecific)
                 .listener(VillagerRetaliationEvents::onRightClickBlock)

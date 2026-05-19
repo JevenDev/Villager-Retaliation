@@ -16,6 +16,9 @@ public final class VillagerRetaliationClient {
         ToucanConfigScreens.register(modContainer, (IConfigScreenFactory) ConfigurationScreen::new);
         modEventBus.addListener(com.jvn.villagerretaliation.client.VillagerRetaliationClientRenderers::registerRenderers);
         modEventBus.addListener(com.jvn.villagerretaliation.client.VillagerRetaliationClientRenderers::registerLayerDefinitions);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.villager.VillagerNameTagOverlay::onRenderNameTag);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.villager.VillagerNameTagOverlay::onClientTick);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.villager.VillagerNameTagOverlay::onLoggingOut);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.reputation.VillagerReputationDebugOverlay::onRenderNameTag);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.reputation.VillagerReputationTradeScreenOverlay::onScreenRender);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.reputation.VillagerReputationHoverTooltipOverlay::onRenderGuiLayer);
