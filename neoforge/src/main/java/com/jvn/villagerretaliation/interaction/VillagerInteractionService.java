@@ -156,6 +156,48 @@ public final class VillagerInteractionService {
         openTrading(player, villager, true);
     }
 
+    public static void handleGiftRequest(ServerPlayer player, int entityId, int inventorySlot) {
+        Villager villager = resolveVillager(player, entityId);
+        if (villager == null) {
+            sendNotice(player, entityId, "I cannot accept gifts right now.");
+            return;
+        }
+        if (!VillagerConversationService.validate(player, villager)) {
+            sendVillagerNotice(player, villager, "The conversation has ended.");
+            return;
+        }
+        if (inventorySlot < 0 || inventorySlot >= 36) {
+            sendVillagerNotice(player, villager, "I cannot accept that.");
+            return;
+        }
+
+        ItemStack selectedStack = player.getInventory().getItem(inventorySlot);
+        if (selectedStack.isEmpty()) {
+            sendVillagerNotice(player, villager, "There is nothing there.");
+            return;
+        }
+
+        ServerLevel level = player.serverLevel();
+        ItemStack giftedStack = player.getInventory().removeItem(inventorySlot, selectedStack.getCount());
+        player.getInventory().setChanged();
+        int reputationValue = VillagerGiftPreferences.reputationValue(villager.getVillagerData().getProfession(), giftedStack);
+        VillagerReputationManager.addGiftReputation(level, villager, player, reputationValue);
+        focusVillagerOnPlayer(villager, player);
+        playGiftFeedback(level, villager, reputationValue);
+        VillagerAmbientIndicatorService.onGiftReceived(villager, reputationValue);
+
+        int updatedReputation = VillagerReputationManager.getReputation(level, villager, player.getUUID());
+        String responseText = VillagerGiftPreferences.responseFor(reputationValue);
+        PacketDistributor.sendToPlayer(player, new VillagerDialogueResponsePayload(
+                villager.getId(),
+                DialogueRequestType.CHAT,
+                responseText,
+                updatedReputation,
+                VillagerReputationLevel.fromReputation(updatedReputation)
+        ));
+        broadcastVillagerChat(level, villager, responseText);
+    }
+
     public static void handleReputationRequest(ServerPlayer player, int entityId) {
         Entity entity = player.serverLevel().getEntity(entityId);
         if (!(entity instanceof Villager villager) || !villager.isAlive() || villager.isBaby()) {
@@ -483,6 +525,20 @@ public final class VillagerInteractionService {
         if (!reputationEffect.blockedByCooldown()) {
             villager.playSound(SoundEvents.VILLAGER_AMBIENT, 0.45F, 0.9F + villager.getRandom().nextFloat() * 0.2F);
         }
+    }
+
+    private static void playGiftFeedback(ServerLevel level, Villager villager, int reputationValue) {
+        if (reputationValue > 0) {
+            spawnDialogueParticles(level, villager, ParticleTypes.HAPPY_VILLAGER, 7, 0.02D);
+            villager.playSound(SoundEvents.VILLAGER_YES, 0.75F, 0.9F + villager.getRandom().nextFloat() * 0.25F);
+            return;
+        }
+        if (reputationValue < 0) {
+            spawnDialogueParticles(level, villager, ParticleTypes.ANGRY_VILLAGER, 5, 0.01D);
+            villager.playSound(SoundEvents.VILLAGER_NO, 0.75F, 0.85F + villager.getRandom().nextFloat() * 0.25F);
+            return;
+        }
+        villager.playSound(SoundEvents.VILLAGER_AMBIENT, 0.45F, 0.9F + villager.getRandom().nextFloat() * 0.2F);
     }
 
     private static void spawnDialogueParticles(ServerLevel level, Villager villager, ParticleOptions particle, int count, double speed) {

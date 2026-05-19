@@ -9,6 +9,7 @@ public enum ReputationEventType {
     POSITIVE_WITNESS,
     TRADE,
     DIALOGUE,
+    GIFT,
     HEAL,
     SAVE,
     GOSSIP

@@ -161,6 +161,16 @@ public final class VillagerAmbientIndicatorService {
         emit(villager, random(villager.getRandom(), "For you", "Take this", "You've earned it"), VillagerWorldTextIndicatorKind.POSITIVE);
     }
 
+    public static void onGiftReceived(AbstractVillager villager, int reputationValue) {
+        if (reputationValue > 0) {
+            emit(villager, random(villager.getRandom(), "Thank you", "How kind", "Lovely"), VillagerWorldTextIndicatorKind.POSITIVE);
+        } else if (reputationValue < 0) {
+            emit(villager, random(villager.getRandom(), "No thanks", "Not this", "Really?"), VillagerWorldTextIndicatorKind.NEGATIVE);
+        } else {
+            emit(villager, random(villager.getRandom(), "Hm", "Thanks", "Alright"), VillagerWorldTextIndicatorKind.DIALOGUE);
+        }
+    }
+
     public static void onTradeRefused(AbstractVillager villager) {
         emit(villager, random(villager.getRandom(), "No trades", "Not you", "Leave"), VillagerWorldTextIndicatorKind.NEGATIVE);
     }
