@@ -254,6 +254,9 @@ public final class VillagerRetaliationEvents {
         if (!player.addItem(remainder) && !remainder.isEmpty()) {
             player.drop(remainder, false);
         }
+        if (player instanceof ServerPlayer serverPlayer) {
+            VillagerInteractionService.sendReceivedItemNotice(serverPlayer, villager, gift);
+        }
 
         VillagerReputationManager.markHighReputationGiftGiven(level, villager, player);
         VillagerAmbientIndicatorService.onHighReputationGift(villager);

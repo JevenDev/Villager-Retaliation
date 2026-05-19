@@ -11,6 +11,7 @@ import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.network.OpenVillagerInteractionPayload;
 import com.jvn.villagerretaliation.network.VillagerConversationEndedPayload;
 import com.jvn.villagerretaliation.network.VillagerDialogueResponsePayload;
+import com.jvn.villagerretaliation.network.VillagerInteractionNoticeKind;
 import com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
@@ -183,6 +184,7 @@ public final class VillagerInteractionService {
         int reputationValue = VillagerGiftPreferences.reputationValue(villager.getVillagerData().getProfession(), giftedStack);
         VillagerReputationManager.addGiftReputation(level, villager, player, reputationValue);
         reduceDialogueAnnoyanceFromGift(level, villager, player, reputationValue);
+        sendGiftNotice(player, villager, giftedStack, reputationValue);
         focusVillagerOnPlayer(villager, player);
         playGiftFeedback(level, villager, reputationValue);
         VillagerAmbientIndicatorService.onGiftReceived(villager, reputationValue);
@@ -206,6 +208,19 @@ public final class VillagerInteractionService {
         }
         int reduction = Math.max(1, reputationValue / divisor);
         VillagerInteractionTracker.reduceRepeatedDialogueUseCounts(level, villager, player, reduction);
+    }
+
+    private static void sendGiftNotice(ServerPlayer player, Villager villager, ItemStack giftedStack, int reputationValue) {
+        VillagerInteractionNoticeKind kind = reputationValue < 0
+                ? VillagerInteractionNoticeKind.GIFT_DISLIKED
+                : VillagerInteractionNoticeKind.GIFT_LIKED;
+        String reaction = reputationValue < 0 ? "Disliked gift" : "Liked gift";
+        PacketDistributor.sendToPlayer(player, new VillagerInteractionNoticePayload(
+                villager.getId(),
+                reaction + ": " + itemName(giftedStack),
+                villagerSpeakerLabel(villager),
+                kind
+        ));
     }
 
     public static void handleReputationRequest(ServerPlayer player, int entityId) {
@@ -352,6 +367,18 @@ public final class VillagerInteractionService {
         );
     }
 
+    public static void sendReceivedItemNotice(ServerPlayer player, Villager villager, ItemStack stack) {
+        if (stack.isEmpty()) {
+            return;
+        }
+        PacketDistributor.sendToPlayer(player, new VillagerInteractionNoticePayload(
+                villager.getId(),
+                "Received item: " + itemName(stack),
+                villagerSpeakerLabel(villager),
+                VillagerInteractionNoticeKind.RECEIVED_ITEM
+        ));
+    }
+
     private static void broadcastVillagerChat(ServerLevel level, Villager villager, String text) {
         if (text == null || text.isBlank()) {
             return;
@@ -372,6 +399,11 @@ public final class VillagerInteractionService {
             }
             PacketDistributor.sendToPlayer(nearbyPlayer, payload);
         }
+    }
+
+    private static String itemName(ItemStack stack) {
+        String name = stack.getHoverName().getString();
+        return stack.getCount() > 1 ? stack.getCount() + "x " + name : name;
     }
 
     private static String villagerSpeakerLabel(Villager villager) {
