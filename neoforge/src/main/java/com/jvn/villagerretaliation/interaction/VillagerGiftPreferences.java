@@ -53,12 +53,13 @@ public final class VillagerGiftPreferences {
     private static GiftReaction globalPreference(ItemStack stack) {
         if (isAny(stack,
                 Items.ROTTEN_FLESH, Items.POISONOUS_POTATO, Items.SPIDER_EYE, Items.FERMENTED_SPIDER_EYE,
-                Items.GUNPOWDER, Items.TNT)) {
+                Items.GUNPOWDER, Items.TNT, Items.TNT_MINECART, Items.FIRE_CHARGE, Items.FLINT_AND_STEEL,
+                Items.LAVA_BUCKET, Items.WITHER_ROSE, Items.WITHER_SKELETON_SKULL)) {
             return GiftReaction.HATED;
         }
         if (isAny(stack,
-                Items.BONE, Items.BONE_MEAL, Items.DEAD_BUSH, Items.WITHER_ROSE,
-                Items.PUFFERFISH, Items.COD_BUCKET, Items.SALMON_BUCKET)) {
+                Items.BONE, Items.BONE_MEAL, Items.DEAD_BUSH, Items.PUFFERFISH, Items.PHANTOM_MEMBRANE,
+                Items.MAGMA_CREAM, Items.SLIME_BALL, Items.FIREWORK_ROCKET, Items.SUSPICIOUS_STEW)) {
             return GiftReaction.DISLIKED;
         }
         if (isAny(stack,
@@ -82,7 +83,10 @@ public final class VillagerGiftPreferences {
             if (isAny(stack, Items.COAL, Items.BLAST_FURNACE, Items.IRON_HELMET, Items.IRON_BOOTS)) {
                 return GiftReaction.LIKED;
             }
-            if (isAny(stack, Items.LEATHER_CHESTPLATE, Items.WOODEN_SWORD)) {
+            if (isAny(stack, Items.TNT, Items.TNT_MINECART, Items.FIRE_CHARGE, Items.LAVA_BUCKET)) {
+                return GiftReaction.HATED;
+            }
+            if (isAny(stack, Items.LEATHER_CHESTPLATE, Items.LEATHER_HELMET, Items.WOODEN_SWORD, Items.DEAD_BUSH)) {
                 return GiftReaction.DISLIKED;
             }
         }
@@ -93,8 +97,12 @@ public final class VillagerGiftPreferences {
             if (isAny(stack, Items.COOKED_BEEF, Items.COOKED_PORKCHOP, Items.COOKED_MUTTON, Items.COOKED_CHICKEN, Items.SMOKER)) {
                 return GiftReaction.LIKED;
             }
-            if (isAny(stack, Items.ROTTEN_FLESH, Items.POISONOUS_POTATO, Items.SPIDER_EYE)) {
+            if (isAny(stack, Items.ROTTEN_FLESH, Items.POISONOUS_POTATO, Items.SPIDER_EYE, Items.FERMENTED_SPIDER_EYE,
+                    Items.SUSPICIOUS_STEW)) {
                 return GiftReaction.HATED;
+            }
+            if (isAny(stack, Items.BONE, Items.BONE_MEAL, Items.WITHER_ROSE)) {
+                return GiftReaction.DISLIKED;
             }
         }
         if (profession == VillagerProfession.CARTOGRAPHER) {
@@ -104,8 +112,11 @@ public final class VillagerGiftPreferences {
             if (isAny(stack, Items.PAPER, Items.FEATHER, Items.INK_SAC, Items.CARTOGRAPHY_TABLE)) {
                 return GiftReaction.LIKED;
             }
-            if (stack.is(Items.TNT)) {
+            if (isAny(stack, Items.TNT, Items.TNT_MINECART, Items.FLINT_AND_STEEL, Items.FIRE_CHARGE)) {
                 return GiftReaction.HATED;
+            }
+            if (isAny(stack, Items.DEAD_BUSH, Items.SUSPICIOUS_STEW, Items.ROTTEN_FLESH)) {
+                return GiftReaction.DISLIKED;
             }
         }
         if (profession == VillagerProfession.CLERIC) {
@@ -115,7 +126,10 @@ public final class VillagerGiftPreferences {
             if (isAny(stack, Items.REDSTONE, Items.LAPIS_LAZULI, Items.BLAZE_POWDER, Items.GHAST_TEAR, Items.BREWING_STAND)) {
                 return GiftReaction.LIKED;
             }
-            if (isAny(stack, Items.ROTTEN_FLESH, Items.FERMENTED_SPIDER_EYE)) {
+            if (isAny(stack, Items.TNT, Items.TNT_MINECART, Items.WITHER_SKELETON_SKULL)) {
+                return GiftReaction.HATED;
+            }
+            if (isAny(stack, Items.ROTTEN_FLESH, Items.FERMENTED_SPIDER_EYE, Items.POISONOUS_POTATO, Items.DEAD_BUSH)) {
                 return GiftReaction.DISLIKED;
             }
         }
@@ -126,8 +140,11 @@ public final class VillagerGiftPreferences {
             if (isAny(stack, Items.WHEAT, Items.BEETROOT, Items.MELON_SLICE, Items.PUMPKIN, Items.HAY_BLOCK, Items.COMPOSTER)) {
                 return GiftReaction.LIKED;
             }
-            if (isAny(stack, Items.POISONOUS_POTATO, Items.DEAD_BUSH)) {
+            if (isAny(stack, Items.POISONOUS_POTATO, Items.DEAD_BUSH, Items.WITHER_ROSE, Items.LAVA_BUCKET)) {
                 return GiftReaction.HATED;
+            }
+            if (isAny(stack, Items.ROTTEN_FLESH, Items.BONE_MEAL, Items.SPIDER_EYE, Items.FERMENTED_SPIDER_EYE)) {
+                return GiftReaction.DISLIKED;
             }
         }
         if (profession == VillagerProfession.FISHERMAN) {
@@ -137,7 +154,10 @@ public final class VillagerGiftPreferences {
             if (isAny(stack, Items.STRING, Items.KELP, Items.DRIED_KELP, Items.BARREL)) {
                 return GiftReaction.LIKED;
             }
-            if (isAny(stack, Items.PUFFERFISH, Items.ROTTEN_FLESH)) {
+            if (isAny(stack, Items.TNT, Items.TNT_MINECART, Items.LAVA_BUCKET)) {
+                return GiftReaction.HATED;
+            }
+            if (isAny(stack, Items.PUFFERFISH, Items.ROTTEN_FLESH, Items.PHANTOM_MEMBRANE, Items.MAGMA_CREAM)) {
                 return GiftReaction.DISLIKED;
             }
         }
@@ -148,7 +168,10 @@ public final class VillagerGiftPreferences {
             if (isAny(stack, Items.STICK, Items.STRING, Items.TRIPWIRE_HOOK, Items.FLETCHING_TABLE)) {
                 return GiftReaction.LIKED;
             }
-            if (isAny(stack, Items.SHIELD, Items.TNT)) {
+            if (isAny(stack, Items.TNT, Items.TNT_MINECART, Items.FIRE_CHARGE)) {
+                return GiftReaction.HATED;
+            }
+            if (isAny(stack, Items.SHIELD, Items.LAVA_BUCKET, Items.ROTTEN_FLESH, Items.SLIME_BALL)) {
                 return GiftReaction.DISLIKED;
             }
         }
@@ -159,7 +182,10 @@ public final class VillagerGiftPreferences {
             if (isAny(stack, Items.CAULDRON, Items.LEATHER_BOOTS, Items.LEATHER_HELMET, Items.LEAD)) {
                 return GiftReaction.LIKED;
             }
-            if (isAny(stack, Items.ROTTEN_FLESH, Items.BONE)) {
+            if (isAny(stack, Items.TNT, Items.FIRE_CHARGE, Items.LAVA_BUCKET)) {
+                return GiftReaction.HATED;
+            }
+            if (isAny(stack, Items.ROTTEN_FLESH, Items.BONE, Items.BONE_MEAL, Items.POISONOUS_POTATO)) {
                 return GiftReaction.DISLIKED;
             }
         }
@@ -170,8 +196,11 @@ public final class VillagerGiftPreferences {
             if (isAny(stack, Items.PAPER, Items.INK_SAC, Items.FEATHER, Items.LECTERN, Items.NAME_TAG)) {
                 return GiftReaction.LIKED;
             }
-            if (isAny(stack, Items.TNT, Items.FLINT_AND_STEEL)) {
+            if (isAny(stack, Items.TNT, Items.TNT_MINECART, Items.FLINT_AND_STEEL, Items.FIRE_CHARGE, Items.LAVA_BUCKET)) {
                 return GiftReaction.HATED;
+            }
+            if (isAny(stack, Items.ROTTEN_FLESH, Items.POISONOUS_POTATO, Items.DEAD_BUSH, Items.SUSPICIOUS_STEW)) {
+                return GiftReaction.DISLIKED;
             }
         }
         if (profession == VillagerProfession.MASON) {
@@ -181,7 +210,10 @@ public final class VillagerGiftPreferences {
             if (isAny(stack, Items.GRANITE, Items.DIORITE, Items.ANDESITE, Items.TERRACOTTA, Items.STONECUTTER)) {
                 return GiftReaction.LIKED;
             }
-            if (isAny(stack, Items.SAND, Items.GRAVEL)) {
+            if (isAny(stack, Items.TNT, Items.TNT_MINECART, Items.LAVA_BUCKET)) {
+                return GiftReaction.HATED;
+            }
+            if (isAny(stack, Items.SAND, Items.GRAVEL, Items.ROTTEN_FLESH, Items.SLIME_BALL)) {
                 return GiftReaction.DISLIKED;
             }
         }
@@ -192,7 +224,10 @@ public final class VillagerGiftPreferences {
             if (isAny(stack, Items.BLACK_WOOL, Items.BROWN_WOOL, Items.PINK_WOOL, Items.LOOM, Items.LEAD)) {
                 return GiftReaction.LIKED;
             }
-            if (isAny(stack, Items.ROTTEN_FLESH, Items.BONE)) {
+            if (isAny(stack, Items.TNT, Items.TNT_MINECART, Items.FIRE_CHARGE, Items.LAVA_BUCKET)) {
+                return GiftReaction.HATED;
+            }
+            if (isAny(stack, Items.ROTTEN_FLESH, Items.BONE, Items.SHEARS, Items.WITHER_ROSE, Items.DEAD_BUSH)) {
                 return GiftReaction.DISLIKED;
             }
         }
@@ -203,7 +238,11 @@ public final class VillagerGiftPreferences {
             if (isAny(stack, Items.COAL, Items.FLINT, Items.IRON_PICKAXE, Items.IRON_AXE, Items.IRON_SHOVEL)) {
                 return GiftReaction.LIKED;
             }
-            if (isAny(stack, Items.WOODEN_PICKAXE, Items.WOODEN_AXE, Items.WOODEN_SHOVEL)) {
+            if (isAny(stack, Items.TNT, Items.TNT_MINECART, Items.FIRE_CHARGE, Items.LAVA_BUCKET)) {
+                return GiftReaction.HATED;
+            }
+            if (isAny(stack, Items.WOODEN_PICKAXE, Items.WOODEN_AXE, Items.WOODEN_SHOVEL, Items.ROTTEN_FLESH,
+                    Items.DEAD_BUSH)) {
                 return GiftReaction.DISLIKED;
             }
         }
@@ -214,7 +253,10 @@ public final class VillagerGiftPreferences {
             if (isAny(stack, Items.COAL, Items.FLINT, Items.IRON_AXE, Items.CROSSBOW)) {
                 return GiftReaction.LIKED;
             }
-            if (isAny(stack, Items.WOODEN_SWORD, Items.ROTTEN_FLESH)) {
+            if (isAny(stack, Items.TNT, Items.TNT_MINECART, Items.FIRE_CHARGE, Items.LAVA_BUCKET)) {
+                return GiftReaction.HATED;
+            }
+            if (isAny(stack, Items.WOODEN_SWORD, Items.ROTTEN_FLESH, Items.POISONOUS_POTATO, Items.SLIME_BALL)) {
                 return GiftReaction.DISLIKED;
             }
         }
@@ -225,8 +267,12 @@ public final class VillagerGiftPreferences {
             if (isAny(stack, Items.SLIME_BALL, Items.SNOWBALL, Items.FLOWER_POT)) {
                 return GiftReaction.LIKED;
             }
-            if (isAny(stack, Items.POISONOUS_POTATO, Items.TNT)) {
+            if (isAny(stack, Items.POISONOUS_POTATO, Items.TNT, Items.TNT_MINECART, Items.LAVA_BUCKET,
+                    Items.WITHER_SKELETON_SKULL)) {
                 return GiftReaction.HATED;
+            }
+            if (isAny(stack, Items.ROTTEN_FLESH, Items.SPIDER_EYE, Items.FERMENTED_SPIDER_EYE, Items.DEAD_BUSH)) {
+                return GiftReaction.DISLIKED;
             }
         }
         return GiftReaction.NEUTRAL;

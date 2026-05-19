@@ -225,7 +225,7 @@ public final class VillagerInteractionService {
     private static void sendGiftNotice(ServerPlayer player, Villager villager, ItemStack giftedStack, int reputationValue) {
         VillagerReputationNoticeKind kind = reputationValue < 0
                 ? VillagerReputationNoticeKind.GIFT_DISLIKED
-                : VillagerReputationNoticeKind.GIFT_LIKED;
+                : reputationValue > 0 ? VillagerReputationNoticeKind.GIFT_LIKED : VillagerReputationNoticeKind.GIFT_NEUTRAL;
         String reaction = reputationValue < 0 ? "Disliked gift" : reputationValue > 0 ? "Liked gift" : "Accepted gift";
         VillagerReputationNetworking.sendNotice(
                 player,
