@@ -33,6 +33,11 @@ public final class VillagerReputationNotificationOverlay {
     private static final int GIFT_LIKED_TEXT_COLOR = 0xFF55FF55;
     private static final int GIFT_NEUTRAL_TEXT_COLOR = 0xFFAAAAAA;
     private static final int GIFT_DISLIKED_TEXT_COLOR = 0xFFFF5555;
+    private static final int VILLAGER_FOLLOWING_TEXT_COLOR = 0xFF55FFAA;
+    private static final int VILLAGER_DISMISSED_TEXT_COLOR = 0xFFFFD166;
+    private static final int VILLAGER_HIRED_TEXT_COLOR = 0xFF55AAFF;
+    private static final int VILLAGER_FIRED_TEXT_COLOR = 0xFFFFAA55;
+    private static final int VILLAGER_DEATH_TEXT_COLOR = 0xFFFF5555;
     private static final int SHADOW_COLOR = 0xB0000000;
     private static final int ENTRY_LIFETIME_TICKS = 82;
     private static final int FADE_IN_TICKS = 8;
@@ -174,6 +179,11 @@ public final class VillagerReputationNotificationOverlay {
             case GIFT_LIKED -> GIFT_LIKED_TEXT_COLOR;
             case GIFT_NEUTRAL -> GIFT_NEUTRAL_TEXT_COLOR;
             case GIFT_DISLIKED -> GIFT_DISLIKED_TEXT_COLOR;
+            case VILLAGER_FOLLOWING -> VILLAGER_FOLLOWING_TEXT_COLOR;
+            case VILLAGER_DISMISSED -> VILLAGER_DISMISSED_TEXT_COLOR;
+            case VILLAGER_HIRED -> VILLAGER_HIRED_TEXT_COLOR;
+            case VILLAGER_FIRED -> VILLAGER_FIRED_TEXT_COLOR;
+            case VILLAGER_DEATH -> VILLAGER_DEATH_TEXT_COLOR;
             default -> TEXT_COLOR;
         };
     }
@@ -184,6 +194,11 @@ public final class VillagerReputationNotificationOverlay {
             case GIFT_LIKED -> ChatFormatting.GREEN;
             case GIFT_NEUTRAL -> ChatFormatting.GRAY;
             case GIFT_DISLIKED -> ChatFormatting.RED;
+            case VILLAGER_FOLLOWING -> ChatFormatting.GREEN;
+            case VILLAGER_DISMISSED -> ChatFormatting.YELLOW;
+            case VILLAGER_HIRED -> ChatFormatting.AQUA;
+            case VILLAGER_FIRED -> ChatFormatting.GOLD;
+            case VILLAGER_DEATH -> ChatFormatting.RED;
             default -> ChatFormatting.GRAY;
         };
     }

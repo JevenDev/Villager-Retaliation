@@ -39,7 +39,8 @@ public final class VillagerInteractionClientHandler {
                 payload.baby(),
                 payload.reputation(),
                 payload.reputationLevel(),
-                payload.mood()
+                payload.mood(),
+                payload.followingPlayer()
         ));
     }
 

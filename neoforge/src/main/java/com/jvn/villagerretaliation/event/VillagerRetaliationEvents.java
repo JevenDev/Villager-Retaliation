@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
 import com.jvn.villagerretaliation.combat.WanderingTraderRetaliationHandler;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
+import com.jvn.villagerretaliation.interaction.VillagerRecruitmentService;
 import com.jvn.villagerretaliation.loot.VillagerLootHandler;
 import com.jvn.villagerretaliation.loot.WanderingTraderLootHandler;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
@@ -65,6 +66,9 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onLivingDamage(LivingDamageEvent.Post event) {
+        if (event.getEntity() instanceof Villager villager && event.getSource().getEntity() instanceof Player attacker) {
+            VillagerRecruitmentService.stopFollowingIfFollowingAttacker(villager, attacker);
+        }
         VillagerRetaliationHandler.onLivingDamage(event);
         WanderingTraderRetaliationHandler.onLivingDamage(event);
         rememberVillageDamageEvent(event);
@@ -86,6 +90,9 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onLivingDeath(LivingDeathEvent event) {
+        if (event.getEntity() instanceof Villager villager) {
+            VillagerRecruitmentService.notifyRecruitmentDeath(villager);
+        }
         VillagerRetaliationHandler.onLivingDeath(event);
         WanderingTraderRetaliationHandler.onLivingDeath(event);
         rememberVillageDeathEvent(event);
@@ -100,6 +107,7 @@ public final class VillagerRetaliationEvents {
     public static void onEntityTickPre(EntityTickEvent.Pre event) {
         if (event.getEntity() instanceof Villager villager) {
             VillagerConversationService.tickVillager(villager);
+            VillagerRecruitmentService.onVillagerTickPre(villager);
             if (villager.level() instanceof ServerLevel level) {
                 VillagerAmbientIndicatorService.maybeEmitSleepIndicator(level, villager);
             }
@@ -115,6 +123,7 @@ public final class VillagerRetaliationEvents {
         }
         if (event.getEntity() instanceof Villager villager) {
             VillagerConversationService.tickVillager(villager);
+            VillagerRecruitmentService.onVillagerTickPost(villager);
         }
         clearIronGolemTargetingVillagers(event.getEntity());
         VillagerRetaliationHandler.onEntityTickPost(event);

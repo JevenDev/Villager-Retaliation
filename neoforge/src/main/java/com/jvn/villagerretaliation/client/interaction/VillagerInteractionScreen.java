@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
 import com.jvn.villagerretaliation.network.VillagerConversationEndRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerDialogueRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerGiftRequestPayload;
+import com.jvn.villagerretaliation.network.VillagerRecruitRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerTradeRequestPayload;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
@@ -77,6 +78,7 @@ public class VillagerInteractionScreen extends Screen {
     private int reputation;
     private VillagerReputationLevel reputationLevel;
     private DialogueDisposition mood;
+    private boolean followingPlayer;
     private final List<DialogueOption> options = new ArrayList<>();
     private DialoguePage page = DialoguePage.ROOT;
     private int selectedOption;
@@ -89,7 +91,7 @@ public class VillagerInteractionScreen extends Screen {
     private Button giftButton;
     private Double originalChatWidth;
 
-    public VillagerInteractionScreen(int villagerEntityId, String villagerName, String professionName, boolean baby, int reputation, VillagerReputationLevel reputationLevel, DialogueDisposition mood) {
+    public VillagerInteractionScreen(int villagerEntityId, String villagerName, String professionName, boolean baby, int reputation, VillagerReputationLevel reputationLevel, DialogueDisposition mood, boolean followingPlayer) {
         super(Component.literal("Villager Interaction"));
         this.villagerEntityId = villagerEntityId;
         this.villagerName = villagerName;
@@ -98,6 +100,7 @@ public class VillagerInteractionScreen extends Screen {
         this.reputation = reputation;
         this.reputationLevel = reputationLevel;
         this.mood = mood;
+        this.followingPlayer = followingPlayer;
         ClientVillagerConversationState.start(villagerEntityId);
     }
 
@@ -249,6 +252,8 @@ public class VillagerInteractionScreen extends Screen {
         this.options.clear();
         if (this.page == DialoguePage.TALK) {
             addDialogueOptions();
+        } else if (this.page == DialoguePage.RECRUIT) {
+            addRecruitOptions();
         } else if (this.page == DialoguePage.ROOT) {
             addRootOptions();
         }
@@ -281,8 +286,14 @@ public class VillagerInteractionScreen extends Screen {
         if (!this.baby) {
             this.options.add(DialogueOption.enabled("Trade", this::requestTrade));
             this.options.add(DialogueOption.enabled("Gift", this::openGiftPage));
+            this.options.add(DialogueOption.enabled("Recruit", this::openRecruitPage));
         }
         this.options.add(DialogueOption.enabled("Goodbye", this::leaveConversation));
+    }
+
+    private void addRecruitOptions() {
+        this.options.add(DialogueOption.enabled("Hire", () -> requestRecruit(VillagerRecruitRequestPayload.Action.HIRE)));
+        this.options.add(DialogueOption.enabled(this.followingPlayer ? "Stop Following" : "Follow Me", () -> requestRecruit(VillagerRecruitRequestPayload.Action.FOLLOW)));
     }
 
     private void addDialogueOption(String label, DialogueRequestType requestType) {
@@ -297,6 +308,11 @@ public class VillagerInteractionScreen extends Screen {
     private void openGiftPage() {
         this.page = DialoguePage.GIFT;
         this.selectedInventorySlot = firstGiftableInventorySlot();
+        rebuildOptions();
+    }
+
+    private void openRecruitPage() {
+        this.page = DialoguePage.RECRUIT;
         rebuildOptions();
     }
 
@@ -342,6 +358,13 @@ public class VillagerInteractionScreen extends Screen {
         }
         DialogueOption option = this.options.get(this.selectedOption);
         option.action().run();
+    }
+
+    private void requestRecruit(VillagerRecruitRequestPayload.Action action) {
+        PacketDistributor.sendToServer(new VillagerRecruitRequestPayload(this.villagerEntityId, action));
+        if (action == VillagerRecruitRequestPayload.Action.FOLLOW) {
+            this.followingPlayer = !this.followingPlayer;
+        }
     }
 
     private void moveSelection(int direction) {
@@ -1031,7 +1054,8 @@ public class VillagerInteractionScreen extends Screen {
     private enum DialoguePage {
         ROOT,
         TALK,
-        GIFT
+        GIFT,
+        RECRUIT
     }
 
     private record DialogueOption(String label, Runnable action) {

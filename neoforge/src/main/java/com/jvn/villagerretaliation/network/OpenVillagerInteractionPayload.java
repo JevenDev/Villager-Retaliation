@@ -14,7 +14,8 @@ public record OpenVillagerInteractionPayload(
         boolean baby,
         int reputation,
         VillagerReputationLevel reputationLevel,
-        DialogueDisposition mood)
+        DialogueDisposition mood,
+        boolean followingPlayer)
         implements CustomPacketPayload {
     public static final Type<OpenVillagerInteractionPayload> TYPE = VillagerPayloads.type("open_villager_interaction");
     public static final StreamCodec<RegistryFriendlyByteBuf, OpenVillagerInteractionPayload> STREAM_CODEC =
@@ -29,6 +30,7 @@ public record OpenVillagerInteractionPayload(
         buffer.writeVarInt(payload.reputation());
         buffer.writeEnum(payload.reputationLevel());
         buffer.writeEnum(payload.mood());
+        buffer.writeBoolean(payload.followingPlayer());
     }
 
     private static OpenVillagerInteractionPayload decode(RegistryFriendlyByteBuf buffer) {
@@ -40,7 +42,8 @@ public record OpenVillagerInteractionPayload(
                 buffer.readBoolean(),
                 buffer.readVarInt(),
                 buffer.readEnum(VillagerReputationLevel.class),
-                buffer.readEnum(DialogueDisposition.class)
+                buffer.readEnum(DialogueDisposition.class),
+                buffer.readBoolean()
         );
     }
 
