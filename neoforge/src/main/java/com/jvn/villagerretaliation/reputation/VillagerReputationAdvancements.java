@@ -20,6 +20,8 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 
@@ -62,6 +64,7 @@ public final class VillagerReputationAdvancements {
     private static final ResourceLocation RESPECT_IS_EARNED = advancementId("reputation/respect_is_earned");
     private static final ResourceLocation FRIEND_OF_THE_VILLAGE = advancementId("reputation/friend_of_the_village");
     private static final ResourceLocation LOCAL_LEGEND = advancementId("reputation/local_legend");
+    private static final ResourceLocation COVER_THEM_IN_DEBRIS = advancementId("reputation/cover_them_in_debris");
     private static final ResourceLocation CROWNED_BY_THE_VILLAGE = advancementId("reputation/crowned_by_the_village");
     private static final ResourceLocation SECOND_CHANCE = advancementId("reputation/second_chance");
     private static final ResourceLocation THE_VILLAGE_REMEMBERS = advancementId("reputation/the_village_remembers");
@@ -258,6 +261,12 @@ public final class VillagerReputationAdvancements {
         award(player, SECOND_CHANCE);
     }
 
+    public static void onVillagerEquipmentChanged(ServerPlayer player, AbstractVillager villager) {
+        if (isCoveredInNetherite(villager)) {
+            award(player, COVER_THEM_IN_DEBRIS);
+        }
+    }
+
     private static boolean crossedInto(
             VillagerReputationLevel previousLevel,
             VillagerReputationLevel newLevel,
@@ -353,6 +362,13 @@ public final class VillagerReputationAdvancements {
         }
         Long gameTime = playerHits.get(villager.getUUID());
         return gameTime != null && level.getGameTime() - gameTime <= DIRECT_HIT_MEMORY_TICKS;
+    }
+
+    private static boolean isCoveredInNetherite(AbstractVillager villager) {
+        return villager.getItemBySlot(EquipmentSlot.HEAD).is(Items.NETHERITE_HELMET)
+                && villager.getItemBySlot(EquipmentSlot.CHEST).is(Items.NETHERITE_CHESTPLATE)
+                && villager.getItemBySlot(EquipmentSlot.LEGS).is(Items.NETHERITE_LEGGINGS)
+                && villager.getItemBySlot(EquipmentSlot.FEET).is(Items.NETHERITE_BOOTS);
     }
 
     private static boolean hasTradeHistory(ServerPlayer player, AbstractVillager villager) {

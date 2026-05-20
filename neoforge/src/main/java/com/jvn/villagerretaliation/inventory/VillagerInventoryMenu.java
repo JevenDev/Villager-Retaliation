@@ -1,7 +1,9 @@
 package com.jvn.villagerretaliation.inventory;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
@@ -69,6 +71,7 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
     public void broadcastChanges() {
         super.broadcastChanges();
         holdVillager();
+        checkNetheriteAdvancement();
     }
 
     @Override
@@ -200,6 +203,12 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
         this.villager.getNavigation().stop();
         this.villager.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
         this.villager.getBrain().eraseMemory(MemoryModuleType.PATH);
+    }
+
+    private void checkNetheriteAdvancement() {
+        if (this.player instanceof ServerPlayer serverPlayer && this.villager != null) {
+            VillagerReputationAdvancements.onVillagerEquipmentChanged(serverPlayer, this.villager);
+        }
     }
 
     private static int armorSlotFor(EquipmentSlot equipmentSlot) {
