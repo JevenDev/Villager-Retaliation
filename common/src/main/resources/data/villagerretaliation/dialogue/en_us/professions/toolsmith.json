@@ -94,5 +94,31 @@
       ],
       "weight": 30
     }
+  ],
+  "pacify": [
+    {
+      "id": "toolsmith_pacify_success",
+      "outcomes": [
+        "success"
+      ],
+      "text": "Fine. I will put the edge away, for now.",
+      "weight": 26
+    },
+    {
+      "id": "toolsmith_pacify_short",
+      "outcomes": [
+        "not_enough_emeralds"
+      ],
+      "text": "Wrong measure. It takes {emerald_cost} {emeralds} to set this right.",
+      "weight": 26
+    },
+    {
+      "id": "toolsmith_pacify_blocked",
+      "outcomes": [
+        "blocked_by_reputation"
+      ],
+      "text": "No. You are using emeralds like the wrong tool.",
+      "weight": 26
+    }
   ]
 }

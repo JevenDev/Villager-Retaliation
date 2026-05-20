@@ -94,5 +94,31 @@
       ],
       "weight": 30
     }
+  ],
+  "pacify": [
+    {
+      "id": "butcher_pacify_success",
+      "outcomes": [
+        "success"
+      ],
+      "text": "Fine. I have work to get back to, and anger spoils the day.",
+      "weight": 26
+    },
+    {
+      "id": "butcher_pacify_short",
+      "outcomes": [
+        "not_enough_emeralds"
+      ],
+      "text": "Too lean an offer. Bring {emerald_cost} {emeralds} if you want this cut clean.",
+      "weight": 26
+    },
+    {
+      "id": "butcher_pacify_blocked",
+      "outcomes": [
+        "blocked_by_reputation"
+      ],
+      "text": "No. I know bad meat, and I know bad apologies.",
+      "weight": 26
+    }
   ]
 }

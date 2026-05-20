@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.dialogue;
 
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
+import com.jvn.villagerretaliation.combat.VillagerPacificationResult;
 import com.jvn.toucanlib.util.ToucanRandom;
 import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
@@ -100,6 +101,22 @@ public final class VillagerDialogueService {
                 combinedConversationLines(VillagerDialogueResources.closingLines(context, disposition), globalGoodbyeLines(context)),
                 professionGoodbyeLines(context.profession())
         );
+    }
+
+    public static String selectPacifyLine(DialogueContext context, VillagerPacificationResult result, int emeraldCost) {
+        Optional<String> resourceLine = VillagerDialogueResources.pacifyLine(context, result, emeraldCost);
+        if (resourceLine.isPresent()) {
+            return resourceLine.get();
+        }
+
+        return switch (result) {
+            case SUCCESS -> "Fine. I will let this go, but I have not forgotten.";
+            case NOT_ENOUGH_EMERALDS -> "That is not enough. Bring {emerald_cost} {emeralds} if you want peace."
+                    .replace("{emerald_cost}", Integer.toString(emeraldCost))
+                    .replace("{emeralds}", emeraldCost == 1 ? "emerald" : "emeralds");
+            case BLOCKED_BY_REPUTATION -> "No. Some things are not settled with emeralds.";
+            default -> "";
+        };
     }
 
     public static DialogueDisposition dispositionFor(VillagerReputationLevel reputationLevel) {

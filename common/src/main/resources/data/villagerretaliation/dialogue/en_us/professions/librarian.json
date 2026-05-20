@@ -94,5 +94,31 @@
       ],
       "weight": 30
     }
+  ],
+  "pacify": [
+    {
+      "id": "librarian_pacify_success",
+      "outcomes": [
+        "success"
+      ],
+      "text": "Fine. I will close this chapter, but I am not tearing out the page.",
+      "weight": 26
+    },
+    {
+      "id": "librarian_pacify_short",
+      "outcomes": [
+        "not_enough_emeralds"
+      ],
+      "text": "The account is incomplete. It requires {emerald_cost} {emeralds}.",
+      "weight": 26
+    },
+    {
+      "id": "librarian_pacify_blocked",
+      "outcomes": [
+        "blocked_by_reputation"
+      ],
+      "text": "No. The record is too fresh, and not in your favor.",
+      "weight": 26
+    }
   ]
 }

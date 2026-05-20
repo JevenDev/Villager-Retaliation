@@ -94,5 +94,31 @@
       ],
       "weight": 30
     }
+  ],
+  "pacify": [
+    {
+      "id": "nitwit_pacify_success",
+      "outcomes": [
+        "success"
+      ],
+      "text": "Fine. I was getting tired of being angry anyway.",
+      "weight": 26
+    },
+    {
+      "id": "nitwit_pacify_short",
+      "outcomes": [
+        "not_enough_emeralds"
+      ],
+      "text": "I counted, then forgot, then counted again. It should be {emerald_cost} {emeralds}.",
+      "weight": 26
+    },
+    {
+      "id": "nitwit_pacify_blocked",
+      "outcomes": [
+        "blocked_by_reputation"
+      ],
+      "text": "No. Even I know this is not fixed.",
+      "weight": 26
+    }
   ]
 }

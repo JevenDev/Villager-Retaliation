@@ -442,23 +442,27 @@ public final class VillagerRetaliationHandler {
     }
 
     public static boolean tryPacifyWithEmeralds(Villager villager, Player player, ItemStack interactionStack) {
+        return pacifyWithEmeralds(villager, player, interactionStack).handled();
+    }
+
+    public static VillagerPacificationResult pacifyWithEmeralds(Villager villager, Player player, ItemStack interactionStack) {
         if (villager.level().isClientSide
                 || !villager.isAlive()
                 || !player.isAlive()
                 || !interactionStack.is(Items.EMERALD)
                 || !RETALIATION.isHostileTowards(villager, player, () -> clearAnger(villager))) {
-            return false;
+            return VillagerPacificationResult.NOT_APPLICABLE;
         }
 
         if (isPacificationBlockedByReputation(villager, player)) {
             VillagerRetaliationRetaliationUtil.spawnMadParticles(villager);
-            return true;
+            return VillagerPacificationResult.BLOCKED_BY_REPUTATION;
         }
 
         int requiredEmeralds = VillagerRetaliationRetaliationUtil.pacifyEmeraldCost(villager);
         if (interactionStack.getCount() < requiredEmeralds) {
             VillagerRetaliationRetaliationUtil.spawnPacifyFailureParticles(villager);
-            return true;
+            return VillagerPacificationResult.NOT_ENOUGH_EMERALDS;
         }
 
         if (!player.hasInfiniteMaterials()) {
@@ -466,7 +470,7 @@ public final class VillagerRetaliationHandler {
         }
         clearAnger(villager);
         VillagerRetaliationRetaliationUtil.spawnPacifySuccessParticles(villager);
-        return true;
+        return VillagerPacificationResult.SUCCESS;
     }
 
     private static boolean isDespisedBy(Villager villager, Player player) {

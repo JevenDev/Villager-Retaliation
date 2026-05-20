@@ -95,5 +95,31 @@
       ],
       "weight": 30
     }
+  ],
+  "pacify": [
+    {
+      "id": "cartographer_pacify_success",
+      "outcomes": [
+        "success"
+      ],
+      "text": "Fine. I will mark this as settled, lightly, in pencil.",
+      "weight": 26
+    },
+    {
+      "id": "cartographer_pacify_short",
+      "outcomes": [
+        "not_enough_emeralds"
+      ],
+      "text": "Your count is off. The route to peace is {emerald_cost} {emeralds}.",
+      "weight": 26
+    },
+    {
+      "id": "cartographer_pacify_blocked",
+      "outcomes": [
+        "blocked_by_reputation"
+      ],
+      "text": "No. Every path back to trust is closed for now.",
+      "weight": 26
+    }
   ]
 }

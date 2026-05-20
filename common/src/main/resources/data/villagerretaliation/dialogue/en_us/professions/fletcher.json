@@ -94,5 +94,31 @@
       ],
       "weight": 30
     }
+  ],
+  "pacify": [
+    {
+      "id": "fletcher_pacify_success",
+      "outcomes": [
+        "success"
+      ],
+      "text": "Fine. I will unstring the anger, but only this once.",
+      "weight": 26
+    },
+    {
+      "id": "fletcher_pacify_short",
+      "outcomes": [
+        "not_enough_emeralds"
+      ],
+      "text": "That does not fly far enough. Bring {emerald_cost} {emeralds}.",
+      "weight": 26
+    },
+    {
+      "id": "fletcher_pacify_blocked",
+      "outcomes": [
+        "blocked_by_reputation"
+      ],
+      "text": "No. Some targets stay marked until trust returns.",
+      "weight": 26
+    }
   ]
 }

@@ -94,5 +94,31 @@
       ],
       "weight": 30
     }
+  ],
+  "pacify": [
+    {
+      "id": "unemployed_pacify_success",
+      "outcomes": [
+        "success"
+      ],
+      "text": "Fine. I have enough problems without carrying this one too.",
+      "weight": 26
+    },
+    {
+      "id": "unemployed_pacify_short",
+      "outcomes": [
+        "not_enough_emeralds"
+      ],
+      "text": "Even without a trade, I know that should be {emerald_cost} {emeralds}.",
+      "weight": 26
+    },
+    {
+      "id": "unemployed_pacify_blocked",
+      "outcomes": [
+        "blocked_by_reputation"
+      ],
+      "text": "No. I may not have work, but I still have sense.",
+      "weight": 26
+    }
   ]
 }

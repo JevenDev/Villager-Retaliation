@@ -94,5 +94,31 @@
       ],
       "weight": 30
     }
+  ],
+  "pacify": [
+    {
+      "id": "shepherd_pacify_success",
+      "outcomes": [
+        "success"
+      ],
+      "text": "Fine. I will smooth this wool down for now.",
+      "weight": 26
+    },
+    {
+      "id": "shepherd_pacify_short",
+      "outcomes": [
+        "not_enough_emeralds"
+      ],
+      "text": "That does not cover the tear. Bring {emerald_cost} {emeralds}.",
+      "weight": 26
+    },
+    {
+      "id": "shepherd_pacify_blocked",
+      "outcomes": [
+        "blocked_by_reputation"
+      ],
+      "text": "No. The flock still startles when you come near.",
+      "weight": 26
+    }
   ]
 }

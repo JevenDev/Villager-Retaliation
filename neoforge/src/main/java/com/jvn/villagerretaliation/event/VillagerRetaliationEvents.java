@@ -1,7 +1,10 @@
 package com.jvn.villagerretaliation.event;
 
 import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
+import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil;
+import com.jvn.villagerretaliation.combat.VillagerPacificationResult;
 import com.jvn.villagerretaliation.combat.WanderingTraderRetaliationHandler;
+import com.jvn.villagerretaliation.dialogue.VillagerDialogueService;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.interaction.VillagerRecruitmentService;
@@ -160,14 +163,19 @@ public final class VillagerRetaliationEvents {
         ItemStack interactionStack = player.getItemInHand(event.getHand());
         ItemStack pacifyStack = interactionStack.is(Items.EMERALD) ? interactionStack : player.getOffhandItem();
 
-        if (event.getTarget() instanceof Villager villager
-                && VillagerRetaliationHandler.tryPacifyWithEmeralds(villager, player, pacifyStack)) {
-            if (player instanceof ServerPlayer serverPlayer) {
-                VillagerReputationAdvancements.onVillagerPacified(serverPlayer);
+        if (event.getTarget() instanceof Villager villager && player instanceof ServerPlayer serverPlayer) {
+            int requiredEmeralds = VillagerRetaliationRetaliationUtil.pacifyEmeraldCost(villager);
+            VillagerPacificationResult pacificationResult =
+                    VillagerRetaliationHandler.pacifyWithEmeralds(villager, player, pacifyStack);
+            if (pacificationResult.handled()) {
+                sendPacificationDialogue(serverPlayer, villager, pacificationResult, requiredEmeralds);
+                if (pacificationResult == VillagerPacificationResult.SUCCESS) {
+                    VillagerReputationAdvancements.onVillagerPacified(serverPlayer);
+                }
+                event.setCanceled(true);
+                event.setCancellationResult(InteractionResult.SUCCESS);
+                return;
             }
-            event.setCanceled(true);
-            event.setCancellationResult(InteractionResult.SUCCESS);
-            return;
         }
 
         if (event.getTarget() instanceof Villager villager) {
@@ -207,6 +215,25 @@ public final class VillagerRetaliationEvents {
                 && WanderingTraderRetaliationHandler.blockTradingIfHostile(trader, player)) {
             event.setCanceled(true);
             event.setCancellationResult(InteractionResult.FAIL);
+        }
+    }
+
+    private static void sendPacificationDialogue(
+            ServerPlayer player,
+            Villager villager,
+            VillagerPacificationResult result,
+            int requiredEmeralds) {
+        if (!(villager.level() instanceof ServerLevel level)) {
+            return;
+        }
+
+        String text = VillagerDialogueService.selectPacifyLine(
+                VillagerInteractionService.createDialogueContext(level, player, villager),
+                result,
+                requiredEmeralds
+        );
+        if (!text.isBlank()) {
+            VillagerInteractionService.sendVillagerNotice(player, villager, text);
         }
     }
 

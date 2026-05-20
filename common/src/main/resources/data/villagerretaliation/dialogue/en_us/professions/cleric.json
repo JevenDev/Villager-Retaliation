@@ -94,5 +94,31 @@
       ],
       "weight": 30
     }
+  ],
+  "pacify": [
+    {
+      "id": "cleric_pacify_success",
+      "outcomes": [
+        "success"
+      ],
+      "text": "Fine. I will breathe first and judge second.",
+      "weight": 26
+    },
+    {
+      "id": "cleric_pacify_short",
+      "outcomes": [
+        "not_enough_emeralds"
+      ],
+      "text": "A remedy needs the full dose. Bring {emerald_cost} {emeralds}.",
+      "weight": 26
+    },
+    {
+      "id": "cleric_pacify_blocked",
+      "outcomes": [
+        "blocked_by_reputation"
+      ],
+      "text": "No. This wound is not ready to close.",
+      "weight": 26
+    }
   ]
 }

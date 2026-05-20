@@ -360,6 +360,18 @@ public final class VillagerInteractionService {
         VillagerConversationService.endForPlayer(player, false);
     }
 
+    public static DialogueContext createDialogueContext(ServerLevel level, ServerPlayer player, Villager villager) {
+        ReputationSnapshot reputation = reputationSnapshot(level, villager, player);
+        return createDialogueContext(
+                level,
+                player,
+                villager,
+                VillagerInteractionTracker.getState(level, villager, player),
+                reputation.value(),
+                reputation.level()
+        );
+    }
+
     private static DialogueContext createDialogueContext(
             ServerLevel level,
             ServerPlayer player,
@@ -504,7 +516,7 @@ public final class VillagerInteractionService {
         PacketDistributor.sendToPlayer(player, new VillagerInteractionNoticePayload(entityId, text, ""));
     }
 
-    private static void sendVillagerNotice(ServerPlayer player, Villager villager, String text) {
+    public static void sendVillagerNotice(ServerPlayer player, Villager villager, String text) {
         PacketDistributor.sendToPlayer(
                 player,
                 new VillagerInteractionNoticePayload(villager.getId(), text, villagerSpeakerLabel(villager))

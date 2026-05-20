@@ -94,5 +94,31 @@
       ],
       "weight": 30
     }
+  ],
+  "pacify": [
+    {
+      "id": "armorer_pacify_success",
+      "outcomes": [
+        "success"
+      ],
+      "text": "Fine. I will lower my guard, but I am keeping the straps tight.",
+      "weight": 26
+    },
+    {
+      "id": "armorer_pacify_short",
+      "outcomes": [
+        "not_enough_emeralds"
+      ],
+      "text": "That will not cover the dent you put in my patience. It takes {emerald_cost} {emeralds}.",
+      "weight": 26
+    },
+    {
+      "id": "armorer_pacify_blocked",
+      "outcomes": [
+        "blocked_by_reputation"
+      ],
+      "text": "No. Armor is for people I mean to protect, and that is not you right now.",
+      "weight": 26
+    }
   ]
 }

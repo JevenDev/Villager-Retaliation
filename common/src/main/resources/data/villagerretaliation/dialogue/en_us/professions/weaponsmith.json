@@ -94,5 +94,31 @@
       ],
       "weight": 30
     }
+  ],
+  "pacify": [
+    {
+      "id": "weaponsmith_pacify_success",
+      "outcomes": [
+        "success"
+      ],
+      "text": "Fine. I will let the blade rest, but do not test me again.",
+      "weight": 26
+    },
+    {
+      "id": "weaponsmith_pacify_short",
+      "outcomes": [
+        "not_enough_emeralds"
+      ],
+      "text": "That offer is dull. Bring {emerald_cost} {emeralds}.",
+      "weight": 26
+    },
+    {
+      "id": "weaponsmith_pacify_blocked",
+      "outcomes": [
+        "blocked_by_reputation"
+      ],
+      "text": "No. Some threats do not get to buy their way closer.",
+      "weight": 26
+    }
   ]
 }

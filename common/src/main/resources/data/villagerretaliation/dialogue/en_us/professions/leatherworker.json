@@ -94,5 +94,31 @@
       ],
       "weight": 30
     }
+  ],
+  "pacify": [
+    {
+      "id": "leatherworker_pacify_success",
+      "outcomes": [
+        "success"
+      ],
+      "text": "Fine. I will stitch this shut for now.",
+      "weight": 26
+    },
+    {
+      "id": "leatherworker_pacify_short",
+      "outcomes": [
+        "not_enough_emeralds"
+      ],
+      "text": "That is not enough to mend it. Bring {emerald_cost} {emeralds}.",
+      "weight": 26
+    },
+    {
+      "id": "leatherworker_pacify_blocked",
+      "outcomes": [
+        "blocked_by_reputation"
+      ],
+      "text": "No. This split runs too deep for emeralds.",
+      "weight": 26
+    }
   ]
 }

@@ -94,5 +94,31 @@
       ],
       "weight": 30
     }
+  ],
+  "pacify": [
+    {
+      "id": "farmer_pacify_success",
+      "outcomes": [
+        "success"
+      ],
+      "text": "Fine. I will let the field lie quiet for now.",
+      "weight": 26
+    },
+    {
+      "id": "farmer_pacify_short",
+      "outcomes": [
+        "not_enough_emeralds"
+      ],
+      "text": "That is not enough seed for this row. Bring {emerald_cost} {emeralds}.",
+      "weight": 26
+    },
+    {
+      "id": "farmer_pacify_blocked",
+      "outcomes": [
+        "blocked_by_reputation"
+      ],
+      "text": "No. You trampled too much for a handful of green to fix it.",
+      "weight": 26
+    }
   ]
 }

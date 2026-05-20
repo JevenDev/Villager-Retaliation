@@ -5,6 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.VillagerRetaliation;
+import com.jvn.villagerretaliation.combat.VillagerPacificationResult;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import java.io.IOException;
 import java.io.Reader;
@@ -48,6 +49,25 @@ public final class VillagerDialogueResources {
                 .toList();
     }
 
+    public static Optional<String> pacifyLine(DialogueContext context, VillagerPacificationResult result, int emeraldCost) {
+        List<PacifyLine> candidates = load(context.level().getServer()).pacifyLines().stream()
+                .filter(line -> line.matches(context, result))
+                .toList();
+        if (candidates.isEmpty()) {
+            return Optional.empty();
+        }
+
+        int totalWeight = candidates.stream().mapToInt(PacifyLine::weight).sum();
+        int selected = context.random().nextInt(Math.max(1, totalWeight));
+        for (PacifyLine candidate : candidates) {
+            selected -= candidate.weight();
+            if (selected < 0) {
+                return Optional.of(resolvePacifyText(candidate.text(), emeraldCost));
+            }
+        }
+        return Optional.of(resolvePacifyText(candidates.getLast().text(), emeraldCost));
+    }
+
     private static DialoguePool load(MinecraftServer server) {
         CachedDialoguePool current = cachedDialoguePool;
         if (current.server() == server) {
@@ -70,6 +90,7 @@ public final class VillagerDialogueResources {
         List<DialogueLine> lines = new ArrayList<>();
         List<ConversationLine> openings = new ArrayList<>();
         List<ConversationLine> closings = new ArrayList<>();
+        List<PacifyLine> pacifyLines = new ArrayList<>();
 
         server.getResourceManager()
                 .listResources(DIALOGUE_ROOT, location -> location.getNamespace().equals(VillagerRetaliation.MOD_ID)
@@ -77,9 +98,9 @@ public final class VillagerDialogueResources {
                 .entrySet()
                 .stream()
                 .sorted(Comparator.comparing(entry -> entry.getKey().toString()))
-                .forEach(entry -> readFile(entry.getKey(), entry.getValue(), lines, openings, closings));
+                .forEach(entry -> readFile(entry.getKey(), entry.getValue(), lines, openings, closings, pacifyLines));
 
-        return new DialoguePool(List.copyOf(lines), List.copyOf(openings), List.copyOf(closings));
+        return new DialoguePool(List.copyOf(lines), List.copyOf(openings), List.copyOf(closings), List.copyOf(pacifyLines));
     }
 
     private static void readFile(
@@ -87,13 +108,15 @@ public final class VillagerDialogueResources {
             Resource resource,
             List<DialogueLine> lines,
             List<ConversationLine> openings,
-            List<ConversationLine> closings) {
+            List<ConversationLine> closings,
+            List<PacifyLine> pacifyLines) {
         try (Reader reader = resource.openAsReader()) {
             JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
             Set<VillagerProfession> defaultProfessions = defaultProfessionsFor(location);
             readDialogueLines(location, root, defaultProfessions, lines);
             readConversationLines(location, root, "openings", defaultProfessions, openings);
             readConversationLines(location, root, "closings", defaultProfessions, closings);
+            readPacifyLines(location, root, defaultProfessions, pacifyLines);
         } catch (IOException | IllegalStateException exception) {
             // Invalid dialogue resources are ignored so one bad datapack file cannot break every conversation.
         }
@@ -170,6 +193,47 @@ public final class VillagerDialogueResources {
                     text,
                     professions,
                     dispositions,
+                    weight
+            ));
+            index++;
+        }
+    }
+
+    private static void readPacifyLines(
+            ResourceLocation location,
+            JsonObject root,
+            Set<VillagerProfession> defaultProfessions,
+            List<PacifyLine> lines) {
+        JsonArray entries = root.getAsJsonArray("pacify");
+        if (entries == null) {
+            return;
+        }
+
+        int index = 0;
+        for (JsonElement element : entries) {
+            if (!element.isJsonObject()) {
+                index++;
+                continue;
+            }
+
+            JsonObject entry = element.getAsJsonObject();
+            String text = readString(entry, "text");
+            if (text.isBlank()) {
+                index++;
+                continue;
+            }
+
+            String id = readString(entry, "id");
+            Set<VillagerProfession> professions = readProfessions(entry, defaultProfessions);
+            Set<DialogueDisposition> dispositions = readEnumSet(entry, "dispositions", DialogueDisposition.class);
+            Set<VillagerPacificationResult> outcomes = readEnumSet(entry, "outcomes", VillagerPacificationResult.class);
+            int weight = Math.max(1, readInt(entry, "weight", 10));
+            lines.add(new PacifyLine(
+                    id.isBlank() ? fallbackId(location, "pacify", index) : id,
+                    text,
+                    professions,
+                    dispositions,
+                    outcomes,
                     weight
             ));
             index++;
@@ -334,9 +398,19 @@ public final class VillagerDialogueResources {
         return location.getPath().replace('/', '_').replace(".json", "") + "_" + group + "_" + index;
     }
 
-    private record DialoguePool(List<DialogueLine> lines, List<ConversationLine> openings, List<ConversationLine> closings) {
+    private static String resolvePacifyText(String text, int emeraldCost) {
+        return text
+                .replace("{emerald_cost}", Integer.toString(emeraldCost))
+                .replace("{emeralds}", emeraldCost == 1 ? "emerald" : "emeralds");
+    }
+
+    private record DialoguePool(
+            List<DialogueLine> lines,
+            List<ConversationLine> openings,
+            List<ConversationLine> closings,
+            List<PacifyLine> pacifyLines) {
         private static DialoguePool empty() {
-            return new DialoguePool(List.of(), List.of(), List.of());
+            return new DialoguePool(List.of(), List.of(), List.of(), List.of());
         }
     }
 
@@ -357,6 +431,24 @@ public final class VillagerDialogueResources {
                 return false;
             }
             return this.dispositions.isEmpty() || this.dispositions.contains(disposition);
+        }
+    }
+
+    private record PacifyLine(
+            String id,
+            String text,
+            Set<VillagerProfession> professions,
+            Set<DialogueDisposition> dispositions,
+            Set<VillagerPacificationResult> outcomes,
+            int weight) {
+        private boolean matches(DialogueContext context, VillagerPacificationResult result) {
+            if (!this.professions.isEmpty() && !this.professions.contains(context.profession())) {
+                return false;
+            }
+            if (!this.dispositions.isEmpty() && !this.dispositions.contains(VillagerDialogueService.moodFor(context))) {
+                return false;
+            }
+            return this.outcomes.isEmpty() || this.outcomes.contains(result);
         }
     }
 }
