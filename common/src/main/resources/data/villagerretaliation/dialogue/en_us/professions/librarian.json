@@ -1,13 +1,98 @@
 {
   "openings": [
-    { "id": "librarian_opening", "text": "Mind the lectern. What do you need?" }
+    {
+      "id": "librarian_opening",
+      "text": "Mind the lectern. What do you need?"
+    }
   ],
   "closings": [
-    { "id": "librarian_closing", "text": "Back to keeping records and stories straight, then." }
+    {
+      "id": "librarian_closing",
+      "text": "Back to keeping records and stories straight, then."
+    }
   ],
   "lines": [
-    { "id": "librarian_chat_pages", "type": "chat", "text": "Missing pages worry me less than people who never read warnings.", "weight": 30 },
-    { "id": "librarian_question_memory", "type": "question", "text": "Villages remember more than people expect.", "weight": 30 },
-    { "id": "librarian_story_records", "type": "story", "text": "Every trade, every kindness, every cruelty. Someone writes it down.", "weight": 26 }
+    {
+      "id": "librarian_chat_pages",
+      "type": "chat",
+      "text": "Missing pages worry me less than people who never read warnings.",
+      "weight": 30
+    },
+    {
+      "id": "librarian_question_memory",
+      "type": "question",
+      "text": "Villages remember more than people expect.",
+      "weight": 30
+    },
+    {
+      "id": "librarian_story_records",
+      "type": "story",
+      "text": "Every trade, every kindness, every cruelty. Someone writes it down.",
+      "weight": 26
+    },
+    {
+      "id": "librarian_new_greeting_lectern",
+      "type": "greeting",
+      "text": "Mind the lectern. It has heard better questions than most people ask.",
+      "weight": 26
+    },
+    {
+      "id": "librarian_new_chat_ink",
+      "type": "chat",
+      "text": "Ink is quiet until someone needs proof.",
+      "weight": 28
+    },
+    {
+      "id": "librarian_new_question_record",
+      "type": "question",
+      "text": "Records do not care who feels embarrassed by them.",
+      "weight": 28
+    },
+    {
+      "id": "librarian_new_story_margin",
+      "type": "story",
+      "text": "The best clue I ever found was written in a margin by someone annoyed.",
+      "weight": 24
+    },
+    {
+      "id": "librarian_new_joke_footnote",
+      "type": "joke",
+      "text": "I had a footnote for this joke, but mercy won.",
+      "weight": 18
+    },
+    {
+      "id": "librarian_new_insult_blank",
+      "type": "insult",
+      "text": "That thought had too many blank pages.",
+      "weight": 18
+    },
+    {
+      "id": "librarian_new_chat_shelf",
+      "type": "chat",
+      "text": "A tidy shelf is proof that peace can be arranged, briefly.",
+      "weight": 28
+    },
+    {
+      "id": "librarian_new_question_warning",
+      "type": "question",
+      "text": "Forgotten warnings do not become kinder. They become surprises.",
+      "weight": 28
+    },
+    {
+      "id": "librarian_new_story_borrowed",
+      "type": "story",
+      "text": "Someone once returned a book cleaner than they borrowed it. We still discuss it.",
+      "weight": 24
+    },
+    {
+      "id": "librarian_new_hostile_memory",
+      "type": "chat",
+      "text": "You may prefer I forget. I have chosen a profession that argues otherwise.",
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
+      "weight": 30
+    }
   ]
 }

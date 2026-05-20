@@ -1,13 +1,98 @@
 {
   "openings": [
-    { "id": "butcher_opening", "text": "Mind the smokehouse. What do you need?" }
+    {
+      "id": "butcher_opening",
+      "text": "Mind the smokehouse. What do you need?"
+    }
   ],
   "closings": [
-    { "id": "butcher_closing", "text": "Back to keeping meat salted and safe, then." }
+    {
+      "id": "butcher_closing",
+      "text": "Back to keeping meat salted and safe, then."
+    }
   ],
   "lines": [
-    { "id": "butcher_chat_work", "type": "chat", "text": "A smokehouse tells you fast who understands patience.", "weight": 30 },
-    { "id": "butcher_question_supplies", "type": "question", "text": "Empty hooks before supper can frighten a village more than thunder.", "weight": 30 },
-    { "id": "butcher_story_stores", "type": "story", "text": "Food decides whether a scare becomes a disaster.", "weight": 26 }
+    {
+      "id": "butcher_chat_work",
+      "type": "chat",
+      "text": "A smokehouse tells you fast who understands patience.",
+      "weight": 30
+    },
+    {
+      "id": "butcher_question_supplies",
+      "type": "question",
+      "text": "Empty hooks before supper can frighten a village more than thunder.",
+      "weight": 30
+    },
+    {
+      "id": "butcher_story_stores",
+      "type": "story",
+      "text": "Food decides whether a scare becomes a disaster.",
+      "weight": 26
+    },
+    {
+      "id": "butcher_new_greeting_smoke",
+      "type": "greeting",
+      "text": "If you smell smoke, that is supper being planned properly.",
+      "weight": 26
+    },
+    {
+      "id": "butcher_new_chat_salt",
+      "type": "chat",
+      "text": "Salt is patient. That is why it keeps food better than most people keep promises.",
+      "weight": 28
+    },
+    {
+      "id": "butcher_new_question_hooks",
+      "type": "question",
+      "text": "Empty hooks tell a village to start worrying before anyone says it aloud.",
+      "weight": 28
+    },
+    {
+      "id": "butcher_new_story_cellar",
+      "type": "story",
+      "text": "A full cellar has ended more arguments here than any speech ever did.",
+      "weight": 24
+    },
+    {
+      "id": "butcher_new_joke_cuts",
+      "type": "joke",
+      "text": "My jokes are like my cuts: better when nobody rushes me.",
+      "weight": 18
+    },
+    {
+      "id": "butcher_new_insult_stale",
+      "type": "insult",
+      "text": "That was stale enough to leave on the shelf.",
+      "weight": 18
+    },
+    {
+      "id": "butcher_new_chat_supper",
+      "type": "chat",
+      "text": "People think about courage until supper is late. Then they think about supper.",
+      "weight": 28
+    },
+    {
+      "id": "butcher_new_question_store",
+      "type": "question",
+      "text": "A village with good stores can make careful choices instead of desperate ones.",
+      "weight": 28
+    },
+    {
+      "id": "butcher_new_story_smokehouse",
+      "type": "story",
+      "text": "Once the smokehouse door stuck shut, and everyone became helpful very quickly.",
+      "weight": 24
+    },
+    {
+      "id": "butcher_new_rude_manners",
+      "type": "insult",
+      "text": "I have carved gristle with more grace than you brought here.",
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
+      "weight": 30
+    }
   ]
 }

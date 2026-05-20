@@ -1,13 +1,98 @@
 {
   "openings": [
-    { "id": "weaponsmith_opening", "text": "Mind the grindstone. What do you need?" }
+    {
+      "id": "weaponsmith_opening",
+      "text": "Mind the grindstone. What do you need?"
+    }
   ],
   "closings": [
-    { "id": "weaponsmith_closing", "text": "Back to keeping blades honest, then." }
+    {
+      "id": "weaponsmith_closing",
+      "text": "Back to keeping blades honest, then."
+    }
   ],
   "lines": [
-    { "id": "weaponsmith_chat_blades", "type": "chat", "text": "Rust on a sword is just neglect learning to speak.", "weight": 30 },
-    { "id": "weaponsmith_question_trouble", "type": "question", "text": "Trouble always finds villages. Best be ready.", "weight": 30 },
-    { "id": "weaponsmith_story_golem", "type": "story", "text": "The golem did good work last night. Still, I keep the blades sharp.", "weight": 26 }
+    {
+      "id": "weaponsmith_chat_blades",
+      "type": "chat",
+      "text": "Rust on a sword is just neglect learning to speak.",
+      "weight": 30
+    },
+    {
+      "id": "weaponsmith_question_trouble",
+      "type": "question",
+      "text": "Trouble always finds villages. Best be ready.",
+      "weight": 30
+    },
+    {
+      "id": "weaponsmith_story_golem",
+      "type": "story",
+      "text": "The golem did good work last night. Still, I keep the blades sharp.",
+      "weight": 26
+    },
+    {
+      "id": "weaponsmith_new_greeting_grindstone",
+      "type": "greeting",
+      "text": "Mind the grindstone. It has no patience for wandering fingers.",
+      "weight": 26
+    },
+    {
+      "id": "weaponsmith_new_chat_blade",
+      "type": "chat",
+      "text": "A blade tells the truth about its owner sooner or later.",
+      "weight": 28
+    },
+    {
+      "id": "weaponsmith_new_question_ready",
+      "type": "question",
+      "text": "Ready is not the same as eager. A village should know the difference.",
+      "weight": 28
+    },
+    {
+      "id": "weaponsmith_new_story_rust",
+      "type": "story",
+      "text": "I once polished rust off a sword and found three old mistakes underneath.",
+      "weight": 24
+    },
+    {
+      "id": "weaponsmith_new_joke_sharp",
+      "type": "joke",
+      "text": "Weapon jokes are sharp. I keep the dull ones for people who lean too close.",
+      "weight": 18
+    },
+    {
+      "id": "weaponsmith_new_insult_dull",
+      "type": "insult",
+      "text": "That was dull enough to be safe, at least.",
+      "weight": 18
+    },
+    {
+      "id": "weaponsmith_new_chat_edge",
+      "type": "chat",
+      "text": "Keeping an edge honest is mostly knowing when to stop grinding.",
+      "weight": 28
+    },
+    {
+      "id": "weaponsmith_new_question_guard",
+      "type": "question",
+      "text": "An unready guard is just confidence standing in the wrong place.",
+      "weight": 28
+    },
+    {
+      "id": "weaponsmith_new_story_night",
+      "type": "story",
+      "text": "Some nights, the grindstone sounds like preparation instead of work.",
+      "weight": 24
+    },
+    {
+      "id": "weaponsmith_new_hostile_distance",
+      "type": "insult",
+      "text": "Stand back. I know the sound trouble makes when it wants to be casual.",
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
+      "weight": 30
+    }
   ]
 }

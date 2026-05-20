@@ -1,13 +1,98 @@
 {
   "openings": [
-    { "id": "toolsmith_opening", "text": "Mind the smithing table. What do you need?" }
+    {
+      "id": "toolsmith_opening",
+      "text": "Mind the smithing table. What do you need?"
+    }
   ],
   "closings": [
-    { "id": "toolsmith_closing", "text": "Back to making tools that do not fail, then." }
+    {
+      "id": "toolsmith_closing",
+      "text": "Back to making tools that do not fail, then."
+    }
   ],
   "lines": [
-    { "id": "toolsmith_chat_handles", "type": "chat", "text": "Cracked handles are small warnings with expensive timing.", "weight": 30 },
-    { "id": "toolsmith_question_edges", "type": "question", "text": "A dull edge makes every simple job into a bad plan.", "weight": 30 },
-    { "id": "toolsmith_story_tool", "type": "story", "text": "A good tool is quiet proof that someone cared before trouble started.", "weight": 26 }
+    {
+      "id": "toolsmith_chat_handles",
+      "type": "chat",
+      "text": "Cracked handles are small warnings with expensive timing.",
+      "weight": 30
+    },
+    {
+      "id": "toolsmith_question_edges",
+      "type": "question",
+      "text": "A dull edge makes every simple job into a bad plan.",
+      "weight": 30
+    },
+    {
+      "id": "toolsmith_story_tool",
+      "type": "story",
+      "text": "A good tool is quiet proof that someone cared before trouble started.",
+      "weight": 26
+    },
+    {
+      "id": "toolsmith_new_greeting_table",
+      "type": "greeting",
+      "text": "Mind the table. Good tools begin with nobody bumping my elbow.",
+      "weight": 26
+    },
+    {
+      "id": "toolsmith_new_chat_handle",
+      "type": "chat",
+      "text": "A handle should fit the hand, not argue with it.",
+      "weight": 28
+    },
+    {
+      "id": "toolsmith_new_question_edge",
+      "type": "question",
+      "text": "A sharp edge is useful. A careless one is just trouble with shine.",
+      "weight": 28
+    },
+    {
+      "id": "toolsmith_new_story_pick",
+      "type": "story",
+      "text": "I once fixed a pick that had seen more stone than sense.",
+      "weight": 24
+    },
+    {
+      "id": "toolsmith_new_joke_point",
+      "type": "joke",
+      "text": "Tool jokes work better when they have a point. Mine sometimes have two.",
+      "weight": 18
+    },
+    {
+      "id": "toolsmith_new_insult_bent",
+      "type": "insult",
+      "text": "That idea is bent past repair.",
+      "weight": 18
+    },
+    {
+      "id": "toolsmith_new_chat_workbench",
+      "type": "chat",
+      "text": "The bench hears every complaint before the finished tool gets praised.",
+      "weight": 28
+    },
+    {
+      "id": "toolsmith_new_question_crack",
+      "type": "question",
+      "text": "Cracked handles are warnings. Ignore them and they become stories.",
+      "weight": 28
+    },
+    {
+      "id": "toolsmith_new_story_shovel",
+      "type": "story",
+      "text": "A shovel broke on me once because I asked it to do axe work.",
+      "weight": 24
+    },
+    {
+      "id": "toolsmith_new_hostile_tool",
+      "type": "insult",
+      "text": "You are using your manners like the wrong tool for the job.",
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
+      "weight": 30
+    }
   ]
 }

@@ -1,13 +1,98 @@
 {
   "openings": [
-    { "id": "cleric_opening", "text": "Mind the brewing stand. What do you need?" }
+    {
+      "id": "cleric_opening",
+      "text": "Mind the brewing stand. What do you need?"
+    }
   ],
   "closings": [
-    { "id": "cleric_closing", "text": "Back to mixing remedies and prayers, then." }
+    {
+      "id": "cleric_closing",
+      "text": "Back to mixing remedies and prayers, then."
+    }
   ],
   "lines": [
-    { "id": "cleric_chat_remedies", "type": "chat", "text": "Some remedies need glass bottles. Some need time and a quieter voice.", "weight": 30 },
-    { "id": "cleric_question_wounds", "type": "question", "text": "There are wounds that potions cannot mend.", "weight": 30 },
-    { "id": "cleric_story_omens", "type": "story", "text": "Bad omens linger longer than most people think.", "weight": 26 }
+    {
+      "id": "cleric_chat_remedies",
+      "type": "chat",
+      "text": "Some remedies need glass bottles. Some need time and a quieter voice.",
+      "weight": 30
+    },
+    {
+      "id": "cleric_question_wounds",
+      "type": "question",
+      "text": "There are wounds that potions cannot mend.",
+      "weight": 30
+    },
+    {
+      "id": "cleric_story_omens",
+      "type": "story",
+      "text": "Bad omens linger longer than most people think.",
+      "weight": 26
+    },
+    {
+      "id": "cleric_new_greeting_bottles",
+      "type": "greeting",
+      "text": "Mind the bottles. Some are medicine, some are mistakes I have not named yet.",
+      "weight": 26
+    },
+    {
+      "id": "cleric_new_chat_brew",
+      "type": "chat",
+      "text": "A good brew needs time, heat, and someone willing to wait quietly.",
+      "weight": 28
+    },
+    {
+      "id": "cleric_new_question_omens",
+      "type": "question",
+      "text": "An omen is only useless if nobody changes course after seeing it.",
+      "weight": 28
+    },
+    {
+      "id": "cleric_new_story_remedy",
+      "type": "story",
+      "text": "I once made a remedy so bitter the patient got better out of spite.",
+      "weight": 24
+    },
+    {
+      "id": "cleric_new_joke_bitter",
+      "type": "joke",
+      "text": "A cleric joke is like medicine: if it tastes pleasant, check it twice.",
+      "weight": 18
+    },
+    {
+      "id": "cleric_new_insult_empty",
+      "type": "insult",
+      "text": "That was an empty bottle of a thought.",
+      "weight": 18
+    },
+    {
+      "id": "cleric_new_chat_wounds",
+      "type": "chat",
+      "text": "Some hurts close cleanly. Some wait for a quieter day.",
+      "weight": 28
+    },
+    {
+      "id": "cleric_new_question_prayer",
+      "type": "question",
+      "text": "Prayer is not a trade. You do not put in words and pull out certainty.",
+      "weight": 28
+    },
+    {
+      "id": "cleric_new_story_night",
+      "type": "story",
+      "text": "After a hard night, even the brewing stand sounds tired in the morning.",
+      "weight": 24
+    },
+    {
+      "id": "cleric_new_fearful_calm",
+      "type": "chat",
+      "text": "Speak gently. I have already heard enough harsh things today.",
+      "dispositions": [
+        "fearful",
+        "cautious"
+      ],
+      "weight": 30
+    }
   ]
 }

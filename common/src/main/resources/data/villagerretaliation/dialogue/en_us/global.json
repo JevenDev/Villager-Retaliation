@@ -3,34 +3,54 @@
     {
       "id": "global_friendly_opening",
       "text": "Good to see you. What can I do for you?",
-      "dispositions": ["respectful", "friendly"]
+      "dispositions": [
+        "respectful",
+        "friendly"
+      ]
     },
     {
       "id": "global_neutral_opening",
       "text": "Hello. What brings you here?",
-      "dispositions": ["neutral", "cautious"]
+      "dispositions": [
+        "neutral",
+        "cautious"
+      ]
     },
     {
       "id": "global_hostile_opening",
       "text": "You should make this quick.",
-      "dispositions": ["rude", "hostile", "fearful"]
+      "dispositions": [
+        "rude",
+        "hostile",
+        "fearful"
+      ]
     }
   ],
   "closings": [
     {
       "id": "global_friendly_closing",
       "text": "Safe travels. Come by again.",
-      "dispositions": ["respectful", "friendly"]
+      "dispositions": [
+        "respectful",
+        "friendly"
+      ]
     },
     {
       "id": "global_neutral_closing",
       "text": "Until next time.",
-      "dispositions": ["neutral", "cautious"]
+      "dispositions": [
+        "neutral",
+        "cautious"
+      ]
     },
     {
       "id": "global_hostile_closing",
       "text": "That is enough for now.",
-      "dispositions": ["rude", "hostile", "fearful"]
+      "dispositions": [
+        "rude",
+        "hostile",
+        "fearful"
+      ]
     }
   ],
   "lines": [
@@ -57,7 +77,79 @@
       "type": "chat",
       "text": "I still remember that {attack_weapon}. Conversations get colder after that.",
       "requires_recent_direct_hit_memory": true,
-      "dispositions": ["cautious", "rude", "hostile", "fearful"],
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 48
+    },
+    {
+      "id": "global_new_greeting_bell",
+      "type": "greeting",
+      "text": "The bell has been quiet today. I would like to keep it that way.",
+      "weight": 22
+    },
+    {
+      "id": "global_new_chat_square",
+      "type": "chat",
+      "text": "The square tells you who is busy, who is worried, and who is pretending not to be either.",
+      "weight": 22
+    },
+    {
+      "id": "global_new_question_doors",
+      "type": "question",
+      "text": "Why do we shut doors early? Because night makes ordinary mistakes harder to fix.",
+      "weight": 22
+    },
+    {
+      "id": "global_new_story_roof",
+      "type": "story",
+      "text": "One season, half the village learned roofing because the rain would not stop teaching.",
+      "weight": 20
+    },
+    {
+      "id": "global_new_joke_emerald",
+      "type": "joke",
+      "text": "I know an emerald joke, but it costs extra if you want the good part.",
+      "weight": 18
+    },
+    {
+      "id": "global_new_insult_path",
+      "type": "insult",
+      "text": "You walk like the path owes you an apology.",
+      "weight": 18
+    },
+    {
+      "id": "global_new_chat_work",
+      "type": "chat",
+      "text": "Most village work is simple until everyone depends on it being done right.",
+      "weight": 22
+    },
+    {
+      "id": "global_new_question_memory",
+      "type": "question",
+      "text": "What do villagers remember? More than visitors hope, less than rumors claim.",
+      "weight": 22
+    },
+    {
+      "id": "global_new_story_well",
+      "type": "story",
+      "text": "The well once went dry for a morning, and suddenly every bucket had a reputation.",
+      "weight": 20
+    },
+    {
+      "id": "global_new_hit_memory",
+      "type": "chat",
+      "text": "It is hard to speak plainly while remembering that {attack_weapon}.",
+      "requires_recent_direct_hit_memory": true,
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
       "weight": 48
     }
   ]

@@ -1,13 +1,98 @@
 {
   "openings": [
-    { "id": "fletcher_opening", "text": "Mind the fletching table. What do you need?" }
+    {
+      "id": "fletcher_opening",
+      "text": "Mind the fletching table. What do you need?"
+    }
   ],
   "closings": [
-    { "id": "fletcher_closing", "text": "Back to balancing arrows true, then." }
+    {
+      "id": "fletcher_closing",
+      "text": "Back to balancing arrows true, then."
+    }
   ],
   "lines": [
-    { "id": "fletcher_chat_feathers", "type": "chat", "text": "Clean feathers and straight shafts make trouble keep its distance.", "weight": 30 },
-    { "id": "fletcher_question_patrols", "type": "question", "text": "A good bow hears trouble before the bell does.", "weight": 30 },
-    { "id": "fletcher_story_missed", "type": "story", "text": "Missed shots teach loudly, especially when everyone heard you brag first.", "weight": 26 }
+    {
+      "id": "fletcher_chat_feathers",
+      "type": "chat",
+      "text": "Clean feathers and straight shafts make trouble keep its distance.",
+      "weight": 30
+    },
+    {
+      "id": "fletcher_question_patrols",
+      "type": "question",
+      "text": "A good bow hears trouble before the bell does.",
+      "weight": 30
+    },
+    {
+      "id": "fletcher_story_missed",
+      "type": "story",
+      "text": "Missed shots teach loudly, especially when everyone heard you brag first.",
+      "weight": 26
+    },
+    {
+      "id": "fletcher_new_greeting_table",
+      "type": "greeting",
+      "text": "Mind the fletching table. Straight arrows do not happen by accident.",
+      "weight": 26
+    },
+    {
+      "id": "fletcher_new_chat_feather",
+      "type": "chat",
+      "text": "A crooked feather makes a promise the arrow cannot keep.",
+      "weight": 28
+    },
+    {
+      "id": "fletcher_new_question_distance",
+      "type": "question",
+      "text": "Distance changes everything. Trouble looks smaller until it arrives.",
+      "weight": 28
+    },
+    {
+      "id": "fletcher_new_story_shaft",
+      "type": "story",
+      "text": "I once threw away a whole bundle because one shaft taught me suspicion.",
+      "weight": 24
+    },
+    {
+      "id": "fletcher_new_joke_flight",
+      "type": "joke",
+      "text": "A fletcher joke should fly straight. Mine wobble honestly.",
+      "weight": 18
+    },
+    {
+      "id": "fletcher_new_insult_blunt",
+      "type": "insult",
+      "text": "That was blunt enough to disappoint an arrow.",
+      "weight": 18
+    },
+    {
+      "id": "fletcher_new_chat_patrol",
+      "type": "chat",
+      "text": "The best warning is the one that reaches trouble before trouble reaches us.",
+      "weight": 28
+    },
+    {
+      "id": "fletcher_new_question_aim",
+      "type": "question",
+      "text": "Aim is not just the hand. It is patience deciding not to flinch.",
+      "weight": 28
+    },
+    {
+      "id": "fletcher_new_story_bell",
+      "type": "story",
+      "text": "There are nights when the bell rings and every arrow feels too few.",
+      "weight": 24
+    },
+    {
+      "id": "fletcher_new_hostile_warning",
+      "type": "insult",
+      "text": "Keep testing patience and you will learn how warnings travel.",
+      "dispositions": [
+        "hostile",
+        "rude"
+      ],
+      "weight": 30
+    }
   ]
 }

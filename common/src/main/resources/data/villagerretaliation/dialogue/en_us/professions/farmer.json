@@ -1,13 +1,98 @@
 {
   "openings": [
-    { "id": "farmer_opening", "text": "Mind the fields. What do you need?" }
+    {
+      "id": "farmer_opening",
+      "text": "Mind the fields. What do you need?"
+    }
   ],
   "closings": [
-    { "id": "farmer_closing", "text": "Back to coaxing food from stubborn soil, then." }
+    {
+      "id": "farmer_closing",
+      "text": "Back to coaxing food from stubborn soil, then."
+    }
   ],
   "lines": [
-    { "id": "farmer_chat_rows", "type": "chat", "text": "Dry rows and trampled crops teach a farmer to watch every footstep.", "weight": 30 },
-    { "id": "farmer_question_soil", "type": "question", "text": "The soil's been kind lately. That's more than I can say for some visitors.", "weight": 30 },
-    { "id": "farmer_story_harvest", "type": "story", "text": "A good harvest keeps a village standing.", "weight": 26 }
+    {
+      "id": "farmer_chat_rows",
+      "type": "chat",
+      "text": "Dry rows and trampled crops teach a farmer to watch every footstep.",
+      "weight": 30
+    },
+    {
+      "id": "farmer_question_soil",
+      "type": "question",
+      "text": "The soil's been kind lately. That's more than I can say for some visitors.",
+      "weight": 30
+    },
+    {
+      "id": "farmer_story_harvest",
+      "type": "story",
+      "text": "A good harvest keeps a village standing.",
+      "weight": 26
+    },
+    {
+      "id": "farmer_new_greeting_rows",
+      "type": "greeting",
+      "text": "Stay off the rows if you can. The crops remember boots.",
+      "weight": 26
+    },
+    {
+      "id": "farmer_new_chat_seed",
+      "type": "chat",
+      "text": "Seeds are small, but they know how to make a person wait.",
+      "weight": 28
+    },
+    {
+      "id": "farmer_new_question_rain",
+      "type": "question",
+      "text": "Good rain is a blessing. Too much rain is work wearing a blessing mask.",
+      "weight": 28
+    },
+    {
+      "id": "farmer_new_story_scarecrow",
+      "type": "story",
+      "text": "I once fixed a scarecrow so well it scared me at dusk.",
+      "weight": 24
+    },
+    {
+      "id": "farmer_new_joke_carrot",
+      "type": "joke",
+      "text": "A carrot joke takes root slowly, if anyone lets it.",
+      "weight": 18
+    },
+    {
+      "id": "farmer_new_insult_mud",
+      "type": "insult",
+      "text": "That thought came in muddy and left tracks.",
+      "weight": 18
+    },
+    {
+      "id": "farmer_new_chat_harvest",
+      "type": "chat",
+      "text": "A harvest is just a hundred small chores deciding to agree.",
+      "weight": 28
+    },
+    {
+      "id": "farmer_new_question_bread",
+      "type": "question",
+      "text": "Bread starts long before the oven. Most good things do.",
+      "weight": 28
+    },
+    {
+      "id": "farmer_new_story_frost",
+      "type": "story",
+      "text": "One frost took half the field and taught the whole village humility.",
+      "weight": 24
+    },
+    {
+      "id": "farmer_new_rude_field",
+      "type": "insult",
+      "text": "I would not plant that opinion in poor soil.",
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
+      "weight": 30
+    }
   ]
 }

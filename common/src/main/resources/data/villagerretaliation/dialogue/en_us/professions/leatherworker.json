@@ -1,13 +1,98 @@
 {
   "openings": [
-    { "id": "leatherworker_opening", "text": "Mind the tannery. What do you need?" }
+    {
+      "id": "leatherworker_opening",
+      "text": "Mind the tannery. What do you need?"
+    }
   ],
   "closings": [
-    { "id": "leatherworker_closing", "text": "Back to curing leather without wasting hide, then." }
+    {
+      "id": "leatherworker_closing",
+      "text": "Back to curing leather without wasting hide, then."
+    }
   ],
   "lines": [
-    { "id": "leatherworker_chat_stitching", "type": "chat", "text": "Bad stitching in the rain tells on itself quickly.", "weight": 30 },
-    { "id": "leatherworker_question_gear", "type": "question", "text": "Gear that lasts is mostly patience made visible.", "weight": 30 },
-    { "id": "leatherworker_story_hide", "type": "story", "text": "A split seam can ruin a journey faster than a bad map.", "weight": 26 }
+    {
+      "id": "leatherworker_chat_stitching",
+      "type": "chat",
+      "text": "Bad stitching in the rain tells on itself quickly.",
+      "weight": 30
+    },
+    {
+      "id": "leatherworker_question_gear",
+      "type": "question",
+      "text": "Gear that lasts is mostly patience made visible.",
+      "weight": 30
+    },
+    {
+      "id": "leatherworker_story_hide",
+      "type": "story",
+      "text": "A split seam can ruin a journey faster than a bad map.",
+      "weight": 26
+    },
+    {
+      "id": "leatherworker_new_greeting_tannery",
+      "type": "greeting",
+      "text": "Mind the tannery. The smell is honest, at least.",
+      "weight": 26
+    },
+    {
+      "id": "leatherworker_new_chat_stitch",
+      "type": "chat",
+      "text": "A stitch done poorly waits for the worst time to confess.",
+      "weight": 28
+    },
+    {
+      "id": "leatherworker_new_question_hide",
+      "type": "question",
+      "text": "Good leather is patience you can wear.",
+      "weight": 28
+    },
+    {
+      "id": "leatherworker_new_story_boots",
+      "type": "story",
+      "text": "I once made boots that outlasted three owners and four bad roads.",
+      "weight": 24
+    },
+    {
+      "id": "leatherworker_new_joke_skin",
+      "type": "joke",
+      "text": "Leather jokes need a thick skin. I keep saying that until someone laughs.",
+      "weight": 18
+    },
+    {
+      "id": "leatherworker_new_insult_split",
+      "type": "insult",
+      "text": "That sentence split like cheap stitching.",
+      "weight": 18
+    },
+    {
+      "id": "leatherworker_new_chat_rain",
+      "type": "chat",
+      "text": "Rain tells the truth about gear faster than any seller will.",
+      "weight": 28
+    },
+    {
+      "id": "leatherworker_new_question_gear",
+      "type": "question",
+      "text": "A pack should carry weight without reminding you every step.",
+      "weight": 28
+    },
+    {
+      "id": "leatherworker_new_story_apron",
+      "type": "story",
+      "text": "My apron has seen enough mistakes to deserve its own corner by the fire.",
+      "weight": 24
+    },
+    {
+      "id": "leatherworker_new_rude_work",
+      "type": "insult",
+      "text": "Do not mock work that lasts longer than your manners.",
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
+      "weight": 30
+    }
   ]
 }

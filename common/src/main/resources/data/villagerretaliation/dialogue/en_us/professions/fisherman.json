@@ -1,13 +1,98 @@
 {
   "openings": [
-    { "id": "fisherman_opening", "text": "Mind the dock. What do you need?" }
+    {
+      "id": "fisherman_opening",
+      "text": "Mind the dock. What do you need?"
+    }
   ],
   "closings": [
-    { "id": "fisherman_closing", "text": "Back to reading water and weather, then." }
+    {
+      "id": "fisherman_closing",
+      "text": "Back to reading water and weather, then."
+    }
   ],
   "lines": [
-    { "id": "fisherman_chat_nets", "type": "chat", "text": "Empty nets at dusk make every rumor sound heavier.", "weight": 30 },
-    { "id": "fisherman_question_water", "type": "question", "text": "Water keeps secrets until the weather shakes them loose.", "weight": 30 },
-    { "id": "fisherman_story_line", "type": "story", "text": "A snapped line once saved me from hauling in something worse than nothing.", "weight": 26 }
+    {
+      "id": "fisherman_chat_nets",
+      "type": "chat",
+      "text": "Empty nets at dusk make every rumor sound heavier.",
+      "weight": 30
+    },
+    {
+      "id": "fisherman_question_water",
+      "type": "question",
+      "text": "Water keeps secrets until the weather shakes them loose.",
+      "weight": 30
+    },
+    {
+      "id": "fisherman_story_line",
+      "type": "story",
+      "text": "A snapped line once saved me from hauling in something worse than nothing.",
+      "weight": 26
+    },
+    {
+      "id": "fisherman_new_greeting_dock",
+      "type": "greeting",
+      "text": "Step lightly on the dock. Loose boards like to announce strangers.",
+      "weight": 26
+    },
+    {
+      "id": "fisherman_new_chat_water",
+      "type": "chat",
+      "text": "Water looks calm right up until it proves it was thinking.",
+      "weight": 28
+    },
+    {
+      "id": "fisherman_new_question_nets",
+      "type": "question",
+      "text": "A good net catches food. A bad net catches excuses.",
+      "weight": 28
+    },
+    {
+      "id": "fisherman_new_story_fog",
+      "type": "story",
+      "text": "Once the fog came in so thick I trusted the dock by smell.",
+      "weight": 24
+    },
+    {
+      "id": "fisherman_new_joke_line",
+      "type": "joke",
+      "text": "A fishing joke needs a good line and someone patient enough to hear it.",
+      "weight": 18
+    },
+    {
+      "id": "fisherman_new_insult_soggy",
+      "type": "insult",
+      "text": "That insult was damp before it reached me.",
+      "weight": 18
+    },
+    {
+      "id": "fisherman_new_chat_weather",
+      "type": "chat",
+      "text": "Weather has more moods than any trader I have met.",
+      "weight": 28
+    },
+    {
+      "id": "fisherman_new_question_twine",
+      "type": "question",
+      "text": "Good twine matters. Small failures love important moments.",
+      "weight": 28
+    },
+    {
+      "id": "fisherman_new_story_empty_net",
+      "type": "story",
+      "text": "An empty net can still bring home a lesson, though nobody cooks it.",
+      "weight": 24
+    },
+    {
+      "id": "fisherman_new_cautious_distance",
+      "type": "chat",
+      "text": "I keep space between myself and uncertain weather. People are no different.",
+      "dispositions": [
+        "cautious",
+        "rude"
+      ],
+      "weight": 30
+    }
   ]
 }

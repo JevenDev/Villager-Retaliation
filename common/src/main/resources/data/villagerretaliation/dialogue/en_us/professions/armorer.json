@@ -1,13 +1,98 @@
 {
   "openings": [
-    { "id": "armorer_opening", "text": "Mind the forge. What do you need?" }
+    {
+      "id": "armorer_opening",
+      "text": "Mind the forge. What do you need?"
+    }
   ],
   "closings": [
-    { "id": "armorer_closing", "text": "Back to fitting mail and shields, then." }
+    {
+      "id": "armorer_closing",
+      "text": "Back to fitting mail and shields, then."
+    }
   ],
   "lines": [
-    { "id": "armorer_chat_work", "type": "chat", "text": "Most of my day is fitting mail and shields. It sounds simple until everything depends on it.", "weight": 30 },
-    { "id": "armorer_question_plates", "type": "question", "text": "A cracked plate after a raid teaches more than a quiet week ever does.", "weight": 30 },
-    { "id": "armorer_story_shield", "type": "story", "text": "A good shield is a promise you test before anyone needs it.", "weight": 26 }
+    {
+      "id": "armorer_chat_work",
+      "type": "chat",
+      "text": "Most of my day is fitting mail and shields. It sounds simple until everything depends on it.",
+      "weight": 30
+    },
+    {
+      "id": "armorer_question_plates",
+      "type": "question",
+      "text": "A cracked plate after a raid teaches more than a quiet week ever does.",
+      "weight": 30
+    },
+    {
+      "id": "armorer_story_shield",
+      "type": "story",
+      "text": "A good shield is a promise you test before anyone needs it.",
+      "weight": 26
+    },
+    {
+      "id": "armorer_new_greeting_heat",
+      "type": "greeting",
+      "text": "Stand clear of the heat. A forge forgives less than I do.",
+      "weight": 26
+    },
+    {
+      "id": "armorer_new_chat_straps",
+      "type": "chat",
+      "text": "A loose strap looks harmless until someone trusts it in a fight.",
+      "weight": 28
+    },
+    {
+      "id": "armorer_new_question_mail",
+      "type": "question",
+      "text": "Good mail is not heavy. Bad mail reminds you of itself all day.",
+      "weight": 28
+    },
+    {
+      "id": "armorer_new_story_helmet",
+      "type": "story",
+      "text": "I once fixed a helmet so dented it looked like it had argued with the ground.",
+      "weight": 24
+    },
+    {
+      "id": "armorer_new_joke_padding",
+      "type": "joke",
+      "text": "Armor jokes need padding. Otherwise everyone feels the point too soon.",
+      "weight": 18
+    },
+    {
+      "id": "armorer_new_insult_rust",
+      "type": "insult",
+      "text": "That remark had the polish of wet rust.",
+      "weight": 18
+    },
+    {
+      "id": "armorer_new_chat_plate",
+      "type": "chat",
+      "text": "Every plate I fit is a small promise that someone gets another chance.",
+      "weight": 28
+    },
+    {
+      "id": "armorer_new_question_shield",
+      "type": "question",
+      "text": "A shield is only useful if the arm behind it holds steady.",
+      "weight": 28
+    },
+    {
+      "id": "armorer_new_story_raid",
+      "type": "story",
+      "text": "After a raid, you learn which buckles were honest and which only looked brave.",
+      "weight": 24
+    },
+    {
+      "id": "armorer_new_hostile_tools",
+      "type": "insult",
+      "text": "Do not sneer at my tools. They protect better people than you.",
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
+      "weight": 30
+    }
   ]
 }
