@@ -153,6 +153,7 @@
   "advancements.villagerretaliation.reputation.respect_is_earned.description": "Become respected by a villager.",
   "advancements.villagerretaliation.reputation.friend_of_the_village.title": "Friend of the Village",
   "advancements.villagerretaliation.reputation.friend_of_the_village.description": "Become trusted by multiple villagers in the same village.",
+  "container.villagerretaliation.villager_inventory": "%s's Inventory",
   "advancements.villagerretaliation.reputation.local_legend.title": "Local Legend",
   "advancements.villagerretaliation.reputation.local_legend.description": "Become revered by a villager.",
   "advancements.villagerretaliation.reputation.crowned_by_the_village.title": "Crowned by the Village",

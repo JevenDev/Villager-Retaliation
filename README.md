@@ -291,11 +291,11 @@ Created by me :D
 
 ## License
 
-This project is licensed under the **[GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.en.html)**.
+All Rights Reserved.
 
 Feel free to use this mod in modpacks, videos, etc. Just provide a link back to this page if possible :)
 
-Looking to port the mod to your favourite loader/version outside of my scope? Feel free to, and let me know so I can add a sub-section to direct users to it!
+Please don't port this mod without express permission from me.
 
 For any general queries/unlisted questions, DM me on Twitter (@prodbyjvn) / Discord (ijvn).
 

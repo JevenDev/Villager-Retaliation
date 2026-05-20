@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
 import com.jvn.villagerretaliation.network.VillagerConversationEndRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerDialogueRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerGiftRequestPayload;
+import com.jvn.villagerretaliation.network.VillagerInventoryRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerRecruitRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerTradeRequestPayload;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
@@ -286,6 +287,9 @@ public class VillagerInteractionScreen extends Screen {
         if (!this.baby) {
             this.options.add(DialogueOption.enabled("Trade", this::requestTrade));
             this.options.add(DialogueOption.enabled("Gift", this::openGiftPage));
+            if (canRequestVillagerInventory()) {
+                this.options.add(DialogueOption.enabled("Inventory", this::requestInventory));
+            }
             this.options.add(DialogueOption.enabled("Recruit", this::openRecruitPage));
         }
         this.options.add(DialogueOption.enabled("Goodbye", this::leaveConversation));
@@ -318,6 +322,10 @@ public class VillagerInteractionScreen extends Screen {
 
     private void requestTrade() {
         PacketDistributor.sendToServer(new VillagerTradeRequestPayload(this.villagerEntityId));
+    }
+
+    private void requestInventory() {
+        PacketDistributor.sendToServer(new VillagerInventoryRequestPayload(this.villagerEntityId));
     }
 
     private void requestGift() {
@@ -877,6 +885,10 @@ public class VillagerInteractionScreen extends Screen {
 
     private String reputationText() {
         return "Reputation: " + this.reputation;
+    }
+
+    private boolean canRequestVillagerInventory() {
+        return this.reputationLevel.trustRank() >= VillagerReputationLevel.REVERED.trustRank();
     }
 
     private void applyChatWidthOverride() {

@@ -9,6 +9,7 @@ import com.jvn.villagerretaliation.dialogue.DialogueReputationEffect;
 import com.jvn.villagerretaliation.dialogue.DialogueReputationService;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueService;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
+import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.network.OpenVillagerInteractionPayload;
 import com.jvn.villagerretaliation.network.VillagerConversationEndedPayload;
 import com.jvn.villagerretaliation.network.VillagerDialogueResponsePayload;
@@ -186,6 +187,26 @@ public final class VillagerInteractionService {
         focusVillagerOnPlayer(villager, player);
         VillagerConversationService.endForPlayer(player, true);
         openTrading(player, villager, true);
+    }
+
+    public static void handleInventoryRequest(ServerPlayer player, int entityId) {
+        Villager villager = resolveVillager(player, entityId);
+        if (villager == null) {
+            sendNotice(player, entityId, "I cannot show you that right now.");
+            return;
+        }
+        if (!VillagerConversationService.validate(player, villager)) {
+            sendVillagerNotice(player, villager, "The conversation has ended.");
+            return;
+        }
+        if (!(player.level() instanceof ServerLevel level) || !VillagerInventoryAccess.canAccess(level, villager, player)) {
+            sendVillagerNotice(player, villager, "I don't know you well enough for that.");
+            return;
+        }
+
+        focusVillagerOnPlayer(villager, player);
+        VillagerConversationService.endForPlayer(player, true);
+        VillagerInventoryAccess.open(player, villager);
     }
 
     public static void handleGiftRequest(ServerPlayer player, int entityId, int inventorySlot) {

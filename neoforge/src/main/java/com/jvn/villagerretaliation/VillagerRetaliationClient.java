@@ -8,6 +8,7 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.neoforge.client.event.RegisterClientTooltipComponentFactoriesEvent;
+import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import net.neoforged.neoforge.common.NeoForge;
 
 @Mod(value = VillagerRetaliation.MOD_ID, dist = Dist.CLIENT)
@@ -34,7 +35,15 @@ public final class VillagerRetaliationClient {
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.interaction.VillagerDialogueCameraFocus::onComputeFov);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.interaction.VillagerDialogueCameraFocus::onClientTick);
         modEventBus.addListener(VillagerRetaliationClient::registerTooltipComponents);
+        modEventBus.addListener(VillagerRetaliationClient::registerMenuScreens);
         modEventBus.addListener(com.jvn.villagerretaliation.client.interaction.VillagerInteractionScreenShaderRenderer::registerShaders);
+    }
+
+    private static void registerMenuScreens(RegisterMenuScreensEvent event) {
+        event.register(
+                com.jvn.villagerretaliation.inventory.VillagerRetaliationMenus.VILLAGER_INVENTORY.get(),
+                com.jvn.villagerretaliation.client.inventory.VillagerInventoryScreen::new
+        );
     }
 
     private static void registerTooltipComponents(RegisterClientTooltipComponentFactoriesEvent event) {

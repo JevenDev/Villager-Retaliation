@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.client.renderer;
 
 import com.jvn.villagerretaliation.client.model.BaseVillagerModel;
+import com.jvn.villagerretaliation.client.inventory.VillagerInventoryScreen;
 import com.jvn.villagerretaliation.client.model.VillagerRetaliationEntityModelLoader;
 import com.jvn.villagerretaliation.client.model.VillagerRetaliationVillagerModel;
 import com.jvn.villagerretaliation.client.model.VanillaVillagerModelAdapter;
@@ -51,7 +52,7 @@ public abstract class AbstractVillagerRetaliationVillagerRenderer<T extends Abst
     @Override
     public void render(T villager, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
         this.refreshModels();
-        this.model = this.poseProvider.shouldUseCombatModel(villager) ? this.combatModel : this.nonCombatModel;
+        this.model = shouldUseHandItemModel(villager) ? this.combatModel : this.nonCombatModel;
         super.render(villager, entityYaw, partialTick, poseStack, buffer, packedLight);
     }
 
@@ -75,6 +76,12 @@ public abstract class AbstractVillagerRetaliationVillagerRenderer<T extends Abst
         if (!currentNonCombatModelSource.equals(this.nonCombatModelSource)) {
             this.reloadNonCombatModel();
         }
+    }
+
+    private boolean shouldUseHandItemModel(T villager) {
+        return this.poseProvider.shouldUseCombatModel(villager)
+                || VillagerInventoryScreen.isRenderingInventoryPreview(villager)
+                && (!villager.getMainHandItem().isEmpty() || !villager.getOffhandItem().isEmpty());
     }
 
     private void reloadCombatModel() {

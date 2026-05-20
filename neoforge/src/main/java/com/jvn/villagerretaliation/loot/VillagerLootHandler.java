@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.loot;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationCombatWeaponFactory;
 import com.jvn.villagerretaliation.combat.VillagerCombatRoles;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.toucanlib.util.ToucanItemStacks;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.toucanlib.neoforge.loot.ToucanLivingDrops;
@@ -21,6 +22,7 @@ public final class VillagerLootHandler {
 
     public static void addDrops(Villager villager, LivingDropsEvent event) {
         VillagerRetaliationVillagerWeapons.ensurePickedMainHandDrop(villager, event);
+        VillagerInventoryAccess.dropExtraInventory(villager);
 
         if (!VillagerRetaliationConfig.ENABLE_VILLAGER_DROPS.get()
                 || villager.isBaby() && !VillagerRetaliationConfig.BABY_VILLAGERS_DROP_LOOT.get()) {
