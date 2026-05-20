@@ -8,6 +8,8 @@ import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -25,6 +27,8 @@ public final class VillagerRecruitmentService {
     private static final double FOLLOW_STOP_DISTANCE_SQR = 2.5D * 2.5D;
     private static final double FOLLOW_FORGET_DISTANCE_SQR = 96.0D * 96.0D;
     private static final double FOLLOW_SPEED = 0.62D;
+    private static final long RECENT_BETRAYED_FOLLOWER_DEATH_NOTICE_TICKS = 200L;
+    private static final Map<UUID, RecentRecruitmentOwner> RECENT_BETRAYED_FOLLOWERS = new HashMap<>();
 
     private VillagerRecruitmentService() {
     }
@@ -67,6 +71,7 @@ public final class VillagerRecruitmentService {
         if (attacker != null
                 && villager.getPersistentData().hasUUID(FOLLOWING_PLAYER_KEY)
                 && villager.getPersistentData().getUUID(FOLLOWING_PLAYER_KEY).equals(attacker.getUUID())) {
+            rememberBetrayedFollower(villager, attacker);
             clearFollowTarget(villager);
             if (attacker instanceof ServerPlayer serverPlayer) {
                 sendNoLongerFollowingNotice(serverPlayer, villager);
@@ -80,6 +85,7 @@ public final class VillagerRecruitmentService {
             return;
         }
 
+        boolean sentNotice = false;
         if (villager.getPersistentData().hasUUID(FOLLOWING_PLAYER_KEY)) {
             ServerPlayer player = level.getServer().getPlayerList().getPlayer(villager.getPersistentData().getUUID(FOLLOWING_PLAYER_KEY));
             if (player != null) {
@@ -88,7 +94,11 @@ public final class VillagerRecruitmentService {
                         displayName(villager) + " died while following you.",
                         VillagerReputationNoticeKind.VILLAGER_DEATH
                 );
+                sentNotice = true;
             }
+        }
+        if (!sentNotice) {
+            notifyRecentBetrayedFollowerDeath(level, villager);
         }
         if (villager.getPersistentData().hasUUID(HIRED_PLAYER_KEY)) {
             ServerPlayer player = level.getServer().getPlayerList().getPlayer(villager.getPersistentData().getUUID(HIRED_PLAYER_KEY));
@@ -191,6 +201,31 @@ public final class VillagerRecruitmentService {
         villager.getNavigation().stop();
     }
 
+    private static void rememberBetrayedFollower(Villager villager, Player attacker) {
+        if (!(villager.level() instanceof ServerLevel level)) {
+            return;
+        }
+        RECENT_BETRAYED_FOLLOWERS.put(
+                villager.getUUID(),
+                new RecentRecruitmentOwner(attacker.getUUID(), level.getGameTime() + RECENT_BETRAYED_FOLLOWER_DEATH_NOTICE_TICKS)
+        );
+    }
+
+    private static void notifyRecentBetrayedFollowerDeath(ServerLevel level, Villager villager) {
+        RecentRecruitmentOwner recentOwner = RECENT_BETRAYED_FOLLOWERS.remove(villager.getUUID());
+        if (recentOwner == null || level.getGameTime() > recentOwner.expiresGameTime()) {
+            return;
+        }
+        ServerPlayer player = level.getServer().getPlayerList().getPlayer(recentOwner.playerId());
+        if (player != null) {
+            VillagerReputationNetworking.sendNotice(
+                    player,
+                    displayName(villager) + " died after you broke their trust.",
+                    VillagerReputationNoticeKind.VILLAGER_DEATH
+            );
+        }
+    }
+
     private static void sendFollowerBetrayalDialogue(Villager villager, ServerPlayer player) {
         PacketDistributor.sendToPlayer(
                 player,
@@ -232,5 +267,8 @@ public final class VillagerRecruitmentService {
 
     private static String displayName(Villager villager) {
         return VillagerPresetNameRegistry.resolveDisplayName(villager).getString();
+    }
+
+    private record RecentRecruitmentOwner(UUID playerId, long expiresGameTime) {
     }
 }

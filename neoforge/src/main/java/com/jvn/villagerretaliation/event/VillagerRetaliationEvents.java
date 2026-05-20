@@ -19,6 +19,7 @@ import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerFleeBehaviorHandler;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -34,8 +35,10 @@ import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.npc.WanderingTrader;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.GameRules;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent;
@@ -91,6 +94,7 @@ public final class VillagerRetaliationEvents {
 
     public static void onLivingDeath(LivingDeathEvent event) {
         if (event.getEntity() instanceof Villager villager) {
+            broadcastVillagerDeathMessage(villager, event.getSource());
             VillagerRecruitmentService.notifyRecruitmentDeath(villager);
         }
         VillagerRetaliationHandler.onLivingDeath(event);
@@ -387,6 +391,73 @@ public final class VillagerRetaliationEvents {
                 VillageEventMemory.remember(level, VillageEventMemory.EventTag.PLAYER_DEFENDED_VILLAGE, deceased.blockPosition(), deceased, attacker);
             }
         }
+    }
+
+    private static void broadcastVillagerDeathMessage(Villager villager, DamageSource source) {
+        if (!(villager.level() instanceof ServerLevel level)
+                || !level.getGameRules().getBoolean(GameRules.RULE_SHOWDEATHMESSAGES)
+                || villager.hasCustomName()) {
+            return;
+        }
+
+        level.getServer().getPlayerList().broadcastSystemMessage(villagerDeathMessage(villager, source), false);
+    }
+
+    private static Component villagerDeathMessage(Villager villager, DamageSource source) {
+        Component villagerName = VillagerPresetNameRegistry.resolveDisplayName(villager);
+        Player hazardOwner = ToucanHazardAttribution.resolveVanillaHazardOwner(villager, source)
+                .filter(Player.class::isInstance)
+                .map(Player.class::cast)
+                .orElse(null);
+        if (hazardOwner != null) {
+            return attributedHazardDeathMessage(villagerName, hazardOwner, source);
+        }
+
+        String messageId = "death.attack." + source.getMsgId();
+        Entity attacker = source.getEntity();
+        if (attacker == null || attacker == villager) {
+            return Component.translatable(messageId, villagerName);
+        }
+
+        return Component.translatable(messageId, villagerName, attacker.getDisplayName());
+    }
+
+    private static Component attributedHazardDeathMessage(Component villagerName, Player player, DamageSource source) {
+        return Component.literal("")
+                .append(villagerName)
+                .append(" ")
+                .append(attributedHazardDeathPhrase(source))
+                .append(" by ")
+                .append(player.getDisplayName())
+                .append(" using ")
+                .append(attributedHazardTool(source));
+    }
+
+    private static String attributedHazardDeathPhrase(DamageSource source) {
+        String messageId = source.getMsgId();
+        if (messageId.equals("lava")
+                || messageId.equals("inFire")
+                || messageId.equals("onFire")
+                || messageId.equals("hotFloor")
+                || messageId.equals("fireball")
+                || messageId.equals("unattributedFireball")) {
+            return "burned to death";
+        }
+        return "died";
+    }
+
+    private static String attributedHazardTool(DamageSource source) {
+        String messageId = source.getMsgId();
+        if (messageId.equals("lava")) {
+            return "a lava bucket";
+        }
+        if (messageId.equals("fireball") || messageId.equals("unattributedFireball")) {
+            return "a fire charge";
+        }
+        if (messageId.equals("inFire") || messageId.equals("onFire")) {
+            return "flint and steel";
+        }
+        return "a hazard";
     }
 
     private static boolean shouldCancelVillagerGolemDamage(Entity victim, Entity attacker, Entity directAttacker) {
