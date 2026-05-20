@@ -150,7 +150,7 @@ public final class VillagerInteractionService {
         VillagerAmbientIndicatorService.onDialogueResponse(villager, requestType, reputationEffect);
         String responseText = reputationEffect.responseOverride() == null ? result.text() : reputationEffect.responseOverride();
         VillagerInteractionTracker.rememberDialogue(level, villager, player, requestType, result.lineId());
-        sendDialogueReputation(player, villager, level);
+        sendDialogueReputation(player, villager, level, requestType, reputationEffect);
         broadcastVillagerChat(level, villager, responseText);
         if (shouldRefuseDespisedConversation(villager, player)) {
             VillagerConversationService.endForPlayer(player, true);
@@ -333,15 +333,27 @@ public final class VillagerInteractionService {
     }
 
     private static void sendDialogueReputation(ServerPlayer player, Villager villager, ServerLevel level) {
+        sendDialogueReputation(player, villager, level, null, null);
+    }
+
+    private static void sendDialogueReputation(
+            ServerPlayer player,
+            Villager villager,
+            ServerLevel level,
+            DialogueRequestType requestType,
+            DialogueReputationEffect reputationEffect) {
         ReputationSnapshot reputation = reputationSnapshot(level, villager, player);
-        DialogueDisposition mood = VillagerDialogueService.moodFor(createDialogueContext(
+        DialogueContext context = createDialogueContext(
                 level,
                 player,
                 villager,
                 VillagerInteractionTracker.getState(level, villager, player),
                 reputation.value(),
                 reputation.level()
-        ));
+        );
+        DialogueDisposition mood = requestType == null || reputationEffect == null
+                ? VillagerDialogueService.moodFor(context)
+                : VillagerDialogueService.moodFor(context, requestType, reputationEffect);
         PacketDistributor.sendToPlayer(player, new VillagerDialogueResponsePayload(
                 villager.getId(),
                 reputation.value(),

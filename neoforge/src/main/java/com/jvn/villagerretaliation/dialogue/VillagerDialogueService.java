@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.dialogue;
 
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.toucanlib.util.ToucanRandom;
+import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -11,6 +12,7 @@ import java.util.function.Predicate;
 import net.minecraft.world.entity.npc.VillagerProfession;
 
 public final class VillagerDialogueService {
+    private static final int PROFESSION_MOOD_LINE_COUNT = 30;
     private static final List<DialogueLine> LINES = createLines();
 
     private VillagerDialogueService() {
@@ -100,38 +102,76 @@ public final class VillagerDialogueService {
     }
 
     public static DialogueDisposition moodFor(DialogueContext context) {
+        return moodForRank(smoothedMoodRankFor(context));
+    }
+
+    public static DialogueDisposition moodFor(DialogueContext context, DialogueRequestType requestType, DialogueReputationEffect reputationEffect) {
+        int moodRank = smoothedMoodRankFor(context);
+        if (reputationEffect.blockedByCooldown()
+                || (requestType == DialogueRequestType.INSULT && !reputationEffect.applied())) {
+            moodRank--;
+        }
+        return moodForRank(moodRank);
+    }
+
+    private static int smoothedMoodRankFor(DialogueContext context) {
         DialogueDisposition baseline = dispositionFor(context.reputationLevel());
+        int baselineRank = moodRank(baseline);
+        int moodRank = baselineRank;
+        int maxDrift = 1;
         if (context.hasRecentDirectHitMemory()) {
-            return context.reputationLevel() == VillagerReputationLevel.FEARED
-                    ? DialogueDisposition.FEARFUL
-                    : lowerMood(baseline, DialogueDisposition.RUDE);
+            moodRank -= context.reputationLevel() == VillagerReputationLevel.FEARED ? 0 : 2;
+            maxDrift = Math.max(maxDrift, 2);
         }
         if (context.hasRecentBrokenBedMemory()) {
-            return lowerMood(baseline, DialogueDisposition.RUDE);
+            moodRank -= 2;
+            maxDrift = Math.max(maxDrift, 2);
         }
         if (context.hasRecentNegativeDialogueMoodMemory()) {
-            return lowerMood(baseline, DialogueDisposition.CAUTIOUS);
+            moodRank--;
         }
         if (context.badFirstImpression()) {
-            return lowerMood(baseline, DialogueDisposition.CAUTIOUS);
+            moodRank--;
         }
         if (context.hasRecentPositiveDialogueMoodMemory()) {
-            return liftMood(baseline);
+            moodRank++;
         }
-        return baseline;
-    }
-
-    private static DialogueDisposition lowerMood(DialogueDisposition baseline, DialogueDisposition limit) {
-        return moodRank(baseline) < moodRank(limit) ? baseline : limit;
-    }
-
-    private static DialogueDisposition liftMood(DialogueDisposition baseline) {
-        return switch (baseline) {
-            case RESPECTFUL, FRIENDLY -> baseline;
-            case NEUTRAL, CAUTIOUS -> DialogueDisposition.FRIENDLY;
-            case RUDE, HOSTILE -> DialogueDisposition.CAUTIOUS;
-            case FEARFUL -> DialogueDisposition.FEARFUL;
-        };
+        moodRank += context.recentGiftToThisVillager()
+                .map(event -> switch (event.gift().reaction()) {
+                    case LOVED -> 2;
+                    case LIKED -> 1;
+                    case NEUTRAL -> 0;
+                    case DISLIKED -> -1;
+                    case HATED -> -2;
+                })
+                .orElse(0);
+        if (context.recentGiftToThisVillager()
+                .map(event -> event.gift().reaction() == VillagerGiftPreferences.GiftReaction.LOVED
+                        || event.gift().reaction() == VillagerGiftPreferences.GiftReaction.HATED)
+                .orElse(false)) {
+            maxDrift = Math.max(maxDrift, 2);
+        }
+        moodRank += context.recentGiftToAnotherVillager()
+                .map(event -> switch (event.gift().reaction()) {
+                    case LOVED, LIKED -> 1;
+                    case NEUTRAL -> 0;
+                    case DISLIKED, HATED -> -1;
+                })
+                .orElse(0);
+        if (context.hasRecentPlayerEvent(VillageEventMemory.EventTag.PLAYER_DEFENDED_VILLAGE)) {
+            moodRank++;
+        }
+        if (context.hasRecentPlayerEvent(VillageEventMemory.EventTag.PLAYER_ATTACKED_VILLAGER)) {
+            moodRank -= 2;
+            maxDrift = Math.max(maxDrift, 2);
+        }
+        if (context.hasRecentEvent(VillageEventMemory.EventTag.VILLAGER_DEATH, VillageEventMemory.EventTag.RAID)) {
+            moodRank--;
+        }
+        if (context.weather() == DialogueContext.WeatherState.THUNDER) {
+            moodRank--;
+        }
+        return clamp(moodRank, baselineRank - maxDrift, baselineRank + maxDrift);
     }
 
     private static int moodRank(DialogueDisposition disposition) {
@@ -144,6 +184,32 @@ public final class VillagerDialogueService {
             case HOSTILE -> -2;
             case FEARFUL -> -3;
         };
+    }
+
+    private static DialogueDisposition moodForRank(int rank) {
+        if (rank >= 3) {
+            return DialogueDisposition.RESPECTFUL;
+        }
+        if (rank == 2) {
+            return DialogueDisposition.FRIENDLY;
+        }
+        if (rank == 1) {
+            return DialogueDisposition.NEUTRAL;
+        }
+        if (rank == 0) {
+            return DialogueDisposition.CAUTIOUS;
+        }
+        if (rank == -1) {
+            return DialogueDisposition.RUDE;
+        }
+        if (rank == -2) {
+            return DialogueDisposition.HOSTILE;
+        }
+        return DialogueDisposition.FEARFUL;
+    }
+
+    private static int clamp(int value, int min, int max) {
+        return Math.max(min, Math.min(max, value));
     }
 
     private static int effectiveWeight(DialogueLine line) {
@@ -1185,8 +1251,8 @@ public final class VillagerDialogueService {
 
     private static void addGlobalMoodLines(List<DialogueLine> lines) {
         for (DialogueDisposition disposition : DialogueDisposition.values()) {
-            for (int index = 0; index < 10; index++) {
-                add(lines, "global_" + disposition.name().toLowerCase() + "_" + index, requestForIndex(index), globalMoodText(disposition, index))
+                for (int index = 0; index < 10; index++) {
+                    add(lines, "global_" + disposition.name().toLowerCase() + "_" + index, requestForMoodIndex(index), globalMoodText(disposition, index))
                         .dispositions(disposition)
                         .weight(18)
                         .build();
@@ -1197,8 +1263,8 @@ public final class VillagerDialogueService {
     private static void addProfessionMoodLines(List<DialogueLine> lines) {
         for (ProfessionDialogue profile : professionProfiles()) {
             for (DialogueDisposition disposition : DialogueDisposition.values()) {
-                for (int index = 0; index < 10; index++) {
-                    add(lines, profile.key() + "_" + disposition.name().toLowerCase() + "_" + index, requestForIndex(index), professionMoodText(profile, disposition, index))
+                for (int index = 0; index < PROFESSION_MOOD_LINE_COUNT; index++) {
+                    add(lines, profile.key() + "_" + disposition.name().toLowerCase() + "_" + index, requestForMoodIndex(index), professionMoodText(profile, disposition, index))
                             .professions(profile.profession())
                             .dispositions(disposition)
                             .weight(24)
@@ -1215,6 +1281,17 @@ public final class VillagerDialogueService {
             case 2 -> DialogueRequestType.STORY;
             case 3 -> DialogueRequestType.JOKE;
             default -> DialogueRequestType.INSULT;
+        };
+    }
+
+    private static DialogueRequestType requestForMoodIndex(int index) {
+        return switch (index % 6) {
+            case 0 -> DialogueRequestType.GREETING;
+            case 1 -> DialogueRequestType.QUESTION;
+            case 2 -> DialogueRequestType.STORY;
+            case 3 -> DialogueRequestType.JOKE;
+            case 4 -> DialogueRequestType.INSULT;
+            default -> DialogueRequestType.CHAT;
         };
     }
 
@@ -1330,7 +1407,27 @@ public final class VillagerDialogueService {
             case 6 -> "Ask about " + profile.warning() + " if you like. I trust you with the answer.";
             case 7 -> "There is pride in " + profile.pride() + ", and some in knowing decent visitors still exist.";
             case 8 -> profile.joke() + " That one is better with an audience I trust.";
-            default -> "Careful now. Even respected friends should not mock a " + profile.role() + "'s work.";
+            case 9 -> "Careful now. Even respected friends should not mock a " + profile.role() + "'s work.";
+            case 10 -> "The " + profile.workplace() + " has been calmer since people started saying your name kindly.";
+            case 11 -> "If you need the truth about " + profile.warning() + ", you have earned more than rumors.";
+            case 12 -> "A village remembers who protects " + profile.pride() + " when it would be easier to walk away.";
+            case 13 -> "I could make the " + profile.gift() + " joke sharper, but you deserve the polished version.";
+            case 14 -> "Respect does not make you untouchable. It makes my warning honest.";
+            case 15 -> "You are welcome near the " + profile.workplace() + ". Not everyone earns that.";
+            case 16 -> "Ask as long as you like. A trusted ear makes " + profile.craft() + " easier to explain.";
+            case 17 -> "Some people bring trouble. You made the " + profile.role() + "'s work feel worth doing.";
+            case 18 -> profile.joke() + " See, that one is for people I do not mind laughing with.";
+            case 19 -> "Do not lean too hard on admiration. It still has bones.";
+            case 20 -> "Good to see you. I was hoping someone steady would pass the " + profile.workplace() + ".";
+            case 21 -> profile.concern() + " worries me less when capable friends are nearby.";
+            case 22 -> "A good reputation is like good " + profile.gift() + ": useful before anyone praises it.";
+            case 23 -> "That joke deserves a bell ring, and not the emergency kind.";
+            case 24 -> "A " + profile.role() + " can respect you and still tell you when your words are crooked.";
+            case 25 -> "People ask me about you. I tell them the village knows the difference between noise and help.";
+            case 26 -> "I would trust you with " + profile.warning() + ", and that is not a small thing.";
+            case 27 -> "There are days " + profile.craft() + " feels lighter because someone decent is watching the road.";
+            case 28 -> profile.joke() + " I saved that one for good company.";
+            default -> "Even heroes should not make a " + profile.role() + " regret speaking warmly.";
         };
     }
 
@@ -1345,7 +1442,27 @@ public final class VillagerDialogueService {
             case 6 -> "If you're asking about " + profile.concern() + ", the answer changes by the hour.";
             case 7 -> "People think " + profile.craft() + " is simple until they try it tired.";
             case 8 -> profile.joke() + " See? Professionally funny.";
-            default -> "Mock the work if you must, but the village still needs it.";
+            case 9 -> "Mock the work if you must, but the village still needs it.";
+            case 10 -> "You are easy enough company. The " + profile.workplace() + " has had worse visitors.";
+            case 11 -> "Ask about " + profile.warning() + " if you want. I will tell you what I know.";
+            case 12 -> "A " + profile.role() + " learns who slows the day down and who helps it along.";
+            case 13 -> "My " + profile.gift() + " joke is mostly terrible, but friendly ears improve it.";
+            case 14 -> "That was pointed, but I will let it pass this once.";
+            case 15 -> "Hello again. You are becoming familiar around the " + profile.workplace() + ".";
+            case 16 -> profile.concern() + " is the sort of problem I can discuss with someone who listens.";
+            case 17 -> "There is pride in " + profile.pride() + ", even when the day makes it difficult.";
+            case 18 -> profile.joke() + " I promise that sounded better in my head.";
+            case 19 -> "Careful. Friendly talk can still bruise.";
+            case 20 -> "I had a decent morning until " + profile.craft() + " started arguing back.";
+            case 21 -> "If you are looking for advice, start with patience and avoid " + profile.warning() + ".";
+            case 22 -> "People underestimate a good " + profile.role() + " until something breaks.";
+            case 23 -> "Tell your joke. The " + profile.workplace() + " could use a harmless interruption.";
+            case 24 -> "I like you well enough to say that was rude.";
+            case 25 -> "Stay a moment. The work will not vanish, unfortunately.";
+            case 26 -> "The thing about " + profile.craft() + " is that it punishes rushing.";
+            case 27 -> "A village is better when people care about " + profile.pride() + " before it fails.";
+            case 28 -> profile.joke() + " That is the kind of humor the " + profile.workplace() + " produces.";
+            default -> "Do not make me choose between liking you and defending my work.";
         };
     }
 
@@ -1360,7 +1477,27 @@ public final class VillagerDialogueService {
             case 6 -> profile.concern() + " is the thing people ignore until it costs them.";
             case 7 -> "You learn a lot as a " + profile.role() + ". Mostly who is patient.";
             case 8 -> profile.joke() + " No refunds on laughter.";
-            default -> "Careful. The " + profile.workplace() + " has heard better complaints.";
+            case 9 -> "Careful. The " + profile.workplace() + " has heard better complaints.";
+            case 10 -> "I do not mind talking, as long as the " + profile.workplace() + " keeps moving.";
+            case 11 -> "If this is about " + profile.warning() + ", ask clearly.";
+            case 12 -> "A " + profile.role() + " gets used to questions from people passing through.";
+            case 13 -> "A joke about " + profile.gift() + "? That could go either way.";
+            case 14 -> "That was not your finest sentence.";
+            case 15 -> "Hello. Stand clear of the " + profile.workplace() + " and we will manage.";
+            case 16 -> profile.craft() + " takes time. So do useful answers.";
+            case 17 -> "Most of my work is keeping " + profile.concern() + " from becoming everyone's problem.";
+            case 18 -> profile.joke() + " That is the standard version.";
+            case 19 -> "Insult the work if you want. It will still be here tomorrow.";
+            case 20 -> "I have a few minutes before " + profile.pride() + " needs attention again.";
+            case 21 -> "Ask about the " + profile.workplace() + ", but do not expect secrets.";
+            case 22 -> "People notice a " + profile.role() + " when something goes wrong. Funny how that works.";
+            case 23 -> "Go on. A quick joke will not ruin the schedule.";
+            case 24 -> "That remark landed about as well as bad " + profile.gift() + ".";
+            case 25 -> "The day is ordinary. Ordinary is good for " + profile.craft() + ".";
+            case 26 -> "A fair question gets a fair answer.";
+            case 27 -> "I keep an eye on " + profile.warning() + " because someone has to.";
+            case 28 -> profile.joke() + " That is all the comedy I am licensed for.";
+            default -> "Careful. Neutral does not mean careless.";
         };
     }
 
@@ -1375,7 +1512,27 @@ public final class VillagerDialogueService {
             case 6 -> profile.warning() + " is not something I discuss carelessly.";
             case 7 -> "The village depends on " + profile.pride() + ". Don't make that harder.";
             case 8 -> profile.joke() + " I laugh quieter around uncertain company.";
-            default -> "Insult me if you want, but leave the " + profile.workplace() + " out of it.";
+            case 9 -> "Insult me if you want, but leave the " + profile.workplace() + " out of it.";
+            case 10 -> "I am willing to talk. That is not the same as relaxing.";
+            case 11 -> "Ask one thing at a time, especially if it involves " + profile.warning() + ".";
+            case 12 -> "A cautious " + profile.role() + " stays alive long enough to be useful.";
+            case 13 -> "A joke about " + profile.gift() + " might help, if it is actually kind.";
+            case 14 -> "That sounded too much like a test.";
+            case 15 -> "Hello. I see you, and so does the " + profile.workplace() + ".";
+            case 16 -> "Why the interest in " + profile.craft() + " now?";
+            case 17 -> profile.concern() + " teaches a person to notice patterns. Yours is not settled.";
+            case 18 -> profile.joke() + " I will decide later whether that was funny.";
+            case 19 -> "Careful. The village repeats sharp words.";
+            case 20 -> "You can stand there. Not closer.";
+            case 21 -> "If this is about " + profile.pride() + ", speak plainly.";
+            case 22 -> "A " + profile.role() + " has to know which visitors make work harder.";
+            case 23 -> "Tell it gently. People are listening for more than a punchline.";
+            case 24 -> "That is the kind of remark that gets doors shut.";
+            case 25 -> "I am busy with " + profile.craft() + ", which is convenient because busy hands stay steady.";
+            case 26 -> "I can answer, but I will not hand you anything that risks " + profile.warning() + ".";
+            case 27 -> "The " + profile.workplace() + " feels smaller when I am unsure about someone.";
+            case 28 -> profile.joke() + " There, a small laugh. Do not waste it.";
+            default -> "Do not make a cautious " + profile.role() + " become a frightened one.";
         };
     }
 
@@ -1390,7 +1547,27 @@ public final class VillagerDialogueService {
             case 6 -> "My advice about " + profile.warning() + "? Don't be the cause of it.";
             case 7 -> "A " + profile.role() + " remembers who makes work harder.";
             case 8 -> profile.joke() + " Still better than talking to you.";
-            default -> "If you came to sneer at my work, stand where I can ignore you.";
+            case 9 -> "If you came to sneer at my work, stand where I can ignore you.";
+            case 10 -> "The " + profile.workplace() + " was peaceful before you interrupted it.";
+            case 11 -> "You want advice? Start by not causing " + profile.warning() + ".";
+            case 12 -> "A " + profile.role() + " has limited patience, and you are spending it quickly.";
+            case 13 -> "Tell the " + profile.gift() + " joke. I am sure it will explain a lot.";
+            case 14 -> "That insult had the craftsmanship of rotten wood.";
+            case 15 -> "You again. The day was nearly tolerable.";
+            case 16 -> "I am not teaching you " + profile.craft() + ". I am surviving this conversation.";
+            case 17 -> profile.concern() + " is easier to handle than you, and it has the decency to be predictable.";
+            case 18 -> profile.joke() + " There. A better contribution than yours so far.";
+            case 19 -> "Watch your mouth near the " + profile.workplace() + ".";
+            case 20 -> "Make it quick. " + profile.pride() + " deserves more time than you do.";
+            case 21 -> "If your question is foolish, I reserve the right to treat it honestly.";
+            case 22 -> "Every " + profile.role() + " knows a bad tool by the weight of it.";
+            case 23 -> "A joke from you is still technically a warning.";
+            case 24 -> "That was rude enough to be boring.";
+            case 25 -> "I have work to do and very little interest in your opinions about it.";
+            case 26 -> "Do not ask me about " + profile.warning() + " like you are not part of the risk.";
+            case 27 -> "People like you make " + profile.craft() + " feel like a locked door.";
+            case 28 -> profile.joke() + " Better than silence? Barely.";
+            default -> "If you want warmth, earn it somewhere before coming to the " + profile.workplace() + ".";
         };
     }
 
@@ -1405,7 +1582,27 @@ public final class VillagerDialogueService {
             case 6 -> "You ask like a thief measuring a door.";
             case 7 -> "The village needs " + profile.pride() + ", not whatever you bring.";
             case 8 -> profile.joke() + " There. More warmth than you deserve.";
-            default -> "Insult a " + profile.role() + " again and listen for the bell.";
+            case 9 -> "Insult a " + profile.role() + " again and listen for the bell.";
+            case 10 -> "Do not linger near the " + profile.workplace() + ".";
+            case 11 -> "I will not tell you anything that helps you turn " + profile.warning() + " against us.";
+            case 12 -> "A " + profile.role() + " learns what danger looks like. I am looking at it.";
+            case 13 -> "No joke about " + profile.gift() + " will make this friendly.";
+            case 14 -> "Your words arrive armed.";
+            case 15 -> "Leave the " + profile.workplace() + " alone.";
+            case 16 -> "You do not get lessons in " + profile.craft() + ". Not from me.";
+            case 17 -> profile.concern() + " is a problem. You are a decision.";
+            case 18 -> profile.joke() + " That is the last kindness in this conversation.";
+            case 19 -> "Say less before the village answers louder.";
+            case 20 -> "You are close enough.";
+            case 21 -> "My answer about " + profile.pride() + " is simple: you do not touch it.";
+            case 22 -> "A " + profile.role() + " protects tools, work, and neighbors. Guess where you fit.";
+            case 23 -> "If that was meant to be funny, it only proved the point.";
+            case 24 -> "Threats are still threats when you dress them as insults.";
+            case 25 -> "The " + profile.workplace() + " does not welcome you.";
+            case 26 -> "Ask someone else. Preferably from outside this village.";
+            case 27 -> "You make " + profile.craft() + " feel like preparation for trouble.";
+            case 28 -> profile.joke() + " Remember it from a distance.";
+            default -> "One more word against this " + profile.role() + " and the bell will not be metaphorical.";
         };
     }
 
@@ -1420,7 +1617,27 @@ public final class VillagerDialogueService {
             case 6 -> profile.warning() + " already keeps me awake. Don't add to it.";
             case 7 -> "I focus on " + profile.pride() + " so my hands stop shaking.";
             case 8 -> profile.joke() + " Was that alright?";
-            default -> "Please. Not the " + profile.workplace() + ". Not today.";
+            case 9 -> "Please. Not the " + profile.workplace() + ". Not today.";
+            case 10 -> "I can talk from here. Please stay there.";
+            case 11 -> "I will answer about " + profile.warning() + " if it means this ends calmly.";
+            case 12 -> "A " + profile.role() + " needs steady hands. You make that difficult.";
+            case 13 -> "A joke about " + profile.gift() + "? I can try to understand it.";
+            case 14 -> "Please do not make that sound like a threat.";
+            case 15 -> "Hello. I am listening. I am also watching the door.";
+            case 16 -> "I can tell you about " + profile.craft() + ", but not if you are angry.";
+            case 17 -> profile.concern() + " is easier when the danger has a name. This is harder.";
+            case 18 -> profile.joke() + " I hope that was the answer you wanted.";
+            case 19 -> "Please leave my work out of this.";
+            case 20 -> "The " + profile.workplace() + " feels too quiet when you are near.";
+            case 21 -> "If I answer, will you go?";
+            case 22 -> "A frightened " + profile.role() + " makes mistakes. I cannot afford that.";
+            case 23 -> "I do not know whether to laugh. I am sorry.";
+            case 24 -> "Please do not speak to me like that.";
+            case 25 -> "I am trying to keep " + profile.pride() + " from falling apart.";
+            case 26 -> "I know about " + profile.warning() + ". I also know when not to say too much.";
+            case 27 -> "Every sound near the " + profile.workplace() + " makes me look up now.";
+            case 28 -> profile.joke() + " That is all I have.";
+            default -> "Please go before my hands forget how to do " + profile.craft() + ".";
         };
     }
 
