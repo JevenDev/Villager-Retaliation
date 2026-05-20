@@ -477,6 +477,7 @@ public final class VillagerRetaliationHandler {
         Optional<LivingEntity> memoryTarget = VillagerRetaliationVillagerCombatUtil.getMemoryIfRegistered(villager, MemoryModuleType.NEAREST_HOSTILE)
                 .filter(LivingEntity::isAlive)
                 .filter(target -> target != villager)
+                .filter(target -> VillagerRetaliationVillagerCombatUtil.isNaturalHostileTarget(villager, target))
                 .filter(target -> !shouldAvoidVisibleCreeper(villager, target));
         if (memoryTarget.isPresent()) {
             anger(villager, memoryTarget.get());

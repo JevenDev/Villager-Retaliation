@@ -9,6 +9,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.NeutralMob;
 import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.monster.Creeper;
@@ -116,7 +117,7 @@ public final class VillagerRetaliationVillagerCombatUtil {
     }
 
     public static boolean shouldIgnoreAttacker(LivingEntity attacker) {
-        if (attacker instanceof AbstractVillager || attacker instanceof IronGolem) {
+        if (attacker instanceof AbstractVillager || attacker instanceof IronGolem || attacker instanceof NeutralMob) {
             return true;
         }
 
@@ -163,10 +164,11 @@ public final class VillagerRetaliationVillagerCombatUtil {
         return ToucanBrainMemories.hasValueIfRegistered(villager.getBrain(), memoryType);
     }
 
-    private static boolean isNaturalHostileTarget(AbstractVillager villager, LivingEntity target) {
+    public static boolean isNaturalHostileTarget(AbstractVillager villager, LivingEntity target) {
         return target != villager
                 && target.isAlive()
                 && target instanceof Enemy
+                && !(target instanceof NeutralMob)
                 && !(target instanceof Creeper)
                 && !target.isAlliedTo(villager)
                 && !VillagerRetaliationVillagerCombatUtil.shouldIgnoreAttacker(target);

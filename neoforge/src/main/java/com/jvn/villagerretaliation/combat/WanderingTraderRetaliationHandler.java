@@ -253,7 +253,8 @@ public final class WanderingTraderRetaliationHandler {
 
         Optional<LivingEntity> memoryTarget = VillagerRetaliationVillagerCombatUtil.getMemoryIfRegistered(trader, MemoryModuleType.NEAREST_HOSTILE)
                 .filter(LivingEntity::isAlive)
-                .filter(target -> target != trader);
+                .filter(target -> target != trader)
+                .filter(target -> VillagerRetaliationVillagerCombatUtil.isNaturalHostileTarget(trader, target));
         if (memoryTarget.isPresent()) {
             anger(trader, memoryTarget.get());
             return;
