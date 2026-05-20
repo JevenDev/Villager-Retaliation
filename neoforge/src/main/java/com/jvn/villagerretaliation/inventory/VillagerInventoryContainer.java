@@ -32,6 +32,7 @@ final class VillagerInventoryContainer implements Container {
         this.villager = villager;
         this.extraInventory = NonNullList.withSize(Math.max(0, INVENTORY_SLOT_COUNT - vanillaInventorySlots()), ItemStack.EMPTY);
         loadExtraInventory();
+        VillagerRetaliationVillagerWeapons.clearTrackedPickup(villager);
     }
 
     @Override
@@ -193,8 +194,9 @@ final class VillagerInventoryContainer implements Container {
     }
 
     private void setEquipment(EquipmentSlot slot, ItemStack stack) {
-        this.villager.setItemSlot(slot, stack);
-        if (!stack.isEmpty()) {
+        ItemStack equipmentStack = stack.isEmpty() ? ItemStack.EMPTY : stack.copy();
+        this.villager.setItemSlot(slot, equipmentStack);
+        if (!equipmentStack.isEmpty()) {
             this.villager.setGuaranteedDrop(slot);
         }
         setChanged();
