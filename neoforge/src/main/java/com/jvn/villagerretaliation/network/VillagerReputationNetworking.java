@@ -158,16 +158,16 @@ public final class VillagerReputationNetworking {
             return;
         }
 
-        String nameKey = VillagerPresetNameRegistry.resolveNameTranslationKey(villager);
-        if (nameKey.isBlank()) {
+        String presetName = VillagerPresetNameRegistry.resolvePresetName(villager);
+        if (presetName.isBlank()) {
             return;
         }
 
         PacketDistributor.sendToPlayer(player, new VillagerNameSyncPayload(
                 villager.getId(),
                 villager.getUUID(),
-                nameKey,
-                VillagerPresetNameRegistry.resolveDisplayName(villager).getString()
+                "",
+                presetName
         ));
     }
 

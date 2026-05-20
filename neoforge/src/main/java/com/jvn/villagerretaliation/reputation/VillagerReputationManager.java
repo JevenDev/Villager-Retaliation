@@ -231,7 +231,7 @@ public final class VillagerReputationManager {
     private static String resolveTierChangeMessage(AbstractVillager villager, VillagerReputationLevel previousLevel, VillagerReputationLevel newLevel) {
         String message = newLevel.transitionMessageFrom(previousLevel);
         String name = VillagerPresetNameRegistry.resolveDisplayName(villager).getString();
-        if (!name.isBlank() && (villager.hasCustomName() || !VillagerPresetNameRegistry.resolveNameTranslationKey(villager).isBlank())) {
+        if (!name.isBlank() && (villager.hasCustomName() || !VillagerPresetNameRegistry.resolvePresetName(villager).isBlank())) {
             String possessiveName = toPossessive(name);
             return message
                     .replace("A villager's", possessiveName)

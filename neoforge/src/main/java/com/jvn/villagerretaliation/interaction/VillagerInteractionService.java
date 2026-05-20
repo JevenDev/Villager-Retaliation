@@ -117,7 +117,7 @@ public final class VillagerInteractionService {
         String greetingText = VillagerDialogueService.selectOpeningGreeting(dialogueContext);
         PacketDistributor.sendToPlayer(player, new OpenVillagerInteractionPayload(
                 villager.getId(),
-                VillagerPresetNameRegistry.resolveNameTranslationKey(villager),
+                "",
                 VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
                 villager.isBaby() ? "Child" : VillagerInteractionTextUtil.professionName(villager.getVillagerData().getProfession(), "Unemployed"),
                 villager.isBaby(),
