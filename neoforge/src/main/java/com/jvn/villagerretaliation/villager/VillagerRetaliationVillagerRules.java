@@ -19,10 +19,19 @@ public final class VillagerRetaliationVillagerRules {
         if (shouldKeepFleeingBehavior(villager)) {
             return false;
         }
+        if (!canStandGroundAgainstHostileMobs(villager)) {
+            return false;
+        }
 
         return !VillagerRetaliationVillagerCombatUtil.hasVisibleCreeperThreat(
                 villager,
                 VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get()
         );
+    }
+
+    public static boolean canStandGroundAgainstHostileMobs(Villager villager) {
+        return VillagerRetaliationVillagerWeapons.hasUsableWeapon(villager)
+                || VillagerRetaliationVillagerWeapons.hasTrackedPickup(villager)
+                || VillagerRetaliationVillagerWeapons.findNearestWeapon(villager).isPresent();
     }
 }

@@ -315,6 +315,13 @@ public final class VillagerRetaliationHandler {
         LivingEntity target = retaliationTarget.target();
         long gameTime = retaliationTarget.gameTime();
         double distanceSqr = villager.distanceToSqr(target);
+        if (isNaturalHostileTarget(villager, target)
+                && !VillagerRetaliationVillagerRules.canStandGroundAgainstHostileMobs(villager)) {
+            clearAnger(villager, true, false);
+            enterFleeState(villager, target, gameTime);
+            handlePassivePotionState(villager);
+            return;
+        }
         if (shouldAvoidVisibleCreeper(villager, target)) {
             clearAnger(villager, true, false);
             enterCreeperAvoidanceState(villager, target, gameTime);
@@ -501,6 +508,10 @@ public final class VillagerRetaliationHandler {
                 .ifPresent(target -> anger(villager, target));
     }
 
+    private static boolean isNaturalHostileTarget(Villager villager, LivingEntity target) {
+        return VillagerRetaliationVillagerCombatUtil.isNaturalHostileTarget(villager, target);
+    }
+
     private static boolean shouldAvoidVisibleCreeper(Villager villager, LivingEntity target) {
         return target instanceof Creeper && villager.hasLineOfSight(target);
     }
@@ -518,7 +529,11 @@ public final class VillagerRetaliationHandler {
     }
 
     private static void enterCreeperAvoidanceState(Villager villager, LivingEntity creeper, long gameTime) {
-        VillagerRetaliationVillagerBrainUtil.enterFleeState(villager, creeper, gameTime);
+        enterFleeState(villager, creeper, gameTime);
+    }
+
+    private static void enterFleeState(Villager villager, LivingEntity hostile, long gameTime) {
+        VillagerRetaliationVillagerBrainUtil.enterFleeState(villager, hostile, gameTime);
         villager.setAggressive(false);
         villager.setChasing(false);
         villager.setTarget(null);
