@@ -80,6 +80,9 @@ public final class VillagerReputationEvents {
         if (!(event.getEntity() instanceof AbstractVillager villager)) {
             return;
         }
+        if (villager.isDeadOrDying() || villager.getHealth() <= 0.0F) {
+            return;
+        }
 
         boolean attributedHazardDamage = ToucanHazardAttribution.isPlayerAttributedVanillaHazardDamage(damaged, event.getSource());
         if (player instanceof ServerPlayer serverPlayer) {
