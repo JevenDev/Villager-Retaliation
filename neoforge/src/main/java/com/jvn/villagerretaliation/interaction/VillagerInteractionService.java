@@ -14,6 +14,7 @@ import com.jvn.villagerretaliation.network.VillagerDialogueResponsePayload;
 import com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
+import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
 import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
@@ -60,6 +61,12 @@ public final class VillagerInteractionService {
     public static InteractionResult handleVillagerRightClick(Villager villager, ServerPlayer player) {
         if (villager.isSleeping()) {
             return handleSleepingVillagerInteraction(villager, player);
+        }
+
+        if (shouldRefuseDespisedConversation(villager, player)) {
+            VillagerAmbientIndicatorService.onTradeRefused(villager);
+            sendVillagerNotice(player, villager, "I'm done talking. Stay away.");
+            return InteractionResult.FAIL;
         }
 
         if (!villager.isBaby()
@@ -116,6 +123,12 @@ public final class VillagerInteractionService {
             sendVillagerNotice(player, villager, "The conversation has ended.");
             return;
         }
+        if (shouldRefuseDespisedConversation(villager, player)) {
+            VillagerConversationService.endForPlayer(player, true);
+            VillagerAmbientIndicatorService.onTradeRefused(villager);
+            sendVillagerNotice(player, villager, "I'm done talking. Stay away.");
+            return;
+        }
         focusVillagerOnPlayer(villager, player);
 
         ServerLevel level = player.serverLevel();
@@ -134,6 +147,9 @@ public final class VillagerInteractionService {
         VillagerInteractionTracker.rememberDialogue(level, villager, player, requestType, result.lineId());
         sendDialogueReputation(player, villager, level);
         broadcastVillagerChat(level, villager, responseText);
+        if (shouldRefuseDespisedConversation(villager, player)) {
+            VillagerConversationService.endForPlayer(player, true);
+        }
     }
 
     public static void handleTradeRequest(ServerPlayer player, int entityId) {
@@ -144,6 +160,12 @@ public final class VillagerInteractionService {
         }
         if (!VillagerConversationService.validate(player, villager)) {
             sendVillagerNotice(player, villager, "The conversation has ended.");
+            return;
+        }
+        if (shouldRefuseDespisedConversation(villager, player)) {
+            VillagerConversationService.endForPlayer(player, true);
+            VillagerAmbientIndicatorService.onTradeRefused(villager);
+            sendVillagerNotice(player, villager, "I refuse to trade with you.");
             return;
         }
         focusVillagerOnPlayer(villager, player);
@@ -159,6 +181,12 @@ public final class VillagerInteractionService {
         }
         if (!VillagerConversationService.validate(player, villager)) {
             sendVillagerNotice(player, villager, "The conversation has ended.");
+            return;
+        }
+        if (shouldRefuseDespisedConversation(villager, player)) {
+            VillagerConversationService.endForPlayer(player, true);
+            VillagerAmbientIndicatorService.onTradeRefused(villager);
+            sendVillagerNotice(player, villager, "Keep your distance.");
             return;
         }
         if (villager.isBaby()) {
@@ -374,6 +402,10 @@ public final class VillagerInteractionService {
 
     private static boolean isCombatBusy(Villager villager) {
         return villager.getTarget() != null || villager.getLastHurtByMob() != null;
+    }
+
+    private static boolean shouldRefuseDespisedConversation(Villager villager, ServerPlayer player) {
+        return VillagerAggressionPolicy.shouldAttackOnSight(villager, player);
     }
 
     private static void sendNotice(ServerPlayer player, int entityId, String text) {
