@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.interaction;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
+import com.jvn.villagerretaliation.dialogue.DialogueDisposition;
 import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
 import com.jvn.villagerretaliation.dialogue.DialogueReputationEffect;
 import com.jvn.villagerretaliation.dialogue.DialogueReputationService;
@@ -12,8 +13,10 @@ import com.jvn.villagerretaliation.network.OpenVillagerInteractionPayload;
 import com.jvn.villagerretaliation.network.VillagerConversationEndedPayload;
 import com.jvn.villagerretaliation.network.VillagerDialogueResponsePayload;
 import com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload;
+import com.jvn.villagerretaliation.network.VillagerRecruitRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
+import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
 import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
@@ -62,6 +65,20 @@ public final class VillagerInteractionService {
             return handleSleepingVillagerInteraction(villager, player);
         }
 
+        if (VillagerRecruitmentService.isFollowing(villager, player)) {
+            VillagerRecruitmentService.stopFollowing(villager);
+            VillagerRecruitmentService.sendNoLongerFollowingNotice(player, villager);
+            focusVillagerOnPlayer(villager, player);
+            sendVillagerNotice(player, villager, "I'll stay here.");
+            return InteractionResult.SUCCESS;
+        }
+
+        if (shouldRefuseDespisedConversation(villager, player)) {
+            VillagerAmbientIndicatorService.onTradeRefused(villager);
+            sendVillagerNotice(player, villager, "I'm done talking. Stay away.");
+            return InteractionResult.FAIL;
+        }
+
         if (!villager.isBaby()
                 && player.isShiftKeyDown()
                 && VillagerRetaliationConfig.SHIFT_RIGHT_CLICK_BYPASSES_INTERACTION_SCREEN.get()) {
@@ -86,14 +103,17 @@ public final class VillagerInteractionService {
     public static void openInteractionScreen(ServerPlayer player, Villager villager) {
         ServerLevel level = player.serverLevel();
         ReputationSnapshot reputation = reputationSnapshot(level, villager, player);
-        String greetingText = VillagerDialogueService.selectOpeningGreeting(createDialogueContext(
+        VillagerInteractionTracker.InteractionState interactionState = VillagerInteractionTracker.getState(level, villager, player);
+        DialogueContext dialogueContext = createDialogueContext(
                 level,
                 player,
                 villager,
-                VillagerInteractionTracker.getState(level, villager, player),
+                interactionState,
                 reputation.value(),
                 reputation.level()
-        ));
+        );
+        DialogueDisposition mood = VillagerDialogueService.moodFor(dialogueContext);
+        String greetingText = VillagerDialogueService.selectOpeningGreeting(dialogueContext);
         PacketDistributor.sendToPlayer(player, new OpenVillagerInteractionPayload(
                 villager.getId(),
                 VillagerPresetNameRegistry.resolveNameTranslationKey(villager),
@@ -101,7 +121,9 @@ public final class VillagerInteractionService {
                 villager.isBaby() ? "Child" : VillagerInteractionTextUtil.professionName(villager.getVillagerData().getProfession(), "Unemployed"),
                 villager.isBaby(),
                 reputation.value(),
-                reputation.level()
+                reputation.level(),
+                mood,
+                VillagerRecruitmentService.isFollowing(villager, player)
         ));
         broadcastVillagerChat(level, villager, greetingText);
     }
@@ -114,6 +136,12 @@ public final class VillagerInteractionService {
         }
         if (!VillagerConversationService.validate(player, villager)) {
             sendVillagerNotice(player, villager, "The conversation has ended.");
+            return;
+        }
+        if (shouldRefuseDespisedConversation(villager, player)) {
+            VillagerConversationService.endForPlayer(player, true);
+            VillagerAmbientIndicatorService.onTradeRefused(villager);
+            sendVillagerNotice(player, villager, "I'm done talking. Stay away.");
             return;
         }
         focusVillagerOnPlayer(villager, player);
@@ -132,8 +160,11 @@ public final class VillagerInteractionService {
         VillagerAmbientIndicatorService.onDialogueResponse(villager, requestType, reputationEffect);
         String responseText = reputationEffect.responseOverride() == null ? result.text() : reputationEffect.responseOverride();
         VillagerInteractionTracker.rememberDialogue(level, villager, player, requestType, result.lineId());
-        sendDialogueReputation(player, villager, level);
+        sendDialogueReputation(player, villager, level, requestType, reputationEffect);
         broadcastVillagerChat(level, villager, responseText);
+        if (shouldRefuseDespisedConversation(villager, player)) {
+            VillagerConversationService.endForPlayer(player, true);
+        }
     }
 
     public static void handleTradeRequest(ServerPlayer player, int entityId) {
@@ -144,6 +175,12 @@ public final class VillagerInteractionService {
         }
         if (!VillagerConversationService.validate(player, villager)) {
             sendVillagerNotice(player, villager, "The conversation has ended.");
+            return;
+        }
+        if (shouldRefuseDespisedConversation(villager, player)) {
+            VillagerConversationService.endForPlayer(player, true);
+            VillagerAmbientIndicatorService.onTradeRefused(villager);
+            sendVillagerNotice(player, villager, "I refuse to trade with you.");
             return;
         }
         focusVillagerOnPlayer(villager, player);
@@ -159,6 +196,12 @@ public final class VillagerInteractionService {
         }
         if (!VillagerConversationService.validate(player, villager)) {
             sendVillagerNotice(player, villager, "The conversation has ended.");
+            return;
+        }
+        if (shouldRefuseDespisedConversation(villager, player)) {
+            VillagerConversationService.endForPlayer(player, true);
+            VillagerAmbientIndicatorService.onTradeRefused(villager);
+            sendVillagerNotice(player, villager, "Keep your distance.");
             return;
         }
         if (villager.isBaby()) {
@@ -202,6 +245,37 @@ public final class VillagerInteractionService {
         String responseText = VillagerGiftPreferences.responseFor(profession, giftedStack, giftPreference);
         sendDialogueReputation(player, villager, level);
         broadcastVillagerChat(level, villager, responseText);
+    }
+
+    public static void handleRecruitRequest(ServerPlayer player, int entityId, VillagerRecruitRequestPayload.Action action) {
+        Villager villager = resolveVillager(player, entityId);
+        if (villager == null) {
+            sendNotice(player, entityId, "I cannot help right now.");
+            return;
+        }
+        if (!VillagerConversationService.validate(player, villager)) {
+            sendVillagerNotice(player, villager, "The conversation has ended.");
+            return;
+        }
+        if (!(player.level() instanceof ServerLevel level)) {
+            return;
+        }
+        if (!VillagerRecruitmentService.canRecruit(level, villager, player)) {
+            sendVillagerNotice(player, villager, "I don't know you well enough for that.");
+            return;
+        }
+
+        focusVillagerOnPlayer(villager, player);
+        if (action == VillagerRecruitRequestPayload.Action.HIRE) {
+            sendVillagerNotice(player, villager, "I cannot be hired yet.");
+            return;
+        }
+
+        boolean nowFollowing = VillagerRecruitmentService.toggleFollow(level, villager, player);
+        String responseText = nowFollowing ? "All right. I'll follow you." : "I'll stay here.";
+        sendVillagerNotice(player, villager, responseText);
+        PacketDistributor.sendToPlayer(player, new VillagerConversationEndedPayload(villager.getId(), responseText));
+        VillagerConversationService.endForPlayer(player, false);
     }
 
     private static void reduceDialogueAnnoyanceFromGift(ServerLevel level, Villager villager, ServerPlayer player, int reputationValue) {
@@ -282,6 +356,10 @@ public final class VillagerInteractionService {
                 interactionState.firstConversation(),
                 weatherState(level, villager),
                 timeOfDay(level),
+                interactionState.lastPositiveDialogueReputationGameTime(),
+                interactionState.lastNegativeDialogueReputationGameTime(),
+                interactionState.lastJokeReputationGameTime(),
+                interactionState.badFirstImpression(),
                 interactionState.lastBrokenBedGameTime(),
                 interactionState.lastDirectHitGameTime(),
                 interactionState.lastDirectHitWeapon(),
@@ -296,11 +374,32 @@ public final class VillagerInteractionService {
     }
 
     private static void sendDialogueReputation(ServerPlayer player, Villager villager, ServerLevel level) {
+        sendDialogueReputation(player, villager, level, null, null);
+    }
+
+    private static void sendDialogueReputation(
+            ServerPlayer player,
+            Villager villager,
+            ServerLevel level,
+            DialogueRequestType requestType,
+            DialogueReputationEffect reputationEffect) {
         ReputationSnapshot reputation = reputationSnapshot(level, villager, player);
+        DialogueContext context = createDialogueContext(
+                level,
+                player,
+                villager,
+                VillagerInteractionTracker.getState(level, villager, player),
+                reputation.value(),
+                reputation.level()
+        );
+        DialogueDisposition mood = requestType == null || reputationEffect == null
+                ? VillagerDialogueService.moodFor(context)
+                : VillagerDialogueService.moodFor(context, requestType, reputationEffect);
         PacketDistributor.sendToPlayer(player, new VillagerDialogueResponsePayload(
                 villager.getId(),
                 reputation.value(),
-                reputation.level()
+                reputation.level(),
+                mood
         ));
     }
 
@@ -374,6 +473,10 @@ public final class VillagerInteractionService {
 
     private static boolean isCombatBusy(Villager villager) {
         return villager.getTarget() != null || villager.getLastHurtByMob() != null;
+    }
+
+    private static boolean shouldRefuseDespisedConversation(Villager villager, ServerPlayer player) {
+        return VillagerAggressionPolicy.shouldAttackOnSight(villager, player);
     }
 
     private static void sendNotice(ServerPlayer player, int entityId, String text) {

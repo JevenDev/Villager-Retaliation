@@ -22,6 +22,10 @@ public record DialogueContext(
         boolean firstConversation,
         WeatherState weather,
         TimeOfDay timeOfDay,
+        long lastPositiveDialogueReputationGameTime,
+        long lastNegativeDialogueReputationGameTime,
+        long lastJokeReputationGameTime,
+        boolean badFirstImpression,
         long lastBrokenBedGameTime,
         long lastDirectHitGameTime,
         String lastDirectHitWeapon,
@@ -30,6 +34,7 @@ public record DialogueContext(
 ) {
     private static final long DIRECT_HIT_MEMORY_TICKS = 20L * 60L * 20L;
     private static final long BROKEN_BED_MEMORY_TICKS = 20L * 60L * 20L;
+    private static final long DIALOGUE_MOOD_MEMORY_TICKS = 20L * 60L * 5L;
 
     public boolean hasRecentEvent(VillageEventMemory.EventTag... tags) {
         return VillageEventMemory.hasAny(this.recentEvents, tags);
@@ -71,6 +76,16 @@ public record DialogueContext(
     public boolean hasRecentBrokenBedMemory() {
         return this.lastBrokenBedGameTime != Long.MIN_VALUE
                 && this.level.getGameTime() - this.lastBrokenBedGameTime <= BROKEN_BED_MEMORY_TICKS;
+    }
+
+    public boolean hasRecentPositiveDialogueMoodMemory() {
+        return this.lastPositiveDialogueReputationGameTime != Long.MIN_VALUE
+                && this.level.getGameTime() - this.lastPositiveDialogueReputationGameTime <= DIALOGUE_MOOD_MEMORY_TICKS;
+    }
+
+    public boolean hasRecentNegativeDialogueMoodMemory() {
+        return this.lastNegativeDialogueReputationGameTime != Long.MIN_VALUE
+                && this.level.getGameTime() - this.lastNegativeDialogueReputationGameTime <= DIALOGUE_MOOD_MEMORY_TICKS;
     }
 
     public String rememberedAttackWeapon() {
