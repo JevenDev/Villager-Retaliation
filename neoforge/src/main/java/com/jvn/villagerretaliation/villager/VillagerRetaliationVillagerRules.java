@@ -12,7 +12,8 @@ public final class VillagerRetaliationVillagerRules {
     public static boolean shouldKeepFleeingBehavior(Villager villager) {
         return villager.isBaby()
                 || villager.getVillagerData().getProfession() == VillagerProfession.NITWIT
-                && !VillagerRetaliationVillagerWeapons.hasUsableWeapon(villager);
+                && !VillagerRetaliationVillagerWeapons.hasUsableWeapon(villager)
+                && !VillagerRetaliationVillagerWeapons.findNearestWeapon(villager).isPresent();
     }
 
     public static boolean shouldSuppressFleeingBehavior(Villager villager) {

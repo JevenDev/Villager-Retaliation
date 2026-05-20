@@ -1,7 +1,6 @@
 package com.jvn.villagerretaliation.client.renderer;
 
 import com.jvn.villagerretaliation.client.model.BaseVillagerModel;
-import com.jvn.villagerretaliation.client.inventory.VillagerInventoryScreen;
 import com.jvn.villagerretaliation.client.model.VillagerRetaliationEntityModelLoader;
 import com.jvn.villagerretaliation.client.model.VillagerRetaliationVillagerModel;
 import com.jvn.villagerretaliation.client.model.VanillaVillagerModelAdapter;
@@ -58,7 +57,7 @@ public abstract class AbstractVillagerRetaliationVillagerRenderer<T extends Abst
 
     @Override
     public ResourceLocation getTextureLocation(T villager) {
-        return this.poseProvider.shouldUseCombatModel(villager) ? this.combatTexture : this.vanillaTexture;
+        return shouldUseHandItemModel(villager) ? this.combatTexture : this.vanillaTexture;
     }
 
     @Override
@@ -80,8 +79,8 @@ public abstract class AbstractVillagerRetaliationVillagerRenderer<T extends Abst
 
     private boolean shouldUseHandItemModel(T villager) {
         return this.poseProvider.shouldUseCombatModel(villager)
-                || VillagerInventoryScreen.isRenderingInventoryPreview(villager)
-                && (!villager.getMainHandItem().isEmpty() || !villager.getOffhandItem().isEmpty());
+                || !villager.getMainHandItem().isEmpty()
+                || !villager.getOffhandItem().isEmpty();
     }
 
     private void reloadCombatModel() {

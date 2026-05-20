@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.combat;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
+import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -14,7 +15,6 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.WanderingTrader;
@@ -211,7 +211,7 @@ final class VillagerClericPotionHelper {
         HEALING_REDRINK_COOLDOWN_UNTIL.remove(villager.getUUID());
         if (state != null && villager.isAlive()) {
             villager.stopUsingItem();
-            villager.setItemSlot(EquipmentSlot.MAINHAND, state.resumeMainHand().copy());
+            VillagerRetaliationVillagerEquipment.restoreVisualMainHand(villager, state.resumeMainHand());
         }
     }
 
@@ -242,7 +242,7 @@ final class VillagerClericPotionHelper {
             HEALING_REDRINK_COOLDOWN_UNTIL.put(villager.getUUID(), serverLevel.getGameTime() + HEALING_REDRINK_COOLDOWN_TICKS);
         }
         if (state != null) {
-            villager.setItemSlot(EquipmentSlot.MAINHAND, state.resumeMainHand().copy());
+            VillagerRetaliationVillagerEquipment.restoreVisualMainHand(villager, state.resumeMainHand());
         }
     }
 
@@ -254,7 +254,7 @@ final class VillagerClericPotionHelper {
 
         ItemStack resumeMainHand = villager.getMainHandItem().copy();
         villager.getNavigation().stop();
-        villager.setItemSlot(EquipmentSlot.MAINHAND, drinkStack);
+        VillagerRetaliationVillagerEquipment.setVisualMainHand(villager, drinkStack);
         villager.startUsingItem(InteractionHand.MAIN_HAND);
         int useDuration = Math.max(2, drinkStack.getUseDuration(villager));
         int manualDrinkDuration = useDuration - 1;
@@ -316,7 +316,7 @@ final class VillagerClericPotionHelper {
     private static void ensureDrinkVisualState(Villager villager, ClericSelfPotion potion) {
         ItemStack mainHand = villager.getMainHandItem();
         if (!VillagerRetaliationPotionUtil.isDrinkableCombatConsumable(mainHand)) {
-            villager.setItemSlot(EquipmentSlot.MAINHAND, createDrinkStack(potion));
+            VillagerRetaliationVillagerEquipment.setVisualMainHand(villager, createDrinkStack(potion));
         }
 
         if (!villager.isUsingItem() || !VillagerRetaliationPotionUtil.isDrinkableCombatConsumable(villager.getUseItem())) {
@@ -500,7 +500,10 @@ final class VillagerClericPotionHelper {
         level.addFreshEntity(thrownPotion);
         villager.swing(InteractionHand.MAIN_HAND, true);
         villager.playSound(SoundEvents.WITCH_THROW, 1.0F, 0.8F + villager.getRandom().nextFloat() * 0.4F);
-        villager.setItemSlot(EquipmentSlot.MAINHAND, PotionContents.createItemStack(Items.SPLASH_POTION, Potions.HARMING));
+        VillagerRetaliationVillagerEquipment.setVisualMainHand(
+                villager,
+                PotionContents.createItemStack(Items.SPLASH_POTION, Potions.HARMING)
+        );
     }
 
     private enum ClericSelfPotion {

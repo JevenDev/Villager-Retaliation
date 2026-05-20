@@ -34,7 +34,6 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
     private static final int OFFHAND_Y = 62;
     private static final int VILLAGER_INVENTORY_X = 8;
     private static final int VILLAGER_INVENTORY_Y = 84;
-    private static final int VILLAGER_HOTBAR_Y = 120;
     private static final int PLAYER_INVENTORY_X = 8;
     private static final int PLAYER_INVENTORY_Y = 156;
     private static final int PLAYER_HOTBAR_Y = 214;
@@ -127,20 +126,11 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
             for (int column = 0; column < 9; column++) {
                 addSlot(new Slot(
                         this.villagerInventory,
-                        VillagerInventoryContainer.ARMOR_SLOT_COUNT + 9 + row * 9 + column,
+                        VillagerInventoryContainer.ARMOR_SLOT_COUNT + row * 9 + column,
                         VILLAGER_INVENTORY_X + column * SLOT_SIZE,
                         VILLAGER_INVENTORY_Y + row * SLOT_SIZE
                 ));
             }
-        }
-
-        for (int column = 0; column < 9; column++) {
-            addSlot(new Slot(
-                    this.villagerInventory,
-                    VillagerInventoryContainer.ARMOR_SLOT_COUNT + column,
-                    VILLAGER_INVENTORY_X + column * SLOT_SIZE,
-                    VILLAGER_HOTBAR_Y
-            ));
         }
 
         addSlot(new Slot(this.villagerInventory, VillagerInventoryContainer.HELD_SLOT, HELD_X, HELD_Y));

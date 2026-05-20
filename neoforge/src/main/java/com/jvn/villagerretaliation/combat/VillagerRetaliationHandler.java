@@ -8,12 +8,14 @@ import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
+import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerRules;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
@@ -98,12 +100,17 @@ public final class VillagerRetaliationHandler {
     public static void onEntityJoinLevel(EntityJoinLevelEvent event) {
         if (!(event.getEntity() instanceof Villager villager)
                 || villager.level().isClientSide
-                || villager.isBaby()
-                || !VillagerCombatRoles.isArmorer(villager)
+                || villager.isBaby()) {
+            return;
+        }
+
+        ensureProfessionMainHand(villager);
+        if (!VillagerCombatRoles.isArmorer(villager)
                 || !VillagerRetaliationConfig.ARMORERS_FIGHT_BACK.get()
                 || !isHardMode(villager)) {
             return;
         }
+
         tryRollArmorerSpawnShield(villager);
     }
 
@@ -287,6 +294,10 @@ public final class VillagerRetaliationHandler {
         }
 
         ensureArmorerSpawnShieldRoll(villager);
+        if (!VillagerClericPotionHelper.isActivelyHandlingPotion(villager)) {
+            VillagerRetaliationVillagerEquipment.maintainPlayerManagedMainHand(villager);
+        }
+        ensureProfessionMainHand(villager);
 
         if (!VillagerRetaliationConfig.ENABLE_VILLAGER_RETALIATION.get()) {
             clearAnger(villager);
@@ -554,7 +565,7 @@ public final class VillagerRetaliationHandler {
         if (!villager.isAlive()
                 || !VillagerRetaliationVillagerRules.shouldSuppressFleeingBehavior(villager)
                 || !VillagerCombatRoles.canScavengeGroundWeapons(villager)
-                || VillagerRetaliationVillagerWeapons.hasTrackedPickup(villager)
+                || VillagerRetaliationVillagerEquipment.isPlayerManagedMainHand(villager)
                 || VillagerInventoryAccess.hasOpenInventory(villager)
                 || !VillagerRetaliationVillagerCombatUtil.isThreatened(villager)) {
             return false;
@@ -596,6 +607,7 @@ public final class VillagerRetaliationHandler {
         } else {
             RETALIATION.discardTemporaryWeapon(villager);
         }
+        VillagerRetaliationVillagerWeapons.maintainAcquiredWeaponAuthority(villager);
         RETALIATION.clearTransientState(villager);
         villager.setAggressive(false);
         villager.setChasing(false);
@@ -826,6 +838,25 @@ public final class VillagerRetaliationHandler {
         }
 
         RETALIATION.equipTemporaryWeapon(villager, weapon);
+    }
+
+    private static void ensureProfessionMainHand(Villager villager) {
+        if (VillagerInventoryAccess.hasOpenInventory(villager)
+                || VillagerRetaliationVillagerEquipment.isPlayerManagedMainHand(villager)
+                || RETALIATION.hasTemporaryWeapon(villager)
+                || VillagerClericPotionHelper.isActivelyHandlingPotion(villager)) {
+            return;
+        }
+
+        ItemStack roleWeapon = VillagerCombatRoles.persistentRoleWeapon(villager);
+        if (!roleWeapon.isEmpty()) {
+            roleWeapon = VillagerRetaliationCombatWeaponFactory.prepareEquippedCombatWeapon(villager, roleWeapon);
+        }
+
+        String roleKey = BuiltInRegistries.VILLAGER_PROFESSION
+                .getKey(villager.getVillagerData().getProfession())
+                .toString();
+        VillagerRetaliationVillagerEquipment.ensureRoleMainHand(villager, roleKey, roleWeapon);
     }
 
     private static boolean handleArmorerShieldCombatTactics(Villager villager, LivingEntity target, double distanceSqr, long gameTime, boolean meleeAttackReady) {
@@ -1063,7 +1094,7 @@ public final class VillagerRetaliationHandler {
 
         if (villager.getOffhandItem().isEmpty()
                 && villager.getRandom().nextDouble() < VillagerRetaliationConfig.ARMORER_SHIELD_CHANCE_HARD.get()) {
-            villager.setItemSlot(EquipmentSlot.OFFHAND, new ItemStack(Items.SHIELD));
+            VillagerRetaliationVillagerEquipment.setRoleEquipment(villager, EquipmentSlot.OFFHAND, new ItemStack(Items.SHIELD));
         }
     }
 

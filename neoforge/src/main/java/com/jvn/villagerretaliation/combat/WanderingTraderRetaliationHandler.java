@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
+import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import java.util.HashMap;
 import java.util.Map;
@@ -303,7 +304,7 @@ public final class WanderingTraderRetaliationHandler {
     private static boolean tryAcquireGroundWeapon(WanderingTrader trader, long gameTime) {
         if (!trader.isAlive()
                 || !WanderingTraderCombatRoles.canScavengeGroundWeapons(trader)
-                || VillagerRetaliationVillagerWeapons.hasTrackedPickup(trader)
+                || VillagerRetaliationVillagerEquipment.isPlayerManagedMainHand(trader)
                 || !VillagerRetaliationVillagerCombatUtil.isThreatened(trader)) {
             return false;
         }
@@ -330,6 +331,7 @@ public final class WanderingTraderRetaliationHandler {
         } else {
             RETALIATION.discardTemporaryWeapon(trader);
         }
+        VillagerRetaliationVillagerWeapons.maintainAcquiredWeaponAuthority(trader);
         RETALIATION.clearTransientState(trader);
         trader.setAggressive(false);
         trader.setTarget(null);
