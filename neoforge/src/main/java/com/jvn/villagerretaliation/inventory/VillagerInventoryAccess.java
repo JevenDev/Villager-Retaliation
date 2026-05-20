@@ -33,4 +33,8 @@ public final class VillagerInventoryAccess {
     public static void dropExtraInventory(Villager villager) {
         VillagerInventoryContainer.dropExtraInventory(villager);
     }
+
+    public static boolean hasOpenInventory(Villager villager) {
+        return VillagerInventoryContainer.hasOpenInventory(villager);
+    }
 }

@@ -1,6 +1,10 @@
 package com.jvn.villagerretaliation.inventory;
 
+import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.Container;
@@ -18,6 +22,7 @@ final class VillagerInventoryContainer implements Container {
     static final int SLOT_COUNT = OFFHAND_SLOT + 1;
 
     private static final String EXTRA_INVENTORY_TAG = "VillagerRetaliationExtraInventory";
+    private static final Map<UUID, Integer> OPEN_INVENTORIES = new HashMap<>();
     private static final EquipmentSlot[] ARMOR_SLOTS = {
             EquipmentSlot.HEAD,
             EquipmentSlot.CHEST,
@@ -26,13 +31,17 @@ final class VillagerInventoryContainer implements Container {
     };
 
     private final Villager villager;
-    private final NonNullList<ItemStack> extraInventory;
+    private final NonNullList<ItemStack> inventory;
+    private final NonNullList<ItemStack> equipment;
 
     VillagerInventoryContainer(Villager villager) {
         this.villager = villager;
-        this.extraInventory = NonNullList.withSize(Math.max(0, INVENTORY_SLOT_COUNT - vanillaInventorySlots()), ItemStack.EMPTY);
-        loadExtraInventory();
-        VillagerRetaliationVillagerWeapons.clearTrackedPickup(villager);
+        this.inventory = NonNullList.withSize(INVENTORY_SLOT_COUNT, ItemStack.EMPTY);
+        this.equipment = NonNullList.withSize(ARMOR_SLOT_COUNT + 2, ItemStack.EMPTY);
+        VillagerRetaliationHandler.releaseTemporaryWeaponForInventory(villager);
+        VillagerRetaliationVillagerWeapons.releaseTrackedPickupForInventory(villager);
+        loadEquipment();
+        loadInventory();
     }
 
     @Override
@@ -52,15 +61,11 @@ final class VillagerInventoryContainer implements Container {
 
     @Override
     public ItemStack getItem(int slot) {
-        if (isArmorSlot(slot)) {
-            return this.villager.getItemBySlot(ARMOR_SLOTS[slot]);
+        int equipmentIndex = equipmentIndexForSlot(slot);
+        if (equipmentIndex >= 0) {
+            return this.equipment.get(equipmentIndex);
         }
-        if (slot == HELD_SLOT) {
-            return this.villager.getMainHandItem();
-        }
-        if (slot == OFFHAND_SLOT) {
-            return this.villager.getOffhandItem();
-        }
+
         int inventorySlot = slot - ARMOR_SLOT_COUNT;
         if (isInventorySlot(inventorySlot)) {
             return getInventoryItem(inventorySlot);
@@ -102,29 +107,23 @@ final class VillagerInventoryContainer implements Container {
 
     @Override
     public void setItem(int slot, ItemStack stack) {
-        if (isArmorSlot(slot)) {
-            setEquipment(ARMOR_SLOTS[slot], stack);
-            return;
-        }
-        if (slot == HELD_SLOT) {
-            VillagerRetaliationVillagerWeapons.clearTrackedPickup(this.villager);
-            setEquipment(EquipmentSlot.MAINHAND, stack);
-            return;
-        }
-        if (slot == OFFHAND_SLOT) {
-            setEquipment(EquipmentSlot.OFFHAND, stack);
+        int equipmentIndex = equipmentIndexForSlot(slot);
+        if (equipmentIndex >= 0) {
+            setEquipment(equipmentIndex, stack);
             return;
         }
 
         int inventorySlot = slot - ARMOR_SLOT_COUNT;
         if (isInventorySlot(inventorySlot)) {
             setInventoryItem(inventorySlot, stack);
+            setChanged();
         }
     }
 
     @Override
     public void setChanged() {
-        this.villager.getInventory().setChanged();
+        saveEquipment();
+        saveInventory();
         saveExtraInventory();
     }
 
@@ -134,6 +133,17 @@ final class VillagerInventoryContainer implements Container {
                 && player.isAlive()
                 && !player.isSpectator()
                 && player.distanceToSqr(this.villager) <= 64.0D;
+    }
+
+    @Override
+    public void startOpen(Player player) {
+        OPEN_INVENTORIES.merge(this.villager.getUUID(), 1, Integer::sum);
+    }
+
+    @Override
+    public void stopOpen(Player player) {
+        setChanged();
+        OPEN_INVENTORIES.computeIfPresent(this.villager.getUUID(), (uuid, openCount) -> openCount <= 1 ? null : openCount - 1);
     }
 
     @Override
@@ -160,6 +170,10 @@ final class VillagerInventoryContainer implements Container {
         return ARMOR_SLOTS[slot];
     }
 
+    static boolean hasOpenInventory(Villager villager) {
+        return OPEN_INVENTORIES.getOrDefault(villager.getUUID(), 0) > 0;
+    }
+
     static void dropExtraInventory(Villager villager) {
         NonNullList<ItemStack> extraInventory = loadExtraInventory(villager, Math.max(0, INVENTORY_SLOT_COUNT - vanillaInventorySlots(villager)));
         for (ItemStack stack : extraInventory) {
@@ -171,33 +185,17 @@ final class VillagerInventoryContainer implements Container {
     }
 
     private ItemStack getInventoryItem(int inventorySlot) {
-        int vanillaSlots = vanillaInventorySlots();
-        if (inventorySlot < vanillaSlots) {
-            return this.villager.getInventory().getItem(inventorySlot);
-        }
-
-        int extraSlot = inventorySlot - vanillaSlots;
-        return extraSlot >= 0 && extraSlot < this.extraInventory.size() ? this.extraInventory.get(extraSlot) : ItemStack.EMPTY;
+        return this.inventory.get(inventorySlot);
     }
 
     private void setInventoryItem(int inventorySlot, ItemStack stack) {
-        int vanillaSlots = vanillaInventorySlots();
-        if (inventorySlot < vanillaSlots) {
-            this.villager.getInventory().setItem(inventorySlot, stack);
-            return;
-        }
-
-        int extraSlot = inventorySlot - vanillaSlots;
-        if (extraSlot >= 0 && extraSlot < this.extraInventory.size()) {
-            this.extraInventory.set(extraSlot, stack);
-        }
+        this.inventory.set(inventorySlot, stack);
     }
 
-    private void setEquipment(EquipmentSlot slot, ItemStack stack) {
-        ItemStack equipmentStack = stack.isEmpty() ? ItemStack.EMPTY : stack.copy();
-        this.villager.setItemSlot(slot, equipmentStack);
-        if (!equipmentStack.isEmpty()) {
-            this.villager.setGuaranteedDrop(slot);
+    private void setEquipment(int equipmentIndex, ItemStack stack) {
+        this.equipment.set(equipmentIndex, stack.isEmpty() ? ItemStack.EMPTY : stack.copy());
+        if (equipmentSlotForIndex(equipmentIndex) == EquipmentSlot.MAINHAND) {
+            VillagerRetaliationVillagerWeapons.clearTrackedPickup(this.villager);
         }
         setChanged();
     }
@@ -210,10 +208,23 @@ final class VillagerInventoryContainer implements Container {
         return Math.min(INVENTORY_SLOT_COUNT, villager.getInventory().getContainerSize());
     }
 
-    private void loadExtraInventory() {
-        NonNullList<ItemStack> loaded = loadExtraInventory(this.villager, this.extraInventory.size());
-        for (int slot = 0; slot < Math.min(this.extraInventory.size(), loaded.size()); slot++) {
-            this.extraInventory.set(slot, loaded.get(slot));
+    private void loadEquipment() {
+        for (int slot = 0; slot < ARMOR_SLOT_COUNT; slot++) {
+            this.equipment.set(slot, this.villager.getItemBySlot(ARMOR_SLOTS[slot]).copy());
+        }
+        this.equipment.set(ARMOR_SLOT_COUNT, this.villager.getMainHandItem().copy());
+        this.equipment.set(ARMOR_SLOT_COUNT + 1, this.villager.getOffhandItem().copy());
+    }
+
+    private void loadInventory() {
+        int vanillaSlots = vanillaInventorySlots();
+        for (int slot = 0; slot < vanillaSlots; slot++) {
+            this.inventory.set(slot, this.villager.getInventory().getItem(slot).copy());
+        }
+
+        NonNullList<ItemStack> loaded = loadExtraInventory(this.villager, Math.max(0, INVENTORY_SLOT_COUNT - vanillaSlots));
+        for (int slot = 0; slot < Math.min(loaded.size(), INVENTORY_SLOT_COUNT - vanillaSlots); slot++) {
+            this.inventory.set(vanillaSlots + slot, loaded.get(slot));
         }
     }
 
@@ -227,7 +238,53 @@ final class VillagerInventoryContainer implements Container {
     }
 
     private void saveExtraInventory() {
-        CompoundTag tag = ContainerHelper.saveAllItems(new CompoundTag(), this.extraInventory, true, this.villager.level().registryAccess());
+        int vanillaSlots = vanillaInventorySlots();
+        NonNullList<ItemStack> extraInventory = NonNullList.withSize(Math.max(0, INVENTORY_SLOT_COUNT - vanillaSlots), ItemStack.EMPTY);
+        for (int slot = 0; slot < extraInventory.size(); slot++) {
+            extraInventory.set(slot, this.inventory.get(vanillaSlots + slot).copy());
+        }
+
+        CompoundTag tag = ContainerHelper.saveAllItems(new CompoundTag(), extraInventory, true, this.villager.level().registryAccess());
         this.villager.getPersistentData().put(EXTRA_INVENTORY_TAG, tag);
+    }
+
+    private void saveEquipment() {
+        for (int slot = 0; slot < this.equipment.size(); slot++) {
+            EquipmentSlot equipmentSlot = equipmentSlotForIndex(slot);
+            ItemStack stack = this.equipment.get(slot);
+            ItemStack equipmentStack = stack.isEmpty() ? ItemStack.EMPTY : stack.copy();
+            this.villager.setItemSlot(equipmentSlot, equipmentStack);
+            if (!equipmentStack.isEmpty()) {
+                this.villager.setGuaranteedDrop(equipmentSlot);
+            }
+        }
+    }
+
+    private void saveInventory() {
+        int vanillaSlots = vanillaInventorySlots();
+        for (int slot = 0; slot < vanillaSlots; slot++) {
+            this.villager.getInventory().setItem(slot, this.inventory.get(slot).copy());
+        }
+        this.villager.getInventory().setChanged();
+    }
+
+    private static int equipmentIndexForSlot(int slot) {
+        if (isArmorSlot(slot)) {
+            return slot;
+        }
+        if (slot == HELD_SLOT) {
+            return ARMOR_SLOT_COUNT;
+        }
+        if (slot == OFFHAND_SLOT) {
+            return ARMOR_SLOT_COUNT + 1;
+        }
+        return -1;
+    }
+
+    private static EquipmentSlot equipmentSlotForIndex(int equipmentIndex) {
+        if (equipmentIndex < ARMOR_SLOT_COUNT) {
+            return ARMOR_SLOTS[equipmentIndex];
+        }
+        return equipmentIndex == ARMOR_SLOT_COUNT ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND;
     }
 }

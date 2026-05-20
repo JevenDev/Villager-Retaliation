@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.combat;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil.ActiveRetaliationTarget;
+import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
@@ -78,6 +79,11 @@ public final class VillagerRetaliationHandler {
     private static final Map<UUID, Long> NEXT_IRON_GOLEM_REPAIR_TICKS = new HashMap<>();
 
     private VillagerRetaliationHandler() {
+    }
+
+    public static void releaseTemporaryWeaponForInventory(Villager villager) {
+        VillagerClericPotionHelper.restoreHeldItemAndClearState(villager);
+        RETALIATION.restoreTemporaryWeapon(villager);
     }
 
     public static void onEntityAttributeModification(EntityAttributeModificationEvent event) {
@@ -349,6 +355,11 @@ public final class VillagerRetaliationHandler {
         villager.setTarget(target);
 
         villager.getLookControl().setLookAt(target, 30.0F, 30.0F);
+        if (VillagerInventoryAccess.hasOpenInventory(villager)) {
+            suspendCombatForOpenInventory(villager);
+            return;
+        }
+
         if (VillagerClericPotionHelper.tickDrinkingIfActive(villager)) {
             villager.getNavigation().stop();
             return;
@@ -544,6 +555,7 @@ public final class VillagerRetaliationHandler {
                 || !VillagerRetaliationVillagerRules.shouldSuppressFleeingBehavior(villager)
                 || !VillagerCombatRoles.canScavengeGroundWeapons(villager)
                 || VillagerRetaliationVillagerWeapons.hasTrackedPickup(villager)
+                || VillagerInventoryAccess.hasOpenInventory(villager)
                 || !VillagerRetaliationVillagerCombatUtil.isThreatened(villager)) {
             return false;
         }
@@ -786,6 +798,11 @@ public final class VillagerRetaliationHandler {
     }
 
     private static void equipCombatWeapon(Villager villager) {
+        if (VillagerInventoryAccess.hasOpenInventory(villager)) {
+            RETALIATION.restoreTemporaryWeapon(villager);
+            return;
+        }
+
         if (VillagerClericPotionHelper.isActivelyHandlingPotion(villager)) {
             return;
         }
@@ -912,6 +929,11 @@ public final class VillagerRetaliationHandler {
     private static void handlePassivePotionState(Villager villager) {
         resetArmorerShieldState(villager);
         VillagerRangedCombatHelper.clearState(villager);
+        if (VillagerInventoryAccess.hasOpenInventory(villager)) {
+            suspendCombatForOpenInventory(villager);
+            return;
+        }
+
         if (VillagerClericPotionHelper.tickDrinkingIfActive(villager)) {
             villager.getNavigation().stop();
             VillagerRetaliationRetaliationUtil.restoreCombatMovement(villager);
@@ -933,6 +955,15 @@ public final class VillagerRetaliationHandler {
         }
 
         VillagerClericPotionHelper.clearState(villager);
+    }
+
+    private static void suspendCombatForOpenInventory(Villager villager) {
+        villager.getNavigation().stop();
+        resetArmorerShieldState(villager);
+        VillagerRangedCombatHelper.clearState(villager);
+        VillagerClericPotionHelper.clearState(villager);
+        VillagerRetaliationRetaliationUtil.restoreCombatMovement(villager);
+        RETALIATION.restoreTemporaryWeapon(villager);
     }
 
     private static boolean tryRepairNearbyIronGolem(Villager villager, ServerLevel level, long gameTime) {

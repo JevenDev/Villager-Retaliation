@@ -2,7 +2,9 @@ package com.jvn.villagerretaliation.inventory;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
+import com.mojang.datafixers.util.Pair;
 import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
@@ -12,6 +14,7 @@ import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
@@ -244,5 +247,20 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
         public int getMaxStackSize() {
             return 1;
         }
+
+        @Override
+        public Pair<ResourceLocation, ResourceLocation> getNoItemIcon() {
+            return Pair.of(InventoryMenu.BLOCK_ATLAS, emptyArmorSlotIcon(this.equipmentSlot));
+        }
+    }
+
+    private static ResourceLocation emptyArmorSlotIcon(EquipmentSlot equipmentSlot) {
+        return switch (equipmentSlot) {
+            case HEAD -> InventoryMenu.EMPTY_ARMOR_SLOT_HELMET;
+            case CHEST -> InventoryMenu.EMPTY_ARMOR_SLOT_CHESTPLATE;
+            case LEGS -> InventoryMenu.EMPTY_ARMOR_SLOT_LEGGINGS;
+            case FEET -> InventoryMenu.EMPTY_ARMOR_SLOT_BOOTS;
+            default -> InventoryMenu.EMPTY_ARMOR_SLOT_HELMET;
+        };
     }
 }

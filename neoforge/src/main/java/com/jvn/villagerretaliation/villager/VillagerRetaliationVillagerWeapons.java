@@ -166,6 +166,31 @@ public final class VillagerRetaliationVillagerWeapons {
         return true;
     }
 
+    public static void releaseTrackedPickupForInventory(AbstractVillager villager) {
+        ItemStack trackedPickup = getTrackedPickup(villager);
+        if (trackedPickup.isEmpty()) {
+            return;
+        }
+
+        ItemStack mainHand = villager.getMainHandItem();
+        if (!mainHand.isEmpty() && ItemStack.isSameItem(mainHand, trackedPickup)) {
+            clearTrackedPickup(villager);
+            return;
+        }
+
+        if (!mainHand.isEmpty()) {
+            ItemStack displacedMainHand = mainHand.copy();
+            ItemStack remainder = villager.getInventory().addItem(displacedMainHand);
+            if (!remainder.isEmpty()) {
+                villager.spawnAtLocation(remainder);
+            }
+        }
+
+        villager.setItemSlot(EquipmentSlot.MAINHAND, trackedPickup.copy());
+        villager.setGuaranteedDrop(EquipmentSlot.MAINHAND);
+        clearTrackedPickup(villager);
+    }
+
     public static void clearTrackedPickup(AbstractVillager villager) {
         PICKED_UP_MAINHAND_ITEMS.remove(villager.getUUID());
         villager.getPersistentData().remove(PERSISTENT_PICKED_UP_MAINHAND_TAG);
