@@ -40,7 +40,9 @@ public final class VillagerInteractionClientHandler {
                 payload.reputation(),
                 payload.reputationLevel(),
                 payload.mood(),
-                payload.followingPlayer()
+                payload.followingPlayer(),
+                payload.knownLikedGiftNames(),
+                payload.knownDislikedGiftNames()
         ));
     }
 
@@ -48,7 +50,13 @@ public final class VillagerInteractionClientHandler {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.screen instanceof VillagerInteractionScreen screen
                 && screen.matchesVillager(payload.entityId())) {
-            screen.updateReputation(payload.reputation(), payload.reputationLevel(), payload.mood());
+            screen.updateReputation(
+                    payload.reputation(),
+                    payload.reputationLevel(),
+                    payload.mood(),
+                    payload.knownLikedGiftNames(),
+                    payload.knownDislikedGiftNames()
+            );
         }
     }
 

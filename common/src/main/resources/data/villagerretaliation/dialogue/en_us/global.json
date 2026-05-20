@@ -151,6 +151,342 @@
         "fearful"
       ],
       "weight": 48
+    },
+    {
+      "id": "gift_global_liked_useful",
+      "type": "gift_preferences",
+      "gift_advice": "global_liked",
+      "text": "{gift_item} is usually welcome. Simple, useful gifts travel well.",
+      "weight": 20
+    },
+    {
+      "id": "gift_global_liked_glad",
+      "type": "gift_preferences",
+      "gift_advice": "global_liked",
+      "text": "Most villagers would be glad to receive {gift_item}.",
+      "weight": 20
+    },
+    {
+      "id": "gift_global_liked_safe",
+      "type": "gift_preferences",
+      "gift_advice": "global_liked",
+      "text": "If you are unsure, {gift_item} is a kind choice.",
+      "weight": 20
+    },
+    {
+      "id": "gift_global_liked_intentions",
+      "type": "gift_preferences",
+      "gift_advice": "global_liked",
+      "text": "A gift like {gift_item} says you came with good intentions.",
+      "weight": 18
+    },
+    {
+      "id": "gift_global_liked_practical",
+      "type": "gift_preferences",
+      "gift_advice": "global_liked",
+      "text": "Villagers remember practical kindness. {gift_item} counts.",
+      "weight": 18
+    },
+    {
+      "id": "gift_global_liked_room",
+      "type": "gift_preferences",
+      "gift_advice": "global_liked",
+      "text": "A village can usually find room for {gift_item}.",
+      "weight": 18
+    },
+    {
+      "id": "gift_global_liked_smile",
+      "type": "gift_preferences",
+      "gift_advice": "global_liked",
+      "text": "For most villagers, {gift_item} is worth a smile.",
+      "weight": 18
+    },
+    {
+      "id": "gift_global_liked_peaceable",
+      "type": "gift_preferences",
+      "gift_advice": "global_liked",
+      "text": "{gift_item} makes a good peaceable gift.",
+      "weight": 18
+    },
+    {
+      "id": "gift_global_liked_understood",
+      "type": "gift_preferences",
+      "gift_advice": "global_liked",
+      "text": "Bring {gift_item} and most villagers will understand the gesture.",
+      "weight": 18
+    },
+    {
+      "id": "gift_global_liked_welcome",
+      "type": "gift_preferences",
+      "gift_advice": "global_liked",
+      "text": "{gift_item} is welcome more often than not.",
+      "weight": 18
+    },
+    {
+      "id": "gift_global_disliked_poor",
+      "type": "gift_preferences",
+      "gift_advice": "global_disliked",
+      "text": "{gift_item} makes a poor gift. Most villagers would rather not handle it.",
+      "weight": 20
+    },
+    {
+      "id": "gift_global_disliked_wrong_message",
+      "type": "gift_preferences",
+      "gift_advice": "global_disliked",
+      "text": "{gift_item} sends the wrong message.",
+      "weight": 20
+    },
+    {
+      "id": "gift_global_disliked_avoid",
+      "type": "gift_preferences",
+      "gift_advice": "global_disliked",
+      "text": "If you are trying to be kind, avoid {gift_item}.",
+      "weight": 20
+    },
+    {
+      "id": "gift_global_disliked_warning",
+      "type": "gift_preferences",
+      "gift_advice": "global_disliked",
+      "text": "{gift_item} is more warning than present.",
+      "weight": 18
+    },
+    {
+      "id": "gift_global_disliked_sour",
+      "type": "gift_preferences",
+      "gift_advice": "global_disliked",
+      "text": "Handing someone {gift_item} is a quick way to sour the room.",
+      "weight": 18
+    },
+    {
+      "id": "gift_global_disliked_elsewhere",
+      "type": "gift_preferences",
+      "gift_advice": "global_disliked",
+      "text": "{gift_item} belongs somewhere else, not in someone's hands as a gift.",
+      "weight": 18
+    },
+    {
+      "id": "gift_global_disliked_bad_offering",
+      "type": "gift_preferences",
+      "gift_advice": "global_disliked",
+      "text": "Most people here would call {gift_item} a bad offering.",
+      "weight": 18
+    },
+    {
+      "id": "gift_global_disliked_empty_handed",
+      "type": "gift_preferences",
+      "gift_advice": "global_disliked",
+      "text": "Better to arrive empty-handed than with {gift_item}.",
+      "weight": 18
+    },
+    {
+      "id": "gift_global_disliked_not_kindness",
+      "type": "gift_preferences",
+      "gift_advice": "global_disliked",
+      "text": "Do not wrap {gift_item} and call it kindness.",
+      "weight": 18
+    },
+    {
+      "id": "gift_global_disliked_wrong_reason",
+      "type": "gift_preferences",
+      "gift_advice": "global_disliked",
+      "text": "{gift_item} is the kind of gift people remember for the wrong reason.",
+      "weight": 18
+    },
+    {
+      "id": "gift_profession_liked_thoughtful",
+      "type": "gift_preferences",
+      "gift_advice": "profession_liked",
+      "text": "If you are choosing for {gift_subject}, {gift_item} is a thoughtful pick.",
+      "weight": 20
+    },
+    {
+      "id": "gift_profession_liked_attention",
+      "type": "gift_preferences",
+      "gift_advice": "profession_liked",
+      "text": "For {gift_subject}, {gift_item} shows you paid attention.",
+      "weight": 20
+    },
+    {
+      "id": "gift_profession_liked_use",
+      "type": "gift_preferences",
+      "gift_advice": "profession_liked",
+      "text": "{gift_subject} can make good use of {gift_item}.",
+      "weight": 20
+    },
+    {
+      "id": "gift_profession_liked_suits",
+      "type": "gift_preferences",
+      "gift_advice": "profession_liked",
+      "text": "{gift_item} suits {gift_subject} better than most gifts.",
+      "weight": 18
+    },
+    {
+      "id": "gift_profession_liked_trade",
+      "type": "gift_preferences",
+      "gift_advice": "profession_liked",
+      "text": "You can tell someone knows the trade when they bring {gift_item}.",
+      "weight": 18
+    },
+    {
+      "id": "gift_profession_liked_value",
+      "type": "gift_preferences",
+      "gift_advice": "profession_liked",
+      "text": "That work gives {gift_item} real value.",
+      "weight": 18
+    },
+    {
+      "id": "gift_profession_liked_memory",
+      "type": "gift_preferences",
+      "gift_advice": "profession_liked",
+      "text": "{gift_item} is the kind of thing {gift_subject} remembers kindly.",
+      "weight": 18
+    },
+    {
+      "id": "gift_profession_liked_careful",
+      "type": "gift_preferences",
+      "gift_advice": "profession_liked",
+      "text": "A careful gift for {gift_subject}? {gift_item}.",
+      "weight": 18
+    },
+    {
+      "id": "gift_profession_liked_respect",
+      "type": "gift_preferences",
+      "gift_advice": "profession_liked",
+      "text": "{gift_subject} tends to respect a gift like {gift_item}.",
+      "weight": 18
+    },
+    {
+      "id": "gift_profession_liked_personal",
+      "type": "gift_preferences",
+      "gift_advice": "profession_liked",
+      "text": "{gift_item} feels personal to {gift_subject}.",
+      "weight": 18
+    },
+    {
+      "id": "gift_profession_disliked_avoid",
+      "type": "gift_preferences",
+      "gift_advice": "profession_disliked",
+      "text": "If you are choosing for {gift_subject}, I would avoid {gift_item}.",
+      "weight": 20
+    },
+    {
+      "id": "gift_profession_disliked_careless",
+      "type": "gift_preferences",
+      "gift_advice": "profession_disliked",
+      "text": "For {gift_subject}, {gift_item} feels careless.",
+      "weight": 20
+    },
+    {
+      "id": "gift_profession_disliked_no_gratitude",
+      "type": "gift_preferences",
+      "gift_advice": "profession_disliked",
+      "text": "Do not bring {gift_item} to {gift_subject} and expect gratitude.",
+      "weight": 20
+    },
+    {
+      "id": "gift_profession_disliked_no_use",
+      "type": "gift_preferences",
+      "gift_advice": "profession_disliked",
+      "text": "{gift_subject} has little use for {gift_item}.",
+      "weight": 18
+    },
+    {
+      "id": "gift_profession_disliked_bad_match",
+      "type": "gift_preferences",
+      "gift_advice": "profession_disliked",
+      "text": "{gift_item} is a poor match for {gift_subject}.",
+      "weight": 18
+    },
+    {
+      "id": "gift_profession_disliked_home",
+      "type": "gift_preferences",
+      "gift_advice": "profession_disliked",
+      "text": "If I were gifting {gift_subject}, I would leave {gift_item} at home.",
+      "weight": 18
+    },
+    {
+      "id": "gift_profession_disliked_wrong_way",
+      "type": "gift_preferences",
+      "gift_advice": "profession_disliked",
+      "text": "{gift_subject} may take {gift_item} the wrong way.",
+      "weight": 18
+    },
+    {
+      "id": "gift_profession_disliked_nuisance",
+      "type": "gift_preferences",
+      "gift_advice": "profession_disliked",
+      "text": "For that profession, {gift_item} is more nuisance than gift.",
+      "weight": 18
+    },
+    {
+      "id": "gift_profession_disliked_insult_trade",
+      "type": "gift_preferences",
+      "gift_advice": "profession_disliked",
+      "text": "You can insult the trade without meaning to. {gift_item} may do it.",
+      "weight": 18
+    },
+    {
+      "id": "gift_profession_disliked_sour",
+      "type": "gift_preferences",
+      "gift_advice": "profession_disliked",
+      "text": "{gift_item} is the kind of thing {gift_subject} remembers sourly.",
+      "weight": 18
+    },
+    {
+      "id": "gift_already_known_all",
+      "type": "gift_preferences",
+      "gift_advice": "already_known",
+      "text": "I think you already know what I can tell you about gifts.",
+      "weight": 20
+    },
+    {
+      "id": "gift_already_known_memory",
+      "type": "gift_preferences",
+      "gift_advice": "already_known",
+      "text": "You've picked my memory clean on gifts, I'm afraid.",
+      "weight": 20
+    },
+    {
+      "id": "gift_already_known_no_fresh",
+      "type": "gift_preferences",
+      "gift_advice": "already_known",
+      "text": "No fresh advice. Try another villager if you want more gift gossip.",
+      "weight": 20
+    },
+    {
+      "id": "gift_already_known_honest",
+      "type": "gift_preferences",
+      "gift_advice": "already_known",
+      "text": "I would rather not pretend I know more than I do.",
+      "weight": 18
+    },
+    {
+      "id": "gift_already_known_today",
+      "type": "gift_preferences",
+      "gift_advice": "already_known",
+      "text": "No new gift advice from me today. Ask someone else and you may hear more.",
+      "weight": 18
+    },
+    {
+      "id": "gift_already_known_end",
+      "type": "gift_preferences",
+      "gift_advice": "already_known",
+      "text": "That is the end of my gift wisdom for the moment.",
+      "weight": 18
+    },
+    {
+      "id": "gift_already_known_personal",
+      "type": "gift_preferences",
+      "gift_advice": "already_known",
+      "text": "Nothing new comes to mind. Gifts are personal, even when villagers gossip.",
+      "weight": 18
+    },
+    {
+      "id": "gift_already_known_no_tip",
+      "type": "gift_preferences",
+      "gift_advice": "already_known",
+      "text": "I do not have another gift tip ready for you.",
+      "weight": 18
     }
   ],
   "pacify": [

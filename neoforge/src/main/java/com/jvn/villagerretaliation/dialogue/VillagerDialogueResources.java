@@ -68,6 +68,31 @@ public final class VillagerDialogueResources {
         return Optional.of(resolvePacifyText(candidates.getLast().text(), emeraldCost));
     }
 
+    public static Optional<String> giftAdviceLine(
+            DialogueContext context,
+            GiftAdviceKind giftAdviceKind,
+            String giftItemName,
+            String giftSubject) {
+        DialogueDisposition disposition = VillagerDialogueService.moodFor(context);
+        List<DialogueLine> candidates = load(context.level().getServer()).lines().stream()
+                .filter(line -> line.giftAdviceKind() == giftAdviceKind)
+                .filter(line -> line.matches(context, DialogueRequestType.GIFT_PREFERENCES, disposition))
+                .toList();
+        if (candidates.isEmpty()) {
+            return Optional.empty();
+        }
+
+        int totalWeight = candidates.stream().mapToInt(line -> Math.max(1, line.weight())).sum();
+        int selected = context.random().nextInt(Math.max(1, totalWeight));
+        for (DialogueLine candidate : candidates) {
+            selected -= Math.max(1, candidate.weight());
+            if (selected < 0) {
+                return Optional.of(resolveGiftAdviceText(candidate.text(), giftItemName, giftSubject));
+            }
+        }
+        return Optional.of(resolveGiftAdviceText(candidates.getLast().text(), giftItemName, giftSubject));
+    }
+
     private static DialoguePool load(MinecraftServer server) {
         CachedDialoguePool current = cachedDialoguePool;
         if (current.server() == server) {
@@ -283,6 +308,7 @@ public final class VillagerDialogueResources {
         if (readBoolean(entry, "first_conversation_only")) {
             builder.firstConversationOnly();
         }
+        readEnum(entry, "gift_advice", GiftAdviceKind.class).ifPresent(builder::giftAdviceKind);
 
         builder.weight(readInt(entry, "weight", 10));
     }
@@ -402,6 +428,12 @@ public final class VillagerDialogueResources {
         return text
                 .replace("{emerald_cost}", Integer.toString(emeraldCost))
                 .replace("{emeralds}", emeraldCost == 1 ? "emerald" : "emeralds");
+    }
+
+    private static String resolveGiftAdviceText(String text, String giftItemName, String giftSubject) {
+        return text
+                .replace("{gift_item}", giftItemName)
+                .replace("{gift_subject}", giftSubject);
     }
 
     private record DialoguePool(

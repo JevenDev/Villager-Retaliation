@@ -502,6 +502,7 @@ public final class VillagerDialogueService {
             case CHAT -> babyChatLines(disposition);
             case GREETING -> babyGreetingLines(disposition);
             case QUESTION -> babyQuestionLines(context, disposition);
+            case GIFT_PREFERENCES -> babyQuestionLines(context, disposition);
             case STORY -> babyStoryLines(context, disposition);
             case JOKE -> babyJokeLines(disposition);
             case INSULT -> babyInsultLines(disposition);

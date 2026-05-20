@@ -19,6 +19,7 @@ public record DialogueLine(
         boolean requiresRecentBrokenBedMemory,
         boolean requiresRecentDirectHitMemory,
         boolean firstConversationOnly,
+        GiftAdviceKind giftAdviceKind,
         int weight
 ) {
     public boolean matches(DialogueContext context, DialogueRequestType requestedType, DialogueDisposition disposition) {
@@ -89,6 +90,9 @@ public record DialogueLine(
         if (this.firstConversationOnly) {
             score += 2;
         }
+        if (this.giftAdviceKind != null) {
+            score += 3;
+        }
         return score;
     }
 
@@ -109,6 +113,7 @@ public record DialogueLine(
         private boolean requiresRecentBrokenBedMemory;
         private boolean requiresRecentDirectHitMemory;
         private boolean firstConversationOnly;
+        private GiftAdviceKind giftAdviceKind;
         private int weight = 10;
 
         protected Builder(String id, DialogueRequestType requestType, String text) {
@@ -162,6 +167,11 @@ public record DialogueLine(
             return this;
         }
 
+        public Builder giftAdviceKind(GiftAdviceKind giftAdviceKind) {
+            this.giftAdviceKind = giftAdviceKind;
+            return this;
+        }
+
         public Builder weight(int weight) {
             this.weight = weight;
             return this;
@@ -181,6 +191,7 @@ public record DialogueLine(
                     this.requiresRecentBrokenBedMemory,
                     this.requiresRecentDirectHitMemory,
                     this.firstConversationOnly,
+                    this.giftAdviceKind,
                     this.weight
             );
         }

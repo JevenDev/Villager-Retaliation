@@ -85,6 +85,7 @@ public final class DialogueReputationService {
             case CHAT -> PlannedEffect.none();
             case GREETING -> planGreeting(context, interactionState.firstConversation());
             case QUESTION -> planQuestion(context);
+            case GIFT_PREFERENCES -> PlannedEffect.none();
             case STORY -> planStory(context);
             case JOKE -> planJoke(context);
             case INSULT -> planInsult(context, interactionState.firstConversation());

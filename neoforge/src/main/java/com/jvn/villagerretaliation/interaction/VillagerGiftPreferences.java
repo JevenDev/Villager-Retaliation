@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.interaction;
 
+import java.util.ArrayList;
+import java.util.List;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -54,6 +56,109 @@ public final class VillagerGiftPreferences {
         }
         GiftReaction globalPreference = globalPreference(stack);
         return new GiftPreference(globalPreference, false, reputationValue(globalPreference, stack));
+    }
+
+    public static List<GiftCandidate> giftCandidates(VillagerProfession profession) {
+        List<GiftCandidate> candidates = new ArrayList<>();
+        addGlobalCandidates(candidates);
+        addProfessionCandidates(candidates, profession);
+        return candidates;
+    }
+
+    private static void addGlobalCandidates(List<GiftCandidate> candidates) {
+        add(candidates, GiftReaction.HATED, false,
+                Items.ROTTEN_FLESH, Items.POISONOUS_POTATO, Items.SPIDER_EYE, Items.FERMENTED_SPIDER_EYE,
+                Items.GUNPOWDER, Items.TNT, Items.TNT_MINECART, Items.FIRE_CHARGE, Items.FLINT_AND_STEEL,
+                Items.LAVA_BUCKET, Items.WITHER_ROSE, Items.WITHER_SKELETON_SKULL);
+        add(candidates, GiftReaction.DISLIKED, false,
+                Items.BONE, Items.BONE_MEAL, Items.DEAD_BUSH, Items.PUFFERFISH, Items.PHANTOM_MEMBRANE,
+                Items.MAGMA_CREAM, Items.SLIME_BALL, Items.FIREWORK_ROCKET, Items.SUSPICIOUS_STEW);
+        add(candidates, GiftReaction.LOVED, false,
+                Items.EMERALD, Items.DIAMOND, Items.GOLD_INGOT, Items.GOLDEN_APPLE,
+                Items.ENCHANTED_GOLDEN_APPLE, Items.EXPERIENCE_BOTTLE);
+        add(candidates, GiftReaction.LIKED, false,
+                Items.BREAD, Items.APPLE, Items.COOKIE, Items.CAKE, Items.PUMPKIN_PIE,
+                Items.HONEY_BOTTLE, Items.SWEET_BERRIES, Items.GLOW_BERRIES, Items.MILK_BUCKET);
+    }
+
+    private static void addProfessionCandidates(List<GiftCandidate> candidates, VillagerProfession profession) {
+        if (profession == VillagerProfession.ARMORER) {
+            add(candidates, GiftReaction.LOVED, true, Items.IRON_INGOT, Items.SHIELD, Items.IRON_CHESTPLATE, Items.DIAMOND_CHESTPLATE);
+            add(candidates, GiftReaction.LIKED, true, Items.COAL, Items.BLAST_FURNACE, Items.IRON_HELMET, Items.IRON_BOOTS);
+            add(candidates, GiftReaction.HATED, true, Items.TNT, Items.TNT_MINECART, Items.FIRE_CHARGE, Items.LAVA_BUCKET);
+            add(candidates, GiftReaction.DISLIKED, true, Items.LEATHER_CHESTPLATE, Items.LEATHER_HELMET, Items.WOODEN_SWORD, Items.DEAD_BUSH);
+        } else if (profession == VillagerProfession.BUTCHER) {
+            add(candidates, GiftReaction.LOVED, true, Items.BEEF, Items.PORKCHOP, Items.MUTTON, Items.CHICKEN, Items.RABBIT);
+            add(candidates, GiftReaction.LIKED, true, Items.COOKED_BEEF, Items.COOKED_PORKCHOP, Items.COOKED_MUTTON, Items.COOKED_CHICKEN, Items.SMOKER);
+            add(candidates, GiftReaction.HATED, true, Items.ROTTEN_FLESH, Items.POISONOUS_POTATO, Items.SPIDER_EYE, Items.FERMENTED_SPIDER_EYE, Items.SUSPICIOUS_STEW);
+            add(candidates, GiftReaction.DISLIKED, true, Items.BONE, Items.BONE_MEAL, Items.WITHER_ROSE);
+        } else if (profession == VillagerProfession.CARTOGRAPHER) {
+            add(candidates, GiftReaction.LOVED, true, Items.MAP, Items.COMPASS, Items.CLOCK, Items.RECOVERY_COMPASS);
+            add(candidates, GiftReaction.LIKED, true, Items.PAPER, Items.FEATHER, Items.INK_SAC, Items.CARTOGRAPHY_TABLE);
+            add(candidates, GiftReaction.HATED, true, Items.TNT, Items.TNT_MINECART, Items.FLINT_AND_STEEL, Items.FIRE_CHARGE);
+            add(candidates, GiftReaction.DISLIKED, true, Items.DEAD_BUSH, Items.SUSPICIOUS_STEW, Items.ROTTEN_FLESH);
+        } else if (profession == VillagerProfession.CLERIC) {
+            add(candidates, GiftReaction.LOVED, true, Items.AMETHYST_SHARD, Items.GLOWSTONE_DUST, Items.EXPERIENCE_BOTTLE, Items.ENDER_PEARL);
+            add(candidates, GiftReaction.LIKED, true, Items.REDSTONE, Items.LAPIS_LAZULI, Items.BLAZE_POWDER, Items.GHAST_TEAR, Items.BREWING_STAND);
+            add(candidates, GiftReaction.HATED, true, Items.TNT, Items.TNT_MINECART, Items.WITHER_SKELETON_SKULL);
+            add(candidates, GiftReaction.DISLIKED, true, Items.ROTTEN_FLESH, Items.FERMENTED_SPIDER_EYE, Items.POISONOUS_POTATO, Items.DEAD_BUSH);
+        } else if (profession == VillagerProfession.FARMER) {
+            add(candidates, GiftReaction.LOVED, true, Items.WHEAT_SEEDS, Items.CARROT, Items.POTATO, Items.BEETROOT_SEEDS, Items.PUMPKIN_SEEDS, Items.MELON_SEEDS);
+            add(candidates, GiftReaction.LIKED, true, Items.WHEAT, Items.BEETROOT, Items.MELON_SLICE, Items.PUMPKIN, Items.HAY_BLOCK, Items.COMPOSTER);
+            add(candidates, GiftReaction.HATED, true, Items.POISONOUS_POTATO, Items.DEAD_BUSH, Items.WITHER_ROSE, Items.LAVA_BUCKET);
+            add(candidates, GiftReaction.DISLIKED, true, Items.ROTTEN_FLESH, Items.BONE_MEAL, Items.SPIDER_EYE, Items.FERMENTED_SPIDER_EYE);
+        } else if (profession == VillagerProfession.FISHERMAN) {
+            add(candidates, GiftReaction.LOVED, true, Items.FISHING_ROD, Items.COD, Items.SALMON, Items.TROPICAL_FISH, Items.NAUTILUS_SHELL);
+            add(candidates, GiftReaction.LIKED, true, Items.STRING, Items.KELP, Items.DRIED_KELP, Items.BARREL);
+            add(candidates, GiftReaction.HATED, true, Items.TNT, Items.TNT_MINECART, Items.LAVA_BUCKET);
+            add(candidates, GiftReaction.DISLIKED, true, Items.PUFFERFISH, Items.ROTTEN_FLESH, Items.PHANTOM_MEMBRANE, Items.MAGMA_CREAM);
+        } else if (profession == VillagerProfession.FLETCHER) {
+            add(candidates, GiftReaction.LOVED, true, Items.FLINT, Items.FEATHER, Items.ARROW, Items.SPECTRAL_ARROW, Items.CROSSBOW);
+            add(candidates, GiftReaction.LIKED, true, Items.STICK, Items.STRING, Items.TRIPWIRE_HOOK, Items.FLETCHING_TABLE);
+            add(candidates, GiftReaction.HATED, true, Items.TNT, Items.TNT_MINECART, Items.FIRE_CHARGE);
+            add(candidates, GiftReaction.DISLIKED, true, Items.SHIELD, Items.LAVA_BUCKET, Items.ROTTEN_FLESH, Items.SLIME_BALL);
+        } else if (profession == VillagerProfession.LEATHERWORKER) {
+            add(candidates, GiftReaction.LOVED, true, Items.LEATHER, Items.RABBIT_HIDE, Items.SADDLE, Items.LEATHER_HORSE_ARMOR);
+            add(candidates, GiftReaction.LIKED, true, Items.CAULDRON, Items.LEATHER_BOOTS, Items.LEATHER_HELMET, Items.LEAD);
+            add(candidates, GiftReaction.HATED, true, Items.TNT, Items.FIRE_CHARGE, Items.LAVA_BUCKET);
+            add(candidates, GiftReaction.DISLIKED, true, Items.ROTTEN_FLESH, Items.BONE, Items.BONE_MEAL, Items.POISONOUS_POTATO);
+        } else if (profession == VillagerProfession.LIBRARIAN) {
+            add(candidates, GiftReaction.LOVED, true, Items.BOOK, Items.WRITABLE_BOOK, Items.WRITTEN_BOOK, Items.BOOKSHELF, Items.ENCHANTED_BOOK);
+            add(candidates, GiftReaction.LIKED, true, Items.PAPER, Items.INK_SAC, Items.FEATHER, Items.LECTERN, Items.NAME_TAG);
+            add(candidates, GiftReaction.HATED, true, Items.TNT, Items.TNT_MINECART, Items.FLINT_AND_STEEL, Items.FIRE_CHARGE, Items.LAVA_BUCKET);
+            add(candidates, GiftReaction.DISLIKED, true, Items.ROTTEN_FLESH, Items.POISONOUS_POTATO, Items.DEAD_BUSH, Items.SUSPICIOUS_STEW);
+        } else if (profession == VillagerProfession.MASON) {
+            add(candidates, GiftReaction.LOVED, true, Items.CLAY_BALL, Items.BRICK, Items.STONE, Items.SMOOTH_STONE, Items.QUARTZ);
+            add(candidates, GiftReaction.LIKED, true, Items.GRANITE, Items.DIORITE, Items.ANDESITE, Items.TERRACOTTA, Items.STONECUTTER);
+            add(candidates, GiftReaction.HATED, true, Items.TNT, Items.TNT_MINECART, Items.LAVA_BUCKET);
+            add(candidates, GiftReaction.DISLIKED, true, Items.SAND, Items.GRAVEL, Items.ROTTEN_FLESH, Items.SLIME_BALL);
+        } else if (profession == VillagerProfession.SHEPHERD) {
+            add(candidates, GiftReaction.LOVED, true, Items.WHITE_WOOL, Items.SHEARS, Items.WHITE_DYE, Items.BLUE_DYE, Items.RED_DYE, Items.YELLOW_DYE);
+            add(candidates, GiftReaction.LIKED, true, Items.BLACK_WOOL, Items.BROWN_WOOL, Items.PINK_WOOL, Items.LOOM, Items.LEAD);
+            add(candidates, GiftReaction.HATED, true, Items.TNT, Items.TNT_MINECART, Items.FIRE_CHARGE, Items.LAVA_BUCKET);
+            add(candidates, GiftReaction.DISLIKED, true, Items.ROTTEN_FLESH, Items.BONE, Items.WITHER_ROSE, Items.DEAD_BUSH);
+        } else if (profession == VillagerProfession.TOOLSMITH) {
+            add(candidates, GiftReaction.LOVED, true, Items.IRON_INGOT, Items.DIAMOND, Items.ANVIL, Items.SMITHING_TABLE);
+            add(candidates, GiftReaction.LIKED, true, Items.COAL, Items.FLINT, Items.IRON_PICKAXE, Items.IRON_AXE, Items.IRON_SHOVEL);
+            add(candidates, GiftReaction.HATED, true, Items.TNT, Items.TNT_MINECART, Items.FIRE_CHARGE, Items.LAVA_BUCKET);
+            add(candidates, GiftReaction.DISLIKED, true, Items.WOODEN_PICKAXE, Items.WOODEN_AXE, Items.WOODEN_SHOVEL, Items.ROTTEN_FLESH, Items.DEAD_BUSH);
+        } else if (profession == VillagerProfession.WEAPONSMITH) {
+            add(candidates, GiftReaction.LOVED, true, Items.IRON_INGOT, Items.DIAMOND, Items.IRON_SWORD, Items.DIAMOND_SWORD, Items.GRINDSTONE);
+            add(candidates, GiftReaction.LIKED, true, Items.COAL, Items.FLINT, Items.IRON_AXE, Items.CROSSBOW);
+            add(candidates, GiftReaction.HATED, true, Items.TNT, Items.TNT_MINECART, Items.FIRE_CHARGE, Items.LAVA_BUCKET);
+            add(candidates, GiftReaction.DISLIKED, true, Items.WOODEN_SWORD, Items.ROTTEN_FLESH, Items.POISONOUS_POTATO, Items.SLIME_BALL);
+        } else if (profession == VillagerProfession.NITWIT) {
+            add(candidates, GiftReaction.LOVED, true, Items.COOKIE, Items.CAKE, Items.PUMPKIN_PIE, Items.HONEY_BOTTLE);
+            add(candidates, GiftReaction.LIKED, true, Items.SLIME_BALL, Items.SNOWBALL, Items.FLOWER_POT);
+            add(candidates, GiftReaction.HATED, true, Items.POISONOUS_POTATO, Items.TNT, Items.TNT_MINECART, Items.LAVA_BUCKET, Items.WITHER_SKELETON_SKULL);
+            add(candidates, GiftReaction.DISLIKED, true, Items.ROTTEN_FLESH, Items.SPIDER_EYE, Items.FERMENTED_SPIDER_EYE, Items.DEAD_BUSH);
+        }
+    }
+
+    private static void add(List<GiftCandidate> candidates, GiftReaction reaction, boolean professionSpecific, Item... items) {
+        for (Item item : items) {
+            candidates.add(new GiftCandidate(item, reaction, professionSpecific));
+        }
     }
 
     private static int reputationValue(GiftReaction reaction, ItemStack stack) {
@@ -519,6 +624,12 @@ public final class VillagerGiftPreferences {
     public record GiftPreference(GiftReaction reaction, boolean professionSpecific, int reputationValue) {
         private GiftPreference withReputationValue(int reputationValue) {
             return new GiftPreference(this.reaction, this.professionSpecific, reputationValue);
+        }
+    }
+
+    public record GiftCandidate(Item item, GiftReaction reaction, boolean professionSpecific) {
+        public boolean positive() {
+            return this.reaction.isPositive();
         }
     }
 }

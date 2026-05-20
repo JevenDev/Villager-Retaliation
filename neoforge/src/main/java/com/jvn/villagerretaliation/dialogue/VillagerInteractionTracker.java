@@ -27,6 +27,7 @@ public final class VillagerInteractionTracker {
                 entry.requestUseCount(DialogueRequestType.CHAT, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.GREETING, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.QUESTION, gameTime, day, optionResetTicks),
+                entry.requestUseCount(DialogueRequestType.GIFT_PREFERENCES, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.STORY, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.JOKE, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.INSULT, gameTime, day, optionResetTicks),
@@ -122,6 +123,7 @@ public final class VillagerInteractionTracker {
             int chatUseCount,
             int greetingUseCount,
             int questionUseCount,
+            int giftPreferenceUseCount,
             int storyUseCount,
             int jokeUseCount,
             int insultUseCount,
@@ -134,6 +136,7 @@ public final class VillagerInteractionTracker {
                 case CHAT -> this.chatUseCount;
                 case GREETING -> this.greetingUseCount;
                 case QUESTION -> this.questionUseCount;
+                case GIFT_PREFERENCES -> this.giftPreferenceUseCount;
                 case STORY -> this.storyUseCount;
                 case JOKE -> this.jokeUseCount;
                 case INSULT -> this.insultUseCount;

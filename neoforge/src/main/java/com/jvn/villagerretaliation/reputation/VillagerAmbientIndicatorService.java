@@ -147,6 +147,7 @@ public final class VillagerAmbientIndicatorService {
             text = switch (requestType) {
                 case GREETING -> random(villager.getRandom(), "Hello", "Good day", "Hm?");
                 case QUESTION -> random(villager.getRandom(), "Let's see", "Maybe", "About that");
+                case GIFT_PREFERENCES -> random(villager.getRandom(), "Gifts", "Thoughtful", "Maybe");
                 case CHAT -> random(villager.getRandom(), "I suppose", "Small talk", "Alright");
                 case STORY -> random(villager.getRandom(), "Listen", "Long story", "I remember");
                 case JOKE -> random(villager.getRandom(), "Heh", "Not bad", "Oh dear");

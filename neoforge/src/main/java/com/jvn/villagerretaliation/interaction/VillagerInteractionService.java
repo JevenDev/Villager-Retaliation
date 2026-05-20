@@ -8,7 +8,9 @@ import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
 import com.jvn.villagerretaliation.dialogue.DialogueReputationEffect;
 import com.jvn.villagerretaliation.dialogue.DialogueReputationService;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueService;
+import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
+import com.jvn.villagerretaliation.dialogue.GiftAdviceKind;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.network.OpenVillagerInteractionPayload;
 import com.jvn.villagerretaliation.network.VillagerConversationEndedPayload;
@@ -115,6 +117,8 @@ public final class VillagerInteractionService {
         );
         DialogueDisposition mood = VillagerDialogueService.moodFor(dialogueContext);
         String greetingText = VillagerDialogueService.selectOpeningGreeting(dialogueContext);
+        VillagerGiftKnowledgeService.GiftKnowledgeSnapshot giftKnowledge =
+                VillagerGiftKnowledgeService.knownGifts(level, player, villager.getVillagerData().getProfession());
         PacketDistributor.sendToPlayer(player, new OpenVillagerInteractionPayload(
                 villager.getId(),
                 "",
@@ -124,7 +128,9 @@ public final class VillagerInteractionService {
                 reputation.value(),
                 reputation.level(),
                 mood,
-                VillagerRecruitmentService.isFollowing(villager, player)
+                VillagerRecruitmentService.isFollowing(villager, player),
+                giftKnowledge.likedGiftNames(),
+                giftKnowledge.dislikedGiftNames()
         ));
         broadcastVillagerChat(level, villager, greetingText);
     }
@@ -151,11 +157,7 @@ public final class VillagerInteractionService {
         VillagerInteractionTracker.InteractionState interactionState = VillagerInteractionTracker.getState(level, villager, player);
         ReputationSnapshot reputation = reputationSnapshot(level, villager, player);
         DialogueContext context = createDialogueContext(level, player, villager, interactionState, reputation.value(), reputation.level());
-        VillagerDialogueService.DialogueResult result = VillagerDialogueService.select(
-                context,
-                requestType,
-                interactionState.recentDialogueIds()
-        );
+        VillagerDialogueService.DialogueResult result = selectDialogueResult(context, requestType, interactionState);
         DialogueReputationEffect reputationEffect = DialogueReputationService.apply(context, requestType, interactionState);
         playDialogueFeedback(level, villager, reputationEffect);
         VillagerAmbientIndicatorService.onDialogueResponse(villager, requestType, reputationEffect);
@@ -428,12 +430,48 @@ public final class VillagerInteractionService {
         DialogueDisposition mood = requestType == null || reputationEffect == null
                 ? VillagerDialogueService.moodFor(context)
                 : VillagerDialogueService.moodFor(context, requestType, reputationEffect);
+        VillagerGiftKnowledgeService.GiftKnowledgeSnapshot giftKnowledge =
+                VillagerGiftKnowledgeService.knownGifts(level, player, villager.getVillagerData().getProfession());
         PacketDistributor.sendToPlayer(player, new VillagerDialogueResponsePayload(
                 villager.getId(),
                 reputation.value(),
                 reputation.level(),
-                mood
+                mood,
+                giftKnowledge.likedGiftNames(),
+                giftKnowledge.dislikedGiftNames()
         ));
+    }
+
+    private static VillagerDialogueService.DialogueResult selectDialogueResult(
+            DialogueContext context,
+            DialogueRequestType requestType,
+            VillagerInteractionTracker.InteractionState interactionState) {
+        if (requestType == DialogueRequestType.GIFT_PREFERENCES) {
+            return VillagerGiftKnowledgeService
+                    .discoverFromGiftQuestion(context)
+                    .map(discovery -> new VillagerDialogueService.DialogueResult(
+                            "gift_preference_discovery",
+                            giftAdviceLine(context, discovery.adviceKind(), discovery.itemName(), discovery.subject())
+                    ))
+                    .orElseGet(() -> new VillagerDialogueService.DialogueResult(
+                            "gift_preference_known",
+                            giftAdviceLine(context, GiftAdviceKind.ALREADY_KNOWN, "", "")
+                    ));
+        }
+        return VillagerDialogueService.select(
+                context,
+                requestType,
+                interactionState.recentDialogueIds()
+        );
+    }
+
+    private static String giftAdviceLine(
+            DialogueContext context,
+            GiftAdviceKind giftAdviceKind,
+            String giftItemName,
+            String giftSubject) {
+        return VillagerDialogueResources.giftAdviceLine(context, giftAdviceKind, giftItemName, giftSubject)
+                .orElse("");
     }
 
     public static InteractionResult openTrading(ServerPlayer player, Villager villager, boolean sendFailureMessage) {
