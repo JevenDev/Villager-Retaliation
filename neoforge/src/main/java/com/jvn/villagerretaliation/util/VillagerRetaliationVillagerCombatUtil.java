@@ -50,6 +50,7 @@ public final class VillagerRetaliationVillagerCombatUtil {
         AABB searchArea = villager.getBoundingBox().inflate(radius);
         LivingEntity closestVisible = null;
         double closestVisibleDistance = Double.MAX_VALUE;
+        double maxDistanceSqr = radius * radius;
 
         for (LivingEntity candidate : level.getEntitiesOfClass(
                 LivingEntity.class,
@@ -57,7 +58,7 @@ public final class VillagerRetaliationVillagerCombatUtil {
                 target -> isNaturalHostileTarget(villager, target)
         )) {
             double distance = villager.distanceToSqr(candidate);
-            if (villager.hasLineOfSight(candidate) && distance < closestVisibleDistance) {
+            if (distance <= maxDistanceSqr && villager.hasLineOfSight(candidate) && distance < closestVisibleDistance) {
                 closestVisibleDistance = distance;
                 closestVisible = candidate;
             }
@@ -80,16 +81,22 @@ public final class VillagerRetaliationVillagerCombatUtil {
         AABB searchArea = villager.getBoundingBox().inflate(radius);
         Creeper closestVisible = null;
         double closestVisibleDistance = Double.MAX_VALUE;
+        double maxDistanceSqr = radius * radius;
 
         for (Creeper creeper : level.getEntitiesOfClass(Creeper.class, searchArea, LivingEntity::isAlive)) {
             double distance = villager.distanceToSqr(creeper);
-            if (villager.hasLineOfSight(creeper) && distance < closestVisibleDistance) {
+            if (distance <= maxDistanceSqr && villager.hasLineOfSight(creeper) && distance < closestVisibleDistance) {
                 closestVisibleDistance = distance;
                 closestVisible = creeper;
             }
         }
 
         return Optional.ofNullable(closestVisible);
+    }
+
+    public static boolean isWithinNaturalHostileTargetRange(AbstractVillager villager, LivingEntity target) {
+        double radius = VillagerRetaliationConfig.NATURAL_HOSTILE_TARGET_RADIUS.get();
+        return radius > 0.0D && villager.distanceToSqr(target) <= radius * radius;
     }
 
     public static Optional<LivingEntity> resolveAttacker(DamageSource source) {

@@ -255,7 +255,9 @@ public final class WanderingTraderRetaliationHandler {
         Optional<LivingEntity> memoryTarget = VillagerRetaliationVillagerCombatUtil.getMemoryIfRegistered(trader, MemoryModuleType.NEAREST_HOSTILE)
                 .filter(LivingEntity::isAlive)
                 .filter(target -> target != trader)
-                .filter(target -> VillagerRetaliationVillagerCombatUtil.isNaturalHostileTarget(trader, target));
+                .filter(target -> VillagerRetaliationVillagerCombatUtil.isNaturalHostileTarget(trader, target))
+                .filter(target -> VillagerRetaliationVillagerCombatUtil.isWithinNaturalHostileTargetRange(trader, target))
+                .filter(trader::hasLineOfSight);
         if (memoryTarget.isPresent()) {
             anger(trader, memoryTarget.get());
             return;
@@ -271,7 +273,7 @@ public final class WanderingTraderRetaliationHandler {
             return;
         }
 
-        double naturalDefenseRadius = VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get();
+        double naturalDefenseRadius = VillagerRetaliationConfig.NATURAL_HOSTILE_TARGET_RADIUS.get();
         VillagerRetaliationVillagerCombatUtil.findNearestNaturalHostile(trader, naturalDefenseRadius)
                 .ifPresent(target -> anger(trader, target));
     }

@@ -512,6 +512,8 @@ public final class VillagerRetaliationHandler {
                 .filter(LivingEntity::isAlive)
                 .filter(target -> target != villager)
                 .filter(target -> VillagerRetaliationVillagerCombatUtil.isNaturalHostileTarget(villager, target))
+                .filter(target -> VillagerRetaliationVillagerCombatUtil.isWithinNaturalHostileTargetRange(villager, target))
+                .filter(villager::hasLineOfSight)
                 .filter(target -> !shouldAvoidVisibleCreeper(villager, target));
         if (memoryTarget.isPresent()) {
             anger(villager, memoryTarget.get());
@@ -524,7 +526,7 @@ public final class VillagerRetaliationHandler {
         }
 
         NEXT_NATURAL_TARGET_SCAN_TICKS.put(villager.getUUID(), gameTime + NATURAL_TARGET_SCAN_INTERVAL_TICKS);
-        double naturalDefenseRadius = VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get();
+        double naturalDefenseRadius = VillagerRetaliationConfig.NATURAL_HOSTILE_TARGET_RADIUS.get();
         VillagerRetaliationVillagerCombatUtil.findNearestNaturalHostile(villager, naturalDefenseRadius)
                 .filter(target -> !shouldAvoidVisibleCreeper(villager, target))
                 .ifPresent(target -> anger(villager, target));
@@ -539,7 +541,7 @@ public final class VillagerRetaliationHandler {
     }
 
     private static boolean tryFleeVisibleCreeper(Villager villager) {
-        double creeperThreatRadius = VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get();
+        double creeperThreatRadius = VillagerRetaliationConfig.NATURAL_HOSTILE_TARGET_RADIUS.get();
         Optional<Creeper> visibleCreeper = VillagerRetaliationVillagerCombatUtil.findNearestVisibleCreeper(villager, creeperThreatRadius);
         if (visibleCreeper.isEmpty()) {
             return false;

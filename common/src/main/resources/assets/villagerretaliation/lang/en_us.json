@@ -101,6 +101,7 @@
   "villagerretaliation.configuration.combat.armorersFightBack": "Armorers Fight Back",
   "villagerretaliation.configuration.combat.fletchersFightBack": "Fletchers Fight Back",
   "villagerretaliation.configuration.combat.butchersFightBack": "Butchers Fight Back",
+  "villagerretaliation.configuration.combat.naturalHostileTargetRadius": "Natural Hostile Target Radius",
   "villagerretaliation.configuration.combat.combatWeaponDropChance": "Combat Weapon Drop Chance",
   "villagerretaliation.configuration.combat.combatWeaponEnchantChance": "Combat Weapon Enchant Chance",
   "villagerretaliation.configuration.combat.armorerShieldChanceHard": "Armorer Shield Chance (Hard)",

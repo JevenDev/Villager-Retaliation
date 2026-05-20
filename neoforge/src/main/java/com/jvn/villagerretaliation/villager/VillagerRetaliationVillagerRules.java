@@ -26,7 +26,7 @@ public final class VillagerRetaliationVillagerRules {
 
         return !VillagerRetaliationVillagerCombatUtil.hasVisibleCreeperThreat(
                 villager,
-                VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get()
+                VillagerRetaliationConfig.NATURAL_HOSTILE_TARGET_RADIUS.get()
         );
     }
 
