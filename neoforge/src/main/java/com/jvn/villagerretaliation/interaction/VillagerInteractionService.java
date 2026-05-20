@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.interaction;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
+import com.jvn.villagerretaliation.dialogue.DialogueDisposition;
 import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
 import com.jvn.villagerretaliation.dialogue.DialogueReputationEffect;
 import com.jvn.villagerretaliation.dialogue.DialogueReputationService;
@@ -93,14 +94,17 @@ public final class VillagerInteractionService {
     public static void openInteractionScreen(ServerPlayer player, Villager villager) {
         ServerLevel level = player.serverLevel();
         ReputationSnapshot reputation = reputationSnapshot(level, villager, player);
-        String greetingText = VillagerDialogueService.selectOpeningGreeting(createDialogueContext(
+        VillagerInteractionTracker.InteractionState interactionState = VillagerInteractionTracker.getState(level, villager, player);
+        DialogueContext dialogueContext = createDialogueContext(
                 level,
                 player,
                 villager,
-                VillagerInteractionTracker.getState(level, villager, player),
+                interactionState,
                 reputation.value(),
                 reputation.level()
-        ));
+        );
+        DialogueDisposition mood = VillagerDialogueService.moodFor(dialogueContext);
+        String greetingText = VillagerDialogueService.selectOpeningGreeting(dialogueContext);
         PacketDistributor.sendToPlayer(player, new OpenVillagerInteractionPayload(
                 villager.getId(),
                 VillagerPresetNameRegistry.resolveNameTranslationKey(villager),
@@ -108,7 +112,8 @@ public final class VillagerInteractionService {
                 villager.isBaby() ? "Child" : VillagerInteractionTextUtil.professionName(villager.getVillagerData().getProfession(), "Unemployed"),
                 villager.isBaby(),
                 reputation.value(),
-                reputation.level()
+                reputation.level(),
+                mood
         ));
         broadcastVillagerChat(level, villager, greetingText);
     }
@@ -310,6 +315,10 @@ public final class VillagerInteractionService {
                 interactionState.firstConversation(),
                 weatherState(level, villager),
                 timeOfDay(level),
+                interactionState.lastPositiveDialogueReputationGameTime(),
+                interactionState.lastNegativeDialogueReputationGameTime(),
+                interactionState.lastJokeReputationGameTime(),
+                interactionState.badFirstImpression(),
                 interactionState.lastBrokenBedGameTime(),
                 interactionState.lastDirectHitGameTime(),
                 interactionState.lastDirectHitWeapon(),
@@ -325,10 +334,19 @@ public final class VillagerInteractionService {
 
     private static void sendDialogueReputation(ServerPlayer player, Villager villager, ServerLevel level) {
         ReputationSnapshot reputation = reputationSnapshot(level, villager, player);
+        DialogueDisposition mood = VillagerDialogueService.moodFor(createDialogueContext(
+                level,
+                player,
+                villager,
+                VillagerInteractionTracker.getState(level, villager, player),
+                reputation.value(),
+                reputation.level()
+        ));
         PacketDistributor.sendToPlayer(player, new VillagerDialogueResponsePayload(
                 villager.getId(),
                 reputation.value(),
-                reputation.level()
+                reputation.level(),
+                mood
         ));
     }
 

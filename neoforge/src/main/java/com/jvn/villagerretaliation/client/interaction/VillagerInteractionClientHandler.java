@@ -38,7 +38,8 @@ public final class VillagerInteractionClientHandler {
                 payload.professionName(),
                 payload.baby(),
                 payload.reputation(),
-                payload.reputationLevel()
+                payload.reputationLevel(),
+                payload.mood()
         ));
     }
 
@@ -46,7 +47,7 @@ public final class VillagerInteractionClientHandler {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.screen instanceof VillagerInteractionScreen screen
                 && screen.matchesVillager(payload.entityId())) {
-            screen.updateReputation(payload.reputation(), payload.reputationLevel());
+            screen.updateReputation(payload.reputation(), payload.reputationLevel(), payload.mood());
         }
     }
 

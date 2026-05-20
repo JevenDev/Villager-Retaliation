@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.client.interaction;
 
 import com.jvn.villagerretaliation.VillagerRetaliation;
+import com.jvn.villagerretaliation.dialogue.DialogueDisposition;
 import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
 import com.jvn.villagerretaliation.network.VillagerConversationEndRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerDialogueRequestPayload;
@@ -75,6 +76,7 @@ public class VillagerInteractionScreen extends Screen {
     private final boolean baby;
     private int reputation;
     private VillagerReputationLevel reputationLevel;
+    private DialogueDisposition mood;
     private final List<DialogueOption> options = new ArrayList<>();
     private DialoguePage page = DialoguePage.ROOT;
     private int selectedOption;
@@ -87,7 +89,7 @@ public class VillagerInteractionScreen extends Screen {
     private Button giftButton;
     private Double originalChatWidth;
 
-    public VillagerInteractionScreen(int villagerEntityId, String villagerName, String professionName, boolean baby, int reputation, VillagerReputationLevel reputationLevel) {
+    public VillagerInteractionScreen(int villagerEntityId, String villagerName, String professionName, boolean baby, int reputation, VillagerReputationLevel reputationLevel, DialogueDisposition mood) {
         super(Component.literal("Villager Interaction"));
         this.villagerEntityId = villagerEntityId;
         this.villagerName = villagerName;
@@ -95,6 +97,7 @@ public class VillagerInteractionScreen extends Screen {
         this.baby = baby;
         this.reputation = reputation;
         this.reputationLevel = reputationLevel;
+        this.mood = mood;
         ClientVillagerConversationState.start(villagerEntityId);
     }
 
@@ -122,9 +125,10 @@ public class VillagerInteractionScreen extends Screen {
         return this.villagerEntityId == entityId;
     }
 
-    public void updateReputation(int reputation, VillagerReputationLevel reputationLevel) {
+    public void updateReputation(int reputation, VillagerReputationLevel reputationLevel, DialogueDisposition mood) {
         this.reputation = reputation;
         this.reputationLevel = reputationLevel;
+        this.mood = mood;
     }
 
     public void closeFromServer() {
@@ -553,7 +557,7 @@ public class VillagerInteractionScreen extends Screen {
 
         drawRightAlignedInfo(graphics, this.villagerName, infoBaseY, INFO_VALUE_COLOR, dividerX);
         drawRightAlignedInfo(graphics, this.professionName, infoBaseY + infoLineGap, INFO_SECONDARY_COLOR, dividerX);
-        drawRightAlignedInfo(graphics, moodText(), infoBaseY + infoLineGap * 2, moodColor(this.reputationLevel), dividerX);
+        drawRightAlignedInfo(graphics, moodText(), infoBaseY + infoLineGap * 2, moodColor(this.mood), dividerX);
         drawRightAlignedInfo(graphics, reputationText(), infoBaseY + infoLineGap * 3, INFO_LABEL_COLOR, dividerX);
     }
 
@@ -845,7 +849,7 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     private String moodText() {
-        return "Mood: " + VillagerInteractionTextUtil.reputationLevelName(this.reputationLevel);
+        return "Mood: " + this.mood.displayName();
     }
 
     private String reputationText() {
@@ -1015,14 +1019,13 @@ public class VillagerInteractionScreen extends Screen {
         }
     }
 
-    private static int moodColor(VillagerReputationLevel level) {
-        if (level.trustRank() > VillagerReputationLevel.NEUTRAL.trustRank()) {
-            return 0xD08BE0A9;
-        }
-        if (level.trustRank() < VillagerReputationLevel.NEUTRAL.trustRank()) {
-            return 0xD0E69A8A;
-        }
-        return 0xCFEAE6DC;
+    private static int moodColor(DialogueDisposition mood) {
+        return switch (mood) {
+            case RESPECTFUL, FRIENDLY -> 0xD08BE0A9;
+            case CAUTIOUS -> 0xD0E6D58A;
+            case RUDE, HOSTILE, FEARFUL -> 0xD0E69A8A;
+            case NEUTRAL -> 0xCFEAE6DC;
+        };
     }
 
     private enum DialoguePage {

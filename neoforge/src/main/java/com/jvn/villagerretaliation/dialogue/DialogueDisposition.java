@@ -7,5 +7,10 @@ public enum DialogueDisposition {
     CAUTIOUS,
     RUDE,
     HOSTILE,
-    FEARFUL
+    FEARFUL;
+
+    public String displayName() {
+        String lowerName = this.name().toLowerCase(java.util.Locale.ROOT);
+        return Character.toUpperCase(lowerName.charAt(0)) + lowerName.substring(1);
+    }
 }

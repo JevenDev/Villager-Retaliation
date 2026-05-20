@@ -31,7 +31,7 @@ public final class VillagerDialogueService {
             return giftMemory.get();
         }
 
-        DialogueDisposition disposition = dispositionFor(context.reputationLevel());
+        DialogueDisposition disposition = moodFor(context);
         List<DialogueLine> candidates = LINES.stream()
                 .filter(line -> line.matches(context, requestType, disposition))
                 .sorted(Comparator.comparingInt(line -> recentDialogueIds.contains(line.id()) ? 1 : 0))
@@ -96,6 +96,53 @@ public final class VillagerDialogueService {
             case HOSTILE -> DialogueDisposition.RUDE;
             case DESPISED -> DialogueDisposition.HOSTILE;
             case FEARED -> DialogueDisposition.FEARFUL;
+        };
+    }
+
+    public static DialogueDisposition moodFor(DialogueContext context) {
+        DialogueDisposition baseline = dispositionFor(context.reputationLevel());
+        if (context.hasRecentDirectHitMemory()) {
+            return context.reputationLevel() == VillagerReputationLevel.FEARED
+                    ? DialogueDisposition.FEARFUL
+                    : lowerMood(baseline, DialogueDisposition.RUDE);
+        }
+        if (context.hasRecentBrokenBedMemory()) {
+            return lowerMood(baseline, DialogueDisposition.RUDE);
+        }
+        if (context.hasRecentNegativeDialogueMoodMemory()) {
+            return lowerMood(baseline, DialogueDisposition.CAUTIOUS);
+        }
+        if (context.badFirstImpression()) {
+            return lowerMood(baseline, DialogueDisposition.CAUTIOUS);
+        }
+        if (context.hasRecentPositiveDialogueMoodMemory()) {
+            return liftMood(baseline);
+        }
+        return baseline;
+    }
+
+    private static DialogueDisposition lowerMood(DialogueDisposition baseline, DialogueDisposition limit) {
+        return moodRank(baseline) < moodRank(limit) ? baseline : limit;
+    }
+
+    private static DialogueDisposition liftMood(DialogueDisposition baseline) {
+        return switch (baseline) {
+            case RESPECTFUL, FRIENDLY -> baseline;
+            case NEUTRAL, CAUTIOUS -> DialogueDisposition.FRIENDLY;
+            case RUDE, HOSTILE -> DialogueDisposition.CAUTIOUS;
+            case FEARFUL -> DialogueDisposition.FEARFUL;
+        };
+    }
+
+    private static int moodRank(DialogueDisposition disposition) {
+        return switch (disposition) {
+            case RESPECTFUL -> 3;
+            case FRIENDLY -> 2;
+            case NEUTRAL -> 1;
+            case CAUTIOUS -> 0;
+            case RUDE -> -1;
+            case HOSTILE -> -2;
+            case FEARFUL -> -3;
         };
     }
 
@@ -539,7 +586,7 @@ public final class VillagerDialogueService {
     }
 
     private static List<String> globalHelloLines(DialogueContext context) {
-        return switch (dispositionFor(context.reputationLevel())) {
+        return switch (moodFor(context)) {
             case RESPECTFUL, FRIENDLY -> List.of(
                     "Good to see you. What can I do for you?",
                     "Welcome back. The village has room for a friendly face."
@@ -564,7 +611,7 @@ public final class VillagerDialogueService {
     }
 
     private static List<String> globalGoodbyeLines(DialogueContext context) {
-        return switch (dispositionFor(context.reputationLevel())) {
+        return switch (moodFor(context)) {
             case RESPECTFUL, FRIENDLY -> List.of(
                     "Safe travels. Come by again.",
                     "Take care out there."

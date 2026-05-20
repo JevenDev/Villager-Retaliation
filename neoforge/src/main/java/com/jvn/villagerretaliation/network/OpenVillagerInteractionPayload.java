@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.network;
 
+import com.jvn.villagerretaliation.dialogue.DialogueDisposition;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -12,7 +13,8 @@ public record OpenVillagerInteractionPayload(
         String professionName,
         boolean baby,
         int reputation,
-        VillagerReputationLevel reputationLevel)
+        VillagerReputationLevel reputationLevel,
+        DialogueDisposition mood)
         implements CustomPacketPayload {
     public static final Type<OpenVillagerInteractionPayload> TYPE = VillagerPayloads.type("open_villager_interaction");
     public static final StreamCodec<RegistryFriendlyByteBuf, OpenVillagerInteractionPayload> STREAM_CODEC =
@@ -26,6 +28,7 @@ public record OpenVillagerInteractionPayload(
         buffer.writeBoolean(payload.baby());
         buffer.writeVarInt(payload.reputation());
         buffer.writeEnum(payload.reputationLevel());
+        buffer.writeEnum(payload.mood());
     }
 
     private static OpenVillagerInteractionPayload decode(RegistryFriendlyByteBuf buffer) {
@@ -36,7 +39,8 @@ public record OpenVillagerInteractionPayload(
                 buffer.readUtf(),
                 buffer.readBoolean(),
                 buffer.readVarInt(),
-                buffer.readEnum(VillagerReputationLevel.class)
+                buffer.readEnum(VillagerReputationLevel.class),
+                buffer.readEnum(DialogueDisposition.class)
         );
     }
 
