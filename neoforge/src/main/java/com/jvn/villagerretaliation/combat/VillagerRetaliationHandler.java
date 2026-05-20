@@ -288,6 +288,11 @@ public final class VillagerRetaliationHandler {
             return;
         }
 
+        if (villager.isSleeping()) {
+            handleSleepingCombatState(villager);
+            return;
+        }
+
         RETALIATION.restorePersistedAngerIfNeeded(villager);
         tryAcquireHostileTarget(villager);
 
@@ -751,6 +756,18 @@ public final class VillagerRetaliationHandler {
             maxDelay = swap;
         }
         return minDelay + villager.getRandom().nextInt(maxDelay - minDelay + 1);
+    }
+
+    private static void handleSleepingCombatState(Villager villager) {
+        villager.setAggressive(false);
+        villager.setChasing(false);
+        villager.setTarget(null);
+        resetArmorerShieldState(villager);
+        VillagerRangedCombatHelper.clearState(villager);
+        VillagerClericPotionHelper.clearState(villager);
+        VillagerRetaliationRetaliationUtil.restoreCombatMovement(villager);
+        RETALIATION.restoreTemporaryWeapon(villager);
+        villager.getNavigation().stop();
     }
 
     private static void equipCombatWeapon(Villager villager) {
