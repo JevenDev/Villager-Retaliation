@@ -1,0 +1,13 @@
+{
+  "openings": [
+    { "id": "librarian_opening", "text": "Mind the lectern. What do you need?" }
+  ],
+  "closings": [
+    { "id": "librarian_closing", "text": "Back to keeping records and stories straight, then." }
+  ],
+  "lines": [
+    { "id": "librarian_chat_pages", "type": "chat", "text": "Missing pages worry me less than people who never read warnings.", "weight": 30 },
+    { "id": "librarian_question_memory", "type": "question", "text": "Villages remember more than people expect.", "weight": 30 },
+    { "id": "librarian_story_records", "type": "story", "text": "Every trade, every kindness, every cruelty. Someone writes it down.", "weight": 26 }
+  ]
+}

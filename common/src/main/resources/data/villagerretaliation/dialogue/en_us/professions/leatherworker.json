@@ -1,0 +1,13 @@
+{
+  "openings": [
+    { "id": "leatherworker_opening", "text": "Mind the tannery. What do you need?" }
+  ],
+  "closings": [
+    { "id": "leatherworker_closing", "text": "Back to curing leather without wasting hide, then." }
+  ],
+  "lines": [
+    { "id": "leatherworker_chat_stitching", "type": "chat", "text": "Bad stitching in the rain tells on itself quickly.", "weight": 30 },
+    { "id": "leatherworker_question_gear", "type": "question", "text": "Gear that lasts is mostly patience made visible.", "weight": 30 },
+    { "id": "leatherworker_story_hide", "type": "story", "text": "A split seam can ruin a journey faster than a bad map.", "weight": 26 }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "openings": [
+    { "id": "toolsmith_opening", "text": "Mind the smithing table. What do you need?" }
+  ],
+  "closings": [
+    { "id": "toolsmith_closing", "text": "Back to making tools that do not fail, then." }
+  ],
+  "lines": [
+    { "id": "toolsmith_chat_handles", "type": "chat", "text": "Cracked handles are small warnings with expensive timing.", "weight": 30 },
+    { "id": "toolsmith_question_edges", "type": "question", "text": "A dull edge makes every simple job into a bad plan.", "weight": 30 },
+    { "id": "toolsmith_story_tool", "type": "story", "text": "A good tool is quiet proof that someone cared before trouble started.", "weight": 26 }
+  ]
+}

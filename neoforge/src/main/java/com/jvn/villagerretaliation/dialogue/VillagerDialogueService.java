@@ -13,7 +13,7 @@ import net.minecraft.world.entity.npc.VillagerProfession;
 
 public final class VillagerDialogueService {
     private static final int PROFESSION_MOOD_LINE_COUNT = 30;
-    private static final List<DialogueLine> LINES = createLines();
+    private static final List<DialogueLine> FALLBACK_LINES = createLines();
 
     private VillagerDialogueService() {
     }
@@ -34,14 +34,15 @@ public final class VillagerDialogueService {
         }
 
         DialogueDisposition disposition = moodFor(context);
-        List<DialogueLine> candidates = LINES.stream()
+        List<DialogueLine> availableLines = availableLines(context);
+        List<DialogueLine> candidates = availableLines.stream()
                 .filter(line -> line.matches(context, requestType, disposition))
                 .sorted(Comparator.comparingInt(line -> recentDialogueIds.contains(line.id()) ? 1 : 0))
                 .toList();
         candidates = preferDirectHitMemoryCandidates(context, requestType, candidates);
         candidates = preferBrokenBedMemoryCandidates(context, requestType, candidates);
         if (candidates.isEmpty()) {
-            candidates = LINES.stream()
+            candidates = availableLines.stream()
                     .filter(line -> line.matches(context, requestType, DialogueDisposition.NEUTRAL))
                     .toList();
             candidates = preferDirectHitMemoryCandidates(context, requestType, candidates);
@@ -79,14 +80,26 @@ public final class VillagerDialogueService {
         if (giftMemory.isPresent()) {
             return giftMemory.get();
         }
-        return selectConversationLine(context, "hello", globalHelloLines(context), professionHelloLines(context.profession()));
+        DialogueDisposition disposition = moodFor(context);
+        return selectConversationLine(
+                context,
+                "hello",
+                combinedConversationLines(VillagerDialogueResources.openingLines(context, disposition), globalHelloLines(context)),
+                professionHelloLines(context.profession())
+        );
     }
 
     public static String selectClosingGoodbye(DialogueContext context) {
         if (context.villager().isBaby()) {
             return selectBabyGoodbye(context);
         }
-        return selectConversationLine(context, "goodbye", globalGoodbyeLines(context), professionGoodbyeLines(context.profession()));
+        DialogueDisposition disposition = moodFor(context);
+        return selectConversationLine(
+                context,
+                "goodbye",
+                combinedConversationLines(VillagerDialogueResources.closingLines(context, disposition), globalGoodbyeLines(context)),
+                professionGoodbyeLines(context.profession())
+        );
     }
 
     public static DialogueDisposition dispositionFor(VillagerReputationLevel reputationLevel) {
@@ -214,6 +227,18 @@ public final class VillagerDialogueService {
 
     private static int effectiveWeight(DialogueLine line) {
         return line.weight() + line.specificityScore() * 8;
+    }
+
+    private static List<DialogueLine> availableLines(DialogueContext context) {
+        List<DialogueLine> resourceLines = VillagerDialogueResources.lines(context.level().getServer());
+        if (resourceLines.isEmpty()) {
+            return FALLBACK_LINES;
+        }
+
+        List<DialogueLine> lines = new ArrayList<>(resourceLines.size() + FALLBACK_LINES.size());
+        lines.addAll(resourceLines);
+        lines.addAll(FALLBACK_LINES);
+        return lines;
     }
 
     private static Optional<DialogueResult> selectGiftMemoryLine(
@@ -393,6 +418,17 @@ public final class VillagerDialogueService {
             return fallback;
         }
         return ToucanRandom.choose(context.random(), candidates);
+    }
+
+    private static List<String> combinedConversationLines(List<String> resourceLines, List<String> fallbackLines) {
+        if (resourceLines.isEmpty()) {
+            return fallbackLines;
+        }
+
+        List<String> lines = new ArrayList<>(resourceLines.size() + fallbackLines.size());
+        lines.addAll(resourceLines);
+        lines.addAll(fallbackLines);
+        return lines;
     }
 
     private static DialogueResult selectBabyLine(DialogueContext context, DialogueRequestType requestType) {

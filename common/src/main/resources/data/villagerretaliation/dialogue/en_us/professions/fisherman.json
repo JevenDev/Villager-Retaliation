@@ -1,0 +1,13 @@
+{
+  "openings": [
+    { "id": "fisherman_opening", "text": "Mind the dock. What do you need?" }
+  ],
+  "closings": [
+    { "id": "fisherman_closing", "text": "Back to reading water and weather, then." }
+  ],
+  "lines": [
+    { "id": "fisherman_chat_nets", "type": "chat", "text": "Empty nets at dusk make every rumor sound heavier.", "weight": 30 },
+    { "id": "fisherman_question_water", "type": "question", "text": "Water keeps secrets until the weather shakes them loose.", "weight": 30 },
+    { "id": "fisherman_story_line", "type": "story", "text": "A snapped line once saved me from hauling in something worse than nothing.", "weight": 26 }
+  ]
+}

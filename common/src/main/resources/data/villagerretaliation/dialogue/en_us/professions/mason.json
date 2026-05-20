@@ -1,0 +1,13 @@
+{
+  "openings": [
+    { "id": "mason_opening", "text": "Mind the stonecutter. What do you need?" }
+  ],
+  "closings": [
+    { "id": "mason_closing", "text": "Back to setting stone that stays set, then." }
+  ],
+  "lines": [
+    { "id": "mason_chat_corners", "type": "chat", "text": "Walls with weak corners teach humility before they teach repair.", "weight": 30 },
+    { "id": "mason_question_stone", "type": "question", "text": "Stone remembers pressure. People do too.", "weight": 30 },
+    { "id": "mason_story_wall", "type": "story", "text": "The best wall is boring. Boring means it held.", "weight": 26 }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "openings": [
+    { "id": "cleric_opening", "text": "Mind the brewing stand. What do you need?" }
+  ],
+  "closings": [
+    { "id": "cleric_closing", "text": "Back to mixing remedies and prayers, then." }
+  ],
+  "lines": [
+    { "id": "cleric_chat_remedies", "type": "chat", "text": "Some remedies need glass bottles. Some need time and a quieter voice.", "weight": 30 },
+    { "id": "cleric_question_wounds", "type": "question", "text": "There are wounds that potions cannot mend.", "weight": 30 },
+    { "id": "cleric_story_omens", "type": "story", "text": "Bad omens linger longer than most people think.", "weight": 26 }
+  ]
+}

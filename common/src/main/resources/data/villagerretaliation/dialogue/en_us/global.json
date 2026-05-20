@@ -1,0 +1,64 @@
+{
+  "openings": [
+    {
+      "id": "global_friendly_opening",
+      "text": "Good to see you. What can I do for you?",
+      "dispositions": ["respectful", "friendly"]
+    },
+    {
+      "id": "global_neutral_opening",
+      "text": "Hello. What brings you here?",
+      "dispositions": ["neutral", "cautious"]
+    },
+    {
+      "id": "global_hostile_opening",
+      "text": "You should make this quick.",
+      "dispositions": ["rude", "hostile", "fearful"]
+    }
+  ],
+  "closings": [
+    {
+      "id": "global_friendly_closing",
+      "text": "Safe travels. Come by again.",
+      "dispositions": ["respectful", "friendly"]
+    },
+    {
+      "id": "global_neutral_closing",
+      "text": "Until next time.",
+      "dispositions": ["neutral", "cautious"]
+    },
+    {
+      "id": "global_hostile_closing",
+      "text": "That is enough for now.",
+      "dispositions": ["rude", "hostile", "fearful"]
+    }
+  ],
+  "lines": [
+    {
+      "id": "global_chat_paths",
+      "type": "chat",
+      "text": "The paths tell you plenty if you watch who hurries and who lingers.",
+      "weight": 22
+    },
+    {
+      "id": "global_question_trust",
+      "type": "question",
+      "text": "Trust is built from small things. Villages are very good at counting small things.",
+      "weight": 24
+    },
+    {
+      "id": "global_story_bell",
+      "type": "story",
+      "text": "Once the bell rang for a wandering cat. Everyone still claims they were not scared.",
+      "weight": 20
+    },
+    {
+      "id": "global_hit_memory",
+      "type": "chat",
+      "text": "I still remember that {attack_weapon}. Conversations get colder after that.",
+      "requires_recent_direct_hit_memory": true,
+      "dispositions": ["cautious", "rude", "hostile", "fearful"],
+      "weight": 48
+    }
+  ]
+}

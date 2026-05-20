@@ -1,0 +1,13 @@
+{
+  "openings": [
+    { "id": "cartographer_opening", "text": "Mind the map table. What do you need?" }
+  ],
+  "closings": [
+    { "id": "cartographer_closing", "text": "Back to reading roads and borders, then." }
+  ],
+  "lines": [
+    { "id": "cartographer_chat_edges", "type": "chat", "text": "Blank edges on a map make people braver than they should be.", "weight": 30 },
+    { "id": "cartographer_question_roads", "type": "question", "text": "Every road looks safer when someone else drew it.", "weight": 30 },
+    { "id": "cartographer_story_path", "type": "story", "text": "A lost path can become a warning if enough people survive telling it.", "weight": 26 }
+  ]
+}

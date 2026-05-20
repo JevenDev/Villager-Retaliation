@@ -1,0 +1,13 @@
+{
+  "openings": [
+    { "id": "nitwit_opening", "text": "Mind the sunny corner. What do you need?" }
+  ],
+  "closings": [
+    { "id": "nitwit_closing", "text": "Back to finding odd jobs and stranger thoughts, then." }
+  ],
+  "lines": [
+    { "id": "nitwit_chat_thought", "type": "chat", "text": "I had a thought once. Left it somewhere safe, probably.", "weight": 30 },
+    { "id": "nitwit_question_thinking", "type": "question", "text": "If you find my thought, tell it I was looking useful.", "weight": 30 },
+    { "id": "nitwit_story_stick", "type": "story", "text": "A nice stick can be many things if nobody important is watching.", "weight": 26 }
+  ]
+}

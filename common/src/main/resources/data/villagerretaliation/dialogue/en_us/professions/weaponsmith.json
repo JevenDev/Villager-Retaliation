@@ -1,0 +1,13 @@
+{
+  "openings": [
+    { "id": "weaponsmith_opening", "text": "Mind the grindstone. What do you need?" }
+  ],
+  "closings": [
+    { "id": "weaponsmith_closing", "text": "Back to keeping blades honest, then." }
+  ],
+  "lines": [
+    { "id": "weaponsmith_chat_blades", "type": "chat", "text": "Rust on a sword is just neglect learning to speak.", "weight": 30 },
+    { "id": "weaponsmith_question_trouble", "type": "question", "text": "Trouble always finds villages. Best be ready.", "weight": 30 },
+    { "id": "weaponsmith_story_golem", "type": "story", "text": "The golem did good work last night. Still, I keep the blades sharp.", "weight": 26 }
+  ]
+}

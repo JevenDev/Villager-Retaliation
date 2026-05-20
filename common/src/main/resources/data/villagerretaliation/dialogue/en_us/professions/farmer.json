@@ -1,0 +1,13 @@
+{
+  "openings": [
+    { "id": "farmer_opening", "text": "Mind the fields. What do you need?" }
+  ],
+  "closings": [
+    { "id": "farmer_closing", "text": "Back to coaxing food from stubborn soil, then." }
+  ],
+  "lines": [
+    { "id": "farmer_chat_rows", "type": "chat", "text": "Dry rows and trampled crops teach a farmer to watch every footstep.", "weight": 30 },
+    { "id": "farmer_question_soil", "type": "question", "text": "The soil's been kind lately. That's more than I can say for some visitors.", "weight": 30 },
+    { "id": "farmer_story_harvest", "type": "story", "text": "A good harvest keeps a village standing.", "weight": 26 }
+  ]
+}

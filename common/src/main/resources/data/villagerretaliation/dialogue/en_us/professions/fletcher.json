@@ -1,0 +1,13 @@
+{
+  "openings": [
+    { "id": "fletcher_opening", "text": "Mind the fletching table. What do you need?" }
+  ],
+  "closings": [
+    { "id": "fletcher_closing", "text": "Back to balancing arrows true, then." }
+  ],
+  "lines": [
+    { "id": "fletcher_chat_feathers", "type": "chat", "text": "Clean feathers and straight shafts make trouble keep its distance.", "weight": 30 },
+    { "id": "fletcher_question_patrols", "type": "question", "text": "A good bow hears trouble before the bell does.", "weight": 30 },
+    { "id": "fletcher_story_missed", "type": "story", "text": "Missed shots teach loudly, especially when everyone heard you brag first.", "weight": 26 }
+  ]
+}

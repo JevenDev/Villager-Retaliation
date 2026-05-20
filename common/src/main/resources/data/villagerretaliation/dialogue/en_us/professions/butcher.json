@@ -1,0 +1,13 @@
+{
+  "openings": [
+    { "id": "butcher_opening", "text": "Mind the smokehouse. What do you need?" }
+  ],
+  "closings": [
+    { "id": "butcher_closing", "text": "Back to keeping meat salted and safe, then." }
+  ],
+  "lines": [
+    { "id": "butcher_chat_work", "type": "chat", "text": "A smokehouse tells you fast who understands patience.", "weight": 30 },
+    { "id": "butcher_question_supplies", "type": "question", "text": "Empty hooks before supper can frighten a village more than thunder.", "weight": 30 },
+    { "id": "butcher_story_stores", "type": "story", "text": "Food decides whether a scare becomes a disaster.", "weight": 26 }
+  ]
+}

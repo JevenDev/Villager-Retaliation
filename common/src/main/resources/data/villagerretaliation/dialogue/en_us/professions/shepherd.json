@@ -1,0 +1,13 @@
+{
+  "openings": [
+    { "id": "shepherd_opening", "text": "Mind the loom. What do you need?" }
+  ],
+  "closings": [
+    { "id": "shepherd_closing", "text": "Back to turning wool into warmth, then." }
+  ],
+  "lines": [
+    { "id": "shepherd_chat_flock", "type": "chat", "text": "Scattered sheep make the whole day longer than it needs to be.", "weight": 30 },
+    { "id": "shepherd_question_wolves", "type": "question", "text": "Wolves near the pens change how everyone listens after dark.", "weight": 30 },
+    { "id": "shepherd_story_wool", "type": "story", "text": "Clean wool feels ordinary until winter reminds you it is not.", "weight": 26 }
+  ]
+}

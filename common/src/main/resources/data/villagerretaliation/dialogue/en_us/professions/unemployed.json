@@ -1,0 +1,13 @@
+{
+  "openings": [
+    { "id": "unemployed_opening", "text": "Mind the job site I have not found yet. What do you need?" }
+  ],
+  "closings": [
+    { "id": "unemployed_closing", "text": "Back to looking useful before anyone notices, then." }
+  ],
+  "lines": [
+    { "id": "unemployed_chat_work", "type": "chat", "text": "Finding the right work is harder when everyone asks if you found it yet.", "weight": 30 },
+    { "id": "unemployed_question_general", "type": "question", "text": "Work is work. Finding the right work is the tricky part.", "weight": 30 },
+    { "id": "unemployed_story_chance", "type": "story", "text": "A fair chance can look a lot like standing around until the right bell rings.", "weight": 26 }
+  ]
+}

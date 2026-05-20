@@ -1,0 +1,13 @@
+{
+  "openings": [
+    { "id": "armorer_opening", "text": "Mind the forge. What do you need?" }
+  ],
+  "closings": [
+    { "id": "armorer_closing", "text": "Back to fitting mail and shields, then." }
+  ],
+  "lines": [
+    { "id": "armorer_chat_work", "type": "chat", "text": "Most of my day is fitting mail and shields. It sounds simple until everything depends on it.", "weight": 30 },
+    { "id": "armorer_question_plates", "type": "question", "text": "A cracked plate after a raid teaches more than a quiet week ever does.", "weight": 30 },
+    { "id": "armorer_story_shield", "type": "story", "text": "A good shield is a promise you test before anyone needs it.", "weight": 26 }
+  ]
+}
