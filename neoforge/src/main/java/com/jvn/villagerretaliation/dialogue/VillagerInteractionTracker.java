@@ -37,6 +37,7 @@ public final class VillagerInteractionTracker {
                 entry.requestUseCount(DialogueRequestType.STORY_HINT_REPORT, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.COMBAT_SURVIVAL_REPORT, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.GEAR_REPORT, gameTime, day, optionResetTicks),
+                entry.requestUseCount(DialogueRequestType.RECRUITMENT_FOLLOWUP, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.APOLOGY, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.VILLAGE_DEFENSE_REPORT, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.STORY, gameTime, day, optionResetTicks),
@@ -221,6 +222,26 @@ public final class VillagerInteractionTracker {
         }
     }
 
+    public static void rememberRecruitmentFollowup(ServerLevel level, Villager villager, ServerPlayer player, String scenario) {
+        VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
+        data.rememberRecruitmentFollowup(villager.getUUID(), player.getUUID(), scenario, level.getGameTime());
+        data.setDirty();
+    }
+
+    public static Optional<RecruitmentFollowupReport> unreportedRecruitmentFollowup(ServerLevel level, Villager villager, ServerPlayer player) {
+        return Optional.ofNullable(VillagerInteractionSavedData.get(level)
+                .unreportedRecruitmentFollowup(villager.getUUID(), player.getUUID()));
+    }
+
+    public static Optional<RecruitmentFollowupReport> claimUnreportedRecruitmentFollowup(ServerLevel level, Villager villager, ServerPlayer player) {
+        VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
+        RecruitmentFollowupReport report = data.claimUnreportedRecruitmentFollowup(villager.getUUID(), player.getUUID());
+        if (report != null) {
+            data.setDirty();
+        }
+        return Optional.ofNullable(report);
+    }
+
     public static Optional<GiftAdviceResultReport> unreportedGiftAdviceResult(ServerLevel level, Villager villager, ServerPlayer player) {
         return Optional.ofNullable(VillagerInteractionSavedData.get(level)
                 .unreportedGiftAdviceResult(villager.getUUID(), player.getUUID()));
@@ -350,6 +371,7 @@ public final class VillagerInteractionTracker {
             int storyHintReportUseCount,
             int combatSurvivalReportUseCount,
             int gearReportUseCount,
+            int recruitmentFollowupUseCount,
             int apologyUseCount,
             int villageDefenseReportUseCount,
             int storyUseCount,
@@ -372,6 +394,7 @@ public final class VillagerInteractionTracker {
                 case STORY_HINT_REPORT -> this.storyHintReportUseCount;
                 case COMBAT_SURVIVAL_REPORT -> this.combatSurvivalReportUseCount;
                 case GEAR_REPORT -> this.gearReportUseCount;
+                case RECRUITMENT_FOLLOWUP -> this.recruitmentFollowupUseCount;
                 case APOLOGY -> this.apologyUseCount;
                 case VILLAGE_DEFENSE_REPORT -> this.villageDefenseReportUseCount;
                 case STORY -> this.storyUseCount;
@@ -416,6 +439,13 @@ public final class VillagerInteractionTracker {
             UUID villagerId,
             String gearKind,
             boolean usedInCombat,
+            long gameTime
+    ) {
+    }
+
+    public record RecruitmentFollowupReport(
+            UUID villagerId,
+            String scenario,
             long gameTime
     ) {
     }

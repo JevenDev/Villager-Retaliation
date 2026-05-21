@@ -71,6 +71,9 @@ public class VillagerInteractionSavedData extends SavedData {
     private static final String TAG_GEAR_REPORT_KIND = "GearReportKind";
     private static final String TAG_GEAR_REPORT_USED_IN_COMBAT = "GearReportUsedInCombat";
     private static final String TAG_GEAR_REPORT_GAME_TIME = "GearReportGameTime";
+    private static final String TAG_RECRUITMENT_FOLLOWUP_UNREPORTED = "RecruitmentFollowupUnreported";
+    private static final String TAG_RECRUITMENT_FOLLOWUP_SCENARIO = "RecruitmentFollowupScenario";
+    private static final String TAG_RECRUITMENT_FOLLOWUP_GAME_TIME = "RecruitmentFollowupGameTime";
     private static final String TAG_GIFT_ADVICE_ITEM_ID = "GiftAdviceItemId";
     private static final String TAG_GIFT_ADVICE_ITEM_NAME = "GiftAdviceItemName";
     private static final String TAG_GIFT_ADVICE_TARGET_PROFESSION = "GiftAdviceTargetProfession";
@@ -128,6 +131,11 @@ public class VillagerInteractionSavedData extends SavedData {
             }
             entry.gearReportUsedInCombat = entryTag.getBoolean(TAG_GEAR_REPORT_USED_IN_COMBAT);
             entry.gearReportGameTime = readOptionalLong(entryTag, TAG_GEAR_REPORT_GAME_TIME);
+            entry.recruitmentFollowupUnreported = entryTag.getBoolean(TAG_RECRUITMENT_FOLLOWUP_UNREPORTED);
+            if (entryTag.contains(TAG_RECRUITMENT_FOLLOWUP_SCENARIO, Tag.TAG_STRING)) {
+                entry.recruitmentFollowupScenario = entryTag.getString(TAG_RECRUITMENT_FOLLOWUP_SCENARIO);
+            }
+            entry.recruitmentFollowupGameTime = readOptionalLong(entryTag, TAG_RECRUITMENT_FOLLOWUP_GAME_TIME);
             if (entryTag.contains(TAG_GIFT_ADVICE_ITEM_ID, Tag.TAG_STRING)) {
                 entry.giftAdviceItemId = entryTag.getString(TAG_GIFT_ADVICE_ITEM_ID);
             }
@@ -312,6 +320,11 @@ public class VillagerInteractionSavedData extends SavedData {
                 }
                 entryTag.putBoolean(TAG_GEAR_REPORT_USED_IN_COMBAT, playerEntry.getValue().gearReportUsedInCombat);
                 entryTag.putLong(TAG_GEAR_REPORT_GAME_TIME, playerEntry.getValue().gearReportGameTime);
+                entryTag.putBoolean(TAG_RECRUITMENT_FOLLOWUP_UNREPORTED, playerEntry.getValue().recruitmentFollowupUnreported);
+                if (playerEntry.getValue().recruitmentFollowupScenario != null && !playerEntry.getValue().recruitmentFollowupScenario.isBlank()) {
+                    entryTag.putString(TAG_RECRUITMENT_FOLLOWUP_SCENARIO, playerEntry.getValue().recruitmentFollowupScenario);
+                }
+                entryTag.putLong(TAG_RECRUITMENT_FOLLOWUP_GAME_TIME, playerEntry.getValue().recruitmentFollowupGameTime);
                 if (playerEntry.getValue().giftAdviceItemId != null && !playerEntry.getValue().giftAdviceItemId.isBlank()) {
                     entryTag.putString(TAG_GIFT_ADVICE_ITEM_ID, playerEntry.getValue().giftAdviceItemId);
                 }
@@ -600,6 +613,18 @@ public class VillagerInteractionSavedData extends SavedData {
         return changed;
     }
 
+    public void rememberRecruitmentFollowup(UUID villagerId, UUID playerId, String scenario, long gameTime) {
+        getOrCreate(villagerId, playerId).rememberRecruitmentFollowup(scenario, gameTime);
+    }
+
+    public VillagerInteractionTracker.RecruitmentFollowupReport unreportedRecruitmentFollowup(UUID villagerId, UUID playerId) {
+        return getOrCreate(villagerId, playerId).unreportedRecruitmentFollowup(villagerId);
+    }
+
+    public VillagerInteractionTracker.RecruitmentFollowupReport claimUnreportedRecruitmentFollowup(UUID villagerId, UUID playerId) {
+        return getOrCreate(villagerId, playerId).claimUnreportedRecruitmentFollowup(villagerId);
+    }
+
     public void rememberGiftAdvice(UUID villagerId, UUID playerId, String itemId, String itemName, String targetProfessionKey) {
         getOrCreate(villagerId, playerId).rememberGiftAdvice(itemId, itemName, targetProfessionKey);
     }
@@ -675,6 +700,9 @@ public class VillagerInteractionSavedData extends SavedData {
         private String gearReportKind;
         private boolean gearReportUsedInCombat;
         private long gearReportGameTime = Long.MIN_VALUE;
+        private boolean recruitmentFollowupUnreported;
+        private String recruitmentFollowupScenario;
+        private long recruitmentFollowupGameTime = Long.MIN_VALUE;
         private String giftAdviceItemId;
         private String giftAdviceItemName;
         private String giftAdviceTargetProfession;
@@ -825,6 +853,31 @@ public class VillagerInteractionSavedData extends SavedData {
                 case "armor" -> armorEquipped;
                 default -> weaponEquipped || armorEquipped;
             };
+        }
+
+        public void rememberRecruitmentFollowup(String scenario, long gameTime) {
+            this.recruitmentFollowupUnreported = true;
+            this.recruitmentFollowupScenario = scenario == null || scenario.isBlank() ? "safe" : scenario;
+            this.recruitmentFollowupGameTime = gameTime;
+        }
+
+        public VillagerInteractionTracker.RecruitmentFollowupReport unreportedRecruitmentFollowup(UUID villagerId) {
+            if (!this.recruitmentFollowupUnreported) {
+                return null;
+            }
+            return new VillagerInteractionTracker.RecruitmentFollowupReport(
+                    villagerId,
+                    this.recruitmentFollowupScenario == null || this.recruitmentFollowupScenario.isBlank()
+                            ? "safe"
+                            : this.recruitmentFollowupScenario,
+                    this.recruitmentFollowupGameTime
+            );
+        }
+
+        public VillagerInteractionTracker.RecruitmentFollowupReport claimUnreportedRecruitmentFollowup(UUID villagerId) {
+            VillagerInteractionTracker.RecruitmentFollowupReport report = unreportedRecruitmentFollowup(villagerId);
+            this.recruitmentFollowupUnreported = false;
+            return report;
         }
 
         public void rememberGiftAdvice(String itemId, String itemName, String targetProfessionKey) {

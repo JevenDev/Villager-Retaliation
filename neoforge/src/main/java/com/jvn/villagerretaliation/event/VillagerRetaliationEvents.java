@@ -74,6 +74,9 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onLivingDamage(LivingDamageEvent.Post event) {
+        if (event.getEntity() instanceof Villager villager && event.getNewDamage() > 0.0F) {
+            VillagerRecruitmentService.rememberFollowerDamage(villager);
+        }
         if (event.getEntity() instanceof Villager villager && event.getSource().getEntity() instanceof Player attacker) {
             VillagerRecruitmentService.stopFollowingIfFollowingAttacker(villager, attacker);
         }

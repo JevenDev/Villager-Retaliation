@@ -15,6 +15,7 @@ public record DialogueOptionDefinition(
         boolean requiresUnreportedStoryHintDiscovery,
         boolean requiresUnreportedCombatSurvivalReport,
         boolean requiresUnreportedGearReport,
+        boolean requiresUnreportedRecruitmentFollowup,
         boolean requiresUnreportedGiftAdviceResult,
         boolean requiresUnapologizedRememberedHarm,
         boolean requiresUnreportedVillageDefense,
@@ -43,6 +44,9 @@ public record DialogueOptionDefinition(
         if (this.requiresUnreportedGearReport && !context.hasUnreportedGearReport()) {
             return false;
         }
+        if (this.requiresUnreportedRecruitmentFollowup && !context.hasUnreportedRecruitmentFollowup()) {
+            return false;
+        }
         if (this.requiresUnreportedGiftAdviceResult && !context.hasUnreportedGiftAdviceResult()) {
             return false;
         }
@@ -56,6 +60,6 @@ public record DialogueOptionDefinition(
     }
 
     public static DialogueOptionDefinition simple(String id, String label, DialogueRequestType requestType, int order) {
-        return new DialogueOptionDefinition(id, label, requestType, true, true, Set.of(), Set.of(), false, false, false, false, false, false, false, order);
+        return new DialogueOptionDefinition(id, label, requestType, true, true, Set.of(), Set.of(), false, false, false, false, false, false, false, false, order);
     }
 }

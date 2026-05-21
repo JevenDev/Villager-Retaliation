@@ -35,6 +35,7 @@ public record DialogueContext(
         VillagerInteractionTracker.StoryHintReport storyHintReport,
         VillagerInteractionTracker.CombatSurvivalReport combatSurvivalReport,
         VillagerInteractionTracker.GearReport gearReport,
+        VillagerInteractionTracker.RecruitmentFollowupReport recruitmentFollowupReport,
         VillagerInteractionTracker.GiftAdviceResultReport giftAdviceResultReport,
         List<VillageEventMemory.MemoryEvent> recentEvents,
         RandomSource random,
@@ -130,6 +131,28 @@ public record DialogueContext(
         return this.gearReport == null || this.gearReport.gearKind() == null || this.gearReport.gearKind().isBlank()
                 ? "gear"
                 : this.gearReport.gearKind();
+    }
+
+    public Optional<VillagerInteractionTracker.RecruitmentFollowupReport> unreportedRecruitmentFollowup() {
+        return Optional.ofNullable(this.recruitmentFollowupReport);
+    }
+
+    public boolean hasUnreportedRecruitmentFollowup() {
+        return this.recruitmentFollowupReport != null;
+    }
+
+    public boolean hasRecruitmentFollowupScenario(String scenario) {
+        return this.recruitmentFollowupReport != null
+                && scenario != null
+                && this.recruitmentFollowupReport.scenario().equalsIgnoreCase(scenario);
+    }
+
+    public String recruitmentFollowupScenario() {
+        return this.recruitmentFollowupReport == null
+                || this.recruitmentFollowupReport.scenario() == null
+                || this.recruitmentFollowupReport.scenario().isBlank()
+                ? "safe"
+                : this.recruitmentFollowupReport.scenario();
     }
 
     public Optional<VillagerInteractionTracker.GiftAdviceResultReport> unreportedGiftAdviceResult() {

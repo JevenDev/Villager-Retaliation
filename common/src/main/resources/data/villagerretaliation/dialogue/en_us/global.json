@@ -53,6 +53,14 @@
       "order": -1
     },
     {
+      "id": "recruitment_followup",
+      "label": "About the trip...",
+      "type": "recruitment_followup",
+      "show_for_babies": false,
+      "requires_unreported_recruitment_followup": true,
+      "order": -1
+    },
+    {
       "id": "apologize_for_harm",
       "label": "Apologize",
       "type": "apology",
@@ -925,6 +933,558 @@
     }
   ],
   "lines": [
+    {
+      "id": "recruitment_followup_safe_home",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "text": "Thank you for bringing me back near home. A short road feels longer when the night has teeth.",
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
+      "show_for_babies": false,
+      "weight": 36
+    },
+    {
+      "id": "recruitment_followup_safe_ready",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "text": "I came back in one piece. That is the kind of help people remember.",
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
+      "show_for_babies": false,
+      "weight": 34
+    },
+    {
+      "id": "recruitment_followup_injured_shaken",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "text": "I made it back, but not cleanly. Next time, we move slower or fight sooner.",
+      "recruitment_followup_scenarios": [
+        "injured"
+      ],
+      "show_for_babies": false,
+      "weight": 36
+    },
+    {
+      "id": "recruitment_followup_injured_warning",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "text": "I am glad to be home, but I am still feeling that road. Do not mistake thanks for forgetting.",
+      "recruitment_followup_scenarios": [
+        "injured"
+      ],
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "recruitment_followup_betrayed_cut",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "text": "You asked me to follow, then turned your hand against me. That is not a small thing.",
+      "recruitment_followup_scenarios": [
+        "betrayed"
+      ],
+      "show_for_babies": false,
+      "weight": 42
+    },
+    {
+      "id": "recruitment_followup_betrayed_trust",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "text": "I followed because I thought you meant to protect me. Now I know to measure that promise twice.",
+      "recruitment_followup_scenarios": [
+        "betrayed"
+      ],
+      "show_for_babies": false,
+      "weight": 40
+    },
+    {
+      "id": "recruitment_followup_armorer_safe",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": [
+        "armorer"
+      ],
+      "text": "Back without a dent worth naming. I will call that a good fit.",
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
+      "show_for_babies": false,
+      "weight": 38
+    },
+    {
+      "id": "recruitment_followup_armorer_injured",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": [
+        "armorer"
+      ],
+      "text": "There are marks on me I would rather see on a breastplate. Next time, let the metal take it.",
+      "recruitment_followup_scenarios": [
+        "injured"
+      ],
+      "show_for_babies": false,
+      "weight": 38
+    },
+    {
+      "id": "recruitment_followup_armorer_betrayed",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": [
+        "armorer"
+      ],
+      "text": "I know the sound of a bad strike. Yours was worse because I trusted the hand behind it.",
+      "recruitment_followup_scenarios": [
+        "betrayed"
+      ],
+      "show_for_babies": false,
+      "weight": 42
+    },
+    {
+      "id": "recruitment_followup_butcher_safe",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": [
+        "butcher"
+      ],
+      "text": "We came back with all our pieces where they belong. Good enough for my ledger.",
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
+      "show_for_babies": false,
+      "weight": 38
+    },
+    {
+      "id": "recruitment_followup_butcher_injured",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": [
+        "butcher"
+      ],
+      "text": "I know a shallow cut from a deep mistake. That trip had a little of both.",
+      "recruitment_followup_scenarios": [
+        "injured"
+      ],
+      "show_for_babies": false,
+      "weight": 38
+    },
+    {
+      "id": "recruitment_followup_butcher_betrayed",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": [
+        "butcher"
+      ],
+      "text": "I expect sharp things at work. I did not expect one from the person I followed.",
+      "recruitment_followup_scenarios": [
+        "betrayed"
+      ],
+      "show_for_babies": false,
+      "weight": 42
+    },
+    {
+      "id": "recruitment_followup_cartographer_safe",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": [
+        "cartographer"
+      ],
+      "text": "A clean route out and a clean route back. I could ink that with a steady hand.",
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
+      "show_for_babies": false,
+      "weight": 38
+    },
+    {
+      "id": "recruitment_followup_cartographer_injured",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": [
+        "cartographer"
+      ],
+      "text": "That path needs a red mark on the map. I would rather not limp through it twice.",
+      "recruitment_followup_scenarios": [
+        "injured"
+      ],
+      "show_for_babies": false,
+      "weight": 38
+    },
+    {
+      "id": "recruitment_followup_cartographer_betrayed",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": [
+        "cartographer"
+      ],
+      "text": "I can redraw a bad map. Redrawing trust is harder.",
+      "recruitment_followup_scenarios": [
+        "betrayed"
+      ],
+      "show_for_babies": false,
+      "weight": 42
+    },
+    {
+      "id": "recruitment_followup_cleric_safe",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["cleric"],
+      "text": "I returned with breath steady and prayers unused. That is a blessing I will not waste.",
+      "recruitment_followup_scenarios": ["safe"],
+      "show_for_babies": false,
+      "weight": 38
+    },
+    {
+      "id": "recruitment_followup_cleric_injured",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["cleric"],
+      "text": "I can tend the hurt, but I would rather not collect it on the way home.",
+      "recruitment_followup_scenarios": ["injured"],
+      "show_for_babies": false,
+      "weight": 38
+    },
+    {
+      "id": "recruitment_followup_cleric_betrayed",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["cleric"],
+      "text": "A wound from an enemy is simple. A wound from a guide asks harder questions.",
+      "recruitment_followup_scenarios": ["betrayed"],
+      "show_for_babies": false,
+      "weight": 42
+    },
+    {
+      "id": "recruitment_followup_farmer_safe",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["farmer"],
+      "text": "Home before the rows missed me. Thank you for seeing me back to the village.",
+      "recruitment_followup_scenarios": ["safe"],
+      "show_for_babies": false,
+      "weight": 38
+    },
+    {
+      "id": "recruitment_followup_farmer_injured",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["farmer"],
+      "text": "I have worked through worse aches, but I should not need a harvest of bruises from one trip.",
+      "recruitment_followup_scenarios": ["injured"],
+      "show_for_babies": false,
+      "weight": 38
+    },
+    {
+      "id": "recruitment_followup_farmer_betrayed",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["farmer"],
+      "text": "Trust grows slowly. You cut yours down fast.",
+      "recruitment_followup_scenarios": ["betrayed"],
+      "show_for_babies": false,
+      "weight": 42
+    },
+    {
+      "id": "recruitment_followup_fisherman_safe",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["fisherman"],
+      "text": "A clean return, no snags. I like a trip that ends like a well-tied line.",
+      "recruitment_followup_scenarios": ["safe"],
+      "show_for_babies": false,
+      "weight": 38
+    },
+    {
+      "id": "recruitment_followup_fisherman_injured",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["fisherman"],
+      "text": "Something got its hook in me out there. Next time, we cut the line sooner.",
+      "recruitment_followup_scenarios": ["injured"],
+      "show_for_babies": false,
+      "weight": 38
+    },
+    {
+      "id": "recruitment_followup_fisherman_betrayed",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["fisherman"],
+      "text": "I know bait when I see it now. Do not ask me to bite twice.",
+      "recruitment_followup_scenarios": ["betrayed"],
+      "show_for_babies": false,
+      "weight": 42
+    },
+    {
+      "id": "recruitment_followup_fletcher_safe",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["fletcher"],
+      "text": "Straight out, straight back. A good route flies true.",
+      "recruitment_followup_scenarios": ["safe"],
+      "show_for_babies": false,
+      "weight": 38
+    },
+    {
+      "id": "recruitment_followup_fletcher_injured",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["fletcher"],
+      "text": "That trip feathered wrong. I came home, but not without a bend in the shaft.",
+      "recruitment_followup_scenarios": ["injured"],
+      "show_for_babies": false,
+      "weight": 38
+    },
+    {
+      "id": "recruitment_followup_fletcher_betrayed",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["fletcher"],
+      "text": "You loosed that hurt at close range. I will remember the aim.",
+      "recruitment_followup_scenarios": ["betrayed"],
+      "show_for_babies": false,
+      "weight": 42
+    },
+    {
+      "id": "recruitment_followup_leatherworker_safe",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["leatherworker"],
+      "text": "Boots dusty, soles whole. That is how I like returning.",
+      "recruitment_followup_scenarios": ["safe"],
+      "show_for_babies": false,
+      "weight": 38
+    },
+    {
+      "id": "recruitment_followup_leatherworker_injured",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["leatherworker"],
+      "text": "I can patch leather. Patching myself is worse work.",
+      "recruitment_followup_scenarios": ["injured"],
+      "show_for_babies": false,
+      "weight": 38
+    },
+    {
+      "id": "recruitment_followup_leatherworker_betrayed",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["leatherworker"],
+      "text": "You split trust like old hide. It will not soften quickly.",
+      "recruitment_followup_scenarios": ["betrayed"],
+      "show_for_babies": false,
+      "weight": 42
+    },
+    {
+      "id": "recruitment_followup_librarian_safe",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["librarian"],
+      "text": "A journey with a tidy ending. I appreciate a chapter that closes at home.",
+      "recruitment_followup_scenarios": ["safe"],
+      "show_for_babies": false,
+      "weight": 38
+    },
+    {
+      "id": "recruitment_followup_librarian_injured",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["librarian"],
+      "text": "That outing needs a margin note: return achieved, judgment questionable.",
+      "recruitment_followup_scenarios": ["injured"],
+      "show_for_babies": false,
+      "weight": 38
+    },
+    {
+      "id": "recruitment_followup_librarian_betrayed",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["librarian"],
+      "text": "I have read warnings with kinder endings than the one you wrote for me.",
+      "recruitment_followup_scenarios": ["betrayed"],
+      "show_for_babies": false,
+      "weight": 42
+    },
+    {
+      "id": "recruitment_followup_mason_safe",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["mason"],
+      "text": "Solid trip, solid return. Foundations matter.",
+      "recruitment_followup_scenarios": ["safe"],
+      "show_for_babies": false,
+      "weight": 38
+    },
+    {
+      "id": "recruitment_followup_mason_injured",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["mason"],
+      "text": "I came back chipped. A wall can take that. A person should not have to.",
+      "recruitment_followup_scenarios": ["injured"],
+      "show_for_babies": false,
+      "weight": 38
+    },
+    {
+      "id": "recruitment_followup_mason_betrayed",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["mason"],
+      "text": "You cracked something load-bearing between us.",
+      "recruitment_followup_scenarios": ["betrayed"],
+      "show_for_babies": false,
+      "weight": 42
+    },
+    {
+      "id": "recruitment_followup_shepherd_safe",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["shepherd"],
+      "text": "Home with no one missing. That is the whole job, really.",
+      "recruitment_followup_scenarios": ["safe"],
+      "show_for_babies": false,
+      "weight": 38
+    },
+    {
+      "id": "recruitment_followup_shepherd_injured",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["shepherd"],
+      "text": "I am back in the fold, but I was not guarded as carefully as I hoped.",
+      "recruitment_followup_scenarios": ["injured"],
+      "show_for_babies": false,
+      "weight": 38
+    },
+    {
+      "id": "recruitment_followup_shepherd_betrayed",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["shepherd"],
+      "text": "A shepherd who strikes the flock earns no easy trust.",
+      "recruitment_followup_scenarios": ["betrayed"],
+      "show_for_babies": false,
+      "weight": 42
+    },
+    {
+      "id": "recruitment_followup_toolsmith_safe",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["toolsmith"],
+      "text": "Good work has a clean finish. Getting me home counts.",
+      "recruitment_followup_scenarios": ["safe"],
+      "show_for_babies": false,
+      "weight": 38
+    },
+    {
+      "id": "recruitment_followup_toolsmith_injured",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["toolsmith"],
+      "text": "That trip handled poorly. I felt every bad grip on the way back.",
+      "recruitment_followup_scenarios": ["injured"],
+      "show_for_babies": false,
+      "weight": 38
+    },
+    {
+      "id": "recruitment_followup_toolsmith_betrayed",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["toolsmith"],
+      "text": "A tool used wrong can still be repaired. Trust is less forgiving.",
+      "recruitment_followup_scenarios": ["betrayed"],
+      "show_for_babies": false,
+      "weight": 42
+    },
+    {
+      "id": "recruitment_followup_weaponsmith_safe",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["weaponsmith"],
+      "text": "You brought me back without needing the worst of it. Restraint is a weapon too.",
+      "recruitment_followup_scenarios": ["safe"],
+      "show_for_babies": false,
+      "weight": 38
+    },
+    {
+      "id": "recruitment_followup_weaponsmith_injured",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["weaponsmith"],
+      "text": "I came back marked. Next time, keep the edge between us and danger.",
+      "recruitment_followup_scenarios": ["injured"],
+      "show_for_babies": false,
+      "weight": 38
+    },
+    {
+      "id": "recruitment_followup_weaponsmith_betrayed",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["weaponsmith"],
+      "text": "I respect sharp steel. I do not respect turning it on someone who followed you.",
+      "recruitment_followup_scenarios": ["betrayed"],
+      "show_for_babies": false,
+      "weight": 42
+    },
+    {
+      "id": "recruitment_followup_unemployed_safe",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["unemployed"],
+      "text": "I do not have a trade for it yet, but coming home safely feels like honest work.",
+      "recruitment_followup_scenarios": ["safe"],
+      "show_for_babies": false,
+      "weight": 38
+    },
+    {
+      "id": "recruitment_followup_unemployed_injured",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["unemployed"],
+      "text": "I was looking for direction, not bruises. Still, I made it back.",
+      "recruitment_followup_scenarios": ["injured"],
+      "show_for_babies": false,
+      "weight": 38
+    },
+    {
+      "id": "recruitment_followup_unemployed_betrayed",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["unemployed"],
+      "text": "I followed because I thought you knew where we were going. I was wrong about more than the road.",
+      "recruitment_followup_scenarios": ["betrayed"],
+      "show_for_babies": false,
+      "weight": 42
+    },
+    {
+      "id": "recruitment_followup_nitwit_safe",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["nitwit"],
+      "text": "We went there, then we came back here. I liked the back here part best.",
+      "recruitment_followup_scenarios": ["safe"],
+      "show_for_babies": false,
+      "weight": 38
+    },
+    {
+      "id": "recruitment_followup_nitwit_injured",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["nitwit"],
+      "text": "I got bonked on the trip. Home is better when fewer things bonk me.",
+      "recruitment_followup_scenarios": ["injured"],
+      "show_for_babies": false,
+      "weight": 38
+    },
+    {
+      "id": "recruitment_followup_nitwit_betrayed",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["nitwit"],
+      "text": "I thought following meant you were on my side. That was the important bit.",
+      "recruitment_followup_scenarios": ["betrayed"],
+      "show_for_babies": false,
+      "weight": 42
+    },
     {
       "id": "gear_report_global_used",
       "type": "gear_report",

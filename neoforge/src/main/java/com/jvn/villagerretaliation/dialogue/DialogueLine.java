@@ -23,6 +23,7 @@ public record DialogueLine(
         boolean requiresRecentDirectHitMemory,
         boolean requiresGearReportUsedInCombat,
         boolean requiresGearReportUnusedInCombat,
+        Set<String> recruitmentFollowupScenarios,
         boolean firstConversationOnly,
         GiftAdviceKind giftAdviceKind,
         int weight
@@ -78,6 +79,10 @@ public record DialogueLine(
         if (this.requiresGearReportUnusedInCombat && !context.hasUnreportedGearReportUnusedInCombat()) {
             return false;
         }
+        if (!this.recruitmentFollowupScenarios.isEmpty()
+                && !this.recruitmentFollowupScenarios.contains(context.recruitmentFollowupScenario())) {
+            return false;
+        }
         return this.weight > 0;
     }
 
@@ -110,6 +115,9 @@ public record DialogueLine(
             score += 5;
         }
         if (this.requiresGearReportUsedInCombat || this.requiresGearReportUnusedInCombat) {
+            score += 5;
+        }
+        if (!this.recruitmentFollowupScenarios.isEmpty()) {
             score += 5;
         }
         if (!this.weatherStates.isEmpty()) {
@@ -148,6 +156,7 @@ public record DialogueLine(
         private boolean requiresRecentDirectHitMemory;
         private boolean requiresGearReportUsedInCombat;
         private boolean requiresGearReportUnusedInCombat;
+        private final Set<String> recruitmentFollowupScenarios = new java.util.HashSet<>();
         private boolean firstConversationOnly;
         private GiftAdviceKind giftAdviceKind;
         private int weight = 10;
@@ -217,6 +226,15 @@ public record DialogueLine(
             return this;
         }
 
+        public Builder recruitmentFollowupScenarios(String... scenarios) {
+            for (String scenario : scenarios) {
+                if (scenario != null && !scenario.isBlank()) {
+                    this.recruitmentFollowupScenarios.add(scenario.trim().toLowerCase(java.util.Locale.ROOT));
+                }
+            }
+            return this;
+        }
+
         public Builder weatherStates(DialogueContext.WeatherState... weatherStates) {
             this.weatherStates.addAll(java.util.List.of(weatherStates));
             return this;
@@ -260,6 +278,7 @@ public record DialogueLine(
                     this.requiresRecentDirectHitMemory,
                     this.requiresGearReportUsedInCombat,
                     this.requiresGearReportUnusedInCombat,
+                    Set.copyOf(this.recruitmentFollowupScenarios),
                     this.firstConversationOnly,
                     this.giftAdviceKind,
                     this.weight

@@ -77,7 +77,7 @@ public final class VillagerInteractionService {
         }
 
         if (VillagerRecruitmentService.isFollowing(villager, player)) {
-            VillagerRecruitmentService.stopFollowing(villager);
+            VillagerRecruitmentService.stopFollowing(player.serverLevel(), villager, player);
             VillagerRecruitmentService.sendNoLongerFollowingNotice(player, villager);
             focusVillagerOnPlayer(villager, player);
             sendVillagerNotice(player, villager, "interaction.follow_stay");
@@ -185,6 +185,8 @@ public final class VillagerInteractionService {
             VillagerInteractionTracker.claimUnreportedCombatSurvivalReport(level, villager, player);
         } else if (requestType == DialogueRequestType.GEAR_REPORT) {
             VillagerInteractionTracker.claimUnreportedGearReport(level, villager, player);
+        } else if (requestType == DialogueRequestType.RECRUITMENT_FOLLOWUP) {
+            VillagerInteractionTracker.claimUnreportedRecruitmentFollowup(level, villager, player);
         }
         sendDialogueReputation(player, villager, level, requestType, reputationEffect);
         broadcastVillagerChat(level, villager, responseText);
@@ -484,6 +486,7 @@ public final class VillagerInteractionService {
                 VillagerInteractionTracker.unreportedStoryHintDiscovery(level, villager, player).orElse(null),
                 VillagerInteractionTracker.unreportedCombatSurvivalReport(level, villager, player).orElse(null),
                 VillagerInteractionTracker.unreportedGearReport(level, villager, player).orElse(null),
+                VillagerInteractionTracker.unreportedRecruitmentFollowup(level, villager, player).orElse(null),
                 VillagerInteractionTracker.unreportedGiftAdviceResult(level, villager, player).orElse(null),
                 VillageEventMemory.recentNear(level, villager.blockPosition()),
                 villager.getRandom(),

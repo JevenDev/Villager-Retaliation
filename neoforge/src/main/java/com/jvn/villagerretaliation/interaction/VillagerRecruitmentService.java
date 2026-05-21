@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.interaction;
 
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
+import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
 import com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
@@ -15,6 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import net.minecraft.core.SectionPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -27,6 +29,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class VillagerRecruitmentService {
     private static final String FOLLOWING_PLAYER_KEY = "VillagerRetaliationFollowingPlayer";
+    private static final String FOLLOW_START_HEALTH_KEY = "VillagerRetaliationFollowStartHealth";
+    private static final String FOLLOW_MIN_HEALTH_KEY = "VillagerRetaliationFollowMinHealth";
     private static final String HIRED_PLAYER_KEY = "VillagerRetaliationHiredPlayer";
     private static final double FOLLOW_START_DISTANCE_SQR = 5.0D * 5.0D;
     private static final double FOLLOW_STOP_DISTANCE_SQR = 2.5D * 2.5D;
@@ -66,11 +70,13 @@ public final class VillagerRecruitmentService {
 
     public static boolean toggleFollow(ServerLevel level, Villager villager, ServerPlayer player) {
         if (isFollowing(villager, player)) {
-            stopFollowing(villager);
+            stopFollowing(level, villager, player);
             sendNoLongerFollowingNotice(player, villager);
             return false;
         }
         villager.getPersistentData().putUUID(FOLLOWING_PLAYER_KEY, player.getUUID());
+        villager.getPersistentData().putFloat(FOLLOW_START_HEALTH_KEY, villager.getHealth());
+        villager.getPersistentData().putFloat(FOLLOW_MIN_HEALTH_KEY, villager.getHealth());
         sendFollowingNotice(player, villager);
         return true;
     }
@@ -79,15 +85,36 @@ public final class VillagerRecruitmentService {
         clearFollowTarget(villager);
     }
 
+    public static void stopFollowing(ServerLevel level, Villager villager, ServerPlayer player) {
+        if (isFollowing(villager, player) && isNearVillage(level, villager)) {
+            String scenario = wasFollowerInjured(villager) ? "injured" : "safe";
+            VillagerInteractionTracker.rememberRecruitmentFollowup(level, villager, player, scenario);
+        }
+        clearFollowTarget(villager);
+    }
+
+    public static void rememberFollowerDamage(Villager villager) {
+        if (!villager.getPersistentData().hasUUID(FOLLOWING_PLAYER_KEY)) {
+            return;
+        }
+        float currentMin = villager.getPersistentData().contains(FOLLOW_MIN_HEALTH_KEY)
+                ? villager.getPersistentData().getFloat(FOLLOW_MIN_HEALTH_KEY)
+                : villager.getHealth();
+        villager.getPersistentData().putFloat(FOLLOW_MIN_HEALTH_KEY, Math.min(currentMin, villager.getHealth()));
+    }
+
     public static void stopFollowingIfFollowingAttacker(Villager villager, Player attacker) {
         if (attacker != null
                 && villager.getPersistentData().hasUUID(FOLLOWING_PLAYER_KEY)
                 && villager.getPersistentData().getUUID(FOLLOWING_PLAYER_KEY).equals(attacker.getUUID())) {
             rememberBetrayedFollower(villager, attacker);
-            clearFollowTarget(villager);
             if (attacker instanceof ServerPlayer serverPlayer) {
+                VillagerInteractionTracker.rememberRecruitmentFollowup(serverPlayer.serverLevel(), villager, serverPlayer, "betrayed");
+                clearFollowTarget(villager);
                 sendNoLongerFollowingNotice(serverPlayer, villager);
                 sendFollowerBetrayalDialogue(villager, serverPlayer);
+            } else {
+                clearFollowTarget(villager);
             }
         }
     }
@@ -231,7 +258,25 @@ public final class VillagerRecruitmentService {
 
     private static void clearFollowTarget(Villager villager) {
         villager.getPersistentData().remove(FOLLOWING_PLAYER_KEY);
+        villager.getPersistentData().remove(FOLLOW_START_HEALTH_KEY);
+        villager.getPersistentData().remove(FOLLOW_MIN_HEALTH_KEY);
         villager.getNavigation().stop();
+    }
+
+    private static boolean wasFollowerInjured(Villager villager) {
+        if (!villager.getPersistentData().contains(FOLLOW_START_HEALTH_KEY)) {
+            return false;
+        }
+        float startHealth = villager.getPersistentData().getFloat(FOLLOW_START_HEALTH_KEY);
+        float minHealth = villager.getPersistentData().contains(FOLLOW_MIN_HEALTH_KEY)
+                ? villager.getPersistentData().getFloat(FOLLOW_MIN_HEALTH_KEY)
+                : villager.getHealth();
+        minHealth = Math.min(minHealth, villager.getHealth());
+        return minHealth + 0.5F < startHealth;
+    }
+
+    private static boolean isNearVillage(ServerLevel level, Villager villager) {
+        return level.sectionsToVillage(SectionPos.of(villager.blockPosition())) <= 2;
     }
 
     private static void rememberBetrayedFollower(Villager villager, Player attacker) {

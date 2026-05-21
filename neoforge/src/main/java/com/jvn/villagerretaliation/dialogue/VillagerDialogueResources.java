@@ -344,6 +344,7 @@ public final class VillagerDialogueResources {
             boolean requiresUnreportedStoryHintDiscovery = readBoolean(entry, "requires_unreported_story_hint_discovery");
             boolean requiresUnreportedCombatSurvivalReport = readBoolean(entry, "requires_unreported_combat_survival_report");
             boolean requiresUnreportedGearReport = readBoolean(entry, "requires_unreported_gear_report");
+            boolean requiresUnreportedRecruitmentFollowup = readBoolean(entry, "requires_unreported_recruitment_followup");
             boolean requiresUnreportedGiftAdviceResult = readBoolean(entry, "requires_unreported_gift_advice_result");
             boolean requiresUnapologizedRememberedHarm = readBoolean(entry, "requires_unapologized_remembered_harm");
             boolean requiresUnreportedVillageDefense = readBoolean(entry, "requires_unreported_village_defense");
@@ -360,6 +361,7 @@ public final class VillagerDialogueResources {
                     requiresUnreportedStoryHintDiscovery,
                     requiresUnreportedCombatSurvivalReport,
                     requiresUnreportedGearReport,
+                    requiresUnreportedRecruitmentFollowup,
                     requiresUnreportedGiftAdviceResult,
                     requiresUnapologizedRememberedHarm,
                     requiresUnreportedVillageDefense,
@@ -539,6 +541,10 @@ public final class VillagerDialogueResources {
         }
         if (readBoolean(entry, "requires_gear_report_unused_in_combat")) {
             builder.requiresGearReportUnusedInCombat();
+        }
+        List<String> recruitmentFollowupScenarios = readStringList(entry, "recruitment_followup_scenarios");
+        if (!recruitmentFollowupScenarios.isEmpty()) {
+            builder.recruitmentFollowupScenarios(recruitmentFollowupScenarios.toArray(String[]::new));
         }
         if (readBoolean(entry, "first_conversation_only")) {
             builder.firstConversationOnly();
