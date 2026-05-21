@@ -399,6 +399,46 @@
       "text": "That one soured? Then bring {alternative_gift} next time. {gift_subject} should take that more kindly."
     },
     {
+      "key": "gift_advice_followup.disliked",
+      "text": "Did they? Hm. Maybe {gift_subject} would prefer {alternative_gift}. Or maybe they were in a mood.",
+      "dispositions": ["cautious", "rude", "hostile", "fearful"],
+      "weight": 18
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "text": "So {gift_item} went badly. Try {alternative_gift} if you want my better guess.",
+      "dispositions": ["rude", "hostile", "fearful"],
+      "weight": 18
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "text": "Advice is not a promise. Still, {alternative_gift} should go over better with {gift_subject}.",
+      "dispositions": ["cautious", "rude", "hostile", "fearful"],
+      "weight": 18
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "text": "You came back to blame me? Try {alternative_gift} next time and call it even.",
+      "dispositions": ["rude", "hostile"],
+      "weight": 18
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "text": "Maybe I misremembered. Maybe you asked the wrong person. Either way, {alternative_gift} is safer.",
+      "dispositions": ["cautious", "rude", "fearful"],
+      "weight": 18
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "text": "Well, now you know. {gift_item} is not the way to win over {gift_subject}. Try {alternative_gift}.",
+      "weight": 16
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "text": "That advice turned sideways. Bring {alternative_gift} and you may get a kinder answer.",
+      "weight": 16
+    },
+    {
       "key": "gift_advice_followup.missing",
       "text": "I lost the thread of that gift advice."
     },

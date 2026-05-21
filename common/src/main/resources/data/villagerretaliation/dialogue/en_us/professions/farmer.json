@@ -5,7 +5,9 @@
     { "key": "gift_advice_followup.liked", "text": "Good. {gift_item} took root with {tested_villager}. That is a healthy sign.", "weight": 22 },
     { "key": "gift_advice_followup.liked", "text": "Then the advice sprouted. If {tested_villager} liked {gift_item}, that is a fair harvest.", "weight": 22 },
     { "key": "gift_advice_followup.disliked", "text": "Wrong soil for that seed. For {gift_subject}, plant {alternative_gift} instead.", "weight": 22 },
-    { "key": "gift_advice_followup.disliked", "text": "{gift_item} did not grow there? Try {alternative_gift}. Some rows need different seed.", "weight": 22 }
+    { "key": "gift_advice_followup.disliked", "text": "{gift_item} did not grow there? Try {alternative_gift}. Some rows need different seed.", "weight": 22 },
+    { "key": "gift_advice_followup.disliked", "text": "Bad seed, bad soil, or bad advice. Hard to say. Plant {alternative_gift} next.", "dispositions": ["cautious", "rude", "hostile", "fearful"], "weight": 20 },
+    { "key": "gift_advice_followup.disliked", "text": "You harvested a frown from {gift_item}? Then sow {alternative_gift} and move on.", "dispositions": ["rude", "hostile"], "weight": 20 }
   ],
   "openings": [
     {

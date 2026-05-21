@@ -5,7 +5,9 @@
     { "key": "gift_advice_followup.liked", "text": "Good. {tested_villager} took {gift_item}; that advice had a clean hook.", "weight": 22 },
     { "key": "gift_advice_followup.liked", "text": "Then {gift_item} was the right bait for {tested_villager}. Glad it landed.", "weight": 22 },
     { "key": "gift_advice_followup.disliked", "text": "That line came back empty. For {gift_subject}, cast {alternative_gift} instead.", "weight": 22 },
-    { "key": "gift_advice_followup.disliked", "text": "Some fish spit the hook. Leave {gift_item} and try {alternative_gift} next time.", "weight": 22 }
+    { "key": "gift_advice_followup.disliked", "text": "Some fish spit the hook. Leave {gift_item} and try {alternative_gift} next time.", "weight": 22 },
+    { "key": "gift_advice_followup.disliked", "text": "Bad bait. It happens. Cast {alternative_gift} if you want a better chance.", "dispositions": ["cautious", "rude", "hostile", "fearful"], "weight": 20 },
+    { "key": "gift_advice_followup.disliked", "text": "You took the line, not me. Still, {alternative_gift} should catch better.", "dispositions": ["rude", "hostile"], "weight": 20 }
   ],
   "openings": [
     {

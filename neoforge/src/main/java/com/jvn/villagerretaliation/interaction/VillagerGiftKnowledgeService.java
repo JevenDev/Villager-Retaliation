@@ -60,12 +60,15 @@ public final class VillagerGiftKnowledgeService {
             return Optional.empty();
         }
 
-        VillagerGiftPreferences.GiftCandidate discovered = unknownCandidates.get(context.random().nextInt(unknownCandidates.size()));
+        GiftAdviceSelection selection = selectGiftAdviceCandidate(context, unknownCandidates);
+        VillagerGiftPreferences.GiftCandidate discovered = selection.candidate();
         String itemId = itemId(discovered.item());
-        boolean liked = discovered.positive();
+        boolean liked = selection.claimedLiked();
         String knowledgeKey = discovered.professionSpecific() ? professionKey : GLOBAL_PROFESSION_KEY;
-        data.rememberGiftKnowledge(player.getUUID(), knowledgeKey, itemId, liked);
-        data.setDirty();
+        if (selection.truthful()) {
+            data.rememberGiftKnowledge(player.getUUID(), knowledgeKey, itemId, discovered.positive());
+            data.setDirty();
+        }
         if (liked) {
             VillagerInteractionTracker.rememberGiftAdvice(
                     level,
@@ -84,6 +87,37 @@ public final class VillagerGiftKnowledgeService {
                 itemId,
                 discovered.professionSpecific() ? professionKey : GLOBAL_PROFESSION_KEY
         ));
+    }
+
+    private static GiftAdviceSelection selectGiftAdviceCandidate(
+            DialogueContext context,
+            List<VillagerGiftPreferences.GiftCandidate> unknownCandidates) {
+        List<VillagerGiftPreferences.GiftCandidate> wrongAdviceCandidates = unknownCandidates.stream()
+                .filter(candidate -> !candidate.positive())
+                .toList();
+        if (!wrongAdviceCandidates.isEmpty() && context.random().nextInt(100) < wrongAdviceChancePercent(context)) {
+            return new GiftAdviceSelection(
+                    wrongAdviceCandidates.get(context.random().nextInt(wrongAdviceCandidates.size())),
+                    true,
+                    false
+            );
+        }
+
+        VillagerGiftPreferences.GiftCandidate candidate = unknownCandidates.get(context.random().nextInt(unknownCandidates.size()));
+        return new GiftAdviceSelection(candidate, candidate.positive(), true);
+    }
+
+    private static int wrongAdviceChancePercent(DialogueContext context) {
+        return switch (context.reputationLevel()) {
+            case FEARED -> 55;
+            case DESPISED -> 45;
+            case HOSTILE -> 35;
+            case SUSPICIOUS -> 20;
+            case NEUTRAL -> 8;
+            case TRUSTED -> 2;
+            case RESPECTED -> 1;
+            case REVERED, ROYALTY -> 0;
+        };
     }
 
     public static void rememberGiftResult(
@@ -201,5 +235,11 @@ public final class VillagerGiftKnowledgeService {
             String subject,
             String itemId,
             String targetProfessionKey) {
+    }
+
+    private record GiftAdviceSelection(
+            VillagerGiftPreferences.GiftCandidate candidate,
+            boolean claimedLiked,
+            boolean truthful) {
     }
 }

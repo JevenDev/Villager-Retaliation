@@ -5,7 +5,9 @@
     { "key": "gift_advice_followup.liked", "text": "Good, {gift_item} worked. See? I can be useful without a workstation.", "weight": 22 },
     { "key": "gift_advice_followup.liked", "text": "{tested_villager} liked it? Excellent. I am putting that under possible talents.", "weight": 22 },
     { "key": "gift_advice_followup.disliked", "text": "Ah. Then my career in advice pauses here. Try {alternative_gift} for {gift_subject}.", "weight": 22 },
-    { "key": "gift_advice_followup.disliked", "text": "{gift_item} was wrong? Let us call it research. {alternative_gift} should work better.", "weight": 22 }
+    { "key": "gift_advice_followup.disliked", "text": "{gift_item} was wrong? Let us call it research. {alternative_gift} should work better.", "weight": 22 },
+    { "key": "gift_advice_followup.disliked", "text": "This is why nobody pays me for advice. Try {alternative_gift}.", "dispositions": ["cautious", "rude", "hostile", "fearful"], "weight": 20 },
+    { "key": "gift_advice_followup.disliked", "text": "You came back? Fair. My next guess is {alternative_gift}.", "dispositions": ["rude", "hostile"], "weight": 20 }
   ],
   "openings": [
     {

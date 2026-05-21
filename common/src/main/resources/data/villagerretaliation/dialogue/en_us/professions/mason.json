@@ -5,7 +5,9 @@
     { "key": "gift_advice_followup.liked", "text": "Good. {gift_item} sat square with {tested_villager}.", "weight": 22 },
     { "key": "gift_advice_followup.liked", "text": "Then the advice was level. {tested_villager} liked {gift_item}.", "weight": 22 },
     { "key": "gift_advice_followup.disliked", "text": "That foundation cracked. For {gift_subject}, set {alternative_gift} instead.", "weight": 22 },
-    { "key": "gift_advice_followup.disliked", "text": "{gift_item} did not bear weight there? Try {alternative_gift}; sturdier choice.", "weight": 22 }
+    { "key": "gift_advice_followup.disliked", "text": "{gift_item} did not bear weight there? Try {alternative_gift}; sturdier choice.", "weight": 22 },
+    { "key": "gift_advice_followup.disliked", "text": "That advice cracked under pressure. Set {alternative_gift} in its place.", "dispositions": ["cautious", "rude", "hostile", "fearful"], "weight": 20 },
+    { "key": "gift_advice_followup.disliked", "text": "You built on weak stone. Use {alternative_gift} if you want it to stand.", "dispositions": ["rude", "hostile"], "weight": 20 }
   ],
   "openings": [
     {

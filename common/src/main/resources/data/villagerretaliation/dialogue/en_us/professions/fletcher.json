@@ -5,7 +5,9 @@
     { "key": "gift_advice_followup.liked", "text": "Good. {gift_item} flew true with {tested_villager}.", "weight": 22 },
     { "key": "gift_advice_followup.liked", "text": "Then that advice hit center. Sounds like {gift_item} flew true.", "weight": 22 },
     { "key": "gift_advice_followup.disliked", "text": "That shot drifted. For {gift_subject}, nock {alternative_gift} instead.", "weight": 22 },
-    { "key": "gift_advice_followup.disliked", "text": "{gift_item} missed the mark? Try {alternative_gift}; straighter flight.", "weight": 22 }
+    { "key": "gift_advice_followup.disliked", "text": "{gift_item} missed the mark? Try {alternative_gift}; straighter flight.", "weight": 22 },
+    { "key": "gift_advice_followup.disliked", "text": "That advice flew crooked. Nock {alternative_gift} next time.", "dispositions": ["cautious", "rude", "hostile", "fearful"], "weight": 20 },
+    { "key": "gift_advice_followup.disliked", "text": "You let loose before checking the fletching. Try {alternative_gift}.", "dispositions": ["rude", "hostile"], "weight": 20 }
   ],
   "openings": [
     {

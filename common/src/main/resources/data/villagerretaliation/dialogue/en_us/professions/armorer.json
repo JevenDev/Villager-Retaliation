@@ -5,7 +5,9 @@
     { "key": "gift_advice_followup.liked", "text": "Good. {gift_item} held like proper mail for {tested_villager}. Advice should take a dent and stay useful.", "weight": 22 },
     { "key": "gift_advice_followup.liked", "text": "I thought {gift_item} would fit. Glad {tested_villager} wore the gesture well.", "weight": 22 },
     { "key": "gift_advice_followup.disliked", "text": "Then that fit was off. For {gift_subject}, try {alternative_gift}; better plate, fewer gaps.", "weight": 22 },
-    { "key": "gift_advice_followup.disliked", "text": "A poor fitting, then. Bring {alternative_gift} next time and the trade should sit easier.", "weight": 22 }
+    { "key": "gift_advice_followup.disliked", "text": "A poor fitting, then. Bring {alternative_gift} next time and the trade should sit easier.", "weight": 22 },
+    { "key": "gift_advice_followup.disliked", "text": "You trusted a cracked plate. That is on both of us. Try {alternative_gift}.", "dispositions": ["cautious", "rude", "hostile", "fearful"], "weight": 20 },
+    { "key": "gift_advice_followup.disliked", "text": "{gift_item} buckled? Fine. {alternative_gift} should hold better.", "dispositions": ["rude", "hostile"], "weight": 20 }
   ],
   "openings": [
     {

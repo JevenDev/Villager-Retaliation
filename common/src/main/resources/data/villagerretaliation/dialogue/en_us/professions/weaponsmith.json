@@ -5,7 +5,9 @@
     { "key": "gift_advice_followup.liked", "text": "Good. {gift_item} struck true with {tested_villager}.", "weight": 22 },
     { "key": "gift_advice_followup.liked", "text": "Then the advice kept its edge. {tested_villager} liked {gift_item}.", "weight": 22 },
     { "key": "gift_advice_followup.disliked", "text": "That blade was poorly balanced. For {gift_subject}, try {alternative_gift}.", "weight": 22 },
-    { "key": "gift_advice_followup.disliked", "text": "{gift_item} missed clean? Bring {alternative_gift}; better weight for the hand.", "weight": 22 }
+    { "key": "gift_advice_followup.disliked", "text": "{gift_item} missed clean? Bring {alternative_gift}; better weight for the hand.", "weight": 22 },
+    { "key": "gift_advice_followup.disliked", "text": "That advice had a dull edge. Try {alternative_gift}; it should bite better.", "dispositions": ["cautious", "rude", "hostile", "fearful"], "weight": 20 },
+    { "key": "gift_advice_followup.disliked", "text": "You swung with what I handed you. Next time, choose {alternative_gift}.", "dispositions": ["rude", "hostile"], "weight": 20 }
   ],
   "openings": [
     {

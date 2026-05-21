@@ -5,7 +5,9 @@
     { "key": "gift_advice_followup.liked", "text": "Then the route was true. {gift_item} led you well to {tested_villager}.", "weight": 22 },
     { "key": "gift_advice_followup.liked", "text": "Good. I had {gift_item} marked in the right margin after all.", "weight": 22 },
     { "key": "gift_advice_followup.disliked", "text": "Then my map was old. For {gift_subject}, redraw the path with {alternative_gift}.", "weight": 22 },
-    { "key": "gift_advice_followup.disliked", "text": "A wrong turn. Leave {gift_item} off that route and try {alternative_gift} instead.", "weight": 22 }
+    { "key": "gift_advice_followup.disliked", "text": "A wrong turn. Leave {gift_item} off that route and try {alternative_gift} instead.", "weight": 22 },
+    { "key": "gift_advice_followup.disliked", "text": "That route was badly marked. Take {alternative_gift} if you want a better bearing.", "dispositions": ["cautious", "rude", "hostile", "fearful"], "weight": 20 },
+    { "key": "gift_advice_followup.disliked", "text": "You followed the map exactly? Brave. Next time, check the legend and bring {alternative_gift}.", "dispositions": ["rude", "hostile"], "weight": 20 }
   ],
   "openings": [
     {

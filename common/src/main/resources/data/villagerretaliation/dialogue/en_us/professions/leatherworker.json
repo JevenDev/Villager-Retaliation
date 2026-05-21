@@ -5,7 +5,9 @@
     { "key": "gift_advice_followup.liked", "text": "Good. {gift_item} sat well with {tested_villager}, like softened leather.", "weight": 22 },
     { "key": "gift_advice_followup.liked", "text": "Then the fit was comfortable. {tested_villager} liked {gift_item}.", "weight": 22 },
     { "key": "gift_advice_followup.disliked", "text": "Too stiff for them, then. For {gift_subject}, try {alternative_gift}.", "weight": 22 },
-    { "key": "gift_advice_followup.disliked", "text": "{gift_item} rubbed wrong? Bring {alternative_gift}; better fit, less complaint.", "weight": 22 }
+    { "key": "gift_advice_followup.disliked", "text": "{gift_item} rubbed wrong? Bring {alternative_gift}; better fit, less complaint.", "weight": 22 },
+    { "key": "gift_advice_followup.disliked", "text": "That advice chafed. {alternative_gift} should sit easier.", "dispositions": ["cautious", "rude", "hostile", "fearful"], "weight": 20 },
+    { "key": "gift_advice_followup.disliked", "text": "You wore bad advice too long. Trade it for {alternative_gift}.", "dispositions": ["rude", "hostile"], "weight": 20 }
   ],
   "openings": [
     {
