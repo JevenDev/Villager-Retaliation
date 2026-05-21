@@ -52,6 +52,14 @@
       "order": -3
     },
     {
+      "id": "story_hint_report",
+      "label": "I found that place",
+      "type": "story_hint_report",
+      "show_for_babies": false,
+      "requires_unreported_story_hint_discovery": true,
+      "order": -4
+    },
+    {
       "id": "adult_story",
       "label": "Ask for Story",
       "type": "story",
@@ -404,6 +412,324 @@
     {
       "key": "story_hint.map",
       "text": "Here. I marked {target_article} on this map. It should sit about {distance} {direction}{vertical}."
+    },
+    {
+      "key": "story_hint_report.missing",
+      "text": "Bring me news after you walk the place I mentioned."
+    },
+    {
+      "key": "story_hint_report.biome",
+      "text": "So {target_article} was really there. Good. A rumor is lighter once it has footprints under it.",
+      "weight": 24
+    },
+    {
+      "key": "story_hint_report.biome",
+      "text": "You reached {target_article}? Then the old talk had a road in it after all.",
+      "weight": 22
+    },
+    {
+      "key": "story_hint_report.structure.village",
+      "text": "You found {target_article}. Then there are neighbors beyond the story, not just smoke and guessing.",
+      "weight": 24
+    },
+    {
+      "key": "story_hint_report.structure.village",
+      "text": "{target_article}, truly? Then the road between here and there matters now.",
+      "weight": 22
+    },
+    {
+      "key": "story_hint_report.structure.village",
+      "text": "Another village at {target_article}. That is not a landmark, that is people.",
+      "weight": 22
+    },
+    {
+      "key": "story_hint_report.structure.village",
+      "text": "Good. If {target_article} is real, then so are its doors, its fields, and its worries.",
+      "weight": 20
+    },
+    {
+      "key": "story_hint_report.structure.village",
+      "text": "You reached {target_article}. I hope they greeted you better than the wilderness did.",
+      "weight": 20
+    },
+    {
+      "key": "story_hint_report.structure.temple",
+      "text": "{target_article}, confirmed. Old stone is easier to respect when someone comes back from it.",
+      "weight": 24
+    },
+    {
+      "key": "story_hint_report.structure.temple",
+      "text": "So {target_article} was not just campfire talk. Careful with places that outlive their builders.",
+      "weight": 22
+    },
+    {
+      "key": "story_hint_report.structure.temple",
+      "text": "You found {target_article}. I suppose old stone still knows how to call travelers in.",
+      "weight": 22
+    },
+    {
+      "key": "story_hint_report.structure.temple",
+      "text": "{target_article}. Hm. Some thresholds should be crossed with one foot ready to leave.",
+      "weight": 20
+    },
+    {
+      "key": "story_hint_report.structure.temple",
+      "text": "Then the tale about {target_article} had teeth after all. I am glad they did not close on you.",
+      "weight": 20
+    },
+    {
+      "key": "story_hint_report.structure.mansion",
+      "text": "You reached {target_article} and returned. Some rumors are warnings wearing roofs.",
+      "weight": 24
+    },
+    {
+      "key": "story_hint_report.structure.mansion",
+      "text": "{target_article}, found. There are houses that shelter folk, and houses that watch them.",
+      "weight": 22
+    },
+    {
+      "key": "story_hint_report.structure.mansion",
+      "text": "You came back from {target_article}. That alone says the rumor deserved respect.",
+      "weight": 22
+    },
+    {
+      "key": "story_hint_report.structure.mansion",
+      "text": "So {target_article} stands where they said. Some doors are better confirmed from outside.",
+      "weight": 20
+    },
+    {
+      "key": "story_hint_report.structure.mansion",
+      "text": "{target_article}. I will remember that name with the kind of caution it deserves.",
+      "weight": 20
+    },
+    {
+      "key": "story_hint_report.structure.monument",
+      "text": "{target_article}, beneath the water. I will believe the waves were telling the truth this once.",
+      "weight": 24
+    },
+    {
+      "key": "story_hint_report.structure.monument",
+      "text": "You found {target_article}? The sea hides things, but apparently not from you.",
+      "weight": 22
+    },
+    {
+      "key": "story_hint_report.structure.monument",
+      "text": "{target_article}, confirmed. I do not trust water that keeps architecture.",
+      "weight": 22
+    },
+    {
+      "key": "story_hint_report.structure.monument",
+      "text": "Then the rumor sank deep and stayed true. That is rare.",
+      "weight": 20
+    },
+    {
+      "key": "story_hint_report.structure.monument",
+      "text": "You reached {target_article}. I hope the water let you leave with all your thoughts intact.",
+      "weight": 20
+    },
+    {
+      "key": "story_hint_report.structure.mineshaft",
+      "text": "You found {target_article}. Timber below ground always means a story went too deep.",
+      "weight": 24
+    },
+    {
+      "key": "story_hint_report.structure.mineshaft",
+      "text": "{target_article}, then. The ground remembers every hand that tried to hollow it out.",
+      "weight": 22
+    },
+    {
+      "key": "story_hint_report.structure.mineshaft",
+      "text": "You found {target_article}. Listen twice before trusting old supports.",
+      "weight": 22
+    },
+    {
+      "key": "story_hint_report.structure.mineshaft",
+      "text": "So the beams were real. Places like {target_article} always sound tired.",
+      "weight": 20
+    },
+    {
+      "key": "story_hint_report.structure.mineshaft",
+      "text": "{target_article}. That is a road made by people who forgot roads should see daylight.",
+      "weight": 20
+    },
+    {
+      "key": "story_hint_report.structure.ancient_city",
+      "text": "{target_article}. Keep that story quiet. Some places should not hear their own names.",
+      "weight": 24
+    },
+    {
+      "key": "story_hint_report.structure.ancient_city",
+      "text": "You came back from {target_article}. Speak softly. Even memory might echo down there.",
+      "weight": 22
+    },
+    {
+      "key": "story_hint_report.structure.ancient_city",
+      "text": "{target_article}, confirmed. That is not a discovery I would celebrate loudly.",
+      "weight": 22
+    },
+    {
+      "key": "story_hint_report.structure.ancient_city",
+      "text": "So the deep rumor was true. Some truths are best carried carefully.",
+      "weight": 20
+    },
+    {
+      "key": "story_hint_report.structure.ancient_city",
+      "text": "You found {target_article}. I hope you left more silence there than you took.",
+      "weight": 20
+    },
+    {
+      "key": "story_hint_report.structure.stronghold",
+      "text": "{target_article}, then. That is not just a rumor. That is a door waiting under the world.",
+      "weight": 24
+    },
+    {
+      "key": "story_hint_report.structure.stronghold",
+      "text": "You found {target_article}. Some stone does not mark a place; it marks a question.",
+      "weight": 22
+    },
+    {
+      "key": "story_hint_report.structure.stronghold",
+      "text": "{target_article}, confirmed. I wonder how long it has been waiting for footsteps.",
+      "weight": 22
+    },
+    {
+      "key": "story_hint_report.structure.stronghold",
+      "text": "So the path led to {target_article}. That sounds less like a destination than a warning.",
+      "weight": 20
+    },
+    {
+      "key": "story_hint_report.structure.stronghold",
+      "text": "You reached {target_article}. Some roads go outward. That one pulls down.",
+      "weight": 20
+    },
+    {
+      "key": "story_hint_report.structure.nether",
+      "text": "You found {target_article} and came back. I will not ask what the heat sounded like.",
+      "weight": 24
+    },
+    {
+      "key": "story_hint_report.structure.nether",
+      "text": "{target_article}, real enough to find and harsh enough to remember.",
+      "weight": 22
+    },
+    {
+      "key": "story_hint_report.structure.nether",
+      "text": "You confirmed {target_article}. Some places make even a rumor smell of smoke.",
+      "weight": 22
+    },
+    {
+      "key": "story_hint_report.structure.nether",
+      "text": "So {target_article} was there. Good. I prefer knowing where the dangerous roads start.",
+      "weight": 20
+    },
+    {
+      "key": "story_hint_report.structure.nether",
+      "text": "You came back from {target_article}. I would call that lucky, skilled, or both.",
+      "weight": 20
+    },
+    {
+      "key": "story_hint_report.structure.outpost",
+      "text": "{target_article}. Good to know. A warned road is kinder than an unwarned one.",
+      "weight": 24
+    },
+    {
+      "key": "story_hint_report.structure.outpost",
+      "text": "You found {target_article}. Then we know which horizon to mistrust.",
+      "weight": 22
+    },
+    {
+      "key": "story_hint_report.structure.outpost",
+      "text": "{target_article}, confirmed. Towers are louder than they look.",
+      "weight": 22
+    },
+    {
+      "key": "story_hint_report.structure.outpost",
+      "text": "So the patrol stories were true. Best to know where trouble keeps a roof.",
+      "weight": 20
+    },
+    {
+      "key": "story_hint_report.structure.outpost",
+      "text": "You reached {target_article}. I hope they saw less of you than you saw of them.",
+      "weight": 20
+    },
+    {
+      "key": "story_hint_report.structure.ruins",
+      "text": "You found {target_article}. Ruins always have more memory than walls.",
+      "weight": 24
+    },
+    {
+      "key": "story_hint_report.structure.ruins",
+      "text": "{target_article}, then. Broken places still know how to keep secrets.",
+      "weight": 22
+    },
+    {
+      "key": "story_hint_report.structure.ruins",
+      "text": "You confirmed {target_article}. The past is never quite as empty as it pretends.",
+      "weight": 22
+    },
+    {
+      "key": "story_hint_report.structure.ruins",
+      "text": "So {target_article} was real. I wonder what story broke there first.",
+      "weight": 20
+    },
+    {
+      "key": "story_hint_report.structure.ruins",
+      "text": "You reached {target_article}. Some places are leftovers, but not harmless ones.",
+      "weight": 20
+    },
+    {
+      "key": "story_hint_report.structure.trial_chambers",
+      "text": "{target_article}. Sounds like the rumor was testing your judgment before the place did.",
+      "weight": 24
+    },
+    {
+      "key": "story_hint_report.structure.trial_chambers",
+      "text": "You found {target_article}. Whoever built it trusted challenge more than comfort.",
+      "weight": 22
+    },
+    {
+      "key": "story_hint_report.structure.trial_chambers",
+      "text": "{target_article}, confirmed. A place like that does not invite travelers. It measures them.",
+      "weight": 22
+    },
+    {
+      "key": "story_hint_report.structure.trial_chambers",
+      "text": "So the tale of {target_article} was true. I hope you brought back more than bruises.",
+      "weight": 20
+    },
+    {
+      "key": "story_hint_report.structure.trial_chambers",
+      "text": "You reached {target_article}. I would call that brave, but brave and foolish share a fence.",
+      "weight": 20
+    },
+    {
+      "key": "story_hint_report.structure.generic",
+      "text": "You found {target_article}. Good. The story has somewhere solid to stand now.",
+      "weight": 24
+    },
+    {
+      "key": "story_hint_report.structure.generic",
+      "text": "{target_article}, confirmed. I will pass that along with fewer maybes.",
+      "weight": 22
+    },
+    {
+      "key": "story_hint_report.structure.generic",
+      "text": "You reached {target_article}. A place is different once someone here has seen it.",
+      "weight": 22
+    },
+    {
+      "key": "story_hint_report.structure.generic",
+      "text": "So the rumor had bones under it. Good to know.",
+      "weight": 20
+    },
+    {
+      "key": "story_hint_report.structure.generic",
+      "text": "{target_article}. I will remember the name with a little more certainty now.",
+      "weight": 20
+    },
+    {
+      "key": "story_hint_report.generic",
+      "text": "You found the place I mentioned. Good. I will remember that."
     }
   ],
   "openings": [

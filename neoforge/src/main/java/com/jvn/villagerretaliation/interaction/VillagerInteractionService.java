@@ -438,6 +438,7 @@ public final class VillagerInteractionService {
                 interactionState.lastDirectHitGameTime(),
                 interactionState.lastDirectHitWeapon(),
                 VillagerInteractionTracker.unreportedCartographerMapDiscovery(level, villager, player).orElse(null),
+                VillagerInteractionTracker.unreportedStoryHintDiscovery(level, villager, player).orElse(null),
                 VillagerInteractionTracker.unreportedCombatSurvivalReport(level, villager, player).orElse(null),
                 VillageEventMemory.recentNear(level, villager.blockPosition()),
                 villager.getRandom(),
@@ -509,6 +510,14 @@ public final class VillagerInteractionService {
                     .orElseGet(() -> new VillagerDialogueService.DialogueResult(
                             "cartographer_map_report_missing",
                             VillagerDialogueResources.message(context, "cartographer_map_report.missing").orElse("")
+                    ));
+        }
+        if (requestType == DialogueRequestType.STORY_HINT_REPORT) {
+            return VillagerStoryHintService
+                    .selectStoryHintReport(context)
+                    .orElseGet(() -> new VillagerDialogueService.DialogueResult(
+                            "story_hint_report_missing",
+                            VillagerDialogueResources.message(context, "story_hint_report.missing").orElse("")
                     ));
         }
         return VillagerDialogueService.select(

@@ -17,6 +17,7 @@ import java.util.UUID;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -104,6 +105,14 @@ public final class VillagerReputationAdvancements {
             award(player, TRUSTED_DIRECTIONS);
             discoveries.forEach(discovery -> sendDialogueMapFoundNotice(player, discovery));
         }
+        player.serverLevel().getBiome(player.blockPosition()).unwrapKey().map(ResourceKey::location).ifPresent(currentBiomeId -> {
+            List<VillagerInteractionTracker.StoryHintReport> hintDiscoveries =
+                    VillagerInteractionTracker.markStoryHintDiscoveriesNear(player.serverLevel(), player, currentBiomeId, DIALOGUE_MAP_FOUND_RADIUS);
+            if (!hintDiscoveries.isEmpty()) {
+                award(player, TRUSTED_DIRECTIONS);
+                hintDiscoveries.forEach(discovery -> sendStoryHintFoundNotice(player, discovery));
+            }
+        });
     }
 
     public static void onVillagerDirectlyDamaged(ServerLevel level, ServerPlayer player, AbstractVillager villager) {
@@ -403,6 +412,28 @@ public final class VillagerReputationAdvancements {
                     level,
                     villager,
                     "dialogue.map.found",
+                    VillagerNotifications.replacements("target", targetName),
+                    fallbackText,
+                    VillagerReputationNoticeKind.MAP_DISCOVERY
+            );
+            return;
+        }
+        VillagerReputationNetworking.sendNotice(player, fallbackText, VillagerReputationNoticeKind.MAP_DISCOVERY);
+    }
+
+    private static void sendStoryHintFoundNotice(ServerPlayer player, VillagerInteractionTracker.StoryHintReport discovery) {
+        ServerLevel level = player.serverLevel();
+        String targetName = discovery.targetName() == null || discovery.targetName().isBlank()
+                ? VillagerInteractionTextUtil.resourcePathName(discovery.targetId())
+                : discovery.targetName();
+        String fallbackText = "Found rumored place: " + targetName;
+        Entity entity = level.getEntity(discovery.villagerId());
+        if (entity instanceof AbstractVillager villager) {
+            VillagerNotifications.sendHud(
+                    player,
+                    level,
+                    villager,
+                    "dialogue.rumor.found",
                     VillagerNotifications.replacements("target", targetName),
                     fallbackText,
                     VillagerReputationNoticeKind.MAP_DISCOVERY

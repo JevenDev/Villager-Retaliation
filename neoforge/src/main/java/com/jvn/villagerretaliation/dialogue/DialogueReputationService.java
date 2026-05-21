@@ -99,6 +99,13 @@ public final class DialogueReputationService {
                     false,
                     null
             );
+            case STORY_HINT_REPORT -> new PlannedEffect(
+                    MAP_REPORT_REPUTATION_GAIN,
+                    "story_hint_report",
+                    DialogueReputationEffect.CooldownCategory.NONE,
+                    false,
+                    null
+            );
             case COMBAT_SURVIVAL_REPORT -> new PlannedEffect(
                     COMBAT_SURVIVAL_REPORT_REPUTATION_GAIN,
                     "combat_survival_report",
@@ -156,6 +163,7 @@ public final class DialogueReputationService {
     private static boolean isDialogueOptionExhausted(DialogueContext context, DialogueRequestType requestType, VillagerInteractionTracker.InteractionState interactionState) {
         if (requestType == DialogueRequestType.INSULT
                 || requestType == DialogueRequestType.MAP_REPORT
+                || requestType == DialogueRequestType.STORY_HINT_REPORT
                 || requestType == DialogueRequestType.COMBAT_SURVIVAL_REPORT
                 || requestType == DialogueRequestType.APOLOGY
                 || requestType == DialogueRequestType.VILLAGE_DEFENSE_REPORT) {

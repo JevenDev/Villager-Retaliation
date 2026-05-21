@@ -33,6 +33,7 @@ public final class VillagerInteractionTracker {
                 entry.requestUseCount(DialogueRequestType.QUESTION, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.GIFT_PREFERENCES, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.MAP_REPORT, gameTime, day, optionResetTicks),
+                entry.requestUseCount(DialogueRequestType.STORY_HINT_REPORT, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.COMBAT_SURVIVAL_REPORT, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.APOLOGY, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.VILLAGE_DEFENSE_REPORT, gameTime, day, optionResetTicks),
@@ -106,6 +107,65 @@ public final class VillagerInteractionTracker {
     public static Optional<CartographerMapReport> claimUnreportedCartographerMapDiscovery(ServerLevel level, Villager villager, ServerPlayer player) {
         VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
         CartographerMapReport report = data.claimUnreportedCartographerMapDiscovery(villager.getUUID(), player.getUUID());
+        if (report != null) {
+            data.setDirty();
+        }
+        return Optional.ofNullable(report);
+    }
+
+    public static void rememberStoryHint(
+            ServerLevel level,
+            Villager villager,
+            ServerPlayer player,
+            StoryHintKind kind,
+            ResourceLocation targetId,
+            String targetName,
+            BlockPos targetPos,
+            long expiresAtGameTime) {
+        VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
+        data.rememberStoryHint(
+                villager.getUUID(),
+                player.getUUID(),
+                level.dimension().location(),
+                kind,
+                targetId,
+                targetName,
+                targetPos,
+                expiresAtGameTime,
+                level.getGameTime()
+        );
+        data.setDirty();
+    }
+
+    public static List<StoryHintReport> markStoryHintDiscoveriesNear(
+            ServerLevel level,
+            ServerPlayer player,
+            ResourceLocation currentBiomeId,
+            double radius) {
+        VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
+        List<StoryHintReport> discoveries = data.markStoryHintDiscoveriesNear(
+                player.getUUID(),
+                level.dimension().location(),
+                currentBiomeId,
+                player.getX(),
+                player.getZ(),
+                radius * radius,
+                level.getGameTime()
+        );
+        if (!discoveries.isEmpty()) {
+            data.setDirty();
+        }
+        return discoveries;
+    }
+
+    public static Optional<StoryHintReport> unreportedStoryHintDiscovery(ServerLevel level, Villager villager, ServerPlayer player) {
+        return Optional.ofNullable(VillagerInteractionSavedData.get(level)
+                .unreportedStoryHintDiscovery(villager.getUUID(), player.getUUID()));
+    }
+
+    public static Optional<StoryHintReport> claimUnreportedStoryHintDiscovery(ServerLevel level, Villager villager, ServerPlayer player) {
+        VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
+        StoryHintReport report = data.claimUnreportedStoryHintDiscovery(villager.getUUID(), player.getUUID());
         if (report != null) {
             data.setDirty();
         }
@@ -206,6 +266,7 @@ public final class VillagerInteractionTracker {
             int questionUseCount,
             int giftPreferenceUseCount,
             int mapReportUseCount,
+            int storyHintReportUseCount,
             int combatSurvivalReportUseCount,
             int apologyUseCount,
             int villageDefenseReportUseCount,
@@ -225,6 +286,7 @@ public final class VillagerInteractionTracker {
                 case QUESTION -> this.questionUseCount;
                 case GIFT_PREFERENCES -> this.giftPreferenceUseCount;
                 case MAP_REPORT -> this.mapReportUseCount;
+                case STORY_HINT_REPORT -> this.storyHintReportUseCount;
                 case COMBAT_SURVIVAL_REPORT -> this.combatSurvivalReportUseCount;
                 case APOLOGY -> this.apologyUseCount;
                 case VILLAGE_DEFENSE_REPORT -> this.villageDefenseReportUseCount;
@@ -239,6 +301,21 @@ public final class VillagerInteractionTracker {
             UUID villagerId,
             ResourceLocation dimension,
             ResourceLocation structureId,
+            String targetName,
+            BlockPos targetPos
+    ) {
+    }
+
+    public enum StoryHintKind {
+        BIOME,
+        STRUCTURE
+    }
+
+    public record StoryHintReport(
+            UUID villagerId,
+            ResourceLocation dimension,
+            StoryHintKind kind,
+            ResourceLocation targetId,
             String targetName,
             BlockPos targetPos
     ) {

@@ -341,6 +341,7 @@ public final class VillagerDialogueResources {
             Set<VillagerProfession> professions = readProfessions(entry, defaultProfessions);
             Set<DialogueDisposition> dispositions = readEnumSet(entry, "dispositions", DialogueDisposition.class);
             boolean requiresUnreportedCartographerMapDiscovery = readBoolean(entry, "requires_unreported_cartographer_map_discovery");
+            boolean requiresUnreportedStoryHintDiscovery = readBoolean(entry, "requires_unreported_story_hint_discovery");
             boolean requiresUnreportedCombatSurvivalReport = readBoolean(entry, "requires_unreported_combat_survival_report");
             boolean requiresUnapologizedRememberedHarm = readBoolean(entry, "requires_unapologized_remembered_harm");
             boolean requiresUnreportedVillageDefense = readBoolean(entry, "requires_unreported_village_defense");
@@ -354,6 +355,7 @@ public final class VillagerDialogueResources {
                     professions,
                     dispositions,
                     requiresUnreportedCartographerMapDiscovery,
+                    requiresUnreportedStoryHintDiscovery,
                     requiresUnreportedCombatSurvivalReport,
                     requiresUnapologizedRememberedHarm,
                     requiresUnreportedVillageDefense,

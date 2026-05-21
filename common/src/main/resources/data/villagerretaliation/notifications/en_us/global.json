@@ -31,6 +31,12 @@
       "color": "#55AAFF"
     },
     {
+      "trigger": "dialogue.rumor.found",
+      "text": "Found rumored place: {target}",
+      "kind": "map_discovery",
+      "color": "#55AAFF"
+    },
+    {
       "trigger": "recruitment.follow_start",
       "text": "{villager} is following you.",
       "kind": "villager_following",

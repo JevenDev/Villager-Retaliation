@@ -12,6 +12,7 @@ public record DialogueOptionDefinition(
         Set<VillagerProfession> professions,
         Set<DialogueDisposition> dispositions,
         boolean requiresUnreportedCartographerMapDiscovery,
+        boolean requiresUnreportedStoryHintDiscovery,
         boolean requiresUnreportedCombatSurvivalReport,
         boolean requiresUnapologizedRememberedHarm,
         boolean requiresUnreportedVillageDefense,
@@ -31,6 +32,9 @@ public record DialogueOptionDefinition(
         if (this.requiresUnreportedCartographerMapDiscovery && !context.hasUnreportedCartographerMapDiscovery()) {
             return false;
         }
+        if (this.requiresUnreportedStoryHintDiscovery && !context.hasUnreportedStoryHintDiscovery()) {
+            return false;
+        }
         if (this.requiresUnreportedCombatSurvivalReport && !context.hasUnreportedCombatSurvivalReport()) {
             return false;
         }
@@ -44,6 +48,6 @@ public record DialogueOptionDefinition(
     }
 
     public static DialogueOptionDefinition simple(String id, String label, DialogueRequestType requestType, int order) {
-        return new DialogueOptionDefinition(id, label, requestType, true, true, Set.of(), Set.of(), false, false, false, false, order);
+        return new DialogueOptionDefinition(id, label, requestType, true, true, Set.of(), Set.of(), false, false, false, false, false, order);
     }
 }

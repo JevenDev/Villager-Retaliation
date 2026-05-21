@@ -52,8 +52,11 @@ public class VillagerInteractionSavedData extends SavedData {
     private static final String TAG_LIKED_GIFTS = "LikedGifts";
     private static final String TAG_DISLIKED_GIFTS = "DislikedGifts";
     private static final String TAG_CARTOGRAPHER_MAPS = "CartographerMaps";
+    private static final String TAG_STORY_HINTS = "StoryHints";
     private static final String TAG_DIMENSION = "Dimension";
+    private static final String TAG_KIND = "Kind";
     private static final String TAG_STRUCTURE = "Structure";
+    private static final String TAG_TARGET = "Target";
     private static final String TAG_TARGET_NAME = "TargetName";
     private static final String TAG_TARGET_X = "TargetX";
     private static final String TAG_TARGET_Y = "TargetY";
@@ -66,6 +69,7 @@ public class VillagerInteractionSavedData extends SavedData {
     private static final String TAG_COMBAT_SURVIVAL_GAME_TIME = "CombatSurvivalGameTime";
     private static final int MAX_RECENT_LINES = 5;
     private static final int MAX_CARTOGRAPHER_MAPS = 8;
+    private static final int MAX_STORY_HINTS = 12;
 
     private final Map<UUID, Map<UUID, InteractionEntry>> entries = new HashMap<>();
     private final Map<UUID, GiftKnowledgeBook> giftKnowledge = new HashMap<>();
@@ -173,6 +177,33 @@ public class VillagerInteractionSavedData extends SavedData {
                         readOptionalLong(mapTag, TAG_EXPIRES_AT),
                         mapTag.getBoolean(TAG_FOUND),
                         mapTag.getBoolean(TAG_REPORTED)
+                ));
+            }
+            ListTag storyHints = entryTag.getList(TAG_STORY_HINTS, Tag.TAG_COMPOUND);
+            for (Tag rawHint : storyHints) {
+                if (!(rawHint instanceof CompoundTag hintTag)) {
+                    continue;
+                }
+                ResourceLocation dimension = ResourceLocation.tryParse(hintTag.getString(TAG_DIMENSION));
+                ResourceLocation targetId = ResourceLocation.tryParse(hintTag.getString(TAG_TARGET));
+                if (dimension == null || targetId == null) {
+                    continue;
+                }
+                VillagerInteractionTracker.StoryHintKind kind;
+                try {
+                    kind = VillagerInteractionTracker.StoryHintKind.valueOf(hintTag.getString(TAG_KIND));
+                } catch (IllegalArgumentException ignored) {
+                    continue;
+                }
+                entry.storyHints.add(new StoryHintMemory(
+                        dimension,
+                        kind,
+                        targetId,
+                        hintTag.getString(TAG_TARGET_NAME),
+                        new BlockPos(hintTag.getInt(TAG_TARGET_X), hintTag.getInt(TAG_TARGET_Y), hintTag.getInt(TAG_TARGET_Z)),
+                        readOptionalLong(hintTag, TAG_EXPIRES_AT),
+                        hintTag.getBoolean(TAG_FOUND),
+                        hintTag.getBoolean(TAG_REPORTED)
                 ));
             }
             data.entries.computeIfAbsent(entryTag.getUUID(TAG_VILLAGER), ignored -> new HashMap<>())
@@ -286,6 +317,22 @@ public class VillagerInteractionSavedData extends SavedData {
                     cartographerMaps.add(mapTag);
                 }
                 entryTag.put(TAG_CARTOGRAPHER_MAPS, cartographerMaps);
+                ListTag storyHints = new ListTag();
+                for (StoryHintMemory storyHint : playerEntry.getValue().storyHints) {
+                    CompoundTag hintTag = new CompoundTag();
+                    hintTag.putString(TAG_DIMENSION, storyHint.dimension().toString());
+                    hintTag.putString(TAG_KIND, storyHint.kind().name());
+                    hintTag.putString(TAG_TARGET, storyHint.targetId().toString());
+                    hintTag.putString(TAG_TARGET_NAME, storyHint.targetName());
+                    hintTag.putInt(TAG_TARGET_X, storyHint.targetPos().getX());
+                    hintTag.putInt(TAG_TARGET_Y, storyHint.targetPos().getY());
+                    hintTag.putInt(TAG_TARGET_Z, storyHint.targetPos().getZ());
+                    hintTag.putLong(TAG_EXPIRES_AT, storyHint.expiresAtGameTime());
+                    hintTag.putBoolean(TAG_FOUND, storyHint.found());
+                    hintTag.putBoolean(TAG_REPORTED, storyHint.reported());
+                    storyHints.add(hintTag);
+                }
+                entryTag.put(TAG_STORY_HINTS, storyHints);
                 entriesTag.add(entryTag);
             }
         }
@@ -379,12 +426,75 @@ public class VillagerInteractionSavedData extends SavedData {
         return discoveries;
     }
 
+    public void rememberStoryHint(
+            UUID villagerId,
+            UUID playerId,
+            ResourceLocation dimension,
+            VillagerInteractionTracker.StoryHintKind kind,
+            ResourceLocation targetId,
+            String targetName,
+            BlockPos targetPos,
+            long expiresAtGameTime,
+            long gameTime) {
+        InteractionEntry entry = getOrCreate(villagerId, playerId);
+        if (entry.hasOpenStoryHint(dimension, kind, targetId, targetPos, gameTime)) {
+            return;
+        }
+        entry.storyHints.add(new StoryHintMemory(
+                dimension,
+                kind,
+                targetId,
+                targetName == null ? "" : targetName,
+                targetPos.immutable(),
+                expiresAtGameTime,
+                false,
+                false
+        ));
+        entry.pruneStoryHints();
+    }
+
+    public List<VillagerInteractionTracker.StoryHintReport> markStoryHintDiscoveriesNear(
+            UUID playerId,
+            ResourceLocation dimension,
+            ResourceLocation currentBiomeId,
+            double x,
+            double z,
+            double radiusSqr,
+            long gameTime) {
+        List<VillagerInteractionTracker.StoryHintReport> discoveries = new ArrayList<>();
+        for (Map.Entry<UUID, Map<UUID, InteractionEntry>> villagerEntry : this.entries.entrySet()) {
+            Map<UUID, InteractionEntry> playerEntries = villagerEntry.getValue();
+            InteractionEntry entry = playerEntries.get(playerId);
+            if (entry == null) {
+                continue;
+            }
+            discoveries.addAll(entry.markStoryHintDiscoveriesNear(
+                    villagerEntry.getKey(),
+                    dimension,
+                    currentBiomeId,
+                    x,
+                    z,
+                    radiusSqr,
+                    gameTime
+            ));
+        }
+        return discoveries;
+    }
+
     public VillagerInteractionTracker.CartographerMapReport unreportedCartographerMapDiscovery(UUID villagerId, UUID playerId) {
         return getOrCreate(villagerId, playerId).unreportedCartographerMapDiscovery(villagerId);
     }
 
     public VillagerInteractionTracker.CartographerMapReport claimUnreportedCartographerMapDiscovery(UUID villagerId, UUID playerId) {
         return getOrCreate(villagerId, playerId).claimUnreportedCartographerMapDiscovery(villagerId);
+    }
+
+    public VillagerInteractionTracker.StoryHintReport unreportedStoryHintDiscovery(UUID villagerId, UUID playerId) {
+        return getOrCreate(villagerId, playerId).unreportedStoryHintDiscovery(villagerId);
+    }
+
+    public VillagerInteractionTracker.StoryHintReport claimUnreportedStoryHintDiscovery(UUID villagerId, UUID playerId) {
+        return getOrCreate(villagerId, playerId).claimUnreportedStoryHintDiscovery(villagerId);
     }
 
     public void rememberCombatSurvivalReport(UUID villagerId, UUID playerId, String eventKind, long gameTime) {
@@ -435,6 +545,7 @@ public class VillagerInteractionSavedData extends SavedData {
         private final Map<DialogueRequestType, Long> lastDialogueByRequestType = new EnumMap<>(DialogueRequestType.class);
         private final Map<DialogueRequestType, RequestUseWindow> requestUseWindows = new EnumMap<>(DialogueRequestType.class);
         private final List<CartographerMapMemory> cartographerMaps = new ArrayList<>();
+        private final List<StoryHintMemory> storyHints = new ArrayList<>();
 
         public boolean hasTalked() {
             return this.hasTalked;
@@ -636,6 +747,74 @@ public class VillagerInteractionSavedData extends SavedData {
             return null;
         }
 
+        private List<VillagerInteractionTracker.StoryHintReport> markStoryHintDiscoveriesNear(
+                UUID villagerId,
+                ResourceLocation dimension,
+                ResourceLocation currentBiomeId,
+                double x,
+                double z,
+                double radiusSqr,
+                long gameTime) {
+            List<VillagerInteractionTracker.StoryHintReport> discoveries = new ArrayList<>();
+            for (int index = 0; index < this.storyHints.size(); index++) {
+                StoryHintMemory storyHint = this.storyHints.get(index);
+                if (storyHint.reported()
+                        || storyHint.found()
+                        || storyHint.expiresAtGameTime() <= gameTime
+                        || !storyHint.dimension().equals(dimension)
+                        || !storyHint.matchesCurrentPlace(currentBiomeId)) {
+                    continue;
+                }
+                double dx = x - (storyHint.targetPos().getX() + 0.5D);
+                double dz = z - (storyHint.targetPos().getZ() + 0.5D);
+                if (dx * dx + dz * dz <= radiusSqr) {
+                    this.storyHints.set(index, storyHint.withFound(true));
+                    discoveries.add(storyHint.toReport(villagerId));
+                }
+            }
+            return discoveries;
+        }
+
+        private VillagerInteractionTracker.StoryHintReport unreportedStoryHintDiscovery(UUID villagerId) {
+            for (int index = this.storyHints.size() - 1; index >= 0; index--) {
+                StoryHintMemory storyHint = this.storyHints.get(index);
+                if (storyHint.found() && !storyHint.reported()) {
+                    return storyHint.toReport(villagerId);
+                }
+            }
+            return null;
+        }
+
+        private VillagerInteractionTracker.StoryHintReport claimUnreportedStoryHintDiscovery(UUID villagerId) {
+            for (int index = this.storyHints.size() - 1; index >= 0; index--) {
+                StoryHintMemory storyHint = this.storyHints.get(index);
+                if (storyHint.found() && !storyHint.reported()) {
+                    this.storyHints.set(index, storyHint.withReported(true));
+                    return storyHint.toReport(villagerId);
+                }
+            }
+            return null;
+        }
+
+        private boolean hasOpenStoryHint(
+                ResourceLocation dimension,
+                VillagerInteractionTracker.StoryHintKind kind,
+                ResourceLocation targetId,
+                BlockPos targetPos,
+                long gameTime) {
+            for (StoryHintMemory storyHint : this.storyHints) {
+                if (!storyHint.reported()
+                        && storyHint.expiresAtGameTime() > gameTime
+                        && storyHint.dimension().equals(dimension)
+                        && storyHint.kind() == kind
+                        && storyHint.targetId().equals(targetId)
+                        && storyHint.targetPos().equals(targetPos)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         private void pruneCartographerMaps() {
             while (this.cartographerMaps.size() > MAX_CARTOGRAPHER_MAPS) {
                 int reportedIndex = firstReportedCartographerMapIndex();
@@ -643,9 +822,25 @@ public class VillagerInteractionSavedData extends SavedData {
             }
         }
 
+        private void pruneStoryHints() {
+            while (this.storyHints.size() > MAX_STORY_HINTS) {
+                int reportedIndex = firstReportedStoryHintIndex();
+                this.storyHints.remove(reportedIndex >= 0 ? reportedIndex : 0);
+            }
+        }
+
         private int firstReportedCartographerMapIndex() {
             for (int index = 0; index < this.cartographerMaps.size(); index++) {
                 if (this.cartographerMaps.get(index).reported()) {
+                    return index;
+                }
+            }
+            return -1;
+        }
+
+        private int firstReportedStoryHintIndex() {
+            for (int index = 0; index < this.storyHints.size(); index++) {
+                if (this.storyHints.get(index).reported()) {
                     return index;
                 }
             }
@@ -691,6 +886,59 @@ public class VillagerInteractionSavedData extends SavedData {
                     villagerId,
                     this.dimension,
                     this.structureId,
+                    this.targetName,
+                    this.targetPos
+            );
+        }
+    }
+
+    private record StoryHintMemory(
+            ResourceLocation dimension,
+            VillagerInteractionTracker.StoryHintKind kind,
+            ResourceLocation targetId,
+            String targetName,
+            BlockPos targetPos,
+            long expiresAtGameTime,
+            boolean found,
+            boolean reported
+    ) {
+        private boolean matchesCurrentPlace(ResourceLocation currentBiomeId) {
+            return this.kind != VillagerInteractionTracker.StoryHintKind.BIOME
+                    || this.targetId.equals(currentBiomeId);
+        }
+
+        private StoryHintMemory withFound(boolean found) {
+            return new StoryHintMemory(
+                    this.dimension,
+                    this.kind,
+                    this.targetId,
+                    this.targetName,
+                    this.targetPos,
+                    this.expiresAtGameTime,
+                    found,
+                    this.reported
+            );
+        }
+
+        private StoryHintMemory withReported(boolean reported) {
+            return new StoryHintMemory(
+                    this.dimension,
+                    this.kind,
+                    this.targetId,
+                    this.targetName,
+                    this.targetPos,
+                    this.expiresAtGameTime,
+                    this.found,
+                    reported
+            );
+        }
+
+        private VillagerInteractionTracker.StoryHintReport toReport(UUID villagerId) {
+            return new VillagerInteractionTracker.StoryHintReport(
+                    villagerId,
+                    this.dimension,
+                    this.kind,
+                    this.targetId,
                     this.targetName,
                     this.targetPos
             );

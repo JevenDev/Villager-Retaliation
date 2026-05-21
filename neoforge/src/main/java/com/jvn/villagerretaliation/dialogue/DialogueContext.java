@@ -32,6 +32,7 @@ public record DialogueContext(
         long lastDirectHitGameTime,
         String lastDirectHitWeapon,
         VillagerInteractionTracker.CartographerMapReport cartographerMapReport,
+        VillagerInteractionTracker.StoryHintReport storyHintReport,
         VillagerInteractionTracker.CombatSurvivalReport combatSurvivalReport,
         List<VillageEventMemory.MemoryEvent> recentEvents,
         RandomSource random,
@@ -89,6 +90,14 @@ public record DialogueContext(
 
     public boolean hasUnreportedCartographerMapDiscovery() {
         return this.cartographerMapReport != null;
+    }
+
+    public Optional<VillagerInteractionTracker.StoryHintReport> unreportedStoryHintDiscovery() {
+        return Optional.ofNullable(this.storyHintReport);
+    }
+
+    public boolean hasUnreportedStoryHintDiscovery() {
+        return this.storyHintReport != null;
     }
 
     public Optional<VillagerInteractionTracker.CombatSurvivalReport> unreportedCombatSurvivalReport() {

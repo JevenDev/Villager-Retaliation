@@ -40,6 +40,7 @@ public final class VillagerStoryHintService {
     private static final long NEGATIVE_CACHE_TICKS = 20L * 30L;
     private static final long CARTOGRAPHER_MAP_COOLDOWN_TICKS = 20L * 60L * 20L * 2L;
     private static final long CARTOGRAPHER_MAP_DISCOVERY_TICKS = 20L * 60L * 60L * 6L;
+    private static final long STORY_HINT_DISCOVERY_TICKS = 20L * 60L * 60L * 6L;
     private static final double MIN_TARGET_SEPARATION_SQR = 96.0D * 96.0D;
     private static final Map<HintCacheKey, CachedLookup> CACHE = new HashMap<>();
     private static final Map<CartographerMapGiftKey, Long> CARTOGRAPHER_MAP_GIFTS = new HashMap<>();
@@ -82,6 +83,33 @@ public final class VillagerStoryHintService {
                 });
     }
 
+    public static Optional<VillagerDialogueService.DialogueResult> selectStoryHintReport(DialogueContext context) {
+        return VillagerInteractionTracker.claimUnreportedStoryHintDiscovery(context.level(), context.villager(), context.player())
+                .map(report -> {
+                    String targetName = report.targetName() == null || report.targetName().isBlank()
+                            ? VillagerInteractionTextUtil.resourcePathName(report.targetId())
+                            : report.targetName();
+                    Map<String, String> replacements = Map.of(
+                            "target", targetName,
+                            "target_article", withArticle(targetName)
+                    );
+                    String key = report.kind() == VillagerInteractionTracker.StoryHintKind.BIOME
+                            ? "story_hint_report.biome"
+                            : "story_hint_report.structure." + structureReportCategory(report.targetId());
+                    String fallbackKey = report.kind() == VillagerInteractionTracker.StoryHintKind.BIOME
+                            ? "story_hint_report.generic"
+                            : "story_hint_report.structure.generic";
+                    String text = VillagerDialogueResources
+                            .message(context, key, replacements)
+                            .or(() -> VillagerDialogueResources.message(context, fallbackKey, replacements))
+                            .orElse("");
+                    return new VillagerDialogueService.DialogueResult(
+                            "story_hint_report_" + report.kind().name().toLowerCase(Locale.ROOT) + "_" + report.targetId().getPath(),
+                            text
+                    );
+                });
+    }
+
     private static Optional<WorldHint> selectWorldHint(DialogueContext context, HintQuality quality) {
         boolean tryStructureFirst = quality.canRevealStructures && context.random().nextBoolean();
         if (tryStructureFirst) {
@@ -109,6 +137,7 @@ public final class VillagerStoryHintService {
             return cached.get().nextTarget(context.random()).map(target -> {
                 String name = VillagerInteractionTextUtil.resourcePathName(target.id());
                 HintPlacement placement = HintPlacement.from(origin, target.pos(), quality);
+                rememberStoryHint(context, target, name);
                 return new WorldHint(HintKind.BIOME, biomeText(context, name, placement, quality));
             });
         }
@@ -122,6 +151,7 @@ public final class VillagerStoryHintService {
         CachedTarget target = targets.get(context.random().nextInt(targets.size()));
         String name = VillagerInteractionTextUtil.resourcePathName(target.id());
         HintPlacement placement = HintPlacement.from(origin, target.pos(), quality);
+        rememberStoryHint(context, target, name);
         return Optional.of(new WorldHint(HintKind.BIOME, biomeText(context, name, placement, quality)));
     }
 
@@ -161,6 +191,9 @@ public final class VillagerStoryHintService {
                 String name = VillagerInteractionTextUtil.resourcePathName(target.id());
                 HintPlacement placement = HintPlacement.fromStructure(origin, target.pos(), target.id(), quality);
                 boolean gaveMap = maybeGiveCartographerMap(context, target, name);
+                if (!gaveMap) {
+                    rememberStoryHint(context, target, name);
+                }
                 return new WorldHint(
                         gaveMap ? HintKind.MAP : HintKind.STRUCTURE,
                         gaveMap
@@ -180,6 +213,9 @@ public final class VillagerStoryHintService {
         String name = VillagerInteractionTextUtil.resourcePathName(target.id());
         HintPlacement placement = HintPlacement.fromStructure(origin, target.pos(), target.id(), quality);
         boolean gaveMap = maybeGiveCartographerMap(context, target, name);
+        if (!gaveMap) {
+            rememberStoryHint(context, target, name);
+        }
         return Optional.of(new WorldHint(
                 gaveMap ? HintKind.MAP : HintKind.STRUCTURE,
                 gaveMap
@@ -224,6 +260,27 @@ public final class VillagerStoryHintService {
             remaining.removeIf(structure -> foundStructureId != null && keyLocation(structure).map(foundStructureId::equals).orElse(false));
         }
         return targets;
+    }
+
+    private static void rememberStoryHint(DialogueContext context, CachedTarget target, String targetName) {
+        VillagerInteractionTracker.StoryHintKind kind = switch (target.kind()) {
+            case BIOME -> VillagerInteractionTracker.StoryHintKind.BIOME;
+            case STRUCTURE -> VillagerInteractionTracker.StoryHintKind.STRUCTURE;
+            case MAP -> null;
+        };
+        if (kind == null) {
+            return;
+        }
+        VillagerInteractionTracker.rememberStoryHint(
+                context.level(),
+                context.villager(),
+                context.player(),
+                kind,
+                target.id(),
+                targetName,
+                target.pos(),
+                context.level().getGameTime() + STORY_HINT_DISCOVERY_TICKS
+        );
     }
 
     private static boolean maybeGiveCartographerMap(DialogueContext context, CachedTarget target, String targetName) {
