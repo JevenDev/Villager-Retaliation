@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.network.VillagerWorldTextIndicatorKind;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
+import com.jvn.villagerretaliation.util.VillagerLocale;
 import java.util.HashMap;
 import java.util.Map;
 import net.minecraft.server.level.ServerLevel;
@@ -105,6 +106,14 @@ public final class VillagerNotifications {
     private static VillagerNotificationContext context(ServerLevel level, AbstractVillager villager, Player player) {
         int reputation = player == null ? 0 : VillagerReputationManager.getReputation(level, villager, player.getUUID());
         VillagerReputationLevel reputationLevel = VillagerReputationLevel.fromReputation(reputation);
-        return new VillagerNotificationContext(level, villager, player, reputation, reputationLevel, villager.getRandom());
+        return new VillagerNotificationContext(
+                level,
+                villager,
+                player,
+                reputation,
+                reputationLevel,
+                villager.getRandom(),
+                player instanceof ServerPlayer serverPlayer ? VillagerLocale.locale(serverPlayer) : VillagerLocale.DEFAULT_LOCALE
+        );
     }
 }

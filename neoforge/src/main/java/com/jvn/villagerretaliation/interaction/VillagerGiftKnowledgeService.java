@@ -29,8 +29,8 @@ public final class VillagerGiftKnowledgeService {
         Set<String> likedNames = new LinkedHashSet<>();
         Set<String> dislikedNames = new LinkedHashSet<>();
 
-        for (VillagerGiftPreferences.GiftCandidate candidate : VillagerGiftPreferences.giftCandidates(profession)) {
-            if (!appliesToProfession(candidate, profession)) {
+        for (VillagerGiftPreferences.GiftCandidate candidate : VillagerGiftPreferences.giftCandidates(level, profession)) {
+            if (!appliesToProfession(level, candidate, profession)) {
                 continue;
             }
             String itemId = itemId(candidate.item());
@@ -53,7 +53,7 @@ public final class VillagerGiftKnowledgeService {
         VillagerProfession profession = context.profession();
         String professionKey = professionKey(profession);
         VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
-        List<VillagerGiftPreferences.GiftCandidate> unknownCandidates = unknownCandidates(data, player, professionKey, profession);
+        List<VillagerGiftPreferences.GiftCandidate> unknownCandidates = unknownCandidates(level, data, player, professionKey, profession);
         if (unknownCandidates.isEmpty()) {
             return Optional.empty();
         }
@@ -73,14 +73,15 @@ public final class VillagerGiftKnowledgeService {
     }
 
     private static List<VillagerGiftPreferences.GiftCandidate> unknownCandidates(
+            ServerLevel level,
             VillagerInteractionSavedData data,
             ServerPlayer player,
             String professionKey,
             VillagerProfession profession) {
         List<VillagerGiftPreferences.GiftCandidate> candidates = new ArrayList<>();
         Set<String> seen = new LinkedHashSet<>();
-        for (VillagerGiftPreferences.GiftCandidate candidate : VillagerGiftPreferences.giftCandidates(profession)) {
-            if (!appliesToProfession(candidate, profession)) {
+        for (VillagerGiftPreferences.GiftCandidate candidate : VillagerGiftPreferences.giftCandidates(level, profession)) {
+            if (!appliesToProfession(level, candidate, profession)) {
                 continue;
             }
             String itemId = itemId(candidate.item());
@@ -104,8 +105,8 @@ public final class VillagerGiftKnowledgeService {
                 || data.knowsGift(player.getUUID(), professionKey, itemId, liked);
     }
 
-    private static boolean appliesToProfession(VillagerGiftPreferences.GiftCandidate candidate, VillagerProfession profession) {
-        return VillagerGiftPreferences.evaluate(profession, new ItemStack(candidate.item())).reaction() == candidate.reaction();
+    private static boolean appliesToProfession(ServerLevel level, VillagerGiftPreferences.GiftCandidate candidate, VillagerProfession profession) {
+        return VillagerGiftPreferences.evaluate(level, profession, new ItemStack(candidate.item())).reaction() == candidate.reaction();
     }
 
     private static String giftSubject(VillagerProfession profession) {

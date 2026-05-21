@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.combat.VillagerPacificationResult;
+import com.jvn.villagerretaliation.util.VillagerLocale;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import java.io.IOException;
 import java.io.Reader;
@@ -13,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.EnumSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -24,28 +26,26 @@ import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.world.entity.npc.VillagerProfession;
 
 public final class VillagerDialogueResources {
-    private static final String DEFAULT_LOCALE = "en_us";
-    private static final String DIALOGUE_ROOT = "dialogue/" + DEFAULT_LOCALE;
-    private static final String PROFESSION_ROOT = DIALOGUE_ROOT + "/professions/";
+    private static final String DIALOGUE_ROOT = "dialogue/";
 
-    private static volatile CachedDialoguePool cachedDialoguePool = CachedDialoguePool.empty();
+    private static volatile CachedDialoguePools cachedDialoguePools = CachedDialoguePools.empty();
 
     private VillagerDialogueResources() {
     }
 
     public static List<DialogueLine> lines(MinecraftServer server) {
-        return load(server).lines();
+        return load(server, VillagerLocale.DEFAULT_LOCALE).lines();
     }
 
     public static List<String> openingLines(DialogueContext context, DialogueDisposition disposition) {
-        return load(context.level().getServer()).openings().stream()
+        return load(context.level().getServer(), context.locale()).openings().stream()
                 .filter(line -> line.matches(context, disposition))
                 .map(ConversationLine::text)
                 .toList();
     }
 
     public static List<String> closingLines(DialogueContext context, DialogueDisposition disposition) {
-        return load(context.level().getServer()).closings().stream()
+        return load(context.level().getServer(), context.locale()).closings().stream()
                 .filter(line -> line.matches(context, disposition))
                 .map(ConversationLine::text)
                 .toList();
@@ -57,7 +57,7 @@ public final class VillagerDialogueResources {
 
     public static Optional<String> message(DialogueContext context, String key, Map<String, String> replacements) {
         DialogueDisposition disposition = VillagerDialogueService.moodFor(context);
-        List<KeyedMessageLine> candidates = load(context.level().getServer()).messages().stream()
+        List<KeyedMessageLine> candidates = load(context.level().getServer(), context.locale()).messages().stream()
                 .filter(line -> line.matches(context, key, disposition))
                 .toList();
         return selectMessage(candidates, context.random().nextInt(Math.max(1, totalMessageWeight(candidates))))
@@ -73,7 +73,24 @@ public final class VillagerDialogueResources {
             net.minecraft.util.RandomSource random,
             String key,
             Map<String, String> replacements) {
-        List<KeyedMessageLine> candidates = load(server).messages().stream()
+        return globalMessage(server, random, key, VillagerLocale.DEFAULT_LOCALE, replacements);
+    }
+
+    public static Optional<String> globalMessage(
+            MinecraftServer server,
+            net.minecraft.util.RandomSource random,
+            String key,
+            String locale) {
+        return globalMessage(server, random, key, locale, Map.of());
+    }
+
+    public static Optional<String> globalMessage(
+            MinecraftServer server,
+            net.minecraft.util.RandomSource random,
+            String key,
+            String locale,
+            Map<String, String> replacements) {
+        List<KeyedMessageLine> candidates = load(server, locale).messages().stream()
                 .filter(line -> line.matches(key))
                 .toList();
         return selectMessage(candidates, random.nextInt(Math.max(1, totalMessageWeight(candidates))))
@@ -81,7 +98,7 @@ public final class VillagerDialogueResources {
     }
 
     public static List<DialogueOptionDefinition> dialogueOptions(DialogueContext context, DialogueDisposition disposition) {
-        return load(context.level().getServer()).options().stream()
+        return load(context.level().getServer(), context.locale()).options().stream()
                 .filter(option -> option.matches(context, disposition))
                 .sorted(Comparator.comparingInt(DialogueOptionDefinition::order).thenComparing(DialogueOptionDefinition::id))
                 .toList();
@@ -98,7 +115,7 @@ public final class VillagerDialogueResources {
     }
 
     public static Optional<String> pacifyLine(DialogueContext context, VillagerPacificationResult result, int emeraldCost) {
-        List<PacifyLine> candidates = load(context.level().getServer()).pacifyLines().stream()
+        List<PacifyLine> candidates = load(context.level().getServer(), context.locale()).pacifyLines().stream()
                 .filter(line -> line.matches(context, result))
                 .toList();
         if (candidates.isEmpty()) {
@@ -122,7 +139,7 @@ public final class VillagerDialogueResources {
             String giftItemName,
             String giftSubject) {
         DialogueDisposition disposition = VillagerDialogueService.moodFor(context);
-        List<DialogueLine> candidates = load(context.level().getServer()).lines().stream()
+        List<DialogueLine> candidates = load(context.level().getServer(), context.locale()).lines().stream()
                 .filter(line -> line.giftAdviceKind() == giftAdviceKind)
                 .filter(line -> line.matches(context, DialogueRequestType.GIFT_PREFERENCES, disposition))
                 .toList();
@@ -141,62 +158,88 @@ public final class VillagerDialogueResources {
         return Optional.of(resolveGiftAdviceText(candidates.getLast().text(), giftItemName, giftSubject));
     }
 
-    private static DialoguePool load(MinecraftServer server) {
-        CachedDialoguePool current = cachedDialoguePool;
+    private static DialoguePool load(MinecraftServer server, String locale) {
+        String normalizedLocale = VillagerLocale.normalize(locale);
+        CachedDialoguePools current = cachedDialoguePools;
         if (current.server() == server) {
-            return current.pool();
+            DialoguePool cachedPool = current.poolsByLocale().get(normalizedLocale);
+            if (cachedPool != null) {
+                return cachedPool;
+            }
         }
 
         synchronized (VillagerDialogueResources.class) {
-            current = cachedDialoguePool;
-            if (current.server() == server) {
-                return current.pool();
+            current = cachedDialoguePools;
+            Map<String, DialoguePool> poolsByLocale = current.server() == server
+                    ? new HashMap<>(current.poolsByLocale())
+                    : new HashMap<>();
+            DialoguePool cachedPool = poolsByLocale.get(normalizedLocale);
+            if (cachedPool != null) {
+                return cachedPool;
             }
 
-            DialoguePool loadedPool = read(server);
-            cachedDialoguePool = new CachedDialoguePool(server, loadedPool);
+            DialoguePool loadedPool = read(server, normalizedLocale);
+            poolsByLocale.put(normalizedLocale, loadedPool);
+            cachedDialoguePools = new CachedDialoguePools(server, Map.copyOf(poolsByLocale));
             return loadedPool;
         }
     }
 
-    private static DialoguePool read(MinecraftServer server) {
-        List<DialogueLine> lines = new ArrayList<>();
-        List<ConversationLine> openings = new ArrayList<>();
-        List<ConversationLine> closings = new ArrayList<>();
-        List<PacifyLine> pacifyLines = new ArrayList<>();
-        List<DialogueOptionDefinition> options = new ArrayList<>();
-        List<KeyedMessageLine> messages = new ArrayList<>();
+    private static DialoguePool read(MinecraftServer server, String locale) {
+        Map<String, DialogueLine> lines = new LinkedHashMap<>();
+        Map<String, ConversationLine> openings = new LinkedHashMap<>();
+        Map<String, ConversationLine> closings = new LinkedHashMap<>();
+        Map<String, PacifyLine> pacifyLines = new LinkedHashMap<>();
+        Map<String, DialogueOptionDefinition> options = new LinkedHashMap<>();
+        Map<String, KeyedMessageLine> messages = new LinkedHashMap<>();
 
+        readLocale(server, VillagerLocale.DEFAULT_LOCALE, lines, openings, closings, pacifyLines, options, messages);
+        if (!VillagerLocale.DEFAULT_LOCALE.equals(locale)) {
+            readLocale(server, locale, lines, openings, closings, pacifyLines, options, messages);
+        }
+
+        return new DialoguePool(
+                List.copyOf(lines.values()),
+                List.copyOf(openings.values()),
+                List.copyOf(closings.values()),
+                List.copyOf(pacifyLines.values()),
+                List.copyOf(options.values()),
+                List.copyOf(messages.values())
+        );
+    }
+
+    private static void readLocale(
+            MinecraftServer server,
+            String locale,
+            Map<String, DialogueLine> lines,
+            Map<String, ConversationLine> openings,
+            Map<String, ConversationLine> closings,
+            Map<String, PacifyLine> pacifyLines,
+            Map<String, DialogueOptionDefinition> options,
+            Map<String, KeyedMessageLine> messages) {
+        String root = DIALOGUE_ROOT + locale;
         server.getResourceManager()
-                .listResources(DIALOGUE_ROOT, location -> location.getNamespace().equals(VillagerRetaliation.MOD_ID)
+                .listResources(root, location -> location.getNamespace().equals(VillagerRetaliation.MOD_ID)
                         && location.getPath().endsWith(".json"))
                 .entrySet()
                 .stream()
                 .sorted(Comparator.comparing(entry -> entry.getKey().toString()))
-                .forEach(entry -> readFile(entry.getKey(), entry.getValue(), lines, openings, closings, pacifyLines, options, messages));
-
-        return new DialoguePool(
-                List.copyOf(lines),
-                List.copyOf(openings),
-                List.copyOf(closings),
-                List.copyOf(pacifyLines),
-                List.copyOf(options),
-                List.copyOf(messages)
-        );
+                .forEach(entry -> readFile(entry.getKey(), entry.getValue(), locale, lines, openings, closings, pacifyLines, options, messages));
     }
 
     private static void readFile(
             ResourceLocation location,
             Resource resource,
-            List<DialogueLine> lines,
-            List<ConversationLine> openings,
-            List<ConversationLine> closings,
-            List<PacifyLine> pacifyLines,
-            List<DialogueOptionDefinition> options,
-            List<KeyedMessageLine> messages) {
+            String locale,
+            Map<String, DialogueLine> lines,
+            Map<String, ConversationLine> openings,
+            Map<String, ConversationLine> closings,
+            Map<String, PacifyLine> pacifyLines,
+            Map<String, DialogueOptionDefinition> options,
+            Map<String, KeyedMessageLine> messages) {
         try (Reader reader = resource.openAsReader()) {
             JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
-            Set<VillagerProfession> defaultProfessions = defaultProfessionsFor(location);
+            Set<VillagerProfession> defaultProfessions = defaultProfessionsFor(location, locale);
             readDialogueOptions(location, root, defaultProfessions, options);
             readKeyedMessages(location, root, defaultProfessions, messages);
             readDialogueLines(location, root, defaultProfessions, lines);
@@ -212,7 +255,7 @@ public final class VillagerDialogueResources {
             ResourceLocation location,
             JsonObject root,
             Set<VillagerProfession> defaultProfessions,
-            List<KeyedMessageLine> messages) {
+            Map<String, KeyedMessageLine> messages) {
         JsonArray entries = root.getAsJsonArray("messages");
         if (entries == null) {
             return;
@@ -239,8 +282,9 @@ public final class VillagerDialogueResources {
             int weight = Math.max(1, readInt(entry, "weight", 10));
             boolean showForAdults = readBoolean(entry, "show_for_adults", true);
             boolean showForBabies = readBoolean(entry, "show_for_babies", true);
-            messages.add(new KeyedMessageLine(
-                    id.isBlank() ? fallbackId(location, "message", index) : id,
+            String resolvedId = id.isBlank() ? fallbackId(location, "message", index) : id;
+            messages.put(resolvedId, new KeyedMessageLine(
+                    resolvedId,
                     key,
                     text,
                     showForAdults,
@@ -257,7 +301,7 @@ public final class VillagerDialogueResources {
             ResourceLocation location,
             JsonObject root,
             Set<VillagerProfession> defaultProfessions,
-            List<DialogueOptionDefinition> options) {
+            Map<String, DialogueOptionDefinition> options) {
         JsonArray entries = root.getAsJsonArray("options");
         if (entries == null) {
             return;
@@ -284,7 +328,7 @@ public final class VillagerDialogueResources {
             Set<VillagerProfession> professions = readProfessions(entry, defaultProfessions);
             Set<DialogueDisposition> dispositions = readEnumSet(entry, "dispositions", DialogueDisposition.class);
             int order = readInt(entry, "order", index);
-            options.add(new DialogueOptionDefinition(
+            options.put(id, new DialogueOptionDefinition(
                     id,
                     label,
                     requestType.get(),
@@ -302,7 +346,7 @@ public final class VillagerDialogueResources {
             ResourceLocation location,
             JsonObject root,
             Set<VillagerProfession> defaultProfessions,
-            List<DialogueLine> lines) {
+            Map<String, DialogueLine> lines) {
         JsonArray entries = root.getAsJsonArray("lines");
         if (entries == null) {
             return;
@@ -324,13 +368,14 @@ public final class VillagerDialogueResources {
             }
 
             String id = readString(entry, "id");
+            String resolvedId = id.isBlank() ? fallbackId(location, "line", index) : id;
             DialogueLine.Builder builder = DialogueLine.builder(
-                    id.isBlank() ? fallbackId(location, "line", index) : id,
+                    resolvedId,
                     requestType.get(),
                     text
             );
             applyDialogueOptions(builder, entry, defaultProfessions);
-            lines.add(builder.build());
+            lines.put(resolvedId, builder.build());
             index++;
         }
     }
@@ -340,7 +385,7 @@ public final class VillagerDialogueResources {
             JsonObject root,
             String key,
             Set<VillagerProfession> defaultProfessions,
-            List<ConversationLine> lines) {
+            Map<String, ConversationLine> lines) {
         JsonArray entries = root.getAsJsonArray(key);
         if (entries == null) {
             return;
@@ -366,8 +411,9 @@ public final class VillagerDialogueResources {
             int weight = Math.max(1, readInt(entry, "weight", 10));
             boolean showForAdults = readBoolean(entry, "show_for_adults", true);
             boolean showForBabies = readBoolean(entry, "show_for_babies", true);
-            lines.add(new ConversationLine(
-                    id.isBlank() ? fallbackId(location, key, index) : id,
+            String resolvedId = id.isBlank() ? fallbackId(location, key, index) : id;
+            lines.put(resolvedId, new ConversationLine(
+                    resolvedId,
                     text,
                     showForAdults,
                     showForBabies,
@@ -383,7 +429,7 @@ public final class VillagerDialogueResources {
             ResourceLocation location,
             JsonObject root,
             Set<VillagerProfession> defaultProfessions,
-            List<PacifyLine> lines) {
+            Map<String, PacifyLine> lines) {
         JsonArray entries = root.getAsJsonArray("pacify");
         if (entries == null) {
             return;
@@ -408,8 +454,9 @@ public final class VillagerDialogueResources {
             Set<DialogueDisposition> dispositions = readEnumSet(entry, "dispositions", DialogueDisposition.class);
             Set<VillagerPacificationResult> outcomes = readEnumSet(entry, "outcomes", VillagerPacificationResult.class);
             int weight = Math.max(1, readInt(entry, "weight", 10));
-            lines.add(new PacifyLine(
-                    id.isBlank() ? fallbackId(location, "pacify", index) : id,
+            String resolvedId = id.isBlank() ? fallbackId(location, "pacify", index) : id;
+            lines.put(resolvedId, new PacifyLine(
+                    resolvedId,
                     text,
                     professions,
                     dispositions,
@@ -476,13 +523,14 @@ public final class VillagerDialogueResources {
         builder.weight(readInt(entry, "weight", 10));
     }
 
-    private static Set<VillagerProfession> defaultProfessionsFor(ResourceLocation location) {
+    private static Set<VillagerProfession> defaultProfessionsFor(ResourceLocation location, String locale) {
         String path = location.getPath();
-        if (!path.startsWith(PROFESSION_ROOT) || !path.endsWith(".json")) {
+        String professionRoot = DIALOGUE_ROOT + locale + "/professions/";
+        if (!path.startsWith(professionRoot) || !path.endsWith(".json")) {
             return Set.of();
         }
 
-        String key = path.substring(PROFESSION_ROOT.length(), path.length() - ".json".length());
+        String key = path.substring(professionRoot.length(), path.length() - ".json".length());
         if (key.contains("/")) {
             key = key.substring(key.lastIndexOf('/') + 1);
         }
@@ -589,7 +637,17 @@ public final class VillagerDialogueResources {
     }
 
     private static String fallbackId(ResourceLocation location, String group, int index) {
-        return location.getPath().replace('/', '_').replace(".json", "") + "_" + group + "_" + index;
+        return stablePath(location).replace('/', '_').replace(".json", "") + "_" + group + "_" + index;
+    }
+
+    private static String stablePath(ResourceLocation location) {
+        String path = location.getPath();
+        if (!path.startsWith(DIALOGUE_ROOT)) {
+            return path;
+        }
+        String remainder = path.substring(DIALOGUE_ROOT.length());
+        int slash = remainder.indexOf('/');
+        return slash < 0 ? remainder : remainder.substring(slash + 1);
     }
 
     private static String resolvePacifyText(String text, int emeraldCost) {
@@ -642,9 +700,9 @@ public final class VillagerDialogueResources {
         }
     }
 
-    private record CachedDialoguePool(MinecraftServer server, DialoguePool pool) {
-        private static CachedDialoguePool empty() {
-            return new CachedDialoguePool(null, DialoguePool.empty());
+    private record CachedDialoguePools(MinecraftServer server, Map<String, DialoguePool> poolsByLocale) {
+        private static CachedDialoguePools empty() {
+            return new CachedDialoguePools(null, Map.of());
         }
     }
 

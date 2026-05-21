@@ -220,6 +220,46 @@ data/villagerretaliation/dialogue/en_us/
 
 The built-in files live in `global.json` and `professions/<profession>.json`. Packs can add or replace files in the same namespace to add new dialogue, tune weights, add profession-specific lines, or expose new talk choices.
 
+Dialogue uses the player's client language when the server knows it. Files in `dialogue/<locale>/` are layered over `dialogue/en_us/`, so translated packs can provide only the entries they need to replace. Matching `id` values replace fallback entries; entries without explicit ids use stable generated ids based on file path and order.
+
+For example, a pack can define the English fallback:
+
+```text
+data/villagerretaliation/dialogue/en_us/global.json
+```
+
+```json
+{
+  "messages": [
+    {
+      "id": "gift.loved.diamond",
+      "key": "gift_response.global.loved",
+      "text": "You brought me something precious."
+    }
+  ]
+}
+```
+
+Then provide only the translated replacement for French:
+
+```text
+data/villagerretaliation/dialogue/fr_fr/global.json
+```
+
+```json
+{
+  "messages": [
+    {
+      "id": "gift.loved.diamond",
+      "key": "gift_response.global.loved",
+      "text": "Vous m'avez apporte quelque chose de precieux."
+    }
+  ]
+}
+```
+
+Players using `fr_fr` see the French text. Players using any locale without a matching override fall back to `en_us`.
+
 Dialogue choices are declared with an `options` array:
 
 ```json
@@ -302,6 +342,80 @@ Each entry binds text and color to a trigger emitted by code. Dialogue can trigg
 `color`, `text_color`, and `chat_color` accept common color names or hex values such as `#FFD166`. HUD entries can set `kind` for existing notification behavior. World-text entries can set `world_text_kind`: `alert`, `murmur`, `positive`, `negative`, `trade`, `dialogue`, or `sleep`.
 
 Built-in triggers include `gift.liked`, `gift.neutral`, `gift.disliked`, `gift.received_item`, recruitment triggers such as `recruitment.follow_start`, reputation tier triggers such as `reputation.tier.trusted.improved`, dialogue triggers such as `dialogue.question`, ambient triggers such as `ambient.murmur`, sleep triggers, trade triggers, and villager alert triggers. Entries can filter by `professions`, `reputation_levels`, `min_reputation`, `max_reputation`, `show_for_adults`, `show_for_babies`, `chance`, and `weight`.
+
+Notification text also follows the player's client language. Files in `notifications/<locale>/` overlay `notifications/en_us/` the same way dialogue files do.
+
+For notification text, use the same `id` overlay pattern:
+
+```text
+data/villagerretaliation/notifications/en_us/global.json
+data/villagerretaliation/notifications/fr_fr/global.json
+```
+
+```json
+{
+  "notifications": [
+    {
+      "id": "notification.gift.liked",
+      "trigger": "gift.liked",
+      "text": "Good gift: {item}",
+      "color": "#55FF55"
+    }
+  ]
+}
+```
+
+The French file can include only that same notification `id` with translated `text`; the trigger, kind, color, and filters can stay in the fallback file unless the translation pack intentionally wants to replace them too.
+
+## Data-driven gifts
+
+Gift reactions and high-reputation reward items are loaded from datapack JSON under:
+
+```text
+data/villagerretaliation/gifts/
+```
+
+Gift rules are not locale-specific because they describe item behavior rather than display text. The villager lines and HUD text that mention gifts still come from the localized dialogue and notification resources.
+
+Gift preference entries map items or item tags to a reaction. Profession-specific entries override global entries when both match the same item.
+
+```json
+{
+  "preferences": [
+    {
+      "reaction": "liked",
+      "items": ["minecraft:bread", "minecraft:apple"]
+    },
+    {
+      "professions": ["farmer"],
+      "reaction": "loved",
+      "items": ["minecraft:wheat", "#minecraft:villager_plantable_seeds"],
+      "reputation_per_item": 6
+    }
+  ]
+}
+```
+
+Valid reactions are `loved`, `liked`, `neutral`, `disliked`, and `hated`. Each reaction has a default per-item reputation value, but `reputation_per_item` can override it for a specific entry.
+
+High-reputation reward entries decide what trusted villagers can give back:
+
+```json
+{
+  "rewards": [
+    {
+      "professions": ["farmer"],
+      "reputation_levels": ["revered", "royalty"],
+      "item": "minecraft:golden_carrot",
+      "min_count": 2,
+      "max_count": 5,
+      "weight": 10
+    }
+  ]
+}
+```
+
+If any profession-specific reward matches, the generic rewards are ignored for that roll. Packs can add files for extra entries or override `gifts/default.json` to replace the built-in table.
 
 ![compatibility](https://cdn.modrinth.com/data/cached_images/1252c11050b7daf8b8621712b58dd1005e7ba982.png)
 

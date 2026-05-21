@@ -8,6 +8,7 @@ import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.network.VillagerWorldTextIndicatorKind;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
+import com.jvn.villagerretaliation.util.VillagerLocale;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
@@ -15,6 +16,7 @@ import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -27,12 +29,11 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.npc.VillagerProfession;
 
 public final class VillagerNotificationResources {
-    private static final String DEFAULT_LOCALE = "en_us";
-    private static final String NOTIFICATION_ROOT = "notifications/" + DEFAULT_LOCALE;
+    private static final String NOTIFICATION_ROOT = "notifications/";
     private static final int DEFAULT_COLOR = ResolvedVillagerNotification.DEFAULT_COLOR;
     private static final Map<String, Integer> NAMED_COLORS = namedColors();
 
-    private static volatile CachedNotificationPool cachedNotificationPool = CachedNotificationPool.empty();
+    private static volatile CachedNotificationPools cachedNotificationPools = CachedNotificationPools.empty();
 
     private VillagerNotificationResources() {
     }
@@ -41,7 +42,7 @@ public final class VillagerNotificationResources {
             VillagerNotificationContext context,
             String trigger,
             Map<String, String> replacements) {
-        List<VillagerNotificationDefinition> candidates = load(context.level().getServer()).definitions().stream()
+        List<VillagerNotificationDefinition> candidates = load(context.level().getServer(), context.locale()).definitions().stream()
                 .filter(definition -> definition.matches(context, trigger))
                 .filter(definition -> definition.chance() >= 1.0D
                         || context.random().nextDouble() < Math.max(0.0D, definition.chance()))
@@ -85,40 +86,60 @@ public final class VillagerNotificationResources {
         );
     }
 
-    private static NotificationPool load(MinecraftServer server) {
-        CachedNotificationPool current = cachedNotificationPool;
+    private static NotificationPool load(MinecraftServer server, String locale) {
+        String normalizedLocale = VillagerLocale.normalize(locale);
+        CachedNotificationPools current = cachedNotificationPools;
         if (current.server() == server) {
-            return current.pool();
+            NotificationPool cachedPool = current.poolsByLocale().get(normalizedLocale);
+            if (cachedPool != null) {
+                return cachedPool;
+            }
         }
 
         synchronized (VillagerNotificationResources.class) {
-            current = cachedNotificationPool;
-            if (current.server() == server) {
-                return current.pool();
+            current = cachedNotificationPools;
+            Map<String, NotificationPool> poolsByLocale = current.server() == server
+                    ? new HashMap<>(current.poolsByLocale())
+                    : new HashMap<>();
+            NotificationPool cachedPool = poolsByLocale.get(normalizedLocale);
+            if (cachedPool != null) {
+                return cachedPool;
             }
 
-            NotificationPool loadedPool = read(server);
-            cachedNotificationPool = new CachedNotificationPool(server, loadedPool);
+            NotificationPool loadedPool = read(server, normalizedLocale);
+            poolsByLocale.put(normalizedLocale, loadedPool);
+            cachedNotificationPools = new CachedNotificationPools(server, Map.copyOf(poolsByLocale));
             return loadedPool;
         }
     }
 
-    private static NotificationPool read(MinecraftServer server) {
-        List<VillagerNotificationDefinition> definitions = new ArrayList<>();
+    private static NotificationPool read(MinecraftServer server, String locale) {
+        Map<String, VillagerNotificationDefinition> definitions = new LinkedHashMap<>();
+        readLocale(server, VillagerLocale.DEFAULT_LOCALE, definitions);
+        if (!VillagerLocale.DEFAULT_LOCALE.equals(locale)) {
+            readLocale(server, locale, definitions);
+        }
+        return new NotificationPool(List.copyOf(definitions.values()));
+    }
+
+    private static void readLocale(
+            MinecraftServer server,
+            String locale,
+            Map<String, VillagerNotificationDefinition> definitions) {
+        String root = NOTIFICATION_ROOT + locale;
         server.getResourceManager()
-                .listResources(NOTIFICATION_ROOT, location -> location.getNamespace().equals(VillagerRetaliation.MOD_ID)
+                .listResources(root, location -> location.getNamespace().equals(VillagerRetaliation.MOD_ID)
                         && location.getPath().endsWith(".json"))
                 .entrySet()
                 .stream()
                 .sorted(Comparator.comparing(entry -> entry.getKey().toString()))
                 .forEach(entry -> readFile(entry.getKey(), entry.getValue(), definitions));
-        return new NotificationPool(List.copyOf(definitions));
     }
 
     private static void readFile(
             ResourceLocation location,
             Resource resource,
-            List<VillagerNotificationDefinition> definitions) {
+            Map<String, VillagerNotificationDefinition> definitions) {
         try (Reader reader = resource.openAsReader()) {
             JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
             JsonArray entries = root.getAsJsonArray("notifications");
@@ -129,7 +150,8 @@ public final class VillagerNotificationResources {
             int index = 0;
             for (JsonElement element : entries) {
                 if (element.isJsonObject()) {
-                    readDefinition(location, element.getAsJsonObject(), index).ifPresent(definitions::add);
+                    readDefinition(location, element.getAsJsonObject(), index)
+                            .ifPresent(definition -> definitions.put(definition.id(), definition));
                 }
                 index++;
             }
@@ -333,7 +355,17 @@ public final class VillagerNotificationResources {
     }
 
     private static String fallbackId(ResourceLocation location, int index) {
-        return location.getPath().replace('/', '_').replace(".json", "") + "_notification_" + index;
+        return stablePath(location).replace('/', '_').replace(".json", "") + "_notification_" + index;
+    }
+
+    private static String stablePath(ResourceLocation location) {
+        String path = location.getPath();
+        if (!path.startsWith(NOTIFICATION_ROOT)) {
+            return path;
+        }
+        String remainder = path.substring(NOTIFICATION_ROOT.length());
+        int slash = remainder.indexOf('/');
+        return slash < 0 ? remainder : remainder.substring(slash + 1);
     }
 
     private static String resolveTemplate(String text, Map<String, String> replacements) {
@@ -351,9 +383,9 @@ public final class VillagerNotificationResources {
         }
     }
 
-    private record CachedNotificationPool(MinecraftServer server, NotificationPool pool) {
-        private static CachedNotificationPool empty() {
-            return new CachedNotificationPool(null, NotificationPool.empty());
+    private record CachedNotificationPools(MinecraftServer server, Map<String, NotificationPool> poolsByLocale) {
+        private static CachedNotificationPools empty() {
+            return new CachedNotificationPools(null, Map.of());
         }
     }
 }

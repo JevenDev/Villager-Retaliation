@@ -27,6 +27,7 @@ import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
+import com.jvn.villagerretaliation.util.VillagerLocale;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import java.util.Map;
@@ -258,7 +259,7 @@ public final class VillagerInteractionService {
         ItemStack giftedStack = player.getInventory().removeItem(inventorySlot, selectedStack.getCount());
         player.getInventory().setChanged();
         VillagerProfession profession = villager.getVillagerData().getProfession();
-        VillagerGiftPreferences.GiftPreference giftPreference = VillagerGiftPreferences.evaluate(profession, giftedStack);
+        VillagerGiftPreferences.GiftPreference giftPreference = VillagerGiftPreferences.evaluate(level, profession, giftedStack);
         int reputationValue = giftPreference.reputationValue();
         VillagerReputationManager.addGiftReputation(level, villager, player, reputationValue);
         VillageEventMemory.rememberGift(
@@ -427,7 +428,8 @@ public final class VillagerInteractionService {
                 interactionState.lastDirectHitGameTime(),
                 interactionState.lastDirectHitWeapon(),
                 VillageEventMemory.recentNear(level, villager.blockPosition()),
-                villager.getRandom()
+                villager.getRandom(),
+                VillagerLocale.locale(player)
         );
     }
 
@@ -586,7 +588,9 @@ public final class VillagerInteractionService {
     }
 
     private static void sendNotice(ServerPlayer player, int entityId, String text) {
-        String resolvedText = VillagerDialogueResources.globalMessage(player.getServer(), player.getRandom(), text).orElse(text);
+        String resolvedText = VillagerDialogueResources
+                .globalMessage(player.getServer(), player.getRandom(), text, VillagerLocale.locale(player))
+                .orElse(text);
         PacketDistributor.sendToPlayer(player, new VillagerInteractionNoticePayload(entityId, resolvedText, ""));
     }
 

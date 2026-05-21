@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.combat.VillagerPacificationResult;
 import com.jvn.villagerretaliation.combat.WanderingTraderRetaliationHandler;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueService;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
+import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.interaction.VillagerRecruitmentService;
 import com.jvn.villagerretaliation.loot.VillagerLootHandler;
@@ -16,7 +17,6 @@ import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.toucanlib.util.ToucanHazardAttribution;
-import com.jvn.toucanlib.util.ToucanRandom;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerFleeBehaviorHandler;
@@ -34,7 +34,6 @@ import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
-import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.npc.WanderingTrader;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.InteractionResult;
@@ -288,7 +287,7 @@ public final class VillagerRetaliationEvents {
         }
 
         VillagerReputationLevel reputationLevel = VillagerReputationManager.getReputationLevel(level, villager, player.getUUID());
-        ItemStack gift = createHighReputationGift(villager, reputationLevel);
+        ItemStack gift = VillagerGiftPreferences.highReputationReward(level, villager, reputationLevel);
         if (gift.isEmpty()) {
             return;
         }
@@ -314,70 +313,6 @@ public final class VillagerRetaliationEvents {
                 0.2D,
                 0.3D,
                 0.02D);
-    }
-
-    private static ItemStack createHighReputationGift(Villager villager, VillagerReputationLevel reputationLevel) {
-        if (reputationLevel != VillagerReputationLevel.REVERED && reputationLevel != VillagerReputationLevel.ROYALTY) {
-            return ItemStack.EMPTY;
-        }
-
-        boolean royalty = reputationLevel == VillagerReputationLevel.ROYALTY;
-        int lowTierCount = royalty ? 2 : 1;
-        int highTierCount = royalty ? 4 : 2;
-        VillagerProfession profession = villager.getVillagerData().getProfession();
-
-        if (profession == VillagerProfession.FARMER) {
-            return new ItemStack(royalty ? Items.GOLDEN_CARROT : Items.BREAD,
-                    ToucanRandom.betweenInclusive(villager.getRandom(), lowTierCount, highTierCount + 1));
-        }
-        if (profession == VillagerProfession.FISHERMAN) {
-            return new ItemStack(royalty ? Items.COOKED_SALMON : Items.COD,
-                    ToucanRandom.betweenInclusive(villager.getRandom(), lowTierCount, highTierCount));
-        }
-        if (profession == VillagerProfession.LIBRARIAN) {
-            return new ItemStack(royalty ? Items.BOOKSHELF : Items.BOOK,
-                    ToucanRandom.betweenInclusive(villager.getRandom(), 1, royalty ? 2 : 3));
-        }
-        if (profession == VillagerProfession.CLERIC) {
-            return new ItemStack(royalty ? Items.GLOWSTONE_DUST : Items.REDSTONE,
-                    ToucanRandom.betweenInclusive(villager.getRandom(), lowTierCount, highTierCount));
-        }
-        if (profession == VillagerProfession.FLETCHER) {
-            return new ItemStack(Items.ARROW,
-                    ToucanRandom.betweenInclusive(villager.getRandom(), royalty ? 6 : 4, royalty ? 12 : 8));
-        }
-        if (profession == VillagerProfession.ARMORER
-                || profession == VillagerProfession.TOOLSMITH
-                || profession == VillagerProfession.WEAPONSMITH) {
-            return new ItemStack(royalty ? Items.IRON_INGOT : Items.COAL,
-                    ToucanRandom.betweenInclusive(villager.getRandom(), lowTierCount, highTierCount));
-        }
-        if (profession == VillagerProfession.CARTOGRAPHER) {
-            return new ItemStack(royalty ? Items.COMPASS : Items.MAP, 1);
-        }
-        if (profession == VillagerProfession.SHEPHERD) {
-            return new ItemStack(royalty ? Items.WHITE_WOOL : Items.WHITE_CARPET,
-                    ToucanRandom.betweenInclusive(villager.getRandom(), lowTierCount + 1, highTierCount + 2));
-        }
-        if (profession == VillagerProfession.BUTCHER) {
-            return new ItemStack(royalty ? Items.COOKED_BEEF : Items.BEEF,
-                    ToucanRandom.betweenInclusive(villager.getRandom(), lowTierCount, highTierCount));
-        }
-        if (profession == VillagerProfession.LEATHERWORKER) {
-            return new ItemStack(royalty ? Items.LEATHER_HORSE_ARMOR : Items.LEATHER,
-                    royalty ? 1 : ToucanRandom.betweenInclusive(villager.getRandom(), lowTierCount, highTierCount));
-        }
-        if (profession == VillagerProfession.MASON) {
-            return new ItemStack(royalty ? Items.BRICKS : Items.CLAY_BALL,
-                    ToucanRandom.betweenInclusive(villager.getRandom(), lowTierCount, highTierCount + 1));
-        }
-        if (profession == VillagerProfession.NITWIT || profession == VillagerProfession.NONE) {
-            return new ItemStack(royalty ? Items.EMERALD : Items.APPLE,
-                    ToucanRandom.betweenInclusive(villager.getRandom(), lowTierCount, highTierCount));
-        }
-
-        return new ItemStack(Items.EMERALD,
-                ToucanRandom.betweenInclusive(villager.getRandom(), lowTierCount, highTierCount));
     }
 
     public static void onEntityLeaveLevel(EntityLeaveLevelEvent event) {

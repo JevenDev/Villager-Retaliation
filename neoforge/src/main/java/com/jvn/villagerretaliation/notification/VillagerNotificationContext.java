@@ -14,7 +14,8 @@ public record VillagerNotificationContext(
         Player player,
         int reputation,
         VillagerReputationLevel reputationLevel,
-        RandomSource random) {
+        RandomSource random,
+        String locale) {
     public VillagerProfession profession() {
         return this.villager instanceof Villager resident
                 ? resident.getVillagerData().getProfession()
