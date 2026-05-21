@@ -25,6 +25,14 @@ public final class DangerousStructureStoryResources {
     private DangerousStructureStoryResources() {
     }
 
+    public static void warm(MinecraftServer server) {
+        entries(server);
+    }
+
+    public static void clearCache() {
+        cachedStructures = new CachedStructures(null, List.of());
+    }
+
     public static List<Entry> entries(MinecraftServer server) {
         CachedStructures current = cachedStructures;
         if (current.server() == server) {

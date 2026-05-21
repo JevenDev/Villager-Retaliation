@@ -12,7 +12,9 @@ import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerRules;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -267,8 +269,10 @@ public final class VillagerRetaliationHandler {
         Optional<LivingEntity> attacker = event.getEntity() instanceof LivingEntity livingEntity
                 ? VillagerRetaliationVillagerCombatUtil.resolveAttacker(livingEntity, event.getSource())
                 : VillagerRetaliationVillagerCombatUtil.resolveAttacker(event.getSource());
+        double radius = VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get();
+        List<Villager> witnessVillagers = witnessVillagersNear(deceased, radius);
         if (deceasedIsVillager) {
-            triggerNitwitWitnessedDeathFlee(deceased, attacker.orElse(null), VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get());
+            triggerNitwitWitnessedDeathFlee(witnessVillagers, attacker.orElse(null));
         }
 
         if (attacker.isEmpty() || VillagerRetaliationVillagerCombatUtil.shouldIgnoreAttacker(attacker.get())) {
@@ -279,10 +283,9 @@ public final class VillagerRetaliationHandler {
         if (!shouldRetaliateAgainstAttacker(deceased instanceof Villager villager ? villager : null, resolvedAttacker)) {
             return;
         }
-        double radius = VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get();
-        angerNearbyVillagers(deceased, resolvedAttacker, radius, deceasedIsVillager);
+        angerWitnessVillagers(witnessVillagers, resolvedAttacker, deceasedIsVillager);
         WanderingTraderRetaliationHandler.angerNearbyTradersFrom(deceased, resolvedAttacker, radius);
-        rallyFromNearbyNitwits(deceased, resolvedAttacker, radius);
+        rallyFromNitwitWitnesses(witnessVillagers, resolvedAttacker, deceasedIsVillager);
     }
 
     public static void onEntityTickPre(EntityTickEvent.Pre event) {
@@ -712,6 +715,50 @@ public final class VillagerRetaliationHandler {
         }
     }
 
+    private static List<Villager> witnessVillagersNear(Entity sourceEntity, double radius) {
+        if (!(sourceEntity.level() instanceof ServerLevel level)) {
+            return List.of();
+        }
+
+        List<Villager> witnesses = new ArrayList<>();
+        AABB area = sourceEntity.getBoundingBox().inflate(radius);
+        for (Villager nearby : level.getEntitiesOfClass(Villager.class, area)) {
+            if (nearby != sourceEntity && canWitnessRetaliationEvent(nearby, sourceEntity)) {
+                witnesses.add(nearby);
+            }
+        }
+        return witnesses;
+    }
+
+    private static void angerWitnessVillagers(
+            List<Villager> witnesses,
+            LivingEntity attacker,
+            boolean witnessedVillagerKill) {
+        for (Villager witness : witnesses) {
+            if (!witness.isBaby() && shouldAggroFromWitness(witness, attacker, witnessedVillagerKill)) {
+                anger(witness, attacker);
+            }
+        }
+    }
+
+    private static void rallyFromNitwitWitnesses(
+            List<Villager> witnesses,
+            LivingEntity attacker,
+            boolean witnessedVillagerKill) {
+        long gameTime = attacker.level().getGameTime();
+        boolean rallied = false;
+        for (Villager witness : witnesses) {
+            if (!isNitwitAlarm(witness)) {
+                continue;
+            }
+            VillagerRetaliationVillagerBrainUtil.enterFleeState(witness, attacker, gameTime);
+            rallied = true;
+        }
+        if (rallied) {
+            angerWitnessVillagers(witnesses, attacker, witnessedVillagerKill);
+        }
+    }
+
     private static boolean shouldAggroFromWitness(Villager witness, LivingEntity attacker, boolean witnessedVillagerKill) {
         if (!(attacker instanceof Player player)) {
             return true;
@@ -741,19 +788,18 @@ public final class VillagerRetaliationHandler {
         }
     }
 
-    private static void triggerNitwitWitnessedDeathFlee(Entity deceased, LivingEntity attacker, double radius) {
-        if (!(deceased.level() instanceof ServerLevel level)) {
-            return;
-        }
-
-        AABB area = deceased.getBoundingBox().inflate(radius);
-        long gameTime = level.getGameTime();
-        for (Villager nearby : level.getEntitiesOfClass(Villager.class, area)) {
-            if (!isWitnessAlarmVillager(nearby) || !canWitnessRetaliationEvent(nearby, deceased)) {
+    private static void triggerNitwitWitnessedDeathFlee(List<Villager> witnesses, LivingEntity attacker) {
+        long gameTime = attacker == null ? 0L : attacker.level().getGameTime();
+        for (Villager nearby : witnesses) {
+            if (!isWitnessAlarmVillager(nearby)) {
                 continue;
             }
 
-            VillagerRetaliationVillagerBrainUtil.enterFleeState(nearby, attacker, gameTime);
+            if (attacker != null) {
+                VillagerRetaliationVillagerBrainUtil.enterFleeState(nearby, attacker, gameTime);
+            } else {
+                nearby.getNavigation().stop();
+            }
         }
     }
 

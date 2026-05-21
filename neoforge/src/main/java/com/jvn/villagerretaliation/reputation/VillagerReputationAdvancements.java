@@ -33,6 +33,8 @@ import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.phys.AABB;
 
@@ -50,6 +52,8 @@ public final class VillagerReputationAdvancements {
     private static final double DANGEROUS_STORY_VILLAGER_RADIUS = 64.0D;
     private static final long DISCOVERY_SCAN_INTERVAL_TICKS = 20L;
     private static final long DANGEROUS_STORY_SCAN_INTERVAL_TICKS = 20L * 5L;
+    private static final long STRUCTURE_STORY_CACHE_TICKS = 20L * 30L;
+    private static final int MAX_STRUCTURE_STORY_CACHE_ENTRIES = 256;
     private static final long DANGEROUS_STORY_SHARE_TICKS = 20L * 60L * 60L * 6L;
 
     private static final Map<UUID, Map<UUID, Integer>> TRADE_COUNTS = new HashMap<>();
@@ -59,6 +63,7 @@ public final class VillagerReputationAdvancements {
     private static final Map<UUID, Long> NEXT_DISCOVERY_SCAN = new HashMap<>();
     private static final Map<UUID, Long> NEXT_DANGEROUS_STORY_SCAN = new HashMap<>();
     private static final Map<UUID, Long> NEXT_BIOME_STORY_SCAN = new HashMap<>();
+    private static final Map<StructureStorySearchKey, StructureStorySearchResult> STRUCTURE_STORY_CACHE = new HashMap<>();
 
     private static final ResourceLocation ROOT = advancementId("reputation/root");
     private static final ResourceLocation COMMONFOLK = advancementId("reputation/commonfolk");
@@ -218,18 +223,10 @@ public final class VillagerReputationAdvancements {
             DangerousStructureStoryResources.Entry storyStructure,
             Holder.Reference<Structure> structure) {
         BlockPos origin = player.blockPosition();
-        com.mojang.datafixers.util.Pair<BlockPos, Holder<Structure>> nearest =
-                level.getChunkSource().getGenerator().findNearestMapStructure(
-                        level,
-                        HolderSet.direct(structure),
-                        origin,
-                        Math.max(1, storyStructure.radius()),
-                        false
-                );
-        if (nearest == null) {
+        BlockPos targetPos = cachedNearestStoryStructure(level, origin, storyStructure, structure);
+        if (targetPos == null) {
             return;
         }
-        BlockPos targetPos = nearest.getFirst();
         double dx = player.getX() - (targetPos.getX() + 0.5D);
         double dz = player.getZ() - (targetPos.getZ() + 0.5D);
         double radiusSqr = (double) storyStructure.radius() * storyStructure.radius();
@@ -249,6 +246,50 @@ public final class VillagerReputationAdvancements {
                     targetPos,
                     expiresAt
             );
+        }
+    }
+
+    private static BlockPos cachedNearestStoryStructure(
+            ServerLevel level,
+            BlockPos origin,
+            DangerousStructureStoryResources.Entry storyStructure,
+            Holder.Reference<Structure> structure) {
+        ChunkPos chunkPos = new ChunkPos(origin);
+        int searchRadius = Math.max(1, storyStructure.radius());
+        StructureStorySearchKey key = new StructureStorySearchKey(
+                level.dimension(),
+                chunkPos.x,
+                chunkPos.z,
+                storyStructure.structureId(),
+                searchRadius
+        );
+        long gameTime = level.getGameTime();
+        StructureStorySearchResult cached = STRUCTURE_STORY_CACHE.get(key);
+        if (cached != null && cached.expiresGameTime() > gameTime) {
+            return cached.pos();
+        }
+
+        com.mojang.datafixers.util.Pair<BlockPos, Holder<Structure>> nearest =
+                level.getChunkSource().getGenerator().findNearestMapStructure(
+                        level,
+                        HolderSet.direct(structure),
+                        origin,
+                        searchRadius,
+                        false
+                );
+        BlockPos result = nearest == null ? null : nearest.getFirst().immutable();
+        STRUCTURE_STORY_CACHE.put(key, new StructureStorySearchResult(result, gameTime + STRUCTURE_STORY_CACHE_TICKS));
+        pruneStructureStoryCache(gameTime);
+        return result;
+    }
+
+    private static void pruneStructureStoryCache(long gameTime) {
+        if (STRUCTURE_STORY_CACHE.size() <= MAX_STRUCTURE_STORY_CACHE_ENTRIES) {
+            return;
+        }
+        STRUCTURE_STORY_CACHE.entrySet().removeIf(entry -> entry.getValue().expiresGameTime() <= gameTime);
+        if (STRUCTURE_STORY_CACHE.size() > MAX_STRUCTURE_STORY_CACHE_ENTRIES) {
+            STRUCTURE_STORY_CACHE.clear();
         }
     }
 
@@ -578,6 +619,17 @@ public final class VillagerReputationAdvancements {
             return;
         }
         VillagerReputationNetworking.sendNotice(player, fallbackText, VillagerReputationNoticeKind.MAP_DISCOVERY);
+    }
+
+    private record StructureStorySearchKey(
+            ResourceKey<Level> dimension,
+            int chunkX,
+            int chunkZ,
+            ResourceLocation structureId,
+            int searchRadius) {
+    }
+
+    private record StructureStorySearchResult(BlockPos pos, long expiresGameTime) {
     }
 
 }

@@ -6,7 +6,9 @@ import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.toucanlib.util.ToucanHazardAttribution;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -224,12 +226,7 @@ public final class VillagerReputationEvents {
 
         long gameTime = level.getGameTime();
         if (gameTime % SIGHT_SCAN_INTERVAL_TICKS == Math.floorMod(villager.getUUID().getLeastSignificantBits(), SIGHT_SCAN_INTERVAL_TICKS)) {
-            if (villager instanceof Villager villageResident) {
-                scanDespisedSight(level, villageResident);
-                scanReputationDrivenFlee(level, villageResident);
-            }
-            scanFearedProximity(level, villager);
-            scanNegativeReputationGolemAggro(level, villager);
+            scanReputationReactions(level, villager);
         }
         VillagerAmbientIndicatorService.maybeMurmurNearPlayers(level, villager);
         if (VillagerRetaliationConfig.SHOW_VILLAGER_REPUTATION_DEBUG_OVERLAY.get()
@@ -391,87 +388,130 @@ public final class VillagerReputationEvents {
         }
     }
 
-    private static void scanDespisedSight(ServerLevel level, Villager villager) {
+    private static void scanReputationReactions(ServerLevel level, AbstractVillager villager) {
         double radius = VillagerRetaliationConfig.DESPISED_SIGHT_RADIUS.get();
+        double radiusSqr = radius * radius;
+        List<NearbyPlayerReputation> nearbyPlayers = nearbyPlayerReputations(level, villager, radius, radiusSqr);
+        if (nearbyPlayers.isEmpty()) {
+            return;
+        }
+
+        if (villager instanceof Villager villageResident) {
+            scanDespisedSight(level, villageResident, nearbyPlayers);
+            scanReputationDrivenFlee(level, villageResident, nearbyPlayers);
+        }
+        scanFearedProximity(level, villager, nearbyPlayers);
+        scanNegativeReputationGolemAggro(level, villager, nearbyPlayers, radius, radiusSqr);
+    }
+
+    private static List<NearbyPlayerReputation> nearbyPlayerReputations(
+            ServerLevel level,
+            AbstractVillager villager,
+            double radius,
+            double radiusSqr) {
         AABB area = villager.getBoundingBox().inflate(radius);
+        List<NearbyPlayerReputation> players = new ArrayList<>();
         for (Player player : level.getEntitiesOfClass(Player.class, area)) {
             if (!player.isAlive() || player.isCreative() || player.isSpectator()) {
                 continue;
             }
-            if (!villager.hasLineOfSight(player)) {
+            double distanceSqr = villager.distanceToSqr(player);
+            if (distanceSqr > radiusSqr) {
                 continue;
             }
-            if (VillagerAggressionPolicy.shouldAttackOnSight(villager, player)) {
-                triggerNegativeReputationBell(level, villager, VillagerReputationLevel.DESPISED);
-                com.jvn.villagerretaliation.combat.VillagerRetaliationHandler.forceAnger(villager, player);
-                return;
+            boolean visible = villager.hasLineOfSight(player);
+            VillagerReputationLevel reputationLevel =
+                    VillagerReputationManager.getReputationLevel(level, villager, player.getUUID());
+            players.add(new NearbyPlayerReputation(player, distanceSqr, visible, reputationLevel));
+        }
+        return players;
+    }
+
+    private static void scanDespisedSight(
+            ServerLevel level,
+            Villager villager,
+            List<NearbyPlayerReputation> nearbyPlayers) {
+        if (!VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()
+                || !VillagerRetaliationConfig.ENABLE_DESPISED_KILL_ON_SIGHT.get()
+                || villager.isBaby()
+                || !com.jvn.villagerretaliation.combat.VillagerCombatRoles.canFightBack(villager)
+                || villager.getVillagerData().getProfession() == VillagerProfession.NITWIT) {
+            return;
+        }
+
+        for (NearbyPlayerReputation nearbyPlayer : nearbyPlayers) {
+            if (!nearbyPlayer.visible() || nearbyPlayer.reputationLevel() != VillagerReputationLevel.DESPISED) {
+                continue;
             }
+            triggerNegativeReputationBell(level, villager, VillagerReputationLevel.DESPISED);
+            com.jvn.villagerretaliation.combat.VillagerRetaliationHandler.forceAnger(villager, nearbyPlayer.player());
+            return;
         }
     }
 
-    private static void scanReputationDrivenFlee(ServerLevel level, Villager villager) {
+    private static void scanReputationDrivenFlee(
+            ServerLevel level,
+            Villager villager,
+            List<NearbyPlayerReputation> nearbyPlayers) {
         if (!villager.isBaby() && villager.getVillagerData().getProfession() != VillagerProfession.NITWIT) {
             return;
         }
 
-        double radius = VillagerRetaliationConfig.DESPISED_SIGHT_RADIUS.get();
-        double radiusSqr = radius * radius;
-        AABB area = villager.getBoundingBox().inflate(radius);
-        for (Player player : level.getEntitiesOfClass(Player.class, area)) {
-            if (!player.isAlive() || player.isCreative() || player.isSpectator()) {
+        for (NearbyPlayerReputation nearbyPlayer : nearbyPlayers) {
+            if (!nearbyPlayer.visible() || !shouldFleeFromReputation(villager, nearbyPlayer.reputationLevel())) {
                 continue;
             }
-            if (villager.distanceToSqr(player) > radiusSqr || !villager.hasLineOfSight(player)) {
-                continue;
-            }
-            VillagerReputationLevel reputationLevel = VillagerReputationManager.getReputationLevel(level, villager, player.getUUID());
-            if (!VillagerAggressionPolicy.shouldFleeFromPlayer(villager, player)) {
-                continue;
-            }
-            if (isBellAlertTier(reputationLevel)) {
-                triggerNegativeReputationBell(level, villager, reputationLevel);
+            if (isBellAlertTier(nearbyPlayer.reputationLevel())) {
+                triggerNegativeReputationBell(level, villager, nearbyPlayer.reputationLevel());
             }
 
-            VillagerRetaliationVillagerBrainUtil.enterFleeState(villager, player, level.getGameTime());
+            VillagerRetaliationVillagerBrainUtil.enterFleeState(villager, nearbyPlayer.player(), level.getGameTime());
             return;
         }
     }
 
-    private static void scanFearedProximity(ServerLevel level, AbstractVillager villager) {
-        AABB area = villager.getBoundingBox().inflate(FEARED_CONVERSION_SHAKE_RADIUS);
-        for (Player player : level.getEntitiesOfClass(Player.class, area)) {
-            if (!player.isAlive() || player.isCreative() || player.isSpectator()) {
+    private static boolean shouldFleeFromReputation(Villager villager, VillagerReputationLevel reputationLevel) {
+        boolean lowEnoughToFlee = reputationLevel == VillagerReputationLevel.HOSTILE
+                || reputationLevel == VillagerReputationLevel.DESPISED
+                || reputationLevel == VillagerReputationLevel.FEARED;
+        return lowEnoughToFlee
+                && (villager.isBaby()
+                || villager.getVillagerData().getProfession() == VillagerProfession.NITWIT
+                || !com.jvn.villagerretaliation.combat.VillagerCombatRoles.canFightBack(villager));
+    }
+
+    private static void scanFearedProximity(
+            ServerLevel level,
+            AbstractVillager villager,
+            List<NearbyPlayerReputation> nearbyPlayers) {
+        for (NearbyPlayerReputation nearbyPlayer : nearbyPlayers) {
+            if (nearbyPlayer.distanceSqr() > FEARED_CONVERSION_SHAKE_RADIUS_SQR) {
                 continue;
             }
-            if (villager.distanceToSqr(player) > FEARED_CONVERSION_SHAKE_RADIUS_SQR) {
-                continue;
-            }
-            VillagerReputationLevel reputationLevel = VillagerReputationManager.getReputationLevel(level, villager, player.getUUID());
-            if (reputationLevel == VillagerReputationLevel.FEARED) {
-                triggerNegativeReputationBell(level, villager, reputationLevel);
+            if (nearbyPlayer.reputationLevel() == VillagerReputationLevel.FEARED) {
+                triggerNegativeReputationBell(level, villager, VillagerReputationLevel.FEARED);
                 VillagerReputationNetworking.sendFearedPulse(villager, FEARED_CONVERSION_SHAKE_TICKS);
                 return;
             }
         }
     }
 
-    private static void scanNegativeReputationGolemAggro(ServerLevel level, AbstractVillager villager) {
-        double radius = VillagerRetaliationConfig.DESPISED_SIGHT_RADIUS.get();
-        double radiusSqr = radius * radius;
-        AABB area = villager.getBoundingBox().inflate(radius);
-        for (Player player : level.getEntitiesOfClass(Player.class, area)) {
-            if (!player.isAlive() || player.isCreative() || player.isSpectator()) {
+    private static void scanNegativeReputationGolemAggro(
+            ServerLevel level,
+            AbstractVillager villager,
+            List<NearbyPlayerReputation> nearbyPlayers,
+            double radius,
+            double radiusSqr) {
+        if (!VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()) {
+            return;
+        }
+
+        for (NearbyPlayerReputation nearbyPlayer : nearbyPlayers) {
+            if (!nearbyPlayer.visible() || !isBellAlertTier(nearbyPlayer.reputationLevel())) {
                 continue;
             }
-            if (villager.distanceToSqr(player) > radiusSqr || !villager.hasLineOfSight(player)) {
-                continue;
-            }
-            if (!VillagerAggressionPolicy.shouldIronGolemsTargetNegativeReputationPlayer(villager, player)) {
-                continue;
-            }
-            if (aggroNearbyIronGolems(villager, player, radius, radiusSqr)) {
-                VillagerReputationLevel reputationLevel = VillagerReputationManager.getReputationLevel(level, villager, player.getUUID());
-                triggerNegativeReputationBell(level, villager, reputationLevel);
+            if (aggroNearbyIronGolems(villager, nearbyPlayer.player(), radius, radiusSqr)) {
+                triggerNegativeReputationBell(level, villager, nearbyPlayer.reputationLevel());
                 return;
             }
         }
@@ -578,6 +618,9 @@ public final class VillagerReputationEvents {
     }
 
     private record PlayerCredit(Player player, boolean fullKillCredit) {
+    }
+
+    private record NearbyPlayerReputation(Player player, double distanceSqr, boolean visible, VillagerReputationLevel reputationLevel) {
     }
 
     private record BellSearchKey(ResourceKey<Level> dimension, int chunkX, int chunkZ) {

@@ -46,8 +46,12 @@ public final class VillagerRecruitmentService {
     private static final double FOLLOW_STOP_DISTANCE_SQR = 2.5D * 2.5D;
     private static final double FOLLOW_FORGET_DISTANCE_SQR = 96.0D * 96.0D;
     private static final double FOLLOW_SPEED = 0.62D;
+    private static final long FOLLOW_TRAVEL_MEMORY_INTERVAL_TICKS = 20L;
+    private static final long FOLLOW_REPUTATION_CHECK_INTERVAL_TICKS = 40L;
     private static final long RECENT_BETRAYED_FOLLOWER_DEATH_NOTICE_TICKS = 200L;
     private static final Map<UUID, RecentRecruitmentOwner> RECENT_BETRAYED_FOLLOWERS = new HashMap<>();
+    private static final Map<UUID, Long> NEXT_FOLLOW_TRAVEL_MEMORY_TICKS = new HashMap<>();
+    private static final Map<UUID, Long> NEXT_FOLLOW_REPUTATION_CHECK_TICKS = new HashMap<>();
 
     private VillagerRecruitmentService() {
     }
@@ -222,8 +226,7 @@ public final class VillagerRecruitmentService {
 
         UUID playerId = villager.getPersistentData().getUUID(FOLLOWING_PLAYER_KEY);
         ServerPlayer player = level.getServer().getPlayerList().getPlayer(playerId);
-        updateTravelMemory(level, villager);
-        rememberBoatTripIfRiding(villager);
+        updateTravelMemoryIfReady(level, villager);
         if (!isValidFollowTarget(level, villager, player)) {
             clearFollowTarget(villager);
             return;
@@ -266,11 +269,25 @@ public final class VillagerRecruitmentService {
                 && !player.isSpectator()
                 && villager.isAlive()
                 && villager.distanceToSqr(player) <= FOLLOW_FORGET_DISTANCE_SQR
-                && VillagerReputationManager.getReputationLevel(level, villager, player.getUUID()).trustRank()
+                && hasRecentlyValidReputation(level, villager, player);
+    }
+
+    private static boolean hasRecentlyValidReputation(ServerLevel level, Villager villager, ServerPlayer player) {
+        long gameTime = level.getGameTime();
+        UUID villagerId = villager.getUUID();
+        Long nextCheck = NEXT_FOLLOW_REPUTATION_CHECK_TICKS.get(villagerId);
+        if (nextCheck != null && nextCheck > gameTime) {
+            return true;
+        }
+
+        NEXT_FOLLOW_REPUTATION_CHECK_TICKS.put(villagerId, gameTime + FOLLOW_REPUTATION_CHECK_INTERVAL_TICKS);
+        return VillagerReputationManager.getReputationLevel(level, villager, player.getUUID()).trustRank()
                 >= VillagerReputationLevel.NEUTRAL.trustRank();
     }
 
     private static void clearFollowTarget(Villager villager) {
+        NEXT_FOLLOW_TRAVEL_MEMORY_TICKS.remove(villager.getUUID());
+        NEXT_FOLLOW_REPUTATION_CHECK_TICKS.remove(villager.getUUID());
         villager.getPersistentData().remove(FOLLOWING_PLAYER_KEY);
         villager.getPersistentData().remove(FOLLOW_START_HEALTH_KEY);
         villager.getPersistentData().remove(FOLLOW_MIN_HEALTH_KEY);
@@ -312,9 +329,20 @@ public final class VillagerRecruitmentService {
     }
 
     private static void rememberBoatTripIfRiding(Villager villager) {
-        if (villager.getVehicle() instanceof Boat) {
+        if (villager.getVehicle() instanceof Boat && !villager.getPersistentData().getBoolean(FOLLOW_USED_BOAT_KEY)) {
             villager.getPersistentData().putBoolean(FOLLOW_USED_BOAT_KEY, true);
         }
+    }
+
+    private static void updateTravelMemoryIfReady(ServerLevel level, Villager villager) {
+        long gameTime = level.getGameTime();
+        Long nextUpdate = NEXT_FOLLOW_TRAVEL_MEMORY_TICKS.get(villager.getUUID());
+        if (nextUpdate != null && nextUpdate > gameTime) {
+            return;
+        }
+        NEXT_FOLLOW_TRAVEL_MEMORY_TICKS.put(villager.getUUID(), gameTime + FOLLOW_TRAVEL_MEMORY_INTERVAL_TICKS);
+        updateTravelMemory(level, villager);
+        rememberBoatTripIfRiding(villager);
     }
 
     private static void updateTravelMemory(ServerLevel level, Villager villager) {
@@ -325,7 +353,8 @@ public final class VillagerRecruitmentService {
         if (distance > currentMax) {
             villager.getPersistentData().putInt(FOLLOW_MAX_DISTANCE_KEY, distance);
         }
-        if (isOceanBiome(level, villager.blockPosition())) {
+        if (!villager.getPersistentData().getBoolean(FOLLOW_CROSSED_OCEAN_KEY)
+                && isOceanBiome(level, villager.blockPosition())) {
             villager.getPersistentData().putBoolean(FOLLOW_CROSSED_OCEAN_KEY, true);
         }
     }

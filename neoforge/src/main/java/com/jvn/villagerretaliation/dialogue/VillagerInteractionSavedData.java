@@ -97,6 +97,7 @@ public class VillagerInteractionSavedData extends SavedData {
     private static final int MAX_STORY_HINTS = 12;
 
     private final Map<UUID, Map<UUID, InteractionEntry>> entries = new HashMap<>();
+    private final Map<UUID, Set<UUID>> villagerIdsByPlayer = new HashMap<>();
     private final Map<UUID, GiftKnowledgeBook> giftKnowledge = new HashMap<>();
 
     public static VillagerInteractionSavedData get(ServerLevel level) {
@@ -276,8 +277,7 @@ public class VillagerInteractionSavedData extends SavedData {
                         hintTag.getBoolean(TAG_SHAREABLE)
                 ));
             }
-            data.entries.computeIfAbsent(entryTag.getUUID(TAG_VILLAGER), ignored -> new HashMap<>())
-                    .put(entryTag.getUUID(TAG_PLAYER), entry);
+            data.putEntry(entryTag.getUUID(TAG_VILLAGER), entryTag.getUUID(TAG_PLAYER), entry);
         }
         ListTag giftKnowledgeTag = tag.getList(TAG_GIFT_KNOWLEDGE, Tag.TAG_COMPOUND);
         for (Tag rawBook : giftKnowledgeTag) {
@@ -480,8 +480,30 @@ public class VillagerInteractionSavedData extends SavedData {
     }
 
     public InteractionEntry getOrCreate(UUID villagerId, UUID playerId) {
-        return this.entries.computeIfAbsent(villagerId, ignored -> new HashMap<>())
-                .computeIfAbsent(playerId, ignored -> new InteractionEntry());
+        Map<UUID, InteractionEntry> playerEntries = this.entries.computeIfAbsent(villagerId, ignored -> new HashMap<>());
+        InteractionEntry entry = playerEntries.get(playerId);
+        if (entry != null) {
+            return entry;
+        }
+
+        InteractionEntry created = new InteractionEntry();
+        putEntry(villagerId, playerId, created);
+        return created;
+    }
+
+    private void putEntry(UUID villagerId, UUID playerId, InteractionEntry entry) {
+        this.entries.computeIfAbsent(villagerId, ignored -> new HashMap<>()).put(playerId, entry);
+        this.villagerIdsByPlayer.computeIfAbsent(playerId, ignored -> new LinkedHashSet<>()).add(villagerId);
+    }
+
+    private Iterable<UUID> villagerIdsForPlayer(UUID playerId) {
+        Set<UUID> indexedIds = this.villagerIdsByPlayer.get(playerId);
+        return indexedIds == null ? List.of() : indexedIds;
+    }
+
+    private InteractionEntry getIndexedEntry(UUID villagerId, UUID playerId) {
+        Map<UUID, InteractionEntry> playerEntries = this.entries.get(villagerId);
+        return playerEntries == null ? null : playerEntries.get(playerId);
     }
 
     public boolean knowsGift(UUID playerId, String professionKey, String itemId, boolean liked) {
@@ -530,13 +552,12 @@ public class VillagerInteractionSavedData extends SavedData {
             double radiusSqr,
             long gameTime) {
         List<VillagerInteractionTracker.CartographerMapReport> discoveries = new ArrayList<>();
-        for (Map.Entry<UUID, Map<UUID, InteractionEntry>> villagerEntry : this.entries.entrySet()) {
-            Map<UUID, InteractionEntry> playerEntries = villagerEntry.getValue();
-            InteractionEntry entry = playerEntries.get(playerId);
+        for (UUID villagerId : villagerIdsForPlayer(playerId)) {
+            InteractionEntry entry = getIndexedEntry(villagerId, playerId);
             if (entry == null) {
                 continue;
             }
-            discoveries.addAll(entry.markCartographerMapDiscoveriesNear(villagerEntry.getKey(), dimension, x, z, radiusSqr, gameTime));
+            discoveries.addAll(entry.markCartographerMapDiscoveriesNear(villagerId, dimension, x, z, radiusSqr, gameTime));
         }
         return discoveries;
     }
@@ -606,14 +627,13 @@ public class VillagerInteractionSavedData extends SavedData {
             double radiusSqr,
             long gameTime) {
         List<VillagerInteractionTracker.StoryHintReport> discoveries = new ArrayList<>();
-        for (Map.Entry<UUID, Map<UUID, InteractionEntry>> villagerEntry : this.entries.entrySet()) {
-            Map<UUID, InteractionEntry> playerEntries = villagerEntry.getValue();
-            InteractionEntry entry = playerEntries.get(playerId);
+        for (UUID villagerId : villagerIdsForPlayer(playerId)) {
+            InteractionEntry entry = getIndexedEntry(villagerId, playerId);
             if (entry == null) {
                 continue;
             }
             discoveries.addAll(entry.markStoryHintDiscoveriesNear(
-                    villagerEntry.getKey(),
+                    villagerId,
                     dimension,
                     currentBiomeId,
                     x,
@@ -636,12 +656,11 @@ public class VillagerInteractionSavedData extends SavedData {
             long gameTime) {
         List<VillagerInteractionTracker.CartographerMapReport> mapDiscoveries = new ArrayList<>();
         List<VillagerInteractionTracker.StoryHintReport> storyDiscoveries = new ArrayList<>();
-        for (Map.Entry<UUID, Map<UUID, InteractionEntry>> villagerEntry : this.entries.entrySet()) {
-            InteractionEntry entry = villagerEntry.getValue().get(playerId);
+        for (UUID villagerId : villagerIdsForPlayer(playerId)) {
+            InteractionEntry entry = getIndexedEntry(villagerId, playerId);
             if (entry == null) {
                 continue;
             }
-            UUID villagerId = villagerEntry.getKey();
             mapDiscoveries.addAll(entry.markCartographerMapDiscoveriesNear(
                     villagerId,
                     dimension,
@@ -772,11 +791,11 @@ public class VillagerInteractionSavedData extends SavedData {
             boolean liked,
             long gameTime) {
         boolean changed = false;
-        for (Map.Entry<UUID, Map<UUID, InteractionEntry>> villagerEntry : this.entries.entrySet()) {
-            if (villagerEntry.getKey().equals(testedVillagerId)) {
+        for (UUID villagerId : villagerIdsForPlayer(playerId)) {
+            if (villagerId.equals(testedVillagerId)) {
                 continue;
             }
-            InteractionEntry entry = villagerEntry.getValue().get(playerId);
+            InteractionEntry entry = getIndexedEntry(villagerId, playerId);
             if (entry != null && entry.markGiftAdviceResult(
                     itemId,
                     itemName,

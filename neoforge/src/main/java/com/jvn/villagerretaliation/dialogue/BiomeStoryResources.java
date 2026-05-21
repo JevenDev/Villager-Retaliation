@@ -24,6 +24,14 @@ public final class BiomeStoryResources {
     private BiomeStoryResources() {
     }
 
+    public static void warm(MinecraftServer server) {
+        entriesByBiome(server);
+    }
+
+    public static void clearCache() {
+        cachedBiomes = new CachedBiomes(null, Map.of());
+    }
+
     public static Map<ResourceLocation, Entry> entriesByBiome(MinecraftServer server) {
         CachedBiomes current = cachedBiomes;
         if (current.server() == server) {

@@ -2,6 +2,8 @@ package com.jvn.villagerretaliation.interaction;
 
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.server.level.ServerLevel;
@@ -18,6 +20,9 @@ public final class VillagerCombatSurvivalService {
     private static final double NEARBY_PLAYER_RADIUS = 24.0D;
     private static final double HOSTILE_THREAT_RADIUS = 16.0D;
     private static final long QUIET_SETTLE_TICKS = 20L * 8L;
+    private static final long NEARBY_THREAT_SCAN_INTERVAL_TICKS = 20L;
+    private static final long ACTIVE_COMBAT_WRITE_INTERVAL_TICKS = 20L;
+    private static final Map<UUID, Long> NEXT_NEARBY_THREAT_SCAN_TICKS = new HashMap<>();
 
     private VillagerCombatSurvivalService() {
     }
@@ -27,14 +32,14 @@ public final class VillagerCombatSurvivalService {
             return;
         }
 
+        long gameTime = level.getGameTime();
         boolean followingPlayer = VillagerRecruitmentService.followingPlayerId(villager).isPresent();
         LivingEntity threat = directHostileThreat(villager);
         if (threat == null && followingPlayer) {
-            threat = nearbyHostileThreat(villager);
+            threat = nearbyHostileThreatIfReady(villager, gameTime);
         }
         String eventKind = eventKind(level, villager, threat);
         ServerPlayer player = eventKind == null ? null : reportPlayer(level, villager);
-        long gameTime = level.getGameTime();
         if (player != null) {
             rememberActiveCombat(villager, player, eventKind, gameTime);
             return;
@@ -69,12 +74,19 @@ public final class VillagerCombatSurvivalService {
     }
 
     private static void rememberActiveCombat(Villager villager, ServerPlayer player, String eventKind, long gameTime) {
+        if (villager.getPersistentData().hasUUID(ACTIVE_PLAYER_KEY)
+                && villager.getPersistentData().getUUID(ACTIVE_PLAYER_KEY).equals(player.getUUID())
+                && eventKind.equals(villager.getPersistentData().getString(ACTIVE_EVENT_KIND_KEY))
+                && gameTime - villager.getPersistentData().getLong(LAST_COMBAT_TICK_KEY) < ACTIVE_COMBAT_WRITE_INTERVAL_TICKS) {
+            return;
+        }
         villager.getPersistentData().putUUID(ACTIVE_PLAYER_KEY, player.getUUID());
         villager.getPersistentData().putString(ACTIVE_EVENT_KIND_KEY, eventKind);
         villager.getPersistentData().putLong(LAST_COMBAT_TICK_KEY, gameTime);
     }
 
     private static void clearActiveCombat(Villager villager) {
+        NEXT_NEARBY_THREAT_SCAN_TICKS.remove(villager.getUUID());
         villager.getPersistentData().remove(ACTIVE_PLAYER_KEY);
         villager.getPersistentData().remove(ACTIVE_EVENT_KIND_KEY);
         villager.getPersistentData().remove(LAST_COMBAT_TICK_KEY);
@@ -135,6 +147,15 @@ public final class VillagerCombatSurvivalService {
             return lastHurtBy;
         }
         return null;
+    }
+
+    private static LivingEntity nearbyHostileThreatIfReady(Villager villager, long gameTime) {
+        Long nextScan = NEXT_NEARBY_THREAT_SCAN_TICKS.get(villager.getUUID());
+        if (nextScan != null && nextScan > gameTime) {
+            return null;
+        }
+        NEXT_NEARBY_THREAT_SCAN_TICKS.put(villager.getUUID(), gameTime + NEARBY_THREAT_SCAN_INTERVAL_TICKS);
+        return nearbyHostileThreat(villager);
     }
 
     private static LivingEntity nearbyHostileThreat(Villager villager) {

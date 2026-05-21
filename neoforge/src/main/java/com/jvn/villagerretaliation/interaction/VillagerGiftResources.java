@@ -38,6 +38,14 @@ public final class VillagerGiftResources {
     private VillagerGiftResources() {
     }
 
+    public static void warm(MinecraftServer server) {
+        load(server);
+    }
+
+    public static void clearCache() {
+        cachedGiftPool = CachedGiftPool.empty();
+    }
+
     public static Optional<VillagerGiftPreferences.GiftPreference> preference(
             ServerLevel level,
             VillagerProfession profession,

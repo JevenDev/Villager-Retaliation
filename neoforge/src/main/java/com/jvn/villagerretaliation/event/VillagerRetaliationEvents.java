@@ -18,6 +18,7 @@ import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.toucanlib.util.ToucanHazardAttribution;
+import com.jvn.villagerretaliation.util.VillagerDataWarmup;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerFleeBehaviorHandler;
@@ -55,10 +56,20 @@ import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
+import net.neoforged.neoforge.event.server.ServerStartedEvent;
+import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
 public final class VillagerRetaliationEvents {
     private VillagerRetaliationEvents() {
+    }
+
+    public static void onServerStarted(ServerStartedEvent event) {
+        VillagerDataWarmup.warm(event.getServer());
+    }
+
+    public static void onServerStopping(ServerStoppingEvent event) {
+        VillagerDataWarmup.clearCaches();
     }
 
     public static void onEntityAttributeModification(EntityAttributeModificationEvent event) {

@@ -37,6 +37,14 @@ public final class VillagerDialogueResources {
         return load(server, VillagerLocale.DEFAULT_LOCALE).lines();
     }
 
+    public static void warm(MinecraftServer server) {
+        load(server, VillagerLocale.DEFAULT_LOCALE);
+    }
+
+    public static void clearCache() {
+        cachedDialoguePools = CachedDialoguePools.empty();
+    }
+
     public static List<String> openingLines(DialogueContext context, DialogueDisposition disposition) {
         return load(context.level().getServer(), context.locale()).openings().stream()
                 .filter(line -> line.matches(context, disposition))
