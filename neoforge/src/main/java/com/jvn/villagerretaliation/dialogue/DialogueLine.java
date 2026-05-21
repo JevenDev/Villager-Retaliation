@@ -24,6 +24,9 @@ public record DialogueLine(
         boolean requiresGearReportUsedInCombat,
         boolean requiresGearReportUnusedInCombat,
         Set<String> recruitmentFollowupScenarios,
+        boolean requiresRecruitmentMemory,
+        Set<String> recruitmentMemoryScenarios,
+        int minRecruitmentFollowDistance,
         boolean firstConversationOnly,
         GiftAdviceKind giftAdviceKind,
         int weight
@@ -81,6 +84,17 @@ public record DialogueLine(
         }
         if (!this.recruitmentFollowupScenarios.isEmpty()
                 && !this.recruitmentFollowupScenarios.contains(context.recruitmentFollowupScenario())) {
+            return false;
+        }
+        if (this.requiresRecruitmentMemory && !context.hasRecruitmentMemory()) {
+            return false;
+        }
+        if (!this.recruitmentMemoryScenarios.isEmpty()
+                && this.recruitmentMemoryScenarios.stream().noneMatch(context::hasRecruitmentMemoryScenario)) {
+            return false;
+        }
+        if (this.minRecruitmentFollowDistance > 0
+                && context.recruitmentMemoryDistanceBlocks() < this.minRecruitmentFollowDistance) {
             return false;
         }
         return this.weight > 0;
@@ -157,6 +171,9 @@ public record DialogueLine(
         private boolean requiresGearReportUsedInCombat;
         private boolean requiresGearReportUnusedInCombat;
         private final Set<String> recruitmentFollowupScenarios = new java.util.HashSet<>();
+        private boolean requiresRecruitmentMemory;
+        private final Set<String> recruitmentMemoryScenarios = new java.util.HashSet<>();
+        private int minRecruitmentFollowDistance;
         private boolean firstConversationOnly;
         private GiftAdviceKind giftAdviceKind;
         private int weight = 10;
@@ -235,6 +252,25 @@ public record DialogueLine(
             return this;
         }
 
+        public Builder requiresRecruitmentMemory() {
+            this.requiresRecruitmentMemory = true;
+            return this;
+        }
+
+        public Builder recruitmentMemoryScenarios(String... scenarios) {
+            for (String scenario : scenarios) {
+                if (scenario != null && !scenario.isBlank()) {
+                    this.recruitmentMemoryScenarios.add(scenario.trim().toLowerCase(java.util.Locale.ROOT));
+                }
+            }
+            return this;
+        }
+
+        public Builder minRecruitmentFollowDistance(int distance) {
+            this.minRecruitmentFollowDistance = Math.max(0, distance);
+            return this;
+        }
+
         public Builder weatherStates(DialogueContext.WeatherState... weatherStates) {
             this.weatherStates.addAll(java.util.List.of(weatherStates));
             return this;
@@ -279,6 +315,9 @@ public record DialogueLine(
                     this.requiresGearReportUsedInCombat,
                     this.requiresGearReportUnusedInCombat,
                     Set.copyOf(this.recruitmentFollowupScenarios),
+                    this.requiresRecruitmentMemory,
+                    Set.copyOf(this.recruitmentMemoryScenarios),
+                    this.minRecruitmentFollowDistance,
                     this.firstConversationOnly,
                     this.giftAdviceKind,
                     this.weight

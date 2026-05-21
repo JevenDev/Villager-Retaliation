@@ -546,6 +546,14 @@ public final class VillagerDialogueResources {
         if (!recruitmentFollowupScenarios.isEmpty()) {
             builder.recruitmentFollowupScenarios(recruitmentFollowupScenarios.toArray(String[]::new));
         }
+        if (readBoolean(entry, "requires_recruitment_memory")) {
+            builder.requiresRecruitmentMemory();
+        }
+        List<String> recruitmentMemoryScenarios = readStringList(entry, "recruitment_memory_scenarios");
+        if (!recruitmentMemoryScenarios.isEmpty()) {
+            builder.recruitmentMemoryScenarios(recruitmentMemoryScenarios.toArray(String[]::new));
+        }
+        builder.minRecruitmentFollowDistance(readInt(entry, "min_recruitment_follow_distance", 0));
         if (readBoolean(entry, "first_conversation_only")) {
             builder.firstConversationOnly();
         }

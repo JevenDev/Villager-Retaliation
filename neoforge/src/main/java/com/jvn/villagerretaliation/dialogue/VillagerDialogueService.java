@@ -363,7 +363,9 @@ public final class VillagerDialogueService {
     private static String resolveText(String text, DialogueContext context) {
         return text
                 .replace("{attack_weapon}", context.rememberedAttackWeapon())
-                .replace("{gear_kind}", context.gearReportKind());
+                .replace("{gear_kind}", context.gearReportKind())
+                .replace("{follow_biome}", context.recruitmentMemoryBiome())
+                .replace("{follow_distance}", Integer.toString(context.recruitmentMemoryDistanceBlocks()));
     }
 
     private static String selectConversationLine(

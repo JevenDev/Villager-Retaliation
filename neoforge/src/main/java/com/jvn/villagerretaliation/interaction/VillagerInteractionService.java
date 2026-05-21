@@ -487,6 +487,7 @@ public final class VillagerInteractionService {
                 VillagerInteractionTracker.unreportedCombatSurvivalReport(level, villager, player).orElse(null),
                 VillagerInteractionTracker.unreportedGearReport(level, villager, player).orElse(null),
                 VillagerInteractionTracker.unreportedRecruitmentFollowup(level, villager, player).orElse(null),
+                VillagerInteractionTracker.recruitmentMemory(level, villager, player).orElse(null),
                 VillagerInteractionTracker.unreportedGiftAdviceResult(level, villager, player).orElse(null),
                 VillageEventMemory.recentNear(level, villager.blockPosition()),
                 villager.getRandom(),

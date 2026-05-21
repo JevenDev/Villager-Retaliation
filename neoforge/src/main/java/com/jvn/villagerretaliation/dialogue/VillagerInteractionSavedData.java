@@ -74,6 +74,10 @@ public class VillagerInteractionSavedData extends SavedData {
     private static final String TAG_RECRUITMENT_FOLLOWUP_UNREPORTED = "RecruitmentFollowupUnreported";
     private static final String TAG_RECRUITMENT_FOLLOWUP_SCENARIO = "RecruitmentFollowupScenario";
     private static final String TAG_RECRUITMENT_FOLLOWUP_GAME_TIME = "RecruitmentFollowupGameTime";
+    private static final String TAG_RECRUITMENT_MEMORY_SCENARIO = "RecruitmentMemoryScenario";
+    private static final String TAG_RECRUITMENT_MEMORY_BIOME = "RecruitmentMemoryBiome";
+    private static final String TAG_RECRUITMENT_MEMORY_DISTANCE = "RecruitmentMemoryDistance";
+    private static final String TAG_RECRUITMENT_MEMORY_GAME_TIME = "RecruitmentMemoryGameTime";
     private static final String TAG_GIFT_ADVICE_ITEM_ID = "GiftAdviceItemId";
     private static final String TAG_GIFT_ADVICE_ITEM_NAME = "GiftAdviceItemName";
     private static final String TAG_GIFT_ADVICE_TARGET_PROFESSION = "GiftAdviceTargetProfession";
@@ -136,6 +140,14 @@ public class VillagerInteractionSavedData extends SavedData {
                 entry.recruitmentFollowupScenario = entryTag.getString(TAG_RECRUITMENT_FOLLOWUP_SCENARIO);
             }
             entry.recruitmentFollowupGameTime = readOptionalLong(entryTag, TAG_RECRUITMENT_FOLLOWUP_GAME_TIME);
+            if (entryTag.contains(TAG_RECRUITMENT_MEMORY_SCENARIO, Tag.TAG_STRING)) {
+                entry.recruitmentMemoryScenario = entryTag.getString(TAG_RECRUITMENT_MEMORY_SCENARIO);
+            }
+            if (entryTag.contains(TAG_RECRUITMENT_MEMORY_BIOME, Tag.TAG_STRING)) {
+                entry.recruitmentMemoryBiome = entryTag.getString(TAG_RECRUITMENT_MEMORY_BIOME);
+            }
+            entry.recruitmentMemoryDistance = entryTag.getInt(TAG_RECRUITMENT_MEMORY_DISTANCE);
+            entry.recruitmentMemoryGameTime = readOptionalLong(entryTag, TAG_RECRUITMENT_MEMORY_GAME_TIME);
             if (entryTag.contains(TAG_GIFT_ADVICE_ITEM_ID, Tag.TAG_STRING)) {
                 entry.giftAdviceItemId = entryTag.getString(TAG_GIFT_ADVICE_ITEM_ID);
             }
@@ -325,6 +337,14 @@ public class VillagerInteractionSavedData extends SavedData {
                     entryTag.putString(TAG_RECRUITMENT_FOLLOWUP_SCENARIO, playerEntry.getValue().recruitmentFollowupScenario);
                 }
                 entryTag.putLong(TAG_RECRUITMENT_FOLLOWUP_GAME_TIME, playerEntry.getValue().recruitmentFollowupGameTime);
+                if (playerEntry.getValue().recruitmentMemoryScenario != null && !playerEntry.getValue().recruitmentMemoryScenario.isBlank()) {
+                    entryTag.putString(TAG_RECRUITMENT_MEMORY_SCENARIO, playerEntry.getValue().recruitmentMemoryScenario);
+                }
+                if (playerEntry.getValue().recruitmentMemoryBiome != null && !playerEntry.getValue().recruitmentMemoryBiome.isBlank()) {
+                    entryTag.putString(TAG_RECRUITMENT_MEMORY_BIOME, playerEntry.getValue().recruitmentMemoryBiome);
+                }
+                entryTag.putInt(TAG_RECRUITMENT_MEMORY_DISTANCE, playerEntry.getValue().recruitmentMemoryDistance);
+                entryTag.putLong(TAG_RECRUITMENT_MEMORY_GAME_TIME, playerEntry.getValue().recruitmentMemoryGameTime);
                 if (playerEntry.getValue().giftAdviceItemId != null && !playerEntry.getValue().giftAdviceItemId.isBlank()) {
                     entryTag.putString(TAG_GIFT_ADVICE_ITEM_ID, playerEntry.getValue().giftAdviceItemId);
                 }
@@ -625,6 +645,14 @@ public class VillagerInteractionSavedData extends SavedData {
         return getOrCreate(villagerId, playerId).claimUnreportedRecruitmentFollowup(villagerId);
     }
 
+    public void rememberRecruitmentMemory(UUID villagerId, UUID playerId, String scenario, String biomeName, int distanceBlocks, long gameTime) {
+        getOrCreate(villagerId, playerId).rememberRecruitmentMemory(scenario, biomeName, distanceBlocks, gameTime);
+    }
+
+    public VillagerInteractionTracker.RecruitmentMemory recruitmentMemory(UUID villagerId, UUID playerId) {
+        return getOrCreate(villagerId, playerId).recruitmentMemory(villagerId);
+    }
+
     public void rememberGiftAdvice(UUID villagerId, UUID playerId, String itemId, String itemName, String targetProfessionKey) {
         getOrCreate(villagerId, playerId).rememberGiftAdvice(itemId, itemName, targetProfessionKey);
     }
@@ -703,6 +731,10 @@ public class VillagerInteractionSavedData extends SavedData {
         private boolean recruitmentFollowupUnreported;
         private String recruitmentFollowupScenario;
         private long recruitmentFollowupGameTime = Long.MIN_VALUE;
+        private String recruitmentMemoryScenario;
+        private String recruitmentMemoryBiome;
+        private int recruitmentMemoryDistance;
+        private long recruitmentMemoryGameTime = Long.MIN_VALUE;
         private String giftAdviceItemId;
         private String giftAdviceItemName;
         private String giftAdviceTargetProfession;
@@ -878,6 +910,30 @@ public class VillagerInteractionSavedData extends SavedData {
             VillagerInteractionTracker.RecruitmentFollowupReport report = unreportedRecruitmentFollowup(villagerId);
             this.recruitmentFollowupUnreported = false;
             return report;
+        }
+
+        public void rememberRecruitmentMemory(String scenario, String biomeName, int distanceBlocks, long gameTime) {
+            this.recruitmentMemoryScenario = scenario == null || scenario.isBlank() ? "safe" : scenario;
+            this.recruitmentMemoryBiome = biomeName == null || biomeName.isBlank() ? "the wilds" : biomeName;
+            this.recruitmentMemoryDistance = Math.max(0, distanceBlocks);
+            this.recruitmentMemoryGameTime = gameTime;
+        }
+
+        public VillagerInteractionTracker.RecruitmentMemory recruitmentMemory(UUID villagerId) {
+            if (this.recruitmentMemoryGameTime == Long.MIN_VALUE) {
+                return null;
+            }
+            return new VillagerInteractionTracker.RecruitmentMemory(
+                    villagerId,
+                    this.recruitmentMemoryScenario == null || this.recruitmentMemoryScenario.isBlank()
+                            ? "safe"
+                            : this.recruitmentMemoryScenario,
+                    this.recruitmentMemoryBiome == null || this.recruitmentMemoryBiome.isBlank()
+                            ? "the wilds"
+                            : this.recruitmentMemoryBiome,
+                    this.recruitmentMemoryDistance,
+                    this.recruitmentMemoryGameTime
+            );
         }
 
         public void rememberGiftAdvice(String itemId, String itemName, String targetProfessionKey) {

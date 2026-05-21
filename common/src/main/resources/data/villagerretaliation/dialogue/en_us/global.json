@@ -1486,6 +1486,199 @@
       "weight": 42
     },
     {
+      "id": "chat_follow_memory_biome",
+      "type": "chat",
+      "option": "adult_chat",
+      "text": "Remember when you made me follow you across {follow_biome}? I still know that road by ache alone.",
+      "requires_recruitment_memory": true,
+      "show_for_babies": false,
+      "weight": 4
+    },
+    {
+      "id": "chat_follow_memory_long_walk",
+      "type": "chat",
+      "option": "adult_chat",
+      "text": "Remember when you made me follow you over {follow_distance} blocks? My legs complained for days.",
+      "requires_recruitment_memory": true,
+      "min_recruitment_follow_distance": 500,
+      "show_for_babies": false,
+      "weight": 5
+    },
+    {
+      "id": "chat_follow_memory_betrayed",
+      "type": "chat",
+      "option": "adult_chat",
+      "text": "Remember when I followed you and you hit me? I do. Still hurts.",
+      "requires_recruitment_memory": true,
+      "recruitment_memory_scenarios": ["betrayed"],
+      "show_for_babies": false,
+      "weight": 5
+    },
+    {
+      "id": "chat_follow_memory_injured",
+      "type": "chat",
+      "option": "adult_chat",
+      "text": "I remember following you home hurt. I was grateful, but not exactly comfortable.",
+      "requires_recruitment_memory": true,
+      "recruitment_memory_scenarios": ["injured"],
+      "show_for_babies": false,
+      "weight": 4
+    },
+    {
+      "id": "chat_follow_memory_armorer",
+      "type": "chat",
+      "option": "adult_chat",
+      "professions": ["armorer"],
+      "text": "That trip through {follow_biome} tested my buckles more than most customers do.",
+      "requires_recruitment_memory": true,
+      "show_for_babies": false,
+      "weight": 3
+    },
+    {
+      "id": "chat_follow_memory_butcher",
+      "type": "chat",
+      "option": "adult_chat",
+      "professions": ["butcher"],
+      "text": "When you had me follow you, I kept thinking the whole walk needed a sharper plan.",
+      "requires_recruitment_memory": true,
+      "show_for_babies": false,
+      "weight": 3
+    },
+    {
+      "id": "chat_follow_memory_cartographer",
+      "type": "chat",
+      "option": "adult_chat",
+      "professions": ["cartographer"],
+      "text": "I could map the route you dragged me along, but I would mark several parts as questionable.",
+      "requires_recruitment_memory": true,
+      "show_for_babies": false,
+      "weight": 3
+    },
+    {
+      "id": "chat_follow_memory_cleric_betrayed",
+      "type": "chat",
+      "option": "adult_chat",
+      "professions": ["cleric"],
+      "text": "I have prayed about that time I followed you and you struck me. The bruise answered first.",
+      "requires_recruitment_memory": true,
+      "recruitment_memory_scenarios": ["betrayed"],
+      "show_for_babies": false,
+      "weight": 4
+    },
+    {
+      "id": "chat_follow_memory_farmer",
+      "type": "chat",
+      "option": "adult_chat",
+      "professions": ["farmer"],
+      "text": "You remember that walk through {follow_biome}? I have tilled softer ground than that road.",
+      "requires_recruitment_memory": true,
+      "show_for_babies": false,
+      "weight": 3
+    },
+    {
+      "id": "chat_follow_memory_fisherman",
+      "type": "chat",
+      "option": "adult_chat",
+      "professions": ["fisherman"],
+      "text": "Following you over {follow_distance} blocks felt like reeling in a boot with opinions.",
+      "requires_recruitment_memory": true,
+      "min_recruitment_follow_distance": 500,
+      "show_for_babies": false,
+      "weight": 4
+    },
+    {
+      "id": "chat_follow_memory_fletcher",
+      "type": "chat",
+      "option": "adult_chat",
+      "professions": ["fletcher"],
+      "text": "That route you took me on flew about as straight as a warped arrow.",
+      "requires_recruitment_memory": true,
+      "show_for_babies": false,
+      "weight": 3
+    },
+    {
+      "id": "chat_follow_memory_leatherworker",
+      "type": "chat",
+      "option": "adult_chat",
+      "professions": ["leatherworker"],
+      "text": "I still think about that walk. My boots forgave you before my feet did.",
+      "requires_recruitment_memory": true,
+      "show_for_babies": false,
+      "weight": 3
+    },
+    {
+      "id": "chat_follow_memory_librarian",
+      "type": "chat",
+      "option": "adult_chat",
+      "professions": ["librarian"],
+      "text": "The story of me following you needs editing. Mostly shorter chapters and fewer hazards.",
+      "requires_recruitment_memory": true,
+      "show_for_babies": false,
+      "weight": 3
+    },
+    {
+      "id": "chat_follow_memory_mason",
+      "type": "chat",
+      "option": "adult_chat",
+      "professions": ["mason"],
+      "text": "After following you that far, I understood why roads need better foundations.",
+      "requires_recruitment_memory": true,
+      "min_recruitment_follow_distance": 500,
+      "show_for_babies": false,
+      "weight": 4
+    },
+    {
+      "id": "chat_follow_memory_shepherd",
+      "type": "chat",
+      "option": "adult_chat",
+      "professions": ["shepherd"],
+      "text": "When I followed you through {follow_biome}, I finally understood why sheep wander off quietly.",
+      "requires_recruitment_memory": true,
+      "show_for_babies": false,
+      "weight": 3
+    },
+    {
+      "id": "chat_follow_memory_toolsmith",
+      "type": "chat",
+      "option": "adult_chat",
+      "professions": ["toolsmith"],
+      "text": "That time I followed you, the whole plan could have used a better handle.",
+      "requires_recruitment_memory": true,
+      "show_for_babies": false,
+      "weight": 3
+    },
+    {
+      "id": "chat_follow_memory_weaponsmith_betrayed",
+      "type": "chat",
+      "option": "adult_chat",
+      "professions": ["weaponsmith"],
+      "text": "Remember when I followed you and you hit me? Poor weapon discipline. Worse friendship.",
+      "requires_recruitment_memory": true,
+      "recruitment_memory_scenarios": ["betrayed"],
+      "show_for_babies": false,
+      "weight": 4
+    },
+    {
+      "id": "chat_follow_memory_unemployed",
+      "type": "chat",
+      "option": "adult_chat",
+      "professions": ["unemployed"],
+      "text": "I followed you once and learned something: I need better shoes before I choose a trade.",
+      "requires_recruitment_memory": true,
+      "show_for_babies": false,
+      "weight": 3
+    },
+    {
+      "id": "chat_follow_memory_nitwit",
+      "type": "chat",
+      "option": "adult_chat",
+      "professions": ["nitwit"],
+      "text": "Remember when I followed you? I thought we were going somewhere. We sure did.",
+      "requires_recruitment_memory": true,
+      "show_for_babies": false,
+      "weight": 3
+    },
+    {
       "id": "gear_report_global_used",
       "type": "gear_report",
       "option": "gear_report",

@@ -242,6 +242,30 @@ public final class VillagerInteractionTracker {
         return Optional.ofNullable(report);
     }
 
+    public static void rememberRecruitmentMemory(
+            ServerLevel level,
+            Villager villager,
+            ServerPlayer player,
+            String scenario,
+            String biomeName,
+            int distanceBlocks) {
+        VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
+        data.rememberRecruitmentMemory(
+                villager.getUUID(),
+                player.getUUID(),
+                scenario,
+                biomeName,
+                distanceBlocks,
+                level.getGameTime()
+        );
+        data.setDirty();
+    }
+
+    public static Optional<RecruitmentMemory> recruitmentMemory(ServerLevel level, Villager villager, ServerPlayer player) {
+        return Optional.ofNullable(VillagerInteractionSavedData.get(level)
+                .recruitmentMemory(villager.getUUID(), player.getUUID()));
+    }
+
     public static Optional<GiftAdviceResultReport> unreportedGiftAdviceResult(ServerLevel level, Villager villager, ServerPlayer player) {
         return Optional.ofNullable(VillagerInteractionSavedData.get(level)
                 .unreportedGiftAdviceResult(villager.getUUID(), player.getUUID()));
@@ -446,6 +470,15 @@ public final class VillagerInteractionTracker {
     public record RecruitmentFollowupReport(
             UUID villagerId,
             String scenario,
+            long gameTime
+    ) {
+    }
+
+    public record RecruitmentMemory(
+            UUID villagerId,
+            String scenario,
+            String biomeName,
+            int distanceBlocks,
             long gameTime
     ) {
     }

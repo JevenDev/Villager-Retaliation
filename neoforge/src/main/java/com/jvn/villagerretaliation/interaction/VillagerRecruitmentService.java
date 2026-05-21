@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -31,6 +32,11 @@ public final class VillagerRecruitmentService {
     private static final String FOLLOWING_PLAYER_KEY = "VillagerRetaliationFollowingPlayer";
     private static final String FOLLOW_START_HEALTH_KEY = "VillagerRetaliationFollowStartHealth";
     private static final String FOLLOW_MIN_HEALTH_KEY = "VillagerRetaliationFollowMinHealth";
+    private static final String FOLLOW_START_X_KEY = "VillagerRetaliationFollowStartX";
+    private static final String FOLLOW_START_Y_KEY = "VillagerRetaliationFollowStartY";
+    private static final String FOLLOW_START_Z_KEY = "VillagerRetaliationFollowStartZ";
+    private static final String FOLLOW_START_BIOME_KEY = "VillagerRetaliationFollowStartBiome";
+    private static final String FOLLOW_MAX_DISTANCE_KEY = "VillagerRetaliationFollowMaxDistance";
     private static final String HIRED_PLAYER_KEY = "VillagerRetaliationHiredPlayer";
     private static final double FOLLOW_START_DISTANCE_SQR = 5.0D * 5.0D;
     private static final double FOLLOW_STOP_DISTANCE_SQR = 2.5D * 2.5D;
@@ -74,9 +80,7 @@ public final class VillagerRecruitmentService {
             sendNoLongerFollowingNotice(player, villager);
             return false;
         }
-        villager.getPersistentData().putUUID(FOLLOWING_PLAYER_KEY, player.getUUID());
-        villager.getPersistentData().putFloat(FOLLOW_START_HEALTH_KEY, villager.getHealth());
-        villager.getPersistentData().putFloat(FOLLOW_MIN_HEALTH_KEY, villager.getHealth());
+        beginFollowing(level, villager, player);
         sendFollowingNotice(player, villager);
         return true;
     }
@@ -86,9 +90,12 @@ public final class VillagerRecruitmentService {
     }
 
     public static void stopFollowing(ServerLevel level, Villager villager, ServerPlayer player) {
-        if (isFollowing(villager, player) && isNearVillage(level, villager)) {
+        if (isFollowing(villager, player)) {
             String scenario = wasFollowerInjured(villager) ? "injured" : "safe";
-            VillagerInteractionTracker.rememberRecruitmentFollowup(level, villager, player, scenario);
+            rememberRecruitmentMemory(level, villager, player, scenario);
+            if (isNearVillage(level, villager)) {
+                VillagerInteractionTracker.rememberRecruitmentFollowup(level, villager, player, scenario);
+            }
         }
         clearFollowTarget(villager);
     }
@@ -109,6 +116,7 @@ public final class VillagerRecruitmentService {
                 && villager.getPersistentData().getUUID(FOLLOWING_PLAYER_KEY).equals(attacker.getUUID())) {
             rememberBetrayedFollower(villager, attacker);
             if (attacker instanceof ServerPlayer serverPlayer) {
+                rememberRecruitmentMemory(serverPlayer.serverLevel(), villager, serverPlayer, "betrayed");
                 VillagerInteractionTracker.rememberRecruitmentFollowup(serverPlayer.serverLevel(), villager, serverPlayer, "betrayed");
                 clearFollowTarget(villager);
                 sendNoLongerFollowingNotice(serverPlayer, villager);
@@ -210,6 +218,7 @@ public final class VillagerRecruitmentService {
 
         UUID playerId = villager.getPersistentData().getUUID(FOLLOWING_PLAYER_KEY);
         ServerPlayer player = level.getServer().getPlayerList().getPlayer(playerId);
+        updateFollowDistance(villager);
         if (!isValidFollowTarget(level, villager, player)) {
             clearFollowTarget(villager);
             return;
@@ -260,7 +269,69 @@ public final class VillagerRecruitmentService {
         villager.getPersistentData().remove(FOLLOWING_PLAYER_KEY);
         villager.getPersistentData().remove(FOLLOW_START_HEALTH_KEY);
         villager.getPersistentData().remove(FOLLOW_MIN_HEALTH_KEY);
+        villager.getPersistentData().remove(FOLLOW_START_X_KEY);
+        villager.getPersistentData().remove(FOLLOW_START_Y_KEY);
+        villager.getPersistentData().remove(FOLLOW_START_Z_KEY);
+        villager.getPersistentData().remove(FOLLOW_START_BIOME_KEY);
+        villager.getPersistentData().remove(FOLLOW_MAX_DISTANCE_KEY);
         villager.getNavigation().stop();
+    }
+
+    private static void beginFollowing(ServerLevel level, Villager villager, ServerPlayer player) {
+        BlockPos start = villager.blockPosition();
+        villager.getPersistentData().putUUID(FOLLOWING_PLAYER_KEY, player.getUUID());
+        villager.getPersistentData().putFloat(FOLLOW_START_HEALTH_KEY, villager.getHealth());
+        villager.getPersistentData().putFloat(FOLLOW_MIN_HEALTH_KEY, villager.getHealth());
+        villager.getPersistentData().putInt(FOLLOW_START_X_KEY, start.getX());
+        villager.getPersistentData().putInt(FOLLOW_START_Y_KEY, start.getY());
+        villager.getPersistentData().putInt(FOLLOW_START_Z_KEY, start.getZ());
+        villager.getPersistentData().putString(FOLLOW_START_BIOME_KEY, biomeName(level, start));
+        villager.getPersistentData().putInt(FOLLOW_MAX_DISTANCE_KEY, 0);
+    }
+
+    private static void rememberRecruitmentMemory(ServerLevel level, Villager villager, ServerPlayer player, String scenario) {
+        VillagerInteractionTracker.rememberRecruitmentMemory(
+                level,
+                villager,
+                player,
+                scenario,
+                villager.getPersistentData().getString(FOLLOW_START_BIOME_KEY),
+                followDistanceBlocks(villager)
+        );
+    }
+
+    private static void updateFollowDistance(Villager villager) {
+        int distance = followDistanceBlocks(villager);
+        int currentMax = villager.getPersistentData().contains(FOLLOW_MAX_DISTANCE_KEY)
+                ? villager.getPersistentData().getInt(FOLLOW_MAX_DISTANCE_KEY)
+                : 0;
+        if (distance > currentMax) {
+            villager.getPersistentData().putInt(FOLLOW_MAX_DISTANCE_KEY, distance);
+        }
+    }
+
+    private static int followDistanceBlocks(Villager villager) {
+        int currentMax = villager.getPersistentData().contains(FOLLOW_MAX_DISTANCE_KEY)
+                ? villager.getPersistentData().getInt(FOLLOW_MAX_DISTANCE_KEY)
+                : 0;
+        if (!villager.getPersistentData().contains(FOLLOW_START_X_KEY)
+                || !villager.getPersistentData().contains(FOLLOW_START_Y_KEY)
+                || !villager.getPersistentData().contains(FOLLOW_START_Z_KEY)) {
+            return currentMax;
+        }
+        BlockPos start = new BlockPos(
+                villager.getPersistentData().getInt(FOLLOW_START_X_KEY),
+                villager.getPersistentData().getInt(FOLLOW_START_Y_KEY),
+                villager.getPersistentData().getInt(FOLLOW_START_Z_KEY)
+        );
+        return Math.max(currentMax, (int) Math.round(Math.sqrt(villager.blockPosition().distSqr(start))));
+    }
+
+    private static String biomeName(ServerLevel level, BlockPos pos) {
+        return level.getBiome(pos)
+                .unwrapKey()
+                .map(key -> VillagerInteractionTextUtil.resourcePathName(key.location()))
+                .orElse("the wilds");
     }
 
     private static boolean wasFollowerInjured(Villager villager) {

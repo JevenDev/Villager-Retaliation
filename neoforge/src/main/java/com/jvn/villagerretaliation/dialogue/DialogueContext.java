@@ -36,6 +36,7 @@ public record DialogueContext(
         VillagerInteractionTracker.CombatSurvivalReport combatSurvivalReport,
         VillagerInteractionTracker.GearReport gearReport,
         VillagerInteractionTracker.RecruitmentFollowupReport recruitmentFollowupReport,
+        VillagerInteractionTracker.RecruitmentMemory recruitmentMemory,
         VillagerInteractionTracker.GiftAdviceResultReport giftAdviceResultReport,
         List<VillageEventMemory.MemoryEvent> recentEvents,
         RandomSource random,
@@ -153,6 +154,32 @@ public record DialogueContext(
                 || this.recruitmentFollowupReport.scenario().isBlank()
                 ? "safe"
                 : this.recruitmentFollowupReport.scenario();
+    }
+
+    public Optional<VillagerInteractionTracker.RecruitmentMemory> recruitmentMemoryOptional() {
+        return Optional.ofNullable(this.recruitmentMemory);
+    }
+
+    public boolean hasRecruitmentMemory() {
+        return this.recruitmentMemory != null;
+    }
+
+    public boolean hasRecruitmentMemoryScenario(String scenario) {
+        return this.recruitmentMemory != null
+                && scenario != null
+                && this.recruitmentMemory.scenario().equalsIgnoreCase(scenario);
+    }
+
+    public int recruitmentMemoryDistanceBlocks() {
+        return this.recruitmentMemory == null ? 0 : this.recruitmentMemory.distanceBlocks();
+    }
+
+    public String recruitmentMemoryBiome() {
+        return this.recruitmentMemory == null
+                || this.recruitmentMemory.biomeName() == null
+                || this.recruitmentMemory.biomeName().isBlank()
+                ? "the wilds"
+                : this.recruitmentMemory.biomeName();
     }
 
     public Optional<VillagerInteractionTracker.GiftAdviceResultReport> unreportedGiftAdviceResult() {
