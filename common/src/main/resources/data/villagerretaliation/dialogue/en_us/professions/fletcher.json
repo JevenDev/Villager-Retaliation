@@ -3,7 +3,7 @@
     { "key": "gift_given", "text": "Here, {gift_item}. Straight aim starts before the bow is drawn.", "weight": 24 },
     { "key": "gift_given", "text": "Take {gift_item}. If trouble comes, I would like you ready for it.", "weight": 24 },
     { "key": "gift_advice_followup.liked", "text": "Good. {gift_item} flew true with {tested_villager}.", "weight": 22 },
-    { "key": "gift_advice_followup.liked", "text": "Then that advice hit center. {tested_villager} liking {gift_item} proves the fletching.", "weight": 22 },
+    { "key": "gift_advice_followup.liked", "text": "Then that advice hit center. Sounds like {gift_item} flew true.", "weight": 22 },
     { "key": "gift_advice_followup.disliked", "text": "That shot drifted. For {gift_subject}, nock {alternative_gift} instead.", "weight": 22 },
     { "key": "gift_advice_followup.disliked", "text": "{gift_item} missed the mark? Try {alternative_gift}; straighter flight.", "weight": 22 }
   ],
