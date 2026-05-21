@@ -88,7 +88,7 @@ public final class VillagerReputationNetworking {
                         ToucanNetwork.withServerPlayer(context, player -> VillagerInteractionService.handleDialogueRequest(
                             player,
                             payload.entityId(),
-                            payload.requestType()
+                            payload.optionId()
                     )))
         );
         network.playToServer(

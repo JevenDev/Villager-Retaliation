@@ -11,9 +11,11 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import net.minecraft.resources.ResourceLocation;
@@ -47,6 +49,52 @@ public final class VillagerDialogueResources {
                 .filter(line -> line.matches(context, disposition))
                 .map(ConversationLine::text)
                 .toList();
+    }
+
+    public static Optional<String> message(DialogueContext context, String key) {
+        return message(context, key, Map.of());
+    }
+
+    public static Optional<String> message(DialogueContext context, String key, Map<String, String> replacements) {
+        DialogueDisposition disposition = VillagerDialogueService.moodFor(context);
+        List<KeyedMessageLine> candidates = load(context.level().getServer()).messages().stream()
+                .filter(line -> line.matches(context, key, disposition))
+                .toList();
+        return selectMessage(candidates, context.random().nextInt(Math.max(1, totalMessageWeight(candidates))))
+                .map(line -> resolveTemplate(line.text(), replacements));
+    }
+
+    public static Optional<String> globalMessage(MinecraftServer server, net.minecraft.util.RandomSource random, String key) {
+        return globalMessage(server, random, key, Map.of());
+    }
+
+    public static Optional<String> globalMessage(
+            MinecraftServer server,
+            net.minecraft.util.RandomSource random,
+            String key,
+            Map<String, String> replacements) {
+        List<KeyedMessageLine> candidates = load(server).messages().stream()
+                .filter(line -> line.matches(key))
+                .toList();
+        return selectMessage(candidates, random.nextInt(Math.max(1, totalMessageWeight(candidates))))
+                .map(line -> resolveTemplate(line.text(), replacements));
+    }
+
+    public static List<DialogueOptionDefinition> dialogueOptions(DialogueContext context, DialogueDisposition disposition) {
+        return load(context.level().getServer()).options().stream()
+                .filter(option -> option.matches(context, disposition))
+                .sorted(Comparator.comparingInt(DialogueOptionDefinition::order).thenComparing(DialogueOptionDefinition::id))
+                .toList();
+    }
+
+    public static Optional<DialogueOptionDefinition> dialogueOption(DialogueContext context, String optionId) {
+        if (optionId == null || optionId.isBlank()) {
+            return Optional.empty();
+        }
+        DialogueDisposition disposition = VillagerDialogueService.moodFor(context);
+        return dialogueOptions(context, disposition).stream()
+                .filter(option -> option.id().equals(optionId))
+                .findFirst();
     }
 
     public static Optional<String> pacifyLine(DialogueContext context, VillagerPacificationResult result, int emeraldCost) {
@@ -116,6 +164,8 @@ public final class VillagerDialogueResources {
         List<ConversationLine> openings = new ArrayList<>();
         List<ConversationLine> closings = new ArrayList<>();
         List<PacifyLine> pacifyLines = new ArrayList<>();
+        List<DialogueOptionDefinition> options = new ArrayList<>();
+        List<KeyedMessageLine> messages = new ArrayList<>();
 
         server.getResourceManager()
                 .listResources(DIALOGUE_ROOT, location -> location.getNamespace().equals(VillagerRetaliation.MOD_ID)
@@ -123,9 +173,16 @@ public final class VillagerDialogueResources {
                 .entrySet()
                 .stream()
                 .sorted(Comparator.comparing(entry -> entry.getKey().toString()))
-                .forEach(entry -> readFile(entry.getKey(), entry.getValue(), lines, openings, closings, pacifyLines));
+                .forEach(entry -> readFile(entry.getKey(), entry.getValue(), lines, openings, closings, pacifyLines, options, messages));
 
-        return new DialoguePool(List.copyOf(lines), List.copyOf(openings), List.copyOf(closings), List.copyOf(pacifyLines));
+        return new DialoguePool(
+                List.copyOf(lines),
+                List.copyOf(openings),
+                List.copyOf(closings),
+                List.copyOf(pacifyLines),
+                List.copyOf(options),
+                List.copyOf(messages)
+        );
     }
 
     private static void readFile(
@@ -134,16 +191,110 @@ public final class VillagerDialogueResources {
             List<DialogueLine> lines,
             List<ConversationLine> openings,
             List<ConversationLine> closings,
-            List<PacifyLine> pacifyLines) {
+            List<PacifyLine> pacifyLines,
+            List<DialogueOptionDefinition> options,
+            List<KeyedMessageLine> messages) {
         try (Reader reader = resource.openAsReader()) {
             JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
             Set<VillagerProfession> defaultProfessions = defaultProfessionsFor(location);
+            readDialogueOptions(location, root, defaultProfessions, options);
+            readKeyedMessages(location, root, defaultProfessions, messages);
             readDialogueLines(location, root, defaultProfessions, lines);
             readConversationLines(location, root, "openings", defaultProfessions, openings);
             readConversationLines(location, root, "closings", defaultProfessions, closings);
             readPacifyLines(location, root, defaultProfessions, pacifyLines);
         } catch (IOException | IllegalStateException exception) {
             // Invalid dialogue resources are ignored so one bad datapack file cannot break every conversation.
+        }
+    }
+
+    private static void readKeyedMessages(
+            ResourceLocation location,
+            JsonObject root,
+            Set<VillagerProfession> defaultProfessions,
+            List<KeyedMessageLine> messages) {
+        JsonArray entries = root.getAsJsonArray("messages");
+        if (entries == null) {
+            return;
+        }
+
+        int index = 0;
+        for (JsonElement element : entries) {
+            if (!element.isJsonObject()) {
+                index++;
+                continue;
+            }
+
+            JsonObject entry = element.getAsJsonObject();
+            String key = readString(entry, "key");
+            String text = readString(entry, "text");
+            if (key.isBlank() || text.isBlank()) {
+                index++;
+                continue;
+            }
+
+            String id = readString(entry, "id");
+            Set<VillagerProfession> professions = readProfessions(entry, defaultProfessions);
+            Set<DialogueDisposition> dispositions = readEnumSet(entry, "dispositions", DialogueDisposition.class);
+            int weight = Math.max(1, readInt(entry, "weight", 10));
+            boolean showForAdults = readBoolean(entry, "show_for_adults", true);
+            boolean showForBabies = readBoolean(entry, "show_for_babies", true);
+            messages.add(new KeyedMessageLine(
+                    id.isBlank() ? fallbackId(location, "message", index) : id,
+                    key,
+                    text,
+                    showForAdults,
+                    showForBabies,
+                    professions,
+                    dispositions,
+                    weight
+            ));
+            index++;
+        }
+    }
+
+    private static void readDialogueOptions(
+            ResourceLocation location,
+            JsonObject root,
+            Set<VillagerProfession> defaultProfessions,
+            List<DialogueOptionDefinition> options) {
+        JsonArray entries = root.getAsJsonArray("options");
+        if (entries == null) {
+            return;
+        }
+
+        int index = 0;
+        for (JsonElement element : entries) {
+            if (!element.isJsonObject()) {
+                index++;
+                continue;
+            }
+
+            JsonObject entry = element.getAsJsonObject();
+            String id = readString(entry, "id");
+            String label = readString(entry, "label");
+            Optional<DialogueRequestType> requestType = readEnum(entry, "type", DialogueRequestType.class);
+            if (id.isBlank() || label.isBlank() || requestType.isEmpty()) {
+                index++;
+                continue;
+            }
+
+            boolean showForAdults = readBoolean(entry, "show_for_adults", true);
+            boolean showForBabies = readBoolean(entry, "show_for_babies", true);
+            Set<VillagerProfession> professions = readProfessions(entry, defaultProfessions);
+            Set<DialogueDisposition> dispositions = readEnumSet(entry, "dispositions", DialogueDisposition.class);
+            int order = readInt(entry, "order", index);
+            options.add(new DialogueOptionDefinition(
+                    id,
+                    label,
+                    requestType.get(),
+                    showForAdults,
+                    showForBabies,
+                    professions,
+                    dispositions,
+                    order
+            ));
+            index++;
         }
     }
 
@@ -213,9 +364,13 @@ public final class VillagerDialogueResources {
             Set<VillagerProfession> professions = readProfessions(entry, defaultProfessions);
             Set<DialogueDisposition> dispositions = readEnumSet(entry, "dispositions", DialogueDisposition.class);
             int weight = Math.max(1, readInt(entry, "weight", 10));
+            boolean showForAdults = readBoolean(entry, "show_for_adults", true);
+            boolean showForBabies = readBoolean(entry, "show_for_babies", true);
             lines.add(new ConversationLine(
                     id.isBlank() ? fallbackId(location, key, index) : id,
                     text,
+                    showForAdults,
+                    showForBabies,
                     professions,
                     dispositions,
                     weight
@@ -308,7 +463,15 @@ public final class VillagerDialogueResources {
         if (readBoolean(entry, "first_conversation_only")) {
             builder.firstConversationOnly();
         }
+        builder.showForAdults(readBoolean(entry, "show_for_adults", true));
+        builder.showForBabies(readBoolean(entry, "show_for_babies", true));
         readEnum(entry, "gift_advice", GiftAdviceKind.class).ifPresent(builder::giftAdviceKind);
+        List<String> optionIds = new ArrayList<>();
+        optionIds.addAll(readStringList(entry, "option"));
+        optionIds.addAll(readStringList(entry, "option_ids"));
+        if (!optionIds.isEmpty()) {
+            builder.optionIds(optionIds.toArray(String[]::new));
+        }
 
         builder.weight(readInt(entry, "weight", 10));
     }
@@ -420,6 +583,11 @@ public final class VillagerDialogueResources {
         return element != null && element.isJsonPrimitive() && element.getAsBoolean();
     }
 
+    private static boolean readBoolean(JsonObject entry, String key, boolean fallback) {
+        JsonElement element = entry.get(key);
+        return element == null || !element.isJsonPrimitive() ? fallback : element.getAsBoolean();
+    }
+
     private static String fallbackId(ResourceLocation location, String group, int index) {
         return location.getPath().replace('/', '_').replace(".json", "") + "_" + group + "_" + index;
     }
@@ -436,13 +604,41 @@ public final class VillagerDialogueResources {
                 .replace("{gift_subject}", giftSubject);
     }
 
+    private static int totalMessageWeight(List<KeyedMessageLine> candidates) {
+        return candidates.stream().mapToInt(KeyedMessageLine::weight).sum();
+    }
+
+    private static Optional<KeyedMessageLine> selectMessage(List<KeyedMessageLine> candidates, int selected) {
+        if (candidates.isEmpty()) {
+            return Optional.empty();
+        }
+        for (KeyedMessageLine candidate : candidates) {
+            selected -= candidate.weight();
+            if (selected < 0) {
+                return Optional.of(candidate);
+            }
+        }
+        return Optional.of(candidates.getLast());
+    }
+
+    private static String resolveTemplate(String text, Map<String, String> replacements) {
+        String resolved = text;
+        Map<String, String> safeReplacements = new HashMap<>(replacements);
+        for (Map.Entry<String, String> entry : safeReplacements.entrySet()) {
+            resolved = resolved.replace("{" + entry.getKey() + "}", entry.getValue() == null ? "" : entry.getValue());
+        }
+        return resolved;
+    }
+
     private record DialoguePool(
             List<DialogueLine> lines,
             List<ConversationLine> openings,
             List<ConversationLine> closings,
-            List<PacifyLine> pacifyLines) {
+            List<PacifyLine> pacifyLines,
+            List<DialogueOptionDefinition> options,
+            List<KeyedMessageLine> messages) {
         private static DialoguePool empty() {
-            return new DialoguePool(List.of(), List.of(), List.of(), List.of());
+            return new DialoguePool(List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
         }
     }
 
@@ -455,10 +651,19 @@ public final class VillagerDialogueResources {
     private record ConversationLine(
             String id,
             String text,
+            boolean showForAdults,
+            boolean showForBabies,
             Set<VillagerProfession> professions,
             Set<DialogueDisposition> dispositions,
             int weight) {
         private boolean matches(DialogueContext context, DialogueDisposition disposition) {
+            if (context.villager().isBaby()) {
+                if (!this.showForBabies) {
+                    return false;
+                }
+            } else if (!this.showForAdults) {
+                return false;
+            }
             if (!this.professions.isEmpty() && !this.professions.contains(context.profession())) {
                 return false;
             }
@@ -481,6 +686,37 @@ public final class VillagerDialogueResources {
                 return false;
             }
             return this.outcomes.isEmpty() || this.outcomes.contains(result);
+        }
+    }
+
+    private record KeyedMessageLine(
+            String id,
+            String key,
+            String text,
+            boolean showForAdults,
+            boolean showForBabies,
+            Set<VillagerProfession> professions,
+            Set<DialogueDisposition> dispositions,
+            int weight) {
+        private boolean matches(String key) {
+            return this.key.equals(key);
+        }
+
+        private boolean matches(DialogueContext context, String key, DialogueDisposition disposition) {
+            if (!matches(key)) {
+                return false;
+            }
+            if (context.villager().isBaby()) {
+                if (!this.showForBabies) {
+                    return false;
+                }
+            } else if (!this.showForAdults) {
+                return false;
+            }
+            if (!this.professions.isEmpty() && !this.professions.contains(context.profession())) {
+                return false;
+            }
+            return this.dispositions.isEmpty() || this.dispositions.contains(disposition);
         }
     }
 }

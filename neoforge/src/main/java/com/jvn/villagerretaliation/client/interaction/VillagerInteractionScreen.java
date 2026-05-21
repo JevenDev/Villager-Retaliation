@@ -2,7 +2,7 @@ package com.jvn.villagerretaliation.client.interaction;
 
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.dialogue.DialogueDisposition;
-import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
+import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.network.VillagerConversationEndRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerDialogueRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerGiftRequestPayload;
@@ -86,6 +86,7 @@ public class VillagerInteractionScreen extends Screen {
     private DialogueDisposition mood;
     private boolean followingPlayer;
     private final List<DialogueOption> options = new ArrayList<>();
+    private final List<DialogueOptionDefinition> dialogueOptions = new ArrayList<>();
     private final List<String> knownLikedGiftNames = new ArrayList<>();
     private final List<String> knownDislikedGiftNames = new ArrayList<>();
     private DialoguePage page = DialoguePage.ROOT;
@@ -108,6 +109,7 @@ public class VillagerInteractionScreen extends Screen {
             VillagerReputationLevel reputationLevel,
             DialogueDisposition mood,
             boolean followingPlayer,
+            List<DialogueOptionDefinition> dialogueOptions,
             List<String> knownLikedGiftNames,
             List<String> knownDislikedGiftNames) {
         super(Component.literal("Villager Interaction"));
@@ -119,6 +121,7 @@ public class VillagerInteractionScreen extends Screen {
         this.reputationLevel = reputationLevel;
         this.mood = mood;
         this.followingPlayer = followingPlayer;
+        this.dialogueOptions.addAll(dialogueOptions);
         this.knownLikedGiftNames.addAll(knownLikedGiftNames);
         this.knownDislikedGiftNames.addAll(knownDislikedGiftNames);
         ClientVillagerConversationState.start(villagerEntityId);
@@ -152,15 +155,21 @@ public class VillagerInteractionScreen extends Screen {
             int reputation,
             VillagerReputationLevel reputationLevel,
             DialogueDisposition mood,
+            List<DialogueOptionDefinition> dialogueOptions,
             List<String> knownLikedGiftNames,
             List<String> knownDislikedGiftNames) {
         this.reputation = reputation;
         this.reputationLevel = reputationLevel;
         this.mood = mood;
+        this.dialogueOptions.clear();
+        this.dialogueOptions.addAll(dialogueOptions);
         this.knownLikedGiftNames.clear();
         this.knownLikedGiftNames.addAll(knownLikedGiftNames);
         this.knownDislikedGiftNames.clear();
         this.knownDislikedGiftNames.addAll(knownDislikedGiftNames);
+        if (this.page == DialoguePage.TALK) {
+            rebuildOptions();
+        }
     }
 
     public void closeFromServer() {
@@ -293,22 +302,8 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     private void addDialogueOptions() {
-        if (this.baby) {
-            addDialogueOption("Say Hello", DialogueRequestType.GREETING);
-            addDialogueOption("Ask About Today", DialogueRequestType.CHAT);
-            addDialogueOption("Ask What They Know", DialogueRequestType.QUESTION);
-            addDialogueOption("Ask About Gifts", DialogueRequestType.GIFT_PREFERENCES);
-            addDialogueOption("Ask for a Story", DialogueRequestType.STORY);
-            addDialogueOption("Tell Joke", DialogueRequestType.JOKE);
-            addDialogueOption("Be Mean", DialogueRequestType.INSULT);
-        } else {
-            addDialogueOption("Small Talk", DialogueRequestType.CHAT);
-            addDialogueOption("Greet", DialogueRequestType.GREETING);
-            addDialogueOption("Ask Question", DialogueRequestType.QUESTION);
-            addDialogueOption("Ask About Gifts", DialogueRequestType.GIFT_PREFERENCES);
-            addDialogueOption("Ask for Story", DialogueRequestType.STORY);
-            addDialogueOption("Tell Joke", DialogueRequestType.JOKE);
-            addDialogueOption("Insult", DialogueRequestType.INSULT);
+        for (DialogueOptionDefinition option : this.dialogueOptions) {
+            addDialogueOption(option.label(), option.id());
         }
     }
 
@@ -330,8 +325,8 @@ public class VillagerInteractionScreen extends Screen {
         this.options.add(DialogueOption.enabled(this.followingPlayer ? "Stop Following" : "Follow Me", () -> requestRecruit(VillagerRecruitRequestPayload.Action.FOLLOW)));
     }
 
-    private void addDialogueOption(String label, DialogueRequestType requestType) {
-        this.options.add(DialogueOption.enabled(label, () -> requestDialogue(requestType)));
+    private void addDialogueOption(String label, String optionId) {
+        this.options.add(DialogueOption.enabled(label, () -> requestDialogue(optionId)));
     }
 
     private void openTalkPage() {
@@ -366,8 +361,8 @@ public class VillagerInteractionScreen extends Screen {
         this.selectedInventorySlot = firstGiftableInventorySlot();
     }
 
-    private void requestDialogue(DialogueRequestType requestType) {
-        PacketDistributor.sendToServer(new VillagerDialogueRequestPayload(this.villagerEntityId, requestType));
+    private void requestDialogue(String optionId) {
+        PacketDistributor.sendToServer(new VillagerDialogueRequestPayload(this.villagerEntityId, optionId));
     }
 
     private void navigateToRootPage() {

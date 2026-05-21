@@ -210,6 +210,64 @@ When enabled, it can show the villager's reputation tier and/or exact reputation
 
 This is disabled by default and is mainly intended for testing and balancing.
 
+## Data-driven dialogue
+
+Villager dialogue is loaded from datapack JSON under:
+
+```text
+data/villagerretaliation/dialogue/en_us/
+```
+
+The built-in files live in `global.json` and `professions/<profession>.json`. Packs can add or replace files in the same namespace to add new dialogue, tune weights, add profession-specific lines, or expose new talk choices.
+
+Dialogue choices are declared with an `options` array:
+
+```json
+{
+  "options": [
+    {
+      "id": "ask_about_raids",
+      "label": "Ask About Raids",
+      "type": "story",
+      "order": 20,
+      "show_for_babies": false
+    }
+  ],
+  "lines": [
+    {
+      "id": "raid_warning_story",
+      "option": "ask_about_raids",
+      "type": "story",
+      "text": "When the bell rings like that, everyone learns how fast fear can run.",
+      "event_tags": ["raid"],
+      "weight": 30
+    }
+  ]
+}
+```
+
+`type` controls the existing dialogue behavior and reputation handling: `chat`, `greeting`, `question`, `gift_preferences`, `story`, `joke`, or `insult`. `option` or `option_ids` binds a line to a custom choice. Lines can also filter by `professions`, `dispositions`, `weather`, `times`, `event_tags`, `player_event_tags`, `show_for_adults`, `show_for_babies`, `requires_recent_broken_bed_memory`, `requires_recent_direct_hit_memory`, and `first_conversation_only`. Higher `weight` values are picked more often.
+
+One-off villager replies are declared with `messages`:
+
+```json
+{
+  "messages": [
+    {
+      "key": "sleep.broken_bed",
+      "text": "That was my bed. I will remember this.",
+      "weight": 20
+    },
+    {
+      "key": "gift_response.global.liked",
+      "text": "{gift_item} is a welcome gift."
+    }
+  ]
+}
+```
+
+Messages cover sleeping interruptions, refusals, repeated-dialogue reactions, gift memories, gift acceptance responses, follower betrayal, and generated story hints. Message entries support the same `professions`, `dispositions`, `show_for_adults`, `show_for_babies`, and `weight` fields as other dialogue pools.
+
 ![compatibility](https://cdn.modrinth.com/data/cached_images/1252c11050b7daf8b8621712b58dd1005e7ba982.png)
 
 ## Compatibility

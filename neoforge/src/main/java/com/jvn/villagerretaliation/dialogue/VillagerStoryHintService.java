@@ -87,7 +87,7 @@ public final class VillagerStoryHintService {
             return cached.get().nextTarget(context.random()).map(target -> {
                 String name = VillagerInteractionTextUtil.resourcePathName(target.id());
                 HintPlacement placement = HintPlacement.from(origin, target.pos(), quality);
-                return new WorldHint(HintKind.BIOME, biomeText(context.random(), name, placement, quality));
+                return new WorldHint(HintKind.BIOME, biomeText(context, name, placement, quality));
             });
         }
 
@@ -100,7 +100,7 @@ public final class VillagerStoryHintService {
         CachedTarget target = targets.get(context.random().nextInt(targets.size()));
         String name = VillagerInteractionTextUtil.resourcePathName(target.id());
         HintPlacement placement = HintPlacement.from(origin, target.pos(), quality);
-        return Optional.of(new WorldHint(HintKind.BIOME, biomeText(context.random(), name, placement, quality)));
+        return Optional.of(new WorldHint(HintKind.BIOME, biomeText(context, name, placement, quality)));
     }
 
     private static List<CachedTarget> locateBiomeTargets(DialogueContext context, HintQuality quality, Holder<Biome> currentBiome) {
@@ -142,8 +142,8 @@ public final class VillagerStoryHintService {
                 return new WorldHint(
                         gaveMap ? HintKind.MAP : HintKind.STRUCTURE,
                         gaveMap
-                                ? cartographerMapText(context.random(), name, placement)
-                                : structureText(context.random(), name, placement, quality)
+                                ? cartographerMapText(context, name, placement)
+                                : structureText(context, name, placement, quality)
                 );
             });
         }
@@ -161,8 +161,8 @@ public final class VillagerStoryHintService {
         return Optional.of(new WorldHint(
                 gaveMap ? HintKind.MAP : HintKind.STRUCTURE,
                 gaveMap
-                        ? cartographerMapText(context.random(), name, placement)
-                        : structureText(context.random(), name, placement, quality)
+                        ? cartographerMapText(context, name, placement)
+                        : structureText(context, name, placement, quality)
         ));
     }
 
@@ -301,69 +301,40 @@ public final class VillagerStoryHintService {
         };
     }
 
-    private static String biomeText(RandomSource random, String name, HintPlacement placement, HintQuality quality) {
+    private static String biomeText(DialogueContext context, String name, HintPlacement placement, HintQuality quality) {
+        Map<String, String> replacements = hintReplacements(name, placement);
         if (!quality.namesTargets) {
-            return ToucanRandom.choose(random,
-                    "I caught wind of different land " + placement.vagueDirectionPhrase() + ". Could be worth a walk.",
-                    "Travelers keep arriving with mud on their boots from " + placement.vagueDirectionPhrase() + ".",
-                    "There is a change in the air " + placement.vagueDirectionPhrase() + ". Different trees, different ground.",
-                    "The paths feel busier " + placement.vagueDirectionPhrase() + ". Someone found another kind of country out there.",
-                    "I heard talk of unfamiliar grass and stone " + placement.vagueDirectionPhrase() + "."
-            );
+            return VillagerDialogueResources.message(context, "story_hint.biome.vague", replacements).orElse("");
         }
 
         if (!quality.namesDistances) {
-            return ToucanRandom.choose(random,
-                    "I caught wind of " + withArticle(name) + " " + placement.vagueDirectionPhrase() + ".",
-                    "Someone came through talking about " + withArticle(name) + " " + placement.vagueDirectionPhrase() + ".",
-                    "If you head " + placement.direction + ", you may find " + withArticle(name) + " before too long.",
-                    "The traders mention " + withArticle(name) + " somewhere " + placement.vagueDirectionPhrase() + ".",
-                    "I keep hearing about " + withArticle(name) + " off " + placement.vagueDirectionPhrase() + "."
-            );
+            return VillagerDialogueResources.message(context, "story_hint.biome.named", replacements).orElse("");
         }
 
-        return ToucanRandom.choose(random,
-                "I caught wind of " + withArticle(name) + " about " + placement.distancePhrase() + " " + placement.direction + ".",
-                "A traveler swore there is " + withArticle(name) + " roughly " + placement.distancePhrase() + " " + placement.direction + ".",
-                "Head " + placement.direction + " for about " + placement.distancePhrase() + " and the land should turn into " + withArticle(name) + ".",
-                "The maps around here put " + withArticle(name) + " near " + placement.distancePhrase() + " " + placement.direction + ".",
-                "If the gossip is right, " + withArticle(name) + " sits about " + placement.distancePhrase() + " " + placement.direction + ".",
-                "A cart passed through with plants from " + withArticle(name) + "; they said it was " + placement.distancePhrase() + " " + placement.direction + "."
-        );
+        return VillagerDialogueResources.message(context, "story_hint.biome.precise", replacements).orElse("");
     }
 
-    private static String structureText(RandomSource random, String name, HintPlacement placement, HintQuality quality) {
-        String vertical = placement.verticalPhrase();
+    private static String structureText(DialogueContext context, String name, HintPlacement placement, HintQuality quality) {
+        Map<String, String> replacements = hintReplacements(name, placement);
         if (!quality.namesDistances) {
-            return ToucanRandom.choose(random,
-                    "I keep hearing stories about " + withArticle(name) + " somewhere " + placement.vagueDirectionPhrase() + vertical + ".",
-                    "The road talk says there is " + withArticle(name) + " out " + placement.vagueDirectionPhrase() + vertical + ".",
-                    "Someone saw old stone " + placement.vagueDirectionPhrase() + vertical + ". Might have been " + withArticle(name) + ".",
-                    "There are rumors of " + withArticle(name) + " toward the " + placement.direction + vertical + ".",
-                    "A nervous miner mentioned " + withArticle(name) + " off " + placement.vagueDirectionPhrase() + vertical + "."
-            );
+            return VillagerDialogueResources.message(context, "story_hint.structure.rumor", replacements).orElse("");
         }
 
-        return ToucanRandom.choose(random,
-                "I keep hearing about " + withArticle(name) + " around " + placement.distancePhrase() + " " + placement.direction + vertical + ".",
-                "A trader marked " + withArticle(name) + " roughly " + placement.distancePhrase() + " " + placement.direction + vertical + ".",
-                "If you head " + placement.direction + " for about " + placement.distancePhrase() + ", watch for " + withArticle(name) + vertical + ".",
-                "Someone heard strange echoes from " + withArticle(name) + " nearly " + placement.distancePhrase() + " " + placement.direction + vertical + ".",
-                "The last patrol saw signs of " + withArticle(name) + " about " + placement.distancePhrase() + " " + placement.direction + vertical + ".",
-                "I would not swear to it, but " + withArticle(name) + " should be " + placement.distancePhrase() + " " + placement.direction + vertical + ".",
-                "Old path stones point " + placement.direction + ". Follow them " + placement.distancePhrase() + " or so and you may find " + withArticle(name) + vertical + "."
-        );
+        return VillagerDialogueResources.message(context, "story_hint.structure.precise", replacements).orElse("");
     }
 
-    private static String cartographerMapText(RandomSource random, String name, HintPlacement placement) {
-        String vertical = placement.verticalPhrase();
-        return ToucanRandom.choose(random,
-                "Here. I marked " + withArticle(name) + " on this map. It should sit about " + placement.distancePhrase() + " " + placement.direction + vertical + ".",
-                "Take this map. The red mark points to " + withArticle(name) + ", roughly " + placement.distancePhrase() + " " + placement.direction + vertical + ".",
-                "I had a spare chart for " + withArticle(name) + ". Follow the map " + placement.direction + " and mind the distance" + vertical + ".",
-                "This map should lead you to " + withArticle(name) + ". I would start " + placement.direction + " and trust the red mark" + vertical + ".",
-                "You have earned a proper chart. The map marks " + withArticle(name) + " about " + placement.distancePhrase() + " " + placement.direction + vertical + ".",
-                "I can do better than a rumor. This map marks " + withArticle(name) + "; follow it " + placement.direction + vertical + "."
+    private static String cartographerMapText(DialogueContext context, String name, HintPlacement placement) {
+        return VillagerDialogueResources.message(context, "story_hint.map", hintReplacements(name, placement)).orElse("");
+    }
+
+    private static Map<String, String> hintReplacements(String name, HintPlacement placement) {
+        return Map.of(
+                "target", name,
+                "target_article", withArticle(name),
+                "direction", placement.direction(),
+                "vague_direction", placement.vagueDirectionPhrase(),
+                "distance", placement.distancePhrase(),
+                "vertical", placement.verticalPhrase()
         );
     }
 

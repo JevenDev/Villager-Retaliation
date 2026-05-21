@@ -1,9 +1,12 @@
 package com.jvn.villagerretaliation.network;
 
 import com.jvn.villagerretaliation.dialogue.DialogueDisposition;
+import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
+import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -18,6 +21,7 @@ public record OpenVillagerInteractionPayload(
         VillagerReputationLevel reputationLevel,
         DialogueDisposition mood,
         boolean followingPlayer,
+        List<DialogueOptionDefinition> dialogueOptions,
         List<String> knownLikedGiftNames,
         List<String> knownDislikedGiftNames)
         implements CustomPacketPayload {
@@ -35,6 +39,7 @@ public record OpenVillagerInteractionPayload(
         buffer.writeEnum(payload.reputationLevel());
         buffer.writeEnum(payload.mood());
         buffer.writeBoolean(payload.followingPlayer());
+        writeDialogueOptions(buffer, payload.dialogueOptions());
         writeStringList(buffer, payload.knownLikedGiftNames());
         writeStringList(buffer, payload.knownDislikedGiftNames());
     }
@@ -50,9 +55,38 @@ public record OpenVillagerInteractionPayload(
                 buffer.readEnum(VillagerReputationLevel.class),
                 buffer.readEnum(DialogueDisposition.class),
                 buffer.readBoolean(),
+                readDialogueOptions(buffer),
                 readStringList(buffer),
                 readStringList(buffer)
         );
+    }
+
+    private static void writeDialogueOptions(RegistryFriendlyByteBuf buffer, List<DialogueOptionDefinition> options) {
+        buffer.writeVarInt(options.size());
+        for (DialogueOptionDefinition option : options) {
+            buffer.writeUtf(option.id(), 128);
+            buffer.writeUtf(option.label(), 128);
+            buffer.writeEnum(option.requestType());
+            buffer.writeVarInt(option.order());
+        }
+    }
+
+    private static List<DialogueOptionDefinition> readDialogueOptions(RegistryFriendlyByteBuf buffer) {
+        int size = buffer.readVarInt();
+        List<DialogueOptionDefinition> options = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            options.add(new DialogueOptionDefinition(
+                    buffer.readUtf(128),
+                    buffer.readUtf(128),
+                    buffer.readEnum(DialogueRequestType.class),
+                    true,
+                    true,
+                    Set.of(),
+                    Set.of(),
+                    buffer.readVarInt()
+            ));
+        }
+        return options;
     }
 
     private static void writeStringList(RegistryFriendlyByteBuf buffer, List<String> values) {

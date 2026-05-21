@@ -10,6 +10,9 @@ public record DialogueLine(
         String id,
         String text,
         DialogueRequestType requestType,
+        Set<String> optionIds,
+        boolean showForAdults,
+        boolean showForBabies,
         Set<VillagerProfession> professions,
         Set<DialogueDisposition> dispositions,
         Set<DialogueContext.WeatherState> weatherStates,
@@ -23,7 +26,21 @@ public record DialogueLine(
         int weight
 ) {
     public boolean matches(DialogueContext context, DialogueRequestType requestedType, DialogueDisposition disposition) {
+        return matches(context, requestedType, "", disposition);
+    }
+
+    public boolean matches(DialogueContext context, DialogueRequestType requestedType, String requestedOptionId, DialogueDisposition disposition) {
         if (this.requestType != requestedType) {
+            return false;
+        }
+        if (context.villager().isBaby()) {
+            if (!this.showForBabies) {
+                return false;
+            }
+        } else if (!this.showForAdults) {
+            return false;
+        }
+        if (!this.optionIds.isEmpty() && !this.optionIds.contains(requestedOptionId)) {
             return false;
         }
         if (this.firstConversationOnly && !context.firstConversation()) {
@@ -66,6 +83,9 @@ public record DialogueLine(
         if (!this.professions.isEmpty()) {
             score += 3;
         }
+        if (!this.optionIds.isEmpty()) {
+            score += 6;
+        }
         if (!this.dispositions.isEmpty()) {
             score += 2;
         }
@@ -104,6 +124,9 @@ public record DialogueLine(
         private final String id;
         private final DialogueRequestType requestType;
         private final String text;
+        private final Set<String> optionIds = new java.util.HashSet<>();
+        private boolean showForAdults = true;
+        private boolean showForBabies = true;
         private final Set<VillagerProfession> professions = java.util.HashSet.newHashSet(1);
         private final Set<DialogueDisposition> dispositions = EnumSet.noneOf(DialogueDisposition.class);
         private final Set<DialogueContext.WeatherState> weatherStates = EnumSet.noneOf(DialogueContext.WeatherState.class);
@@ -124,6 +147,25 @@ public record DialogueLine(
 
         public Builder professions(VillagerProfession... professions) {
             this.professions.addAll(java.util.List.of(professions));
+            return this;
+        }
+
+        public Builder optionIds(String... optionIds) {
+            for (String optionId : optionIds) {
+                if (optionId != null && !optionId.isBlank()) {
+                    this.optionIds.add(optionId.trim());
+                }
+            }
+            return this;
+        }
+
+        public Builder showForAdults(boolean showForAdults) {
+            this.showForAdults = showForAdults;
+            return this;
+        }
+
+        public Builder showForBabies(boolean showForBabies) {
+            this.showForBabies = showForBabies;
             return this;
         }
 
@@ -182,6 +224,9 @@ public record DialogueLine(
                     this.id,
                     this.text,
                     this.requestType,
+                    Set.copyOf(this.optionIds),
+                    this.showForAdults,
+                    this.showForBabies,
                     Set.copyOf(this.professions),
                     Set.copyOf(this.dispositions),
                     Set.copyOf(this.weatherStates),

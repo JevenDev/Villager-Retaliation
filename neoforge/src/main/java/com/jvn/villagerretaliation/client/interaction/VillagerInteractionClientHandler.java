@@ -54,6 +54,7 @@ public final class VillagerInteractionClientHandler {
                 payload.reputationLevel(),
                 payload.mood(),
                 payload.followingPlayer(),
+                payload.dialogueOptions(),
                 payload.knownLikedGiftNames(),
                 payload.knownDislikedGiftNames()
         ));
@@ -67,6 +68,7 @@ public final class VillagerInteractionClientHandler {
                     payload.reputation(),
                     payload.reputationLevel(),
                     payload.mood(),
+                    payload.dialogueOptions(),
                     payload.knownLikedGiftNames(),
                     payload.knownDislikedGiftNames()
             );

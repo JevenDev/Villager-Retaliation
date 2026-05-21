@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.DialogueDisposition;
+import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
 import com.jvn.villagerretaliation.dialogue.DialogueReputationEffect;
 import com.jvn.villagerretaliation.dialogue.DialogueReputationService;
@@ -27,6 +28,7 @@ import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
+import java.util.Map;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
@@ -72,13 +74,13 @@ public final class VillagerInteractionService {
             VillagerRecruitmentService.stopFollowing(villager);
             VillagerRecruitmentService.sendNoLongerFollowingNotice(player, villager);
             focusVillagerOnPlayer(villager, player);
-            sendVillagerNotice(player, villager, "I'll stay here.");
+            sendVillagerNotice(player, villager, "interaction.follow_stay");
             return InteractionResult.SUCCESS;
         }
 
         if (shouldRefuseDespisedConversation(villager, player)) {
             VillagerAmbientIndicatorService.onTradeRefused(villager);
-            sendVillagerNotice(player, villager, "I'm done talking. Stay away.");
+            sendVillagerNotice(player, villager, "interaction.refuse_despised");
             return InteractionResult.FAIL;
         }
 
@@ -90,12 +92,12 @@ public final class VillagerInteractionService {
 
         if (VillagerRetaliationHandler.isHostileTowards(villager, player)) {
             VillagerAmbientIndicatorService.onTradeRefused(villager);
-            sendVillagerNotice(player, villager, "I'm too angry to talk.");
+            sendVillagerNotice(player, villager, "interaction.refuse_angry");
             return InteractionResult.FAIL;
         }
 
         if (!VillagerConversationService.start(player, villager)) {
-            sendVillagerNotice(player, villager, "I'm busy right now.");
+            sendVillagerNotice(player, villager, "interaction.busy");
             return InteractionResult.FAIL;
         }
         openInteractionScreen(player, villager);
@@ -117,6 +119,7 @@ public final class VillagerInteractionService {
         );
         DialogueDisposition mood = VillagerDialogueService.moodFor(dialogueContext);
         String greetingText = VillagerDialogueService.selectOpeningGreeting(dialogueContext);
+        java.util.List<DialogueOptionDefinition> dialogueOptions = VillagerDialogueResources.dialogueOptions(dialogueContext, mood);
         VillagerGiftKnowledgeService.GiftKnowledgeSnapshot giftKnowledge =
                 VillagerGiftKnowledgeService.knownGifts(level, player, villager.getVillagerData().getProfession());
         PacketDistributor.sendToPlayer(player, new OpenVillagerInteractionPayload(
@@ -129,26 +132,27 @@ public final class VillagerInteractionService {
                 reputation.level(),
                 mood,
                 VillagerRecruitmentService.isFollowing(villager, player),
+                dialogueOptions,
                 giftKnowledge.likedGiftNames(),
                 giftKnowledge.dislikedGiftNames()
         ));
         broadcastVillagerChat(level, villager, greetingText);
     }
 
-    public static void handleDialogueRequest(ServerPlayer player, int entityId, DialogueRequestType requestType) {
+    public static void handleDialogueRequest(ServerPlayer player, int entityId, String optionId) {
         Villager villager = resolveVillager(player, entityId);
         if (villager == null) {
-            sendNotice(player, entityId, "I'm no longer available.");
+            sendNotice(player, entityId, "interaction.unavailable");
             return;
         }
         if (!VillagerConversationService.validate(player, villager)) {
-            sendVillagerNotice(player, villager, "The conversation has ended.");
+            sendVillagerNotice(player, villager, "interaction.conversation_ended");
             return;
         }
         if (shouldRefuseDespisedConversation(villager, player)) {
             VillagerConversationService.endForPlayer(player, true);
             VillagerAmbientIndicatorService.onTradeRefused(villager);
-            sendVillagerNotice(player, villager, "I'm done talking. Stay away.");
+            sendVillagerNotice(player, villager, "interaction.refuse_despised");
             return;
         }
         focusVillagerOnPlayer(villager, player);
@@ -157,7 +161,14 @@ public final class VillagerInteractionService {
         VillagerInteractionTracker.InteractionState interactionState = VillagerInteractionTracker.getState(level, villager, player);
         ReputationSnapshot reputation = reputationSnapshot(level, villager, player);
         DialogueContext context = createDialogueContext(level, player, villager, interactionState, reputation.value(), reputation.level());
-        VillagerDialogueService.DialogueResult result = selectDialogueResult(context, requestType, interactionState);
+        DialogueOptionDefinition dialogueOption = VillagerDialogueResources.dialogueOption(context, optionId).orElse(null);
+        if (dialogueOption == null) {
+            sendVillagerNotice(player, villager, "interaction.unknown_dialogue_option");
+            sendDialogueReputation(player, villager, level);
+            return;
+        }
+        DialogueRequestType requestType = dialogueOption.requestType();
+        VillagerDialogueService.DialogueResult result = selectDialogueResult(context, dialogueOption, interactionState);
         DialogueReputationEffect reputationEffect = DialogueReputationService.apply(context, requestType, interactionState);
         playDialogueFeedback(level, villager, reputationEffect);
         VillagerAmbientIndicatorService.onDialogueResponse(villager, requestType, reputationEffect);
@@ -173,17 +184,17 @@ public final class VillagerInteractionService {
     public static void handleTradeRequest(ServerPlayer player, int entityId) {
         Villager villager = resolveVillager(player, entityId);
         if (villager == null) {
-            sendNotice(player, entityId, "I cannot trade right now.");
+            sendNotice(player, entityId, "interaction.trade_unavailable");
             return;
         }
         if (!VillagerConversationService.validate(player, villager)) {
-            sendVillagerNotice(player, villager, "The conversation has ended.");
+            sendVillagerNotice(player, villager, "interaction.conversation_ended");
             return;
         }
         if (shouldRefuseDespisedConversation(villager, player)) {
             VillagerConversationService.endForPlayer(player, true);
             VillagerAmbientIndicatorService.onTradeRefused(villager);
-            sendVillagerNotice(player, villager, "I refuse to trade with you.");
+            sendVillagerNotice(player, villager, "interaction.refuse_trade");
             return;
         }
         focusVillagerOnPlayer(villager, player);
@@ -194,15 +205,15 @@ public final class VillagerInteractionService {
     public static void handleInventoryRequest(ServerPlayer player, int entityId) {
         Villager villager = resolveVillager(player, entityId);
         if (villager == null) {
-            sendNotice(player, entityId, "I cannot show you that right now.");
+            sendNotice(player, entityId, "interaction.inventory_unavailable");
             return;
         }
         if (!VillagerConversationService.validate(player, villager)) {
-            sendVillagerNotice(player, villager, "The conversation has ended.");
+            sendVillagerNotice(player, villager, "interaction.conversation_ended");
             return;
         }
         if (!(player.level() instanceof ServerLevel level) || !VillagerInventoryAccess.canAccess(level, villager, player)) {
-            sendVillagerNotice(player, villager, "I don't know you well enough for that.");
+            sendVillagerNotice(player, villager, "interaction.not_trusted_enough");
             return;
         }
 
@@ -214,31 +225,31 @@ public final class VillagerInteractionService {
     public static void handleGiftRequest(ServerPlayer player, int entityId, int inventorySlot) {
         Villager villager = resolveVillager(player, entityId);
         if (villager == null) {
-            sendNotice(player, entityId, "I cannot accept gifts right now.");
+            sendNotice(player, entityId, "interaction.gift_unavailable");
             return;
         }
         if (!VillagerConversationService.validate(player, villager)) {
-            sendVillagerNotice(player, villager, "The conversation has ended.");
+            sendVillagerNotice(player, villager, "interaction.conversation_ended");
             return;
         }
         if (shouldRefuseDespisedConversation(villager, player)) {
             VillagerConversationService.endForPlayer(player, true);
             VillagerAmbientIndicatorService.onTradeRefused(villager);
-            sendVillagerNotice(player, villager, "Keep your distance.");
+            sendVillagerNotice(player, villager, "interaction.keep_distance");
             return;
         }
         if (villager.isBaby()) {
-            sendVillagerNotice(player, villager, "I should ask a grown-up before taking that.");
+            sendVillagerNotice(player, villager, "interaction.child_refuse_gift");
             return;
         }
         if (inventorySlot < 0 || inventorySlot >= 36) {
-            sendVillagerNotice(player, villager, "I cannot accept that.");
+            sendVillagerNotice(player, villager, "interaction.gift_invalid");
             return;
         }
 
         ItemStack selectedStack = player.getInventory().getItem(inventorySlot);
         if (selectedStack.isEmpty()) {
-            sendVillagerNotice(player, villager, "There is nothing there.");
+            sendVillagerNotice(player, villager, "interaction.gift_empty_slot");
             return;
         }
 
@@ -265,7 +276,12 @@ public final class VillagerInteractionService {
         playGiftFeedback(level, villager, reputationValue);
         VillagerAmbientIndicatorService.onGiftReceived(villager, reputationValue);
 
-        String responseText = VillagerGiftPreferences.responseFor(profession, giftedStack, giftPreference);
+        DialogueContext giftContext = createDialogueContext(level, player, villager);
+        String responseText = VillagerDialogueResources.message(
+                giftContext,
+                giftResponseKey(giftPreference),
+                Map.of("gift_item", giftedStack.getHoverName().getString())
+        ).orElse("");
         sendDialogueReputation(player, villager, level);
         broadcastVillagerChat(level, villager, responseText);
     }
@@ -273,29 +289,29 @@ public final class VillagerInteractionService {
     public static void handleRecruitRequest(ServerPlayer player, int entityId, VillagerRecruitRequestPayload.Action action) {
         Villager villager = resolveVillager(player, entityId);
         if (villager == null) {
-            sendNotice(player, entityId, "I cannot help right now.");
+            sendNotice(player, entityId, "interaction.recruit_unavailable");
             return;
         }
         if (!VillagerConversationService.validate(player, villager)) {
-            sendVillagerNotice(player, villager, "The conversation has ended.");
+            sendVillagerNotice(player, villager, "interaction.conversation_ended");
             return;
         }
         if (!(player.level() instanceof ServerLevel level)) {
             return;
         }
         if (!VillagerRecruitmentService.canRecruit(level, villager, player)) {
-            sendVillagerNotice(player, villager, "I don't know you well enough for that.");
+            sendVillagerNotice(player, villager, "interaction.not_trusted_enough");
             return;
         }
 
         focusVillagerOnPlayer(villager, player);
         if (action == VillagerRecruitRequestPayload.Action.HIRE) {
-            sendVillagerNotice(player, villager, "I cannot be hired yet.");
+            sendVillagerNotice(player, villager, "interaction.hire_unavailable");
             return;
         }
 
         boolean nowFollowing = VillagerRecruitmentService.toggleFollow(level, villager, player);
-        String responseText = nowFollowing ? "All right. I'll follow you." : "I'll stay here.";
+        String responseText = message(createDialogueContext(level, player, villager), nowFollowing ? "interaction.follow_start" : "interaction.follow_stay");
         sendVillagerNotice(player, villager, responseText);
         PacketDistributor.sendToPlayer(player, new VillagerConversationEndedPayload(villager.getId(), responseText));
         VillagerConversationService.endForPlayer(player, false);
@@ -308,6 +324,12 @@ public final class VillagerInteractionService {
         }
         int reduction = Math.max(1, reputationValue / divisor);
         VillagerInteractionTracker.reduceRepeatedDialogueUseCounts(level, villager, player, reduction);
+    }
+
+    private static String giftResponseKey(VillagerGiftPreferences.GiftPreference giftPreference) {
+        String scope = giftPreference.professionSpecific() ? "profession" : "global";
+        String reaction = giftPreference.reaction().name().toLowerCase(java.util.Locale.ROOT);
+        return "gift_response." + scope + "." + reaction;
     }
 
     private static void sendGiftNotice(ServerPlayer player, Villager villager, ItemStack giftedStack, int reputationValue) {
@@ -430,6 +452,7 @@ public final class VillagerInteractionService {
         DialogueDisposition mood = requestType == null || reputationEffect == null
                 ? VillagerDialogueService.moodFor(context)
                 : VillagerDialogueService.moodFor(context, requestType, reputationEffect);
+        java.util.List<DialogueOptionDefinition> dialogueOptions = VillagerDialogueResources.dialogueOptions(context, mood);
         VillagerGiftKnowledgeService.GiftKnowledgeSnapshot giftKnowledge =
                 VillagerGiftKnowledgeService.knownGifts(level, player, villager.getVillagerData().getProfession());
         PacketDistributor.sendToPlayer(player, new VillagerDialogueResponsePayload(
@@ -437,6 +460,7 @@ public final class VillagerInteractionService {
                 reputation.value(),
                 reputation.level(),
                 mood,
+                dialogueOptions,
                 giftKnowledge.likedGiftNames(),
                 giftKnowledge.dislikedGiftNames()
         ));
@@ -444,8 +468,9 @@ public final class VillagerInteractionService {
 
     private static VillagerDialogueService.DialogueResult selectDialogueResult(
             DialogueContext context,
-            DialogueRequestType requestType,
+            DialogueOptionDefinition dialogueOption,
             VillagerInteractionTracker.InteractionState interactionState) {
+        DialogueRequestType requestType = dialogueOption.requestType();
         if (requestType == DialogueRequestType.GIFT_PREFERENCES) {
             return VillagerGiftKnowledgeService
                     .discoverFromGiftQuestion(context)
@@ -460,7 +485,7 @@ public final class VillagerInteractionService {
         }
         return VillagerDialogueService.select(
                 context,
-                requestType,
+                dialogueOption,
                 interactionState.recentDialogueIds()
         );
     }
@@ -474,16 +499,20 @@ public final class VillagerInteractionService {
                 .orElse("");
     }
 
+    private static String message(DialogueContext context, String key) {
+        return VillagerDialogueResources.message(context, key).orElse("");
+    }
+
     public static InteractionResult openTrading(ServerPlayer player, Villager villager, boolean sendFailureMessage) {
         if (!canUseInteractionSystem(player, villager)) {
             if (sendFailureMessage) {
-                sendVillagerNotice(player, villager, "I cannot trade right now.");
+                sendVillagerNotice(player, villager, "interaction.trade_unavailable");
             }
             return InteractionResult.FAIL;
         }
         if (villager.isBaby()) {
             if (sendFailureMessage) {
-                sendVillagerNotice(player, villager, "I do not know how to trade yet.");
+                sendVillagerNotice(player, villager, "interaction.child_refuse_trade");
             }
             return InteractionResult.FAIL;
         }
@@ -494,7 +523,7 @@ public final class VillagerInteractionService {
                 VillagerReputationAdvancements.onTradeRefusedDueToLowReputation(player);
             }
             if (sendFailureMessage) {
-                sendVillagerNotice(player, villager, "I refuse to trade with you.");
+                sendVillagerNotice(player, villager, "interaction.refuse_trade");
             }
             VillagerAmbientIndicatorService.onTradeRefused(villager);
             return InteractionResult.FAIL;
@@ -502,7 +531,7 @@ public final class VillagerInteractionService {
         if (villager.getOffers().isEmpty()) {
             villager.setUnhappyCounter(40);
             if (sendFailureMessage) {
-                sendVillagerNotice(player, villager, "I have no trades available.");
+                sendVillagerNotice(player, villager, "interaction.no_trades");
             }
             return InteractionResult.CONSUME;
         }
@@ -551,13 +580,18 @@ public final class VillagerInteractionService {
     }
 
     private static void sendNotice(ServerPlayer player, int entityId, String text) {
-        PacketDistributor.sendToPlayer(player, new VillagerInteractionNoticePayload(entityId, text, ""));
+        String resolvedText = VillagerDialogueResources.globalMessage(player.getServer(), player.getRandom(), text).orElse(text);
+        PacketDistributor.sendToPlayer(player, new VillagerInteractionNoticePayload(entityId, resolvedText, ""));
     }
 
     public static void sendVillagerNotice(ServerPlayer player, Villager villager, String text) {
+        String resolvedText = text;
+        if (villager.level() instanceof ServerLevel level) {
+            resolvedText = VillagerDialogueResources.message(createDialogueContext(level, player, villager), text).orElse(text);
+        }
         PacketDistributor.sendToPlayer(
                 player,
-                new VillagerInteractionNoticePayload(villager.getId(), text, villagerSpeakerLabel(villager))
+                new VillagerInteractionNoticePayload(villager.getId(), resolvedText, villagerSpeakerLabel(villager))
         );
     }
 
@@ -651,7 +685,10 @@ public final class VillagerInteractionService {
         }
         spawnDialogueParticles(level, villager, ParticleTypes.ANGRY_VILLAGER, 4, 0.01D);
         villager.playSound(SoundEvents.VILLAGER_NO, 0.75F, 0.75F + villager.getRandom().nextFloat() * 0.2F);
-        broadcastVillagerChat(level, villager, sleepingResponse(villager, alreadyDisturbedThisNight));
+        broadcastVillagerChat(level, villager, message(
+                createDialogueContext(level, player, villager),
+                alreadyDisturbedThisNight ? "sleep.repeated_disturbance" : "sleep.disturbance"
+        ));
         return InteractionResult.SUCCESS;
     }
 
@@ -685,7 +722,10 @@ public final class VillagerInteractionService {
         sleepingVillager.stopSleeping();
         spawnDialogueParticles(level, sleepingVillager, ParticleTypes.ANGRY_VILLAGER, 6, 0.01D);
         sleepingVillager.playSound(SoundEvents.VILLAGER_NO, 0.85F, 0.7F + sleepingVillager.getRandom().nextFloat() * 0.2F);
-        broadcastVillagerChat(level, sleepingVillager, brokenBedResponse(sleepingVillager));
+        broadcastVillagerChat(level, sleepingVillager, message(
+                createDialogueContext(level, player, sleepingVillager),
+                "sleep.broken_bed"
+        ));
     }
 
     private static Villager findSleepingVillagerAtBed(ServerLevel level, BlockPos pos) {
@@ -700,32 +740,6 @@ public final class VillagerInteractionService {
             }
         }
         return sleepingVillager;
-    }
-
-    private static String sleepingResponse(Villager villager, boolean alreadyDisturbedThisNight) {
-        if (alreadyDisturbedThisNight) {
-            return switch (villager.getRandom().nextInt(4)) {
-                case 0 -> "I already woke up once for you tonight.";
-                case 1 -> "No. Morning. Come back in the morning.";
-                case 2 -> "Stop. I am not getting up again.";
-                default -> "You've bothered me enough for one night.";
-            };
-        }
-        return switch (villager.getRandom().nextInt(4)) {
-            case 0 -> "Mmph... let me sleep.";
-            case 1 -> "Not now. It's the middle of the night.";
-            case 2 -> "Come back when the sun is up.";
-            default -> "Stop bothering me. I'm sleeping.";
-        };
-    }
-
-    private static String brokenBedResponse(Villager villager) {
-        return switch (villager.getRandom().nextInt(4)) {
-            case 0 -> "My bed! What is wrong with you?";
-            case 1 -> "You broke my bed while I was sleeping in it!";
-            case 2 -> "Unbelievable. Now where am I supposed to sleep?";
-            default -> "That was my bed. I will remember this.";
-        };
     }
 
     private static void playDialogueFeedback(ServerLevel level, Villager villager, DialogueReputationEffect reputationEffect) {

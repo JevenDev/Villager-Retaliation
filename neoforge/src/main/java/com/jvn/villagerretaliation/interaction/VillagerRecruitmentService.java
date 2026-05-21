@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.interaction;
 
+import com.jvn.villagerretaliation.dialogue.DialogueContext;
+import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
 import com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
@@ -231,7 +233,7 @@ public final class VillagerRecruitmentService {
                 player,
                 new VillagerInteractionNoticePayload(
                         villager.getId(),
-                        followerBetrayalResponse(villager),
+                        followerBetrayalResponse(villager, player),
                         villagerSpeakerLabel(villager)
                 )
         );
@@ -245,15 +247,12 @@ public final class VillagerRecruitmentService {
         );
     }
 
-    private static String followerBetrayalResponse(Villager villager) {
-        return switch (villager.getRandom().nextInt(6)) {
-            case 0 -> "I trusted you.";
-            case 1 -> "So that's why you wanted me close?";
-            case 2 -> "I should have stayed home.";
-            case 3 -> "You asked me to follow you, not fear you.";
-            case 4 -> "After I came with you? Really?";
-            default -> "No. I am done following you.";
-        };
+    private static String followerBetrayalResponse(Villager villager, ServerPlayer player) {
+        if (!(villager.level() instanceof ServerLevel level)) {
+            return "";
+        }
+        DialogueContext context = VillagerInteractionService.createDialogueContext(level, player, villager);
+        return VillagerDialogueResources.message(context, "interaction.follow_betrayal").orElse("");
     }
 
     private static String villagerSpeakerLabel(Villager villager) {
