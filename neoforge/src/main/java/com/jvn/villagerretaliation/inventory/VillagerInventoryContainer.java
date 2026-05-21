@@ -30,6 +30,7 @@ final class VillagerInventoryContainer implements Container {
     private static final String BORROWED_COMBAT_WEAPON_TAG = "VillagerRetaliationBorrowedCombatWeapon";
     private static final String BORROWED_COMBAT_WEAPON_SLOT_TAG = "Slot";
     private static final String BORROWED_COMBAT_WEAPON_STACK_TAG = "Stack";
+    private static final String BORROWED_COMBAT_WEAPON_RETURN_FAILURES_TAG = "ReturnFailures";
     private static final Map<UUID, Integer> OPEN_INVENTORIES = new HashMap<>();
     private static final EquipmentSlot[] ARMOR_SLOTS = {
             EquipmentSlot.HEAD,
@@ -237,7 +238,7 @@ final class VillagerInventoryContainer implements Container {
 
         ItemStack mainHand = villager.getMainHandItem();
         if (ItemStack.isSameItem(mainHand, borrowedWeapon.stack())) {
-            persistBorrowedCombatWeapon(villager, borrowedWeapon.slot(), mainHand.copy());
+            persistBorrowedCombatWeapon(villager, borrowedWeapon.slot(), mainHand.copy(), borrowedWeapon.returnFailures());
             return true;
         }
 
@@ -278,16 +279,32 @@ final class VillagerInventoryContainer implements Container {
         ItemStack returnedStack = mainHand;
         if (returnedStack.isEmpty() || !ItemStack.isSameItem(returnedStack, borrowedWeapon.stack())) {
             if (!mainHand.isEmpty()) {
-                addItem(villager, mainHand.copy());
+                ItemStack displacedRemainder = addItem(villager, mainHand.copy());
+                if (!displacedRemainder.isEmpty()) {
+                    villager.spawnAtLocation(displacedRemainder);
+                }
             }
             returnedStack = borrowedWeapon.stack();
         } else {
             returnedStack = returnedStack.copy();
         }
 
+        ItemStack remainder = addItemToPreferredSlot(villager, returnedStack, borrowedWeapon.slot());
+        if (remainder.isEmpty()) {
+            villager.getPersistentData().remove(BORROWED_COMBAT_WEAPON_TAG);
+            VillagerRetaliationVillagerEquipment.restoreMainHand(villager, ItemStack.EMPTY);
+            return;
+        }
+
+        if (borrowedWeapon.returnFailures() <= 0) {
+            persistBorrowedCombatWeapon(villager, borrowedWeapon.slot(), remainder, borrowedWeapon.returnFailures() + 1);
+            VillagerRetaliationVillagerEquipment.setTemporaryMainHand(villager, remainder, 0.0F);
+            return;
+        }
+
         villager.getPersistentData().remove(BORROWED_COMBAT_WEAPON_TAG);
         VillagerRetaliationVillagerEquipment.restoreMainHand(villager, ItemStack.EMPTY);
-        addItemToPreferredSlot(villager, returnedStack, borrowedWeapon.slot());
+        villager.spawnAtLocation(remainder);
     }
 
     static void clearBorrowedCombatWeapon(Villager villager) {
@@ -421,9 +438,9 @@ final class VillagerInventoryContainer implements Container {
         villager.getPersistentData().remove(EXTRA_INVENTORY_TAG);
     }
 
-    private static void addItemToPreferredSlot(Villager villager, ItemStack stack, int preferredSlot) {
+    private static ItemStack addItemToPreferredSlot(Villager villager, ItemStack stack, int preferredSlot) {
         if (stack.isEmpty()) {
-            return;
+            return ItemStack.EMPTY;
         }
 
         NonNullList<ItemStack> inventory = loadFullInventory(villager);
@@ -444,9 +461,7 @@ final class VillagerInventoryContainer implements Container {
         mergeIntoExistingStacks(inventory, remainder);
         fillEmptySlots(inventory, remainder);
         saveFullInventory(villager, inventory);
-        if (!remainder.isEmpty()) {
-            villager.spawnAtLocation(remainder);
-        }
+        return remainder;
     }
 
     private static void dropLegacyOverflowInventory(Villager villager, LivingDropsEvent event) {
@@ -508,9 +523,14 @@ final class VillagerInventoryContainer implements Container {
     }
 
     private static void persistBorrowedCombatWeapon(Villager villager, int slot, ItemStack stack) {
+        persistBorrowedCombatWeapon(villager, slot, stack, 0);
+    }
+
+    private static void persistBorrowedCombatWeapon(Villager villager, int slot, ItemStack stack, int returnFailures) {
         CompoundTag tag = new CompoundTag();
         tag.putInt(BORROWED_COMBAT_WEAPON_SLOT_TAG, slot);
         tag.put(BORROWED_COMBAT_WEAPON_STACK_TAG, stack.saveOptional(villager.level().registryAccess()));
+        tag.putInt(BORROWED_COMBAT_WEAPON_RETURN_FAILURES_TAG, returnFailures);
         villager.getPersistentData().put(BORROWED_COMBAT_WEAPON_TAG, tag);
     }
 
@@ -529,7 +549,11 @@ final class VillagerInventoryContainer implements Container {
             clearBorrowedCombatWeapon(villager);
             return null;
         }
-        return new BorrowedCombatWeapon(tag.getInt(BORROWED_COMBAT_WEAPON_SLOT_TAG), stack);
+        return new BorrowedCombatWeapon(
+                tag.getInt(BORROWED_COMBAT_WEAPON_SLOT_TAG),
+                stack,
+                tag.getInt(BORROWED_COMBAT_WEAPON_RETURN_FAILURES_TAG)
+        );
     }
 
     private static void dropEquipment(Villager villager, LivingDropsEvent event) {
@@ -584,7 +608,7 @@ final class VillagerInventoryContainer implements Container {
         }
     }
 
-    private record BorrowedCombatWeapon(int slot, ItemStack stack) {
+    private record BorrowedCombatWeapon(int slot, ItemStack stack, int returnFailures) {
     }
 
     private void saveExtraInventory() {
