@@ -67,7 +67,12 @@ public final class VillagerReputationNotificationOverlay {
             return;
         }
 
-        PENDING_NOTIFICATIONS.addLast(new PendingNotification(payload.text(), payload.kind()));
+        PENDING_NOTIFICATIONS.addLast(new PendingNotification(
+                payload.text(),
+                payload.kind(),
+                payload.textColor(),
+                payload.chatColor()
+        ));
         promotePendingEntries();
     }
 
@@ -140,7 +145,12 @@ public final class VillagerReputationNotificationOverlay {
     private static void promotePendingEntries() {
         while (ACTIVE_ENTRIES.size() < MAX_ENTRIES && !PENDING_NOTIFICATIONS.isEmpty()) {
             PendingNotification pending = PENDING_NOTIFICATIONS.removeFirst();
-            ACTIVE_ENTRIES.addLast(new NotificationEntry(pending.text(), pending.kind()));
+            ACTIVE_ENTRIES.addLast(new NotificationEntry(
+                    pending.text(),
+                    pending.kind(),
+                    pending.textColor(),
+                    pending.chatColor()
+            ));
         }
     }
 
@@ -159,7 +169,7 @@ public final class VillagerReputationNotificationOverlay {
         int background = withAlpha(BACKGROUND_COLOR, alpha);
         int stripe = withAlpha(STRIPE_COLOR, alpha);
         int shadow = withAlpha(SHADOW_COLOR, alpha);
-        int textColor = withAlpha(textColor(entry.kind), alpha);
+        int textColor = withAlpha(textColor(entry), alpha);
 
         graphics.fill(x, y, x + width, y + ENTRY_HEIGHT, background);
         graphics.fill(x, y, x + 2, y + ENTRY_HEIGHT, stripe);
@@ -173,8 +183,11 @@ public final class VillagerReputationNotificationOverlay {
         graphics.pose().popPose();
     }
 
-    private static int textColor(VillagerReputationNoticeKind kind) {
-        return switch (kind) {
+    private static int textColor(NotificationEntry entry) {
+        if (entry.textColor != Integer.MIN_VALUE) {
+            return entry.textColor;
+        }
+        return switch (entry.kind) {
             case RECEIVED_ITEM -> RECEIVED_ITEM_TEXT_COLOR;
             case GIFT_LIKED -> GIFT_LIKED_TEXT_COLOR;
             case GIFT_NEUTRAL -> GIFT_NEUTRAL_TEXT_COLOR;
@@ -204,6 +217,11 @@ public final class VillagerReputationNotificationOverlay {
     }
 
     private static Component chatMessage(VillagerReputationTierNoticePayload payload) {
+        if (payload.chatColor() != Integer.MIN_VALUE) {
+            return Component.literal(payload.text()).withStyle(style -> style
+                    .withColor(payload.chatColor() & 0x00FFFFFF)
+                    .withItalic(true));
+        }
         if (payload.kind() == VillagerReputationNoticeKind.RECEIVED_ITEM) {
             String prefix = "Received item: ";
             String text = payload.text();
@@ -226,17 +244,21 @@ public final class VillagerReputationNotificationOverlay {
     private record Anchor(int x, int y) {
     }
 
-    private record PendingNotification(String text, VillagerReputationNoticeKind kind) {
+    private record PendingNotification(String text, VillagerReputationNoticeKind kind, int textColor, int chatColor) {
     }
 
     private static final class NotificationEntry {
         private final String text;
         private final VillagerReputationNoticeKind kind;
+        private final int textColor;
+        private final int chatColor;
         private int age;
 
-        private NotificationEntry(String text, VillagerReputationNoticeKind kind) {
+        private NotificationEntry(String text, VillagerReputationNoticeKind kind, int textColor, int chatColor) {
             this.text = text;
             this.kind = kind;
+            this.textColor = textColor;
+            this.chatColor = chatColor;
         }
 
         private float alpha(float partialTick) {

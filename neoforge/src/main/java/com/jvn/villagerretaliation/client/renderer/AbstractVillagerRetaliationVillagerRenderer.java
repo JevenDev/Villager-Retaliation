@@ -51,13 +51,13 @@ public abstract class AbstractVillagerRetaliationVillagerRenderer<T extends Abst
     @Override
     public void render(T villager, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
         this.refreshModels();
-        this.model = this.poseProvider.shouldUseCombatModel(villager) ? this.combatModel : this.nonCombatModel;
+        this.model = shouldUseHandItemModel(villager) ? this.combatModel : this.nonCombatModel;
         super.render(villager, entityYaw, partialTick, poseStack, buffer, packedLight);
     }
 
     @Override
     public ResourceLocation getTextureLocation(T villager) {
-        return this.poseProvider.shouldUseCombatModel(villager) ? this.combatTexture : this.vanillaTexture;
+        return shouldUseHandItemModel(villager) ? this.combatTexture : this.vanillaTexture;
     }
 
     @Override
@@ -75,6 +75,12 @@ public abstract class AbstractVillagerRetaliationVillagerRenderer<T extends Abst
         if (!currentNonCombatModelSource.equals(this.nonCombatModelSource)) {
             this.reloadNonCombatModel();
         }
+    }
+
+    private boolean shouldUseHandItemModel(T villager) {
+        return this.poseProvider.shouldUseCombatModel(villager)
+                || !villager.getMainHandItem().isEmpty()
+                || !villager.getOffhandItem().isEmpty();
     }
 
     private void reloadCombatModel() {

@@ -1,0 +1,422 @@
+{
+  "notifications": [
+    {
+      "trigger": "gift.liked",
+      "text": "Liked gift: {item}",
+      "kind": "gift_liked",
+      "color": "green"
+    },
+    {
+      "trigger": "gift.neutral",
+      "text": "Accepted gift: {item}",
+      "kind": "gift_neutral",
+      "color": "gray"
+    },
+    {
+      "trigger": "gift.disliked",
+      "text": "Disliked gift: {item}",
+      "kind": "gift_disliked",
+      "color": "red"
+    },
+    {
+      "trigger": "gift.received_item",
+      "text": "Received item: {item}",
+      "kind": "received_item",
+      "color": "aqua"
+    },
+    {
+      "trigger": "recruitment.follow_start",
+      "text": "{villager} is following you.",
+      "kind": "villager_following",
+      "color": "#55FFAA"
+    },
+    {
+      "trigger": "recruitment.follow_stop",
+      "text": "{villager} is no longer following you.",
+      "kind": "villager_dismissed",
+      "color": "#FFD166"
+    },
+    {
+      "trigger": "recruitment.hired",
+      "text": "{villager} hired.",
+      "kind": "villager_hired",
+      "color": "#55AAFF"
+    },
+    {
+      "trigger": "recruitment.fired",
+      "text": "{villager} fired.",
+      "kind": "villager_fired",
+      "color": "#FFAA55"
+    },
+    {
+      "trigger": "recruitment.follower_death",
+      "text": "{villager} died while following you.",
+      "kind": "villager_death",
+      "color": "red"
+    },
+    {
+      "trigger": "recruitment.hired_death",
+      "text": "{villager} died while hired by you.",
+      "kind": "villager_death",
+      "color": "red"
+    },
+    {
+      "trigger": "recruitment.betrayed_follower_death",
+      "text": "{villager} died after you broke their trust.",
+      "kind": "villager_death",
+      "color": "red"
+    },
+    {
+      "trigger": "reputation.tier.royalty.improved",
+      "text": "{villager} now treats you like royalty.",
+      "color": "yellow"
+    },
+    {
+      "trigger": "reputation.tier.royalty.worsened",
+      "text": "{villager} no longer sees you as royalty.",
+      "color": "gold"
+    },
+    {
+      "trigger": "reputation.tier.revered.improved",
+      "text": "{villager} now reveres you.",
+      "color": "gold"
+    },
+    {
+      "trigger": "reputation.tier.revered.worsened",
+      "text": "{villager_possessive} reverence for you has faded.",
+      "color": "yellow"
+    },
+    {
+      "trigger": "reputation.tier.respected.improved",
+      "text": "You feel yourself earning {villager_possessive} deep respect.",
+      "color": "aqua"
+    },
+    {
+      "trigger": "reputation.tier.respected.worsened",
+      "text": "You feel {villager_possessive} deep respect for you slipping away.",
+      "color": "gray"
+    },
+    {
+      "trigger": "reputation.tier.trusted.improved",
+      "text": "You feel yourself gaining {villager_possessive} trust.",
+      "color": "green"
+    },
+    {
+      "trigger": "reputation.tier.trusted.worsened",
+      "text": "You feel {villager_possessive} trust in you weaken.",
+      "color": "gray"
+    },
+    {
+      "trigger": "reputation.tier.neutral.improved",
+      "text": "{villager} seems to feel neutral toward you again.",
+      "color": "gray"
+    },
+    {
+      "trigger": "reputation.tier.neutral.worsened",
+      "text": "{villager} seems to feel neutral toward you again.",
+      "color": "gray"
+    },
+    {
+      "trigger": "reputation.tier.suspicious.improved",
+      "text": "{villager} seems less suspicious of you.",
+      "color": "gray"
+    },
+    {
+      "trigger": "reputation.tier.suspicious.worsened",
+      "text": "You feel {villager} becoming suspicious of you.",
+      "color": "#FFAA55"
+    },
+    {
+      "trigger": "reputation.tier.hostile.improved",
+      "text": "{villager} no longer sees you as completely unforgivable.",
+      "color": "gray"
+    },
+    {
+      "trigger": "reputation.tier.hostile.worsened",
+      "text": "You feel {villager} becoming hostile toward you.",
+      "color": "red"
+    },
+    {
+      "trigger": "reputation.tier.despised.improved",
+      "text": "{villager_possessive} hatred for you has softened.",
+      "color": "gray"
+    },
+    {
+      "trigger": "reputation.tier.despised.worsened",
+      "text": "You feel {villager} come to despise you.",
+      "color": "dark_red"
+    },
+    {
+      "trigger": "reputation.tier.feared.improved",
+      "text": "{villager} no longer fears you completely.",
+      "color": "gray"
+    },
+    {
+      "trigger": "reputation.tier.feared.worsened",
+      "text": "{villager} now fears you.",
+      "color": "light_purple"
+    },
+    {
+      "trigger": "ambient.murmur",
+      "text": "Our hero",
+      "world_text_kind": "murmur",
+      "color": "#E9EEF5",
+      "reputation_levels": ["royalty"],
+      "weight": 10
+    },
+    {
+      "trigger": "ambient.murmur",
+      "text": "There they are",
+      "world_text_kind": "murmur",
+      "color": "#E9EEF5",
+      "reputation_levels": ["royalty"],
+      "weight": 10
+    },
+    {
+      "trigger": "ambient.murmur",
+      "text": "Good omen",
+      "world_text_kind": "murmur",
+      "color": "#E9EEF5",
+      "reputation_levels": ["royalty"],
+      "weight": 10
+    },
+    {
+      "trigger": "ambient.murmur",
+      "text": "Good folk",
+      "world_text_kind": "murmur",
+      "reputation_levels": ["revered"]
+    },
+    {
+      "trigger": "ambient.murmur",
+      "text": "Trusted face",
+      "world_text_kind": "murmur",
+      "reputation_levels": ["revered"]
+    },
+    {
+      "trigger": "ambient.murmur",
+      "text": "Welcome back",
+      "world_text_kind": "murmur",
+      "reputation_levels": ["revered"]
+    },
+    {
+      "trigger": "ambient.murmur",
+      "text": "Friendly one",
+      "world_text_kind": "murmur",
+      "reputation_levels": ["respected"]
+    },
+    {
+      "trigger": "ambient.murmur",
+      "text": "Good day",
+      "world_text_kind": "murmur",
+      "reputation_levels": ["respected"]
+    },
+    {
+      "trigger": "ambient.murmur",
+      "text": "Steady hands",
+      "world_text_kind": "murmur",
+      "reputation_levels": ["respected"]
+    },
+    {
+      "trigger": "ambient.murmur",
+      "text": "I know them",
+      "world_text_kind": "murmur",
+      "reputation_levels": ["trusted"]
+    },
+    {
+      "trigger": "ambient.murmur",
+      "text": "Seems alright",
+      "world_text_kind": "murmur",
+      "reputation_levels": ["trusted", "neutral"]
+    },
+    {
+      "trigger": "ambient.murmur",
+      "text": "Careful",
+      "world_text_kind": "murmur",
+      "reputation_levels": ["suspicious"]
+    },
+    {
+      "trigger": "ambient.murmur",
+      "text": "Watch them",
+      "world_text_kind": "murmur",
+      "reputation_levels": ["suspicious"]
+    },
+    {
+      "trigger": "ambient.murmur",
+      "text": "Not welcome",
+      "world_text_kind": "murmur",
+      "reputation_levels": ["hostile"]
+    },
+    {
+      "trigger": "ambient.murmur",
+      "text": "Stay ready",
+      "world_text_kind": "murmur",
+      "reputation_levels": ["hostile"]
+    },
+    {
+      "trigger": "ambient.murmur",
+      "text": "Sound the bell",
+      "world_text_kind": "murmur",
+      "reputation_levels": ["despised"]
+    },
+    {
+      "trigger": "ambient.murmur",
+      "text": "Stay back",
+      "world_text_kind": "murmur",
+      "reputation_levels": ["feared"]
+    },
+    {
+      "trigger": "ambient.sleep_breathing",
+      "text": "ZZZ",
+      "world_text_kind": "sleep",
+      "color": "#A9E8FF"
+    },
+    {
+      "trigger": "ambient.sleep_breathing",
+      "text": "*snores*",
+      "world_text_kind": "sleep",
+      "color": "#A9E8FF"
+    },
+    {
+      "trigger": "ambient.sleep_murmur",
+      "text": "warm bed",
+      "world_text_kind": "sleep",
+      "color": "#A9E8FF"
+    },
+    {
+      "trigger": "ambient.sleep_murmur",
+      "text": "quiet night",
+      "world_text_kind": "sleep",
+      "color": "#A9E8FF"
+    },
+    {
+      "trigger": "ambient.sleep_murmur",
+      "text": "ripe wheat",
+      "world_text_kind": "sleep",
+      "color": "#A9E8FF",
+      "professions": ["farmer"]
+    },
+    {
+      "trigger": "ambient.sleep_murmur",
+      "text": "fresh ink",
+      "world_text_kind": "sleep",
+      "color": "#A9E8FF",
+      "professions": ["librarian"]
+    },
+    {
+      "trigger": "trade.completed",
+      "text": "A pleasure",
+      "world_text_kind": "trade",
+      "color": "#6BFFB4",
+      "reputation_levels": ["royalty", "revered"]
+    },
+    {
+      "trigger": "trade.completed",
+      "text": "Good trade",
+      "world_text_kind": "trade",
+      "color": "#6BFFB4",
+      "reputation_levels": ["respected", "trusted", "neutral"]
+    },
+    {
+      "trigger": "trade.completed",
+      "text": "Be quick",
+      "world_text_kind": "trade",
+      "reputation_levels": ["suspicious", "hostile", "despised"]
+    },
+    {
+      "trigger": "trade.completed",
+      "text": "Please go",
+      "world_text_kind": "trade",
+      "reputation_levels": ["feared"]
+    },
+    {
+      "trigger": "trade.refused",
+      "text": "No trades",
+      "world_text_kind": "negative",
+      "color": "red"
+    },
+    {
+      "trigger": "dialogue.cooldown",
+      "text": "Again?",
+      "world_text_kind": "negative",
+      "color": "red"
+    },
+    {
+      "trigger": "dialogue.greeting",
+      "text": "Hello",
+      "world_text_kind": "dialogue",
+      "color": "#D7C7FF"
+    },
+    {
+      "trigger": "dialogue.question",
+      "text": "About that",
+      "world_text_kind": "dialogue",
+      "color": "#D7C7FF"
+    },
+    {
+      "trigger": "dialogue.joke.positive",
+      "text": "Heh",
+      "world_text_kind": "positive",
+      "color": "green"
+    },
+    {
+      "trigger": "dialogue.insult.negative",
+      "text": "Really?",
+      "world_text_kind": "negative",
+      "color": "red"
+    },
+    {
+      "trigger": "gift.high_reputation",
+      "text": "For you",
+      "world_text_kind": "positive",
+      "color": "green"
+    },
+    {
+      "trigger": "gift.world.liked",
+      "text": "Thank you",
+      "world_text_kind": "positive",
+      "color": "green"
+    },
+    {
+      "trigger": "gift.world.neutral",
+      "text": "Thanks",
+      "world_text_kind": "dialogue",
+      "color": "#D7C7FF"
+    },
+    {
+      "trigger": "gift.world.disliked",
+      "text": "No thanks",
+      "world_text_kind": "negative",
+      "color": "red"
+    },
+    {
+      "trigger": "alert.villager_damaged",
+      "text": "!",
+      "world_text_kind": "alert",
+      "color": "#FFD166"
+    },
+    {
+      "trigger": "alert.witness_attack.player",
+      "text": "Stop!",
+      "world_text_kind": "alert",
+      "color": "#FFD166"
+    },
+    {
+      "trigger": "alert.witness_attack",
+      "text": "Danger!",
+      "world_text_kind": "alert",
+      "color": "#FFD166"
+    },
+    {
+      "trigger": "alert.witness_death.player",
+      "text": "Murder!",
+      "world_text_kind": "alert",
+      "color": "#FFD166"
+    },
+    {
+      "trigger": "alert.witness_death",
+      "text": "Bell!",
+      "world_text_kind": "alert",
+      "color": "#FFD166"
+    }
+  ]
+}

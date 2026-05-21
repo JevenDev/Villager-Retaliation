@@ -1,0 +1,328 @@
+{
+  "preferences": [
+    {
+      "reaction": "hated",
+      "items": ["rotten_flesh", "poisonous_potato", "spider_eye", "fermented_spider_eye", "gunpowder", "tnt", "tnt_minecart", "fire_charge", "flint_and_steel", "lava_bucket", "wither_rose", "wither_skeleton_skull"]
+    },
+    {
+      "reaction": "disliked",
+      "items": ["bone", "bone_meal", "dead_bush", "pufferfish", "phantom_membrane", "magma_cream", "slime_ball", "firework_rocket", "suspicious_stew"]
+    },
+    {
+      "reaction": "loved",
+      "items": ["emerald", "diamond", "gold_ingot", "golden_apple", "enchanted_golden_apple", "experience_bottle"]
+    },
+    {
+      "reaction": "liked",
+      "items": ["bread", "apple", "cookie", "cake", "pumpkin_pie", "honey_bottle", "sweet_berries", "glow_berries", "milk_bucket"]
+    },
+    {
+      "professions": ["armorer"],
+      "reaction": "loved",
+      "items": ["iron_ingot", "shield", "iron_chestplate", "diamond_chestplate"]
+    },
+    {
+      "professions": ["armorer"],
+      "reaction": "liked",
+      "items": ["coal", "blast_furnace", "iron_helmet", "iron_boots"]
+    },
+    {
+      "professions": ["armorer"],
+      "reaction": "hated",
+      "items": ["tnt", "tnt_minecart", "fire_charge", "lava_bucket"]
+    },
+    {
+      "professions": ["armorer"],
+      "reaction": "disliked",
+      "items": ["leather_chestplate", "leather_helmet", "wooden_sword", "dead_bush"]
+    },
+    {
+      "professions": ["butcher"],
+      "reaction": "loved",
+      "items": ["beef", "porkchop", "mutton", "chicken", "rabbit"]
+    },
+    {
+      "professions": ["butcher"],
+      "reaction": "liked",
+      "items": ["cooked_beef", "cooked_porkchop", "cooked_mutton", "cooked_chicken", "smoker"]
+    },
+    {
+      "professions": ["butcher"],
+      "reaction": "hated",
+      "items": ["rotten_flesh", "poisonous_potato", "spider_eye", "fermented_spider_eye", "suspicious_stew"]
+    },
+    {
+      "professions": ["butcher"],
+      "reaction": "disliked",
+      "items": ["bone", "bone_meal", "wither_rose"]
+    },
+    {
+      "professions": ["cartographer"],
+      "reaction": "loved",
+      "items": ["map", "compass", "clock", "recovery_compass"]
+    },
+    {
+      "professions": ["cartographer"],
+      "reaction": "liked",
+      "items": ["paper", "feather", "ink_sac", "cartography_table"]
+    },
+    {
+      "professions": ["cartographer"],
+      "reaction": "hated",
+      "items": ["tnt", "tnt_minecart", "flint_and_steel", "fire_charge"]
+    },
+    {
+      "professions": ["cartographer"],
+      "reaction": "disliked",
+      "items": ["dead_bush", "suspicious_stew", "rotten_flesh"]
+    },
+    {
+      "professions": ["cleric"],
+      "reaction": "loved",
+      "items": ["amethyst_shard", "glowstone_dust", "experience_bottle", "ender_pearl"]
+    },
+    {
+      "professions": ["cleric"],
+      "reaction": "liked",
+      "items": ["redstone", "lapis_lazuli", "blaze_powder", "ghast_tear", "brewing_stand"]
+    },
+    {
+      "professions": ["cleric"],
+      "reaction": "hated",
+      "items": ["tnt", "tnt_minecart", "wither_skeleton_skull"]
+    },
+    {
+      "professions": ["cleric"],
+      "reaction": "disliked",
+      "items": ["rotten_flesh", "fermented_spider_eye", "poisonous_potato", "dead_bush"]
+    },
+    {
+      "professions": ["farmer"],
+      "reaction": "loved",
+      "items": ["wheat_seeds", "carrot", "potato", "beetroot_seeds", "pumpkin_seeds", "melon_seeds"]
+    },
+    {
+      "professions": ["farmer"],
+      "reaction": "liked",
+      "items": ["wheat", "beetroot", "melon_slice", "pumpkin", "hay_block", "composter"]
+    },
+    {
+      "professions": ["farmer"],
+      "reaction": "hated",
+      "items": ["poisonous_potato", "dead_bush", "wither_rose", "lava_bucket"]
+    },
+    {
+      "professions": ["farmer"],
+      "reaction": "disliked",
+      "items": ["rotten_flesh", "bone_meal", "spider_eye", "fermented_spider_eye"]
+    },
+    {
+      "professions": ["fisherman"],
+      "reaction": "loved",
+      "items": ["fishing_rod", "cod", "salmon", "tropical_fish", "nautilus_shell"]
+    },
+    {
+      "professions": ["fisherman"],
+      "reaction": "liked",
+      "items": ["string", "kelp", "dried_kelp", "barrel"]
+    },
+    {
+      "professions": ["fisherman"],
+      "reaction": "hated",
+      "items": ["tnt", "tnt_minecart", "lava_bucket"]
+    },
+    {
+      "professions": ["fisherman"],
+      "reaction": "disliked",
+      "items": ["pufferfish", "rotten_flesh", "phantom_membrane", "magma_cream"]
+    },
+    {
+      "professions": ["fletcher"],
+      "reaction": "loved",
+      "items": ["flint", "feather", "arrow", "spectral_arrow", "crossbow"]
+    },
+    {
+      "professions": ["fletcher"],
+      "reaction": "liked",
+      "items": ["stick", "string", "tripwire_hook", "fletching_table"]
+    },
+    {
+      "professions": ["fletcher"],
+      "reaction": "hated",
+      "items": ["tnt", "tnt_minecart", "fire_charge"]
+    },
+    {
+      "professions": ["fletcher"],
+      "reaction": "disliked",
+      "items": ["shield", "lava_bucket", "rotten_flesh", "slime_ball"]
+    },
+    {
+      "professions": ["leatherworker"],
+      "reaction": "loved",
+      "items": ["leather", "rabbit_hide", "saddle", "leather_horse_armor"]
+    },
+    {
+      "professions": ["leatherworker"],
+      "reaction": "liked",
+      "items": ["cauldron", "leather_boots", "leather_helmet", "lead"]
+    },
+    {
+      "professions": ["leatherworker"],
+      "reaction": "hated",
+      "items": ["tnt", "fire_charge", "lava_bucket"]
+    },
+    {
+      "professions": ["leatherworker"],
+      "reaction": "disliked",
+      "items": ["rotten_flesh", "bone", "bone_meal", "poisonous_potato"]
+    },
+    {
+      "professions": ["librarian"],
+      "reaction": "loved",
+      "items": ["book", "writable_book", "written_book", "bookshelf", "enchanted_book"]
+    },
+    {
+      "professions": ["librarian"],
+      "reaction": "liked",
+      "items": ["paper", "ink_sac", "feather", "lectern", "name_tag"]
+    },
+    {
+      "professions": ["librarian"],
+      "reaction": "hated",
+      "items": ["tnt", "tnt_minecart", "flint_and_steel", "fire_charge", "lava_bucket"]
+    },
+    {
+      "professions": ["librarian"],
+      "reaction": "disliked",
+      "items": ["rotten_flesh", "poisonous_potato", "dead_bush", "suspicious_stew"]
+    },
+    {
+      "professions": ["mason"],
+      "reaction": "loved",
+      "items": ["clay_ball", "brick", "stone", "smooth_stone", "quartz"]
+    },
+    {
+      "professions": ["mason"],
+      "reaction": "liked",
+      "items": ["granite", "diorite", "andesite", "terracotta", "stonecutter"]
+    },
+    {
+      "professions": ["mason"],
+      "reaction": "hated",
+      "items": ["tnt", "tnt_minecart", "lava_bucket"]
+    },
+    {
+      "professions": ["mason"],
+      "reaction": "disliked",
+      "items": ["sand", "gravel", "rotten_flesh", "slime_ball"]
+    },
+    {
+      "professions": ["shepherd"],
+      "reaction": "loved",
+      "items": ["white_wool", "shears", "white_dye", "blue_dye", "red_dye", "yellow_dye"]
+    },
+    {
+      "professions": ["shepherd"],
+      "reaction": "liked",
+      "items": ["black_wool", "brown_wool", "pink_wool", "loom", "lead"]
+    },
+    {
+      "professions": ["shepherd"],
+      "reaction": "hated",
+      "items": ["tnt", "tnt_minecart", "fire_charge", "lava_bucket"]
+    },
+    {
+      "professions": ["shepherd"],
+      "reaction": "disliked",
+      "items": ["rotten_flesh", "bone", "wither_rose", "dead_bush"]
+    },
+    {
+      "professions": ["toolsmith"],
+      "reaction": "loved",
+      "items": ["iron_ingot", "diamond", "anvil", "smithing_table"]
+    },
+    {
+      "professions": ["toolsmith"],
+      "reaction": "liked",
+      "items": ["coal", "flint", "iron_pickaxe", "iron_axe", "iron_shovel"]
+    },
+    {
+      "professions": ["toolsmith"],
+      "reaction": "hated",
+      "items": ["tnt", "tnt_minecart", "fire_charge", "lava_bucket"]
+    },
+    {
+      "professions": ["toolsmith"],
+      "reaction": "disliked",
+      "items": ["wooden_pickaxe", "wooden_axe", "wooden_shovel", "rotten_flesh", "dead_bush"]
+    },
+    {
+      "professions": ["weaponsmith"],
+      "reaction": "loved",
+      "items": ["iron_ingot", "diamond", "iron_sword", "diamond_sword", "grindstone"]
+    },
+    {
+      "professions": ["weaponsmith"],
+      "reaction": "liked",
+      "items": ["coal", "flint", "iron_axe", "crossbow"]
+    },
+    {
+      "professions": ["weaponsmith"],
+      "reaction": "hated",
+      "items": ["tnt", "tnt_minecart", "fire_charge", "lava_bucket"]
+    },
+    {
+      "professions": ["weaponsmith"],
+      "reaction": "disliked",
+      "items": ["wooden_sword", "rotten_flesh", "poisonous_potato", "slime_ball"]
+    },
+    {
+      "professions": ["nitwit"],
+      "reaction": "loved",
+      "items": ["cookie", "cake", "pumpkin_pie", "honey_bottle"]
+    },
+    {
+      "professions": ["nitwit"],
+      "reaction": "liked",
+      "items": ["slime_ball", "snowball", "flower_pot"]
+    },
+    {
+      "professions": ["nitwit"],
+      "reaction": "hated",
+      "items": ["poisonous_potato", "tnt", "tnt_minecart", "lava_bucket", "wither_skeleton_skull"]
+    },
+    {
+      "professions": ["nitwit"],
+      "reaction": "disliked",
+      "items": ["rotten_flesh", "spider_eye", "fermented_spider_eye", "dead_bush"]
+    }
+  ],
+  "rewards": [
+    { "professions": ["farmer"], "reputation_levels": ["revered"], "item": "bread", "min_count": 1, "max_count": 3 },
+    { "professions": ["farmer"], "reputation_levels": ["royalty"], "item": "golden_carrot", "min_count": 2, "max_count": 5 },
+    { "professions": ["fisherman"], "reputation_levels": ["revered"], "item": "cod", "min_count": 1, "max_count": 2 },
+    { "professions": ["fisherman"], "reputation_levels": ["royalty"], "item": "cooked_salmon", "min_count": 2, "max_count": 4 },
+    { "professions": ["librarian"], "reputation_levels": ["revered"], "item": "book", "min_count": 1, "max_count": 3 },
+    { "professions": ["librarian"], "reputation_levels": ["royalty"], "item": "bookshelf", "min_count": 1, "max_count": 2 },
+    { "professions": ["cleric"], "reputation_levels": ["revered"], "item": "redstone", "min_count": 1, "max_count": 2 },
+    { "professions": ["cleric"], "reputation_levels": ["royalty"], "item": "glowstone_dust", "min_count": 2, "max_count": 4 },
+    { "professions": ["fletcher"], "reputation_levels": ["revered"], "item": "arrow", "min_count": 4, "max_count": 8 },
+    { "professions": ["fletcher"], "reputation_levels": ["royalty"], "item": "arrow", "min_count": 6, "max_count": 12 },
+    { "professions": ["armorer", "toolsmith", "weaponsmith"], "reputation_levels": ["revered"], "item": "coal", "min_count": 1, "max_count": 2 },
+    { "professions": ["armorer", "toolsmith", "weaponsmith"], "reputation_levels": ["royalty"], "item": "iron_ingot", "min_count": 2, "max_count": 4 },
+    { "professions": ["cartographer"], "reputation_levels": ["revered"], "item": "map", "min_count": 1, "max_count": 1 },
+    { "professions": ["cartographer"], "reputation_levels": ["royalty"], "item": "compass", "min_count": 1, "max_count": 1 },
+    { "professions": ["shepherd"], "reputation_levels": ["revered"], "item": "white_carpet", "min_count": 2, "max_count": 4 },
+    { "professions": ["shepherd"], "reputation_levels": ["royalty"], "item": "white_wool", "min_count": 3, "max_count": 6 },
+    { "professions": ["butcher"], "reputation_levels": ["revered"], "item": "beef", "min_count": 1, "max_count": 2 },
+    { "professions": ["butcher"], "reputation_levels": ["royalty"], "item": "cooked_beef", "min_count": 2, "max_count": 4 },
+    { "professions": ["leatherworker"], "reputation_levels": ["revered"], "item": "leather", "min_count": 1, "max_count": 2 },
+    { "professions": ["leatherworker"], "reputation_levels": ["royalty"], "item": "leather_horse_armor", "min_count": 1, "max_count": 1 },
+    { "professions": ["mason"], "reputation_levels": ["revered"], "item": "clay_ball", "min_count": 1, "max_count": 3 },
+    { "professions": ["mason"], "reputation_levels": ["royalty"], "item": "bricks", "min_count": 2, "max_count": 5 },
+    { "professions": ["nitwit", "none"], "reputation_levels": ["revered"], "item": "apple", "min_count": 1, "max_count": 2 },
+    { "professions": ["nitwit", "none"], "reputation_levels": ["royalty"], "item": "emerald", "min_count": 2, "max_count": 4 },
+    { "reputation_levels": ["revered"], "item": "emerald", "min_count": 1, "max_count": 2 },
+    { "reputation_levels": ["royalty"], "item": "emerald", "min_count": 2, "max_count": 4 }
+  ]
+}

@@ -12,17 +12,27 @@ public final class VillagerRetaliationVillagerRules {
     public static boolean shouldKeepFleeingBehavior(Villager villager) {
         return villager.isBaby()
                 || villager.getVillagerData().getProfession() == VillagerProfession.NITWIT
-                && !VillagerRetaliationVillagerWeapons.hasUsableWeapon(villager);
+                && !VillagerRetaliationVillagerWeapons.hasUsableWeapon(villager)
+                && !VillagerRetaliationVillagerWeapons.findNearestWeapon(villager).isPresent();
     }
 
     public static boolean shouldSuppressFleeingBehavior(Villager villager) {
         if (shouldKeepFleeingBehavior(villager)) {
             return false;
         }
+        if (!canStandGroundAgainstHostileMobs(villager)) {
+            return false;
+        }
 
         return !VillagerRetaliationVillagerCombatUtil.hasVisibleCreeperThreat(
                 villager,
-                VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get()
+                VillagerRetaliationConfig.NATURAL_HOSTILE_TARGET_RADIUS.get()
         );
+    }
+
+    public static boolean canStandGroundAgainstHostileMobs(Villager villager) {
+        return VillagerRetaliationVillagerWeapons.hasUsableWeapon(villager)
+                || VillagerRetaliationVillagerWeapons.hasTrackedPickup(villager)
+                || VillagerRetaliationVillagerWeapons.findNearestWeapon(villager).isPresent();
     }
 }

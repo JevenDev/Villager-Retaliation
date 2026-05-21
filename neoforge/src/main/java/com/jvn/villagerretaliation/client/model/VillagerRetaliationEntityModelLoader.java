@@ -6,6 +6,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.jvn.villagerretaliation.VillagerRetaliation;
+import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
 import com.mojang.logging.LogUtils;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
@@ -26,13 +27,6 @@ import java.util.List;
 import java.util.Optional;
 
 public final class VillagerRetaliationEntityModelLoader {
-    public static final ResourceLocation COMBAT_VILLAGER_MODEL =
-            VillagerRetaliation.id("models/entity/villager/combat_villager.json");
-    public static final ResourceLocation NON_COMBAT_VILLAGER_MODEL =
-            VillagerRetaliation.id("models/entity/villager/non_combat_villager.json");
-    public static final ResourceLocation VILLAGER_MODEL_OPTIONS =
-            VillagerRetaliation.id("models/entity/villager/render_options.json");
-
     private static final String EMF_MOD_ID = "entity_model_features";
     private static final String MOD_RESOURCE_PACK_ID = "mod/" + VillagerRetaliation.MOD_ID;
     private static final Gson GSON = new Gson();
@@ -43,7 +37,7 @@ public final class VillagerRetaliationEntityModelLoader {
 
     public static ModelPart loadCombatVillagerModel(EntityRendererProvider.Context context) {
         ResourceManager resourceManager = context.getResourceManager();
-        Optional<Resource> overrideResource = findResourcePackOverride(resourceManager, COMBAT_VILLAGER_MODEL);
+        Optional<Resource> overrideResource = findResourcePackOverride(resourceManager, VillagerRetaliationClientAssets.COMBAT_VILLAGER_MODEL);
         if (overrideResource.isPresent()) {
             LOGGER.info("Loading combat villager model from json:{}", overrideResource.get().sourcePackId());
             return loadCombatVillagerModel(overrideResource.get());
@@ -57,7 +51,7 @@ public final class VillagerRetaliationEntityModelLoader {
     }
 
     public static String combatVillagerModelSource(ResourceManager resourceManager) {
-        Optional<Resource> overrideResource = findResourcePackOverride(resourceManager, COMBAT_VILLAGER_MODEL);
+        Optional<Resource> overrideResource = findResourcePackOverride(resourceManager, VillagerRetaliationClientAssets.COMBAT_VILLAGER_MODEL);
         if (overrideResource.isPresent()) {
             return "json:" + overrideResource.get().sourcePackId();
         }
@@ -69,18 +63,18 @@ public final class VillagerRetaliationEntityModelLoader {
             return Optional.empty();
         }
 
-        Optional<Resource> overrideResource = findResourcePackOverride(resourceManager, NON_COMBAT_VILLAGER_MODEL);
+        Optional<Resource> overrideResource = findResourcePackOverride(resourceManager, VillagerRetaliationClientAssets.NON_COMBAT_VILLAGER_MODEL);
         if (overrideResource.isEmpty()) {
             LOGGER.warn(
                     "Villager model options requested a custom non-combat model, but {} was not found. Falling back to vanilla crossed arms.",
-                    NON_COMBAT_VILLAGER_MODEL
+                    VillagerRetaliationClientAssets.NON_COMBAT_VILLAGER_MODEL
             );
             return Optional.empty();
         }
 
         Resource resource = overrideResource.get();
         LOGGER.info("Loading non-combat villager model from json:{}", resource.sourcePackId());
-        Optional<LayerDefinition> layerDefinition = loadLayerDefinition(resource, NON_COMBAT_VILLAGER_MODEL);
+        Optional<LayerDefinition> layerDefinition = loadLayerDefinition(resource, VillagerRetaliationClientAssets.NON_COMBAT_VILLAGER_MODEL);
         if (layerDefinition.isEmpty()) {
             return Optional.empty();
         }
@@ -103,7 +97,7 @@ public final class VillagerRetaliationEntityModelLoader {
             return "vanilla:" + mode.serializedName;
         }
 
-        Optional<Resource> overrideResource = findResourcePackOverride(resourceManager, NON_COMBAT_VILLAGER_MODEL);
+        Optional<Resource> overrideResource = findResourcePackOverride(resourceManager, VillagerRetaliationClientAssets.NON_COMBAT_VILLAGER_MODEL);
         return overrideResource
                 .map(resource -> "custom:" + resource.sourcePackId())
                 .orElse("custom:missing");
@@ -117,12 +111,12 @@ public final class VillagerRetaliationEntityModelLoader {
             return root;
         }
 
-        LOGGER.warn("Combat villager model {} is missing required parts. Falling back to the built-in model.", COMBAT_VILLAGER_MODEL);
+        LOGGER.warn("Combat villager model {} is missing required parts. Falling back to the built-in model.", VillagerRetaliationClientAssets.COMBAT_VILLAGER_MODEL);
         return VillagerRetaliationVillagerModel.createBodyLayer().bakeRoot();
     }
 
     private static ModelPart loadCombatVillagerModel(Resource resource) {
-        LayerDefinition layerDefinition = loadLayerDefinition(resource, COMBAT_VILLAGER_MODEL)
+        LayerDefinition layerDefinition = loadLayerDefinition(resource, VillagerRetaliationClientAssets.COMBAT_VILLAGER_MODEL)
                 .orElseGet(VillagerRetaliationVillagerModel::createBodyLayer);
         ModelPart root = layerDefinition.bakeRoot();
         if (hasRequiredCombatParts(root)) {
@@ -134,7 +128,7 @@ public final class VillagerRetaliationEntityModelLoader {
     }
 
     private static Optional<LayerDefinition> loadLayerDefinition(ResourceManager resourceManager) {
-        Optional<Resource> resource = resourceManager.getResource(COMBAT_VILLAGER_MODEL);
+        Optional<Resource> resource = resourceManager.getResource(VillagerRetaliationClientAssets.COMBAT_VILLAGER_MODEL);
         if (resource.isEmpty()) {
             return Optional.empty();
         }
@@ -143,7 +137,7 @@ public final class VillagerRetaliationEntityModelLoader {
     }
 
     private static Optional<LayerDefinition> loadLayerDefinition(Resource resource) {
-        return loadLayerDefinition(resource, COMBAT_VILLAGER_MODEL);
+        return loadLayerDefinition(resource, VillagerRetaliationClientAssets.COMBAT_VILLAGER_MODEL);
     }
 
     private static Optional<LayerDefinition> loadLayerDefinition(Resource resource, ResourceLocation modelLocation) {
@@ -179,7 +173,7 @@ public final class VillagerRetaliationEntityModelLoader {
     }
 
     private static NonCombatModelMode getNonCombatModelMode(ResourceManager resourceManager) {
-        Optional<Resource> optionsResource = findResourcePackOverride(resourceManager, VILLAGER_MODEL_OPTIONS);
+        Optional<Resource> optionsResource = findResourcePackOverride(resourceManager, VillagerRetaliationClientAssets.VILLAGER_MODEL_OPTIONS);
         if (optionsResource.isEmpty()) {
             return NonCombatModelMode.VANILLA;
         }
@@ -196,7 +190,7 @@ public final class VillagerRetaliationEntityModelLoader {
         } catch (Exception exception) {
             LOGGER.warn(
                     "Failed to load villager model options {} from {}. Falling back to vanilla crossed arms.",
-                    VILLAGER_MODEL_OPTIONS,
+                    VillagerRetaliationClientAssets.VILLAGER_MODEL_OPTIONS,
                     resource.sourcePackId(),
                     exception
             );

@@ -1,0 +1,124 @@
+{
+  "openings": [
+    {
+      "id": "mason_opening",
+      "text": "Mind the stonecutter. What do you need?"
+    }
+  ],
+  "closings": [
+    {
+      "id": "mason_closing",
+      "text": "Back to setting stone that stays set, then."
+    }
+  ],
+  "lines": [
+    {
+      "id": "mason_chat_corners",
+      "type": "chat",
+      "text": "Walls with weak corners teach humility before they teach repair.",
+      "weight": 30
+    },
+    {
+      "id": "mason_question_stone",
+      "type": "question",
+      "text": "Stone remembers pressure. People do too.",
+      "weight": 30
+    },
+    {
+      "id": "mason_story_wall",
+      "type": "story",
+      "text": "The best wall is boring. Boring means it held.",
+      "weight": 26
+    },
+    {
+      "id": "mason_new_greeting_stonecutter",
+      "type": "greeting",
+      "text": "Keep clear of the stonecutter. It does not care who started the conversation.",
+      "weight": 26
+    },
+    {
+      "id": "mason_new_chat_wall",
+      "type": "chat",
+      "text": "A wall is only as honest as its weakest corner.",
+      "weight": 28
+    },
+    {
+      "id": "mason_new_question_foundation",
+      "type": "question",
+      "text": "Foundations matter because everything else gets to pretend they do not.",
+      "weight": 28
+    },
+    {
+      "id": "mason_new_story_chip",
+      "type": "story",
+      "text": "One bad chip once made me redo a whole doorway. It was right to complain.",
+      "weight": 24
+    },
+    {
+      "id": "mason_new_joke_dense",
+      "type": "joke",
+      "text": "Mason jokes are solid. Sometimes too solid to move.",
+      "weight": 18
+    },
+    {
+      "id": "mason_new_insult_gravel",
+      "type": "insult",
+      "text": "That remark had all the strength of loose gravel.",
+      "weight": 18
+    },
+    {
+      "id": "mason_new_chat_steps",
+      "type": "chat",
+      "text": "Good steps are noticed only by people who have climbed bad ones.",
+      "weight": 28
+    },
+    {
+      "id": "mason_new_question_crack",
+      "type": "question",
+      "text": "A crack is not always disaster. Sometimes it is a warning asking politely.",
+      "weight": 28
+    },
+    {
+      "id": "mason_new_story_arch",
+      "type": "story",
+      "text": "An arch looks impossible until the last stone proves everyone wrong.",
+      "weight": 24
+    },
+    {
+      "id": "mason_new_rude_weight",
+      "type": "insult",
+      "text": "Your words carry weight, but not the useful kind.",
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
+      "weight": 30
+    }
+  ],
+  "pacify": [
+    {
+      "id": "mason_pacify_success",
+      "outcomes": [
+        "success"
+      ],
+      "text": "Fine. I will set this stone down carefully.",
+      "weight": 26
+    },
+    {
+      "id": "mason_pacify_short",
+      "outcomes": [
+        "not_enough_emeralds"
+      ],
+      "text": "That foundation will not hold. Bring {emerald_cost} {emeralds}.",
+      "weight": 26
+    },
+    {
+      "id": "mason_pacify_blocked",
+      "outcomes": [
+        "blocked_by_reputation"
+      ],
+      "text": "No. Some cracks keep spreading after the offer is made.",
+      "weight": 26
+    }
+  ]
+}

@@ -1,0 +1,125 @@
+{
+  "openings": [
+    {
+      "id": "cartographer_opening",
+      "text": "Mind the map table. What do you need?"
+    }
+  ],
+  "closings": [
+    {
+      "id": "cartographer_closing",
+      "text": "Back to reading roads and borders, then."
+    }
+  ],
+  "lines": [
+    {
+      "id": "cartographer_chat_edges",
+      "type": "chat",
+      "text": "Blank edges on a map make people braver than they should be.",
+      "weight": 30
+    },
+    {
+      "id": "cartographer_question_roads",
+      "type": "question",
+      "text": "Every road looks safer when someone else drew it.",
+      "weight": 30
+    },
+    {
+      "id": "cartographer_story_path",
+      "type": "story",
+      "text": "A lost path can become a warning if enough people survive telling it.",
+      "weight": 26
+    },
+    {
+      "id": "cartographer_new_greeting_table",
+      "type": "greeting",
+      "text": "Keep your hands off the map table unless you know where they are going.",
+      "weight": 26
+    },
+    {
+      "id": "cartographer_new_chat_edges",
+      "type": "chat",
+      "text": "The edge of a map is not the edge of the world. It is the edge of our nerve.",
+      "weight": 28
+    },
+    {
+      "id": "cartographer_new_question_roads",
+      "type": "question",
+      "text": "Roads look straight until you have to walk them tired.",
+      "weight": 28
+    },
+    {
+      "id": "cartographer_new_story_wrong_turn",
+      "type": "story",
+      "text": "A wrong turn once taught me more than three careful maps.",
+      "weight": 24
+    },
+    {
+      "id": "cartographer_new_joke_fold",
+      "type": "joke",
+      "text": "Map jokes are easy to fold badly.",
+      "weight": 18
+    },
+    {
+      "id": "cartographer_new_insult_lost",
+      "type": "insult",
+      "text": "You could get lost standing still.",
+      "weight": 18
+    },
+    {
+      "id": "cartographer_new_chat_border",
+      "type": "chat",
+      "text": "Borders are lines people draw so fear has somewhere neat to stand.",
+      "weight": 28
+    },
+    {
+      "id": "cartographer_new_question_compass",
+      "type": "question",
+      "text": "A compass helps with north. It says nothing about wisdom.",
+      "weight": 28
+    },
+    {
+      "id": "cartographer_new_story_blank_space",
+      "type": "story",
+      "text": "Blank space on parchment has a way of daring people to be foolish.",
+      "weight": 24
+    },
+    {
+      "id": "cartographer_new_cautious_path",
+      "type": "chat",
+      "text": "I do not mark every path for every traveler. Some maps are earned.",
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile"
+      ],
+      "weight": 30
+    }
+  ],
+  "pacify": [
+    {
+      "id": "cartographer_pacify_success",
+      "outcomes": [
+        "success"
+      ],
+      "text": "Fine. I will mark this as settled, lightly, in pencil.",
+      "weight": 26
+    },
+    {
+      "id": "cartographer_pacify_short",
+      "outcomes": [
+        "not_enough_emeralds"
+      ],
+      "text": "Your count is off. The route to peace is {emerald_cost} {emeralds}.",
+      "weight": 26
+    },
+    {
+      "id": "cartographer_pacify_blocked",
+      "outcomes": [
+        "blocked_by_reputation"
+      ],
+      "text": "No. Every path back to trust is closed for now.",
+      "weight": 26
+    }
+  ]
+}

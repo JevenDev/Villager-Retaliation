@@ -68,7 +68,7 @@ public final class DialogueReputationService {
                     "insult_child",
                     DialogueReputationEffect.CooldownCategory.NEGATIVE,
                     false,
-                    "That was mean. I am telling someone."
+                    response(context, "reputation.insult_child")
             )
                     : PlannedEffect.none();
         }
@@ -85,6 +85,7 @@ public final class DialogueReputationService {
             case CHAT -> PlannedEffect.none();
             case GREETING -> planGreeting(context, interactionState.firstConversation());
             case QUESTION -> planQuestion(context);
+            case GIFT_PREFERENCES -> PlannedEffect.none();
             case STORY -> planStory(context);
             case JOKE -> planJoke(context);
             case INSULT -> planInsult(context, interactionState.firstConversation());
@@ -178,7 +179,7 @@ public final class DialogueReputationService {
                 "joke_missed",
                 DialogueReputationEffect.CooldownCategory.JOKE,
                 false,
-                context.random().nextInt(3) == 0 ? "Hmph. Maybe don't quit your day job." : null
+                context.random().nextInt(3) == 0 ? response(context, "reputation.joke_missed") : null
         );
     }
 
@@ -226,34 +227,22 @@ public final class DialogueReputationService {
         if (context.random().nextInt(4) != 0) {
             return null;
         }
-        return switch (context.random().nextInt(3)) {
-            case 0 -> "You know, you're not so bad to talk to.";
-            case 1 -> "It's good to speak with someone who listens.";
-            default -> "Maybe I misjudged you.";
-        };
+        return response(context, "reputation.positive");
     }
 
     private static String angryResponse(DialogueContext context) {
-        return switch (context.random().nextInt(3)) {
-            case 0 -> "I should have known better than to speak with you.";
-            case 1 -> "Careful. Villages remember cruelty.";
-            default -> "Say that again and see who still trades with you.";
-        };
+        return response(context, "reputation.angry");
     }
 
     private static String annoyedOptionResponse(DialogueContext context, DialogueRequestType requestType) {
         if (requestType == DialogueRequestType.QUESTION) {
-            return switch (context.random().nextInt(3)) {
-                case 0 -> "You've asked enough questions for one day.";
-                case 1 -> "Again with that? My patience has limits.";
-                default -> "I have work to do. Ask something else.";
-            };
+            return response(context, "reputation.repeated_question");
         }
-        return switch (context.random().nextInt(3)) {
-            case 0 -> "Enough of that for now.";
-            case 1 -> "Try something else. My patience has limits.";
-            default -> "I have work to do. Not this again.";
-        };
+        return response(context, "reputation.repeated_dialogue");
+    }
+
+    private static String response(DialogueContext context, String key) {
+        return VillagerDialogueResources.message(context, key).orElse("");
     }
 
     private record PlannedEffect(

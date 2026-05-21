@@ -1,23 +1,24 @@
 package com.jvn.villagerretaliation.client.interaction;
 
-import com.jvn.villagerretaliation.VillagerRetaliation;
+import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
 import com.jvn.villagerretaliation.dialogue.DialogueDisposition;
-import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
+import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.network.VillagerConversationEndRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerDialogueRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerGiftRequestPayload;
+import com.jvn.villagerretaliation.network.VillagerInventoryRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerRecruitRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerTradeRequestPayload;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.Villager;
@@ -64,10 +65,8 @@ public class VillagerInteractionScreen extends Screen {
     private static final int INVENTORY_BUTTON_WIDTH = 64;
     private static final int INVENTORY_BUTTON_HEIGHT = 18;
     private static final int INVENTORY_BUTTON_GAP = 4;
-    private static final ResourceLocation DIVIDER_SELECT_TEXTURE =
-            VillagerRetaliation.id("textures/gui/villager_interaction_screen/divider_select.png");
-    private static final ResourceLocation GIFT_INVENTORY_TEXTURE =
-            VillagerRetaliation.id("textures/gui/villager_interaction_screen/gift_inventory.png");
+    private static final int GIFT_INFO_ICON_SIZE = 16;
+    private static final int GIFT_INFO_ICON_GAP = 5;
     private static final int DIVIDER_SELECT_WIDTH = 11;
     private static final int DIVIDER_SELECT_HEIGHT = 19;
 
@@ -80,6 +79,9 @@ public class VillagerInteractionScreen extends Screen {
     private DialogueDisposition mood;
     private boolean followingPlayer;
     private final List<DialogueOption> options = new ArrayList<>();
+    private final List<DialogueOptionDefinition> dialogueOptions = new ArrayList<>();
+    private final List<String> knownLikedGiftNames = new ArrayList<>();
+    private final List<String> knownDislikedGiftNames = new ArrayList<>();
     private DialoguePage page = DialoguePage.ROOT;
     private int selectedOption;
     private boolean closingFromServer;
@@ -91,7 +93,18 @@ public class VillagerInteractionScreen extends Screen {
     private Button giftButton;
     private Double originalChatWidth;
 
-    public VillagerInteractionScreen(int villagerEntityId, String villagerName, String professionName, boolean baby, int reputation, VillagerReputationLevel reputationLevel, DialogueDisposition mood, boolean followingPlayer) {
+    public VillagerInteractionScreen(
+            int villagerEntityId,
+            String villagerName,
+            String professionName,
+            boolean baby,
+            int reputation,
+            VillagerReputationLevel reputationLevel,
+            DialogueDisposition mood,
+            boolean followingPlayer,
+            List<DialogueOptionDefinition> dialogueOptions,
+            List<String> knownLikedGiftNames,
+            List<String> knownDislikedGiftNames) {
         super(Component.literal("Villager Interaction"));
         this.villagerEntityId = villagerEntityId;
         this.villagerName = villagerName;
@@ -101,6 +114,9 @@ public class VillagerInteractionScreen extends Screen {
         this.reputationLevel = reputationLevel;
         this.mood = mood;
         this.followingPlayer = followingPlayer;
+        this.dialogueOptions.addAll(dialogueOptions);
+        this.knownLikedGiftNames.addAll(knownLikedGiftNames);
+        this.knownDislikedGiftNames.addAll(knownDislikedGiftNames);
         ClientVillagerConversationState.start(villagerEntityId);
     }
 
@@ -128,10 +144,25 @@ public class VillagerInteractionScreen extends Screen {
         return this.villagerEntityId == entityId;
     }
 
-    public void updateReputation(int reputation, VillagerReputationLevel reputationLevel, DialogueDisposition mood) {
+    public void updateReputation(
+            int reputation,
+            VillagerReputationLevel reputationLevel,
+            DialogueDisposition mood,
+            List<DialogueOptionDefinition> dialogueOptions,
+            List<String> knownLikedGiftNames,
+            List<String> knownDislikedGiftNames) {
         this.reputation = reputation;
         this.reputationLevel = reputationLevel;
         this.mood = mood;
+        this.dialogueOptions.clear();
+        this.dialogueOptions.addAll(dialogueOptions);
+        this.knownLikedGiftNames.clear();
+        this.knownLikedGiftNames.addAll(knownLikedGiftNames);
+        this.knownDislikedGiftNames.clear();
+        this.knownDislikedGiftNames.addAll(knownDislikedGiftNames);
+        if (this.page == DialoguePage.TALK) {
+            rebuildOptionsKeepingListPosition();
+        }
     }
 
     public void closeFromServer() {
@@ -263,21 +294,24 @@ public class VillagerInteractionScreen extends Screen {
         ensureSelectedVisible();
     }
 
+    private void rebuildOptionsKeepingListPosition() {
+        int previousSelectedOption = this.selectedOption;
+        float previousOptionScroll = this.optionScroll;
+        float previousTargetOptionScroll = this.targetOptionScroll;
+
+        rebuildOptions();
+
+        if (!this.options.isEmpty()) {
+            this.selectedOption = Mth.clamp(previousSelectedOption, 0, this.options.size() - 1);
+        }
+        this.optionScroll = Mth.clamp(previousOptionScroll, 0.0F, maxOptionScroll());
+        this.targetOptionScroll = Mth.clamp(previousTargetOptionScroll, 0.0F, maxOptionScroll());
+        ensureSelectedVisible();
+    }
+
     private void addDialogueOptions() {
-        if (this.baby) {
-            addDialogueOption("Say Hello", DialogueRequestType.GREETING);
-            addDialogueOption("Ask About Today", DialogueRequestType.CHAT);
-            addDialogueOption("Ask What They Know", DialogueRequestType.QUESTION);
-            addDialogueOption("Ask for a Story", DialogueRequestType.STORY);
-            addDialogueOption("Tell Joke", DialogueRequestType.JOKE);
-            addDialogueOption("Be Mean", DialogueRequestType.INSULT);
-        } else {
-            addDialogueOption("Small Talk", DialogueRequestType.CHAT);
-            addDialogueOption("Greet", DialogueRequestType.GREETING);
-            addDialogueOption("Ask Question", DialogueRequestType.QUESTION);
-            addDialogueOption("Ask for Story", DialogueRequestType.STORY);
-            addDialogueOption("Tell Joke", DialogueRequestType.JOKE);
-            addDialogueOption("Insult", DialogueRequestType.INSULT);
+        for (DialogueOptionDefinition option : this.dialogueOptions) {
+            addDialogueOption(option.label(), option.id());
         }
     }
 
@@ -286,6 +320,9 @@ public class VillagerInteractionScreen extends Screen {
         if (!this.baby) {
             this.options.add(DialogueOption.enabled("Trade", this::requestTrade));
             this.options.add(DialogueOption.enabled("Gift", this::openGiftPage));
+            if (canRequestVillagerInventory()) {
+                this.options.add(DialogueOption.enabled("Inventory", this::requestInventory));
+            }
             this.options.add(DialogueOption.enabled("Recruit", this::openRecruitPage));
         }
         this.options.add(DialogueOption.enabled("Goodbye", this::leaveConversation));
@@ -296,8 +333,8 @@ public class VillagerInteractionScreen extends Screen {
         this.options.add(DialogueOption.enabled(this.followingPlayer ? "Stop Following" : "Follow Me", () -> requestRecruit(VillagerRecruitRequestPayload.Action.FOLLOW)));
     }
 
-    private void addDialogueOption(String label, DialogueRequestType requestType) {
-        this.options.add(DialogueOption.enabled(label, () -> requestDialogue(requestType)));
+    private void addDialogueOption(String label, String optionId) {
+        this.options.add(DialogueOption.enabled(label, () -> requestDialogue(optionId)));
     }
 
     private void openTalkPage() {
@@ -320,6 +357,10 @@ public class VillagerInteractionScreen extends Screen {
         PacketDistributor.sendToServer(new VillagerTradeRequestPayload(this.villagerEntityId));
     }
 
+    private void requestInventory() {
+        PacketDistributor.sendToServer(new VillagerInventoryRequestPayload(this.villagerEntityId));
+    }
+
     private void requestGift() {
         if (this.selectedInventorySlot < 0) {
             return;
@@ -328,8 +369,8 @@ public class VillagerInteractionScreen extends Screen {
         this.selectedInventorySlot = firstGiftableInventorySlot();
     }
 
-    private void requestDialogue(DialogueRequestType requestType) {
-        PacketDistributor.sendToServer(new VillagerDialogueRequestPayload(this.villagerEntityId, requestType));
+    private void requestDialogue(String optionId) {
+        PacketDistributor.sendToServer(new VillagerDialogueRequestPayload(this.villagerEntityId, optionId));
     }
 
     private void navigateToRootPage() {
@@ -410,17 +451,20 @@ public class VillagerInteractionScreen extends Screen {
         int hoveredSlot = giftSlotAt(mouseX, mouseY);
 
         renderGiftSlots(graphics, left, top, hoveredSlot);
+        renderGiftInfoIcon(graphics, mouseX, mouseY);
         renderGiftButton(graphics, mouseX, mouseY, partialTick);
 
         ItemStack hoveredStack = stackForInventorySlot(hoveredSlot);
-        if (!hoveredStack.isEmpty()) {
+        if (isPointInsideGiftInfoIcon(mouseX, mouseY)) {
+            renderGiftKnowledgeTooltip(graphics, mouseX, mouseY);
+        } else if (!hoveredStack.isEmpty()) {
             graphics.renderTooltip(this.font, hoveredStack, mouseX, mouseY);
         }
     }
 
     private void renderGiftSlots(GuiGraphics graphics, int left, int top, int hoveredSlot) {
         graphics.blit(
-                GIFT_INVENTORY_TEXTURE,
+                VillagerRetaliationClientAssets.GIFT_INVENTORY_TEXTURE,
                 left,
                 top,
                 0,
@@ -609,7 +653,7 @@ public class VillagerInteractionScreen extends Screen {
 
         int selectorLeft = lineRight - DIVIDER_SELECT_WIDTH;
         graphics.blit(
-                DIVIDER_SELECT_TEXTURE,
+                VillagerRetaliationClientAssets.DIVIDER_SELECT_TEXTURE,
                 selectorLeft,
                 selectorTop,
                 0,
@@ -804,6 +848,61 @@ public class VillagerInteractionScreen extends Screen {
         return new GiftButtonBounds(left, top, left + INVENTORY_BUTTON_WIDTH, top + INVENTORY_BUTTON_HEIGHT);
     }
 
+    private void renderGiftInfoIcon(GuiGraphics graphics, int mouseX, int mouseY) {
+        GiftInfoIconBounds bounds = giftInfoIconBounds();
+        graphics.blit(
+                VillagerRetaliationClientAssets.GIFT_INFO_ICON_TEXTURE,
+                bounds.left(),
+                bounds.top(),
+                0,
+                0,
+                GIFT_INFO_ICON_SIZE,
+                GIFT_INFO_ICON_SIZE,
+                GIFT_INFO_ICON_SIZE,
+                GIFT_INFO_ICON_SIZE
+        );
+    }
+
+    private void renderGiftKnowledgeTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
+        List<Component> tooltip = new ArrayList<>();
+        tooltip.add(Component.literal("Known gifts").withStyle(ChatFormatting.AQUA));
+        tooltip.add(Component.literal(this.professionName).withStyle(ChatFormatting.AQUA));
+        tooltip.add(Component.empty());
+        if (this.knownLikedGiftNames.isEmpty() && this.knownDislikedGiftNames.isEmpty()) {
+            tooltip.add(Component.literal("Ask villagers about gifts to learn more.").withStyle(ChatFormatting.GRAY));
+        } else {
+            addGiftTooltipSection(tooltip, "Likes", this.knownLikedGiftNames, ChatFormatting.GREEN);
+            addGiftTooltipSection(tooltip, "Dislikes", this.knownDislikedGiftNames, ChatFormatting.RED);
+        }
+        graphics.renderComponentTooltip(this.font, tooltip, mouseX, mouseY);
+    }
+
+    private static void addGiftTooltipSection(List<Component> tooltip, String label, List<String> giftNames, ChatFormatting color) {
+        tooltip.add(Component.literal(label + ":").withStyle(color));
+        if (giftNames.isEmpty()) {
+            tooltip.add(Component.literal("  Unknown").withStyle(ChatFormatting.GRAY));
+            return;
+        }
+        for (String giftName : giftNames) {
+            tooltip.add(Component.literal("  " + giftName).withStyle(color));
+        }
+    }
+
+    private boolean isPointInsideGiftInfoIcon(double mouseX, double mouseY) {
+        GiftInfoIconBounds bounds = giftInfoIconBounds();
+        return mouseX >= bounds.left()
+                && mouseX <= bounds.right()
+                && mouseY >= bounds.top()
+                && mouseY <= bounds.bottom();
+    }
+
+    private GiftInfoIconBounds giftInfoIconBounds() {
+        GiftButtonBounds giftButton = giftButtonBounds();
+        int left = giftButton.left() - GIFT_INFO_ICON_GAP - GIFT_INFO_ICON_SIZE;
+        int top = giftButton.top() + (INVENTORY_BUTTON_HEIGHT - GIFT_INFO_ICON_SIZE) / 2;
+        return new GiftInfoIconBounds(left, top, left + GIFT_INFO_ICON_SIZE, top + GIFT_INFO_ICON_SIZE);
+    }
+
     private boolean isPointInsideOptionScrollArea(double mouseX, double mouseY) {
         int left = optionsLeft() - 18;
         int right = optionsLeft() + OPTION_WIDTH + 4;
@@ -877,6 +976,10 @@ public class VillagerInteractionScreen extends Screen {
 
     private String reputationText() {
         return "Reputation: " + this.reputation;
+    }
+
+    private boolean canRequestVillagerInventory() {
+        return this.reputationLevel.trustRank() >= VillagerReputationLevel.REVERED.trustRank();
     }
 
     private void applyChatWidthOverride() {
@@ -1081,5 +1184,8 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     private record GiftButtonBounds(int left, int top, int right, int bottom) {
+    }
+
+    private record GiftInfoIconBounds(int left, int top, int right, int bottom) {
     }
 }

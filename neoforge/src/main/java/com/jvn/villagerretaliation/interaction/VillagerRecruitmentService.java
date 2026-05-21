@@ -1,8 +1,10 @@
 package com.jvn.villagerretaliation.interaction;
 
+import com.jvn.villagerretaliation.dialogue.DialogueContext;
+import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
 import com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload;
-import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
+import com.jvn.villagerretaliation.notification.VillagerNotifications;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
@@ -89,8 +91,12 @@ public final class VillagerRecruitmentService {
         if (villager.getPersistentData().hasUUID(FOLLOWING_PLAYER_KEY)) {
             ServerPlayer player = level.getServer().getPlayerList().getPlayer(villager.getPersistentData().getUUID(FOLLOWING_PLAYER_KEY));
             if (player != null) {
-                VillagerReputationNetworking.sendNotice(
+                VillagerNotifications.sendHud(
                         player,
+                        level,
+                        villager,
+                        "recruitment.follower_death",
+                        replacements(villager),
                         displayName(villager) + " died while following you.",
                         VillagerReputationNoticeKind.VILLAGER_DEATH
                 );
@@ -103,8 +109,12 @@ public final class VillagerRecruitmentService {
         if (villager.getPersistentData().hasUUID(HIRED_PLAYER_KEY)) {
             ServerPlayer player = level.getServer().getPlayerList().getPlayer(villager.getPersistentData().getUUID(HIRED_PLAYER_KEY));
             if (player != null) {
-                VillagerReputationNetworking.sendNotice(
+                VillagerNotifications.sendHud(
                         player,
+                        level,
+                        villager,
+                        "recruitment.hired_death",
+                        replacements(villager),
                         displayName(villager) + " died while hired by you.",
                         VillagerReputationNoticeKind.VILLAGER_DEATH
                 );
@@ -113,24 +123,36 @@ public final class VillagerRecruitmentService {
     }
 
     public static void sendHiredNotice(ServerPlayer player, Villager villager) {
-        VillagerReputationNetworking.sendNotice(
+        VillagerNotifications.sendHud(
                 player,
+                player.serverLevel(),
+                villager,
+                "recruitment.hired",
+                replacements(villager),
                 displayName(villager) + " hired.",
                 VillagerReputationNoticeKind.VILLAGER_HIRED
         );
     }
 
     public static void sendFiredNotice(ServerPlayer player, Villager villager) {
-        VillagerReputationNetworking.sendNotice(
+        VillagerNotifications.sendHud(
                 player,
+                player.serverLevel(),
+                villager,
+                "recruitment.fired",
+                replacements(villager),
                 displayName(villager) + " fired.",
                 VillagerReputationNoticeKind.VILLAGER_FIRED
         );
     }
 
     public static void sendNoLongerFollowingNotice(ServerPlayer player, Villager villager) {
-        VillagerReputationNetworking.sendNotice(
+        VillagerNotifications.sendHud(
                 player,
+                player.serverLevel(),
+                villager,
+                "recruitment.follow_stop",
+                replacements(villager),
                 displayName(villager) + " is no longer following you.",
                 VillagerReputationNoticeKind.VILLAGER_DISMISSED
         );
@@ -218,8 +240,12 @@ public final class VillagerRecruitmentService {
         }
         ServerPlayer player = level.getServer().getPlayerList().getPlayer(recentOwner.playerId());
         if (player != null) {
-            VillagerReputationNetworking.sendNotice(
+            VillagerNotifications.sendHud(
                     player,
+                    level,
+                    villager,
+                    "recruitment.betrayed_follower_death",
+                    replacements(villager),
                     displayName(villager) + " died after you broke their trust.",
                     VillagerReputationNoticeKind.VILLAGER_DEATH
             );
@@ -231,29 +257,34 @@ public final class VillagerRecruitmentService {
                 player,
                 new VillagerInteractionNoticePayload(
                         villager.getId(),
-                        followerBetrayalResponse(villager),
+                        followerBetrayalResponse(villager, player),
                         villagerSpeakerLabel(villager)
                 )
         );
     }
 
     private static void sendFollowingNotice(ServerPlayer player, Villager villager) {
-        VillagerReputationNetworking.sendNotice(
+        VillagerNotifications.sendHud(
                 player,
+                player.serverLevel(),
+                villager,
+                "recruitment.follow_start",
+                replacements(villager),
                 displayName(villager) + " is following you.",
                 VillagerReputationNoticeKind.VILLAGER_FOLLOWING
         );
     }
 
-    private static String followerBetrayalResponse(Villager villager) {
-        return switch (villager.getRandom().nextInt(6)) {
-            case 0 -> "I trusted you.";
-            case 1 -> "So that's why you wanted me close?";
-            case 2 -> "I should have stayed home.";
-            case 3 -> "You asked me to follow you, not fear you.";
-            case 4 -> "After I came with you? Really?";
-            default -> "No. I am done following you.";
-        };
+    private static Map<String, String> replacements(Villager villager) {
+        return VillagerNotifications.replacements("villager", displayName(villager));
+    }
+
+    private static String followerBetrayalResponse(Villager villager, ServerPlayer player) {
+        if (!(villager.level() instanceof ServerLevel level)) {
+            return "";
+        }
+        DialogueContext context = VillagerInteractionService.createDialogueContext(level, player, villager);
+        return VillagerDialogueResources.message(context, "interaction.follow_betrayal").orElse("");
     }
 
     private static String villagerSpeakerLabel(Villager villager) {

@@ -1,0 +1,915 @@
+{
+  "options": [
+    {
+      "id": "adult_chat",
+      "label": "Small Talk",
+      "type": "chat",
+      "show_for_babies": false,
+      "order": 0
+    },
+    {
+      "id": "adult_greeting",
+      "label": "Greet",
+      "type": "greeting",
+      "show_for_babies": false,
+      "order": 1
+    },
+    {
+      "id": "adult_question",
+      "label": "Ask Question",
+      "type": "question",
+      "show_for_babies": false,
+      "order": 2
+    },
+    {
+      "id": "adult_gift_preferences",
+      "label": "Ask About Gifts",
+      "type": "gift_preferences",
+      "show_for_babies": false,
+      "order": 3
+    },
+    {
+      "id": "adult_story",
+      "label": "Ask for Story",
+      "type": "story",
+      "show_for_babies": false,
+      "order": 4
+    },
+    {
+      "id": "adult_joke",
+      "label": "Tell Joke",
+      "type": "joke",
+      "show_for_babies": false,
+      "order": 5
+    },
+    {
+      "id": "adult_insult",
+      "label": "Insult",
+      "type": "insult",
+      "show_for_babies": false,
+      "order": 6
+    },
+    {
+      "id": "baby_greeting",
+      "label": "Say Hello",
+      "type": "greeting",
+      "show_for_adults": false,
+      "order": 0
+    },
+    {
+      "id": "baby_chat",
+      "label": "Ask About Today",
+      "type": "chat",
+      "show_for_adults": false,
+      "order": 1
+    },
+    {
+      "id": "baby_question",
+      "label": "Ask What They Know",
+      "type": "question",
+      "show_for_adults": false,
+      "order": 2
+    },
+    {
+      "id": "baby_gift_preferences",
+      "label": "Ask About Gifts",
+      "type": "gift_preferences",
+      "show_for_adults": false,
+      "order": 3
+    },
+    {
+      "id": "baby_story",
+      "label": "Ask for a Story",
+      "type": "story",
+      "show_for_adults": false,
+      "order": 4
+    },
+    {
+      "id": "baby_joke",
+      "label": "Tell Joke",
+      "type": "joke",
+      "show_for_adults": false,
+      "order": 5
+    },
+    {
+      "id": "baby_insult",
+      "label": "Be Mean",
+      "type": "insult",
+      "show_for_adults": false,
+      "order": 6
+    }
+  ],
+  "messages": [
+    { "key": "interaction.follow_stay", "text": "I'll stay here." },
+    { "key": "interaction.follow_start", "text": "All right. I'll follow you." },
+    { "key": "interaction.follow_betrayal", "text": "I trusted you." },
+    { "key": "interaction.follow_betrayal", "text": "You asked me to follow you, not fear you." },
+    { "key": "interaction.refuse_despised", "text": "I'm done talking. Stay away." },
+    { "key": "interaction.refuse_angry", "text": "I'm too angry to talk." },
+    { "key": "interaction.busy", "text": "I'm busy right now." },
+    { "key": "interaction.unavailable", "text": "I'm no longer available." },
+    { "key": "interaction.conversation_ended", "text": "The conversation has ended." },
+    { "key": "interaction.unknown_dialogue_option", "text": "I am not sure how to answer that." },
+    { "key": "interaction.trade_unavailable", "text": "I cannot trade right now." },
+    { "key": "interaction.refuse_trade", "text": "I refuse to trade with you." },
+    { "key": "interaction.inventory_unavailable", "text": "I cannot show you that right now." },
+    { "key": "interaction.not_trusted_enough", "text": "I don't know you well enough for that." },
+    { "key": "interaction.gift_unavailable", "text": "I cannot accept gifts right now." },
+    { "key": "interaction.keep_distance", "text": "Keep your distance." },
+    { "key": "interaction.child_refuse_gift", "text": "I should ask a grown-up before taking that.", "show_for_adults": false },
+    { "key": "interaction.gift_invalid", "text": "I cannot accept that." },
+    { "key": "interaction.gift_empty_slot", "text": "There is nothing there." },
+    { "key": "interaction.recruit_unavailable", "text": "I cannot help right now." },
+    { "key": "interaction.hire_unavailable", "text": "I cannot be hired yet." },
+    { "key": "interaction.child_refuse_trade", "text": "I do not know how to trade yet.", "show_for_adults": false },
+    { "key": "interaction.no_trades", "text": "I have no trades available." },
+    { "key": "dialogue.fallback", "text": "They stare at you, unsure what to say." },
+    { "key": "sleep.disturbance", "text": "Mmph... let me sleep." },
+    { "key": "sleep.disturbance", "text": "Come back when the sun is up." },
+    { "key": "sleep.repeated_disturbance", "text": "I already woke up once for you tonight." },
+    { "key": "sleep.repeated_disturbance", "text": "You've bothered me enough for one night." },
+    { "key": "sleep.broken_bed", "text": "My bed! What is wrong with you?" },
+    { "key": "sleep.broken_bed", "text": "That was my bed. I will remember this." },
+    { "key": "reputation.insult_child", "text": "That was mean. I am telling someone.", "show_for_adults": false },
+    { "key": "reputation.positive", "text": "You know, you're not so bad to talk to." },
+    { "key": "reputation.positive", "text": "It's good to speak with someone who listens." },
+    { "key": "reputation.angry", "text": "I should have known better than to speak with you." },
+    { "key": "reputation.angry", "text": "Careful. Villages remember cruelty." },
+    { "key": "reputation.repeated_question", "text": "You've asked enough questions for one day." },
+    { "key": "reputation.repeated_question", "text": "I have work to do. Ask something else." },
+    { "key": "reputation.repeated_dialogue", "text": "Enough of that for now." },
+    { "key": "reputation.repeated_dialogue", "text": "Try something else. My patience has limits." },
+    { "key": "reputation.joke_missed", "text": "Hmph. Maybe don't quit your day job." },
+    { "key": "gift_memory.direct.loved", "text": "Still thinking about the {gift_item} you gave me. That was a real kindness." },
+    { "key": "gift_memory.direct.liked", "text": "That {gift_item} you gave me was useful. Thank you again." },
+    { "key": "gift_memory.direct.neutral", "text": "I am still deciding what to do with that {gift_item} you gave me." },
+    { "key": "gift_memory.direct.disliked", "text": "I remember that {gift_item}. Not fondly." },
+    { "key": "gift_memory.direct.hated", "text": "I have not forgotten the {gift_item} you handed me." },
+    { "key": "gift_memory.village.loved", "text": "I heard you gave {villager_name} {gift_item}. That was kind of you." },
+    { "key": "gift_memory.village.liked", "text": "{villager_name} seemed pleased with that {gift_item}." },
+    { "key": "gift_memory.village.neutral", "text": "I heard about the {gift_item} you gave {villager_name}. Interesting choice." },
+    { "key": "gift_memory.village.disliked", "text": "{villager_name} did not sound pleased about that {gift_item}." },
+    { "key": "gift_memory.village.hated", "text": "I heard what you gave {villager_name}. Do not bring that sort of thing here." },
+    { "key": "gift_response.global.loved", "text": "This is wonderful. You chose like someone who knows me." },
+    { "key": "gift_response.global.liked", "text": "{gift_item} is a welcome gift." },
+    { "key": "gift_response.global.neutral", "text": "A curious gift. I will think about it." },
+    { "key": "gift_response.global.disliked", "text": "I do not have much use for {gift_item}." },
+    { "key": "gift_response.global.hated", "text": "That is an insult, not a gift." },
+    { "key": "gift_response.profession.loved", "text": "{gift_item}? For my work? That is thoughtful." },
+    { "key": "gift_response.profession.liked", "text": "I can make good use of {gift_item}." },
+    { "key": "gift_response.profession.neutral", "text": "Thank you. I suppose this has its uses." },
+    { "key": "gift_response.profession.disliked", "text": "{gift_item} is a poor match for my trade." },
+    { "key": "gift_response.profession.hated", "text": "Do not bring danger and call it a present." },
+    { "key": "story_hint.biome.vague", "text": "I caught wind of different land {vague_direction}. Could be worth a walk." },
+    { "key": "story_hint.biome.named", "text": "I caught wind of {target_article} {vague_direction}." },
+    { "key": "story_hint.biome.precise", "text": "I caught wind of {target_article} about {distance} {direction}." },
+    { "key": "story_hint.structure.rumor", "text": "I keep hearing stories about {target_article} somewhere {vague_direction}{vertical}." },
+    { "key": "story_hint.structure.precise", "text": "I keep hearing about {target_article} around {distance} {direction}{vertical}." },
+    { "key": "story_hint.map", "text": "Here. I marked {target_article} on this map. It should sit about {distance} {direction}{vertical}." }
+  ],
+  "openings": [
+    {
+      "id": "global_friendly_opening",
+      "text": "Good to see you. What can I do for you?",
+      "dispositions": [
+        "respectful",
+        "friendly"
+      ],
+      "show_for_babies": false
+    },
+    {
+      "id": "global_neutral_opening",
+      "text": "Hello. What brings you here?",
+      "dispositions": [
+        "neutral",
+        "cautious"
+      ],
+      "show_for_babies": false
+    },
+    {
+      "id": "global_hostile_opening",
+      "text": "You should make this quick.",
+      "dispositions": [
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "show_for_babies": false
+    },
+    {
+      "id": "baby_friendly_opening",
+      "text": "Hi! Did you come to visit?",
+      "dispositions": [
+        "respectful",
+        "friendly"
+      ],
+      "show_for_adults": false
+    },
+    {
+      "id": "baby_cautious_opening",
+      "text": "Um. Are you here to talk?",
+      "dispositions": [
+        "neutral",
+        "cautious",
+        "rude"
+      ],
+      "show_for_adults": false
+    },
+    {
+      "id": "baby_afraid_opening",
+      "text": "I can listen, but then I am going back inside.",
+      "dispositions": [
+        "hostile",
+        "fearful"
+      ],
+      "show_for_adults": false
+    }
+  ],
+  "closings": [
+    {
+      "id": "global_friendly_closing",
+      "text": "Safe travels. Come by again.",
+      "dispositions": [
+        "respectful",
+        "friendly"
+      ],
+      "show_for_babies": false
+    },
+    {
+      "id": "global_neutral_closing",
+      "text": "Until next time.",
+      "dispositions": [
+        "neutral",
+        "cautious"
+      ],
+      "show_for_babies": false
+    },
+    {
+      "id": "global_hostile_closing",
+      "text": "That is enough for now.",
+      "dispositions": [
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "show_for_babies": false
+    },
+    {
+      "id": "baby_friendly_closing",
+      "text": "Bye! Come back later.",
+      "dispositions": [
+        "respectful",
+        "friendly"
+      ],
+      "show_for_adults": false
+    },
+    {
+      "id": "baby_cautious_closing",
+      "text": "Okay. Goodbye.",
+      "dispositions": [
+        "neutral",
+        "cautious",
+        "rude"
+      ],
+      "show_for_adults": false
+    },
+    {
+      "id": "baby_afraid_closing",
+      "text": "I am going to find someone older.",
+      "dispositions": [
+        "hostile",
+        "fearful"
+      ],
+      "show_for_adults": false
+    }
+  ],
+  "lines": [
+    {
+      "id": "baby_chat_hiding_place",
+      "type": "chat",
+      "option": "baby_chat",
+      "text": "I found a really good hiding place, but I cannot tell you or it stops being good.",
+      "show_for_adults": false,
+      "weight": 25
+    },
+    {
+      "id": "baby_chat_bell",
+      "type": "chat",
+      "option": "baby_chat",
+      "text": "The bell is loud up close. I learned that by mistake.",
+      "show_for_adults": false,
+      "weight": 22
+    },
+    {
+      "id": "baby_greeting_hi_again",
+      "type": "greeting",
+      "option": "baby_greeting",
+      "text": "Hi again!",
+      "show_for_adults": false,
+      "weight": 25
+    },
+    {
+      "id": "baby_greeting_from_here",
+      "type": "greeting",
+      "option": "baby_greeting",
+      "text": "I can say hello from here.",
+      "show_for_adults": false,
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 24
+    },
+    {
+      "id": "baby_question_doors_bells",
+      "type": "question",
+      "option": "baby_question",
+      "text": "A question? I know three things: doors, bells, and which path has puddles.",
+      "show_for_adults": false,
+      "weight": 24
+    },
+    {
+      "id": "baby_question_grownups",
+      "type": "question",
+      "option": "baby_question",
+      "text": "Ask a grown-up. They like sounding certain.",
+      "show_for_adults": false,
+      "weight": 22
+    },
+    {
+      "id": "baby_story_well",
+      "type": "story",
+      "option": "baby_story",
+      "text": "Once I ran all the way around the well and did not fall in. That is the whole story, but it was very exciting.",
+      "show_for_adults": false,
+      "weight": 22
+    },
+    {
+      "id": "baby_story_tall",
+      "type": "story",
+      "option": "baby_story",
+      "text": "I had a dream I was tall enough to see over every fence.",
+      "show_for_adults": false,
+      "weight": 20
+    },
+    {
+      "id": "baby_joke_bell",
+      "type": "joke",
+      "option": "baby_joke",
+      "text": "Why did the bell ring? Because it had something important to say!",
+      "show_for_adults": false,
+      "weight": 22
+    },
+    {
+      "id": "baby_joke_chores",
+      "type": "joke",
+      "option": "baby_joke",
+      "text": "If I stand very still, chores cannot see me.",
+      "show_for_adults": false,
+      "weight": 22
+    },
+    {
+      "id": "baby_insult_not_nice",
+      "type": "insult",
+      "option": "baby_insult",
+      "text": "That was not nice.",
+      "show_for_adults": false,
+      "weight": 25
+    },
+    {
+      "id": "baby_insult_scary",
+      "type": "insult",
+      "option": "baby_insult",
+      "text": "You are being scary.",
+      "show_for_adults": false,
+      "dispositions": [
+        "hostile",
+        "fearful"
+      ],
+      "weight": 24
+    },
+    {
+      "id": "global_chat_paths",
+      "type": "chat",
+      "text": "The paths tell you plenty if you watch who hurries and who lingers.",
+      "weight": 22
+    },
+    {
+      "id": "global_question_trust",
+      "type": "question",
+      "text": "Trust is built from small things. Villages are very good at counting small things.",
+      "weight": 24
+    },
+    {
+      "id": "global_story_bell",
+      "type": "story",
+      "text": "Once the bell rang for a wandering cat. Everyone still claims they were not scared.",
+      "weight": 20
+    },
+    {
+      "id": "global_hit_memory",
+      "type": "chat",
+      "text": "I still remember that {attack_weapon}. Conversations get colder after that.",
+      "requires_recent_direct_hit_memory": true,
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 48
+    },
+    {
+      "id": "global_new_greeting_bell",
+      "type": "greeting",
+      "text": "The bell has been quiet today. I would like to keep it that way.",
+      "weight": 22
+    },
+    {
+      "id": "global_new_chat_square",
+      "type": "chat",
+      "text": "The square tells you who is busy, who is worried, and who is pretending not to be either.",
+      "weight": 22
+    },
+    {
+      "id": "global_new_question_doors",
+      "type": "question",
+      "text": "Why do we shut doors early? Because night makes ordinary mistakes harder to fix.",
+      "weight": 22
+    },
+    {
+      "id": "global_new_story_roof",
+      "type": "story",
+      "text": "One season, half the village learned roofing because the rain would not stop teaching.",
+      "weight": 20
+    },
+    {
+      "id": "global_new_joke_emerald",
+      "type": "joke",
+      "text": "I know an emerald joke, but it costs extra if you want the good part.",
+      "weight": 18
+    },
+    {
+      "id": "global_new_insult_path",
+      "type": "insult",
+      "text": "You walk like the path owes you an apology.",
+      "weight": 18
+    },
+    {
+      "id": "global_new_chat_work",
+      "type": "chat",
+      "text": "Most village work is simple until everyone depends on it being done right.",
+      "weight": 22
+    },
+    {
+      "id": "global_new_question_memory",
+      "type": "question",
+      "text": "What do villagers remember? More than visitors hope, less than rumors claim.",
+      "weight": 22
+    },
+    {
+      "id": "global_new_story_well",
+      "type": "story",
+      "text": "The well once went dry for a morning, and suddenly every bucket had a reputation.",
+      "weight": 20
+    },
+    {
+      "id": "global_new_hit_memory",
+      "type": "chat",
+      "text": "It is hard to speak plainly while remembering that {attack_weapon}.",
+      "requires_recent_direct_hit_memory": true,
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 48
+    },
+    {
+      "id": "gift_global_liked_useful",
+      "type": "gift_preferences",
+      "gift_advice": "global_liked",
+      "text": "{gift_item} is usually welcome. Simple, useful gifts travel well.",
+      "weight": 20
+    },
+    {
+      "id": "gift_global_liked_glad",
+      "type": "gift_preferences",
+      "gift_advice": "global_liked",
+      "text": "Most villagers would be glad to receive {gift_item}.",
+      "weight": 20
+    },
+    {
+      "id": "gift_global_liked_safe",
+      "type": "gift_preferences",
+      "gift_advice": "global_liked",
+      "text": "If you are unsure, {gift_item} is a kind choice.",
+      "weight": 20
+    },
+    {
+      "id": "gift_global_liked_intentions",
+      "type": "gift_preferences",
+      "gift_advice": "global_liked",
+      "text": "A gift like {gift_item} says you came with good intentions.",
+      "weight": 18
+    },
+    {
+      "id": "gift_global_liked_practical",
+      "type": "gift_preferences",
+      "gift_advice": "global_liked",
+      "text": "Villagers remember practical kindness. {gift_item} counts.",
+      "weight": 18
+    },
+    {
+      "id": "gift_global_liked_room",
+      "type": "gift_preferences",
+      "gift_advice": "global_liked",
+      "text": "A village can usually find room for {gift_item}.",
+      "weight": 18
+    },
+    {
+      "id": "gift_global_liked_smile",
+      "type": "gift_preferences",
+      "gift_advice": "global_liked",
+      "text": "For most villagers, {gift_item} is worth a smile.",
+      "weight": 18
+    },
+    {
+      "id": "gift_global_liked_peaceable",
+      "type": "gift_preferences",
+      "gift_advice": "global_liked",
+      "text": "{gift_item} makes a good peaceable gift.",
+      "weight": 18
+    },
+    {
+      "id": "gift_global_liked_understood",
+      "type": "gift_preferences",
+      "gift_advice": "global_liked",
+      "text": "Bring {gift_item} and most villagers will understand the gesture.",
+      "weight": 18
+    },
+    {
+      "id": "gift_global_liked_welcome",
+      "type": "gift_preferences",
+      "gift_advice": "global_liked",
+      "text": "{gift_item} is welcome more often than not.",
+      "weight": 18
+    },
+    {
+      "id": "gift_global_disliked_poor",
+      "type": "gift_preferences",
+      "gift_advice": "global_disliked",
+      "text": "{gift_item} makes a poor gift. Most villagers would rather not handle it.",
+      "weight": 20
+    },
+    {
+      "id": "gift_global_disliked_wrong_message",
+      "type": "gift_preferences",
+      "gift_advice": "global_disliked",
+      "text": "{gift_item} sends the wrong message.",
+      "weight": 20
+    },
+    {
+      "id": "gift_global_disliked_avoid",
+      "type": "gift_preferences",
+      "gift_advice": "global_disliked",
+      "text": "If you are trying to be kind, avoid {gift_item}.",
+      "weight": 20
+    },
+    {
+      "id": "gift_global_disliked_warning",
+      "type": "gift_preferences",
+      "gift_advice": "global_disliked",
+      "text": "{gift_item} is more warning than present.",
+      "weight": 18
+    },
+    {
+      "id": "gift_global_disliked_sour",
+      "type": "gift_preferences",
+      "gift_advice": "global_disliked",
+      "text": "Handing someone {gift_item} is a quick way to sour the room.",
+      "weight": 18
+    },
+    {
+      "id": "gift_global_disliked_elsewhere",
+      "type": "gift_preferences",
+      "gift_advice": "global_disliked",
+      "text": "{gift_item} belongs somewhere else, not in someone's hands as a gift.",
+      "weight": 18
+    },
+    {
+      "id": "gift_global_disliked_bad_offering",
+      "type": "gift_preferences",
+      "gift_advice": "global_disliked",
+      "text": "Most people here would call {gift_item} a bad offering.",
+      "weight": 18
+    },
+    {
+      "id": "gift_global_disliked_empty_handed",
+      "type": "gift_preferences",
+      "gift_advice": "global_disliked",
+      "text": "Better to arrive empty-handed than with {gift_item}.",
+      "weight": 18
+    },
+    {
+      "id": "gift_global_disliked_not_kindness",
+      "type": "gift_preferences",
+      "gift_advice": "global_disliked",
+      "text": "Do not wrap {gift_item} and call it kindness.",
+      "weight": 18
+    },
+    {
+      "id": "gift_global_disliked_wrong_reason",
+      "type": "gift_preferences",
+      "gift_advice": "global_disliked",
+      "text": "{gift_item} is the kind of gift people remember for the wrong reason.",
+      "weight": 18
+    },
+    {
+      "id": "gift_profession_liked_thoughtful",
+      "type": "gift_preferences",
+      "gift_advice": "profession_liked",
+      "text": "If you are choosing for {gift_subject}, {gift_item} is a thoughtful pick.",
+      "weight": 20
+    },
+    {
+      "id": "gift_profession_liked_attention",
+      "type": "gift_preferences",
+      "gift_advice": "profession_liked",
+      "text": "For {gift_subject}, {gift_item} shows you paid attention.",
+      "weight": 20
+    },
+    {
+      "id": "gift_profession_liked_use",
+      "type": "gift_preferences",
+      "gift_advice": "profession_liked",
+      "text": "{gift_subject} can make good use of {gift_item}.",
+      "weight": 20
+    },
+    {
+      "id": "gift_profession_liked_suits",
+      "type": "gift_preferences",
+      "gift_advice": "profession_liked",
+      "text": "{gift_item} suits {gift_subject} better than most gifts.",
+      "weight": 18
+    },
+    {
+      "id": "gift_profession_liked_trade",
+      "type": "gift_preferences",
+      "gift_advice": "profession_liked",
+      "text": "You can tell someone knows the trade when they bring {gift_item}.",
+      "weight": 18
+    },
+    {
+      "id": "gift_profession_liked_value",
+      "type": "gift_preferences",
+      "gift_advice": "profession_liked",
+      "text": "That work gives {gift_item} real value.",
+      "weight": 18
+    },
+    {
+      "id": "gift_profession_liked_memory",
+      "type": "gift_preferences",
+      "gift_advice": "profession_liked",
+      "text": "{gift_item} is the kind of thing {gift_subject} remembers kindly.",
+      "weight": 18
+    },
+    {
+      "id": "gift_profession_liked_careful",
+      "type": "gift_preferences",
+      "gift_advice": "profession_liked",
+      "text": "A careful gift for {gift_subject}? {gift_item}.",
+      "weight": 18
+    },
+    {
+      "id": "gift_profession_liked_respect",
+      "type": "gift_preferences",
+      "gift_advice": "profession_liked",
+      "text": "{gift_subject} tends to respect a gift like {gift_item}.",
+      "weight": 18
+    },
+    {
+      "id": "gift_profession_liked_personal",
+      "type": "gift_preferences",
+      "gift_advice": "profession_liked",
+      "text": "{gift_item} feels personal to {gift_subject}.",
+      "weight": 18
+    },
+    {
+      "id": "gift_profession_disliked_avoid",
+      "type": "gift_preferences",
+      "gift_advice": "profession_disliked",
+      "text": "If you are choosing for {gift_subject}, I would avoid {gift_item}.",
+      "weight": 20
+    },
+    {
+      "id": "gift_profession_disliked_careless",
+      "type": "gift_preferences",
+      "gift_advice": "profession_disliked",
+      "text": "For {gift_subject}, {gift_item} feels careless.",
+      "weight": 20
+    },
+    {
+      "id": "gift_profession_disliked_no_gratitude",
+      "type": "gift_preferences",
+      "gift_advice": "profession_disliked",
+      "text": "Do not bring {gift_item} to {gift_subject} and expect gratitude.",
+      "weight": 20
+    },
+    {
+      "id": "gift_profession_disliked_no_use",
+      "type": "gift_preferences",
+      "gift_advice": "profession_disliked",
+      "text": "{gift_subject} has little use for {gift_item}.",
+      "weight": 18
+    },
+    {
+      "id": "gift_profession_disliked_bad_match",
+      "type": "gift_preferences",
+      "gift_advice": "profession_disliked",
+      "text": "{gift_item} is a poor match for {gift_subject}.",
+      "weight": 18
+    },
+    {
+      "id": "gift_profession_disliked_home",
+      "type": "gift_preferences",
+      "gift_advice": "profession_disliked",
+      "text": "If I were gifting {gift_subject}, I would leave {gift_item} at home.",
+      "weight": 18
+    },
+    {
+      "id": "gift_profession_disliked_wrong_way",
+      "type": "gift_preferences",
+      "gift_advice": "profession_disliked",
+      "text": "{gift_subject} may take {gift_item} the wrong way.",
+      "weight": 18
+    },
+    {
+      "id": "gift_profession_disliked_nuisance",
+      "type": "gift_preferences",
+      "gift_advice": "profession_disliked",
+      "text": "For that profession, {gift_item} is more nuisance than gift.",
+      "weight": 18
+    },
+    {
+      "id": "gift_profession_disliked_insult_trade",
+      "type": "gift_preferences",
+      "gift_advice": "profession_disliked",
+      "text": "You can insult the trade without meaning to. {gift_item} may do it.",
+      "weight": 18
+    },
+    {
+      "id": "gift_profession_disliked_sour",
+      "type": "gift_preferences",
+      "gift_advice": "profession_disliked",
+      "text": "{gift_item} is the kind of thing {gift_subject} remembers sourly.",
+      "weight": 18
+    },
+    {
+      "id": "gift_already_known_all",
+      "type": "gift_preferences",
+      "gift_advice": "already_known",
+      "text": "I think you already know what I can tell you about gifts.",
+      "weight": 20
+    },
+    {
+      "id": "gift_already_known_memory",
+      "type": "gift_preferences",
+      "gift_advice": "already_known",
+      "text": "You've picked my memory clean on gifts, I'm afraid.",
+      "weight": 20
+    },
+    {
+      "id": "gift_already_known_no_fresh",
+      "type": "gift_preferences",
+      "gift_advice": "already_known",
+      "text": "No fresh advice. Try another villager if you want more gift gossip.",
+      "weight": 20
+    },
+    {
+      "id": "gift_already_known_honest",
+      "type": "gift_preferences",
+      "gift_advice": "already_known",
+      "text": "I would rather not pretend I know more than I do.",
+      "weight": 18
+    },
+    {
+      "id": "gift_already_known_today",
+      "type": "gift_preferences",
+      "gift_advice": "already_known",
+      "text": "No new gift advice from me today. Ask someone else and you may hear more.",
+      "weight": 18
+    },
+    {
+      "id": "gift_already_known_end",
+      "type": "gift_preferences",
+      "gift_advice": "already_known",
+      "text": "That is the end of my gift wisdom for the moment.",
+      "weight": 18
+    },
+    {
+      "id": "gift_already_known_personal",
+      "type": "gift_preferences",
+      "gift_advice": "already_known",
+      "text": "Nothing new comes to mind. Gifts are personal, even when villagers gossip.",
+      "weight": 18
+    },
+    {
+      "id": "gift_already_known_no_tip",
+      "type": "gift_preferences",
+      "gift_advice": "already_known",
+      "text": "I do not have another gift tip ready for you.",
+      "weight": 18
+    }
+  ],
+  "pacify": [
+    {
+      "id": "global_pacify_success_1",
+      "outcomes": [
+        "success"
+      ],
+      "text": "Fine. I will stand down, but peace takes more than emeralds.",
+      "weight": 20
+    },
+    {
+      "id": "global_pacify_success_2",
+      "outcomes": [
+        "success"
+      ],
+      "text": "I will let this pass for now. Do not make me regret it.",
+      "weight": 20
+    },
+    {
+      "id": "global_pacify_success_3",
+      "outcomes": [
+        "success"
+      ],
+      "text": "That is enough to cool my temper. Keep your hands peaceful.",
+      "weight": 20
+    },
+    {
+      "id": "global_pacify_short_1",
+      "outcomes": [
+        "not_enough_emeralds"
+      ],
+      "text": "That is not enough. Bring {emerald_cost} {emeralds} if you want this settled.",
+      "weight": 20
+    },
+    {
+      "id": "global_pacify_short_2",
+      "outcomes": [
+        "not_enough_emeralds"
+      ],
+      "text": "You are short. Peace costs {emerald_cost} {emeralds} today.",
+      "weight": 20
+    },
+    {
+      "id": "global_pacify_short_3",
+      "outcomes": [
+        "not_enough_emeralds"
+      ],
+      "text": "A small offer will not calm a large mistake. I need {emerald_cost} {emeralds}.",
+      "weight": 20
+    },
+    {
+      "id": "global_pacify_blocked_1",
+      "outcomes": [
+        "blocked_by_reputation"
+      ],
+      "text": "No. Some things are not bought back with emeralds.",
+      "dispositions": [
+        "hostile",
+        "fearful"
+      ],
+      "weight": 24
+    },
+    {
+      "id": "global_pacify_blocked_2",
+      "outcomes": [
+        "blocked_by_reputation"
+      ],
+      "text": "Keep them. I do not trust your apology.",
+      "dispositions": [
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 24
+    },
+    {
+      "id": "global_pacify_blocked_3",
+      "outcomes": [
+        "blocked_by_reputation"
+      ],
+      "text": "The village remembers too much for that to work.",
+      "dispositions": [
+        "hostile",
+        "fearful"
+      ],
+      "weight": 24
+    }
+  ]
+}

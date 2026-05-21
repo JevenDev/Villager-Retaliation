@@ -4,8 +4,10 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -42,9 +44,15 @@ public class VillagerInteractionSavedData extends SavedData {
     private static final String TAG_WINDOW_START_GAME_TIME = "WindowStartGameTime";
     private static final String TAG_WINDOW_DAY = "WindowDay";
     private static final String TAG_BAD_FIRST_IMPRESSION = "BadFirstImpression";
+    private static final String TAG_GIFT_KNOWLEDGE = "GiftKnowledge";
+    private static final String TAG_PROFESSIONS = "Professions";
+    private static final String TAG_PROFESSION = "Profession";
+    private static final String TAG_LIKED_GIFTS = "LikedGifts";
+    private static final String TAG_DISLIKED_GIFTS = "DislikedGifts";
     private static final int MAX_RECENT_LINES = 5;
 
     private final Map<UUID, Map<UUID, InteractionEntry>> entries = new HashMap<>();
+    private final Map<UUID, GiftKnowledgeBook> giftKnowledge = new HashMap<>();
 
     public static VillagerInteractionSavedData get(ServerLevel level) {
         return level.getServer().overworld().getDataStorage().computeIfAbsent(
@@ -129,7 +137,32 @@ public class VillagerInteractionSavedData extends SavedData {
             data.entries.computeIfAbsent(entryTag.getUUID(TAG_VILLAGER), ignored -> new HashMap<>())
                     .put(entryTag.getUUID(TAG_PLAYER), entry);
         }
+        ListTag giftKnowledgeTag = tag.getList(TAG_GIFT_KNOWLEDGE, Tag.TAG_COMPOUND);
+        for (Tag rawBook : giftKnowledgeTag) {
+            if (!(rawBook instanceof CompoundTag bookTag) || !bookTag.hasUUID(TAG_PLAYER)) {
+                continue;
+            }
+            GiftKnowledgeBook book = new GiftKnowledgeBook();
+            ListTag professionsTag = bookTag.getList(TAG_PROFESSIONS, Tag.TAG_COMPOUND);
+            for (Tag rawProfession : professionsTag) {
+                if (!(rawProfession instanceof CompoundTag professionTag)
+                        || !professionTag.contains(TAG_PROFESSION, Tag.TAG_STRING)) {
+                    continue;
+                }
+                GiftKnowledgeEntry knowledgeEntry = new GiftKnowledgeEntry();
+                readStringSet(professionTag.getList(TAG_LIKED_GIFTS, Tag.TAG_STRING), knowledgeEntry.likedGifts);
+                readStringSet(professionTag.getList(TAG_DISLIKED_GIFTS, Tag.TAG_STRING), knowledgeEntry.dislikedGifts);
+                book.byProfession.put(professionTag.getString(TAG_PROFESSION), knowledgeEntry);
+            }
+            data.giftKnowledge.put(bookTag.getUUID(TAG_PLAYER), book);
+        }
         return data;
+    }
+
+    private static void readStringSet(ListTag tag, Set<String> values) {
+        for (Tag rawValue : tag) {
+            values.add(rawValue.getAsString());
+        }
     }
 
     private static long readOptionalLong(CompoundTag tag, String key) {
@@ -196,12 +229,68 @@ public class VillagerInteractionSavedData extends SavedData {
             }
         }
         tag.put(TAG_ENTRIES, entriesTag);
+        ListTag giftKnowledgeTag = new ListTag();
+        for (Map.Entry<UUID, GiftKnowledgeBook> bookEntry : this.giftKnowledge.entrySet()) {
+            CompoundTag bookTag = new CompoundTag();
+            bookTag.putUUID(TAG_PLAYER, bookEntry.getKey());
+            ListTag professionsTag = new ListTag();
+            for (Map.Entry<String, GiftKnowledgeEntry> professionEntry : bookEntry.getValue().byProfession.entrySet()) {
+                CompoundTag professionTag = new CompoundTag();
+                professionTag.putString(TAG_PROFESSION, professionEntry.getKey());
+                professionTag.put(TAG_LIKED_GIFTS, writeStringSet(professionEntry.getValue().likedGifts));
+                professionTag.put(TAG_DISLIKED_GIFTS, writeStringSet(professionEntry.getValue().dislikedGifts));
+                professionsTag.add(professionTag);
+            }
+            bookTag.put(TAG_PROFESSIONS, professionsTag);
+            giftKnowledgeTag.add(bookTag);
+        }
+        tag.put(TAG_GIFT_KNOWLEDGE, giftKnowledgeTag);
+        return tag;
+    }
+
+    private static ListTag writeStringSet(Set<String> values) {
+        ListTag tag = new ListTag();
+        for (String value : values) {
+            tag.add(StringTag.valueOf(value));
+        }
         return tag;
     }
 
     public InteractionEntry getOrCreate(UUID villagerId, UUID playerId) {
         return this.entries.computeIfAbsent(villagerId, ignored -> new HashMap<>())
                 .computeIfAbsent(playerId, ignored -> new InteractionEntry());
+    }
+
+    public boolean knowsGift(UUID playerId, String professionKey, String itemId, boolean liked) {
+        GiftKnowledgeEntry entry = giftKnowledgeEntry(playerId, professionKey, false);
+        if (entry == null) {
+            return false;
+        }
+        return liked ? entry.likedGifts.contains(itemId) : entry.dislikedGifts.contains(itemId);
+    }
+
+    public void rememberGiftKnowledge(UUID playerId, String professionKey, String itemId, boolean liked) {
+        GiftKnowledgeEntry entry = giftKnowledgeEntry(playerId, professionKey, true);
+        if (liked) {
+            entry.likedGifts.add(itemId);
+        } else {
+            entry.dislikedGifts.add(itemId);
+        }
+    }
+
+    private GiftKnowledgeEntry giftKnowledgeEntry(UUID playerId, String professionKey, boolean create) {
+        GiftKnowledgeBook book = this.giftKnowledge.get(playerId);
+        if (book == null) {
+            if (!create) {
+                return null;
+            }
+            book = new GiftKnowledgeBook();
+            this.giftKnowledge.put(playerId, book);
+        }
+        if (create) {
+            return book.byProfession.computeIfAbsent(professionKey, ignored -> new GiftKnowledgeEntry());
+        }
+        return book.byProfession.get(professionKey);
     }
 
     public static class InteractionEntry {
@@ -385,5 +474,14 @@ public class VillagerInteractionSavedData extends SavedData {
         private void reduce(int amount) {
             this.count = Math.max(0, this.count - amount);
         }
+    }
+
+    private static class GiftKnowledgeBook {
+        private final Map<String, GiftKnowledgeEntry> byProfession = new HashMap<>();
+    }
+
+    private static class GiftKnowledgeEntry {
+        private final Set<String> likedGifts = new LinkedHashSet<>();
+        private final Set<String> dislikedGifts = new LinkedHashSet<>();
     }
 }

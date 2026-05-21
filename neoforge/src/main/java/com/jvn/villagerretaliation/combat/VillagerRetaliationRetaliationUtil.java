@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
+import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import java.util.Map;
 import java.util.Optional;
@@ -14,7 +15,6 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
@@ -327,9 +327,8 @@ public final class VillagerRetaliationRetaliationUtil {
             return false;
         }
 
-        if (!ItemStack.isSameItem(villager.getMainHandItem(), state.equippedWeapon())) {
-            villager.setItemSlot(EquipmentSlot.MAINHAND, state.equippedWeapon().copy());
-            villager.setDropChance(EquipmentSlot.MAINHAND, currentCombatWeaponDropChance());
+        if (!VillagerRetaliationVillagerEquipment.mainHandMatchesItem(villager, state.equippedWeapon())) {
+            VillagerRetaliationVillagerEquipment.setTemporaryMainHand(villager, state.equippedWeapon(), currentCombatWeaponDropChance());
         }
         return true;
     }
@@ -343,8 +342,7 @@ public final class VillagerRetaliationRetaliationUtil {
         ItemStack equippedWeapon = VillagerRetaliationCombatWeaponFactory.prepareEquippedCombatWeapon(villager, weapon.copy());
         float previousDropChance = Mob.DEFAULT_EQUIPMENT_DROP_CHANCE;
         temporaryWeapons.put(villager.getUUID(), new TemporaryWeaponState(previousMainHand, equippedWeapon.copy(), previousDropChance));
-        villager.setItemSlot(EquipmentSlot.MAINHAND, equippedWeapon);
-        villager.setDropChance(EquipmentSlot.MAINHAND, currentCombatWeaponDropChance());
+        VillagerRetaliationVillagerEquipment.setTemporaryMainHand(villager, equippedWeapon, currentCombatWeaponDropChance());
         VillagerRangedCombatHelper.seedInitialAttackDelay(villager, equippedWeapon);
     }
 
@@ -357,10 +355,18 @@ public final class VillagerRetaliationRetaliationUtil {
             return;
         }
 
-        if (ItemStack.isSameItemSameComponents(villager.getMainHandItem(), state.equippedWeapon())) {
-            villager.setItemSlot(EquipmentSlot.MAINHAND, state.previousMainHand().copy());
+        if (VillagerRetaliationVillagerWeapons.maintainAcquiredWeaponAuthority(villager)) {
+            return;
         }
-        villager.setDropChance(EquipmentSlot.MAINHAND, state.previousDropChance());
+
+        boolean restoredPrevious = false;
+        if (VillagerRetaliationVillagerEquipment.mainHandMatchesStack(villager, state.equippedWeapon())) {
+            VillagerRetaliationVillagerEquipment.restoreMainHand(villager, state.previousMainHand());
+            restoredPrevious = true;
+        }
+        if (!restoredPrevious || state.previousMainHand().isEmpty()) {
+            VillagerRetaliationVillagerEquipment.setMainHandDropChance(villager, state.previousDropChance());
+        }
     }
 
     public static <T extends AbstractVillager> void discardTemporaryWeapon(
@@ -369,7 +375,7 @@ public final class VillagerRetaliationRetaliationUtil {
     ) {
         TemporaryWeaponState state = temporaryWeapons.remove(villager.getUUID());
         if (state != null) {
-            villager.setDropChance(EquipmentSlot.MAINHAND, state.previousDropChance());
+            VillagerRetaliationVillagerEquipment.setMainHandDropChance(villager, state.previousDropChance());
         }
     }
 

@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
+import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import java.util.HashMap;
 import java.util.Map;
@@ -253,7 +254,10 @@ public final class WanderingTraderRetaliationHandler {
 
         Optional<LivingEntity> memoryTarget = VillagerRetaliationVillagerCombatUtil.getMemoryIfRegistered(trader, MemoryModuleType.NEAREST_HOSTILE)
                 .filter(LivingEntity::isAlive)
-                .filter(target -> target != trader);
+                .filter(target -> target != trader)
+                .filter(target -> VillagerRetaliationVillagerCombatUtil.isNaturalHostileTarget(trader, target))
+                .filter(target -> VillagerRetaliationVillagerCombatUtil.isWithinNaturalHostileTargetRange(trader, target))
+                .filter(trader::hasLineOfSight);
         if (memoryTarget.isPresent()) {
             anger(trader, memoryTarget.get());
             return;
@@ -269,7 +273,7 @@ public final class WanderingTraderRetaliationHandler {
             return;
         }
 
-        double naturalDefenseRadius = VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get();
+        double naturalDefenseRadius = VillagerRetaliationConfig.NATURAL_HOSTILE_TARGET_RADIUS.get();
         VillagerRetaliationVillagerCombatUtil.findNearestNaturalHostile(trader, naturalDefenseRadius)
                 .ifPresent(target -> anger(trader, target));
     }
@@ -302,7 +306,7 @@ public final class WanderingTraderRetaliationHandler {
     private static boolean tryAcquireGroundWeapon(WanderingTrader trader, long gameTime) {
         if (!trader.isAlive()
                 || !WanderingTraderCombatRoles.canScavengeGroundWeapons(trader)
-                || VillagerRetaliationVillagerWeapons.hasTrackedPickup(trader)
+                || VillagerRetaliationVillagerEquipment.isPlayerManagedMainHand(trader)
                 || !VillagerRetaliationVillagerCombatUtil.isThreatened(trader)) {
             return false;
         }
@@ -329,6 +333,7 @@ public final class WanderingTraderRetaliationHandler {
         } else {
             RETALIATION.discardTemporaryWeapon(trader);
         }
+        VillagerRetaliationVillagerWeapons.maintainAcquiredWeaponAuthority(trader);
         RETALIATION.clearTransientState(trader);
         trader.setAggressive(false);
         trader.setTarget(null);

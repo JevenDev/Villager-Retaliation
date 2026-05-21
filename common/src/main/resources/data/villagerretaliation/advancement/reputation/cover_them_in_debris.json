@@ -1,0 +1,23 @@
+{
+  "parent": "villagerretaliation:reputation/local_legend",
+  "display": {
+    "icon": {
+      "id": "minecraft:netherite_chestplate"
+    },
+    "title": {
+      "translate": "advancements.villagerretaliation.reputation.cover_them_in_debris.title"
+    },
+    "description": {
+      "translate": "advancements.villagerretaliation.reputation.cover_them_in_debris.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

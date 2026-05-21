@@ -40,7 +40,9 @@ public final class VillagerCombatRoles {
             return false;
         }
 
-        return profession(villager) != VillagerProfession.NITWIT || VillagerRetaliationVillagerWeapons.hasUsableWeapon(villager);
+        return profession(villager) != VillagerProfession.NITWIT
+                || VillagerRetaliationVillagerWeapons.hasUsableWeapon(villager)
+                || canScavengeNearbyGroundWeapon(villager);
     }
 
     public static boolean canUseTemporaryCombatLoadout(Villager villager) {
@@ -74,6 +76,22 @@ public final class VillagerCombatRoles {
 
     public static ItemStack preferredWeapon(Villager villager) {
         return PREFERRED_WEAPON_RULES.getOrDefault(profession(villager), ignored -> ItemStack.EMPTY).apply(villager);
+    }
+
+    public static ItemStack persistentRoleWeapon(Villager villager) {
+        VillagerProfession profession = profession(villager);
+        if (!VillagerRetaliationConfig.ENABLE_VILLAGER_RETALIATION.get() || !canUseTemporaryCombatLoadout(villager)) {
+            return ItemStack.EMPTY;
+        }
+
+        if (profession == VillagerProfession.CLERIC || profession == VillagerProfession.LIBRARIAN) {
+            return ItemStack.EMPTY;
+        }
+        if (profession == VillagerProfession.FARMER) {
+            return VillagerRetaliationConfig.FARMERS_USE_BREAD.get() ? new ItemStack(Items.IRON_HOE) : ItemStack.EMPTY;
+        }
+
+        return preferredWeapon(villager);
     }
 
     public static ItemStack preferredLootWeapon(Villager villager) {
@@ -118,6 +136,11 @@ public final class VillagerCombatRoles {
         }
 
         return !usesDedicatedRoleCombatItem(villager);
+    }
+
+    public static boolean canScavengeNearbyGroundWeapon(Villager villager) {
+        return canScavengeGroundWeapons(villager)
+                && VillagerRetaliationVillagerWeapons.findNearestWeapon(villager).isPresent();
     }
 
     public static boolean usesDedicatedRoleCombatItem(Villager villager) {

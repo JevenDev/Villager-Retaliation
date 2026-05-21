@@ -1,15 +1,10 @@
 package com.jvn.villagerretaliation.villager;
 
 import com.jvn.toucanlib.neoforge.loot.ToucanLivingDrops;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.function.Predicate;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.AbstractVillager;
@@ -25,8 +20,6 @@ import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 public final class VillagerRetaliationVillagerWeapons {
     public static final double WEAPON_SEARCH_RADIUS = 12.0D;
     public static final double WEAPON_PICKUP_REACH_SQR = 2.25D;
-    private static final String PERSISTENT_PICKED_UP_MAINHAND_TAG = "VillagerRetaliationPickedUpMainhand";
-    private static final Map<UUID, ItemStack> PICKED_UP_MAINHAND_ITEMS = new HashMap<>();
 
     private VillagerRetaliationVillagerWeapons() {
     }
@@ -36,7 +29,7 @@ public final class VillagerRetaliationVillagerWeapons {
     }
 
     public static boolean hasTrackedPickup(AbstractVillager villager) {
-        return !getTrackedPickup(villager).isEmpty();
+        return VillagerRetaliationVillagerEquipment.hasPickedUpMainHand(villager);
     }
 
     public static ItemStack getPrimaryWeapon(AbstractVillager villager) {
@@ -94,7 +87,7 @@ public final class VillagerRetaliationVillagerWeapons {
     }
 
     public static void equipGroundWeapon(AbstractVillager villager, ItemEntity itemEntity) {
-        if (hasTrackedPickup(villager)) {
+        if (VillagerRetaliationVillagerEquipment.isPlayerManagedMainHand(villager)) {
             return;
         }
 
@@ -114,9 +107,7 @@ public final class VillagerRetaliationVillagerWeapons {
 
         villager.onItemPickup(itemEntity);
         villager.take(itemEntity, 1);
-        villager.setItemSlot(EquipmentSlot.MAINHAND, equippedStack);
-        villager.setGuaranteedDrop(EquipmentSlot.MAINHAND);
-        setTrackedPickup(villager, equippedStack.copy());
+        VillagerRetaliationVillagerEquipment.setPickedUpMainHand(villager, equippedStack);
 
         groundStack.shrink(1);
         if (groundStack.isEmpty()) {
@@ -125,7 +116,7 @@ public final class VillagerRetaliationVillagerWeapons {
     }
 
     public static void ensurePickedMainHandDrop(AbstractVillager villager, LivingDropsEvent event) {
-        ItemStack trackedPickup = getTrackedPickup(villager);
+        ItemStack trackedPickup = VillagerRetaliationVillagerEquipment.pickedUpMainHand(villager);
         if (trackedPickup.isEmpty()) {
             return;
         }
@@ -141,16 +132,22 @@ public final class VillagerRetaliationVillagerWeapons {
     }
 
     public static boolean maintainAcquiredWeaponAuthority(AbstractVillager villager) {
-        ItemStack trackedPickup = getTrackedPickup(villager);
-        if (trackedPickup.isEmpty()) {
+        if (!VillagerRetaliationVillagerEquipment.hasPickedUpMainHand(villager)) {
             return false;
+        }
+        return VillagerRetaliationVillagerEquipment.maintainPlayerManagedMainHand(villager);
+    }
+
+    public static void prepareTrackedPickupForInventory(AbstractVillager villager) {
+        ItemStack trackedPickup = VillagerRetaliationVillagerEquipment.pickedUpMainHand(villager);
+        if (trackedPickup.isEmpty()) {
+            return;
         }
 
         ItemStack mainHand = villager.getMainHandItem();
-        if (ItemStack.isSameItem(mainHand, trackedPickup)) {
-            setTrackedPickup(villager, mainHand.copy());
-            villager.setGuaranteedDrop(EquipmentSlot.MAINHAND);
-            return true;
+        if (!mainHand.isEmpty() && ItemStack.isSameItem(mainHand, trackedPickup)) {
+            VillagerRetaliationVillagerEquipment.setPickedUpMainHand(villager, mainHand);
+            return;
         }
 
         if (!mainHand.isEmpty()) {
@@ -161,18 +158,15 @@ public final class VillagerRetaliationVillagerWeapons {
             }
         }
 
-        villager.setItemSlot(EquipmentSlot.MAINHAND, trackedPickup.copy());
-        villager.setGuaranteedDrop(EquipmentSlot.MAINHAND);
-        return true;
+        VillagerRetaliationVillagerEquipment.setPickedUpMainHand(villager, trackedPickup);
     }
 
     public static void clearTrackedPickup(AbstractVillager villager) {
-        PICKED_UP_MAINHAND_ITEMS.remove(villager.getUUID());
-        villager.getPersistentData().remove(PERSISTENT_PICKED_UP_MAINHAND_TAG);
+        VillagerRetaliationVillagerEquipment.clearPickedUpMainHand(villager);
     }
 
     public static void clearTrackedPickupCache(AbstractVillager villager) {
-        PICKED_UP_MAINHAND_ITEMS.remove(villager.getUUID());
+        VillagerRetaliationVillagerEquipment.clearTrackedMainHandCache(villager);
     }
 
     public static boolean isRangedWeapon(ItemStack stack) {
@@ -207,31 +201,8 @@ public final class VillagerRetaliationVillagerWeapons {
         return itemEntity.isAlive() && !itemEntity.hasPickUpDelay() && !itemEntity.getItem().isEmpty();
     }
 
-    private static ItemStack getTrackedPickup(AbstractVillager villager) {
-        ItemStack trackedPickup = PICKED_UP_MAINHAND_ITEMS.get(villager.getUUID());
-        if (trackedPickup != null && !trackedPickup.isEmpty()) {
-            return trackedPickup;
-        }
-
-        CompoundTag trackedTag = villager.getPersistentData().getCompound(PERSISTENT_PICKED_UP_MAINHAND_TAG);
-        if (trackedTag.isEmpty()) {
-            return ItemStack.EMPTY;
-        }
-
-        ItemStack restored = ItemStack.parseOptional(villager.level().registryAccess(), trackedTag);
-        if (!restored.isEmpty()) {
-            PICKED_UP_MAINHAND_ITEMS.put(villager.getUUID(), restored.copy());
-        }
-        return restored;
-    }
-
-    private static void setTrackedPickup(AbstractVillager villager, ItemStack trackedPickup) {
-        PICKED_UP_MAINHAND_ITEMS.put(villager.getUUID(), trackedPickup.copy());
-        villager.getPersistentData().put(PERSISTENT_PICKED_UP_MAINHAND_TAG, (CompoundTag) trackedPickup.saveOptional(villager.level().registryAccess()));
-    }
-
     private static boolean shouldPathfindForWeapon(AbstractVillager villager, ItemStack equippedWeapon, ItemStack groundWeapon) {
-        if (!isUsableWeapon(groundWeapon) || hasTrackedPickup(villager)) {
+        if (!isUsableWeapon(groundWeapon) || VillagerRetaliationVillagerEquipment.isPlayerManagedMainHand(villager)) {
             return false;
         }
 

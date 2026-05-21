@@ -1,0 +1,124 @@
+{
+  "openings": [
+    {
+      "id": "nitwit_opening",
+      "text": "Mind the sunny corner. What do you need?"
+    }
+  ],
+  "closings": [
+    {
+      "id": "nitwit_closing",
+      "text": "Back to finding odd jobs and stranger thoughts, then."
+    }
+  ],
+  "lines": [
+    {
+      "id": "nitwit_chat_thought",
+      "type": "chat",
+      "text": "I had a thought once. Left it somewhere safe, probably.",
+      "weight": 30
+    },
+    {
+      "id": "nitwit_question_thinking",
+      "type": "question",
+      "text": "If you find my thought, tell it I was looking useful.",
+      "weight": 30
+    },
+    {
+      "id": "nitwit_story_stick",
+      "type": "story",
+      "text": "A nice stick can be many things if nobody important is watching.",
+      "weight": 26
+    },
+    {
+      "id": "nitwit_new_greeting_corner",
+      "type": "greeting",
+      "text": "Hello. I was keeping this corner company.",
+      "weight": 26
+    },
+    {
+      "id": "nitwit_new_chat_button",
+      "type": "chat",
+      "text": "I found a button once. No wall, just ambition.",
+      "weight": 28
+    },
+    {
+      "id": "nitwit_new_question_where",
+      "type": "question",
+      "text": "Where am I going? Usually somewhere nearby, once I remember why.",
+      "weight": 28
+    },
+    {
+      "id": "nitwit_new_story_bucket",
+      "type": "story",
+      "text": "I carried an empty bucket all morning. Very light work. Very confusing.",
+      "weight": 24
+    },
+    {
+      "id": "nitwit_new_joke_thought",
+      "type": "joke",
+      "text": "My joke wandered off, but it promised to be funny if it returns.",
+      "weight": 18
+    },
+    {
+      "id": "nitwit_new_insult_hat",
+      "type": "insult",
+      "text": "Your hat looks like it is thinking harder than you.",
+      "weight": 18
+    },
+    {
+      "id": "nitwit_new_chat_shadow",
+      "type": "chat",
+      "text": "I tried following my shadow, but it got behind me somehow.",
+      "weight": 28
+    },
+    {
+      "id": "nitwit_new_question_job",
+      "type": "question",
+      "text": "A job sounds useful. I am saving usefulness for the right moment.",
+      "weight": 28
+    },
+    {
+      "id": "nitwit_new_story_bread",
+      "type": "story",
+      "text": "I once put bread in a chest and called it planning. Nobody argued.",
+      "weight": 24
+    },
+    {
+      "id": "nitwit_new_cautious_simple",
+      "type": "chat",
+      "text": "I can be silly from over here. Over here feels better.",
+      "dispositions": [
+        "cautious",
+        "fearful"
+      ],
+      "weight": 30
+    }
+  ],
+  "pacify": [
+    {
+      "id": "nitwit_pacify_success",
+      "outcomes": [
+        "success"
+      ],
+      "text": "Fine. I was getting tired of being angry anyway.",
+      "weight": 26
+    },
+    {
+      "id": "nitwit_pacify_short",
+      "outcomes": [
+        "not_enough_emeralds"
+      ],
+      "text": "I counted, then forgot, then counted again. It should be {emerald_cost} {emeralds}.",
+      "weight": 26
+    },
+    {
+      "id": "nitwit_pacify_blocked",
+      "outcomes": [
+        "blocked_by_reputation"
+      ],
+      "text": "No. Even I know this is not fixed.",
+      "weight": 26
+    }
+  ]
+}

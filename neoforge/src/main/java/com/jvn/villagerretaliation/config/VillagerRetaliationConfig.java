@@ -100,6 +100,7 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.BooleanValue ARMORERS_FIGHT_BACK;
     public static final ModConfigSpec.BooleanValue FLETCHERS_FIGHT_BACK;
     public static final ModConfigSpec.BooleanValue BUTCHERS_FIGHT_BACK;
+    public static final ModConfigSpec.DoubleValue NATURAL_HOSTILE_TARGET_RADIUS;
     public static final ModConfigSpec.DoubleValue COMBAT_WEAPON_DROP_CHANCE;
     public static final ModConfigSpec.DoubleValue COMBAT_WEAPON_ENCHANT_CHANCE;
     public static final ModConfigSpec.DoubleValue ARMORER_SHIELD_CHANCE_HARD;
@@ -435,6 +436,9 @@ public final class VillagerRetaliationConfig {
         BUTCHERS_FIGHT_BACK = BUILDER.comment("Allows butchers to retaliate with melee behavior.")
                 .translation("villagerretaliation.configuration.combat.butchersFightBack")
                 .define("butchersFightBack", true);
+        NATURAL_HOSTILE_TARGET_RADIUS = BUILDER.comment("Maximum range in blocks for villagers and wandering traders to proactively target visible hostile mobs.")
+                .translation("villagerretaliation.configuration.combat.naturalHostileTargetRadius")
+                .defineInRange("naturalHostileTargetRadius", 16.0D, 0.0D, 64.0D);
         BUILDER.comment("Chance for temporary retaliation main-hand weapons to drop on villager death.");
         COMBAT_WEAPON_DROP_CHANCE = BUILDER
                 .translation("villagerretaliation.configuration.combat.combatWeaponDropChance")

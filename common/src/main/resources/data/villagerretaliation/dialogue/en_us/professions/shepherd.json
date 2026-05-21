@@ -1,0 +1,124 @@
+{
+  "openings": [
+    {
+      "id": "shepherd_opening",
+      "text": "Mind the loom. What do you need?"
+    }
+  ],
+  "closings": [
+    {
+      "id": "shepherd_closing",
+      "text": "Back to turning wool into warmth, then."
+    }
+  ],
+  "lines": [
+    {
+      "id": "shepherd_chat_flock",
+      "type": "chat",
+      "text": "Scattered sheep make the whole day longer than it needs to be.",
+      "weight": 30
+    },
+    {
+      "id": "shepherd_question_wolves",
+      "type": "question",
+      "text": "Wolves near the pens change how everyone listens after dark.",
+      "weight": 30
+    },
+    {
+      "id": "shepherd_story_wool",
+      "type": "story",
+      "text": "Clean wool feels ordinary until winter reminds you it is not.",
+      "weight": 26
+    },
+    {
+      "id": "shepherd_new_greeting_loom",
+      "type": "greeting",
+      "text": "Mind the loom. Threads tangle faster when people crowd them.",
+      "weight": 26
+    },
+    {
+      "id": "shepherd_new_chat_wool",
+      "type": "chat",
+      "text": "Clean wool is quiet proof that somebody did the dull work well.",
+      "weight": 28
+    },
+    {
+      "id": "shepherd_new_question_warmth",
+      "type": "question",
+      "text": "Warmth is easy to praise after someone else made it.",
+      "weight": 28
+    },
+    {
+      "id": "shepherd_new_story_dye",
+      "type": "story",
+      "text": "A spilled dye pot once made half the village look festive by mistake.",
+      "weight": 24
+    },
+    {
+      "id": "shepherd_new_joke_thread",
+      "type": "joke",
+      "text": "My jokes have loose threads. Pull gently.",
+      "weight": 18
+    },
+    {
+      "id": "shepherd_new_insult_tangle",
+      "type": "insult",
+      "text": "That thought tangled itself before it reached the loom.",
+      "weight": 18
+    },
+    {
+      "id": "shepherd_new_chat_blanket",
+      "type": "chat",
+      "text": "A good blanket is village peace you can fold.",
+      "weight": 28
+    },
+    {
+      "id": "shepherd_new_question_pattern",
+      "type": "question",
+      "text": "Patterns are easier to see when you stop yanking the thread.",
+      "weight": 28
+    },
+    {
+      "id": "shepherd_new_story_late",
+      "type": "story",
+      "text": "One late evening, the whole loom jammed because I trusted a knot.",
+      "weight": 24
+    },
+    {
+      "id": "shepherd_new_rude_work",
+      "type": "insult",
+      "text": "Do not pull at work you do not understand.",
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
+      "weight": 30
+    }
+  ],
+  "pacify": [
+    {
+      "id": "shepherd_pacify_success",
+      "outcomes": [
+        "success"
+      ],
+      "text": "Fine. I will smooth this wool down for now.",
+      "weight": 26
+    },
+    {
+      "id": "shepherd_pacify_short",
+      "outcomes": [
+        "not_enough_emeralds"
+      ],
+      "text": "That does not cover the tear. Bring {emerald_cost} {emeralds}.",
+      "weight": 26
+    },
+    {
+      "id": "shepherd_pacify_blocked",
+      "outcomes": [
+        "blocked_by_reputation"
+      ],
+      "text": "No. The flock still startles when you come near.",
+      "weight": 26
+    }
+  ]
+}

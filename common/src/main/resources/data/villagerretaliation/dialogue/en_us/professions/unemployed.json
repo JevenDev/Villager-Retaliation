@@ -1,0 +1,124 @@
+{
+  "openings": [
+    {
+      "id": "unemployed_opening",
+      "text": "Mind the job site I have not found yet. What do you need?"
+    }
+  ],
+  "closings": [
+    {
+      "id": "unemployed_closing",
+      "text": "Back to looking useful before anyone notices, then."
+    }
+  ],
+  "lines": [
+    {
+      "id": "unemployed_chat_work",
+      "type": "chat",
+      "text": "Finding the right work is harder when everyone asks if you found it yet.",
+      "weight": 30
+    },
+    {
+      "id": "unemployed_question_general",
+      "type": "question",
+      "text": "Work is work. Finding the right work is the tricky part.",
+      "weight": 30
+    },
+    {
+      "id": "unemployed_story_chance",
+      "type": "story",
+      "text": "A fair chance can look a lot like standing around until the right bell rings.",
+      "weight": 26
+    },
+    {
+      "id": "unemployed_new_greeting_site",
+      "type": "greeting",
+      "text": "If you see a spare job site, do mention it kindly.",
+      "weight": 26
+    },
+    {
+      "id": "unemployed_new_chat_waiting",
+      "type": "chat",
+      "text": "Waiting for work is still work if you look worried enough.",
+      "weight": 28
+    },
+    {
+      "id": "unemployed_new_question_place",
+      "type": "question",
+      "text": "Where do I fit? Somewhere useful, I hope, preferably before supper.",
+      "weight": 28
+    },
+    {
+      "id": "unemployed_new_story_bell",
+      "type": "story",
+      "text": "I once followed the bell hoping it meant opportunity. It meant hurry.",
+      "weight": 24
+    },
+    {
+      "id": "unemployed_new_joke_flexible",
+      "type": "joke",
+      "text": "Unemployed jokes are flexible. That is what I keep telling myself.",
+      "weight": 18
+    },
+    {
+      "id": "unemployed_new_insult_idle",
+      "type": "insult",
+      "text": "That was idle talk, and I would know.",
+      "weight": 18
+    },
+    {
+      "id": "unemployed_new_chat_errands",
+      "type": "chat",
+      "text": "People with trades get tasks. People without trades get errands.",
+      "weight": 28
+    },
+    {
+      "id": "unemployed_new_question_chance",
+      "type": "question",
+      "text": "A fair chance is easier to ask for than to recognize.",
+      "weight": 28
+    },
+    {
+      "id": "unemployed_new_story_barrel",
+      "type": "story",
+      "text": "I organized a barrel once. For a moment, everyone thought I had a calling.",
+      "weight": 24
+    },
+    {
+      "id": "unemployed_new_cautious_useful",
+      "type": "chat",
+      "text": "I am trying to look useful, not involved.",
+      "dispositions": [
+        "cautious",
+        "fearful"
+      ],
+      "weight": 30
+    }
+  ],
+  "pacify": [
+    {
+      "id": "unemployed_pacify_success",
+      "outcomes": [
+        "success"
+      ],
+      "text": "Fine. I have enough problems without carrying this one too.",
+      "weight": 26
+    },
+    {
+      "id": "unemployed_pacify_short",
+      "outcomes": [
+        "not_enough_emeralds"
+      ],
+      "text": "Even without a trade, I know that should be {emerald_cost} {emeralds}.",
+      "weight": 26
+    },
+    {
+      "id": "unemployed_pacify_blocked",
+      "outcomes": [
+        "blocked_by_reputation"
+      ],
+      "text": "No. I may not have work, but I still have sense.",
+      "weight": 26
+    }
+  ]
+}

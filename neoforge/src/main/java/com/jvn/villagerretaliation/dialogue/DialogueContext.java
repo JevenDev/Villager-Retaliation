@@ -30,7 +30,8 @@ public record DialogueContext(
         long lastDirectHitGameTime,
         String lastDirectHitWeapon,
         List<VillageEventMemory.MemoryEvent> recentEvents,
-        RandomSource random
+        RandomSource random,
+        String locale
 ) {
     private static final long DIRECT_HIT_MEMORY_TICKS = 20L * 60L * 20L;
     private static final long BROKEN_BED_MEMORY_TICKS = 20L * 60L * 20L;

@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.network;
 
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
+import com.jvn.villagerretaliation.notification.ResolvedVillagerNotification;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import com.jvn.toucanlib.neoforge.network.ToucanNetwork;
@@ -11,7 +12,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 public final class VillagerReputationNetworking {
-    private static final String PROTOCOL_VERSION = "4";
+    private static final String PROTOCOL_VERSION = "6";
 
     private VillagerReputationNetworking() {
     }
@@ -88,7 +89,7 @@ public final class VillagerReputationNetworking {
                         ToucanNetwork.withServerPlayer(context, player -> VillagerInteractionService.handleDialogueRequest(
                             player,
                             payload.entityId(),
-                            payload.requestType()
+                            payload.optionId()
                     )))
         );
         network.playToServer(
@@ -96,6 +97,15 @@ public final class VillagerReputationNetworking {
                 VillagerTradeRequestPayload.STREAM_CODEC,
                 (payload, context) -> ToucanNetwork.enqueue(context, () ->
                         ToucanNetwork.withServerPlayer(context, player -> VillagerInteractionService.handleTradeRequest(
+                            player,
+                            payload.entityId()
+                    )))
+        );
+        network.playToServer(
+                VillagerInventoryRequestPayload.TYPE,
+                VillagerInventoryRequestPayload.STREAM_CODEC,
+                (payload, context) -> ToucanNetwork.enqueue(context, () ->
+                        ToucanNetwork.withServerPlayer(context, player -> VillagerInteractionService.handleInventoryRequest(
                             player,
                             payload.entityId()
                     )))
@@ -149,16 +159,16 @@ public final class VillagerReputationNetworking {
             return;
         }
 
-        String nameKey = VillagerPresetNameRegistry.resolveNameTranslationKey(villager);
-        if (nameKey.isBlank()) {
+        String presetName = VillagerPresetNameRegistry.resolvePresetName(villager);
+        if (presetName.isBlank()) {
             return;
         }
 
         PacketDistributor.sendToPlayer(player, new VillagerNameSyncPayload(
                 villager.getId(),
                 villager.getUUID(),
-                nameKey,
-                VillagerPresetNameRegistry.resolveDisplayName(villager).getString()
+                "",
+                presetName
         ));
     }
 
@@ -170,10 +180,27 @@ public final class VillagerReputationNetworking {
         PacketDistributor.sendToPlayer(player, new VillagerReputationTierNoticePayload(text, kind));
     }
 
+    public static void sendNotice(ServerPlayer player, ResolvedVillagerNotification notification) {
+        PacketDistributor.sendToPlayer(player, new VillagerReputationTierNoticePayload(
+                notification.text(),
+                notification.noticeKind(),
+                notification.textColor(),
+                notification.chatColor()
+        ));
+    }
+
     public static void sendWorldTextIndicator(AbstractVillager villager, String text, VillagerWorldTextIndicatorKind kind) {
+        sendWorldTextIndicator(villager, text, kind, ResolvedVillagerNotification.DEFAULT_COLOR);
+    }
+
+    public static void sendWorldTextIndicator(
+            AbstractVillager villager,
+            String text,
+            VillagerWorldTextIndicatorKind kind,
+            int textColor) {
         PacketDistributor.sendToPlayersTrackingEntity(
                 villager,
-                new VillagerWorldTextIndicatorPayload(villager.getId(), text, kind)
+                new VillagerWorldTextIndicatorPayload(villager.getId(), text, kind, textColor)
         );
     }
 }

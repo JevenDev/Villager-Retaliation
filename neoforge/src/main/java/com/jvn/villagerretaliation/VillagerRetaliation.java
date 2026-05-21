@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation;
 import com.jvn.villagerretaliation.command.VillagerRetaliationCommands;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.event.VillagerRetaliationEvents;
+import com.jvn.villagerretaliation.inventory.VillagerRetaliationMenus;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.reputation.VillagerReputationEvents;
 import com.jvn.toucanlib.neoforge.event.ToucanEventBuses;
@@ -24,6 +25,7 @@ public class VillagerRetaliation {
 
     public VillagerRetaliation(IEventBus modEventBus, ModContainer modContainer) {
         modContainer.registerConfig(ModConfig.Type.COMMON, VillagerRetaliationConfig.SPEC);
+        VillagerRetaliationMenus.register(modEventBus);
         ToucanEventBuses.on(modEventBus)
                 .listener(VillagerRetaliationEvents::onEntityAttributeModification)
                 .listener(VillagerReputationNetworking::registerPayloads);

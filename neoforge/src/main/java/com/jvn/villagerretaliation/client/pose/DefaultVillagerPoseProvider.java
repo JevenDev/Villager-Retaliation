@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.client.pose;
 
+import com.jvn.villagerretaliation.client.inventory.VillagerInventoryScreen;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationPotionUtil;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.Items;
@@ -43,6 +44,15 @@ public final class DefaultVillagerPoseProvider extends AbstractCombatVillagerPos
     @Override
     protected boolean isAggressivelyPostured(Villager villager) {
         return villager.isAggressive() || villager.isChasing() || villager.getTarget() != null;
+    }
+
+    @Override
+    public VillagerArmPose getArmPose(Villager villager, float attackTime) {
+        if (VillagerInventoryScreen.isRenderingInventoryPreview(villager)
+                && (!villager.getMainHandItem().isEmpty() || !villager.getOffhandItem().isEmpty())) {
+            return VillagerArmPose.HOLDING_ITEM;
+        }
+        return super.getArmPose(villager, attackTime);
     }
 
     private static boolean isHoldingPotionItem(Villager villager) {
