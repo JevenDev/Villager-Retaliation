@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -27,6 +28,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.inventory.MerchantMenu;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BellBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -47,11 +50,13 @@ public final class VillagerReputationEvents {
     private static final int FEARED_CONVERSION_SHAKE_TICKS = 30;
     private static final long COMMONFOLK_VILLAGE_SCAN_INTERVAL_TICKS = 40L;
     private static final long NEGATIVE_REPUTATION_BELL_COOLDOWN_TICKS = 20L * 10L;
+    private static final long NEGATIVE_REPUTATION_BELL_CACHE_TICKS = 20L * 5L;
     private static final int NEGATIVE_REPUTATION_BELL_SEARCH_HORIZONTAL_RADIUS = 32;
     private static final int NEGATIVE_REPUTATION_BELL_SEARCH_VERTICAL_RADIUS = 8;
     private static final int CURED_VILLAGER_REPUTATION = 100;
     private static final Map<UUID, PlayerContribution> HOSTILE_PLAYER_CONTRIBUTIONS = new HashMap<>();
     private static final Map<UUID, Long> NEGATIVE_REPUTATION_BELL_COOLDOWNS = new HashMap<>();
+    private static final Map<BellSearchKey, BellSearchResult> NEGATIVE_REPUTATION_BELL_CACHE = new HashMap<>();
 
     private VillagerReputationEvents() {
     }
@@ -231,17 +236,18 @@ public final class VillagerReputationEvents {
                 && gameTime % DEBUG_SYNC_INTERVAL_TICKS == Math.floorMod(villager.getUUID().getMostSignificantBits(), DEBUG_SYNC_INTERVAL_TICKS)) {
             syncNearbyDebug(level, villager);
         }
-        if (gameTime % VillagerRetaliationConfig.REPUTATION_DECAY_INTERVAL.get() == 0L) {
-            VillagerReputationManager.pruneOldEntries(level);
-            pruneHostileContributions(gameTime);
-            pruneNegativeReputationBellCooldowns(gameTime);
-        }
     }
 
     public static void onServerTickPost(ServerTickEvent.Post event) {
         VillagerReputationManager.flushTierChangeMessages(event.getServer());
 
         long gameTime = event.getServer().overworld().getGameTime();
+        if (gameTime % VillagerRetaliationConfig.REPUTATION_DECAY_INTERVAL.get() == 0L) {
+            VillagerReputationManager.pruneOldEntries(event.getServer().overworld());
+            pruneHostileContributions(gameTime);
+            pruneNegativeReputationBellState(gameTime);
+        }
+
         if (gameTime % COMMONFOLK_VILLAGE_SCAN_INTERVAL_TICKS == 0L) {
             for (ServerPlayer player : event.getServer().getPlayerList().getPlayers()) {
                 VillagerReputationAdvancements.onVillagePresenceCheck(player);
@@ -520,6 +526,14 @@ public final class VillagerReputationEvents {
     }
 
     private static Optional<BlockPos> findNearestBell(ServerLevel level, BlockPos origin) {
+        ChunkPos chunkPos = new ChunkPos(origin);
+        BellSearchKey cacheKey = new BellSearchKey(level.dimension(), chunkPos.x, chunkPos.z);
+        long gameTime = level.getGameTime();
+        BellSearchResult cached = NEGATIVE_REPUTATION_BELL_CACHE.get(cacheKey);
+        if (cached != null && gameTime < cached.expiresGameTime()) {
+            return Optional.ofNullable(cached.pos());
+        }
+
         BlockPos min = origin.offset(
                 -NEGATIVE_REPUTATION_BELL_SEARCH_HORIZONTAL_RADIUS,
                 -NEGATIVE_REPUTATION_BELL_SEARCH_VERTICAL_RADIUS,
@@ -543,11 +557,13 @@ public final class VillagerReputationEvents {
                 best = candidate.immutable();
             }
         }
+        NEGATIVE_REPUTATION_BELL_CACHE.put(cacheKey, new BellSearchResult(best, gameTime + NEGATIVE_REPUTATION_BELL_CACHE_TICKS));
         return Optional.ofNullable(best);
     }
 
-    private static void pruneNegativeReputationBellCooldowns(long gameTime) {
+    private static void pruneNegativeReputationBellState(long gameTime) {
         NEGATIVE_REPUTATION_BELL_COOLDOWNS.entrySet().removeIf(entry -> entry.getValue() <= gameTime);
+        NEGATIVE_REPUTATION_BELL_CACHE.entrySet().removeIf(entry -> entry.getValue().expiresGameTime() <= gameTime);
     }
 
     private static void syncNearbyDebug(ServerLevel level, AbstractVillager villager) {
@@ -562,5 +578,11 @@ public final class VillagerReputationEvents {
     }
 
     private record PlayerCredit(Player player, boolean fullKillCredit) {
+    }
+
+    private record BellSearchKey(ResourceKey<Level> dimension, int chunkX, int chunkZ) {
+    }
+
+    private record BellSearchResult(BlockPos pos, long expiresGameTime) {
     }
 }

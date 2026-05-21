@@ -151,9 +151,6 @@ public final class VillagerRetaliationEvents {
 
     public static void onEntityJoinLevel(EntityJoinLevelEvent event) {
         VillagerRetaliationHandler.onEntityJoinLevel(event);
-        if (event.getEntity() instanceof AbstractVillager villager && villager.level() instanceof ServerLevel) {
-            VillagerPresetNameRegistry.ensurePresetNameAssigned(villager);
-        }
     }
 
     public static void onPlayerStartTracking(PlayerEvent.StartTracking event) {
