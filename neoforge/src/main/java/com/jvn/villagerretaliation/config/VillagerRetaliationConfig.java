@@ -15,6 +15,7 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.BooleanValue SHIFT_RIGHT_CLICK_BYPASSES_INTERACTION_SCREEN;
     public static final ModConfigSpec.BooleanValue ENABLE_DIALOGUE_REPUTATION_EFFECTS;
     public static final ModConfigSpec.BooleanValue ENABLE_DIALOGUE_CAMERA_FOCUS;
+    public static final ModConfigSpec.BooleanValue SEPARATE_VILLAGER_CHAT_MESSAGES;
     public static final ModConfigSpec.DoubleValue DIALOGUE_CAMERA_ZOOM_AMOUNT;
     public static final ModConfigSpec.IntValue DIALOGUE_CAMERA_TRANSITION_TICKS;
     public static final ModConfigSpec.EnumValue<ReputationChangeDisplayMode> REPUTATION_CHANGE_DISPLAY_MODE;
@@ -187,6 +188,10 @@ public final class VillagerRetaliationConfig {
                 .comment("Enables a subtle client-side FOV zoom while the Villager Retaliation dialogue screen is open.")
                 .translation("villagerretaliation.configuration.dialogue.enableDialogueCameraFocus")
                 .define("enableDialogueCameraFocus", true);
+        SEPARATE_VILLAGER_CHAT_MESSAGES = BUILDER
+                .comment("Adds a blank chat line between consecutive villager dialogue messages for readability.")
+                .translation("villagerretaliation.configuration.dialogue.separateVillagerChatMessages")
+                .define("separateVillagerChatMessages", true);
         DIALOGUE_CAMERA_ZOOM_AMOUNT = BUILDER
                 .comment("FOV zoom amount used while the Villager Retaliation dialogue screen is open.")
                 .translation("villagerretaliation.configuration.dialogue.dialogueCameraZoomAmount")
