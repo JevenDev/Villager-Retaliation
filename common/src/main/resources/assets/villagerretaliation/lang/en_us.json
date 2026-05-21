@@ -168,5 +168,7 @@
   "advancements.villagerretaliation.reputation.trusted_directions.title": "Trusted Directions",
   "advancements.villagerretaliation.reputation.trusted_directions.description": "Follow a map given through villager dialogue.",
   "advancements.villagerretaliation.reputation.no_rest_for_the_wicked.title": "No Rest For The Wicked",
-  "advancements.villagerretaliation.reputation.no_rest_for_the_wicked.description": "Break the bed of a sleeping villager."
+  "advancements.villagerretaliation.reputation.no_rest_for_the_wicked.description": "Break the bed of a sleeping villager.",
+  "advancements.villagerretaliation.reputation.bait_and_betrayal.title": "Bait and Betrayal",
+  "advancements.villagerretaliation.reputation.bait_and_betrayal.description": "Have a villager follow you, then kill them."
 }

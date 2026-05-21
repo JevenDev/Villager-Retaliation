@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
 import com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.notification.VillagerNotifications;
+import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
@@ -15,6 +16,7 @@ import java.util.Map;
 import java.util.UUID;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.npc.Villager;
@@ -82,7 +84,7 @@ public final class VillagerRecruitmentService {
         }
     }
 
-    public static void notifyRecruitmentDeath(Villager villager) {
+    public static void notifyRecruitmentDeath(Villager villager, Entity killer) {
         if (!(villager.level() instanceof ServerLevel level)) {
             return;
         }
@@ -91,6 +93,7 @@ public final class VillagerRecruitmentService {
         if (villager.getPersistentData().hasUUID(FOLLOWING_PLAYER_KEY)) {
             ServerPlayer player = level.getServer().getPlayerList().getPlayer(villager.getPersistentData().getUUID(FOLLOWING_PLAYER_KEY));
             if (player != null) {
+                awardLuredKillIfOwner(player, killer);
                 VillagerNotifications.sendHud(
                         player,
                         level,
@@ -104,7 +107,7 @@ public final class VillagerRecruitmentService {
             }
         }
         if (!sentNotice) {
-            notifyRecentBetrayedFollowerDeath(level, villager);
+            notifyRecentBetrayedFollowerDeath(level, villager, killer);
         }
         if (villager.getPersistentData().hasUUID(HIRED_PLAYER_KEY)) {
             ServerPlayer player = level.getServer().getPlayerList().getPlayer(villager.getPersistentData().getUUID(HIRED_PLAYER_KEY));
@@ -233,13 +236,14 @@ public final class VillagerRecruitmentService {
         );
     }
 
-    private static void notifyRecentBetrayedFollowerDeath(ServerLevel level, Villager villager) {
+    private static void notifyRecentBetrayedFollowerDeath(ServerLevel level, Villager villager, Entity killer) {
         RecentRecruitmentOwner recentOwner = RECENT_BETRAYED_FOLLOWERS.remove(villager.getUUID());
         if (recentOwner == null || level.getGameTime() > recentOwner.expiresGameTime()) {
             return;
         }
         ServerPlayer player = level.getServer().getPlayerList().getPlayer(recentOwner.playerId());
         if (player != null) {
+            awardLuredKillIfOwner(player, killer);
             VillagerNotifications.sendHud(
                     player,
                     level,
@@ -249,6 +253,12 @@ public final class VillagerRecruitmentService {
                     displayName(villager) + " died after you broke their trust.",
                     VillagerReputationNoticeKind.VILLAGER_DEATH
             );
+        }
+    }
+
+    private static void awardLuredKillIfOwner(ServerPlayer owner, Entity killer) {
+        if (killer instanceof ServerPlayer killerPlayer && killerPlayer.getUUID().equals(owner.getUUID())) {
+            VillagerReputationAdvancements.onLuredVillagerKilled(killerPlayer);
         }
     }
 

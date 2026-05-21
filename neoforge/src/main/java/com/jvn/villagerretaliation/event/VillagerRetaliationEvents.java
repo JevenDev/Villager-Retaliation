@@ -97,7 +97,7 @@ public final class VillagerRetaliationEvents {
     public static void onLivingDeath(LivingDeathEvent event) {
         if (event.getEntity() instanceof Villager villager) {
             broadcastVillagerDeathMessage(villager, event.getSource());
-            VillagerRecruitmentService.notifyRecruitmentDeath(villager);
+            VillagerRecruitmentService.notifyRecruitmentDeath(villager, event.getSource().getEntity());
         }
         VillagerRetaliationHandler.onLivingDeath(event);
         WanderingTraderRetaliationHandler.onLivingDeath(event);
