@@ -8,6 +8,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 
 public final class VillagerInventoryAccess {
     private VillagerInventoryAccess() {
@@ -32,6 +34,14 @@ public final class VillagerInventoryAccess {
 
     public static void dropExtraInventory(Villager villager) {
         VillagerInventoryContainer.dropExtraInventory(villager);
+    }
+
+    public static ItemStack addItem(Villager villager, ItemStack stack) {
+        return VillagerInventoryContainer.addItem(villager, stack);
+    }
+
+    public static void dropAllInventoryAndEquipment(Villager villager, LivingDropsEvent event) {
+        VillagerInventoryContainer.dropAllInventoryAndEquipment(villager, event);
     }
 
     public static boolean hasOpenInventory(Villager villager) {

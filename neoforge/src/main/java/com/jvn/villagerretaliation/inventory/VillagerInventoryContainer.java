@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 import net.minecraft.core.NonNullList;
@@ -11,9 +12,11 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.Container;
 import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 
 final class VillagerInventoryContainer implements Container {
     static final int ARMOR_SLOT_COUNT = 4;
@@ -193,6 +196,33 @@ final class VillagerInventoryContainer implements Container {
         villager.getPersistentData().remove(EXTRA_INVENTORY_TAG);
     }
 
+    static ItemStack addItem(Villager villager, ItemStack stack) {
+        if (stack.isEmpty()) {
+            return ItemStack.EMPTY;
+        }
+
+        NonNullList<ItemStack> inventory = loadFullInventory(villager);
+        ItemStack remainder = stack.copy();
+        mergeIntoExistingStacks(inventory, remainder);
+        fillEmptySlots(inventory, remainder);
+        saveFullInventory(villager, inventory);
+        return remainder;
+    }
+
+    static void dropAllInventoryAndEquipment(Villager villager, LivingDropsEvent event) {
+        dropEquipment(villager, event);
+
+        NonNullList<ItemStack> inventory = loadFullInventory(villager);
+        for (ItemStack stack : inventory) {
+            if (!stack.isEmpty()) {
+                com.jvn.toucanlib.neoforge.loot.ToucanLivingDrops.addDrop(event, stack.copy());
+            }
+        }
+        dropLegacyOverflowInventory(villager, event);
+
+        clearFullInventory(villager);
+    }
+
     private ItemStack getInventoryItem(int inventorySlot) {
         return this.inventory.get(inventorySlot);
     }
@@ -241,6 +271,116 @@ final class VillagerInventoryContainer implements Container {
             ContainerHelper.loadAllItems(tag, inventory, villager.level().registryAccess());
         }
         return inventory;
+    }
+
+    private static NonNullList<ItemStack> loadFullInventory(Villager villager) {
+        NonNullList<ItemStack> inventory = NonNullList.withSize(INVENTORY_SLOT_COUNT, ItemStack.EMPTY);
+        int vanillaSlots = vanillaInventorySlots(villager);
+        for (int slot = 0; slot < vanillaSlots; slot++) {
+            inventory.set(slot, villager.getInventory().getItem(slot).copy());
+        }
+
+        NonNullList<ItemStack> extraInventory = loadExtraInventory(villager, Math.max(0, INVENTORY_SLOT_COUNT - vanillaSlots));
+        for (int slot = 0; slot < extraInventory.size(); slot++) {
+            inventory.set(vanillaSlots + slot, extraInventory.get(slot).copy());
+        }
+        return inventory;
+    }
+
+    private static void saveFullInventory(Villager villager, NonNullList<ItemStack> inventory) {
+        int vanillaSlots = vanillaInventorySlots(villager);
+        for (int slot = 0; slot < vanillaSlots; slot++) {
+            villager.getInventory().setItem(slot, inventory.get(slot).copy());
+        }
+        villager.getInventory().setChanged();
+
+        NonNullList<ItemStack> extraInventory = NonNullList.withSize(Math.max(0, INVENTORY_SLOT_COUNT - vanillaSlots), ItemStack.EMPTY);
+        for (int slot = 0; slot < extraInventory.size(); slot++) {
+            extraInventory.set(slot, inventory.get(vanillaSlots + slot).copy());
+        }
+        CompoundTag tag = ContainerHelper.saveAllItems(new CompoundTag(), extraInventory, true, villager.level().registryAccess());
+        villager.getPersistentData().put(EXTRA_INVENTORY_TAG, tag);
+    }
+
+    private static void clearFullInventory(Villager villager) {
+        NonNullList<ItemStack> emptyInventory = NonNullList.withSize(INVENTORY_SLOT_COUNT, ItemStack.EMPTY);
+        saveFullInventory(villager, emptyInventory);
+        villager.getPersistentData().remove(EXTRA_INVENTORY_TAG);
+    }
+
+    private static void dropLegacyOverflowInventory(Villager villager, LivingDropsEvent event) {
+        int vanillaSlots = vanillaInventorySlots(villager);
+        int currentExtraSlots = Math.max(0, INVENTORY_SLOT_COUNT - vanillaSlots);
+        int legacyExtraSlots = Math.max(currentExtraSlots, LEGACY_INVENTORY_SLOT_COUNT - vanillaSlots);
+        NonNullList<ItemStack> legacyExtraInventory = loadExtraInventory(villager, legacyExtraSlots);
+        for (int slot = currentExtraSlots; slot < legacyExtraInventory.size(); slot++) {
+            ItemStack stack = legacyExtraInventory.get(slot);
+            if (!stack.isEmpty()) {
+                com.jvn.toucanlib.neoforge.loot.ToucanLivingDrops.addDrop(event, stack.copy());
+            }
+        }
+    }
+
+    private static void mergeIntoExistingStacks(NonNullList<ItemStack> inventory, ItemStack remainder) {
+        for (ItemStack existingStack : inventory) {
+            if (remainder.isEmpty()) {
+                return;
+            }
+            if (existingStack.isEmpty() || !ItemStack.isSameItemSameComponents(existingStack, remainder)) {
+                continue;
+            }
+
+            int moveCount = Math.min(remainder.getCount(), existingStack.getMaxStackSize() - existingStack.getCount());
+            if (moveCount > 0) {
+                existingStack.grow(moveCount);
+                remainder.shrink(moveCount);
+            }
+        }
+    }
+
+    private static void fillEmptySlots(NonNullList<ItemStack> inventory, ItemStack remainder) {
+        for (int slot = 0; slot < inventory.size(); slot++) {
+            if (remainder.isEmpty()) {
+                return;
+            }
+            if (!inventory.get(slot).isEmpty()) {
+                continue;
+            }
+
+            int moveCount = Math.min(remainder.getCount(), remainder.getMaxStackSize());
+            inventory.set(slot, remainder.copyWithCount(moveCount));
+            remainder.shrink(moveCount);
+        }
+    }
+
+    private static void dropEquipment(Villager villager, LivingDropsEvent event) {
+        dropEquipmentSlot(villager, event, EquipmentSlot.HEAD);
+        dropEquipmentSlot(villager, event, EquipmentSlot.CHEST);
+        dropEquipmentSlot(villager, event, EquipmentSlot.LEGS);
+        dropEquipmentSlot(villager, event, EquipmentSlot.FEET);
+        dropEquipmentSlot(villager, event, EquipmentSlot.MAINHAND);
+        dropEquipmentSlot(villager, event, EquipmentSlot.OFFHAND);
+    }
+
+    private static void dropEquipmentSlot(Villager villager, LivingDropsEvent event, EquipmentSlot slot) {
+        ItemStack stack = villager.getItemBySlot(slot);
+        if (stack.isEmpty()) {
+            return;
+        }
+
+        removeOneMatchingDrop(event, stack);
+        com.jvn.toucanlib.neoforge.loot.ToucanLivingDrops.addDrop(event, stack.copy());
+        VillagerRetaliationVillagerEquipment.setInventoryEquipment(villager, slot, ItemStack.EMPTY);
+    }
+
+    private static void removeOneMatchingDrop(LivingDropsEvent event, ItemStack stack) {
+        Iterator<ItemEntity> drops = event.getDrops().iterator();
+        while (drops.hasNext()) {
+            if (ItemStack.isSameItemSameComponents(drops.next().getItem(), stack)) {
+                drops.remove();
+                return;
+            }
+        }
     }
 
     private void saveExtraInventory() {

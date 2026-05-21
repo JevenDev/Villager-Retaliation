@@ -265,6 +265,7 @@ public final class VillagerInteractionService {
         int reputationValue = giftPreference.reputationValue();
         VillagerGiftKnowledgeService.rememberGiftResult(level, player, profession, giftedStack, giftPreference);
         VillagerReputationManager.addGiftReputation(level, villager, player, reputationValue);
+        VillagerGiftKeepsakes.storeGift(level, villager, player, giftedStack, giftPreference);
         VillageEventMemory.rememberGift(
                 level,
                 villager.blockPosition(),
