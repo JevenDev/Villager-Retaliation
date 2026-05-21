@@ -626,7 +626,7 @@ public final class VillagerDialogueResources {
 
         String key = path.substring(professionRoot.length(), path.length() - ".json".length());
         if (key.contains("/")) {
-            key = key.substring(key.lastIndexOf('/') + 1);
+            key = key.substring(0, key.indexOf('/'));
         }
         return parseProfession(key).map(Set::of).orElse(Set.of());
     }

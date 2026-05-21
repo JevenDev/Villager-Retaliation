@@ -1,0 +1,4904 @@
+{
+  "lines": [
+    {
+      "id": "baby_share_story_ancient_city_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ancient_city",
+      "text": "{target_article}? I saw grown-ups get quiet when Ancient City came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ancient_city_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ancient_city",
+      "text": "You went to {target}? That sounds like the kind of place where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ancient_city_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ancient_city",
+      "text": "I can tell the other children not to run toward Ancient City. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ancient_city_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ancient_city",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ancient_city_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ancient_city",
+      "text": "If I hear anyone whisper about Ancient City, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_bastion_remnant_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:bastion_remnant",
+      "text": "{target_article}? I saw grown-ups get quiet when Bastion Remnant came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_bastion_remnant_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:bastion_remnant",
+      "text": "You went to {target}? That sounds like the kind of place where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_bastion_remnant_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:bastion_remnant",
+      "text": "I can tell the other children not to run toward Bastion Remnant. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_bastion_remnant_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:bastion_remnant",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_bastion_remnant_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:bastion_remnant",
+      "text": "If I hear anyone whisper about Bastion Remnant, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_buried_treasure_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:buried_treasure",
+      "text": "{target_article}? I saw grown-ups get quiet when Buried Treasure came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_buried_treasure_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:buried_treasure",
+      "text": "You went to {target}? That sounds like the kind of place where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_buried_treasure_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:buried_treasure",
+      "text": "I can tell the other children not to run toward Buried Treasure. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_buried_treasure_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:buried_treasure",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_buried_treasure_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:buried_treasure",
+      "text": "If I hear anyone whisper about Buried Treasure, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_desert_pyramid_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:desert_pyramid",
+      "text": "{target_article}? I saw grown-ups get quiet when Desert Pyramid came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_desert_pyramid_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:desert_pyramid",
+      "text": "You went to {target}? That sounds like the kind of place where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_desert_pyramid_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:desert_pyramid",
+      "text": "I can tell the other children not to run toward Desert Pyramid. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_desert_pyramid_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:desert_pyramid",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_desert_pyramid_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:desert_pyramid",
+      "text": "If I hear anyone whisper about Desert Pyramid, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_end_city_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:end_city",
+      "text": "{target_article}? I saw grown-ups get quiet when End City came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_end_city_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:end_city",
+      "text": "You went to {target}? That sounds like the kind of place where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_end_city_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:end_city",
+      "text": "I can tell the other children not to run toward End City. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_end_city_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:end_city",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_end_city_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:end_city",
+      "text": "If I hear anyone whisper about End City, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_fortress_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:fortress",
+      "text": "{target_article}? I saw grown-ups get quiet when Nether Fortress came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_fortress_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:fortress",
+      "text": "You went to {target}? That sounds like the kind of place where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_fortress_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:fortress",
+      "text": "I can tell the other children not to run toward Nether Fortress. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_fortress_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:fortress",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_fortress_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:fortress",
+      "text": "If I hear anyone whisper about Nether Fortress, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_igloo_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:igloo",
+      "text": "{target_article}? I saw grown-ups get quiet when Igloo came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_igloo_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:igloo",
+      "text": "You went to {target}? That sounds like the kind of place where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_igloo_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:igloo",
+      "text": "I can tell the other children not to run toward Igloo. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_igloo_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:igloo",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_igloo_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:igloo",
+      "text": "If I hear anyone whisper about Igloo, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_jungle_pyramid_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:jungle_pyramid",
+      "text": "{target_article}? I saw grown-ups get quiet when Jungle Pyramid came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_jungle_pyramid_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:jungle_pyramid",
+      "text": "You went to {target}? That sounds like the kind of place where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_jungle_pyramid_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:jungle_pyramid",
+      "text": "I can tell the other children not to run toward Jungle Pyramid. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_jungle_pyramid_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:jungle_pyramid",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_jungle_pyramid_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:jungle_pyramid",
+      "text": "If I hear anyone whisper about Jungle Pyramid, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_mineshaft_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:mineshaft",
+      "text": "{target_article}? I saw grown-ups get quiet when Mineshaft came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_mineshaft_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:mineshaft",
+      "text": "You went to {target}? That sounds like the kind of place where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_mineshaft_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:mineshaft",
+      "text": "I can tell the other children not to run toward Mineshaft. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_mineshaft_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:mineshaft",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_mineshaft_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:mineshaft",
+      "text": "If I hear anyone whisper about Mineshaft, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_mineshaft_mesa_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:mineshaft_mesa",
+      "text": "{target_article}? I saw grown-ups get quiet when Mesa Mineshaft came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_mineshaft_mesa_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:mineshaft_mesa",
+      "text": "You went to {target}? That sounds like the kind of place where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_mineshaft_mesa_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:mineshaft_mesa",
+      "text": "I can tell the other children not to run toward Mesa Mineshaft. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_mineshaft_mesa_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:mineshaft_mesa",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_mineshaft_mesa_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:mineshaft_mesa",
+      "text": "If I hear anyone whisper about Mesa Mineshaft, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_monument_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:monument",
+      "text": "{target_article}? I saw grown-ups get quiet when Ocean Monument came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_monument_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:monument",
+      "text": "You went to {target}? That sounds like the kind of place where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_monument_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:monument",
+      "text": "I can tell the other children not to run toward Ocean Monument. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_monument_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:monument",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_monument_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:monument",
+      "text": "If I hear anyone whisper about Ocean Monument, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_nether_fossil_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:nether_fossil",
+      "text": "{target_article}? I saw grown-ups get quiet when Nether Fossil came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_nether_fossil_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:nether_fossil",
+      "text": "You went to {target}? That sounds like the kind of place where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_nether_fossil_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:nether_fossil",
+      "text": "I can tell the other children not to run toward Nether Fossil. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_nether_fossil_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:nether_fossil",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_nether_fossil_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:nether_fossil",
+      "text": "If I hear anyone whisper about Nether Fossil, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ocean_ruin_cold_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ocean_ruin_cold",
+      "text": "{target_article}? I saw grown-ups get quiet when Cold Ocean Ruin came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ocean_ruin_cold_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ocean_ruin_cold",
+      "text": "You went to {target}? That sounds like the kind of place where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ocean_ruin_cold_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ocean_ruin_cold",
+      "text": "I can tell the other children not to run toward Cold Ocean Ruin. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ocean_ruin_cold_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ocean_ruin_cold",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ocean_ruin_cold_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ocean_ruin_cold",
+      "text": "If I hear anyone whisper about Cold Ocean Ruin, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ocean_ruin_warm_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ocean_ruin_warm",
+      "text": "{target_article}? I saw grown-ups get quiet when Warm Ocean Ruin came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ocean_ruin_warm_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ocean_ruin_warm",
+      "text": "You went to {target}? That sounds like the kind of place where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ocean_ruin_warm_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ocean_ruin_warm",
+      "text": "I can tell the other children not to run toward Warm Ocean Ruin. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ocean_ruin_warm_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ocean_ruin_warm",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ocean_ruin_warm_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ocean_ruin_warm",
+      "text": "If I hear anyone whisper about Warm Ocean Ruin, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_pillager_outpost_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:pillager_outpost",
+      "text": "{target_article}? I saw grown-ups get quiet when Pillager Outpost came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_pillager_outpost_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:pillager_outpost",
+      "text": "You went to {target}? That sounds like the kind of place where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_pillager_outpost_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:pillager_outpost",
+      "text": "I can tell the other children not to run toward Pillager Outpost. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_pillager_outpost_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:pillager_outpost",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_pillager_outpost_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:pillager_outpost",
+      "text": "If I hear anyone whisper about Pillager Outpost, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ruined_portal_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ruined_portal",
+      "text": "{target_article}? I saw grown-ups get quiet when Ruined Portal came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ruined_portal_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ruined_portal",
+      "text": "You went to {target}? That sounds like the kind of place where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ruined_portal_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ruined_portal",
+      "text": "I can tell the other children not to run toward Ruined Portal. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ruined_portal_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ruined_portal",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ruined_portal_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ruined_portal",
+      "text": "If I hear anyone whisper about Ruined Portal, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ruined_portal_desert_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ruined_portal_desert",
+      "text": "{target_article}? I saw grown-ups get quiet when Desert Ruined Portal came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ruined_portal_desert_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ruined_portal_desert",
+      "text": "You went to {target}? That sounds like the kind of place where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ruined_portal_desert_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ruined_portal_desert",
+      "text": "I can tell the other children not to run toward Desert Ruined Portal. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ruined_portal_desert_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ruined_portal_desert",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ruined_portal_desert_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ruined_portal_desert",
+      "text": "If I hear anyone whisper about Desert Ruined Portal, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ruined_portal_jungle_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ruined_portal_jungle",
+      "text": "{target_article}? I saw grown-ups get quiet when Jungle Ruined Portal came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ruined_portal_jungle_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ruined_portal_jungle",
+      "text": "You went to {target}? That sounds like the kind of place where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ruined_portal_jungle_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ruined_portal_jungle",
+      "text": "I can tell the other children not to run toward Jungle Ruined Portal. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ruined_portal_jungle_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ruined_portal_jungle",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ruined_portal_jungle_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ruined_portal_jungle",
+      "text": "If I hear anyone whisper about Jungle Ruined Portal, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ruined_portal_mountain_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ruined_portal_mountain",
+      "text": "{target_article}? I saw grown-ups get quiet when Mountain Ruined Portal came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ruined_portal_mountain_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ruined_portal_mountain",
+      "text": "You went to {target}? That sounds like the kind of place where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ruined_portal_mountain_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ruined_portal_mountain",
+      "text": "I can tell the other children not to run toward Mountain Ruined Portal. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ruined_portal_mountain_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ruined_portal_mountain",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ruined_portal_mountain_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ruined_portal_mountain",
+      "text": "If I hear anyone whisper about Mountain Ruined Portal, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ruined_portal_nether_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ruined_portal_nether",
+      "text": "{target_article}? I saw grown-ups get quiet when Nether Ruined Portal came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ruined_portal_nether_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ruined_portal_nether",
+      "text": "You went to {target}? That sounds like the kind of place where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ruined_portal_nether_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ruined_portal_nether",
+      "text": "I can tell the other children not to run toward Nether Ruined Portal. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ruined_portal_nether_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ruined_portal_nether",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ruined_portal_nether_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ruined_portal_nether",
+      "text": "If I hear anyone whisper about Nether Ruined Portal, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ruined_portal_ocean_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ruined_portal_ocean",
+      "text": "{target_article}? I saw grown-ups get quiet when Ocean Ruined Portal came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ruined_portal_ocean_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ruined_portal_ocean",
+      "text": "You went to {target}? That sounds like the kind of place where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ruined_portal_ocean_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ruined_portal_ocean",
+      "text": "I can tell the other children not to run toward Ocean Ruined Portal. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ruined_portal_ocean_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ruined_portal_ocean",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ruined_portal_ocean_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ruined_portal_ocean",
+      "text": "If I hear anyone whisper about Ocean Ruined Portal, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ruined_portal_swamp_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ruined_portal_swamp",
+      "text": "{target_article}? I saw grown-ups get quiet when Swamp Ruined Portal came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ruined_portal_swamp_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ruined_portal_swamp",
+      "text": "You went to {target}? That sounds like the kind of place where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ruined_portal_swamp_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ruined_portal_swamp",
+      "text": "I can tell the other children not to run toward Swamp Ruined Portal. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ruined_portal_swamp_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ruined_portal_swamp",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ruined_portal_swamp_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:ruined_portal_swamp",
+      "text": "If I hear anyone whisper about Swamp Ruined Portal, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_shipwreck_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:shipwreck",
+      "text": "{target_article}? I saw grown-ups get quiet when Shipwreck came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_shipwreck_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:shipwreck",
+      "text": "You went to {target}? That sounds like the kind of place where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_shipwreck_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:shipwreck",
+      "text": "I can tell the other children not to run toward Shipwreck. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_shipwreck_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:shipwreck",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_shipwreck_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:shipwreck",
+      "text": "If I hear anyone whisper about Shipwreck, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_shipwreck_beached_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:shipwreck_beached",
+      "text": "{target_article}? I saw grown-ups get quiet when Beached Shipwreck came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_shipwreck_beached_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:shipwreck_beached",
+      "text": "You went to {target}? That sounds like the kind of place where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_shipwreck_beached_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:shipwreck_beached",
+      "text": "I can tell the other children not to run toward Beached Shipwreck. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_shipwreck_beached_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:shipwreck_beached",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_shipwreck_beached_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:shipwreck_beached",
+      "text": "If I hear anyone whisper about Beached Shipwreck, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_stronghold_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:stronghold",
+      "text": "{target_article}? I saw grown-ups get quiet when Stronghold came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_stronghold_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:stronghold",
+      "text": "You went to {target}? That sounds like the kind of place where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_stronghold_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:stronghold",
+      "text": "I can tell the other children not to run toward Stronghold. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_stronghold_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:stronghold",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_stronghold_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:stronghold",
+      "text": "If I hear anyone whisper about Stronghold, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_swamp_hut_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:swamp_hut",
+      "text": "{target_article}? I saw grown-ups get quiet when Swamp Hut came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_swamp_hut_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:swamp_hut",
+      "text": "You went to {target}? That sounds like the kind of place where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_swamp_hut_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:swamp_hut",
+      "text": "I can tell the other children not to run toward Swamp Hut. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_swamp_hut_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:swamp_hut",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_swamp_hut_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:swamp_hut",
+      "text": "If I hear anyone whisper about Swamp Hut, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_trail_ruins_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:trail_ruins",
+      "text": "{target_article}? I saw grown-ups get quiet when Trail Ruins came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_trail_ruins_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:trail_ruins",
+      "text": "You went to {target}? That sounds like the kind of place where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_trail_ruins_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:trail_ruins",
+      "text": "I can tell the other children not to run toward Trail Ruins. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_trail_ruins_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:trail_ruins",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_trail_ruins_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:trail_ruins",
+      "text": "If I hear anyone whisper about Trail Ruins, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_trial_chambers_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:trial_chambers",
+      "text": "{target_article}? I saw grown-ups get quiet when Trial Chambers came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_trial_chambers_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:trial_chambers",
+      "text": "You went to {target}? That sounds like the kind of place where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_trial_chambers_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:trial_chambers",
+      "text": "I can tell the other children not to run toward Trial Chambers. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_trial_chambers_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:trial_chambers",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_trial_chambers_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:trial_chambers",
+      "text": "If I hear anyone whisper about Trial Chambers, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_village_desert_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:village_desert",
+      "text": "{target_article}? I saw grown-ups get quiet when Desert Village came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_village_desert_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:village_desert",
+      "text": "You went to {target}? That sounds like the kind of place where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_village_desert_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:village_desert",
+      "text": "I can tell the other children not to run toward Desert Village. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_village_desert_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:village_desert",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_village_desert_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:village_desert",
+      "text": "If I hear anyone whisper about Desert Village, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_village_plains_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:village_plains",
+      "text": "{target_article}? I saw grown-ups get quiet when Plains Village came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_village_plains_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:village_plains",
+      "text": "You went to {target}? That sounds like the kind of place where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_village_plains_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:village_plains",
+      "text": "I can tell the other children not to run toward Plains Village. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_village_plains_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:village_plains",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_village_plains_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:village_plains",
+      "text": "If I hear anyone whisper about Plains Village, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_village_savanna_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:village_savanna",
+      "text": "{target_article}? I saw grown-ups get quiet when Savanna Village came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_village_savanna_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:village_savanna",
+      "text": "You went to {target}? That sounds like the kind of place where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_village_savanna_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:village_savanna",
+      "text": "I can tell the other children not to run toward Savanna Village. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_village_savanna_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:village_savanna",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_village_savanna_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:village_savanna",
+      "text": "If I hear anyone whisper about Savanna Village, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_village_snowy_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:village_snowy",
+      "text": "{target_article}? I saw grown-ups get quiet when Snowy Village came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_village_snowy_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:village_snowy",
+      "text": "You went to {target}? That sounds like the kind of place where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_village_snowy_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:village_snowy",
+      "text": "I can tell the other children not to run toward Snowy Village. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_village_snowy_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:village_snowy",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_village_snowy_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:village_snowy",
+      "text": "If I hear anyone whisper about Snowy Village, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_village_taiga_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:village_taiga",
+      "text": "{target_article}? I saw grown-ups get quiet when Taiga Village came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_village_taiga_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:village_taiga",
+      "text": "You went to {target}? That sounds like the kind of place where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_village_taiga_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:village_taiga",
+      "text": "I can tell the other children not to run toward Taiga Village. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_village_taiga_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:village_taiga",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_village_taiga_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:village_taiga",
+      "text": "If I hear anyone whisper about Taiga Village, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_woodland_mansion_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:woodland_mansion",
+      "text": "{target_article}? I saw grown-ups get quiet when Woodland Mansion came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_woodland_mansion_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:woodland_mansion",
+      "text": "You went to {target}? That sounds like the kind of place where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_woodland_mansion_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:woodland_mansion",
+      "text": "I can tell the other children not to run toward Woodland Mansion. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_woodland_mansion_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:woodland_mansion",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_woodland_mansion_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_structure": "minecraft:woodland_mansion",
+      "text": "If I hear anyone whisper about Woodland Mansion, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_badlands_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:badlands",
+      "text": "{target_article}? I saw grown-ups get quiet when Badlands came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_badlands_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:badlands",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_badlands_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:badlands",
+      "text": "I can tell the other children not to run toward Badlands. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_badlands_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:badlands",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_badlands_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:badlands",
+      "text": "If I hear anyone whisper about Badlands, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_bamboo_jungle_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:bamboo_jungle",
+      "text": "{target_article}? I saw grown-ups get quiet when Bamboo Jungle came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_bamboo_jungle_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:bamboo_jungle",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_bamboo_jungle_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:bamboo_jungle",
+      "text": "I can tell the other children not to run toward Bamboo Jungle. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_bamboo_jungle_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:bamboo_jungle",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_bamboo_jungle_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:bamboo_jungle",
+      "text": "If I hear anyone whisper about Bamboo Jungle, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_basalt_deltas_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:basalt_deltas",
+      "text": "{target_article}? I saw grown-ups get quiet when Basalt Deltas came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_basalt_deltas_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:basalt_deltas",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_basalt_deltas_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:basalt_deltas",
+      "text": "I can tell the other children not to run toward Basalt Deltas. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_basalt_deltas_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:basalt_deltas",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_basalt_deltas_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:basalt_deltas",
+      "text": "If I hear anyone whisper about Basalt Deltas, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_beach_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:beach",
+      "text": "{target_article}? I saw grown-ups get quiet when Beach came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_beach_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:beach",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_beach_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:beach",
+      "text": "I can tell the other children not to run toward Beach. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_beach_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:beach",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_beach_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:beach",
+      "text": "If I hear anyone whisper about Beach, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_birch_forest_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:birch_forest",
+      "text": "{target_article}? I saw grown-ups get quiet when Birch Forest came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_birch_forest_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:birch_forest",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_birch_forest_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:birch_forest",
+      "text": "I can tell the other children not to run toward Birch Forest. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_birch_forest_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:birch_forest",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_birch_forest_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:birch_forest",
+      "text": "If I hear anyone whisper about Birch Forest, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_cherry_grove_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:cherry_grove",
+      "text": "{target_article}? I saw grown-ups get quiet when Cherry Grove came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_cherry_grove_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:cherry_grove",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_cherry_grove_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:cherry_grove",
+      "text": "I can tell the other children not to run toward Cherry Grove. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_cherry_grove_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:cherry_grove",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_cherry_grove_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:cherry_grove",
+      "text": "If I hear anyone whisper about Cherry Grove, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_cold_ocean_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:cold_ocean",
+      "text": "{target_article}? I saw grown-ups get quiet when Cold Ocean came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_cold_ocean_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:cold_ocean",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_cold_ocean_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:cold_ocean",
+      "text": "I can tell the other children not to run toward Cold Ocean. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_cold_ocean_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:cold_ocean",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_cold_ocean_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:cold_ocean",
+      "text": "If I hear anyone whisper about Cold Ocean, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_crimson_forest_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:crimson_forest",
+      "text": "{target_article}? I saw grown-ups get quiet when Crimson Forest came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_crimson_forest_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:crimson_forest",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_crimson_forest_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:crimson_forest",
+      "text": "I can tell the other children not to run toward Crimson Forest. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_crimson_forest_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:crimson_forest",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_crimson_forest_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:crimson_forest",
+      "text": "If I hear anyone whisper about Crimson Forest, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_dark_forest_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:dark_forest",
+      "text": "{target_article}? I saw grown-ups get quiet when Dark Forest came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_dark_forest_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:dark_forest",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_dark_forest_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:dark_forest",
+      "text": "I can tell the other children not to run toward Dark Forest. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_dark_forest_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:dark_forest",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_dark_forest_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:dark_forest",
+      "text": "If I hear anyone whisper about Dark Forest, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_deep_cold_ocean_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:deep_cold_ocean",
+      "text": "{target_article}? I saw grown-ups get quiet when Deep Cold Ocean came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_deep_cold_ocean_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:deep_cold_ocean",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_deep_cold_ocean_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:deep_cold_ocean",
+      "text": "I can tell the other children not to run toward Deep Cold Ocean. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_deep_cold_ocean_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:deep_cold_ocean",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_deep_cold_ocean_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:deep_cold_ocean",
+      "text": "If I hear anyone whisper about Deep Cold Ocean, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_deep_dark_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:deep_dark",
+      "text": "{target_article}? I saw grown-ups get quiet when Deep Dark came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_deep_dark_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:deep_dark",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_deep_dark_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:deep_dark",
+      "text": "I can tell the other children not to run toward Deep Dark. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_deep_dark_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:deep_dark",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_deep_dark_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:deep_dark",
+      "text": "If I hear anyone whisper about Deep Dark, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_deep_frozen_ocean_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:deep_frozen_ocean",
+      "text": "{target_article}? I saw grown-ups get quiet when Deep Frozen Ocean came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_deep_frozen_ocean_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:deep_frozen_ocean",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_deep_frozen_ocean_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:deep_frozen_ocean",
+      "text": "I can tell the other children not to run toward Deep Frozen Ocean. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_deep_frozen_ocean_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:deep_frozen_ocean",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_deep_frozen_ocean_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:deep_frozen_ocean",
+      "text": "If I hear anyone whisper about Deep Frozen Ocean, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_deep_lukewarm_ocean_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:deep_lukewarm_ocean",
+      "text": "{target_article}? I saw grown-ups get quiet when Deep Lukewarm Ocean came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_deep_lukewarm_ocean_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:deep_lukewarm_ocean",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_deep_lukewarm_ocean_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:deep_lukewarm_ocean",
+      "text": "I can tell the other children not to run toward Deep Lukewarm Ocean. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_deep_lukewarm_ocean_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:deep_lukewarm_ocean",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_deep_lukewarm_ocean_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:deep_lukewarm_ocean",
+      "text": "If I hear anyone whisper about Deep Lukewarm Ocean, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_deep_ocean_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:deep_ocean",
+      "text": "{target_article}? I saw grown-ups get quiet when Deep Ocean came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_deep_ocean_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:deep_ocean",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_deep_ocean_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:deep_ocean",
+      "text": "I can tell the other children not to run toward Deep Ocean. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_deep_ocean_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:deep_ocean",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_deep_ocean_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:deep_ocean",
+      "text": "If I hear anyone whisper about Deep Ocean, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_desert_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:desert",
+      "text": "{target_article}? I saw grown-ups get quiet when Desert came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_desert_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:desert",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_desert_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:desert",
+      "text": "I can tell the other children not to run toward Desert. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_desert_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:desert",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_desert_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:desert",
+      "text": "If I hear anyone whisper about Desert, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_dripstone_caves_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:dripstone_caves",
+      "text": "{target_article}? I saw grown-ups get quiet when Dripstone Caves came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_dripstone_caves_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:dripstone_caves",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_dripstone_caves_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:dripstone_caves",
+      "text": "I can tell the other children not to run toward Dripstone Caves. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_dripstone_caves_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:dripstone_caves",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_dripstone_caves_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:dripstone_caves",
+      "text": "If I hear anyone whisper about Dripstone Caves, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_end_barrens_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:end_barrens",
+      "text": "{target_article}? I saw grown-ups get quiet when End Barrens came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_end_barrens_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:end_barrens",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_end_barrens_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:end_barrens",
+      "text": "I can tell the other children not to run toward End Barrens. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_end_barrens_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:end_barrens",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_end_barrens_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:end_barrens",
+      "text": "If I hear anyone whisper about End Barrens, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_end_highlands_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:end_highlands",
+      "text": "{target_article}? I saw grown-ups get quiet when End Highlands came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_end_highlands_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:end_highlands",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_end_highlands_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:end_highlands",
+      "text": "I can tell the other children not to run toward End Highlands. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_end_highlands_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:end_highlands",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_end_highlands_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:end_highlands",
+      "text": "If I hear anyone whisper about End Highlands, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_end_midlands_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:end_midlands",
+      "text": "{target_article}? I saw grown-ups get quiet when End Midlands came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_end_midlands_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:end_midlands",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_end_midlands_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:end_midlands",
+      "text": "I can tell the other children not to run toward End Midlands. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_end_midlands_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:end_midlands",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_end_midlands_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:end_midlands",
+      "text": "If I hear anyone whisper about End Midlands, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_eroded_badlands_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:eroded_badlands",
+      "text": "{target_article}? I saw grown-ups get quiet when Eroded Badlands came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_eroded_badlands_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:eroded_badlands",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_eroded_badlands_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:eroded_badlands",
+      "text": "I can tell the other children not to run toward Eroded Badlands. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_eroded_badlands_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:eroded_badlands",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_eroded_badlands_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:eroded_badlands",
+      "text": "If I hear anyone whisper about Eroded Badlands, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_flower_forest_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:flower_forest",
+      "text": "{target_article}? I saw grown-ups get quiet when Flower Forest came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_flower_forest_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:flower_forest",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_flower_forest_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:flower_forest",
+      "text": "I can tell the other children not to run toward Flower Forest. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_flower_forest_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:flower_forest",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_flower_forest_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:flower_forest",
+      "text": "If I hear anyone whisper about Flower Forest, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_forest_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:forest",
+      "text": "{target_article}? I saw grown-ups get quiet when Forest came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_forest_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:forest",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_forest_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:forest",
+      "text": "I can tell the other children not to run toward Forest. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_forest_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:forest",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_forest_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:forest",
+      "text": "If I hear anyone whisper about Forest, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_frozen_ocean_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:frozen_ocean",
+      "text": "{target_article}? I saw grown-ups get quiet when Frozen Ocean came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_frozen_ocean_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:frozen_ocean",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_frozen_ocean_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:frozen_ocean",
+      "text": "I can tell the other children not to run toward Frozen Ocean. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_frozen_ocean_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:frozen_ocean",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_frozen_ocean_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:frozen_ocean",
+      "text": "If I hear anyone whisper about Frozen Ocean, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_frozen_peaks_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:frozen_peaks",
+      "text": "{target_article}? I saw grown-ups get quiet when Frozen Peaks came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_frozen_peaks_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:frozen_peaks",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_frozen_peaks_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:frozen_peaks",
+      "text": "I can tell the other children not to run toward Frozen Peaks. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_frozen_peaks_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:frozen_peaks",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_frozen_peaks_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:frozen_peaks",
+      "text": "If I hear anyone whisper about Frozen Peaks, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_frozen_river_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:frozen_river",
+      "text": "{target_article}? I saw grown-ups get quiet when Frozen River came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_frozen_river_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:frozen_river",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_frozen_river_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:frozen_river",
+      "text": "I can tell the other children not to run toward Frozen River. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_frozen_river_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:frozen_river",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_frozen_river_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:frozen_river",
+      "text": "If I hear anyone whisper about Frozen River, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_grove_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:grove",
+      "text": "{target_article}? I saw grown-ups get quiet when Grove came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_grove_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:grove",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_grove_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:grove",
+      "text": "I can tell the other children not to run toward Grove. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_grove_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:grove",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_grove_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:grove",
+      "text": "If I hear anyone whisper about Grove, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ice_spikes_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:ice_spikes",
+      "text": "{target_article}? I saw grown-ups get quiet when Ice Spikes came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ice_spikes_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:ice_spikes",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ice_spikes_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:ice_spikes",
+      "text": "I can tell the other children not to run toward Ice Spikes. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ice_spikes_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:ice_spikes",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ice_spikes_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:ice_spikes",
+      "text": "If I hear anyone whisper about Ice Spikes, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_jagged_peaks_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:jagged_peaks",
+      "text": "{target_article}? I saw grown-ups get quiet when Jagged Peaks came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_jagged_peaks_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:jagged_peaks",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_jagged_peaks_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:jagged_peaks",
+      "text": "I can tell the other children not to run toward Jagged Peaks. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_jagged_peaks_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:jagged_peaks",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_jagged_peaks_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:jagged_peaks",
+      "text": "If I hear anyone whisper about Jagged Peaks, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_jungle_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:jungle",
+      "text": "{target_article}? I saw grown-ups get quiet when Jungle came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_jungle_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:jungle",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_jungle_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:jungle",
+      "text": "I can tell the other children not to run toward Jungle. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_jungle_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:jungle",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_jungle_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:jungle",
+      "text": "If I hear anyone whisper about Jungle, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_lukewarm_ocean_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:lukewarm_ocean",
+      "text": "{target_article}? I saw grown-ups get quiet when Lukewarm Ocean came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_lukewarm_ocean_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:lukewarm_ocean",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_lukewarm_ocean_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:lukewarm_ocean",
+      "text": "I can tell the other children not to run toward Lukewarm Ocean. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_lukewarm_ocean_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:lukewarm_ocean",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_lukewarm_ocean_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:lukewarm_ocean",
+      "text": "If I hear anyone whisper about Lukewarm Ocean, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_lush_caves_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:lush_caves",
+      "text": "{target_article}? I saw grown-ups get quiet when Lush Caves came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_lush_caves_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:lush_caves",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_lush_caves_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:lush_caves",
+      "text": "I can tell the other children not to run toward Lush Caves. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_lush_caves_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:lush_caves",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_lush_caves_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:lush_caves",
+      "text": "If I hear anyone whisper about Lush Caves, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_mangrove_swamp_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:mangrove_swamp",
+      "text": "{target_article}? I saw grown-ups get quiet when Mangrove Swamp came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_mangrove_swamp_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:mangrove_swamp",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_mangrove_swamp_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:mangrove_swamp",
+      "text": "I can tell the other children not to run toward Mangrove Swamp. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_mangrove_swamp_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:mangrove_swamp",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_mangrove_swamp_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:mangrove_swamp",
+      "text": "If I hear anyone whisper about Mangrove Swamp, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_meadow_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:meadow",
+      "text": "{target_article}? I saw grown-ups get quiet when Meadow came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_meadow_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:meadow",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_meadow_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:meadow",
+      "text": "I can tell the other children not to run toward Meadow. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_meadow_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:meadow",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_meadow_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:meadow",
+      "text": "If I hear anyone whisper about Meadow, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_mushroom_fields_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:mushroom_fields",
+      "text": "{target_article}? I saw grown-ups get quiet when Mushroom Fields came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_mushroom_fields_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:mushroom_fields",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_mushroom_fields_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:mushroom_fields",
+      "text": "I can tell the other children not to run toward Mushroom Fields. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_mushroom_fields_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:mushroom_fields",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_mushroom_fields_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:mushroom_fields",
+      "text": "If I hear anyone whisper about Mushroom Fields, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_nether_wastes_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:nether_wastes",
+      "text": "{target_article}? I saw grown-ups get quiet when Nether Wastes came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_nether_wastes_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:nether_wastes",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_nether_wastes_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:nether_wastes",
+      "text": "I can tell the other children not to run toward Nether Wastes. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_nether_wastes_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:nether_wastes",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_nether_wastes_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:nether_wastes",
+      "text": "If I hear anyone whisper about Nether Wastes, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ocean_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:ocean",
+      "text": "{target_article}? I saw grown-ups get quiet when Ocean came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ocean_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:ocean",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ocean_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:ocean",
+      "text": "I can tell the other children not to run toward Ocean. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ocean_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:ocean",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_ocean_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:ocean",
+      "text": "If I hear anyone whisper about Ocean, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_old_growth_birch_forest_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:old_growth_birch_forest",
+      "text": "{target_article}? I saw grown-ups get quiet when Old Growth Birch Forest came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_old_growth_birch_forest_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:old_growth_birch_forest",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_old_growth_birch_forest_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:old_growth_birch_forest",
+      "text": "I can tell the other children not to run toward Old Growth Birch Forest. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_old_growth_birch_forest_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:old_growth_birch_forest",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_old_growth_birch_forest_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:old_growth_birch_forest",
+      "text": "If I hear anyone whisper about Old Growth Birch Forest, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_old_growth_pine_taiga_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:old_growth_pine_taiga",
+      "text": "{target_article}? I saw grown-ups get quiet when Old Growth Pine Taiga came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_old_growth_pine_taiga_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:old_growth_pine_taiga",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_old_growth_pine_taiga_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:old_growth_pine_taiga",
+      "text": "I can tell the other children not to run toward Old Growth Pine Taiga. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_old_growth_pine_taiga_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:old_growth_pine_taiga",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_old_growth_pine_taiga_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:old_growth_pine_taiga",
+      "text": "If I hear anyone whisper about Old Growth Pine Taiga, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_old_growth_spruce_taiga_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:old_growth_spruce_taiga",
+      "text": "{target_article}? I saw grown-ups get quiet when Old Growth Spruce Taiga came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_old_growth_spruce_taiga_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:old_growth_spruce_taiga",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_old_growth_spruce_taiga_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:old_growth_spruce_taiga",
+      "text": "I can tell the other children not to run toward Old Growth Spruce Taiga. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_old_growth_spruce_taiga_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:old_growth_spruce_taiga",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_old_growth_spruce_taiga_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:old_growth_spruce_taiga",
+      "text": "If I hear anyone whisper about Old Growth Spruce Taiga, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_plains_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:plains",
+      "text": "{target_article}? I saw grown-ups get quiet when Plains came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_plains_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:plains",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_plains_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:plains",
+      "text": "I can tell the other children not to run toward Plains. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_plains_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:plains",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_plains_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:plains",
+      "text": "If I hear anyone whisper about Plains, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_river_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:river",
+      "text": "{target_article}? I saw grown-ups get quiet when River came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_river_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:river",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_river_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:river",
+      "text": "I can tell the other children not to run toward River. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_river_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:river",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_river_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:river",
+      "text": "If I hear anyone whisper about River, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_savanna_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:savanna",
+      "text": "{target_article}? I saw grown-ups get quiet when Savanna came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_savanna_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:savanna",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_savanna_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:savanna",
+      "text": "I can tell the other children not to run toward Savanna. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_savanna_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:savanna",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_savanna_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:savanna",
+      "text": "If I hear anyone whisper about Savanna, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_savanna_plateau_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:savanna_plateau",
+      "text": "{target_article}? I saw grown-ups get quiet when Savanna Plateau came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_savanna_plateau_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:savanna_plateau",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_savanna_plateau_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:savanna_plateau",
+      "text": "I can tell the other children not to run toward Savanna Plateau. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_savanna_plateau_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:savanna_plateau",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_savanna_plateau_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:savanna_plateau",
+      "text": "If I hear anyone whisper about Savanna Plateau, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_small_end_islands_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:small_end_islands",
+      "text": "{target_article}? I saw grown-ups get quiet when Small End Islands came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_small_end_islands_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:small_end_islands",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_small_end_islands_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:small_end_islands",
+      "text": "I can tell the other children not to run toward Small End Islands. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_small_end_islands_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:small_end_islands",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_small_end_islands_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:small_end_islands",
+      "text": "If I hear anyone whisper about Small End Islands, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_snowy_beach_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:snowy_beach",
+      "text": "{target_article}? I saw grown-ups get quiet when Snowy Beach came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_snowy_beach_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:snowy_beach",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_snowy_beach_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:snowy_beach",
+      "text": "I can tell the other children not to run toward Snowy Beach. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_snowy_beach_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:snowy_beach",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_snowy_beach_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:snowy_beach",
+      "text": "If I hear anyone whisper about Snowy Beach, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_snowy_plains_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:snowy_plains",
+      "text": "{target_article}? I saw grown-ups get quiet when Snowy Plains came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_snowy_plains_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:snowy_plains",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_snowy_plains_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:snowy_plains",
+      "text": "I can tell the other children not to run toward Snowy Plains. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_snowy_plains_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:snowy_plains",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_snowy_plains_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:snowy_plains",
+      "text": "If I hear anyone whisper about Snowy Plains, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_snowy_slopes_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:snowy_slopes",
+      "text": "{target_article}? I saw grown-ups get quiet when Snowy Slopes came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_snowy_slopes_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:snowy_slopes",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_snowy_slopes_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:snowy_slopes",
+      "text": "I can tell the other children not to run toward Snowy Slopes. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_snowy_slopes_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:snowy_slopes",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_snowy_slopes_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:snowy_slopes",
+      "text": "If I hear anyone whisper about Snowy Slopes, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_snowy_taiga_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:snowy_taiga",
+      "text": "{target_article}? I saw grown-ups get quiet when Snowy Taiga came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_snowy_taiga_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:snowy_taiga",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_snowy_taiga_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:snowy_taiga",
+      "text": "I can tell the other children not to run toward Snowy Taiga. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_snowy_taiga_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:snowy_taiga",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_snowy_taiga_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:snowy_taiga",
+      "text": "If I hear anyone whisper about Snowy Taiga, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_soul_sand_valley_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:soul_sand_valley",
+      "text": "{target_article}? I saw grown-ups get quiet when Soul Sand Valley came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_soul_sand_valley_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:soul_sand_valley",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_soul_sand_valley_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:soul_sand_valley",
+      "text": "I can tell the other children not to run toward Soul Sand Valley. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_soul_sand_valley_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:soul_sand_valley",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_soul_sand_valley_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:soul_sand_valley",
+      "text": "If I hear anyone whisper about Soul Sand Valley, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_sparse_jungle_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:sparse_jungle",
+      "text": "{target_article}? I saw grown-ups get quiet when Sparse Jungle came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_sparse_jungle_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:sparse_jungle",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_sparse_jungle_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:sparse_jungle",
+      "text": "I can tell the other children not to run toward Sparse Jungle. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_sparse_jungle_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:sparse_jungle",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_sparse_jungle_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:sparse_jungle",
+      "text": "If I hear anyone whisper about Sparse Jungle, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_stony_peaks_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:stony_peaks",
+      "text": "{target_article}? I saw grown-ups get quiet when Stony Peaks came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_stony_peaks_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:stony_peaks",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_stony_peaks_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:stony_peaks",
+      "text": "I can tell the other children not to run toward Stony Peaks. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_stony_peaks_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:stony_peaks",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_stony_peaks_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:stony_peaks",
+      "text": "If I hear anyone whisper about Stony Peaks, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_stony_shore_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:stony_shore",
+      "text": "{target_article}? I saw grown-ups get quiet when Stony Shore came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_stony_shore_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:stony_shore",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_stony_shore_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:stony_shore",
+      "text": "I can tell the other children not to run toward Stony Shore. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_stony_shore_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:stony_shore",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_stony_shore_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:stony_shore",
+      "text": "If I hear anyone whisper about Stony Shore, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_sunflower_plains_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:sunflower_plains",
+      "text": "{target_article}? I saw grown-ups get quiet when Sunflower Plains came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_sunflower_plains_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:sunflower_plains",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_sunflower_plains_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:sunflower_plains",
+      "text": "I can tell the other children not to run toward Sunflower Plains. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_sunflower_plains_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:sunflower_plains",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_sunflower_plains_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:sunflower_plains",
+      "text": "If I hear anyone whisper about Sunflower Plains, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_swamp_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:swamp",
+      "text": "{target_article}? I saw grown-ups get quiet when Swamp came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_swamp_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:swamp",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_swamp_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:swamp",
+      "text": "I can tell the other children not to run toward Swamp. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_swamp_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:swamp",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_swamp_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:swamp",
+      "text": "If I hear anyone whisper about Swamp, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_taiga_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:taiga",
+      "text": "{target_article}? I saw grown-ups get quiet when Taiga came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_taiga_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:taiga",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_taiga_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:taiga",
+      "text": "I can tell the other children not to run toward Taiga. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_taiga_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:taiga",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_taiga_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:taiga",
+      "text": "If I hear anyone whisper about Taiga, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_the_end_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:the_end",
+      "text": "{target_article}? I saw grown-ups get quiet when The End came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_the_end_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:the_end",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_the_end_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:the_end",
+      "text": "I can tell the other children not to run toward The End. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_the_end_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:the_end",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_the_end_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:the_end",
+      "text": "If I hear anyone whisper about The End, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_the_void_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:the_void",
+      "text": "{target_article}? I saw grown-ups get quiet when The Void came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_the_void_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:the_void",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_the_void_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:the_void",
+      "text": "I can tell the other children not to run toward The Void. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_the_void_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:the_void",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_the_void_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:the_void",
+      "text": "If I hear anyone whisper about The Void, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_warm_ocean_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:warm_ocean",
+      "text": "{target_article}? I saw grown-ups get quiet when Warm Ocean came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_warm_ocean_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:warm_ocean",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_warm_ocean_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:warm_ocean",
+      "text": "I can tell the other children not to run toward Warm Ocean. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_warm_ocean_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:warm_ocean",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_warm_ocean_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:warm_ocean",
+      "text": "If I hear anyone whisper about Warm Ocean, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_warped_forest_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:warped_forest",
+      "text": "{target_article}? I saw grown-ups get quiet when Warped Forest came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_warped_forest_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:warped_forest",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_warped_forest_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:warped_forest",
+      "text": "I can tell the other children not to run toward Warped Forest. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_warped_forest_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:warped_forest",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_warped_forest_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:warped_forest",
+      "text": "If I hear anyone whisper about Warped Forest, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_windswept_forest_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:windswept_forest",
+      "text": "{target_article}? I saw grown-ups get quiet when Windswept Forest came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_windswept_forest_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:windswept_forest",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_windswept_forest_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:windswept_forest",
+      "text": "I can tell the other children not to run toward Windswept Forest. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_windswept_forest_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:windswept_forest",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_windswept_forest_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:windswept_forest",
+      "text": "If I hear anyone whisper about Windswept Forest, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_windswept_gravelly_hills_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:windswept_gravelly_hills",
+      "text": "{target_article}? I saw grown-ups get quiet when Windswept Gravelly Hills came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_windswept_gravelly_hills_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:windswept_gravelly_hills",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_windswept_gravelly_hills_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:windswept_gravelly_hills",
+      "text": "I can tell the other children not to run toward Windswept Gravelly Hills. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_windswept_gravelly_hills_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:windswept_gravelly_hills",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_windswept_gravelly_hills_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:windswept_gravelly_hills",
+      "text": "If I hear anyone whisper about Windswept Gravelly Hills, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_windswept_hills_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:windswept_hills",
+      "text": "{target_article}? I saw grown-ups get quiet when Windswept Hills came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_windswept_hills_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:windswept_hills",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_windswept_hills_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:windswept_hills",
+      "text": "I can tell the other children not to run toward Windswept Hills. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_windswept_hills_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:windswept_hills",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_windswept_hills_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:windswept_hills",
+      "text": "If I hear anyone whisper about Windswept Hills, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_windswept_savanna_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:windswept_savanna",
+      "text": "{target_article}? I saw grown-ups get quiet when Windswept Savanna came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_windswept_savanna_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:windswept_savanna",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_windswept_savanna_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:windswept_savanna",
+      "text": "I can tell the other children not to run toward Windswept Savanna. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_windswept_savanna_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:windswept_savanna",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_windswept_savanna_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:windswept_savanna",
+      "text": "If I hear anyone whisper about Windswept Savanna, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_wooded_badlands_1",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:wooded_badlands",
+      "text": "{target_article}? I saw grown-ups get quiet when Wooded Badlands came up. Should I stay close to the bell?",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_wooded_badlands_2",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:wooded_badlands",
+      "text": "You went to {target}? That sounds like the kind of land where I should hold someone's hand.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_wooded_badlands_3",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:wooded_badlands",
+      "text": "I can tell the other children not to run toward Wooded Badlands. We are very good at running the wrong way sometimes.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_wooded_badlands_4",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:wooded_badlands",
+      "text": "{target_article} sounds scary, but I am glad you came back to say it out loud.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "baby_share_story_wooded_badlands_5",
+      "type": "share_story",
+      "option": "baby_share_story",
+      "story_biome": "minecraft:wooded_badlands",
+      "text": "If I hear anyone whisper about Wooded Badlands, I will remember: tell a grown-up first, adventure later.",
+      "weight": 28,
+      "show_for_adults": false,
+      "show_for_babies": true
+    }
+  ]
+}

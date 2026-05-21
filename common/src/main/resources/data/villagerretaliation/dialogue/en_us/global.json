@@ -163,18 +163,26 @@
       "order": 4
     },
     {
+      "id": "baby_share_story",
+      "label": "Share a Story",
+      "type": "share_story",
+      "show_for_adults": false,
+      "requires_shareable_story": true,
+      "order": 5
+    },
+    {
       "id": "baby_joke",
       "label": "Tell Joke",
       "type": "joke",
       "show_for_adults": false,
-      "order": 5
+      "order": 6
     },
     {
       "id": "baby_insult",
       "label": "Be Mean",
       "type": "insult",
       "show_for_adults": false,
-      "order": 6
+      "order": 7
     }
   ],
   "messages": [

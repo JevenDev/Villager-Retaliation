@@ -220,7 +220,7 @@ Villager dialogue is loaded from datapack JSON under:
 data/villagerretaliation/dialogue/en_us/
 ```
 
-The built-in files live in `global.json` and `professions/<profession>.json`. Packs can add or replace files in the same namespace to add new dialogue, tune weights, add profession-specific lines, or expose new talk choices.
+The built-in files live in `global.json`, `professions/<profession>.json`, and optional nested files such as `professions/<profession>/share_stories.json`. Packs can add or replace files in the same namespace to add new dialogue, tune weights, add profession-specific lines, or expose new talk choices. Files directly under `professions/<profession>.json` and nested under `professions/<profession>/` automatically apply to that profession unless an entry provides its own `professions` filter.
 
 Dialogue uses the player's client language when the server knows it. Files in `dialogue/<locale>/` are layered over `dialogue/en_us/`, so translated packs can provide only the entries they need to replace. Matching `id` values replace fallback entries; entries without explicit ids use stable generated ids based on file path and order.
 
@@ -338,7 +338,7 @@ Biome entries use the same shape:
 }
 ```
 
-When the player discovers one of these structures or biomes near adult villagers, those villagers can show the built-in `Share a Story` option until the story is told.
+When the player discovers one of these structures or biomes near villagers, those villagers can show the built-in `Share a Story` option until the story is told. Babies use their own baby-only `share_story` dialogue lines when available.
 
 Structure-specific shared-story lines can filter with `story_structure`:
 
@@ -364,6 +364,14 @@ Structure-specific shared-story lines can filter with `story_structure`:
   ]
 }
 ```
+
+Large dialogue sets can be split into nested profession files for readability:
+
+```text
+data/villagerretaliation/dialogue/en_us/professions/fisherman/share_stories.json
+```
+
+Lines in that file automatically default to the `fisherman` profession, so they do not need to repeat `"professions": ["fisherman"]` unless a pack intentionally wants a different filter.
 
 Gift advice is not always reliable. Villagers with low personal reputation toward the player can mislead them by recommending a gift that the target profession actually dislikes, and neutral or lightly trusted villagers can occasionally be wrong. Bad advice is not added to the known gift lists until the player tests it; returning to the recommender afterward can reveal a `gift_advice_followup` response.
 

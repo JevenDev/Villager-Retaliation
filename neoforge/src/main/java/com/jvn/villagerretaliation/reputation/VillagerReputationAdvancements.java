@@ -143,7 +143,7 @@ public final class VillagerReputationAdvancements {
         if (storyBiome == null) {
             return;
         }
-        List<Villager> nearbyVillagers = nearbyAdultVillagers(level, player.blockPosition());
+        List<Villager> nearbyVillagers = nearbyVillagers(level, player.blockPosition());
         if (nearbyVillagers.isEmpty()) {
             return;
         }
@@ -176,7 +176,7 @@ public final class VillagerReputationAdvancements {
         if (storyStructures.isEmpty()) {
             return;
         }
-        List<Villager> nearbyVillagers = nearbyAdultVillagers(level, player.blockPosition());
+        List<Villager> nearbyVillagers = nearbyVillagers(level, player.blockPosition());
         if (nearbyVillagers.isEmpty()) {
             return;
         }
@@ -188,11 +188,11 @@ public final class VillagerReputationAdvancements {
         }
     }
 
-    private static List<Villager> nearbyAdultVillagers(ServerLevel level, BlockPos origin) {
+    private static List<Villager> nearbyVillagers(ServerLevel level, BlockPos origin) {
         return level.getEntitiesOfClass(
                 Villager.class,
                 new AABB(origin).inflate(DANGEROUS_STORY_VILLAGER_RADIUS),
-                villager -> villager.isAlive() && !villager.isBaby()
+                Villager::isAlive
         );
     }
 
