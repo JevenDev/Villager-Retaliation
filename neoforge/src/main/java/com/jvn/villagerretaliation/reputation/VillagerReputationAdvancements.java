@@ -39,6 +39,7 @@ public final class VillagerReputationAdvancements {
     private static final long DIRECT_HIT_MEMORY_TICKS = 20L * 40L;
     private static final double HOSTILITY_SCAN_RADIUS = 64.0D;
     private static final double DIALOGUE_MAP_FOUND_RADIUS = 64.0D;
+    private static final double STORY_HINT_FOUND_RADIUS = 256.0D;
 
     private static final Map<UUID, Map<UUID, Integer>> TRADE_COUNTS = new HashMap<>();
     private static final Map<UUID, Set<UUID>> TRADED_VILLAGERS = new HashMap<>();
@@ -107,7 +108,7 @@ public final class VillagerReputationAdvancements {
         }
         player.serverLevel().getBiome(player.blockPosition()).unwrapKey().map(ResourceKey::location).ifPresent(currentBiomeId -> {
             List<VillagerInteractionTracker.StoryHintReport> hintDiscoveries =
-                    VillagerInteractionTracker.markStoryHintDiscoveriesNear(player.serverLevel(), player, currentBiomeId, DIALOGUE_MAP_FOUND_RADIUS);
+                    VillagerInteractionTracker.markStoryHintDiscoveriesNear(player.serverLevel(), player, currentBiomeId, STORY_HINT_FOUND_RADIUS);
             if (!hintDiscoveries.isEmpty()) {
                 award(player, TRUSTED_DIRECTIONS);
                 hintDiscoveries.forEach(discovery -> sendStoryHintFoundNotice(player, discovery));

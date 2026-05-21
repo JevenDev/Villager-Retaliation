@@ -159,26 +159,44 @@ public final class VillagerStoryHintService {
         ServerLevel level = context.level();
         BlockPos origin = context.villager().blockPosition();
         List<CachedTarget> targets = new ArrayList<>();
-        int samplesPerRing = 12;
-        int ringStep = Math.max(160, quality.biomeRadius / 5);
-        double angleOffset = context.random().nextDouble() * Math.PI * 2.0D;
-        for (int radius = Math.max(160, quality.biomeMinRadius); radius <= quality.biomeRadius && targets.size() < quality.biomePoolSize; radius += ringStep) {
-            for (int sample = 0; sample < samplesPerRing && targets.size() < quality.biomePoolSize; sample++) {
-                double angle = angleOffset + (Math.PI * 2.0D * sample / samplesPerRing);
-                int x = origin.getX() + (int) Math.round(Math.cos(angle) * radius);
-                int z = origin.getZ() + (int) Math.round(Math.sin(angle) * radius);
-                Holder<Biome> biome = level.getUncachedNoiseBiome(
-                        QuartPos.fromBlock(x),
-                        QuartPos.fromBlock(origin.getY()),
-                        QuartPos.fromBlock(z)
+        int minRadius = Math.max(160, quality.biomeMinRadius);
+        int maxRadius = Math.max(minRadius, quality.biomeRadius);
+        int attempts = Math.max(48, quality.biomePoolSize * 24);
+        for (int attempt = 0; attempt < attempts && targets.size() < quality.biomePoolSize; attempt++) {
+            int radius = randomRadius(context.random(), minRadius, maxRadius);
+            double angle = context.random().nextDouble() * Math.PI * 2.0D;
+            int x = origin.getX() + (int) Math.round(Math.cos(angle) * radius);
+            int z = origin.getZ() + (int) Math.round(Math.sin(angle) * radius);
+            Holder<Biome> biome = level.getUncachedNoiseBiome(
+                    QuartPos.fromBlock(x),
+                    QuartPos.fromBlock(origin.getY()),
+                    QuartPos.fromBlock(z)
+            );
+            ResourceLocation biomeId = keyLocation(biome).orElse(null);
+            if (biomeId != null && !biome.is(currentBiome) && isNewTarget(targets, biomeId, x, z)) {
+                Pair<BlockPos, Holder<Biome>> nearest = level.findClosestBiome3d(
+                        candidate -> keyLocation(candidate).map(biomeId::equals).orElse(false),
+                        origin,
+                        maxRadius,
+                        32,
+                        64
                 );
-                ResourceLocation biomeId = keyLocation(biome).orElse(null);
-                if (biomeId != null && !biome.is(currentBiome) && isNewTarget(targets, biomeId, x, z)) {
-                    targets.add(new CachedTarget(HintKind.BIOME, biomeId, new BlockPos(x, origin.getY(), z)));
+                BlockPos targetPos = nearest == null ? new BlockPos(x, origin.getY(), z) : nearest.getFirst();
+                if (isNewTarget(targets, biomeId, targetPos.getX(), targetPos.getZ())) {
+                    targets.add(new CachedTarget(HintKind.BIOME, biomeId, targetPos));
                 }
             }
         }
         return targets;
+    }
+
+    private static int randomRadius(RandomSource random, int minRadius, int maxRadius) {
+        if (maxRadius <= minRadius) {
+            return minRadius;
+        }
+        double minSqr = (double) minRadius * minRadius;
+        double maxSqr = (double) maxRadius * maxRadius;
+        return (int) Math.round(Math.sqrt(minSqr + random.nextDouble() * (maxSqr - minSqr)));
     }
 
     private static Optional<WorldHint> findStructureHint(DialogueContext context, HintQuality quality) {
@@ -479,9 +497,9 @@ public final class VillagerStoryHintService {
         NONE(0, 0, 0, 0, 0, 0, 0, false, false, false),
         VAGUE(12, 700, 160, 0, 1, 0, 0, false, false, false),
         BIOME_NAME(24, 1100, 220, 0, 2, 0, 0, true, false, false),
-        PRECISE_BIOME(34, 1800, 360, 0, 3, 0, 64, true, true, false),
-        STRUCTURE_RUMOR(46, 2400, 480, 96, 3, 2, 128, true, false, true),
-        PRECISE_STRUCTURE(58, 3600, 720, 160, 4, 3, 64, true, true, true);
+        PRECISE_BIOME(34, 1800, 360, 0, 3, 0, 50, true, true, false),
+        STRUCTURE_RUMOR(46, 2400, 480, 96, 3, 2, 100, true, false, true),
+        PRECISE_STRUCTURE(58, 3600, 720, 160, 4, 3, 50, true, true, true);
 
         private final int chancePercent;
         private final int biomeRadius;
