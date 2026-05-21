@@ -465,6 +465,7 @@ public final class VillagerInteractionService {
             VillagerInteractionTracker.InteractionState interactionState,
             int reputation,
             VillagerReputationLevel reputationLevel) {
+        VillagerInteractionTracker.ContextReports reports = VillagerInteractionTracker.contextReports(level, villager, player);
         return new DialogueContext(
                 level,
                 player,
@@ -484,15 +485,15 @@ public final class VillagerInteractionService {
                 interactionState.lastBrokenBedGameTime(),
                 interactionState.lastDirectHitGameTime(),
                 interactionState.lastDirectHitWeapon(),
-                VillagerInteractionTracker.unreportedCartographerMapDiscovery(level, villager, player).orElse(null),
-                VillagerInteractionTracker.unreportedStoryHintDiscovery(level, villager, player).orElse(null),
-                VillagerInteractionTracker.shareableStory(level, villager, player).orElse(null),
-                VillagerInteractionTracker.unreportedCombatSurvivalReport(level, villager, player).orElse(null),
-                VillagerInteractionTracker.unreportedGearReport(level, villager, player).orElse(null),
-                VillagerInteractionTracker.unreportedRecruitmentFollowup(level, villager, player).orElse(null),
-                VillagerInteractionTracker.unreportedCuredRecognition(level, villager, player).orElse(null),
-                VillagerInteractionTracker.recruitmentMemory(level, villager, player).orElse(null),
-                VillagerInteractionTracker.unreportedGiftAdviceResult(level, villager, player).orElse(null),
+                reports.cartographerMapReport(),
+                reports.storyHintReport(),
+                reports.shareableStoryReport(),
+                reports.combatSurvivalReport(),
+                reports.gearReport(),
+                reports.recruitmentFollowupReport(),
+                reports.curedRecognitionReport(),
+                reports.recruitmentMemory(),
+                reports.giftAdviceResultReport(),
                 VillageEventMemory.recentNear(level, villager.blockPosition()),
                 villager.getRandom(),
                 VillagerLocale.locale(player)
@@ -500,8 +501,9 @@ public final class VillagerInteractionService {
     }
 
     private static ReputationSnapshot reputationSnapshot(ServerLevel level, Villager villager, ServerPlayer player) {
-        int reputation = VillagerReputationManager.getReputation(level, villager, player.getUUID());
-        return new ReputationSnapshot(reputation, VillagerReputationLevel.fromReputation(reputation));
+        VillagerReputationManager.ReputationSnapshot reputation =
+                VillagerReputationManager.getReputationSnapshot(level, villager, player.getUUID());
+        return new ReputationSnapshot(reputation.value(), reputation.level());
     }
 
     private static void sendDialogueReputation(ServerPlayer player, Villager villager, ServerLevel level) {

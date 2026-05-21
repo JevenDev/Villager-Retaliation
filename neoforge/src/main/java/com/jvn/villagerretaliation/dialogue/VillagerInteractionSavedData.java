@@ -625,6 +625,46 @@ public class VillagerInteractionSavedData extends SavedData {
         return discoveries;
     }
 
+    public VillagerInteractionTracker.DiscoveryReports markDiscoveriesNear(
+            UUID playerId,
+            ResourceLocation dimension,
+            ResourceLocation currentBiomeId,
+            double x,
+            double z,
+            double mapRadiusSqr,
+            double storyRadiusSqr,
+            long gameTime) {
+        List<VillagerInteractionTracker.CartographerMapReport> mapDiscoveries = new ArrayList<>();
+        List<VillagerInteractionTracker.StoryHintReport> storyDiscoveries = new ArrayList<>();
+        for (Map.Entry<UUID, Map<UUID, InteractionEntry>> villagerEntry : this.entries.entrySet()) {
+            InteractionEntry entry = villagerEntry.getValue().get(playerId);
+            if (entry == null) {
+                continue;
+            }
+            UUID villagerId = villagerEntry.getKey();
+            mapDiscoveries.addAll(entry.markCartographerMapDiscoveriesNear(
+                    villagerId,
+                    dimension,
+                    x,
+                    z,
+                    mapRadiusSqr,
+                    gameTime
+            ));
+            if (currentBiomeId != null) {
+                storyDiscoveries.addAll(entry.markStoryHintDiscoveriesNear(
+                        villagerId,
+                        dimension,
+                        currentBiomeId,
+                        x,
+                        z,
+                        storyRadiusSqr,
+                        gameTime
+                ));
+            }
+        }
+        return new VillagerInteractionTracker.DiscoveryReports(mapDiscoveries, storyDiscoveries);
+    }
+
     public VillagerInteractionTracker.CartographerMapReport unreportedCartographerMapDiscovery(UUID villagerId, UUID playerId) {
         return getOrCreate(villagerId, playerId).unreportedCartographerMapDiscovery(villagerId);
     }
@@ -753,6 +793,21 @@ public class VillagerInteractionSavedData extends SavedData {
 
     public VillagerInteractionTracker.GiftAdviceResultReport unreportedGiftAdviceResult(UUID villagerId, UUID playerId) {
         return getOrCreate(villagerId, playerId).unreportedGiftAdviceResult(villagerId);
+    }
+
+    public VillagerInteractionTracker.ContextReports contextReports(UUID villagerId, UUID playerId, long gameTime) {
+        InteractionEntry entry = getOrCreate(villagerId, playerId);
+        return new VillagerInteractionTracker.ContextReports(
+                entry.unreportedCartographerMapDiscovery(villagerId),
+                entry.unreportedStoryHintDiscovery(villagerId),
+                entry.shareableStory(villagerId, gameTime),
+                entry.unreportedCombatSurvivalReport(villagerId),
+                entry.unreportedGearReport(villagerId),
+                entry.unreportedRecruitmentFollowup(villagerId),
+                entry.unreportedCuredRecognition(villagerId),
+                entry.recruitmentMemory(villagerId),
+                entry.unreportedGiftAdviceResult(villagerId)
+        );
     }
 
     public VillagerInteractionTracker.GiftAdviceResultReport claimUnreportedGiftAdviceResult(UUID villagerId, UUID playerId) {

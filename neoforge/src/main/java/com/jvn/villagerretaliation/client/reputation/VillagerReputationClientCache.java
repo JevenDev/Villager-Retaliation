@@ -10,8 +10,10 @@ import java.util.UUID;
 import net.minecraft.client.Minecraft;
 
 public final class VillagerReputationClientCache {
+    private static final long PRUNE_INTERVAL_TICKS = 40L;
     private static final Map<UUID, DisplayEntry> BY_VILLAGER_UUID = new HashMap<>();
     private static final Map<Integer, UUID> ENTITY_ID_TO_UUID = new HashMap<>();
+    private static long nextPruneGameTime;
 
     private VillagerReputationClientCache() {
     }
@@ -34,6 +36,7 @@ public final class VillagerReputationClientCache {
     public static void clear() {
         BY_VILLAGER_UUID.clear();
         ENTITY_ID_TO_UUID.clear();
+        nextPruneGameTime = 0L;
     }
 
     public static void pruneMissing() {
@@ -42,6 +45,11 @@ public final class VillagerReputationClientCache {
             clear();
             return;
         }
+        long gameTime = minecraft.level.getGameTime();
+        if (gameTime < nextPruneGameTime) {
+            return;
+        }
+        nextPruneGameTime = gameTime + PRUNE_INTERVAL_TICKS;
 
         Iterator<Map.Entry<Integer, UUID>> iterator = ENTITY_ID_TO_UUID.entrySet().iterator();
         while (iterator.hasNext()) {

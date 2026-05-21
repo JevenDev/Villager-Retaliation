@@ -104,14 +104,15 @@ public final class VillagerNotifications {
     }
 
     private static VillagerNotificationContext context(ServerLevel level, AbstractVillager villager, Player player) {
-        int reputation = player == null ? 0 : VillagerReputationManager.getReputation(level, villager, player.getUUID());
-        VillagerReputationLevel reputationLevel = VillagerReputationLevel.fromReputation(reputation);
+        VillagerReputationManager.ReputationSnapshot reputation = player == null
+                ? new VillagerReputationManager.ReputationSnapshot(0, VillagerReputationLevel.NEUTRAL)
+                : VillagerReputationManager.getReputationSnapshot(level, villager, player.getUUID());
         return new VillagerNotificationContext(
                 level,
                 villager,
                 player,
-                reputation,
-                reputationLevel,
+                reputation.value(),
+                reputation.level(),
                 villager.getRandom(),
                 player instanceof ServerPlayer serverPlayer ? VillagerLocale.locale(serverPlayer) : VillagerLocale.DEFAULT_LOCALE
         );

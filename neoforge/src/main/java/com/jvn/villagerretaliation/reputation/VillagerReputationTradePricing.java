@@ -23,9 +23,11 @@ public final class VillagerReputationTradePricing {
             return;
         }
 
-        int modReputation = VillagerReputationManager.getReputation(level, villager, player.getUUID());
+        VillagerReputationManager.ReputationSnapshot reputation =
+                VillagerReputationManager.getReputationSnapshot(level, villager, player.getUUID());
+        int modReputation = reputation.value();
         int scaledModReputation = Mth.floor((float) (modReputation * VillagerRetaliationConfig.REPUTATION_TRADE_PRICE_SCALE.get()));
-        VillagerReputationLevel modReputationLevel = VillagerReputationManager.getReputationLevel(level, villager, player.getUUID());
+        VillagerReputationLevel modReputationLevel = reputation.level();
         int tierReputationEquivalent = resolveTierReputationEquivalent(modReputationLevel, scaledModReputation);
 
         for (MerchantOffer offer : villager.getOffers()) {

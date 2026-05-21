@@ -164,6 +164,29 @@ public final class VillagerInteractionTracker {
         return discoveries;
     }
 
+    public static DiscoveryReports markDiscoveriesNear(
+            ServerLevel level,
+            ServerPlayer player,
+            ResourceLocation currentBiomeId,
+            double mapRadius,
+            double storyRadius) {
+        VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
+        DiscoveryReports reports = data.markDiscoveriesNear(
+                player.getUUID(),
+                level.dimension().location(),
+                currentBiomeId,
+                player.getX(),
+                player.getZ(),
+                mapRadius * mapRadius,
+                storyRadius * storyRadius,
+                level.getGameTime()
+        );
+        if (!reports.cartographerMapReports().isEmpty() || !reports.storyHintReports().isEmpty()) {
+            data.setDirty();
+        }
+        return reports;
+    }
+
     public static Optional<StoryHintReport> unreportedStoryHintDiscovery(ServerLevel level, Villager villager, ServerPlayer player) {
         return Optional.ofNullable(VillagerInteractionSavedData.get(level)
                 .unreportedStoryHintDiscovery(villager.getUUID(), player.getUUID()));
@@ -441,6 +464,30 @@ public final class VillagerInteractionTracker {
         VillagerInteractionSavedData.InteractionEntry entry = data.getOrCreate(villager.getUUID(), player.getUUID());
         entry.rememberDirectHit(level.getGameTime(), weapon);
         data.setDirty();
+    }
+
+    public static ContextReports contextReports(ServerLevel level, Villager villager, ServerPlayer player) {
+        VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
+        return data.contextReports(villager.getUUID(), player.getUUID(), level.getGameTime());
+    }
+
+    public record ContextReports(
+            CartographerMapReport cartographerMapReport,
+            StoryHintReport storyHintReport,
+            StoryHintReport shareableStoryReport,
+            CombatSurvivalReport combatSurvivalReport,
+            GearReport gearReport,
+            RecruitmentFollowupReport recruitmentFollowupReport,
+            CuredRecognitionReport curedRecognitionReport,
+            RecruitmentMemory recruitmentMemory,
+            GiftAdviceResultReport giftAdviceResultReport
+    ) {
+    }
+
+    public record DiscoveryReports(
+            List<CartographerMapReport> cartographerMapReports,
+            List<StoryHintReport> storyHintReports
+    ) {
     }
 
     public record InteractionState(

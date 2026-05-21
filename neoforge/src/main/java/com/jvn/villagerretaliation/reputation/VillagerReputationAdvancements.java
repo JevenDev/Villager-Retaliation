@@ -48,6 +48,7 @@ public final class VillagerReputationAdvancements {
     private static final double DIALOGUE_MAP_FOUND_RADIUS = 64.0D;
     private static final double STORY_HINT_FOUND_RADIUS = 256.0D;
     private static final double DANGEROUS_STORY_VILLAGER_RADIUS = 64.0D;
+    private static final long DISCOVERY_SCAN_INTERVAL_TICKS = 20L;
     private static final long DANGEROUS_STORY_SCAN_INTERVAL_TICKS = 20L * 5L;
     private static final long DANGEROUS_STORY_SHARE_TICKS = 20L * 60L * 60L * 6L;
 
@@ -55,6 +56,7 @@ public final class VillagerReputationAdvancements {
     private static final Map<UUID, Set<UUID>> TRADED_VILLAGERS = new HashMap<>();
     private static final Map<UUID, Map<UUID, Long>> RECENT_DIRECT_VILLAGER_HITS = new HashMap<>();
     private static final Map<UUID, Set<UUID>> HOSTILE_OR_WORSE_HISTORY = new HashMap<>();
+    private static final Map<UUID, Long> NEXT_DISCOVERY_SCAN = new HashMap<>();
     private static final Map<UUID, Long> NEXT_DANGEROUS_STORY_SCAN = new HashMap<>();
     private static final Map<UUID, Long> NEXT_BIOME_STORY_SCAN = new HashMap<>();
 
@@ -112,21 +114,34 @@ public final class VillagerReputationAdvancements {
     }
 
     public static void onPlayerTick(ServerPlayer player) {
-        List<VillagerInteractionTracker.CartographerMapReport> discoveries =
-                VillagerInteractionTracker.markCartographerMapDiscoveriesNear(player.serverLevel(), player, DIALOGUE_MAP_FOUND_RADIUS);
-        if (!discoveries.isEmpty()) {
-            award(player, TRUSTED_DIRECTIONS);
-            discoveries.forEach(discovery -> sendDialogueMapFoundNotice(player, discovery));
-        }
-        player.serverLevel().getBiome(player.blockPosition()).unwrapKey().map(ResourceKey::location).ifPresent(currentBiomeId -> {
-            List<VillagerInteractionTracker.StoryHintReport> hintDiscoveries =
-                    VillagerInteractionTracker.markStoryHintDiscoveriesNear(player.serverLevel(), player, currentBiomeId, STORY_HINT_FOUND_RADIUS);
-            if (!hintDiscoveries.isEmpty()) {
+        ServerLevel level = player.serverLevel();
+        ResourceLocation currentBiomeId = level.getBiome(player.blockPosition())
+                .unwrapKey()
+                .map(ResourceKey::location)
+                .orElse(null);
+        long gameTime = level.getGameTime();
+        Long nextDiscoveryScan = NEXT_DISCOVERY_SCAN.get(player.getUUID());
+        if (nextDiscoveryScan == null || nextDiscoveryScan <= gameTime) {
+            NEXT_DISCOVERY_SCAN.put(player.getUUID(), gameTime + DISCOVERY_SCAN_INTERVAL_TICKS);
+            VillagerInteractionTracker.DiscoveryReports discoveries = VillagerInteractionTracker.markDiscoveriesNear(
+                    level,
+                    player,
+                    currentBiomeId,
+                    DIALOGUE_MAP_FOUND_RADIUS,
+                    STORY_HINT_FOUND_RADIUS
+            );
+            if (!discoveries.cartographerMapReports().isEmpty()) {
                 award(player, TRUSTED_DIRECTIONS);
-                hintDiscoveries.forEach(discovery -> sendStoryHintFoundNotice(player, discovery));
+                discoveries.cartographerMapReports().forEach(discovery -> sendDialogueMapFoundNotice(player, discovery));
             }
+            if (!discoveries.storyHintReports().isEmpty()) {
+                award(player, TRUSTED_DIRECTIONS);
+                discoveries.storyHintReports().forEach(discovery -> sendStoryHintFoundNotice(player, discovery));
+            }
+        }
+        if (currentBiomeId != null) {
             rememberBiomeStories(player, currentBiomeId);
-        });
+        }
         rememberDangerousStructureStories(player);
     }
 
