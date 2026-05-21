@@ -261,6 +261,7 @@ public final class VillagerInteractionService {
         VillagerProfession profession = villager.getVillagerData().getProfession();
         VillagerGiftPreferences.GiftPreference giftPreference = VillagerGiftPreferences.evaluate(level, profession, giftedStack);
         int reputationValue = giftPreference.reputationValue();
+        VillagerGiftKnowledgeService.rememberGiftResult(level, player, profession, giftedStack, giftPreference);
         VillagerReputationManager.addGiftReputation(level, villager, player, reputationValue);
         VillageEventMemory.rememberGift(
                 level,

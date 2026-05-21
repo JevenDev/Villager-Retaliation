@@ -72,6 +72,23 @@ public final class VillagerGiftKnowledgeService {
         ));
     }
 
+    public static void rememberGiftResult(
+            ServerLevel level,
+            ServerPlayer player,
+            VillagerProfession profession,
+            ItemStack giftedStack,
+            VillagerGiftPreferences.GiftPreference giftPreference) {
+        Boolean liked = knowledgePolarity(giftPreference.reaction());
+        if (liked == null || giftedStack.isEmpty()) {
+            return;
+        }
+
+        String knowledgeKey = giftPreference.professionSpecific() ? professionKey(profession) : GLOBAL_PROFESSION_KEY;
+        VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
+        data.rememberGiftKnowledge(player.getUUID(), knowledgeKey, itemId(giftedStack.getItem()), liked);
+        data.setDirty();
+    }
+
     private static List<VillagerGiftPreferences.GiftCandidate> unknownCandidates(
             ServerLevel level,
             VillagerInteractionSavedData data,
@@ -119,6 +136,14 @@ public final class VillagerGiftKnowledgeService {
             return liked ? GiftAdviceKind.PROFESSION_LIKED : GiftAdviceKind.PROFESSION_DISLIKED;
         }
         return liked ? GiftAdviceKind.GLOBAL_LIKED : GiftAdviceKind.GLOBAL_DISLIKED;
+    }
+
+    private static Boolean knowledgePolarity(VillagerGiftPreferences.GiftReaction reaction) {
+        return switch (reaction) {
+            case LOVED, LIKED -> true;
+            case DISLIKED, HATED -> false;
+            case NEUTRAL -> null;
+        };
     }
 
     private static String professionKey(VillagerProfession profession) {
