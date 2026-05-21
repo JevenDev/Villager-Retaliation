@@ -166,9 +166,10 @@ public record DialogueContext(
     }
 
     public boolean hasRecentVillageEventConcern() {
-        return this.weather == WeatherState.THUNDER
-                || hasRecentEvent(
+        return hasRecentEvent(
                 VillageEventMemory.EventTag.THUNDERSTORM,
+                VillageEventMemory.EventTag.SANDSTORM,
+                VillageEventMemory.EventTag.SNOWSTORM,
                 VillageEventMemory.EventTag.VILLAGE_FIRE,
                 VillageEventMemory.EventTag.RAID,
                 VillageEventMemory.EventTag.PLAYER_DEFENDED_RAID,

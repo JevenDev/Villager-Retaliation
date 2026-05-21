@@ -401,6 +401,106 @@
       "text": "We are safe enough, though every shadow is getting inspected twice.",
       "weight": 34,
       "show_for_babies": false
+    },
+    {
+      "id": "toolsmith_village_event_sandstorm_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "sandstorm"
+      ],
+      "text": "The tools and repairs collected half the desert, but the people made it indoors.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "toolsmith_village_event_sandstorm_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "sandstorm"
+      ],
+      "text": "I checked the tools and repairs, then checked who was coughing from the dust.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "toolsmith_village_event_sandstorm_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "sandstorm"
+      ],
+      "text": "Sand in the hinges, sand in the eyes, but no one missing so far.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "toolsmith_village_event_sandstorm_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "sandstorm"
+      ],
+      "text": "Harsh wind teaches you which doors really close.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "toolsmith_village_event_sandstorm_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "sandstorm"
+      ],
+      "text": "We are safe enough, though the village sounds like it is grinding its teeth.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "toolsmith_village_event_snowstorm_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "snowstorm"
+      ],
+      "text": "The tools and repairs can wait. Warm hands and clear paths matter first.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "toolsmith_village_event_snowstorm_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "snowstorm"
+      ],
+      "text": "Snow piled against the doors, but everyone near me found shelter.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "toolsmith_village_event_snowstorm_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "snowstorm"
+      ],
+      "text": "Cold works quietly. We are checking on anyone who went quiet too long.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "toolsmith_village_event_snowstorm_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "snowstorm"
+      ],
+      "text": "The tools and repairs froze stiff, but the village kept moving.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "toolsmith_village_event_snowstorm_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "snowstorm"
+      ],
+      "text": "We are alright for now. Keep the fires fed and the paths open.",
+      "weight": 34,
+      "show_for_babies": false
     }
   ],
   "pacify": [

@@ -7973,6 +7973,216 @@
       "weight": 32,
       "show_for_adults": false,
       "show_for_babies": true
+    },
+    {
+      "id": "village_event_sandstorm_shared_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "sandstorm"
+      ],
+      "text": "The wind came in hard enough to make the whole village taste like dust.",
+      "weight": 28,
+      "show_for_babies": false
+    },
+    {
+      "id": "village_event_sandstorm_shared_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "sandstorm"
+      ],
+      "text": "No rain here, just grit in the shutters and everyone checking their eyes.",
+      "weight": 28,
+      "show_for_babies": false
+    },
+    {
+      "id": "village_event_sandstorm_shared_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "sandstorm"
+      ],
+      "text": "The sand got everywhere, but people found their way indoors.",
+      "weight": 28,
+      "show_for_babies": false
+    },
+    {
+      "id": "village_event_sandstorm_shared_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "sandstorm"
+      ],
+      "text": "Harsh wind can scare a village nearly as well as thunder. We are still here.",
+      "weight": 28,
+      "show_for_babies": false
+    },
+    {
+      "id": "village_event_sandstorm_shared_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "sandstorm"
+      ],
+      "text": "We are sweeping doorways and counting heads after that wall of dust.",
+      "weight": 28,
+      "show_for_babies": false
+    },
+    {
+      "id": "village_event_sandstorm_baby_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "sandstorm"
+      ],
+      "text": "The wind threw sand at the windows. I did not like the sound.",
+      "weight": 32,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "village_event_sandstorm_baby_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "sandstorm"
+      ],
+      "text": "I got dust in my mouth even inside. How does it do that?",
+      "weight": 32,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "village_event_sandstorm_baby_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "sandstorm"
+      ],
+      "text": "The grown-ups said cover my face, so I did.",
+      "weight": 32,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "village_event_sandstorm_baby_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "sandstorm"
+      ],
+      "text": "It was like the ground tried to fly away.",
+      "weight": 32,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "village_event_sandstorm_baby_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "sandstorm"
+      ],
+      "text": "I am okay, but my hair feels crunchy.",
+      "weight": 32,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "village_event_snowstorm_shared_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "snowstorm"
+      ],
+      "text": "The snow came down hard, but the hearths held and the doors stayed shut.",
+      "weight": 28,
+      "show_for_babies": false
+    },
+    {
+      "id": "village_event_snowstorm_shared_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "snowstorm"
+      ],
+      "text": "Cold frightens slowly. We are checking fingers, roofs, and firewood.",
+      "weight": 28,
+      "show_for_babies": false
+    },
+    {
+      "id": "village_event_snowstorm_shared_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "snowstorm"
+      ],
+      "text": "The village went white and quiet for a while. Quiet is not always peace.",
+      "weight": 28,
+      "show_for_babies": false
+    },
+    {
+      "id": "village_event_snowstorm_shared_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "snowstorm"
+      ],
+      "text": "Everyone is chilled, but accounted for. Warmth matters now.",
+      "weight": 28,
+      "show_for_babies": false
+    },
+    {
+      "id": "village_event_snowstorm_shared_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "snowstorm"
+      ],
+      "text": "We are clearing paths before the snow hides what people need.",
+      "weight": 28,
+      "show_for_babies": false
+    },
+    {
+      "id": "village_event_snowstorm_baby_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "snowstorm"
+      ],
+      "text": "The snow made everything disappear. I stayed where I could see a lantern.",
+      "weight": 32,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "village_event_snowstorm_baby_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "snowstorm"
+      ],
+      "text": "My toes got cold just looking outside.",
+      "weight": 32,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "village_event_snowstorm_baby_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "snowstorm"
+      ],
+      "text": "The wind pushed snow at the door like it wanted in.",
+      "weight": 32,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "village_event_snowstorm_baby_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "snowstorm"
+      ],
+      "text": "I am okay. I want soup though.",
+      "weight": 32,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "village_event_snowstorm_baby_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "snowstorm"
+      ],
+      "text": "The whole village looked like a blanket, but a scary blanket.",
+      "weight": 32,
+      "show_for_adults": false,
+      "show_for_babies": true
     }
   ],
   "pacify": [

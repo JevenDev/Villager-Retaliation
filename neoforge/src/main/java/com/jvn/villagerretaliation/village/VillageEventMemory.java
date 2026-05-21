@@ -94,6 +94,8 @@ public final class VillageEventMemory {
         BABY_BORN,
         IRON_GOLEM_DEFEATED_MOB,
         THUNDERSTORM,
+        SANDSTORM,
+        SNOWSTORM,
         VILLAGE_FIRE,
         NIGHT_ATTACK,
         RAID,

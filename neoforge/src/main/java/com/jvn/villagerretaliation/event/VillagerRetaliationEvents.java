@@ -138,7 +138,7 @@ public final class VillagerRetaliationEvents {
         if (event.getEntity() instanceof Villager villager) {
             VillagerConversationService.tickVillager(villager);
             VillagerRecruitmentService.onVillagerTickPost(villager);
-            rememberThunderstormNearVillager(villager);
+            rememberWeatherEventNearVillager(villager);
         }
         clearIronGolemTargetingVillagers(event.getEntity());
         VillagerRetaliationHandler.onEntityTickPost(event);
@@ -384,13 +384,24 @@ public final class VillagerRetaliationEvents {
         }
     }
 
-    private static void rememberThunderstormNearVillager(Villager villager) {
+    private static void rememberWeatherEventNearVillager(Villager villager) {
         if (!(villager.level() instanceof ServerLevel level) || !level.isThundering()) {
             return;
         }
         if (level.getGameTime() % 200L == Math.floorMod(villager.getUUID().getLeastSignificantBits(), 200L)) {
-            VillageEventMemory.remember(level, VillageEventMemory.EventTag.THUNDERSTORM, villager.blockPosition(), villager, null);
+            VillageEventMemory.remember(level, weatherEventTag(level, villager.blockPosition()), villager.blockPosition(), villager, null);
         }
+    }
+
+    private static VillageEventMemory.EventTag weatherEventTag(ServerLevel level, net.minecraft.core.BlockPos pos) {
+        net.minecraft.world.level.biome.Biome biome = level.getBiome(pos).value();
+        if (!biome.hasPrecipitation()) {
+            return VillageEventMemory.EventTag.SANDSTORM;
+        }
+        if (biome.coldEnoughToSnow(pos)) {
+            return VillageEventMemory.EventTag.SNOWSTORM;
+        }
+        return VillageEventMemory.EventTag.THUNDERSTORM;
     }
 
     private static boolean isNight(ServerLevel level) {
