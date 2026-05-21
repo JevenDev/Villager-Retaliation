@@ -343,6 +343,7 @@ public final class VillagerDialogueResources {
             boolean requiresUnreportedCartographerMapDiscovery = readBoolean(entry, "requires_unreported_cartographer_map_discovery");
             boolean requiresUnreportedStoryHintDiscovery = readBoolean(entry, "requires_unreported_story_hint_discovery");
             boolean requiresUnreportedCombatSurvivalReport = readBoolean(entry, "requires_unreported_combat_survival_report");
+            boolean requiresUnreportedGearReport = readBoolean(entry, "requires_unreported_gear_report");
             boolean requiresUnreportedGiftAdviceResult = readBoolean(entry, "requires_unreported_gift_advice_result");
             boolean requiresUnapologizedRememberedHarm = readBoolean(entry, "requires_unapologized_remembered_harm");
             boolean requiresUnreportedVillageDefense = readBoolean(entry, "requires_unreported_village_defense");
@@ -358,6 +359,7 @@ public final class VillagerDialogueResources {
                     requiresUnreportedCartographerMapDiscovery,
                     requiresUnreportedStoryHintDiscovery,
                     requiresUnreportedCombatSurvivalReport,
+                    requiresUnreportedGearReport,
                     requiresUnreportedGiftAdviceResult,
                     requiresUnapologizedRememberedHarm,
                     requiresUnreportedVillageDefense,
@@ -531,6 +533,12 @@ public final class VillagerDialogueResources {
         }
         if (readBoolean(entry, "requires_recent_direct_hit_memory")) {
             builder.requiresRecentDirectHitMemory();
+        }
+        if (readBoolean(entry, "requires_gear_report_used_in_combat")) {
+            builder.requiresGearReportUsedInCombat();
+        }
+        if (readBoolean(entry, "requires_gear_report_unused_in_combat")) {
+            builder.requiresGearReportUnusedInCombat();
         }
         if (readBoolean(entry, "first_conversation_only")) {
             builder.firstConversationOnly();

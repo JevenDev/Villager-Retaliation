@@ -313,7 +313,7 @@ public final class VillagerDialogueService {
         return switch (requestType) {
             case GREETING, QUESTION, INSULT -> directHitCandidates;
             case CHAT -> context.random().nextInt(100) < 45 ? directHitCandidates : candidates;
-            case MAP_REPORT, STORY_HINT_REPORT, COMBAT_SURVIVAL_REPORT, GIFT_ADVICE_FOLLOWUP, APOLOGY, VILLAGE_DEFENSE_REPORT -> candidates;
+            case MAP_REPORT, STORY_HINT_REPORT, COMBAT_SURVIVAL_REPORT, GEAR_REPORT, GIFT_ADVICE_FOLLOWUP, APOLOGY, VILLAGE_DEFENSE_REPORT -> candidates;
             default -> candidates;
         };
     }
@@ -330,7 +330,7 @@ public final class VillagerDialogueService {
 
         return switch (requestType) {
             case GREETING, QUESTION, CHAT, INSULT -> brokenBedCandidates;
-            case MAP_REPORT, STORY_HINT_REPORT, COMBAT_SURVIVAL_REPORT, GIFT_ADVICE_FOLLOWUP, APOLOGY, VILLAGE_DEFENSE_REPORT -> candidates;
+            case MAP_REPORT, STORY_HINT_REPORT, COMBAT_SURVIVAL_REPORT, GEAR_REPORT, GIFT_ADVICE_FOLLOWUP, APOLOGY, VILLAGE_DEFENSE_REPORT -> candidates;
             default -> candidates;
         };
     }
@@ -361,7 +361,9 @@ public final class VillagerDialogueService {
     }
 
     private static String resolveText(String text, DialogueContext context) {
-        return text.replace("{attack_weapon}", context.rememberedAttackWeapon());
+        return text
+                .replace("{attack_weapon}", context.rememberedAttackWeapon())
+                .replace("{gear_kind}", context.gearReportKind());
     }
 
     private static String selectConversationLine(

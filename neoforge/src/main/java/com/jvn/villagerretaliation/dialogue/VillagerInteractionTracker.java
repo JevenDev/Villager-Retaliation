@@ -36,6 +36,7 @@ public final class VillagerInteractionTracker {
                 entry.requestUseCount(DialogueRequestType.MAP_REPORT, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.STORY_HINT_REPORT, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.COMBAT_SURVIVAL_REPORT, gameTime, day, optionResetTicks),
+                entry.requestUseCount(DialogueRequestType.GEAR_REPORT, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.APOLOGY, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.VILLAGE_DEFENSE_REPORT, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.STORY, gameTime, day, optionResetTicks),
@@ -193,6 +194,33 @@ public final class VillagerInteractionTracker {
         return Optional.ofNullable(report);
     }
 
+    public static void rememberGearReport(ServerLevel level, Villager villager, ServerPlayer player, String gearKind) {
+        VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
+        data.rememberGearReport(villager.getUUID(), player.getUUID(), gearKind, level.getGameTime());
+        data.setDirty();
+    }
+
+    public static Optional<GearReport> unreportedGearReport(ServerLevel level, Villager villager, ServerPlayer player) {
+        return Optional.ofNullable(VillagerInteractionSavedData.get(level)
+                .unreportedGearReport(villager.getUUID(), player.getUUID()));
+    }
+
+    public static Optional<GearReport> claimUnreportedGearReport(ServerLevel level, Villager villager, ServerPlayer player) {
+        VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
+        GearReport report = data.claimUnreportedGearReport(villager.getUUID(), player.getUUID());
+        if (report != null) {
+            data.setDirty();
+        }
+        return Optional.ofNullable(report);
+    }
+
+    public static void markGearReportsUsedInCombat(ServerLevel level, Villager villager, boolean weaponEquipped, boolean armorEquipped) {
+        VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
+        if (data.markGearReportsUsedInCombat(villager.getUUID(), weaponEquipped, armorEquipped)) {
+            data.setDirty();
+        }
+    }
+
     public static Optional<GiftAdviceResultReport> unreportedGiftAdviceResult(ServerLevel level, Villager villager, ServerPlayer player) {
         return Optional.ofNullable(VillagerInteractionSavedData.get(level)
                 .unreportedGiftAdviceResult(villager.getUUID(), player.getUUID()));
@@ -321,6 +349,7 @@ public final class VillagerInteractionTracker {
             int mapReportUseCount,
             int storyHintReportUseCount,
             int combatSurvivalReportUseCount,
+            int gearReportUseCount,
             int apologyUseCount,
             int villageDefenseReportUseCount,
             int storyUseCount,
@@ -342,6 +371,7 @@ public final class VillagerInteractionTracker {
                 case MAP_REPORT -> this.mapReportUseCount;
                 case STORY_HINT_REPORT -> this.storyHintReportUseCount;
                 case COMBAT_SURVIVAL_REPORT -> this.combatSurvivalReportUseCount;
+                case GEAR_REPORT -> this.gearReportUseCount;
                 case APOLOGY -> this.apologyUseCount;
                 case VILLAGE_DEFENSE_REPORT -> this.villageDefenseReportUseCount;
                 case STORY -> this.storyUseCount;
@@ -378,6 +408,14 @@ public final class VillagerInteractionTracker {
     public record CombatSurvivalReport(
             UUID villagerId,
             String eventKind,
+            long gameTime
+    ) {
+    }
+
+    public record GearReport(
+            UUID villagerId,
+            String gearKind,
+            boolean usedInCombat,
             long gameTime
     ) {
     }

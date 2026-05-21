@@ -31,6 +31,7 @@ import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.util.VillagerLocale;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
+import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import java.util.Map;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -45,6 +46,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Equipable;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.AABB;
@@ -181,6 +183,8 @@ public final class VillagerInteractionService {
         VillagerInteractionTracker.rememberDialogue(level, villager, player, requestType, result.lineId());
         if (requestType == DialogueRequestType.COMBAT_SURVIVAL_REPORT) {
             VillagerInteractionTracker.claimUnreportedCombatSurvivalReport(level, villager, player);
+        } else if (requestType == DialogueRequestType.GEAR_REPORT) {
+            VillagerInteractionTracker.claimUnreportedGearReport(level, villager, player);
         }
         sendDialogueReputation(player, villager, level, requestType, reputationEffect);
         broadcastVillagerChat(level, villager, responseText);
@@ -284,6 +288,7 @@ public final class VillagerInteractionService {
         }
         VillagerReputationManager.addGiftReputation(level, villager, player, reputationValue);
         VillagerGiftKeepsakes.storeGift(level, villager, player, giftedStack, giftPreference);
+        rememberGearGift(level, villager, player, giftedStack);
         VillageEventMemory.rememberGift(
                 level,
                 villager.blockPosition(),
@@ -362,6 +367,21 @@ public final class VillagerInteractionService {
             case DISLIKED, HATED -> false;
             case NEUTRAL -> null;
         };
+    }
+
+    private static void rememberGearGift(ServerLevel level, Villager villager, ServerPlayer player, ItemStack giftedStack) {
+        String gearKind = gearKind(giftedStack);
+        if (!gearKind.isBlank()) {
+            VillagerInteractionTracker.rememberGearReport(level, villager, player, gearKind);
+        }
+    }
+
+    private static String gearKind(ItemStack stack) {
+        if (VillagerRetaliationVillagerWeapons.isUsableWeapon(stack)) {
+            return "weapon";
+        }
+        Equipable equipable = Equipable.get(stack);
+        return equipable == null ? "" : "armor";
     }
 
     private static void sendGiftNotice(ServerPlayer player, Villager villager, ItemStack giftedStack, int reputationValue) {
@@ -463,6 +483,7 @@ public final class VillagerInteractionService {
                 VillagerInteractionTracker.unreportedCartographerMapDiscovery(level, villager, player).orElse(null),
                 VillagerInteractionTracker.unreportedStoryHintDiscovery(level, villager, player).orElse(null),
                 VillagerInteractionTracker.unreportedCombatSurvivalReport(level, villager, player).orElse(null),
+                VillagerInteractionTracker.unreportedGearReport(level, villager, player).orElse(null),
                 VillagerInteractionTracker.unreportedGiftAdviceResult(level, villager, player).orElse(null),
                 VillageEventMemory.recentNear(level, villager.blockPosition()),
                 villager.getRandom(),

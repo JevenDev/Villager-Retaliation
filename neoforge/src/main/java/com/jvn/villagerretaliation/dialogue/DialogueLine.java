@@ -21,6 +21,8 @@ public record DialogueLine(
         Set<VillageEventMemory.EventTag> playerEventTags,
         boolean requiresRecentBrokenBedMemory,
         boolean requiresRecentDirectHitMemory,
+        boolean requiresGearReportUsedInCombat,
+        boolean requiresGearReportUnusedInCombat,
         boolean firstConversationOnly,
         GiftAdviceKind giftAdviceKind,
         int weight
@@ -70,6 +72,12 @@ public record DialogueLine(
         if (this.requiresRecentDirectHitMemory && !context.hasRecentDirectHitMemory()) {
             return false;
         }
+        if (this.requiresGearReportUsedInCombat && !context.hasUnreportedGearReportUsedInCombat()) {
+            return false;
+        }
+        if (this.requiresGearReportUnusedInCombat && !context.hasUnreportedGearReportUnusedInCombat()) {
+            return false;
+        }
         return this.weight > 0;
     }
 
@@ -99,6 +107,9 @@ public record DialogueLine(
             score += 5;
         }
         if (this.requiresRecentDirectHitMemory) {
+            score += 5;
+        }
+        if (this.requiresGearReportUsedInCombat || this.requiresGearReportUnusedInCombat) {
             score += 5;
         }
         if (!this.weatherStates.isEmpty()) {
@@ -135,6 +146,8 @@ public record DialogueLine(
         private final Set<VillageEventMemory.EventTag> playerEventTags = EnumSet.noneOf(VillageEventMemory.EventTag.class);
         private boolean requiresRecentBrokenBedMemory;
         private boolean requiresRecentDirectHitMemory;
+        private boolean requiresGearReportUsedInCombat;
+        private boolean requiresGearReportUnusedInCombat;
         private boolean firstConversationOnly;
         private GiftAdviceKind giftAdviceKind;
         private int weight = 10;
@@ -194,6 +207,16 @@ public record DialogueLine(
             return this;
         }
 
+        public Builder requiresGearReportUsedInCombat() {
+            this.requiresGearReportUsedInCombat = true;
+            return this;
+        }
+
+        public Builder requiresGearReportUnusedInCombat() {
+            this.requiresGearReportUnusedInCombat = true;
+            return this;
+        }
+
         public Builder weatherStates(DialogueContext.WeatherState... weatherStates) {
             this.weatherStates.addAll(java.util.List.of(weatherStates));
             return this;
@@ -235,6 +258,8 @@ public record DialogueLine(
                     Set.copyOf(this.playerEventTags),
                     this.requiresRecentBrokenBedMemory,
                     this.requiresRecentDirectHitMemory,
+                    this.requiresGearReportUsedInCombat,
+                    this.requiresGearReportUnusedInCombat,
                     this.firstConversationOnly,
                     this.giftAdviceKind,
                     this.weight

@@ -45,6 +45,14 @@
       "order": -1
     },
     {
+      "id": "gear_report",
+      "label": "How is the gear?",
+      "type": "gear_report",
+      "show_for_babies": false,
+      "requires_unreported_gear_report": true,
+      "order": -1
+    },
+    {
       "id": "apologize_for_harm",
       "label": "Apologize",
       "type": "apology",
@@ -917,6 +925,378 @@
     }
   ],
   "lines": [
+    {
+      "id": "gear_report_global_used",
+      "type": "gear_report",
+      "option": "gear_report",
+      "text": "It held when trouble came close. That matters more than shine.",
+      "requires_gear_report_used_in_combat": true,
+      "show_for_babies": false,
+      "weight": 30
+    },
+    {
+      "id": "gear_report_global_used_steady",
+      "type": "gear_report",
+      "option": "gear_report",
+      "text": "I had to trust it in a fight. I am glad you thought ahead.",
+      "requires_gear_report_used_in_combat": true,
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "gear_report_global_used_gear_kind",
+      "type": "gear_report",
+      "option": "gear_report",
+      "text": "The {gear_kind} earned its place. I noticed that more than I expected.",
+      "requires_gear_report_used_in_combat": true,
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "gear_report_global_used_close",
+      "type": "gear_report",
+      "option": "gear_report",
+      "text": "When it mattered, I was better prepared than I would have been alone.",
+      "requires_gear_report_used_in_combat": true,
+      "show_for_babies": false,
+      "weight": 26
+    },
+    {
+      "id": "gear_report_global_unused",
+      "type": "gear_report",
+      "option": "gear_report",
+      "text": "I have not needed it yet. That is the best kind of preparation.",
+      "requires_gear_report_unused_in_combat": true,
+      "show_for_babies": false,
+      "weight": 30
+    },
+    {
+      "id": "gear_report_global_unused_ready",
+      "type": "gear_report",
+      "option": "gear_report",
+      "text": "It is ready. I would rather carry caution than regret.",
+      "requires_gear_report_unused_in_combat": true,
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "gear_report_global_unused_gear_kind",
+      "type": "gear_report",
+      "option": "gear_report",
+      "text": "The {gear_kind} is still waiting. I hope it stays that way.",
+      "requires_gear_report_unused_in_combat": true,
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "gear_report_global_unused_comfort",
+      "type": "gear_report",
+      "option": "gear_report",
+      "text": "I have not had to use it. Still, walking home feels a little easier.",
+      "requires_gear_report_unused_in_combat": true,
+      "show_for_babies": false,
+      "weight": 26
+    },
+    {
+      "id": "gear_report_armorer_used",
+      "type": "gear_report",
+      "option": "gear_report",
+      "professions": ["armorer"],
+      "text": "It took the moment cleanly. Good gear is quiet until the blow lands.",
+      "requires_gear_report_used_in_combat": true,
+      "show_for_babies": false,
+      "weight": 34
+    },
+    {
+      "id": "gear_report_armorer_unused",
+      "type": "gear_report",
+      "option": "gear_report",
+      "professions": ["armorer"],
+      "text": "No dents yet. I can live with careful work staying untested.",
+      "requires_gear_report_unused_in_combat": true,
+      "show_for_babies": false,
+      "weight": 34
+    },
+    {
+      "id": "gear_report_weaponsmith_used",
+      "type": "gear_report",
+      "option": "gear_report",
+      "professions": ["weaponsmith"],
+      "text": "It found its purpose. I prefer tools that know when to stop.",
+      "requires_gear_report_used_in_combat": true,
+      "show_for_babies": false,
+      "weight": 34
+    },
+    {
+      "id": "gear_report_weaponsmith_unused",
+      "type": "gear_report",
+      "option": "gear_report",
+      "professions": ["weaponsmith"],
+      "text": "Still sharp, still waiting. That is better than needing it twice.",
+      "requires_gear_report_unused_in_combat": true,
+      "show_for_babies": false,
+      "weight": 34
+    },
+    {
+      "id": "gear_report_fletcher_used",
+      "type": "gear_report",
+      "option": "gear_report",
+      "professions": ["fletcher"],
+      "text": "It kept its line under pressure. A steady hand is easier with proper tools.",
+      "requires_gear_report_used_in_combat": true,
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "gear_report_nitwit_used",
+      "type": "gear_report",
+      "option": "gear_report",
+      "professions": ["nitwit"],
+      "text": "I used it and did not drop it. That is two victories, if you ask me.",
+      "requires_gear_report_used_in_combat": true,
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "gear_report_butcher_used",
+      "type": "gear_report",
+      "option": "gear_report",
+      "professions": ["butcher"],
+      "text": "It handled ugly work without making a mess of me. I count that as fine quality.",
+      "requires_gear_report_used_in_combat": true,
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "gear_report_butcher_unused",
+      "type": "gear_report",
+      "option": "gear_report",
+      "professions": ["butcher"],
+      "text": "Still clean. That is how I prefer tools before the hard work starts.",
+      "requires_gear_report_unused_in_combat": true,
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "gear_report_cartographer_used",
+      "type": "gear_report",
+      "option": "gear_report",
+      "professions": ["cartographer"],
+      "text": "It helped me keep my bearings when the road stopped feeling safe.",
+      "requires_gear_report_used_in_combat": true,
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "gear_report_cartographer_unused",
+      "type": "gear_report",
+      "option": "gear_report",
+      "professions": ["cartographer"],
+      "text": "Unused so far. A good map and good gear both matter most before trouble starts.",
+      "requires_gear_report_unused_in_combat": true,
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "gear_report_cleric_used",
+      "type": "gear_report",
+      "option": "gear_report",
+      "professions": ["cleric"],
+      "text": "It bought me the breath I needed. Sometimes protection is its own blessing.",
+      "requires_gear_report_used_in_combat": true,
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "gear_report_cleric_unused",
+      "type": "gear_report",
+      "option": "gear_report",
+      "professions": ["cleric"],
+      "text": "I have not needed it. I will still be grateful before I am desperate.",
+      "requires_gear_report_unused_in_combat": true,
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "gear_report_farmer_used",
+      "type": "gear_report",
+      "option": "gear_report",
+      "professions": ["farmer"],
+      "text": "It kept me standing. Crops recover faster when the farmer does too.",
+      "requires_gear_report_used_in_combat": true,
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "gear_report_farmer_unused",
+      "type": "gear_report",
+      "option": "gear_report",
+      "professions": ["farmer"],
+      "text": "Unused, thankfully. I would rather wear out a hoe than this.",
+      "requires_gear_report_unused_in_combat": true,
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "gear_report_fisherman_used",
+      "type": "gear_report",
+      "option": "gear_report",
+      "professions": ["fisherman"],
+      "text": "It held steady. Better than most nets, and those are meant to catch trouble.",
+      "requires_gear_report_used_in_combat": true,
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "gear_report_fisherman_unused",
+      "type": "gear_report",
+      "option": "gear_report",
+      "professions": ["fisherman"],
+      "text": "Dry, unused, and welcome. Some things should stay out of the water and out of danger.",
+      "requires_gear_report_unused_in_combat": true,
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "gear_report_fletcher_unused",
+      "type": "gear_report",
+      "option": "gear_report",
+      "professions": ["fletcher"],
+      "text": "Still unused. A ready shot is not wasted just because it stays in the quiver.",
+      "requires_gear_report_unused_in_combat": true,
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "gear_report_leatherworker_used",
+      "type": "gear_report",
+      "option": "gear_report",
+      "professions": ["leatherworker"],
+      "text": "It flexed where it should and held where it had to. Good work saves skin.",
+      "requires_gear_report_used_in_combat": true,
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "gear_report_leatherworker_unused",
+      "type": "gear_report",
+      "option": "gear_report",
+      "professions": ["leatherworker"],
+      "text": "No scuffs yet. I appreciate gear that does not rush to prove itself.",
+      "requires_gear_report_unused_in_combat": true,
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "gear_report_librarian_used",
+      "type": "gear_report",
+      "option": "gear_report",
+      "professions": ["librarian"],
+      "text": "It performed as promised. I may need to revise my opinion of practical gifts upward.",
+      "requires_gear_report_used_in_combat": true,
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "gear_report_librarian_unused",
+      "type": "gear_report",
+      "option": "gear_report",
+      "professions": ["librarian"],
+      "text": "Untested. I have filed it under things I hope remain theoretical.",
+      "requires_gear_report_unused_in_combat": true,
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "gear_report_mason_used",
+      "type": "gear_report",
+      "option": "gear_report",
+      "professions": ["mason"],
+      "text": "Solid work. It took the pressure like good stone in the right wall.",
+      "requires_gear_report_used_in_combat": true,
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "gear_report_mason_unused",
+      "type": "gear_report",
+      "option": "gear_report",
+      "professions": ["mason"],
+      "text": "Still unmarked. Strong things do not need to boast before the load comes.",
+      "requires_gear_report_unused_in_combat": true,
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "gear_report_shepherd_used",
+      "type": "gear_report",
+      "option": "gear_report",
+      "professions": ["shepherd"],
+      "text": "It helped keep the wolves from making a story of me. That is enough praise.",
+      "requires_gear_report_used_in_combat": true,
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "gear_report_shepherd_unused",
+      "type": "gear_report",
+      "option": "gear_report",
+      "professions": ["shepherd"],
+      "text": "Unused so far. I prefer watching over nervous sheep to testing nervous steel.",
+      "requires_gear_report_unused_in_combat": true,
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "gear_report_toolsmith_used",
+      "type": "gear_report",
+      "option": "gear_report",
+      "professions": ["toolsmith"],
+      "text": "It did its job without complaint. That is the highest compliment a tool gets.",
+      "requires_gear_report_used_in_combat": true,
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "gear_report_toolsmith_unused",
+      "type": "gear_report",
+      "option": "gear_report",
+      "professions": ["toolsmith"],
+      "text": "Still ready. A tool can be useful before it ever bites into work.",
+      "requires_gear_report_unused_in_combat": true,
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "gear_report_unemployed_used",
+      "type": "gear_report",
+      "option": "gear_report",
+      "professions": ["unemployed"],
+      "text": "It helped. Maybe being ready is a profession of its own for now.",
+      "requires_gear_report_used_in_combat": true,
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "gear_report_unemployed_unused",
+      "type": "gear_report",
+      "option": "gear_report",
+      "professions": ["unemployed"],
+      "text": "Unused so far. I may not have a trade, but I know preparation when I see it.",
+      "requires_gear_report_unused_in_combat": true,
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "gear_report_nitwit_unused",
+      "type": "gear_report",
+      "option": "gear_report",
+      "professions": ["nitwit"],
+      "text": "I have not used it. I have practiced looking brave with it, which is almost something.",
+      "requires_gear_report_unused_in_combat": true,
+      "show_for_babies": false,
+      "weight": 32
+    },
     {
       "id": "village_defense_global_counted",
       "type": "village_defense_report",

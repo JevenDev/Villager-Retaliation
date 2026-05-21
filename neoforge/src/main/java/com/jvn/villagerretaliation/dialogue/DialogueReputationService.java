@@ -114,6 +114,7 @@ public final class DialogueReputationService {
                     false,
                     null
             );
+            case GEAR_REPORT -> PlannedEffect.none();
             case APOLOGY -> context.hasUnapologizedRememberedHarm()
                     ? new PlannedEffect(
                     APOLOGY_REPUTATION_GAIN,
@@ -166,6 +167,7 @@ public final class DialogueReputationService {
                 || requestType == DialogueRequestType.MAP_REPORT
                 || requestType == DialogueRequestType.STORY_HINT_REPORT
                 || requestType == DialogueRequestType.COMBAT_SURVIVAL_REPORT
+                || requestType == DialogueRequestType.GEAR_REPORT
                 || requestType == DialogueRequestType.GIFT_ADVICE_FOLLOWUP
                 || requestType == DialogueRequestType.APOLOGY
                 || requestType == DialogueRequestType.VILLAGE_DEFENSE_REPORT) {

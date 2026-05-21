@@ -1,7 +1,9 @@
 package com.jvn.villagerretaliation.inventory;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
+import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
@@ -17,6 +19,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ArmorItem;
+import net.minecraft.world.item.Equipable;
 import net.minecraft.world.item.ItemStack;
 
 public class VillagerInventoryMenu extends AbstractContainerMenu {
@@ -44,6 +47,7 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
     private final int villagerEntityId;
     private final Player player;
     private final VillagerGiftReturnTracker.GiftSnapshot giftSnapshot;
+    private final int initialGearStackCount;
     private boolean giftReturnsProcessed;
 
     public VillagerInventoryMenu(int containerId, Inventory playerInventory, RegistryFriendlyByteBuf data) {
@@ -64,6 +68,7 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
         this.giftSnapshot = villager != null && playerInventory.player instanceof ServerPlayer serverPlayer
                 ? VillagerGiftReturnTracker.capture(serverPlayer, villager)
                 : null;
+        this.initialGearStackCount = villager == null ? 0 : gearStackCount(villagerInventory);
         villagerInventory.startOpen(playerInventory.player);
         addVillagerSlots();
         addPlayerSlots(playerInventory);
@@ -110,6 +115,7 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
     public void removed(Player player) {
         super.removed(player);
         processTakenGifts(player);
+        rememberAddedGear(player);
         this.villagerInventory.stopOpen(player);
     }
 
@@ -221,6 +227,50 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
         }
         this.giftReturnsProcessed = true;
         VillagerGiftReturnTracker.applyTakenGiftPenalties(serverPlayer, this.villager, this.giftSnapshot);
+    }
+
+    private void rememberAddedGear(Player player) {
+        if (this.villager == null || !(player instanceof ServerPlayer serverPlayer)) {
+            return;
+        }
+        if (gearStackCount(this.villagerInventory) <= this.initialGearStackCount) {
+            return;
+        }
+        String gearKind = gearKind(this.villagerInventory);
+        if (!gearKind.isBlank()) {
+            VillagerInteractionTracker.rememberGearReport(serverPlayer.serverLevel(), this.villager, serverPlayer, gearKind);
+        }
+    }
+
+    private static int gearStackCount(Container container) {
+        int count = 0;
+        for (int slot = 0; slot < VILLAGER_SLOT_COUNT; slot++) {
+            ItemStack stack = container.getItem(slot);
+            if (isGear(stack)) {
+                count += stack.getCount();
+            }
+        }
+        return count;
+    }
+
+    private static String gearKind(Container container) {
+        boolean hasArmor = false;
+        for (int slot = 0; slot < VILLAGER_SLOT_COUNT; slot++) {
+            ItemStack stack = container.getItem(slot);
+            if (VillagerRetaliationVillagerWeapons.isUsableWeapon(stack)) {
+                return "weapon";
+            }
+            hasArmor |= isArmor(stack);
+        }
+        return hasArmor ? "armor" : "";
+    }
+
+    private static boolean isGear(ItemStack stack) {
+        return VillagerRetaliationVillagerWeapons.isUsableWeapon(stack) || isArmor(stack);
+    }
+
+    private static boolean isArmor(ItemStack stack) {
+        return Equipable.get(stack) != null;
     }
 
     private static int armorSlotFor(EquipmentSlot equipmentSlot) {

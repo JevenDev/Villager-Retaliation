@@ -34,6 +34,7 @@ public record DialogueContext(
         VillagerInteractionTracker.CartographerMapReport cartographerMapReport,
         VillagerInteractionTracker.StoryHintReport storyHintReport,
         VillagerInteractionTracker.CombatSurvivalReport combatSurvivalReport,
+        VillagerInteractionTracker.GearReport gearReport,
         VillagerInteractionTracker.GiftAdviceResultReport giftAdviceResultReport,
         List<VillageEventMemory.MemoryEvent> recentEvents,
         RandomSource random,
@@ -107,6 +108,28 @@ public record DialogueContext(
 
     public boolean hasUnreportedCombatSurvivalReport() {
         return this.combatSurvivalReport != null;
+    }
+
+    public Optional<VillagerInteractionTracker.GearReport> unreportedGearReport() {
+        return Optional.ofNullable(this.gearReport);
+    }
+
+    public boolean hasUnreportedGearReport() {
+        return this.gearReport != null;
+    }
+
+    public boolean hasUnreportedGearReportUsedInCombat() {
+        return this.gearReport != null && this.gearReport.usedInCombat();
+    }
+
+    public boolean hasUnreportedGearReportUnusedInCombat() {
+        return this.gearReport != null && !this.gearReport.usedInCombat();
+    }
+
+    public String gearReportKind() {
+        return this.gearReport == null || this.gearReport.gearKind() == null || this.gearReport.gearKind().isBlank()
+                ? "gear"
+                : this.gearReport.gearKind();
     }
 
     public Optional<VillagerInteractionTracker.GiftAdviceResultReport> unreportedGiftAdviceResult() {

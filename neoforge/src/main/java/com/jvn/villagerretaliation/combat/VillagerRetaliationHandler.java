@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.combat;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil.ActiveRetaliationTarget;
+import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
@@ -43,6 +44,7 @@ import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
 import net.minecraft.world.entity.projectile.ThrownEgg;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.item.AxeItem;
+import net.minecraft.world.item.Equipable;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.AABB;
@@ -392,6 +394,7 @@ public final class VillagerRetaliationHandler {
         }
 
         equipCombatWeapon(villager);
+        VillagerInteractionTracker.markGearReportsUsedInCombat(level, villager, hasEquippedWeaponGear(villager), hasEquippedArmorGear(villager));
         VillagerRetaliationRetaliationUtil.boostCombatMovement(villager);
 
         handleDefensiveRole(villager, gameTime);
@@ -908,6 +911,20 @@ public final class VillagerRetaliationHandler {
         }
 
         RETALIATION.equipTemporaryWeapon(villager, weapon);
+    }
+
+    private static boolean hasEquippedWeaponGear(Villager villager) {
+        return VillagerRetaliationVillagerEquipment.isPlayerManagedMainHand(villager)
+                || VillagerInventoryAccess.hasBorrowedCombatWeapon(villager)
+                || VillagerRetaliationVillagerWeapons.isUsableWeapon(villager.getOffhandItem());
+    }
+
+    private static boolean hasEquippedArmorGear(Villager villager) {
+        return !villager.getItemBySlot(EquipmentSlot.HEAD).isEmpty()
+                || !villager.getItemBySlot(EquipmentSlot.CHEST).isEmpty()
+                || !villager.getItemBySlot(EquipmentSlot.LEGS).isEmpty()
+                || !villager.getItemBySlot(EquipmentSlot.FEET).isEmpty()
+                || Equipable.get(villager.getOffhandItem()) != null;
     }
 
     private static void ensureProfessionMainHand(Villager villager) {

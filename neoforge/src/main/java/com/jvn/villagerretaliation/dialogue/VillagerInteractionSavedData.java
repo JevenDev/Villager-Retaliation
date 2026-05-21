@@ -67,6 +67,10 @@ public class VillagerInteractionSavedData extends SavedData {
     private static final String TAG_COMBAT_SURVIVAL_UNREPORTED = "CombatSurvivalUnreported";
     private static final String TAG_COMBAT_SURVIVAL_EVENT_KIND = "CombatSurvivalEventKind";
     private static final String TAG_COMBAT_SURVIVAL_GAME_TIME = "CombatSurvivalGameTime";
+    private static final String TAG_GEAR_REPORT_UNREPORTED = "GearReportUnreported";
+    private static final String TAG_GEAR_REPORT_KIND = "GearReportKind";
+    private static final String TAG_GEAR_REPORT_USED_IN_COMBAT = "GearReportUsedInCombat";
+    private static final String TAG_GEAR_REPORT_GAME_TIME = "GearReportGameTime";
     private static final String TAG_GIFT_ADVICE_ITEM_ID = "GiftAdviceItemId";
     private static final String TAG_GIFT_ADVICE_ITEM_NAME = "GiftAdviceItemName";
     private static final String TAG_GIFT_ADVICE_TARGET_PROFESSION = "GiftAdviceTargetProfession";
@@ -118,6 +122,12 @@ public class VillagerInteractionSavedData extends SavedData {
                 entry.combatSurvivalEventKind = entryTag.getString(TAG_COMBAT_SURVIVAL_EVENT_KIND);
             }
             entry.combatSurvivalGameTime = readOptionalLong(entryTag, TAG_COMBAT_SURVIVAL_GAME_TIME);
+            entry.gearReportUnreported = entryTag.getBoolean(TAG_GEAR_REPORT_UNREPORTED);
+            if (entryTag.contains(TAG_GEAR_REPORT_KIND, Tag.TAG_STRING)) {
+                entry.gearReportKind = entryTag.getString(TAG_GEAR_REPORT_KIND);
+            }
+            entry.gearReportUsedInCombat = entryTag.getBoolean(TAG_GEAR_REPORT_USED_IN_COMBAT);
+            entry.gearReportGameTime = readOptionalLong(entryTag, TAG_GEAR_REPORT_GAME_TIME);
             if (entryTag.contains(TAG_GIFT_ADVICE_ITEM_ID, Tag.TAG_STRING)) {
                 entry.giftAdviceItemId = entryTag.getString(TAG_GIFT_ADVICE_ITEM_ID);
             }
@@ -296,6 +306,12 @@ public class VillagerInteractionSavedData extends SavedData {
                     entryTag.putString(TAG_COMBAT_SURVIVAL_EVENT_KIND, playerEntry.getValue().combatSurvivalEventKind);
                 }
                 entryTag.putLong(TAG_COMBAT_SURVIVAL_GAME_TIME, playerEntry.getValue().combatSurvivalGameTime);
+                entryTag.putBoolean(TAG_GEAR_REPORT_UNREPORTED, playerEntry.getValue().gearReportUnreported);
+                if (playerEntry.getValue().gearReportKind != null && !playerEntry.getValue().gearReportKind.isBlank()) {
+                    entryTag.putString(TAG_GEAR_REPORT_KIND, playerEntry.getValue().gearReportKind);
+                }
+                entryTag.putBoolean(TAG_GEAR_REPORT_USED_IN_COMBAT, playerEntry.getValue().gearReportUsedInCombat);
+                entryTag.putLong(TAG_GEAR_REPORT_GAME_TIME, playerEntry.getValue().gearReportGameTime);
                 if (playerEntry.getValue().giftAdviceItemId != null && !playerEntry.getValue().giftAdviceItemId.isBlank()) {
                     entryTag.putString(TAG_GIFT_ADVICE_ITEM_ID, playerEntry.getValue().giftAdviceItemId);
                 }
@@ -560,6 +576,30 @@ public class VillagerInteractionSavedData extends SavedData {
         return getOrCreate(villagerId, playerId).claimUnreportedCombatSurvivalReport(villagerId);
     }
 
+    public void rememberGearReport(UUID villagerId, UUID playerId, String gearKind, long gameTime) {
+        getOrCreate(villagerId, playerId).rememberGearReport(gearKind, gameTime);
+    }
+
+    public VillagerInteractionTracker.GearReport unreportedGearReport(UUID villagerId, UUID playerId) {
+        return getOrCreate(villagerId, playerId).unreportedGearReport(villagerId);
+    }
+
+    public VillagerInteractionTracker.GearReport claimUnreportedGearReport(UUID villagerId, UUID playerId) {
+        return getOrCreate(villagerId, playerId).claimUnreportedGearReport(villagerId);
+    }
+
+    public boolean markGearReportsUsedInCombat(UUID villagerId, boolean weaponEquipped, boolean armorEquipped) {
+        Map<UUID, InteractionEntry> playerEntries = this.entries.get(villagerId);
+        if (playerEntries == null) {
+            return false;
+        }
+        boolean changed = false;
+        for (InteractionEntry entry : playerEntries.values()) {
+            changed |= entry.markGearReportUsedInCombat(weaponEquipped, armorEquipped);
+        }
+        return changed;
+    }
+
     public void rememberGiftAdvice(UUID villagerId, UUID playerId, String itemId, String itemName, String targetProfessionKey) {
         getOrCreate(villagerId, playerId).rememberGiftAdvice(itemId, itemName, targetProfessionKey);
     }
@@ -631,6 +671,10 @@ public class VillagerInteractionSavedData extends SavedData {
         private boolean combatSurvivalUnreported;
         private String combatSurvivalEventKind;
         private long combatSurvivalGameTime = Long.MIN_VALUE;
+        private boolean gearReportUnreported;
+        private String gearReportKind;
+        private boolean gearReportUsedInCombat;
+        private long gearReportGameTime = Long.MIN_VALUE;
         private String giftAdviceItemId;
         private String giftAdviceItemName;
         private String giftAdviceTargetProfession;
@@ -739,6 +783,48 @@ public class VillagerInteractionSavedData extends SavedData {
             VillagerInteractionTracker.CombatSurvivalReport report = unreportedCombatSurvivalReport(villagerId);
             this.combatSurvivalUnreported = false;
             return report;
+        }
+
+        public void rememberGearReport(String gearKind, long gameTime) {
+            this.gearReportUnreported = true;
+            this.gearReportKind = gearKind == null || gearKind.isBlank() ? "gear" : gearKind;
+            this.gearReportUsedInCombat = false;
+            this.gearReportGameTime = gameTime;
+        }
+
+        public VillagerInteractionTracker.GearReport unreportedGearReport(UUID villagerId) {
+            if (!this.gearReportUnreported) {
+                return null;
+            }
+            return new VillagerInteractionTracker.GearReport(
+                    villagerId,
+                    this.gearReportKind == null || this.gearReportKind.isBlank() ? "gear" : this.gearReportKind,
+                    this.gearReportUsedInCombat,
+                    this.gearReportGameTime
+            );
+        }
+
+        public VillagerInteractionTracker.GearReport claimUnreportedGearReport(UUID villagerId) {
+            VillagerInteractionTracker.GearReport report = unreportedGearReport(villagerId);
+            this.gearReportUnreported = false;
+            return report;
+        }
+
+        public boolean markGearReportUsedInCombat(boolean weaponEquipped, boolean armorEquipped) {
+            if (!this.gearReportUnreported || this.gearReportUsedInCombat || !gearReportMatchesEquippedGear(weaponEquipped, armorEquipped)) {
+                return false;
+            }
+            this.gearReportUsedInCombat = true;
+            return true;
+        }
+
+        private boolean gearReportMatchesEquippedGear(boolean weaponEquipped, boolean armorEquipped) {
+            String gearKind = this.gearReportKind == null ? "" : this.gearReportKind;
+            return switch (gearKind) {
+                case "weapon" -> weaponEquipped;
+                case "armor" -> armorEquipped;
+                default -> weaponEquipped || armorEquipped;
+            };
         }
 
         public void rememberGiftAdvice(String itemId, String itemName, String targetProfessionKey) {
