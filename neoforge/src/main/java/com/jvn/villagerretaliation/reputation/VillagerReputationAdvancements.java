@@ -72,6 +72,7 @@ public final class VillagerReputationAdvancements {
     private static final ResourceLocation NO_REST_FOR_THE_WICKED = advancementId("reputation/no_rest_for_the_wicked");
     private static final ResourceLocation TRUSTED_DIRECTIONS = advancementId("reputation/trusted_directions");
     private static final ResourceLocation BAIT_AND_BETRAYAL = advancementId("reputation/bait_and_betrayal");
+    private static final ResourceLocation CHANGED_MY_MIND = advancementId("reputation/changed_my_mind");
 
     private VillagerReputationAdvancements() {
     }
@@ -86,6 +87,10 @@ public final class VillagerReputationAdvancements {
 
     public static void onLuredVillagerKilled(ServerPlayer player) {
         award(player, BAIT_AND_BETRAYAL);
+    }
+
+    public static void onGiftTakenBack(ServerPlayer player) {
+        award(player, CHANGED_MY_MIND);
     }
 
     public static void onSleepingVillagerBedBroken(ServerPlayer player) {

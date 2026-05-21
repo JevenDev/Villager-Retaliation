@@ -294,6 +294,27 @@ final class VillagerInventoryContainer implements Container {
         villager.getPersistentData().remove(BORROWED_COMBAT_WEAPON_TAG);
     }
 
+    static int countStoredGiftItem(Villager villager, UUID playerId, ItemStack target) {
+        if (target.isEmpty()) {
+            return 0;
+        }
+
+        int count = 0;
+        for (EquipmentSlot slot : ARMOR_SLOTS) {
+            count += matchingGiftItemCount(villager.getItemBySlot(slot), playerId, target);
+        }
+        if (canAccessMainHand(villager)) {
+            count += matchingGiftItemCount(villager.getMainHandItem(), playerId, target);
+        }
+        count += matchingGiftItemCount(villager.getOffhandItem(), playerId, target);
+
+        NonNullList<ItemStack> inventory = loadFullInventory(villager);
+        for (ItemStack stack : inventory) {
+            count += matchingGiftItemCount(stack, playerId, target);
+        }
+        return count;
+    }
+
     static void dropAllInventoryAndEquipment(Villager villager, LivingDropsEvent event) {
         BorrowedCombatWeapon borrowedWeapon = borrowedCombatWeapon(villager);
         boolean borrowedWeaponInMainHand = borrowedWeapon != null
@@ -544,6 +565,13 @@ final class VillagerInventoryContainer implements Container {
     private static boolean mainHandMatchesBorrowedCombatWeapon(Villager villager) {
         BorrowedCombatWeapon borrowedWeapon = borrowedCombatWeapon(villager);
         return borrowedWeapon != null && ItemStack.isSameItem(villager.getMainHandItem(), borrowedWeapon.stack());
+    }
+
+    private static int matchingGiftItemCount(ItemStack stack, UUID playerId, ItemStack target) {
+        return VillagerGiftReturnTracker.isStoredGiftFrom(stack, playerId)
+                && VillagerGiftReturnTracker.isSameTrackedGiftItem(stack, target)
+                ? stack.getCount()
+                : 0;
     }
 
     private static void removeOneMatchingDrop(LivingDropsEvent event, ItemStack stack) {

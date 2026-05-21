@@ -43,6 +43,8 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
     private final Villager villager;
     private final int villagerEntityId;
     private final Player player;
+    private final VillagerGiftReturnTracker.GiftSnapshot giftSnapshot;
+    private boolean giftReturnsProcessed;
 
     public VillagerInventoryMenu(int containerId, Inventory playerInventory, RegistryFriendlyByteBuf data) {
         this(containerId, playerInventory, new SimpleContainer(VILLAGER_SLOT_COUNT), null, data == null ? -1 : data.readVarInt());
@@ -59,6 +61,9 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
         this.villager = villager;
         this.villagerEntityId = villagerEntityId;
         this.player = playerInventory.player;
+        this.giftSnapshot = villager != null && playerInventory.player instanceof ServerPlayer serverPlayer
+                ? VillagerGiftReturnTracker.capture(serverPlayer, villager)
+                : null;
         villagerInventory.startOpen(playerInventory.player);
         addVillagerSlots();
         addPlayerSlots(playerInventory);
@@ -104,11 +109,17 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
     @Override
     public void removed(Player player) {
         super.removed(player);
+        processTakenGifts(player);
         this.villagerInventory.stopOpen(player);
     }
 
     public int villagerEntityId() {
         return this.villagerEntityId;
+    }
+
+    public boolean isVillagerSlot(Slot slot) {
+        int menuSlot = this.slots.indexOf(slot);
+        return menuSlot >= 0 && menuSlot < VILLAGER_SLOT_COUNT;
     }
 
     private void addVillagerSlots() {
@@ -202,6 +213,14 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
         if (this.player instanceof ServerPlayer serverPlayer && this.villager != null) {
             VillagerReputationAdvancements.onVillagerEquipmentChanged(serverPlayer, this.villager);
         }
+    }
+
+    private void processTakenGifts(Player player) {
+        if (this.giftReturnsProcessed || this.villager == null || !(player instanceof ServerPlayer serverPlayer)) {
+            return;
+        }
+        this.giftReturnsProcessed = true;
+        VillagerGiftReturnTracker.applyTakenGiftPenalties(serverPlayer, this.villager, this.giftSnapshot);
     }
 
     private static int armorSlotFor(EquipmentSlot equipmentSlot) {

@@ -185,5 +185,7 @@
   "advancements.villagerretaliation.reputation.no_rest_for_the_wicked.title": "No Rest For The Wicked",
   "advancements.villagerretaliation.reputation.no_rest_for_the_wicked.description": "Break the bed of a sleeping villager.",
   "advancements.villagerretaliation.reputation.bait_and_betrayal.title": "Bait and Betrayal",
-  "advancements.villagerretaliation.reputation.bait_and_betrayal.description": "Have a villager follow you, then kill them."
+  "advancements.villagerretaliation.reputation.bait_and_betrayal.description": "Have a villager follow you, then kill them.",
+  "advancements.villagerretaliation.reputation.changed_my_mind.title": "Changed My Mind",
+  "advancements.villagerretaliation.reputation.changed_my_mind.description": "Take back a gift from a villager."
 }

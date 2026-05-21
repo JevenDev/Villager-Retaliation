@@ -1,16 +1,21 @@
 package com.jvn.villagerretaliation.client.inventory;
 
 import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
+import com.jvn.villagerretaliation.inventory.VillagerGiftReturnTracker;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryMenu;
+import java.util.ArrayList;
+import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.ItemStack;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
@@ -72,6 +77,17 @@ public class VillagerInventoryScreen extends AbstractContainerScreen<VillagerInv
 
     @Override
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
+    }
+
+    @Override
+    protected List<Component> getTooltipFromContainerItem(ItemStack stack) {
+        List<Component> tooltip = new ArrayList<>(super.getTooltipFromContainerItem(stack));
+        if (this.hoveredSlot != null && this.menu.isVillagerSlot(this.hoveredSlot)) {
+            VillagerGiftReturnTracker.giftedBy(stack)
+                    .map(name -> Component.literal("gifted by " + name).withStyle(ChatFormatting.GRAY))
+                    .ifPresent(tooltip::add);
+        }
+        return tooltip;
     }
 
     private void renderVillager(GuiGraphics graphics, int mouseX, int mouseY) {

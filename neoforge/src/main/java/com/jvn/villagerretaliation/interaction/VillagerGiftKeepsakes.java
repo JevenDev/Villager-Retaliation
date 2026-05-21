@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.interaction;
 
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
+import com.jvn.villagerretaliation.inventory.VillagerGiftReturnTracker;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
@@ -25,11 +26,26 @@ public final class VillagerGiftKeepsakes {
             return;
         }
         if (maybeKeepGift(level, villager, player, giftedStack, giftPreference)) {
+            VillagerGiftReturnTracker.recordStoredGift(level, villager, player, giftedStack, giftPreference.reputationValue());
             return;
         }
 
-        ItemStack remainder = VillagerInventoryAccess.addItem(villager, giftedStack.copy());
+        ItemStack remainder = VillagerInventoryAccess.addItem(
+                villager,
+                VillagerGiftReturnTracker.markStoredGift(giftedStack.copy(), player)
+        );
+        int storedCount = giftedStack.getCount() - remainder.getCount();
+        if (storedCount > 0) {
+            VillagerGiftReturnTracker.recordStoredGift(
+                    level,
+                    villager,
+                    player,
+                    giftedStack.copyWithCount(storedCount),
+                    storedReputationValue(giftedStack, storedCount, giftPreference.reputationValue())
+            );
+        }
         if (!remainder.isEmpty()) {
+            VillagerGiftReturnTracker.stripGiftTracking(remainder);
             villager.spawnAtLocation(remainder);
         }
     }
@@ -56,12 +72,22 @@ public final class VillagerGiftKeepsakes {
             return false;
         }
 
-        ItemStack keepsake = giftedStack.copy();
+        ItemStack keepsake = VillagerGiftReturnTracker.markStoredGift(giftedStack.copy(), player);
         EquipmentSlot preferredSlot = equipmentSlotFor(keepsake);
         if (preferredSlot != null && tryEquip(villager, preferredSlot, keepsake)) {
             return true;
         }
         return preferredSlot != EquipmentSlot.MAINHAND && tryEquip(villager, EquipmentSlot.MAINHAND, keepsake);
+    }
+
+    private static int storedReputationValue(ItemStack giftedStack, int storedCount, int reputationValue) {
+        if (reputationValue <= 0) {
+            return reputationValue;
+        }
+        if (storedCount >= giftedStack.getCount()) {
+            return reputationValue;
+        }
+        return Math.max(1, reputationValue * storedCount / giftedStack.getCount());
     }
 
     private static int keepsakeChance(
