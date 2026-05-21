@@ -10,10 +10,15 @@ public final class VillagerRetaliationVillagerRules {
     }
 
     public static boolean shouldKeepFleeingBehavior(Villager villager) {
-        return villager.isBaby()
-                || villager.getVillagerData().getProfession() == VillagerProfession.NITWIT
-                && !VillagerRetaliationVillagerWeapons.hasUsableWeapon(villager)
-                && !VillagerRetaliationVillagerWeapons.findNearestWeapon(villager).isPresent();
+        if (villager.isBaby()) {
+            return true;
+        }
+        if (villager.getVillagerData().getProfession() != VillagerProfession.NITWIT
+                || VillagerRetaliationVillagerWeapons.hasUsableWeapon(villager)) {
+            return false;
+        }
+
+        return !canPickUpGroundWeapons() || !VillagerRetaliationVillagerWeapons.findNearestWeapon(villager).isPresent();
     }
 
     public static boolean shouldSuppressFleeingBehavior(Villager villager) {
@@ -23,6 +28,9 @@ public final class VillagerRetaliationVillagerRules {
         if (!canStandGroundAgainstHostileMobs(villager)) {
             return false;
         }
+        if (!VillagerRetaliationConfig.VILLAGERS_FLEE_VISIBLE_CREEPERS.get()) {
+            return true;
+        }
 
         return !VillagerRetaliationVillagerCombatUtil.hasVisibleCreeperThreat(
                 villager,
@@ -31,8 +39,16 @@ public final class VillagerRetaliationVillagerRules {
     }
 
     public static boolean canStandGroundAgainstHostileMobs(Villager villager) {
+        if (!VillagerRetaliationConfig.VILLAGERS_STAND_GROUND_AGAINST_HOSTILE_MOBS.get()) {
+            return false;
+        }
+
         return VillagerRetaliationVillagerWeapons.hasUsableWeapon(villager)
                 || VillagerRetaliationVillagerWeapons.hasTrackedPickup(villager)
-                || VillagerRetaliationVillagerWeapons.findNearestWeapon(villager).isPresent();
+                || canPickUpGroundWeapons() && VillagerRetaliationVillagerWeapons.findNearestWeapon(villager).isPresent();
+    }
+
+    private static boolean canPickUpGroundWeapons() {
+        return VillagerRetaliationConfig.VILLAGERS_PICK_UP_GROUND_WEAPONS.get();
     }
 }

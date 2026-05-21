@@ -198,9 +198,11 @@ Config categories include:
 - `balance` - loot and drop rates
 - `retaliation` - anger rules, aggro radius, duration, line-of-sight witnesses
 - `reputation` - penalties, gains, thresholds, gossip, trade pricing
-- `combat` - profession combat toggles, armorer shields, clerics, farmers
+- `combat` - profession combat toggles, hostile mob targeting/retaliation, weapon pickup, armorer shields, clerics, farmers
 - `debugOverlay` - optional reputation display for testing
 - `wanderer` - wandering trader drop behavior
+
+Pack creators can tune monster-defense behavior independently with `combat.villagersTargetHostileMobs`, `combat.villagersRetaliateAgainstHostileMobs`, `combat.villagersStandGroundAgainstHostileMobs`, `combat.villagersPickUpGroundWeapons`, and the equivalent wandering trader options. `combat.naturalHostileTargetRadius` still controls the scan distance when proactive hostile mob targeting is enabled.
 
 ## Debug Overlay
 

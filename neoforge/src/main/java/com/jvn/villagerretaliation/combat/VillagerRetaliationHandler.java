@@ -214,8 +214,11 @@ public final class VillagerRetaliationHandler {
         }
 
         if (villager.isBaby()) {
-            VillagerRetaliationVillagerCombatUtil.resolveAttacker(villager, event.getSource()).ifPresent(attacker ->
-                    rallyNearbyVillagers(villager, attacker, VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get()));
+            VillagerRetaliationVillagerCombatUtil.resolveAttacker(villager, event.getSource()).ifPresent(attacker -> {
+                if (shouldRetaliateAgainstAttacker(villager, attacker)) {
+                    rallyNearbyVillagers(villager, attacker, VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get());
+                }
+            });
             return;
         }
 
@@ -224,6 +227,9 @@ public final class VillagerRetaliationHandler {
         }
 
         VillagerRetaliationVillagerCombatUtil.resolveAttacker(villager, event.getSource()).ifPresent(attacker -> {
+            if (!shouldRetaliateAgainstAttacker(villager, attacker)) {
+                return;
+            }
             if (isNitwitAlarm(villager)) {
                 rallyNearbyVillagers(villager, attacker, VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get());
                 return;
@@ -267,6 +273,9 @@ public final class VillagerRetaliationHandler {
         }
 
         LivingEntity resolvedAttacker = attacker.get();
+        if (!shouldRetaliateAgainstAttacker(deceased instanceof Villager villager ? villager : null, resolvedAttacker)) {
+            return;
+        }
         double radius = VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get();
         angerNearbyVillagers(deceased, resolvedAttacker, radius, deceasedIsVillager);
         WanderingTraderRetaliationHandler.angerNearbyTradersFrom(deceased, resolvedAttacker, radius);
@@ -498,7 +507,9 @@ public final class VillagerRetaliationHandler {
             return;
         }
         if (attacker instanceof Creeper creeper) {
-            enterCreeperAvoidanceState(villager, creeper, villager.level().getGameTime());
+            if (VillagerRetaliationConfig.VILLAGERS_FLEE_VISIBLE_CREEPERS.get()) {
+                enterCreeperAvoidanceState(villager, creeper, villager.level().getGameTime());
+            }
             return;
         }
         RETALIATION.anger(villager, attacker);
@@ -507,6 +518,7 @@ public final class VillagerRetaliationHandler {
     private static void tryAcquireHostileTarget(Villager villager) {
         if (RETALIATION.hasAnger(villager)
                 || !villager.isAlive()
+                || !VillagerRetaliationConfig.VILLAGERS_TARGET_HOSTILE_MOBS.get()
                 || !VillagerRetaliationVillagerRules.shouldSuppressFleeingBehavior(villager)
                 || !VillagerCombatRoles.canFightBack(villager)) {
             return;
@@ -541,10 +553,16 @@ public final class VillagerRetaliationHandler {
     }
 
     private static boolean shouldAvoidVisibleCreeper(Villager villager, LivingEntity target) {
-        return target instanceof Creeper && villager.hasLineOfSight(target);
+        return VillagerRetaliationConfig.VILLAGERS_FLEE_VISIBLE_CREEPERS.get()
+                && target instanceof Creeper
+                && villager.hasLineOfSight(target);
     }
 
     private static boolean tryFleeVisibleCreeper(Villager villager) {
+        if (!VillagerRetaliationConfig.VILLAGERS_FLEE_VISIBLE_CREEPERS.get()) {
+            return false;
+        }
+
         double creeperThreatRadius = VillagerRetaliationConfig.NATURAL_HOSTILE_TARGET_RADIUS.get();
         Optional<Creeper> visibleCreeper = VillagerRetaliationVillagerCombatUtil.findNearestVisibleCreeper(villager, creeperThreatRadius);
         if (visibleCreeper.isEmpty()) {
@@ -622,6 +640,22 @@ public final class VillagerRetaliationHandler {
         if (stopNavigation) {
             villager.getNavigation().stop();
         }
+    }
+
+    private static boolean shouldRetaliateAgainstAttacker(Villager villager, LivingEntity attacker) {
+        return VillagerRetaliationConfig.VILLAGERS_RETALIATE_AGAINST_HOSTILE_MOBS.get()
+                || !isHostileMobAttacker(villager, attacker);
+    }
+
+    private static boolean isHostileMobAttacker(Villager villager, LivingEntity attacker) {
+        if (attacker instanceof Creeper) {
+            return true;
+        }
+        if (villager != null) {
+            return VillagerRetaliationVillagerCombatUtil.isNaturalHostileTarget(villager, attacker);
+        }
+        return attacker instanceof net.minecraft.world.entity.monster.Enemy
+                && !(attacker instanceof net.minecraft.world.entity.NeutralMob);
     }
 
     private static void syncMeleeAttackAttributes(Villager villager) {

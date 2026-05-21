@@ -135,7 +135,8 @@ public final class VillagerCombatRoles {
             return false;
         }
 
-        return !usesDedicatedRoleCombatItem(villager);
+        return VillagerRetaliationConfig.VILLAGERS_PICK_UP_GROUND_WEAPONS.get()
+                && !usesDedicatedRoleCombatItem(villager);
     }
 
     public static boolean canScavengeNearbyGroundWeapon(Villager villager) {

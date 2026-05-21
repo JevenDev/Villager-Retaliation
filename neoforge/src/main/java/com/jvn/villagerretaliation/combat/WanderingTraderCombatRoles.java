@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.combat;
 
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import java.util.List;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -32,7 +33,7 @@ public final class WanderingTraderCombatRoles {
     }
 
     public static boolean canScavengeGroundWeapons(WanderingTrader trader) {
-        return true;
+        return VillagerRetaliationConfig.WANDERING_TRADERS_PICK_UP_GROUND_WEAPONS.get();
     }
 
     public static ItemStack preferredWeapon(WanderingTrader trader) {
