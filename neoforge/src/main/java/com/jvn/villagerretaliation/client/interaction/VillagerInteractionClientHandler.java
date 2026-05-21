@@ -8,7 +8,6 @@ import com.jvn.villagerretaliation.network.VillagerConversationEndedPayload;
 import com.jvn.villagerretaliation.network.VillagerDialogueResponsePayload;
 import com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import net.minecraft.ChatFormatting;
@@ -23,7 +22,6 @@ import net.minecraft.world.entity.npc.VillagerProfession;
 
 public final class VillagerInteractionClientHandler {
     private static final long VILLAGER_CHAT_CONTINUATION_WINDOW_MILLIS = 15_000L;
-    private static final int VILLAGER_CHAT_WRAP_PADDING_PIXELS = 24;
     private static final int VILLAGER_CHAT_PRIMARY_TEXT_COLOR = 0xFFFFFF;
     private static final int VILLAGER_CHAT_SECONDARY_TEXT_COLOR = 0xD8D8D8;
     private static int lastChatSpeakerEntityId = Integer.MIN_VALUE;
@@ -122,7 +120,7 @@ public final class VillagerInteractionClientHandler {
         if (shouldSeparateVillagerChatMessage()) {
             addVillagerChatSeparator(minecraft, accentColor);
         }
-        addVillagerChatLines(minecraft, text, accentColor, currentChatGroupMessageIndex);
+        addVillagerChatMessage(minecraft, formatVillagerChatLine(text.strip(), currentChatGroupMessageIndex), accentColor);
         currentChatGroupMessageIndex++;
         rememberVillagerChatGroup(entityId, resolvedSpeaker);
     }
@@ -140,13 +138,6 @@ public final class VillagerInteractionClientHandler {
     private static void addVillagerChatSpeakerSeparator(Minecraft minecraft, int accentColor) {
         if (VillagerRetaliationConfig.SEPARATE_VILLAGER_CHAT_SPEAKERS.get()) {
             addVillagerChatMessage(minecraft, Component.empty(), accentColor);
-        }
-    }
-
-    private static void addVillagerChatLines(Minecraft minecraft, String text, int accentColor, int messageIndex) {
-        List<String> lines = wrapVillagerChatLine(minecraft, text);
-        for (String line : lines) {
-            addVillagerChatMessage(minecraft, formatVillagerChatLine(line, messageIndex), accentColor);
         }
     }
 
@@ -196,32 +187,6 @@ public final class VillagerInteractionClientHandler {
     private static Component formatVillagerChatLine(String text, int lineIndex) {
         int color = lineIndex % 2 == 0 ? VILLAGER_CHAT_PRIMARY_TEXT_COLOR : VILLAGER_CHAT_SECONDARY_TEXT_COLOR;
         return Component.literal(text).withStyle(style -> style.withColor(color));
-    }
-
-    private static List<String> wrapVillagerChatLine(Minecraft minecraft, String text) {
-        int maxWidth = Math.max(40, minecraft.gui.getChat().getWidth() - VILLAGER_CHAT_WRAP_PADDING_PIXELS);
-        List<String> lines = new ArrayList<>();
-        String remaining = text.strip();
-        while (!remaining.isEmpty()) {
-            String candidate = minecraft.font.plainSubstrByWidth(remaining, maxWidth);
-            int splitIndex = candidate.length();
-            if (splitIndex < remaining.length()) {
-                int lastSpace = candidate.lastIndexOf(' ');
-                if (lastSpace > 0) {
-                    splitIndex = lastSpace;
-                }
-            }
-            if (splitIndex <= 0) {
-                splitIndex = Math.max(1, candidate.length());
-            }
-
-            String line = remaining.substring(0, splitIndex).stripTrailing();
-            if (!line.isEmpty()) {
-                lines.add(line);
-            }
-            remaining = remaining.substring(splitIndex).stripLeading();
-        }
-        return lines;
     }
 
     private static int villagerChatAccentColor(Minecraft minecraft, int entityId) {

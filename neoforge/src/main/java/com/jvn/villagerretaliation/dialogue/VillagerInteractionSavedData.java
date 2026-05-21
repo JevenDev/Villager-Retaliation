@@ -347,30 +347,31 @@ public class VillagerInteractionSavedData extends SavedData {
         entry.pruneCartographerMaps();
     }
 
-    public boolean markCartographerMapDiscoveriesNear(
+    public List<VillagerInteractionTracker.CartographerMapReport> markCartographerMapDiscoveriesNear(
             UUID playerId,
             ResourceLocation dimension,
             double x,
             double z,
             double radiusSqr,
             long gameTime) {
-        boolean foundAny = false;
-        for (Map<UUID, InteractionEntry> playerEntries : this.entries.values()) {
+        List<VillagerInteractionTracker.CartographerMapReport> discoveries = new ArrayList<>();
+        for (Map.Entry<UUID, Map<UUID, InteractionEntry>> villagerEntry : this.entries.entrySet()) {
+            Map<UUID, InteractionEntry> playerEntries = villagerEntry.getValue();
             InteractionEntry entry = playerEntries.get(playerId);
             if (entry == null) {
                 continue;
             }
-            foundAny |= entry.markCartographerMapDiscoveriesNear(dimension, x, z, radiusSqr, gameTime);
+            discoveries.addAll(entry.markCartographerMapDiscoveriesNear(villagerEntry.getKey(), dimension, x, z, radiusSqr, gameTime));
         }
-        return foundAny;
+        return discoveries;
     }
 
     public VillagerInteractionTracker.CartographerMapReport unreportedCartographerMapDiscovery(UUID villagerId, UUID playerId) {
-        return getOrCreate(villagerId, playerId).unreportedCartographerMapDiscovery();
+        return getOrCreate(villagerId, playerId).unreportedCartographerMapDiscovery(villagerId);
     }
 
     public VillagerInteractionTracker.CartographerMapReport claimUnreportedCartographerMapDiscovery(UUID villagerId, UUID playerId) {
-        return getOrCreate(villagerId, playerId).claimUnreportedCartographerMapDiscovery();
+        return getOrCreate(villagerId, playerId).claimUnreportedCartographerMapDiscovery(villagerId);
     }
 
     private GiftKnowledgeEntry giftKnowledgeEntry(UUID playerId, String professionKey, boolean create) {
@@ -537,13 +538,14 @@ public class VillagerInteractionSavedData extends SavedData {
             }
         }
 
-        private boolean markCartographerMapDiscoveriesNear(
+        private List<VillagerInteractionTracker.CartographerMapReport> markCartographerMapDiscoveriesNear(
+                UUID villagerId,
                 ResourceLocation dimension,
                 double x,
                 double z,
                 double radiusSqr,
                 long gameTime) {
-            boolean foundAny = false;
+            List<VillagerInteractionTracker.CartographerMapReport> discoveries = new ArrayList<>();
             for (int index = 0; index < this.cartographerMaps.size(); index++) {
                 CartographerMapMemory mapMemory = this.cartographerMaps.get(index);
                 if (mapMemory.reported()
@@ -556,28 +558,28 @@ public class VillagerInteractionSavedData extends SavedData {
                 double dz = z - (mapMemory.targetPos().getZ() + 0.5D);
                 if (dx * dx + dz * dz <= radiusSqr) {
                     this.cartographerMaps.set(index, mapMemory.withFound(true));
-                    foundAny = true;
+                    discoveries.add(mapMemory.toReport(villagerId));
                 }
             }
-            return foundAny;
+            return discoveries;
         }
 
-        private VillagerInteractionTracker.CartographerMapReport unreportedCartographerMapDiscovery() {
+        private VillagerInteractionTracker.CartographerMapReport unreportedCartographerMapDiscovery(UUID villagerId) {
             for (int index = this.cartographerMaps.size() - 1; index >= 0; index--) {
                 CartographerMapMemory mapMemory = this.cartographerMaps.get(index);
                 if (mapMemory.found() && !mapMemory.reported()) {
-                    return mapMemory.toReport();
+                    return mapMemory.toReport(villagerId);
                 }
             }
             return null;
         }
 
-        private VillagerInteractionTracker.CartographerMapReport claimUnreportedCartographerMapDiscovery() {
+        private VillagerInteractionTracker.CartographerMapReport claimUnreportedCartographerMapDiscovery(UUID villagerId) {
             for (int index = this.cartographerMaps.size() - 1; index >= 0; index--) {
                 CartographerMapMemory mapMemory = this.cartographerMaps.get(index);
                 if (mapMemory.found() && !mapMemory.reported()) {
                     this.cartographerMaps.set(index, mapMemory.withReported(true));
-                    return mapMemory.toReport();
+                    return mapMemory.toReport(villagerId);
                 }
             }
             return null;
@@ -633,8 +635,9 @@ public class VillagerInteractionSavedData extends SavedData {
             );
         }
 
-        private VillagerInteractionTracker.CartographerMapReport toReport() {
+        private VillagerInteractionTracker.CartographerMapReport toReport(UUID villagerId) {
             return new VillagerInteractionTracker.CartographerMapReport(
+                    villagerId,
                     this.dimension,
                     this.structureId,
                     this.targetName,

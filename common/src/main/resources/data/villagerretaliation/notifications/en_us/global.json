@@ -25,6 +25,12 @@
       "color": "aqua"
     },
     {
+      "trigger": "dialogue.map.found",
+      "text": "Found map destination: {target}",
+      "kind": "map_discovery",
+      "color": "#55AAFF"
+    },
+    {
       "trigger": "recruitment.follow_start",
       "text": "{villager} is following you.",
       "kind": "villager_following",

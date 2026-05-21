@@ -3,6 +3,10 @@ package com.jvn.villagerretaliation.reputation;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
+import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
+import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
+import com.jvn.villagerretaliation.notification.VillagerNotifications;
+import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -89,8 +93,11 @@ public final class VillagerReputationAdvancements {
     }
 
     public static void onPlayerTick(ServerPlayer player) {
-        if (VillagerInteractionTracker.markCartographerMapDiscoveriesNear(player.serverLevel(), player, DIALOGUE_MAP_FOUND_RADIUS)) {
+        List<VillagerInteractionTracker.CartographerMapReport> discoveries =
+                VillagerInteractionTracker.markCartographerMapDiscoveriesNear(player.serverLevel(), player, DIALOGUE_MAP_FOUND_RADIUS);
+        if (!discoveries.isEmpty()) {
             award(player, TRUSTED_DIRECTIONS);
+            discoveries.forEach(discovery -> sendDialogueMapFoundNotice(player, discovery));
         }
     }
 
@@ -376,6 +383,28 @@ public final class VillagerReputationAdvancements {
 
     private static ResourceLocation advancementId(String path) {
         return VillagerRetaliation.id(path);
+    }
+
+    private static void sendDialogueMapFoundNotice(ServerPlayer player, VillagerInteractionTracker.CartographerMapReport discovery) {
+        ServerLevel level = player.serverLevel();
+        String targetName = discovery.targetName() == null || discovery.targetName().isBlank()
+                ? VillagerInteractionTextUtil.resourcePathName(discovery.structureId())
+                : discovery.targetName();
+        String fallbackText = "Found map destination: " + targetName;
+        Entity entity = level.getEntity(discovery.villagerId());
+        if (entity instanceof AbstractVillager villager) {
+            VillagerNotifications.sendHud(
+                    player,
+                    level,
+                    villager,
+                    "dialogue.map.found",
+                    VillagerNotifications.replacements("target", targetName),
+                    fallbackText,
+                    VillagerReputationNoticeKind.MAP_DISCOVERY
+            );
+            return;
+        }
+        VillagerReputationNetworking.sendNotice(player, fallbackText, VillagerReputationNoticeKind.MAP_DISCOVERY);
     }
 
 }

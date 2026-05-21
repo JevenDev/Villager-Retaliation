@@ -29,6 +29,7 @@ public final class VillagerReputationNotificationOverlay {
     private static final int BACKGROUND_COLOR = 0xA0101010;
     private static final int STRIPE_COLOR = 0xCCECECEC;
     private static final int TEXT_COLOR = 0xFFF3F3F3;
+    private static final int MAP_DISCOVERY_TEXT_COLOR = 0xFF55AAFF;
     private static final int RECEIVED_ITEM_TEXT_COLOR = 0xFF55FFFF;
     private static final int GIFT_LIKED_TEXT_COLOR = 0xFF55FF55;
     private static final int GIFT_NEUTRAL_TEXT_COLOR = 0xFFAAAAAA;
@@ -188,6 +189,7 @@ public final class VillagerReputationNotificationOverlay {
             return entry.textColor;
         }
         return switch (entry.kind) {
+            case MAP_DISCOVERY -> MAP_DISCOVERY_TEXT_COLOR;
             case RECEIVED_ITEM -> RECEIVED_ITEM_TEXT_COLOR;
             case GIFT_LIKED -> GIFT_LIKED_TEXT_COLOR;
             case GIFT_NEUTRAL -> GIFT_NEUTRAL_TEXT_COLOR;
@@ -203,6 +205,7 @@ public final class VillagerReputationNotificationOverlay {
 
     private static ChatFormatting chatColor(VillagerReputationNoticeKind kind) {
         return switch (kind) {
+            case MAP_DISCOVERY -> ChatFormatting.AQUA;
             case RECEIVED_ITEM -> ChatFormatting.AQUA;
             case GIFT_LIKED -> ChatFormatting.GREEN;
             case GIFT_NEUTRAL -> ChatFormatting.GRAY;

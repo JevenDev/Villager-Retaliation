@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.dialogue;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -76,9 +77,9 @@ public final class VillagerInteractionTracker {
         data.setDirty();
     }
 
-    public static boolean markCartographerMapDiscoveriesNear(ServerLevel level, ServerPlayer player, double radius) {
+    public static List<CartographerMapReport> markCartographerMapDiscoveriesNear(ServerLevel level, ServerPlayer player, double radius) {
         VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
-        boolean found = data.markCartographerMapDiscoveriesNear(
+        List<CartographerMapReport> discoveries = data.markCartographerMapDiscoveriesNear(
                 player.getUUID(),
                 level.dimension().location(),
                 player.getX(),
@@ -86,10 +87,10 @@ public final class VillagerInteractionTracker {
                 radius * radius,
                 level.getGameTime()
         );
-        if (found) {
+        if (!discoveries.isEmpty()) {
             data.setDirty();
         }
-        return found;
+        return discoveries;
     }
 
     public static Optional<CartographerMapReport> unreportedCartographerMapDiscovery(ServerLevel level, Villager villager, ServerPlayer player) {
@@ -202,6 +203,7 @@ public final class VillagerInteractionTracker {
     }
 
     public record CartographerMapReport(
+            UUID villagerId,
             ResourceLocation dimension,
             ResourceLocation structureId,
             String targetName,

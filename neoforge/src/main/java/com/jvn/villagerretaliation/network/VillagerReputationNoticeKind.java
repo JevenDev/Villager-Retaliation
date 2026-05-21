@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.network;
 
 public enum VillagerReputationNoticeKind {
     DEFAULT,
+    MAP_DISCOVERY,
     RECEIVED_ITEM,
     GIFT_LIKED,
     GIFT_NEUTRAL,

@@ -7,6 +7,7 @@ import net.minecraft.world.entity.npc.VillagerProfession;
 
 public final class DialogueReputationService {
     private static final long DAY_TICKS = 24000L;
+    private static final int MAP_REPORT_REPUTATION_GAIN = 10;
 
     private DialogueReputationService() {
     }
@@ -86,7 +87,13 @@ public final class DialogueReputationService {
             case GREETING -> planGreeting(context, interactionState.firstConversation());
             case QUESTION -> planQuestion(context);
             case GIFT_PREFERENCES -> PlannedEffect.none();
-            case MAP_REPORT -> PlannedEffect.none();
+            case MAP_REPORT -> new PlannedEffect(
+                    MAP_REPORT_REPUTATION_GAIN,
+                    "map_report",
+                    DialogueReputationEffect.CooldownCategory.NONE,
+                    false,
+                    null
+            );
             case STORY -> planStory(context);
             case JOKE -> planJoke(context);
             case INSULT -> planInsult(context, interactionState.firstConversation());
@@ -203,7 +210,7 @@ public final class DialogueReputationService {
     }
 
     private static boolean isBlockedByCooldown(VillagerInteractionTracker.InteractionState interactionState, PlannedEffect plannedEffect, long day) {
-        if (plannedEffect.delta() < 0) {
+        if (plannedEffect.delta() < 0 || plannedEffect.cooldownCategory() == DialogueReputationEffect.CooldownCategory.NONE) {
             return false;
         }
         return !hasDayCooldownElapsed(
