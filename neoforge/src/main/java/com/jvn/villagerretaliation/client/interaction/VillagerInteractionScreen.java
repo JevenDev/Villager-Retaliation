@@ -1,6 +1,6 @@
 package com.jvn.villagerretaliation.client.interaction;
 
-import com.jvn.villagerretaliation.VillagerRetaliation;
+import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
 import com.jvn.villagerretaliation.dialogue.DialogueDisposition;
 import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.network.VillagerConversationEndRequestPayload;
@@ -19,7 +19,6 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.Villager;
@@ -68,12 +67,6 @@ public class VillagerInteractionScreen extends Screen {
     private static final int INVENTORY_BUTTON_GAP = 4;
     private static final int GIFT_INFO_ICON_SIZE = 16;
     private static final int GIFT_INFO_ICON_GAP = 5;
-    private static final ResourceLocation DIVIDER_SELECT_TEXTURE =
-            VillagerRetaliation.id("textures/gui/villager_interaction_screen/divider_select.png");
-    private static final ResourceLocation GIFT_INVENTORY_TEXTURE =
-            VillagerRetaliation.id("textures/gui/villager_interaction_screen/gift_inventory.png");
-    private static final ResourceLocation GIFT_INFO_ICON_TEXTURE =
-            VillagerRetaliation.id("textures/gui/villager_interaction_screen/info_icon.png");
     private static final int DIVIDER_SELECT_WIDTH = 11;
     private static final int DIVIDER_SELECT_HEIGHT = 19;
 
@@ -456,7 +449,7 @@ public class VillagerInteractionScreen extends Screen {
 
     private void renderGiftSlots(GuiGraphics graphics, int left, int top, int hoveredSlot) {
         graphics.blit(
-                GIFT_INVENTORY_TEXTURE,
+                VillagerRetaliationClientAssets.GIFT_INVENTORY_TEXTURE,
                 left,
                 top,
                 0,
@@ -645,7 +638,7 @@ public class VillagerInteractionScreen extends Screen {
 
         int selectorLeft = lineRight - DIVIDER_SELECT_WIDTH;
         graphics.blit(
-                DIVIDER_SELECT_TEXTURE,
+                VillagerRetaliationClientAssets.DIVIDER_SELECT_TEXTURE,
                 selectorLeft,
                 selectorTop,
                 0,
@@ -843,7 +836,7 @@ public class VillagerInteractionScreen extends Screen {
     private void renderGiftInfoIcon(GuiGraphics graphics, int mouseX, int mouseY) {
         GiftInfoIconBounds bounds = giftInfoIconBounds();
         graphics.blit(
-                GIFT_INFO_ICON_TEXTURE,
+                VillagerRetaliationClientAssets.GIFT_INFO_ICON_TEXTURE,
                 bounds.left(),
                 bounds.top(),
                 0,

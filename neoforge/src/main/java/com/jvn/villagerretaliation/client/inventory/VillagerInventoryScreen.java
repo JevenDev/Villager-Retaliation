@@ -1,13 +1,12 @@
 package com.jvn.villagerretaliation.client.inventory;
 
-import com.jvn.villagerretaliation.VillagerRetaliation;
+import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryMenu;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.AbstractVillager;
@@ -16,11 +15,6 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 public class VillagerInventoryScreen extends AbstractContainerScreen<VillagerInventoryMenu> {
-    private static final ResourceLocation VILLAGER_INVENTORY_TEXTURE =
-            VillagerRetaliation.id("textures/gui/villager_interaction_screen/villager_inventory.png");
-    private static final ResourceLocation PLAYER_INVENTORY_TEXTURE =
-            VillagerRetaliation.id("textures/gui/villager_interaction_screen/gift_inventory.png");
-
     private static final int VILLAGER_TEXTURE_WIDTH = 176;
     private static final int VILLAGER_TEXTURE_HEIGHT = 144;
     private static final int PLAYER_TEXTURE_WIDTH = 176;
@@ -52,7 +46,7 @@ public class VillagerInventoryScreen extends AbstractContainerScreen<VillagerInv
     @Override
     protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
         graphics.blit(
-                VILLAGER_INVENTORY_TEXTURE,
+                VillagerRetaliationClientAssets.VILLAGER_INVENTORY_TEXTURE,
                 this.leftPos,
                 this.topPos,
                 0,
@@ -63,7 +57,7 @@ public class VillagerInventoryScreen extends AbstractContainerScreen<VillagerInv
                 VILLAGER_TEXTURE_HEIGHT
         );
         graphics.blit(
-                PLAYER_INVENTORY_TEXTURE,
+                VillagerRetaliationClientAssets.GIFT_INVENTORY_TEXTURE,
                 this.leftPos,
                 this.topPos + PLAYER_TEXTURE_Y,
                 0,

@@ -1,6 +1,6 @@
 package com.jvn.villagerretaliation.client.interaction;
 
-import com.jvn.villagerretaliation.VillagerRetaliation;
+import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.BufferUploader;
@@ -10,12 +10,10 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import java.io.IOException;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.ShaderInstance;
-import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.client.event.RegisterShadersEvent;
 import org.joml.Matrix4f;
 
 public final class VillagerInteractionScreenShaderRenderer {
-    private static final ResourceLocation INTERACTION_VEIL_SHADER_ID = VillagerRetaliation.id("interaction_veil");
     private static final float DITHER_CELL_SIZE = 1.0F;
     private static final float DITHER_ARC_DEPTH = 30.0F;
 
@@ -27,7 +25,11 @@ public final class VillagerInteractionScreenShaderRenderer {
     public static void registerShaders(RegisterShadersEvent event) {
         try {
             event.registerShader(
-                    new ShaderInstance(event.getResourceProvider(), INTERACTION_VEIL_SHADER_ID, DefaultVertexFormat.POSITION),
+                    new ShaderInstance(
+                            event.getResourceProvider(),
+                            VillagerRetaliationClientAssets.INTERACTION_VEIL_SHADER,
+                            DefaultVertexFormat.POSITION
+                    ),
                     shader -> interactionVeilShader = shader
             );
         } catch (IOException exception) {

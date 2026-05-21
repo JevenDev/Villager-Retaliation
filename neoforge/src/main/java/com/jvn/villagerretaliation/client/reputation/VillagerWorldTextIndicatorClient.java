@@ -67,7 +67,7 @@ public final class VillagerWorldTextIndicatorClient {
             return;
         }
 
-        ToucanWorldTextStyle style = style(payload.text(), payload.kind());
+        ToucanWorldTextStyle style = style(payload.text(), payload.kind(), payload.textColor());
         if (payload.kind() == VillagerWorldTextIndicatorKind.SLEEP) {
             addSleepEntry(villager, payload.text(), style);
             return;
@@ -81,15 +81,28 @@ public final class VillagerWorldTextIndicatorClient {
         }
     }
 
-    private static ToucanWorldTextStyle style(String text, VillagerWorldTextIndicatorKind kind) {
+    private static ToucanWorldTextStyle style(String text, VillagerWorldTextIndicatorKind kind, int customColor) {
+        int color = customColor != Integer.MIN_VALUE ? customColor : defaultColor(kind);
         return switch (kind) {
-            case ALERT -> new ToucanWorldTextStyle(text, ALERT_COLOR, false, TEXT_LIFETIME_MILLIS, BASE_SCALE * 1.05F, 0.0D, 0.0D, 0.0D, 2.15F, 0.010F, 0.024F, 8.0F);
-            case POSITIVE -> new ToucanWorldTextStyle(text, POSITIVE_COLOR, false, TEXT_LIFETIME_MILLIS + 40, BASE_SCALE * 0.82F, 0.0D, 0.0D, 0.0D, 1.65F, 0.014F, 0.024F, 5.5F);
-            case NEGATIVE -> new ToucanWorldTextStyle(text, NEGATIVE_COLOR, true, TEXT_LIFETIME_MILLIS + 20, BASE_SCALE * 0.84F, 0.0D, 0.0D, 0.0D, 1.75F, 0.014F, 0.028F, 7.0F);
-            case TRADE -> new ToucanWorldTextStyle(text, TRADE_COLOR, false, TEXT_LIFETIME_MILLIS + 35, BASE_SCALE * 0.80F, 0.0D, 0.0D, 0.0D, 1.55F, 0.012F, 0.022F, 5.0F);
-            case DIALOGUE -> new ToucanWorldTextStyle(text, DIALOGUE_COLOR, false, TEXT_LIFETIME_MILLIS - 40, BASE_SCALE * 0.76F, 0.0D, 0.0D, 0.0D, 1.45F, 0.012F, 0.020F, 4.5F);
-            case SLEEP -> new ToucanWorldTextStyle(text, SLEEP_COLOR, true, 1650, BASE_SCALE * 0.72F, 0.0D, 0.0D, 0.0D, 1.10F, 0.026F, 0.018F, 3.0F);
-            default -> new ToucanWorldTextStyle(text, MURMUR_COLOR, true, TEXT_LIFETIME_MILLIS, BASE_SCALE * 0.70F, 0.0D, 0.0D, 0.0D, 1.20F, 0.008F, 0.016F, 4.0F);
+            case ALERT -> new ToucanWorldTextStyle(text, color, false, TEXT_LIFETIME_MILLIS, BASE_SCALE * 1.05F, 0.0D, 0.0D, 0.0D, 2.15F, 0.010F, 0.024F, 8.0F);
+            case POSITIVE -> new ToucanWorldTextStyle(text, color, false, TEXT_LIFETIME_MILLIS + 40, BASE_SCALE * 0.82F, 0.0D, 0.0D, 0.0D, 1.65F, 0.014F, 0.024F, 5.5F);
+            case NEGATIVE -> new ToucanWorldTextStyle(text, color, true, TEXT_LIFETIME_MILLIS + 20, BASE_SCALE * 0.84F, 0.0D, 0.0D, 0.0D, 1.75F, 0.014F, 0.028F, 7.0F);
+            case TRADE -> new ToucanWorldTextStyle(text, color, false, TEXT_LIFETIME_MILLIS + 35, BASE_SCALE * 0.80F, 0.0D, 0.0D, 0.0D, 1.55F, 0.012F, 0.022F, 5.0F);
+            case DIALOGUE -> new ToucanWorldTextStyle(text, color, false, TEXT_LIFETIME_MILLIS - 40, BASE_SCALE * 0.76F, 0.0D, 0.0D, 0.0D, 1.45F, 0.012F, 0.020F, 4.5F);
+            case SLEEP -> new ToucanWorldTextStyle(text, color, true, 1650, BASE_SCALE * 0.72F, 0.0D, 0.0D, 0.0D, 1.10F, 0.026F, 0.018F, 3.0F);
+            default -> new ToucanWorldTextStyle(text, color, true, TEXT_LIFETIME_MILLIS, BASE_SCALE * 0.70F, 0.0D, 0.0D, 0.0D, 1.20F, 0.008F, 0.016F, 4.0F);
+        };
+    }
+
+    private static int defaultColor(VillagerWorldTextIndicatorKind kind) {
+        return switch (kind) {
+            case ALERT -> ALERT_COLOR;
+            case POSITIVE -> POSITIVE_COLOR;
+            case NEGATIVE -> NEGATIVE_COLOR;
+            case TRADE -> TRADE_COLOR;
+            case DIALOGUE -> DIALOGUE_COLOR;
+            case SLEEP -> SLEEP_COLOR;
+            default -> MURMUR_COLOR;
         };
     }
 

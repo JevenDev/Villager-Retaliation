@@ -268,6 +268,41 @@ One-off villager replies are declared with `messages`:
 
 Messages cover sleeping interruptions, refusals, repeated-dialogue reactions, gift memories, gift acceptance responses, follower betrayal, and generated story hints. Message entries support the same `professions`, `dispositions`, `show_for_adults`, `show_for_babies`, and `weight` fields as other dialogue pools.
 
+## Data-driven notifications
+
+Villager HUD notifications and ambient world-text indicators are loaded from datapack JSON under:
+
+```text
+data/villagerretaliation/notifications/en_us/
+```
+
+Each entry binds text and color to a trigger emitted by code. Dialogue can trigger notifications, and world events can trigger them too, as long as the event has a trigger ID exposed by the mod.
+
+```json
+{
+  "notifications": [
+    {
+      "trigger": "gift.liked",
+      "text": "Good gift: {item}",
+      "kind": "gift_liked",
+      "color": "#55FF55"
+    },
+    {
+      "trigger": "ambient.murmur",
+      "text": "War changes every trade route.",
+      "world_text_kind": "murmur",
+      "color": "gold",
+      "reputation_levels": ["trusted", "respected", "revered", "royalty"],
+      "weight": 20
+    }
+  ]
+}
+```
+
+`color`, `text_color`, and `chat_color` accept common color names or hex values such as `#FFD166`. HUD entries can set `kind` for existing notification behavior. World-text entries can set `world_text_kind`: `alert`, `murmur`, `positive`, `negative`, `trade`, `dialogue`, or `sleep`.
+
+Built-in triggers include `gift.liked`, `gift.neutral`, `gift.disliked`, `gift.received_item`, recruitment triggers such as `recruitment.follow_start`, reputation tier triggers such as `reputation.tier.trusted.improved`, dialogue triggers such as `dialogue.question`, ambient triggers such as `ambient.murmur`, sleep triggers, trade triggers, and villager alert triggers. Entries can filter by `professions`, `reputation_levels`, `min_reputation`, `max_reputation`, `show_for_adults`, `show_for_babies`, `chance`, and `weight`.
+
 ![compatibility](https://cdn.modrinth.com/data/cached_images/1252c11050b7daf8b8621712b58dd1005e7ba982.png)
 
 ## Compatibility

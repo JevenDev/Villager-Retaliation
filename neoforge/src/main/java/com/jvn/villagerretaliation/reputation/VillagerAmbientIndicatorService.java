@@ -3,8 +3,8 @@ package com.jvn.villagerretaliation.reputation;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
 import com.jvn.villagerretaliation.dialogue.DialogueReputationEffect;
-import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.network.VillagerWorldTextIndicatorKind;
+import com.jvn.villagerretaliation.notification.VillagerNotifications;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -53,7 +53,7 @@ public final class VillagerAmbientIndicatorService {
 
         VillagerReputationLevel reputationLevel = VillagerReputationManager.getReputationLevel(level, villager, player.getUUID());
         String text = randomMurmur(villager.getRandom(), reputationLevel);
-        emit(villager, text, VillagerWorldTextIndicatorKind.MURMUR);
+        emit(level, villager, player, "ambient.murmur", VillagerWorldTextIndicatorKind.MURMUR, text);
         delayNextMurmur(villager, gameTime, 10 + villager.getRandom().nextInt(12));
         pruneCooldowns(gameTime);
     }
@@ -69,10 +69,12 @@ public final class VillagerAmbientIndicatorService {
             return;
         }
 
-        String text = villager.getRandom().nextInt(100) < 52
+        boolean breathing = villager.getRandom().nextInt(100) < 52;
+        String trigger = breathing ? "ambient.sleep_breathing" : "ambient.sleep_murmur";
+        String text = breathing
                 ? randomSleepBreathing(villager.getRandom())
                 : randomSleepMurmur(villager.getRandom(), villager.getVillagerData().getProfession());
-        emit(villager, text, VillagerWorldTextIndicatorKind.SLEEP);
+        emit(level, villager, null, trigger, VillagerWorldTextIndicatorKind.SLEEP, text);
         NEXT_SLEEP_TICK.put(villager.getUUID(), gameTime + SLEEP_BASE_COOLDOWN_TICKS + villager.getRandom().nextInt(20 * 4));
         pruneCooldowns(gameTime);
     }
@@ -82,7 +84,7 @@ public final class VillagerAmbientIndicatorService {
             return;
         }
 
-        emitAlert(level, damaged, "!");
+        emitAlert(level, damaged, "alert.villager_damaged", "!");
 
         AABB area = damaged.getBoundingBox().inflate(ALERT_WITNESS_RADIUS);
         int alerted = 0;
@@ -93,7 +95,12 @@ public final class VillagerAmbientIndicatorService {
             if (!witness.hasLineOfSight(damaged)) {
                 continue;
             }
-            emitAlert(level, witness, alertTextForWitness(witness, attacker));
+            emitAlert(
+                    level,
+                    witness,
+                    attacker instanceof Player ? "alert.witness_attack.player" : "alert.witness_attack",
+                    alertTextForWitness(witness, attacker)
+            );
             alerted++;
             if (alerted >= MAX_ALERT_WITNESSES) {
                 return;
@@ -111,7 +118,12 @@ public final class VillagerAmbientIndicatorService {
             if (!witness.hasLineOfSight(killed)) {
                 continue;
             }
-            emitAlert(level, witness, alertTextForDeath(witness, attacker));
+            emitAlert(
+                    level,
+                    witness,
+                    attacker instanceof Player ? "alert.witness_death.player" : "alert.witness_death",
+                    alertTextForDeath(witness, attacker)
+            );
             alerted++;
             if (alerted >= MAX_ALERT_WITNESSES) {
                 return;
@@ -128,21 +140,35 @@ public final class VillagerAmbientIndicatorService {
             case FEARED -> random(villager.getRandom(), "Please go", "We're done", "Take it");
             default -> random(villager.getRandom(), "Good trade", "Done deal", "Thanks");
         };
-        emit(villager, text, VillagerWorldTextIndicatorKind.TRADE);
+        emit(level, villager, player, "trade.completed", VillagerWorldTextIndicatorKind.TRADE, text);
     }
 
-    public static void onDialogueResponse(Villager villager, DialogueRequestType requestType, DialogueReputationEffect reputationEffect) {
+    public static void onDialogueResponse(
+            ServerLevel level,
+            Villager villager,
+            Player player,
+            String optionId,
+            DialogueRequestType requestType,
+            DialogueReputationEffect reputationEffect) {
         VillagerWorldTextIndicatorKind kind = VillagerWorldTextIndicatorKind.DIALOGUE;
+        String baseTrigger = "dialogue." + requestType.name().toLowerCase(java.util.Locale.ROOT);
+        String trigger = optionId == null || optionId.isBlank() ? baseTrigger : "dialogue.option." + optionId;
         if (reputationEffect.applied() && reputationEffect.reputationDelta() > 0) {
             kind = VillagerWorldTextIndicatorKind.POSITIVE;
+            baseTrigger += ".positive";
+            trigger += ".positive";
         } else if (reputationEffect.applied() && reputationEffect.reputationDelta() < 0) {
             kind = VillagerWorldTextIndicatorKind.NEGATIVE;
+            baseTrigger += ".negative";
+            trigger += ".negative";
         }
 
         String text;
         if (reputationEffect.blockedByCooldown()) {
             text = random(villager.getRandom(), "Already asked", "Enough now", "Again?");
             kind = VillagerWorldTextIndicatorKind.NEGATIVE;
+            trigger = "dialogue.cooldown";
+            baseTrigger = "";
         } else {
             text = switch (requestType) {
                 case GREETING -> random(villager.getRandom(), "Hello", "Good day", "Hm?");
@@ -155,25 +181,37 @@ public final class VillagerAmbientIndicatorService {
             };
         }
 
-        emit(villager, text, kind);
+        emit(level, villager, player, trigger, baseTrigger, kind, text);
     }
 
     public static void onHighReputationGift(AbstractVillager villager) {
-        emit(villager, random(villager.getRandom(), "For you", "Take this", "You've earned it"), VillagerWorldTextIndicatorKind.POSITIVE);
+        if (villager.level() instanceof ServerLevel level) {
+            emit(level, villager, null, "gift.high_reputation", VillagerWorldTextIndicatorKind.POSITIVE,
+                    random(villager.getRandom(), "For you", "Take this", "You've earned it"));
+        }
     }
 
     public static void onGiftReceived(AbstractVillager villager, int reputationValue) {
+        if (!(villager.level() instanceof ServerLevel level)) {
+            return;
+        }
         if (reputationValue > 0) {
-            emit(villager, random(villager.getRandom(), "Thank you", "How kind", "Lovely"), VillagerWorldTextIndicatorKind.POSITIVE);
+            emit(level, villager, null, "gift.world.liked", VillagerWorldTextIndicatorKind.POSITIVE,
+                    random(villager.getRandom(), "Thank you", "How kind", "Lovely"));
         } else if (reputationValue < 0) {
-            emit(villager, random(villager.getRandom(), "No thanks", "Not this", "Really?"), VillagerWorldTextIndicatorKind.NEGATIVE);
+            emit(level, villager, null, "gift.world.disliked", VillagerWorldTextIndicatorKind.NEGATIVE,
+                    random(villager.getRandom(), "No thanks", "Not this", "Really?"));
         } else {
-            emit(villager, random(villager.getRandom(), "Hm", "Thanks", "Alright"), VillagerWorldTextIndicatorKind.DIALOGUE);
+            emit(level, villager, null, "gift.world.neutral", VillagerWorldTextIndicatorKind.DIALOGUE,
+                    random(villager.getRandom(), "Hm", "Thanks", "Alright"));
         }
     }
 
     public static void onTradeRefused(AbstractVillager villager) {
-        emit(villager, random(villager.getRandom(), "No trades", "Not you", "Leave"), VillagerWorldTextIndicatorKind.NEGATIVE);
+        if (villager.level() instanceof ServerLevel level) {
+            emit(level, villager, null, "trade.refused", VillagerWorldTextIndicatorKind.NEGATIVE,
+                    random(villager.getRandom(), "No trades", "Not you", "Leave"));
+        }
     }
 
     private static Player findMurmurTarget(ServerLevel level, AbstractVillager villager) {
@@ -196,20 +234,37 @@ public final class VillagerAmbientIndicatorService {
         return closest;
     }
 
-    private static void emitAlert(ServerLevel level, AbstractVillager villager, String text) {
+    private static void emitAlert(ServerLevel level, AbstractVillager villager, String trigger, String text) {
         long gameTime = level.getGameTime();
         if (gameTime < NEXT_ALERT_TICK.getOrDefault(villager.getUUID(), 0L)) {
             return;
         }
         NEXT_ALERT_TICK.put(villager.getUUID(), gameTime + ALERT_COOLDOWN_TICKS);
-        emit(villager, text, VillagerWorldTextIndicatorKind.ALERT);
+        emit(level, villager, null, trigger, VillagerWorldTextIndicatorKind.ALERT, text);
     }
 
-    private static void emit(AbstractVillager villager, String text, VillagerWorldTextIndicatorKind kind) {
-        if (text == null || text.isBlank() || !(villager.level() instanceof ServerLevel)) {
+    private static void emit(
+            ServerLevel level,
+            AbstractVillager villager,
+            Player player,
+            String trigger,
+            VillagerWorldTextIndicatorKind fallbackKind,
+            String fallbackText) {
+        emit(level, villager, player, trigger, "", fallbackKind, fallbackText);
+    }
+
+    private static void emit(
+            ServerLevel level,
+            AbstractVillager villager,
+            Player player,
+            String trigger,
+            String fallbackTrigger,
+            VillagerWorldTextIndicatorKind fallbackKind,
+            String fallbackText) {
+        if (fallbackText == null || fallbackText.isBlank()) {
             return;
         }
-        VillagerReputationNetworking.sendWorldTextIndicator(villager, text, kind);
+        VillagerNotifications.sendWorldText(level, villager, player, trigger, fallbackTrigger, Map.of(), fallbackKind, fallbackText);
     }
 
     private static void delayNextMurmur(AbstractVillager villager, long gameTime, int extraSeconds) {

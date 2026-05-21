@@ -1,21 +1,22 @@
 package com.jvn.villagerretaliation.client.renderer;
 
-import com.jvn.villagerretaliation.VillagerRetaliation;
+import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
 import com.jvn.villagerretaliation.client.pose.DefaultVillagerPoseProvider;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.layers.VillagerProfessionLayer;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.npc.Villager;
 
 public class VillagerRetaliationVillagerRenderer extends AbstractVillagerRetaliationVillagerRenderer<Villager> {
-    private static final ResourceLocation VANILLA_VILLAGER_SKIN = ResourceLocation.withDefaultNamespace("textures/entity/villager/villager.png");
-    private static final ResourceLocation COMBAT_VILLAGER_SKIN =
-            VillagerRetaliation.id("textures/entity/villager/villager.png");
-
     public VillagerRetaliationVillagerRenderer(EntityRendererProvider.Context context) {
-        super(context, ModelLayers.VILLAGER, DefaultVillagerPoseProvider.INSTANCE, VANILLA_VILLAGER_SKIN, COMBAT_VILLAGER_SKIN);
+        super(
+                context,
+                ModelLayers.VILLAGER,
+                DefaultVillagerPoseProvider.INSTANCE,
+                VillagerRetaliationClientAssets.VANILLA_VILLAGER_SKIN,
+                VillagerRetaliationClientAssets.COMBAT_VILLAGER_SKIN
+        );
         this.addLayer(new VillagerProfessionLayer<>(this, context.getResourceManager(), "villager"));
     }
 

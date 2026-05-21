@@ -1,6 +1,6 @@
 package com.jvn.villagerretaliation.client.reputation;
 
-import com.jvn.villagerretaliation.VillagerRetaliation;
+import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import net.minecraft.ChatFormatting;
@@ -29,20 +29,6 @@ public final class VillagerReputationIconSet {
     }
 
     public static ResourceLocation iconFor(VillagerReputationLevel level) {
-        return switch (level) {
-            case ROYALTY -> icon("royalty");
-            case REVERED -> icon("revered");
-            case RESPECTED -> icon("respected");
-            case TRUSTED -> icon("trusted");
-            case NEUTRAL -> icon("neutral");
-            case SUSPICIOUS -> icon("suspicious");
-            case HOSTILE -> icon("hostile");
-            case DESPISED -> icon("despised");
-            case FEARED -> icon("feared");
-        };
-    }
-
-    private static ResourceLocation icon(String name) {
-        return VillagerRetaliation.id("textures/gui/container/icons/" + name + ".png");
+        return VillagerRetaliationClientAssets.reputationIcon(level);
     }
 }

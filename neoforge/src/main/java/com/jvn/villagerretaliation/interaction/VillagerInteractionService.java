@@ -20,6 +20,7 @@ import com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload;
 import com.jvn.villagerretaliation.network.VillagerRecruitRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
+import com.jvn.villagerretaliation.notification.VillagerNotifications;
 import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
 import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
@@ -171,7 +172,7 @@ public final class VillagerInteractionService {
         VillagerDialogueService.DialogueResult result = selectDialogueResult(context, dialogueOption, interactionState);
         DialogueReputationEffect reputationEffect = DialogueReputationService.apply(context, requestType, interactionState);
         playDialogueFeedback(level, villager, reputationEffect);
-        VillagerAmbientIndicatorService.onDialogueResponse(villager, requestType, reputationEffect);
+        VillagerAmbientIndicatorService.onDialogueResponse(level, villager, player, optionId, requestType, reputationEffect);
         String responseText = reputationEffect.responseOverride() == null ? result.text() : reputationEffect.responseOverride();
         VillagerInteractionTracker.rememberDialogue(level, villager, player, requestType, result.lineId());
         sendDialogueReputation(player, villager, level, requestType, reputationEffect);
@@ -337,8 +338,13 @@ public final class VillagerInteractionService {
                 ? VillagerReputationNoticeKind.GIFT_DISLIKED
                 : reputationValue > 0 ? VillagerReputationNoticeKind.GIFT_LIKED : VillagerReputationNoticeKind.GIFT_NEUTRAL;
         String reaction = reputationValue < 0 ? "Disliked gift" : reputationValue > 0 ? "Liked gift" : "Accepted gift";
-        VillagerReputationNetworking.sendNotice(
+        String trigger = reputationValue < 0 ? "gift.disliked" : reputationValue > 0 ? "gift.liked" : "gift.neutral";
+        VillagerNotifications.sendHud(
                 player,
+                player.serverLevel(),
+                villager,
+                trigger,
+                VillagerNotifications.replacements("item", itemName(giftedStack), "villager", displayName(villager)),
                 reaction + ": " + itemName(giftedStack),
                 kind
         );
@@ -599,8 +605,12 @@ public final class VillagerInteractionService {
         if (stack.isEmpty()) {
             return;
         }
-        VillagerReputationNetworking.sendNotice(
+        VillagerNotifications.sendHud(
                 player,
+                player.serverLevel(),
+                villager,
+                "gift.received_item",
+                VillagerNotifications.replacements("item", itemName(stack), "villager", displayName(villager)),
                 "Received item: " + itemName(stack),
                 VillagerReputationNoticeKind.RECEIVED_ITEM
         );
@@ -633,8 +643,12 @@ public final class VillagerInteractionService {
         return stack.getCount() > 1 ? stack.getCount() + "x " + name : name;
     }
 
+    private static String displayName(Villager villager) {
+        return VillagerPresetNameRegistry.resolveDisplayName(villager).getString();
+    }
+
     private static String villagerSpeakerLabel(Villager villager) {
-        String resolvedName = VillagerPresetNameRegistry.resolveDisplayName(villager).getString();
+        String resolvedName = displayName(villager);
         if (villager.isBaby()) {
             return "Child " + resolvedName;
         }

@@ -2,6 +2,9 @@ package com.jvn.villagerretaliation.reputation;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
+import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
+import com.jvn.villagerretaliation.notification.ResolvedVillagerNotification;
+import com.jvn.villagerretaliation.notification.VillagerNotifications;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import java.util.LinkedHashMap;
@@ -20,7 +23,7 @@ import net.minecraft.world.entity.player.Player;
 
 public final class VillagerReputationManager {
     private static final long DAY_TICKS = 24000L;
-    private static final Map<UUID, Map<String, Integer>> PENDING_TIER_MESSAGES = new LinkedHashMap<>();
+    private static final Map<UUID, Map<ResolvedVillagerNotification, Integer>> PENDING_TIER_MESSAGES = new LinkedHashMap<>();
 
     private VillagerReputationManager() {
     }
@@ -216,16 +219,42 @@ public final class VillagerReputationManager {
             return;
         }
 
-        notifyTierChange(player, resolveTierChangeMessage(villager, previousLevel, newLevel));
+        notifyTierChange(player, resolveTierChangeNotification(level, villager, player, previousLevel, newLevel));
         spawnTierChangeParticles(level, villager, previousLevel, newLevel);
         if (player instanceof ServerPlayer serverPlayer) {
             VillagerReputationAdvancements.onReputationTierChanged(level, villager, serverPlayer, previousLevel, newLevel);
         }
     }
 
-    private static void notifyTierChange(Player player, String message) {
+    private static void notifyTierChange(Player player, ResolvedVillagerNotification notification) {
         PENDING_TIER_MESSAGES.computeIfAbsent(player.getUUID(), ignored -> new LinkedHashMap<>())
-                .merge(message, 1, Integer::sum);
+                .merge(notification, 1, Integer::sum);
+    }
+
+    private static ResolvedVillagerNotification resolveTierChangeNotification(
+            ServerLevel level,
+            AbstractVillager villager,
+            Player player,
+            VillagerReputationLevel previousLevel,
+            VillagerReputationLevel newLevel) {
+        String direction = newLevel.isMoreTrustedThan(previousLevel) ? "improved" : "worsened";
+        String trigger = "reputation.tier." + newLevel.name().toLowerCase(java.util.Locale.ROOT) + "." + direction;
+        String name = VillagerPresetNameRegistry.resolveDisplayName(villager).getString();
+        return VillagerNotifications.resolve(
+                level,
+                villager,
+                player,
+                trigger,
+                VillagerNotifications.replacements(
+                        "villager", name,
+                        "villager_possessive", toPossessive(name),
+                        "villager_kind", villager instanceof WanderingTrader ? "wandering trader" : "villager",
+                        "previous_level", previousLevel.name().toLowerCase(java.util.Locale.ROOT),
+                        "new_level", newLevel.name().toLowerCase(java.util.Locale.ROOT)
+                ),
+                resolveTierChangeMessage(villager, previousLevel, newLevel),
+                VillagerReputationNoticeKind.DEFAULT
+        );
     }
 
     private static String resolveTierChangeMessage(AbstractVillager villager, VillagerReputationLevel previousLevel, VillagerReputationLevel newLevel) {
@@ -260,18 +289,25 @@ public final class VillagerReputationManager {
             return;
         }
 
-        Map<UUID, Map<String, Integer>> pendingMessages = new LinkedHashMap<>(PENDING_TIER_MESSAGES);
+        Map<UUID, Map<ResolvedVillagerNotification, Integer>> pendingMessages = new LinkedHashMap<>(PENDING_TIER_MESSAGES);
         PENDING_TIER_MESSAGES.clear();
-        for (Map.Entry<UUID, Map<String, Integer>> playerEntry : pendingMessages.entrySet()) {
+        for (Map.Entry<UUID, Map<ResolvedVillagerNotification, Integer>> playerEntry : pendingMessages.entrySet()) {
             ServerPlayer player = server.getPlayerList().getPlayer(playerEntry.getKey());
             if (player == null) {
                 continue;
             }
-            for (Map.Entry<String, Integer> messageEntry : playerEntry.getValue().entrySet()) {
-                String message = messageEntry.getValue() > 1
-                        ? messageEntry.getKey() + " x" + messageEntry.getValue()
-                        : messageEntry.getKey();
-                VillagerReputationNetworking.sendTierNotice(player, message);
+            for (Map.Entry<ResolvedVillagerNotification, Integer> messageEntry : playerEntry.getValue().entrySet()) {
+                ResolvedVillagerNotification notification = messageEntry.getKey();
+                if (messageEntry.getValue() > 1) {
+                    notification = new ResolvedVillagerNotification(
+                            notification.text() + " x" + messageEntry.getValue(),
+                            notification.textColor(),
+                            notification.chatColor(),
+                            notification.noticeKind(),
+                            notification.worldTextKind()
+                    );
+                }
+                VillagerReputationNetworking.sendNotice(player, notification);
             }
         }
     }
