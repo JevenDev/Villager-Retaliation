@@ -116,7 +116,7 @@ public final class VillagerInteractionClientHandler {
         int accentColor = villagerChatAccentColor(minecraft, entityId);
         if (shouldStartVillagerChatGroup(entityId, resolvedSpeaker)) {
             currentChatGroupMessageIndex = 0;
-            addVillagerChatSeparator(minecraft, accentColor);
+            addVillagerChatSpeakerSeparator(minecraft, accentColor);
             addVillagerChatMessage(minecraft, formatVillagerChatHeader(resolvedSpeaker, accentColor), accentColor);
         }
         if (shouldSeparateVillagerChatMessage()) {
@@ -133,6 +133,12 @@ public final class VillagerInteractionClientHandler {
 
     private static void addVillagerChatSeparator(Minecraft minecraft, int accentColor) {
         if (VillagerRetaliationConfig.SEPARATE_VILLAGER_CHAT_MESSAGES.get()) {
+            addVillagerChatMessage(minecraft, Component.empty(), accentColor);
+        }
+    }
+
+    private static void addVillagerChatSpeakerSeparator(Minecraft minecraft, int accentColor) {
+        if (VillagerRetaliationConfig.SEPARATE_VILLAGER_CHAT_SPEAKERS.get()) {
             addVillagerChatMessage(minecraft, Component.empty(), accentColor);
         }
     }
