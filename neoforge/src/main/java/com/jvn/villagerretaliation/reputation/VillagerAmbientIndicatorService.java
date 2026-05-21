@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.reputation;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
 import com.jvn.villagerretaliation.dialogue.DialogueReputationEffect;
 import com.jvn.villagerretaliation.network.VillagerWorldTextIndicatorKind;
@@ -143,6 +144,40 @@ public final class VillagerAmbientIndicatorService {
         emit(level, villager, player, "trade.completed", VillagerWorldTextIndicatorKind.TRADE, text);
     }
 
+    public static void onConversationOpened(ServerLevel level, Villager villager, Player player) {
+        if (!canShowFriendlyConversationText(level, villager, player)) {
+            return;
+        }
+
+        DialogueContext.TimeOfDay timeOfDay = timeOfDay(level);
+        emit(
+                level,
+                villager,
+                player,
+                "conversation.opening." + timeTrigger(timeOfDay),
+                "conversation.opening",
+                VillagerWorldTextIndicatorKind.DIALOGUE,
+                randomGreeting(villager.getRandom(), timeOfDay)
+        );
+    }
+
+    public static void onConversationClosed(ServerLevel level, Villager villager, Player player) {
+        if (!canShowFriendlyConversationText(level, villager, player)) {
+            return;
+        }
+
+        DialogueContext.TimeOfDay timeOfDay = timeOfDay(level);
+        emit(
+                level,
+                villager,
+                player,
+                "conversation.closing." + timeTrigger(timeOfDay),
+                "conversation.closing",
+                VillagerWorldTextIndicatorKind.DIALOGUE,
+                randomGoodbye(villager.getRandom(), timeOfDay)
+        );
+    }
+
     public static void onDialogueResponse(
             ServerLevel level,
             Villager villager,
@@ -283,6 +318,52 @@ public final class VillagerAmbientIndicatorService {
             case FEARED -> random(random, "Stay back", "Please no", "Quiet now");
             default -> random(random, "Hm", "Traveler", "Passing by");
         };
+    }
+
+    private static String randomGreeting(RandomSource random, DialogueContext.TimeOfDay timeOfDay) {
+        String timeGreeting = switch (timeOfDay) {
+            case MORNING -> "Morning";
+            case AFTERNOON -> "Afternoon";
+            case EVENING -> "Evening";
+            case NIGHT -> "";
+        };
+        if (!timeGreeting.isBlank() && random.nextInt(100) < 35) {
+            return timeGreeting;
+        }
+        return randomFrom(random, "Hello", "Greetings", "Hey", "Hallo", "Hai", "Hi", "Heyo", "Sup", "Ciao");
+    }
+
+    private static String randomGoodbye(RandomSource random, DialogueContext.TimeOfDay timeOfDay) {
+        if (timeOfDay == DialogueContext.TimeOfDay.NIGHT && random.nextInt(100) < 45) {
+            return randomFrom(random, "Goodnight", "Night", "G'night");
+        }
+        return randomFrom(random, "Bye", "Cya", "Goodbye", "Later", "Peace");
+    }
+
+    private static boolean canShowFriendlyConversationText(ServerLevel level, AbstractVillager villager, Player player) {
+        if (player == null) {
+            return false;
+        }
+        return VillagerReputationManager.getReputationLevel(level, villager, player.getUUID()).trustRank()
+                >= VillagerReputationLevel.NEUTRAL.trustRank();
+    }
+
+    private static DialogueContext.TimeOfDay timeOfDay(ServerLevel level) {
+        long dayTime = level.getDayTime() % 24000L;
+        if (dayTime < 6000L) {
+            return DialogueContext.TimeOfDay.MORNING;
+        }
+        if (dayTime < 12000L) {
+            return DialogueContext.TimeOfDay.AFTERNOON;
+        }
+        if (dayTime < 14000L) {
+            return DialogueContext.TimeOfDay.EVENING;
+        }
+        return DialogueContext.TimeOfDay.NIGHT;
+    }
+
+    private static String timeTrigger(DialogueContext.TimeOfDay timeOfDay) {
+        return timeOfDay.name().toLowerCase(java.util.Locale.ROOT);
     }
 
     private static String randomSleepBreathing(RandomSource random) {

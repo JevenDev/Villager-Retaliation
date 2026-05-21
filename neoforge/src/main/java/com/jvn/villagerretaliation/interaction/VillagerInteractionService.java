@@ -138,6 +138,7 @@ public final class VillagerInteractionService {
                 giftKnowledge.likedGiftNames(),
                 giftKnowledge.dislikedGiftNames()
         ));
+        VillagerAmbientIndicatorService.onConversationOpened(level, villager, player);
         broadcastVillagerChat(level, villager, greetingText);
     }
 
@@ -388,6 +389,7 @@ public final class VillagerInteractionService {
                 reputation.level()
         ));
         PacketDistributor.sendToPlayer(player, new VillagerConversationEndedPayload(villager.getId(), goodbyeText));
+        VillagerAmbientIndicatorService.onConversationClosed(level, villager, player);
         broadcastVillagerChat(level, villager, goodbyeText);
         VillagerConversationService.endForPlayer(player, false);
     }
