@@ -94,6 +94,8 @@
   "villagerretaliation.configuration.debugOverlay.reputationDebugOverlayMaxDistance": "Reputation Debug Overlay Max Distance",
   "villagerretaliation.configuration.debugOverlay.reputationDebugOverlayShowTier": "Reputation Debug Overlay Show Tier",
   "villagerretaliation.configuration.debugOverlay.reputationDebugOverlayShowNumber": "Reputation Debug Overlay Show Number",
+  "villagerretaliation.configuration.debugOverlay.reputationDebugOverlayShowHealth": "Reputation Debug Overlay Show Health",
+  "villagerretaliation.configuration.debugOverlay.reputationDebugOverlayShowArmor": "Reputation Debug Overlay Show Armor",
   "villagerretaliation.configuration.debugOverlay.reputationDebugOverlayRequireAdvancedTooltips": "Reputation Debug Overlay Require Advanced Tooltips",
   "villagerretaliation.configuration.debugOverlay.reputationDebugOverlayOnlyWhenSneaking": "Reputation Debug Overlay Only When Sneaking",
   "villagerretaliation.configuration.combat.weaponsmithsFightBack": "Weaponsmiths Fight Back",

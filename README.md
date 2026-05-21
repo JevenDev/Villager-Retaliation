@@ -208,7 +208,7 @@ Pack creators can tune monster-defense behavior independently with `combat.villa
 
 There is an optional client-side debug overlay for testing reputation.
 
-When enabled, it can show the villager's reputation tier and/or exact reputation value above their head. It can be limited by distance, sneaking, or advanced tooltips.
+When enabled, it can show the villager's reputation tier and/or exact reputation value above their head. Optional health and armor lines can be shown under the reputation line. It can be limited by distance, sneaking, or advanced tooltips.
 
 This is disabled by default and is mainly intended for testing and balancing.
 

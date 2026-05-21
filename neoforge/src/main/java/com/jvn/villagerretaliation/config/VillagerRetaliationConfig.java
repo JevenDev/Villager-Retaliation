@@ -92,6 +92,8 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.DoubleValue REPUTATION_DEBUG_OVERLAY_MAX_DISTANCE;
     public static final ModConfigSpec.BooleanValue REPUTATION_DEBUG_OVERLAY_SHOW_TIER;
     public static final ModConfigSpec.BooleanValue REPUTATION_DEBUG_OVERLAY_SHOW_NUMBER;
+    public static final ModConfigSpec.BooleanValue REPUTATION_DEBUG_OVERLAY_SHOW_HEALTH;
+    public static final ModConfigSpec.BooleanValue REPUTATION_DEBUG_OVERLAY_SHOW_ARMOR;
     public static final ModConfigSpec.BooleanValue REPUTATION_DEBUG_OVERLAY_REQUIRE_ADVANCED_TOOLTIPS;
     public static final ModConfigSpec.BooleanValue REPUTATION_DEBUG_OVERLAY_ONLY_WHEN_SNEAKING;
 
@@ -418,6 +420,14 @@ public final class VillagerRetaliationConfig {
                 .comment("Shows the reputation number in the debug overlay.")
                 .translation("villagerretaliation.configuration.debugOverlay.reputationDebugOverlayShowNumber")
                 .define("reputationDebugOverlayShowNumber", true);
+        REPUTATION_DEBUG_OVERLAY_SHOW_HEALTH = BUILDER
+                .comment("Shows current and maximum health under the reputation debug overlay.")
+                .translation("villagerretaliation.configuration.debugOverlay.reputationDebugOverlayShowHealth")
+                .define("reputationDebugOverlayShowHealth", false);
+        REPUTATION_DEBUG_OVERLAY_SHOW_ARMOR = BUILDER
+                .comment("Shows the current armor value under the reputation debug overlay.")
+                .translation("villagerretaliation.configuration.debugOverlay.reputationDebugOverlayShowArmor")
+                .define("reputationDebugOverlayShowArmor", false);
         REPUTATION_DEBUG_OVERLAY_REQUIRE_ADVANCED_TOOLTIPS = BUILDER
                 .comment("Requires advanced tooltips (F3+H) for the reputation debug overlay.")
                 .translation("villagerretaliation.configuration.debugOverlay.reputationDebugOverlayRequireAdvancedTooltips")

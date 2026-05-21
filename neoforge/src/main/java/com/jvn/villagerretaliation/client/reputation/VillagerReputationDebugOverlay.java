@@ -2,6 +2,9 @@ package com.jvn.villagerretaliation.client.reputation;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.mojang.blaze3d.vertex.PoseStack;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -43,8 +46,8 @@ public final class VillagerReputationDebugOverlay {
         }
 
         VillagerReputationClientCache.get(villager.getUUID(), villager.getId())
-                .map(VillagerReputationDebugOverlay::format)
-                .ifPresent(text -> renderOverlay(event, villager, text));
+                .map(entry -> format(villager, entry))
+                .ifPresent(lines -> renderOverlay(event, villager, lines));
     }
 
     public static void onClientTick(net.neoforged.neoforge.client.event.ClientTickEvent.Post event) {
@@ -55,24 +58,31 @@ public final class VillagerReputationDebugOverlay {
         VillagerReputationClientCache.clear();
     }
 
-    private static String format(VillagerReputationClientCache.DisplayEntry entry) {
+    private static List<String> format(AbstractVillager villager, VillagerReputationClientCache.DisplayEntry entry) {
+        List<String> lines = new ArrayList<>();
         boolean showNumber = VillagerRetaliationConfig.REPUTATION_DEBUG_OVERLAY_SHOW_NUMBER.get();
         boolean showTier = VillagerRetaliationConfig.REPUTATION_DEBUG_OVERLAY_SHOW_TIER.get();
         if (showNumber && showTier) {
-            return "Reputation: " + entry.reputation() + " (" + entry.level().name() + ")";
+            lines.add("Reputation: " + entry.reputation() + " (" + entry.level().name() + ")");
+        } else if (showNumber) {
+            lines.add("Reputation: " + entry.reputation());
+        } else if (showTier) {
+            lines.add(entry.level().name());
         }
-        if (showNumber) {
-            return "Reputation: " + entry.reputation();
+
+        if (VillagerRetaliationConfig.REPUTATION_DEBUG_OVERLAY_SHOW_HEALTH.get()) {
+            lines.add(String.format(Locale.ROOT, "Health: %.1f / %.1f", villager.getHealth(), villager.getMaxHealth()));
         }
-        if (showTier) {
-            return entry.level().name();
+        if (VillagerRetaliationConfig.REPUTATION_DEBUG_OVERLAY_SHOW_ARMOR.get()) {
+            lines.add("Armor: " + villager.getArmorValue());
         }
-        return "";
+
+        return lines;
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private static void renderOverlay(RenderNameTagEvent event, AbstractVillager villager, String text) {
-        if (text.isEmpty()) {
+    private static void renderOverlay(RenderNameTagEvent event, AbstractVillager villager, List<String> lines) {
+        if (lines.isEmpty()) {
             return;
         }
 
@@ -92,14 +102,18 @@ public final class VillagerReputationDebugOverlay {
 
         Matrix4f pose = poseStack.last().pose();
         Font font = renderer.getFont();
-        Component component = Component.literal(text);
-        float x = -font.width(component) / 2.0F;
         int background = ((int) (Minecraft.getInstance().options.getBackgroundOpacity(0.25F) * 255.0F)) << 24;
         boolean seeThrough = !villager.isDiscrete();
-        font.drawInBatch(component, x, 0.0F, 0xFFDDDDDD, false, pose, bufferSource,
-                seeThrough ? Font.DisplayMode.SEE_THROUGH : Font.DisplayMode.NORMAL, background, event.getPackedLight());
-        if (seeThrough) {
-            font.drawInBatch(component, x, 0.0F, 0xFFFFFFFF, false, pose, bufferSource, Font.DisplayMode.NORMAL, 0, event.getPackedLight());
+        int lineHeight = font.lineHeight + 1;
+        for (int index = 0; index < lines.size(); index++) {
+            Component component = Component.literal(lines.get(index));
+            float x = -font.width(component) / 2.0F;
+            float y = index * lineHeight;
+            font.drawInBatch(component, x, y, 0xFFDDDDDD, false, pose, bufferSource,
+                    seeThrough ? Font.DisplayMode.SEE_THROUGH : Font.DisplayMode.NORMAL, background, event.getPackedLight());
+            if (seeThrough) {
+                font.drawInBatch(component, x, y, 0xFFFFFFFF, false, pose, bufferSource, Font.DisplayMode.NORMAL, 0, event.getPackedLight());
+            }
         }
         poseStack.popPose();
     }
