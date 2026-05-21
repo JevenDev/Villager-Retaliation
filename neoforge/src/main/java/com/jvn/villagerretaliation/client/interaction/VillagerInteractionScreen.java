@@ -161,7 +161,7 @@ public class VillagerInteractionScreen extends Screen {
         this.knownDislikedGiftNames.clear();
         this.knownDislikedGiftNames.addAll(knownDislikedGiftNames);
         if (this.page == DialoguePage.TALK) {
-            rebuildOptions();
+            rebuildOptionsKeepingListPosition();
         }
     }
 
@@ -291,6 +291,21 @@ public class VillagerInteractionScreen extends Screen {
         this.selectedOption = this.options.isEmpty() ? -1 : 0;
         this.optionScroll = 0.0F;
         this.targetOptionScroll = 0.0F;
+        ensureSelectedVisible();
+    }
+
+    private void rebuildOptionsKeepingListPosition() {
+        int previousSelectedOption = this.selectedOption;
+        float previousOptionScroll = this.optionScroll;
+        float previousTargetOptionScroll = this.targetOptionScroll;
+
+        rebuildOptions();
+
+        if (!this.options.isEmpty()) {
+            this.selectedOption = Mth.clamp(previousSelectedOption, 0, this.options.size() - 1);
+        }
+        this.optionScroll = Mth.clamp(previousOptionScroll, 0.0F, maxOptionScroll());
+        this.targetOptionScroll = Mth.clamp(previousTargetOptionScroll, 0.0F, maxOptionScroll());
         ensureSelectedVisible();
     }
 
