@@ -123,75 +123,288 @@
     }
   ],
   "messages": [
-    { "key": "interaction.follow_stay", "text": "I'll stay here." },
-    { "key": "interaction.follow_start", "text": "All right. I'll follow you." },
-    { "key": "interaction.follow_betrayal", "text": "I trusted you." },
-    { "key": "interaction.follow_betrayal", "text": "You asked me to follow you, not fear you." },
-    { "key": "interaction.refuse_despised", "text": "I'm done talking. Stay away." },
-    { "key": "interaction.refuse_angry", "text": "I'm too angry to talk." },
-    { "key": "interaction.busy", "text": "I'm busy right now." },
-    { "key": "interaction.unavailable", "text": "I'm no longer available." },
-    { "key": "interaction.conversation_ended", "text": "The conversation has ended." },
-    { "key": "interaction.unknown_dialogue_option", "text": "I am not sure how to answer that." },
-    { "key": "interaction.trade_unavailable", "text": "I cannot trade right now." },
-    { "key": "interaction.refuse_trade", "text": "I refuse to trade with you." },
-    { "key": "interaction.inventory_unavailable", "text": "I cannot show you that right now." },
-    { "key": "interaction.not_trusted_enough", "text": "I don't know you well enough for that." },
-    { "key": "interaction.gift_unavailable", "text": "I cannot accept gifts right now." },
-    { "key": "interaction.keep_distance", "text": "Keep your distance." },
-    { "key": "interaction.child_refuse_gift", "text": "I should ask a grown-up before taking that.", "show_for_adults": false },
-    { "key": "interaction.gift_invalid", "text": "I cannot accept that." },
-    { "key": "interaction.gift_empty_slot", "text": "There is nothing there." },
-    { "key": "interaction.recruit_unavailable", "text": "I cannot help right now." },
-    { "key": "interaction.hire_unavailable", "text": "I cannot be hired yet." },
-    { "key": "interaction.child_refuse_trade", "text": "I do not know how to trade yet.", "show_for_adults": false },
-    { "key": "interaction.no_trades", "text": "I have no trades available." },
-    { "key": "dialogue.fallback", "text": "They stare at you, unsure what to say." },
-    { "key": "sleep.disturbance", "text": "Mmph... let me sleep." },
-    { "key": "sleep.disturbance", "text": "Come back when the sun is up." },
-    { "key": "sleep.repeated_disturbance", "text": "I already woke up once for you tonight." },
-    { "key": "sleep.repeated_disturbance", "text": "You've bothered me enough for one night." },
-    { "key": "sleep.broken_bed", "text": "My bed! What is wrong with you?" },
-    { "key": "sleep.broken_bed", "text": "That was my bed. I will remember this." },
-    { "key": "reputation.insult_child", "text": "That was mean. I am telling someone.", "show_for_adults": false },
-    { "key": "reputation.positive", "text": "You know, you're not so bad to talk to." },
-    { "key": "reputation.positive", "text": "It's good to speak with someone who listens." },
-    { "key": "reputation.angry", "text": "I should have known better than to speak with you." },
-    { "key": "reputation.angry", "text": "Careful. Villages remember cruelty." },
-    { "key": "reputation.repeated_question", "text": "You've asked enough questions for one day." },
-    { "key": "reputation.repeated_question", "text": "I have work to do. Ask something else." },
-    { "key": "reputation.repeated_dialogue", "text": "Enough of that for now." },
-    { "key": "reputation.repeated_dialogue", "text": "Try something else. My patience has limits." },
-    { "key": "reputation.joke_missed", "text": "Hmph. Maybe don't quit your day job." },
-    { "key": "gift_memory.direct.loved", "text": "Still thinking about the {gift_item} you gave me. That was a real kindness." },
-    { "key": "gift_memory.direct.liked", "text": "That {gift_item} you gave me was useful. Thank you again." },
-    { "key": "gift_memory.direct.neutral", "text": "I am still deciding what to do with that {gift_item} you gave me." },
-    { "key": "gift_memory.direct.disliked", "text": "I remember that {gift_item}. Not fondly." },
-    { "key": "gift_memory.direct.hated", "text": "I have not forgotten the {gift_item} you handed me." },
-    { "key": "gift_memory.village.loved", "text": "I heard you gave {villager_name} {gift_item}. That was kind of you." },
-    { "key": "gift_memory.village.liked", "text": "{villager_name} seemed pleased with that {gift_item}." },
-    { "key": "gift_memory.village.neutral", "text": "I heard about the {gift_item} you gave {villager_name}. Interesting choice." },
-    { "key": "gift_memory.village.disliked", "text": "{villager_name} did not sound pleased about that {gift_item}." },
-    { "key": "gift_memory.village.hated", "text": "I heard what you gave {villager_name}. Do not bring that sort of thing here." },
-    { "key": "gift_response.global.loved", "text": "This is wonderful. You chose like someone who knows me." },
-    { "key": "gift_response.global.liked", "text": "{gift_item} is a welcome gift." },
-    { "key": "gift_response.global.neutral", "text": "A curious gift. I will think about it." },
-    { "key": "gift_response.global.disliked", "text": "I do not have much use for {gift_item}." },
-    { "key": "gift_response.global.hated", "text": "That is an insult, not a gift." },
-    { "key": "gift_response.profession.loved", "text": "{gift_item}? For my work? That is thoughtful." },
-    { "key": "gift_response.profession.liked", "text": "I can make good use of {gift_item}." },
-    { "key": "gift_response.profession.neutral", "text": "Thank you. I suppose this has its uses." },
-    { "key": "gift_response.profession.disliked", "text": "{gift_item} is a poor match for my trade." },
-    { "key": "gift_response.profession.hated", "text": "Do not bring danger and call it a present." },
-    { "key": "gift_given", "text": "Here. Take {gift_item}. You have earned a little kindness back.", "weight": 18 },
-    { "key": "gift_given", "text": "I wanted you to have {gift_item}. Good neighbors share what they can.", "weight": 18 },
-    { "key": "gift_given", "text": "{gift_item} should serve you well. Consider it thanks from this village.", "weight": 18 },
-    { "key": "story_hint.biome.vague", "text": "I caught wind of different land {vague_direction}. Could be worth a walk." },
-    { "key": "story_hint.biome.named", "text": "I caught wind of {target_article} {vague_direction}." },
-    { "key": "story_hint.biome.precise", "text": "I caught wind of {target_article} about {distance} {direction}." },
-    { "key": "story_hint.structure.rumor", "text": "I keep hearing stories about {target_article} somewhere {vague_direction}{vertical}." },
-    { "key": "story_hint.structure.precise", "text": "I keep hearing about {target_article} around {distance} {direction}{vertical}." },
-    { "key": "story_hint.map", "text": "Here. I marked {target_article} on this map. It should sit about {distance} {direction}{vertical}." }
+    {
+      "key": "interaction.follow_stay",
+      "text": "I'll stay here."
+    },
+    {
+      "key": "interaction.follow_start",
+      "text": "All right. I'll follow you."
+    },
+    {
+      "key": "interaction.follow_betrayal",
+      "text": "I trusted you."
+    },
+    {
+      "key": "interaction.follow_betrayal",
+      "text": "You asked me to follow you, not fear you."
+    },
+    {
+      "key": "interaction.refuse_despised",
+      "text": "I'm done talking. Stay away."
+    },
+    {
+      "key": "interaction.refuse_angry",
+      "text": "I'm too angry to talk."
+    },
+    {
+      "key": "interaction.busy",
+      "text": "I'm busy right now."
+    },
+    {
+      "key": "interaction.unavailable",
+      "text": "I'm no longer available."
+    },
+    {
+      "key": "interaction.conversation_ended",
+      "text": "The conversation has ended."
+    },
+    {
+      "key": "interaction.unknown_dialogue_option",
+      "text": "I am not sure how to answer that."
+    },
+    {
+      "key": "interaction.trade_unavailable",
+      "text": "I cannot trade right now."
+    },
+    {
+      "key": "interaction.refuse_trade",
+      "text": "I refuse to trade with you."
+    },
+    {
+      "key": "interaction.inventory_unavailable",
+      "text": "I cannot show you that right now."
+    },
+    {
+      "key": "interaction.not_trusted_enough",
+      "text": "I don't know you well enough for that."
+    },
+    {
+      "key": "interaction.gift_unavailable",
+      "text": "I cannot accept gifts right now."
+    },
+    {
+      "key": "interaction.keep_distance",
+      "text": "Keep your distance."
+    },
+    {
+      "key": "interaction.child_refuse_gift",
+      "text": "I should ask a grown-up before taking that.",
+      "show_for_adults": false
+    },
+    {
+      "key": "interaction.gift_invalid",
+      "text": "I cannot accept that."
+    },
+    {
+      "key": "interaction.gift_empty_slot",
+      "text": "There is nothing there."
+    },
+    {
+      "key": "interaction.recruit_unavailable",
+      "text": "I cannot help right now."
+    },
+    {
+      "key": "interaction.hire_unavailable",
+      "text": "I cannot be hired yet."
+    },
+    {
+      "key": "interaction.child_refuse_trade",
+      "text": "I do not know how to trade yet.",
+      "show_for_adults": false
+    },
+    {
+      "key": "interaction.no_trades",
+      "text": "I have no trades available."
+    },
+    {
+      "key": "dialogue.fallback",
+      "text": "They stare at you, unsure what to say."
+    },
+    {
+      "key": "sleep.disturbance",
+      "text": "Mmph... let me sleep."
+    },
+    {
+      "key": "sleep.disturbance",
+      "text": "Come back when the sun is up."
+    },
+    {
+      "key": "sleep.repeated_disturbance",
+      "text": "I already woke up once for you tonight."
+    },
+    {
+      "key": "sleep.repeated_disturbance",
+      "text": "You've bothered me enough for one night."
+    },
+    {
+      "key": "sleep.broken_bed",
+      "text": "My bed! What is wrong with you?"
+    },
+    {
+      "key": "sleep.broken_bed",
+      "text": "That was my bed. I will remember this."
+    },
+    {
+      "key": "reputation.insult_child",
+      "text": "That was mean. I am telling someone.",
+      "show_for_adults": false
+    },
+    {
+      "key": "reputation.positive",
+      "text": "You know, you're not so bad to talk to."
+    },
+    {
+      "key": "reputation.positive",
+      "text": "It's good to speak with someone who listens."
+    },
+    {
+      "key": "reputation.angry",
+      "text": "I should have known better than to speak with you."
+    },
+    {
+      "key": "reputation.angry",
+      "text": "Careful. Villages remember cruelty."
+    },
+    {
+      "key": "reputation.repeated_question",
+      "text": "You've asked enough questions for one day."
+    },
+    {
+      "key": "reputation.repeated_question",
+      "text": "I have work to do. Ask something else."
+    },
+    {
+      "key": "reputation.repeated_dialogue",
+      "text": "Enough of that for now."
+    },
+    {
+      "key": "reputation.repeated_dialogue",
+      "text": "Try something else. My patience has limits."
+    },
+    {
+      "key": "reputation.joke_missed",
+      "text": "Hmph. Maybe don't quit your day job."
+    },
+    {
+      "key": "gift_memory.direct.loved",
+      "text": "Still thinking about the {gift_item} you gave me. That was a real kindness."
+    },
+    {
+      "key": "gift_memory.direct.liked",
+      "text": "That {gift_item} you gave me was useful. Thank you again."
+    },
+    {
+      "key": "gift_memory.direct.neutral",
+      "text": "I am still deciding what to do with that {gift_item} you gave me."
+    },
+    {
+      "key": "gift_memory.direct.disliked",
+      "text": "I remember that {gift_item}. Not fondly."
+    },
+    {
+      "key": "gift_memory.direct.hated",
+      "text": "I have not forgotten the {gift_item} you handed me."
+    },
+    {
+      "key": "gift_memory.village.loved",
+      "text": "I heard you gave {villager_name} {gift_item}. That was kind of you."
+    },
+    {
+      "key": "gift_memory.village.liked",
+      "text": "{villager_name} seemed pleased with that {gift_item}."
+    },
+    {
+      "key": "gift_memory.village.neutral",
+      "text": "I heard about the {gift_item} you gave {villager_name}. Interesting choice."
+    },
+    {
+      "key": "gift_memory.village.disliked",
+      "text": "{villager_name} did not sound pleased about that {gift_item}."
+    },
+    {
+      "key": "gift_memory.village.hated",
+      "text": "I heard what you gave {villager_name}. Do not bring that sort of thing here."
+    },
+    {
+      "key": "gift_response.global.loved",
+      "text": "This is wonderful. You chose like someone who knows me."
+    },
+    {
+      "key": "gift_response.global.liked",
+      "text": "{gift_item} is a welcome gift."
+    },
+    {
+      "key": "gift_response.global.neutral",
+      "text": "A curious gift. I will think about it."
+    },
+    {
+      "key": "gift_response.global.disliked",
+      "text": "I do not have much use for {gift_item}."
+    },
+    {
+      "key": "gift_response.global.hated",
+      "text": "That is an insult, not a gift."
+    },
+    {
+      "key": "gift_response.profession.loved",
+      "text": "{gift_item}? For my work? That is thoughtful."
+    },
+    {
+      "key": "gift_response.profession.liked",
+      "text": "I can make good use of {gift_item}."
+    },
+    {
+      "key": "gift_response.profession.neutral",
+      "text": "Thank you. I suppose this has its uses."
+    },
+    {
+      "key": "gift_response.profession.disliked",
+      "text": "{gift_item} is a poor match for my trade."
+    },
+    {
+      "key": "gift_response.profession.hated",
+      "text": "Do not bring danger and call it a present."
+    },
+    {
+      "key": "gift_given",
+      "text": "Here. Take {gift_item}. You have earned a little kindness back.",
+      "weight": 18
+    },
+    {
+      "key": "gift_given",
+      "text": "I wanted you to have {gift_item}. Good neighbors share what they can.",
+      "weight": 18
+    },
+    {
+      "key": "gift_given",
+      "text": "{gift_item} should serve you well. Consider it thanks from this village.",
+      "weight": 18
+    },
+    {
+      "key": "story_hint.biome.vague",
+      "text": "I caught wind of different land {vague_direction}. Could be worth a walk."
+    },
+    {
+      "key": "story_hint.biome.named",
+      "text": "I caught wind of {target_article} {vague_direction}."
+    },
+    {
+      "key": "story_hint.biome.precise",
+      "text": "I caught wind of {target_article} about {distance} {direction}."
+    },
+    {
+      "key": "story_hint.structure.rumor",
+      "text": "I keep hearing stories about {target_article} somewhere {vague_direction}{vertical}."
+    },
+    {
+      "key": "story_hint.structure.precise",
+      "text": "I keep hearing about {target_article} around {distance} {direction}{vertical}."
+    },
+    {
+      "key": "story_hint.map",
+      "text": "Here. I marked {target_article} on this map. It should sit about {distance} {direction}{vertical}."
+    }
   ],
   "openings": [
     {
@@ -331,7 +544,12 @@
       "type": "village_defense_report",
       "option": "village_defense_report",
       "text": "You helped. I know that. I am still hearing the horns in my head.",
-      "dispositions": ["cautious", "rude", "hostile", "fearful"],
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
       "show_for_babies": false,
       "weight": 38
     },
@@ -340,7 +558,12 @@
       "type": "village_defense_report",
       "option": "village_defense_report",
       "text": "Maybe you saved us. Maybe I need another day before I can say that without shaking.",
-      "dispositions": ["cautious", "rude", "hostile", "fearful"],
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
       "show_for_babies": false,
       "weight": 34
     },
@@ -348,28 +571,331 @@
       "id": "village_defense_armorer_respect",
       "type": "village_defense_report",
       "option": "village_defense_report",
-      "professions": ["armorer"],
+      "professions": [
+        "armorer"
+      ],
       "text": "You stood where armor matters most. I respect that more than clean talk.",
       "show_for_babies": false,
       "weight": 42
     },
     {
+      "id": "village_defense_armorer_gate",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "armorer"
+      ],
+      "text": "You held when the gate needed holding. Armor is easier to trust after seeing that.",
+      "show_for_babies": false,
+      "weight": 40
+    },
+    {
+      "id": "village_defense_butcher_smoke",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "butcher"
+      ],
+      "text": "I know the smell of fear and smoke. You pushed both back from our doors.",
+      "show_for_babies": false,
+      "weight": 40
+    },
+    {
+      "id": "village_defense_butcher_cleaver",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "butcher"
+      ],
+      "text": "There are clean cuts and ugly fights. That was ugly, but you helped finish it.",
+      "show_for_babies": false,
+      "weight": 38
+    },
+    {
+      "id": "village_defense_cartographer_marked",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "cartographer"
+      ],
+      "text": "I marked where the raiders came through. I also marked where you turned them back.",
+      "show_for_babies": false,
+      "weight": 40
+    },
+    {
+      "id": "village_defense_cartographer_border",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "cartographer"
+      ],
+      "text": "Maps make borders look calm. You reminded me borders have to be defended.",
+      "show_for_babies": false,
+      "weight": 38
+    },
+    {
+      "id": "village_defense_cleric_prayer",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "cleric"
+      ],
+      "text": "I prayed for courage in the village. It seems some of it found you.",
+      "show_for_babies": false,
+      "weight": 40
+    },
+    {
+      "id": "village_defense_cleric_spared",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "cleric"
+      ],
+      "text": "Every life still here is a quieter bell than the one that rang. Thank you.",
+      "show_for_babies": false,
+      "weight": 38
+    },
+    {
+      "id": "village_defense_farmer_rows",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "farmer"
+      ],
+      "text": "They trampled the rows, but not the village. You had a hand in that.",
+      "show_for_babies": false,
+      "weight": 40
+    },
+    {
+      "id": "village_defense_farmer_harvest",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "farmer"
+      ],
+      "text": "We will still have a harvest because there are still hands to gather it.",
+      "show_for_babies": false,
+      "weight": 38
+    },
+    {
+      "id": "village_defense_fisherman_nets",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "fisherman"
+      ],
+      "text": "When trouble came in like a bad tide, you helped drag it back out.",
+      "show_for_babies": false,
+      "weight": 40
+    },
+    {
+      "id": "village_defense_fisherman_harbor",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "fisherman"
+      ],
+      "text": "A village is a harbor in its own way. You kept ours from burning.",
+      "show_for_babies": false,
+      "weight": 38
+    },
+    {
+      "id": "village_defense_fletcher_arrows",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "fletcher"
+      ],
+      "text": "I heard arrows, axes, shouting. Then I saw you still standing for us.",
+      "show_for_babies": false,
+      "weight": 40
+    },
+    {
+      "id": "village_defense_fletcher_aim",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "fletcher"
+      ],
+      "text": "Good aim is choosing what matters under pressure. You chose the village.",
+      "show_for_babies": false,
+      "weight": 38
+    },
+    {
+      "id": "village_defense_leatherworker_straps",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "leatherworker"
+      ],
+      "text": "A few straps snapped and a few nerves did too, but the village held.",
+      "show_for_babies": false,
+      "weight": 40
+    },
+    {
+      "id": "village_defense_leatherworker_scars",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "leatherworker"
+      ],
+      "text": "Leather remembers every cut. So do people. This one may be remembered kindly.",
+      "show_for_babies": false,
+      "weight": 38
+    },
+    {
+      "id": "village_defense_librarian_record",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "librarian"
+      ],
+      "text": "I intend to write this down accurately. You stood with us when it mattered.",
+      "show_for_babies": false,
+      "weight": 40
+    },
+    {
+      "id": "village_defense_librarian_margin",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "librarian"
+      ],
+      "text": "Some deeds deserve more than a margin note. Yours may be one of them.",
+      "show_for_babies": false,
+      "weight": 38
+    },
+    {
+      "id": "village_defense_mason_wall",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "mason"
+      ],
+      "text": "Walls help, but walls do not swing back. You did.",
+      "show_for_babies": false,
+      "weight": 40
+    },
+    {
+      "id": "village_defense_mason_foundation",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "mason"
+      ],
+      "text": "A village stands on more than stone. Yesterday, it stood on nerve.",
+      "show_for_babies": false,
+      "weight": 38
+    },
+    {
+      "id": "village_defense_nitwit_ducked",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "nitwit"
+      ],
+      "text": "I ducked very professionally. You did the scarier part, which was nice.",
+      "show_for_babies": false,
+      "weight": 40
+    },
+    {
+      "id": "village_defense_nitwit_horn",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "nitwit"
+      ],
+      "text": "The horn went bwaa and everyone ran. You ran the useful direction.",
+      "show_for_babies": false,
+      "weight": 38
+    },
+    {
+      "id": "village_defense_shepherd_flock",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "shepherd"
+      ],
+      "text": "A frightened flock scatters. A frightened village nearly does too. You helped gather us.",
+      "show_for_babies": false,
+      "weight": 40
+    },
+    {
+      "id": "village_defense_shepherd_wool",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "shepherd"
+      ],
+      "text": "I can mend torn wool. Mending a village takes people who show up.",
+      "show_for_babies": false,
+      "weight": 38
+    },
+    {
       "id": "village_defense_toolsmith_respect",
       "type": "village_defense_report",
       "option": "village_defense_report",
-      "professions": ["toolsmith"],
+      "professions": [
+        "toolsmith"
+      ],
       "text": "Good hands under pressure are rare. Yours were useful when the village needed them.",
       "show_for_babies": false,
       "weight": 42
     },
     {
+      "id": "village_defense_toolsmith_useful",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "toolsmith"
+      ],
+      "text": "A tool proves itself under strain. So did you.",
+      "show_for_babies": false,
+      "weight": 40
+    },
+    {
+      "id": "village_defense_unemployed_place",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "unemployed"
+      ],
+      "text": "I am still finding my place here. You made sure there was a here to find it in.",
+      "show_for_babies": false,
+      "weight": 40
+    },
+    {
+      "id": "village_defense_unemployed_doors",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "unemployed"
+      ],
+      "text": "I had no station, no trade, just a door to hide behind. You kept that door standing.",
+      "show_for_babies": false,
+      "weight": 38
+    },
+    {
       "id": "village_defense_weaponsmith_respect",
       "type": "village_defense_report",
       "option": "village_defense_report",
-      "professions": ["weaponsmith"],
+      "professions": [
+        "weaponsmith"
+      ],
       "text": "A weapon means little without the nerve to use it at the gate. You had that nerve.",
       "show_for_babies": false,
       "weight": 44
+    },
+    {
+      "id": "village_defense_weaponsmith_edge",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "weaponsmith"
+      ],
+      "text": "You kept your edge when the village lost its breath. That deserves respect.",
+      "show_for_babies": false,
+      "weight": 40
     },
     {
       "id": "apology_global_not_forgotten",
@@ -390,7 +916,12 @@
       "type": "apology",
       "option": "apologize_for_harm",
       "text": "Words mend less than actions, but I will remember that you said them.",
-      "dispositions": ["cautious", "rude", "hostile", "fearful"],
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
       "weight": 34
     },
     {
@@ -398,7 +929,11 @@
       "type": "apology",
       "option": "apologize_for_harm",
       "text": "Thank you for saying it plainly. Do better by us, and this can pass.",
-      "dispositions": ["respectful", "friendly", "neutral"],
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral"
+      ],
       "weight": 34
     },
     {
@@ -413,37 +948,331 @@
       "id": "apology_armorer",
       "type": "apology",
       "option": "apologize_for_harm",
-      "professions": ["armorer"],
+      "professions": [
+        "armorer"
+      ],
       "text": "Fine. I know what can be repaired. I also know what keeps the dent.",
       "show_for_babies": false,
       "weight": 34
     },
     {
+      "id": "apology_armorer_straps",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "armorer"
+      ],
+      "text": "I will loosen the straps a little. Earn the rest with what you do next.",
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "apology_butcher_blunt",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "butcher"
+      ],
+      "text": "That was bluntly said. Good. Blunt is better than pretending nothing happened.",
+      "show_for_babies": false,
+      "weight": 34
+    },
+    {
+      "id": "apology_butcher_counter",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "butcher"
+      ],
+      "text": "I clean up messes for a living. This one is yours to clean properly.",
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "apology_cartographer_mark",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "cartographer"
+      ],
+      "text": "I can mark the apology. Whether the route changes is up to you.",
+      "show_for_babies": false,
+      "weight": 34
+    },
+    {
+      "id": "apology_cartographer_reroute",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "cartographer"
+      ],
+      "text": "Some paths can be corrected after a bad turn. Do not make me redraw this one twice.",
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
       "id": "apology_cleric",
       "type": "apology",
       "option": "apologize_for_harm",
-      "professions": ["cleric"],
+      "professions": [
+        "cleric"
+      ],
       "text": "Remorse is useful only if it changes the next choice. I hope yours does.",
       "show_for_babies": false,
       "weight": 34
     },
     {
+      "id": "apology_cleric_repair",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "cleric"
+      ],
+      "text": "Repentance is not a speech. It is a repair repeated until trust returns.",
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "apology_farmer_seed",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "farmer"
+      ],
+      "text": "An apology is a seed. It still needs watering, and I will be watching the crop.",
+      "show_for_babies": false,
+      "weight": 34
+    },
+    {
+      "id": "apology_farmer_fence",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "farmer"
+      ],
+      "text": "Break a fence and you mend it before night. Trust works much the same.",
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "apology_fisherman_line",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "fisherman"
+      ],
+      "text": "You cast trouble into the water. Fine. Now reel back something better.",
+      "show_for_babies": false,
+      "weight": 34
+    },
+    {
+      "id": "apology_fisherman_tide",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "fisherman"
+      ],
+      "text": "Bad tides pass. I will see whether you bring the same storm again.",
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "apology_fletcher_straight",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "fletcher"
+      ],
+      "text": "Straight words are worth more than crooked excuses. Keep them straight.",
+      "show_for_babies": false,
+      "weight": 34
+    },
+    {
+      "id": "apology_fletcher_miss",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "fletcher"
+      ],
+      "text": "You missed the mark badly. The apology lands closer. Do not waste it.",
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "apology_leatherworker_stitch",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "leatherworker"
+      ],
+      "text": "A clean stitch still leaves a seam. I accept the stitch. I remember the cut.",
+      "show_for_babies": false,
+      "weight": 34
+    },
+    {
+      "id": "apology_leatherworker_soften",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "leatherworker"
+      ],
+      "text": "Hard things can soften with work. Start there.",
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
       "id": "apology_librarian",
       "type": "apology",
       "option": "apologize_for_harm",
-      "professions": ["librarian"],
+      "professions": [
+        "librarian"
+      ],
       "text": "I will file that apology carefully. The follow-up is the part worth reading.",
       "show_for_babies": false,
       "weight": 34
     },
     {
+      "id": "apology_librarian_record",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "librarian"
+      ],
+      "text": "I will not erase the record. I may add this to it.",
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "apology_mason_crack",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "mason"
+      ],
+      "text": "Cracks spread if ignored. You noticed this one. Now prove you can patch it.",
+      "show_for_babies": false,
+      "weight": 34
+    },
+    {
+      "id": "apology_mason_mortar",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "mason"
+      ],
+      "text": "Mortar takes time to set. So does forgiveness.",
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "apology_nitwit_wobbly",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "nitwit"
+      ],
+      "text": "That sounded sorry. I am still standing over here for a bit.",
+      "show_for_babies": false,
+      "weight": 34
+    },
+    {
+      "id": "apology_nitwit_pocket",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "nitwit"
+      ],
+      "text": "I accept the apology, but I am keeping one pocket full of suspicion.",
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "apology_shepherd_count",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "shepherd"
+      ],
+      "text": "I count losses carefully. I can count an apology too, if it is real.",
+      "show_for_babies": false,
+      "weight": 34
+    },
+    {
+      "id": "apology_shepherd_wool",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "shepherd"
+      ],
+      "text": "Rough hands ruin good wool. Gentle choices from here, yes?",
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "apology_toolsmith_rework",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "toolsmith"
+      ],
+      "text": "A bent tool can be reworked, if the metal is worth saving. Show me yours is.",
+      "show_for_babies": false,
+      "weight": 34
+    },
+    {
+      "id": "apology_toolsmith_handle",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "toolsmith"
+      ],
+      "text": "Words are the handle. Actions are the head. I need both before I trust the tool.",
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "apology_unemployed_room",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "unemployed"
+      ],
+      "text": "I am trying to belong here. Please do not make that harder.",
+      "show_for_babies": false,
+      "weight": 34
+    },
+    {
+      "id": "apology_unemployed_start",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "unemployed"
+      ],
+      "text": "Fine. We can start again from here, but not from before.",
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
       "id": "apology_weaponsmith",
       "type": "apology",
       "option": "apologize_for_harm",
-      "professions": ["weaponsmith"],
+      "professions": [
+        "weaponsmith"
+      ],
       "text": "A weapon is honest about harm. People should try being that honest before causing it.",
       "show_for_babies": false,
       "weight": 34
+    },
+    {
+      "id": "apology_weaponsmith_sheath",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "weaponsmith"
+      ],
+      "text": "Good. Now keep your temper sheathed unless the village needs it drawn.",
+      "show_for_babies": false,
+      "weight": 32
     },
     {
       "id": "combat_survival_global_breath",
@@ -465,7 +1294,9 @@
       "id": "combat_survival_armorer",
       "type": "combat_survival_report",
       "option": "combat_survival_report",
-      "professions": ["armorer"],
+      "professions": [
+        "armorer"
+      ],
       "text": "A few new dents, no missing plates. That is a victory I can repair.",
       "show_for_babies": false,
       "weight": 34
@@ -474,7 +1305,9 @@
       "id": "combat_survival_butcher",
       "type": "combat_survival_report",
       "option": "combat_survival_report",
-      "professions": ["butcher"],
+      "professions": [
+        "butcher"
+      ],
       "text": "I have handled sharp nights before. This one nearly handled me back.",
       "show_for_babies": false,
       "weight": 34
@@ -483,7 +1316,9 @@
       "id": "combat_survival_cartographer",
       "type": "combat_survival_report",
       "option": "combat_survival_report",
-      "professions": ["cartographer"],
+      "professions": [
+        "cartographer"
+      ],
       "text": "I could draw the route back with my eyes closed. I would rather not walk it again tonight.",
       "show_for_babies": false,
       "weight": 34
@@ -492,7 +1327,9 @@
       "id": "combat_survival_cleric",
       "type": "combat_survival_report",
       "option": "combat_survival_report",
-      "professions": ["cleric"],
+      "professions": [
+        "cleric"
+      ],
       "text": "A little faith, a little medicine, and a very fast prayer. Yes, I made it back.",
       "show_for_babies": false,
       "weight": 34
@@ -501,7 +1338,9 @@
       "id": "combat_survival_farmer",
       "type": "combat_survival_report",
       "option": "combat_survival_report",
-      "professions": ["farmer"],
+      "professions": [
+        "farmer"
+      ],
       "text": "Fields teach patience. Fights teach exactly when patience has run out.",
       "show_for_babies": false,
       "weight": 34
@@ -510,7 +1349,9 @@
       "id": "combat_survival_fisherman",
       "type": "combat_survival_report",
       "option": "combat_survival_report",
-      "professions": ["fisherman"],
+      "professions": [
+        "fisherman"
+      ],
       "text": "I have pulled mean things from dark water. Tonight was louder, that is all.",
       "show_for_babies": false,
       "weight": 34
@@ -519,7 +1360,9 @@
       "id": "combat_survival_fletcher",
       "type": "combat_survival_report",
       "option": "combat_survival_report",
-      "professions": ["fletcher"],
+      "professions": [
+        "fletcher"
+      ],
       "text": "Lost two arrows, kept my nerve. I will call that a fair trade.",
       "show_for_babies": false,
       "weight": 34
@@ -528,7 +1371,9 @@
       "id": "combat_survival_leatherworker",
       "type": "combat_survival_report",
       "option": "combat_survival_report",
-      "professions": ["leatherworker"],
+      "professions": [
+        "leatherworker"
+      ],
       "text": "Scratches, scuffs, and one strap I do not trust anymore. Nothing I cannot mend.",
       "show_for_babies": false,
       "weight": 34
@@ -537,7 +1382,9 @@
       "id": "combat_survival_librarian",
       "type": "combat_survival_report",
       "option": "combat_survival_report",
-      "professions": ["librarian"],
+      "professions": [
+        "librarian"
+      ],
       "text": "I prefer danger in books. Books usually stay on the correct side of the shelf.",
       "show_for_babies": false,
       "weight": 34
@@ -546,7 +1393,9 @@
       "id": "combat_survival_mason",
       "type": "combat_survival_report",
       "option": "combat_survival_report",
-      "professions": ["mason"],
+      "professions": [
+        "mason"
+      ],
       "text": "Stone chips, tools chip, people chip too. Important thing is not breaking.",
       "show_for_babies": false,
       "weight": 34
@@ -555,7 +1404,9 @@
       "id": "combat_survival_nitwit",
       "type": "combat_survival_report",
       "option": "combat_survival_report",
-      "professions": ["nitwit"],
+      "professions": [
+        "nitwit"
+      ],
       "text": "I made it back because I ran exactly the clever amount. No one measures that.",
       "show_for_babies": false,
       "weight": 34
@@ -564,7 +1415,9 @@
       "id": "combat_survival_shepherd",
       "type": "combat_survival_report",
       "option": "combat_survival_report",
-      "professions": ["shepherd"],
+      "professions": [
+        "shepherd"
+      ],
       "text": "I have chased enough trouble from the flock to know when trouble has teeth.",
       "show_for_babies": false,
       "weight": 34
@@ -573,7 +1426,9 @@
       "id": "combat_survival_toolsmith",
       "type": "combat_survival_report",
       "option": "combat_survival_report",
-      "professions": ["toolsmith"],
+      "professions": [
+        "toolsmith"
+      ],
       "text": "Good tools held. So did I. I will inspect both before sleeping.",
       "show_for_babies": false,
       "weight": 34
@@ -582,7 +1437,9 @@
       "id": "combat_survival_unemployed",
       "type": "combat_survival_report",
       "option": "combat_survival_report",
-      "professions": ["unemployed"],
+      "professions": [
+        "unemployed"
+      ],
       "text": "I do not have a trade for that sort of night. I survived it anyway.",
       "show_for_babies": false,
       "weight": 34
@@ -591,10 +1448,3147 @@
       "id": "combat_survival_weaponsmith",
       "type": "combat_survival_report",
       "option": "combat_survival_report",
-      "professions": ["weaponsmith"],
+      "professions": [
+        "weaponsmith"
+      ],
       "text": "The blade did its work, and so did my feet when it was time to come home.",
       "show_for_babies": false,
       "weight": 34
+    },
+    {
+      "id": "combat_survival_armorer_buckles",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "armorer"
+      ],
+      "text": "Every buckle held except the one in my knees. I will forgive that one.",
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "combat_survival_butcher_still_here",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "butcher"
+      ],
+      "text": "Still here, still got all my fingers, still not eager to repeat it.",
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "combat_survival_cartographer_way_home",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "cartographer"
+      ],
+      "text": "For a moment, every direction looked wrong. Then home looked possible again.",
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "combat_survival_cleric_candle",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "cleric"
+      ],
+      "text": "I kept one candle burning and one foot moving. Somehow both worked.",
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "combat_survival_farmer_mud",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "farmer"
+      ],
+      "text": "Mud on my boots, fear in my throat, and home still ahead. I made it.",
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "combat_survival_fisherman_current",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "fisherman"
+      ],
+      "text": "I followed the safest current I could find. Tonight, that current was back here.",
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "combat_survival_fletcher_quiver",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "fletcher"
+      ],
+      "text": "My quiver is lighter, but so is my heart now that I am inside the village again.",
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "combat_survival_leatherworker_sole",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "leatherworker"
+      ],
+      "text": "Wore half the sole off one boot getting back. Worth it.",
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "combat_survival_librarian_unwritten",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "librarian"
+      ],
+      "text": "There were several endings I disliked. I am glad we reached this chapter.",
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "combat_survival_mason_chisel",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "mason"
+      ],
+      "text": "My hands shook too much to hold a chisel after. Still, they held long enough.",
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "combat_survival_nitwit_wrong_way",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "nitwit"
+      ],
+      "text": "I only ran the wrong way once, maybe twice, and then I found the right door.",
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "combat_survival_shepherd_gate",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "shepherd"
+      ],
+      "text": "I know the sound of everyone trying to get through one gate at once. I made it through.",
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "combat_survival_toolsmith_grip",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "toolsmith"
+      ],
+      "text": "My grip held when it had to. I will think about that for a while.",
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "combat_survival_unemployed_corner",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "unemployed"
+      ],
+      "text": "I found a corner, then a path, then home. That is more plan than I started with.",
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "combat_survival_weaponsmith_tempered",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "weaponsmith"
+      ],
+      "text": "Heat, pressure, fear. Good steel survives that. So did I.",
+      "show_for_babies": false,
+      "weight": 32
+    },
+    {
+      "id": "combat_survival_report_armorer_extra_1",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "armorer"
+      ],
+      "text": "My hands still keep checking straps that are already there. I made it back, though.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_armorer_extra_2",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "armorer"
+      ],
+      "text": "The plates held, the straps held, and somehow I held too.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_armorer_extra_3",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "armorer"
+      ],
+      "text": "I will hammer out the dents tomorrow. Tonight I am grateful there is a tomorrow.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_armorer_extra_4",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "armorer"
+      ],
+      "text": "Armor can turn a blow, but it cannot quiet the heart after. I am home, at least.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_armorer_extra_5",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "armorer"
+      ],
+      "text": "I counted every buckle at the door. All present. That felt like a blessing.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_armorer_extra_6",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "armorer"
+      ],
+      "text": "A few marks on the metal, a few in my memory. Nothing missing.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_butcher_extra_1",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "butcher"
+      ],
+      "text": "I came back with a shaking hand and an empty stomach. Better than not coming back.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_butcher_extra_2",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "butcher"
+      ],
+      "text": "There was too much noise and not enough door between me and it. I found the door.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_butcher_extra_3",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "butcher"
+      ],
+      "text": "I have had hard mornings, but that night was something else entirely.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_butcher_extra_4",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "butcher"
+      ],
+      "text": "My apron has seen worse stains. My nerves have not.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_butcher_extra_5",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "butcher"
+      ],
+      "text": "I made it home, and I am counting that before I count anything else.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_butcher_extra_6",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "butcher"
+      ],
+      "text": "The cleaver stayed in my grip. So did my sense, barely.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_cartographer_extra_1",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "cartographer"
+      ],
+      "text": "I know the way home on paper. Knowing it while scared is different.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_cartographer_extra_2",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "cartographer"
+      ],
+      "text": "Every landmark looked strange in the dark. Then the village lights found me.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_cartographer_extra_3",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "cartographer"
+      ],
+      "text": "I would mark that route in red if I ever had to draw it.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_cartographer_extra_4",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "cartographer"
+      ],
+      "text": "The map says the road is short. My feet disagree.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_cartographer_extra_5",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "cartographer"
+      ],
+      "text": "I came back with no new map, only a better respect for old paths.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_cartographer_extra_6",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "cartographer"
+      ],
+      "text": "For once, I was glad the village was exactly where I left it.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_cleric_extra_1",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "cleric"
+      ],
+      "text": "I returned with a prayer half-finished and gratitude fully earned.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_cleric_extra_2",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "cleric"
+      ],
+      "text": "My hands shook too much for the bell afterward, but I was alive to hear it.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_cleric_extra_3",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "cleric"
+      ],
+      "text": "There are nights that make faith very practical. I survived one.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_cleric_extra_4",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "cleric"
+      ],
+      "text": "I kept repeating the same blessing until my feet reached home.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_cleric_extra_5",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "cleric"
+      ],
+      "text": "The altar looked brighter after that road back.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_cleric_extra_6",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "cleric"
+      ],
+      "text": "I made it, though my voice may need a quiet hour.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_farmer_extra_1",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "farmer"
+      ],
+      "text": "I made it back with mud on my knees and luck in both pockets.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_farmer_extra_2",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "farmer"
+      ],
+      "text": "The field path never felt so long. The village never looked so good.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_farmer_extra_3",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "farmer"
+      ],
+      "text": "I kept thinking about sunrise. That helped me keep moving.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_farmer_extra_4",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "farmer"
+      ],
+      "text": "I have weathered storms, but storms do not usually carry axes.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_farmer_extra_5",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "farmer"
+      ],
+      "text": "Home was the only crop I cared about reaching.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_farmer_extra_6",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "farmer"
+      ],
+      "text": "My boots are ruined. I am not. Good trade.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_fisherman_extra_1",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "fisherman"
+      ],
+      "text": "I followed the sound of home like a line pulled tight.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_fisherman_extra_2",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "fisherman"
+      ],
+      "text": "Dark water is honest compared to a dark road with raiders near it.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_fisherman_extra_3",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "fisherman"
+      ],
+      "text": "I came back cold, winded, and happy to complain about both.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_fisherman_extra_4",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "fisherman"
+      ],
+      "text": "The night tried to pull me under. I kept my head up.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_fisherman_extra_5",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "fisherman"
+      ],
+      "text": "I have lost catches before. I am glad I was not the catch this time.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_fisherman_extra_6",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "fisherman"
+      ],
+      "text": "The door felt like a dock after bad weather.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_fletcher_extra_1",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "fletcher"
+      ],
+      "text": "I counted arrows until counting steps mattered more.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_fletcher_extra_2",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "fletcher"
+      ],
+      "text": "My hands remembered what to do before my head caught up.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_fletcher_extra_3",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "fletcher"
+      ],
+      "text": "I made it back with an empty quiver and a full respect for walls.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_fletcher_extra_4",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "fletcher"
+      ],
+      "text": "The road home felt like a target I could barely see.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_fletcher_extra_5",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "fletcher"
+      ],
+      "text": "A steady breath is harder when the dark is shouting.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_fletcher_extra_6",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "fletcher"
+      ],
+      "text": "I lost my aim for a moment. I did not lose the way home.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_leatherworker_extra_1",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "leatherworker"
+      ],
+      "text": "My boots earned every scuff getting back here.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_leatherworker_extra_2",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "leatherworker"
+      ],
+      "text": "I will be stitching straps until sunrise, but I am here to stitch them.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_leatherworker_extra_3",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "leatherworker"
+      ],
+      "text": "The night pulled hard. Good seams held.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_leatherworker_extra_4",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "leatherworker"
+      ],
+      "text": "I came home with scratches, not silence. I prefer scratches.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_leatherworker_extra_5",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "leatherworker"
+      ],
+      "text": "One sole nearly split and my courage nearly followed. Both held.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_leatherworker_extra_6",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "leatherworker"
+      ],
+      "text": "I can mend the gear. The shaking may take longer.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_librarian_extra_1",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "librarian"
+      ],
+      "text": "I made it back with several new reasons to prefer quiet shelves.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_librarian_extra_2",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "librarian"
+      ],
+      "text": "That chapter had too much running and not enough punctuation.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_librarian_extra_3",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "librarian"
+      ],
+      "text": "I survived, though my notes from the event are mostly shaking lines.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_librarian_extra_4",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "librarian"
+      ],
+      "text": "The village door has never looked so beautifully constructed.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_librarian_extra_5",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "librarian"
+      ],
+      "text": "I would shelve that experience under never again.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_librarian_extra_6",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "librarian"
+      ],
+      "text": "Home is a short word. It felt very large when I reached it.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_mason_extra_1",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "mason"
+      ],
+      "text": "I made it back chipped around the edges, but not broken.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_mason_extra_2",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "mason"
+      ],
+      "text": "Stone dust in my sleeves, fear in my teeth, home under my feet.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_mason_extra_3",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "mason"
+      ],
+      "text": "A wall looks different after you have wished for one.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_mason_extra_4",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "mason"
+      ],
+      "text": "I kept moving one step at a time. That is how anything solid gets built.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_mason_extra_5",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "mason"
+      ],
+      "text": "The road tried to crack me. It failed.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_mason_extra_6",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "mason"
+      ],
+      "text": "I will trust walls more tomorrow. Tonight I trust doors.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_nitwit_extra_1",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "nitwit"
+      ],
+      "text": "I survived by making several choices very quickly and only some of them silly.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_nitwit_extra_2",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "nitwit"
+      ],
+      "text": "The door was exactly where I hoped it was. Eventually.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_nitwit_extra_3",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "nitwit"
+      ],
+      "text": "I came back alive, which is my favorite kind of back.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_nitwit_extra_4",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "nitwit"
+      ],
+      "text": "I was brave for at least three seconds. The rest was very fast walking.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_nitwit_extra_5",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "nitwit"
+      ],
+      "text": "Someone shouted run, and I became excellent at listening.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_nitwit_extra_6",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "nitwit"
+      ],
+      "text": "I made it home and only lost one thought on the way.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_shepherd_extra_1",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "shepherd"
+      ],
+      "text": "I counted my steps back like I count heads at dusk.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_shepherd_extra_2",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "shepherd"
+      ],
+      "text": "A scattered mind is hard to gather. I managed it enough to get home.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_shepherd_extra_3",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "shepherd"
+      ],
+      "text": "The village gate felt like a pen after a long, bad storm.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_shepherd_extra_4",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "shepherd"
+      ],
+      "text": "I made it back with my heart running ahead of me.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_shepherd_extra_5",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "shepherd"
+      ],
+      "text": "Keeping calm is easier when no one is shouting. I did my best anyway.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_shepherd_extra_6",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "shepherd"
+      ],
+      "text": "I reached home and only then remembered to breathe properly.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_toolsmith_extra_1",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "toolsmith"
+      ],
+      "text": "The handle held, the edge held, and I held on behind them.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_toolsmith_extra_2",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "toolsmith"
+      ],
+      "text": "I will inspect every tool I carried. I may inspect my knees too.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_toolsmith_extra_3",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "toolsmith"
+      ],
+      "text": "A good grip saved me more than once tonight.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_toolsmith_extra_4",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "toolsmith"
+      ],
+      "text": "I made it back with work to do and hands still able to do it.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_toolsmith_extra_5",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "toolsmith"
+      ],
+      "text": "Nothing tests a tool like fear. Nothing tests a person faster.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_toolsmith_extra_6",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "toolsmith"
+      ],
+      "text": "I know what stress does to metal now. I know what it does to me too.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_unemployed_extra_1",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "unemployed"
+      ],
+      "text": "I made it back without a trade, a plan, or much dignity. Still counts.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_unemployed_extra_2",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "unemployed"
+      ],
+      "text": "I learned that I am very motivated by closed doors and warm lights.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_unemployed_extra_3",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "unemployed"
+      ],
+      "text": "Home looked like the best job I could possibly have.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_unemployed_extra_4",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "unemployed"
+      ],
+      "text": "I survived by following people who seemed less confused than I was.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_unemployed_extra_5",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "unemployed"
+      ],
+      "text": "I reached the village and decided that was enough achievement for the day.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_unemployed_extra_6",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "unemployed"
+      ],
+      "text": "I have no title for what I did. I lived through it.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_weaponsmith_extra_1",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "weaponsmith"
+      ],
+      "text": "Steel sang, fear shouted, and I still heard the way home.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_weaponsmith_extra_2",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "weaponsmith"
+      ],
+      "text": "I kept my blade ready and my feet smarter than pride.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_weaponsmith_extra_3",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "weaponsmith"
+      ],
+      "text": "No weapon feels heavy until you carry it back after the fight.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_weaponsmith_extra_4",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "weaponsmith"
+      ],
+      "text": "I survived with the edge intact and the lesson sharper.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_weaponsmith_extra_5",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "weaponsmith"
+      ],
+      "text": "I trust good steel. Tonight I had to trust my own nerve too.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "combat_survival_report_weaponsmith_extra_6",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": [
+        "weaponsmith"
+      ],
+      "text": "The fight ended before I did. That is the result I prefer.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_armorer_extra_1",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "armorer"
+      ],
+      "text": "I can repair damage when someone brings it to the anvil. You have brought yours.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_armorer_extra_2",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "armorer"
+      ],
+      "text": "Do not mistake acceptance for softness. I heard you, and I will be watching.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_armorer_extra_3",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "armorer"
+      ],
+      "text": "A dent tells me where the strike landed. Your apology tells me you know it landed.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_armorer_extra_4",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "armorer"
+      ],
+      "text": "Words are light. Better choices have weight. Bring those next.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_armorer_extra_5",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "armorer"
+      ],
+      "text": "I will set this aside for now, not throw it away.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_armorer_extra_6",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "armorer"
+      ],
+      "text": "Fine. Let the next thing you make be trust, not trouble.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_butcher_extra_1",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "butcher"
+      ],
+      "text": "I prefer clean cuts to messy words. That was clean enough to hear.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_butcher_extra_2",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "butcher"
+      ],
+      "text": "You made a mess. Start by not making another one.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_butcher_extra_3",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "butcher"
+      ],
+      "text": "An apology does not put things back on the hook, but it is a beginning.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_butcher_extra_4",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "butcher"
+      ],
+      "text": "I will take the words. I will judge the hands.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_butcher_extra_5",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "butcher"
+      ],
+      "text": "Fine. Say it once, then prove it every time after.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_butcher_extra_6",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "butcher"
+      ],
+      "text": "I know when something has gone bad. This does not have to.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_cartographer_extra_1",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "cartographer"
+      ],
+      "text": "You are asking to redraw a line you crossed. That can be done carefully.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_cartographer_extra_2",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "cartographer"
+      ],
+      "text": "A bad route is not shameful if you correct it before others follow.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_cartographer_extra_3",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "cartographer"
+      ],
+      "text": "I will mark this apology, but not as the destination.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_cartographer_extra_4",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "cartographer"
+      ],
+      "text": "Do not make a habit of needing a way back from harm.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_cartographer_extra_5",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "cartographer"
+      ],
+      "text": "Fine. Let us see whether your next steps match your words.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_cartographer_extra_6",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "cartographer"
+      ],
+      "text": "Some mistakes become warnings on maps. Try not to become one.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_cleric_extra_1",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "cleric"
+      ],
+      "text": "Contrition is a door. Walk through it, do not stand in front of it.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_cleric_extra_2",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "cleric"
+      ],
+      "text": "I accept the words. Make the next act worthy of them.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_cleric_extra_3",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "cleric"
+      ],
+      "text": "Mercy is not forgetfulness. It is a chance to choose better.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_cleric_extra_4",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "cleric"
+      ],
+      "text": "A wounded trust heals slowly. Still, healing can begin here.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_cleric_extra_5",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "cleric"
+      ],
+      "text": "If remorse has roots, we will see fruit.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_cleric_extra_6",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "cleric"
+      ],
+      "text": "I will hold this apology with care. Do not make it lonely.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_farmer_extra_1",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "farmer"
+      ],
+      "text": "You stepped on trust like young shoots. It can grow back if you stop trampling it.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_farmer_extra_2",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "farmer"
+      ],
+      "text": "Fine. Plant better behavior where that harm was.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_farmer_extra_3",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "farmer"
+      ],
+      "text": "I will not pull up the apology before it sprouts. Do not let it wither.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_farmer_extra_4",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "farmer"
+      ],
+      "text": "A fence mended poorly breaks again. Mend this properly.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_farmer_extra_5",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "farmer"
+      ],
+      "text": "Words are rain. Useful, but not enough by themselves.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_farmer_extra_6",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "farmer"
+      ],
+      "text": "I have seen hard ground soften. Maybe you can too.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_fisherman_extra_1",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "fisherman"
+      ],
+      "text": "You tangled the line. Fine. Untangle it slowly and do not cut it again.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_fisherman_extra_2",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "fisherman"
+      ],
+      "text": "An apology floats. Trust sinks or holds by what follows.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_fisherman_extra_3",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "fisherman"
+      ],
+      "text": "I will hear you out. I have waited longer for worse catches.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_fisherman_extra_4",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "fisherman"
+      ],
+      "text": "Bad waters calm if the wind changes. Let us see whether yours does.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_fisherman_extra_5",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "fisherman"
+      ],
+      "text": "You hooked harm and brought it here. Now bring something decent.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_fisherman_extra_6",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "fisherman"
+      ],
+      "text": "Fine. I will not throw the words back, but I will inspect them.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_fletcher_extra_1",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "fletcher"
+      ],
+      "text": "The apology flies straighter than the harm did. That is something.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_fletcher_extra_2",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "fletcher"
+      ],
+      "text": "Do not notch the same mistake twice.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_fletcher_extra_3",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "fletcher"
+      ],
+      "text": "I hear the words. Now keep your aim away from us.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_fletcher_extra_4",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "fletcher"
+      ],
+      "text": "A bent shaft can be corrected if it has not split. Prove you have not split.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_fletcher_extra_5",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "fletcher"
+      ],
+      "text": "Fine. Let this be the shot you meant to take.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_fletcher_extra_6",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "fletcher"
+      ],
+      "text": "Trust is easy to miss and hard to hit again. Try carefully.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_leatherworker_extra_1",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "leatherworker"
+      ],
+      "text": "Trust is not leather, but it still stretches thin when treated badly.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_leatherworker_extra_2",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "leatherworker"
+      ],
+      "text": "Fine. Let us see whether your next touch is gentler.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_leatherworker_extra_3",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "leatherworker"
+      ],
+      "text": "You made a tear. The apology is a needle, not the whole repair.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_leatherworker_extra_4",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "leatherworker"
+      ],
+      "text": "I will accept the first stitch. Keep sewing.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_leatherworker_extra_5",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "leatherworker"
+      ],
+      "text": "Rough handling leaves marks. I heard you admit that.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_leatherworker_extra_6",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "leatherworker"
+      ],
+      "text": "Do not pull at a mending place before it has strength.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_librarian_extra_1",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "librarian"
+      ],
+      "text": "Your apology is noted. The revision will be in your behavior.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_librarian_extra_2",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "librarian"
+      ],
+      "text": "I dislike repeat offenses in any edition.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_librarian_extra_3",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "librarian"
+      ],
+      "text": "Words can clarify. They cannot replace the missing page.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_librarian_extra_4",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "librarian"
+      ],
+      "text": "I will not close the book on you yet. Do not make me regret the bookmark.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_librarian_extra_5",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "librarian"
+      ],
+      "text": "The statement is clear. The evidence must follow.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_librarian_extra_6",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "librarian"
+      ],
+      "text": "I accept the correction. Now avoid making an errata list.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_mason_extra_1",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "mason"
+      ],
+      "text": "You made a crack. You named it. That is the first proper repair.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_mason_extra_2",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "mason"
+      ],
+      "text": "Do not plaster over this and call it fixed.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_mason_extra_3",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "mason"
+      ],
+      "text": "Fine. A foundation can be reset, but it takes honest work.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_mason_extra_4",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "mason"
+      ],
+      "text": "I hear the apology. Now bring mortar, not dust.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_mason_extra_5",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "mason"
+      ],
+      "text": "Damage hidden inside stone still spreads. Keep this in the open.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_mason_extra_6",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "mason"
+      ],
+      "text": "Trust can stand again if the base is not shaken twice.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_nitwit_extra_1",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "nitwit"
+      ],
+      "text": "That sounded like the right kind of sorry. I think.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_nitwit_extra_2",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "nitwit"
+      ],
+      "text": "I accept, but I am standing behind this idea of distance for now.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_nitwit_extra_3",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "nitwit"
+      ],
+      "text": "Okay. Try doing the good version of that next time.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_nitwit_extra_4",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "nitwit"
+      ],
+      "text": "I will forgive a bit now and maybe another bit after lunch.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_nitwit_extra_5",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "nitwit"
+      ],
+      "text": "Words received. Suspicion still lightly worn.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_nitwit_extra_6",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "nitwit"
+      ],
+      "text": "Fine. I am putting the apology somewhere safe in my head.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_shepherd_extra_1",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "shepherd"
+      ],
+      "text": "A frightened heart remembers rough handling. Be gentler from here.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_shepherd_extra_2",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "shepherd"
+      ],
+      "text": "Fine. I will count the apology, but I will also count what follows.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_shepherd_extra_3",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "shepherd"
+      ],
+      "text": "Trust scatters quickly. Gather it patiently.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_shepherd_extra_4",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "shepherd"
+      ],
+      "text": "Do not chase forgiveness. Walk steady and let it come closer.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_shepherd_extra_5",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "shepherd"
+      ],
+      "text": "I hear you. Keep your hands calm around this village.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_shepherd_extra_6",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "shepherd"
+      ],
+      "text": "Words can be soft. Make your choices soft too.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_toolsmith_extra_1",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "toolsmith"
+      ],
+      "text": "A poor strike can ruin good work. Learn control before you swing again.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_toolsmith_extra_2",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "toolsmith"
+      ],
+      "text": "Fine. Rework the habit, not just the sentence.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_toolsmith_extra_3",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "toolsmith"
+      ],
+      "text": "I accept the apology as raw material. Make something better from it.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_toolsmith_extra_4",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "toolsmith"
+      ],
+      "text": "Do not bring me another broken trust and ask why it failed.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_toolsmith_extra_5",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "toolsmith"
+      ],
+      "text": "Words set the handle. Actions drive the head tight.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_toolsmith_extra_6",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "toolsmith"
+      ],
+      "text": "If you mean it, the next repair starts now.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_unemployed_extra_1",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "unemployed"
+      ],
+      "text": "I am still figuring out where I fit. Please do not make me fit around fear.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_unemployed_extra_2",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "unemployed"
+      ],
+      "text": "Fine. I accept, but I need room to believe it.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_unemployed_extra_3",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "unemployed"
+      ],
+      "text": "That helps. Not everything, but it helps.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_unemployed_extra_4",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "unemployed"
+      ],
+      "text": "I do not have a profession for judging apologies. This one sounds real enough to start.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_unemployed_extra_5",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "unemployed"
+      ],
+      "text": "Let us call this a beginning, not a finish.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_unemployed_extra_6",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "unemployed"
+      ],
+      "text": "I will give the apology a place. Give me a reason to keep it there.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_weaponsmith_extra_1",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "weaponsmith"
+      ],
+      "text": "Harm is easy to make and hard to take back. At least you know which you did.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_weaponsmith_extra_2",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "weaponsmith"
+      ],
+      "text": "Fine. Keep the sharp parts of yourself pointed where they belong.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_weaponsmith_extra_3",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "weaponsmith"
+      ],
+      "text": "An apology is not a sheath, but it may keep the edge from cutting twice.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_weaponsmith_extra_4",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "weaponsmith"
+      ],
+      "text": "I respect honest remorse more than polished excuses.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_weaponsmith_extra_5",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "weaponsmith"
+      ],
+      "text": "If you cannot control your hand, no apology will be enough. Control it.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_weaponsmith_extra_6",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": [
+        "weaponsmith"
+      ],
+      "text": "Good. Let this be the last time I hear that tone for this reason.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_armorer_extra_1",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "armorer"
+      ],
+      "text": "You fought like someone who understands what a door is worth.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_armorer_extra_2",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "armorer"
+      ],
+      "text": "I saw you stand between iron and panic. That stays with me.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_armorer_extra_3",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "armorer"
+      ],
+      "text": "The village needed a shield before the walls did. You were one.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_armorer_extra_4",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "armorer"
+      ],
+      "text": "Good armor is not only worn. Sometimes it arrives carrying a weapon.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_armorer_extra_5",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "armorer"
+      ],
+      "text": "When the shouting started, you did not fold. I respect that.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_armorer_extra_6",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "armorer"
+      ],
+      "text": "You gave the village time to breathe. Every guard knows the value of time.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_butcher_extra_1",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "butcher"
+      ],
+      "text": "You kept the raid from reaching more kitchens than mine. I noticed.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_butcher_extra_2",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "butcher"
+      ],
+      "text": "The village smelled of smoke and fear. Then it smelled like survival.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_butcher_extra_3",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "butcher"
+      ],
+      "text": "You did hard work when hard work was needed. That matters.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_butcher_extra_4",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "butcher"
+      ],
+      "text": "I saw raiders turn from our doors because you were there.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_butcher_extra_5",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "butcher"
+      ],
+      "text": "No one wants that kind of fight, but someone had to answer it.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_butcher_extra_6",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "butcher"
+      ],
+      "text": "You helped keep families at their tables. That is worth saying aloud.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_cartographer_extra_1",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "cartographer"
+      ],
+      "text": "I can point to where you met them. That spot feels different now.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_cartographer_extra_2",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "cartographer"
+      ],
+      "text": "A village border is not ink. Yesterday, you made that clear.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_cartographer_extra_3",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "cartographer"
+      ],
+      "text": "You changed the shape of the danger before it reached the center.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_cartographer_extra_4",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "cartographer"
+      ],
+      "text": "I marked the raid path. I also marked where it stopped.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_cartographer_extra_5",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "cartographer"
+      ],
+      "text": "The map of this place has one more reason to keep its name.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_cartographer_extra_6",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "cartographer"
+      ],
+      "text": "You made the distance between raiders and homes matter.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_cleric_extra_1",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "cleric"
+      ],
+      "text": "I prayed for protection and saw someone answer with action.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_cleric_extra_2",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "cleric"
+      ],
+      "text": "You gave fear less room inside these walls.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_cleric_extra_3",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "cleric"
+      ],
+      "text": "The bell called for help, and you came before the echo faded.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_cleric_extra_4",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "cleric"
+      ],
+      "text": "There are blessings spoken and blessings done. Yours was done.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_cleric_extra_5",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "cleric"
+      ],
+      "text": "I will remember the courage, even while I tend the frightened.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_cleric_extra_6",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "cleric"
+      ],
+      "text": "The village is quieter because you helped end the noise.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_farmer_extra_1",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "farmer"
+      ],
+      "text": "The fields can be replanted. The people had to be kept alive first.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_farmer_extra_2",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "farmer"
+      ],
+      "text": "You helped make sure we still have hands for the harvest.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_farmer_extra_3",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "farmer"
+      ],
+      "text": "Raiders came for more than crops. You stopped them short.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_farmer_extra_4",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "farmer"
+      ],
+      "text": "I saw you fighting near the rows. That is not forgotten.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_farmer_extra_5",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "farmer"
+      ],
+      "text": "You kept the village standing long enough for morning chores to matter.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_farmer_extra_6",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "farmer"
+      ],
+      "text": "The ground remembers heavy boots. I will remember who drove them off.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_fisherman_extra_1",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "fisherman"
+      ],
+      "text": "The raid came in rough, and you helped break the current.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_fisherman_extra_2",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "fisherman"
+      ],
+      "text": "You kept the danger from dragging more of us under.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_fisherman_extra_3",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "fisherman"
+      ],
+      "text": "I saw you stand where the tide was meanest.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_fisherman_extra_4",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "fisherman"
+      ],
+      "text": "A safe harbor takes work. Yesterday, you did some.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_fisherman_extra_5",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "fisherman"
+      ],
+      "text": "The village rode out the storm because people held fast.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_fisherman_extra_6",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "fisherman"
+      ],
+      "text": "You helped haul the worst of that night away from our doors.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_fletcher_extra_1",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "fletcher"
+      ],
+      "text": "You picked the right target when the raid pressed in.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_fletcher_extra_2",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "fletcher"
+      ],
+      "text": "I saw you move where the arrows were pointing. That takes nerve.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_fletcher_extra_3",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "fletcher"
+      ],
+      "text": "The village needed steady aim, and you gave it more than words.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_fletcher_extra_4",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "fletcher"
+      ],
+      "text": "Every raider stopped early is a home spared late.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_fletcher_extra_5",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "fletcher"
+      ],
+      "text": "You helped turn the fight before it reached the center.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_fletcher_extra_6",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "fletcher"
+      ],
+      "text": "I respect anyone who can choose clearly while the air is full of panic.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_leatherworker_extra_1",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "leatherworker"
+      ],
+      "text": "You helped keep more than roofs intact. People held together because of it.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_leatherworker_extra_2",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "leatherworker"
+      ],
+      "text": "The village came through worn, but not torn apart.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_leatherworker_extra_3",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "leatherworker"
+      ],
+      "text": "I saw courage stretched tight and not snapping. Yours included.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_leatherworker_extra_4",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "leatherworker"
+      ],
+      "text": "Raiders test every weak point. You became a strong one.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_leatherworker_extra_5",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "leatherworker"
+      ],
+      "text": "I can repair gear. You helped spare things that cannot be repaired as easily.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_leatherworker_extra_6",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "leatherworker"
+      ],
+      "text": "The doors, straps, and nerves all held better because you fought.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_librarian_extra_1",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "librarian"
+      ],
+      "text": "The account will say you came when the village needed help.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_librarian_extra_2",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "librarian"
+      ],
+      "text": "I saw a story turn because someone chose not to flee.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_librarian_extra_3",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "librarian"
+      ],
+      "text": "There are records of raids and records of people who stopped them. You earned a line.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_librarian_extra_4",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "librarian"
+      ],
+      "text": "The village archive remains intact. So do we, thanks in part to you.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_librarian_extra_5",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "librarian"
+      ],
+      "text": "I will remember the facts: danger came, and you answered.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_librarian_extra_6",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "librarian"
+      ],
+      "text": "Some deeds sound exaggerated until one sees them from a doorway.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_mason_extra_1",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "mason"
+      ],
+      "text": "The wall held better because someone stood beyond it.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_mason_extra_2",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "mason"
+      ],
+      "text": "You gave the village another layer of stone when it needed one.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_mason_extra_3",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "mason"
+      ],
+      "text": "I saw raiders hit our edge and fail to break through.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_mason_extra_4",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "mason"
+      ],
+      "text": "Good work under pressure keeps structures standing. So does courage.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_mason_extra_5",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "mason"
+      ],
+      "text": "The village is still square on its foundation because people held firm.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_mason_extra_6",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "mason"
+      ],
+      "text": "You helped keep the center from cracking.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_nitwit_extra_1",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "nitwit"
+      ],
+      "text": "You ran toward the loud part. That seemed important and extremely bold.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_nitwit_extra_2",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "nitwit"
+      ],
+      "text": "I was under a table, but I heard useful fighting. Yours, probably.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_nitwit_extra_3",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "nitwit"
+      ],
+      "text": "The village is still here, and I am very attached to that outcome.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_nitwit_extra_4",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "nitwit"
+      ],
+      "text": "You made the raiders stop doing raid things near us. Excellent choice.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_nitwit_extra_5",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "nitwit"
+      ],
+      "text": "I did morale from a safe place. You did the dangerous part.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_nitwit_extra_6",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "nitwit"
+      ],
+      "text": "When the horn sounded, you became part of the answer. I liked that.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_shepherd_extra_1",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "shepherd"
+      ],
+      "text": "You helped keep panic from scattering everyone beyond reach.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_shepherd_extra_2",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "shepherd"
+      ],
+      "text": "The village needed gathering, and your courage gave us a center.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_shepherd_extra_3",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "shepherd"
+      ],
+      "text": "I saw people find their doors because the raiders were forced back.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_shepherd_extra_4",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "shepherd"
+      ],
+      "text": "A safe fold matters most when the night is loud.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_shepherd_extra_5",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "shepherd"
+      ],
+      "text": "You helped bring the village through frightened but together.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_shepherd_extra_6",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "shepherd"
+      ],
+      "text": "Some courage is quiet afterward. I see it anyway.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_toolsmith_extra_1",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "toolsmith"
+      ],
+      "text": "You were the right tool in a terrible moment.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_toolsmith_extra_2",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "toolsmith"
+      ],
+      "text": "When pressure came down, you did not warp.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_toolsmith_extra_3",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "toolsmith"
+      ],
+      "text": "The village needed more than sharp edges. It needed steady hands.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_toolsmith_extra_4",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "toolsmith"
+      ],
+      "text": "You made yourself useful where usefulness mattered most.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_toolsmith_extra_5",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "toolsmith"
+      ],
+      "text": "I saw the kind of work no bench can teach.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_toolsmith_extra_6",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "toolsmith"
+      ],
+      "text": "Good work leaves marks. Yours left people alive to notice.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_unemployed_extra_1",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "unemployed"
+      ],
+      "text": "I do not have much here yet, but you helped keep what I might become part of.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_unemployed_extra_2",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "unemployed"
+      ],
+      "text": "The village still has room for me because people like you fought for it.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_unemployed_extra_3",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "unemployed"
+      ],
+      "text": "I had nowhere important to stand, so I watched. You stood somewhere important.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_unemployed_extra_4",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "unemployed"
+      ],
+      "text": "You protected more than houses. You protected chances.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_unemployed_extra_5",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "unemployed"
+      ],
+      "text": "I saw a future here look less certain, then you pushed back.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_unemployed_extra_6",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "unemployed"
+      ],
+      "text": "Maybe I will find work tomorrow because there is still a village tomorrow.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_weaponsmith_extra_1",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "weaponsmith"
+      ],
+      "text": "You used force for the village, not against it. That distinction matters.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_weaponsmith_extra_2",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "weaponsmith"
+      ],
+      "text": "I saw discipline in that fight. Not just fury.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_weaponsmith_extra_3",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "weaponsmith"
+      ],
+      "text": "Raiders understand strength. Yesterday, so did you.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_weaponsmith_extra_4",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "weaponsmith"
+      ],
+      "text": "You met danger at the edge and kept it from cutting deeper.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_weaponsmith_extra_5",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "weaponsmith"
+      ],
+      "text": "A blade is judged by what it protects. People are too.",
+      "show_for_babies": false,
+      "weight": 28
+    },
+    {
+      "id": "village_defense_report_weaponsmith_extra_6",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": [
+        "weaponsmith"
+      ],
+      "text": "You fought clean enough for me to respect the work.",
+      "show_for_babies": false,
+      "weight": 28
     },
     {
       "id": "baby_chat_hiding_place",
