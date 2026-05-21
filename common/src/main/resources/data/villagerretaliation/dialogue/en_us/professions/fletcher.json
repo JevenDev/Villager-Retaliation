@@ -1,4 +1,8 @@
 {
+  "messages": [
+    { "key": "gift_given", "text": "Here, {gift_item}. Straight aim starts before the bow is drawn.", "weight": 24 },
+    { "key": "gift_given", "text": "Take {gift_item}. If trouble comes, I would like you ready for it.", "weight": 24 }
+  ],
   "openings": [
     {
       "id": "fletcher_opening",

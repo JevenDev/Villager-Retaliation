@@ -1,4 +1,8 @@
 {
+  "messages": [
+    { "key": "gift_given", "text": "Take {gift_item}. Better to carry thanks before you need steel.", "weight": 24 },
+    { "key": "gift_given", "text": "Here, {gift_item}. I trust you to use it with a cooler head than most.", "weight": 24 }
+  ],
   "openings": [
     {
       "id": "weaponsmith_opening",

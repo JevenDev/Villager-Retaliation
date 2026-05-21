@@ -1,4 +1,8 @@
 {
+  "messages": [
+    { "key": "gift_given", "text": "Take {gift_item}. A little comfort on the road never hurts.", "weight": 24 },
+    { "key": "gift_given", "text": "Here, {gift_item}. Keep it close when the night gets cold.", "weight": 24 }
+  ],
   "openings": [
     {
       "id": "shepherd_opening",

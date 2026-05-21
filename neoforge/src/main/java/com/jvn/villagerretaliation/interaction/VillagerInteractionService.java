@@ -634,6 +634,18 @@ public final class VillagerInteractionService {
         );
     }
 
+    public static void sendHighReputationGiftDialogue(ServerPlayer player, Villager villager, ItemStack stack) {
+        if (stack.isEmpty() || !(villager.level() instanceof ServerLevel level)) {
+            return;
+        }
+
+        DialogueContext context = createDialogueContext(level, player, villager);
+        String responseText = VillagerDialogueResources
+                .professionPriorityMessage(context, "gift_given", Map.of("gift_item", itemName(stack)))
+                .orElse("");
+        broadcastVillagerChat(level, villager, responseText);
+    }
+
     private static void broadcastVillagerChat(ServerLevel level, Villager villager, String text) {
         if (text == null || text.isBlank()) {
             return;

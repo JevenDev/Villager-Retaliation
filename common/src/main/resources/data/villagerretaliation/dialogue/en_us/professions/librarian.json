@@ -1,4 +1,8 @@
 {
+  "messages": [
+    { "key": "gift_given", "text": "Take {gift_item}. Knowledge is not the only thing worth lending carefully.", "weight": 24 },
+    { "key": "gift_given", "text": "Here, {gift_item}. Return with a story, and I will call it a fair trade.", "weight": 24 }
+  ],
   "openings": [
     {
       "id": "librarian_opening",

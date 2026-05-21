@@ -1,4 +1,8 @@
 {
+  "messages": [
+    { "key": "gift_given", "text": "Here, {gift_item}. The right tool in the right hand saves a lot of trouble.", "weight": 24 },
+    { "key": "gift_given", "text": "Take {gift_item}. Keep it useful and it will repay you twice.", "weight": 24 }
+  ],
   "openings": [
     {
       "id": "toolsmith_opening",

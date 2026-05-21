@@ -1,4 +1,8 @@
 {
+  "messages": [
+    { "key": "gift_given", "text": "Here, {gift_item}. Every good journey starts with something useful in hand.", "weight": 24 },
+    { "key": "gift_given", "text": "Take {gift_item}. Bring it back with a story if the road treats you kindly.", "weight": 24 }
+  ],
   "openings": [
     {
       "id": "cartographer_opening",

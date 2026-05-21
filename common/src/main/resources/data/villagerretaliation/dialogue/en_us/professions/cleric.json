@@ -1,4 +1,8 @@
 {
+  "messages": [
+    { "key": "gift_given", "text": "Take {gift_item}. May it keep trouble at a respectful distance.", "weight": 24 },
+    { "key": "gift_given", "text": "Here, {gift_item}. Some blessings are practical enough to fit in a hand.", "weight": 24 }
+  ],
   "openings": [
     {
       "id": "cleric_opening",

@@ -1,4 +1,8 @@
 {
+  "messages": [
+    { "key": "gift_given", "text": "Take {gift_item}. I may not have a trade, but I know how to say thanks.", "weight": 24 },
+    { "key": "gift_given", "text": "Here, {gift_item}. Maybe one of us will find the perfect use for it.", "weight": 24 }
+  ],
   "openings": [
     {
       "id": "unemployed_opening",

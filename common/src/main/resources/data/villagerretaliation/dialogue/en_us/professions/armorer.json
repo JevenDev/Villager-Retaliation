@@ -1,4 +1,8 @@
 {
+  "messages": [
+    { "key": "gift_given", "text": "Here, {gift_item}. Well-kept armor is not the only thing that protects a friend.", "weight": 24 },
+    { "key": "gift_given", "text": "Take {gift_item}. I would rather see you prepared than patched up later.", "weight": 24 }
+  ],
   "openings": [
     {
       "id": "armorer_opening",

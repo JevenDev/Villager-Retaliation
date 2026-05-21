@@ -64,6 +64,19 @@ public final class VillagerDialogueResources {
                 .map(line -> resolveTemplate(line.text(), replacements));
     }
 
+    public static Optional<String> professionPriorityMessage(DialogueContext context, String key, Map<String, String> replacements) {
+        DialogueDisposition disposition = VillagerDialogueService.moodFor(context);
+        List<KeyedMessageLine> matches = load(context.level().getServer(), context.locale()).messages().stream()
+                .filter(line -> line.matches(context, key, disposition))
+                .toList();
+        boolean hasProfessionSpecificMatch = matches.stream().anyMatch(KeyedMessageLine::professionSpecific);
+        List<KeyedMessageLine> candidates = matches.stream()
+                .filter(line -> !hasProfessionSpecificMatch || line.professionSpecific())
+                .toList();
+        return selectMessage(candidates, context.random().nextInt(Math.max(1, totalMessageWeight(candidates))))
+                .map(line -> resolveTemplate(line.text(), replacements));
+    }
+
     public static Optional<String> globalMessage(MinecraftServer server, net.minecraft.util.RandomSource random, String key) {
         return globalMessage(server, random, key, Map.of());
     }
@@ -777,6 +790,10 @@ public final class VillagerDialogueResources {
                 return false;
             }
             return this.dispositions.isEmpty() || this.dispositions.contains(disposition);
+        }
+
+        private boolean professionSpecific() {
+            return !this.professions.isEmpty();
         }
     }
 }

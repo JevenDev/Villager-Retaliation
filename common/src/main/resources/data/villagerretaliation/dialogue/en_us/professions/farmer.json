@@ -1,4 +1,8 @@
 {
+  "messages": [
+    { "key": "gift_given", "text": "Here, {gift_item}. Good things grow better when they are shared.", "weight": 24 },
+    { "key": "gift_given", "text": "Take {gift_item}. Consider it a small harvest for the kindness you planted.", "weight": 24 }
+  ],
   "openings": [
     {
       "id": "farmer_opening",

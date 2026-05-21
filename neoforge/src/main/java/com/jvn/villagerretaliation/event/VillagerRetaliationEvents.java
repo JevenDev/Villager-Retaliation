@@ -298,6 +298,7 @@ public final class VillagerRetaliationEvents {
         }
         if (player instanceof ServerPlayer serverPlayer) {
             VillagerInteractionService.sendReceivedItemNotice(serverPlayer, villager, gift);
+            VillagerInteractionService.sendHighReputationGiftDialogue(serverPlayer, villager, gift);
         }
 
         VillagerReputationManager.markHighReputationGiftGiven(level, villager, player);

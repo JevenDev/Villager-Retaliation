@@ -1,4 +1,8 @@
 {
+  "messages": [
+    { "key": "gift_given", "text": "Here, {gift_item}. Strong villages are built one fair exchange at a time.", "weight": 24 },
+    { "key": "gift_given", "text": "Take {gift_item}. A steady hand deserves steady thanks.", "weight": 24 }
+  ],
   "openings": [
     {
       "id": "mason_opening",

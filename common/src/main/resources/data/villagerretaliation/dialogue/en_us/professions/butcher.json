@@ -1,4 +1,8 @@
 {
+  "messages": [
+    { "key": "gift_given", "text": "Take {gift_item}. A good village keeps its friends fed and standing.", "weight": 24 },
+    { "key": "gift_given", "text": "Here, {gift_item}. It is honest work to send someone off with provisions.", "weight": 24 }
+  ],
   "openings": [
     {
       "id": "butcher_opening",
