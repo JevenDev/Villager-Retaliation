@@ -187,6 +187,8 @@ public final class VillagerInteractionService {
             VillagerInteractionTracker.claimUnreportedGearReport(level, villager, player);
         } else if (requestType == DialogueRequestType.RECRUITMENT_FOLLOWUP) {
             VillagerInteractionTracker.claimUnreportedRecruitmentFollowup(level, villager, player);
+        } else if (requestType == DialogueRequestType.CURED_RECOGNITION) {
+            VillagerInteractionTracker.claimUnreportedCuredRecognition(level, villager, player);
         }
         sendDialogueReputation(player, villager, level, requestType, reputationEffect);
         broadcastVillagerChat(level, villager, responseText);
@@ -487,6 +489,7 @@ public final class VillagerInteractionService {
                 VillagerInteractionTracker.unreportedCombatSurvivalReport(level, villager, player).orElse(null),
                 VillagerInteractionTracker.unreportedGearReport(level, villager, player).orElse(null),
                 VillagerInteractionTracker.unreportedRecruitmentFollowup(level, villager, player).orElse(null),
+                VillagerInteractionTracker.unreportedCuredRecognition(level, villager, player).orElse(null),
                 VillagerInteractionTracker.recruitmentMemory(level, villager, player).orElse(null),
                 VillagerInteractionTracker.unreportedGiftAdviceResult(level, villager, player).orElse(null),
                 VillageEventMemory.recentNear(level, villager.blockPosition()),

@@ -345,6 +345,8 @@ public final class VillagerDialogueResources {
             boolean requiresUnreportedCombatSurvivalReport = readBoolean(entry, "requires_unreported_combat_survival_report");
             boolean requiresUnreportedGearReport = readBoolean(entry, "requires_unreported_gear_report");
             boolean requiresUnreportedRecruitmentFollowup = readBoolean(entry, "requires_unreported_recruitment_followup");
+            boolean requiresUnreportedCuredRecognition = readBoolean(entry, "requires_unreported_cured_recognition");
+            boolean requiresRecentVillageEvent = readBoolean(entry, "requires_recent_village_event");
             boolean requiresUnreportedGiftAdviceResult = readBoolean(entry, "requires_unreported_gift_advice_result");
             boolean requiresUnapologizedRememberedHarm = readBoolean(entry, "requires_unapologized_remembered_harm");
             boolean requiresUnreportedVillageDefense = readBoolean(entry, "requires_unreported_village_defense");
@@ -362,6 +364,8 @@ public final class VillagerDialogueResources {
                     requiresUnreportedCombatSurvivalReport,
                     requiresUnreportedGearReport,
                     requiresUnreportedRecruitmentFollowup,
+                    requiresUnreportedCuredRecognition,
+                    requiresRecentVillageEvent,
                     requiresUnreportedGiftAdviceResult,
                     requiresUnapologizedRememberedHarm,
                     requiresUnreportedVillageDefense,

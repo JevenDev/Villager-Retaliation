@@ -93,6 +93,9 @@ public final class VillageEventMemory {
     public enum EventTag {
         BABY_BORN,
         IRON_GOLEM_DEFEATED_MOB,
+        THUNDERSTORM,
+        VILLAGE_FIRE,
+        NIGHT_ATTACK,
         RAID,
         VILLAGER_DEATH,
         VILLAGER_ATTACKED,

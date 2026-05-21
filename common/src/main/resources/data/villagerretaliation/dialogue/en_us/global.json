@@ -29,6 +29,21 @@
       "order": 3
     },
     {
+      "id": "cured_recognition",
+      "label": "Do you remember me?",
+      "type": "cured_recognition",
+      "show_for_babies": false,
+      "requires_unreported_cured_recognition": true,
+      "order": -6
+    },
+    {
+      "id": "village_event_report",
+      "label": "Are you alright?",
+      "type": "village_event_report",
+      "requires_recent_village_event": true,
+      "order": -5
+    },
+    {
       "id": "gift_advice_followup",
       "label": "About that gift advice...",
       "type": "gift_advice_followup",
@@ -417,31 +432,52 @@
     {
       "key": "gift_advice_followup.disliked",
       "text": "Did they? Hm. Maybe {gift_subject} would prefer {alternative_gift}. Or maybe they were in a mood.",
-      "dispositions": ["cautious", "rude", "hostile", "fearful"],
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
       "weight": 18
     },
     {
       "key": "gift_advice_followup.disliked",
       "text": "So {gift_item} went badly. Try {alternative_gift} if you want my better guess.",
-      "dispositions": ["rude", "hostile", "fearful"],
+      "dispositions": [
+        "rude",
+        "hostile",
+        "fearful"
+      ],
       "weight": 18
     },
     {
       "key": "gift_advice_followup.disliked",
       "text": "Advice is not a promise. Still, {alternative_gift} should go over better with {gift_subject}.",
-      "dispositions": ["cautious", "rude", "hostile", "fearful"],
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
       "weight": 18
     },
     {
       "key": "gift_advice_followup.disliked",
       "text": "You came back to blame me? Try {alternative_gift} next time and call it even.",
-      "dispositions": ["rude", "hostile"],
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
       "weight": 18
     },
     {
       "key": "gift_advice_followup.disliked",
       "text": "Maybe I misremembered. Maybe you asked the wrong person. Either way, {alternative_gift} is safer.",
-      "dispositions": ["cautious", "rude", "fearful"],
+      "dispositions": [
+        "cautious",
+        "rude",
+        "fearful"
+      ],
       "weight": 18
     },
     {
@@ -1132,9 +1168,13 @@
       "id": "recruitment_followup_cleric_safe",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["cleric"],
+      "professions": [
+        "cleric"
+      ],
       "text": "I returned with breath steady and prayers unused. That is a blessing I will not waste.",
-      "recruitment_followup_scenarios": ["safe"],
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
       "show_for_babies": false,
       "weight": 38
     },
@@ -1142,9 +1182,13 @@
       "id": "recruitment_followup_cleric_injured",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["cleric"],
+      "professions": [
+        "cleric"
+      ],
       "text": "I can tend the hurt, but I would rather not collect it on the way home.",
-      "recruitment_followup_scenarios": ["injured"],
+      "recruitment_followup_scenarios": [
+        "injured"
+      ],
       "show_for_babies": false,
       "weight": 38
     },
@@ -1152,9 +1196,13 @@
       "id": "recruitment_followup_cleric_betrayed",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["cleric"],
+      "professions": [
+        "cleric"
+      ],
       "text": "A wound from an enemy is simple. A wound from a guide asks harder questions.",
-      "recruitment_followup_scenarios": ["betrayed"],
+      "recruitment_followup_scenarios": [
+        "betrayed"
+      ],
       "show_for_babies": false,
       "weight": 42
     },
@@ -1162,9 +1210,13 @@
       "id": "recruitment_followup_farmer_safe",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["farmer"],
+      "professions": [
+        "farmer"
+      ],
       "text": "Home before the rows missed me. Thank you for seeing me back to the village.",
-      "recruitment_followup_scenarios": ["safe"],
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
       "show_for_babies": false,
       "weight": 38
     },
@@ -1172,9 +1224,13 @@
       "id": "recruitment_followup_farmer_injured",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["farmer"],
+      "professions": [
+        "farmer"
+      ],
       "text": "I have worked through worse aches, but I should not need a harvest of bruises from one trip.",
-      "recruitment_followup_scenarios": ["injured"],
+      "recruitment_followup_scenarios": [
+        "injured"
+      ],
       "show_for_babies": false,
       "weight": 38
     },
@@ -1182,9 +1238,13 @@
       "id": "recruitment_followup_farmer_betrayed",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["farmer"],
+      "professions": [
+        "farmer"
+      ],
       "text": "Trust grows slowly. You cut yours down fast.",
-      "recruitment_followup_scenarios": ["betrayed"],
+      "recruitment_followup_scenarios": [
+        "betrayed"
+      ],
       "show_for_babies": false,
       "weight": 42
     },
@@ -1192,9 +1252,13 @@
       "id": "recruitment_followup_fisherman_safe",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["fisherman"],
+      "professions": [
+        "fisherman"
+      ],
       "text": "A clean return, no snags. I like a trip that ends like a well-tied line.",
-      "recruitment_followup_scenarios": ["safe"],
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
       "show_for_babies": false,
       "weight": 38
     },
@@ -1202,9 +1266,13 @@
       "id": "recruitment_followup_fisherman_injured",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["fisherman"],
+      "professions": [
+        "fisherman"
+      ],
       "text": "Something got its hook in me out there. Next time, we cut the line sooner.",
-      "recruitment_followup_scenarios": ["injured"],
+      "recruitment_followup_scenarios": [
+        "injured"
+      ],
       "show_for_babies": false,
       "weight": 38
     },
@@ -1212,9 +1280,13 @@
       "id": "recruitment_followup_fisherman_betrayed",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["fisherman"],
+      "professions": [
+        "fisherman"
+      ],
       "text": "I know bait when I see it now. Do not ask me to bite twice.",
-      "recruitment_followup_scenarios": ["betrayed"],
+      "recruitment_followup_scenarios": [
+        "betrayed"
+      ],
       "show_for_babies": false,
       "weight": 42
     },
@@ -1222,9 +1294,13 @@
       "id": "recruitment_followup_fletcher_safe",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["fletcher"],
+      "professions": [
+        "fletcher"
+      ],
       "text": "Straight out, straight back. A good route flies true.",
-      "recruitment_followup_scenarios": ["safe"],
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
       "show_for_babies": false,
       "weight": 38
     },
@@ -1232,9 +1308,13 @@
       "id": "recruitment_followup_fletcher_injured",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["fletcher"],
+      "professions": [
+        "fletcher"
+      ],
       "text": "That trip feathered wrong. I came home, but not without a bend in the shaft.",
-      "recruitment_followup_scenarios": ["injured"],
+      "recruitment_followup_scenarios": [
+        "injured"
+      ],
       "show_for_babies": false,
       "weight": 38
     },
@@ -1242,9 +1322,13 @@
       "id": "recruitment_followup_fletcher_betrayed",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["fletcher"],
+      "professions": [
+        "fletcher"
+      ],
       "text": "You loosed that hurt at close range. I will remember the aim.",
-      "recruitment_followup_scenarios": ["betrayed"],
+      "recruitment_followup_scenarios": [
+        "betrayed"
+      ],
       "show_for_babies": false,
       "weight": 42
     },
@@ -1252,9 +1336,13 @@
       "id": "recruitment_followup_leatherworker_safe",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["leatherworker"],
+      "professions": [
+        "leatherworker"
+      ],
       "text": "Boots dusty, soles whole. That is how I like returning.",
-      "recruitment_followup_scenarios": ["safe"],
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
       "show_for_babies": false,
       "weight": 38
     },
@@ -1262,9 +1350,13 @@
       "id": "recruitment_followup_leatherworker_injured",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["leatherworker"],
+      "professions": [
+        "leatherworker"
+      ],
       "text": "I can patch leather. Patching myself is worse work.",
-      "recruitment_followup_scenarios": ["injured"],
+      "recruitment_followup_scenarios": [
+        "injured"
+      ],
       "show_for_babies": false,
       "weight": 38
     },
@@ -1272,9 +1364,13 @@
       "id": "recruitment_followup_leatherworker_betrayed",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["leatherworker"],
+      "professions": [
+        "leatherworker"
+      ],
       "text": "You split trust like old hide. It will not soften quickly.",
-      "recruitment_followup_scenarios": ["betrayed"],
+      "recruitment_followup_scenarios": [
+        "betrayed"
+      ],
       "show_for_babies": false,
       "weight": 42
     },
@@ -1282,9 +1378,13 @@
       "id": "recruitment_followup_librarian_safe",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["librarian"],
+      "professions": [
+        "librarian"
+      ],
       "text": "A journey with a tidy ending. I appreciate a chapter that closes at home.",
-      "recruitment_followup_scenarios": ["safe"],
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
       "show_for_babies": false,
       "weight": 38
     },
@@ -1292,9 +1392,13 @@
       "id": "recruitment_followup_librarian_injured",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["librarian"],
+      "professions": [
+        "librarian"
+      ],
       "text": "That outing needs a margin note: return achieved, judgment questionable.",
-      "recruitment_followup_scenarios": ["injured"],
+      "recruitment_followup_scenarios": [
+        "injured"
+      ],
       "show_for_babies": false,
       "weight": 38
     },
@@ -1302,9 +1406,13 @@
       "id": "recruitment_followup_librarian_betrayed",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["librarian"],
+      "professions": [
+        "librarian"
+      ],
       "text": "I have read warnings with kinder endings than the one you wrote for me.",
-      "recruitment_followup_scenarios": ["betrayed"],
+      "recruitment_followup_scenarios": [
+        "betrayed"
+      ],
       "show_for_babies": false,
       "weight": 42
     },
@@ -1312,9 +1420,13 @@
       "id": "recruitment_followup_mason_safe",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["mason"],
+      "professions": [
+        "mason"
+      ],
       "text": "Solid trip, solid return. Foundations matter.",
-      "recruitment_followup_scenarios": ["safe"],
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
       "show_for_babies": false,
       "weight": 38
     },
@@ -1322,9 +1434,13 @@
       "id": "recruitment_followup_mason_injured",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["mason"],
+      "professions": [
+        "mason"
+      ],
       "text": "I came back chipped. A wall can take that. A person should not have to.",
-      "recruitment_followup_scenarios": ["injured"],
+      "recruitment_followup_scenarios": [
+        "injured"
+      ],
       "show_for_babies": false,
       "weight": 38
     },
@@ -1332,9 +1448,13 @@
       "id": "recruitment_followup_mason_betrayed",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["mason"],
+      "professions": [
+        "mason"
+      ],
       "text": "You cracked something load-bearing between us.",
-      "recruitment_followup_scenarios": ["betrayed"],
+      "recruitment_followup_scenarios": [
+        "betrayed"
+      ],
       "show_for_babies": false,
       "weight": 42
     },
@@ -1342,9 +1462,13 @@
       "id": "recruitment_followup_shepherd_safe",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["shepherd"],
+      "professions": [
+        "shepherd"
+      ],
       "text": "Home with no one missing. That is the whole job, really.",
-      "recruitment_followup_scenarios": ["safe"],
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
       "show_for_babies": false,
       "weight": 38
     },
@@ -1352,9 +1476,13 @@
       "id": "recruitment_followup_shepherd_injured",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["shepherd"],
+      "professions": [
+        "shepherd"
+      ],
       "text": "I am back in the fold, but I was not guarded as carefully as I hoped.",
-      "recruitment_followup_scenarios": ["injured"],
+      "recruitment_followup_scenarios": [
+        "injured"
+      ],
       "show_for_babies": false,
       "weight": 38
     },
@@ -1362,9 +1490,13 @@
       "id": "recruitment_followup_shepherd_betrayed",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["shepherd"],
+      "professions": [
+        "shepherd"
+      ],
       "text": "A shepherd who strikes the flock earns no easy trust.",
-      "recruitment_followup_scenarios": ["betrayed"],
+      "recruitment_followup_scenarios": [
+        "betrayed"
+      ],
       "show_for_babies": false,
       "weight": 42
     },
@@ -1372,9 +1504,13 @@
       "id": "recruitment_followup_toolsmith_safe",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["toolsmith"],
+      "professions": [
+        "toolsmith"
+      ],
       "text": "Good work has a clean finish. Getting me home counts.",
-      "recruitment_followup_scenarios": ["safe"],
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
       "show_for_babies": false,
       "weight": 38
     },
@@ -1382,9 +1518,13 @@
       "id": "recruitment_followup_toolsmith_injured",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["toolsmith"],
+      "professions": [
+        "toolsmith"
+      ],
       "text": "That trip handled poorly. I felt every bad grip on the way back.",
-      "recruitment_followup_scenarios": ["injured"],
+      "recruitment_followup_scenarios": [
+        "injured"
+      ],
       "show_for_babies": false,
       "weight": 38
     },
@@ -1392,9 +1532,13 @@
       "id": "recruitment_followup_toolsmith_betrayed",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["toolsmith"],
+      "professions": [
+        "toolsmith"
+      ],
       "text": "A tool used wrong can still be repaired. Trust is less forgiving.",
-      "recruitment_followup_scenarios": ["betrayed"],
+      "recruitment_followup_scenarios": [
+        "betrayed"
+      ],
       "show_for_babies": false,
       "weight": 42
     },
@@ -1402,9 +1546,13 @@
       "id": "recruitment_followup_weaponsmith_safe",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["weaponsmith"],
+      "professions": [
+        "weaponsmith"
+      ],
       "text": "You brought me back without needing the worst of it. Restraint is a weapon too.",
-      "recruitment_followup_scenarios": ["safe"],
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
       "show_for_babies": false,
       "weight": 38
     },
@@ -1412,9 +1560,13 @@
       "id": "recruitment_followup_weaponsmith_injured",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["weaponsmith"],
+      "professions": [
+        "weaponsmith"
+      ],
       "text": "I came back marked. Next time, keep the edge between us and danger.",
-      "recruitment_followup_scenarios": ["injured"],
+      "recruitment_followup_scenarios": [
+        "injured"
+      ],
       "show_for_babies": false,
       "weight": 38
     },
@@ -1422,9 +1574,13 @@
       "id": "recruitment_followup_weaponsmith_betrayed",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["weaponsmith"],
+      "professions": [
+        "weaponsmith"
+      ],
       "text": "I respect sharp steel. I do not respect turning it on someone who followed you.",
-      "recruitment_followup_scenarios": ["betrayed"],
+      "recruitment_followup_scenarios": [
+        "betrayed"
+      ],
       "show_for_babies": false,
       "weight": 42
     },
@@ -1432,9 +1588,13 @@
       "id": "recruitment_followup_unemployed_safe",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["unemployed"],
+      "professions": [
+        "unemployed"
+      ],
       "text": "I do not have a trade for it yet, but coming home safely feels like honest work.",
-      "recruitment_followup_scenarios": ["safe"],
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
       "show_for_babies": false,
       "weight": 38
     },
@@ -1442,9 +1602,13 @@
       "id": "recruitment_followup_unemployed_injured",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["unemployed"],
+      "professions": [
+        "unemployed"
+      ],
       "text": "I was looking for direction, not bruises. Still, I made it back.",
-      "recruitment_followup_scenarios": ["injured"],
+      "recruitment_followup_scenarios": [
+        "injured"
+      ],
       "show_for_babies": false,
       "weight": 38
     },
@@ -1452,9 +1616,13 @@
       "id": "recruitment_followup_unemployed_betrayed",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["unemployed"],
+      "professions": [
+        "unemployed"
+      ],
       "text": "I followed because I thought you knew where we were going. I was wrong about more than the road.",
-      "recruitment_followup_scenarios": ["betrayed"],
+      "recruitment_followup_scenarios": [
+        "betrayed"
+      ],
       "excludes_recruitment_ocean_crossing": true,
       "show_for_babies": false,
       "weight": 42
@@ -1463,9 +1631,13 @@
       "id": "recruitment_followup_nitwit_safe",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["nitwit"],
+      "professions": [
+        "nitwit"
+      ],
       "text": "We went there, then we came back here. I liked the back here part best.",
-      "recruitment_followup_scenarios": ["safe"],
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
       "show_for_babies": false,
       "weight": 38
     },
@@ -1473,9 +1645,13 @@
       "id": "recruitment_followup_nitwit_injured",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["nitwit"],
+      "professions": [
+        "nitwit"
+      ],
       "text": "I got bonked on the trip. Home is better when fewer things bonk me.",
-      "recruitment_followup_scenarios": ["injured"],
+      "recruitment_followup_scenarios": [
+        "injured"
+      ],
       "show_for_babies": false,
       "weight": 38
     },
@@ -1483,9 +1659,13 @@
       "id": "recruitment_followup_nitwit_betrayed",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["nitwit"],
+      "professions": [
+        "nitwit"
+      ],
       "text": "I thought following meant you were on my side. That was the important bit.",
-      "recruitment_followup_scenarios": ["betrayed"],
+      "recruitment_followup_scenarios": [
+        "betrayed"
+      ],
       "show_for_babies": false,
       "weight": 42
     },
@@ -1494,7 +1674,9 @@
       "type": "recruitment_followup",
       "option": "recruitment_followup",
       "text": "The boat helped. I will admit, being carried home by water is easier on the knees.",
-      "recruitment_followup_scenarios": ["safe"],
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
       "requires_recruitment_boat_trip": true,
       "show_for_babies": false,
       "weight": 44
@@ -1504,7 +1686,9 @@
       "type": "recruitment_followup",
       "option": "recruitment_followup",
       "text": "Crossing ocean by boat was a better idea than swimming it. Thank you for keeping me dry.",
-      "recruitment_followup_scenarios": ["safe"],
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
       "requires_recruitment_boat_trip": true,
       "requires_recruitment_ocean_crossing": true,
       "show_for_babies": false,
@@ -1515,7 +1699,9 @@
       "type": "recruitment_followup",
       "option": "recruitment_followup",
       "text": "I crossed ocean water without a boat and still made it home. Next time, please find wood before waves.",
-      "recruitment_followup_scenarios": ["safe"],
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
       "requires_recruitment_swim_trip": true,
       "show_for_babies": false,
       "weight": 50
@@ -1525,7 +1711,9 @@
       "type": "recruitment_followup",
       "option": "recruitment_followup",
       "text": "The boat ride was the quiet part. Getting hurt before or after it spoiled the memory.",
-      "recruitment_followup_scenarios": ["injured"],
+      "recruitment_followup_scenarios": [
+        "injured"
+      ],
       "requires_recruitment_boat_trip": true,
       "show_for_babies": false,
       "weight": 44
@@ -1535,7 +1723,9 @@
       "type": "recruitment_followup",
       "option": "recruitment_followup",
       "text": "The ocean crossing by boat was manageable. The part where I got hurt was less impressive.",
-      "recruitment_followup_scenarios": ["injured"],
+      "recruitment_followup_scenarios": [
+        "injured"
+      ],
       "requires_recruitment_boat_trip": true,
       "requires_recruitment_ocean_crossing": true,
       "show_for_babies": false,
@@ -1546,7 +1736,9 @@
       "type": "recruitment_followup",
       "option": "recruitment_followup",
       "text": "Swimming across ocean and coming home hurt is not an adventure I want repeated.",
-      "recruitment_followup_scenarios": ["injured"],
+      "recruitment_followup_scenarios": [
+        "injured"
+      ],
       "requires_recruitment_swim_trip": true,
       "show_for_babies": false,
       "weight": 50
@@ -1556,7 +1748,9 @@
       "type": "recruitment_followup",
       "option": "recruitment_followup",
       "text": "You put me in a boat, took me along, and then broke trust. Strange journey, worse ending.",
-      "recruitment_followup_scenarios": ["betrayed"],
+      "recruitment_followup_scenarios": [
+        "betrayed"
+      ],
       "requires_recruitment_boat_trip": true,
       "show_for_babies": false,
       "weight": 46
@@ -1565,7 +1759,9 @@
       "id": "recruitment_followup_fisherman_boat",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["fisherman"],
+      "professions": [
+        "fisherman"
+      ],
       "text": "A boat is honest enough. It goes where it is pointed, unlike some plans.",
       "requires_recruitment_boat_trip": true,
       "show_for_babies": false,
@@ -1575,7 +1771,9 @@
       "id": "recruitment_followup_armorer_boat",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["armorer"],
+      "professions": [
+        "armorer"
+      ],
       "text": "A boat carries armor poorly, but it carried me well enough.",
       "requires_recruitment_boat_trip": true,
       "show_for_babies": false,
@@ -1585,7 +1783,9 @@
       "id": "recruitment_followup_butcher_boat",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["butcher"],
+      "professions": [
+        "butcher"
+      ],
       "text": "I prefer a steady block beneath me, but the boat got us back without carving a new problem.",
       "requires_recruitment_boat_trip": true,
       "show_for_babies": false,
@@ -1595,7 +1795,9 @@
       "id": "recruitment_followup_cartographer_boat",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["cartographer"],
+      "professions": [
+        "cartographer"
+      ],
       "text": "I could chart that boat route. I might add a warning mark beside it.",
       "requires_recruitment_boat_trip": true,
       "show_for_babies": false,
@@ -1605,7 +1807,9 @@
       "id": "recruitment_followup_cleric_boat",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["cleric"],
+      "professions": [
+        "cleric"
+      ],
       "text": "The boat floated. My nerves, less so. Still, I am home.",
       "requires_recruitment_boat_trip": true,
       "show_for_babies": false,
@@ -1615,7 +1819,9 @@
       "id": "recruitment_followup_farmer_boat",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["farmer"],
+      "professions": [
+        "farmer"
+      ],
       "text": "I know soil better than water. The boat was appreciated.",
       "requires_recruitment_boat_trip": true,
       "show_for_babies": false,
@@ -1625,7 +1831,9 @@
       "id": "recruitment_followup_fletcher_boat",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["fletcher"],
+      "professions": [
+        "fletcher"
+      ],
       "text": "The boat drifted, but it did not miss the mark entirely.",
       "requires_recruitment_boat_trip": true,
       "show_for_babies": false,
@@ -1635,7 +1843,9 @@
       "id": "recruitment_followup_leatherworker_boat",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["leatherworker"],
+      "professions": [
+        "leatherworker"
+      ],
       "text": "Boat spray is poor treatment for leather. Better than swimming, though.",
       "requires_recruitment_boat_trip": true,
       "show_for_babies": false,
@@ -1645,7 +1855,9 @@
       "id": "recruitment_followup_librarian_boat",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["librarian"],
+      "professions": [
+        "librarian"
+      ],
       "text": "If I write that boat ride down, I will shelve it under anxious transportation.",
       "requires_recruitment_boat_trip": true,
       "show_for_babies": false,
@@ -1655,7 +1867,9 @@
       "id": "recruitment_followup_mason_boat",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["mason"],
+      "professions": [
+        "mason"
+      ],
       "text": "No foundation under a boat, yet somehow it held. I respect the craft.",
       "requires_recruitment_boat_trip": true,
       "show_for_babies": false,
@@ -1665,7 +1879,9 @@
       "id": "recruitment_followup_shepherd_boat",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["shepherd"],
+      "professions": [
+        "shepherd"
+      ],
       "text": "Keeping me in the boat was the hard part. I have chased calmer sheep.",
       "requires_recruitment_boat_trip": true,
       "show_for_babies": false,
@@ -1675,7 +1891,9 @@
       "id": "recruitment_followup_toolsmith_boat",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["toolsmith"],
+      "professions": [
+        "toolsmith"
+      ],
       "text": "That boat was the right tool for the crossing. I will give you that.",
       "requires_recruitment_boat_trip": true,
       "show_for_babies": false,
@@ -1685,7 +1903,9 @@
       "id": "recruitment_followup_weaponsmith_boat",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["weaponsmith"],
+      "professions": [
+        "weaponsmith"
+      ],
       "text": "A boat is not armor, but it kept danger at a decent distance.",
       "requires_recruitment_boat_trip": true,
       "show_for_babies": false,
@@ -1695,7 +1915,9 @@
       "id": "recruitment_followup_unemployed_boat",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["unemployed"],
+      "professions": [
+        "unemployed"
+      ],
       "text": "I learned I am not ready for a career in boating. But I survived the lesson.",
       "requires_recruitment_boat_trip": true,
       "show_for_babies": false,
@@ -1705,7 +1927,9 @@
       "id": "recruitment_followup_nitwit_boat",
       "type": "recruitment_followup",
       "option": "recruitment_followup",
-      "professions": ["nitwit"],
+      "professions": [
+        "nitwit"
+      ],
       "text": "The boat moved and I did not have to. I liked that part.",
       "requires_recruitment_boat_trip": true,
       "show_for_babies": false,
@@ -1769,7 +1993,9 @@
       "option": "adult_chat",
       "text": "Remember when I followed you and you hit me? I do. Still hurts.",
       "requires_recruitment_memory": true,
-      "recruitment_memory_scenarios": ["betrayed"],
+      "recruitment_memory_scenarios": [
+        "betrayed"
+      ],
       "show_for_babies": false,
       "weight": 5
     },
@@ -1779,7 +2005,9 @@
       "option": "adult_chat",
       "text": "I remember following you home hurt. I was grateful, but not exactly comfortable.",
       "requires_recruitment_memory": true,
-      "recruitment_memory_scenarios": ["injured"],
+      "recruitment_memory_scenarios": [
+        "injured"
+      ],
       "show_for_babies": false,
       "weight": 4
     },
@@ -1787,7 +2015,9 @@
       "id": "chat_follow_memory_armorer",
       "type": "chat",
       "option": "adult_chat",
-      "professions": ["armorer"],
+      "professions": [
+        "armorer"
+      ],
       "text": "That trip through {follow_biome} tested my buckles more than most customers do.",
       "requires_recruitment_memory": true,
       "show_for_babies": false,
@@ -1797,7 +2027,9 @@
       "id": "chat_follow_memory_armorer_boat",
       "type": "chat",
       "option": "adult_chat",
-      "professions": ["armorer"],
+      "professions": [
+        "armorer"
+      ],
       "text": "Armor is not made for sitting in a boat. I learned that while following you.",
       "requires_recruitment_memory": true,
       "requires_recruitment_boat_trip": true,
@@ -1808,7 +2040,9 @@
       "id": "chat_follow_memory_butcher",
       "type": "chat",
       "option": "adult_chat",
-      "professions": ["butcher"],
+      "professions": [
+        "butcher"
+      ],
       "text": "When you had me follow you, I kept thinking the whole walk needed a sharper plan.",
       "requires_recruitment_memory": true,
       "excludes_recruitment_ocean_crossing": true,
@@ -1819,7 +2053,9 @@
       "id": "chat_follow_memory_cartographer_boat",
       "type": "chat",
       "option": "adult_chat",
-      "professions": ["cartographer"],
+      "professions": [
+        "cartographer"
+      ],
       "text": "That boat route would look peaceful on a map. The lived version was wetter.",
       "requires_recruitment_memory": true,
       "requires_recruitment_boat_trip": true,
@@ -1830,7 +2066,9 @@
       "id": "chat_follow_memory_cartographer",
       "type": "chat",
       "option": "adult_chat",
-      "professions": ["cartographer"],
+      "professions": [
+        "cartographer"
+      ],
       "text": "I could map the route you dragged me along, but I would mark several parts as questionable.",
       "requires_recruitment_memory": true,
       "show_for_babies": false,
@@ -1840,10 +2078,14 @@
       "id": "chat_follow_memory_cleric_betrayed",
       "type": "chat",
       "option": "adult_chat",
-      "professions": ["cleric"],
+      "professions": [
+        "cleric"
+      ],
       "text": "I have prayed about that time I followed you and you struck me. The bruise answered first.",
       "requires_recruitment_memory": true,
-      "recruitment_memory_scenarios": ["betrayed"],
+      "recruitment_memory_scenarios": [
+        "betrayed"
+      ],
       "show_for_babies": false,
       "weight": 4
     },
@@ -1851,7 +2093,9 @@
       "id": "chat_follow_memory_fisherman_boat",
       "type": "chat",
       "option": "adult_chat",
-      "professions": ["fisherman"],
+      "professions": [
+        "fisherman"
+      ],
       "text": "You taking me by boat was almost sensible. Almost.",
       "requires_recruitment_memory": true,
       "requires_recruitment_boat_trip": true,
@@ -1862,7 +2106,9 @@
       "id": "chat_follow_memory_farmer",
       "type": "chat",
       "option": "adult_chat",
-      "professions": ["farmer"],
+      "professions": [
+        "farmer"
+      ],
       "text": "You remember that walk through {follow_biome}? I have tilled softer ground than that road.",
       "requires_recruitment_memory": true,
       "excludes_recruitment_ocean_crossing": true,
@@ -1873,7 +2119,9 @@
       "id": "chat_follow_memory_leatherworker_boat",
       "type": "chat",
       "option": "adult_chat",
-      "professions": ["leatherworker"],
+      "professions": [
+        "leatherworker"
+      ],
       "text": "I still remember that boat trip. Wet leather complains longer than villagers do.",
       "requires_recruitment_memory": true,
       "requires_recruitment_boat_trip": true,
@@ -1884,7 +2132,9 @@
       "id": "chat_follow_memory_fisherman",
       "type": "chat",
       "option": "adult_chat",
-      "professions": ["fisherman"],
+      "professions": [
+        "fisherman"
+      ],
       "text": "Following you over {follow_distance} blocks felt like reeling in a boot with opinions.",
       "requires_recruitment_memory": true,
       "min_recruitment_follow_distance": 500,
@@ -1895,7 +2145,9 @@
       "id": "chat_follow_memory_fletcher",
       "type": "chat",
       "option": "adult_chat",
-      "professions": ["fletcher"],
+      "professions": [
+        "fletcher"
+      ],
       "text": "That route you took me on flew about as straight as a warped arrow.",
       "requires_recruitment_memory": true,
       "show_for_babies": false,
@@ -1905,7 +2157,9 @@
       "id": "chat_follow_memory_shepherd_boat",
       "type": "chat",
       "option": "adult_chat",
-      "professions": ["shepherd"],
+      "professions": [
+        "shepherd"
+      ],
       "text": "That boat ride was calm enough, until I remembered I was trusting you with the shore.",
       "requires_recruitment_memory": true,
       "requires_recruitment_boat_trip": true,
@@ -1916,7 +2170,9 @@
       "id": "chat_follow_memory_leatherworker",
       "type": "chat",
       "option": "adult_chat",
-      "professions": ["leatherworker"],
+      "professions": [
+        "leatherworker"
+      ],
       "text": "I still think about that walk. My boots forgave you before my feet did.",
       "requires_recruitment_memory": true,
       "excludes_recruitment_ocean_crossing": true,
@@ -1927,7 +2183,9 @@
       "id": "chat_follow_memory_librarian",
       "type": "chat",
       "option": "adult_chat",
-      "professions": ["librarian"],
+      "professions": [
+        "librarian"
+      ],
       "text": "The story of me following you needs editing. Mostly shorter chapters and fewer hazards.",
       "requires_recruitment_memory": true,
       "show_for_babies": false,
@@ -1937,7 +2195,9 @@
       "id": "chat_follow_memory_mason",
       "type": "chat",
       "option": "adult_chat",
-      "professions": ["mason"],
+      "professions": [
+        "mason"
+      ],
       "text": "After following you that far, I understood why roads need better foundations.",
       "requires_recruitment_memory": true,
       "min_recruitment_follow_distance": 500,
@@ -1949,7 +2209,9 @@
       "id": "chat_follow_memory_shepherd",
       "type": "chat",
       "option": "adult_chat",
-      "professions": ["shepherd"],
+      "professions": [
+        "shepherd"
+      ],
       "text": "When I followed you through {follow_biome}, I finally understood why sheep wander off quietly.",
       "requires_recruitment_memory": true,
       "excludes_recruitment_ocean_crossing": true,
@@ -1960,7 +2222,9 @@
       "id": "chat_follow_memory_toolsmith",
       "type": "chat",
       "option": "adult_chat",
-      "professions": ["toolsmith"],
+      "professions": [
+        "toolsmith"
+      ],
       "text": "That time I followed you, the whole plan could have used a better handle.",
       "requires_recruitment_memory": true,
       "show_for_babies": false,
@@ -1970,10 +2234,14 @@
       "id": "chat_follow_memory_weaponsmith_betrayed",
       "type": "chat",
       "option": "adult_chat",
-      "professions": ["weaponsmith"],
+      "professions": [
+        "weaponsmith"
+      ],
       "text": "Remember when I followed you and you hit me? Poor weapon discipline. Worse friendship.",
       "requires_recruitment_memory": true,
-      "recruitment_memory_scenarios": ["betrayed"],
+      "recruitment_memory_scenarios": [
+        "betrayed"
+      ],
       "show_for_babies": false,
       "weight": 4
     },
@@ -1981,7 +2249,9 @@
       "id": "chat_follow_memory_unemployed",
       "type": "chat",
       "option": "adult_chat",
-      "professions": ["unemployed"],
+      "professions": [
+        "unemployed"
+      ],
       "text": "I followed you once and learned something: I need better shoes before I choose a trade.",
       "requires_recruitment_memory": true,
       "excludes_recruitment_ocean_crossing": true,
@@ -1992,7 +2262,9 @@
       "id": "chat_follow_memory_nitwit",
       "type": "chat",
       "option": "adult_chat",
-      "professions": ["nitwit"],
+      "professions": [
+        "nitwit"
+      ],
       "text": "Remember when I followed you? I thought we were going somewhere. We sure did.",
       "requires_recruitment_memory": true,
       "show_for_babies": false,
@@ -2002,7 +2274,9 @@
       "id": "chat_follow_memory_nitwit_boat",
       "type": "chat",
       "option": "adult_chat",
-      "professions": ["nitwit"],
+      "professions": [
+        "nitwit"
+      ],
       "text": "Remember the boat? I sat down and the world moved. Very clever.",
       "requires_recruitment_memory": true,
       "requires_recruitment_boat_trip": true,
@@ -2013,7 +2287,9 @@
       "id": "chat_follow_memory_butcher_boat",
       "type": "chat",
       "option": "adult_chat",
-      "professions": ["butcher"],
+      "professions": [
+        "butcher"
+      ],
       "text": "A boat ride is better than being dragged over rough ground. Still, I prefer cutting across town, not water.",
       "requires_recruitment_memory": true,
       "requires_recruitment_boat_trip": true,
@@ -2024,7 +2300,9 @@
       "id": "chat_follow_memory_cleric_boat",
       "type": "chat",
       "option": "adult_chat",
-      "professions": ["cleric"],
+      "professions": [
+        "cleric"
+      ],
       "text": "I said a quiet prayer during that boat ride. Mostly for balance.",
       "requires_recruitment_memory": true,
       "requires_recruitment_boat_trip": true,
@@ -2035,7 +2313,9 @@
       "id": "chat_follow_memory_farmer_boat",
       "type": "chat",
       "option": "adult_chat",
-      "professions": ["farmer"],
+      "professions": [
+        "farmer"
+      ],
       "text": "Boats are not much like fields. No furrows, no rows, just water deciding if it likes you.",
       "requires_recruitment_memory": true,
       "requires_recruitment_boat_trip": true,
@@ -2046,7 +2326,9 @@
       "id": "chat_follow_memory_fletcher_boat",
       "type": "chat",
       "option": "adult_chat",
-      "professions": ["fletcher"],
+      "professions": [
+        "fletcher"
+      ],
       "text": "That boat did not fly straight, but at least it floated straight enough.",
       "requires_recruitment_memory": true,
       "requires_recruitment_boat_trip": true,
@@ -2057,7 +2339,9 @@
       "id": "chat_follow_memory_librarian_boat",
       "type": "chat",
       "option": "adult_chat",
-      "professions": ["librarian"],
+      "professions": [
+        "librarian"
+      ],
       "text": "The boat chapter of our journey was damp, brief, and badly footnoted.",
       "requires_recruitment_memory": true,
       "requires_recruitment_boat_trip": true,
@@ -2068,7 +2352,9 @@
       "id": "chat_follow_memory_mason_boat",
       "type": "chat",
       "option": "adult_chat",
-      "professions": ["mason"],
+      "professions": [
+        "mason"
+      ],
       "text": "I do not trust anything with no foundation, but that boat held better than I expected.",
       "requires_recruitment_memory": true,
       "requires_recruitment_boat_trip": true,
@@ -2079,7 +2365,9 @@
       "id": "chat_follow_memory_toolsmith_boat",
       "type": "chat",
       "option": "adult_chat",
-      "professions": ["toolsmith"],
+      "professions": [
+        "toolsmith"
+      ],
       "text": "A boat is just a tool with a nervous floor. Yours worked, mostly.",
       "requires_recruitment_memory": true,
       "requires_recruitment_boat_trip": true,
@@ -2090,7 +2378,9 @@
       "id": "chat_follow_memory_weaponsmith_boat",
       "type": "chat",
       "option": "adult_chat",
-      "professions": ["weaponsmith"],
+      "professions": [
+        "weaponsmith"
+      ],
       "text": "That boat trip had one good quality: no one was swinging steel in it.",
       "requires_recruitment_memory": true,
       "requires_recruitment_boat_trip": true,
@@ -2101,7 +2391,9 @@
       "id": "chat_follow_memory_unemployed_boat",
       "type": "chat",
       "option": "adult_chat",
-      "professions": ["unemployed"],
+      "professions": [
+        "unemployed"
+      ],
       "text": "I followed you into a boat once. Not a trade, apparently, but it felt like training.",
       "requires_recruitment_memory": true,
       "requires_recruitment_boat_trip": true,
@@ -2112,7 +2404,9 @@
       "id": "chat_follow_memory_cartographer_ocean_boat",
       "type": "chat",
       "option": "adult_chat",
-      "professions": ["cartographer"],
+      "professions": [
+        "cartographer"
+      ],
       "text": "The ocean crossing by boat would make a fine blue line on a map. I would label it 'questionable judgment.'",
       "requires_recruitment_memory": true,
       "requires_recruitment_boat_trip": true,
@@ -2124,7 +2418,9 @@
       "id": "chat_follow_memory_fisherman_ocean_boat",
       "type": "chat",
       "option": "adult_chat",
-      "professions": ["fisherman"],
+      "professions": [
+        "fisherman"
+      ],
       "text": "If we had to cross ocean, at least you used a boat. That is the first sensible part of the story.",
       "requires_recruitment_memory": true,
       "requires_recruitment_boat_trip": true,
@@ -2136,7 +2432,9 @@
       "id": "chat_follow_memory_fisherman_ocean_swim",
       "type": "chat",
       "option": "adult_chat",
-      "professions": ["fisherman"],
+      "professions": [
+        "fisherman"
+      ],
       "text": "Swimming across ocean with you was not fishing. It was being the catch.",
       "requires_recruitment_memory": true,
       "requires_recruitment_swim_trip": true,
@@ -2147,7 +2445,9 @@
       "id": "chat_follow_memory_leatherworker_ocean_swim",
       "type": "chat",
       "option": "adult_chat",
-      "professions": ["leatherworker"],
+      "professions": [
+        "leatherworker"
+      ],
       "text": "Ocean swimming is terrible for leather and worse for my mood.",
       "requires_recruitment_memory": true,
       "requires_recruitment_swim_trip": true,
@@ -2230,7 +2530,9 @@
       "id": "gear_report_armorer_used",
       "type": "gear_report",
       "option": "gear_report",
-      "professions": ["armorer"],
+      "professions": [
+        "armorer"
+      ],
       "text": "It took the moment cleanly. Good gear is quiet until the blow lands.",
       "requires_gear_report_used_in_combat": true,
       "show_for_babies": false,
@@ -2240,7 +2542,9 @@
       "id": "gear_report_armorer_unused",
       "type": "gear_report",
       "option": "gear_report",
-      "professions": ["armorer"],
+      "professions": [
+        "armorer"
+      ],
       "text": "No dents yet. I can live with careful work staying untested.",
       "requires_gear_report_unused_in_combat": true,
       "show_for_babies": false,
@@ -2250,7 +2554,9 @@
       "id": "gear_report_weaponsmith_used",
       "type": "gear_report",
       "option": "gear_report",
-      "professions": ["weaponsmith"],
+      "professions": [
+        "weaponsmith"
+      ],
       "text": "It found its purpose. I prefer tools that know when to stop.",
       "requires_gear_report_used_in_combat": true,
       "show_for_babies": false,
@@ -2260,7 +2566,9 @@
       "id": "gear_report_weaponsmith_unused",
       "type": "gear_report",
       "option": "gear_report",
-      "professions": ["weaponsmith"],
+      "professions": [
+        "weaponsmith"
+      ],
       "text": "Still sharp, still waiting. That is better than needing it twice.",
       "requires_gear_report_unused_in_combat": true,
       "show_for_babies": false,
@@ -2270,7 +2578,9 @@
       "id": "gear_report_fletcher_used",
       "type": "gear_report",
       "option": "gear_report",
-      "professions": ["fletcher"],
+      "professions": [
+        "fletcher"
+      ],
       "text": "It kept its line under pressure. A steady hand is easier with proper tools.",
       "requires_gear_report_used_in_combat": true,
       "show_for_babies": false,
@@ -2280,7 +2590,9 @@
       "id": "gear_report_nitwit_used",
       "type": "gear_report",
       "option": "gear_report",
-      "professions": ["nitwit"],
+      "professions": [
+        "nitwit"
+      ],
       "text": "I used it and did not drop it. That is two victories, if you ask me.",
       "requires_gear_report_used_in_combat": true,
       "show_for_babies": false,
@@ -2290,7 +2602,9 @@
       "id": "gear_report_butcher_used",
       "type": "gear_report",
       "option": "gear_report",
-      "professions": ["butcher"],
+      "professions": [
+        "butcher"
+      ],
       "text": "It handled ugly work without making a mess of me. I count that as fine quality.",
       "requires_gear_report_used_in_combat": true,
       "show_for_babies": false,
@@ -2300,7 +2614,9 @@
       "id": "gear_report_butcher_unused",
       "type": "gear_report",
       "option": "gear_report",
-      "professions": ["butcher"],
+      "professions": [
+        "butcher"
+      ],
       "text": "Still clean. That is how I prefer tools before the hard work starts.",
       "requires_gear_report_unused_in_combat": true,
       "show_for_babies": false,
@@ -2310,7 +2626,9 @@
       "id": "gear_report_cartographer_used",
       "type": "gear_report",
       "option": "gear_report",
-      "professions": ["cartographer"],
+      "professions": [
+        "cartographer"
+      ],
       "text": "It helped me keep my bearings when the road stopped feeling safe.",
       "requires_gear_report_used_in_combat": true,
       "show_for_babies": false,
@@ -2320,7 +2638,9 @@
       "id": "gear_report_cartographer_unused",
       "type": "gear_report",
       "option": "gear_report",
-      "professions": ["cartographer"],
+      "professions": [
+        "cartographer"
+      ],
       "text": "Unused so far. A good map and good gear both matter most before trouble starts.",
       "requires_gear_report_unused_in_combat": true,
       "show_for_babies": false,
@@ -2330,7 +2650,9 @@
       "id": "gear_report_cleric_used",
       "type": "gear_report",
       "option": "gear_report",
-      "professions": ["cleric"],
+      "professions": [
+        "cleric"
+      ],
       "text": "It bought me the breath I needed. Sometimes protection is its own blessing.",
       "requires_gear_report_used_in_combat": true,
       "show_for_babies": false,
@@ -2340,7 +2662,9 @@
       "id": "gear_report_cleric_unused",
       "type": "gear_report",
       "option": "gear_report",
-      "professions": ["cleric"],
+      "professions": [
+        "cleric"
+      ],
       "text": "I have not needed it. I will still be grateful before I am desperate.",
       "requires_gear_report_unused_in_combat": true,
       "show_for_babies": false,
@@ -2350,7 +2674,9 @@
       "id": "gear_report_farmer_used",
       "type": "gear_report",
       "option": "gear_report",
-      "professions": ["farmer"],
+      "professions": [
+        "farmer"
+      ],
       "text": "It kept me standing. Crops recover faster when the farmer does too.",
       "requires_gear_report_used_in_combat": true,
       "show_for_babies": false,
@@ -2360,7 +2686,9 @@
       "id": "gear_report_farmer_unused",
       "type": "gear_report",
       "option": "gear_report",
-      "professions": ["farmer"],
+      "professions": [
+        "farmer"
+      ],
       "text": "Unused, thankfully. I would rather wear out a hoe than this.",
       "requires_gear_report_unused_in_combat": true,
       "show_for_babies": false,
@@ -2370,7 +2698,9 @@
       "id": "gear_report_fisherman_used",
       "type": "gear_report",
       "option": "gear_report",
-      "professions": ["fisherman"],
+      "professions": [
+        "fisherman"
+      ],
       "text": "It held steady. Better than most nets, and those are meant to catch trouble.",
       "requires_gear_report_used_in_combat": true,
       "show_for_babies": false,
@@ -2380,7 +2710,9 @@
       "id": "gear_report_fisherman_unused",
       "type": "gear_report",
       "option": "gear_report",
-      "professions": ["fisherman"],
+      "professions": [
+        "fisherman"
+      ],
       "text": "Dry, unused, and welcome. Some things should stay out of the water and out of danger.",
       "requires_gear_report_unused_in_combat": true,
       "show_for_babies": false,
@@ -2390,7 +2722,9 @@
       "id": "gear_report_fletcher_unused",
       "type": "gear_report",
       "option": "gear_report",
-      "professions": ["fletcher"],
+      "professions": [
+        "fletcher"
+      ],
       "text": "Still unused. A ready shot is not wasted just because it stays in the quiver.",
       "requires_gear_report_unused_in_combat": true,
       "show_for_babies": false,
@@ -2400,7 +2734,9 @@
       "id": "gear_report_leatherworker_used",
       "type": "gear_report",
       "option": "gear_report",
-      "professions": ["leatherworker"],
+      "professions": [
+        "leatherworker"
+      ],
       "text": "It flexed where it should and held where it had to. Good work saves skin.",
       "requires_gear_report_used_in_combat": true,
       "show_for_babies": false,
@@ -2410,7 +2746,9 @@
       "id": "gear_report_leatherworker_unused",
       "type": "gear_report",
       "option": "gear_report",
-      "professions": ["leatherworker"],
+      "professions": [
+        "leatherworker"
+      ],
       "text": "No scuffs yet. I appreciate gear that does not rush to prove itself.",
       "requires_gear_report_unused_in_combat": true,
       "show_for_babies": false,
@@ -2420,7 +2758,9 @@
       "id": "gear_report_librarian_used",
       "type": "gear_report",
       "option": "gear_report",
-      "professions": ["librarian"],
+      "professions": [
+        "librarian"
+      ],
       "text": "It performed as promised. I may need to revise my opinion of practical gifts upward.",
       "requires_gear_report_used_in_combat": true,
       "show_for_babies": false,
@@ -2430,7 +2770,9 @@
       "id": "gear_report_librarian_unused",
       "type": "gear_report",
       "option": "gear_report",
-      "professions": ["librarian"],
+      "professions": [
+        "librarian"
+      ],
       "text": "Untested. I have filed it under things I hope remain theoretical.",
       "requires_gear_report_unused_in_combat": true,
       "show_for_babies": false,
@@ -2440,7 +2782,9 @@
       "id": "gear_report_mason_used",
       "type": "gear_report",
       "option": "gear_report",
-      "professions": ["mason"],
+      "professions": [
+        "mason"
+      ],
       "text": "Solid work. It took the pressure like good stone in the right wall.",
       "requires_gear_report_used_in_combat": true,
       "show_for_babies": false,
@@ -2450,7 +2794,9 @@
       "id": "gear_report_mason_unused",
       "type": "gear_report",
       "option": "gear_report",
-      "professions": ["mason"],
+      "professions": [
+        "mason"
+      ],
       "text": "Still unmarked. Strong things do not need to boast before the load comes.",
       "requires_gear_report_unused_in_combat": true,
       "show_for_babies": false,
@@ -2460,7 +2806,9 @@
       "id": "gear_report_shepherd_used",
       "type": "gear_report",
       "option": "gear_report",
-      "professions": ["shepherd"],
+      "professions": [
+        "shepherd"
+      ],
       "text": "It helped keep the wolves from making a story of me. That is enough praise.",
       "requires_gear_report_used_in_combat": true,
       "show_for_babies": false,
@@ -2470,7 +2818,9 @@
       "id": "gear_report_shepherd_unused",
       "type": "gear_report",
       "option": "gear_report",
-      "professions": ["shepherd"],
+      "professions": [
+        "shepherd"
+      ],
       "text": "Unused so far. I prefer watching over nervous sheep to testing nervous steel.",
       "requires_gear_report_unused_in_combat": true,
       "show_for_babies": false,
@@ -2480,7 +2830,9 @@
       "id": "gear_report_toolsmith_used",
       "type": "gear_report",
       "option": "gear_report",
-      "professions": ["toolsmith"],
+      "professions": [
+        "toolsmith"
+      ],
       "text": "It did its job without complaint. That is the highest compliment a tool gets.",
       "requires_gear_report_used_in_combat": true,
       "show_for_babies": false,
@@ -2490,7 +2842,9 @@
       "id": "gear_report_toolsmith_unused",
       "type": "gear_report",
       "option": "gear_report",
-      "professions": ["toolsmith"],
+      "professions": [
+        "toolsmith"
+      ],
       "text": "Still ready. A tool can be useful before it ever bites into work.",
       "requires_gear_report_unused_in_combat": true,
       "show_for_babies": false,
@@ -2500,7 +2854,9 @@
       "id": "gear_report_unemployed_used",
       "type": "gear_report",
       "option": "gear_report",
-      "professions": ["unemployed"],
+      "professions": [
+        "unemployed"
+      ],
       "text": "It helped. Maybe being ready is a profession of its own for now.",
       "requires_gear_report_used_in_combat": true,
       "show_for_babies": false,
@@ -2510,7 +2866,9 @@
       "id": "gear_report_unemployed_unused",
       "type": "gear_report",
       "option": "gear_report",
-      "professions": ["unemployed"],
+      "professions": [
+        "unemployed"
+      ],
       "text": "Unused so far. I may not have a trade, but I know preparation when I see it.",
       "requires_gear_report_unused_in_combat": true,
       "show_for_babies": false,
@@ -2520,7 +2878,9 @@
       "id": "gear_report_nitwit_unused",
       "type": "gear_report",
       "option": "gear_report",
-      "professions": ["nitwit"],
+      "professions": [
+        "nitwit"
+      ],
       "text": "I have not used it. I have practiced looking brave with it, which is almost something.",
       "requires_gear_report_unused_in_combat": true,
       "show_for_babies": false,
@@ -7132,6 +7492,487 @@
       "gift_advice": "already_known",
       "text": "I do not have another gift tip ready for you.",
       "weight": 18
+    },
+    {
+      "id": "cured_recognition_generic_warm_1",
+      "type": "cured_recognition",
+      "text": "I remember pieces. Your face came back before my voice did. Thank you for waiting on the other side.",
+      "weight": 30,
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ]
+    },
+    {
+      "id": "cured_recognition_generic_warm_2",
+      "type": "cured_recognition",
+      "text": "I remember enough to know you pulled me out of something dark.",
+      "weight": 30,
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ]
+    },
+    {
+      "id": "cured_recognition_generic_confused_1",
+      "type": "cured_recognition",
+      "text": "I know you, I think. The memory has teeth marks around the edges.",
+      "weight": 30,
+      "dispositions": [
+        "neutral",
+        "cautious"
+      ]
+    },
+    {
+      "id": "cured_recognition_generic_confused_2",
+      "type": "cured_recognition",
+      "text": "Your voice sounds familiar, but everything before the cure is fog and hunger.",
+      "weight": 30,
+      "dispositions": [
+        "neutral",
+        "cautious"
+      ]
+    },
+    {
+      "id": "cured_recognition_generic_uneasy_1",
+      "type": "cured_recognition",
+      "text": "I remember you. That does not make the remembering easy.",
+      "weight": 30,
+      "dispositions": [
+        "rude",
+        "hostile",
+        "fearful"
+      ]
+    },
+    {
+      "id": "village_event_thunderstorm_shared_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "The thunder shook everyone, but the village is still standing.",
+      "weight": 28,
+      "show_for_babies": false
+    },
+    {
+      "id": "village_event_thunderstorm_shared_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "We are rattled, not broken. Count heads before counting damage.",
+      "weight": 28,
+      "show_for_babies": false
+    },
+    {
+      "id": "village_event_thunderstorm_shared_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "The little ones jumped at every crack, but most doors held.",
+      "weight": 28,
+      "show_for_babies": false
+    },
+    {
+      "id": "village_event_thunderstorm_shared_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "Lightning makes honest fear out of everyone. Thank you for asking.",
+      "weight": 28,
+      "show_for_babies": false
+    },
+    {
+      "id": "village_event_thunderstorm_shared_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "We are checking roofs, bells, and nerves after that thunder.",
+      "weight": 28,
+      "show_for_babies": false
+    },
+    {
+      "id": "village_event_thunderstorm_baby_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "The sky was so loud. I stayed near the bed and did not like it.",
+      "weight": 32,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "village_event_thunderstorm_baby_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "I think everyone is okay, but the thunder made my knees feel funny.",
+      "weight": 32,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "village_event_thunderstorm_baby_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "The grown-ups said stay inside. I stayed very inside.",
+      "weight": 32,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "village_event_thunderstorm_baby_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "I counted the booms and lost count because I hid.",
+      "weight": 32,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "village_event_thunderstorm_baby_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "Nobody should let the sky shout that much.",
+      "weight": 32,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "village_event_fire_shared_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "The smoke has thinned, but everyone is still counting what was lost.",
+      "weight": 28,
+      "show_for_babies": false
+    },
+    {
+      "id": "village_event_fire_shared_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "We put out what we could. Keep water close until the smell fades.",
+      "weight": 28,
+      "show_for_babies": false
+    },
+    {
+      "id": "village_event_fire_shared_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "Fire leaves more than ash. People will be jumpy for a while.",
+      "weight": 28,
+      "show_for_babies": false
+    },
+    {
+      "id": "village_event_fire_shared_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "No one wants to say they were scared first, so I will: we were scared.",
+      "weight": 28,
+      "show_for_babies": false
+    },
+    {
+      "id": "village_event_fire_shared_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "Everyone is checking walls, beds, and each other after the flames.",
+      "weight": 28,
+      "show_for_babies": false
+    },
+    {
+      "id": "village_event_fire_baby_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "There was smoke and grown-ups yelling. I stayed low like they said.",
+      "weight": 32,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "village_event_fire_baby_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "I do not like fire when it runs around loose.",
+      "weight": 32,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "village_event_fire_baby_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "Someone carried water very fast. I tried to help by not being in the way.",
+      "weight": 32,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "village_event_fire_baby_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "The air tasted bad, but I think everyone found a safe place.",
+      "weight": 32,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "village_event_fire_baby_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "I am okay. My blanket smells smoky though.",
+      "weight": 32,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "village_event_raid_shared_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "The raid is over for now. Some of us are still listening for horns.",
+      "weight": 28,
+      "show_for_babies": false
+    },
+    {
+      "id": "village_event_raid_shared_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "Everyone alive is accounted for, but calm takes longer to return.",
+      "weight": 28,
+      "show_for_babies": false
+    },
+    {
+      "id": "village_event_raid_shared_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "We barred the doors, held our breath, and made it to the other side.",
+      "weight": 28,
+      "show_for_babies": false
+    },
+    {
+      "id": "village_event_raid_shared_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "Ask again after the shaking stops. For now, yes, most are safe.",
+      "weight": 28,
+      "show_for_babies": false
+    },
+    {
+      "id": "village_event_raid_shared_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "The bell did its work. So did the brave ones. The rest of us remember.",
+      "weight": 28,
+      "show_for_babies": false
+    },
+    {
+      "id": "village_event_raid_baby_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "The bell was loud and everyone ran. I ran too.",
+      "weight": 32,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "village_event_raid_baby_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "I hid where I was told. I think that means I helped.",
+      "weight": 32,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "village_event_raid_baby_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "The bad people are gone, right? Please say they are gone.",
+      "weight": 32,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "village_event_raid_baby_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "I heard shouting outside and did not peek. Not even once.",
+      "weight": 32,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "village_event_raid_baby_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "My heart is still running even though my feet stopped.",
+      "weight": 32,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "village_event_night_attack_shared_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "The night brought trouble, but dawn found us still here.",
+      "weight": 28,
+      "show_for_babies": false
+    },
+    {
+      "id": "village_event_night_attack_shared_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "We are checking doors and wounds. Night makes every sound suspicious now.",
+      "weight": 28,
+      "show_for_babies": false
+    },
+    {
+      "id": "village_event_night_attack_shared_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "Some slept through it. Some will not sleep well for a while.",
+      "weight": 28,
+      "show_for_babies": false
+    },
+    {
+      "id": "village_event_night_attack_shared_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "The attack passed, but people are keeping lamps lit anyway.",
+      "weight": 28,
+      "show_for_babies": false
+    },
+    {
+      "id": "village_event_night_attack_shared_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "Everyone is quieter after a bad night. Quiet can mean alive, at least.",
+      "weight": 28,
+      "show_for_babies": false
+    },
+    {
+      "id": "village_event_night_attack_baby_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "I heard monsters and pulled the blanket over my head.",
+      "weight": 32,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "village_event_night_attack_baby_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "Night was too noisy. I want morning to stay longer.",
+      "weight": 32,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "village_event_night_attack_baby_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "Someone told me not to open the door, so I did not.",
+      "weight": 32,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "village_event_night_attack_baby_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "I am okay, but I want the lamps left on.",
+      "weight": 32,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "village_event_night_attack_baby_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "The dark made bad sounds. The grown-ups made braver sounds.",
+      "weight": 32,
+      "show_for_adults": false,
+      "show_for_babies": true
     }
   ],
   "pacify": [

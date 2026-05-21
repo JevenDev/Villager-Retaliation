@@ -28,6 +28,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -137,6 +138,7 @@ public final class VillagerRetaliationEvents {
         if (event.getEntity() instanceof Villager villager) {
             VillagerConversationService.tickVillager(villager);
             VillagerRecruitmentService.onVillagerTickPost(villager);
+            rememberThunderstormNearVillager(villager);
         }
         clearIronGolemTargetingVillagers(event.getEntity());
         VillagerRetaliationHandler.onEntityTickPost(event);
@@ -341,6 +343,15 @@ public final class VillagerRetaliationEvents {
 
         Entity attacker = event.getSource().getEntity();
         VillageEventMemory.remember(level, VillageEventMemory.EventTag.VILLAGER_ATTACKED, villager.blockPosition(), villager, attacker);
+        if (event.getSource().is(DamageTypeTags.IS_FIRE)) {
+            VillageEventMemory.remember(level, VillageEventMemory.EventTag.VILLAGE_FIRE, villager.blockPosition(), villager, attacker);
+        }
+        if (attacker instanceof Enemy && isNight(level)) {
+            VillageEventMemory.remember(level, VillageEventMemory.EventTag.NIGHT_ATTACK, villager.blockPosition(), villager, attacker);
+        }
+        if (attacker instanceof Raider && isActiveRaidAt(level, attacker)) {
+            VillageEventMemory.remember(level, VillageEventMemory.EventTag.RAID, villager.blockPosition(), villager, attacker);
+        }
         if (attacker instanceof Player) {
             VillageEventMemory.remember(level, VillageEventMemory.EventTag.PLAYER_ATTACKED_VILLAGER, villager.blockPosition(), villager, attacker);
         }
@@ -358,15 +369,33 @@ public final class VillagerRetaliationEvents {
         } else if (deceased instanceof IronGolem golem) {
             VillageEventMemory.remember(level, VillageEventMemory.EventTag.GOLEM_KILLED, golem.blockPosition(), golem, attacker);
         } else if (deceased instanceof Enemy) {
+            if (isNight(level)) {
+                VillageEventMemory.remember(level, VillageEventMemory.EventTag.NIGHT_ATTACK, deceased.blockPosition(), deceased, attacker);
+            }
             if (attacker instanceof IronGolem) {
                 VillageEventMemory.remember(level, VillageEventMemory.EventTag.IRON_GOLEM_DEFEATED_MOB, deceased.blockPosition(), deceased, attacker);
             } else if (attacker instanceof Player) {
                 VillageEventMemory.remember(level, VillageEventMemory.EventTag.PLAYER_DEFENDED_VILLAGE, deceased.blockPosition(), deceased, attacker);
                 if (deceased instanceof Raider && isActiveRaidAt(level, deceased)) {
+                    VillageEventMemory.remember(level, VillageEventMemory.EventTag.RAID, deceased.blockPosition(), deceased, attacker);
                     VillageEventMemory.remember(level, VillageEventMemory.EventTag.PLAYER_DEFENDED_RAID, deceased.blockPosition(), deceased, attacker);
                 }
             }
         }
+    }
+
+    private static void rememberThunderstormNearVillager(Villager villager) {
+        if (!(villager.level() instanceof ServerLevel level) || !level.isThundering()) {
+            return;
+        }
+        if (level.getGameTime() % 200L == Math.floorMod(villager.getUUID().getLeastSignificantBits(), 200L)) {
+            VillageEventMemory.remember(level, VillageEventMemory.EventTag.THUNDERSTORM, villager.blockPosition(), villager, null);
+        }
+    }
+
+    private static boolean isNight(ServerLevel level) {
+        long time = level.getDayTime() % 24000L;
+        return time >= 12542L && time < 23460L;
     }
 
     private static boolean isActiveRaidAt(ServerLevel level, Entity entity) {

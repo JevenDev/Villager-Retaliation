@@ -38,6 +38,8 @@ public final class VillagerInteractionTracker {
                 entry.requestUseCount(DialogueRequestType.COMBAT_SURVIVAL_REPORT, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.GEAR_REPORT, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.RECRUITMENT_FOLLOWUP, gameTime, day, optionResetTicks),
+                entry.requestUseCount(DialogueRequestType.CURED_RECOGNITION, gameTime, day, optionResetTicks),
+                entry.requestUseCount(DialogueRequestType.VILLAGE_EVENT_REPORT, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.APOLOGY, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.VILLAGE_DEFENSE_REPORT, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.STORY, gameTime, day, optionResetTicks),
@@ -242,6 +244,26 @@ public final class VillagerInteractionTracker {
         return Optional.ofNullable(report);
     }
 
+    public static void rememberCuredRecognition(ServerLevel level, Villager villager, UUID playerId) {
+        VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
+        data.rememberCuredRecognition(villager.getUUID(), playerId, level.getGameTime());
+        data.setDirty();
+    }
+
+    public static Optional<CuredRecognitionReport> unreportedCuredRecognition(ServerLevel level, Villager villager, ServerPlayer player) {
+        return Optional.ofNullable(VillagerInteractionSavedData.get(level)
+                .unreportedCuredRecognition(villager.getUUID(), player.getUUID()));
+    }
+
+    public static Optional<CuredRecognitionReport> claimUnreportedCuredRecognition(ServerLevel level, Villager villager, ServerPlayer player) {
+        VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
+        CuredRecognitionReport report = data.claimUnreportedCuredRecognition(villager.getUUID(), player.getUUID());
+        if (report != null) {
+            data.setDirty();
+        }
+        return Optional.ofNullable(report);
+    }
+
     public static void rememberRecruitmentMemory(
             ServerLevel level,
             Villager villager,
@@ -400,6 +422,8 @@ public final class VillagerInteractionTracker {
             int combatSurvivalReportUseCount,
             int gearReportUseCount,
             int recruitmentFollowupUseCount,
+            int curedRecognitionUseCount,
+            int villageEventReportUseCount,
             int apologyUseCount,
             int villageDefenseReportUseCount,
             int storyUseCount,
@@ -423,6 +447,8 @@ public final class VillagerInteractionTracker {
                 case COMBAT_SURVIVAL_REPORT -> this.combatSurvivalReportUseCount;
                 case GEAR_REPORT -> this.gearReportUseCount;
                 case RECRUITMENT_FOLLOWUP -> this.recruitmentFollowupUseCount;
+                case CURED_RECOGNITION -> this.curedRecognitionUseCount;
+                case VILLAGE_EVENT_REPORT -> this.villageEventReportUseCount;
                 case APOLOGY -> this.apologyUseCount;
                 case VILLAGE_DEFENSE_REPORT -> this.villageDefenseReportUseCount;
                 case STORY -> this.storyUseCount;
@@ -474,6 +500,12 @@ public final class VillagerInteractionTracker {
     public record RecruitmentFollowupReport(
             UUID villagerId,
             String scenario,
+            long gameTime
+    ) {
+    }
+
+    public record CuredRecognitionReport(
+            UUID villagerId,
             long gameTime
     ) {
     }

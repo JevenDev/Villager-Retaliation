@@ -1,13 +1,55 @@
 {
   "messages": [
-    { "key": "gift_given", "text": "Take {gift_item}. I may not have a trade, but I know how to say thanks.", "weight": 24 },
-    { "key": "gift_given", "text": "Here, {gift_item}. Maybe one of us will find the perfect use for it.", "weight": 24 },
-    { "key": "gift_advice_followup.liked", "text": "Good, {gift_item} worked. See? I can be useful without a workstation.", "weight": 22 },
-    { "key": "gift_advice_followup.liked", "text": "{tested_villager} liked it? Excellent. I am putting that under possible talents.", "weight": 22 },
-    { "key": "gift_advice_followup.disliked", "text": "Ah. Then my career in advice pauses here. Try {alternative_gift} for {gift_subject}.", "weight": 22 },
-    { "key": "gift_advice_followup.disliked", "text": "{gift_item} was wrong? Let us call it research. {alternative_gift} should work better.", "weight": 22 },
-    { "key": "gift_advice_followup.disliked", "text": "This is why nobody pays me for advice. Try {alternative_gift}.", "dispositions": ["cautious", "rude", "hostile", "fearful"], "weight": 20 },
-    { "key": "gift_advice_followup.disliked", "text": "You came back? Fair. My next guess is {alternative_gift}.", "dispositions": ["rude", "hostile"], "weight": 20 }
+    {
+      "key": "gift_given",
+      "text": "Take {gift_item}. I may not have a trade, but I know how to say thanks.",
+      "weight": 24
+    },
+    {
+      "key": "gift_given",
+      "text": "Here, {gift_item}. Maybe one of us will find the perfect use for it.",
+      "weight": 24
+    },
+    {
+      "key": "gift_advice_followup.liked",
+      "text": "Good, {gift_item} worked. See? I can be useful without a workstation.",
+      "weight": 22
+    },
+    {
+      "key": "gift_advice_followup.liked",
+      "text": "{tested_villager} liked it? Excellent. I am putting that under possible talents.",
+      "weight": 22
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "text": "Ah. Then my career in advice pauses here. Try {alternative_gift} for {gift_subject}.",
+      "weight": 22
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "text": "{gift_item} was wrong? Let us call it research. {alternative_gift} should work better.",
+      "weight": 22
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "text": "This is why nobody pays me for advice. Try {alternative_gift}.",
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 20
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "text": "You came back? Fair. My next guess is {alternative_gift}.",
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
+      "weight": 20
+    }
   ],
   "openings": [
     {
@@ -103,6 +145,262 @@
         "fearful"
       ],
       "weight": 30
+    },
+    {
+      "id": "unemployed_cured_recognition_warm_1",
+      "type": "cured_recognition",
+      "text": "I remember having no trade, no thoughts, almost no self. You helped with the important one.",
+      "weight": 30,
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ]
+    },
+    {
+      "id": "unemployed_cured_recognition_warm_2",
+      "type": "cured_recognition",
+      "text": "I did not know what I would become, but you made sure I could become anything.",
+      "weight": 30,
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ]
+    },
+    {
+      "id": "unemployed_cured_recognition_confused_1",
+      "type": "cured_recognition",
+      "text": "Your face is familiar. So is being confused, but this feels different.",
+      "weight": 30,
+      "dispositions": [
+        "neutral",
+        "cautious"
+      ]
+    },
+    {
+      "id": "unemployed_cured_recognition_confused_2",
+      "type": "cured_recognition",
+      "text": "I remember waking with empty hands and a head full of broken bells.",
+      "weight": 30,
+      "dispositions": [
+        "neutral",
+        "cautious"
+      ]
+    },
+    {
+      "id": "unemployed_cured_recognition_uneasy_1",
+      "type": "cured_recognition",
+      "text": "I remember you, though I still do not know what to do with the memory.",
+      "weight": 30,
+      "dispositions": [
+        "rude",
+        "hostile",
+        "fearful"
+      ]
+    },
+    {
+      "id": "unemployed_village_event_thunderstorm_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "The open hands and odd jobs took the thunder badly, but everyone near my station is breathing.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_thunderstorm_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "I checked the open hands and odd jobs first, then the people. Both needed steady hands.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_thunderstorm_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "That storm rattled the open hands and odd jobs; it rattled us more.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_thunderstorm_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "Lightning makes every trade feel small. We are safe enough for now.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_thunderstorm_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "I will trust the sky again when it stops threatening the roof.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_fire_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "I checked the open hands and odd jobs for sparks. Then I checked faces for fear.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_fire_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "Smoke gets into everything: lungs, clothes, and the way people talk afterward.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_fire_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "The open hands and odd jobs can be replaced. People cannot. That is the count that matters.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_fire_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "We saved what hands could reach before the flames decided otherwise.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_fire_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "Fire teaches quick priorities. Water, exits, children, neighbors.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_raid_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "During a raid, the open hands and odd jobs matters less than who makes it behind a door.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_raid_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "The horns stopped, but my hands still expect more trouble.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_raid_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "We counted survivors before supplies. That is the right order.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_raid_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "Raiders came looking for weakness. They found a village that remembers how to stand.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_raid_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "I saw fear move through the village and courage move faster.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_night_attack_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "Night trouble always finds the loose latch first. We are fixing those now.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_night_attack_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "I kept near the open hands and odd jobs and listened for anyone calling for help.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_night_attack_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "Dawn did not erase the attack, but it gave us light to count by.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_night_attack_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "The dark tested everyone. Most of us passed by staying alive.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_night_attack_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "We are safe enough, though every shadow is getting inspected twice.",
+      "weight": 34,
+      "show_for_babies": false
     }
   ],
   "pacify": [

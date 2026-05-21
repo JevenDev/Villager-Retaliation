@@ -1,13 +1,55 @@
 {
   "messages": [
-    { "key": "gift_given", "text": "Here, {gift_item}. Straight aim starts before the bow is drawn.", "weight": 24 },
-    { "key": "gift_given", "text": "Take {gift_item}. If trouble comes, I would like you ready for it.", "weight": 24 },
-    { "key": "gift_advice_followup.liked", "text": "Good. {gift_item} flew true with {tested_villager}.", "weight": 22 },
-    { "key": "gift_advice_followup.liked", "text": "Then that advice hit center. Sounds like {gift_item} flew true.", "weight": 22 },
-    { "key": "gift_advice_followup.disliked", "text": "That shot drifted. For {gift_subject}, nock {alternative_gift} instead.", "weight": 22 },
-    { "key": "gift_advice_followup.disliked", "text": "{gift_item} missed the mark? Try {alternative_gift}; straighter flight.", "weight": 22 },
-    { "key": "gift_advice_followup.disliked", "text": "That advice flew crooked. Nock {alternative_gift} next time.", "dispositions": ["cautious", "rude", "hostile", "fearful"], "weight": 20 },
-    { "key": "gift_advice_followup.disliked", "text": "You let loose before checking the fletching. Try {alternative_gift}.", "dispositions": ["rude", "hostile"], "weight": 20 }
+    {
+      "key": "gift_given",
+      "text": "Here, {gift_item}. Straight aim starts before the bow is drawn.",
+      "weight": 24
+    },
+    {
+      "key": "gift_given",
+      "text": "Take {gift_item}. If trouble comes, I would like you ready for it.",
+      "weight": 24
+    },
+    {
+      "key": "gift_advice_followup.liked",
+      "text": "Good. {gift_item} flew true with {tested_villager}.",
+      "weight": 22
+    },
+    {
+      "key": "gift_advice_followup.liked",
+      "text": "Then that advice hit center. Sounds like {gift_item} flew true.",
+      "weight": 22
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "text": "That shot drifted. For {gift_subject}, nock {alternative_gift} instead.",
+      "weight": 22
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "text": "{gift_item} missed the mark? Try {alternative_gift}; straighter flight.",
+      "weight": 22
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "text": "That advice flew crooked. Nock {alternative_gift} next time.",
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 20
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "text": "You let loose before checking the fletching. Try {alternative_gift}.",
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
+      "weight": 20
+    }
   ],
   "openings": [
     {
@@ -103,6 +145,262 @@
         "rude"
       ],
       "weight": 30
+    },
+    {
+      "id": "fletcher_cured_recognition_warm_1",
+      "type": "cured_recognition",
+      "text": "I remember the cure flying true when everything else had gone crooked.",
+      "weight": 30,
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ]
+    },
+    {
+      "id": "fletcher_cured_recognition_warm_2",
+      "type": "cured_recognition",
+      "text": "You set me back on the string and did not let me snap.",
+      "weight": 30,
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ]
+    },
+    {
+      "id": "fletcher_cured_recognition_confused_1",
+      "type": "cured_recognition",
+      "text": "Your face lands near the target, but the rest of the memory wobbles.",
+      "weight": 30,
+      "dispositions": [
+        "neutral",
+        "cautious"
+      ]
+    },
+    {
+      "id": "fletcher_cured_recognition_confused_2",
+      "type": "cured_recognition",
+      "text": "There was a hiss, a bite of gold, and then my thoughts found their fletching.",
+      "weight": 30,
+      "dispositions": [
+        "neutral",
+        "cautious"
+      ]
+    },
+    {
+      "id": "fletcher_cured_recognition_uneasy_1",
+      "type": "cured_recognition",
+      "text": "I remember you. The arrow of it still shakes in the target.",
+      "weight": 30,
+      "dispositions": [
+        "rude",
+        "hostile",
+        "fearful"
+      ]
+    },
+    {
+      "id": "fletcher_village_event_thunderstorm_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "The bows and arrows took the thunder badly, but everyone near my station is breathing.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "fletcher_village_event_thunderstorm_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "I checked the bows and arrows first, then the people. Both needed steady hands.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "fletcher_village_event_thunderstorm_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "That storm rattled the bows and arrows; it rattled us more.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "fletcher_village_event_thunderstorm_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "Lightning makes every trade feel small. We are safe enough for now.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "fletcher_village_event_thunderstorm_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "I will trust the sky again when it stops threatening the roof.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "fletcher_village_event_fire_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "I checked the bows and arrows for sparks. Then I checked faces for fear.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "fletcher_village_event_fire_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "Smoke gets into everything: lungs, clothes, and the way people talk afterward.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "fletcher_village_event_fire_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "The bows and arrows can be replaced. People cannot. That is the count that matters.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "fletcher_village_event_fire_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "We saved what hands could reach before the flames decided otherwise.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "fletcher_village_event_fire_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "Fire teaches quick priorities. Water, exits, children, neighbors.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "fletcher_village_event_raid_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "During a raid, the bows and arrows matters less than who makes it behind a door.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "fletcher_village_event_raid_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "The horns stopped, but my hands still expect more trouble.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "fletcher_village_event_raid_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "We counted survivors before supplies. That is the right order.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "fletcher_village_event_raid_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "Raiders came looking for weakness. They found a village that remembers how to stand.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "fletcher_village_event_raid_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "I saw fear move through the village and courage move faster.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "fletcher_village_event_night_attack_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "Night trouble always finds the loose latch first. We are fixing those now.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "fletcher_village_event_night_attack_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "I kept near the bows and arrows and listened for anyone calling for help.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "fletcher_village_event_night_attack_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "Dawn did not erase the attack, but it gave us light to count by.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "fletcher_village_event_night_attack_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "The dark tested everyone. Most of us passed by staying alive.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "fletcher_village_event_night_attack_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "We are safe enough, though every shadow is getting inspected twice.",
+      "weight": 34,
+      "show_for_babies": false
     }
   ],
   "pacify": [

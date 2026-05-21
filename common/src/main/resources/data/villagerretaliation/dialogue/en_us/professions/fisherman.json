@@ -1,13 +1,55 @@
 {
   "messages": [
-    { "key": "gift_given", "text": "Take {gift_item}. A useful catch should not sit in one pair of hands.", "weight": 24 },
-    { "key": "gift_given", "text": "Here, {gift_item}. The water was generous, so I can be too.", "weight": 24 },
-    { "key": "gift_advice_followup.liked", "text": "Good. {tested_villager} took {gift_item}; that advice had a clean hook.", "weight": 22 },
-    { "key": "gift_advice_followup.liked", "text": "Then {gift_item} was the right bait for {tested_villager}. Glad it landed.", "weight": 22 },
-    { "key": "gift_advice_followup.disliked", "text": "That line came back empty. For {gift_subject}, cast {alternative_gift} instead.", "weight": 22 },
-    { "key": "gift_advice_followup.disliked", "text": "Some fish spit the hook. Leave {gift_item} and try {alternative_gift} next time.", "weight": 22 },
-    { "key": "gift_advice_followup.disliked", "text": "Bad bait. It happens. Cast {alternative_gift} if you want a better chance.", "dispositions": ["cautious", "rude", "hostile", "fearful"], "weight": 20 },
-    { "key": "gift_advice_followup.disliked", "text": "You took the line, not me. Still, {alternative_gift} should catch better.", "dispositions": ["rude", "hostile"], "weight": 20 }
+    {
+      "key": "gift_given",
+      "text": "Take {gift_item}. A useful catch should not sit in one pair of hands.",
+      "weight": 24
+    },
+    {
+      "key": "gift_given",
+      "text": "Here, {gift_item}. The water was generous, so I can be too.",
+      "weight": 24
+    },
+    {
+      "key": "gift_advice_followup.liked",
+      "text": "Good. {tested_villager} took {gift_item}; that advice had a clean hook.",
+      "weight": 22
+    },
+    {
+      "key": "gift_advice_followup.liked",
+      "text": "Then {gift_item} was the right bait for {tested_villager}. Glad it landed.",
+      "weight": 22
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "text": "That line came back empty. For {gift_subject}, cast {alternative_gift} instead.",
+      "weight": 22
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "text": "Some fish spit the hook. Leave {gift_item} and try {alternative_gift} next time.",
+      "weight": 22
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "text": "Bad bait. It happens. Cast {alternative_gift} if you want a better chance.",
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 20
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "text": "You took the line, not me. Still, {alternative_gift} should catch better.",
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
+      "weight": 20
+    }
   ],
   "openings": [
     {
@@ -103,6 +145,262 @@
         "rude"
       ],
       "weight": 30
+    },
+    {
+      "id": "fisherman_cured_recognition_warm_1",
+      "type": "cured_recognition",
+      "text": "I remember sinking far below myself. You hauled the line in.",
+      "weight": 30,
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ]
+    },
+    {
+      "id": "fisherman_cured_recognition_warm_2",
+      "type": "cured_recognition",
+      "text": "The dark had me hooked. You cut the line clean.",
+      "weight": 30,
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ]
+    },
+    {
+      "id": "fisherman_cured_recognition_confused_1",
+      "type": "cured_recognition",
+      "text": "Your face breaks the surface of that memory, then slips under again.",
+      "weight": 30,
+      "dispositions": [
+        "neutral",
+        "cautious"
+      ]
+    },
+    {
+      "id": "fisherman_cured_recognition_confused_2",
+      "type": "cured_recognition",
+      "text": "I remember a taste like bad river water, then breathing like it was new.",
+      "weight": 30,
+      "dispositions": [
+        "neutral",
+        "cautious"
+      ]
+    },
+    {
+      "id": "fisherman_cured_recognition_uneasy_1",
+      "type": "cured_recognition",
+      "text": "I remember you through deep water and panic. Do not crowd the bank.",
+      "weight": 30,
+      "dispositions": [
+        "rude",
+        "hostile",
+        "fearful"
+      ]
+    },
+    {
+      "id": "fisherman_village_event_thunderstorm_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "The nets and docks took the thunder badly, but everyone near my station is breathing.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "fisherman_village_event_thunderstorm_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "I checked the nets and docks first, then the people. Both needed steady hands.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "fisherman_village_event_thunderstorm_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "That storm rattled the nets and docks; it rattled us more.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "fisherman_village_event_thunderstorm_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "Lightning makes every trade feel small. We are safe enough for now.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "fisherman_village_event_thunderstorm_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "I will trust the sky again when it stops threatening the roof.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "fisherman_village_event_fire_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "I checked the nets and docks for sparks. Then I checked faces for fear.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "fisherman_village_event_fire_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "Smoke gets into everything: lungs, clothes, and the way people talk afterward.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "fisherman_village_event_fire_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "The nets and docks can be replaced. People cannot. That is the count that matters.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "fisherman_village_event_fire_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "We saved what hands could reach before the flames decided otherwise.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "fisherman_village_event_fire_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "Fire teaches quick priorities. Water, exits, children, neighbors.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "fisherman_village_event_raid_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "During a raid, the nets and docks matters less than who makes it behind a door.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "fisherman_village_event_raid_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "The horns stopped, but my hands still expect more trouble.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "fisherman_village_event_raid_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "We counted survivors before supplies. That is the right order.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "fisherman_village_event_raid_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "Raiders came looking for weakness. They found a village that remembers how to stand.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "fisherman_village_event_raid_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "I saw fear move through the village and courage move faster.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "fisherman_village_event_night_attack_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "Night trouble always finds the loose latch first. We are fixing those now.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "fisherman_village_event_night_attack_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "I kept near the nets and docks and listened for anyone calling for help.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "fisherman_village_event_night_attack_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "Dawn did not erase the attack, but it gave us light to count by.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "fisherman_village_event_night_attack_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "The dark tested everyone. Most of us passed by staying alive.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "fisherman_village_event_night_attack_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "We are safe enough, though every shadow is getting inspected twice.",
+      "weight": 34,
+      "show_for_babies": false
     }
   ],
   "pacify": [

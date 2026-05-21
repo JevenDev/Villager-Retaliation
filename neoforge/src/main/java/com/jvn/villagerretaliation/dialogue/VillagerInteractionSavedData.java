@@ -74,6 +74,8 @@ public class VillagerInteractionSavedData extends SavedData {
     private static final String TAG_RECRUITMENT_FOLLOWUP_UNREPORTED = "RecruitmentFollowupUnreported";
     private static final String TAG_RECRUITMENT_FOLLOWUP_SCENARIO = "RecruitmentFollowupScenario";
     private static final String TAG_RECRUITMENT_FOLLOWUP_GAME_TIME = "RecruitmentFollowupGameTime";
+    private static final String TAG_CURED_RECOGNITION_UNREPORTED = "CuredRecognitionUnreported";
+    private static final String TAG_CURED_RECOGNITION_GAME_TIME = "CuredRecognitionGameTime";
     private static final String TAG_RECRUITMENT_MEMORY_SCENARIO = "RecruitmentMemoryScenario";
     private static final String TAG_RECRUITMENT_MEMORY_BIOME = "RecruitmentMemoryBiome";
     private static final String TAG_RECRUITMENT_MEMORY_DISTANCE = "RecruitmentMemoryDistance";
@@ -142,6 +144,8 @@ public class VillagerInteractionSavedData extends SavedData {
                 entry.recruitmentFollowupScenario = entryTag.getString(TAG_RECRUITMENT_FOLLOWUP_SCENARIO);
             }
             entry.recruitmentFollowupGameTime = readOptionalLong(entryTag, TAG_RECRUITMENT_FOLLOWUP_GAME_TIME);
+            entry.curedRecognitionUnreported = entryTag.getBoolean(TAG_CURED_RECOGNITION_UNREPORTED);
+            entry.curedRecognitionGameTime = readOptionalLong(entryTag, TAG_CURED_RECOGNITION_GAME_TIME);
             if (entryTag.contains(TAG_RECRUITMENT_MEMORY_SCENARIO, Tag.TAG_STRING)) {
                 entry.recruitmentMemoryScenario = entryTag.getString(TAG_RECRUITMENT_MEMORY_SCENARIO);
             }
@@ -341,6 +345,8 @@ public class VillagerInteractionSavedData extends SavedData {
                     entryTag.putString(TAG_RECRUITMENT_FOLLOWUP_SCENARIO, playerEntry.getValue().recruitmentFollowupScenario);
                 }
                 entryTag.putLong(TAG_RECRUITMENT_FOLLOWUP_GAME_TIME, playerEntry.getValue().recruitmentFollowupGameTime);
+                entryTag.putBoolean(TAG_CURED_RECOGNITION_UNREPORTED, playerEntry.getValue().curedRecognitionUnreported);
+                entryTag.putLong(TAG_CURED_RECOGNITION_GAME_TIME, playerEntry.getValue().curedRecognitionGameTime);
                 if (playerEntry.getValue().recruitmentMemoryScenario != null && !playerEntry.getValue().recruitmentMemoryScenario.isBlank()) {
                     entryTag.putString(TAG_RECRUITMENT_MEMORY_SCENARIO, playerEntry.getValue().recruitmentMemoryScenario);
                 }
@@ -651,6 +657,18 @@ public class VillagerInteractionSavedData extends SavedData {
         return getOrCreate(villagerId, playerId).claimUnreportedRecruitmentFollowup(villagerId);
     }
 
+    public void rememberCuredRecognition(UUID villagerId, UUID playerId, long gameTime) {
+        getOrCreate(villagerId, playerId).rememberCuredRecognition(gameTime);
+    }
+
+    public VillagerInteractionTracker.CuredRecognitionReport unreportedCuredRecognition(UUID villagerId, UUID playerId) {
+        return getOrCreate(villagerId, playerId).unreportedCuredRecognition(villagerId);
+    }
+
+    public VillagerInteractionTracker.CuredRecognitionReport claimUnreportedCuredRecognition(UUID villagerId, UUID playerId) {
+        return getOrCreate(villagerId, playerId).claimUnreportedCuredRecognition(villagerId);
+    }
+
     public void rememberRecruitmentMemory(UUID villagerId, UUID playerId, String scenario, String biomeName, int distanceBlocks, boolean boatTrip, boolean oceanCrossing, long gameTime) {
         getOrCreate(villagerId, playerId).rememberRecruitmentMemory(scenario, biomeName, distanceBlocks, boatTrip, oceanCrossing, gameTime);
     }
@@ -737,6 +755,8 @@ public class VillagerInteractionSavedData extends SavedData {
         private boolean recruitmentFollowupUnreported;
         private String recruitmentFollowupScenario;
         private long recruitmentFollowupGameTime = Long.MIN_VALUE;
+        private boolean curedRecognitionUnreported;
+        private long curedRecognitionGameTime = Long.MIN_VALUE;
         private String recruitmentMemoryScenario;
         private String recruitmentMemoryBiome;
         private int recruitmentMemoryDistance;
@@ -917,6 +937,24 @@ public class VillagerInteractionSavedData extends SavedData {
         public VillagerInteractionTracker.RecruitmentFollowupReport claimUnreportedRecruitmentFollowup(UUID villagerId) {
             VillagerInteractionTracker.RecruitmentFollowupReport report = unreportedRecruitmentFollowup(villagerId);
             this.recruitmentFollowupUnreported = false;
+            return report;
+        }
+
+        public void rememberCuredRecognition(long gameTime) {
+            this.curedRecognitionUnreported = true;
+            this.curedRecognitionGameTime = gameTime;
+        }
+
+        public VillagerInteractionTracker.CuredRecognitionReport unreportedCuredRecognition(UUID villagerId) {
+            if (!this.curedRecognitionUnreported) {
+                return null;
+            }
+            return new VillagerInteractionTracker.CuredRecognitionReport(villagerId, this.curedRecognitionGameTime);
+        }
+
+        public VillagerInteractionTracker.CuredRecognitionReport claimUnreportedCuredRecognition(UUID villagerId) {
+            VillagerInteractionTracker.CuredRecognitionReport report = unreportedCuredRecognition(villagerId);
+            this.curedRecognitionUnreported = false;
             return report;
         }
 

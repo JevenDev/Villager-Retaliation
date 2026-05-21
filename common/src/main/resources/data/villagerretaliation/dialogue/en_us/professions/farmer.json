@@ -1,13 +1,55 @@
 {
   "messages": [
-    { "key": "gift_given", "text": "Here, {gift_item}. Good things grow better when they are shared.", "weight": 24 },
-    { "key": "gift_given", "text": "Take {gift_item}. Consider it a small harvest for the kindness you planted.", "weight": 24 },
-    { "key": "gift_advice_followup.liked", "text": "Good. {gift_item} took root with {tested_villager}. That is a healthy sign.", "weight": 22 },
-    { "key": "gift_advice_followup.liked", "text": "Then the advice sprouted. If {tested_villager} liked {gift_item}, that is a fair harvest.", "weight": 22 },
-    { "key": "gift_advice_followup.disliked", "text": "Wrong soil for that seed. For {gift_subject}, plant {alternative_gift} instead.", "weight": 22 },
-    { "key": "gift_advice_followup.disliked", "text": "{gift_item} did not grow there? Try {alternative_gift}. Some rows need different seed.", "weight": 22 },
-    { "key": "gift_advice_followup.disliked", "text": "Bad seed, bad soil, or bad advice. Hard to say. Plant {alternative_gift} next.", "dispositions": ["cautious", "rude", "hostile", "fearful"], "weight": 20 },
-    { "key": "gift_advice_followup.disliked", "text": "You harvested a frown from {gift_item}? Then sow {alternative_gift} and move on.", "dispositions": ["rude", "hostile"], "weight": 20 }
+    {
+      "key": "gift_given",
+      "text": "Here, {gift_item}. Good things grow better when they are shared.",
+      "weight": 24
+    },
+    {
+      "key": "gift_given",
+      "text": "Take {gift_item}. Consider it a small harvest for the kindness you planted.",
+      "weight": 24
+    },
+    {
+      "key": "gift_advice_followup.liked",
+      "text": "Good. {gift_item} took root with {tested_villager}. That is a healthy sign.",
+      "weight": 22
+    },
+    {
+      "key": "gift_advice_followup.liked",
+      "text": "Then the advice sprouted. If {tested_villager} liked {gift_item}, that is a fair harvest.",
+      "weight": 22
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "text": "Wrong soil for that seed. For {gift_subject}, plant {alternative_gift} instead.",
+      "weight": 22
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "text": "{gift_item} did not grow there? Try {alternative_gift}. Some rows need different seed.",
+      "weight": 22
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "text": "Bad seed, bad soil, or bad advice. Hard to say. Plant {alternative_gift} next.",
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 20
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "text": "You harvested a frown from {gift_item}? Then sow {alternative_gift} and move on.",
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
+      "weight": 20
+    }
   ],
   "openings": [
     {
@@ -103,6 +145,262 @@
         "hostile"
       ],
       "weight": 30
+    },
+    {
+      "id": "farmer_cured_recognition_warm_1",
+      "type": "cured_recognition",
+      "text": "I remember waking like a field after frost. You gave the roots a chance.",
+      "weight": 30,
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ]
+    },
+    {
+      "id": "farmer_cured_recognition_warm_2",
+      "type": "cured_recognition",
+      "text": "You pulled me back from spoiled soil. I will not forget that harvest.",
+      "weight": 30,
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ]
+    },
+    {
+      "id": "farmer_cured_recognition_confused_1",
+      "type": "cured_recognition",
+      "text": "Your face is familiar, like a seed found in last year's coat.",
+      "weight": 30,
+      "dispositions": [
+        "neutral",
+        "cautious"
+      ]
+    },
+    {
+      "id": "farmer_cured_recognition_confused_2",
+      "type": "cured_recognition",
+      "text": "I remember mud, hunger, and sunlight arriving too bright. Were you the sunlight?",
+      "weight": 30,
+      "dispositions": [
+        "neutral",
+        "cautious"
+      ]
+    },
+    {
+      "id": "farmer_cured_recognition_uneasy_1",
+      "type": "cured_recognition",
+      "text": "I remember you, but the memory still has grave dirt under its nails.",
+      "weight": 30,
+      "dispositions": [
+        "rude",
+        "hostile",
+        "fearful"
+      ]
+    },
+    {
+      "id": "farmer_village_event_thunderstorm_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "The fields and animals took the thunder badly, but everyone near my station is breathing.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "farmer_village_event_thunderstorm_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "I checked the fields and animals first, then the people. Both needed steady hands.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "farmer_village_event_thunderstorm_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "That storm rattled the fields and animals; it rattled us more.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "farmer_village_event_thunderstorm_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "Lightning makes every trade feel small. We are safe enough for now.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "farmer_village_event_thunderstorm_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "I will trust the sky again when it stops threatening the roof.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "farmer_village_event_fire_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "I checked the fields and animals for sparks. Then I checked faces for fear.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "farmer_village_event_fire_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "Smoke gets into everything: lungs, clothes, and the way people talk afterward.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "farmer_village_event_fire_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "The fields and animals can be replaced. People cannot. That is the count that matters.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "farmer_village_event_fire_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "We saved what hands could reach before the flames decided otherwise.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "farmer_village_event_fire_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "Fire teaches quick priorities. Water, exits, children, neighbors.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "farmer_village_event_raid_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "During a raid, the fields and animals matters less than who makes it behind a door.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "farmer_village_event_raid_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "The horns stopped, but my hands still expect more trouble.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "farmer_village_event_raid_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "We counted survivors before supplies. That is the right order.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "farmer_village_event_raid_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "Raiders came looking for weakness. They found a village that remembers how to stand.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "farmer_village_event_raid_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "I saw fear move through the village and courage move faster.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "farmer_village_event_night_attack_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "Night trouble always finds the loose latch first. We are fixing those now.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "farmer_village_event_night_attack_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "I kept near the fields and animals and listened for anyone calling for help.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "farmer_village_event_night_attack_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "Dawn did not erase the attack, but it gave us light to count by.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "farmer_village_event_night_attack_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "The dark tested everyone. Most of us passed by staying alive.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "farmer_village_event_night_attack_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "We are safe enough, though every shadow is getting inspected twice.",
+      "weight": 34,
+      "show_for_babies": false
     }
   ],
   "pacify": [

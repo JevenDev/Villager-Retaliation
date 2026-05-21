@@ -287,6 +287,9 @@ public final class VillagerReputationEvents {
                 && outcome instanceof Villager curedVillager
                 && curingPlayerId != null) {
             VillagerReputationManager.setReputation(level, curedVillager, curingPlayerId, CURED_VILLAGER_REPUTATION);
+            if (hadKnownReputationBeforeCure) {
+                VillagerInteractionTracker.rememberCuredRecognition(level, curedVillager, curingPlayerId);
+            }
             if (hadKnownReputationBeforeCure
                     && level.getPlayerByUUID(curingPlayerId) instanceof ServerPlayer serverPlayer) {
                 VillagerReputationAdvancements.onCuredKnownZombieVillager(serverPlayer);

@@ -1,13 +1,56 @@
 {
   "messages": [
-    { "key": "gift_given", "text": "Take {gift_item}. May it keep trouble at a respectful distance.", "weight": 24 },
-    { "key": "gift_given", "text": "Here, {gift_item}. Some blessings are practical enough to fit in a hand.", "weight": 24 },
-    { "key": "gift_advice_followup.liked", "text": "Good. {tested_villager} received {gift_item} with the right spirit.", "weight": 22 },
-    { "key": "gift_advice_followup.liked", "text": "Then the omen was clear. {gift_item} carried kindness where you took it.", "weight": 22 },
-    { "key": "gift_advice_followup.disliked", "text": "Then I read the sign poorly. Bring {alternative_gift} to {gift_subject}; it should be received better.", "weight": 22 },
-    { "key": "gift_advice_followup.disliked", "text": "Set {gift_item} aside for that soul. {alternative_gift} is the gentler offering.", "weight": 22 },
-    { "key": "gift_advice_followup.disliked", "text": "Not every sign is kind. Offer {alternative_gift} next time.", "dispositions": ["cautious", "rude", "hostile", "fearful"], "weight": 20 },
-    { "key": "gift_advice_followup.disliked", "text": "If {gift_item} troubled them, perhaps that was the lesson. {alternative_gift} will be calmer.", "dispositions": ["rude", "hostile", "fearful"], "weight": 20 }
+    {
+      "key": "gift_given",
+      "text": "Take {gift_item}. May it keep trouble at a respectful distance.",
+      "weight": 24
+    },
+    {
+      "key": "gift_given",
+      "text": "Here, {gift_item}. Some blessings are practical enough to fit in a hand.",
+      "weight": 24
+    },
+    {
+      "key": "gift_advice_followup.liked",
+      "text": "Good. {tested_villager} received {gift_item} with the right spirit.",
+      "weight": 22
+    },
+    {
+      "key": "gift_advice_followup.liked",
+      "text": "Then the omen was clear. {gift_item} carried kindness where you took it.",
+      "weight": 22
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "text": "Then I read the sign poorly. Bring {alternative_gift} to {gift_subject}; it should be received better.",
+      "weight": 22
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "text": "Set {gift_item} aside for that soul. {alternative_gift} is the gentler offering.",
+      "weight": 22
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "text": "Not every sign is kind. Offer {alternative_gift} next time.",
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 20
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "text": "If {gift_item} troubled them, perhaps that was the lesson. {alternative_gift} will be calmer.",
+      "dispositions": [
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 20
+    }
   ],
   "openings": [
     {
@@ -103,6 +146,262 @@
         "cautious"
       ],
       "weight": 30
+    },
+    {
+      "id": "cleric_cured_recognition_warm_1",
+      "type": "cured_recognition",
+      "text": "I remember the cure like a bell under water. You were there when it rang clear.",
+      "weight": 30,
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ]
+    },
+    {
+      "id": "cleric_cured_recognition_warm_2",
+      "type": "cured_recognition",
+      "text": "Whatever mercy found me, it came through your hands.",
+      "weight": 30,
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ]
+    },
+    {
+      "id": "cleric_cured_recognition_confused_1",
+      "type": "cured_recognition",
+      "text": "My memory kneels and trembles. I know you, but not cleanly.",
+      "weight": 30,
+      "dispositions": [
+        "neutral",
+        "cautious"
+      ]
+    },
+    {
+      "id": "cleric_cured_recognition_confused_2",
+      "type": "cured_recognition",
+      "text": "I remember weakness, bitterness, gold, and then breath. The rest is prayer smoke.",
+      "weight": 30,
+      "dispositions": [
+        "neutral",
+        "cautious"
+      ]
+    },
+    {
+      "id": "cleric_cured_recognition_uneasy_1",
+      "type": "cured_recognition",
+      "text": "I remember you from the edge of a curse. Forgive me if my thanks sounds afraid.",
+      "weight": 30,
+      "dispositions": [
+        "rude",
+        "hostile",
+        "fearful"
+      ]
+    },
+    {
+      "id": "cleric_village_event_thunderstorm_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "The bells and prayers took the thunder badly, but everyone near my station is breathing.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cleric_village_event_thunderstorm_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "I checked the bells and prayers first, then the people. Both needed steady hands.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cleric_village_event_thunderstorm_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "That storm rattled the bells and prayers; it rattled us more.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cleric_village_event_thunderstorm_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "Lightning makes every trade feel small. We are safe enough for now.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cleric_village_event_thunderstorm_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "I will trust the sky again when it stops threatening the roof.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cleric_village_event_fire_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "I checked the bells and prayers for sparks. Then I checked faces for fear.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cleric_village_event_fire_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "Smoke gets into everything: lungs, clothes, and the way people talk afterward.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cleric_village_event_fire_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "The bells and prayers can be replaced. People cannot. That is the count that matters.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cleric_village_event_fire_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "We saved what hands could reach before the flames decided otherwise.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cleric_village_event_fire_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "Fire teaches quick priorities. Water, exits, children, neighbors.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cleric_village_event_raid_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "During a raid, the bells and prayers matters less than who makes it behind a door.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cleric_village_event_raid_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "The horns stopped, but my hands still expect more trouble.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cleric_village_event_raid_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "We counted survivors before supplies. That is the right order.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cleric_village_event_raid_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "Raiders came looking for weakness. They found a village that remembers how to stand.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cleric_village_event_raid_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "I saw fear move through the village and courage move faster.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cleric_village_event_night_attack_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "Night trouble always finds the loose latch first. We are fixing those now.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cleric_village_event_night_attack_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "I kept near the bells and prayers and listened for anyone calling for help.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cleric_village_event_night_attack_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "Dawn did not erase the attack, but it gave us light to count by.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cleric_village_event_night_attack_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "The dark tested everyone. Most of us passed by staying alive.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cleric_village_event_night_attack_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "We are safe enough, though every shadow is getting inspected twice.",
+      "weight": 34,
+      "show_for_babies": false
     }
   ],
   "pacify": [

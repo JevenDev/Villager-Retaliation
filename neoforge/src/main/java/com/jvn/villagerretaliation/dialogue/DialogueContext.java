@@ -36,6 +36,7 @@ public record DialogueContext(
         VillagerInteractionTracker.CombatSurvivalReport combatSurvivalReport,
         VillagerInteractionTracker.GearReport gearReport,
         VillagerInteractionTracker.RecruitmentFollowupReport recruitmentFollowupReport,
+        VillagerInteractionTracker.CuredRecognitionReport curedRecognitionReport,
         VillagerInteractionTracker.RecruitmentMemory recruitmentMemory,
         VillagerInteractionTracker.GiftAdviceResultReport giftAdviceResultReport,
         List<VillageEventMemory.MemoryEvent> recentEvents,
@@ -154,6 +155,25 @@ public record DialogueContext(
                 || this.recruitmentFollowupReport.scenario().isBlank()
                 ? "safe"
                 : this.recruitmentFollowupReport.scenario();
+    }
+
+    public Optional<VillagerInteractionTracker.CuredRecognitionReport> unreportedCuredRecognition() {
+        return Optional.ofNullable(this.curedRecognitionReport);
+    }
+
+    public boolean hasUnreportedCuredRecognition() {
+        return this.curedRecognitionReport != null;
+    }
+
+    public boolean hasRecentVillageEventConcern() {
+        return this.weather == WeatherState.THUNDER
+                || hasRecentEvent(
+                VillageEventMemory.EventTag.THUNDERSTORM,
+                VillageEventMemory.EventTag.VILLAGE_FIRE,
+                VillageEventMemory.EventTag.RAID,
+                VillageEventMemory.EventTag.PLAYER_DEFENDED_RAID,
+                VillageEventMemory.EventTag.NIGHT_ATTACK
+        );
     }
 
     public Optional<VillagerInteractionTracker.RecruitmentMemory> recruitmentMemoryOptional() {
