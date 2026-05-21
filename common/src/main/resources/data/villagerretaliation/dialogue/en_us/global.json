@@ -37,6 +37,13 @@
       "order": -1
     },
     {
+      "id": "apologize_for_harm",
+      "label": "Apologize",
+      "type": "apology",
+      "requires_unapologized_remembered_harm": true,
+      "order": -2
+    },
+    {
       "id": "adult_story",
       "label": "Ask for Story",
       "type": "story",
@@ -295,6 +302,80 @@
     }
   ],
   "lines": [
+    {
+      "id": "apology_global_not_forgotten",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "text": "I hear you. I have not forgotten, but I hear you.",
+      "weight": 28
+    },
+    {
+      "id": "apology_global_small_step",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "text": "An apology is a start. Let your hands prove the rest.",
+      "weight": 28
+    },
+    {
+      "id": "apology_global_cautious",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "text": "Words mend less than actions, but I will remember that you said them.",
+      "dispositions": ["cautious", "rude", "hostile", "fearful"],
+      "weight": 34
+    },
+    {
+      "id": "apology_global_friendly",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "text": "Thank you for saying it plainly. Do better by us, and this can pass.",
+      "dispositions": ["respectful", "friendly", "neutral"],
+      "weight": 34
+    },
+    {
+      "id": "apology_child_telling",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "text": "Okay. I am still telling someone older, though.",
+      "show_for_adults": false,
+      "weight": 28
+    },
+    {
+      "id": "apology_armorer",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": ["armorer"],
+      "text": "Fine. I know what can be repaired. I also know what keeps the dent.",
+      "show_for_babies": false,
+      "weight": 34
+    },
+    {
+      "id": "apology_cleric",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": ["cleric"],
+      "text": "Remorse is useful only if it changes the next choice. I hope yours does.",
+      "show_for_babies": false,
+      "weight": 34
+    },
+    {
+      "id": "apology_librarian",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": ["librarian"],
+      "text": "I will file that apology carefully. The follow-up is the part worth reading.",
+      "show_for_babies": false,
+      "weight": 34
+    },
+    {
+      "id": "apology_weaponsmith",
+      "type": "apology",
+      "option": "apologize_for_harm",
+      "professions": ["weaponsmith"],
+      "text": "A weapon is honest about harm. People should try being that honest before causing it.",
+      "show_for_babies": false,
+      "weight": 34
+    },
     {
       "id": "combat_survival_global_breath",
       "type": "combat_survival_report",

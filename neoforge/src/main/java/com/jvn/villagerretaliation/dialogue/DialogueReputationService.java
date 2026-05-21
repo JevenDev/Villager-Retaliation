@@ -9,6 +9,7 @@ public final class DialogueReputationService {
     private static final long DAY_TICKS = 24000L;
     private static final int MAP_REPORT_REPUTATION_GAIN = 10;
     private static final int COMBAT_SURVIVAL_REPORT_REPUTATION_GAIN = 12;
+    private static final int APOLOGY_REPUTATION_GAIN = 4;
 
     private DialogueReputationService() {
     }
@@ -18,7 +19,9 @@ public final class DialogueReputationService {
                 || !VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()) {
             return DialogueReputationEffect.none(requestType);
         }
-        if (context.villager().isBaby() && requestType != DialogueRequestType.INSULT) {
+        if (context.villager().isBaby()
+                && requestType != DialogueRequestType.INSULT
+                && requestType != DialogueRequestType.APOLOGY) {
             return DialogueReputationEffect.none(requestType);
         }
 
@@ -102,6 +105,15 @@ public final class DialogueReputationService {
                     false,
                     null
             );
+            case APOLOGY -> context.hasUnapologizedRememberedHarm()
+                    ? new PlannedEffect(
+                    APOLOGY_REPUTATION_GAIN,
+                    "apology",
+                    DialogueReputationEffect.CooldownCategory.NONE,
+                    false,
+                    null
+            )
+                    : PlannedEffect.none();
             case STORY -> planStory(context);
             case JOKE -> planJoke(context);
             case INSULT -> planInsult(context, interactionState.firstConversation());
@@ -134,7 +146,8 @@ public final class DialogueReputationService {
     private static boolean isDialogueOptionExhausted(DialogueContext context, DialogueRequestType requestType, VillagerInteractionTracker.InteractionState interactionState) {
         if (requestType == DialogueRequestType.INSULT
                 || requestType == DialogueRequestType.MAP_REPORT
-                || requestType == DialogueRequestType.COMBAT_SURVIVAL_REPORT) {
+                || requestType == DialogueRequestType.COMBAT_SURVIVAL_REPORT
+                || requestType == DialogueRequestType.APOLOGY) {
             return false;
         }
         int limit = repeatedDialogueLimit(context.reputationLevel());

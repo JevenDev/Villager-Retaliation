@@ -342,6 +342,7 @@ public final class VillagerDialogueResources {
             Set<DialogueDisposition> dispositions = readEnumSet(entry, "dispositions", DialogueDisposition.class);
             boolean requiresUnreportedCartographerMapDiscovery = readBoolean(entry, "requires_unreported_cartographer_map_discovery");
             boolean requiresUnreportedCombatSurvivalReport = readBoolean(entry, "requires_unreported_combat_survival_report");
+            boolean requiresUnapologizedRememberedHarm = readBoolean(entry, "requires_unapologized_remembered_harm");
             int order = readInt(entry, "order", index);
             options.put(id, new DialogueOptionDefinition(
                     id,
@@ -353,6 +354,7 @@ public final class VillagerDialogueResources {
                     dispositions,
                     requiresUnreportedCartographerMapDiscovery,
                     requiresUnreportedCombatSurvivalReport,
+                    requiresUnapologizedRememberedHarm,
                     order
             ));
             index++;

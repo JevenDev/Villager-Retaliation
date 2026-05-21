@@ -25,6 +25,7 @@ public record DialogueContext(
         long lastPositiveDialogueReputationGameTime,
         long lastNegativeDialogueReputationGameTime,
         long lastJokeReputationGameTime,
+        long lastApologyDialogueGameTime,
         boolean badFirstImpression,
         long lastBrokenBedGameTime,
         long lastDirectHitGameTime,
@@ -95,6 +96,29 @@ public record DialogueContext(
 
     public boolean hasUnreportedCombatSurvivalReport() {
         return this.combatSurvivalReport != null;
+    }
+
+    public boolean hasUnapologizedRememberedHarm() {
+        long latestHarm = latestRememberedHarmGameTime();
+        return latestHarm != Long.MIN_VALUE && latestHarm > this.lastApologyDialogueGameTime;
+    }
+
+    public long latestRememberedHarmGameTime() {
+        long latest = Long.MIN_VALUE;
+        if (hasRecentDirectHitMemory()) {
+            latest = Math.max(latest, this.lastDirectHitGameTime);
+        }
+        if (hasRecentBrokenBedMemory()) {
+            latest = Math.max(latest, this.lastBrokenBedGameTime);
+        }
+        UUID playerId = this.player.getUUID();
+        for (VillageEventMemory.MemoryEvent event : this.recentEvents) {
+            if (event.tag() == VillageEventMemory.EventTag.PLAYER_ATTACKED_VILLAGER
+                    && playerId.equals(event.playerId())) {
+                latest = Math.max(latest, event.gameTime());
+            }
+        }
+        return latest;
     }
 
     public boolean hasRecentPositiveDialogueMoodMemory() {

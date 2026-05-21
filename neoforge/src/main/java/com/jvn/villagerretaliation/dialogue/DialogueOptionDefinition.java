@@ -13,6 +13,7 @@ public record DialogueOptionDefinition(
         Set<DialogueDisposition> dispositions,
         boolean requiresUnreportedCartographerMapDiscovery,
         boolean requiresUnreportedCombatSurvivalReport,
+        boolean requiresUnapologizedRememberedHarm,
         int order
 ) {
     public boolean matches(DialogueContext context, DialogueDisposition disposition) {
@@ -32,10 +33,13 @@ public record DialogueOptionDefinition(
         if (this.requiresUnreportedCombatSurvivalReport && !context.hasUnreportedCombatSurvivalReport()) {
             return false;
         }
+        if (this.requiresUnapologizedRememberedHarm && !context.hasUnapologizedRememberedHarm()) {
+            return false;
+        }
         return this.dispositions.isEmpty() || this.dispositions.contains(disposition);
     }
 
     public static DialogueOptionDefinition simple(String id, String label, DialogueRequestType requestType, int order) {
-        return new DialogueOptionDefinition(id, label, requestType, true, true, Set.of(), Set.of(), false, false, order);
+        return new DialogueOptionDefinition(id, label, requestType, true, true, Set.of(), Set.of(), false, false, false, order);
     }
 }
