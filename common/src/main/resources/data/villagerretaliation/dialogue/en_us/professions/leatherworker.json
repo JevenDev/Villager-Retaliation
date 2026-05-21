@@ -203,7 +203,7 @@
       "event_tags": [
         "thunderstorm"
       ],
-      "text": "The stitches and straps took the thunder badly, but everyone near my station is breathing.",
+      "text": "Thunder shook the cauldron so hard the cauldron shook rings across the water, but everyone near me is still standing.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -213,7 +213,7 @@
       "event_tags": [
         "thunderstorm"
       ],
-      "text": "I checked the stitches and straps first, then the people. Both needed steady hands.",
+      "text": "I checked hides, saddles, and dye vats after the lightning, then counted heads. No one should be alone after a sky like that.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -223,7 +223,7 @@
       "event_tags": [
         "thunderstorm"
       ],
-      "text": "That storm rattled the stitches and straps; it rattled us more.",
+      "text": "Near the cauldron, the bell sounded small under that thunder. We stayed inside and kept the doors watched.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -233,7 +233,7 @@
       "event_tags": [
         "thunderstorm"
       ],
-      "text": "Lightning makes every trade feel small. We are safe enough for now.",
+      "text": "That thunder made everyone quiet. I checked the hides twice.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -243,7 +243,7 @@
       "event_tags": [
         "thunderstorm"
       ],
-      "text": "I will trust the sky again when it stops threatening the roof.",
+      "text": "The sky can keep its lightning. I have hides to set right.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -253,7 +253,7 @@
       "event_tags": [
         "village_fire"
       ],
-      "text": "I checked the stitches and straps for sparks. Then I checked faces for fear.",
+      "text": "I checked dry hides and dye racks for sparks first, then checked faces for smoke and fear.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -263,7 +263,7 @@
       "event_tags": [
         "village_fire"
       ],
-      "text": "Smoke gets into everything: lungs, clothes, and the way people talk afterward.",
+      "text": "We passed water hand to hand and kept people away from the smoke. I checked the cauldron after.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -273,7 +273,7 @@
       "event_tags": [
         "village_fire"
       ],
-      "text": "The stitches and straps can be replaced. People cannot. That is the count that matters.",
+      "text": "The hides can wait. People come first.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -283,7 +283,7 @@
       "event_tags": [
         "village_fire"
       ],
-      "text": "We saved what hands could reach before the flames decided otherwise.",
+      "text": "We saved what we could reach around the cauldron, then stopped pretending things matter more than neighbors.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -293,7 +293,7 @@
       "event_tags": [
         "village_fire"
       ],
-      "text": "Fire teaches quick priorities. Water, exits, children, neighbors.",
+      "text": "The smoke is thinning near the cauldron, but everyone is still sniffing the air like it might lie.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -304,7 +304,7 @@
         "raid",
         "player_defended_raid"
       ],
-      "text": "During a raid, the stitches and straps matters less than who makes it behind a door.",
+      "text": "During a raid, the hides can soak another day; who makes it behind a door matters more.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -315,7 +315,7 @@
         "raid",
         "player_defended_raid"
       ],
-      "text": "The horns stopped, but my hands still expect more trouble.",
+      "text": "The horns stopped, but my hands near the cauldron still expect another wave from the road.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -326,7 +326,7 @@
         "raid",
         "player_defended_raid"
       ],
-      "text": "We counted survivors before supplies. That is the right order.",
+      "text": "We counted living neighbors before hides, saddles, and dye vats. That is the only count worth starting with.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -337,7 +337,7 @@
         "raid",
         "player_defended_raid"
       ],
-      "text": "Raiders came looking for weakness. They found a village that remembers how to stand.",
+      "text": "Raiders came looking for easy emeralds. They found barred doors near the cauldron and a bell that would not stop ringing.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -348,7 +348,7 @@
         "raid",
         "player_defended_raid"
       ],
-      "text": "I saw fear move through the village and courage move faster.",
+      "text": "From the cauldron, I saw fear cross the square; then I saw courage get there first.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -358,7 +358,7 @@
       "event_tags": [
         "night_attack"
       ],
-      "text": "Night trouble always finds the loose latch first. We are fixing those now.",
+      "text": "Night trouble tests the loose latch by the cauldron first. We are fixing those before sunset.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -368,7 +368,7 @@
       "event_tags": [
         "night_attack"
       ],
-      "text": "I kept near the stitches and straps and listened for anyone calling for help.",
+      "text": "I stayed near the cauldron corner and listened for anyone calling from the dark.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -378,7 +378,7 @@
       "event_tags": [
         "night_attack"
       ],
-      "text": "Dawn did not erase the attack, but it gave us light to count by.",
+      "text": "Dawn gave the cauldron enough light to count wounds, missing blocks, and who made it home.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -388,7 +388,7 @@
       "event_tags": [
         "night_attack"
       ],
-      "text": "The dark tested everyone. Most of us passed by staying alive.",
+      "text": "The dark tested everyone. Most of us passed by keeping stout boots between us and teeth.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -398,7 +398,7 @@
       "event_tags": [
         "night_attack"
       ],
-      "text": "We are safe enough, though every shadow is getting inspected twice.",
+      "text": "We are safe enough near the cauldron, though every shadow is being inspected twice.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -408,7 +408,7 @@
       "event_tags": [
         "sandstorm"
       ],
-      "text": "The stitches and straps collected half the desert, but the people made it indoors.",
+      "text": "The wind threw sand through every crack. I am still cleaning sand out of the leather seams.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -418,7 +418,7 @@
       "event_tags": [
         "sandstorm"
       ],
-      "text": "I checked the stitches and straps, then checked who was coughing from the dust.",
+      "text": "I checked hides, saddles, and dye vats, then checked who was coughing too hard to answer.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -428,7 +428,7 @@
       "event_tags": [
         "sandstorm"
       ],
-      "text": "Sand in the hinges, sand in the eyes, but no one missing so far.",
+      "text": "Sand reached the cauldron, the hinges, and half our eyes, but no one has been reported missing.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -438,7 +438,7 @@
       "event_tags": [
         "sandstorm"
       ],
-      "text": "Harsh wind teaches you which doors really close.",
+      "text": "A hard wind teaches a leatherworker which doors actually close and which ones only pretend.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -448,7 +448,7 @@
       "event_tags": [
         "sandstorm"
       ],
-      "text": "We are safe enough, though the village sounds like it is grinding its teeth.",
+      "text": "We are safe enough near the cauldron, though the whole village sounds like it is chewing gravel.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -458,7 +458,7 @@
       "event_tags": [
         "snowstorm"
       ],
-      "text": "The stitches and straps can wait. Warm hands and clear paths matter first.",
+      "text": "The hides can soak another day. Warm hands, clear paths, and full hearths come first.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -468,7 +468,7 @@
       "event_tags": [
         "snowstorm"
       ],
-      "text": "Snow piled against the doors, but everyone near me found shelter.",
+      "text": "Snow piled against the doors, but everyone near the cauldron found shelter.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -478,7 +478,7 @@
       "event_tags": [
         "snowstorm"
       ],
-      "text": "Cold works quietly. We are checking on anyone who went quiet too long.",
+      "text": "Cold works quietly around the cauldron. We are checking on anyone who stayed quiet too long.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -488,7 +488,7 @@
       "event_tags": [
         "snowstorm"
       ],
-      "text": "The stitches and straps froze stiff, but the village kept moving.",
+      "text": "I am clearing stiff frost from the hides and watching for footprints that stop too soon.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -498,7 +498,7 @@
       "event_tags": [
         "snowstorm"
       ],
-      "text": "We are alright for now. Keep the fires fed and the paths open.",
+      "text": "We are alright for now near the cauldron. Keep the fires fed and the paths open.",
       "weight": 34,
       "show_for_babies": false
     }

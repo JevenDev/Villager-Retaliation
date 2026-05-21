@@ -120,11 +120,13 @@ public final class VillagerStoryHintService {
                             ? VillagerInteractionTextUtil.resourcePathName(report.targetId())
                             : report.targetName();
                     VillagerDialogueService.DialogueResult result = VillagerDialogueService.select(context, option, recentDialogueIds);
+                    Map<String, String> replacements = Map.of(
+                            "target", targetName,
+                            "target_article", withArticle(targetName)
+                    );
                     return new VillagerDialogueService.DialogueResult(
                             "share_story_" + report.targetId().getPath() + "_" + result.lineId(),
-                            result.text()
-                                    .replace("{target}", targetName)
-                                    .replace("{target_article}", withArticle(targetName))
+                            VillagerDialogueResources.resolveTemplate(result.text(), replacements)
                     );
                 });
     }

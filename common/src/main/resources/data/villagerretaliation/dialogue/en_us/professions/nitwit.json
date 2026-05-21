@@ -203,7 +203,7 @@
       "event_tags": [
         "thunderstorm"
       ],
-      "text": "The wandering and hiding places took the thunder badly, but everyone near my station is breathing.",
+      "text": "Thunder shook the village square so hard I jumped before the bell did, but everyone near me is still standing.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -213,7 +213,7 @@
       "event_tags": [
         "thunderstorm"
       ],
-      "text": "I checked the wandering and hiding places first, then the people. Both needed steady hands.",
+      "text": "I checked doors, beds, and hiding places after the lightning, then counted heads. No one should be alone after a sky like that.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -223,7 +223,7 @@
       "event_tags": [
         "thunderstorm"
       ],
-      "text": "That storm rattled the wandering and hiding places; it rattled us more.",
+      "text": "By the bell, the thunder made the whole square flinch. I stayed inside and kept away from windows.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -233,7 +233,7 @@
       "event_tags": [
         "thunderstorm"
       ],
-      "text": "Lightning makes every trade feel small. We are safe enough for now.",
+      "text": "That thunder made everyone quiet. I checked my hiding spot twice.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -243,7 +243,7 @@
       "event_tags": [
         "thunderstorm"
       ],
-      "text": "I will trust the sky again when it stops threatening the roof.",
+      "text": "The sky can keep its lightning. I have a safe corner to find.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -253,7 +253,7 @@
       "event_tags": [
         "village_fire"
       ],
-      "text": "I checked the wandering and hiding places for sparks. Then I checked faces for fear.",
+      "text": "I checked roofs and fences for sparks, then checked faces for smoke and fear.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -263,7 +263,7 @@
       "event_tags": [
         "village_fire"
       ],
-      "text": "Smoke gets into everything: lungs, clothes, and the way people talk afterward.",
+      "text": "We passed water hand to hand and kept people away from the smoke. I carried the bucket after.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -273,7 +273,7 @@
       "event_tags": [
         "village_fire"
       ],
-      "text": "The wandering and hiding places can be replaced. People cannot. That is the count that matters.",
+      "text": "My chores can wait. People come first.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -283,7 +283,7 @@
       "event_tags": [
         "village_fire"
       ],
-      "text": "We saved what hands could reach before the flames decided otherwise.",
+      "text": "We saved what we could near the bell, then made sure no one was still coughing alone.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -293,7 +293,7 @@
       "event_tags": [
         "village_fire"
       ],
-      "text": "Fire teaches quick priorities. Water, exits, children, neighbors.",
+      "text": "The smoke is thinner now, but I keep smelling my sleeves to make sure it is really gone.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -304,7 +304,7 @@
         "raid",
         "player_defended_raid"
       ],
-      "text": "During a raid, the wandering and hiding places matters less than who makes it behind a door.",
+      "text": "During a raid, whatever i was doing can wait; who makes it behind a door matters more.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -315,7 +315,7 @@
         "raid",
         "player_defended_raid"
       ],
-      "text": "The horns stopped, but my hands still expect more trouble.",
+      "text": "The horns stopped, but I still keep looking at the road like it might shout again.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -326,7 +326,7 @@
         "raid",
         "player_defended_raid"
       ],
-      "text": "We counted survivors before supplies. That is the right order.",
+      "text": "We counted living neighbors before doors, beds, and hiding places. That is the only count worth starting with.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -337,7 +337,7 @@
         "raid",
         "player_defended_raid"
       ],
-      "text": "Raiders came looking for weakness. They found a village that remembers how to stand.",
+      "text": "Raiders came looking for easy emeralds. They found barred doors near the bell and a bell that would not stop ringing.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -348,7 +348,7 @@
         "raid",
         "player_defended_raid"
       ],
-      "text": "I saw fear move through the village and courage move faster.",
+      "text": "From the bell, I saw fear cross the square; then I saw courage get there first.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -358,7 +358,7 @@
       "event_tags": [
         "night_attack"
       ],
-      "text": "Night trouble always finds the loose latch first. We are fixing those now.",
+      "text": "Night trouble found the door everyone meant to fix tomorrow. It is getting fixed today.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -368,7 +368,7 @@
       "event_tags": [
         "night_attack"
       ],
-      "text": "I kept near the wandering and hiding places and listened for anyone calling for help.",
+      "text": "I stayed near the dark between houses and listened for anyone calling from the dark.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -378,7 +378,7 @@
       "event_tags": [
         "night_attack"
       ],
-      "text": "Dawn did not erase the attack, but it gave us light to count by.",
+      "text": "Dawn made it easier to see who was missing, which is not the same as making it easier.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -388,7 +388,7 @@
       "event_tags": [
         "night_attack"
       ],
-      "text": "The dark tested everyone. Most of us passed by staying alive.",
+      "text": "The dark tested everyone. Most of us passed by keeping both hands free between us and teeth.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -398,7 +398,7 @@
       "event_tags": [
         "night_attack"
       ],
-      "text": "We are safe enough, though every shadow is getting inspected twice.",
+      "text": "We are safe enough, but I still look twice at anything shaped like a monster.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -408,7 +408,7 @@
       "event_tags": [
         "sandstorm"
       ],
-      "text": "The wandering and hiding places collected half the desert, but the people made it indoors.",
+      "text": "The wind threw sand through every crack. I am still cleaning sand from my sleeves.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -418,7 +418,7 @@
       "event_tags": [
         "sandstorm"
       ],
-      "text": "I checked the wandering and hiding places, then checked who was coughing from the dust.",
+      "text": "I checked doors, beds, and hiding places, then checked who was coughing too hard to answer.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -428,7 +428,7 @@
       "event_tags": [
         "sandstorm"
       ],
-      "text": "Sand in the hinges, sand in the eyes, but no one missing so far.",
+      "text": "Sand got in my sleeves, my mouth, and places sand should not know about. No one is missing, though.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -438,7 +438,7 @@
       "event_tags": [
         "sandstorm"
       ],
-      "text": "Harsh wind teaches you which doors really close.",
+      "text": "A hard wind teaches a nitwit which doors actually close and which ones only pretend.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -448,7 +448,7 @@
       "event_tags": [
         "sandstorm"
       ],
-      "text": "We are safe enough, though the village sounds like it is grinding its teeth.",
+      "text": "We are safe enough, but every step sounds crunchy and everyone is blinking too much.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -458,7 +458,7 @@
       "event_tags": [
         "snowstorm"
       ],
-      "text": "The wandering and hiding places can wait. Warm hands and clear paths matter first.",
+      "text": "Whatever I was doing can wait. Warm hands, clear paths, and full hearths come first.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -468,7 +468,7 @@
       "event_tags": [
         "snowstorm"
       ],
-      "text": "Snow piled against the doors, but everyone near me found shelter.",
+      "text": "Snow piled against the doors, but everyone near the bell found shelter.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -478,7 +478,7 @@
       "event_tags": [
         "snowstorm"
       ],
-      "text": "Cold works quietly. We are checking on anyone who went quiet too long.",
+      "text": "Cold is sneaky. I am checking on anyone who stopped complaining about it.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -488,7 +488,7 @@
       "event_tags": [
         "snowstorm"
       ],
-      "text": "The wandering and hiding places froze stiff, but the village kept moving.",
+      "text": "I am clearing snow out of my shoes and watching for footprints that stop too soon.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -498,7 +498,7 @@
       "event_tags": [
         "snowstorm"
       ],
-      "text": "We are alright for now. Keep the fires fed and the paths open.",
+      "text": "We are alright for now. I am keeping close to smoke, soup, and shoveled paths.",
       "weight": 34,
       "show_for_babies": false
     }

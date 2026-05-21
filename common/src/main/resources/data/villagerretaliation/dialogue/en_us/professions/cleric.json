@@ -204,7 +204,7 @@
       "event_tags": [
         "thunderstorm"
       ],
-      "text": "The bells and prayers took the thunder badly, but everyone near my station is breathing.",
+      "text": "Thunder shook the brewing stand so hard the bottles clicked like teeth, but everyone near me is still standing.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -214,7 +214,7 @@
       "event_tags": [
         "thunderstorm"
       ],
-      "text": "I checked the bells and prayers first, then the people. Both needed steady hands.",
+      "text": "I checked bottles, remedies, and the bell rope after the lightning, then counted heads. No one should be alone after a sky like that.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -224,7 +224,7 @@
       "event_tags": [
         "thunderstorm"
       ],
-      "text": "That storm rattled the bells and prayers; it rattled us more.",
+      "text": "Near the brewing stand, the bell sounded small under that thunder. We stayed inside and kept the doors watched.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -234,7 +234,7 @@
       "event_tags": [
         "thunderstorm"
       ],
-      "text": "Lightning makes every trade feel small. We are safe enough for now.",
+      "text": "That thunder made everyone quiet. I checked the bottles twice.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -244,7 +244,7 @@
       "event_tags": [
         "thunderstorm"
       ],
-      "text": "I will trust the sky again when it stops threatening the roof.",
+      "text": "The sky can keep its lightning. I have bottles to set right.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -254,7 +254,7 @@
       "event_tags": [
         "village_fire"
       ],
-      "text": "I checked the bells and prayers for sparks. Then I checked faces for fear.",
+      "text": "I checked glass bottles and dry shelves for sparks first, then checked faces for smoke and fear.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -264,7 +264,7 @@
       "event_tags": [
         "village_fire"
       ],
-      "text": "Smoke gets into everything: lungs, clothes, and the way people talk afterward.",
+      "text": "We passed water hand to hand and kept people away from the smoke. I checked the brewing stand after.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -274,7 +274,7 @@
       "event_tags": [
         "village_fire"
       ],
-      "text": "The bells and prayers can be replaced. People cannot. That is the count that matters.",
+      "text": "The brewing stand can wait. People come first.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -284,7 +284,7 @@
       "event_tags": [
         "village_fire"
       ],
-      "text": "We saved what hands could reach before the flames decided otherwise.",
+      "text": "We saved what we could reach around the brewing stand, then stopped pretending things matter more than neighbors.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -294,7 +294,7 @@
       "event_tags": [
         "village_fire"
       ],
-      "text": "Fire teaches quick priorities. Water, exits, children, neighbors.",
+      "text": "The smoke is thinning near the brewing stand, but everyone is still sniffing the air like it might lie.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -305,7 +305,7 @@
         "raid",
         "player_defended_raid"
       ],
-      "text": "During a raid, the bells and prayers matters less than who makes it behind a door.",
+      "text": "During a raid, the brewing stand can wait; who makes it behind a door matters more.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -316,7 +316,7 @@
         "raid",
         "player_defended_raid"
       ],
-      "text": "The horns stopped, but my hands still expect more trouble.",
+      "text": "The horns stopped, but my hands near the brewing stand still expect another wave from the road.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -327,7 +327,7 @@
         "raid",
         "player_defended_raid"
       ],
-      "text": "We counted survivors before supplies. That is the right order.",
+      "text": "We counted living neighbors before bottles, remedies, and the bell rope. That is the only count worth starting with.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -338,7 +338,7 @@
         "raid",
         "player_defended_raid"
       ],
-      "text": "Raiders came looking for weakness. They found a village that remembers how to stand.",
+      "text": "Raiders came looking for easy emeralds. They found barred doors near the brewing stand and a bell that would not stop ringing.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -349,7 +349,7 @@
         "raid",
         "player_defended_raid"
       ],
-      "text": "I saw fear move through the village and courage move faster.",
+      "text": "From the brewing stand, I saw fear cross the square; then I saw courage get there first.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -359,7 +359,7 @@
       "event_tags": [
         "night_attack"
       ],
-      "text": "Night trouble always finds the loose latch first. We are fixing those now.",
+      "text": "Night trouble tests the loose latch by the brewing stand first. We are fixing those before sunset.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -369,7 +369,7 @@
       "event_tags": [
         "night_attack"
       ],
-      "text": "I kept near the bells and prayers and listened for anyone calling for help.",
+      "text": "I stayed near the brewing stand by the back wall and listened for anyone calling from the dark.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -379,7 +379,7 @@
       "event_tags": [
         "night_attack"
       ],
-      "text": "Dawn did not erase the attack, but it gave us light to count by.",
+      "text": "Dawn gave the brewing stand enough light to count wounds, missing blocks, and who made it home.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -389,7 +389,7 @@
       "event_tags": [
         "night_attack"
       ],
-      "text": "The dark tested everyone. Most of us passed by staying alive.",
+      "text": "The dark tested everyone. Most of us passed by keeping a bitter potion between us and teeth.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -399,7 +399,7 @@
       "event_tags": [
         "night_attack"
       ],
-      "text": "We are safe enough, though every shadow is getting inspected twice.",
+      "text": "We are safe enough near the brewing stand, though every shadow is being inspected twice.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -409,7 +409,7 @@
       "event_tags": [
         "sandstorm"
       ],
-      "text": "The bells and prayers collected half the desert, but the people made it indoors.",
+      "text": "The wind threw sand through every crack. I am still cleaning grit out of the corks.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -419,7 +419,7 @@
       "event_tags": [
         "sandstorm"
       ],
-      "text": "I checked the bells and prayers, then checked who was coughing from the dust.",
+      "text": "I checked bottles, remedies, and the bell rope, then checked who was coughing too hard to answer.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -429,7 +429,7 @@
       "event_tags": [
         "sandstorm"
       ],
-      "text": "Sand in the hinges, sand in the eyes, but no one missing so far.",
+      "text": "Sand reached the brewing stand, the hinges, and half our eyes, but no one has been reported missing.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -439,7 +439,7 @@
       "event_tags": [
         "sandstorm"
       ],
-      "text": "Harsh wind teaches you which doors really close.",
+      "text": "A hard wind teaches a cleric which doors actually close and which ones only pretend.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -449,7 +449,7 @@
       "event_tags": [
         "sandstorm"
       ],
-      "text": "We are safe enough, though the village sounds like it is grinding its teeth.",
+      "text": "We are safe enough near the brewing stand, though the whole village sounds like it is chewing gravel.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -459,7 +459,7 @@
       "event_tags": [
         "snowstorm"
       ],
-      "text": "The bells and prayers can wait. Warm hands and clear paths matter first.",
+      "text": "The brewing stand can wait. Warm hands, clear paths, and full hearths come first.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -469,7 +469,7 @@
       "event_tags": [
         "snowstorm"
       ],
-      "text": "Snow piled against the doors, but everyone near me found shelter.",
+      "text": "Snow piled against the doors, but everyone near the brewing stand found shelter.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -479,7 +479,7 @@
       "event_tags": [
         "snowstorm"
       ],
-      "text": "Cold works quietly. We are checking on anyone who went quiet too long.",
+      "text": "Cold works quietly around the brewing stand. We are checking on anyone who stayed quiet too long.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -489,7 +489,7 @@
       "event_tags": [
         "snowstorm"
       ],
-      "text": "The bells and prayers froze stiff, but the village kept moving.",
+      "text": "I am clearing frost from the bottle necks and watching for footprints that stop too soon.",
       "weight": 34,
       "show_for_babies": false
     },
@@ -499,7 +499,7 @@
       "event_tags": [
         "snowstorm"
       ],
-      "text": "We are alright for now. Keep the fires fed and the paths open.",
+      "text": "We are alright for now near the brewing stand. Keep the fires fed and the paths open.",
       "weight": 34,
       "show_for_babies": false
     }
