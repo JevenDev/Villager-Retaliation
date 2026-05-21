@@ -131,7 +131,6 @@ public final class VillagerRetaliationEvents {
 
     public static void onEntityTickPre(EntityTickEvent.Pre event) {
         if (event.getEntity() instanceof Villager villager) {
-            VillagerConversationService.tickVillager(villager);
             VillagerRecruitmentService.onVillagerTickPre(villager);
             if (villager.level() instanceof ServerLevel level) {
                 VillagerAmbientIndicatorService.maybeEmitSleepIndicator(level, villager);
@@ -340,6 +339,9 @@ public final class VillagerRetaliationEvents {
         VillagerRetaliationHandler.onEntityLeaveLevel(event);
         WanderingTraderRetaliationHandler.onEntityLeaveLevel(event);
         VillagerConversationService.endForEntityLeaving(event.getEntity(), true);
+        if (event.getEntity() instanceof Villager villager) {
+            VillagerCombatSurvivalService.onVillagerLeaveLevel(villager);
+        }
     }
 
     private static void rememberVillageDamageEvent(LivingDamageEvent.Post event) {

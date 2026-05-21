@@ -52,6 +52,10 @@ public final class VillagerCombatSurvivalService {
         clearActiveCombat(villager);
     }
 
+    public static void onVillagerLeaveLevel(Villager villager) {
+        NEXT_NEARBY_THREAT_SCAN_TICKS.remove(villager.getUUID());
+    }
+
     private static void maybeFinishActiveCombat(ServerLevel level, Villager villager, long gameTime) {
         if (!villager.getPersistentData().hasUUID(ACTIVE_PLAYER_KEY)) {
             return;

@@ -1,12 +1,7 @@
 package com.jvn.villagerretaliation.dialogue;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
-import java.io.IOException;
-import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -63,31 +58,19 @@ public final class DangerousStructureStoryResources {
     }
 
     private static void readFile(Resource resource, Map<ResourceLocation, Entry> entries) {
-        try (Reader reader = resource.openAsReader()) {
-            JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
-            int fallbackRadius = Math.max(1, readInt(root, "radius", DEFAULT_RADIUS));
-            JsonArray entryArray = root.getAsJsonArray("entries");
-            if (entryArray != null) {
-                for (JsonElement element : entryArray) {
-                    if (element.isJsonObject()) {
-                        readEntry(element.getAsJsonObject(), fallbackRadius, entries);
-                    }
-                }
-                return;
-            }
-
-            readEntry(root, fallbackRadius, entries);
-        } catch (IOException | IllegalStateException ignored) {
-            // Invalid datapack files are ignored so one custom structure list cannot break dialogue.
-        }
+        DialogueJsonResources.readEntryObjects(
+                resource,
+                root -> Math.max(1, DialogueJsonResources.readInt(root, "radius", DEFAULT_RADIUS)),
+                (entry, fallbackRadius) -> readEntry(entry, fallbackRadius, entries)
+        );
     }
 
     private static void readEntry(JsonObject entry, int fallbackRadius, Map<ResourceLocation, Entry> entries) {
-        String targetName = readString(entry, "name");
-        int radius = Math.max(1, readInt(entry, "radius", fallbackRadius));
+        String targetName = DialogueJsonResources.readString(entry, "name");
+        int radius = Math.max(1, DialogueJsonResources.readInt(entry, "radius", fallbackRadius));
         List<String> structureIds = new ArrayList<>();
-        structureIds.addAll(readStringList(entry, "structure"));
-        structureIds.addAll(readStringList(entry, "structures"));
+        structureIds.addAll(DialogueJsonResources.readStringList(entry, "structure"));
+        structureIds.addAll(DialogueJsonResources.readStringList(entry, "structures"));
         for (String structureId : structureIds) {
             ResourceLocation id = ResourceLocation.tryParse(structureId);
             if (id == null) {
@@ -96,41 +79,6 @@ public final class DangerousStructureStoryResources {
             String name = targetName.isBlank() ? VillagerInteractionTextUtil.resourcePathName(id) : targetName;
             entries.put(id, new Entry(id, name, radius));
         }
-    }
-
-    private static List<String> readStringList(JsonObject entry, String key) {
-        JsonElement element = entry.get(key);
-        if (element == null) {
-            return List.of();
-        }
-        if (element.isJsonPrimitive()) {
-            String value = element.getAsString().trim();
-            return value.isBlank() ? List.of() : List.of(value);
-        }
-        if (!element.isJsonArray()) {
-            return List.of();
-        }
-
-        List<String> values = new ArrayList<>();
-        for (JsonElement child : element.getAsJsonArray()) {
-            if (child.isJsonPrimitive()) {
-                String value = child.getAsString().trim();
-                if (!value.isBlank()) {
-                    values.add(value);
-                }
-            }
-        }
-        return values;
-    }
-
-    private static String readString(JsonObject entry, String key) {
-        JsonElement element = entry.get(key);
-        return element == null || !element.isJsonPrimitive() ? "" : element.getAsString().trim();
-    }
-
-    private static int readInt(JsonObject entry, String key, int fallback) {
-        JsonElement element = entry.get(key);
-        return element == null || !element.isJsonPrimitive() ? fallback : element.getAsInt();
     }
 
     public record Entry(ResourceLocation structureId, String targetName, int radius) {
