@@ -77,6 +77,8 @@ public class VillagerInteractionSavedData extends SavedData {
     private static final String TAG_RECRUITMENT_MEMORY_SCENARIO = "RecruitmentMemoryScenario";
     private static final String TAG_RECRUITMENT_MEMORY_BIOME = "RecruitmentMemoryBiome";
     private static final String TAG_RECRUITMENT_MEMORY_DISTANCE = "RecruitmentMemoryDistance";
+    private static final String TAG_RECRUITMENT_MEMORY_BOAT_TRIP = "RecruitmentMemoryBoatTrip";
+    private static final String TAG_RECRUITMENT_MEMORY_OCEAN_CROSSING = "RecruitmentMemoryOceanCrossing";
     private static final String TAG_RECRUITMENT_MEMORY_GAME_TIME = "RecruitmentMemoryGameTime";
     private static final String TAG_GIFT_ADVICE_ITEM_ID = "GiftAdviceItemId";
     private static final String TAG_GIFT_ADVICE_ITEM_NAME = "GiftAdviceItemName";
@@ -147,6 +149,8 @@ public class VillagerInteractionSavedData extends SavedData {
                 entry.recruitmentMemoryBiome = entryTag.getString(TAG_RECRUITMENT_MEMORY_BIOME);
             }
             entry.recruitmentMemoryDistance = entryTag.getInt(TAG_RECRUITMENT_MEMORY_DISTANCE);
+            entry.recruitmentMemoryBoatTrip = entryTag.getBoolean(TAG_RECRUITMENT_MEMORY_BOAT_TRIP);
+            entry.recruitmentMemoryOceanCrossing = entryTag.getBoolean(TAG_RECRUITMENT_MEMORY_OCEAN_CROSSING);
             entry.recruitmentMemoryGameTime = readOptionalLong(entryTag, TAG_RECRUITMENT_MEMORY_GAME_TIME);
             if (entryTag.contains(TAG_GIFT_ADVICE_ITEM_ID, Tag.TAG_STRING)) {
                 entry.giftAdviceItemId = entryTag.getString(TAG_GIFT_ADVICE_ITEM_ID);
@@ -344,6 +348,8 @@ public class VillagerInteractionSavedData extends SavedData {
                     entryTag.putString(TAG_RECRUITMENT_MEMORY_BIOME, playerEntry.getValue().recruitmentMemoryBiome);
                 }
                 entryTag.putInt(TAG_RECRUITMENT_MEMORY_DISTANCE, playerEntry.getValue().recruitmentMemoryDistance);
+                entryTag.putBoolean(TAG_RECRUITMENT_MEMORY_BOAT_TRIP, playerEntry.getValue().recruitmentMemoryBoatTrip);
+                entryTag.putBoolean(TAG_RECRUITMENT_MEMORY_OCEAN_CROSSING, playerEntry.getValue().recruitmentMemoryOceanCrossing);
                 entryTag.putLong(TAG_RECRUITMENT_MEMORY_GAME_TIME, playerEntry.getValue().recruitmentMemoryGameTime);
                 if (playerEntry.getValue().giftAdviceItemId != null && !playerEntry.getValue().giftAdviceItemId.isBlank()) {
                     entryTag.putString(TAG_GIFT_ADVICE_ITEM_ID, playerEntry.getValue().giftAdviceItemId);
@@ -645,8 +651,8 @@ public class VillagerInteractionSavedData extends SavedData {
         return getOrCreate(villagerId, playerId).claimUnreportedRecruitmentFollowup(villagerId);
     }
 
-    public void rememberRecruitmentMemory(UUID villagerId, UUID playerId, String scenario, String biomeName, int distanceBlocks, long gameTime) {
-        getOrCreate(villagerId, playerId).rememberRecruitmentMemory(scenario, biomeName, distanceBlocks, gameTime);
+    public void rememberRecruitmentMemory(UUID villagerId, UUID playerId, String scenario, String biomeName, int distanceBlocks, boolean boatTrip, boolean oceanCrossing, long gameTime) {
+        getOrCreate(villagerId, playerId).rememberRecruitmentMemory(scenario, biomeName, distanceBlocks, boatTrip, oceanCrossing, gameTime);
     }
 
     public VillagerInteractionTracker.RecruitmentMemory recruitmentMemory(UUID villagerId, UUID playerId) {
@@ -734,6 +740,8 @@ public class VillagerInteractionSavedData extends SavedData {
         private String recruitmentMemoryScenario;
         private String recruitmentMemoryBiome;
         private int recruitmentMemoryDistance;
+        private boolean recruitmentMemoryBoatTrip;
+        private boolean recruitmentMemoryOceanCrossing;
         private long recruitmentMemoryGameTime = Long.MIN_VALUE;
         private String giftAdviceItemId;
         private String giftAdviceItemName;
@@ -912,10 +920,12 @@ public class VillagerInteractionSavedData extends SavedData {
             return report;
         }
 
-        public void rememberRecruitmentMemory(String scenario, String biomeName, int distanceBlocks, long gameTime) {
+        public void rememberRecruitmentMemory(String scenario, String biomeName, int distanceBlocks, boolean boatTrip, boolean oceanCrossing, long gameTime) {
             this.recruitmentMemoryScenario = scenario == null || scenario.isBlank() ? "safe" : scenario;
             this.recruitmentMemoryBiome = biomeName == null || biomeName.isBlank() ? "the wilds" : biomeName;
             this.recruitmentMemoryDistance = Math.max(0, distanceBlocks);
+            this.recruitmentMemoryBoatTrip = boatTrip;
+            this.recruitmentMemoryOceanCrossing = oceanCrossing;
             this.recruitmentMemoryGameTime = gameTime;
         }
 
@@ -932,6 +942,8 @@ public class VillagerInteractionSavedData extends SavedData {
                             ? "the wilds"
                             : this.recruitmentMemoryBiome,
                     this.recruitmentMemoryDistance,
+                    this.recruitmentMemoryBoatTrip,
+                    this.recruitmentMemoryOceanCrossing,
                     this.recruitmentMemoryGameTime
             );
         }

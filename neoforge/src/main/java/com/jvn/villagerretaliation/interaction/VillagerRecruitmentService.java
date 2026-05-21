@@ -20,12 +20,14 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.BiomeTags;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.schedule.Activity;
+import net.minecraft.world.entity.vehicle.Boat;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class VillagerRecruitmentService {
@@ -37,6 +39,8 @@ public final class VillagerRecruitmentService {
     private static final String FOLLOW_START_Z_KEY = "VillagerRetaliationFollowStartZ";
     private static final String FOLLOW_START_BIOME_KEY = "VillagerRetaliationFollowStartBiome";
     private static final String FOLLOW_MAX_DISTANCE_KEY = "VillagerRetaliationFollowMaxDistance";
+    private static final String FOLLOW_USED_BOAT_KEY = "VillagerRetaliationFollowUsedBoat";
+    private static final String FOLLOW_CROSSED_OCEAN_KEY = "VillagerRetaliationFollowCrossedOcean";
     private static final String HIRED_PLAYER_KEY = "VillagerRetaliationHiredPlayer";
     private static final double FOLLOW_START_DISTANCE_SQR = 5.0D * 5.0D;
     private static final double FOLLOW_STOP_DISTANCE_SQR = 2.5D * 2.5D;
@@ -218,7 +222,8 @@ public final class VillagerRecruitmentService {
 
         UUID playerId = villager.getPersistentData().getUUID(FOLLOWING_PLAYER_KEY);
         ServerPlayer player = level.getServer().getPlayerList().getPlayer(playerId);
-        updateFollowDistance(villager);
+        updateTravelMemory(level, villager);
+        rememberBoatTripIfRiding(villager);
         if (!isValidFollowTarget(level, villager, player)) {
             clearFollowTarget(villager);
             return;
@@ -274,6 +279,8 @@ public final class VillagerRecruitmentService {
         villager.getPersistentData().remove(FOLLOW_START_Z_KEY);
         villager.getPersistentData().remove(FOLLOW_START_BIOME_KEY);
         villager.getPersistentData().remove(FOLLOW_MAX_DISTANCE_KEY);
+        villager.getPersistentData().remove(FOLLOW_USED_BOAT_KEY);
+        villager.getPersistentData().remove(FOLLOW_CROSSED_OCEAN_KEY);
         villager.getNavigation().stop();
     }
 
@@ -287,6 +294,8 @@ public final class VillagerRecruitmentService {
         villager.getPersistentData().putInt(FOLLOW_START_Z_KEY, start.getZ());
         villager.getPersistentData().putString(FOLLOW_START_BIOME_KEY, biomeName(level, start));
         villager.getPersistentData().putInt(FOLLOW_MAX_DISTANCE_KEY, 0);
+        villager.getPersistentData().putBoolean(FOLLOW_USED_BOAT_KEY, false);
+        villager.getPersistentData().putBoolean(FOLLOW_CROSSED_OCEAN_KEY, isOceanBiome(level, start));
     }
 
     private static void rememberRecruitmentMemory(ServerLevel level, Villager villager, ServerPlayer player, String scenario) {
@@ -296,17 +305,28 @@ public final class VillagerRecruitmentService {
                 player,
                 scenario,
                 villager.getPersistentData().getString(FOLLOW_START_BIOME_KEY),
-                followDistanceBlocks(villager)
+                followDistanceBlocks(villager),
+                villager.getPersistentData().getBoolean(FOLLOW_USED_BOAT_KEY),
+                villager.getPersistentData().getBoolean(FOLLOW_CROSSED_OCEAN_KEY)
         );
     }
 
-    private static void updateFollowDistance(Villager villager) {
+    private static void rememberBoatTripIfRiding(Villager villager) {
+        if (villager.getVehicle() instanceof Boat) {
+            villager.getPersistentData().putBoolean(FOLLOW_USED_BOAT_KEY, true);
+        }
+    }
+
+    private static void updateTravelMemory(ServerLevel level, Villager villager) {
         int distance = followDistanceBlocks(villager);
         int currentMax = villager.getPersistentData().contains(FOLLOW_MAX_DISTANCE_KEY)
                 ? villager.getPersistentData().getInt(FOLLOW_MAX_DISTANCE_KEY)
                 : 0;
         if (distance > currentMax) {
             villager.getPersistentData().putInt(FOLLOW_MAX_DISTANCE_KEY, distance);
+        }
+        if (isOceanBiome(level, villager.blockPosition())) {
+            villager.getPersistentData().putBoolean(FOLLOW_CROSSED_OCEAN_KEY, true);
         }
     }
 
@@ -332,6 +352,10 @@ public final class VillagerRecruitmentService {
                 .unwrapKey()
                 .map(key -> VillagerInteractionTextUtil.resourcePathName(key.location()))
                 .orElse("the wilds");
+    }
+
+    private static boolean isOceanBiome(ServerLevel level, BlockPos pos) {
+        return level.getBiome(pos).is(BiomeTags.IS_OCEAN);
     }
 
     private static boolean wasFollowerInjured(Villager villager) {

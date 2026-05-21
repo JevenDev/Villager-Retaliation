@@ -248,7 +248,9 @@ public final class VillagerInteractionTracker {
             ServerPlayer player,
             String scenario,
             String biomeName,
-            int distanceBlocks) {
+            int distanceBlocks,
+            boolean boatTrip,
+            boolean oceanCrossing) {
         VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
         data.rememberRecruitmentMemory(
                 villager.getUUID(),
@@ -256,6 +258,8 @@ public final class VillagerInteractionTracker {
                 scenario,
                 biomeName,
                 distanceBlocks,
+                boatTrip,
+                oceanCrossing,
                 level.getGameTime()
         );
         data.setDirty();
@@ -479,6 +483,8 @@ public final class VillagerInteractionTracker {
             String scenario,
             String biomeName,
             int distanceBlocks,
+            boolean boatTrip,
+            boolean oceanCrossing,
             long gameTime
     ) {
     }

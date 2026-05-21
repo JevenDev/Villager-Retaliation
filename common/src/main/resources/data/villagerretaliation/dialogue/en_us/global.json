@@ -941,6 +941,7 @@
       "recruitment_followup_scenarios": [
         "safe"
       ],
+      "excludes_recruitment_ocean_crossing": true,
       "show_for_babies": false,
       "weight": 36
     },
@@ -963,6 +964,7 @@
       "recruitment_followup_scenarios": [
         "injured"
       ],
+      "excludes_recruitment_ocean_crossing": true,
       "show_for_babies": false,
       "weight": 36
     },
@@ -974,6 +976,7 @@
       "recruitment_followup_scenarios": [
         "injured"
       ],
+      "excludes_recruitment_ocean_crossing": true,
       "show_for_babies": false,
       "weight": 32
     },
@@ -1452,6 +1455,7 @@
       "professions": ["unemployed"],
       "text": "I followed because I thought you knew where we were going. I was wrong about more than the road.",
       "recruitment_followup_scenarios": ["betrayed"],
+      "excludes_recruitment_ocean_crossing": true,
       "show_for_babies": false,
       "weight": 42
     },
@@ -1486,11 +1490,234 @@
       "weight": 42
     },
     {
+      "id": "recruitment_followup_boat_safe",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "text": "The boat helped. I will admit, being carried home by water is easier on the knees.",
+      "recruitment_followup_scenarios": ["safe"],
+      "requires_recruitment_boat_trip": true,
+      "show_for_babies": false,
+      "weight": 44
+    },
+    {
+      "id": "recruitment_followup_ocean_boat_safe",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "text": "Crossing ocean by boat was a better idea than swimming it. Thank you for keeping me dry.",
+      "recruitment_followup_scenarios": ["safe"],
+      "requires_recruitment_boat_trip": true,
+      "requires_recruitment_ocean_crossing": true,
+      "show_for_babies": false,
+      "weight": 50
+    },
+    {
+      "id": "recruitment_followup_ocean_swim_safe",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "text": "I crossed ocean water without a boat and still made it home. Next time, please find wood before waves.",
+      "recruitment_followup_scenarios": ["safe"],
+      "requires_recruitment_swim_trip": true,
+      "show_for_babies": false,
+      "weight": 50
+    },
+    {
+      "id": "recruitment_followup_boat_injured",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "text": "The boat ride was the quiet part. Getting hurt before or after it spoiled the memory.",
+      "recruitment_followup_scenarios": ["injured"],
+      "requires_recruitment_boat_trip": true,
+      "show_for_babies": false,
+      "weight": 44
+    },
+    {
+      "id": "recruitment_followup_ocean_boat_injured",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "text": "The ocean crossing by boat was manageable. The part where I got hurt was less impressive.",
+      "recruitment_followup_scenarios": ["injured"],
+      "requires_recruitment_boat_trip": true,
+      "requires_recruitment_ocean_crossing": true,
+      "show_for_babies": false,
+      "weight": 50
+    },
+    {
+      "id": "recruitment_followup_ocean_swim_injured",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "text": "Swimming across ocean and coming home hurt is not an adventure I want repeated.",
+      "recruitment_followup_scenarios": ["injured"],
+      "requires_recruitment_swim_trip": true,
+      "show_for_babies": false,
+      "weight": 50
+    },
+    {
+      "id": "recruitment_followup_boat_betrayed",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "text": "You put me in a boat, took me along, and then broke trust. Strange journey, worse ending.",
+      "recruitment_followup_scenarios": ["betrayed"],
+      "requires_recruitment_boat_trip": true,
+      "show_for_babies": false,
+      "weight": 46
+    },
+    {
+      "id": "recruitment_followup_fisherman_boat",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["fisherman"],
+      "text": "A boat is honest enough. It goes where it is pointed, unlike some plans.",
+      "requires_recruitment_boat_trip": true,
+      "show_for_babies": false,
+      "weight": 44
+    },
+    {
+      "id": "recruitment_followup_armorer_boat",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["armorer"],
+      "text": "A boat carries armor poorly, but it carried me well enough.",
+      "requires_recruitment_boat_trip": true,
+      "show_for_babies": false,
+      "weight": 42
+    },
+    {
+      "id": "recruitment_followup_butcher_boat",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["butcher"],
+      "text": "I prefer a steady block beneath me, but the boat got us back without carving a new problem.",
+      "requires_recruitment_boat_trip": true,
+      "show_for_babies": false,
+      "weight": 42
+    },
+    {
+      "id": "recruitment_followup_cartographer_boat",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["cartographer"],
+      "text": "I could chart that boat route. I might add a warning mark beside it.",
+      "requires_recruitment_boat_trip": true,
+      "show_for_babies": false,
+      "weight": 42
+    },
+    {
+      "id": "recruitment_followup_cleric_boat",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["cleric"],
+      "text": "The boat floated. My nerves, less so. Still, I am home.",
+      "requires_recruitment_boat_trip": true,
+      "show_for_babies": false,
+      "weight": 42
+    },
+    {
+      "id": "recruitment_followup_farmer_boat",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["farmer"],
+      "text": "I know soil better than water. The boat was appreciated.",
+      "requires_recruitment_boat_trip": true,
+      "show_for_babies": false,
+      "weight": 42
+    },
+    {
+      "id": "recruitment_followup_fletcher_boat",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["fletcher"],
+      "text": "The boat drifted, but it did not miss the mark entirely.",
+      "requires_recruitment_boat_trip": true,
+      "show_for_babies": false,
+      "weight": 42
+    },
+    {
+      "id": "recruitment_followup_leatherworker_boat",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["leatherworker"],
+      "text": "Boat spray is poor treatment for leather. Better than swimming, though.",
+      "requires_recruitment_boat_trip": true,
+      "show_for_babies": false,
+      "weight": 42
+    },
+    {
+      "id": "recruitment_followup_librarian_boat",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["librarian"],
+      "text": "If I write that boat ride down, I will shelve it under anxious transportation.",
+      "requires_recruitment_boat_trip": true,
+      "show_for_babies": false,
+      "weight": 42
+    },
+    {
+      "id": "recruitment_followup_mason_boat",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["mason"],
+      "text": "No foundation under a boat, yet somehow it held. I respect the craft.",
+      "requires_recruitment_boat_trip": true,
+      "show_for_babies": false,
+      "weight": 42
+    },
+    {
+      "id": "recruitment_followup_shepherd_boat",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["shepherd"],
+      "text": "Keeping me in the boat was the hard part. I have chased calmer sheep.",
+      "requires_recruitment_boat_trip": true,
+      "show_for_babies": false,
+      "weight": 42
+    },
+    {
+      "id": "recruitment_followup_toolsmith_boat",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["toolsmith"],
+      "text": "That boat was the right tool for the crossing. I will give you that.",
+      "requires_recruitment_boat_trip": true,
+      "show_for_babies": false,
+      "weight": 42
+    },
+    {
+      "id": "recruitment_followup_weaponsmith_boat",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["weaponsmith"],
+      "text": "A boat is not armor, but it kept danger at a decent distance.",
+      "requires_recruitment_boat_trip": true,
+      "show_for_babies": false,
+      "weight": 42
+    },
+    {
+      "id": "recruitment_followup_unemployed_boat",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["unemployed"],
+      "text": "I learned I am not ready for a career in boating. But I survived the lesson.",
+      "requires_recruitment_boat_trip": true,
+      "show_for_babies": false,
+      "weight": 42
+    },
+    {
+      "id": "recruitment_followup_nitwit_boat",
+      "type": "recruitment_followup",
+      "option": "recruitment_followup",
+      "professions": ["nitwit"],
+      "text": "The boat moved and I did not have to. I liked that part.",
+      "requires_recruitment_boat_trip": true,
+      "show_for_babies": false,
+      "weight": 42
+    },
+    {
       "id": "chat_follow_memory_biome",
       "type": "chat",
       "option": "adult_chat",
       "text": "Remember when you made me follow you across {follow_biome}? I still know that road by ache alone.",
       "requires_recruitment_memory": true,
+      "excludes_recruitment_ocean_crossing": true,
       "show_for_babies": false,
       "weight": 4
     },
@@ -1501,8 +1728,40 @@
       "text": "Remember when you made me follow you over {follow_distance} blocks? My legs complained for days.",
       "requires_recruitment_memory": true,
       "min_recruitment_follow_distance": 500,
+      "excludes_recruitment_ocean_crossing": true,
       "show_for_babies": false,
       "weight": 5
+    },
+    {
+      "id": "chat_follow_memory_boat",
+      "type": "chat",
+      "option": "adult_chat",
+      "text": "Remember when you took me along in a boat? I was not sure whether to thank you or ask where the oars had gone.",
+      "requires_recruitment_memory": true,
+      "requires_recruitment_boat_trip": true,
+      "show_for_babies": false,
+      "weight": 4
+    },
+    {
+      "id": "chat_follow_memory_ocean_swim",
+      "type": "chat",
+      "option": "adult_chat",
+      "text": "Remember when you took me across ocean water without a boat? I remember every splash.",
+      "requires_recruitment_memory": true,
+      "requires_recruitment_swim_trip": true,
+      "show_for_babies": false,
+      "weight": 5
+    },
+    {
+      "id": "chat_follow_memory_boat_long",
+      "type": "chat",
+      "option": "adult_chat",
+      "text": "That boat trip was part of a {follow_distance} block outing. Water did some of the work, but not enough.",
+      "requires_recruitment_memory": true,
+      "requires_recruitment_boat_trip": true,
+      "min_recruitment_follow_distance": 500,
+      "show_for_babies": false,
+      "weight": 4
     },
     {
       "id": "chat_follow_memory_betrayed",
@@ -1535,12 +1794,35 @@
       "weight": 3
     },
     {
+      "id": "chat_follow_memory_armorer_boat",
+      "type": "chat",
+      "option": "adult_chat",
+      "professions": ["armorer"],
+      "text": "Armor is not made for sitting in a boat. I learned that while following you.",
+      "requires_recruitment_memory": true,
+      "requires_recruitment_boat_trip": true,
+      "show_for_babies": false,
+      "weight": 3
+    },
+    {
       "id": "chat_follow_memory_butcher",
       "type": "chat",
       "option": "adult_chat",
       "professions": ["butcher"],
       "text": "When you had me follow you, I kept thinking the whole walk needed a sharper plan.",
       "requires_recruitment_memory": true,
+      "excludes_recruitment_ocean_crossing": true,
+      "show_for_babies": false,
+      "weight": 3
+    },
+    {
+      "id": "chat_follow_memory_cartographer_boat",
+      "type": "chat",
+      "option": "adult_chat",
+      "professions": ["cartographer"],
+      "text": "That boat route would look peaceful on a map. The lived version was wetter.",
+      "requires_recruitment_memory": true,
+      "requires_recruitment_boat_trip": true,
       "show_for_babies": false,
       "weight": 3
     },
@@ -1566,12 +1848,35 @@
       "weight": 4
     },
     {
+      "id": "chat_follow_memory_fisherman_boat",
+      "type": "chat",
+      "option": "adult_chat",
+      "professions": ["fisherman"],
+      "text": "You taking me by boat was almost sensible. Almost.",
+      "requires_recruitment_memory": true,
+      "requires_recruitment_boat_trip": true,
+      "show_for_babies": false,
+      "weight": 4
+    },
+    {
       "id": "chat_follow_memory_farmer",
       "type": "chat",
       "option": "adult_chat",
       "professions": ["farmer"],
       "text": "You remember that walk through {follow_biome}? I have tilled softer ground than that road.",
       "requires_recruitment_memory": true,
+      "excludes_recruitment_ocean_crossing": true,
+      "show_for_babies": false,
+      "weight": 3
+    },
+    {
+      "id": "chat_follow_memory_leatherworker_boat",
+      "type": "chat",
+      "option": "adult_chat",
+      "professions": ["leatherworker"],
+      "text": "I still remember that boat trip. Wet leather complains longer than villagers do.",
+      "requires_recruitment_memory": true,
+      "requires_recruitment_boat_trip": true,
       "show_for_babies": false,
       "weight": 3
     },
@@ -1597,12 +1902,24 @@
       "weight": 3
     },
     {
+      "id": "chat_follow_memory_shepherd_boat",
+      "type": "chat",
+      "option": "adult_chat",
+      "professions": ["shepherd"],
+      "text": "That boat ride was calm enough, until I remembered I was trusting you with the shore.",
+      "requires_recruitment_memory": true,
+      "requires_recruitment_boat_trip": true,
+      "show_for_babies": false,
+      "weight": 3
+    },
+    {
       "id": "chat_follow_memory_leatherworker",
       "type": "chat",
       "option": "adult_chat",
       "professions": ["leatherworker"],
       "text": "I still think about that walk. My boots forgave you before my feet did.",
       "requires_recruitment_memory": true,
+      "excludes_recruitment_ocean_crossing": true,
       "show_for_babies": false,
       "weight": 3
     },
@@ -1624,6 +1941,7 @@
       "text": "After following you that far, I understood why roads need better foundations.",
       "requires_recruitment_memory": true,
       "min_recruitment_follow_distance": 500,
+      "excludes_recruitment_ocean_crossing": true,
       "show_for_babies": false,
       "weight": 4
     },
@@ -1634,6 +1952,7 @@
       "professions": ["shepherd"],
       "text": "When I followed you through {follow_biome}, I finally understood why sheep wander off quietly.",
       "requires_recruitment_memory": true,
+      "excludes_recruitment_ocean_crossing": true,
       "show_for_babies": false,
       "weight": 3
     },
@@ -1665,6 +1984,7 @@
       "professions": ["unemployed"],
       "text": "I followed you once and learned something: I need better shoes before I choose a trade.",
       "requires_recruitment_memory": true,
+      "excludes_recruitment_ocean_crossing": true,
       "show_for_babies": false,
       "weight": 3
     },
@@ -1677,6 +1997,162 @@
       "requires_recruitment_memory": true,
       "show_for_babies": false,
       "weight": 3
+    },
+    {
+      "id": "chat_follow_memory_nitwit_boat",
+      "type": "chat",
+      "option": "adult_chat",
+      "professions": ["nitwit"],
+      "text": "Remember the boat? I sat down and the world moved. Very clever.",
+      "requires_recruitment_memory": true,
+      "requires_recruitment_boat_trip": true,
+      "show_for_babies": false,
+      "weight": 3
+    },
+    {
+      "id": "chat_follow_memory_butcher_boat",
+      "type": "chat",
+      "option": "adult_chat",
+      "professions": ["butcher"],
+      "text": "A boat ride is better than being dragged over rough ground. Still, I prefer cutting across town, not water.",
+      "requires_recruitment_memory": true,
+      "requires_recruitment_boat_trip": true,
+      "show_for_babies": false,
+      "weight": 3
+    },
+    {
+      "id": "chat_follow_memory_cleric_boat",
+      "type": "chat",
+      "option": "adult_chat",
+      "professions": ["cleric"],
+      "text": "I said a quiet prayer during that boat ride. Mostly for balance.",
+      "requires_recruitment_memory": true,
+      "requires_recruitment_boat_trip": true,
+      "show_for_babies": false,
+      "weight": 3
+    },
+    {
+      "id": "chat_follow_memory_farmer_boat",
+      "type": "chat",
+      "option": "adult_chat",
+      "professions": ["farmer"],
+      "text": "Boats are not much like fields. No furrows, no rows, just water deciding if it likes you.",
+      "requires_recruitment_memory": true,
+      "requires_recruitment_boat_trip": true,
+      "show_for_babies": false,
+      "weight": 3
+    },
+    {
+      "id": "chat_follow_memory_fletcher_boat",
+      "type": "chat",
+      "option": "adult_chat",
+      "professions": ["fletcher"],
+      "text": "That boat did not fly straight, but at least it floated straight enough.",
+      "requires_recruitment_memory": true,
+      "requires_recruitment_boat_trip": true,
+      "show_for_babies": false,
+      "weight": 3
+    },
+    {
+      "id": "chat_follow_memory_librarian_boat",
+      "type": "chat",
+      "option": "adult_chat",
+      "professions": ["librarian"],
+      "text": "The boat chapter of our journey was damp, brief, and badly footnoted.",
+      "requires_recruitment_memory": true,
+      "requires_recruitment_boat_trip": true,
+      "show_for_babies": false,
+      "weight": 3
+    },
+    {
+      "id": "chat_follow_memory_mason_boat",
+      "type": "chat",
+      "option": "adult_chat",
+      "professions": ["mason"],
+      "text": "I do not trust anything with no foundation, but that boat held better than I expected.",
+      "requires_recruitment_memory": true,
+      "requires_recruitment_boat_trip": true,
+      "show_for_babies": false,
+      "weight": 3
+    },
+    {
+      "id": "chat_follow_memory_toolsmith_boat",
+      "type": "chat",
+      "option": "adult_chat",
+      "professions": ["toolsmith"],
+      "text": "A boat is just a tool with a nervous floor. Yours worked, mostly.",
+      "requires_recruitment_memory": true,
+      "requires_recruitment_boat_trip": true,
+      "show_for_babies": false,
+      "weight": 3
+    },
+    {
+      "id": "chat_follow_memory_weaponsmith_boat",
+      "type": "chat",
+      "option": "adult_chat",
+      "professions": ["weaponsmith"],
+      "text": "That boat trip had one good quality: no one was swinging steel in it.",
+      "requires_recruitment_memory": true,
+      "requires_recruitment_boat_trip": true,
+      "show_for_babies": false,
+      "weight": 3
+    },
+    {
+      "id": "chat_follow_memory_unemployed_boat",
+      "type": "chat",
+      "option": "adult_chat",
+      "professions": ["unemployed"],
+      "text": "I followed you into a boat once. Not a trade, apparently, but it felt like training.",
+      "requires_recruitment_memory": true,
+      "requires_recruitment_boat_trip": true,
+      "show_for_babies": false,
+      "weight": 3
+    },
+    {
+      "id": "chat_follow_memory_cartographer_ocean_boat",
+      "type": "chat",
+      "option": "adult_chat",
+      "professions": ["cartographer"],
+      "text": "The ocean crossing by boat would make a fine blue line on a map. I would label it 'questionable judgment.'",
+      "requires_recruitment_memory": true,
+      "requires_recruitment_boat_trip": true,
+      "requires_recruitment_ocean_crossing": true,
+      "show_for_babies": false,
+      "weight": 4
+    },
+    {
+      "id": "chat_follow_memory_fisherman_ocean_boat",
+      "type": "chat",
+      "option": "adult_chat",
+      "professions": ["fisherman"],
+      "text": "If we had to cross ocean, at least you used a boat. That is the first sensible part of the story.",
+      "requires_recruitment_memory": true,
+      "requires_recruitment_boat_trip": true,
+      "requires_recruitment_ocean_crossing": true,
+      "show_for_babies": false,
+      "weight": 5
+    },
+    {
+      "id": "chat_follow_memory_fisherman_ocean_swim",
+      "type": "chat",
+      "option": "adult_chat",
+      "professions": ["fisherman"],
+      "text": "Swimming across ocean with you was not fishing. It was being the catch.",
+      "requires_recruitment_memory": true,
+      "requires_recruitment_swim_trip": true,
+      "show_for_babies": false,
+      "weight": 5
+    },
+    {
+      "id": "chat_follow_memory_leatherworker_ocean_swim",
+      "type": "chat",
+      "option": "adult_chat",
+      "professions": ["leatherworker"],
+      "text": "Ocean swimming is terrible for leather and worse for my mood.",
+      "requires_recruitment_memory": true,
+      "requires_recruitment_swim_trip": true,
+      "show_for_babies": false,
+      "weight": 4
     },
     {
       "id": "gear_report_global_used",

@@ -174,6 +174,18 @@ public record DialogueContext(
         return this.recruitmentMemory == null ? 0 : this.recruitmentMemory.distanceBlocks();
     }
 
+    public boolean hasRecruitmentMemoryBoatTrip() {
+        return this.recruitmentMemory != null && this.recruitmentMemory.boatTrip();
+    }
+
+    public boolean hasRecruitmentMemoryOceanCrossing() {
+        return this.recruitmentMemory != null && this.recruitmentMemory.oceanCrossing();
+    }
+
+    public boolean hasRecruitmentMemorySwimTrip() {
+        return this.recruitmentMemory != null && this.recruitmentMemory.oceanCrossing() && !this.recruitmentMemory.boatTrip();
+    }
+
     public String recruitmentMemoryBiome() {
         return this.recruitmentMemory == null
                 || this.recruitmentMemory.biomeName() == null

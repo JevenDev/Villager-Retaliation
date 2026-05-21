@@ -27,6 +27,10 @@ public record DialogueLine(
         boolean requiresRecruitmentMemory,
         Set<String> recruitmentMemoryScenarios,
         int minRecruitmentFollowDistance,
+        boolean requiresRecruitmentBoatTrip,
+        boolean requiresRecruitmentOceanCrossing,
+        boolean requiresRecruitmentSwimTrip,
+        boolean excludesRecruitmentOceanCrossing,
         boolean firstConversationOnly,
         GiftAdviceKind giftAdviceKind,
         int weight
@@ -95,6 +99,18 @@ public record DialogueLine(
         }
         if (this.minRecruitmentFollowDistance > 0
                 && context.recruitmentMemoryDistanceBlocks() < this.minRecruitmentFollowDistance) {
+            return false;
+        }
+        if (this.requiresRecruitmentBoatTrip && !context.hasRecruitmentMemoryBoatTrip()) {
+            return false;
+        }
+        if (this.requiresRecruitmentOceanCrossing && !context.hasRecruitmentMemoryOceanCrossing()) {
+            return false;
+        }
+        if (this.requiresRecruitmentSwimTrip && !context.hasRecruitmentMemorySwimTrip()) {
+            return false;
+        }
+        if (this.excludesRecruitmentOceanCrossing && context.hasRecruitmentMemoryOceanCrossing()) {
             return false;
         }
         return this.weight > 0;
@@ -174,6 +190,10 @@ public record DialogueLine(
         private boolean requiresRecruitmentMemory;
         private final Set<String> recruitmentMemoryScenarios = new java.util.HashSet<>();
         private int minRecruitmentFollowDistance;
+        private boolean requiresRecruitmentBoatTrip;
+        private boolean requiresRecruitmentOceanCrossing;
+        private boolean requiresRecruitmentSwimTrip;
+        private boolean excludesRecruitmentOceanCrossing;
         private boolean firstConversationOnly;
         private GiftAdviceKind giftAdviceKind;
         private int weight = 10;
@@ -271,6 +291,26 @@ public record DialogueLine(
             return this;
         }
 
+        public Builder requiresRecruitmentBoatTrip() {
+            this.requiresRecruitmentBoatTrip = true;
+            return this;
+        }
+
+        public Builder requiresRecruitmentOceanCrossing() {
+            this.requiresRecruitmentOceanCrossing = true;
+            return this;
+        }
+
+        public Builder requiresRecruitmentSwimTrip() {
+            this.requiresRecruitmentSwimTrip = true;
+            return this;
+        }
+
+        public Builder excludesRecruitmentOceanCrossing() {
+            this.excludesRecruitmentOceanCrossing = true;
+            return this;
+        }
+
         public Builder weatherStates(DialogueContext.WeatherState... weatherStates) {
             this.weatherStates.addAll(java.util.List.of(weatherStates));
             return this;
@@ -318,6 +358,10 @@ public record DialogueLine(
                     this.requiresRecruitmentMemory,
                     Set.copyOf(this.recruitmentMemoryScenarios),
                     this.minRecruitmentFollowDistance,
+                    this.requiresRecruitmentBoatTrip,
+                    this.requiresRecruitmentOceanCrossing,
+                    this.requiresRecruitmentSwimTrip,
+                    this.excludesRecruitmentOceanCrossing,
                     this.firstConversationOnly,
                     this.giftAdviceKind,
                     this.weight
