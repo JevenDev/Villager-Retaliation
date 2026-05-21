@@ -178,6 +178,9 @@ public final class VillagerInteractionService {
         VillagerAmbientIndicatorService.onDialogueResponse(level, villager, player, optionId, requestType, reputationEffect);
         String responseText = reputationEffect.responseOverride() == null ? result.text() : reputationEffect.responseOverride();
         VillagerInteractionTracker.rememberDialogue(level, villager, player, requestType, result.lineId());
+        if (requestType == DialogueRequestType.COMBAT_SURVIVAL_REPORT) {
+            VillagerInteractionTracker.claimUnreportedCombatSurvivalReport(level, villager, player);
+        }
         sendDialogueReputation(player, villager, level, requestType, reputationEffect);
         broadcastVillagerChat(level, villager, responseText);
         if (shouldRefuseDespisedConversation(villager, player)) {
@@ -433,6 +436,7 @@ public final class VillagerInteractionService {
                 interactionState.lastDirectHitGameTime(),
                 interactionState.lastDirectHitWeapon(),
                 VillagerInteractionTracker.unreportedCartographerMapDiscovery(level, villager, player).orElse(null),
+                VillagerInteractionTracker.unreportedCombatSurvivalReport(level, villager, player).orElse(null),
                 VillageEventMemory.recentNear(level, villager.blockPosition()),
                 villager.getRandom(),
                 VillagerLocale.locale(player)

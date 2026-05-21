@@ -8,6 +8,7 @@ import net.minecraft.world.entity.npc.VillagerProfession;
 public final class DialogueReputationService {
     private static final long DAY_TICKS = 24000L;
     private static final int MAP_REPORT_REPUTATION_GAIN = 10;
+    private static final int COMBAT_SURVIVAL_REPORT_REPUTATION_GAIN = 12;
 
     private DialogueReputationService() {
     }
@@ -94,6 +95,13 @@ public final class DialogueReputationService {
                     false,
                     null
             );
+            case COMBAT_SURVIVAL_REPORT -> new PlannedEffect(
+                    COMBAT_SURVIVAL_REPORT_REPUTATION_GAIN,
+                    "combat_survival_report",
+                    DialogueReputationEffect.CooldownCategory.NONE,
+                    false,
+                    null
+            );
             case STORY -> planStory(context);
             case JOKE -> planJoke(context);
             case INSULT -> planInsult(context, interactionState.firstConversation());
@@ -124,7 +132,9 @@ public final class DialogueReputationService {
     }
 
     private static boolean isDialogueOptionExhausted(DialogueContext context, DialogueRequestType requestType, VillagerInteractionTracker.InteractionState interactionState) {
-        if (requestType == DialogueRequestType.INSULT || requestType == DialogueRequestType.MAP_REPORT) {
+        if (requestType == DialogueRequestType.INSULT
+                || requestType == DialogueRequestType.MAP_REPORT
+                || requestType == DialogueRequestType.COMBAT_SURVIVAL_REPORT) {
             return false;
         }
         int limit = repeatedDialogueLimit(context.reputationLevel());

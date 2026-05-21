@@ -33,6 +33,7 @@ public final class VillagerInteractionTracker {
                 entry.requestUseCount(DialogueRequestType.QUESTION, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.GIFT_PREFERENCES, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.MAP_REPORT, gameTime, day, optionResetTicks),
+                entry.requestUseCount(DialogueRequestType.COMBAT_SURVIVAL_REPORT, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.STORY, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.JOKE, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.INSULT, gameTime, day, optionResetTicks),
@@ -101,6 +102,26 @@ public final class VillagerInteractionTracker {
     public static Optional<CartographerMapReport> claimUnreportedCartographerMapDiscovery(ServerLevel level, Villager villager, ServerPlayer player) {
         VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
         CartographerMapReport report = data.claimUnreportedCartographerMapDiscovery(villager.getUUID(), player.getUUID());
+        if (report != null) {
+            data.setDirty();
+        }
+        return Optional.ofNullable(report);
+    }
+
+    public static void rememberCombatSurvivalReport(ServerLevel level, Villager villager, ServerPlayer player, String eventKind) {
+        VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
+        data.rememberCombatSurvivalReport(villager.getUUID(), player.getUUID(), eventKind, level.getGameTime());
+        data.setDirty();
+    }
+
+    public static Optional<CombatSurvivalReport> unreportedCombatSurvivalReport(ServerLevel level, Villager villager, ServerPlayer player) {
+        return Optional.ofNullable(VillagerInteractionSavedData.get(level)
+                .unreportedCombatSurvivalReport(villager.getUUID(), player.getUUID()));
+    }
+
+    public static Optional<CombatSurvivalReport> claimUnreportedCombatSurvivalReport(ServerLevel level, Villager villager, ServerPlayer player) {
+        VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
+        CombatSurvivalReport report = data.claimUnreportedCombatSurvivalReport(villager.getUUID(), player.getUUID());
         if (report != null) {
             data.setDirty();
         }
@@ -181,6 +202,7 @@ public final class VillagerInteractionTracker {
             int questionUseCount,
             int giftPreferenceUseCount,
             int mapReportUseCount,
+            int combatSurvivalReportUseCount,
             int storyUseCount,
             int jokeUseCount,
             int insultUseCount,
@@ -195,6 +217,7 @@ public final class VillagerInteractionTracker {
                 case QUESTION -> this.questionUseCount;
                 case GIFT_PREFERENCES -> this.giftPreferenceUseCount;
                 case MAP_REPORT -> this.mapReportUseCount;
+                case COMBAT_SURVIVAL_REPORT -> this.combatSurvivalReportUseCount;
                 case STORY -> this.storyUseCount;
                 case JOKE -> this.jokeUseCount;
                 case INSULT -> this.insultUseCount;
@@ -208,6 +231,13 @@ public final class VillagerInteractionTracker {
             ResourceLocation structureId,
             String targetName,
             BlockPos targetPos
+    ) {
+    }
+
+    public record CombatSurvivalReport(
+            UUID villagerId,
+            String eventKind,
+            long gameTime
     ) {
     }
 }

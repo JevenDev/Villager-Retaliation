@@ -29,6 +29,14 @@
       "order": 3
     },
     {
+      "id": "combat_survival_report",
+      "label": "You made it back",
+      "type": "combat_survival_report",
+      "show_for_babies": false,
+      "requires_unreported_combat_survival_report": true,
+      "order": -1
+    },
+    {
       "id": "adult_story",
       "label": "Ask for Story",
       "type": "story",
@@ -287,6 +295,157 @@
     }
   ],
   "lines": [
+    {
+      "id": "combat_survival_global_breath",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "text": "I did. Still breathing, still standing. That counts for more than it sounds.",
+      "show_for_babies": false,
+      "weight": 26
+    },
+    {
+      "id": "combat_survival_global_home",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "text": "Back to the village in one piece. I will remember who helped make that true.",
+      "show_for_babies": false,
+      "weight": 26
+    },
+    {
+      "id": "combat_survival_armorer",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": ["armorer"],
+      "text": "A few new dents, no missing plates. That is a victory I can repair.",
+      "show_for_babies": false,
+      "weight": 34
+    },
+    {
+      "id": "combat_survival_butcher",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": ["butcher"],
+      "text": "I have handled sharp nights before. This one nearly handled me back.",
+      "show_for_babies": false,
+      "weight": 34
+    },
+    {
+      "id": "combat_survival_cartographer",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": ["cartographer"],
+      "text": "I could draw the route back with my eyes closed. I would rather not walk it again tonight.",
+      "show_for_babies": false,
+      "weight": 34
+    },
+    {
+      "id": "combat_survival_cleric",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": ["cleric"],
+      "text": "A little faith, a little medicine, and a very fast prayer. Yes, I made it back.",
+      "show_for_babies": false,
+      "weight": 34
+    },
+    {
+      "id": "combat_survival_farmer",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": ["farmer"],
+      "text": "Fields teach patience. Fights teach exactly when patience has run out.",
+      "show_for_babies": false,
+      "weight": 34
+    },
+    {
+      "id": "combat_survival_fisherman",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": ["fisherman"],
+      "text": "I have pulled mean things from dark water. Tonight was louder, that is all.",
+      "show_for_babies": false,
+      "weight": 34
+    },
+    {
+      "id": "combat_survival_fletcher",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": ["fletcher"],
+      "text": "Lost two arrows, kept my nerve. I will call that a fair trade.",
+      "show_for_babies": false,
+      "weight": 34
+    },
+    {
+      "id": "combat_survival_leatherworker",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": ["leatherworker"],
+      "text": "Scratches, scuffs, and one strap I do not trust anymore. Nothing I cannot mend.",
+      "show_for_babies": false,
+      "weight": 34
+    },
+    {
+      "id": "combat_survival_librarian",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": ["librarian"],
+      "text": "I prefer danger in books. Books usually stay on the correct side of the shelf.",
+      "show_for_babies": false,
+      "weight": 34
+    },
+    {
+      "id": "combat_survival_mason",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": ["mason"],
+      "text": "Stone chips, tools chip, people chip too. Important thing is not breaking.",
+      "show_for_babies": false,
+      "weight": 34
+    },
+    {
+      "id": "combat_survival_nitwit",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": ["nitwit"],
+      "text": "I made it back because I ran exactly the clever amount. No one measures that.",
+      "show_for_babies": false,
+      "weight": 34
+    },
+    {
+      "id": "combat_survival_shepherd",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": ["shepherd"],
+      "text": "I have chased enough trouble from the flock to know when trouble has teeth.",
+      "show_for_babies": false,
+      "weight": 34
+    },
+    {
+      "id": "combat_survival_toolsmith",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": ["toolsmith"],
+      "text": "Good tools held. So did I. I will inspect both before sleeping.",
+      "show_for_babies": false,
+      "weight": 34
+    },
+    {
+      "id": "combat_survival_unemployed",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": ["unemployed"],
+      "text": "I do not have a trade for that sort of night. I survived it anyway.",
+      "show_for_babies": false,
+      "weight": 34
+    },
+    {
+      "id": "combat_survival_weaponsmith",
+      "type": "combat_survival_report",
+      "option": "combat_survival_report",
+      "professions": ["weaponsmith"],
+      "text": "The blade did its work, and so did my feet when it was time to come home.",
+      "show_for_babies": false,
+      "weight": 34
+    },
     {
       "id": "baby_chat_hiding_place",
       "type": "chat",

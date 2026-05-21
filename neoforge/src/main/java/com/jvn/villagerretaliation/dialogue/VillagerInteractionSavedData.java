@@ -61,6 +61,9 @@ public class VillagerInteractionSavedData extends SavedData {
     private static final String TAG_EXPIRES_AT = "ExpiresAt";
     private static final String TAG_FOUND = "Found";
     private static final String TAG_REPORTED = "Reported";
+    private static final String TAG_COMBAT_SURVIVAL_UNREPORTED = "CombatSurvivalUnreported";
+    private static final String TAG_COMBAT_SURVIVAL_EVENT_KIND = "CombatSurvivalEventKind";
+    private static final String TAG_COMBAT_SURVIVAL_GAME_TIME = "CombatSurvivalGameTime";
     private static final int MAX_RECENT_LINES = 5;
     private static final int MAX_CARTOGRAPHER_MAPS = 8;
 
@@ -97,6 +100,11 @@ public class VillagerInteractionSavedData extends SavedData {
             if (entryTag.contains(TAG_LAST_DIRECT_HIT_WEAPON, Tag.TAG_STRING)) {
                 entry.lastDirectHitWeapon = entryTag.getString(TAG_LAST_DIRECT_HIT_WEAPON);
             }
+            entry.combatSurvivalUnreported = entryTag.getBoolean(TAG_COMBAT_SURVIVAL_UNREPORTED);
+            if (entryTag.contains(TAG_COMBAT_SURVIVAL_EVENT_KIND, Tag.TAG_STRING)) {
+                entry.combatSurvivalEventKind = entryTag.getString(TAG_COMBAT_SURVIVAL_EVENT_KIND);
+            }
+            entry.combatSurvivalGameTime = readOptionalLong(entryTag, TAG_COMBAT_SURVIVAL_GAME_TIME);
             if (entryTag.contains(TAG_CONSECUTIVE_REQUEST_TYPE, Tag.TAG_STRING)) {
                 try {
                     entry.consecutiveRequestType = DialogueRequestType.valueOf(entryTag.getString(TAG_CONSECUTIVE_REQUEST_TYPE));
@@ -222,6 +230,11 @@ public class VillagerInteractionSavedData extends SavedData {
                 if (playerEntry.getValue().lastDirectHitWeapon != null && !playerEntry.getValue().lastDirectHitWeapon.isBlank()) {
                     entryTag.putString(TAG_LAST_DIRECT_HIT_WEAPON, playerEntry.getValue().lastDirectHitWeapon);
                 }
+                entryTag.putBoolean(TAG_COMBAT_SURVIVAL_UNREPORTED, playerEntry.getValue().combatSurvivalUnreported);
+                if (playerEntry.getValue().combatSurvivalEventKind != null && !playerEntry.getValue().combatSurvivalEventKind.isBlank()) {
+                    entryTag.putString(TAG_COMBAT_SURVIVAL_EVENT_KIND, playerEntry.getValue().combatSurvivalEventKind);
+                }
+                entryTag.putLong(TAG_COMBAT_SURVIVAL_GAME_TIME, playerEntry.getValue().combatSurvivalGameTime);
                 if (playerEntry.getValue().consecutiveRequestType != null) {
                     entryTag.putString(TAG_CONSECUTIVE_REQUEST_TYPE, playerEntry.getValue().consecutiveRequestType.name());
                     entryTag.putInt(TAG_CONSECUTIVE_REQUEST_COUNT, playerEntry.getValue().consecutiveRequestCount);
@@ -374,6 +387,18 @@ public class VillagerInteractionSavedData extends SavedData {
         return getOrCreate(villagerId, playerId).claimUnreportedCartographerMapDiscovery(villagerId);
     }
 
+    public void rememberCombatSurvivalReport(UUID villagerId, UUID playerId, String eventKind, long gameTime) {
+        getOrCreate(villagerId, playerId).rememberCombatSurvivalReport(eventKind, gameTime);
+    }
+
+    public VillagerInteractionTracker.CombatSurvivalReport unreportedCombatSurvivalReport(UUID villagerId, UUID playerId) {
+        return getOrCreate(villagerId, playerId).unreportedCombatSurvivalReport(villagerId);
+    }
+
+    public VillagerInteractionTracker.CombatSurvivalReport claimUnreportedCombatSurvivalReport(UUID villagerId, UUID playerId) {
+        return getOrCreate(villagerId, playerId).claimUnreportedCombatSurvivalReport(villagerId);
+    }
+
     private GiftKnowledgeEntry giftKnowledgeEntry(UUID playerId, String professionKey, boolean create) {
         GiftKnowledgeBook book = this.giftKnowledge.get(playerId);
         if (book == null) {
@@ -400,6 +425,9 @@ public class VillagerInteractionSavedData extends SavedData {
         private boolean badFirstImpression;
         private long lastDirectHitGameTime = Long.MIN_VALUE;
         private String lastDirectHitWeapon;
+        private boolean combatSurvivalUnreported;
+        private String combatSurvivalEventKind;
+        private long combatSurvivalGameTime = Long.MIN_VALUE;
         private DialogueRequestType consecutiveRequestType;
         private int consecutiveRequestCount;
         private final ArrayDeque<String> recentDialogueIds = new ArrayDeque<>();
@@ -475,6 +503,29 @@ public class VillagerInteractionSavedData extends SavedData {
         public void rememberDirectHit(long gameTime, String weapon) {
             this.lastDirectHitGameTime = gameTime;
             this.lastDirectHitWeapon = weapon;
+        }
+
+        public void rememberCombatSurvivalReport(String eventKind, long gameTime) {
+            this.combatSurvivalUnreported = true;
+            this.combatSurvivalEventKind = eventKind == null || eventKind.isBlank() ? "combat" : eventKind;
+            this.combatSurvivalGameTime = gameTime;
+        }
+
+        public VillagerInteractionTracker.CombatSurvivalReport unreportedCombatSurvivalReport(UUID villagerId) {
+            if (!this.combatSurvivalUnreported) {
+                return null;
+            }
+            return new VillagerInteractionTracker.CombatSurvivalReport(
+                    villagerId,
+                    this.combatSurvivalEventKind == null || this.combatSurvivalEventKind.isBlank() ? "combat" : this.combatSurvivalEventKind,
+                    this.combatSurvivalGameTime
+            );
+        }
+
+        public VillagerInteractionTracker.CombatSurvivalReport claimUnreportedCombatSurvivalReport(UUID villagerId) {
+            VillagerInteractionTracker.CombatSurvivalReport report = unreportedCombatSurvivalReport(villagerId);
+            this.combatSurvivalUnreported = false;
+            return report;
         }
 
         public int consecutiveRequestCount(DialogueRequestType requestType) {

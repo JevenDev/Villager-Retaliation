@@ -13,6 +13,7 @@ import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -50,6 +51,13 @@ public final class VillagerRecruitmentService {
 
     public static boolean isFollowingAnyPlayer(Villager villager) {
         return villager.getPersistentData().hasUUID(FOLLOWING_PLAYER_KEY);
+    }
+
+    public static Optional<UUID> followingPlayerId(Villager villager) {
+        if (!villager.getPersistentData().hasUUID(FOLLOWING_PLAYER_KEY)) {
+            return Optional.empty();
+        }
+        return Optional.of(villager.getPersistentData().getUUID(FOLLOWING_PLAYER_KEY));
     }
 
     public static boolean isHiredAnyPlayer(Villager villager) {

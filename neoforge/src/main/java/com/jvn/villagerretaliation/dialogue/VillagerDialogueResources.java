@@ -341,6 +341,7 @@ public final class VillagerDialogueResources {
             Set<VillagerProfession> professions = readProfessions(entry, defaultProfessions);
             Set<DialogueDisposition> dispositions = readEnumSet(entry, "dispositions", DialogueDisposition.class);
             boolean requiresUnreportedCartographerMapDiscovery = readBoolean(entry, "requires_unreported_cartographer_map_discovery");
+            boolean requiresUnreportedCombatSurvivalReport = readBoolean(entry, "requires_unreported_combat_survival_report");
             int order = readInt(entry, "order", index);
             options.put(id, new DialogueOptionDefinition(
                     id,
@@ -351,6 +352,7 @@ public final class VillagerDialogueResources {
                     professions,
                     dispositions,
                     requiresUnreportedCartographerMapDiscovery,
+                    requiresUnreportedCombatSurvivalReport,
                     order
             ));
             index++;

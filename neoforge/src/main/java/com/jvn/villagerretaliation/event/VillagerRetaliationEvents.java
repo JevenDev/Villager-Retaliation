@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil;
 import com.jvn.villagerretaliation.combat.VillagerPacificationResult;
 import com.jvn.villagerretaliation.combat.WanderingTraderRetaliationHandler;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueService;
+import com.jvn.villagerretaliation.interaction.VillagerCombatSurvivalService;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
@@ -97,6 +98,7 @@ public final class VillagerRetaliationEvents {
     public static void onLivingDeath(LivingDeathEvent event) {
         if (event.getEntity() instanceof Villager villager) {
             broadcastVillagerDeathMessage(villager, event.getSource());
+            VillagerCombatSurvivalService.onVillagerDeath(villager);
             VillagerRecruitmentService.notifyRecruitmentDeath(villager, event.getSource().getEntity());
         }
         VillagerRetaliationHandler.onLivingDeath(event);
@@ -135,6 +137,9 @@ public final class VillagerRetaliationEvents {
         VillagerRetaliationHandler.onEntityTickPost(event);
         WanderingTraderRetaliationHandler.onEntityTickPost(event);
         VillagerFleeBehaviorHandler.onEntityTickPost(event);
+        if (event.getEntity() instanceof Villager villager) {
+            VillagerCombatSurvivalService.onVillagerTickPost(villager);
+        }
     }
 
     public static void onEntityJoinLevel(EntityJoinLevelEvent event) {

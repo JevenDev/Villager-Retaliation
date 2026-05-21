@@ -288,7 +288,7 @@ Dialogue choices are declared with an `options` array:
 }
 ```
 
-`type` controls the existing dialogue behavior and reputation handling: `chat`, `greeting`, `question`, `gift_preferences`, `map_report`, `story`, `joke`, or `insult`. `option` or `option_ids` binds a line to a custom choice. Lines can also filter by `professions`, `dispositions`, `weather`, `times`, `event_tags`, `player_event_tags`, `show_for_adults`, `show_for_babies`, `requires_recent_broken_bed_memory`, `requires_recent_direct_hit_memory`, and `first_conversation_only`. Options can set `requires_unreported_cartographer_map_discovery` to appear only after the player finds a cartographer dialogue map target and before they report it. Higher `weight` values are picked more often.
+`type` controls the existing dialogue behavior and reputation handling: `chat`, `greeting`, `question`, `gift_preferences`, `map_report`, `combat_survival_report`, `story`, `joke`, or `insult`. `option` or `option_ids` binds a line to a custom choice. Lines can also filter by `professions`, `dispositions`, `weather`, `times`, `event_tags`, `player_event_tags`, `show_for_adults`, `show_for_babies`, `requires_recent_broken_bed_memory`, `requires_recent_direct_hit_memory`, and `first_conversation_only`. Options can set `requires_unreported_cartographer_map_discovery` to appear only after the player finds a cartographer dialogue map target and before they report it, or `requires_unreported_combat_survival_report` to appear after a followed villager or nearby fighting villager survives a raid/night hostile encounter and before that survival is acknowledged. Higher `weight` values are picked more often.
 
 One-off villager replies are declared with `messages`:
 
