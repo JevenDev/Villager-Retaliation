@@ -70,7 +70,7 @@ final class VillagerInventoryContainer implements Container {
             return this.villager.getItemBySlot(ARMOR_SLOTS[slot]);
         }
         if (slot == HELD_SLOT) {
-            return this.villager.getMainHandItem();
+            return canAccessMainHand(this.villager) ? this.villager.getMainHandItem() : ItemStack.EMPTY;
         }
         if (slot == OFFHAND_SLOT) {
             return this.villager.getOffhandItem();
@@ -121,6 +121,9 @@ final class VillagerInventoryContainer implements Container {
             return;
         }
         if (slot == HELD_SLOT) {
+            if (stack.isEmpty() && !canAccessMainHand(this.villager)) {
+                return;
+            }
             setEquipment(EquipmentSlot.MAINHAND, stack);
             return;
         }
@@ -522,10 +525,25 @@ final class VillagerInventoryContainer implements Container {
         if (stack.isEmpty()) {
             return;
         }
+        if (slot == EquipmentSlot.MAINHAND && !canAccessMainHand(villager)) {
+            removeOneMatchingDrop(event, stack);
+            return;
+        }
 
         removeOneMatchingDrop(event, stack);
         com.jvn.toucanlib.neoforge.loot.ToucanLivingDrops.addDrop(event, stack.copy());
         VillagerRetaliationVillagerEquipment.setInventoryEquipment(villager, slot, ItemStack.EMPTY);
+    }
+
+    private static boolean canAccessMainHand(Villager villager) {
+        return villager.getMainHandItem().isEmpty()
+                || mainHandMatchesBorrowedCombatWeapon(villager)
+                || VillagerRetaliationVillagerEquipment.hasManagedMainHand(villager);
+    }
+
+    private static boolean mainHandMatchesBorrowedCombatWeapon(Villager villager) {
+        BorrowedCombatWeapon borrowedWeapon = borrowedCombatWeapon(villager);
+        return borrowedWeapon != null && ItemStack.isSameItem(villager.getMainHandItem(), borrowedWeapon.stack());
     }
 
     private static void removeOneMatchingDrop(LivingDropsEvent event, ItemStack stack) {
