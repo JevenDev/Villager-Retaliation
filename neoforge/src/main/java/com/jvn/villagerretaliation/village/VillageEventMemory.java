@@ -98,6 +98,7 @@ public final class VillageEventMemory {
         VILLAGER_ATTACKED,
         PLAYER_ATTACKED_VILLAGER,
         PLAYER_DEFENDED_VILLAGE,
+        PLAYER_DEFENDED_RAID,
         GOLEM_CREATED,
         GOLEM_KILLED,
         NEARBY_HOSTILE_MOB,

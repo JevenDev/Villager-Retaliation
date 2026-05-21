@@ -37,6 +37,8 @@ import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.WanderingTrader;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.raid.Raid;
+import net.minecraft.world.entity.raid.Raider;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.item.ItemStack;
@@ -357,8 +359,16 @@ public final class VillagerRetaliationEvents {
                 VillageEventMemory.remember(level, VillageEventMemory.EventTag.IRON_GOLEM_DEFEATED_MOB, deceased.blockPosition(), deceased, attacker);
             } else if (attacker instanceof Player) {
                 VillageEventMemory.remember(level, VillageEventMemory.EventTag.PLAYER_DEFENDED_VILLAGE, deceased.blockPosition(), deceased, attacker);
+                if (deceased instanceof Raider && isActiveRaidAt(level, deceased)) {
+                    VillageEventMemory.remember(level, VillageEventMemory.EventTag.PLAYER_DEFENDED_RAID, deceased.blockPosition(), deceased, attacker);
+                }
             }
         }
+    }
+
+    private static boolean isActiveRaidAt(ServerLevel level, Entity entity) {
+        Raid raid = level.getRaidAt(entity.blockPosition());
+        return raid != null && raid.isActive() && !raid.isVictory() && !raid.isLoss();
     }
 
     private static void broadcastVillagerDeathMessage(Villager villager, DamageSource source) {

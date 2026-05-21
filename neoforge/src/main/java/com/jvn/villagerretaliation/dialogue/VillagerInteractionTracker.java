@@ -35,10 +35,12 @@ public final class VillagerInteractionTracker {
                 entry.requestUseCount(DialogueRequestType.MAP_REPORT, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.COMBAT_SURVIVAL_REPORT, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.APOLOGY, gameTime, day, optionResetTicks),
+                entry.requestUseCount(DialogueRequestType.VILLAGE_DEFENSE_REPORT, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.STORY, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.JOKE, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.INSULT, gameTime, day, optionResetTicks),
                 entry.lastDialogueGameTime(DialogueRequestType.APOLOGY),
+                entry.lastDialogueGameTime(DialogueRequestType.VILLAGE_DEFENSE_REPORT),
                 entry.lastBrokenBedGameTime(),
                 entry.lastDirectHitGameTime(),
                 entry.lastDirectHitWeapon()
@@ -206,10 +208,12 @@ public final class VillagerInteractionTracker {
             int mapReportUseCount,
             int combatSurvivalReportUseCount,
             int apologyUseCount,
+            int villageDefenseReportUseCount,
             int storyUseCount,
             int jokeUseCount,
             int insultUseCount,
             long lastApologyDialogueGameTime,
+            long lastVillageDefenseReportGameTime,
             long lastBrokenBedGameTime,
             long lastDirectHitGameTime,
             String lastDirectHitWeapon
@@ -223,6 +227,7 @@ public final class VillagerInteractionTracker {
                 case MAP_REPORT -> this.mapReportUseCount;
                 case COMBAT_SURVIVAL_REPORT -> this.combatSurvivalReportUseCount;
                 case APOLOGY -> this.apologyUseCount;
+                case VILLAGE_DEFENSE_REPORT -> this.villageDefenseReportUseCount;
                 case STORY -> this.storyUseCount;
                 case JOKE -> this.jokeUseCount;
                 case INSULT -> this.insultUseCount;

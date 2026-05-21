@@ -26,6 +26,7 @@ public record DialogueContext(
         long lastNegativeDialogueReputationGameTime,
         long lastJokeReputationGameTime,
         long lastApologyDialogueGameTime,
+        long lastVillageDefenseReportGameTime,
         boolean badFirstImpression,
         long lastBrokenBedGameTime,
         long lastDirectHitGameTime,
@@ -101,6 +102,23 @@ public record DialogueContext(
     public boolean hasUnapologizedRememberedHarm() {
         long latestHarm = latestRememberedHarmGameTime();
         return latestHarm != Long.MIN_VALUE && latestHarm > this.lastApologyDialogueGameTime;
+    }
+
+    public boolean hasUnreportedVillageDefense() {
+        long latestDefense = latestVillageDefenseGameTime();
+        return latestDefense != Long.MIN_VALUE && latestDefense > this.lastVillageDefenseReportGameTime;
+    }
+
+    public long latestVillageDefenseGameTime() {
+        long latest = Long.MIN_VALUE;
+        UUID playerId = this.player.getUUID();
+        for (VillageEventMemory.MemoryEvent event : this.recentEvents) {
+            if (event.tag() == VillageEventMemory.EventTag.PLAYER_DEFENDED_RAID
+                    && playerId.equals(event.playerId())) {
+                latest = Math.max(latest, event.gameTime());
+            }
+        }
+        return latest;
     }
 
     public long latestRememberedHarmGameTime() {

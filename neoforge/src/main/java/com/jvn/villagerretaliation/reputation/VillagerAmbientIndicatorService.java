@@ -212,6 +212,7 @@ public final class VillagerAmbientIndicatorService {
                 case MAP_REPORT -> random(villager.getRandom(), "You found it", "Returned", "Mapped");
                 case COMBAT_SURVIVAL_REPORT -> random(villager.getRandom(), "Back safe", "Still standing", "Made it");
                 case APOLOGY -> random(villager.getRandom(), "Apology", "Heard", "Careful");
+                case VILLAGE_DEFENSE_REPORT -> random(villager.getRandom(), "Raid ended", "You fought", "Afterward");
                 case CHAT -> random(villager.getRandom(), "I suppose", "Small talk", "Alright");
                 case STORY -> random(villager.getRandom(), "Listen", "Long story", "I remember");
                 case JOKE -> random(villager.getRandom(), "Heh", "Not bad", "Oh dear");

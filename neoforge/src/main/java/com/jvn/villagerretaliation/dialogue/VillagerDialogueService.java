@@ -179,7 +179,7 @@ public final class VillagerDialogueService {
                     case DISLIKED, HATED -> -1;
                 })
                 .orElse(0);
-        if (context.hasRecentPlayerEvent(VillageEventMemory.EventTag.PLAYER_DEFENDED_VILLAGE)) {
+        if (context.hasRecentPlayerEvent(VillageEventMemory.EventTag.PLAYER_DEFENDED_VILLAGE, VillageEventMemory.EventTag.PLAYER_DEFENDED_RAID)) {
             moodRank++;
         }
         if (context.hasRecentPlayerEvent(VillageEventMemory.EventTag.PLAYER_ATTACKED_VILLAGER)) {
@@ -313,7 +313,7 @@ public final class VillagerDialogueService {
         return switch (requestType) {
             case GREETING, QUESTION, INSULT -> directHitCandidates;
             case CHAT -> context.random().nextInt(100) < 45 ? directHitCandidates : candidates;
-            case MAP_REPORT, COMBAT_SURVIVAL_REPORT, APOLOGY -> candidates;
+            case MAP_REPORT, COMBAT_SURVIVAL_REPORT, APOLOGY, VILLAGE_DEFENSE_REPORT -> candidates;
             default -> candidates;
         };
     }
@@ -330,7 +330,7 @@ public final class VillagerDialogueService {
 
         return switch (requestType) {
             case GREETING, QUESTION, CHAT, INSULT -> brokenBedCandidates;
-            case MAP_REPORT, COMBAT_SURVIVAL_REPORT, APOLOGY -> candidates;
+            case MAP_REPORT, COMBAT_SURVIVAL_REPORT, APOLOGY, VILLAGE_DEFENSE_REPORT -> candidates;
             default -> candidates;
         };
     }

@@ -44,6 +44,14 @@
       "order": -2
     },
     {
+      "id": "village_defense_report",
+      "label": "About the attack...",
+      "type": "village_defense_report",
+      "show_for_babies": false,
+      "requires_unreported_village_defense": true,
+      "order": -3
+    },
+    {
       "id": "adult_story",
       "label": "Ask for Story",
       "type": "story",
@@ -302,6 +310,67 @@
     }
   ],
   "lines": [
+    {
+      "id": "village_defense_global_counted",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "text": "We saw what you did when the raiders came. People count that sort of courage carefully.",
+      "show_for_babies": false,
+      "weight": 30
+    },
+    {
+      "id": "village_defense_global_bell",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "text": "The bell rang and you ran toward the danger. That is not nothing.",
+      "show_for_babies": false,
+      "weight": 30
+    },
+    {
+      "id": "village_defense_cautious_shaken",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "text": "You helped. I know that. I am still hearing the horns in my head.",
+      "dispositions": ["cautious", "rude", "hostile", "fearful"],
+      "show_for_babies": false,
+      "weight": 38
+    },
+    {
+      "id": "village_defense_cautious_doors",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "text": "Maybe you saved us. Maybe I need another day before I can say that without shaking.",
+      "dispositions": ["cautious", "rude", "hostile", "fearful"],
+      "show_for_babies": false,
+      "weight": 34
+    },
+    {
+      "id": "village_defense_armorer_respect",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": ["armorer"],
+      "text": "You stood where armor matters most. I respect that more than clean talk.",
+      "show_for_babies": false,
+      "weight": 42
+    },
+    {
+      "id": "village_defense_toolsmith_respect",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": ["toolsmith"],
+      "text": "Good hands under pressure are rare. Yours were useful when the village needed them.",
+      "show_for_babies": false,
+      "weight": 42
+    },
+    {
+      "id": "village_defense_weaponsmith_respect",
+      "type": "village_defense_report",
+      "option": "village_defense_report",
+      "professions": ["weaponsmith"],
+      "text": "A weapon means little without the nerve to use it at the gate. You had that nerve.",
+      "show_for_babies": false,
+      "weight": 44
+    },
     {
       "id": "apology_global_not_forgotten",
       "type": "apology",

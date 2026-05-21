@@ -8,6 +8,7 @@ public enum DialogueRequestType {
     MAP_REPORT,
     COMBAT_SURVIVAL_REPORT,
     APOLOGY,
+    VILLAGE_DEFENSE_REPORT,
     STORY,
     JOKE,
     INSULT

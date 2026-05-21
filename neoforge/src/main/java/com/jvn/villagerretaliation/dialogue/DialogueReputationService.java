@@ -10,6 +10,7 @@ public final class DialogueReputationService {
     private static final int MAP_REPORT_REPUTATION_GAIN = 10;
     private static final int COMBAT_SURVIVAL_REPORT_REPUTATION_GAIN = 12;
     private static final int APOLOGY_REPUTATION_GAIN = 4;
+    private static final int VILLAGE_DEFENSE_REPORT_REPUTATION_GAIN = 8;
 
     private DialogueReputationService() {
     }
@@ -114,6 +115,15 @@ public final class DialogueReputationService {
                     null
             )
                     : PlannedEffect.none();
+            case VILLAGE_DEFENSE_REPORT -> context.hasUnreportedVillageDefense()
+                    ? new PlannedEffect(
+                    VILLAGE_DEFENSE_REPORT_REPUTATION_GAIN,
+                    "village_defense_report",
+                    DialogueReputationEffect.CooldownCategory.NONE,
+                    false,
+                    null
+            )
+                    : PlannedEffect.none();
             case STORY -> planStory(context);
             case JOKE -> planJoke(context);
             case INSULT -> planInsult(context, interactionState.firstConversation());
@@ -147,7 +157,8 @@ public final class DialogueReputationService {
         if (requestType == DialogueRequestType.INSULT
                 || requestType == DialogueRequestType.MAP_REPORT
                 || requestType == DialogueRequestType.COMBAT_SURVIVAL_REPORT
-                || requestType == DialogueRequestType.APOLOGY) {
+                || requestType == DialogueRequestType.APOLOGY
+                || requestType == DialogueRequestType.VILLAGE_DEFENSE_REPORT) {
             return false;
         }
         int limit = repeatedDialogueLimit(context.reputationLevel());
