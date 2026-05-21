@@ -72,6 +72,16 @@ public final class VillagerInteractionClientHandler {
                     payload.knownLikedGiftNames(),
                     payload.knownDislikedGiftNames()
             );
+        } else if (minecraft.screen instanceof VillagerInteractionChatScreen screen
+                && screen.matchesVillager(payload.entityId())) {
+            screen.updateReputation(
+                    payload.reputation(),
+                    payload.reputationLevel(),
+                    payload.mood(),
+                    payload.dialogueOptions(),
+                    payload.knownLikedGiftNames(),
+                    payload.knownDislikedGiftNames()
+            );
         }
     }
 
@@ -82,6 +92,9 @@ public final class VillagerInteractionClientHandler {
     public static void acceptConversationEnded(VillagerConversationEndedPayload payload) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.screen instanceof VillagerInteractionScreen screen
+                && screen.matchesVillager(payload.entityId())) {
+            screen.closeFromServer();
+        } else if (minecraft.screen instanceof VillagerInteractionChatScreen screen
                 && screen.matchesVillager(payload.entityId())) {
             screen.closeFromServer();
         }
