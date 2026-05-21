@@ -580,7 +580,7 @@ public class VillagerInteractionSavedData extends SavedData {
             long expiresAtGameTime,
             long gameTime) {
         InteractionEntry entry = getOrCreate(villagerId, playerId);
-        if (entry.hasStoryHint(dimension, kind, targetId, targetPos, gameTime)) {
+        if (entry.hasStoryHint(dimension, kind, targetId, gameTime)) {
             return;
         }
         entry.storyHints.add(new StoryHintMemory(
@@ -1263,6 +1263,22 @@ public class VillagerInteractionSavedData extends SavedData {
                         && storyHint.kind() == kind
                         && storyHint.targetId().equals(targetId)
                         && storyHint.targetPos().equals(targetPos)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private boolean hasStoryHint(
+                ResourceLocation dimension,
+                VillagerInteractionTracker.StoryHintKind kind,
+                ResourceLocation targetId,
+                long gameTime) {
+            for (StoryHintMemory storyHint : this.storyHints) {
+                if (storyHint.expiresAtGameTime() > gameTime
+                        && storyHint.dimension().equals(dimension)
+                        && storyHint.kind() == kind
+                        && storyHint.targetId().equals(targetId)) {
                     return true;
                 }
             }

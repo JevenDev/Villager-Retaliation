@@ -536,6 +536,35 @@ public final class VillagerDialogueResources {
             builder.playerEventTags(playerEventTags.toArray(VillageEventMemory.EventTag[]::new));
         }
 
+        List<ResourceLocation> storyTargetIds = new ArrayList<>();
+        for (String value : readStringList(entry, "story_structure")) {
+            ResourceLocation id = ResourceLocation.tryParse(value);
+            if (id != null) {
+                storyTargetIds.add(id);
+            }
+        }
+        for (String value : readStringList(entry, "story_structures")) {
+            ResourceLocation id = ResourceLocation.tryParse(value);
+            if (id != null) {
+                storyTargetIds.add(id);
+            }
+        }
+        for (String value : readStringList(entry, "story_biome")) {
+            ResourceLocation id = ResourceLocation.tryParse(value);
+            if (id != null) {
+                storyTargetIds.add(id);
+            }
+        }
+        for (String value : readStringList(entry, "story_biomes")) {
+            ResourceLocation id = ResourceLocation.tryParse(value);
+            if (id != null) {
+                storyTargetIds.add(id);
+            }
+        }
+        if (!storyTargetIds.isEmpty()) {
+            builder.storyTargetIds(storyTargetIds.toArray(ResourceLocation[]::new));
+        }
+
         if (readBoolean(entry, "requires_recent_broken_bed_memory")) {
             builder.requiresRecentBrokenBedMemory();
         }

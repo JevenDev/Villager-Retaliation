@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import java.util.EnumSet;
 import java.util.Set;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.npc.VillagerProfession;
 
 public record DialogueLine(
@@ -19,6 +20,7 @@ public record DialogueLine(
         Set<DialogueContext.TimeOfDay> timeOfDays,
         Set<VillageEventMemory.EventTag> eventTags,
         Set<VillageEventMemory.EventTag> playerEventTags,
+        Set<ResourceLocation> storyTargetIds,
         boolean requiresRecentBrokenBedMemory,
         boolean requiresRecentDirectHitMemory,
         boolean requiresGearReportUsedInCombat,
@@ -72,6 +74,10 @@ public record DialogueLine(
             return false;
         }
         if (!this.playerEventTags.isEmpty() && !context.hasRecentPlayerEvent(this.playerEventTags.toArray(VillageEventMemory.EventTag[]::new))) {
+            return false;
+        }
+        if (!this.storyTargetIds.isEmpty()
+                && context.shareableStory().map(report -> !this.storyTargetIds.contains(report.targetId())).orElse(true)) {
             return false;
         }
         if (this.requiresRecentBrokenBedMemory && !context.hasRecentBrokenBedMemory()) {
@@ -138,6 +144,9 @@ public record DialogueLine(
         if (!this.playerEventTags.isEmpty()) {
             score += 5;
         }
+        if (!this.storyTargetIds.isEmpty()) {
+            score += 8;
+        }
         if (this.requiresRecentBrokenBedMemory) {
             score += 5;
         }
@@ -182,6 +191,7 @@ public record DialogueLine(
         private final Set<DialogueContext.TimeOfDay> timeOfDays = EnumSet.noneOf(DialogueContext.TimeOfDay.class);
         private final Set<VillageEventMemory.EventTag> eventTags = EnumSet.noneOf(VillageEventMemory.EventTag.class);
         private final Set<VillageEventMemory.EventTag> playerEventTags = EnumSet.noneOf(VillageEventMemory.EventTag.class);
+        private final Set<ResourceLocation> storyTargetIds = new java.util.HashSet<>();
         private boolean requiresRecentBrokenBedMemory;
         private boolean requiresRecentDirectHitMemory;
         private boolean requiresGearReportUsedInCombat;
@@ -240,6 +250,15 @@ public record DialogueLine(
 
         public Builder playerEventTags(VillageEventMemory.EventTag... eventTags) {
             this.playerEventTags.addAll(java.util.List.of(eventTags));
+            return this;
+        }
+
+        public Builder storyTargetIds(ResourceLocation... storyTargetIds) {
+            for (ResourceLocation storyTargetId : storyTargetIds) {
+                if (storyTargetId != null) {
+                    this.storyTargetIds.add(storyTargetId);
+                }
+            }
             return this;
         }
 
@@ -350,6 +369,7 @@ public record DialogueLine(
                     Set.copyOf(this.timeOfDays),
                     Set.copyOf(this.eventTags),
                     Set.copyOf(this.playerEventTags),
+                    Set.copyOf(this.storyTargetIds),
                     this.requiresRecentBrokenBedMemory,
                     this.requiresRecentDirectHitMemory,
                     this.requiresGearReportUsedInCombat,

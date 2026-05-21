@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.reputation;
 
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.dialogue.BiomeStoryResources;
 import com.jvn.villagerretaliation.dialogue.DangerousStructureStoryResources;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
@@ -55,6 +56,7 @@ public final class VillagerReputationAdvancements {
     private static final Map<UUID, Map<UUID, Long>> RECENT_DIRECT_VILLAGER_HITS = new HashMap<>();
     private static final Map<UUID, Set<UUID>> HOSTILE_OR_WORSE_HISTORY = new HashMap<>();
     private static final Map<UUID, Long> NEXT_DANGEROUS_STORY_SCAN = new HashMap<>();
+    private static final Map<UUID, Long> NEXT_BIOME_STORY_SCAN = new HashMap<>();
 
     private static final ResourceLocation ROOT = advancementId("reputation/root");
     private static final ResourceLocation COMMONFOLK = advancementId("reputation/commonfolk");
@@ -123,8 +125,42 @@ public final class VillagerReputationAdvancements {
                 award(player, TRUSTED_DIRECTIONS);
                 hintDiscoveries.forEach(discovery -> sendStoryHintFoundNotice(player, discovery));
             }
+            rememberBiomeStories(player, currentBiomeId);
         });
         rememberDangerousStructureStories(player);
+    }
+
+    private static void rememberBiomeStories(ServerPlayer player, ResourceLocation currentBiomeId) {
+        ServerLevel level = player.serverLevel();
+        long gameTime = level.getGameTime();
+        Long nextScan = NEXT_BIOME_STORY_SCAN.get(player.getUUID());
+        if (nextScan != null && nextScan > gameTime) {
+            return;
+        }
+        NEXT_BIOME_STORY_SCAN.put(player.getUUID(), gameTime + DANGEROUS_STORY_SCAN_INTERVAL_TICKS);
+
+        BiomeStoryResources.Entry storyBiome = BiomeStoryResources.entriesByBiome(level.getServer()).get(currentBiomeId);
+        if (storyBiome == null) {
+            return;
+        }
+        List<Villager> nearbyVillagers = nearbyAdultVillagers(level, player.blockPosition());
+        if (nearbyVillagers.isEmpty()) {
+            return;
+        }
+
+        long expiresAt = gameTime + DANGEROUS_STORY_SHARE_TICKS;
+        for (Villager villager : nearbyVillagers) {
+            VillagerInteractionTracker.rememberShareableStory(
+                    level,
+                    villager,
+                    player,
+                    VillagerInteractionTracker.StoryHintKind.BIOME,
+                    storyBiome.biomeId(),
+                    storyBiome.targetName(),
+                    player.blockPosition(),
+                    expiresAt
+            );
+        }
     }
 
     private static void rememberDangerousStructureStories(ServerPlayer player) {
@@ -140,11 +176,7 @@ public final class VillagerReputationAdvancements {
         if (storyStructures.isEmpty()) {
             return;
         }
-        List<Villager> nearbyVillagers = level.getEntitiesOfClass(
-                Villager.class,
-                new AABB(player.blockPosition()).inflate(DANGEROUS_STORY_VILLAGER_RADIUS),
-                villager -> villager.isAlive() && !villager.isBaby()
-        );
+        List<Villager> nearbyVillagers = nearbyAdultVillagers(level, player.blockPosition());
         if (nearbyVillagers.isEmpty()) {
             return;
         }
@@ -154,6 +186,14 @@ public final class VillagerReputationAdvancements {
             registry.getHolder(ResourceKey.create(Registries.STRUCTURE, storyStructure.structureId()))
                     .ifPresent(holder -> rememberDangerousStructureStory(level, player, nearbyVillagers, storyStructure, holder));
         }
+    }
+
+    private static List<Villager> nearbyAdultVillagers(ServerLevel level, BlockPos origin) {
+        return level.getEntitiesOfClass(
+                Villager.class,
+                new AABB(origin).inflate(DANGEROUS_STORY_VILLAGER_RADIUS),
+                villager -> villager.isAlive() && !villager.isBaby()
+        );
     }
 
     private static void rememberDangerousStructureStory(

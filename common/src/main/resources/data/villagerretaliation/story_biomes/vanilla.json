@@ -1,0 +1,260 @@
+{
+  "entries": [
+    {
+      "biome": "minecraft:badlands",
+      "name": "Badlands"
+    },
+    {
+      "biome": "minecraft:bamboo_jungle",
+      "name": "Bamboo Jungle"
+    },
+    {
+      "biome": "minecraft:basalt_deltas",
+      "name": "Basalt Deltas"
+    },
+    {
+      "biome": "minecraft:beach",
+      "name": "Beach"
+    },
+    {
+      "biome": "minecraft:birch_forest",
+      "name": "Birch Forest"
+    },
+    {
+      "biome": "minecraft:cherry_grove",
+      "name": "Cherry Grove"
+    },
+    {
+      "biome": "minecraft:cold_ocean",
+      "name": "Cold Ocean"
+    },
+    {
+      "biome": "minecraft:crimson_forest",
+      "name": "Crimson Forest"
+    },
+    {
+      "biome": "minecraft:dark_forest",
+      "name": "Dark Forest"
+    },
+    {
+      "biome": "minecraft:deep_cold_ocean",
+      "name": "Deep Cold Ocean"
+    },
+    {
+      "biome": "minecraft:deep_dark",
+      "name": "Deep Dark"
+    },
+    {
+      "biome": "minecraft:deep_frozen_ocean",
+      "name": "Deep Frozen Ocean"
+    },
+    {
+      "biome": "minecraft:deep_lukewarm_ocean",
+      "name": "Deep Lukewarm Ocean"
+    },
+    {
+      "biome": "minecraft:deep_ocean",
+      "name": "Deep Ocean"
+    },
+    {
+      "biome": "minecraft:desert",
+      "name": "Desert"
+    },
+    {
+      "biome": "minecraft:dripstone_caves",
+      "name": "Dripstone Caves"
+    },
+    {
+      "biome": "minecraft:end_barrens",
+      "name": "End Barrens"
+    },
+    {
+      "biome": "minecraft:end_highlands",
+      "name": "End Highlands"
+    },
+    {
+      "biome": "minecraft:end_midlands",
+      "name": "End Midlands"
+    },
+    {
+      "biome": "minecraft:eroded_badlands",
+      "name": "Eroded Badlands"
+    },
+    {
+      "biome": "minecraft:flower_forest",
+      "name": "Flower Forest"
+    },
+    {
+      "biome": "minecraft:forest",
+      "name": "Forest"
+    },
+    {
+      "biome": "minecraft:frozen_ocean",
+      "name": "Frozen Ocean"
+    },
+    {
+      "biome": "minecraft:frozen_peaks",
+      "name": "Frozen Peaks"
+    },
+    {
+      "biome": "minecraft:frozen_river",
+      "name": "Frozen River"
+    },
+    {
+      "biome": "minecraft:grove",
+      "name": "Grove"
+    },
+    {
+      "biome": "minecraft:ice_spikes",
+      "name": "Ice Spikes"
+    },
+    {
+      "biome": "minecraft:jagged_peaks",
+      "name": "Jagged Peaks"
+    },
+    {
+      "biome": "minecraft:jungle",
+      "name": "Jungle"
+    },
+    {
+      "biome": "minecraft:lukewarm_ocean",
+      "name": "Lukewarm Ocean"
+    },
+    {
+      "biome": "minecraft:lush_caves",
+      "name": "Lush Caves"
+    },
+    {
+      "biome": "minecraft:mangrove_swamp",
+      "name": "Mangrove Swamp"
+    },
+    {
+      "biome": "minecraft:meadow",
+      "name": "Meadow"
+    },
+    {
+      "biome": "minecraft:mushroom_fields",
+      "name": "Mushroom Fields"
+    },
+    {
+      "biome": "minecraft:nether_wastes",
+      "name": "Nether Wastes"
+    },
+    {
+      "biome": "minecraft:ocean",
+      "name": "Ocean"
+    },
+    {
+      "biome": "minecraft:old_growth_birch_forest",
+      "name": "Old Growth Birch Forest"
+    },
+    {
+      "biome": "minecraft:old_growth_pine_taiga",
+      "name": "Old Growth Pine Taiga"
+    },
+    {
+      "biome": "minecraft:old_growth_spruce_taiga",
+      "name": "Old Growth Spruce Taiga"
+    },
+    {
+      "biome": "minecraft:plains",
+      "name": "Plains"
+    },
+    {
+      "biome": "minecraft:river",
+      "name": "River"
+    },
+    {
+      "biome": "minecraft:savanna",
+      "name": "Savanna"
+    },
+    {
+      "biome": "minecraft:savanna_plateau",
+      "name": "Savanna Plateau"
+    },
+    {
+      "biome": "minecraft:small_end_islands",
+      "name": "Small End Islands"
+    },
+    {
+      "biome": "minecraft:snowy_beach",
+      "name": "Snowy Beach"
+    },
+    {
+      "biome": "minecraft:snowy_plains",
+      "name": "Snowy Plains"
+    },
+    {
+      "biome": "minecraft:snowy_slopes",
+      "name": "Snowy Slopes"
+    },
+    {
+      "biome": "minecraft:snowy_taiga",
+      "name": "Snowy Taiga"
+    },
+    {
+      "biome": "minecraft:soul_sand_valley",
+      "name": "Soul Sand Valley"
+    },
+    {
+      "biome": "minecraft:sparse_jungle",
+      "name": "Sparse Jungle"
+    },
+    {
+      "biome": "minecraft:stony_peaks",
+      "name": "Stony Peaks"
+    },
+    {
+      "biome": "minecraft:stony_shore",
+      "name": "Stony Shore"
+    },
+    {
+      "biome": "minecraft:sunflower_plains",
+      "name": "Sunflower Plains"
+    },
+    {
+      "biome": "minecraft:swamp",
+      "name": "Swamp"
+    },
+    {
+      "biome": "minecraft:taiga",
+      "name": "Taiga"
+    },
+    {
+      "biome": "minecraft:the_end",
+      "name": "The End"
+    },
+    {
+      "biome": "minecraft:the_void",
+      "name": "The Void"
+    },
+    {
+      "biome": "minecraft:warm_ocean",
+      "name": "Warm Ocean"
+    },
+    {
+      "biome": "minecraft:warped_forest",
+      "name": "Warped Forest"
+    },
+    {
+      "biome": "minecraft:windswept_forest",
+      "name": "Windswept Forest"
+    },
+    {
+      "biome": "minecraft:windswept_gravelly_hills",
+      "name": "Windswept Gravelly Hills"
+    },
+    {
+      "biome": "minecraft:windswept_hills",
+      "name": "Windswept Hills"
+    },
+    {
+      "biome": "minecraft:windswept_savanna",
+      "name": "Windswept Savanna"
+    },
+    {
+      "biome": "minecraft:wooded_badlands",
+      "name": "Wooded Badlands"
+    }
+  ]
+}

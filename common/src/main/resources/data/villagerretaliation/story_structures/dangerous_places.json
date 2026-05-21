@@ -7,17 +7,168 @@
       "radius": 128
     },
     {
-      "structure": "minecraft:woodland_mansion",
-      "name": "Woodland Mansion",
+      "structure": "minecraft:bastion_remnant",
+      "name": "Bastion Remnant",
       "radius": 128
     },
     {
+      "structure": "minecraft:buried_treasure",
+      "name": "Buried Treasure",
+      "radius": 96
+    },
+    {
+      "structure": "minecraft:desert_pyramid",
+      "name": "Desert Pyramid",
+      "radius": 96
+    },
+    {
+      "structure": "minecraft:end_city",
+      "name": "End City",
+      "radius": 128
+    },
+    {
+      "structure": "minecraft:fortress",
+      "name": "Nether Fortress",
+      "radius": 128
+    },
+    {
+      "structure": "minecraft:igloo",
+      "name": "Igloo",
+      "radius": 96
+    },
+    {
+      "structure": "minecraft:jungle_pyramid",
+      "name": "Jungle Pyramid",
+      "radius": 96
+    },
+    {
+      "structure": "minecraft:mineshaft",
+      "name": "Mineshaft",
+      "radius": 96
+    },
+    {
+      "structure": "minecraft:mineshaft_mesa",
+      "name": "Mesa Mineshaft",
+      "radius": 96
+    },
+    {
+      "structure": "minecraft:monument",
+      "name": "Ocean Monument",
+      "radius": 96
+    },
+    {
+      "structure": "minecraft:nether_fossil",
+      "name": "Nether Fossil",
+      "radius": 96
+    },
+    {
+      "structure": "minecraft:ocean_ruin_cold",
+      "name": "Cold Ocean Ruin",
+      "radius": 96
+    },
+    {
+      "structure": "minecraft:ocean_ruin_warm",
+      "name": "Warm Ocean Ruin",
+      "radius": 96
+    },
+    {
       "structure": "minecraft:pillager_outpost",
-      "name": "Pillager Outpost"
+      "name": "Pillager Outpost",
+      "radius": 96
+    },
+    {
+      "structure": "minecraft:ruined_portal",
+      "name": "Ruined Portal",
+      "radius": 96
+    },
+    {
+      "structure": "minecraft:ruined_portal_desert",
+      "name": "Desert Ruined Portal",
+      "radius": 96
+    },
+    {
+      "structure": "minecraft:ruined_portal_jungle",
+      "name": "Jungle Ruined Portal",
+      "radius": 96
+    },
+    {
+      "structure": "minecraft:ruined_portal_mountain",
+      "name": "Mountain Ruined Portal",
+      "radius": 96
+    },
+    {
+      "structure": "minecraft:ruined_portal_nether",
+      "name": "Nether Ruined Portal",
+      "radius": 96
+    },
+    {
+      "structure": "minecraft:ruined_portal_ocean",
+      "name": "Ocean Ruined Portal",
+      "radius": 96
+    },
+    {
+      "structure": "minecraft:ruined_portal_swamp",
+      "name": "Swamp Ruined Portal",
+      "radius": 96
+    },
+    {
+      "structure": "minecraft:shipwreck",
+      "name": "Shipwreck",
+      "radius": 96
+    },
+    {
+      "structure": "minecraft:shipwreck_beached",
+      "name": "Beached Shipwreck",
+      "radius": 96
+    },
+    {
+      "structure": "minecraft:stronghold",
+      "name": "Stronghold",
+      "radius": 128
+    },
+    {
+      "structure": "minecraft:swamp_hut",
+      "name": "Swamp Hut",
+      "radius": 96
+    },
+    {
+      "structure": "minecraft:trail_ruins",
+      "name": "Trail Ruins",
+      "radius": 96
     },
     {
       "structure": "minecraft:trial_chambers",
       "name": "Trial Chambers",
+      "radius": 128
+    },
+    {
+      "structure": "minecraft:village_desert",
+      "name": "Desert Village",
+      "radius": 96
+    },
+    {
+      "structure": "minecraft:village_plains",
+      "name": "Plains Village",
+      "radius": 96
+    },
+    {
+      "structure": "minecraft:village_savanna",
+      "name": "Savanna Village",
+      "radius": 96
+    },
+    {
+      "structure": "minecraft:village_snowy",
+      "name": "Snowy Village",
+      "radius": 96
+    },
+    {
+      "structure": "minecraft:village_taiga",
+      "name": "Taiga Village",
+      "radius": 96
+    },
+    {
+      "structure": "minecraft:woodland_mansion",
+      "name": "Woodland Mansion",
       "radius": 128
     }
   ]

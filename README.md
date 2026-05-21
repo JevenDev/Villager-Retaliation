@@ -288,15 +288,21 @@ Dialogue choices are declared with an `options` array:
 }
 ```
 
-`type` controls the existing dialogue behavior and reputation handling: `chat`, `greeting`, `question`, `gift_preferences`, `gift_advice_followup`, `map_report`, `combat_survival_report`, `gear_report`, `recruitment_followup`, `apology`, `village_defense_report`, `story`, `share_story`, `joke`, or `insult`. `option` or `option_ids` binds a line to a custom choice. Lines can also filter by `professions`, `dispositions`, `weather`, `times`, `event_tags`, `player_event_tags`, `show_for_adults`, `show_for_babies`, `requires_recent_broken_bed_memory`, `requires_recent_direct_hit_memory`, `requires_gear_report_used_in_combat`, `requires_gear_report_unused_in_combat`, `recruitment_followup_scenarios`, `requires_recruitment_memory`, `recruitment_memory_scenarios`, `min_recruitment_follow_distance`, `requires_recruitment_boat_trip`, `requires_recruitment_ocean_crossing`, `requires_recruitment_swim_trip`, `excludes_recruitment_ocean_crossing`, and `first_conversation_only`. Recruitment memory chat lines can use `{follow_biome}` and `{follow_distance}` placeholders. Shared story lines can use `{target}` and `{target_article}` placeholders. Options can set `requires_unreported_cartographer_map_discovery` to appear only after the player finds a cartographer dialogue map target and before they report it, `requires_unreported_gift_advice_result` to appear after the player tests that villager's gift advice on another villager and before the result is discussed, `requires_unreported_combat_survival_report` to appear after a followed villager or nearby fighting villager survives a raid/night hostile encounter and before that survival is acknowledged, `requires_unreported_gear_report` to appear after the player gives that villager armor or a usable weapon and before they ask how it is working, `requires_unreported_recruitment_followup` to appear after a follower is dismissed safely near the village, dismissed injured near the village, or betrayed by the player and before that outcome is discussed, `requires_unapologized_remembered_harm` to appear after the player hits that villager, breaks their bed, or is recently caught harming a nearby villager and before they apologize, `requires_unreported_village_defense` to appear for nearby villagers after the player kills raiders during an active raid and before that defense is discussed, or `requires_shareable_story` to appear only after the player has discovered a configured dangerous structure near that villager. Higher `weight` values are picked more often.
+`type` controls the existing dialogue behavior and reputation handling: `chat`, `greeting`, `question`, `gift_preferences`, `gift_advice_followup`, `map_report`, `combat_survival_report`, `gear_report`, `recruitment_followup`, `apology`, `village_defense_report`, `story`, `share_story`, `joke`, or `insult`. `option` or `option_ids` binds a line to a custom choice. Lines can also filter by `professions`, `dispositions`, `weather`, `times`, `event_tags`, `player_event_tags`, `show_for_adults`, `show_for_babies`, `requires_recent_broken_bed_memory`, `requires_recent_direct_hit_memory`, `requires_gear_report_used_in_combat`, `requires_gear_report_unused_in_combat`, `recruitment_followup_scenarios`, `requires_recruitment_memory`, `recruitment_memory_scenarios`, `min_recruitment_follow_distance`, `requires_recruitment_boat_trip`, `requires_recruitment_ocean_crossing`, `requires_recruitment_swim_trip`, `excludes_recruitment_ocean_crossing`, and `first_conversation_only`. Recruitment memory chat lines can use `{follow_biome}` and `{follow_distance}` placeholders. Shared story lines can use `{target}` and `{target_article}` placeholders, and can filter to specific discovered structures or biomes with `story_structure`, `story_structures`, `story_biome`, or `story_biomes`. Options can set `requires_unreported_cartographer_map_discovery` to appear only after the player finds a cartographer dialogue map target and before they report it, `requires_unreported_gift_advice_result` to appear after the player tests that villager's gift advice on another villager and before the result is discussed, `requires_unreported_combat_survival_report` to appear after a followed villager or nearby fighting villager survives a raid/night hostile encounter and before that survival is acknowledged, `requires_unreported_gear_report` to appear after the player gives that villager armor or a usable weapon and before they ask how it is working, `requires_unreported_recruitment_followup` to appear after a follower is dismissed safely near the village, dismissed injured near the village, or betrayed by the player and before that outcome is discussed, `requires_unapologized_remembered_harm` to appear after the player hits that villager, breaks their bed, or is recently caught harming a nearby villager and before they apologize, `requires_unreported_village_defense` to appear for nearby villagers after the player kills raiders during an active raid and before that defense is discussed, or `requires_shareable_story` to appear only after the player has discovered a configured structure or biome near that villager. Higher `weight` values are picked more often.
 
-Dangerous structures that unlock `share_story` dialogue are loaded from datapack JSON under:
+Structures that unlock `share_story` dialogue are loaded from datapack JSON under:
 
 ```text
 data/villagerretaliation/story_structures/
 ```
 
-Each file can define one entry or an `entries` array. `structure` accepts any vanilla or modded structure id. `name` is optional; if omitted, the structure path is converted into a readable name. `radius` controls how close the player must be to the structure before nearby villagers can receive a story to share.
+Biomes that unlock `share_story` dialogue are loaded from datapack JSON under:
+
+```text
+data/villagerretaliation/story_biomes/
+```
+
+Each file can define one entry or an `entries` array. `structure` accepts any vanilla or modded structure id, and `biome` accepts any vanilla or modded biome id. `name` is optional; if omitted, the id path is converted into a readable name. Structure `radius` controls how close the player must be to the structure before nearby villagers can receive a story to share. The built-in pack includes every vanilla 1.21.1 biome and structure id, with at least five unique `share_story` responses per villager profession for each one.
 
 ```json
 {
@@ -315,7 +321,49 @@ Each file can define one entry or an `entries` array. `structure` accepts any va
 }
 ```
 
-When the player discovers one of these structures near adult villagers, those villagers can show the built-in `Share a Story` option until the story is told.
+Biome entries use the same shape:
+
+```json
+{
+  "entries": [
+    {
+      "biome": "minecraft:deep_dark",
+      "name": "Deep Dark"
+    },
+    {
+      "biome": "examplemod:crystal_marsh",
+      "name": "Crystal Marsh"
+    }
+  ]
+}
+```
+
+When the player discovers one of these structures or biomes near adult villagers, those villagers can show the built-in `Share a Story` option until the story is told.
+
+Structure-specific shared-story lines can filter with `story_structure`:
+
+```json
+{
+  "lines": [
+    {
+      "id": "librarian_share_story_haunted_keep",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "story_structure": "examplemod:haunted_keep",
+      "text": "{target_article}. I will write that under warnings, not wonders.",
+      "weight": 24
+    },
+    {
+      "id": "farmer_share_story_crystal_marsh",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "story_biome": "examplemod:crystal_marsh",
+      "text": "{target_article}? Then the fields should know which road not to trust.",
+      "weight": 24
+    }
+  ]
+}
+```
 
 Gift advice is not always reliable. Villagers with low personal reputation toward the player can mislead them by recommending a gift that the target profession actually dislikes, and neutral or lightly trusted villagers can occasionally be wrong. Bad advice is not added to the known gift lists until the player tests it; returning to the recommender afterward can reveal a `gift_advice_followup` response.
 
