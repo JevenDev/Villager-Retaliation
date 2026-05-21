@@ -27,6 +27,9 @@ final class VillagerInventoryContainer implements Container {
     static final int SLOT_COUNT = OFFHAND_SLOT + 1;
 
     private static final String EXTRA_INVENTORY_TAG = "VillagerRetaliationExtraInventory";
+    private static final String BORROWED_COMBAT_WEAPON_TAG = "VillagerRetaliationBorrowedCombatWeapon";
+    private static final String BORROWED_COMBAT_WEAPON_SLOT_TAG = "Slot";
+    private static final String BORROWED_COMBAT_WEAPON_STACK_TAG = "Stack";
     private static final Map<UUID, Integer> OPEN_INVENTORIES = new HashMap<>();
     private static final EquipmentSlot[] ARMOR_SLOTS = {
             EquipmentSlot.HEAD,
@@ -209,8 +212,93 @@ final class VillagerInventoryContainer implements Container {
         return remainder;
     }
 
+    static boolean hasUsableWeapon(Villager villager) {
+        NonNullList<ItemStack> inventory = loadFullInventory(villager);
+        for (ItemStack stack : inventory) {
+            if (VillagerRetaliationVillagerWeapons.isUsableWeapon(stack)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static boolean hasBorrowedCombatWeapon(Villager villager) {
+        return villager.getPersistentData().contains(BORROWED_COMBAT_WEAPON_TAG, CompoundTag.TAG_COMPOUND);
+    }
+
+    static boolean maintainBorrowedCombatWeapon(Villager villager) {
+        BorrowedCombatWeapon borrowedWeapon = borrowedCombatWeapon(villager);
+        if (borrowedWeapon == null) {
+            return false;
+        }
+
+        ItemStack mainHand = villager.getMainHandItem();
+        if (ItemStack.isSameItem(mainHand, borrowedWeapon.stack())) {
+            persistBorrowedCombatWeapon(villager, borrowedWeapon.slot(), mainHand.copy());
+            return true;
+        }
+
+        VillagerRetaliationVillagerEquipment.setTemporaryMainHand(villager, borrowedWeapon.stack(), 0.0F);
+        return true;
+    }
+
+    static boolean tryBorrowCombatWeapon(Villager villager) {
+        if (hasBorrowedCombatWeapon(villager)) {
+            return maintainBorrowedCombatWeapon(villager);
+        }
+        if (!villager.getMainHandItem().isEmpty()
+                || VillagerRetaliationVillagerEquipment.isPlayerManagedMainHand(villager)) {
+            return false;
+        }
+
+        NonNullList<ItemStack> inventory = loadFullInventory(villager);
+        int selectedSlot = selectBestWeaponSlot(inventory);
+        if (selectedSlot < 0) {
+            return false;
+        }
+
+        ItemStack borrowedStack = inventory.get(selectedSlot).copy();
+        inventory.set(selectedSlot, ItemStack.EMPTY);
+        saveFullInventory(villager, inventory);
+        persistBorrowedCombatWeapon(villager, selectedSlot, borrowedStack);
+        VillagerRetaliationVillagerEquipment.setTemporaryMainHand(villager, borrowedStack, 0.0F);
+        return true;
+    }
+
+    static void returnBorrowedCombatWeapon(Villager villager) {
+        BorrowedCombatWeapon borrowedWeapon = borrowedCombatWeapon(villager);
+        if (borrowedWeapon == null) {
+            return;
+        }
+
+        ItemStack mainHand = villager.getMainHandItem();
+        ItemStack returnedStack = mainHand;
+        if (returnedStack.isEmpty() || !ItemStack.isSameItem(returnedStack, borrowedWeapon.stack())) {
+            if (!mainHand.isEmpty()) {
+                addItem(villager, mainHand.copy());
+            }
+            returnedStack = borrowedWeapon.stack();
+        } else {
+            returnedStack = returnedStack.copy();
+        }
+
+        villager.getPersistentData().remove(BORROWED_COMBAT_WEAPON_TAG);
+        VillagerRetaliationVillagerEquipment.restoreMainHand(villager, ItemStack.EMPTY);
+        addItemToPreferredSlot(villager, returnedStack, borrowedWeapon.slot());
+    }
+
+    static void clearBorrowedCombatWeapon(Villager villager) {
+        villager.getPersistentData().remove(BORROWED_COMBAT_WEAPON_TAG);
+    }
+
     static void dropAllInventoryAndEquipment(Villager villager, LivingDropsEvent event) {
+        BorrowedCombatWeapon borrowedWeapon = borrowedCombatWeapon(villager);
+        boolean borrowedWeaponInMainHand = borrowedWeapon != null
+                && ItemStack.isSameItem(villager.getMainHandItem(), borrowedWeapon.stack());
         dropEquipment(villager, event);
+        if (borrowedWeapon != null && !borrowedWeaponInMainHand) {
+            com.jvn.toucanlib.neoforge.loot.ToucanLivingDrops.addDrop(event, borrowedWeapon.stack().copy());
+        }
 
         NonNullList<ItemStack> inventory = loadFullInventory(villager);
         for (ItemStack stack : inventory) {
@@ -221,6 +309,7 @@ final class VillagerInventoryContainer implements Container {
         dropLegacyOverflowInventory(villager, event);
 
         clearFullInventory(villager);
+        clearBorrowedCombatWeapon(villager);
     }
 
     private ItemStack getInventoryItem(int inventorySlot) {
@@ -308,6 +397,34 @@ final class VillagerInventoryContainer implements Container {
         villager.getPersistentData().remove(EXTRA_INVENTORY_TAG);
     }
 
+    private static void addItemToPreferredSlot(Villager villager, ItemStack stack, int preferredSlot) {
+        if (stack.isEmpty()) {
+            return;
+        }
+
+        NonNullList<ItemStack> inventory = loadFullInventory(villager);
+        ItemStack remainder = stack.copy();
+        if (preferredSlot >= 0 && preferredSlot < inventory.size()) {
+            ItemStack preferredStack = inventory.get(preferredSlot);
+            if (preferredStack.isEmpty()) {
+                inventory.set(preferredSlot, remainder.copy());
+                remainder = ItemStack.EMPTY;
+            } else if (ItemStack.isSameItemSameComponents(preferredStack, remainder)) {
+                int moveCount = Math.min(remainder.getCount(), preferredStack.getMaxStackSize() - preferredStack.getCount());
+                if (moveCount > 0) {
+                    preferredStack.grow(moveCount);
+                    remainder.shrink(moveCount);
+                }
+            }
+        }
+        mergeIntoExistingStacks(inventory, remainder);
+        fillEmptySlots(inventory, remainder);
+        saveFullInventory(villager, inventory);
+        if (!remainder.isEmpty()) {
+            villager.spawnAtLocation(remainder);
+        }
+    }
+
     private static void dropLegacyOverflowInventory(Villager villager, LivingDropsEvent event) {
         int vanillaSlots = vanillaInventorySlots(villager);
         int currentExtraSlots = Math.max(0, INVENTORY_SLOT_COUNT - vanillaSlots);
@@ -353,6 +470,44 @@ final class VillagerInventoryContainer implements Container {
         }
     }
 
+    private static int selectBestWeaponSlot(NonNullList<ItemStack> inventory) {
+        int bestSlot = -1;
+        ItemStack bestWeapon = ItemStack.EMPTY;
+        for (int slot = 0; slot < inventory.size(); slot++) {
+            ItemStack candidate = inventory.get(slot);
+            if (VillagerRetaliationVillagerWeapons.isBetterWeaponChoice(candidate, bestWeapon)) {
+                bestSlot = slot;
+                bestWeapon = candidate;
+            }
+        }
+        return bestSlot;
+    }
+
+    private static void persistBorrowedCombatWeapon(Villager villager, int slot, ItemStack stack) {
+        CompoundTag tag = new CompoundTag();
+        tag.putInt(BORROWED_COMBAT_WEAPON_SLOT_TAG, slot);
+        tag.put(BORROWED_COMBAT_WEAPON_STACK_TAG, stack.saveOptional(villager.level().registryAccess()));
+        villager.getPersistentData().put(BORROWED_COMBAT_WEAPON_TAG, tag);
+    }
+
+    private static BorrowedCombatWeapon borrowedCombatWeapon(Villager villager) {
+        CompoundTag tag = villager.getPersistentData().getCompound(BORROWED_COMBAT_WEAPON_TAG);
+        if (tag.isEmpty() || !tag.contains(BORROWED_COMBAT_WEAPON_STACK_TAG, CompoundTag.TAG_COMPOUND)) {
+            clearBorrowedCombatWeapon(villager);
+            return null;
+        }
+
+        ItemStack stack = ItemStack.parseOptional(
+                villager.level().registryAccess(),
+                tag.getCompound(BORROWED_COMBAT_WEAPON_STACK_TAG)
+        );
+        if (stack.isEmpty()) {
+            clearBorrowedCombatWeapon(villager);
+            return null;
+        }
+        return new BorrowedCombatWeapon(tag.getInt(BORROWED_COMBAT_WEAPON_SLOT_TAG), stack);
+    }
+
     private static void dropEquipment(Villager villager, LivingDropsEvent event) {
         dropEquipmentSlot(villager, event, EquipmentSlot.HEAD);
         dropEquipmentSlot(villager, event, EquipmentSlot.CHEST);
@@ -381,6 +536,9 @@ final class VillagerInventoryContainer implements Container {
                 return;
             }
         }
+    }
+
+    private record BorrowedCombatWeapon(int slot, ItemStack stack) {
     }
 
     private void saveExtraInventory() {

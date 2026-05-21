@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.villager;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
@@ -14,7 +15,9 @@ public final class VillagerRetaliationVillagerRules {
             return true;
         }
         if (villager.getVillagerData().getProfession() != VillagerProfession.NITWIT
-                || VillagerRetaliationVillagerWeapons.hasUsableWeapon(villager)) {
+                || VillagerRetaliationVillagerWeapons.hasUsableWeapon(villager)
+                || VillagerInventoryAccess.hasBorrowedCombatWeapon(villager)
+                || VillagerInventoryAccess.hasUsableWeapon(villager)) {
             return false;
         }
 
@@ -45,6 +48,8 @@ public final class VillagerRetaliationVillagerRules {
 
         return VillagerRetaliationVillagerWeapons.hasUsableWeapon(villager)
                 || VillagerRetaliationVillagerWeapons.hasTrackedPickup(villager)
+                || VillagerInventoryAccess.hasBorrowedCombatWeapon(villager)
+                || VillagerInventoryAccess.hasUsableWeapon(villager)
                 || canPickUpGroundWeapons() && VillagerRetaliationVillagerWeapons.findNearestWeapon(villager).isPresent();
     }
 

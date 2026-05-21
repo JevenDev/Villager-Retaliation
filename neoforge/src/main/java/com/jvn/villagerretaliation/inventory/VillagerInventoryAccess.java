@@ -40,6 +40,30 @@ public final class VillagerInventoryAccess {
         return VillagerInventoryContainer.addItem(villager, stack);
     }
 
+    public static boolean hasUsableWeapon(Villager villager) {
+        return VillagerInventoryContainer.hasUsableWeapon(villager);
+    }
+
+    public static boolean hasBorrowedCombatWeapon(Villager villager) {
+        return VillagerInventoryContainer.hasBorrowedCombatWeapon(villager);
+    }
+
+    public static boolean maintainBorrowedCombatWeapon(Villager villager) {
+        return VillagerInventoryContainer.maintainBorrowedCombatWeapon(villager);
+    }
+
+    public static boolean tryBorrowCombatWeapon(Villager villager) {
+        return VillagerInventoryContainer.tryBorrowCombatWeapon(villager);
+    }
+
+    public static void returnBorrowedCombatWeapon(Villager villager) {
+        VillagerInventoryContainer.returnBorrowedCombatWeapon(villager);
+    }
+
+    public static void clearBorrowedCombatWeapon(Villager villager) {
+        VillagerInventoryContainer.clearBorrowedCombatWeapon(villager);
+    }
+
     public static void dropAllInventoryAndEquipment(Villager villager, LivingDropsEvent event) {
         VillagerInventoryContainer.dropAllInventoryAndEquipment(villager, event);
     }

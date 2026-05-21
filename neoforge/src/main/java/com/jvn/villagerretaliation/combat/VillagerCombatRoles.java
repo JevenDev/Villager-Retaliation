@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.combat;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import java.util.HashMap;
 import java.util.Map;
@@ -42,6 +43,8 @@ public final class VillagerCombatRoles {
 
         return profession(villager) != VillagerProfession.NITWIT
                 || VillagerRetaliationVillagerWeapons.hasUsableWeapon(villager)
+                || VillagerInventoryAccess.hasBorrowedCombatWeapon(villager)
+                || VillagerInventoryAccess.hasUsableWeapon(villager)
                 || canScavengeNearbyGroundWeapon(villager);
     }
 

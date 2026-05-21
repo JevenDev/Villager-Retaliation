@@ -86,6 +86,7 @@ public final class VillagerRetaliationHandler {
     public static void releaseTemporaryWeaponForInventory(Villager villager) {
         VillagerClericPotionHelper.restoreHeldItemAndClearState(villager);
         RETALIATION.restoreTemporaryWeapon(villager);
+        VillagerInventoryAccess.returnBorrowedCombatWeapon(villager);
     }
 
     public static void onEntityAttributeModification(EntityAttributeModificationEvent event) {
@@ -385,6 +386,7 @@ public final class VillagerRetaliationHandler {
             return;
         }
 
+        tryBorrowInventoryCombatWeapon(villager);
         if (tryAcquireGroundWeapon(villager, gameTime)) {
             return;
         }
@@ -603,6 +605,21 @@ public final class VillagerRetaliationHandler {
         );
     }
 
+    private static boolean tryBorrowInventoryCombatWeapon(Villager villager) {
+        if (VillagerInventoryAccess.hasOpenInventory(villager)
+                || VillagerClericPotionHelper.isActivelyHandlingPotion(villager)
+                || VillagerRetaliationVillagerWeapons.hasUsableWeapon(villager)) {
+            return false;
+        }
+
+        boolean borrowed = VillagerInventoryAccess.tryBorrowCombatWeapon(villager);
+        if (borrowed) {
+            RETALIATION.discardTemporaryWeapon(villager);
+            VillagerRangedCombatHelper.seedInitialAttackDelay(villager, villager.getMainHandItem());
+        }
+        return borrowed;
+    }
+
     private static void clearAnger(Villager villager) {
         clearAnger(villager, true, true);
     }
@@ -628,8 +645,10 @@ public final class VillagerRetaliationHandler {
         VillagerRetaliationRetaliationUtil.restoreCombatMovement(villager);
         if (restoreWeapon && !preservePotionUse) {
             RETALIATION.restoreTemporaryWeapon(villager);
+            VillagerInventoryAccess.returnBorrowedCombatWeapon(villager);
         } else {
             RETALIATION.discardTemporaryWeapon(villager);
+            VillagerInventoryAccess.clearBorrowedCombatWeapon(villager);
         }
         VillagerRetaliationVillagerWeapons.maintainAcquiredWeaponAuthority(villager);
         RETALIATION.clearTransientState(villager);
@@ -846,16 +865,23 @@ public final class VillagerRetaliationHandler {
         VillagerClericPotionHelper.clearState(villager);
         VillagerRetaliationRetaliationUtil.restoreCombatMovement(villager);
         RETALIATION.restoreTemporaryWeapon(villager);
+        VillagerInventoryAccess.returnBorrowedCombatWeapon(villager);
         villager.getNavigation().stop();
     }
 
     private static void equipCombatWeapon(Villager villager) {
         if (VillagerInventoryAccess.hasOpenInventory(villager)) {
             RETALIATION.restoreTemporaryWeapon(villager);
+            VillagerInventoryAccess.returnBorrowedCombatWeapon(villager);
             return;
         }
 
         if (VillagerClericPotionHelper.isActivelyHandlingPotion(villager)) {
+            return;
+        }
+
+        if (VillagerInventoryAccess.maintainBorrowedCombatWeapon(villager)) {
+            RETALIATION.discardTemporaryWeapon(villager);
             return;
         }
 
@@ -869,6 +895,10 @@ public final class VillagerRetaliationHandler {
         }
 
         if (VillagerRetaliationVillagerWeapons.hasUsableWeapon(villager)) {
+            return;
+        }
+
+        if (tryBorrowInventoryCombatWeapon(villager)) {
             return;
         }
 
@@ -1013,6 +1043,7 @@ public final class VillagerRetaliationHandler {
 
         VillagerRetaliationRetaliationUtil.restoreCombatMovement(villager);
         RETALIATION.restoreTemporaryWeapon(villager);
+        VillagerInventoryAccess.returnBorrowedCombatWeapon(villager);
         if (VillagerClericPotionHelper.tryOutOfCombatMilk(villager)) {
             return;
         }
@@ -1035,6 +1066,7 @@ public final class VillagerRetaliationHandler {
         VillagerClericPotionHelper.clearState(villager);
         VillagerRetaliationRetaliationUtil.restoreCombatMovement(villager);
         RETALIATION.restoreTemporaryWeapon(villager);
+        VillagerInventoryAccess.returnBorrowedCombatWeapon(villager);
     }
 
     private static boolean tryRepairNearbyIronGolem(Villager villager, ServerLevel level, long gameTime) {
@@ -1097,6 +1129,7 @@ public final class VillagerRetaliationHandler {
             RETALIATION.restoreTemporaryWeapon(villager);
         } else {
             RETALIATION.discardTemporaryWeapon(villager);
+            VillagerInventoryAccess.clearBorrowedCombatWeapon(villager);
         }
         RETALIATION.clearTransientState(villager);
         NEXT_SPECIAL_TICKS.remove(villager.getUUID());
