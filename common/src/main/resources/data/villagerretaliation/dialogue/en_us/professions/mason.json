@@ -1,7 +1,11 @@
 {
   "messages": [
     { "key": "gift_given", "text": "Here, {gift_item}. Strong villages are built one fair exchange at a time.", "weight": 24 },
-    { "key": "gift_given", "text": "Take {gift_item}. A steady hand deserves steady thanks.", "weight": 24 }
+    { "key": "gift_given", "text": "Take {gift_item}. A steady hand deserves steady thanks.", "weight": 24 },
+    { "key": "gift_advice_followup.liked", "text": "Good. {gift_item} sat square with {tested_villager}.", "weight": 22 },
+    { "key": "gift_advice_followup.liked", "text": "Then the advice was level. {tested_villager} liked {gift_item}.", "weight": 22 },
+    { "key": "gift_advice_followup.disliked", "text": "That foundation cracked. For {gift_subject}, set {alternative_gift} instead.", "weight": 22 },
+    { "key": "gift_advice_followup.disliked", "text": "{gift_item} did not bear weight there? Try {alternative_gift}; sturdier choice.", "weight": 22 }
   ],
   "openings": [
     {

@@ -29,6 +29,14 @@
       "order": 3
     },
     {
+      "id": "gift_advice_followup",
+      "label": "About that gift advice...",
+      "type": "gift_advice_followup",
+      "show_for_babies": false,
+      "requires_unreported_gift_advice_result": true,
+      "order": -5
+    },
+    {
       "id": "combat_survival_report",
       "label": "You made it back",
       "type": "combat_survival_report",
@@ -373,6 +381,26 @@
     {
       "key": "gift_response.profession.hated",
       "text": "Do not bring danger and call it a present."
+    },
+    {
+      "key": "gift_advice_followup.liked",
+      "text": "About that gift advice... good. {tested_villager} liked {gift_item}. Word gets around when a tip lands."
+    },
+    {
+      "key": "gift_advice_followup.liked",
+      "text": "So {gift_item} worked for {tested_villager}. I am glad my advice held up."
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "text": "About that gift advice... hm. If {gift_item} did not suit {gift_subject}, try {alternative_gift} instead."
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "text": "That one soured? Then bring {alternative_gift} next time. {gift_subject} should take that more kindly."
+    },
+    {
+      "key": "gift_advice_followup.missing",
+      "text": "I lost the thread of that gift advice."
     },
     {
       "key": "gift_given",

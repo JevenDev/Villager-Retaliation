@@ -1,7 +1,11 @@
 {
   "messages": [
     { "key": "gift_given", "text": "Take {gift_item}. A good village keeps its friends fed and standing.", "weight": 24 },
-    { "key": "gift_given", "text": "Here, {gift_item}. It is honest work to send someone off with provisions.", "weight": 24 }
+    { "key": "gift_given", "text": "Here, {gift_item}. It is honest work to send someone off with provisions.", "weight": 24 },
+    { "key": "gift_advice_followup.liked", "text": "Good. {tested_villager} has a sound nose for {gift_item}. Fresh advice, clean cut.", "weight": 22 },
+    { "key": "gift_advice_followup.liked", "text": "If {tested_villager} liked {gift_item}, then the cut was right.", "weight": 22 },
+    { "key": "gift_advice_followup.disliked", "text": "Bad cut, then. For {gift_subject}, I would set down {gift_item} and bring {alternative_gift}.", "weight": 22 },
+    { "key": "gift_advice_followup.disliked", "text": "Some gifts spoil in the telling. Try {alternative_gift}; that should suit {gift_subject} better.", "weight": 22 }
   ],
   "openings": [
     {

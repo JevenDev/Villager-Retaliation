@@ -92,6 +92,7 @@ public final class DialogueReputationService {
             case GREETING -> planGreeting(context, interactionState.firstConversation());
             case QUESTION -> planQuestion(context);
             case GIFT_PREFERENCES -> PlannedEffect.none();
+            case GIFT_ADVICE_FOLLOWUP -> PlannedEffect.none();
             case MAP_REPORT -> new PlannedEffect(
                     MAP_REPORT_REPUTATION_GAIN,
                     "map_report",
@@ -165,6 +166,7 @@ public final class DialogueReputationService {
                 || requestType == DialogueRequestType.MAP_REPORT
                 || requestType == DialogueRequestType.STORY_HINT_REPORT
                 || requestType == DialogueRequestType.COMBAT_SURVIVAL_REPORT
+                || requestType == DialogueRequestType.GIFT_ADVICE_FOLLOWUP
                 || requestType == DialogueRequestType.APOLOGY
                 || requestType == DialogueRequestType.VILLAGE_DEFENSE_REPORT) {
             return false;

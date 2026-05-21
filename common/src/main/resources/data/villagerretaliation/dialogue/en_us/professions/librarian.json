@@ -1,7 +1,11 @@
 {
   "messages": [
     { "key": "gift_given", "text": "Take {gift_item}. Knowledge is not the only thing worth lending carefully.", "weight": 24 },
-    { "key": "gift_given", "text": "Here, {gift_item}. Return with a story, and I will call it a fair trade.", "weight": 24 }
+    { "key": "gift_given", "text": "Here, {gift_item}. Return with a story, and I will call it a fair trade.", "weight": 24 },
+    { "key": "gift_advice_followup.liked", "text": "Excellent. {tested_villager} liking {gift_item} confirms the entry.", "weight": 22 },
+    { "key": "gift_advice_followup.liked", "text": "Then my reference was sound. {gift_item} belongs on that page.", "weight": 22 },
+    { "key": "gift_advice_followup.disliked", "text": "An error in the margin, then. For {gift_subject}, revise the gift to {alternative_gift}.", "weight": 22 },
+    { "key": "gift_advice_followup.disliked", "text": "{gift_item} was the wrong citation. Try {alternative_gift}; much stronger source.", "weight": 22 }
   ],
   "openings": [
     {

@@ -34,6 +34,7 @@ public record DialogueContext(
         VillagerInteractionTracker.CartographerMapReport cartographerMapReport,
         VillagerInteractionTracker.StoryHintReport storyHintReport,
         VillagerInteractionTracker.CombatSurvivalReport combatSurvivalReport,
+        VillagerInteractionTracker.GiftAdviceResultReport giftAdviceResultReport,
         List<VillageEventMemory.MemoryEvent> recentEvents,
         RandomSource random,
         String locale
@@ -106,6 +107,14 @@ public record DialogueContext(
 
     public boolean hasUnreportedCombatSurvivalReport() {
         return this.combatSurvivalReport != null;
+    }
+
+    public Optional<VillagerInteractionTracker.GiftAdviceResultReport> unreportedGiftAdviceResult() {
+        return Optional.ofNullable(this.giftAdviceResultReport);
+    }
+
+    public boolean hasUnreportedGiftAdviceResult() {
+        return this.giftAdviceResultReport != null;
     }
 
     public boolean hasUnapologizedRememberedHarm() {

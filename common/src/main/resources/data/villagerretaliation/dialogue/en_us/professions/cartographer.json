@@ -1,7 +1,11 @@
 {
   "messages": [
     { "key": "gift_given", "text": "Here, {gift_item}. Every good journey starts with something useful in hand.", "weight": 24 },
-    { "key": "gift_given", "text": "Take {gift_item}. Bring it back with a story if the road treats you kindly.", "weight": 24 }
+    { "key": "gift_given", "text": "Take {gift_item}. Bring it back with a story if the road treats you kindly.", "weight": 24 },
+    { "key": "gift_advice_followup.liked", "text": "Then the route was true. {gift_item} led you well to {tested_villager}.", "weight": 22 },
+    { "key": "gift_advice_followup.liked", "text": "Good. I had {gift_item} marked in the right margin after all.", "weight": 22 },
+    { "key": "gift_advice_followup.disliked", "text": "Then my map was old. For {gift_subject}, redraw the path with {alternative_gift}.", "weight": 22 },
+    { "key": "gift_advice_followup.disliked", "text": "A wrong turn. Leave {gift_item} off that route and try {alternative_gift} instead.", "weight": 22 }
   ],
   "openings": [
     {

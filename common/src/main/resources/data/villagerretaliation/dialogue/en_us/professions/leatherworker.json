@@ -1,7 +1,11 @@
 {
   "messages": [
     { "key": "gift_given", "text": "Take {gift_item}. Good gear should travel, not gather dust.", "weight": 24 },
-    { "key": "gift_given", "text": "Here, {gift_item}. It has more use with you than sitting by my cauldron.", "weight": 24 }
+    { "key": "gift_given", "text": "Here, {gift_item}. It has more use with you than sitting by my cauldron.", "weight": 24 },
+    { "key": "gift_advice_followup.liked", "text": "Good. {gift_item} sat well with {tested_villager}, like softened leather.", "weight": 22 },
+    { "key": "gift_advice_followup.liked", "text": "Then the fit was comfortable. {tested_villager} liked {gift_item}.", "weight": 22 },
+    { "key": "gift_advice_followup.disliked", "text": "Too stiff for them, then. For {gift_subject}, try {alternative_gift}.", "weight": 22 },
+    { "key": "gift_advice_followup.disliked", "text": "{gift_item} rubbed wrong? Bring {alternative_gift}; better fit, less complaint.", "weight": 22 }
   ],
   "openings": [
     {

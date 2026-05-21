@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.interaction;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.GiftAdviceKind;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionSavedData;
+import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -13,6 +14,7 @@ import java.util.Set;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -64,11 +66,23 @@ public final class VillagerGiftKnowledgeService {
         String knowledgeKey = discovered.professionSpecific() ? professionKey : GLOBAL_PROFESSION_KEY;
         data.rememberGiftKnowledge(player.getUUID(), knowledgeKey, itemId, liked);
         data.setDirty();
+        if (liked) {
+            VillagerInteractionTracker.rememberGiftAdvice(
+                    level,
+                    context.villager(),
+                    player,
+                    itemId,
+                    itemName(discovered.item()),
+                    discovered.professionSpecific() ? professionKey : GLOBAL_PROFESSION_KEY
+            );
+        }
 
         return Optional.of(new GiftKnowledgeDiscovery(
                 giftAdviceKind(liked, discovered.professionSpecific()),
                 itemName(discovered.item()),
-                giftSubject(profession)
+                giftSubject(profession),
+                itemId,
+                discovered.professionSpecific() ? professionKey : GLOBAL_PROFESSION_KEY
         ));
     }
 
@@ -87,6 +101,22 @@ public final class VillagerGiftKnowledgeService {
         VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
         data.rememberGiftKnowledge(player.getUUID(), knowledgeKey, itemId(giftedStack.getItem()), liked);
         data.setDirty();
+    }
+
+    public static Optional<String> randomLikedGiftName(
+            ServerLevel level,
+            VillagerProfession profession,
+            String excludedItemId,
+            RandomSource random) {
+        List<VillagerGiftPreferences.GiftCandidate> candidates = VillagerGiftPreferences.giftCandidates(level, profession).stream()
+                .filter(candidate -> appliesToProfession(level, candidate, profession))
+                .filter(VillagerGiftPreferences.GiftCandidate::positive)
+                .filter(candidate -> !itemId(candidate.item()).equals(excludedItemId))
+                .toList();
+        if (candidates.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(itemName(candidates.get(random.nextInt(candidates.size())).item()));
     }
 
     private static List<VillagerGiftPreferences.GiftCandidate> unknownCandidates(
@@ -146,7 +176,7 @@ public final class VillagerGiftKnowledgeService {
         };
     }
 
-    private static String professionKey(VillagerProfession profession) {
+    public static String professionKey(VillagerProfession profession) {
         if (profession == null) {
             return "none";
         }
@@ -165,6 +195,11 @@ public final class VillagerGiftKnowledgeService {
     public record GiftKnowledgeSnapshot(List<String> likedGiftNames, List<String> dislikedGiftNames) {
     }
 
-    public record GiftKnowledgeDiscovery(GiftAdviceKind adviceKind, String itemName, String subject) {
+    public record GiftKnowledgeDiscovery(
+            GiftAdviceKind adviceKind,
+            String itemName,
+            String subject,
+            String itemId,
+            String targetProfessionKey) {
     }
 }

@@ -1,7 +1,11 @@
 {
   "messages": [
     { "key": "gift_given", "text": "Here, {gift_item}. Good things grow better when they are shared.", "weight": 24 },
-    { "key": "gift_given", "text": "Take {gift_item}. Consider it a small harvest for the kindness you planted.", "weight": 24 }
+    { "key": "gift_given", "text": "Take {gift_item}. Consider it a small harvest for the kindness you planted.", "weight": 24 },
+    { "key": "gift_advice_followup.liked", "text": "Good. {gift_item} took root with {tested_villager}. That is a healthy sign.", "weight": 22 },
+    { "key": "gift_advice_followup.liked", "text": "Then the advice sprouted. {tested_villager} liking {gift_item} is a fair harvest.", "weight": 22 },
+    { "key": "gift_advice_followup.disliked", "text": "Wrong soil for that seed. For {gift_subject}, plant {alternative_gift} instead.", "weight": 22 },
+    { "key": "gift_advice_followup.disliked", "text": "{gift_item} did not grow there? Try {alternative_gift}. Some rows need different seed.", "weight": 22 }
   ],
   "openings": [
     {

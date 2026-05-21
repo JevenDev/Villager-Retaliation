@@ -32,6 +32,7 @@ public final class VillagerInteractionTracker {
                 entry.requestUseCount(DialogueRequestType.GREETING, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.QUESTION, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.GIFT_PREFERENCES, gameTime, day, optionResetTicks),
+                entry.requestUseCount(DialogueRequestType.GIFT_ADVICE_FOLLOWUP, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.MAP_REPORT, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.STORY_HINT_REPORT, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.COMBAT_SURVIVAL_REPORT, gameTime, day, optionResetTicks),
@@ -192,6 +193,57 @@ public final class VillagerInteractionTracker {
         return Optional.ofNullable(report);
     }
 
+    public static Optional<GiftAdviceResultReport> unreportedGiftAdviceResult(ServerLevel level, Villager villager, ServerPlayer player) {
+        return Optional.ofNullable(VillagerInteractionSavedData.get(level)
+                .unreportedGiftAdviceResult(villager.getUUID(), player.getUUID()));
+    }
+
+    public static Optional<GiftAdviceResultReport> claimUnreportedGiftAdviceResult(ServerLevel level, Villager villager, ServerPlayer player) {
+        VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
+        GiftAdviceResultReport report = data.claimUnreportedGiftAdviceResult(villager.getUUID(), player.getUUID());
+        if (report != null) {
+            data.setDirty();
+        }
+        return Optional.ofNullable(report);
+    }
+
+    public static void rememberGiftAdvice(
+            ServerLevel level,
+            Villager villager,
+            ServerPlayer player,
+            String itemId,
+            String itemName,
+            String targetProfessionKey) {
+        VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
+        data.rememberGiftAdvice(villager.getUUID(), player.getUUID(), itemId, itemName, targetProfessionKey);
+        data.setDirty();
+    }
+
+    public static void markGiftAdviceResult(
+            ServerLevel level,
+            Villager testedVillager,
+            ServerPlayer player,
+            String itemId,
+            String itemName,
+            String testedProfessionKey,
+            String testedProfessionName,
+            String testedVillagerName,
+            boolean liked) {
+        VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
+        if (data.markGiftAdviceResult(
+                player.getUUID(),
+                testedVillager.getUUID(),
+                itemId,
+                itemName,
+                testedProfessionKey,
+                testedProfessionName,
+                testedVillagerName,
+                liked,
+                level.getGameTime())) {
+            data.setDirty();
+        }
+    }
+
     public static long lastReputationGameTime(ServerLevel level, Villager villager, ServerPlayer player, DialogueRequestType requestType) {
         return VillagerInteractionSavedData.get(level)
                 .getOrCreate(villager.getUUID(), player.getUUID())
@@ -265,6 +317,7 @@ public final class VillagerInteractionTracker {
             int greetingUseCount,
             int questionUseCount,
             int giftPreferenceUseCount,
+            int giftAdviceFollowupUseCount,
             int mapReportUseCount,
             int storyHintReportUseCount,
             int combatSurvivalReportUseCount,
@@ -285,6 +338,7 @@ public final class VillagerInteractionTracker {
                 case GREETING -> this.greetingUseCount;
                 case QUESTION -> this.questionUseCount;
                 case GIFT_PREFERENCES -> this.giftPreferenceUseCount;
+                case GIFT_ADVICE_FOLLOWUP -> this.giftAdviceFollowupUseCount;
                 case MAP_REPORT -> this.mapReportUseCount;
                 case STORY_HINT_REPORT -> this.storyHintReportUseCount;
                 case COMBAT_SURVIVAL_REPORT -> this.combatSurvivalReportUseCount;
@@ -324,6 +378,18 @@ public final class VillagerInteractionTracker {
     public record CombatSurvivalReport(
             UUID villagerId,
             String eventKind,
+            long gameTime
+    ) {
+    }
+
+    public record GiftAdviceResultReport(
+            UUID villagerId,
+            String itemId,
+            String itemName,
+            String testedProfessionKey,
+            String testedProfessionName,
+            String testedVillagerName,
+            boolean liked,
             long gameTime
     ) {
     }

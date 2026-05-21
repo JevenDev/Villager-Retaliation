@@ -1,7 +1,11 @@
 {
   "messages": [
     { "key": "gift_given", "text": "Take {gift_item}. A little comfort on the road never hurts.", "weight": 24 },
-    { "key": "gift_given", "text": "Here, {gift_item}. Keep it close when the night gets cold.", "weight": 24 }
+    { "key": "gift_given", "text": "Here, {gift_item}. Keep it close when the night gets cold.", "weight": 24 },
+    { "key": "gift_advice_followup.liked", "text": "Good. {gift_item} suited {tested_villager} like the right dye on clean wool.", "weight": 22 },
+    { "key": "gift_advice_followup.liked", "text": "Then the pattern held. {tested_villager} liked {gift_item}.", "weight": 22 },
+    { "key": "gift_advice_followup.disliked", "text": "Wrong color for that cloth. For {gift_subject}, try {alternative_gift}.", "weight": 22 },
+    { "key": "gift_advice_followup.disliked", "text": "{gift_item} clashed? Bring {alternative_gift}; softer on the eyes and temper.", "weight": 22 }
   ],
   "openings": [
     {

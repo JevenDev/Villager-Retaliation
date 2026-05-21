@@ -1,7 +1,11 @@
 {
   "messages": [
     { "key": "gift_given", "text": "Take {gift_item}. May it keep trouble at a respectful distance.", "weight": 24 },
-    { "key": "gift_given", "text": "Here, {gift_item}. Some blessings are practical enough to fit in a hand.", "weight": 24 }
+    { "key": "gift_given", "text": "Here, {gift_item}. Some blessings are practical enough to fit in a hand.", "weight": 24 },
+    { "key": "gift_advice_followup.liked", "text": "Good. {tested_villager} received {gift_item} with the right spirit.", "weight": 22 },
+    { "key": "gift_advice_followup.liked", "text": "Then the omen was clear. {gift_item} carried kindness where you took it.", "weight": 22 },
+    { "key": "gift_advice_followup.disliked", "text": "Then I read the sign poorly. Bring {alternative_gift} to {gift_subject}; it should be received better.", "weight": 22 },
+    { "key": "gift_advice_followup.disliked", "text": "Set {gift_item} aside for that soul. {alternative_gift} is the gentler offering.", "weight": 22 }
   ],
   "openings": [
     {

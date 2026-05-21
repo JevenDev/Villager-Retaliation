@@ -67,6 +67,15 @@ public class VillagerInteractionSavedData extends SavedData {
     private static final String TAG_COMBAT_SURVIVAL_UNREPORTED = "CombatSurvivalUnreported";
     private static final String TAG_COMBAT_SURVIVAL_EVENT_KIND = "CombatSurvivalEventKind";
     private static final String TAG_COMBAT_SURVIVAL_GAME_TIME = "CombatSurvivalGameTime";
+    private static final String TAG_GIFT_ADVICE_ITEM_ID = "GiftAdviceItemId";
+    private static final String TAG_GIFT_ADVICE_ITEM_NAME = "GiftAdviceItemName";
+    private static final String TAG_GIFT_ADVICE_TARGET_PROFESSION = "GiftAdviceTargetProfession";
+    private static final String TAG_GIFT_ADVICE_RESULT_UNREPORTED = "GiftAdviceResultUnreported";
+    private static final String TAG_GIFT_ADVICE_RESULT_PROFESSION = "GiftAdviceResultProfession";
+    private static final String TAG_GIFT_ADVICE_RESULT_PROFESSION_NAME = "GiftAdviceResultProfessionName";
+    private static final String TAG_GIFT_ADVICE_RESULT_VILLAGER_NAME = "GiftAdviceResultVillagerName";
+    private static final String TAG_GIFT_ADVICE_RESULT_LIKED = "GiftAdviceResultLiked";
+    private static final String TAG_GIFT_ADVICE_RESULT_GAME_TIME = "GiftAdviceResultGameTime";
     private static final int MAX_RECENT_LINES = 5;
     private static final int MAX_CARTOGRAPHER_MAPS = 8;
     private static final int MAX_STORY_HINTS = 12;
@@ -109,6 +118,27 @@ public class VillagerInteractionSavedData extends SavedData {
                 entry.combatSurvivalEventKind = entryTag.getString(TAG_COMBAT_SURVIVAL_EVENT_KIND);
             }
             entry.combatSurvivalGameTime = readOptionalLong(entryTag, TAG_COMBAT_SURVIVAL_GAME_TIME);
+            if (entryTag.contains(TAG_GIFT_ADVICE_ITEM_ID, Tag.TAG_STRING)) {
+                entry.giftAdviceItemId = entryTag.getString(TAG_GIFT_ADVICE_ITEM_ID);
+            }
+            if (entryTag.contains(TAG_GIFT_ADVICE_ITEM_NAME, Tag.TAG_STRING)) {
+                entry.giftAdviceItemName = entryTag.getString(TAG_GIFT_ADVICE_ITEM_NAME);
+            }
+            if (entryTag.contains(TAG_GIFT_ADVICE_TARGET_PROFESSION, Tag.TAG_STRING)) {
+                entry.giftAdviceTargetProfession = entryTag.getString(TAG_GIFT_ADVICE_TARGET_PROFESSION);
+            }
+            entry.giftAdviceResultUnreported = entryTag.getBoolean(TAG_GIFT_ADVICE_RESULT_UNREPORTED);
+            if (entryTag.contains(TAG_GIFT_ADVICE_RESULT_PROFESSION, Tag.TAG_STRING)) {
+                entry.giftAdviceResultProfession = entryTag.getString(TAG_GIFT_ADVICE_RESULT_PROFESSION);
+            }
+            if (entryTag.contains(TAG_GIFT_ADVICE_RESULT_PROFESSION_NAME, Tag.TAG_STRING)) {
+                entry.giftAdviceResultProfessionName = entryTag.getString(TAG_GIFT_ADVICE_RESULT_PROFESSION_NAME);
+            }
+            if (entryTag.contains(TAG_GIFT_ADVICE_RESULT_VILLAGER_NAME, Tag.TAG_STRING)) {
+                entry.giftAdviceResultVillagerName = entryTag.getString(TAG_GIFT_ADVICE_RESULT_VILLAGER_NAME);
+            }
+            entry.giftAdviceResultLiked = entryTag.getBoolean(TAG_GIFT_ADVICE_RESULT_LIKED);
+            entry.giftAdviceResultGameTime = readOptionalLong(entryTag, TAG_GIFT_ADVICE_RESULT_GAME_TIME);
             if (entryTag.contains(TAG_CONSECUTIVE_REQUEST_TYPE, Tag.TAG_STRING)) {
                 try {
                     entry.consecutiveRequestType = DialogueRequestType.valueOf(entryTag.getString(TAG_CONSECUTIVE_REQUEST_TYPE));
@@ -266,6 +296,27 @@ public class VillagerInteractionSavedData extends SavedData {
                     entryTag.putString(TAG_COMBAT_SURVIVAL_EVENT_KIND, playerEntry.getValue().combatSurvivalEventKind);
                 }
                 entryTag.putLong(TAG_COMBAT_SURVIVAL_GAME_TIME, playerEntry.getValue().combatSurvivalGameTime);
+                if (playerEntry.getValue().giftAdviceItemId != null && !playerEntry.getValue().giftAdviceItemId.isBlank()) {
+                    entryTag.putString(TAG_GIFT_ADVICE_ITEM_ID, playerEntry.getValue().giftAdviceItemId);
+                }
+                if (playerEntry.getValue().giftAdviceItemName != null && !playerEntry.getValue().giftAdviceItemName.isBlank()) {
+                    entryTag.putString(TAG_GIFT_ADVICE_ITEM_NAME, playerEntry.getValue().giftAdviceItemName);
+                }
+                if (playerEntry.getValue().giftAdviceTargetProfession != null && !playerEntry.getValue().giftAdviceTargetProfession.isBlank()) {
+                    entryTag.putString(TAG_GIFT_ADVICE_TARGET_PROFESSION, playerEntry.getValue().giftAdviceTargetProfession);
+                }
+                entryTag.putBoolean(TAG_GIFT_ADVICE_RESULT_UNREPORTED, playerEntry.getValue().giftAdviceResultUnreported);
+                if (playerEntry.getValue().giftAdviceResultProfession != null && !playerEntry.getValue().giftAdviceResultProfession.isBlank()) {
+                    entryTag.putString(TAG_GIFT_ADVICE_RESULT_PROFESSION, playerEntry.getValue().giftAdviceResultProfession);
+                }
+                if (playerEntry.getValue().giftAdviceResultProfessionName != null && !playerEntry.getValue().giftAdviceResultProfessionName.isBlank()) {
+                    entryTag.putString(TAG_GIFT_ADVICE_RESULT_PROFESSION_NAME, playerEntry.getValue().giftAdviceResultProfessionName);
+                }
+                if (playerEntry.getValue().giftAdviceResultVillagerName != null && !playerEntry.getValue().giftAdviceResultVillagerName.isBlank()) {
+                    entryTag.putString(TAG_GIFT_ADVICE_RESULT_VILLAGER_NAME, playerEntry.getValue().giftAdviceResultVillagerName);
+                }
+                entryTag.putBoolean(TAG_GIFT_ADVICE_RESULT_LIKED, playerEntry.getValue().giftAdviceResultLiked);
+                entryTag.putLong(TAG_GIFT_ADVICE_RESULT_GAME_TIME, playerEntry.getValue().giftAdviceResultGameTime);
                 if (playerEntry.getValue().consecutiveRequestType != null) {
                     entryTag.putString(TAG_CONSECUTIVE_REQUEST_TYPE, playerEntry.getValue().consecutiveRequestType.name());
                     entryTag.putInt(TAG_CONSECUTIVE_REQUEST_COUNT, playerEntry.getValue().consecutiveRequestCount);
@@ -509,6 +560,48 @@ public class VillagerInteractionSavedData extends SavedData {
         return getOrCreate(villagerId, playerId).claimUnreportedCombatSurvivalReport(villagerId);
     }
 
+    public void rememberGiftAdvice(UUID villagerId, UUID playerId, String itemId, String itemName, String targetProfessionKey) {
+        getOrCreate(villagerId, playerId).rememberGiftAdvice(itemId, itemName, targetProfessionKey);
+    }
+
+    public boolean markGiftAdviceResult(
+            UUID playerId,
+            UUID testedVillagerId,
+            String itemId,
+            String itemName,
+            String testedProfessionKey,
+            String testedProfessionName,
+            String testedVillagerName,
+            boolean liked,
+            long gameTime) {
+        boolean changed = false;
+        for (Map.Entry<UUID, Map<UUID, InteractionEntry>> villagerEntry : this.entries.entrySet()) {
+            if (villagerEntry.getKey().equals(testedVillagerId)) {
+                continue;
+            }
+            InteractionEntry entry = villagerEntry.getValue().get(playerId);
+            if (entry != null && entry.markGiftAdviceResult(
+                    itemId,
+                    itemName,
+                    testedProfessionKey,
+                    testedProfessionName,
+                    testedVillagerName,
+                    liked,
+                    gameTime)) {
+                changed = true;
+            }
+        }
+        return changed;
+    }
+
+    public VillagerInteractionTracker.GiftAdviceResultReport unreportedGiftAdviceResult(UUID villagerId, UUID playerId) {
+        return getOrCreate(villagerId, playerId).unreportedGiftAdviceResult(villagerId);
+    }
+
+    public VillagerInteractionTracker.GiftAdviceResultReport claimUnreportedGiftAdviceResult(UUID villagerId, UUID playerId) {
+        return getOrCreate(villagerId, playerId).claimUnreportedGiftAdviceResult(villagerId);
+    }
+
     private GiftKnowledgeEntry giftKnowledgeEntry(UUID playerId, String professionKey, boolean create) {
         GiftKnowledgeBook book = this.giftKnowledge.get(playerId);
         if (book == null) {
@@ -538,6 +631,15 @@ public class VillagerInteractionSavedData extends SavedData {
         private boolean combatSurvivalUnreported;
         private String combatSurvivalEventKind;
         private long combatSurvivalGameTime = Long.MIN_VALUE;
+        private String giftAdviceItemId;
+        private String giftAdviceItemName;
+        private String giftAdviceTargetProfession;
+        private boolean giftAdviceResultUnreported;
+        private String giftAdviceResultProfession;
+        private String giftAdviceResultProfessionName;
+        private String giftAdviceResultVillagerName;
+        private boolean giftAdviceResultLiked;
+        private long giftAdviceResultGameTime = Long.MIN_VALUE;
         private DialogueRequestType consecutiveRequestType;
         private int consecutiveRequestCount;
         private final ArrayDeque<String> recentDialogueIds = new ArrayDeque<>();
@@ -637,6 +739,73 @@ public class VillagerInteractionSavedData extends SavedData {
             VillagerInteractionTracker.CombatSurvivalReport report = unreportedCombatSurvivalReport(villagerId);
             this.combatSurvivalUnreported = false;
             return report;
+        }
+
+        public void rememberGiftAdvice(String itemId, String itemName, String targetProfessionKey) {
+            this.giftAdviceItemId = itemId;
+            this.giftAdviceItemName = itemName;
+            this.giftAdviceTargetProfession = targetProfessionKey == null || targetProfessionKey.isBlank()
+                    ? "*"
+                    : targetProfessionKey;
+        }
+
+        public boolean markGiftAdviceResult(
+                String itemId,
+                String itemName,
+                String testedProfessionKey,
+                String testedProfessionName,
+                String testedVillagerName,
+                boolean liked,
+                long gameTime) {
+            if (this.giftAdviceItemId == null
+                    || this.giftAdviceItemId.isBlank()
+                    || this.giftAdviceTargetProfession == null
+                    || this.giftAdviceTargetProfession.isBlank()
+                    || !this.giftAdviceItemId.equals(itemId)
+                    || !giftAdviceMatchesProfession(testedProfessionKey)) {
+                return false;
+            }
+            this.giftAdviceItemId = null;
+            this.giftAdviceItemName = null;
+            this.giftAdviceTargetProfession = null;
+            this.giftAdviceResultUnreported = true;
+            this.giftAdviceItemId = itemId;
+            this.giftAdviceItemName = itemName;
+            this.giftAdviceResultProfession = testedProfessionKey;
+            this.giftAdviceResultProfessionName = testedProfessionName;
+            this.giftAdviceResultVillagerName = testedVillagerName;
+            this.giftAdviceResultLiked = liked;
+            this.giftAdviceResultGameTime = gameTime;
+            return true;
+        }
+
+        public VillagerInteractionTracker.GiftAdviceResultReport unreportedGiftAdviceResult(UUID villagerId) {
+            if (!this.giftAdviceResultUnreported) {
+                return null;
+            }
+            return new VillagerInteractionTracker.GiftAdviceResultReport(
+                    villagerId,
+                    this.giftAdviceItemId,
+                    this.giftAdviceItemName,
+                    this.giftAdviceResultProfession,
+                    this.giftAdviceResultProfessionName,
+                    this.giftAdviceResultVillagerName,
+                    this.giftAdviceResultLiked,
+                    this.giftAdviceResultGameTime
+            );
+        }
+
+        public VillagerInteractionTracker.GiftAdviceResultReport claimUnreportedGiftAdviceResult(UUID villagerId) {
+            VillagerInteractionTracker.GiftAdviceResultReport report = unreportedGiftAdviceResult(villagerId);
+            this.giftAdviceResultUnreported = false;
+            return report;
+        }
+
+        private boolean giftAdviceMatchesProfession(String testedProfessionKey) {
+            return this.giftAdviceTargetProfession == null
+                    || this.giftAdviceTargetProfession.isBlank()
+                    || this.giftAdviceTargetProfession.equals("*")
+                    || this.giftAdviceTargetProfession.equals(testedProfessionKey);
         }
 
         public int consecutiveRequestCount(DialogueRequestType requestType) {

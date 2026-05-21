@@ -1,7 +1,11 @@
 {
   "messages": [
     { "key": "gift_given", "text": "Here, {gift_item}. The right tool in the right hand saves a lot of trouble.", "weight": 24 },
-    { "key": "gift_given", "text": "Take {gift_item}. Keep it useful and it will repay you twice.", "weight": 24 }
+    { "key": "gift_given", "text": "Take {gift_item}. Keep it useful and it will repay you twice.", "weight": 24 },
+    { "key": "gift_advice_followup.liked", "text": "Good. {gift_item} did the job for {tested_villager}.", "weight": 22 },
+    { "key": "gift_advice_followup.liked", "text": "Then the advice had a good edge. {tested_villager} liked {gift_item}.", "weight": 22 },
+    { "key": "gift_advice_followup.disliked", "text": "Wrong tool for the work. For {gift_subject}, use {alternative_gift} instead.", "weight": 22 },
+    { "key": "gift_advice_followup.disliked", "text": "{gift_item} slipped in the hand? Try {alternative_gift}; cleaner work.", "weight": 22 }
   ],
   "openings": [
     {

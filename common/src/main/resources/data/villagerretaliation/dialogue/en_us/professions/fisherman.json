@@ -1,7 +1,11 @@
 {
   "messages": [
     { "key": "gift_given", "text": "Take {gift_item}. A useful catch should not sit in one pair of hands.", "weight": 24 },
-    { "key": "gift_given", "text": "Here, {gift_item}. The water was generous, so I can be too.", "weight": 24 }
+    { "key": "gift_given", "text": "Here, {gift_item}. The water was generous, so I can be too.", "weight": 24 },
+    { "key": "gift_advice_followup.liked", "text": "Good. {tested_villager} took {gift_item}; that advice had a clean hook.", "weight": 22 },
+    { "key": "gift_advice_followup.liked", "text": "Then {gift_item} was the right bait for {tested_villager}. Glad it landed.", "weight": 22 },
+    { "key": "gift_advice_followup.disliked", "text": "That line came back empty. For {gift_subject}, cast {alternative_gift} instead.", "weight": 22 },
+    { "key": "gift_advice_followup.disliked", "text": "Some fish spit the hook. Leave {gift_item} and try {alternative_gift} next time.", "weight": 22 }
   ],
   "openings": [
     {
