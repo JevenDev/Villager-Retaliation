@@ -68,6 +68,7 @@ public record VillagerDialogueResponsePayload(
                     true,
                     Set.of(),
                     Set.of(),
+                    false,
                     buffer.readVarInt()
             ));
         }

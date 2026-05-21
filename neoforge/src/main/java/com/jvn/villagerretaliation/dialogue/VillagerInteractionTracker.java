@@ -2,6 +2,9 @@ package com.jvn.villagerretaliation.dialogue;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import java.util.List;
+import java.util.Optional;
+import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.npc.Villager;
@@ -28,6 +31,7 @@ public final class VillagerInteractionTracker {
                 entry.requestUseCount(DialogueRequestType.GREETING, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.QUESTION, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.GIFT_PREFERENCES, gameTime, day, optionResetTicks),
+                entry.requestUseCount(DialogueRequestType.MAP_REPORT, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.STORY, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.JOKE, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.INSULT, gameTime, day, optionResetTicks),
@@ -49,6 +53,57 @@ public final class VillagerInteractionTracker {
                 VillagerRetaliationConfig.REPEATED_DIALOGUE_OPTION_RESET_TICKS.get()
         );
         data.setDirty();
+    }
+
+    public static void rememberCartographerMap(
+            ServerLevel level,
+            Villager villager,
+            ServerPlayer player,
+            ResourceLocation structureId,
+            String targetName,
+            BlockPos targetPos,
+            long expiresAtGameTime) {
+        VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
+        data.rememberCartographerMap(
+                villager.getUUID(),
+                player.getUUID(),
+                level.dimension().location(),
+                structureId,
+                targetName,
+                targetPos,
+                expiresAtGameTime
+        );
+        data.setDirty();
+    }
+
+    public static boolean markCartographerMapDiscoveriesNear(ServerLevel level, ServerPlayer player, double radius) {
+        VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
+        boolean found = data.markCartographerMapDiscoveriesNear(
+                player.getUUID(),
+                level.dimension().location(),
+                player.getX(),
+                player.getZ(),
+                radius * radius,
+                level.getGameTime()
+        );
+        if (found) {
+            data.setDirty();
+        }
+        return found;
+    }
+
+    public static Optional<CartographerMapReport> unreportedCartographerMapDiscovery(ServerLevel level, Villager villager, ServerPlayer player) {
+        return Optional.ofNullable(VillagerInteractionSavedData.get(level)
+                .unreportedCartographerMapDiscovery(villager.getUUID(), player.getUUID()));
+    }
+
+    public static Optional<CartographerMapReport> claimUnreportedCartographerMapDiscovery(ServerLevel level, Villager villager, ServerPlayer player) {
+        VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
+        CartographerMapReport report = data.claimUnreportedCartographerMapDiscovery(villager.getUUID(), player.getUUID());
+        if (report != null) {
+            data.setDirty();
+        }
+        return Optional.ofNullable(report);
     }
 
     public static long lastReputationGameTime(ServerLevel level, Villager villager, ServerPlayer player, DialogueRequestType requestType) {
@@ -124,6 +179,7 @@ public final class VillagerInteractionTracker {
             int greetingUseCount,
             int questionUseCount,
             int giftPreferenceUseCount,
+            int mapReportUseCount,
             int storyUseCount,
             int jokeUseCount,
             int insultUseCount,
@@ -137,10 +193,19 @@ public final class VillagerInteractionTracker {
                 case GREETING -> this.greetingUseCount;
                 case QUESTION -> this.questionUseCount;
                 case GIFT_PREFERENCES -> this.giftPreferenceUseCount;
+                case MAP_REPORT -> this.mapReportUseCount;
                 case STORY -> this.storyUseCount;
                 case JOKE -> this.jokeUseCount;
                 case INSULT -> this.insultUseCount;
             };
         }
+    }
+
+    public record CartographerMapReport(
+            ResourceLocation dimension,
+            ResourceLocation structureId,
+            String targetName,
+            BlockPos targetPos
+    ) {
     }
 }

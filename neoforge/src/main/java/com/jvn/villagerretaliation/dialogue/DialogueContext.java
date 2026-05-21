@@ -29,6 +29,7 @@ public record DialogueContext(
         long lastBrokenBedGameTime,
         long lastDirectHitGameTime,
         String lastDirectHitWeapon,
+        VillagerInteractionTracker.CartographerMapReport cartographerMapReport,
         List<VillageEventMemory.MemoryEvent> recentEvents,
         RandomSource random,
         String locale
@@ -77,6 +78,14 @@ public record DialogueContext(
     public boolean hasRecentBrokenBedMemory() {
         return this.lastBrokenBedGameTime != Long.MIN_VALUE
                 && this.level.getGameTime() - this.lastBrokenBedGameTime <= BROKEN_BED_MEMORY_TICKS;
+    }
+
+    public Optional<VillagerInteractionTracker.CartographerMapReport> unreportedCartographerMapDiscovery() {
+        return Optional.ofNullable(this.cartographerMapReport);
+    }
+
+    public boolean hasUnreportedCartographerMapDiscovery() {
+        return this.cartographerMapReport != null;
     }
 
     public boolean hasRecentPositiveDialogueMoodMemory() {

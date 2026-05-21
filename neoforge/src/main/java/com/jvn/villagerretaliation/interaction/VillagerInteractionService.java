@@ -11,6 +11,7 @@ import com.jvn.villagerretaliation.dialogue.DialogueReputationService;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueService;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
+import com.jvn.villagerretaliation.dialogue.VillagerStoryHintService;
 import com.jvn.villagerretaliation.dialogue.GiftAdviceKind;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.network.OpenVillagerInteractionPayload;
@@ -430,6 +431,7 @@ public final class VillagerInteractionService {
                 interactionState.lastBrokenBedGameTime(),
                 interactionState.lastDirectHitGameTime(),
                 interactionState.lastDirectHitWeapon(),
+                VillagerInteractionTracker.unreportedCartographerMapDiscovery(level, villager, player).orElse(null),
                 VillageEventMemory.recentNear(level, villager.blockPosition()),
                 villager.getRandom(),
                 VillagerLocale.locale(player)
@@ -492,6 +494,14 @@ public final class VillagerInteractionService {
                     .orElseGet(() -> new VillagerDialogueService.DialogueResult(
                             "gift_preference_known",
                             giftAdviceLine(context, GiftAdviceKind.ALREADY_KNOWN, "", "")
+                    ));
+        }
+        if (requestType == DialogueRequestType.MAP_REPORT) {
+            return VillagerStoryHintService
+                    .selectCartographerMapReport(context)
+                    .orElseGet(() -> new VillagerDialogueService.DialogueResult(
+                            "cartographer_map_report_missing",
+                            VillagerDialogueResources.message(context, "cartographer_map_report.missing").orElse("")
                     ));
         }
         return VillagerDialogueService.select(

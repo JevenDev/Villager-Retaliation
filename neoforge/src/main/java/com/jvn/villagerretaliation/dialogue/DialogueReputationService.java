@@ -86,6 +86,7 @@ public final class DialogueReputationService {
             case GREETING -> planGreeting(context, interactionState.firstConversation());
             case QUESTION -> planQuestion(context);
             case GIFT_PREFERENCES -> PlannedEffect.none();
+            case MAP_REPORT -> PlannedEffect.none();
             case STORY -> planStory(context);
             case JOKE -> planJoke(context);
             case INSULT -> planInsult(context, interactionState.firstConversation());
@@ -116,7 +117,7 @@ public final class DialogueReputationService {
     }
 
     private static boolean isDialogueOptionExhausted(DialogueContext context, DialogueRequestType requestType, VillagerInteractionTracker.InteractionState interactionState) {
-        if (requestType == DialogueRequestType.INSULT) {
+        if (requestType == DialogueRequestType.INSULT || requestType == DialogueRequestType.MAP_REPORT) {
             return false;
         }
         int limit = repeatedDialogueLimit(context.reputationLevel());

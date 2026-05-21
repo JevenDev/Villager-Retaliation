@@ -9,11 +9,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.saveddata.SavedData;
@@ -49,7 +51,18 @@ public class VillagerInteractionSavedData extends SavedData {
     private static final String TAG_PROFESSION = "Profession";
     private static final String TAG_LIKED_GIFTS = "LikedGifts";
     private static final String TAG_DISLIKED_GIFTS = "DislikedGifts";
+    private static final String TAG_CARTOGRAPHER_MAPS = "CartographerMaps";
+    private static final String TAG_DIMENSION = "Dimension";
+    private static final String TAG_STRUCTURE = "Structure";
+    private static final String TAG_TARGET_NAME = "TargetName";
+    private static final String TAG_TARGET_X = "TargetX";
+    private static final String TAG_TARGET_Y = "TargetY";
+    private static final String TAG_TARGET_Z = "TargetZ";
+    private static final String TAG_EXPIRES_AT = "ExpiresAt";
+    private static final String TAG_FOUND = "Found";
+    private static final String TAG_REPORTED = "Reported";
     private static final int MAX_RECENT_LINES = 5;
+    private static final int MAX_CARTOGRAPHER_MAPS = 8;
 
     private final Map<UUID, Map<UUID, InteractionEntry>> entries = new HashMap<>();
     private final Map<UUID, GiftKnowledgeBook> giftKnowledge = new HashMap<>();
@@ -133,6 +146,26 @@ public class VillagerInteractionSavedData extends SavedData {
                     ));
                 } catch (IllegalArgumentException ignored) {
                 }
+            }
+            ListTag cartographerMaps = entryTag.getList(TAG_CARTOGRAPHER_MAPS, Tag.TAG_COMPOUND);
+            for (Tag rawMap : cartographerMaps) {
+                if (!(rawMap instanceof CompoundTag mapTag)) {
+                    continue;
+                }
+                ResourceLocation dimension = ResourceLocation.tryParse(mapTag.getString(TAG_DIMENSION));
+                ResourceLocation structureId = ResourceLocation.tryParse(mapTag.getString(TAG_STRUCTURE));
+                if (dimension == null || structureId == null) {
+                    continue;
+                }
+                entry.cartographerMaps.add(new CartographerMapMemory(
+                        dimension,
+                        structureId,
+                        mapTag.getString(TAG_TARGET_NAME),
+                        new BlockPos(mapTag.getInt(TAG_TARGET_X), mapTag.getInt(TAG_TARGET_Y), mapTag.getInt(TAG_TARGET_Z)),
+                        readOptionalLong(mapTag, TAG_EXPIRES_AT),
+                        mapTag.getBoolean(TAG_FOUND),
+                        mapTag.getBoolean(TAG_REPORTED)
+                ));
             }
             data.entries.computeIfAbsent(entryTag.getUUID(TAG_VILLAGER), ignored -> new HashMap<>())
                     .put(entryTag.getUUID(TAG_PLAYER), entry);
@@ -225,6 +258,21 @@ public class VillagerInteractionSavedData extends SavedData {
                     requestTypeUses.add(requestTypeTag);
                 }
                 entryTag.put(TAG_REQUEST_TYPE_USES, requestTypeUses);
+                ListTag cartographerMaps = new ListTag();
+                for (CartographerMapMemory mapMemory : playerEntry.getValue().cartographerMaps) {
+                    CompoundTag mapTag = new CompoundTag();
+                    mapTag.putString(TAG_DIMENSION, mapMemory.dimension().toString());
+                    mapTag.putString(TAG_STRUCTURE, mapMemory.structureId().toString());
+                    mapTag.putString(TAG_TARGET_NAME, mapMemory.targetName());
+                    mapTag.putInt(TAG_TARGET_X, mapMemory.targetPos().getX());
+                    mapTag.putInt(TAG_TARGET_Y, mapMemory.targetPos().getY());
+                    mapTag.putInt(TAG_TARGET_Z, mapMemory.targetPos().getZ());
+                    mapTag.putLong(TAG_EXPIRES_AT, mapMemory.expiresAtGameTime());
+                    mapTag.putBoolean(TAG_FOUND, mapMemory.found());
+                    mapTag.putBoolean(TAG_REPORTED, mapMemory.reported());
+                    cartographerMaps.add(mapTag);
+                }
+                entryTag.put(TAG_CARTOGRAPHER_MAPS, cartographerMaps);
                 entriesTag.add(entryTag);
             }
         }
@@ -278,6 +326,53 @@ public class VillagerInteractionSavedData extends SavedData {
         }
     }
 
+    public void rememberCartographerMap(
+            UUID villagerId,
+            UUID playerId,
+            ResourceLocation dimension,
+            ResourceLocation structureId,
+            String targetName,
+            BlockPos targetPos,
+            long expiresAtGameTime) {
+        InteractionEntry entry = getOrCreate(villagerId, playerId);
+        entry.cartographerMaps.add(new CartographerMapMemory(
+                dimension,
+                structureId,
+                targetName == null ? "" : targetName,
+                targetPos.immutable(),
+                expiresAtGameTime,
+                false,
+                false
+        ));
+        entry.pruneCartographerMaps();
+    }
+
+    public boolean markCartographerMapDiscoveriesNear(
+            UUID playerId,
+            ResourceLocation dimension,
+            double x,
+            double z,
+            double radiusSqr,
+            long gameTime) {
+        boolean foundAny = false;
+        for (Map<UUID, InteractionEntry> playerEntries : this.entries.values()) {
+            InteractionEntry entry = playerEntries.get(playerId);
+            if (entry == null) {
+                continue;
+            }
+            foundAny |= entry.markCartographerMapDiscoveriesNear(dimension, x, z, radiusSqr, gameTime);
+        }
+        return foundAny;
+    }
+
+    public VillagerInteractionTracker.CartographerMapReport unreportedCartographerMapDiscovery(UUID villagerId, UUID playerId) {
+        return getOrCreate(villagerId, playerId).unreportedCartographerMapDiscovery();
+    }
+
+    public VillagerInteractionTracker.CartographerMapReport claimUnreportedCartographerMapDiscovery(UUID villagerId, UUID playerId) {
+        return getOrCreate(villagerId, playerId).claimUnreportedCartographerMapDiscovery();
+    }
+
     private GiftKnowledgeEntry giftKnowledgeEntry(UUID playerId, String professionKey, boolean create) {
         GiftKnowledgeBook book = this.giftKnowledge.get(playerId);
         if (book == null) {
@@ -310,6 +405,7 @@ public class VillagerInteractionSavedData extends SavedData {
         private final Map<DialogueRequestType, Long> lastReputationByRequestType = new EnumMap<>(DialogueRequestType.class);
         private final Map<DialogueRequestType, Long> lastDialogueByRequestType = new EnumMap<>(DialogueRequestType.class);
         private final Map<DialogueRequestType, RequestUseWindow> requestUseWindows = new EnumMap<>(DialogueRequestType.class);
+        private final List<CartographerMapMemory> cartographerMaps = new ArrayList<>();
 
         public boolean hasTalked() {
             return this.hasTalked;
@@ -439,6 +535,111 @@ public class VillagerInteractionSavedData extends SavedData {
                     window.reduce(amount);
                 }
             }
+        }
+
+        private boolean markCartographerMapDiscoveriesNear(
+                ResourceLocation dimension,
+                double x,
+                double z,
+                double radiusSqr,
+                long gameTime) {
+            boolean foundAny = false;
+            for (int index = 0; index < this.cartographerMaps.size(); index++) {
+                CartographerMapMemory mapMemory = this.cartographerMaps.get(index);
+                if (mapMemory.reported()
+                        || mapMemory.found()
+                        || mapMemory.expiresAtGameTime() <= gameTime
+                        || !mapMemory.dimension().equals(dimension)) {
+                    continue;
+                }
+                double dx = x - (mapMemory.targetPos().getX() + 0.5D);
+                double dz = z - (mapMemory.targetPos().getZ() + 0.5D);
+                if (dx * dx + dz * dz <= radiusSqr) {
+                    this.cartographerMaps.set(index, mapMemory.withFound(true));
+                    foundAny = true;
+                }
+            }
+            return foundAny;
+        }
+
+        private VillagerInteractionTracker.CartographerMapReport unreportedCartographerMapDiscovery() {
+            for (int index = this.cartographerMaps.size() - 1; index >= 0; index--) {
+                CartographerMapMemory mapMemory = this.cartographerMaps.get(index);
+                if (mapMemory.found() && !mapMemory.reported()) {
+                    return mapMemory.toReport();
+                }
+            }
+            return null;
+        }
+
+        private VillagerInteractionTracker.CartographerMapReport claimUnreportedCartographerMapDiscovery() {
+            for (int index = this.cartographerMaps.size() - 1; index >= 0; index--) {
+                CartographerMapMemory mapMemory = this.cartographerMaps.get(index);
+                if (mapMemory.found() && !mapMemory.reported()) {
+                    this.cartographerMaps.set(index, mapMemory.withReported(true));
+                    return mapMemory.toReport();
+                }
+            }
+            return null;
+        }
+
+        private void pruneCartographerMaps() {
+            while (this.cartographerMaps.size() > MAX_CARTOGRAPHER_MAPS) {
+                int reportedIndex = firstReportedCartographerMapIndex();
+                this.cartographerMaps.remove(reportedIndex >= 0 ? reportedIndex : 0);
+            }
+        }
+
+        private int firstReportedCartographerMapIndex() {
+            for (int index = 0; index < this.cartographerMaps.size(); index++) {
+                if (this.cartographerMaps.get(index).reported()) {
+                    return index;
+                }
+            }
+            return -1;
+        }
+    }
+
+    private record CartographerMapMemory(
+            ResourceLocation dimension,
+            ResourceLocation structureId,
+            String targetName,
+            BlockPos targetPos,
+            long expiresAtGameTime,
+            boolean found,
+            boolean reported
+    ) {
+        private CartographerMapMemory withFound(boolean found) {
+            return new CartographerMapMemory(
+                    this.dimension,
+                    this.structureId,
+                    this.targetName,
+                    this.targetPos,
+                    this.expiresAtGameTime,
+                    found,
+                    this.reported
+            );
+        }
+
+        private CartographerMapMemory withReported(boolean reported) {
+            return new CartographerMapMemory(
+                    this.dimension,
+                    this.structureId,
+                    this.targetName,
+                    this.targetPos,
+                    this.expiresAtGameTime,
+                    this.found,
+                    reported
+            );
+        }
+
+        private VillagerInteractionTracker.CartographerMapReport toReport() {
+            return new VillagerInteractionTracker.CartographerMapReport(
+                    this.dimension,
+                    this.structureId,
+                    this.targetName,
+                    this.targetPos
+            );
         }
     }
 

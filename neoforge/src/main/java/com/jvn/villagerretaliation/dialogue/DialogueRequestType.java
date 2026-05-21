@@ -5,6 +5,7 @@ public enum DialogueRequestType {
     GREETING,
     QUESTION,
     GIFT_PREFERENCES,
+    MAP_REPORT,
     STORY,
     JOKE,
     INSULT

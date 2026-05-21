@@ -11,6 +11,7 @@ public record DialogueOptionDefinition(
         boolean showForBabies,
         Set<VillagerProfession> professions,
         Set<DialogueDisposition> dispositions,
+        boolean requiresUnreportedCartographerMapDiscovery,
         int order
 ) {
     public boolean matches(DialogueContext context, DialogueDisposition disposition) {
@@ -24,10 +25,13 @@ public record DialogueOptionDefinition(
         if (!this.professions.isEmpty() && !this.professions.contains(context.profession())) {
             return false;
         }
+        if (this.requiresUnreportedCartographerMapDiscovery && !context.hasUnreportedCartographerMapDiscovery()) {
+            return false;
+        }
         return this.dispositions.isEmpty() || this.dispositions.contains(disposition);
     }
 
     public static DialogueOptionDefinition simple(String id, String label, DialogueRequestType requestType, int order) {
-        return new DialogueOptionDefinition(id, label, requestType, true, true, Set.of(), Set.of(), order);
+        return new DialogueOptionDefinition(id, label, requestType, true, true, Set.of(), Set.of(), false, order);
     }
 }

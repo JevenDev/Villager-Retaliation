@@ -313,6 +313,7 @@ public final class VillagerDialogueService {
         return switch (requestType) {
             case GREETING, QUESTION, INSULT -> directHitCandidates;
             case CHAT -> context.random().nextInt(100) < 45 ? directHitCandidates : candidates;
+            case MAP_REPORT -> candidates;
             default -> candidates;
         };
     }
@@ -329,6 +330,7 @@ public final class VillagerDialogueService {
 
         return switch (requestType) {
             case GREETING, QUESTION, CHAT, INSULT -> brokenBedCandidates;
+            case MAP_REPORT -> candidates;
             default -> candidates;
         };
     }

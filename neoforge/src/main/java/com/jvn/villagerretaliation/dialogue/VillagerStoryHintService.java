@@ -2,7 +2,6 @@ package com.jvn.villagerretaliation.dialogue;
 
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
-import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.toucanlib.util.ToucanRandom;
 import com.mojang.datafixers.util.Pair;
@@ -40,6 +39,7 @@ public final class VillagerStoryHintService {
     private static final long POSITIVE_CACHE_TICKS = 20L * 60L * 10L;
     private static final long NEGATIVE_CACHE_TICKS = 20L * 30L;
     private static final long CARTOGRAPHER_MAP_COOLDOWN_TICKS = 20L * 60L * 20L * 2L;
+    private static final long CARTOGRAPHER_MAP_DISCOVERY_TICKS = 20L * 60L * 60L * 6L;
     private static final double MIN_TARGET_SEPARATION_SQR = 96.0D * 96.0D;
     private static final Map<HintCacheKey, CachedLookup> CACHE = new HashMap<>();
     private static final Map<CartographerMapGiftKey, Long> CARTOGRAPHER_MAP_GIFTS = new HashMap<>();
@@ -58,6 +58,28 @@ public final class VillagerStoryHintService {
                 "story_hint_" + worldHint.kind().name().toLowerCase(Locale.ROOT),
                 worldHint.text()
         ));
+    }
+
+    public static Optional<VillagerDialogueService.DialogueResult> selectCartographerMapReport(DialogueContext context) {
+        return VillagerInteractionTracker.claimUnreportedCartographerMapDiscovery(context.level(), context.villager(), context.player())
+                .map(report -> {
+                    String targetName = report.targetName() == null || report.targetName().isBlank()
+                            ? VillagerInteractionTextUtil.resourcePathName(report.structureId())
+                            : report.targetName();
+                    String category = structureReportCategory(report.structureId());
+                    Map<String, String> replacements = Map.of(
+                            "target", targetName,
+                            "target_article", withArticle(targetName)
+                    );
+                    String text = VillagerDialogueResources
+                            .message(context, "cartographer_map_report.structure." + category, replacements)
+                            .or(() -> VillagerDialogueResources.message(context, "cartographer_map_report.structure.generic", replacements))
+                            .orElse("");
+                    return new VillagerDialogueService.DialogueResult(
+                            "cartographer_map_report_" + category + "_" + report.structureId().getPath(),
+                            text
+                    );
+                });
     }
 
     private static Optional<WorldHint> selectWorldHint(DialogueContext context, HintQuality quality) {
@@ -221,7 +243,15 @@ public final class VillagerStoryHintService {
         if (!context.player().addItem(remainder) && !remainder.isEmpty()) {
             context.player().drop(remainder, false);
         }
-        VillagerReputationAdvancements.rememberDialogueMapTarget(context.player(), context.level(), target.pos());
+        VillagerInteractionTracker.rememberCartographerMap(
+                context.level(),
+                context.villager(),
+                context.player(),
+                target.id(),
+                targetName,
+                target.pos(),
+                gameTime + CARTOGRAPHER_MAP_DISCOVERY_TICKS
+        );
         VillagerInteractionService.sendReceivedItemNotice(context.player(), context.villager(), map);
 
         CARTOGRAPHER_MAP_GIFTS.put(giftKey, gameTime + CARTOGRAPHER_MAP_COOLDOWN_TICKS);
@@ -325,6 +355,44 @@ public final class VillagerStoryHintService {
 
     private static String cartographerMapText(DialogueContext context, String name, HintPlacement placement) {
         return VillagerDialogueResources.message(context, "story_hint.map", hintReplacements(name, placement)).orElse("");
+    }
+
+    private static String structureReportCategory(ResourceLocation structureId) {
+        String path = structureId.getPath();
+        if (path.startsWith("village")) {
+            return "village";
+        }
+        if (path.contains("pyramid") || path.contains("temple") || path.equals("igloo")) {
+            return "temple";
+        }
+        if (path.contains("mansion")) {
+            return "mansion";
+        }
+        if (path.contains("monument")) {
+            return "monument";
+        }
+        if (path.contains("mineshaft")) {
+            return "mineshaft";
+        }
+        if (path.contains("ancient_city")) {
+            return "ancient_city";
+        }
+        if (path.contains("stronghold")) {
+            return "stronghold";
+        }
+        if (path.contains("fortress") || path.contains("bastion")) {
+            return "nether";
+        }
+        if (path.contains("outpost")) {
+            return "outpost";
+        }
+        if (path.contains("shipwreck") || path.contains("ruin")) {
+            return "ruins";
+        }
+        if (path.contains("trial_chambers")) {
+            return "trial_chambers";
+        }
+        return "generic";
     }
 
     private static Map<String, String> hintReplacements(String name, HintPlacement placement) {

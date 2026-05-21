@@ -11,6 +11,43 @@
       "text": "Back to reading roads and borders, then."
     }
   ],
+  "options": [
+    {
+      "id": "cartographer_map_report",
+      "label": "Report Discovery",
+      "type": "map_report",
+      "show_for_babies": false,
+      "requires_unreported_cartographer_map_discovery": true,
+      "order": 4
+    }
+  ],
+  "messages": [
+    { "key": "cartographer_map_report.missing", "text": "Bring me news from the mark first. A map is not a story until someone walks it." },
+    { "key": "cartographer_map_report.structure.village", "text": "You found {target_article}? Good. A village that can be reached can also be warned.", "weight": 24 },
+    { "key": "cartographer_map_report.structure.village", "text": "{target_article}, then. I will mark the road in softer ink. People live at the end of that line.", "weight": 22 },
+    { "key": "cartographer_map_report.structure.temple", "text": "So {target_article} still stands. Old stone keeps old trouble, but now the way there is honest.", "weight": 24 },
+    { "key": "cartographer_map_report.structure.temple", "text": "{target_article}. Hm. I will note the hazards twice and the treasure not at all.", "weight": 22 },
+    { "key": "cartographer_map_report.structure.mansion", "text": "You reached {target_article} and came back speaking. That is worth a darker border.", "weight": 24 },
+    { "key": "cartographer_map_report.structure.mansion", "text": "{target_article}, confirmed. Some roofs are warnings. I will draw that one like it bites.", "weight": 22 },
+    { "key": "cartographer_map_report.structure.monument", "text": "{target_article} under open water. Good work. The sea hides landmarks better than any fog.", "weight": 24 },
+    { "key": "cartographer_map_report.structure.monument", "text": "You found {target_article}? Then the waves were telling the truth for once.", "weight": 22 },
+    { "key": "cartographer_map_report.structure.mineshaft", "text": "{target_article}. Timber below ground means somebody trusted the dark too much.", "weight": 24 },
+    { "key": "cartographer_map_report.structure.mineshaft", "text": "You found {target_article}. I will mark the descent and leave room for cave-ins.", "weight": 22 },
+    { "key": "cartographer_map_report.structure.ancient_city", "text": "{target_article}. Keep your voice low even in the telling. Some places listen after you leave.", "weight": 24 },
+    { "key": "cartographer_map_report.structure.ancient_city", "text": "You came back from {target_article}. I will mark it, but not invite anyone there lightly.", "weight": 22 },
+    { "key": "cartographer_map_report.structure.stronghold", "text": "{target_article}, found at last. That is not a road; it is a question carved into stone.", "weight": 24 },
+    { "key": "cartographer_map_report.structure.stronghold", "text": "You found {target_article}. Some maps point outward. That one points beneath everything.", "weight": 22 },
+    { "key": "cartographer_map_report.structure.nether", "text": "{target_article}. Even the name makes the parchment feel warmer.", "weight": 24 },
+    { "key": "cartographer_map_report.structure.nether", "text": "You found {target_article} and returned. I will not ask what followed you in memory.", "weight": 22 },
+    { "key": "cartographer_map_report.structure.outpost", "text": "{target_article}. I will mark patrol risk on every road that brushes near it.", "weight": 24 },
+    { "key": "cartographer_map_report.structure.outpost", "text": "You found {target_article}. Good. A tower seen on a map is a tower avoided in time.", "weight": 22 },
+    { "key": "cartographer_map_report.structure.ruins", "text": "{target_article}. Ruins are never as empty as hopeful travelers claim.", "weight": 24 },
+    { "key": "cartographer_map_report.structure.ruins", "text": "You found {target_article}. I will draw it lightly. The past dislikes being pinned down.", "weight": 22 },
+    { "key": "cartographer_map_report.structure.trial_chambers", "text": "{target_article}. A place built to test feet, nerve, and poor judgment.", "weight": 24 },
+    { "key": "cartographer_map_report.structure.trial_chambers", "text": "You found {target_article}. I will mark it as useful, dangerous, and not for the overconfident.", "weight": 22 },
+    { "key": "cartographer_map_report.structure.generic", "text": "You found {target_article}. Good. The map was a promise; now it is a record.", "weight": 24 },
+    { "key": "cartographer_map_report.structure.generic", "text": "{target_article}, confirmed. I will clean up the linework and pretend I was certain all along.", "weight": 22 }
+  ],
   "lines": [
     {
       "id": "cartographer_chat_edges",
