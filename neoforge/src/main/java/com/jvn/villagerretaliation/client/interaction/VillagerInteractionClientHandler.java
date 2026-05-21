@@ -120,7 +120,9 @@ public final class VillagerInteractionClientHandler {
         if (shouldSeparateVillagerChatMessage()) {
             addVillagerChatSeparator(minecraft, accentColor);
         }
-        addVillagerChatMessage(minecraft, formatVillagerChatLine(text.strip(), currentChatGroupMessageIndex), accentColor);
+        for (String line : wrapVillagerChatText(minecraft, text.strip())) {
+            addVillagerChatMessage(minecraft, formatVillagerChatLine(line, currentChatGroupMessageIndex), accentColor);
+        }
         currentChatGroupMessageIndex++;
         rememberVillagerChatGroup(entityId, resolvedSpeaker);
     }
@@ -187,6 +189,49 @@ public final class VillagerInteractionClientHandler {
     private static Component formatVillagerChatLine(String text, int lineIndex) {
         int color = lineIndex % 2 == 0 ? VILLAGER_CHAT_PRIMARY_TEXT_COLOR : VILLAGER_CHAT_SECONDARY_TEXT_COLOR;
         return Component.literal(text).withStyle(style -> style.withColor(color));
+    }
+
+    private static List<String> wrapVillagerChatText(Minecraft minecraft, String text) {
+        int chatWidth = Math.max(20, minecraft.gui.getChat().getWidth());
+        List<String> lines = new java.util.ArrayList<>();
+        for (String paragraph : text.split("\\R", -1)) {
+            wrapVillagerChatParagraph(minecraft, paragraph.strip(), chatWidth, lines);
+        }
+        return lines.isEmpty() ? List.of(text.strip()) : lines;
+    }
+
+    private static void wrapVillagerChatParagraph(Minecraft minecraft, String paragraph, int maxWidth, List<String> lines) {
+        String remaining = paragraph.strip();
+        while (!remaining.isEmpty()) {
+            if (minecraft.font.width(remaining) <= maxWidth) {
+                lines.add(remaining);
+                return;
+            }
+
+            String fitting = minecraft.font.plainSubstrByWidth(remaining, maxWidth);
+            if (fitting.isBlank()) {
+                int firstCodePointLength = Character.charCount(remaining.codePointAt(0));
+                lines.add(remaining.substring(0, firstCodePointLength));
+                remaining = remaining.substring(firstCodePointLength).stripLeading();
+                continue;
+            }
+
+            int splitIndex = lastWhitespaceIndex(fitting);
+            if (splitIndex <= 0) {
+                splitIndex = fitting.length();
+            }
+            lines.add(remaining.substring(0, splitIndex).stripTrailing());
+            remaining = remaining.substring(splitIndex).stripLeading();
+        }
+    }
+
+    private static int lastWhitespaceIndex(String text) {
+        for (int index = text.length() - 1; index >= 0; index--) {
+            if (Character.isWhitespace(text.charAt(index))) {
+                return index;
+            }
+        }
+        return -1;
     }
 
     private static int villagerChatAccentColor(Minecraft minecraft, int entityId) {

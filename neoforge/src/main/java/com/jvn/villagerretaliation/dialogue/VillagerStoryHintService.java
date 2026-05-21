@@ -159,7 +159,7 @@ public final class VillagerStoryHintService {
         if (cached.isPresent()) {
             return cached.get().nextTarget(context.random()).map(target -> {
                 String name = VillagerInteractionTextUtil.resourcePathName(target.id());
-                HintPlacement placement = HintPlacement.from(origin, target.pos(), quality);
+                HintPlacement placement = HintPlacement.fromStructure(origin, target.pos(), target.id(), quality);
                 boolean gaveMap = maybeGiveCartographerMap(context, target, name);
                 return new WorldHint(
                         gaveMap ? HintKind.MAP : HintKind.STRUCTURE,
@@ -178,7 +178,7 @@ public final class VillagerStoryHintService {
 
         CachedTarget target = targets.get(context.random().nextInt(targets.size()));
         String name = VillagerInteractionTextUtil.resourcePathName(target.id());
-        HintPlacement placement = HintPlacement.from(origin, target.pos(), quality);
+        HintPlacement placement = HintPlacement.fromStructure(origin, target.pos(), target.id(), quality);
         boolean gaveMap = maybeGiveCartographerMap(context, target, name);
         return Optional.of(new WorldHint(
                 gaveMap ? HintKind.MAP : HintKind.STRUCTURE,
@@ -211,8 +211,10 @@ public final class VillagerStoryHintService {
                 break;
             }
 
-            HintPlacement placement = HintPlacement.from(origin, nearest.getFirst(), quality);
             ResourceLocation structureId = keyLocation(nearest.getSecond()).orElse(null);
+            HintPlacement placement = structureId == null
+                    ? HintPlacement.from(origin, nearest.getFirst(), quality)
+                    : HintPlacement.fromStructure(origin, nearest.getFirst(), structureId, quality);
             if (placement.horizontalDistance >= MIN_STRUCTURE_DISTANCE
                     && structureId != null
                     && isNewTarget(targets, structureId, nearest.getFirst().getX(), nearest.getFirst().getZ())) {
@@ -470,12 +472,20 @@ public final class VillagerStoryHintService {
         }
     }
 
-    private record HintPlacement(String direction, int horizontalDistance, int yDelta, HintQuality quality) {
+    private record HintPlacement(String direction, int horizontalDistance, int yDelta, HintQuality quality, boolean reliableVertical) {
         private static HintPlacement from(BlockPos origin, BlockPos target, HintQuality quality) {
+            return from(origin, target, quality, true);
+        }
+
+        private static HintPlacement fromStructure(BlockPos origin, BlockPos target, ResourceLocation structureId, HintQuality quality) {
+            return from(origin, target, quality, hasReliableStructureVertical(structureId, target));
+        }
+
+        private static HintPlacement from(BlockPos origin, BlockPos target, HintQuality quality, boolean reliableVertical) {
             int dx = target.getX() - origin.getX();
             int dz = target.getZ() - origin.getZ();
             int horizontalDistance = (int) Math.round(Math.sqrt((double) dx * dx + (double) dz * dz));
-            return new HintPlacement(direction(dx, dz), horizontalDistance, target.getY() - origin.getY(), quality);
+            return new HintPlacement(direction(dx, dz), horizontalDistance, target.getY() - origin.getY(), quality, reliableVertical);
         }
 
         private String vagueDirectionPhrase() {
@@ -492,6 +502,9 @@ public final class VillagerStoryHintService {
         }
 
         private String verticalPhrase() {
+            if (!this.reliableVertical) {
+                return "";
+            }
             if (this.yDelta < -36) {
                 return ", deep underground";
             }
@@ -502,6 +515,13 @@ public final class VillagerStoryHintService {
                 return ", high above the usual paths";
             }
             return "";
+        }
+
+        private static boolean hasReliableStructureVertical(ResourceLocation structureId, BlockPos target) {
+            if (target.getY() == 0) {
+                return false;
+            }
+            return !"village".equals(structureReportCategory(structureId));
         }
 
         private static String direction(int dx, int dz) {
