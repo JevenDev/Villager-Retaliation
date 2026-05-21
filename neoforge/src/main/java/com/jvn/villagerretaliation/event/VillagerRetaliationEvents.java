@@ -416,8 +416,7 @@ public final class VillagerRetaliationEvents {
 
     private static void broadcastVillagerDeathMessage(Villager villager, DamageSource source) {
         if (!(villager.level() instanceof ServerLevel level)
-                || !level.getGameRules().getBoolean(GameRules.RULE_SHOWDEATHMESSAGES)
-                || villager.hasCustomName()) {
+                || !level.getGameRules().getBoolean(GameRules.RULE_SHOWDEATHMESSAGES)) {
             return;
         }
 

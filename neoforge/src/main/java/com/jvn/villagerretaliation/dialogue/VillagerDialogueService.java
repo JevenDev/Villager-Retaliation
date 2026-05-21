@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.combat.VillagerPacificationResult;
 import com.jvn.toucanlib.util.ToucanRandom;
 import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
+import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -12,6 +13,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.UUID;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.npc.AbstractVillager;
 
 public final class VillagerDialogueService {
     private VillagerDialogueService() {
@@ -265,7 +269,7 @@ public final class VillagerDialogueService {
         if (villageGift.isPresent()) {
             String id = "gift_memory_village_" + villageGift.get().gift().reaction().name().toLowerCase();
             if (!recentDialogueIds.contains(id)) {
-                return Optional.of(new DialogueResult(id, villageGiftLine(villageGift.get().gift(), context)));
+                return Optional.of(new DialogueResult(id, villageGiftLine(villageGift.get(), context)));
             }
         }
         return Optional.empty();
@@ -280,7 +284,7 @@ public final class VillagerDialogueService {
             return Optional.of(directGiftLine(directGift.get().gift(), context));
         }
         Optional<VillageEventMemory.MemoryEvent> villageGift = context.recentGiftToAnotherVillager();
-        return villageGift.map(memoryEvent -> villageGiftLine(memoryEvent.gift(), context));
+        return villageGift.map(memoryEvent -> villageGiftLine(memoryEvent, context));
     }
 
     private static String directGiftLine(VillageEventMemory.GiftMemory gift, DialogueContext context) {
@@ -291,13 +295,27 @@ public final class VillagerDialogueService {
         ).orElse("");
     }
 
-    private static String villageGiftLine(VillageEventMemory.GiftMemory gift, DialogueContext context) {
-        String villagerName = gift.villagerName() == null || gift.villagerName().isBlank() ? "someone here" : gift.villagerName();
+    private static String villageGiftLine(VillageEventMemory.MemoryEvent event, DialogueContext context) {
+        VillageEventMemory.GiftMemory gift = event.gift();
+        String villagerName = resolveRememberedVillagerName(context, event.sourceId(), gift.villagerName());
         return VillagerDialogueResources.message(
                 context,
                 "gift_memory.village." + gift.reaction().name().toLowerCase(Locale.ROOT),
                 Map.of("gift_item", gift.itemName(), "villager_name", villagerName)
         ).orElse("");
+    }
+
+    private static String resolveRememberedVillagerName(DialogueContext context, UUID villagerId, String fallbackName) {
+        if (villagerId != null) {
+            Entity entity = context.level().getEntity(villagerId);
+            if (entity instanceof AbstractVillager villager) {
+                String resolvedName = VillagerPresetNameRegistry.resolveDisplayName(villager).getString().trim();
+                if (!resolvedName.isBlank()) {
+                    return resolvedName;
+                }
+            }
+        }
+        return fallbackName == null || fallbackName.isBlank() ? "someone here" : fallbackName;
     }
 
     private static List<DialogueLine> preferDirectHitMemoryCandidates(
