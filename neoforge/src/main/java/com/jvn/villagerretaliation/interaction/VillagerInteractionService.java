@@ -486,6 +486,7 @@ public final class VillagerInteractionService {
                 interactionState.lastDirectHitWeapon(),
                 VillagerInteractionTracker.unreportedCartographerMapDiscovery(level, villager, player).orElse(null),
                 VillagerInteractionTracker.unreportedStoryHintDiscovery(level, villager, player).orElse(null),
+                VillagerInteractionTracker.shareableStory(level, villager, player).orElse(null),
                 VillagerInteractionTracker.unreportedCombatSurvivalReport(level, villager, player).orElse(null),
                 VillagerInteractionTracker.unreportedGearReport(level, villager, player).orElse(null),
                 VillagerInteractionTracker.unreportedRecruitmentFollowup(level, villager, player).orElse(null),
@@ -582,6 +583,14 @@ public final class VillagerInteractionService {
                     .orElseGet(() -> new VillagerDialogueService.DialogueResult(
                             "story_hint_report_missing",
                             VillagerDialogueResources.message(context, "story_hint_report.missing").orElse("")
+                    ));
+        }
+        if (requestType == DialogueRequestType.SHARE_STORY) {
+            return VillagerStoryHintService
+                    .selectSharedStory(context, dialogueOption, interactionState.recentDialogueIds())
+                    .orElseGet(() -> new VillagerDialogueService.DialogueResult(
+                            "share_story_missing",
+                            VillagerDialogueResources.message(context, "share_story.missing").orElse("")
                     ));
         }
         return VillagerDialogueService.select(

@@ -21,6 +21,7 @@ public record DialogueOptionDefinition(
         boolean requiresUnreportedGiftAdviceResult,
         boolean requiresUnapologizedRememberedHarm,
         boolean requiresUnreportedVillageDefense,
+        boolean requiresShareableStory,
         int order
 ) {
     public boolean matches(DialogueContext context, DialogueDisposition disposition) {
@@ -64,10 +65,13 @@ public record DialogueOptionDefinition(
         if (this.requiresUnreportedVillageDefense && !context.hasUnreportedVillageDefense()) {
             return false;
         }
+        if (this.requiresShareableStory && !context.hasShareableStory()) {
+            return false;
+        }
         return this.dispositions.isEmpty() || this.dispositions.contains(disposition);
     }
 
     public static DialogueOptionDefinition simple(String id, String label, DialogueRequestType requestType, int order) {
-        return new DialogueOptionDefinition(id, label, requestType, true, true, Set.of(), Set.of(), false, false, false, false, false, false, false, false, false, false, order);
+        return new DialogueOptionDefinition(id, label, requestType, true, true, Set.of(), Set.of(), false, false, false, false, false, false, false, false, false, false, false, order);
     }
 }

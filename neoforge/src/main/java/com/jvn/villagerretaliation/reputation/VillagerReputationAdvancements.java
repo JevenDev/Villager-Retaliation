@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.reputation;
 
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.dialogue.DangerousStructureStoryResources;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
@@ -17,6 +18,10 @@ import java.util.UUID;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
+import net.minecraft.core.HolderSet;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -27,6 +32,7 @@ import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.phys.AABB;
 
 public final class VillagerReputationAdvancements {
@@ -40,11 +46,15 @@ public final class VillagerReputationAdvancements {
     private static final double HOSTILITY_SCAN_RADIUS = 64.0D;
     private static final double DIALOGUE_MAP_FOUND_RADIUS = 64.0D;
     private static final double STORY_HINT_FOUND_RADIUS = 256.0D;
+    private static final double DANGEROUS_STORY_VILLAGER_RADIUS = 64.0D;
+    private static final long DANGEROUS_STORY_SCAN_INTERVAL_TICKS = 20L * 5L;
+    private static final long DANGEROUS_STORY_SHARE_TICKS = 20L * 60L * 60L * 6L;
 
     private static final Map<UUID, Map<UUID, Integer>> TRADE_COUNTS = new HashMap<>();
     private static final Map<UUID, Set<UUID>> TRADED_VILLAGERS = new HashMap<>();
     private static final Map<UUID, Map<UUID, Long>> RECENT_DIRECT_VILLAGER_HITS = new HashMap<>();
     private static final Map<UUID, Set<UUID>> HOSTILE_OR_WORSE_HISTORY = new HashMap<>();
+    private static final Map<UUID, Long> NEXT_DANGEROUS_STORY_SCAN = new HashMap<>();
 
     private static final ResourceLocation ROOT = advancementId("reputation/root");
     private static final ResourceLocation COMMONFOLK = advancementId("reputation/commonfolk");
@@ -114,6 +124,77 @@ public final class VillagerReputationAdvancements {
                 hintDiscoveries.forEach(discovery -> sendStoryHintFoundNotice(player, discovery));
             }
         });
+        rememberDangerousStructureStories(player);
+    }
+
+    private static void rememberDangerousStructureStories(ServerPlayer player) {
+        ServerLevel level = player.serverLevel();
+        long gameTime = level.getGameTime();
+        Long nextScan = NEXT_DANGEROUS_STORY_SCAN.get(player.getUUID());
+        if (nextScan != null && nextScan > gameTime) {
+            return;
+        }
+        NEXT_DANGEROUS_STORY_SCAN.put(player.getUUID(), gameTime + DANGEROUS_STORY_SCAN_INTERVAL_TICKS);
+
+        List<DangerousStructureStoryResources.Entry> storyStructures = DangerousStructureStoryResources.entries(level.getServer());
+        if (storyStructures.isEmpty()) {
+            return;
+        }
+        List<Villager> nearbyVillagers = level.getEntitiesOfClass(
+                Villager.class,
+                new AABB(player.blockPosition()).inflate(DANGEROUS_STORY_VILLAGER_RADIUS),
+                villager -> villager.isAlive() && !villager.isBaby()
+        );
+        if (nearbyVillagers.isEmpty()) {
+            return;
+        }
+
+        Registry<Structure> registry = level.registryAccess().registryOrThrow(Registries.STRUCTURE);
+        for (DangerousStructureStoryResources.Entry storyStructure : storyStructures) {
+            registry.getHolder(ResourceKey.create(Registries.STRUCTURE, storyStructure.structureId()))
+                    .ifPresent(holder -> rememberDangerousStructureStory(level, player, nearbyVillagers, storyStructure, holder));
+        }
+    }
+
+    private static void rememberDangerousStructureStory(
+            ServerLevel level,
+            ServerPlayer player,
+            List<Villager> nearbyVillagers,
+            DangerousStructureStoryResources.Entry storyStructure,
+            Holder.Reference<Structure> structure) {
+        BlockPos origin = player.blockPosition();
+        com.mojang.datafixers.util.Pair<BlockPos, Holder<Structure>> nearest =
+                level.getChunkSource().getGenerator().findNearestMapStructure(
+                        level,
+                        HolderSet.direct(structure),
+                        origin,
+                        Math.max(1, storyStructure.radius()),
+                        false
+                );
+        if (nearest == null) {
+            return;
+        }
+        BlockPos targetPos = nearest.getFirst();
+        double dx = player.getX() - (targetPos.getX() + 0.5D);
+        double dz = player.getZ() - (targetPos.getZ() + 0.5D);
+        double radiusSqr = (double) storyStructure.radius() * storyStructure.radius();
+        if (dx * dx + dz * dz > radiusSqr) {
+            return;
+        }
+
+        long expiresAt = level.getGameTime() + DANGEROUS_STORY_SHARE_TICKS;
+        for (Villager villager : nearbyVillagers) {
+            VillagerInteractionTracker.rememberShareableStory(
+                    level,
+                    villager,
+                    player,
+                    VillagerInteractionTracker.StoryHintKind.STRUCTURE,
+                    storyStructure.structureId(),
+                    storyStructure.targetName(),
+                    targetPos,
+                    expiresAt
+            );
+        }
     }
 
     public static void onVillagerDirectlyDamaged(ServerLevel level, ServerPlayer player, AbstractVillager villager) {

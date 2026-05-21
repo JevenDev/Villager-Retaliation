@@ -43,6 +43,7 @@ public final class VillagerInteractionTracker {
                 entry.requestUseCount(DialogueRequestType.APOLOGY, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.VILLAGE_DEFENSE_REPORT, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.STORY, gameTime, day, optionResetTicks),
+                entry.requestUseCount(DialogueRequestType.SHARE_STORY, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.JOKE, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.INSULT, gameTime, day, optionResetTicks),
                 entry.lastDialogueGameTime(DialogueRequestType.APOLOGY),
@@ -171,6 +172,44 @@ public final class VillagerInteractionTracker {
     public static Optional<StoryHintReport> claimUnreportedStoryHintDiscovery(ServerLevel level, Villager villager, ServerPlayer player) {
         VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
         StoryHintReport report = data.claimUnreportedStoryHintDiscovery(villager.getUUID(), player.getUUID());
+        if (report != null) {
+            data.setDirty();
+        }
+        return Optional.ofNullable(report);
+    }
+
+    public static void rememberShareableStory(
+            ServerLevel level,
+            Villager villager,
+            ServerPlayer player,
+            StoryHintKind kind,
+            ResourceLocation targetId,
+            String targetName,
+            BlockPos targetPos,
+            long expiresAtGameTime) {
+        VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
+        data.rememberShareableStory(
+                villager.getUUID(),
+                player.getUUID(),
+                level.dimension().location(),
+                kind,
+                targetId,
+                targetName,
+                targetPos,
+                expiresAtGameTime,
+                level.getGameTime()
+        );
+        data.setDirty();
+    }
+
+    public static Optional<StoryHintReport> shareableStory(ServerLevel level, Villager villager, ServerPlayer player) {
+        return Optional.ofNullable(VillagerInteractionSavedData.get(level)
+                .shareableStory(villager.getUUID(), player.getUUID(), level.getGameTime()));
+    }
+
+    public static Optional<StoryHintReport> claimShareableStory(ServerLevel level, Villager villager, ServerPlayer player) {
+        VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
+        StoryHintReport report = data.claimShareableStory(villager.getUUID(), player.getUUID(), level.getGameTime());
         if (report != null) {
             data.setDirty();
         }
@@ -427,6 +466,7 @@ public final class VillagerInteractionTracker {
             int apologyUseCount,
             int villageDefenseReportUseCount,
             int storyUseCount,
+            int shareStoryUseCount,
             int jokeUseCount,
             int insultUseCount,
             long lastApologyDialogueGameTime,
@@ -452,6 +492,7 @@ public final class VillagerInteractionTracker {
                 case APOLOGY -> this.apologyUseCount;
                 case VILLAGE_DEFENSE_REPORT -> this.villageDefenseReportUseCount;
                 case STORY -> this.storyUseCount;
+                case SHARE_STORY -> this.shareStoryUseCount;
                 case JOKE -> this.jokeUseCount;
                 case INSULT -> this.insultUseCount;
             };

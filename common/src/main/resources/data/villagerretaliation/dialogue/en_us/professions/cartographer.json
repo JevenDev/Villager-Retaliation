@@ -586,6 +586,41 @@
       "text": "We are alright for now. Keep the fires fed and the paths open.",
       "weight": 34,
       "show_for_babies": false
+    },
+    {
+      "id": "cartographer_share_story_1",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "{target_article}, you say? I will mark that warning with a heavier hand than most.",
+      "weight": 24
+    },
+    {
+      "id": "cartographer_share_story_2",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "A map can show where {target} sits, but not how it feels when the air changes.",
+      "weight": 24
+    },
+    {
+      "id": "cartographer_share_story_3",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "Good that you told me. Empty spaces around {target_article} deserve ink too.",
+      "weight": 24
+    },
+    {
+      "id": "cartographer_share_story_4",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "I have heard rumors of {target}. Your footsteps give the map its proof.",
+      "weight": 24
+    },
+    {
+      "id": "cartographer_share_story_5",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "Then {target} is not just a smudge on old parchment. I will warn anyone following that road.",
+      "weight": 24
     }
   ],
   "pacify": [

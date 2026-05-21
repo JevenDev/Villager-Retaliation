@@ -106,18 +106,26 @@
       "order": 4
     },
     {
+      "id": "adult_share_story",
+      "label": "Share a Story",
+      "type": "share_story",
+      "show_for_babies": false,
+      "requires_shareable_story": true,
+      "order": 5
+    },
+    {
       "id": "adult_joke",
       "label": "Tell Joke",
       "type": "joke",
       "show_for_babies": false,
-      "order": 5
+      "order": 6
     },
     {
       "id": "adult_insult",
       "label": "Insult",
       "type": "insult",
       "show_for_babies": false,
-      "order": 6
+      "order": 7
     },
     {
       "id": "baby_greeting",
@@ -536,6 +544,10 @@
     {
       "key": "story_hint_report.missing",
       "text": "Bring me news after you walk the place I mentioned."
+    },
+    {
+      "key": "share_story.missing",
+      "text": "I am not sure which story you mean."
     },
     {
       "key": "story_hint_report.biome",

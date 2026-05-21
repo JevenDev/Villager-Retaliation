@@ -501,6 +501,41 @@
       "text": "We are alright for now. Keep the fires fed and the paths open.",
       "weight": 34,
       "show_for_babies": false
+    },
+    {
+      "id": "leatherworker_share_story_1",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "{target_article}. Wear boots you can run in if you go back.",
+      "weight": 24
+    },
+    {
+      "id": "leatherworker_share_story_2",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "I can mend torn leather. I cannot mend what places like {target} do to a careless traveler.",
+      "weight": 24
+    },
+    {
+      "id": "leatherworker_share_story_3",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "A warning about {target_article} fits better than any saddle: snug, useful, and meant to travel.",
+      "weight": 24
+    },
+    {
+      "id": "leatherworker_share_story_4",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "I will tell the caravan folk to check straps before passing near {target}.",
+      "weight": 24
+    },
+    {
+      "id": "leatherworker_share_story_5",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "You brought back the story and your skin. That is enough luck for one visit to {target_article}.",
+      "weight": 24
     }
   ],
   "pacify": [

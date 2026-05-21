@@ -110,6 +110,25 @@ public final class VillagerStoryHintService {
                 });
     }
 
+    public static Optional<VillagerDialogueService.DialogueResult> selectSharedStory(
+            DialogueContext context,
+            DialogueOptionDefinition option,
+            List<String> recentDialogueIds) {
+        return VillagerInteractionTracker.claimShareableStory(context.level(), context.villager(), context.player())
+                .map(report -> {
+                    String targetName = report.targetName() == null || report.targetName().isBlank()
+                            ? VillagerInteractionTextUtil.resourcePathName(report.targetId())
+                            : report.targetName();
+                    VillagerDialogueService.DialogueResult result = VillagerDialogueService.select(context, option, recentDialogueIds);
+                    return new VillagerDialogueService.DialogueResult(
+                            "share_story_" + report.targetId().getPath() + "_" + result.lineId(),
+                            result.text()
+                                    .replace("{target}", targetName)
+                                    .replace("{target_article}", withArticle(targetName))
+                    );
+                });
+    }
+
     private static Optional<WorldHint> selectWorldHint(DialogueContext context, HintQuality quality) {
         boolean tryStructureFirst = quality.canRevealStructures && context.random().nextBoolean();
         if (tryStructureFirst) {

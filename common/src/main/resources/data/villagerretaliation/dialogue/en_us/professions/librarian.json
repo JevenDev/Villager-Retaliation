@@ -501,6 +501,41 @@
       "text": "We are alright for now. Keep the fires fed and the paths open.",
       "weight": 34,
       "show_for_babies": false
+    },
+    {
+      "id": "librarian_share_story_1",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "{target_article}. I will write that under warnings, not wonders.",
+      "weight": 24
+    },
+    {
+      "id": "librarian_share_story_2",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "Stories from {target} should be cataloged where curious hands cannot mistake them for invitations.",
+      "weight": 24
+    },
+    {
+      "id": "librarian_share_story_3",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "Your account gives the rumor a spine. {target_article} is now a record, not a whisper.",
+      "weight": 24
+    },
+    {
+      "id": "librarian_share_story_4",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "I will copy the warning about {target}. Memory fades faster than ink.",
+      "weight": 24
+    },
+    {
+      "id": "librarian_share_story_5",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "Some books should stay closed. Some places too. {target} sounds like both.",
+      "weight": 24
     }
   ],
   "pacify": [

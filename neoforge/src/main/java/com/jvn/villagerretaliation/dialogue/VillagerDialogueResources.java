@@ -350,6 +350,7 @@ public final class VillagerDialogueResources {
             boolean requiresUnreportedGiftAdviceResult = readBoolean(entry, "requires_unreported_gift_advice_result");
             boolean requiresUnapologizedRememberedHarm = readBoolean(entry, "requires_unapologized_remembered_harm");
             boolean requiresUnreportedVillageDefense = readBoolean(entry, "requires_unreported_village_defense");
+            boolean requiresShareableStory = readBoolean(entry, "requires_shareable_story");
             int order = readInt(entry, "order", index);
             options.put(id, new DialogueOptionDefinition(
                     id,
@@ -369,6 +370,7 @@ public final class VillagerDialogueResources {
                     requiresUnreportedGiftAdviceResult,
                     requiresUnapologizedRememberedHarm,
                     requiresUnreportedVillageDefense,
+                    requiresShareableStory,
                     order
             ));
             index++;

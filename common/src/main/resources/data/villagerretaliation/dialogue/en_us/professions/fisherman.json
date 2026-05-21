@@ -501,6 +501,41 @@
       "text": "We are alright for now. Keep the fires fed and the paths open.",
       "weight": 34,
       "show_for_babies": false
+    },
+    {
+      "id": "fisherman_share_story_1",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "{target_article}, hm. Some places are hooks, and travelers are the bait.",
+      "weight": 24
+    },
+    {
+      "id": "fisherman_share_story_2",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "You saw {target} and came back. That is the part of the tale I like best.",
+      "weight": 24
+    },
+    {
+      "id": "fisherman_share_story_3",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "I will tell anyone casting lines near that road to keep one eye on {target}.",
+      "weight": 24
+    },
+    {
+      "id": "fisherman_share_story_4",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "A bad current is still water until it pulls. Sounds like {target_article} pulls hard.",
+      "weight": 24
+    },
+    {
+      "id": "fisherman_share_story_5",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "Stories like {target} travel farther than boats when people listen.",
+      "weight": 24
     }
   ],
   "pacify": [

@@ -64,6 +64,7 @@ public class VillagerInteractionSavedData extends SavedData {
     private static final String TAG_EXPIRES_AT = "ExpiresAt";
     private static final String TAG_FOUND = "Found";
     private static final String TAG_REPORTED = "Reported";
+    private static final String TAG_SHAREABLE = "Shareable";
     private static final String TAG_COMBAT_SURVIVAL_UNREPORTED = "CombatSurvivalUnreported";
     private static final String TAG_COMBAT_SURVIVAL_EVENT_KIND = "CombatSurvivalEventKind";
     private static final String TAG_COMBAT_SURVIVAL_GAME_TIME = "CombatSurvivalGameTime";
@@ -271,7 +272,8 @@ public class VillagerInteractionSavedData extends SavedData {
                         new BlockPos(hintTag.getInt(TAG_TARGET_X), hintTag.getInt(TAG_TARGET_Y), hintTag.getInt(TAG_TARGET_Z)),
                         readOptionalLong(hintTag, TAG_EXPIRES_AT),
                         hintTag.getBoolean(TAG_FOUND),
-                        hintTag.getBoolean(TAG_REPORTED)
+                        hintTag.getBoolean(TAG_REPORTED),
+                        hintTag.getBoolean(TAG_SHAREABLE)
                 ));
             }
             data.entries.computeIfAbsent(entryTag.getUUID(TAG_VILLAGER), ignored -> new HashMap<>())
@@ -442,6 +444,7 @@ public class VillagerInteractionSavedData extends SavedData {
                     hintTag.putLong(TAG_EXPIRES_AT, storyHint.expiresAtGameTime());
                     hintTag.putBoolean(TAG_FOUND, storyHint.found());
                     hintTag.putBoolean(TAG_REPORTED, storyHint.reported());
+                    hintTag.putBoolean(TAG_SHAREABLE, storyHint.shareable());
                     storyHints.add(hintTag);
                 }
                 entryTag.put(TAG_STORY_HINTS, storyHints);
@@ -560,7 +563,36 @@ public class VillagerInteractionSavedData extends SavedData {
                 targetPos.immutable(),
                 expiresAtGameTime,
                 false,
+                false,
                 false
+        ));
+        entry.pruneStoryHints();
+    }
+
+    public void rememberShareableStory(
+            UUID villagerId,
+            UUID playerId,
+            ResourceLocation dimension,
+            VillagerInteractionTracker.StoryHintKind kind,
+            ResourceLocation targetId,
+            String targetName,
+            BlockPos targetPos,
+            long expiresAtGameTime,
+            long gameTime) {
+        InteractionEntry entry = getOrCreate(villagerId, playerId);
+        if (entry.hasStoryHint(dimension, kind, targetId, targetPos, gameTime)) {
+            return;
+        }
+        entry.storyHints.add(new StoryHintMemory(
+                dimension,
+                kind,
+                targetId,
+                targetName == null ? "" : targetName,
+                targetPos.immutable(),
+                expiresAtGameTime,
+                true,
+                false,
+                true
         ));
         entry.pruneStoryHints();
     }
@@ -607,6 +639,14 @@ public class VillagerInteractionSavedData extends SavedData {
 
     public VillagerInteractionTracker.StoryHintReport claimUnreportedStoryHintDiscovery(UUID villagerId, UUID playerId) {
         return getOrCreate(villagerId, playerId).claimUnreportedStoryHintDiscovery(villagerId);
+    }
+
+    public VillagerInteractionTracker.StoryHintReport shareableStory(UUID villagerId, UUID playerId, long gameTime) {
+        return getOrCreate(villagerId, playerId).shareableStory(villagerId, gameTime);
+    }
+
+    public VillagerInteractionTracker.StoryHintReport claimShareableStory(UUID villagerId, UUID playerId, long gameTime) {
+        return getOrCreate(villagerId, playerId).claimShareableStory(villagerId, gameTime);
     }
 
     public void rememberCombatSurvivalReport(UUID villagerId, UUID playerId, String eventKind, long gameTime) {
@@ -1192,7 +1232,7 @@ public class VillagerInteractionSavedData extends SavedData {
         private VillagerInteractionTracker.StoryHintReport unreportedStoryHintDiscovery(UUID villagerId) {
             for (int index = this.storyHints.size() - 1; index >= 0; index--) {
                 StoryHintMemory storyHint = this.storyHints.get(index);
-                if (storyHint.found() && !storyHint.reported()) {
+                if (storyHint.found() && !storyHint.reported() && !storyHint.shareable()) {
                     return storyHint.toReport(villagerId);
                 }
             }
@@ -1202,7 +1242,7 @@ public class VillagerInteractionSavedData extends SavedData {
         private VillagerInteractionTracker.StoryHintReport claimUnreportedStoryHintDiscovery(UUID villagerId) {
             for (int index = this.storyHints.size() - 1; index >= 0; index--) {
                 StoryHintMemory storyHint = this.storyHints.get(index);
-                if (storyHint.found() && !storyHint.reported()) {
+                if (storyHint.found() && !storyHint.reported() && !storyHint.shareable()) {
                     this.storyHints.set(index, storyHint.withReported(true));
                     return storyHint.toReport(villagerId);
                 }
@@ -1227,6 +1267,45 @@ public class VillagerInteractionSavedData extends SavedData {
                 }
             }
             return false;
+        }
+
+        private boolean hasStoryHint(
+                ResourceLocation dimension,
+                VillagerInteractionTracker.StoryHintKind kind,
+                ResourceLocation targetId,
+                BlockPos targetPos,
+                long gameTime) {
+            for (StoryHintMemory storyHint : this.storyHints) {
+                if (storyHint.expiresAtGameTime() > gameTime
+                        && storyHint.dimension().equals(dimension)
+                        && storyHint.kind() == kind
+                        && storyHint.targetId().equals(targetId)
+                        && storyHint.targetPos().equals(targetPos)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private VillagerInteractionTracker.StoryHintReport shareableStory(UUID villagerId, long gameTime) {
+            for (int index = this.storyHints.size() - 1; index >= 0; index--) {
+                StoryHintMemory storyHint = this.storyHints.get(index);
+                if (storyHint.shareable() && storyHint.found() && !storyHint.reported() && storyHint.expiresAtGameTime() > gameTime) {
+                    return storyHint.toReport(villagerId);
+                }
+            }
+            return null;
+        }
+
+        private VillagerInteractionTracker.StoryHintReport claimShareableStory(UUID villagerId, long gameTime) {
+            for (int index = this.storyHints.size() - 1; index >= 0; index--) {
+                StoryHintMemory storyHint = this.storyHints.get(index);
+                if (storyHint.shareable() && storyHint.found() && !storyHint.reported() && storyHint.expiresAtGameTime() > gameTime) {
+                    this.storyHints.set(index, storyHint.withReported(true));
+                    return storyHint.toReport(villagerId);
+                }
+            }
+            return null;
         }
 
         private void pruneCartographerMaps() {
@@ -1314,7 +1393,8 @@ public class VillagerInteractionSavedData extends SavedData {
             BlockPos targetPos,
             long expiresAtGameTime,
             boolean found,
-            boolean reported
+            boolean reported,
+            boolean shareable
     ) {
         private boolean matchesCurrentPlace(ResourceLocation currentBiomeId) {
             return this.kind != VillagerInteractionTracker.StoryHintKind.BIOME
@@ -1330,7 +1410,8 @@ public class VillagerInteractionSavedData extends SavedData {
                     this.targetPos,
                     this.expiresAtGameTime,
                     found,
-                    this.reported
+                    this.reported,
+                    this.shareable
             );
         }
 
@@ -1343,7 +1424,8 @@ public class VillagerInteractionSavedData extends SavedData {
                     this.targetPos,
                     this.expiresAtGameTime,
                     this.found,
-                    reported
+                    reported,
+                    this.shareable
             );
         }
 

@@ -501,6 +501,41 @@
       "text": "We are alright for now. Keep the fires fed and the paths open.",
       "weight": 34,
       "show_for_babies": false
+    },
+    {
+      "id": "farmer_share_story_1",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "{target_article}? Then the fields should know which road not to trust.",
+      "weight": 24
+    },
+    {
+      "id": "farmer_share_story_2",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "Bad places grow trouble if nobody pulls the first weed. Thank you for naming {target}.",
+      "weight": 24
+    },
+    {
+      "id": "farmer_share_story_3",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "I will keep the younger ones from wandering toward {target_article}. Curiosity sprouts fast.",
+      "weight": 24
+    },
+    {
+      "id": "farmer_share_story_4",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "A story from {target} is not seed for gossip. It is a fence post.",
+      "weight": 24
+    },
+    {
+      "id": "farmer_share_story_5",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "If the path to {target_article} crosses farmland, I want signs up before sunset.",
+      "weight": 24
     }
   ],
   "pacify": [

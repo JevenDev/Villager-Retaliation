@@ -501,6 +501,41 @@
       "text": "We are alright for now. Keep the fires fed and the paths open.",
       "weight": 34,
       "show_for_babies": false
+    },
+    {
+      "id": "fletcher_share_story_1",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "{target_article}? I will keep arrows ready for anyone forced to pass that way.",
+      "weight": 24
+    },
+    {
+      "id": "fletcher_share_story_2",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "A warning from {target} flies better than a rumor. I will see it reaches ears.",
+      "weight": 24
+    },
+    {
+      "id": "fletcher_share_story_3",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "If trouble follows you from {target_article}, make sure it meets us at range.",
+      "weight": 24
+    },
+    {
+      "id": "fletcher_share_story_4",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "I do not like places that make travelers look over both shoulders. {target} sounds like one.",
+      "weight": 24
+    },
+    {
+      "id": "fletcher_share_story_5",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "Good story, sharp point. We will remember {target}.",
+      "weight": 24
     }
   ],
   "pacify": [

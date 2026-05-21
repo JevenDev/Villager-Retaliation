@@ -501,6 +501,41 @@
       "text": "We are alright for now. Keep the fires fed and the paths open.",
       "weight": 34,
       "show_for_babies": false
+    },
+    {
+      "id": "butcher_share_story_1",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "{target_article}? Then keep your stores tight. Fear makes people careless with food and doors.",
+      "weight": 24
+    },
+    {
+      "id": "butcher_share_story_2",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "You brought back a story from {target}. Good. Bad places are worse when no one names them.",
+      "weight": 24
+    },
+    {
+      "id": "butcher_share_story_3",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "I know the smell of danger well enough. {target} sounds like a place to leave before dusk.",
+      "weight": 24
+    },
+    {
+      "id": "butcher_share_story_4",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "If travelers are drifting from {target_article}, we will need knives sharp and soup ready.",
+      "weight": 24
+    },
+    {
+      "id": "butcher_share_story_5",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "Some stories spoil if ignored. I will pass word about {target}.",
+      "weight": 24
     }
   ],
   "pacify": [

@@ -1,0 +1,24 @@
+{
+  "radius": 96,
+  "entries": [
+    {
+      "structure": "minecraft:ancient_city",
+      "name": "Ancient City",
+      "radius": 128
+    },
+    {
+      "structure": "minecraft:woodland_mansion",
+      "name": "Woodland Mansion",
+      "radius": 128
+    },
+    {
+      "structure": "minecraft:pillager_outpost",
+      "name": "Pillager Outpost"
+    },
+    {
+      "structure": "minecraft:trial_chambers",
+      "name": "Trial Chambers",
+      "radius": 128
+    }
+  ]
+}

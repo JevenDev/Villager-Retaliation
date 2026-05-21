@@ -501,6 +501,41 @@
       "text": "We are alright for now. Keep the fires fed and the paths open.",
       "weight": 34,
       "show_for_babies": false
+    },
+    {
+      "id": "unemployed_share_story_1",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "{target_article}. I may not have a trade, but I know a warning when I hear one.",
+      "weight": 24
+    },
+    {
+      "id": "unemployed_share_story_2",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "I will tell people about {target}. Passing along danger is useful work.",
+      "weight": 24
+    },
+    {
+      "id": "unemployed_share_story_3",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "Some places make a person choose a different road. {target_article} sounds convincing.",
+      "weight": 24
+    },
+    {
+      "id": "unemployed_share_story_4",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "You brought back news from {target}. That gives the rest of us a chance to be sensible.",
+      "weight": 24
+    },
+    {
+      "id": "unemployed_share_story_5",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "I have time to listen, and this is worth hearing. {target_article} will not stay just your story.",
+      "weight": 24
     }
   ],
   "pacify": [

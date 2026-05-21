@@ -16,6 +16,7 @@ public enum DialogueRequestType {
     APOLOGY,
     VILLAGE_DEFENSE_REPORT,
     STORY,
+    SHARE_STORY,
     JOKE,
     INSULT
 }

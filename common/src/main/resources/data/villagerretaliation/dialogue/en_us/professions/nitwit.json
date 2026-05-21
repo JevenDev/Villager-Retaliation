@@ -501,6 +501,41 @@
       "text": "We are alright for now. Keep the fires fed and the paths open.",
       "weight": 34,
       "show_for_babies": false
+    },
+    {
+      "id": "nitwit_share_story_1",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "{target_article}? That sounds like a place where my feet would suddenly remember chores elsewhere.",
+      "weight": 24
+    },
+    {
+      "id": "nitwit_share_story_2",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "You went to {target} and came back? I would like to skip the first part.",
+      "weight": 24
+    },
+    {
+      "id": "nitwit_share_story_3",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "I can tell people about {target_article}. I am very good at sounding worried.",
+      "weight": 24
+    },
+    {
+      "id": "nitwit_share_story_4",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "Bad place, good story, better distance. That is what I heard about {target}.",
+      "weight": 24
+    },
+    {
+      "id": "nitwit_share_story_5",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "If anyone asks, I was already not going near {target_article} before it was wise.",
+      "weight": 24
     }
   ],
   "pacify": [

@@ -107,6 +107,13 @@ public final class DialogueReputationService {
                     false,
                     null
             );
+            case SHARE_STORY -> new PlannedEffect(
+                    MAP_REPORT_REPUTATION_GAIN,
+                    "share_story",
+                    DialogueReputationEffect.CooldownCategory.NONE,
+                    false,
+                    null
+            );
             case COMBAT_SURVIVAL_REPORT -> new PlannedEffect(
                     COMBAT_SURVIVAL_REPORT_REPUTATION_GAIN,
                     "combat_survival_report",
@@ -169,6 +176,7 @@ public final class DialogueReputationService {
         if (requestType == DialogueRequestType.INSULT
                 || requestType == DialogueRequestType.MAP_REPORT
                 || requestType == DialogueRequestType.STORY_HINT_REPORT
+                || requestType == DialogueRequestType.SHARE_STORY
                 || requestType == DialogueRequestType.COMBAT_SURVIVAL_REPORT
                 || requestType == DialogueRequestType.GEAR_REPORT
                 || requestType == DialogueRequestType.RECRUITMENT_FOLLOWUP

@@ -33,6 +33,7 @@ public record DialogueContext(
         String lastDirectHitWeapon,
         VillagerInteractionTracker.CartographerMapReport cartographerMapReport,
         VillagerInteractionTracker.StoryHintReport storyHintReport,
+        VillagerInteractionTracker.StoryHintReport shareableStoryReport,
         VillagerInteractionTracker.CombatSurvivalReport combatSurvivalReport,
         VillagerInteractionTracker.GearReport gearReport,
         VillagerInteractionTracker.RecruitmentFollowupReport recruitmentFollowupReport,
@@ -103,6 +104,14 @@ public record DialogueContext(
 
     public boolean hasUnreportedStoryHintDiscovery() {
         return this.storyHintReport != null;
+    }
+
+    public Optional<VillagerInteractionTracker.StoryHintReport> shareableStory() {
+        return Optional.ofNullable(this.shareableStoryReport);
+    }
+
+    public boolean hasShareableStory() {
+        return this.shareableStoryReport != null;
     }
 
     public Optional<VillagerInteractionTracker.CombatSurvivalReport> unreportedCombatSurvivalReport() {

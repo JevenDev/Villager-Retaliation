@@ -501,6 +501,41 @@
       "text": "We are alright for now. Keep the fires fed and the paths open.",
       "weight": 34,
       "show_for_babies": false
+    },
+    {
+      "id": "weaponsmith_share_story_1",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "{target_article}. If that place sends trouble here, we meet it with edges ready.",
+      "weight": 24
+    },
+    {
+      "id": "weaponsmith_share_story_2",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "You came back from {target}. Good. Steel is for the ones who make it back to warn us.",
+      "weight": 24
+    },
+    {
+      "id": "weaponsmith_share_story_3",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "I do not like the shape of that story. {target_article} sounds like a blade pointed at the road.",
+      "weight": 24
+    },
+    {
+      "id": "weaponsmith_share_story_4",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "I will check the racks. Warnings about {target} should not find us empty-handed.",
+      "weight": 24
+    },
+    {
+      "id": "weaponsmith_share_story_5",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "text": "If anyone goes near {target_article}, tell them bravery dulls faster than iron.",
+      "weight": 24
     }
   ],
   "pacify": [
