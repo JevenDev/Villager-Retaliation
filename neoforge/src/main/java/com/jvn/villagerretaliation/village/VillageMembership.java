@@ -1,8 +1,10 @@
 package com.jvn.villagerretaliation.village;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Predicate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
@@ -56,10 +58,14 @@ public final class VillageMembership {
     }
 
     public static List<Villager> villagersForLocalVillage(ServerLevel level, BlockPos origin, double fallbackRadius) {
-        return resolve(level, origin)
-                .map(VillageArea::members)
-                .filter(members -> !members.isEmpty())
-                .orElseGet(() -> aliveVillagersNear(level, origin, fallbackRadius));
+        List<Villager> nearbyVillagers = aliveVillagersNear(level, origin, fallbackRadius);
+        Optional<VillageArea> area = resolve(level, origin);
+        if (area.isEmpty()) {
+            return nearbyVillagers;
+        }
+        Set<Villager> villagers = new LinkedHashSet<>(area.get().members());
+        villagers.addAll(nearbyVillagers);
+        return List.copyOf(villagers);
     }
 
     private static List<Villager> residentVillagersNear(ServerLevel level, BlockPos origin, double radius) {

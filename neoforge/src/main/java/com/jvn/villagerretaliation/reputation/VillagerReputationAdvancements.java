@@ -191,7 +191,8 @@ public final class VillagerReputationAdvancements {
                 player,
                 nearbyVillagers,
                 VillagerInteractionTracker.StoryHintKind.BIOME,
-                storyBiome.biomeId()
+                storyBiome.biomeId(),
+                player.blockPosition()
         );
         if (nearbyVillagers.isEmpty()) {
             return;
@@ -247,17 +248,6 @@ public final class VillagerReputationAdvancements {
             List<Villager> nearbyVillagers,
             DangerousStructureStoryResources.Entry storyStructure,
             Holder.Reference<Structure> structure) {
-        nearbyVillagers = shareableStoryCandidates(
-                level,
-                player,
-                nearbyVillagers,
-                VillagerInteractionTracker.StoryHintKind.STRUCTURE,
-                storyStructure.structureId()
-        );
-        if (nearbyVillagers.isEmpty()) {
-            return;
-        }
-
         BlockPos origin = player.blockPosition();
         BlockPos targetPos = cachedNearestStoryStructure(level, origin, storyStructure, structure);
         if (targetPos == null) {
@@ -267,6 +257,18 @@ public final class VillagerReputationAdvancements {
         double dz = player.getZ() - (targetPos.getZ() + 0.5D);
         double radiusSqr = (double) storyStructure.radius() * storyStructure.radius();
         if (dx * dx + dz * dz > radiusSqr) {
+            return;
+        }
+
+        nearbyVillagers = shareableStoryCandidates(
+                level,
+                player,
+                nearbyVillagers,
+                VillagerInteractionTracker.StoryHintKind.STRUCTURE,
+                storyStructure.structureId(),
+                targetPos
+        );
+        if (nearbyVillagers.isEmpty()) {
             return;
         }
 
@@ -290,9 +292,10 @@ public final class VillagerReputationAdvancements {
             ServerPlayer player,
             List<Villager> villagers,
             VillagerInteractionTracker.StoryHintKind kind,
-            ResourceLocation targetId) {
+            ResourceLocation targetId,
+            BlockPos targetPos) {
         return villagers.stream()
-                .filter(villager -> VillagerInteractionTracker.canRememberShareableStory(level, villager, player, kind, targetId))
+                .filter(villager -> VillagerInteractionTracker.canRememberShareableStory(level, villager, player, kind, targetId, targetPos))
                 .toList();
     }
 

@@ -279,13 +279,15 @@ public final class VillagerInteractionTracker {
             Villager villager,
             ServerPlayer player,
             StoryHintKind kind,
-            ResourceLocation targetId) {
+            ResourceLocation targetId,
+            BlockPos targetPos) {
         return VillagerInteractionSavedData.get(level).canRememberShareableStory(
                 villager.getUUID(),
                 player.getUUID(),
                 level.dimension().location(),
                 kind,
                 targetId,
+                targetPos,
                 level.getGameTime()
         );
     }

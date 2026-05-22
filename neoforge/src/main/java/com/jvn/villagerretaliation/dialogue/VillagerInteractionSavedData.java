@@ -106,6 +106,7 @@ public class VillagerInteractionSavedData extends SavedData {
     private static final int MAX_STORY_HINTS = 12;
     private static final int MAX_SHARED_STORY_TARGETS = 64;
     private static final int MAX_SHARED_STORY_COOLDOWNS_PER_PLAYER = 128;
+    private static final int SHARED_BIOME_STORY_REGION_SHIFT = 8;
     private static final long SHARED_STORY_TARGET_COOLDOWN_TICKS = 20L * 60L * 60L * 24L;
     private static final int DEFAULT_BIOME_STORY_HINT_DISCOVERY_RADIUS = 256;
     private static final int DEFAULT_STRUCTURE_STORY_HINT_DISCOVERY_RADIUS = 128;
@@ -295,7 +296,7 @@ public class VillagerInteractionSavedData extends SavedData {
                 );
                 entry.storyHints.add(storyHint);
                 if (storyHint.shareable() && storyHint.reported()) {
-                    entry.rememberSharedStoryTarget(dimension, kind, targetId);
+                    entry.rememberSharedStoryTarget(dimension, kind, targetId, storyHint.targetPos());
                 }
             }
             if (entryTag.contains(TAG_SHARED_STORY_TARGETS, Tag.TAG_LIST)) {
@@ -724,11 +725,11 @@ public class VillagerInteractionSavedData extends SavedData {
             BlockPos targetPos,
             long expiresAtGameTime,
             long gameTime) {
-        if (isSharedStoryTargetCoolingDown(playerId, dimension, kind, targetId, gameTime)) {
+        if (isSharedStoryTargetCoolingDown(playerId, dimension, kind, targetId, targetPos, gameTime)) {
             return false;
         }
         InteractionEntry entry = getOrCreate(villagerId, playerId);
-        if (entry.hasKnownShareableStory(dimension, kind, targetId, gameTime)) {
+        if (entry.hasKnownShareableStory(dimension, kind, targetId, targetPos, gameTime)) {
             return false;
         }
         entry.storyHints.add(new StoryHintMemory(
@@ -753,12 +754,13 @@ public class VillagerInteractionSavedData extends SavedData {
             ResourceLocation dimension,
             VillagerInteractionTracker.StoryHintKind kind,
             ResourceLocation targetId,
+            BlockPos targetPos,
             long gameTime) {
-        if (isSharedStoryTargetCoolingDown(playerId, dimension, kind, targetId, gameTime)) {
+        if (isSharedStoryTargetCoolingDown(playerId, dimension, kind, targetId, targetPos, gameTime)) {
             return false;
         }
         InteractionEntry entry = getIndexedEntry(villagerId, playerId);
-        return entry == null || !entry.hasKnownShareableStory(dimension, kind, targetId, gameTime);
+        return entry == null || !entry.hasKnownShareableStory(dimension, kind, targetId, targetPos, gameTime);
     }
 
     private boolean isSharedStoryTargetCoolingDown(
@@ -766,18 +768,24 @@ public class VillagerInteractionSavedData extends SavedData {
             ResourceLocation dimension,
             VillagerInteractionTracker.StoryHintKind kind,
             ResourceLocation targetId,
+            BlockPos targetPos,
             long gameTime) {
         LinkedHashMap<String, Long> cooldowns = this.sharedStoryCooldownsByPlayer.get(playerId);
         if (cooldowns == null || cooldowns.isEmpty()) {
             return false;
         }
-        String key = sharedStoryTargetKey(dimension, kind, targetId);
+        String key = sharedStoryTargetKey(dimension, kind, targetId, targetPos);
+        String matchedKey = key;
         Long expiresAt = cooldowns.get(key);
+        if (expiresAt == null) {
+            matchedKey = exactSharedStoryTargetKey(dimension, kind, targetId, targetPos);
+            expiresAt = cooldowns.get(matchedKey);
+        }
         if (expiresAt == null) {
             return false;
         }
         if (expiresAt <= gameTime) {
-            cooldowns.remove(key);
+            cooldowns.remove(matchedKey);
             if (cooldowns.isEmpty()) {
                 this.sharedStoryCooldownsByPlayer.remove(playerId);
             }
@@ -791,9 +799,10 @@ public class VillagerInteractionSavedData extends SavedData {
             ResourceLocation dimension,
             VillagerInteractionTracker.StoryHintKind kind,
             ResourceLocation targetId,
+            BlockPos targetPos,
             long gameTime) {
         LinkedHashMap<String, Long> cooldowns = this.sharedStoryCooldownsByPlayer.computeIfAbsent(playerId, ignored -> new LinkedHashMap<>());
-        cooldowns.put(sharedStoryTargetKey(dimension, kind, targetId), gameTime + SHARED_STORY_TARGET_COOLDOWN_TICKS);
+        cooldowns.put(sharedStoryTargetKey(dimension, kind, targetId, targetPos), gameTime + SHARED_STORY_TARGET_COOLDOWN_TICKS);
         pruneSharedStoryCooldowns(playerId, gameTime);
     }
 
@@ -913,6 +922,7 @@ public class VillagerInteractionSavedData extends SavedData {
                         storyHint.dimension(),
                         storyHint.kind(),
                         storyHint.targetId(),
+                        storyHint.targetPos(),
                         gameTime
                 ));
     }
@@ -927,10 +937,11 @@ public class VillagerInteractionSavedData extends SavedData {
                 storyHint.dimension(),
                 storyHint.kind(),
                 storyHint.targetId(),
+                storyHint.targetPos(),
                 gameTime
         ));
         if (report != null) {
-            rememberSharedStoryTargetCooldown(playerId, report.dimension(), report.kind(), report.targetId(), gameTime);
+            rememberSharedStoryTargetCooldown(playerId, report.dimension(), report.kind(), report.targetId(), report.targetPos(), gameTime);
             incrementSharedStoryCount(playerId);
         }
         return report;
@@ -1620,16 +1631,19 @@ public class VillagerInteractionSavedData extends SavedData {
                 ResourceLocation dimension,
                 VillagerInteractionTracker.StoryHintKind kind,
                 ResourceLocation targetId,
+                BlockPos targetPos,
                 long gameTime) {
-            return this.sharedStoryTargets.contains(sharedStoryTargetKey(dimension, kind, targetId))
-                    || hasStoryHint(dimension, kind, targetId, gameTime);
+            return this.sharedStoryTargets.contains(sharedStoryTargetKey(dimension, kind, targetId, targetPos))
+                    || this.sharedStoryTargets.contains(exactSharedStoryTargetKey(dimension, kind, targetId, targetPos))
+                    || hasStoryHint(dimension, kind, targetId, targetPos, gameTime);
         }
 
         private void rememberSharedStoryTarget(
                 ResourceLocation dimension,
                 VillagerInteractionTracker.StoryHintKind kind,
-                ResourceLocation targetId) {
-            this.sharedStoryTargets.add(sharedStoryTargetKey(dimension, kind, targetId));
+                ResourceLocation targetId,
+                BlockPos targetPos) {
+            this.sharedStoryTargets.add(sharedStoryTargetKey(dimension, kind, targetId, targetPos));
             pruneSharedStoryTargets();
         }
 
@@ -1644,7 +1658,8 @@ public class VillagerInteractionSavedData extends SavedData {
                         && storyHint.dimension().equals(dimension)
                         && storyHint.kind() == kind
                         && storyHint.targetId().equals(targetId)
-                        && storyHint.targetPos().equals(targetPos)) {
+                        && sharedStoryTargetKey(storyHint.dimension(), storyHint.kind(), storyHint.targetId(), storyHint.targetPos())
+                                .equals(sharedStoryTargetKey(dimension, kind, targetId, targetPos))) {
                     return true;
                 }
             }
@@ -1680,7 +1695,7 @@ public class VillagerInteractionSavedData extends SavedData {
                         && storyHint.expiresAtGameTime() > gameTime
                         && canShare.test(storyHint)) {
                     this.storyHints.set(index, storyHint.withReported(true));
-                    rememberSharedStoryTarget(storyHint.dimension(), storyHint.kind(), storyHint.targetId());
+                    rememberSharedStoryTarget(storyHint.dimension(), storyHint.kind(), storyHint.targetId(), storyHint.targetPos());
                     return storyHint.toReport(villagerId);
                 }
             }
@@ -1782,8 +1797,24 @@ public class VillagerInteractionSavedData extends SavedData {
     private static String sharedStoryTargetKey(
             ResourceLocation dimension,
             VillagerInteractionTracker.StoryHintKind kind,
-            ResourceLocation targetId) {
-        return dimension + "|" + kind.name() + "|" + targetId;
+            ResourceLocation targetId,
+            BlockPos targetPos) {
+        return dimension + "|" + kind.name() + "|" + targetId + "|" + sharedStoryLocationKey(kind, targetPos);
+    }
+
+    private static String exactSharedStoryTargetKey(
+            ResourceLocation dimension,
+            VillagerInteractionTracker.StoryHintKind kind,
+            ResourceLocation targetId,
+            BlockPos targetPos) {
+        return dimension + "|" + kind.name() + "|" + targetId + "|" + targetPos.getX() + "," + targetPos.getY() + "," + targetPos.getZ();
+    }
+
+    private static String sharedStoryLocationKey(VillagerInteractionTracker.StoryHintKind kind, BlockPos targetPos) {
+        if (kind == VillagerInteractionTracker.StoryHintKind.BIOME) {
+            return "region:" + (targetPos.getX() >> SHARED_BIOME_STORY_REGION_SHIFT) + "," + (targetPos.getZ() >> SHARED_BIOME_STORY_REGION_SHIFT);
+        }
+        return "pos:" + targetPos.getX() + "," + targetPos.getY() + "," + targetPos.getZ();
     }
 
     private record CartographerMapMemory(
