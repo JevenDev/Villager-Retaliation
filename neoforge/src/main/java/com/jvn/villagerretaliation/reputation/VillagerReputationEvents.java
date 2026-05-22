@@ -5,6 +5,8 @@ import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.toucanlib.util.ToucanHazardAttribution;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
+import com.jvn.villagerretaliation.village.VillageEventMemory;
+import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -290,6 +292,13 @@ public final class VillagerReputationEvents {
                 && outcome instanceof Villager curedVillager
                 && curingPlayerId != null) {
             VillagerReputationManager.setReputation(level, curedVillager, curingPlayerId, CURED_VILLAGER_REPUTATION);
+            VillageEventMemory.rememberCuredVillager(
+                    level,
+                    curedVillager.blockPosition(),
+                    curedVillager,
+                    curingPlayerId,
+                    VillagerPresetNameRegistry.resolveDisplayName(curedVillager).getString()
+            );
             if (hadKnownReputationBeforeCure) {
                 VillagerInteractionTracker.rememberCuredRecognition(level, curedVillager, curingPlayerId);
             }

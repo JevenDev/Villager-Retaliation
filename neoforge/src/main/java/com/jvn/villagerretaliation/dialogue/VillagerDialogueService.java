@@ -379,11 +379,33 @@ public final class VillagerDialogueService {
     }
 
     private static String resolveText(String text, DialogueContext context) {
+        String curedVillagerName = curedVillagerName(context);
         return text
                 .replace("{attack_weapon}", context.rememberedAttackWeapon())
                 .replace("{gear_kind}", context.gearReportKind())
                 .replace("{follow_biome}", context.recruitmentMemoryBiome())
-                .replace("{follow_distance}", Integer.toString(context.recruitmentMemoryDistanceBlocks()));
+                .replace("{follow_distance}", Integer.toString(context.recruitmentMemoryDistanceBlocks()))
+                .replace("{cured_villager}", curedVillagerName)
+                .replace("{cured_villager_possessive}", toPossessive(curedVillagerName));
+    }
+
+    private static String curedVillagerName(DialogueContext context) {
+        return context.recentEvents().stream()
+                .filter(event -> event.tag() == VillageEventMemory.EventTag.PLAYER_CURED_VILLAGER)
+                .filter(event -> context.player().getUUID().equals(event.playerId()))
+                .max(Comparator.comparingLong(VillageEventMemory.MemoryEvent::gameTime))
+                .map(event -> {
+                    String fallbackName = event.curedVillager() == null ? "" : event.curedVillager().villagerName();
+                    return resolveRememberedVillagerName(context, event.sourceId(), fallbackName);
+                })
+                .orElse("someone here");
+    }
+
+    private static String toPossessive(String name) {
+        if (name == null || name.isBlank()) {
+            return "someone here's";
+        }
+        return name.endsWith("s") || name.endsWith("S") ? name + "'" : name + "'s";
     }
 
     private static String selectConversationLine(

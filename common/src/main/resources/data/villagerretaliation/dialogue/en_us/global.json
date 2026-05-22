@@ -7565,6 +7565,124 @@
       ]
     },
     {
+      "id": "village_cure_acknowledgement_respectful_1",
+      "type": "greeting",
+      "player_event_tags": [
+        "player_cured_villager"
+      ],
+      "text": "Word reached us about {cured_villager}. You brought one of ours back.",
+      "weight": 34,
+      "show_for_babies": false,
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ]
+    },
+    {
+      "id": "village_cure_acknowledgement_respectful_2",
+      "type": "chat",
+      "player_event_tags": [
+        "player_cured_villager"
+      ],
+      "text": "{cured_villager_possessive} cure matters here. People remember who stayed to help.",
+      "weight": 34,
+      "show_for_babies": false,
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ]
+    },
+    {
+      "id": "village_cure_acknowledgement_neutral_1",
+      "type": "greeting",
+      "player_event_tags": [
+        "player_cured_villager"
+      ],
+      "text": "I heard you cured {cured_villager}. That is not a small thing.",
+      "weight": 32,
+      "show_for_babies": false,
+      "dispositions": [
+        "neutral"
+      ]
+    },
+    {
+      "id": "village_cure_acknowledgement_neutral_2",
+      "type": "chat",
+      "player_event_tags": [
+        "player_cured_villager"
+      ],
+      "text": "{cured_villager} is walking these paths again because of you. The village noticed.",
+      "weight": 32,
+      "show_for_babies": false,
+      "dispositions": [
+        "neutral"
+      ]
+    },
+    {
+      "id": "village_cure_acknowledgement_wary_1",
+      "type": "greeting",
+      "player_event_tags": [
+        "player_cured_villager"
+      ],
+      "text": "I heard what you did for {cured_villager}. I am still wary, but I will not pretend that meant nothing.",
+      "weight": 34,
+      "show_for_babies": false,
+      "dispositions": [
+        "cautious",
+        "rude"
+      ]
+    },
+    {
+      "id": "village_cure_acknowledgement_wary_2",
+      "type": "chat",
+      "player_event_tags": [
+        "player_cured_villager"
+      ],
+      "text": "Helping {cured_villager} speaks well of you. It does not erase everything else.",
+      "weight": 34,
+      "show_for_babies": false,
+      "dispositions": [
+        "cautious",
+        "rude"
+      ]
+    },
+    {
+      "id": "village_cure_acknowledgement_fearful_1",
+      "type": "greeting",
+      "player_event_tags": [
+        "player_cured_villager"
+      ],
+      "text": "You saved {cured_villager}. I know. I just do not know what to do with both that and the rest.",
+      "weight": 34,
+      "show_for_babies": false,
+      "dispositions": [
+        "hostile",
+        "fearful"
+      ]
+    },
+    {
+      "id": "village_cure_acknowledgement_baby_1",
+      "type": "greeting",
+      "player_event_tags": [
+        "player_cured_villager"
+      ],
+      "text": "Are you the doctor who saved {cured_villager}?",
+      "weight": 38,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
+      "id": "village_cure_acknowledgement_baby_2",
+      "type": "chat",
+      "player_event_tags": [
+        "player_cured_villager"
+      ],
+      "text": "The grown-ups said you are the wizard that saved {cured_villager}. Are you really?",
+      "weight": 38,
+      "show_for_adults": false,
+      "show_for_babies": true
+    },
+    {
       "id": "village_event_thunderstorm_shared_1",
       "type": "village_event_report",
       "event_tags": [

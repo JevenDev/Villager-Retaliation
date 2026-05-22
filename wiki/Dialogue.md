@@ -178,6 +178,7 @@ villager_attacked
 player_attacked_villager
 player_defended_village
 player_defended_raid
+player_cured_villager
 golem_created
 golem_killed
 nearby_hostile_mob
@@ -187,6 +188,13 @@ player_gave_liked_gift
 player_gave_neutral_gift
 player_gave_disliked_gift
 player_gave_hated_gift
+```
+
+Lines that use `player_cured_villager` can use:
+
+```text
+{cured_villager}
+{cured_villager_possessive}
 ```
 
 ## Messages

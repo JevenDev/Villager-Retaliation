@@ -31,6 +31,7 @@ public final class VillageEventMemory {
                 pos.immutable(),
                 source == null ? null : source.getUUID(),
                 player == null ? null : player.getUUID(),
+                null,
                 null
         ));
         prune(level);
@@ -52,7 +53,27 @@ public final class VillageEventMemory {
                 pos.immutable(),
                 villager == null ? null : villager.getUUID(),
                 player == null ? null : player.getUUID(),
-                new GiftMemory(villagerName, itemName, reaction, reputationValue)
+                new GiftMemory(villagerName, itemName, reaction, reputationValue),
+                null
+        ));
+        prune(level);
+    }
+
+    public static void rememberCuredVillager(
+            ServerLevel level,
+            BlockPos pos,
+            Entity villager,
+            UUID playerId,
+            String villagerName) {
+        ArrayDeque<MemoryEvent> events = EVENTS.computeIfAbsent(level.dimension(), ignored -> new ArrayDeque<>());
+        events.addLast(new MemoryEvent(
+                EventTag.PLAYER_CURED_VILLAGER,
+                level.getGameTime(),
+                pos.immutable(),
+                villager == null ? null : villager.getUUID(),
+                playerId,
+                null,
+                new CuredVillagerMemory(villagerName)
         ));
         prune(level);
     }
@@ -104,6 +125,7 @@ public final class VillageEventMemory {
         PLAYER_ATTACKED_VILLAGER,
         PLAYER_DEFENDED_VILLAGE,
         PLAYER_DEFENDED_RAID,
+        PLAYER_CURED_VILLAGER,
         GOLEM_CREATED,
         GOLEM_KILLED,
         NEARBY_HOSTILE_MOB,
@@ -125,9 +147,19 @@ public final class VillageEventMemory {
         };
     }
 
-    public record MemoryEvent(EventTag tag, long gameTime, BlockPos pos, UUID sourceId, UUID playerId, GiftMemory gift) {
+    public record MemoryEvent(
+            EventTag tag,
+            long gameTime,
+            BlockPos pos,
+            UUID sourceId,
+            UUID playerId,
+            GiftMemory gift,
+            CuredVillagerMemory curedVillager) {
     }
 
     public record GiftMemory(String villagerName, String itemName, VillagerGiftPreferences.GiftReaction reaction, int reputationValue) {
+    }
+
+    public record CuredVillagerMemory(String villagerName) {
     }
 }
