@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.dialogue;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -299,6 +300,7 @@ public final class VillagerInteractionTracker {
         StoryHintReport report = data.claimShareableStory(villager.getUUID(), player.getUUID(), level.getGameTime());
         if (report != null) {
             data.setDirty();
+            VillagerReputationAdvancements.onSharedStory(player, data.sharedStoryCount(player.getUUID()));
         }
         return Optional.ofNullable(report);
     }

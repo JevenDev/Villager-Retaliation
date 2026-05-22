@@ -187,5 +187,13 @@
   "advancements.villagerretaliation.reputation.bait_and_betrayal.title": "Bait and Betrayal",
   "advancements.villagerretaliation.reputation.bait_and_betrayal.description": "Have a villager follow you, then kill them.",
   "advancements.villagerretaliation.reputation.changed_my_mind.title": "Changed My Mind",
-  "advancements.villagerretaliation.reputation.changed_my_mind.description": "Take back a gift from a villager."
+  "advancements.villagerretaliation.reputation.changed_my_mind.description": "Take back a gift from a villager.",
+  "advancements.villagerretaliation.reputation.once_upon_a_time.title": "Once Upon a Time",
+  "advancements.villagerretaliation.reputation.once_upon_a_time.description": "Share a discovered story with a villager.",
+  "advancements.villagerretaliation.reputation.story_keeper.title": "Story Keeper",
+  "advancements.villagerretaliation.reputation.story_keeper.description": "Share 5 discovered stories with villagers.",
+  "advancements.villagerretaliation.reputation.village_chronicler.title": "Village Chronicler",
+  "advancements.villagerretaliation.reputation.village_chronicler.description": "Share 10 discovered stories with villagers.",
+  "advancements.villagerretaliation.reputation.legend_trader.title": "Legend Trader",
+  "advancements.villagerretaliation.reputation.legend_trader.description": "Share 25 discovered stories with villagers."
 }

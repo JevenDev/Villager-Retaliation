@@ -70,8 +70,10 @@ public class VillagerInteractionSavedData extends SavedData {
     private static final String TAG_SHAREABLE = "Shareable";
     private static final String TAG_SHARED_STORY_TARGETS = "SharedStoryTargets";
     private static final String TAG_SHARED_STORY_COOLDOWNS = "SharedStoryCooldowns";
+    private static final String TAG_SHARED_STORY_COUNTS = "SharedStoryCounts";
     private static final String TAG_TARGETS = "Targets";
     private static final String TAG_TARGET_KEY = "TargetKey";
+    private static final String TAG_SHARED_STORIES = "SharedStories";
     private static final String TAG_COMBAT_SURVIVAL_UNREPORTED = "CombatSurvivalUnreported";
     private static final String TAG_COMBAT_SURVIVAL_EVENT_KIND = "CombatSurvivalEventKind";
     private static final String TAG_COMBAT_SURVIVAL_GAME_TIME = "CombatSurvivalGameTime";
@@ -112,6 +114,7 @@ public class VillagerInteractionSavedData extends SavedData {
     private final Map<UUID, Set<UUID>> villagerIdsByPlayer = new HashMap<>();
     private final Map<UUID, GiftKnowledgeBook> giftKnowledge = new HashMap<>();
     private final Map<UUID, LinkedHashMap<String, Long>> sharedStoryCooldownsByPlayer = new HashMap<>();
+    private final Map<UUID, Integer> sharedStoryCountsByPlayer = new HashMap<>();
 
     public static VillagerInteractionSavedData get(ServerLevel level) {
         return level.getServer().overworld().getDataStorage().computeIfAbsent(
@@ -339,6 +342,18 @@ public class VillagerInteractionSavedData extends SavedData {
                 data.sharedStoryCooldownsByPlayer.put(cooldownsTag.getUUID(TAG_PLAYER), cooldowns);
             }
         }
+        ListTag sharedStoryCountsTag = tag.getList(TAG_SHARED_STORY_COUNTS, Tag.TAG_COMPOUND);
+        for (Tag rawCount : sharedStoryCountsTag) {
+            if (!(rawCount instanceof CompoundTag countTag)
+                    || !countTag.hasUUID(TAG_PLAYER)
+                    || !countTag.contains(TAG_SHARED_STORIES, Tag.TAG_INT)) {
+                continue;
+            }
+            int count = Math.max(0, countTag.getInt(TAG_SHARED_STORIES));
+            if (count > 0) {
+                data.sharedStoryCountsByPlayer.put(countTag.getUUID(TAG_PLAYER), count);
+            }
+        }
         return data;
     }
 
@@ -545,6 +560,17 @@ public class VillagerInteractionSavedData extends SavedData {
             sharedStoryCooldownsTag.add(cooldownsTag);
         }
         tag.put(TAG_SHARED_STORY_COOLDOWNS, sharedStoryCooldownsTag);
+        ListTag sharedStoryCountsTag = new ListTag();
+        for (Map.Entry<UUID, Integer> countEntry : this.sharedStoryCountsByPlayer.entrySet()) {
+            if (countEntry.getValue() <= 0) {
+                continue;
+            }
+            CompoundTag countTag = new CompoundTag();
+            countTag.putUUID(TAG_PLAYER, countEntry.getKey());
+            countTag.putInt(TAG_SHARED_STORIES, countEntry.getValue());
+            sharedStoryCountsTag.add(countTag);
+        }
+        tag.put(TAG_SHARED_STORY_COUNTS, sharedStoryCountsTag);
         return tag;
     }
 
@@ -905,8 +931,17 @@ public class VillagerInteractionSavedData extends SavedData {
         ));
         if (report != null) {
             rememberSharedStoryTargetCooldown(playerId, report.dimension(), report.kind(), report.targetId(), gameTime);
+            incrementSharedStoryCount(playerId);
         }
         return report;
+    }
+
+    public int sharedStoryCount(UUID playerId) {
+        return this.sharedStoryCountsByPlayer.getOrDefault(playerId, 0);
+    }
+
+    private void incrementSharedStoryCount(UUID playerId) {
+        this.sharedStoryCountsByPlayer.merge(playerId, 1, Integer::sum);
     }
 
     public void rememberCombatSurvivalReport(UUID villagerId, UUID playerId, String eventKind, long gameTime) {

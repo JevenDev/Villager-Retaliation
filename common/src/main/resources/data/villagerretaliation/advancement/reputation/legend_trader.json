@@ -1,0 +1,23 @@
+{
+  "parent": "villagerretaliation:reputation/village_chronicler",
+  "display": {
+    "icon": {
+      "id": "minecraft:recovery_compass"
+    },
+    "title": {
+      "translate": "advancements.villagerretaliation.reputation.legend_trader.title"
+    },
+    "description": {
+      "translate": "advancements.villagerretaliation.reputation.legend_trader.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

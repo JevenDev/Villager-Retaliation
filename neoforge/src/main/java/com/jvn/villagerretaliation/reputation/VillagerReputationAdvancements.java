@@ -94,6 +94,10 @@ public final class VillagerReputationAdvancements {
     private static final ResourceLocation TRUSTED_DIRECTIONS = advancementId("reputation/trusted_directions");
     private static final ResourceLocation BAIT_AND_BETRAYAL = advancementId("reputation/bait_and_betrayal");
     private static final ResourceLocation CHANGED_MY_MIND = advancementId("reputation/changed_my_mind");
+    private static final ResourceLocation ONCE_UPON_A_TIME = advancementId("reputation/once_upon_a_time");
+    private static final ResourceLocation STORY_KEEPER = advancementId("reputation/story_keeper");
+    private static final ResourceLocation VILLAGE_CHRONICLER = advancementId("reputation/village_chronicler");
+    private static final ResourceLocation LEGEND_TRADER = advancementId("reputation/legend_trader");
 
     private VillagerReputationAdvancements() {
     }
@@ -116,6 +120,21 @@ public final class VillagerReputationAdvancements {
 
     public static void onSleepingVillagerBedBroken(ServerPlayer player) {
         award(player, NO_REST_FOR_THE_WICKED);
+    }
+
+    public static void onSharedStory(ServerPlayer player, int sharedStoryCount) {
+        if (sharedStoryCount >= 1) {
+            award(player, ONCE_UPON_A_TIME);
+        }
+        if (sharedStoryCount >= 5) {
+            award(player, STORY_KEEPER);
+        }
+        if (sharedStoryCount >= 10) {
+            award(player, VILLAGE_CHRONICLER);
+        }
+        if (sharedStoryCount >= 25) {
+            award(player, LEGEND_TRADER);
+        }
     }
 
     public static void onPlayerTick(ServerPlayer player) {
