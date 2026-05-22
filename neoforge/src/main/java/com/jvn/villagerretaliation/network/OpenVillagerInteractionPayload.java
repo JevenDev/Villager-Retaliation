@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.social.VillagerFamilyTreeSnapshot;
+import com.jvn.villagerretaliation.villager.VillagerGender;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -130,23 +131,70 @@ public record OpenVillagerInteractionPayload(
 
     private static void writeFamilyTree(RegistryFriendlyByteBuf buffer, VillagerFamilyTreeSnapshot familyTree) {
         VillagerFamilyTreeSnapshot safeFamilyTree = familyTree == null ? VillagerFamilyTreeSnapshot.EMPTY : familyTree;
-        writeStringList(buffer, safeFamilyTree.parents());
-        writeStringList(buffer, safeFamilyTree.siblings());
-        writeStringList(buffer, safeFamilyTree.spouses());
-        writeStringList(buffer, safeFamilyTree.children());
-        writeStringList(buffer, safeFamilyTree.friends());
-        writeStringList(buffer, safeFamilyTree.rivals());
+        writeFamilyMembers(buffer, safeFamilyTree.parents());
+        writeFamilyMembers(buffer, safeFamilyTree.birthParents());
+        writeFamilyMembers(buffer, safeFamilyTree.adoptiveParents());
+        writeFamilyMembers(buffer, safeFamilyTree.stepParents());
+        writeFamilyMembers(buffer, safeFamilyTree.siblings());
+        writeFamilyMembers(buffer, safeFamilyTree.spouses());
+        writeFamilyMembers(buffer, safeFamilyTree.children());
+        writeFamilyMembers(buffer, safeFamilyTree.friends());
+        writeFamilyMembers(buffer, safeFamilyTree.rivals());
+        writeAncestry(buffer, safeFamilyTree.ancestry());
     }
 
     private static VillagerFamilyTreeSnapshot readFamilyTree(RegistryFriendlyByteBuf buffer) {
         return new VillagerFamilyTreeSnapshot(
-                readStringList(buffer),
-                readStringList(buffer),
-                readStringList(buffer),
-                readStringList(buffer),
-                readStringList(buffer),
-                readStringList(buffer)
+                readFamilyMembers(buffer),
+                readFamilyMembers(buffer),
+                readFamilyMembers(buffer),
+                readFamilyMembers(buffer),
+                readFamilyMembers(buffer),
+                readFamilyMembers(buffer),
+                readFamilyMembers(buffer),
+                readFamilyMembers(buffer),
+                readFamilyMembers(buffer),
+                readAncestry(buffer)
         );
+    }
+
+    private static void writeFamilyMembers(RegistryFriendlyByteBuf buffer, List<VillagerFamilyTreeSnapshot.FamilyMember> members) {
+        buffer.writeVarInt(members.size());
+        for (VillagerFamilyTreeSnapshot.FamilyMember member : members) {
+            buffer.writeUtf(member.name(), 128);
+            buffer.writeEnum(member.gender());
+            buffer.writeBoolean(member.alive());
+        }
+    }
+
+    private static List<VillagerFamilyTreeSnapshot.FamilyMember> readFamilyMembers(RegistryFriendlyByteBuf buffer) {
+        int size = buffer.readVarInt();
+        List<VillagerFamilyTreeSnapshot.FamilyMember> members = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            members.add(new VillagerFamilyTreeSnapshot.FamilyMember(
+                    buffer.readUtf(128),
+                    buffer.readEnum(VillagerGender.class),
+                    buffer.readBoolean()
+            ));
+        }
+        return members;
+    }
+
+    private static void writeAncestry(RegistryFriendlyByteBuf buffer, List<VillagerFamilyTreeSnapshot.AncestorGeneration> ancestry) {
+        buffer.writeVarInt(ancestry.size());
+        for (VillagerFamilyTreeSnapshot.AncestorGeneration generation : ancestry) {
+            buffer.writeVarInt(generation.generation());
+            writeFamilyMembers(buffer, generation.ancestors());
+        }
+    }
+
+    private static List<VillagerFamilyTreeSnapshot.AncestorGeneration> readAncestry(RegistryFriendlyByteBuf buffer) {
+        int size = buffer.readVarInt();
+        List<VillagerFamilyTreeSnapshot.AncestorGeneration> ancestry = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            ancestry.add(new VillagerFamilyTreeSnapshot.AncestorGeneration(buffer.readVarInt(), readFamilyMembers(buffer)));
+        }
+        return ancestry;
     }
 
     @Override

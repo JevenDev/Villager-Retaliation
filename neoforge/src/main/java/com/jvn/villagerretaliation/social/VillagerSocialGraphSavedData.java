@@ -25,6 +25,7 @@ import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.level.saveddata.SavedData;
 
 public class VillagerSocialGraphSavedData extends SavedData {
+    private static final int ANCESTOR_GENERATION_LIMIT = 10;
     private static final String DATA_NAME = "villagerretaliation_social_graph";
     private static final String TAG_PROFILES = "Profiles";
     private static final String TAG_RELATIONSHIPS = "Relationships";
@@ -181,6 +182,17 @@ public class VillagerSocialGraphSavedData extends SavedData {
     }
 
     public void linkParentsAndChild(ServerLevel level, Villager parentA, Villager parentB, Villager child) {
+        linkParentsAndChild(level, parentA, parentB, child, RelationshipType.BIRTH_PARENT, RelationshipType.BIRTH_CHILD);
+    }
+
+    private void linkParentsAndChild(
+            ServerLevel level,
+            Villager parentA,
+            Villager parentB,
+            Villager child,
+            RelationshipType parentDetailType,
+            RelationshipType childDetailType
+    ) {
         ensureProfile(level, parentA);
         ensureProfile(level, parentB);
         ensureProfile(level, child);
@@ -193,6 +205,8 @@ public class VillagerSocialGraphSavedData extends SavedData {
         boolean changed = false;
         changed |= addParentChild(parentA.getUUID(), child.getUUID());
         changed |= addParentChild(parentB.getUUID(), child.getUUID());
+        changed |= addParentChildDetail(parentA.getUUID(), child.getUUID(), parentDetailType, childDetailType);
+        changed |= addParentChildDetail(parentB.getUUID(), child.getUUID(), parentDetailType, childDetailType);
         for (UUID siblingId : existingSiblings) {
             changed |= addSymmetric(child.getUUID(), RelationshipType.SIBLING, siblingId);
         }
@@ -206,12 +220,16 @@ public class VillagerSocialGraphSavedData extends SavedData {
         ensureProfile(level, villager);
         UUID villagerId = villager.getUUID();
         return new VillagerFamilyTreeSnapshot(
-                relationshipNames(level, villagerId, RelationshipType.PARENT),
-                relationshipNames(level, villagerId, RelationshipType.SIBLING),
-                relationshipNames(level, villagerId, RelationshipType.SPOUSE),
-                relationshipNames(level, villagerId, RelationshipType.CHILD),
-                relationshipNames(level, villagerId, RelationshipType.FRIEND),
-                relationshipNames(level, villagerId, RelationshipType.RIVAL)
+                relationshipMembers(level, villagerId, RelationshipType.PARENT),
+                relationshipMembers(level, villagerId, RelationshipType.BIRTH_PARENT),
+                relationshipMembers(level, villagerId, RelationshipType.ADOPTIVE_PARENT),
+                stepParents(level, villagerId),
+                relationshipMembers(level, villagerId, RelationshipType.SIBLING),
+                relationshipMembers(level, villagerId, RelationshipType.SPOUSE),
+                relationshipMembers(level, villagerId, RelationshipType.CHILD),
+                relationshipMembers(level, villagerId, RelationshipType.FRIEND),
+                relationshipMembers(level, villagerId, RelationshipType.RIVAL),
+                ancestorGenerations(level, villagerId)
         );
     }
 
@@ -274,7 +292,7 @@ public class VillagerSocialGraphSavedData extends SavedData {
     }
 
     public void linkAdoptiveParentsAndChild(ServerLevel level, Villager parentA, Villager parentB, Villager child) {
-        linkParentsAndChild(level, parentA, parentB, child);
+        linkParentsAndChild(level, parentA, parentB, child, RelationshipType.ADOPTIVE_PARENT, RelationshipType.ADOPTIVE_CHILD);
         linkSpouses(level, parentA, parentB);
     }
 
@@ -343,35 +361,99 @@ public class VillagerSocialGraphSavedData extends SavedData {
         }
     }
 
-    private List<String> relationshipNames(ServerLevel level, UUID villagerId, RelationshipType type) {
-        List<String> names = new ArrayList<>();
-        for (UUID relativeId : relationships(villagerId, type)) {
-            String name = profileDisplayName(level, relativeId);
-            if (!name.isBlank()) {
-                names.add(name);
+    private List<VillagerFamilyTreeSnapshot.FamilyMember> stepParents(ServerLevel level, UUID villagerId) {
+        Set<UUID> directParents = relationships(villagerId, RelationshipType.PARENT);
+        Set<UUID> stepParentIds = new HashSet<>();
+        for (UUID parentId : directParents) {
+            for (UUID spouseId : relationships(parentId, RelationshipType.SPOUSE)) {
+                if (!directParents.contains(spouseId) && !villagerId.equals(spouseId)) {
+                    stepParentIds.add(spouseId);
+                }
             }
         }
-        names.sort(String::compareToIgnoreCase);
-        return List.copyOf(names);
+        return membersForIds(level, stepParentIds);
     }
 
-    private String profileDisplayName(ServerLevel level, UUID relativeId) {
+    private List<VillagerFamilyTreeSnapshot.AncestorGeneration> ancestorGenerations(ServerLevel level, UUID villagerId) {
+        Map<Integer, Set<UUID>> ancestorsByGeneration = new HashMap<>();
+        collectAncestorGenerations(villagerId, 1, ancestorsByGeneration, new HashSet<>());
+
+        List<VillagerFamilyTreeSnapshot.AncestorGeneration> generations = new ArrayList<>();
+        for (int generation = 2; generation <= ANCESTOR_GENERATION_LIMIT; generation++) {
+            List<VillagerFamilyTreeSnapshot.FamilyMember> ancestors =
+                    membersForIds(level, ancestorsByGeneration.getOrDefault(generation, Set.of()));
+            if (!ancestors.isEmpty()) {
+                generations.add(new VillagerFamilyTreeSnapshot.AncestorGeneration(generation, ancestors));
+            }
+        }
+        return List.copyOf(generations);
+    }
+
+    private void collectAncestorGenerations(
+            UUID villagerId,
+            int parentGeneration,
+            Map<Integer, Set<UUID>> ancestorsByGeneration,
+            Set<UUID> path
+    ) {
+        if (parentGeneration > ANCESTOR_GENERATION_LIMIT) {
+            return;
+        }
+        for (UUID parentId : relationships(villagerId, RelationshipType.PARENT)) {
+            if (!path.add(parentId)) {
+                continue;
+            }
+            if (parentGeneration >= 2) {
+                ancestorsByGeneration
+                        .computeIfAbsent(parentGeneration, ignored -> new HashSet<>())
+                        .add(parentId);
+            }
+            collectAncestorGenerations(parentId, parentGeneration + 1, ancestorsByGeneration, path);
+            path.remove(parentId);
+        }
+    }
+
+    private List<VillagerFamilyTreeSnapshot.FamilyMember> relationshipMembers(ServerLevel level, UUID villagerId, RelationshipType type) {
+        return membersForIds(level, relationships(villagerId, type));
+    }
+
+    private List<VillagerFamilyTreeSnapshot.FamilyMember> membersForIds(ServerLevel level, Set<UUID> memberIds) {
+        List<VillagerFamilyTreeSnapshot.FamilyMember> members = new ArrayList<>();
+        for (UUID memberId : memberIds) {
+            VillagerFamilyTreeSnapshot.FamilyMember member = profileMember(level, memberId);
+            if (member != null && !member.name().isBlank()) {
+                members.add(member);
+            }
+        }
+        members.sort((first, second) -> first.name().compareToIgnoreCase(second.name()));
+        return List.copyOf(members);
+    }
+
+    private VillagerFamilyTreeSnapshot.FamilyMember profileMember(ServerLevel level, UUID relativeId) {
         Entity entity = level.getEntity(relativeId);
         if (entity instanceof Villager villager) {
             ensureProfile(level, villager);
-            return VillagerPresetNameRegistry.resolveDisplayName(villager).getString();
+            return new VillagerFamilyTreeSnapshot.FamilyMember(
+                    VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
+                    VillagerPresetNameRegistry.resolveGender(villager),
+                    villager.isAlive()
+            );
         }
 
         VillagerProfile profile = this.profiles.get(relativeId);
         if (profile == null || profile.name().isBlank()) {
-            return "";
+            return null;
         }
-        return profile.alive() ? profile.name() : profile.name() + " (deceased)";
+        return new VillagerFamilyTreeSnapshot.FamilyMember(profile.name(), profile.gender(), profile.alive());
     }
 
     private boolean addParentChild(UUID parentId, UUID childId) {
         return addRelationshipRaw(childId, RelationshipType.PARENT, parentId)
                 | addRelationshipRaw(parentId, RelationshipType.CHILD, childId);
+    }
+
+    private boolean addParentChildDetail(UUID parentId, UUID childId, RelationshipType parentType, RelationshipType childType) {
+        return addRelationshipRaw(childId, parentType, parentId)
+                | addRelationshipRaw(parentId, childType, childId);
     }
 
     private boolean addSymmetric(UUID subjectId, RelationshipType type, UUID targetId) {
@@ -392,6 +474,10 @@ public class VillagerSocialGraphSavedData extends SavedData {
     public enum RelationshipType {
         PARENT("parent"),
         CHILD("child"),
+        BIRTH_PARENT("birth_parent"),
+        BIRTH_CHILD("birth_child"),
+        ADOPTIVE_PARENT("adoptive_parent"),
+        ADOPTIVE_CHILD("adoptive_child"),
         SIBLING("sibling"),
         SPOUSE("spouse"),
         FRIEND("friend"),
