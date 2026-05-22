@@ -904,6 +904,54 @@
   ],
   "openings": [
     {
+      "id": "global_new_village_opening",
+      "text": "You must be new here. What brings you to our village?",
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral",
+        "cautious"
+      ],
+      "first_village_interaction_only": true,
+      "show_for_babies": false
+    },
+    {
+      "id": "global_new_villager_opening",
+      "text": "I haven't seen you before. What brings you here?",
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral",
+        "cautious"
+      ],
+      "first_conversation_only": true,
+      "show_for_babies": false
+    },
+    {
+      "id": "baby_new_village_opening",
+      "text": "You must be new here. Are you visiting?",
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral",
+        "cautious"
+      ],
+      "first_village_interaction_only": true,
+      "show_for_adults": false
+    },
+    {
+      "id": "baby_new_villager_opening",
+      "text": "I haven't seen you before. Are you new?",
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral",
+        "cautious"
+      ],
+      "first_conversation_only": true,
+      "show_for_adults": false
+    },
+    {
       "id": "global_friendly_opening",
       "text": "Good to see you. What can I do for you?",
       "dispositions": [

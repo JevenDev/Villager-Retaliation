@@ -20,6 +20,7 @@ public record DialogueContext(
         int reputation,
         VillagerReputationLevel reputationLevel,
         boolean firstConversation,
+        boolean firstVillageInteraction,
         WeatherState weather,
         TimeOfDay timeOfDay,
         long lastPositiveDialogueReputationGameTime,

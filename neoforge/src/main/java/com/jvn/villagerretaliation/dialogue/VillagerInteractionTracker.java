@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.dialogue;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
+import com.jvn.villagerretaliation.village.VillageMembership;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,13 +23,14 @@ public final class VillagerInteractionTracker {
     }
 
     public static InteractionState getState(ServerLevel level, Villager villager, ServerPlayer player) {
-        VillagerInteractionSavedData.InteractionEntry entry = VillagerInteractionSavedData.get(level)
-                .getOrEmptyForRead(villager.getUUID(), player.getUUID());
+        VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
+        VillagerInteractionSavedData.InteractionEntry entry = data.getOrEmptyForRead(villager.getUUID(), player.getUUID());
         long gameTime = level.getGameTime();
         long day = level.getDayTime() / 24000L;
         long optionResetTicks = VillagerRetaliationConfig.REPEATED_DIALOGUE_OPTION_RESET_TICKS.get();
         return new InteractionState(
                 !entry.hasTalked(),
+                isFirstVillageInteraction(level, villager, player, data),
                 entry.recentDialogueIds(),
                 entry.lastPositiveDialogueReputationGameTime(),
                 entry.lastPositiveDialogueReputationDay(),
@@ -290,6 +292,19 @@ public final class VillagerInteractionTracker {
                 targetPos,
                 level.getGameTime()
         );
+    }
+
+    private static boolean isFirstVillageInteraction(
+            ServerLevel level,
+            Villager villager,
+            ServerPlayer player,
+            VillagerInteractionSavedData data) {
+        return VillageMembership.resolve(level, villager)
+                .map(area -> !data.hasTalkedWithAny(
+                        area.members().stream().map(Villager::getUUID).toList(),
+                        player.getUUID()
+                ))
+                .orElse(false);
     }
 
     public static Optional<StoryHintReport> shareableStory(ServerLevel level, Villager villager, ServerPlayer player) {
@@ -560,6 +575,7 @@ public final class VillagerInteractionTracker {
 
     public record InteractionState(
             boolean firstConversation,
+            boolean firstVillageInteraction,
             List<String> recentDialogueIds,
             long lastPositiveDialogueReputationGameTime,
             long lastPositiveDialogueReputationDay,

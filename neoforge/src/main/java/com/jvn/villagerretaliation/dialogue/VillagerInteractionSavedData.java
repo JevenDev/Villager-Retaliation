@@ -600,6 +600,16 @@ public class VillagerInteractionSavedData extends SavedData {
         return entry == null ? new InteractionEntry() : entry;
     }
 
+    boolean hasTalkedWithAny(Iterable<UUID> villagerIds, UUID playerId) {
+        for (UUID villagerId : villagerIds) {
+            InteractionEntry entry = getIndexedEntry(villagerId, playerId);
+            if (entry != null && entry.hasTalked()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private void putEntry(UUID villagerId, UUID playerId, InteractionEntry entry) {
         this.entries.computeIfAbsent(villagerId, ignored -> new HashMap<>()).put(playerId, entry);
         this.villagerIdsByPlayer.computeIfAbsent(playerId, ignored -> new LinkedHashSet<>()).add(villagerId);

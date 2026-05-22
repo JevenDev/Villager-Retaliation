@@ -474,6 +474,7 @@ public final class VillagerInteractionService {
                 reputation,
                 reputationLevel,
                 interactionState.firstConversation(),
+                interactionState.firstVillageInteraction(),
                 weatherState(level, villager),
                 timeOfDay(level),
                 interactionState.lastPositiveDialogueReputationGameTime(),

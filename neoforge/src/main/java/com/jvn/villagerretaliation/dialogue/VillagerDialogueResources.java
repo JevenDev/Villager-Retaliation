@@ -46,8 +46,16 @@ public final class VillagerDialogueResources {
     }
 
     public static List<String> openingLines(DialogueContext context, DialogueDisposition disposition) {
-        return load(context.level().getServer(), context.locale()).openings().stream()
+        List<ConversationLine> candidates = load(context.level().getServer(), context.locale()).openings().stream()
                 .filter(line -> line.matches(context, disposition))
+                .toList();
+        List<ConversationLine> firstInteractionCandidates = candidates.stream()
+                .filter(ConversationLine::firstInteractionSpecific)
+                .toList();
+        if (!firstInteractionCandidates.isEmpty()) {
+            candidates = firstInteractionCandidates;
+        }
+        return candidates.stream()
                 .map(ConversationLine::text)
                 .toList();
     }
@@ -454,6 +462,8 @@ public final class VillagerDialogueResources {
             int weight = Math.max(1, readInt(entry, "weight", 10));
             boolean showForAdults = readBoolean(entry, "show_for_adults", true);
             boolean showForBabies = readBoolean(entry, "show_for_babies", true);
+            boolean firstConversationOnly = readBoolean(entry, "first_conversation_only");
+            boolean firstVillageInteractionOnly = readBoolean(entry, "first_village_interaction_only");
             String resolvedId = id.isBlank() ? fallbackId(location, key, index) : id;
             lines.put(resolvedId, new ConversationLine(
                     resolvedId,
@@ -462,7 +472,9 @@ public final class VillagerDialogueResources {
                     showForBabies,
                     professions,
                     dispositions,
-                    weight
+                    weight,
+                    firstConversationOnly,
+                    firstVillageInteractionOnly
             ));
             index++;
         }
@@ -854,7 +866,9 @@ public final class VillagerDialogueResources {
             boolean showForBabies,
             Set<VillagerProfession> professions,
             Set<DialogueDisposition> dispositions,
-            int weight) {
+            int weight,
+            boolean firstConversationOnly,
+            boolean firstVillageInteractionOnly) {
         private boolean matches(DialogueContext context, DialogueDisposition disposition) {
             if (context.villager().isBaby()) {
                 if (!this.showForBabies) {
@@ -866,7 +880,17 @@ public final class VillagerDialogueResources {
             if (!this.professions.isEmpty() && !this.professions.contains(context.profession())) {
                 return false;
             }
+            if (this.firstConversationOnly && !context.firstConversation()) {
+                return false;
+            }
+            if (this.firstVillageInteractionOnly && !context.firstVillageInteraction()) {
+                return false;
+            }
             return this.dispositions.isEmpty() || this.dispositions.contains(disposition);
+        }
+
+        private boolean firstInteractionSpecific() {
+            return this.firstConversationOnly || this.firstVillageInteractionOnly;
         }
     }
 

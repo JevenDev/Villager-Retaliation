@@ -250,7 +250,7 @@ Message fields:
 }
 ```
 
-Openings and closings support `id`, `text`, `professions`, `dispositions`, `show_for_adults`, `show_for_babies`, and `weight`.
+Openings and closings support `id`, `text`, `professions`, `dispositions`, `show_for_adults`, `show_for_babies`, `first_conversation_only`, `first_village_interaction_only`, and `weight`.
 
 ## Pacify Lines
 
