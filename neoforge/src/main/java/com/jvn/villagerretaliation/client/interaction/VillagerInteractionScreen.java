@@ -11,6 +11,7 @@ import com.jvn.villagerretaliation.network.VillagerRecruitRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerTradeRequestPayload;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.social.VillagerFamilyTreeSnapshot;
+import com.jvn.villagerretaliation.social.VillagerRelationshipSnapshot;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.villager.VillagerGender;
 import java.util.ArrayList;
@@ -36,7 +37,7 @@ public class VillagerInteractionScreen extends Screen {
     private static final int OPTION_HEIGHT = 18;
     private static final int OPTION_GAP = 0;
     private static final int OPTION_VIEWPORT_ROWS = 5;
-    private static final int INFO_PANEL_ROWS = 6;
+    private static final int INFO_PANEL_ROWS = 7;
     private static final int OPTION_TEXT_INSET = 10;
     private static final int OPTION_SCROLLBAR_OFFSET = 2;
     private static final int OPTION_SCROLLBAR_WIDTH = 2;
@@ -87,6 +88,7 @@ public class VillagerInteractionScreen extends Screen {
     private final List<String> knownLikedGiftNames = new ArrayList<>();
     private final List<String> knownDislikedGiftNames = new ArrayList<>();
     private final VillagerFamilyTreeSnapshot familyTree;
+    private final VillagerRelationshipSnapshot relationships;
     private DialoguePage page = DialoguePage.ROOT;
     private int selectedOption;
     private boolean closingFromServer;
@@ -112,7 +114,8 @@ public class VillagerInteractionScreen extends Screen {
             List<DialogueOptionDefinition> dialogueOptions,
             List<String> knownLikedGiftNames,
             List<String> knownDislikedGiftNames,
-            VillagerFamilyTreeSnapshot familyTree) {
+            VillagerFamilyTreeSnapshot familyTree,
+            VillagerRelationshipSnapshot relationships) {
         super(Component.literal("Villager Interaction"));
         this.villagerEntityId = villagerEntityId;
         this.villagerName = villagerName;
@@ -127,6 +130,7 @@ public class VillagerInteractionScreen extends Screen {
         this.knownLikedGiftNames.addAll(knownLikedGiftNames);
         this.knownDislikedGiftNames.addAll(knownDislikedGiftNames);
         this.familyTree = familyTree == null ? VillagerFamilyTreeSnapshot.EMPTY : familyTree;
+        this.relationships = relationships == null ? VillagerRelationshipSnapshot.EMPTY : relationships;
         ClientVillagerConversationState.start(villagerEntityId);
     }
 
@@ -248,6 +252,7 @@ public class VillagerInteractionScreen extends Screen {
 
         if (tryClickBackButton(mouseX, mouseY)
                 || tryClickFamilyButton(mouseX, mouseY)
+                || tryClickRelationshipButton(mouseX, mouseY)
                 || tryBeginScrollbarDrag(mouseX, mouseY)
                 || tryActivateHoveredOption(mouseX, mouseY)) {
             return true;
@@ -332,6 +337,8 @@ public class VillagerInteractionScreen extends Screen {
             addAncestryOptions();
         } else if (this.page == DialoguePage.DESCENDANTS) {
             addDescendantOptions();
+        } else if (this.page == DialoguePage.RELATIONSHIPS) {
+            addRelationshipOptions();
         } else if (this.page == DialoguePage.RECRUIT) {
             addRecruitOptions();
         } else if (this.page == DialoguePage.ROOT) {
@@ -373,6 +380,9 @@ public class VillagerInteractionScreen extends Screen {
                 this.options.add(DialogueOption.enabled("Inventory", this::requestInventory));
             }
             this.options.add(DialogueOption.enabled("Recruit", this::openRecruitPage));
+            if (this.relationships.hasRelationships()) {
+                this.options.add(DialogueOption.enabled("Relationships", this::openRelationshipPage));
+            }
         }
         this.options.add(DialogueOption.enabled("Goodbye", this::leaveConversation));
     }
@@ -436,6 +446,21 @@ public class VillagerInteractionScreen extends Screen {
         }
     }
 
+    private void addRelationshipOptions() {
+        for (VillagerRelationshipSnapshot.RomanticBondView bond : this.relationships.current()) {
+            this.options.add(DialogueOption.enabled(bond.displayLabel(), () -> {
+            }));
+        }
+        for (VillagerRelationshipSnapshot.RomanticBondView bond : this.relationships.past()) {
+            this.options.add(DialogueOption.enabled(bond.displayLabel(), () -> {
+            }));
+        }
+        if (this.options.isEmpty()) {
+            this.options.add(DialogueOption.enabled("No known relationships", () -> {
+            }));
+        }
+    }
+
     private void addGenderedFamilyRows(
             String maleLabel,
             String femaleLabel,
@@ -476,6 +501,11 @@ public class VillagerInteractionScreen extends Screen {
 
     private void openFamilyPage() {
         this.page = DialoguePage.FAMILY;
+        rebuildOptions();
+    }
+
+    private void openRelationshipPage() {
+        this.page = DialoguePage.RELATIONSHIPS;
         rebuildOptions();
     }
 
@@ -773,6 +803,7 @@ public class VillagerInteractionScreen extends Screen {
         drawRightAlignedInfo(graphics, moodText(), infoBaseY + infoLineGap * 3, moodColor(this.mood), dividerX);
         drawRightAlignedInfo(graphics, reputationText(), infoBaseY + infoLineGap * 4, INFO_LABEL_COLOR, dividerX);
         renderFamilyButton(graphics, mouseX, mouseY, infoBaseY + infoLineGap * 5, dividerX);
+        renderRelationshipButton(graphics, mouseX, mouseY, infoBaseY + infoLineGap * 6, dividerX);
     }
 
     private void drawRightAlignedInfo(GuiGraphics graphics, String text, int y, int color, int dividerX) {
@@ -790,6 +821,19 @@ public class VillagerInteractionScreen extends Screen {
                 ? INFO_VALUE_COLOR
                 : hovered ? 0xFFE5E5DE : INFO_SECONDARY_COLOR;
         if (hovered || familyPageActive) {
+            graphics.fill(bounds.left() - 6, bounds.top() - 2, bounds.right() + 4, bounds.bottom() + 2, hovered ? 0x30000000 : 0x18000000);
+        }
+        graphics.drawString(this.font, text, bounds.left(), y, color, false);
+    }
+
+    private void renderRelationshipButton(GuiGraphics graphics, int mouseX, int mouseY, int y, int dividerX) {
+        String text = relationshipButtonText();
+        FamilyButtonBounds bounds = familyButtonBounds(y, dividerX, text);
+        boolean hovered = bounds.contains(mouseX, mouseY);
+        int color = this.page == DialoguePage.RELATIONSHIPS
+                ? INFO_VALUE_COLOR
+                : hovered ? 0xFFE5E5DE : INFO_SECONDARY_COLOR;
+        if (hovered || this.page == DialoguePage.RELATIONSHIPS) {
             graphics.fill(bounds.left() - 6, bounds.top() - 2, bounds.right() + 4, bounds.bottom() + 2, hovered ? 0x30000000 : 0x18000000);
         }
         graphics.drawString(this.font, text, bounds.left(), y, color, false);
@@ -911,6 +955,14 @@ public class VillagerInteractionScreen extends Screen {
             return false;
         }
         openFamilyPage();
+        return true;
+    }
+
+    private boolean tryClickRelationshipButton(double mouseX, double mouseY) {
+        if (!isPointInsideRelationshipButton(mouseX, mouseY)) {
+            return false;
+        }
+        openRelationshipPage();
         return true;
     }
 
@@ -1138,7 +1190,7 @@ public class VillagerInteractionScreen extends Screen {
         return Math.max(
                 Math.max(Math.max(this.font.width(this.villagerName), this.font.width(this.professionName)),
                         Math.max(Math.max(this.font.width(genderText()), this.font.width(moodText())), this.font.width(reputationText()))),
-                this.font.width(familyButtonText())
+                Math.max(this.font.width(familyButtonText()), this.font.width(relationshipButtonText()))
         );
     }
 
@@ -1159,10 +1211,21 @@ public class VillagerInteractionScreen extends Screen {
         return count <= 0 ? "Family Tree" : "Family Tree: " + count;
     }
 
+    private String relationshipButtonText() {
+        int count = this.relationships.relationshipCount();
+        return count <= 0 ? "Relationships" : "Relationships: " + count;
+    }
+
     private boolean isPointInsideFamilyButton(double mouseX, double mouseY) {
         int infoBaseY = Mth.floor(optionTextTop(conversationInfoTop()));
         int y = infoBaseY + optionStride() * 5;
         return familyButtonBounds(y, dividerX(), familyButtonText()).contains(mouseX, mouseY);
+    }
+
+    private boolean isPointInsideRelationshipButton(double mouseX, double mouseY) {
+        int infoBaseY = Mth.floor(optionTextTop(conversationInfoTop()));
+        int y = infoBaseY + optionStride() * 6;
+        return familyButtonBounds(y, dividerX(), relationshipButtonText()).contains(mouseX, mouseY);
     }
 
     private FamilyButtonBounds familyButtonBounds(int y, int dividerX, String text) {
@@ -1400,6 +1463,7 @@ public class VillagerInteractionScreen extends Screen {
         FAMILY,
         ANCESTRY,
         DESCENDANTS,
+        RELATIONSHIPS,
         RECRUIT
     }
 

@@ -96,6 +96,10 @@ public final class VillagerSocialGraphService {
         return VillagerSocialGraphSavedData.get(level).familySnapshot(level, villager);
     }
 
+    public static VillagerRelationshipSnapshot relationshipSnapshot(ServerLevel level, Villager villager) {
+        return VillagerSocialGraphSavedData.get(level).relationshipSnapshot(level, villager);
+    }
+
     private static String deathCause(DamageSource source) {
         Entity attacker = source.getEntity();
         String cause = source.getMsgId();

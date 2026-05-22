@@ -60,7 +60,8 @@ public final class VillagerInteractionClientHandler {
                 payload.dialogueOptions(),
                 payload.knownLikedGiftNames(),
                 payload.knownDislikedGiftNames(),
-                payload.familyTree()
+                payload.familyTree(),
+                payload.relationships()
         ));
     }
 

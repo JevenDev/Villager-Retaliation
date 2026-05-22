@@ -30,6 +30,7 @@ public class VillagerSocialGraphSavedData extends SavedData {
     private static final String DATA_NAME = "villagerretaliation_social_graph";
     private static final String TAG_PROFILES = "Profiles";
     private static final String TAG_RELATIONSHIPS = "Relationships";
+    private static final String TAG_ROMANTIC_BONDS = "RomanticBonds";
     private static final String TAG_ID = "Id";
     private static final String TAG_NAME = "Name";
     private static final String TAG_GENDER = "Gender";
@@ -47,9 +48,19 @@ public class VillagerSocialGraphSavedData extends SavedData {
     private static final String TAG_FROM = "From";
     private static final String TAG_TO = "To";
     private static final String TAG_TYPE = "Type";
+    private static final String TAG_FIRST = "First";
+    private static final String TAG_SECOND = "Second";
+    private static final String TAG_STAGE = "Stage";
+    private static final String TAG_AFFECTION = "Affection";
+    private static final String TAG_COMPATIBILITY = "Compatibility";
+    private static final String TAG_STARTED_GAME_TIME = "StartedGameTime";
+    private static final String TAG_STAGE_SINCE_GAME_TIME = "StageSinceGameTime";
+    private static final String TAG_ENDED_GAME_TIME = "EndedGameTime";
+    private static final String TAG_END_REASON = "EndReason";
 
     private final Map<UUID, VillagerProfile> profiles = new HashMap<>();
     private final Map<UUID, EnumMap<RelationshipType, Set<UUID>>> relationships = new HashMap<>();
+    private final Map<RomanticPairKey, RomanticBond> romanticBonds = new HashMap<>();
 
     public static VillagerSocialGraphSavedData get(ServerLevel level) {
         return level.getServer().overworld().getDataStorage().computeIfAbsent(
@@ -82,6 +93,19 @@ public class VillagerSocialGraphSavedData extends SavedData {
             }
             data.addRelationshipRaw(relationshipTag.getUUID(TAG_FROM), type, relationshipTag.getUUID(TAG_TO));
         }
+
+        ListTag romanticBondsTag = tag.getList(TAG_ROMANTIC_BONDS, Tag.TAG_COMPOUND);
+        for (Tag rawBond : romanticBondsTag) {
+            if (!(rawBond instanceof CompoundTag bondTag)
+                    || !bondTag.hasUUID(TAG_FIRST)
+                    || !bondTag.hasUUID(TAG_SECOND)) {
+                continue;
+            }
+            RomanticBond bond = RomanticBond.load(bondTag);
+            if (bond != null) {
+                data.romanticBonds.put(RomanticPairKey.of(bond.firstId(), bond.secondId()), bond);
+            }
+        }
         return data;
     }
 
@@ -107,6 +131,12 @@ public class VillagerSocialGraphSavedData extends SavedData {
             }
         }
         tag.put(TAG_RELATIONSHIPS, relationshipsTag);
+
+        ListTag romanticBondsTag = new ListTag();
+        for (RomanticBond bond : this.romanticBonds.values()) {
+            romanticBondsTag.add(bond.save());
+        }
+        tag.put(TAG_ROMANTIC_BONDS, romanticBondsTag);
         return tag;
     }
 
@@ -129,7 +159,9 @@ public class VillagerSocialGraphSavedData extends SavedData {
 
     public void markDead(ServerLevel level, Villager villager, String deathCause) {
         VillagerProfile profile = ensureProfile(level, villager);
-        if (profile.markDead(level, deathCause)) {
+        boolean changed = profile.markDead(level, deathCause);
+        changed |= markRomanticBondsWidowed(level, villager.getUUID(), deathCause);
+        if (changed) {
             setDirty();
         }
     }
@@ -173,6 +205,29 @@ public class VillagerSocialGraphSavedData extends SavedData {
                     }
                     changed = true;
                 }
+            }
+        }
+
+        if (!this.romanticBonds.isEmpty()) {
+            Map<RomanticPairKey, RomanticBond> updatedBonds = new HashMap<>();
+            for (RomanticBond bond : this.romanticBonds.values()) {
+                RomanticBond updatedBond = bond.replacing(sourceId, targetId);
+                if (updatedBond.firstId().equals(updatedBond.secondId())) {
+                    changed = true;
+                    continue;
+                }
+                updatedBonds.merge(
+                        RomanticPairKey.of(updatedBond.firstId(), updatedBond.secondId()),
+                        updatedBond,
+                        RomanticBond::prefer
+                );
+                if (updatedBond != bond) {
+                    changed = true;
+                }
+            }
+            if (changed) {
+                this.romanticBonds.clear();
+                this.romanticBonds.putAll(updatedBonds);
             }
         }
 
@@ -236,6 +291,121 @@ public class VillagerSocialGraphSavedData extends SavedData {
                 ancestorGenerations(level, villagerId),
                 descendantGenerations(level, villagerId)
         );
+    }
+
+    public VillagerRelationshipSnapshot relationshipSnapshot(ServerLevel level, Villager villager) {
+        ensureProfile(level, villager);
+        UUID villagerId = villager.getUUID();
+        List<VillagerRelationshipSnapshot.RomanticBondView> current = new ArrayList<>();
+        List<VillagerRelationshipSnapshot.RomanticBondView> past = new ArrayList<>();
+
+        for (RomanticBond bond : this.romanticBonds.values()) {
+            if (!bond.includes(villagerId)) {
+                continue;
+            }
+            UUID partnerId = bond.other(villagerId);
+            VillagerFamilyTreeSnapshot.FamilyMember partner = profileMember(level, partnerId);
+            if (partner == null || partner.name().isBlank()) {
+                continue;
+            }
+
+            VillagerRelationshipSnapshot.RomanticBondView view = new VillagerRelationshipSnapshot.RomanticBondView(
+                    partner.name(),
+                    partner.alive(),
+                    bond.stage(),
+                    bond.affection(),
+                    bond.compatibility(),
+                    bond.startedGameTime(),
+                    bond.stageSinceGameTime(),
+                    bond.endedGameTime(),
+                    bond.endReason()
+            );
+            if (bond.stage().active()) {
+                current.add(view);
+            } else {
+                past.add(view);
+            }
+        }
+
+        current.sort((first, second) -> first.partnerName().compareToIgnoreCase(second.partnerName()));
+        past.sort((first, second) -> first.partnerName().compareToIgnoreCase(second.partnerName()));
+        return new VillagerRelationshipSnapshot(List.copyOf(current), List.copyOf(past));
+    }
+
+    public RelationshipValidation setRomanticRelationshipStage(
+            ServerLevel level,
+            Villager first,
+            Villager second,
+            VillagerRelationshipStage stage
+    ) {
+        RelationshipValidation validation = validateRomanticPair(level, first, second, stage);
+        if (!validation.allowed()) {
+            return validation;
+        }
+
+        RomanticPairKey key = RomanticPairKey.of(first.getUUID(), second.getUUID());
+        RomanticBond bond = this.romanticBonds.get(key);
+        long gameTime = level.getGameTime();
+        if (bond == null && !stage.active()) {
+            return RelationshipValidation.blocked("Those villagers do not have an existing relationship.");
+        }
+        if (bond == null) {
+            int compatibility = deterministicCompatibility(first.getUUID(), second.getUUID());
+            int affection = defaultAffection(stage, compatibility);
+            bond = RomanticBond.create(key.first(), key.second(), stage, affection, compatibility, gameTime);
+            this.romanticBonds.put(key, bond);
+        } else {
+            bond.setStage(stage, gameTime, "");
+            bond.setAffection(Math.max(bond.affection(), defaultAffection(stage, bond.compatibility())));
+        }
+
+        if (stage == VillagerRelationshipStage.MARRIED) {
+            linkSpouses(level, first, second);
+        } else if (stage == VillagerRelationshipStage.SEPARATED) {
+            bond.setStage(stage, gameTime, "separated");
+            removeSymmetric(first.getUUID(), RelationshipType.SPOUSE, second.getUUID());
+        }
+        setDirty();
+        return RelationshipValidation.success();
+    }
+
+    public RelationshipValidation validateRomanticPair(
+            ServerLevel level,
+            Villager first,
+            Villager second,
+            VillagerRelationshipStage stage
+    ) {
+        ensureProfile(level, first);
+        ensureProfile(level, second);
+        if (stage == null) {
+            return RelationshipValidation.blocked("Unknown relationship stage.");
+        }
+        if (stage == VillagerRelationshipStage.WIDOWED) {
+            return RelationshipValidation.blocked("Widowed relationships are applied automatically when a partner dies.");
+        }
+        if (first.getUUID().equals(second.getUUID())) {
+            return RelationshipValidation.blocked("That is the same villager.");
+        }
+        if (first.isBaby() || second.isBaby()) {
+            return RelationshipValidation.blocked("Romantic relationships need adult villagers.");
+        }
+        if (!first.isAlive() || !second.isAlive()) {
+            return RelationshipValidation.blocked("Both villagers must be alive.");
+        }
+        if (isTooCloselyRelated(first.getUUID(), second.getUUID())) {
+            return RelationshipValidation.blocked("Those villagers are too closely related.");
+        }
+        if (stage.exclusive()) {
+            RomanticBond firstExclusive = activeExclusiveBond(first.getUUID(), second.getUUID());
+            if (firstExclusive != null) {
+                return RelationshipValidation.blocked(profileDisplayName(level, first.getUUID()) + " is already with someone else.");
+            }
+            RomanticBond secondExclusive = activeExclusiveBond(second.getUUID(), first.getUUID());
+            if (secondExclusive != null) {
+                return RelationshipValidation.blocked(profileDisplayName(level, second.getUUID()) + " is already with someone else.");
+            }
+        }
+        return RelationshipValidation.success();
     }
 
     public Set<UUID> relationships(UUID subjectId, RelationshipType type) {
@@ -307,6 +477,46 @@ public class VillagerSocialGraphSavedData extends SavedData {
         if (addSymmetric(first.getUUID(), RelationshipType.SPOUSE, second.getUUID())) {
             setDirty();
         }
+    }
+
+    private boolean markRomanticBondsWidowed(ServerLevel level, UUID deadVillagerId, String deathCause) {
+        boolean changed = false;
+        long gameTime = level.getGameTime();
+        String reason = deathCause == null || deathCause.isBlank() ? "partner died" : "partner died: " + deathCause;
+        for (RomanticBond bond : this.romanticBonds.values()) {
+            if (bond.includes(deadVillagerId) && bond.stage().active()) {
+                bond.setStage(VillagerRelationshipStage.WIDOWED, gameTime, reason);
+                changed = true;
+            }
+        }
+        return changed;
+    }
+
+    private RomanticBond activeExclusiveBond(UUID villagerId, UUID allowedPartnerId) {
+        for (RomanticBond bond : this.romanticBonds.values()) {
+            if (bond.includes(villagerId)
+                    && !bond.includes(allowedPartnerId)
+                    && bond.stage().active()
+                    && bond.stage().exclusive()) {
+                return bond;
+            }
+        }
+        return null;
+    }
+
+    private static int deterministicCompatibility(UUID firstId, UUID secondId) {
+        int hash = firstId.hashCode() * 31 + secondId.hashCode();
+        return 35 + Math.floorMod(hash, 66);
+    }
+
+    private static int defaultAffection(VillagerRelationshipStage stage, int compatibility) {
+        return switch (stage) {
+            case CRUSH -> Math.max(15, compatibility / 3);
+            case DATING -> Math.max(35, compatibility / 2);
+            case ENGAGED -> Math.max(65, compatibility);
+            case MARRIED -> Math.max(80, compatibility);
+            case SEPARATED, WIDOWED -> 0;
+        };
     }
 
     private boolean isTooCloselyRelated(UUID firstId, UUID secondId) {
@@ -529,6 +739,11 @@ public class VillagerSocialGraphSavedData extends SavedData {
         return new VillagerFamilyTreeSnapshot.FamilyMember(profile.name(), profile.gender(), profile.alive());
     }
 
+    private String profileDisplayName(ServerLevel level, UUID relativeId) {
+        VillagerFamilyTreeSnapshot.FamilyMember member = profileMember(level, relativeId);
+        return member == null || member.name().isBlank() ? "Villager" : member.name();
+    }
+
     private boolean addParentChild(UUID parentId, UUID childId) {
         return addRelationshipRaw(childId, RelationshipType.PARENT, parentId)
                 | addRelationshipRaw(parentId, RelationshipType.CHILD, childId);
@@ -542,6 +757,30 @@ public class VillagerSocialGraphSavedData extends SavedData {
     private boolean addSymmetric(UUID subjectId, RelationshipType type, UUID targetId) {
         return addRelationshipRaw(subjectId, type, targetId)
                 | addRelationshipRaw(targetId, type, subjectId);
+    }
+
+    private boolean removeSymmetric(UUID subjectId, RelationshipType type, UUID targetId) {
+        return removeRelationshipRaw(subjectId, type, targetId)
+                | removeRelationshipRaw(targetId, type, subjectId);
+    }
+
+    private boolean removeRelationshipRaw(UUID subjectId, RelationshipType type, UUID targetId) {
+        EnumMap<RelationshipType, Set<UUID>> byType = this.relationships.get(subjectId);
+        if (byType == null) {
+            return false;
+        }
+        Set<UUID> targets = byType.get(type);
+        if (targets == null) {
+            return false;
+        }
+        boolean removed = targets.remove(targetId);
+        if (targets.isEmpty()) {
+            byType.remove(type);
+        }
+        if (byType.isEmpty()) {
+            this.relationships.remove(subjectId);
+        }
+        return removed;
     }
 
     private boolean addRelationshipRaw(UUID subjectId, RelationshipType type, UUID targetId) {
@@ -596,6 +835,193 @@ public class VillagerSocialGraphSavedData extends SavedData {
 
         static BreedingValidation blocked(String reason) {
             return new BreedingValidation(false, reason);
+        }
+    }
+
+    public record RelationshipValidation(boolean allowed, String reason) {
+        public static RelationshipValidation success() {
+            return new RelationshipValidation(true, "");
+        }
+
+        public static RelationshipValidation blocked(String reason) {
+            return new RelationshipValidation(false, reason);
+        }
+    }
+
+    private record RomanticPairKey(UUID first, UUID second) {
+        private static RomanticPairKey of(UUID first, UUID second) {
+            return first.compareTo(second) <= 0
+                    ? new RomanticPairKey(first, second)
+                    : new RomanticPairKey(second, first);
+        }
+    }
+
+    private static class RomanticBond {
+        private UUID firstId;
+        private UUID secondId;
+        private VillagerRelationshipStage stage;
+        private int affection;
+        private int compatibility;
+        private long startedGameTime;
+        private long stageSinceGameTime;
+        private long endedGameTime = Long.MIN_VALUE;
+        private String endReason = "";
+
+        private RomanticBond(UUID firstId, UUID secondId) {
+            RomanticPairKey key = RomanticPairKey.of(firstId, secondId);
+            this.firstId = key.first();
+            this.secondId = key.second();
+        }
+
+        static RomanticBond create(
+                UUID firstId,
+                UUID secondId,
+                VillagerRelationshipStage stage,
+                int affection,
+                int compatibility,
+                long gameTime
+        ) {
+            RomanticBond bond = new RomanticBond(firstId, secondId);
+            bond.stage = stage;
+            bond.affection = clampScore(affection);
+            bond.compatibility = clampScore(compatibility);
+            bond.startedGameTime = gameTime;
+            bond.stageSinceGameTime = gameTime;
+            return bond;
+        }
+
+        static RomanticBond load(CompoundTag tag) {
+            VillagerRelationshipStage stage = VillagerRelationshipStage.bySerializedName(tag.getString(TAG_STAGE));
+            if (stage == null) {
+                return null;
+            }
+            RomanticBond bond = new RomanticBond(tag.getUUID(TAG_FIRST), tag.getUUID(TAG_SECOND));
+            bond.stage = stage;
+            bond.affection = clampScore(tag.getInt(TAG_AFFECTION));
+            bond.compatibility = clampScore(tag.getInt(TAG_COMPATIBILITY));
+            bond.startedGameTime = tag.getLong(TAG_STARTED_GAME_TIME);
+            bond.stageSinceGameTime = tag.getLong(TAG_STAGE_SINCE_GAME_TIME);
+            bond.endedGameTime = tag.contains(TAG_ENDED_GAME_TIME, Tag.TAG_LONG)
+                    ? tag.getLong(TAG_ENDED_GAME_TIME)
+                    : Long.MIN_VALUE;
+            bond.endReason = tag.getString(TAG_END_REASON);
+            return bond;
+        }
+
+        CompoundTag save() {
+            CompoundTag tag = new CompoundTag();
+            tag.putUUID(TAG_FIRST, this.firstId);
+            tag.putUUID(TAG_SECOND, this.secondId);
+            tag.putString(TAG_STAGE, this.stage.serializedName());
+            tag.putInt(TAG_AFFECTION, this.affection);
+            tag.putInt(TAG_COMPATIBILITY, this.compatibility);
+            tag.putLong(TAG_STARTED_GAME_TIME, this.startedGameTime);
+            tag.putLong(TAG_STAGE_SINCE_GAME_TIME, this.stageSinceGameTime);
+            if (this.endedGameTime != Long.MIN_VALUE) {
+                tag.putLong(TAG_ENDED_GAME_TIME, this.endedGameTime);
+            }
+            tag.putString(TAG_END_REASON, this.endReason);
+            return tag;
+        }
+
+        RomanticBond replacing(UUID sourceId, UUID targetId) {
+            if (!includes(sourceId)) {
+                return this;
+            }
+            RomanticBond copy = copy();
+            if (copy.firstId.equals(sourceId)) {
+                copy.firstId = targetId;
+            }
+            if (copy.secondId.equals(sourceId)) {
+                copy.secondId = targetId;
+            }
+            RomanticPairKey key = RomanticPairKey.of(copy.firstId, copy.secondId);
+            copy.firstId = key.first();
+            copy.secondId = key.second();
+            return copy;
+        }
+
+        static RomanticBond prefer(RomanticBond first, RomanticBond second) {
+            return first.stageSinceGameTime >= second.stageSinceGameTime ? first : second;
+        }
+
+        private RomanticBond copy() {
+            RomanticBond copy = new RomanticBond(this.firstId, this.secondId);
+            copy.stage = this.stage;
+            copy.affection = this.affection;
+            copy.compatibility = this.compatibility;
+            copy.startedGameTime = this.startedGameTime;
+            copy.stageSinceGameTime = this.stageSinceGameTime;
+            copy.endedGameTime = this.endedGameTime;
+            copy.endReason = this.endReason;
+            return copy;
+        }
+
+        boolean includes(UUID villagerId) {
+            return this.firstId.equals(villagerId) || this.secondId.equals(villagerId);
+        }
+
+        UUID other(UUID villagerId) {
+            return this.firstId.equals(villagerId) ? this.secondId : this.firstId;
+        }
+
+        void setStage(VillagerRelationshipStage stage, long gameTime, String endReason) {
+            if (this.stage == stage && Objects.equals(this.endReason, endReason)) {
+                return;
+            }
+            this.stage = stage;
+            this.stageSinceGameTime = gameTime;
+            if (stage.active()) {
+                this.endedGameTime = Long.MIN_VALUE;
+                this.endReason = "";
+            } else {
+                this.endedGameTime = gameTime;
+                this.endReason = endReason == null ? "" : endReason;
+            }
+        }
+
+        void setAffection(int affection) {
+            this.affection = clampScore(affection);
+        }
+
+        UUID firstId() {
+            return this.firstId;
+        }
+
+        UUID secondId() {
+            return this.secondId;
+        }
+
+        VillagerRelationshipStage stage() {
+            return this.stage;
+        }
+
+        int affection() {
+            return this.affection;
+        }
+
+        int compatibility() {
+            return this.compatibility;
+        }
+
+        long startedGameTime() {
+            return this.startedGameTime;
+        }
+
+        long stageSinceGameTime() {
+            return this.stageSinceGameTime;
+        }
+
+        long endedGameTime() {
+            return this.endedGameTime;
+        }
+
+        String endReason() {
+            return this.endReason;
+        }
+
+        private static int clampScore(int value) {
+            return Math.max(0, Math.min(100, value));
         }
     }
 

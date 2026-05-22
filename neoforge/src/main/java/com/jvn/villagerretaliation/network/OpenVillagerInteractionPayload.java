@@ -5,6 +5,8 @@ import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.social.VillagerFamilyTreeSnapshot;
+import com.jvn.villagerretaliation.social.VillagerRelationshipSnapshot;
+import com.jvn.villagerretaliation.social.VillagerRelationshipStage;
 import com.jvn.villagerretaliation.villager.VillagerGender;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +29,8 @@ public record OpenVillagerInteractionPayload(
         List<DialogueOptionDefinition> dialogueOptions,
         List<String> knownLikedGiftNames,
         List<String> knownDislikedGiftNames,
-        VillagerFamilyTreeSnapshot familyTree)
+        VillagerFamilyTreeSnapshot familyTree,
+        VillagerRelationshipSnapshot relationships)
         implements CustomPacketPayload {
     public static final Type<OpenVillagerInteractionPayload> TYPE = VillagerPayloads.type("open_villager_interaction");
     public static final StreamCodec<RegistryFriendlyByteBuf, OpenVillagerInteractionPayload> STREAM_CODEC =
@@ -48,6 +51,7 @@ public record OpenVillagerInteractionPayload(
         writeStringList(buffer, payload.knownLikedGiftNames());
         writeStringList(buffer, payload.knownDislikedGiftNames());
         writeFamilyTree(buffer, payload.familyTree());
+        writeRelationships(buffer, payload.relationships());
     }
 
     private static OpenVillagerInteractionPayload decode(RegistryFriendlyByteBuf buffer) {
@@ -65,7 +69,8 @@ public record OpenVillagerInteractionPayload(
                 readDialogueOptions(buffer),
                 readStringList(buffer),
                 readStringList(buffer),
-                readFamilyTree(buffer)
+                readFamilyTree(buffer),
+                readRelationships(buffer)
         );
     }
 
@@ -228,6 +233,53 @@ public record OpenVillagerInteractionPayload(
             descendants.add(new VillagerFamilyTreeSnapshot.DescendantGeneration(buffer.readVarInt(), readFamilyMembers(buffer)));
         }
         return descendants;
+    }
+
+    private static void writeRelationships(RegistryFriendlyByteBuf buffer, VillagerRelationshipSnapshot relationships) {
+        VillagerRelationshipSnapshot safeRelationships = relationships == null ? VillagerRelationshipSnapshot.EMPTY : relationships;
+        writeRomanticBondViews(buffer, safeRelationships.current());
+        writeRomanticBondViews(buffer, safeRelationships.past());
+    }
+
+    private static VillagerRelationshipSnapshot readRelationships(RegistryFriendlyByteBuf buffer) {
+        return new VillagerRelationshipSnapshot(readRomanticBondViews(buffer), readRomanticBondViews(buffer));
+    }
+
+    private static void writeRomanticBondViews(
+            RegistryFriendlyByteBuf buffer,
+            List<VillagerRelationshipSnapshot.RomanticBondView> bonds
+    ) {
+        buffer.writeVarInt(bonds.size());
+        for (VillagerRelationshipSnapshot.RomanticBondView bond : bonds) {
+            buffer.writeUtf(bond.partnerName(), 128);
+            buffer.writeBoolean(bond.partnerAlive());
+            buffer.writeEnum(bond.stage());
+            buffer.writeVarInt(bond.affection());
+            buffer.writeVarInt(bond.compatibility());
+            buffer.writeLong(bond.startedGameTime());
+            buffer.writeLong(bond.stageSinceGameTime());
+            buffer.writeLong(bond.endedGameTime());
+            buffer.writeUtf(bond.endReason(), 128);
+        }
+    }
+
+    private static List<VillagerRelationshipSnapshot.RomanticBondView> readRomanticBondViews(RegistryFriendlyByteBuf buffer) {
+        int size = buffer.readVarInt();
+        List<VillagerRelationshipSnapshot.RomanticBondView> bonds = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            bonds.add(new VillagerRelationshipSnapshot.RomanticBondView(
+                    buffer.readUtf(128),
+                    buffer.readBoolean(),
+                    buffer.readEnum(VillagerRelationshipStage.class),
+                    buffer.readVarInt(),
+                    buffer.readVarInt(),
+                    buffer.readLong(),
+                    buffer.readLong(),
+                    buffer.readLong(),
+                    buffer.readUtf(128)
+            ));
+        }
+        return bonds;
     }
 
     @Override

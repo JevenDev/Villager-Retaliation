@@ -175,9 +175,12 @@ Requires operator.
 
 ```mcfunction
 /villagerretaliation setNearbyReputation <integer>
+/villagerretaliation setNearestRelationship <crush|dating|engaged|married|separated>
 ```
 
 This sets nearby villagers' and wandering traders' reputation toward the executing player. It is mainly useful for testing tiers, trade pricing, despised behavior, feared behavior, pacification, and the debug overlay.
+
+`setNearestRelationship` is a relationship-system debug command. It applies the chosen romantic stage to the two nearest adult villagers, respecting the social graph's adult, alive, close-family, and exclusive-partner validation rules.
 
 Example:
 
