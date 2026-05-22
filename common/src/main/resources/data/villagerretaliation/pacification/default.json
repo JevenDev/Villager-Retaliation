@@ -1,0 +1,11 @@
+{
+  "payments": [
+    {
+      "item": "minecraft:emerald",
+      "min_count": 3,
+      "max_count": 32,
+      "name": "emerald",
+      "plural_name": "emeralds"
+    }
+  ]
+}

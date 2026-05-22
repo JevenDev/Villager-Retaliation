@@ -4,7 +4,7 @@ This page lists shared JSON conventions used across Villager Retaliation's data-
 
 ## Resource Location Shortcuts
 
-For gift item ids, unnamespaced values are treated as Minecraft ids:
+For gift and pacification item ids, unnamespaced values are treated as Minecraft ids:
 
 ```json
 "bread"
@@ -167,4 +167,3 @@ They also accept `#RRGGBB`, `0xRRGGBB`, `#AARRGGBB`, or `0xAARRGGBB`.
 - A misspelled enum value is silently ignored by many loaders.
 - A missing required field usually causes only that entry to be skipped.
 - A broken model JSON falls back to the built-in model, and logs a warning.
-

@@ -459,35 +459,46 @@ public final class VillagerRetaliationHandler {
     }
 
     public static boolean tryPacifyWithEmeralds(Villager villager, Player player, ItemStack interactionStack) {
-        return pacifyWithEmeralds(villager, player, interactionStack).handled();
+        return tryPacifyWithPayment(villager, player, interactionStack);
     }
 
     public static VillagerPacificationResult pacifyWithEmeralds(Villager villager, Player player, ItemStack interactionStack) {
+        return pacifyWithPayment(villager, player, interactionStack).result();
+    }
+
+    public static boolean tryPacifyWithPayment(Villager villager, Player player, ItemStack interactionStack) {
+        return pacifyWithPayment(villager, player, interactionStack).handled();
+    }
+
+    public static VillagerPacificationAttempt pacifyWithPayment(Villager villager, Player player, ItemStack interactionStack) {
         if (villager.level().isClientSide
                 || !villager.isAlive()
                 || !player.isAlive()
-                || !interactionStack.is(Items.EMERALD)
                 || !RETALIATION.isHostileTowards(villager, player, () -> clearAnger(villager))) {
-            return VillagerPacificationResult.NOT_APPLICABLE;
+            return VillagerPacificationAttempt.notApplicable();
+        }
+
+        Optional<PacifyPaymentOffer> payment = VillagerPacifyPaymentResources.offerFor(villager, interactionStack);
+        if (payment.isEmpty()) {
+            return VillagerPacificationAttempt.notApplicable();
         }
 
         if (isPacificationBlockedByReputation(villager, player)) {
             VillagerRetaliationRetaliationUtil.spawnMadParticles(villager);
-            return VillagerPacificationResult.BLOCKED_BY_REPUTATION;
+            return VillagerPacificationAttempt.of(VillagerPacificationResult.BLOCKED_BY_REPUTATION, payment.get());
         }
 
-        int requiredEmeralds = VillagerRetaliationRetaliationUtil.pacifyEmeraldCost(villager);
-        if (interactionStack.getCount() < requiredEmeralds) {
+        if (interactionStack.getCount() < payment.get().count()) {
             VillagerRetaliationRetaliationUtil.spawnPacifyFailureParticles(villager);
-            return VillagerPacificationResult.NOT_ENOUGH_EMERALDS;
+            return VillagerPacificationAttempt.of(VillagerPacificationResult.NOT_ENOUGH_EMERALDS, payment.get());
         }
 
         if (!player.hasInfiniteMaterials()) {
-            interactionStack.shrink(requiredEmeralds);
+            interactionStack.shrink(payment.get().count());
         }
         clearAnger(villager);
         VillagerRetaliationRetaliationUtil.spawnPacifySuccessParticles(villager);
-        return VillagerPacificationResult.SUCCESS;
+        return VillagerPacificationAttempt.of(VillagerPacificationResult.SUCCESS, payment.get());
     }
 
     private static boolean isDespisedBy(Villager villager, Player player) {

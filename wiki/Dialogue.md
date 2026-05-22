@@ -259,7 +259,7 @@ Openings and closings support `id`, `text`, `professions`, `dispositions`, `show
   "pacify": [
     {
       "id": "my_pack.pacify.accepted",
-      "text": "Fine. {emerald_cost} {emeralds}, and we try peace again.",
+      "text": "Fine. {payment_cost} {payment_items}, and we try peace again.",
       "outcomes": ["success"],
       "weight": 10
     }
@@ -270,9 +270,12 @@ Openings and closings support `id`, `text`, `professions`, `dispositions`, `show
 Pacify text supports:
 
 ```text
-{emerald_cost}
-{emeralds}
+{payment_cost}
+{payment_item}
+{payment_items}
 ```
+
+For older packs, `{emerald_cost}` still aliases `{payment_cost}`, and `{emeralds}` still aliases `{payment_items}`.
 
 The `outcomes` field filters by the internal pacification result enum. If omitted, the line can match any result.
 

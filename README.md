@@ -41,7 +41,7 @@ Villagers are neutral instead of purely passive.
 
 By default, hitting a villager only angers that villager. Killing an adult villager can anger nearby adult villagers if they can witness it. Anger expires after a configurable duration, and creative/spectator players can be ignored.
 
-Villagers and wandering traders can also block trading while hostile. Hostile villagers can be pacified with emeralds, unless your reputation has fallen too low.
+Villagers and wandering traders can also block trading while hostile. Hostile villagers can be pacified with datapack-defined item payments, unless your reputation has fallen too low.
 
 ### Reputation
 
@@ -114,7 +114,7 @@ Lower trust can make villagers more dangerous or less willing to deal with you:
 - Hostile villagers can harass you with eggs or poisonous potatoes
 - Despised villagers can attack on sight when enabled
 - Feared villagers visibly react when you get close
-- Despised or feared villagers may refuse emerald pacification
+- Despised or feared villagers may refuse pacification payments
 - Babies, nitwits, and non-combat villagers can flee from hated players
 
 ## Loot
@@ -142,7 +142,7 @@ The mod includes a full reputation advancement tab.
 | --- | --- | --- | --- |
 | Village Relations | Task (Tab Root) | Automatically granted when any Villager Retaliation advancement is awarded. | No |
 | Commonfolk | Task | Interact with any villager, or enter a village. | No |
-| I'm Sorry! | Task | Pacify a hostile villager with emeralds. | No |
+| I'm Sorry! | Task | Pacify a hostile villager with a payment item. | No |
 | A Familiar Face | Task | Reach Trusted reputation with any villager. | No |
 | Respect Is Earned | Task | Reach Respected reputation with any villager. | No |
 | Friend of the Village | Goal | Reach Trusted with 5 villagers in one village area. | No |

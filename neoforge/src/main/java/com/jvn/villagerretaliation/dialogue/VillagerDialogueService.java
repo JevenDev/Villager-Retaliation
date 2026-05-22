@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.dialogue;
 
+import com.jvn.villagerretaliation.combat.PacifyPaymentOffer;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.combat.VillagerPacificationResult;
 import com.jvn.toucanlib.util.ToucanRandom;
@@ -110,8 +111,8 @@ public final class VillagerDialogueService {
         );
     }
 
-    public static String selectPacifyLine(DialogueContext context, VillagerPacificationResult result, int emeraldCost) {
-        return VillagerDialogueResources.pacifyLine(context, result, emeraldCost).orElse("");
+    public static String selectPacifyLine(DialogueContext context, VillagerPacificationResult result, PacifyPaymentOffer payment) {
+        return VillagerDialogueResources.pacifyLine(context, result, payment).orElse("");
     }
 
     public static DialogueDisposition dispositionFor(VillagerReputationLevel reputationLevel) {

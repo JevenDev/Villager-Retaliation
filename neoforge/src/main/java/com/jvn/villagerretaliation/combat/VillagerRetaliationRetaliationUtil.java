@@ -36,8 +36,6 @@ public final class VillagerRetaliationRetaliationUtil {
     private static final String PERSISTENT_TARGET_UUID = "Target";
     private static final String PERSISTENT_LAST_SEEN_TICK = "LastSeenTick";
     private static final double MAX_RETALIATION_PURSUIT_DISTANCE_SQR = 1024.0D;
-    private static final int PACIFY_EMERALD_MIN_COST = 3;
-    private static final int PACIFY_EMERALD_MAX_COST = 32;
     private static final ResourceLocation COMBAT_MOVEMENT_SPEED_MODIFIER_ID =
             VillagerRetaliation.id("combat_movement_speed");
     private static final AttributeModifier COMBAT_MOVEMENT_SPEED_MODIFIER =
@@ -198,10 +196,6 @@ public final class VillagerRetaliationRetaliationUtil {
 
         double y = villager.getY() + villager.getBbHeight() + 0.2D;
         level.sendParticles(ParticleTypes.SMOKE, villager.getX(), y, villager.getZ(), 6, 0.2D, 0.15D, 0.2D, 0.01D);
-    }
-
-    public static int pacifyEmeraldCost(AbstractVillager villager) {
-        return PACIFY_EMERALD_MIN_COST + villager.getRandom().nextInt(PACIFY_EMERALD_MAX_COST - PACIFY_EMERALD_MIN_COST + 1);
     }
 
     public static boolean isAttackReady(AbstractVillager villager, Map<UUID, Long> nextAttackTicks, long gameTime) {

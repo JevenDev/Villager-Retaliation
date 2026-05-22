@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.util;
 
+import com.jvn.villagerretaliation.combat.VillagerPacifyPaymentResources;
 import com.jvn.villagerretaliation.dialogue.BiomeStoryResources;
 import com.jvn.villagerretaliation.dialogue.DangerousStructureStoryResources;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
@@ -17,6 +18,7 @@ public final class VillagerDataWarmup {
     public static void warm(MinecraftServer server) {
         VillagerDialogueResources.warm(server);
         VillagerGiftResources.warm(server);
+        VillagerPacifyPaymentResources.warm(server);
         VillagerNotificationResources.warm(server);
         BiomeStoryResources.warm(server);
         DangerousStructureStoryResources.warm(server);
@@ -28,6 +30,7 @@ public final class VillagerDataWarmup {
     public static void clearCaches() {
         VillagerDialogueResources.clearCache();
         VillagerGiftResources.clearCache();
+        VillagerPacifyPaymentResources.clearCache();
         VillagerNotificationResources.clearCache();
         BiomeStoryResources.clearCache();
         DangerousStructureStoryResources.clearCache();

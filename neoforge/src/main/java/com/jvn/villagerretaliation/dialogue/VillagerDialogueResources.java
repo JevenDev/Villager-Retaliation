@@ -5,6 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.VillagerRetaliation;
+import com.jvn.villagerretaliation.combat.PacifyPaymentOffer;
 import com.jvn.villagerretaliation.combat.VillagerPacificationResult;
 import com.jvn.villagerretaliation.util.VillagerLocale;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
@@ -143,7 +144,7 @@ public final class VillagerDialogueResources {
                 .findFirst();
     }
 
-    public static Optional<String> pacifyLine(DialogueContext context, VillagerPacificationResult result, int emeraldCost) {
+    public static Optional<String> pacifyLine(DialogueContext context, VillagerPacificationResult result, PacifyPaymentOffer payment) {
         List<PacifyLine> candidates = load(context.level().getServer(), context.locale()).pacifyLines().stream()
                 .filter(line -> line.matches(context, result))
                 .toList();
@@ -156,10 +157,10 @@ public final class VillagerDialogueResources {
         for (PacifyLine candidate : candidates) {
             selected -= candidate.weight();
             if (selected < 0) {
-                return Optional.of(resolvePacifyText(candidate.text(), emeraldCost));
+                return Optional.of(resolvePacifyText(candidate.text(), payment));
             }
         }
-        return Optional.of(resolvePacifyText(candidates.getLast().text(), emeraldCost));
+        return Optional.of(resolvePacifyText(candidates.getLast().text(), payment));
     }
 
     public static Optional<String> giftAdviceLine(
@@ -764,10 +765,14 @@ public final class VillagerDialogueResources {
         return slash < 0 ? remainder : remainder.substring(slash + 1);
     }
 
-    private static String resolvePacifyText(String text, int emeraldCost) {
+    private static String resolvePacifyText(String text, PacifyPaymentOffer payment) {
+        String count = Integer.toString(payment.count());
         return text
-                .replace("{emerald_cost}", Integer.toString(emeraldCost))
-                .replace("{emeralds}", emeraldCost == 1 ? "emerald" : "emeralds");
+                .replace("{emerald_cost}", count)
+                .replace("{emeralds}", payment.itemNameForCount())
+                .replace("{payment_cost}", count)
+                .replace("{payment_item}", payment.itemName())
+                .replace("{payment_items}", payment.itemNameForCount());
     }
 
     private static String resolveGiftAdviceText(String text, String giftItemName, String giftSubject) {

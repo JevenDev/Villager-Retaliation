@@ -23,7 +23,6 @@ import net.minecraft.world.entity.animal.horse.TraderLlama;
 import net.minecraft.world.entity.npc.WanderingTrader;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent;
@@ -204,11 +203,19 @@ public final class WanderingTraderRetaliationHandler {
     }
 
     public static boolean tryPacifyWithEmeralds(WanderingTrader trader, Player player, ItemStack interactionStack) {
+        return tryPacifyWithPayment(trader, player, interactionStack);
+    }
+
+    public static boolean tryPacifyWithPayment(WanderingTrader trader, Player player, ItemStack interactionStack) {
         if (trader.level().isClientSide
                 || !trader.isAlive()
                 || !player.isAlive()
-                || !interactionStack.is(Items.EMERALD)
                 || !RETALIATION.isHostileTowards(trader, player, () -> clearAnger(trader))) {
+            return false;
+        }
+
+        Optional<PacifyPaymentOffer> payment = VillagerPacifyPaymentResources.offerFor(trader, interactionStack);
+        if (payment.isEmpty()) {
             return false;
         }
 
@@ -217,14 +224,13 @@ public final class WanderingTraderRetaliationHandler {
             return true;
         }
 
-        int requiredEmeralds = VillagerRetaliationRetaliationUtil.pacifyEmeraldCost(trader);
-        if (interactionStack.getCount() < requiredEmeralds) {
+        if (interactionStack.getCount() < payment.get().count()) {
             VillagerRetaliationRetaliationUtil.spawnPacifyFailureParticles(trader);
             return true;
         }
 
         if (!player.hasInfiniteMaterials()) {
-            interactionStack.shrink(requiredEmeralds);
+            interactionStack.shrink(payment.get().count());
         }
         clearAnger(trader);
         VillagerRetaliationRetaliationUtil.spawnPacifySuccessParticles(trader);

@@ -8407,7 +8407,7 @@
       "outcomes": [
         "success"
       ],
-      "text": "Fine. I will stand down, but peace takes more than emeralds.",
+      "text": "Fine. I will stand down, but peace takes more than payment.",
       "weight": 20
     },
     {
@@ -8455,7 +8455,7 @@
       "outcomes": [
         "blocked_by_reputation"
       ],
-      "text": "No. Some things are not bought back with emeralds.",
+      "text": "No. Some things are not bought back with {payment_items}.",
       "dispositions": [
         "hostile",
         "fearful"
