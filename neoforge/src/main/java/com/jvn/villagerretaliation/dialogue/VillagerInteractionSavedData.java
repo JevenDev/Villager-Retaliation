@@ -633,6 +633,19 @@ public class VillagerInteractionSavedData extends SavedData {
         return liked ? entry.likedGifts.contains(itemId) : entry.dislikedGifts.contains(itemId);
     }
 
+    public boolean hasGiftKnowledge(UUID playerId, String... professionKeys) {
+        GiftKnowledgeBook book = this.giftKnowledge.get(playerId);
+        if (book == null || professionKeys == null || professionKeys.length == 0) {
+            return false;
+        }
+        for (String professionKey : professionKeys) {
+            if (book.hasKnownGifts(professionKey)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public boolean rememberGiftKnowledge(UUID playerId, String professionKey, String itemId, boolean liked) {
         GiftKnowledgeEntry entry = giftKnowledgeEntry(playerId, professionKey, true);
         boolean changed;
@@ -1976,10 +1989,19 @@ public class VillagerInteractionSavedData extends SavedData {
 
     private static class GiftKnowledgeBook {
         private final Map<String, GiftKnowledgeEntry> byProfession = new HashMap<>();
+
+        private boolean hasKnownGifts(String professionKey) {
+            GiftKnowledgeEntry entry = this.byProfession.get(professionKey);
+            return entry != null && entry.hasKnownGifts();
+        }
     }
 
     private static class GiftKnowledgeEntry {
         private final Set<String> likedGifts = new LinkedHashSet<>();
         private final Set<String> dislikedGifts = new LinkedHashSet<>();
+
+        private boolean hasKnownGifts() {
+            return !this.likedGifts.isEmpty() || !this.dislikedGifts.isEmpty();
+        }
     }
 }

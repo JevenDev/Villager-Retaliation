@@ -28,6 +28,10 @@ public final class VillagerGiftKnowledgeService {
     public static GiftKnowledgeSnapshot knownGifts(ServerLevel level, ServerPlayer player, VillagerProfession profession) {
         VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
         String professionKey = professionKey(profession);
+        if (!data.hasGiftKnowledge(player.getUUID(), GLOBAL_PROFESSION_KEY, professionKey)) {
+            return new GiftKnowledgeSnapshot(List.of(), List.of());
+        }
+
         Set<String> likedNames = new LinkedHashSet<>();
         Set<String> dislikedNames = new LinkedHashSet<>();
 
