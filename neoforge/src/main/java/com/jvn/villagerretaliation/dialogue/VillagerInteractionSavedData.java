@@ -4,6 +4,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -68,6 +69,9 @@ public class VillagerInteractionSavedData extends SavedData {
     private static final String TAG_REPORTED = "Reported";
     private static final String TAG_SHAREABLE = "Shareable";
     private static final String TAG_SHARED_STORY_TARGETS = "SharedStoryTargets";
+    private static final String TAG_SHARED_STORY_COOLDOWNS = "SharedStoryCooldowns";
+    private static final String TAG_TARGETS = "Targets";
+    private static final String TAG_TARGET_KEY = "TargetKey";
     private static final String TAG_COMBAT_SURVIVAL_UNREPORTED = "CombatSurvivalUnreported";
     private static final String TAG_COMBAT_SURVIVAL_EVENT_KIND = "CombatSurvivalEventKind";
     private static final String TAG_COMBAT_SURVIVAL_GAME_TIME = "CombatSurvivalGameTime";
@@ -99,12 +103,15 @@ public class VillagerInteractionSavedData extends SavedData {
     private static final int MAX_CARTOGRAPHER_MAPS = 8;
     private static final int MAX_STORY_HINTS = 12;
     private static final int MAX_SHARED_STORY_TARGETS = 64;
+    private static final int MAX_SHARED_STORY_COOLDOWNS_PER_PLAYER = 128;
+    private static final long SHARED_STORY_TARGET_COOLDOWN_TICKS = 20L * 60L * 60L * 24L;
     private static final int DEFAULT_BIOME_STORY_HINT_DISCOVERY_RADIUS = 256;
     private static final int DEFAULT_STRUCTURE_STORY_HINT_DISCOVERY_RADIUS = 128;
 
     private final Map<UUID, Map<UUID, InteractionEntry>> entries = new HashMap<>();
     private final Map<UUID, Set<UUID>> villagerIdsByPlayer = new HashMap<>();
     private final Map<UUID, GiftKnowledgeBook> giftKnowledge = new HashMap<>();
+    private final Map<UUID, LinkedHashMap<String, Long>> sharedStoryCooldownsByPlayer = new HashMap<>();
 
     public static VillagerInteractionSavedData get(ServerLevel level) {
         return level.getServer().overworld().getDataStorage().computeIfAbsent(
@@ -313,6 +320,25 @@ public class VillagerInteractionSavedData extends SavedData {
             }
             data.giftKnowledge.put(bookTag.getUUID(TAG_PLAYER), book);
         }
+        ListTag sharedStoryCooldownsTag = tag.getList(TAG_SHARED_STORY_COOLDOWNS, Tag.TAG_COMPOUND);
+        for (Tag rawCooldowns : sharedStoryCooldownsTag) {
+            if (!(rawCooldowns instanceof CompoundTag cooldownsTag) || !cooldownsTag.hasUUID(TAG_PLAYER)) {
+                continue;
+            }
+            LinkedHashMap<String, Long> cooldowns = new LinkedHashMap<>();
+            ListTag targetCooldowns = cooldownsTag.getList(TAG_TARGETS, Tag.TAG_COMPOUND);
+            for (Tag rawTarget : targetCooldowns) {
+                if (!(rawTarget instanceof CompoundTag targetTag)
+                        || !targetTag.contains(TAG_TARGET_KEY, Tag.TAG_STRING)
+                        || !targetTag.contains(TAG_EXPIRES_AT, Tag.TAG_LONG)) {
+                    continue;
+                }
+                cooldowns.put(targetTag.getString(TAG_TARGET_KEY), targetTag.getLong(TAG_EXPIRES_AT));
+            }
+            if (!cooldowns.isEmpty()) {
+                data.sharedStoryCooldownsByPlayer.put(cooldownsTag.getUUID(TAG_PLAYER), cooldowns);
+            }
+        }
         return data;
     }
 
@@ -501,6 +527,24 @@ public class VillagerInteractionSavedData extends SavedData {
             giftKnowledgeTag.add(bookTag);
         }
         tag.put(TAG_GIFT_KNOWLEDGE, giftKnowledgeTag);
+        ListTag sharedStoryCooldownsTag = new ListTag();
+        for (Map.Entry<UUID, LinkedHashMap<String, Long>> cooldownsEntry : this.sharedStoryCooldownsByPlayer.entrySet()) {
+            if (cooldownsEntry.getValue().isEmpty()) {
+                continue;
+            }
+            CompoundTag cooldownsTag = new CompoundTag();
+            cooldownsTag.putUUID(TAG_PLAYER, cooldownsEntry.getKey());
+            ListTag targetCooldowns = new ListTag();
+            for (Map.Entry<String, Long> targetEntry : cooldownsEntry.getValue().entrySet()) {
+                CompoundTag targetTag = new CompoundTag();
+                targetTag.putString(TAG_TARGET_KEY, targetEntry.getKey());
+                targetTag.putLong(TAG_EXPIRES_AT, targetEntry.getValue());
+                targetCooldowns.add(targetTag);
+            }
+            cooldownsTag.put(TAG_TARGETS, targetCooldowns);
+            sharedStoryCooldownsTag.add(cooldownsTag);
+        }
+        tag.put(TAG_SHARED_STORY_COOLDOWNS, sharedStoryCooldownsTag);
         return tag;
     }
 
@@ -654,6 +698,9 @@ public class VillagerInteractionSavedData extends SavedData {
             BlockPos targetPos,
             long expiresAtGameTime,
             long gameTime) {
+        if (isSharedStoryTargetCoolingDown(playerId, dimension, kind, targetId, gameTime)) {
+            return false;
+        }
         InteractionEntry entry = getOrCreate(villagerId, playerId);
         if (entry.hasKnownShareableStory(dimension, kind, targetId, gameTime)) {
             return false;
@@ -681,8 +728,61 @@ public class VillagerInteractionSavedData extends SavedData {
             VillagerInteractionTracker.StoryHintKind kind,
             ResourceLocation targetId,
             long gameTime) {
+        if (isSharedStoryTargetCoolingDown(playerId, dimension, kind, targetId, gameTime)) {
+            return false;
+        }
         InteractionEntry entry = getIndexedEntry(villagerId, playerId);
         return entry == null || !entry.hasKnownShareableStory(dimension, kind, targetId, gameTime);
+    }
+
+    private boolean isSharedStoryTargetCoolingDown(
+            UUID playerId,
+            ResourceLocation dimension,
+            VillagerInteractionTracker.StoryHintKind kind,
+            ResourceLocation targetId,
+            long gameTime) {
+        LinkedHashMap<String, Long> cooldowns = this.sharedStoryCooldownsByPlayer.get(playerId);
+        if (cooldowns == null || cooldowns.isEmpty()) {
+            return false;
+        }
+        String key = sharedStoryTargetKey(dimension, kind, targetId);
+        Long expiresAt = cooldowns.get(key);
+        if (expiresAt == null) {
+            return false;
+        }
+        if (expiresAt <= gameTime) {
+            cooldowns.remove(key);
+            if (cooldowns.isEmpty()) {
+                this.sharedStoryCooldownsByPlayer.remove(playerId);
+            }
+            return false;
+        }
+        return true;
+    }
+
+    private void rememberSharedStoryTargetCooldown(
+            UUID playerId,
+            ResourceLocation dimension,
+            VillagerInteractionTracker.StoryHintKind kind,
+            ResourceLocation targetId,
+            long gameTime) {
+        LinkedHashMap<String, Long> cooldowns = this.sharedStoryCooldownsByPlayer.computeIfAbsent(playerId, ignored -> new LinkedHashMap<>());
+        cooldowns.put(sharedStoryTargetKey(dimension, kind, targetId), gameTime + SHARED_STORY_TARGET_COOLDOWN_TICKS);
+        pruneSharedStoryCooldowns(playerId, gameTime);
+    }
+
+    private void pruneSharedStoryCooldowns(UUID playerId, long gameTime) {
+        LinkedHashMap<String, Long> cooldowns = this.sharedStoryCooldownsByPlayer.get(playerId);
+        if (cooldowns == null) {
+            return;
+        }
+        cooldowns.entrySet().removeIf(entry -> entry.getValue() <= gameTime);
+        while (cooldowns.size() > MAX_SHARED_STORY_COOLDOWNS_PER_PLAYER) {
+            cooldowns.remove(cooldowns.keySet().iterator().next());
+        }
+        if (cooldowns.isEmpty()) {
+            this.sharedStoryCooldownsByPlayer.remove(playerId);
+        }
     }
 
     private static int sanitizeDiscoveryRadius(int discoveryRadius, VillagerInteractionTracker.StoryHintKind kind) {
@@ -780,12 +880,33 @@ public class VillagerInteractionSavedData extends SavedData {
 
     public VillagerInteractionTracker.StoryHintReport shareableStory(UUID villagerId, UUID playerId, long gameTime) {
         InteractionEntry entry = getIndexedEntry(villagerId, playerId);
-        return entry == null ? null : entry.shareableStory(villagerId, gameTime);
+        return entry == null
+                ? null
+                : entry.shareableStory(villagerId, gameTime, storyHint -> !isSharedStoryTargetCoolingDown(
+                        playerId,
+                        storyHint.dimension(),
+                        storyHint.kind(),
+                        storyHint.targetId(),
+                        gameTime
+                ));
     }
 
     public VillagerInteractionTracker.StoryHintReport claimShareableStory(UUID villagerId, UUID playerId, long gameTime) {
         InteractionEntry entry = getIndexedEntry(villagerId, playerId);
-        return entry == null ? null : entry.claimShareableStory(villagerId, gameTime);
+        if (entry == null) {
+            return null;
+        }
+        VillagerInteractionTracker.StoryHintReport report = entry.claimShareableStory(villagerId, gameTime, storyHint -> !isSharedStoryTargetCoolingDown(
+                playerId,
+                storyHint.dimension(),
+                storyHint.kind(),
+                storyHint.targetId(),
+                gameTime
+        ));
+        if (report != null) {
+            rememberSharedStoryTargetCooldown(playerId, report.dimension(), report.kind(), report.targetId(), gameTime);
+        }
+        return report;
     }
 
     public void rememberCombatSurvivalReport(UUID villagerId, UUID playerId, String eventKind, long gameTime) {
@@ -912,7 +1033,7 @@ public class VillagerInteractionSavedData extends SavedData {
         return new VillagerInteractionTracker.ContextReports(
                 entry.unreportedCartographerMapDiscovery(villagerId),
                 entry.unreportedStoryHintDiscovery(villagerId),
-                entry.shareableStory(villagerId, gameTime),
+                shareableStory(villagerId, playerId, gameTime),
                 entry.unreportedCombatSurvivalReport(villagerId),
                 entry.unreportedGearReport(villagerId),
                 entry.unreportedRecruitmentFollowup(villagerId),
@@ -1495,20 +1616,34 @@ public class VillagerInteractionSavedData extends SavedData {
             return false;
         }
 
-        private VillagerInteractionTracker.StoryHintReport shareableStory(UUID villagerId, long gameTime) {
+        private VillagerInteractionTracker.StoryHintReport shareableStory(
+                UUID villagerId,
+                long gameTime,
+                Predicate<StoryHintMemory> canShare) {
             for (int index = this.storyHints.size() - 1; index >= 0; index--) {
                 StoryHintMemory storyHint = this.storyHints.get(index);
-                if (storyHint.shareable() && storyHint.found() && !storyHint.reported() && storyHint.expiresAtGameTime() > gameTime) {
+                if (storyHint.shareable()
+                        && storyHint.found()
+                        && !storyHint.reported()
+                        && storyHint.expiresAtGameTime() > gameTime
+                        && canShare.test(storyHint)) {
                     return storyHint.toReport(villagerId);
                 }
             }
             return null;
         }
 
-        private VillagerInteractionTracker.StoryHintReport claimShareableStory(UUID villagerId, long gameTime) {
+        private VillagerInteractionTracker.StoryHintReport claimShareableStory(
+                UUID villagerId,
+                long gameTime,
+                Predicate<StoryHintMemory> canShare) {
             for (int index = this.storyHints.size() - 1; index >= 0; index--) {
                 StoryHintMemory storyHint = this.storyHints.get(index);
-                if (storyHint.shareable() && storyHint.found() && !storyHint.reported() && storyHint.expiresAtGameTime() > gameTime) {
+                if (storyHint.shareable()
+                        && storyHint.found()
+                        && !storyHint.reported()
+                        && storyHint.expiresAtGameTime() > gameTime
+                        && canShare.test(storyHint)) {
                     this.storyHints.set(index, storyHint.withReported(true));
                     rememberSharedStoryTarget(storyHint.dimension(), storyHint.kind(), storyHint.targetId());
                     return storyHint.toReport(villagerId);
