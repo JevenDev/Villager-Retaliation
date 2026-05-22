@@ -27,6 +27,14 @@ public record DialogueOptionDefinition(
         boolean requiresKnownSibling,
         boolean requiresKnownSpouse,
         boolean requiresKnownChild,
+        boolean requiresKnownGrandparent,
+        boolean requiresKnownGrandchild,
+        boolean requiresKnownDescendant,
+        boolean requiresKnownAuntUncle,
+        boolean requiresKnownCousin,
+        boolean requiresKnownNieceNephew,
+        boolean requiresKnownExtendedFamily,
+        boolean requiresKnownDeceasedFamily,
         int order
 ) {
     public boolean matches(DialogueContext context, DialogueDisposition disposition) {
@@ -88,10 +96,34 @@ public record DialogueOptionDefinition(
         if (this.requiresKnownChild && !context.hasKnownChild()) {
             return false;
         }
+        if (this.requiresKnownGrandparent && !context.hasKnownGrandparent()) {
+            return false;
+        }
+        if (this.requiresKnownGrandchild && !context.hasKnownGrandchild()) {
+            return false;
+        }
+        if (this.requiresKnownDescendant && !context.hasKnownDescendant()) {
+            return false;
+        }
+        if (this.requiresKnownAuntUncle && !context.hasKnownAuntUncle()) {
+            return false;
+        }
+        if (this.requiresKnownCousin && !context.hasKnownCousin()) {
+            return false;
+        }
+        if (this.requiresKnownNieceNephew && !context.hasKnownNieceNephew()) {
+            return false;
+        }
+        if (this.requiresKnownExtendedFamily && !context.hasKnownExtendedFamily()) {
+            return false;
+        }
+        if (this.requiresKnownDeceasedFamily && !context.hasKnownDeceasedFamily()) {
+            return false;
+        }
         return this.dispositions.isEmpty() || this.dispositions.contains(disposition);
     }
 
     public static DialogueOptionDefinition simple(String id, String label, DialogueRequestType requestType, int order) {
-        return new DialogueOptionDefinition(id, label, requestType, true, true, Set.of(), Set.of(), false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, order);
+        return new DialogueOptionDefinition(id, label, requestType, true, true, Set.of(), Set.of(), false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, order);
     }
 }

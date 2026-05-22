@@ -1126,6 +1126,53 @@
       "weight": 22
     },
     {
+      "id": "adult_family_grandparent",
+      "type": "question",
+      "option": "adult_family",
+      "text": "{grandparent} taught the family which paths are safe after dark. Some advice survives longer than the person who first said it.",
+      "requires_known_grandparent": true,
+      "show_for_babies": false,
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral",
+        "cautious"
+      ],
+      "weight": 18
+    },
+    {
+      "id": "adult_family_descendant",
+      "type": "question",
+      "option": "adult_family",
+      "text": "When I think about {descendant}, I try to leave the village a little kinder than I found it.",
+      "requires_known_descendant": true,
+      "show_for_babies": false,
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral"
+      ],
+      "weight": 18
+    },
+    {
+      "id": "adult_family_extended",
+      "type": "question",
+      "option": "adult_family",
+      "text": "{extended_relative} is not in my house every night, but family branches still share the same weather.",
+      "requires_known_extended_family": true,
+      "show_for_babies": false,
+      "weight": 14
+    },
+    {
+      "id": "adult_family_deceased",
+      "type": "question",
+      "option": "adult_family",
+      "text": "We still say {deceased_family_possessive} name when the village gathers. Remembering is a kind of shelter.",
+      "requires_known_deceased_family": true,
+      "show_for_babies": false,
+      "weight": 16
+    },
+    {
       "id": "adult_family_guarded",
       "type": "question",
       "option": "adult_family",
@@ -1157,6 +1204,24 @@
       "requires_known_sibling": true,
       "show_for_adults": false,
       "weight": 22
+    },
+    {
+      "id": "baby_family_grandparent",
+      "type": "question",
+      "option": "baby_family",
+      "text": "{grandparent} knows stories that start before my bed was even made.",
+      "requires_known_grandparent": true,
+      "show_for_adults": false,
+      "weight": 16
+    },
+    {
+      "id": "baby_family_cousin",
+      "type": "question",
+      "option": "baby_family",
+      "text": "{cousin} says we are related enough to share chores. I think that sounds suspicious.",
+      "requires_known_cousin": true,
+      "show_for_adults": false,
+      "weight": 14
     },
     {
       "id": "recruitment_followup_safe_home",

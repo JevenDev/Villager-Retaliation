@@ -373,6 +373,14 @@ public final class VillagerDialogueResources {
             boolean requiresKnownSibling = readBoolean(entry, "requires_known_sibling");
             boolean requiresKnownSpouse = readBoolean(entry, "requires_known_spouse");
             boolean requiresKnownChild = readBoolean(entry, "requires_known_child");
+            boolean requiresKnownGrandparent = readBoolean(entry, "requires_known_grandparent");
+            boolean requiresKnownGrandchild = readBoolean(entry, "requires_known_grandchild");
+            boolean requiresKnownDescendant = readBoolean(entry, "requires_known_descendant");
+            boolean requiresKnownAuntUncle = readBoolean(entry, "requires_known_aunt_uncle");
+            boolean requiresKnownCousin = readBoolean(entry, "requires_known_cousin");
+            boolean requiresKnownNieceNephew = readBoolean(entry, "requires_known_niece_nephew");
+            boolean requiresKnownExtendedFamily = readBoolean(entry, "requires_known_extended_family");
+            boolean requiresKnownDeceasedFamily = readBoolean(entry, "requires_known_deceased_family");
             int order = readInt(entry, "order", index);
             options.put(id, new DialogueOptionDefinition(
                     id,
@@ -398,6 +406,14 @@ public final class VillagerDialogueResources {
                     requiresKnownSibling,
                     requiresKnownSpouse,
                     requiresKnownChild,
+                    requiresKnownGrandparent,
+                    requiresKnownGrandchild,
+                    requiresKnownDescendant,
+                    requiresKnownAuntUncle,
+                    requiresKnownCousin,
+                    requiresKnownNieceNephew,
+                    requiresKnownExtendedFamily,
+                    requiresKnownDeceasedFamily,
                     order
             ));
             index++;
@@ -649,6 +665,30 @@ public final class VillagerDialogueResources {
         }
         if (readBoolean(entry, "requires_known_child")) {
             builder.requiresKnownChild();
+        }
+        if (readBoolean(entry, "requires_known_grandparent")) {
+            builder.requiresKnownGrandparent();
+        }
+        if (readBoolean(entry, "requires_known_grandchild")) {
+            builder.requiresKnownGrandchild();
+        }
+        if (readBoolean(entry, "requires_known_descendant")) {
+            builder.requiresKnownDescendant();
+        }
+        if (readBoolean(entry, "requires_known_aunt_uncle")) {
+            builder.requiresKnownAuntUncle();
+        }
+        if (readBoolean(entry, "requires_known_cousin")) {
+            builder.requiresKnownCousin();
+        }
+        if (readBoolean(entry, "requires_known_niece_nephew")) {
+            builder.requiresKnownNieceNephew();
+        }
+        if (readBoolean(entry, "requires_known_extended_family")) {
+            builder.requiresKnownExtendedFamily();
+        }
+        if (readBoolean(entry, "requires_known_deceased_family")) {
+            builder.requiresKnownDeceasedFamily();
         }
         builder.showForAdults(readBoolean(entry, "show_for_adults", true));
         builder.showForBabies(readBoolean(entry, "show_for_babies", true));

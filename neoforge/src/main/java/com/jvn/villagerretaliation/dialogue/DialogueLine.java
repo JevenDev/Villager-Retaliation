@@ -39,6 +39,14 @@ public record DialogueLine(
         boolean requiresKnownSibling,
         boolean requiresKnownSpouse,
         boolean requiresKnownChild,
+        boolean requiresKnownGrandparent,
+        boolean requiresKnownGrandchild,
+        boolean requiresKnownDescendant,
+        boolean requiresKnownAuntUncle,
+        boolean requiresKnownCousin,
+        boolean requiresKnownNieceNephew,
+        boolean requiresKnownExtendedFamily,
+        boolean requiresKnownDeceasedFamily,
         GiftAdviceKind giftAdviceKind,
         int weight
 ) {
@@ -139,6 +147,30 @@ public record DialogueLine(
         if (this.requiresKnownChild && !context.hasKnownChild()) {
             return false;
         }
+        if (this.requiresKnownGrandparent && !context.hasKnownGrandparent()) {
+            return false;
+        }
+        if (this.requiresKnownGrandchild && !context.hasKnownGrandchild()) {
+            return false;
+        }
+        if (this.requiresKnownDescendant && !context.hasKnownDescendant()) {
+            return false;
+        }
+        if (this.requiresKnownAuntUncle && !context.hasKnownAuntUncle()) {
+            return false;
+        }
+        if (this.requiresKnownCousin && !context.hasKnownCousin()) {
+            return false;
+        }
+        if (this.requiresKnownNieceNephew && !context.hasKnownNieceNephew()) {
+            return false;
+        }
+        if (this.requiresKnownExtendedFamily && !context.hasKnownExtendedFamily()) {
+            return false;
+        }
+        if (this.requiresKnownDeceasedFamily && !context.hasKnownDeceasedFamily()) {
+            return false;
+        }
         return this.weight > 0;
     }
 
@@ -192,7 +224,15 @@ public record DialogueLine(
                 || this.requiresKnownParent
                 || this.requiresKnownSibling
                 || this.requiresKnownSpouse
-                || this.requiresKnownChild) {
+                || this.requiresKnownChild
+                || this.requiresKnownGrandparent
+                || this.requiresKnownGrandchild
+                || this.requiresKnownDescendant
+                || this.requiresKnownAuntUncle
+                || this.requiresKnownCousin
+                || this.requiresKnownNieceNephew
+                || this.requiresKnownExtendedFamily
+                || this.requiresKnownDeceasedFamily) {
             score += 5;
         }
         if (this.giftAdviceKind != null) {
@@ -237,6 +277,14 @@ public record DialogueLine(
         private boolean requiresKnownSibling;
         private boolean requiresKnownSpouse;
         private boolean requiresKnownChild;
+        private boolean requiresKnownGrandparent;
+        private boolean requiresKnownGrandchild;
+        private boolean requiresKnownDescendant;
+        private boolean requiresKnownAuntUncle;
+        private boolean requiresKnownCousin;
+        private boolean requiresKnownNieceNephew;
+        private boolean requiresKnownExtendedFamily;
+        private boolean requiresKnownDeceasedFamily;
         private GiftAdviceKind giftAdviceKind;
         private int weight = 10;
 
@@ -402,6 +450,46 @@ public record DialogueLine(
             return this;
         }
 
+        public Builder requiresKnownGrandparent() {
+            this.requiresKnownGrandparent = true;
+            return this;
+        }
+
+        public Builder requiresKnownGrandchild() {
+            this.requiresKnownGrandchild = true;
+            return this;
+        }
+
+        public Builder requiresKnownDescendant() {
+            this.requiresKnownDescendant = true;
+            return this;
+        }
+
+        public Builder requiresKnownAuntUncle() {
+            this.requiresKnownAuntUncle = true;
+            return this;
+        }
+
+        public Builder requiresKnownCousin() {
+            this.requiresKnownCousin = true;
+            return this;
+        }
+
+        public Builder requiresKnownNieceNephew() {
+            this.requiresKnownNieceNephew = true;
+            return this;
+        }
+
+        public Builder requiresKnownExtendedFamily() {
+            this.requiresKnownExtendedFamily = true;
+            return this;
+        }
+
+        public Builder requiresKnownDeceasedFamily() {
+            this.requiresKnownDeceasedFamily = true;
+            return this;
+        }
+
         public Builder giftAdviceKind(GiftAdviceKind giftAdviceKind) {
             this.giftAdviceKind = giftAdviceKind;
             return this;
@@ -445,6 +533,14 @@ public record DialogueLine(
                     this.requiresKnownSibling,
                     this.requiresKnownSpouse,
                     this.requiresKnownChild,
+                    this.requiresKnownGrandparent,
+                    this.requiresKnownGrandchild,
+                    this.requiresKnownDescendant,
+                    this.requiresKnownAuntUncle,
+                    this.requiresKnownCousin,
+                    this.requiresKnownNieceNephew,
+                    this.requiresKnownExtendedFamily,
+                    this.requiresKnownDeceasedFamily,
                     this.giftAdviceKind,
                     this.weight
             );

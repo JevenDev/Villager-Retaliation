@@ -75,6 +75,38 @@ public record DialogueContext(
         return this.familyTree.hasChild();
     }
 
+    public boolean hasKnownGrandparent() {
+        return this.familyTree.hasGrandparent();
+    }
+
+    public boolean hasKnownGrandchild() {
+        return this.familyTree.hasGrandchild();
+    }
+
+    public boolean hasKnownDescendant() {
+        return this.familyTree.hasDescendant();
+    }
+
+    public boolean hasKnownAuntUncle() {
+        return this.familyTree.hasAuntUncle();
+    }
+
+    public boolean hasKnownCousin() {
+        return this.familyTree.hasCousin();
+    }
+
+    public boolean hasKnownNieceNephew() {
+        return this.familyTree.hasNieceNephew();
+    }
+
+    public boolean hasKnownExtendedFamily() {
+        return this.familyTree.hasExtendedFamily();
+    }
+
+    public boolean hasKnownDeceasedFamily() {
+        return this.familyTree.hasDeceasedFamily();
+    }
+
     public boolean hasRecentPlayerEvent(VillageEventMemory.EventTag... tags) {
         return VillageEventMemory.hasAnyForPlayer(this.recentEvents, this.player.getUUID(), tags);
     }

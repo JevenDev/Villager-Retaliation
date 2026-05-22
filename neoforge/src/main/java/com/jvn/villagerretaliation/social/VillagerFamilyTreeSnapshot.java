@@ -75,6 +75,38 @@ public record VillagerFamilyTreeSnapshot(
         return !this.descendants.isEmpty();
     }
 
+    public boolean hasGrandparent() {
+        return this.ancestry.stream().anyMatch(generation -> generation.generation() == 2 && !generation.ancestors().isEmpty());
+    }
+
+    public boolean hasGrandchild() {
+        return this.descendants.stream().anyMatch(generation -> generation.generation() == 2 && !generation.descendants().isEmpty());
+    }
+
+    public boolean hasDescendant() {
+        return hasChild() || hasDescendants();
+    }
+
+    public boolean hasAuntUncle() {
+        return !this.auntsUncles.isEmpty();
+    }
+
+    public boolean hasCousin() {
+        return !this.cousins.isEmpty();
+    }
+
+    public boolean hasNieceNephew() {
+        return !this.niecesNephews.isEmpty();
+    }
+
+    public boolean hasExtendedFamily() {
+        return hasAncestry() || hasDescendants() || hasAuntUncle() || hasCousin() || hasNieceNephew();
+    }
+
+    public boolean hasDeceasedFamily() {
+        return allKnownMembers().stream().anyMatch(member -> !member.alive());
+    }
+
     public int relationshipCount() {
         int count = this.parents.size()
                 + this.stepParents.size()
@@ -111,6 +143,53 @@ public record VillagerFamilyTreeSnapshot(
         return firstOrFallback(this.children, "my child");
     }
 
+    public String firstGrandparent() {
+        return firstGenerationMember(this.ancestry, 2, "my grandparent");
+    }
+
+    public String firstAncestor() {
+        return this.ancestry.stream()
+                .filter(generation -> !generation.ancestors().isEmpty())
+                .findFirst()
+                .map(generation -> generation.ancestors().getFirst().name())
+                .orElse("my ancestor");
+    }
+
+    public String firstGrandchild() {
+        return firstDescendantGenerationMember(2, "my grandchild");
+    }
+
+    public String firstDescendant() {
+        if (hasChild()) {
+            return firstChild();
+        }
+        return this.descendants.stream()
+                .filter(generation -> !generation.descendants().isEmpty())
+                .findFirst()
+                .map(generation -> generation.descendants().getFirst().name())
+                .orElse("my descendant");
+    }
+
+    public String firstAuntUncle() {
+        return firstOrFallback(this.auntsUncles, "my aunt or uncle");
+    }
+
+    public String firstCousin() {
+        return firstOrFallback(this.cousins, "my cousin");
+    }
+
+    public String firstNieceNephew() {
+        return firstOrFallback(this.niecesNephews, "my niece or nephew");
+    }
+
+    public String firstDeceasedFamily() {
+        return allKnownMembers().stream()
+                .filter(member -> !member.alive())
+                .findFirst()
+                .map(FamilyMember::name)
+                .orElse("someone from my family");
+    }
+
     public String firstRelative() {
         if (hasParent()) {
             return firstParent();
@@ -121,7 +200,35 @@ public record VillagerFamilyTreeSnapshot(
         if (hasSpouse()) {
             return firstSpouse();
         }
+        if (hasChild()) {
+            return firstChild();
+        }
+        if (hasExtendedFamily()) {
+            return firstExtendedRelative();
+        }
         return firstChild();
+    }
+
+    public String firstExtendedRelative() {
+        if (hasGrandparent()) {
+            return firstGrandparent();
+        }
+        if (hasAncestry()) {
+            return firstAncestor();
+        }
+        if (hasAuntUncle()) {
+            return firstAuntUncle();
+        }
+        if (hasCousin()) {
+            return firstCousin();
+        }
+        if (hasNieceNephew()) {
+            return firstNieceNephew();
+        }
+        if (hasDescendants()) {
+            return firstDescendant();
+        }
+        return firstGrandchild();
     }
 
     public List<FamilyMember> maleParents() {
@@ -196,6 +303,47 @@ public record VillagerFamilyTreeSnapshot(
 
     private static String firstOrFallback(List<FamilyMember> values, String fallback) {
         return values.isEmpty() ? fallback : values.getFirst().name();
+    }
+
+    private static String firstGenerationMember(List<AncestorGeneration> generations, int generation, String fallback) {
+        return generations.stream()
+                .filter(candidate -> candidate.generation() == generation)
+                .filter(candidate -> !candidate.ancestors().isEmpty())
+                .findFirst()
+                .map(candidate -> candidate.ancestors().getFirst().name())
+                .orElse(fallback);
+    }
+
+    private String firstDescendantGenerationMember(int generation, String fallback) {
+        return this.descendants.stream()
+                .filter(candidate -> candidate.generation() == generation)
+                .filter(candidate -> !candidate.descendants().isEmpty())
+                .findFirst()
+                .map(candidate -> candidate.descendants().getFirst().name())
+                .orElse(fallback);
+    }
+
+    private List<FamilyMember> allKnownMembers() {
+        java.util.ArrayList<FamilyMember> members = new java.util.ArrayList<>();
+        members.addAll(this.parents);
+        members.addAll(this.birthParents);
+        members.addAll(this.adoptiveParents);
+        members.addAll(this.stepParents);
+        members.addAll(this.siblings);
+        members.addAll(this.spouses);
+        members.addAll(this.children);
+        members.addAll(this.auntsUncles);
+        members.addAll(this.cousins);
+        members.addAll(this.niecesNephews);
+        members.addAll(this.friends);
+        members.addAll(this.rivals);
+        for (AncestorGeneration generation : this.ancestry) {
+            members.addAll(generation.ancestors());
+        }
+        for (DescendantGeneration generation : this.descendants) {
+            members.addAll(generation.descendants());
+        }
+        return List.copyOf(members);
     }
 
     public record FamilyMember(String name, VillagerGender gender, boolean alive) {

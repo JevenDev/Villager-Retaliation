@@ -84,6 +84,14 @@ public record VillagerDialogueResponsePayload(
                     false,
                     false,
                     false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
                     buffer.readVarInt()
             ));
         }
