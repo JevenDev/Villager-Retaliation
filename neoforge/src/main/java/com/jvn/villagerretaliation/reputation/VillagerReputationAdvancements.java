@@ -52,6 +52,8 @@ public final class VillagerReputationAdvancements {
     private static final double DANGEROUS_STORY_VILLAGER_RADIUS = 64.0D;
     private static final long DISCOVERY_SCAN_INTERVAL_TICKS = 20L;
     private static final long DANGEROUS_STORY_SCAN_INTERVAL_TICKS = 20L * 5L;
+    private static final long DANGEROUS_STORY_INITIAL_SCAN_DELAY_TICKS = 20L * 10L;
+    private static final int DANGEROUS_STORY_STRUCTURES_PER_SCAN = 2;
     private static final long STRUCTURE_STORY_CACHE_TICKS = 20L * 30L;
     private static final int MAX_STRUCTURE_STORY_CACHE_ENTRIES = 256;
     private static final long DANGEROUS_STORY_SHARE_TICKS = 20L * 60L * 60L * 6L;
@@ -62,6 +64,7 @@ public final class VillagerReputationAdvancements {
     private static final Map<UUID, Set<UUID>> HOSTILE_OR_WORSE_HISTORY = new HashMap<>();
     private static final Map<UUID, Long> NEXT_DISCOVERY_SCAN = new HashMap<>();
     private static final Map<UUID, Long> NEXT_DANGEROUS_STORY_SCAN = new HashMap<>();
+    private static final Map<UUID, Integer> NEXT_DANGEROUS_STORY_INDEX = new HashMap<>();
     private static final Map<UUID, Long> NEXT_BIOME_STORY_SCAN = new HashMap<>();
     private static final Map<StructureStorySearchKey, StructureStorySearchResult> STRUCTURE_STORY_CACHE = new HashMap<>();
 
@@ -216,11 +219,16 @@ public final class VillagerReputationAdvancements {
     private static void rememberDangerousStructureStories(ServerPlayer player) {
         ServerLevel level = player.serverLevel();
         long gameTime = level.getGameTime();
+        UUID playerId = player.getUUID();
         Long nextScan = NEXT_DANGEROUS_STORY_SCAN.get(player.getUUID());
+        if (nextScan == null) {
+            NEXT_DANGEROUS_STORY_SCAN.put(playerId, gameTime + DANGEROUS_STORY_INITIAL_SCAN_DELAY_TICKS);
+            return;
+        }
         if (nextScan != null && nextScan > gameTime) {
             return;
         }
-        NEXT_DANGEROUS_STORY_SCAN.put(player.getUUID(), gameTime + DANGEROUS_STORY_SCAN_INTERVAL_TICKS);
+        NEXT_DANGEROUS_STORY_SCAN.put(playerId, gameTime + DANGEROUS_STORY_SCAN_INTERVAL_TICKS);
 
         List<DangerousStructureStoryResources.Entry> storyStructures = DangerousStructureStoryResources.entries(level.getServer());
         if (storyStructures.isEmpty()) {
@@ -232,10 +240,18 @@ public final class VillagerReputationAdvancements {
         }
 
         Registry<Structure> registry = level.registryAccess().registryOrThrow(Registries.STRUCTURE);
-        for (DangerousStructureStoryResources.Entry storyStructure : storyStructures) {
+        int startIndex = Math.floorMod(
+                NEXT_DANGEROUS_STORY_INDEX.getOrDefault(playerId, playerId.hashCode()),
+                storyStructures.size()
+        );
+        int checks = Math.min(DANGEROUS_STORY_STRUCTURES_PER_SCAN, storyStructures.size());
+        for (int offset = 0; offset < checks; offset++) {
+            DangerousStructureStoryResources.Entry storyStructure =
+                    storyStructures.get((startIndex + offset) % storyStructures.size());
             registry.getHolder(ResourceKey.create(Registries.STRUCTURE, storyStructure.structureId()))
                     .ifPresent(holder -> rememberDangerousStructureStory(level, player, nearbyVillagers, storyStructure, holder));
         }
+        NEXT_DANGEROUS_STORY_INDEX.put(playerId, (startIndex + checks) % storyStructures.size());
     }
 
     private static List<Villager> nearbyVillagers(ServerLevel level, BlockPos origin) {
