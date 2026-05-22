@@ -22,6 +22,14 @@
       "order": 2
     },
     {
+      "id": "adult_family",
+      "label": "Ask About Family",
+      "type": "question",
+      "show_for_babies": false,
+      "requires_known_family": true,
+      "order": 2
+    },
+    {
       "id": "adult_gift_preferences",
       "label": "Ask About Gifts",
       "type": "gift_preferences",
@@ -146,6 +154,14 @@
       "label": "Ask What They Know",
       "type": "question",
       "show_for_adults": false,
+      "order": 2
+    },
+    {
+      "id": "baby_family",
+      "label": "Ask About Family",
+      "type": "question",
+      "show_for_adults": false,
+      "requires_known_family": true,
       "order": 2
     },
     {
@@ -1067,6 +1083,81 @@
     }
   ],
   "lines": [
+    {
+      "id": "adult_family_parent_warm",
+      "type": "question",
+      "option": "adult_family",
+      "text": "{parent} still checks in on me when the village gets loud. Family has a way of making even a crowded place feel anchored.",
+      "requires_known_parent": true,
+      "show_for_babies": false,
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral"
+      ],
+      "weight": 24
+    },
+    {
+      "id": "adult_family_child_warm",
+      "type": "question",
+      "option": "adult_family",
+      "text": "I keep an eye on {child}. Around here, every child learns quickly which footsteps mean help.",
+      "requires_known_child": true,
+      "show_for_babies": false,
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral"
+      ],
+      "weight": 24
+    },
+    {
+      "id": "adult_family_sibling_warm",
+      "type": "question",
+      "option": "adult_family",
+      "text": "{sibling} and I do not always agree, but I would still stand between them and trouble.",
+      "requires_known_sibling": true,
+      "show_for_babies": false,
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral"
+      ],
+      "weight": 22
+    },
+    {
+      "id": "adult_family_guarded",
+      "type": "question",
+      "option": "adult_family",
+      "text": "{relative} is family. That is enough to make me careful about who asks.",
+      "requires_known_family": true,
+      "show_for_babies": false,
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 28
+    },
+    {
+      "id": "baby_family_parent",
+      "type": "question",
+      "option": "baby_family",
+      "text": "{parent} says I should stay where the bell can hear me.",
+      "requires_known_parent": true,
+      "show_for_adults": false,
+      "weight": 28
+    },
+    {
+      "id": "baby_family_sibling",
+      "type": "question",
+      "option": "baby_family",
+      "text": "{sibling} thinks they are faster than me. They are not always right.",
+      "requires_known_sibling": true,
+      "show_for_adults": false,
+      "weight": 22
+    },
     {
       "id": "recruitment_followup_safe_home",
       "type": "recruitment_followup",

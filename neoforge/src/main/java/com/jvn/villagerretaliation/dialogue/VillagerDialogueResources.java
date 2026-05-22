@@ -368,6 +368,11 @@ public final class VillagerDialogueResources {
             boolean requiresUnapologizedRememberedHarm = readBoolean(entry, "requires_unapologized_remembered_harm");
             boolean requiresUnreportedVillageDefense = readBoolean(entry, "requires_unreported_village_defense");
             boolean requiresShareableStory = readBoolean(entry, "requires_shareable_story");
+            boolean requiresKnownFamily = readBoolean(entry, "requires_known_family");
+            boolean requiresKnownParent = readBoolean(entry, "requires_known_parent");
+            boolean requiresKnownSibling = readBoolean(entry, "requires_known_sibling");
+            boolean requiresKnownSpouse = readBoolean(entry, "requires_known_spouse");
+            boolean requiresKnownChild = readBoolean(entry, "requires_known_child");
             int order = readInt(entry, "order", index);
             options.put(id, new DialogueOptionDefinition(
                     id,
@@ -388,6 +393,11 @@ public final class VillagerDialogueResources {
                     requiresUnapologizedRememberedHarm,
                     requiresUnreportedVillageDefense,
                     requiresShareableStory,
+                    requiresKnownFamily,
+                    requiresKnownParent,
+                    requiresKnownSibling,
+                    requiresKnownSpouse,
+                    requiresKnownChild,
                     order
             ));
             index++;
@@ -624,6 +634,21 @@ public final class VillagerDialogueResources {
         }
         if (readBoolean(entry, "first_conversation_only")) {
             builder.firstConversationOnly();
+        }
+        if (readBoolean(entry, "requires_known_family")) {
+            builder.requiresKnownFamily();
+        }
+        if (readBoolean(entry, "requires_known_parent")) {
+            builder.requiresKnownParent();
+        }
+        if (readBoolean(entry, "requires_known_sibling")) {
+            builder.requiresKnownSibling();
+        }
+        if (readBoolean(entry, "requires_known_spouse")) {
+            builder.requiresKnownSpouse();
+        }
+        if (readBoolean(entry, "requires_known_child")) {
+            builder.requiresKnownChild();
         }
         builder.showForAdults(readBoolean(entry, "show_for_adults", true));
         builder.showForBabies(readBoolean(entry, "show_for_babies", true));

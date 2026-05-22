@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.dialogue.DialogueDisposition;
 import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
+import com.jvn.villagerretaliation.social.VillagerFamilyTreeSnapshot;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -16,6 +17,7 @@ public record OpenVillagerInteractionPayload(
         String villagerNameKey,
         String villagerNameFallback,
         String professionName,
+        String genderName,
         boolean baby,
         int reputation,
         VillagerReputationLevel reputationLevel,
@@ -23,7 +25,8 @@ public record OpenVillagerInteractionPayload(
         boolean followingPlayer,
         List<DialogueOptionDefinition> dialogueOptions,
         List<String> knownLikedGiftNames,
-        List<String> knownDislikedGiftNames)
+        List<String> knownDislikedGiftNames,
+        VillagerFamilyTreeSnapshot familyTree)
         implements CustomPacketPayload {
     public static final Type<OpenVillagerInteractionPayload> TYPE = VillagerPayloads.type("open_villager_interaction");
     public static final StreamCodec<RegistryFriendlyByteBuf, OpenVillagerInteractionPayload> STREAM_CODEC =
@@ -34,6 +37,7 @@ public record OpenVillagerInteractionPayload(
         buffer.writeUtf(payload.villagerNameKey());
         buffer.writeUtf(payload.villagerNameFallback());
         buffer.writeUtf(payload.professionName());
+        buffer.writeUtf(payload.genderName(), 32);
         buffer.writeBoolean(payload.baby());
         buffer.writeVarInt(payload.reputation());
         buffer.writeEnum(payload.reputationLevel());
@@ -42,6 +46,7 @@ public record OpenVillagerInteractionPayload(
         writeDialogueOptions(buffer, payload.dialogueOptions());
         writeStringList(buffer, payload.knownLikedGiftNames());
         writeStringList(buffer, payload.knownDislikedGiftNames());
+        writeFamilyTree(buffer, payload.familyTree());
     }
 
     private static OpenVillagerInteractionPayload decode(RegistryFriendlyByteBuf buffer) {
@@ -50,6 +55,7 @@ public record OpenVillagerInteractionPayload(
                 buffer.readUtf(),
                 buffer.readUtf(),
                 buffer.readUtf(),
+                buffer.readUtf(32),
                 buffer.readBoolean(),
                 buffer.readVarInt(),
                 buffer.readEnum(VillagerReputationLevel.class),
@@ -57,7 +63,8 @@ public record OpenVillagerInteractionPayload(
                 buffer.readBoolean(),
                 readDialogueOptions(buffer),
                 readStringList(buffer),
-                readStringList(buffer)
+                readStringList(buffer),
+                readFamilyTree(buffer)
         );
     }
 
@@ -94,6 +101,11 @@ public record OpenVillagerInteractionPayload(
                     false,
                     false,
                     false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
                     buffer.readVarInt()
             ));
         }
@@ -114,6 +126,27 @@ public record OpenVillagerInteractionPayload(
             values.add(buffer.readUtf(128));
         }
         return values;
+    }
+
+    private static void writeFamilyTree(RegistryFriendlyByteBuf buffer, VillagerFamilyTreeSnapshot familyTree) {
+        VillagerFamilyTreeSnapshot safeFamilyTree = familyTree == null ? VillagerFamilyTreeSnapshot.EMPTY : familyTree;
+        writeStringList(buffer, safeFamilyTree.parents());
+        writeStringList(buffer, safeFamilyTree.siblings());
+        writeStringList(buffer, safeFamilyTree.spouses());
+        writeStringList(buffer, safeFamilyTree.children());
+        writeStringList(buffer, safeFamilyTree.friends());
+        writeStringList(buffer, safeFamilyTree.rivals());
+    }
+
+    private static VillagerFamilyTreeSnapshot readFamilyTree(RegistryFriendlyByteBuf buffer) {
+        return new VillagerFamilyTreeSnapshot(
+                readStringList(buffer),
+                readStringList(buffer),
+                readStringList(buffer),
+                readStringList(buffer),
+                readStringList(buffer),
+                readStringList(buffer)
+        );
     }
 
     @Override

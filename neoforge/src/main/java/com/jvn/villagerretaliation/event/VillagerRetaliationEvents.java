@@ -7,6 +7,7 @@ import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil;
 import com.jvn.villagerretaliation.combat.VillagerPacificationResult;
 import com.jvn.villagerretaliation.combat.VillagerPacifyPaymentResources;
 import com.jvn.villagerretaliation.combat.WanderingTraderRetaliationHandler;
+import com.jvn.villagerretaliation.debug.VillagerRetaliationDebugItems;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueService;
 import com.jvn.villagerretaliation.interaction.VillagerCombatSurvivalService;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
@@ -181,6 +182,17 @@ public final class VillagerRetaliationEvents {
         }
 
         ItemStack interactionStack = player.getItemInHand(event.getHand());
+
+        if (event.getTarget() instanceof Villager villager
+                && player instanceof ServerPlayer
+                && VillagerRetaliationDebugItems.isDebugVillagerTool(interactionStack.getItem())) {
+            InteractionResult result = interactionStack.interactLivingEntity(player, villager, event.getHand());
+            if (result.consumesAction()) {
+                event.setCanceled(true);
+                event.setCancellationResult(result);
+                return;
+            }
+        }
 
         if (event.getTarget() instanceof Villager villager && player instanceof ServerPlayer serverPlayer) {
             ItemStack pacifyStack = selectPacifyPaymentStack(villager, player, interactionStack);

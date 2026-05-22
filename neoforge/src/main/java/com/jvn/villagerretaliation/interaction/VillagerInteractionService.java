@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.interaction;
 
 import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.debug.VillagerRetaliationDebugItems;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.DialogueDisposition;
 import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
@@ -27,6 +28,8 @@ import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
+import com.jvn.villagerretaliation.social.VillagerFamilyTreeSnapshot;
+import com.jvn.villagerretaliation.social.VillagerSocialGraphService;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.util.VillagerLocale;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
@@ -128,11 +131,13 @@ public final class VillagerInteractionService {
         java.util.List<DialogueOptionDefinition> dialogueOptions = VillagerDialogueResources.dialogueOptions(dialogueContext, mood);
         VillagerGiftKnowledgeService.GiftKnowledgeSnapshot giftKnowledge =
                 VillagerGiftKnowledgeService.knownGifts(level, player, villager.getVillagerData().getProfession());
+        VillagerFamilyTreeSnapshot familyTree = VillagerSocialGraphService.familySnapshot(level, villager);
         PacketDistributor.sendToPlayer(player, new OpenVillagerInteractionPayload(
                 villager.getId(),
                 "",
                 VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
                 villager.isBaby() ? "Child" : VillagerInteractionTextUtil.professionName(villager.getVillagerData().getProfession(), "Unemployed"),
+                VillagerPresetNameRegistry.resolveGender(villager).displayName(),
                 villager.isBaby(),
                 reputation.value(),
                 reputation.level(),
@@ -140,7 +145,8 @@ public final class VillagerInteractionService {
                 VillagerRecruitmentService.isFollowing(villager, player),
                 dialogueOptions,
                 giftKnowledge.likedGiftNames(),
-                giftKnowledge.dislikedGiftNames()
+                giftKnowledge.dislikedGiftNames(),
+                familyTree
         ));
         VillagerAmbientIndicatorService.onConversationOpened(level, villager, player);
         broadcastVillagerChat(level, villager, greetingText);
@@ -495,6 +501,7 @@ public final class VillagerInteractionService {
                 reports.curedRecognitionReport(),
                 reports.recruitmentMemory(),
                 reports.giftAdviceResultReport(),
+                VillagerSocialGraphService.familySnapshot(level, villager),
                 VillageEventMemory.recentForVillage(level, villager),
                 villager.getRandom(),
                 VillagerLocale.locale(player)
@@ -719,7 +726,9 @@ public final class VillagerInteractionService {
     }
 
     private static boolean shouldBypassInteractionScreen(ItemStack stack) {
-        return stack.is(Items.VILLAGER_SPAWN_EGG) || stack.is(Items.NAME_TAG);
+        return stack.is(Items.VILLAGER_SPAWN_EGG)
+                || stack.is(Items.NAME_TAG)
+                || VillagerRetaliationDebugItems.isDebugVillagerTool(stack.getItem());
     }
 
     private static boolean canUseInteractionTarget(ServerPlayer player, Villager villager, boolean allowSleeping) {

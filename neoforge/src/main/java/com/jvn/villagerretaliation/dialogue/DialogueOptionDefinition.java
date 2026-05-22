@@ -22,6 +22,11 @@ public record DialogueOptionDefinition(
         boolean requiresUnapologizedRememberedHarm,
         boolean requiresUnreportedVillageDefense,
         boolean requiresShareableStory,
+        boolean requiresKnownFamily,
+        boolean requiresKnownParent,
+        boolean requiresKnownSibling,
+        boolean requiresKnownSpouse,
+        boolean requiresKnownChild,
         int order
 ) {
     public boolean matches(DialogueContext context, DialogueDisposition disposition) {
@@ -68,10 +73,25 @@ public record DialogueOptionDefinition(
         if (this.requiresShareableStory && !context.hasShareableStory()) {
             return false;
         }
+        if (this.requiresKnownFamily && !context.hasKnownFamily()) {
+            return false;
+        }
+        if (this.requiresKnownParent && !context.hasKnownParent()) {
+            return false;
+        }
+        if (this.requiresKnownSibling && !context.hasKnownSibling()) {
+            return false;
+        }
+        if (this.requiresKnownSpouse && !context.hasKnownSpouse()) {
+            return false;
+        }
+        if (this.requiresKnownChild && !context.hasKnownChild()) {
+            return false;
+        }
         return this.dispositions.isEmpty() || this.dispositions.contains(disposition);
     }
 
     public static DialogueOptionDefinition simple(String id, String label, DialogueRequestType requestType, int order) {
-        return new DialogueOptionDefinition(id, label, requestType, true, true, Set.of(), Set.of(), false, false, false, false, false, false, false, false, false, false, false, order);
+        return new DialogueOptionDefinition(id, label, requestType, true, true, Set.of(), Set.of(), false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, order);
     }
 }

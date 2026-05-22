@@ -1,5 +1,7 @@
 {
   "villagerretaliation.mod_name": "VillagerRetaliation",
+  "item.villagerretaliation.villager_breeding_stick": "Villager Breeding Stick",
+  "item.villagerretaliation.villager_maturity_emerald": "Villager Maturity Emerald",
   "villagerretaliation.configuration.title": "%s Configuration",
   "villagerretaliation.configuration.section.villagerretaliation.common.toml": "%s Settings",
   "villagerretaliation.configuration.section.villagerretaliation.common.toml.title": "%s Settings",

@@ -34,6 +34,11 @@ public record DialogueLine(
         boolean requiresRecruitmentSwimTrip,
         boolean excludesRecruitmentOceanCrossing,
         boolean firstConversationOnly,
+        boolean requiresKnownFamily,
+        boolean requiresKnownParent,
+        boolean requiresKnownSibling,
+        boolean requiresKnownSpouse,
+        boolean requiresKnownChild,
         GiftAdviceKind giftAdviceKind,
         int weight
 ) {
@@ -119,6 +124,21 @@ public record DialogueLine(
         if (this.excludesRecruitmentOceanCrossing && context.hasRecruitmentMemoryOceanCrossing()) {
             return false;
         }
+        if (this.requiresKnownFamily && !context.hasKnownFamily()) {
+            return false;
+        }
+        if (this.requiresKnownParent && !context.hasKnownParent()) {
+            return false;
+        }
+        if (this.requiresKnownSibling && !context.hasKnownSibling()) {
+            return false;
+        }
+        if (this.requiresKnownSpouse && !context.hasKnownSpouse()) {
+            return false;
+        }
+        if (this.requiresKnownChild && !context.hasKnownChild()) {
+            return false;
+        }
         return this.weight > 0;
     }
 
@@ -168,6 +188,13 @@ public record DialogueLine(
         if (this.firstConversationOnly) {
             score += 2;
         }
+        if (this.requiresKnownFamily
+                || this.requiresKnownParent
+                || this.requiresKnownSibling
+                || this.requiresKnownSpouse
+                || this.requiresKnownChild) {
+            score += 5;
+        }
         if (this.giftAdviceKind != null) {
             score += 3;
         }
@@ -205,6 +232,11 @@ public record DialogueLine(
         private boolean requiresRecruitmentSwimTrip;
         private boolean excludesRecruitmentOceanCrossing;
         private boolean firstConversationOnly;
+        private boolean requiresKnownFamily;
+        private boolean requiresKnownParent;
+        private boolean requiresKnownSibling;
+        private boolean requiresKnownSpouse;
+        private boolean requiresKnownChild;
         private GiftAdviceKind giftAdviceKind;
         private int weight = 10;
 
@@ -345,6 +377,31 @@ public record DialogueLine(
             return this;
         }
 
+        public Builder requiresKnownFamily() {
+            this.requiresKnownFamily = true;
+            return this;
+        }
+
+        public Builder requiresKnownParent() {
+            this.requiresKnownParent = true;
+            return this;
+        }
+
+        public Builder requiresKnownSibling() {
+            this.requiresKnownSibling = true;
+            return this;
+        }
+
+        public Builder requiresKnownSpouse() {
+            this.requiresKnownSpouse = true;
+            return this;
+        }
+
+        public Builder requiresKnownChild() {
+            this.requiresKnownChild = true;
+            return this;
+        }
+
         public Builder giftAdviceKind(GiftAdviceKind giftAdviceKind) {
             this.giftAdviceKind = giftAdviceKind;
             return this;
@@ -383,6 +440,11 @@ public record DialogueLine(
                     this.requiresRecruitmentSwimTrip,
                     this.excludesRecruitmentOceanCrossing,
                     this.firstConversationOnly,
+                    this.requiresKnownFamily,
+                    this.requiresKnownParent,
+                    this.requiresKnownSibling,
+                    this.requiresKnownSpouse,
+                    this.requiresKnownChild,
                     this.giftAdviceKind,
                     this.weight
             );

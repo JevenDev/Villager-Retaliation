@@ -387,7 +387,17 @@ public final class VillagerDialogueService {
                 .replace("{follow_biome}", context.recruitmentMemoryBiome())
                 .replace("{follow_distance}", Integer.toString(context.recruitmentMemoryDistanceBlocks()))
                 .replace("{cured_villager}", curedVillagerName)
-                .replace("{cured_villager_possessive}", toPossessive(curedVillagerName));
+                .replace("{cured_villager_possessive}", toPossessive(curedVillagerName))
+                .replace("{parent}", context.familyTree().firstParent())
+                .replace("{parent_possessive}", toPossessive(context.familyTree().firstParent()))
+                .replace("{sibling}", context.familyTree().firstSibling())
+                .replace("{sibling_possessive}", toPossessive(context.familyTree().firstSibling()))
+                .replace("{spouse}", context.familyTree().firstSpouse())
+                .replace("{spouse_possessive}", toPossessive(context.familyTree().firstSpouse()))
+                .replace("{child}", context.familyTree().firstChild())
+                .replace("{child_possessive}", toPossessive(context.familyTree().firstChild()))
+                .replace("{relative}", context.familyTree().firstRelative())
+                .replace("{relative_possessive}", toPossessive(context.familyTree().firstRelative()));
     }
 
     private static String curedVillagerName(DialogueContext context) {

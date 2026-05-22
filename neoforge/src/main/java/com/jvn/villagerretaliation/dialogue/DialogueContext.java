@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.dialogue;
 
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
+import com.jvn.villagerretaliation.social.VillagerFamilyTreeSnapshot;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import java.util.Comparator;
 import java.util.List;
@@ -41,6 +42,7 @@ public record DialogueContext(
         VillagerInteractionTracker.CuredRecognitionReport curedRecognitionReport,
         VillagerInteractionTracker.RecruitmentMemory recruitmentMemory,
         VillagerInteractionTracker.GiftAdviceResultReport giftAdviceResultReport,
+        VillagerFamilyTreeSnapshot familyTree,
         List<VillageEventMemory.MemoryEvent> recentEvents,
         RandomSource random,
         String locale
@@ -51,6 +53,26 @@ public record DialogueContext(
 
     public boolean hasRecentEvent(VillageEventMemory.EventTag... tags) {
         return VillageEventMemory.hasAny(this.recentEvents, tags);
+    }
+
+    public boolean hasKnownFamily() {
+        return this.familyTree.hasFamily();
+    }
+
+    public boolean hasKnownParent() {
+        return this.familyTree.hasParent();
+    }
+
+    public boolean hasKnownSibling() {
+        return this.familyTree.hasSibling();
+    }
+
+    public boolean hasKnownSpouse() {
+        return this.familyTree.hasSpouse();
+    }
+
+    public boolean hasKnownChild() {
+        return this.familyTree.hasChild();
     }
 
     public boolean hasRecentPlayerEvent(VillageEventMemory.EventTag... tags) {

@@ -1,8 +1,10 @@
 package com.jvn.villagerretaliation.reputation;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -130,6 +132,54 @@ public class VillagerReputationSavedData extends SavedData {
         return true;
     }
 
+    public boolean inheritParentEntries(UUID childVillagerId, UUID parentAId, UUID parentBId, long gameTime, BlockPos childPos) {
+        if (childVillagerId == null || parentAId == null || parentBId == null) {
+            return false;
+        }
+
+        Map<UUID, ReputationEntry> parentAEntries = this.entries.getOrDefault(parentAId, Map.of());
+        Map<UUID, ReputationEntry> parentBEntries = this.entries.getOrDefault(parentBId, Map.of());
+        if (parentAEntries.isEmpty() && parentBEntries.isEmpty()) {
+            return false;
+        }
+
+        Set<UUID> playerIds = new HashSet<>();
+        playerIds.addAll(parentAEntries.keySet());
+        playerIds.addAll(parentBEntries.keySet());
+
+        boolean changed = false;
+        for (UUID playerId : playerIds) {
+            Map<UUID, ReputationEntry> childEntries = this.entries.computeIfAbsent(childVillagerId, ignored -> new HashMap<>());
+            if (childEntries.containsKey(playerId)) {
+                continue;
+            }
+
+            ReputationEntry parentAEntry = parentAEntries.get(playerId);
+            ReputationEntry parentBEntry = parentBEntries.get(playerId);
+            int inherited = inheritedParentReputation(
+                    parentAEntry == null ? 0 : parentAEntry.reputation(),
+                    parentAEntry != null,
+                    parentBEntry == null ? 0 : parentBEntry.reputation(),
+                    parentBEntry != null
+            );
+            if (inherited == 0) {
+                continue;
+            }
+
+            ReputationEntry childEntry = new ReputationEntry();
+            childEntry.setReputation(inherited);
+            childEntry.setLastInteractionGameTime(gameTime);
+            childEntry.setLastKnownVillagerPosition(childPos);
+            childEntries.put(playerId, childEntry);
+            changed = true;
+        }
+
+        if (changed) {
+            setDirty();
+        }
+        return changed;
+    }
+
     public void pruneOldNeutralEntries(long olderThanGameTime) {
         boolean changed = false;
         Iterator<Map.Entry<UUID, Map<UUID, ReputationEntry>>> villagerIterator = this.entries.entrySet().iterator();
@@ -154,6 +204,22 @@ public class VillagerReputationSavedData extends SavedData {
 
     private static ReputationEntry preferMostRecentEntry(ReputationEntry existing, ReputationEntry incoming) {
         return incoming.lastInteractionGameTime >= existing.lastInteractionGameTime ? incoming : existing;
+    }
+
+    private static int inheritedParentReputation(int parentA, boolean hasParentA, int parentB, boolean hasParentB) {
+        int base;
+        if (hasParentA && hasParentB) {
+            if (parentA > 0 && parentB > 0) {
+                base = Math.max(parentA, parentB);
+            } else if (parentA < 0 && parentB < 0) {
+                base = Math.min(parentA, parentB);
+            } else {
+                base = parentA + parentB;
+            }
+        } else {
+            base = hasParentA ? parentA : parentB;
+        }
+        return Math.round(base * 0.75F);
     }
 
     public static class ReputationEntry {

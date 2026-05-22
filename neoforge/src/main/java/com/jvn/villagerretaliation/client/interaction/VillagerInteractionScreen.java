@@ -10,6 +10,7 @@ import com.jvn.villagerretaliation.network.VillagerInventoryRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerRecruitRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerTradeRequestPayload;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
+import com.jvn.villagerretaliation.social.VillagerFamilyTreeSnapshot;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +35,7 @@ public class VillagerInteractionScreen extends Screen {
     private static final int OPTION_HEIGHT = 18;
     private static final int OPTION_GAP = 0;
     private static final int OPTION_VIEWPORT_ROWS = 5;
+    private static final int INFO_PANEL_ROWS = 6;
     private static final int OPTION_TEXT_INSET = 10;
     private static final int OPTION_SCROLLBAR_OFFSET = 2;
     private static final int OPTION_SCROLLBAR_WIDTH = 2;
@@ -73,6 +75,7 @@ public class VillagerInteractionScreen extends Screen {
     private final int villagerEntityId;
     private final String villagerName;
     private final String professionName;
+    private final String genderName;
     private final boolean baby;
     private int reputation;
     private VillagerReputationLevel reputationLevel;
@@ -82,6 +85,7 @@ public class VillagerInteractionScreen extends Screen {
     private final List<DialogueOptionDefinition> dialogueOptions = new ArrayList<>();
     private final List<String> knownLikedGiftNames = new ArrayList<>();
     private final List<String> knownDislikedGiftNames = new ArrayList<>();
+    private final VillagerFamilyTreeSnapshot familyTree;
     private DialoguePage page = DialoguePage.ROOT;
     private int selectedOption;
     private boolean closingFromServer;
@@ -98,6 +102,7 @@ public class VillagerInteractionScreen extends Screen {
             int villagerEntityId,
             String villagerName,
             String professionName,
+            String genderName,
             boolean baby,
             int reputation,
             VillagerReputationLevel reputationLevel,
@@ -105,11 +110,13 @@ public class VillagerInteractionScreen extends Screen {
             boolean followingPlayer,
             List<DialogueOptionDefinition> dialogueOptions,
             List<String> knownLikedGiftNames,
-            List<String> knownDislikedGiftNames) {
+            List<String> knownDislikedGiftNames,
+            VillagerFamilyTreeSnapshot familyTree) {
         super(Component.literal("Villager Interaction"));
         this.villagerEntityId = villagerEntityId;
         this.villagerName = villagerName;
         this.professionName = professionName;
+        this.genderName = genderName == null || genderName.isBlank() ? "Unknown" : genderName;
         this.baby = baby;
         this.reputation = reputation;
         this.reputationLevel = reputationLevel;
@@ -118,6 +125,7 @@ public class VillagerInteractionScreen extends Screen {
         this.dialogueOptions.addAll(dialogueOptions);
         this.knownLikedGiftNames.addAll(knownLikedGiftNames);
         this.knownDislikedGiftNames.addAll(knownDislikedGiftNames);
+        this.familyTree = familyTree == null ? VillagerFamilyTreeSnapshot.EMPTY : familyTree;
         ClientVillagerConversationState.start(villagerEntityId);
     }
 
@@ -182,7 +190,7 @@ public class VillagerInteractionScreen extends Screen {
         updateOptionScroll();
 
         int optionsTop = optionsTop();
-        renderConversationFocus(graphics, conversationInfoTop());
+        renderConversationFocus(graphics, conversationInfoTop(), mouseX, mouseY);
         renderDivider(graphics, optionsTop);
         renderTopBackButton(graphics, mouseX, mouseY);
         if (this.page == DialoguePage.GIFT) {
@@ -238,6 +246,7 @@ public class VillagerInteractionScreen extends Screen {
         }
 
         if (tryClickBackButton(mouseX, mouseY)
+                || tryClickFamilyButton(mouseX, mouseY)
                 || tryBeginScrollbarDrag(mouseX, mouseY)
                 || tryActivateHoveredOption(mouseX, mouseY)) {
             return true;
@@ -316,6 +325,8 @@ public class VillagerInteractionScreen extends Screen {
         this.options.clear();
         if (this.page == DialoguePage.TALK) {
             addDialogueOptions();
+        } else if (this.page == DialoguePage.FAMILY) {
+            addFamilyOptions();
         } else if (this.page == DialoguePage.RECRUIT) {
             addRecruitOptions();
         } else if (this.page == DialoguePage.ROOT) {
@@ -366,6 +377,28 @@ public class VillagerInteractionScreen extends Screen {
         this.options.add(DialogueOption.enabled(this.followingPlayer ? "Stop Following" : "Follow Me", () -> requestRecruit(VillagerRecruitRequestPayload.Action.FOLLOW)));
     }
 
+    private void addFamilyOptions() {
+        addFamilyRows("Parent", this.familyTree.parents());
+        addFamilyRows("Sibling", this.familyTree.siblings());
+        addFamilyRows("Spouse", this.familyTree.spouses());
+        addFamilyRows("Child", this.familyTree.children());
+        addFamilyRows("Friend", this.familyTree.friends());
+        addFamilyRows("Rival", this.familyTree.rivals());
+        if (this.options.isEmpty()) {
+            this.options.add(DialogueOption.enabled("No known family", () -> {
+            }));
+        }
+    }
+
+    private void addFamilyRows(String label, List<String> names) {
+        for (String name : names) {
+            if (name != null && !name.isBlank()) {
+                this.options.add(DialogueOption.enabled(label + ": " + name, () -> {
+                }));
+            }
+        }
+    }
+
     private void addDialogueOption(String label, String optionId) {
         this.options.add(DialogueOption.enabled(label, () -> requestDialogue(optionId)));
     }
@@ -383,6 +416,11 @@ public class VillagerInteractionScreen extends Screen {
 
     private void openRecruitPage() {
         this.page = DialoguePage.RECRUIT;
+        rebuildOptions();
+    }
+
+    private void openFamilyPage() {
+        this.page = DialoguePage.FAMILY;
         rebuildOptions();
     }
 
@@ -650,19 +688,34 @@ public class VillagerInteractionScreen extends Screen {
         VillagerInteractionScreenShaderRenderer.renderInteractionVeil(graphics, this.width, this.height, veilTop, VEIL_TOP_DITHER_HEIGHT);
     }
 
-    private void renderConversationFocus(GuiGraphics graphics, int optionsTop) {
+    private void renderConversationFocus(GuiGraphics graphics, int optionsTop, int mouseX, int mouseY) {
         int dividerX = dividerX();
         int infoBaseY = Mth.floor(optionTextTop(optionsTop));
         int infoLineGap = optionStride();
 
         drawRightAlignedInfo(graphics, this.villagerName, infoBaseY, INFO_VALUE_COLOR, dividerX);
         drawRightAlignedInfo(graphics, this.professionName, infoBaseY + infoLineGap, INFO_SECONDARY_COLOR, dividerX);
-        drawRightAlignedInfo(graphics, moodText(), infoBaseY + infoLineGap * 2, moodColor(this.mood), dividerX);
-        drawRightAlignedInfo(graphics, reputationText(), infoBaseY + infoLineGap * 3, INFO_LABEL_COLOR, dividerX);
+        drawRightAlignedInfo(graphics, genderText(), infoBaseY + infoLineGap * 2, INFO_SECONDARY_COLOR, dividerX);
+        drawRightAlignedInfo(graphics, moodText(), infoBaseY + infoLineGap * 3, moodColor(this.mood), dividerX);
+        drawRightAlignedInfo(graphics, reputationText(), infoBaseY + infoLineGap * 4, INFO_LABEL_COLOR, dividerX);
+        renderFamilyButton(graphics, mouseX, mouseY, infoBaseY + infoLineGap * 5, dividerX);
     }
 
     private void drawRightAlignedInfo(GuiGraphics graphics, String text, int y, int color, int dividerX) {
         graphics.drawString(this.font, text, dividerX - 28 - this.font.width(text), y, color, false);
+    }
+
+    private void renderFamilyButton(GuiGraphics graphics, int mouseX, int mouseY, int y, int dividerX) {
+        String text = familyButtonText();
+        FamilyButtonBounds bounds = familyButtonBounds(y, dividerX, text);
+        boolean hovered = bounds.contains(mouseX, mouseY);
+        int color = this.page == DialoguePage.FAMILY
+                ? INFO_VALUE_COLOR
+                : hovered ? 0xFFE5E5DE : INFO_SECONDARY_COLOR;
+        if (hovered || this.page == DialoguePage.FAMILY) {
+            graphics.fill(bounds.left() - 6, bounds.top() - 2, bounds.right() + 4, bounds.bottom() + 2, hovered ? 0x30000000 : 0x18000000);
+        }
+        graphics.drawString(this.font, text, bounds.left(), y, color, false);
     }
 
     private void renderDivider(GuiGraphics graphics, int optionsTop) {
@@ -773,6 +826,14 @@ public class VillagerInteractionScreen extends Screen {
         }
 
         navigateToRootPage();
+        return true;
+    }
+
+    private boolean tryClickFamilyButton(double mouseX, double mouseY) {
+        if (!isPointInsideFamilyButton(mouseX, mouseY)) {
+            return false;
+        }
+        openFamilyPage();
         return true;
     }
 
@@ -998,9 +1059,14 @@ public class VillagerInteractionScreen extends Screen {
 
     private int infoPanelWidth() {
         return Math.max(
-                Math.max(this.font.width(this.villagerName), this.font.width(this.professionName)),
-                Math.max(this.font.width(moodText()), this.font.width(reputationText()))
+                Math.max(Math.max(this.font.width(this.villagerName), this.font.width(this.professionName)),
+                        Math.max(Math.max(this.font.width(genderText()), this.font.width(moodText())), this.font.width(reputationText()))),
+                this.font.width(familyButtonText())
         );
+    }
+
+    private String genderText() {
+        return "Gender: " + this.genderName;
     }
 
     private String moodText() {
@@ -1009,6 +1075,23 @@ public class VillagerInteractionScreen extends Screen {
 
     private String reputationText() {
         return "Reputation: " + this.reputation;
+    }
+
+    private String familyButtonText() {
+        int count = this.familyTree.relationshipCount();
+        return count <= 0 ? "Family Tree" : "Family Tree: " + count;
+    }
+
+    private boolean isPointInsideFamilyButton(double mouseX, double mouseY) {
+        int infoBaseY = Mth.floor(optionTextTop(conversationInfoTop()));
+        int y = infoBaseY + optionStride() * 5;
+        return familyButtonBounds(y, dividerX(), familyButtonText()).contains(mouseX, mouseY);
+    }
+
+    private FamilyButtonBounds familyButtonBounds(int y, int dividerX, String text) {
+        int width = this.font.width(text);
+        int left = dividerX - 28 - width;
+        return new FamilyButtonBounds(left, left + width, y, y + this.font.lineHeight);
     }
 
     private boolean canRequestVillagerInventory() {
@@ -1048,7 +1131,7 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     private int rootOptionViewportHeight() {
-        return OPTION_VIEWPORT_ROWS * OPTION_HEIGHT + Math.max(0, OPTION_VIEWPORT_ROWS - 1) * OPTION_GAP;
+        return INFO_PANEL_ROWS * OPTION_HEIGHT + Math.max(0, INFO_PANEL_ROWS - 1) * OPTION_GAP;
     }
 
     private float maxOptionScroll() {
@@ -1191,6 +1274,7 @@ public class VillagerInteractionScreen extends Screen {
         ROOT,
         TALK,
         GIFT,
+        FAMILY,
         RECRUIT
     }
 
@@ -1220,5 +1304,14 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     private record GiftInfoIconBounds(int left, int top, int right, int bottom) {
+    }
+
+    private record FamilyButtonBounds(int left, int right, int top, int bottom) {
+        boolean contains(double mouseX, double mouseY) {
+            return mouseX >= this.left
+                    && mouseX <= this.right
+                    && mouseY >= this.top - 2
+                    && mouseY <= this.bottom + 2;
+        }
     }
 }
