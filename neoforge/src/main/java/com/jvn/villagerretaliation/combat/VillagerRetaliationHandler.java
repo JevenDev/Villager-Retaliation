@@ -60,6 +60,7 @@ import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
 public final class VillagerRetaliationHandler {
     private static final long NATURAL_TARGET_SCAN_INTERVAL_TICKS = 20L;
+    private static final long CREEPER_AVOIDANCE_SCAN_INTERVAL_TICKS = 10L;
     private static final double HOSTILE_HARASS_THROW_MAX_DISTANCE_SQR = 144.0D;
     private static final long ARMORER_SHIELD_AXE_BREAK_TICKS = 100L;
     private static final int ARMORER_COUNTER_SWINGS_AFTER_BLOCK = 1;
@@ -79,6 +80,7 @@ public final class VillagerRetaliationHandler {
             new VillagerRetaliationRetaliationRuntime<>(PERSISTENT_TAG_ROOT);
     private static final Map<UUID, Long> NEXT_SPECIAL_TICKS = new HashMap<>();
     private static final Map<UUID, Long> NEXT_NATURAL_TARGET_SCAN_TICKS = new HashMap<>();
+    private static final Map<UUID, Long> NEXT_CREEPER_AVOIDANCE_SCAN_TICKS = new HashMap<>();
     private static final Map<UUID, Long> NEXT_HOSTILE_HARASS_THROW_TICKS = new HashMap<>();
     private static final Map<UUID, Long> ARMORER_SHIELD_DISABLED_UNTIL_TICKS = new HashMap<>();
     private static final Map<UUID, Integer> ARMORER_PENDING_COUNTER_SWINGS = new HashMap<>();
@@ -557,11 +559,10 @@ public final class VillagerRetaliationHandler {
         }
 
         long gameTime = villager.level().getGameTime();
-        if (gameTime < NEXT_NATURAL_TARGET_SCAN_TICKS.getOrDefault(villager.getUUID(), 0L)) {
+        if (!consumeScanSlot(villager, NEXT_NATURAL_TARGET_SCAN_TICKS, gameTime, NATURAL_TARGET_SCAN_INTERVAL_TICKS)) {
             return;
         }
 
-        NEXT_NATURAL_TARGET_SCAN_TICKS.put(villager.getUUID(), gameTime + NATURAL_TARGET_SCAN_INTERVAL_TICKS);
         double naturalDefenseRadius = VillagerRetaliationConfig.NATURAL_HOSTILE_TARGET_RADIUS.get();
         VillagerRetaliationVillagerCombatUtil.findNearestNaturalHostile(villager, naturalDefenseRadius)
                 .filter(target -> !shouldAvoidVisibleCreeper(villager, target))
@@ -580,6 +581,11 @@ public final class VillagerRetaliationHandler {
 
     private static boolean tryFleeVisibleCreeper(Villager villager) {
         if (!VillagerRetaliationConfig.VILLAGERS_FLEE_VISIBLE_CREEPERS.get()) {
+            return false;
+        }
+
+        long gameTime = villager.level().getGameTime();
+        if (!consumeScanSlot(villager, NEXT_CREEPER_AVOIDANCE_SCAN_TICKS, gameTime, CREEPER_AVOIDANCE_SCAN_INTERVAL_TICKS)) {
             return false;
         }
 
@@ -1146,7 +1152,7 @@ public final class VillagerRetaliationHandler {
 
     private static boolean tryRepairNearbyIronGolem(Villager villager, ServerLevel level, long gameTime) {
         if (!canProfessionRepairIronGolems(villager)
-                || gameTime < NEXT_IRON_GOLEM_REPAIR_TICKS.getOrDefault(villager.getUUID(), 0L)) {
+                || !consumeScanSlot(villager, NEXT_IRON_GOLEM_REPAIR_TICKS, gameTime, SMITH_IRON_GOLEM_REPAIR_SCAN_INTERVAL_TICKS)) {
             return false;
         }
 
@@ -1158,6 +1164,7 @@ public final class VillagerRetaliationHandler {
 
         if (!villager.hasLineOfSight(ironGolem)
                 || villager.distanceToSqr(ironGolem) > SMITH_IRON_GOLEM_REPAIR_REACH_SQR) {
+            NEXT_IRON_GOLEM_REPAIR_TICKS.put(villager.getUUID(), gameTime + 20L);
             villager.getNavigation().moveTo(ironGolem, VillagerCombatRoles.movementSpeed(villager) * 0.6D);
             return true;
         }
@@ -1210,6 +1217,7 @@ public final class VillagerRetaliationHandler {
         RETALIATION.clearTransientState(villager);
         NEXT_SPECIAL_TICKS.remove(villager.getUUID());
         NEXT_NATURAL_TARGET_SCAN_TICKS.remove(villager.getUUID());
+        NEXT_CREEPER_AVOIDANCE_SCAN_TICKS.remove(villager.getUUID());
         NEXT_HOSTILE_HARASS_THROW_TICKS.remove(villager.getUUID());
         NEXT_IRON_GOLEM_REPAIR_TICKS.remove(villager.getUUID());
         if (villager.isAlive()) {
@@ -1254,5 +1262,29 @@ public final class VillagerRetaliationHandler {
     private static void resetArmorerShieldState(Villager villager) {
         stopArmorerShieldBlocking(villager);
         clearArmorerShieldTacticState(villager, false);
+    }
+
+    private static boolean consumeScanSlot(Villager villager, Map<UUID, Long> nextScanTicks, long gameTime, long intervalTicks) {
+        UUID villagerId = villager.getUUID();
+        Long nextScan = nextScanTicks.get(villagerId);
+        if (nextScan == null) {
+            long firstScan = gameTime + scanStagger(villagerId, intervalTicks);
+            if (firstScan > gameTime) {
+                nextScanTicks.put(villagerId, firstScan);
+                return false;
+            }
+        } else if (gameTime < nextScan) {
+            return false;
+        }
+
+        nextScanTicks.put(villagerId, gameTime + Math.max(1L, intervalTicks));
+        return true;
+    }
+
+    private static long scanStagger(UUID villagerId, long intervalTicks) {
+        if (intervalTicks <= 1L) {
+            return 0L;
+        }
+        return Math.floorMod(villagerId.getMostSignificantBits() ^ villagerId.getLeastSignificantBits(), intervalTicks);
     }
 }

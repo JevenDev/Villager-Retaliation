@@ -27,6 +27,7 @@ import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerFleeBehaviorHandler;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
+import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerRules;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -73,6 +74,7 @@ public final class VillagerRetaliationEvents {
 
     public static void onServerStopping(ServerStoppingEvent event) {
         VillagerDataWarmup.clearCaches();
+        VillagerRetaliationVillagerRules.clearCachedChecks();
     }
 
     public static void onEntityAttributeModification(EntityAttributeModificationEvent event) {
@@ -363,6 +365,7 @@ public final class VillagerRetaliationEvents {
         VillagerConversationService.endForEntityLeaving(event.getEntity(), true);
         if (event.getEntity() instanceof Villager villager) {
             VillagerCombatSurvivalService.onVillagerLeaveLevel(villager);
+            VillagerRetaliationVillagerRules.clearCachedChecks(villager);
         }
     }
 

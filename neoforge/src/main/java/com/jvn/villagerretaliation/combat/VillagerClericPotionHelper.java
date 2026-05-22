@@ -32,6 +32,7 @@ final class VillagerClericPotionHelper {
     private static final Map<UUID, Long> HEALING_REDRINK_COOLDOWN_UNTIL = new HashMap<>();
     private static final double MAX_THROW_DISTANCE_SQR = 144.0D;
     private static final int THROW_INTERVAL_TICKS = 60;
+    private static final int PASSIVE_SUPPORT_SCAN_INTERVAL_TICKS = 20;
     private static final int HEALING_REDRINK_COOLDOWN_TICKS = 40;
     private static final int FIRE_RESISTANCE_TICKS = 20 * 180;
     private static final int WATER_BREATHING_TICKS = 20 * 180;
@@ -43,6 +44,7 @@ final class VillagerClericPotionHelper {
     private static final double SPLASH_RADIUS = 4.0D;
     private static final float SUPPORT_HEAL_HEALTH_RATIO = 0.6F;
     private static final float SUPPORT_HEAL_MIN_MISSING_HEALTH = 4.0F;
+    private static final Map<UUID, Long> NEXT_PASSIVE_SUPPORT_SCAN_TICKS = new HashMap<>();
 
     private VillagerClericPotionHelper() {
     }
@@ -105,6 +107,7 @@ final class VillagerClericPotionHelper {
 
     static void clearAllState(Villager villager) {
         clearState(villager);
+        NEXT_PASSIVE_SUPPORT_SCAN_TICKS.remove(villager.getUUID());
         HEALING_REDRINK_COOLDOWN_UNTIL.remove(villager.getUUID());
     }
 
@@ -144,6 +147,16 @@ final class VillagerClericPotionHelper {
             return true;
         }
 
+        int attackDelay = ATTACK_DELAY.getOrDefault(villager.getUUID(), 0);
+        if (attackDelay > 0) {
+            ATTACK_DELAY.put(villager.getUUID(), attackDelay - 1);
+            return true;
+        }
+
+        if (!consumePassiveSupportScanSlot(villager, level.getGameTime())) {
+            return false;
+        }
+
         double passiveRange = VillagerRetaliationConfig.PASSIVE_CLERIC_ALLY_HEAL_RANGE.get();
         LivingEntity supportTarget = findSupportTarget(
                 villager,
@@ -154,13 +167,6 @@ final class VillagerClericPotionHelper {
         );
         if (supportTarget == null) {
             return false;
-        }
-
-        int attackDelay = ATTACK_DELAY.getOrDefault(villager.getUUID(), 0);
-        if (attackDelay > 0) {
-            ATTACK_DELAY.put(villager.getUUID(), attackDelay - 1);
-            villager.getNavigation().moveTo(supportTarget, VillagerCombatRoles.movementSpeed(villager) * 0.6D);
-            return true;
         }
 
         double distanceSqr = villager.distanceToSqr(supportTarget);
@@ -198,6 +204,30 @@ final class VillagerClericPotionHelper {
         return DRINKING_POTIONS.containsKey(villager.getUUID());
     }
 
+    private static boolean consumePassiveSupportScanSlot(Villager villager, long gameTime) {
+        UUID villagerId = villager.getUUID();
+        Long nextScan = NEXT_PASSIVE_SUPPORT_SCAN_TICKS.get(villagerId);
+        if (nextScan == null) {
+            long firstScan = gameTime + scanStagger(villagerId, PASSIVE_SUPPORT_SCAN_INTERVAL_TICKS);
+            if (firstScan > gameTime) {
+                NEXT_PASSIVE_SUPPORT_SCAN_TICKS.put(villagerId, firstScan);
+                return false;
+            }
+        } else if (gameTime < nextScan) {
+            return false;
+        }
+
+        NEXT_PASSIVE_SUPPORT_SCAN_TICKS.put(villagerId, gameTime + PASSIVE_SUPPORT_SCAN_INTERVAL_TICKS);
+        return true;
+    }
+
+    private static long scanStagger(UUID villagerId, long intervalTicks) {
+        if (intervalTicks <= 1L) {
+            return 0L;
+        }
+        return Math.floorMod(villagerId.getMostSignificantBits() ^ villagerId.getLeastSignificantBits(), intervalTicks);
+    }
+
     static void setPostDrinkMainHand(Villager villager, ItemStack stack) {
         PotionUseState state = DRINKING_POTIONS.get(villager.getUUID());
         if (state != null) {
@@ -208,6 +238,7 @@ final class VillagerClericPotionHelper {
     static void restoreHeldItemAndClearState(Villager villager) {
         PotionUseState state = DRINKING_POTIONS.remove(villager.getUUID());
         ATTACK_DELAY.remove(villager.getUUID());
+        NEXT_PASSIVE_SUPPORT_SCAN_TICKS.remove(villager.getUUID());
         HEALING_REDRINK_COOLDOWN_UNTIL.remove(villager.getUUID());
         if (state != null && villager.isAlive()) {
             villager.stopUsingItem();

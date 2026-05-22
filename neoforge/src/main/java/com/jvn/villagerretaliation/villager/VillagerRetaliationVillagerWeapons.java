@@ -73,6 +73,12 @@ public final class VillagerRetaliationVillagerWeapons {
             if (isCachedWeaponStillUsable(villager, cached.itemEntity())) {
                 return Optional.of(cached.itemEntity());
             }
+        } else if (cached == null) {
+            long firstSearch = gameTime + scanStagger(villagerId, WEAPON_SEARCH_CACHE_TICKS);
+            if (firstSearch > gameTime) {
+                NEAREST_WEAPON_CACHE.put(villagerId, new CachedWeaponSearch(null, firstSearch));
+                return Optional.empty();
+            }
         }
 
         ItemEntity bestWeapon = findNearestWeaponUncached(villager);
@@ -275,6 +281,13 @@ public final class VillagerRetaliationVillagerWeapons {
 
     private static void clearNearestWeaponCache(AbstractVillager villager) {
         NEAREST_WEAPON_CACHE.remove(villager.getUUID());
+    }
+
+    private static long scanStagger(UUID villagerId, long intervalTicks) {
+        if (intervalTicks <= 1L) {
+            return 0L;
+        }
+        return Math.floorMod(villagerId.getMostSignificantBits() ^ villagerId.getLeastSignificantBits(), intervalTicks);
     }
 
     private static void pruneNearestWeaponCache(long gameTime) {
