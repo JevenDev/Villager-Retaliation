@@ -239,6 +239,53 @@ public class VillagerSocialGraphSavedData extends SavedData {
         return BreedingValidation.success();
     }
 
+    public BreedingValidation validateAdoptionParents(ServerLevel level, Villager first, Villager second) {
+        ensureProfile(level, first);
+        ensureProfile(level, second);
+        if (first.getUUID().equals(second.getUUID())) {
+            return BreedingValidation.blocked("That is the same villager.");
+        }
+        if (first.isBaby() || second.isBaby()) {
+            return BreedingValidation.blocked("Adoption needs adult villagers.");
+        }
+        if (isTooCloselyRelated(first.getUUID(), second.getUUID())) {
+            return BreedingValidation.blocked("Those villagers are too closely related to adopt together.");
+        }
+        return BreedingValidation.success();
+    }
+
+    public BreedingValidation validateAdoption(ServerLevel level, Villager first, Villager second, Villager child) {
+        BreedingValidation parentValidation = validateAdoptionParents(level, first, second);
+        if (!parentValidation.allowed()) {
+            return parentValidation;
+        }
+        ensureProfile(level, child);
+        if (!child.isBaby()) {
+            return BreedingValidation.blocked("Adoption needs a baby villager.");
+        }
+        UUID childId = child.getUUID();
+        if (first.getUUID().equals(childId) || second.getUUID().equals(childId)) {
+            return BreedingValidation.blocked("Villagers cannot adopt themselves.");
+        }
+        if (hasLivingParents(level, childId)) {
+            return BreedingValidation.blocked("That baby already has living parents.");
+        }
+        return BreedingValidation.success();
+    }
+
+    public void linkAdoptiveParentsAndChild(ServerLevel level, Villager parentA, Villager parentB, Villager child) {
+        linkParentsAndChild(level, parentA, parentB, child);
+        linkSpouses(level, parentA, parentB);
+    }
+
+    public void linkSpouses(ServerLevel level, Villager first, Villager second) {
+        ensureProfile(level, first);
+        ensureProfile(level, second);
+        if (addSymmetric(first.getUUID(), RelationshipType.SPOUSE, second.getUUID())) {
+            setDirty();
+        }
+    }
+
     private boolean isTooCloselyRelated(UUID firstId, UUID secondId) {
         if (firstId.equals(secondId)) {
             return true;
@@ -255,6 +302,24 @@ public class VillagerSocialGraphSavedData extends SavedData {
         }
         return relationships(firstId, RelationshipType.SIBLING).contains(secondId)
                 || relationships(secondId, RelationshipType.SIBLING).contains(firstId);
+    }
+
+    private boolean hasLivingParents(ServerLevel level, UUID childId) {
+        for (UUID parentId : relationships(childId, RelationshipType.PARENT)) {
+            if (isLivingVillager(level, parentId)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isLivingVillager(ServerLevel level, UUID villagerId) {
+        Entity entity = level.getEntity(villagerId);
+        if (entity instanceof Villager villager) {
+            return villager.isAlive();
+        }
+        VillagerProfile profile = this.profiles.get(villagerId);
+        return profile != null && profile.alive();
     }
 
     private boolean isAncestorOf(UUID possibleAncestorId, UUID villagerId, int maxDepth) {

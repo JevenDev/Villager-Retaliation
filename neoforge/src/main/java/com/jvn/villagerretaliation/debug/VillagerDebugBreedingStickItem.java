@@ -27,6 +27,8 @@ public class VillagerDebugBreedingStickItem extends Item {
     private static final String DEBUG_BREEDING_TAG = "VillagerRetaliationDebugBreeding";
     private static final String SELECTED_VILLAGER_TAG = "SelectedVillager";
     private static final String SELECTED_NAME_TAG = "SelectedName";
+    private static final String SELECTED_PARTNER_TAG = "SelectedPartner";
+    private static final String SELECTED_PARTNER_NAME_TAG = "SelectedPartnerName";
 
     public VillagerDebugBreedingStickItem(Properties properties) {
         super(properties);
@@ -44,13 +46,12 @@ public class VillagerDebugBreedingStickItem extends Item {
             return InteractionResult.PASS;
         }
 
+        SelectedVillagers selectedVillagers = selectedVillagers(stack);
         if (villager.isBaby()) {
-            serverPlayer.displayClientMessage(Component.literal("Debug breeding needs adult villagers."), true);
-            return InteractionResult.SUCCESS;
+            return tryAdopt(stack, serverPlayer, level, villager, selectedVillagers);
         }
 
-        SelectedVillager selectedVillager = selectedVillager(stack);
-        if (selectedVillager == null || selectedVillager.id().equals(villager.getUUID())) {
+        if (selectedVillagers == null || selectedVillagers.contains(villager.getUUID())) {
             storeSelectedVillager(stack, villager);
             serverPlayer.displayClientMessage(
                     Component.literal("Selected " + displayName(villager) + ". Right-click another adult villager."),
@@ -59,8 +60,17 @@ public class VillagerDebugBreedingStickItem extends Item {
             return InteractionResult.SUCCESS;
         }
 
-        Entity selectedEntity = level.getEntity(selectedVillager.id());
-        if (!(selectedEntity instanceof Villager otherVillager) || !otherVillager.isAlive() || otherVillager.isBaby()) {
+        if (selectedVillagers.hasAdoptionPair()) {
+            storeSelectedVillager(stack, villager);
+            serverPlayer.displayClientMessage(
+                    Component.literal("Started a new selection with " + displayName(villager) + "."),
+                    true
+            );
+            return InteractionResult.SUCCESS;
+        }
+
+        Villager otherVillager = selectedAdult(level, selectedVillagers.firstId());
+        if (otherVillager == null) {
             storeSelectedVillager(stack, villager);
             serverPlayer.displayClientMessage(
                     Component.literal("Previous selection was unavailable. Selected " + displayName(villager) + " instead."),
@@ -71,20 +81,84 @@ public class VillagerDebugBreedingStickItem extends Item {
 
         VillagerSocialGraphSavedData socialGraph = VillagerSocialGraphSavedData.get(level);
         VillagerSocialGraphSavedData.BreedingValidation validation = socialGraph.validateBreedingPair(level, otherVillager, villager);
-        if (!validation.allowed()) {
+        boolean sameGender = VillagerPresetNameRegistry.resolveGender(otherVillager) == VillagerPresetNameRegistry.resolveGender(villager);
+        boolean adoptionRequested = serverPlayer.isShiftKeyDown();
+        if (!adoptionRequested && validation.allowed()) {
+            if (spawnDebugBaby(level, serverPlayer, otherVillager, villager)) {
+                clearSelection(stack);
+                serverPlayer.displayClientMessage(
+                        Component.literal("Debug baby created for " + displayName(otherVillager) + " and " + displayName(villager) + "."),
+                        true
+                );
+            } else {
+                serverPlayer.displayClientMessage(Component.literal("Could not create debug baby."), true);
+            }
+            return InteractionResult.SUCCESS;
+        }
+
+        if (!adoptionRequested && !sameGender) {
             serverPlayer.displayClientMessage(Component.literal(validation.reason()), true);
             return InteractionResult.SUCCESS;
         }
 
-        if (spawnDebugBaby(level, serverPlayer, otherVillager, villager)) {
-            clearSelection(stack);
-            serverPlayer.displayClientMessage(
-                    Component.literal("Debug baby created for " + displayName(otherVillager) + " and " + displayName(villager) + "."),
-                    true
-            );
-        } else {
-            serverPlayer.displayClientMessage(Component.literal("Could not create debug baby."), true);
+        VillagerSocialGraphSavedData.BreedingValidation adoptionParentValidation =
+                socialGraph.validateAdoptionParents(level, otherVillager, villager);
+        if (!adoptionParentValidation.allowed()) {
+            serverPlayer.displayClientMessage(Component.literal(adoptionParentValidation.reason()), true);
+            return InteractionResult.SUCCESS;
         }
+
+        storeSelectedPair(stack, otherVillager, villager);
+        serverPlayer.displayClientMessage(
+                Component.literal("Selected " + displayName(otherVillager) + " and " + displayName(villager)
+                        + " for adoption. Right-click an orphan baby villager."),
+                true
+        );
+        return InteractionResult.SUCCESS;
+    }
+
+    private static InteractionResult tryAdopt(
+            ItemStack stack,
+            ServerPlayer player,
+            ServerLevel level,
+            Villager child,
+            SelectedVillagers selectedVillagers
+    ) {
+        if (selectedVillagers == null || !selectedVillagers.hasAdoptionPair()) {
+            player.displayClientMessage(Component.literal("Select two adult villagers, then right-click an orphan baby villager."), true);
+            return InteractionResult.SUCCESS;
+        }
+
+        Villager parentA = selectedAdult(level, selectedVillagers.firstId());
+        Villager parentB = selectedAdult(level, selectedVillagers.secondId());
+        if (parentA == null || parentB == null) {
+            clearSelection(stack);
+            player.displayClientMessage(Component.literal("Adoption pair was unavailable. Selection cleared."), true);
+            return InteractionResult.SUCCESS;
+        }
+
+        VillagerSocialGraphSavedData socialGraph = VillagerSocialGraphSavedData.get(level);
+        VillagerSocialGraphSavedData.BreedingValidation validation = socialGraph.validateAdoption(level, parentA, parentB, child);
+        if (!validation.allowed()) {
+            player.displayClientMessage(Component.literal(validation.reason()), true);
+            return InteractionResult.SUCCESS;
+        }
+
+        socialGraph.linkAdoptiveParentsAndChild(level, parentA, parentB, child);
+        VillagerReputationManager.inheritReputationFromParents(level, child, parentA, parentB);
+        clearSelection(stack);
+
+        double x = child.getX();
+        double y = child.getY();
+        double z = child.getZ();
+        level.sendParticles(ParticleTypes.HEART, x, y + child.getBbHeight() + 0.25D, z, 9, 0.35D, 0.25D, 0.35D, 0.02D);
+        parentA.playSound(SoundEvents.VILLAGER_YES, 0.8F, 0.9F + parentA.getRandom().nextFloat() * 0.2F);
+        parentB.playSound(SoundEvents.VILLAGER_YES, 0.8F, 0.9F + parentB.getRandom().nextFloat() * 0.2F);
+        child.playSound(SoundEvents.VILLAGER_YES, 0.8F, 1.1F + child.getRandom().nextFloat() * 0.2F);
+        player.displayClientMessage(
+                Component.literal(displayName(parentA) + " and " + displayName(parentB) + " adopted " + displayName(child) + "."),
+                true
+        );
         return InteractionResult.SUCCESS;
     }
 
@@ -115,6 +189,14 @@ public class VillagerDebugBreedingStickItem extends Item {
         return true;
     }
 
+    private static Villager selectedAdult(ServerLevel level, UUID id) {
+        Entity selectedEntity = level.getEntity(id);
+        if (selectedEntity instanceof Villager villager && villager.isAlive() && !villager.isBaby()) {
+            return villager;
+        }
+        return null;
+    }
+
     private static void storeSelectedVillager(ItemStack stack, Villager villager) {
         CompoundTag selectionTag = new CompoundTag();
         selectionTag.putUUID(SELECTED_VILLAGER_TAG, villager.getUUID());
@@ -122,7 +204,16 @@ public class VillagerDebugBreedingStickItem extends Item {
         CustomData.update(DataComponents.CUSTOM_DATA, stack, tag -> tag.put(DEBUG_BREEDING_TAG, selectionTag));
     }
 
-    private static SelectedVillager selectedVillager(ItemStack stack) {
+    private static void storeSelectedPair(ItemStack stack, Villager first, Villager second) {
+        CompoundTag selectionTag = new CompoundTag();
+        selectionTag.putUUID(SELECTED_VILLAGER_TAG, first.getUUID());
+        selectionTag.putString(SELECTED_NAME_TAG, displayName(first));
+        selectionTag.putUUID(SELECTED_PARTNER_TAG, second.getUUID());
+        selectionTag.putString(SELECTED_PARTNER_NAME_TAG, displayName(second));
+        CustomData.update(DataComponents.CUSTOM_DATA, stack, tag -> tag.put(DEBUG_BREEDING_TAG, selectionTag));
+    }
+
+    private static SelectedVillagers selectedVillagers(ItemStack stack) {
         CustomData customData = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
         if (customData.isEmpty() || !customData.contains(DEBUG_BREEDING_TAG)) {
             return null;
@@ -131,7 +222,14 @@ public class VillagerDebugBreedingStickItem extends Item {
         if (!selectionTag.hasUUID(SELECTED_VILLAGER_TAG)) {
             return null;
         }
-        return new SelectedVillager(selectionTag.getUUID(SELECTED_VILLAGER_TAG), selectionTag.getString(SELECTED_NAME_TAG));
+        UUID secondId = selectionTag.hasUUID(SELECTED_PARTNER_TAG) ? selectionTag.getUUID(SELECTED_PARTNER_TAG) : null;
+        String secondName = secondId == null ? "" : selectionTag.getString(SELECTED_PARTNER_NAME_TAG);
+        return new SelectedVillagers(
+                selectionTag.getUUID(SELECTED_VILLAGER_TAG),
+                selectionTag.getString(SELECTED_NAME_TAG),
+                secondId,
+                secondName
+        );
     }
 
     private static void clearSelection(ItemStack stack) {
@@ -152,6 +250,13 @@ public class VillagerDebugBreedingStickItem extends Item {
         return VillagerPresetNameRegistry.resolveDisplayName(villager).getString();
     }
 
-    private record SelectedVillager(UUID id, String name) {
+    private record SelectedVillagers(UUID firstId, String firstName, UUID secondId, String secondName) {
+        private boolean hasAdoptionPair() {
+            return this.secondId != null;
+        }
+
+        private boolean contains(UUID id) {
+            return this.firstId.equals(id) || (this.secondId != null && this.secondId.equals(id));
+        }
     }
 }

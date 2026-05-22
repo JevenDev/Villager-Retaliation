@@ -192,7 +192,7 @@ Debug-only family testing items are available through commands:
 /give @s villagerretaliation:villager_maturity_emerald
 ```
 
-Right-click two adult villagers with the breeding stick to create a baby immediately, bypassing vanilla breeding cooldown. The debug breeding tool still respects Villager Retaliation's gender and close-family checks. Right-click a baby villager with the maturity emerald to make them an adult immediately.
+Right-click two adult villagers with the breeding stick to create a biological baby immediately, bypassing vanilla breeding cooldown. Biological births require opposite-gender parents and still respect close-family checks. Sneak-right-click the second adult instead to select any valid adult pair for adoption, then right-click an orphan baby villager. Same-gender adult pairs automatically enter adoption mode instead of creating a biological baby. Right-click a baby villager with the maturity emerald to make them an adult immediately.
 
 ## Configuration
 
