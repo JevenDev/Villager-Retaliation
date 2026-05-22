@@ -138,9 +138,13 @@ public record OpenVillagerInteractionPayload(
         writeFamilyMembers(buffer, safeFamilyTree.siblings());
         writeFamilyMembers(buffer, safeFamilyTree.spouses());
         writeFamilyMembers(buffer, safeFamilyTree.children());
+        writeFamilyMembers(buffer, safeFamilyTree.auntsUncles());
+        writeFamilyMembers(buffer, safeFamilyTree.cousins());
+        writeFamilyMembers(buffer, safeFamilyTree.niecesNephews());
         writeFamilyMembers(buffer, safeFamilyTree.friends());
         writeFamilyMembers(buffer, safeFamilyTree.rivals());
         writeAncestry(buffer, safeFamilyTree.ancestry());
+        writeDescendants(buffer, safeFamilyTree.descendants());
     }
 
     private static VillagerFamilyTreeSnapshot readFamilyTree(RegistryFriendlyByteBuf buffer) {
@@ -154,7 +158,11 @@ public record OpenVillagerInteractionPayload(
                 readFamilyMembers(buffer),
                 readFamilyMembers(buffer),
                 readFamilyMembers(buffer),
-                readAncestry(buffer)
+                readFamilyMembers(buffer),
+                readFamilyMembers(buffer),
+                readFamilyMembers(buffer),
+                readAncestry(buffer),
+                readDescendants(buffer)
         );
     }
 
@@ -195,6 +203,23 @@ public record OpenVillagerInteractionPayload(
             ancestry.add(new VillagerFamilyTreeSnapshot.AncestorGeneration(buffer.readVarInt(), readFamilyMembers(buffer)));
         }
         return ancestry;
+    }
+
+    private static void writeDescendants(RegistryFriendlyByteBuf buffer, List<VillagerFamilyTreeSnapshot.DescendantGeneration> descendants) {
+        buffer.writeVarInt(descendants.size());
+        for (VillagerFamilyTreeSnapshot.DescendantGeneration generation : descendants) {
+            buffer.writeVarInt(generation.generation());
+            writeFamilyMembers(buffer, generation.descendants());
+        }
+    }
+
+    private static List<VillagerFamilyTreeSnapshot.DescendantGeneration> readDescendants(RegistryFriendlyByteBuf buffer) {
+        int size = buffer.readVarInt();
+        List<VillagerFamilyTreeSnapshot.DescendantGeneration> descendants = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            descendants.add(new VillagerFamilyTreeSnapshot.DescendantGeneration(buffer.readVarInt(), readFamilyMembers(buffer)));
+        }
+        return descendants;
     }
 
     @Override

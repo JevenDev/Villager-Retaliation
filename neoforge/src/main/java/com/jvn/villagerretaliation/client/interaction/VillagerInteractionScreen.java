@@ -330,6 +330,8 @@ public class VillagerInteractionScreen extends Screen {
             addFamilyOptions();
         } else if (this.page == DialoguePage.ANCESTRY) {
             addAncestryOptions();
+        } else if (this.page == DialoguePage.DESCENDANTS) {
+            addDescendantOptions();
         } else if (this.page == DialoguePage.RECRUIT) {
             addRecruitOptions();
         } else if (this.page == DialoguePage.ROOT) {
@@ -384,6 +386,9 @@ public class VillagerInteractionScreen extends Screen {
         if (this.familyTree.hasAncestry()) {
             this.options.add(DialogueOption.enabled("Ancestry", this::openAncestryPage));
         }
+        if (this.familyTree.hasDescendants()) {
+            this.options.add(DialogueOption.enabled("Descendants", this::openDescendantsPage));
+        }
         addFamilyRows("Father", this.familyTree.maleParents());
         addFamilyRows("Mother", this.familyTree.femaleParents());
         addFamilyRows("Birth-Father", this.familyTree.maleBirthParents());
@@ -394,12 +399,28 @@ public class VillagerInteractionScreen extends Screen {
         addFamilyRows("Step-Mother", this.familyTree.femaleStepParents());
         addFamilyRows("Brother", this.familyTree.brothers());
         addFamilyRows("Sister", this.familyTree.sisters());
+        addFamilyRows("Uncle", this.familyTree.uncles());
+        addFamilyRows("Aunt", this.familyTree.aunts());
+        addFamilyRows("Nephew", this.familyTree.nephews());
+        addFamilyRows("Niece", this.familyTree.nieces());
+        addGenderedFamilyRows("Male Cousin", "Female Cousin", this.familyTree.cousins());
         addGenderedFamilyRows("Husband", "Wife", this.familyTree.spouses());
         addGenderedFamilyRows("Son", "Daughter", this.familyTree.children());
         addFamilyRows("Friend", this.familyTree.friends());
         addFamilyRows("Rival", this.familyTree.rivals());
         if (this.options.isEmpty()) {
             this.options.add(DialogueOption.enabled("No known family", () -> {
+            }));
+        }
+    }
+
+    private void addDescendantOptions() {
+        for (VillagerFamilyTreeSnapshot.DescendantGeneration generation : this.familyTree.descendants()) {
+            addFamilyRows(maleDescendantLabel(generation.generation()), VillagerFamilyTreeSnapshot.membersByGender(generation.descendants(), VillagerGender.MALE));
+            addFamilyRows(femaleDescendantLabel(generation.generation()), VillagerFamilyTreeSnapshot.membersByGender(generation.descendants(), VillagerGender.FEMALE));
+        }
+        if (this.options.isEmpty()) {
+            this.options.add(DialogueOption.enabled("No known descendants", () -> {
             }));
         }
     }
@@ -463,6 +484,11 @@ public class VillagerInteractionScreen extends Screen {
         rebuildOptions();
     }
 
+    private void openDescendantsPage() {
+        this.page = DialoguePage.DESCENDANTS;
+        rebuildOptions();
+    }
+
     private void requestTrade() {
         PacketDistributor.sendToServer(new VillagerTradeRequestPayload(this.villagerEntityId));
     }
@@ -492,7 +518,7 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     private void navigateBackPage() {
-        if (this.page == DialoguePage.ANCESTRY) {
+        if (this.page == DialoguePage.ANCESTRY || this.page == DialoguePage.DESCENDANTS) {
             this.page = DialoguePage.FAMILY;
             rebuildOptions();
             return;
@@ -757,7 +783,9 @@ public class VillagerInteractionScreen extends Screen {
         String text = familyButtonText();
         FamilyButtonBounds bounds = familyButtonBounds(y, dividerX, text);
         boolean hovered = bounds.contains(mouseX, mouseY);
-        boolean familyPageActive = this.page == DialoguePage.FAMILY || this.page == DialoguePage.ANCESTRY;
+        boolean familyPageActive = this.page == DialoguePage.FAMILY
+                || this.page == DialoguePage.ANCESTRY
+                || this.page == DialoguePage.DESCENDANTS;
         int color = familyPageActive
                 ? INFO_VALUE_COLOR
                 : hovered ? 0xFFE5E5DE : INFO_SECONDARY_COLOR;
@@ -1327,7 +1355,30 @@ public class VillagerInteractionScreen extends Screen {
         return ancestorPrefix(generation) + "mother";
     }
 
+    private static String maleDescendantLabel(int generation) {
+        return descendantPrefix(generation) + "son";
+    }
+
+    private static String femaleDescendantLabel(int generation) {
+        return descendantPrefix(generation) + "daughter";
+    }
+
     private static String ancestorPrefix(int generation) {
+        if (generation <= 2) {
+            return "Grand";
+        }
+
+        StringBuilder prefix = new StringBuilder();
+        for (int i = 0; i < generation - 2; i++) {
+            if (!prefix.isEmpty()) {
+                prefix.append("-");
+            }
+            prefix.append("Great");
+        }
+        return prefix.append("-grand").toString();
+    }
+
+    private static String descendantPrefix(int generation) {
         if (generation <= 2) {
             return "Grand";
         }
@@ -1348,6 +1399,7 @@ public class VillagerInteractionScreen extends Screen {
         GIFT,
         FAMILY,
         ANCESTRY,
+        DESCENDANTS,
         RECRUIT
     }
 

@@ -26,6 +26,7 @@ import net.minecraft.world.level.saveddata.SavedData;
 
 public class VillagerSocialGraphSavedData extends SavedData {
     private static final int ANCESTOR_GENERATION_LIMIT = 10;
+    private static final int DESCENDANT_GENERATION_LIMIT = 10;
     private static final String DATA_NAME = "villagerretaliation_social_graph";
     private static final String TAG_PROFILES = "Profiles";
     private static final String TAG_RELATIONSHIPS = "Relationships";
@@ -227,9 +228,13 @@ public class VillagerSocialGraphSavedData extends SavedData {
                 relationshipMembers(level, villagerId, RelationshipType.SIBLING),
                 relationshipMembers(level, villagerId, RelationshipType.SPOUSE),
                 relationshipMembers(level, villagerId, RelationshipType.CHILD),
+                auntsUncles(level, villagerId),
+                cousins(level, villagerId),
+                niecesNephews(level, villagerId),
                 relationshipMembers(level, villagerId, RelationshipType.FRIEND),
                 relationshipMembers(level, villagerId, RelationshipType.RIVAL),
-                ancestorGenerations(level, villagerId)
+                ancestorGenerations(level, villagerId),
+                descendantGenerations(level, villagerId)
         );
     }
 
@@ -374,6 +379,46 @@ public class VillagerSocialGraphSavedData extends SavedData {
         return membersForIds(level, stepParentIds);
     }
 
+    private List<VillagerFamilyTreeSnapshot.FamilyMember> auntsUncles(ServerLevel level, UUID villagerId) {
+        Set<UUID> directParents = relationships(villagerId, RelationshipType.PARENT);
+        Set<UUID> auntsUncles = new HashSet<>();
+        for (UUID parentId : directParents) {
+            for (UUID siblingId : relationships(parentId, RelationshipType.SIBLING)) {
+                if (!villagerId.equals(siblingId) && !directParents.contains(siblingId)) {
+                    auntsUncles.add(siblingId);
+                }
+            }
+        }
+        return membersForIds(level, auntsUncles);
+    }
+
+    private List<VillagerFamilyTreeSnapshot.FamilyMember> cousins(ServerLevel level, UUID villagerId) {
+        Set<UUID> directParents = relationships(villagerId, RelationshipType.PARENT);
+        Set<UUID> cousinIds = new HashSet<>();
+        for (UUID parentId : directParents) {
+            for (UUID siblingId : relationships(parentId, RelationshipType.SIBLING)) {
+                for (UUID childId : relationships(siblingId, RelationshipType.CHILD)) {
+                    if (!villagerId.equals(childId)) {
+                        cousinIds.add(childId);
+                    }
+                }
+            }
+        }
+        return membersForIds(level, cousinIds);
+    }
+
+    private List<VillagerFamilyTreeSnapshot.FamilyMember> niecesNephews(ServerLevel level, UUID villagerId) {
+        Set<UUID> niecesNephews = new HashSet<>();
+        for (UUID siblingId : relationships(villagerId, RelationshipType.SIBLING)) {
+            for (UUID childId : relationships(siblingId, RelationshipType.CHILD)) {
+                if (!villagerId.equals(childId)) {
+                    niecesNephews.add(childId);
+                }
+            }
+        }
+        return membersForIds(level, niecesNephews);
+    }
+
     private List<VillagerFamilyTreeSnapshot.AncestorGeneration> ancestorGenerations(ServerLevel level, UUID villagerId) {
         Map<Integer, Set<UUID>> ancestorsByGeneration = new HashMap<>();
         collectAncestorGenerations(villagerId, 1, ancestorsByGeneration, new HashSet<>());
@@ -384,6 +429,21 @@ public class VillagerSocialGraphSavedData extends SavedData {
                     membersForIds(level, ancestorsByGeneration.getOrDefault(generation, Set.of()));
             if (!ancestors.isEmpty()) {
                 generations.add(new VillagerFamilyTreeSnapshot.AncestorGeneration(generation, ancestors));
+            }
+        }
+        return List.copyOf(generations);
+    }
+
+    private List<VillagerFamilyTreeSnapshot.DescendantGeneration> descendantGenerations(ServerLevel level, UUID villagerId) {
+        Map<Integer, Set<UUID>> descendantsByGeneration = new HashMap<>();
+        collectDescendantGenerations(villagerId, 1, descendantsByGeneration, new HashSet<>());
+
+        List<VillagerFamilyTreeSnapshot.DescendantGeneration> generations = new ArrayList<>();
+        for (int generation = 2; generation <= DESCENDANT_GENERATION_LIMIT; generation++) {
+            List<VillagerFamilyTreeSnapshot.FamilyMember> descendants =
+                    membersForIds(level, descendantsByGeneration.getOrDefault(generation, Set.of()));
+            if (!descendants.isEmpty()) {
+                generations.add(new VillagerFamilyTreeSnapshot.DescendantGeneration(generation, descendants));
             }
         }
         return List.copyOf(generations);
@@ -409,6 +469,29 @@ public class VillagerSocialGraphSavedData extends SavedData {
             }
             collectAncestorGenerations(parentId, parentGeneration + 1, ancestorsByGeneration, path);
             path.remove(parentId);
+        }
+    }
+
+    private void collectDescendantGenerations(
+            UUID villagerId,
+            int childGeneration,
+            Map<Integer, Set<UUID>> descendantsByGeneration,
+            Set<UUID> path
+    ) {
+        if (childGeneration > DESCENDANT_GENERATION_LIMIT) {
+            return;
+        }
+        for (UUID childId : relationships(villagerId, RelationshipType.CHILD)) {
+            if (!path.add(childId)) {
+                continue;
+            }
+            if (childGeneration >= 2) {
+                descendantsByGeneration
+                        .computeIfAbsent(childGeneration, ignored -> new HashSet<>())
+                        .add(childId);
+            }
+            collectDescendantGenerations(childId, childGeneration + 1, descendantsByGeneration, path);
+            path.remove(childId);
         }
     }
 

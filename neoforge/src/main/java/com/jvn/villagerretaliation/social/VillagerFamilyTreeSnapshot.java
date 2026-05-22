@@ -11,11 +11,19 @@ public record VillagerFamilyTreeSnapshot(
         List<FamilyMember> siblings,
         List<FamilyMember> spouses,
         List<FamilyMember> children,
+        List<FamilyMember> auntsUncles,
+        List<FamilyMember> cousins,
+        List<FamilyMember> niecesNephews,
         List<FamilyMember> friends,
         List<FamilyMember> rivals,
-        List<AncestorGeneration> ancestry
+        List<AncestorGeneration> ancestry,
+        List<DescendantGeneration> descendants
 ) {
     public static final VillagerFamilyTreeSnapshot EMPTY = new VillagerFamilyTreeSnapshot(
+            List.of(),
+            List.of(),
+            List.of(),
+            List.of(),
             List.of(),
             List.of(),
             List.of(),
@@ -36,7 +44,11 @@ public record VillagerFamilyTreeSnapshot(
                 || !this.siblings.isEmpty()
                 || !this.spouses.isEmpty()
                 || !this.children.isEmpty()
-                || !this.ancestry.isEmpty();
+                || !this.auntsUncles.isEmpty()
+                || !this.cousins.isEmpty()
+                || !this.niecesNephews.isEmpty()
+                || !this.ancestry.isEmpty()
+                || !this.descendants.isEmpty();
     }
 
     public boolean hasParent() {
@@ -59,16 +71,26 @@ public record VillagerFamilyTreeSnapshot(
         return !this.ancestry.isEmpty();
     }
 
+    public boolean hasDescendants() {
+        return !this.descendants.isEmpty();
+    }
+
     public int relationshipCount() {
         int count = this.parents.size()
                 + this.stepParents.size()
                 + this.siblings.size()
                 + this.spouses.size()
                 + this.children.size()
+                + this.auntsUncles.size()
+                + this.cousins.size()
+                + this.niecesNephews.size()
                 + this.friends.size()
                 + this.rivals.size();
         for (AncestorGeneration generation : this.ancestry) {
             count += generation.ancestors().size();
+        }
+        for (DescendantGeneration generation : this.descendants) {
+            count += generation.descendants().size();
         }
         return count;
     }
@@ -142,6 +164,30 @@ public record VillagerFamilyTreeSnapshot(
         return membersByGender(this.siblings, VillagerGender.FEMALE);
     }
 
+    public List<FamilyMember> uncles() {
+        return membersByGender(this.auntsUncles, VillagerGender.MALE);
+    }
+
+    public List<FamilyMember> aunts() {
+        return membersByGender(this.auntsUncles, VillagerGender.FEMALE);
+    }
+
+    public List<FamilyMember> maleCousins() {
+        return membersByGender(this.cousins, VillagerGender.MALE);
+    }
+
+    public List<FamilyMember> femaleCousins() {
+        return membersByGender(this.cousins, VillagerGender.FEMALE);
+    }
+
+    public List<FamilyMember> nephews() {
+        return membersByGender(this.niecesNephews, VillagerGender.MALE);
+    }
+
+    public List<FamilyMember> nieces() {
+        return membersByGender(this.niecesNephews, VillagerGender.FEMALE);
+    }
+
     public static List<FamilyMember> membersByGender(List<FamilyMember> members, VillagerGender gender) {
         return members.stream()
                 .filter(member -> member.gender() == gender)
@@ -169,6 +215,12 @@ public record VillagerFamilyTreeSnapshot(
 
     public record AncestorGeneration(int generation, List<FamilyMember> ancestors) {
         public boolean isGrandparentGeneration() {
+            return this.generation == 2;
+        }
+    }
+
+    public record DescendantGeneration(int generation, List<FamilyMember> descendants) {
+        public boolean isGrandchildGeneration() {
             return this.generation == 2;
         }
     }
