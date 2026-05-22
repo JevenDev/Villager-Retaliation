@@ -273,6 +273,22 @@ public final class VillagerInteractionTracker {
         }
     }
 
+    public static boolean canRememberShareableStory(
+            ServerLevel level,
+            Villager villager,
+            ServerPlayer player,
+            StoryHintKind kind,
+            ResourceLocation targetId) {
+        return VillagerInteractionSavedData.get(level).canRememberShareableStory(
+                villager.getUUID(),
+                player.getUUID(),
+                level.dimension().location(),
+                kind,
+                targetId,
+                level.getGameTime()
+        );
+    }
+
     public static Optional<StoryHintReport> shareableStory(ServerLevel level, Villager villager, ServerPlayer player) {
         return Optional.ofNullable(VillagerInteractionSavedData.get(level)
                 .shareableStory(villager.getUUID(), player.getUUID(), level.getGameTime()));

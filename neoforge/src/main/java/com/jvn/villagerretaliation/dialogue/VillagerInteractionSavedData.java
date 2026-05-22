@@ -67,6 +67,7 @@ public class VillagerInteractionSavedData extends SavedData {
     private static final String TAG_FOUND = "Found";
     private static final String TAG_REPORTED = "Reported";
     private static final String TAG_SHAREABLE = "Shareable";
+    private static final String TAG_SHARED_STORY_TARGETS = "SharedStoryTargets";
     private static final String TAG_COMBAT_SURVIVAL_UNREPORTED = "CombatSurvivalUnreported";
     private static final String TAG_COMBAT_SURVIVAL_EVENT_KIND = "CombatSurvivalEventKind";
     private static final String TAG_COMBAT_SURVIVAL_GAME_TIME = "CombatSurvivalGameTime";
@@ -97,6 +98,7 @@ public class VillagerInteractionSavedData extends SavedData {
     private static final int MAX_RECENT_LINES = 5;
     private static final int MAX_CARTOGRAPHER_MAPS = 8;
     private static final int MAX_STORY_HINTS = 12;
+    private static final int MAX_SHARED_STORY_TARGETS = 64;
     private static final int DEFAULT_BIOME_STORY_HINT_DISCOVERY_RADIUS = 256;
     private static final int DEFAULT_STRUCTURE_STORY_HINT_DISCOVERY_RADIUS = 128;
 
@@ -269,7 +271,7 @@ public class VillagerInteractionSavedData extends SavedData {
                 } catch (IllegalArgumentException ignored) {
                     continue;
                 }
-                entry.storyHints.add(new StoryHintMemory(
+                StoryHintMemory storyHint = new StoryHintMemory(
                         dimension,
                         kind,
                         targetId,
@@ -280,7 +282,15 @@ public class VillagerInteractionSavedData extends SavedData {
                         hintTag.getBoolean(TAG_FOUND),
                         hintTag.getBoolean(TAG_REPORTED),
                         hintTag.getBoolean(TAG_SHAREABLE)
-                ));
+                );
+                entry.storyHints.add(storyHint);
+                if (storyHint.shareable() && storyHint.reported()) {
+                    entry.rememberSharedStoryTarget(dimension, kind, targetId);
+                }
+            }
+            if (entryTag.contains(TAG_SHARED_STORY_TARGETS, Tag.TAG_LIST)) {
+                readStringSet(entryTag.getList(TAG_SHARED_STORY_TARGETS, Tag.TAG_STRING), entry.sharedStoryTargets);
+                entry.pruneSharedStoryTargets();
             }
             data.putEntry(entryTag.getUUID(TAG_VILLAGER), entryTag.getUUID(TAG_PLAYER), entry);
         }
@@ -470,6 +480,7 @@ public class VillagerInteractionSavedData extends SavedData {
                     storyHints.add(hintTag);
                 }
                 entryTag.put(TAG_STORY_HINTS, storyHints);
+                entryTag.put(TAG_SHARED_STORY_TARGETS, writeStringSet(playerEntry.getValue().sharedStoryTargets));
                 entriesTag.add(entryTag);
             }
         }
@@ -644,7 +655,7 @@ public class VillagerInteractionSavedData extends SavedData {
             long expiresAtGameTime,
             long gameTime) {
         InteractionEntry entry = getOrCreate(villagerId, playerId);
-        if (entry.hasStoryHint(dimension, kind, targetId, gameTime)) {
+        if (entry.hasKnownShareableStory(dimension, kind, targetId, gameTime)) {
             return false;
         }
         entry.storyHints.add(new StoryHintMemory(
@@ -661,6 +672,17 @@ public class VillagerInteractionSavedData extends SavedData {
         ));
         entry.pruneStoryHints();
         return true;
+    }
+
+    public boolean canRememberShareableStory(
+            UUID villagerId,
+            UUID playerId,
+            ResourceLocation dimension,
+            VillagerInteractionTracker.StoryHintKind kind,
+            ResourceLocation targetId,
+            long gameTime) {
+        InteractionEntry entry = getIndexedEntry(villagerId, playerId);
+        return entry == null || !entry.hasKnownShareableStory(dimension, kind, targetId, gameTime);
     }
 
     private static int sanitizeDiscoveryRadius(int discoveryRadius, VillagerInteractionTracker.StoryHintKind kind) {
@@ -966,6 +988,7 @@ public class VillagerInteractionSavedData extends SavedData {
         private final Map<DialogueRequestType, RequestUseWindow> requestUseWindows = new EnumMap<>(DialogueRequestType.class);
         private final List<CartographerMapMemory> cartographerMaps = new ArrayList<>();
         private final List<StoryHintMemory> storyHints = new ArrayList<>();
+        private final LinkedHashSet<String> sharedStoryTargets = new LinkedHashSet<>();
 
         public boolean hasTalked() {
             return this.hasTalked;
@@ -1437,6 +1460,23 @@ public class VillagerInteractionSavedData extends SavedData {
             return false;
         }
 
+        private boolean hasKnownShareableStory(
+                ResourceLocation dimension,
+                VillagerInteractionTracker.StoryHintKind kind,
+                ResourceLocation targetId,
+                long gameTime) {
+            return this.sharedStoryTargets.contains(sharedStoryTargetKey(dimension, kind, targetId))
+                    || hasStoryHint(dimension, kind, targetId, gameTime);
+        }
+
+        private void rememberSharedStoryTarget(
+                ResourceLocation dimension,
+                VillagerInteractionTracker.StoryHintKind kind,
+                ResourceLocation targetId) {
+            this.sharedStoryTargets.add(sharedStoryTargetKey(dimension, kind, targetId));
+            pruneSharedStoryTargets();
+        }
+
         private boolean hasStoryHint(
                 ResourceLocation dimension,
                 VillagerInteractionTracker.StoryHintKind kind,
@@ -1470,6 +1510,7 @@ public class VillagerInteractionSavedData extends SavedData {
                 StoryHintMemory storyHint = this.storyHints.get(index);
                 if (storyHint.shareable() && storyHint.found() && !storyHint.reported() && storyHint.expiresAtGameTime() > gameTime) {
                     this.storyHints.set(index, storyHint.withReported(true));
+                    rememberSharedStoryTarget(storyHint.dimension(), storyHint.kind(), storyHint.targetId());
                     return storyHint.toReport(villagerId);
                 }
             }
@@ -1487,6 +1528,12 @@ public class VillagerInteractionSavedData extends SavedData {
             while (this.storyHints.size() > MAX_STORY_HINTS) {
                 int reportedIndex = firstReportedStoryHintIndex();
                 this.storyHints.remove(reportedIndex >= 0 ? reportedIndex : 0);
+            }
+        }
+
+        private void pruneSharedStoryTargets() {
+            while (this.sharedStoryTargets.size() > MAX_SHARED_STORY_TARGETS) {
+                this.sharedStoryTargets.remove(this.sharedStoryTargets.iterator().next());
             }
         }
 
@@ -1553,12 +1600,20 @@ public class VillagerInteractionSavedData extends SavedData {
                     && this.lastDialogueByRequestType.isEmpty()
                     && this.requestUseWindows.isEmpty()
                     && this.cartographerMaps.isEmpty()
-                    && this.storyHints.isEmpty();
+                    && this.storyHints.isEmpty()
+                    && this.sharedStoryTargets.isEmpty();
         }
 
         private static boolean isBlank(String value) {
             return value == null || value.isBlank();
         }
+    }
+
+    private static String sharedStoryTargetKey(
+            ResourceLocation dimension,
+            VillagerInteractionTracker.StoryHintKind kind,
+            ResourceLocation targetId) {
+        return dimension + "|" + kind.name() + "|" + targetId;
     }
 
     private record CartographerMapMemory(

@@ -167,6 +167,16 @@ public final class VillagerReputationAdvancements {
         if (nearbyVillagers.isEmpty()) {
             return;
         }
+        nearbyVillagers = shareableStoryCandidates(
+                level,
+                player,
+                nearbyVillagers,
+                VillagerInteractionTracker.StoryHintKind.BIOME,
+                storyBiome.biomeId()
+        );
+        if (nearbyVillagers.isEmpty()) {
+            return;
+        }
 
         long expiresAt = gameTime + DANGEROUS_STORY_SHARE_TICKS;
         for (Villager villager : nearbyVillagers) {
@@ -222,6 +232,17 @@ public final class VillagerReputationAdvancements {
             List<Villager> nearbyVillagers,
             DangerousStructureStoryResources.Entry storyStructure,
             Holder.Reference<Structure> structure) {
+        nearbyVillagers = shareableStoryCandidates(
+                level,
+                player,
+                nearbyVillagers,
+                VillagerInteractionTracker.StoryHintKind.STRUCTURE,
+                storyStructure.structureId()
+        );
+        if (nearbyVillagers.isEmpty()) {
+            return;
+        }
+
         BlockPos origin = player.blockPosition();
         BlockPos targetPos = cachedNearestStoryStructure(level, origin, storyStructure, structure);
         if (targetPos == null) {
@@ -247,6 +268,17 @@ public final class VillagerReputationAdvancements {
                     expiresAt
             );
         }
+    }
+
+    private static List<Villager> shareableStoryCandidates(
+            ServerLevel level,
+            ServerPlayer player,
+            List<Villager> villagers,
+            VillagerInteractionTracker.StoryHintKind kind,
+            ResourceLocation targetId) {
+        return villagers.stream()
+                .filter(villager -> VillagerInteractionTracker.canRememberShareableStory(level, villager, player, kind, targetId))
+                .toList();
     }
 
     private static BlockPos cachedNearestStoryStructure(
