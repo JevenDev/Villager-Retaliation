@@ -1,16 +1,22 @@
 package com.jvn.villagerretaliation.village;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
+import net.minecraft.core.SectionPos;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
@@ -19,6 +25,9 @@ public final class VillageMembership {
     private static final double MAX_RADIUS = 96.0D;
     private static final double VILLAGER_DISCOVERY_RADIUS = 96.0D;
     private static final double EDGE_PADDING = 16.0D;
+    private static final long RESOLVE_CACHE_TICKS = 200L;
+    private static final int MAX_RESOLVE_CACHE_ENTRIES = 512;
+    private static final Map<ResolveCacheKey, CachedResolve> RESOLVE_CACHE = new HashMap<>();
 
     private VillageMembership() {
     }
@@ -40,6 +49,33 @@ public final class VillageMembership {
     }
 
     public static Optional<VillageArea> resolve(ServerLevel level, BlockPos origin) {
+        ResolveCacheKey cacheKey = ResolveCacheKey.of(level, origin);
+        long gameTime = level.getGameTime();
+        CachedResolve direct = RESOLVE_CACHE.get(cacheKey);
+        if (direct != null && direct.isValid(gameTime)) {
+            Optional<VillageArea> directArea = direct.areaContaining(level, origin);
+            if (directArea.isPresent() || direct.area() == null) {
+                return directArea;
+            }
+        }
+
+        Optional<VillageArea> cachedArea = cachedAreaContaining(level, origin, cacheKey, gameTime);
+        if (cachedArea.isPresent()) {
+            RESOLVE_CACHE.put(cacheKey, new CachedResolve(level.dimension(), cachedArea.get(), gameTime + RESOLVE_CACHE_TICKS));
+            return cachedArea;
+        }
+
+        Optional<VillageArea> resolved = resolveUncached(level, origin);
+        RESOLVE_CACHE.put(cacheKey, new CachedResolve(level.dimension(), resolved.orElse(null), gameTime + RESOLVE_CACHE_TICKS));
+        pruneResolveCache(gameTime);
+        return resolved;
+    }
+
+    public static void clearCache() {
+        RESOLVE_CACHE.clear();
+    }
+
+    private static Optional<VillageArea> resolveUncached(ServerLevel level, BlockPos origin) {
         List<Villager> nearbyResidents = residentVillagersNear(level, origin, VILLAGER_DISCOVERY_RADIUS);
         boolean vanillaVillage = level.isVillage(origin);
         if (!vanillaVillage && nearbyResidents.isEmpty()) {
@@ -55,6 +91,40 @@ public final class VillageMembership {
         );
         VillageArea area = new VillageArea(level, center, radius, List.copyOf(members), vanillaVillage);
         return area.contains(origin) ? Optional.of(area) : Optional.empty();
+    }
+
+    private static Optional<VillageArea> cachedAreaContaining(
+            ServerLevel level,
+            BlockPos origin,
+            ResolveCacheKey currentKey,
+            long gameTime) {
+        for (Map.Entry<ResolveCacheKey, CachedResolve> entry : RESOLVE_CACHE.entrySet()) {
+            if (entry.getKey().equals(currentKey)) {
+                continue;
+            }
+            CachedResolve cached = entry.getValue();
+            if (!cached.isValid(gameTime)) {
+                continue;
+            }
+            Optional<VillageArea> area = cached.areaContaining(level, origin);
+            if (area.isPresent()) {
+                return area;
+            }
+        }
+        return Optional.empty();
+    }
+
+    private static void pruneResolveCache(long gameTime) {
+        RESOLVE_CACHE.entrySet().removeIf(entry -> !entry.getValue().isValid(gameTime));
+        if (RESOLVE_CACHE.size() <= MAX_RESOLVE_CACHE_ENTRIES) {
+            return;
+        }
+
+        Iterator<ResolveCacheKey> iterator = RESOLVE_CACHE.keySet().iterator();
+        while (RESOLVE_CACHE.size() > MAX_RESOLVE_CACHE_ENTRIES && iterator.hasNext()) {
+            iterator.next();
+            iterator.remove();
+        }
     }
 
     public static List<Villager> villagersForLocalVillage(ServerLevel level, BlockPos origin, double fallbackRadius) {
@@ -140,9 +210,37 @@ public final class VillageMembership {
         return Math.min(MAX_RADIUS, radius);
     }
 
+    private record ResolveCacheKey(ResourceKey<Level> dimension, int sectionX, int sectionY, int sectionZ) {
+        private static ResolveCacheKey of(ServerLevel level, BlockPos pos) {
+            return new ResolveCacheKey(
+                    level.dimension(),
+                    SectionPos.blockToSectionCoord(pos.getX()),
+                    SectionPos.blockToSectionCoord(pos.getY()),
+                    SectionPos.blockToSectionCoord(pos.getZ())
+            );
+        }
+    }
+
+    private record CachedResolve(ResourceKey<Level> dimension, VillageArea area, long expiresGameTime) {
+        private boolean isValid(long gameTime) {
+            return gameTime < this.expiresGameTime;
+        }
+
+        private Optional<VillageArea> areaContaining(ServerLevel level, BlockPos origin) {
+            if (!this.dimension.equals(level.dimension()) || this.area == null || this.area.level() != level) {
+                return Optional.empty();
+            }
+            return this.area.geometricallyContains(origin) ? Optional.of(this.area) : Optional.empty();
+        }
+    }
+
     public record VillageArea(ServerLevel level, Vec3 center, double radius, List<Villager> members, boolean vanillaVillageAtOrigin) {
         public boolean contains(BlockPos pos) {
             return this.level.isVillage(pos) || Vec3.atCenterOf(pos).distanceToSqr(this.center) <= this.radius * this.radius;
+        }
+
+        private boolean geometricallyContains(BlockPos pos) {
+            return Vec3.atCenterOf(pos).distanceToSqr(this.center) <= this.radius * this.radius;
         }
 
         public BlockPos centerBlock() {

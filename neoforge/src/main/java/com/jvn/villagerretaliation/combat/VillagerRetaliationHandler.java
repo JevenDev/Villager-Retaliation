@@ -69,6 +69,7 @@ public final class VillagerRetaliationHandler {
     private static final double ARMORER_SHIELD_TRIGGER_RANGE = 7.0D;
     private static final double ARMORER_SHIELD_TRIGGER_RANGE_SQR = ARMORER_SHIELD_TRIGGER_RANGE * ARMORER_SHIELD_TRIGGER_RANGE;
     private static final long SMITH_IRON_GOLEM_REPAIR_COOLDOWN_TICKS = 6000L;
+    private static final long SMITH_IRON_GOLEM_REPAIR_SCAN_INTERVAL_TICKS = 100L;
     private static final double SMITH_IRON_GOLEM_REPAIR_SEARCH_RADIUS = 12.0D;
     private static final double SMITH_IRON_GOLEM_REPAIR_REACH_SQR = 9.0D;
     private static final float SMITH_IRON_GOLEM_REPAIR_HEAL_AMOUNT = 25.0F;
@@ -1151,6 +1152,7 @@ public final class VillagerRetaliationHandler {
 
         IronGolem ironGolem = findNearbyDamagedIronGolem(villager, level);
         if (ironGolem == null) {
+            NEXT_IRON_GOLEM_REPAIR_TICKS.put(villager.getUUID(), gameTime + SMITH_IRON_GOLEM_REPAIR_SCAN_INTERVAL_TICKS);
             return false;
         }
 

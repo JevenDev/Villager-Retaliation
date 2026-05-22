@@ -36,6 +36,7 @@ import com.jvn.villagerretaliation.util.VillagerLocale;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
+import java.util.List;
 import java.util.Map;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -119,21 +120,21 @@ public final class VillagerInteractionService {
         ServerLevel level = player.serverLevel();
         ReputationSnapshot reputation = reputationSnapshot(level, villager, player);
         VillagerInteractionTracker.InteractionState interactionState = VillagerInteractionTracker.getState(level, villager, player);
+        DialogueContextSnapshots contextSnapshots = dialogueContextSnapshots(level, villager);
         DialogueContext dialogueContext = createDialogueContext(
                 level,
                 player,
                 villager,
                 interactionState,
                 reputation.value(),
-                reputation.level()
+                reputation.level(),
+                contextSnapshots
         );
         DialogueDisposition mood = VillagerDialogueService.moodFor(dialogueContext);
         String greetingText = VillagerDialogueService.selectOpeningGreeting(dialogueContext);
-        java.util.List<DialogueOptionDefinition> dialogueOptions = VillagerDialogueResources.dialogueOptions(dialogueContext, mood);
+        List<DialogueOptionDefinition> dialogueOptions = VillagerDialogueResources.dialogueOptions(dialogueContext, mood);
         VillagerGiftKnowledgeService.GiftKnowledgeSnapshot giftKnowledge =
                 VillagerGiftKnowledgeService.knownGifts(level, player, villager.getVillagerData().getProfession());
-        VillagerFamilyTreeSnapshot familyTree = VillagerSocialGraphService.familySnapshot(level, villager);
-        VillagerRelationshipSnapshot relationships = VillagerSocialGraphService.relationshipSnapshot(level, villager);
         PacketDistributor.sendToPlayer(player, new OpenVillagerInteractionPayload(
                 villager.getId(),
                 "",
@@ -148,8 +149,8 @@ public final class VillagerInteractionService {
                 dialogueOptions,
                 giftKnowledge.likedGiftNames(),
                 giftKnowledge.dislikedGiftNames(),
-                familyTree,
-                relationships
+                contextSnapshots.familyTree(),
+                contextSnapshots.relationships()
         ));
         VillagerAmbientIndicatorService.onConversationOpened(level, villager, player);
         broadcastVillagerChat(level, villager, greetingText);
@@ -474,6 +475,25 @@ public final class VillagerInteractionService {
             VillagerInteractionTracker.InteractionState interactionState,
             int reputation,
             VillagerReputationLevel reputationLevel) {
+        return createDialogueContext(
+                level,
+                player,
+                villager,
+                interactionState,
+                reputation,
+                reputationLevel,
+                dialogueContextSnapshots(level, villager)
+        );
+    }
+
+    private static DialogueContext createDialogueContext(
+            ServerLevel level,
+            ServerPlayer player,
+            Villager villager,
+            VillagerInteractionTracker.InteractionState interactionState,
+            int reputation,
+            VillagerReputationLevel reputationLevel,
+            DialogueContextSnapshots contextSnapshots) {
         VillagerInteractionTracker.ContextReports reports = VillagerInteractionTracker.contextReports(level, villager, player);
         return new DialogueContext(
                 level,
@@ -504,11 +524,19 @@ public final class VillagerInteractionService {
                 reports.curedRecognitionReport(),
                 reports.recruitmentMemory(),
                 reports.giftAdviceResultReport(),
-                VillagerSocialGraphService.familySnapshot(level, villager),
-                VillagerSocialGraphService.relationshipSnapshot(level, villager),
-                VillageEventMemory.recentForVillage(level, villager),
+                contextSnapshots.familyTree(),
+                contextSnapshots.relationships(),
+                contextSnapshots.recentEvents(),
                 villager.getRandom(),
                 VillagerLocale.locale(player)
+        );
+    }
+
+    private static DialogueContextSnapshots dialogueContextSnapshots(ServerLevel level, Villager villager) {
+        return new DialogueContextSnapshots(
+                VillagerSocialGraphService.familySnapshot(level, villager),
+                VillagerSocialGraphService.relationshipSnapshot(level, villager),
+                VillageEventMemory.recentForVillage(level, villager)
         );
     }
 
@@ -1012,5 +1040,11 @@ public final class VillagerInteractionService {
     }
 
     private record ReputationSnapshot(int value, VillagerReputationLevel level) {
+    }
+
+    private record DialogueContextSnapshots(
+            VillagerFamilyTreeSnapshot familyTree,
+            VillagerRelationshipSnapshot relationships,
+            List<VillageEventMemory.MemoryEvent> recentEvents) {
     }
 }

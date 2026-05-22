@@ -8,7 +8,11 @@ import com.jvn.villagerretaliation.dialogue.VillagerInteractionSavedData;
 import com.jvn.villagerretaliation.interaction.VillagerGiftResources;
 import com.jvn.villagerretaliation.notification.VillagerNotificationResources;
 import com.jvn.villagerretaliation.reputation.VillagerReputationSavedData;
+import com.jvn.villagerretaliation.social.VillagerSocialGraphSavedData;
+import com.jvn.villagerretaliation.village.VillageEventMemory;
+import com.jvn.villagerretaliation.village.VillageMembership;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
+import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import net.minecraft.server.MinecraftServer;
 
 public final class VillagerDataWarmup {
@@ -25,6 +29,7 @@ public final class VillagerDataWarmup {
         VillagerPresetNameRegistry.warm(server);
         VillagerInteractionSavedData.get(server.overworld());
         VillagerReputationSavedData.get(server.overworld());
+        VillagerSocialGraphSavedData.get(server.overworld());
     }
 
     public static void clearCaches() {
@@ -35,5 +40,8 @@ public final class VillagerDataWarmup {
         BiomeStoryResources.clearCache();
         DangerousStructureStoryResources.clearCache();
         VillagerPresetNameRegistry.clearCache();
+        VillageEventMemory.clear();
+        VillageMembership.clearCache();
+        VillagerRetaliationVillagerWeapons.clearCache();
     }
 }
