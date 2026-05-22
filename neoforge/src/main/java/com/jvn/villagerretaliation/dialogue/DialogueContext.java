@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.dialogue;
 
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.social.VillagerFamilyTreeSnapshot;
+import com.jvn.villagerretaliation.social.VillagerRelationshipSnapshot;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import java.util.Comparator;
 import java.util.List;
@@ -43,6 +44,7 @@ public record DialogueContext(
         VillagerInteractionTracker.RecruitmentMemory recruitmentMemory,
         VillagerInteractionTracker.GiftAdviceResultReport giftAdviceResultReport,
         VillagerFamilyTreeSnapshot familyTree,
+        VillagerRelationshipSnapshot relationships,
         List<VillageEventMemory.MemoryEvent> recentEvents,
         RandomSource random,
         String locale
@@ -105,6 +107,42 @@ public record DialogueContext(
 
     public boolean hasKnownDeceasedFamily() {
         return this.familyTree.hasDeceasedFamily();
+    }
+
+    public boolean hasKnownRelationship() {
+        return this.relationships.hasRelationships();
+    }
+
+    public boolean hasKnownCurrentRelationship() {
+        return this.relationships.hasCurrentRelationship();
+    }
+
+    public boolean hasKnownPastRelationship() {
+        return this.relationships.hasPastRelationship();
+    }
+
+    public boolean hasKnownCrush() {
+        return this.relationships.hasCrush();
+    }
+
+    public boolean hasKnownDatingPartner() {
+        return this.relationships.hasDatingPartner();
+    }
+
+    public boolean hasKnownFiance() {
+        return this.relationships.hasFiance();
+    }
+
+    public boolean hasKnownRomanticSpouse() {
+        return this.relationships.hasRomanticSpouse();
+    }
+
+    public boolean hasKnownSeparatedPartner() {
+        return this.relationships.hasSeparatedPartner();
+    }
+
+    public boolean hasKnownWidowedPartner() {
+        return this.relationships.hasWidowedPartner();
     }
 
     public boolean hasRecentPlayerEvent(VillageEventMemory.EventTag... tags) {

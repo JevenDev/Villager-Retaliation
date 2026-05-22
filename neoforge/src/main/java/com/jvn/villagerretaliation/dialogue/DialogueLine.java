@@ -47,6 +47,15 @@ public record DialogueLine(
         boolean requiresKnownNieceNephew,
         boolean requiresKnownExtendedFamily,
         boolean requiresKnownDeceasedFamily,
+        boolean requiresKnownRelationship,
+        boolean requiresKnownCurrentRelationship,
+        boolean requiresKnownPastRelationship,
+        boolean requiresKnownCrush,
+        boolean requiresKnownDatingPartner,
+        boolean requiresKnownFiance,
+        boolean requiresKnownRomanticSpouse,
+        boolean requiresKnownSeparatedPartner,
+        boolean requiresKnownWidowedPartner,
         GiftAdviceKind giftAdviceKind,
         int weight
 ) {
@@ -171,6 +180,33 @@ public record DialogueLine(
         if (this.requiresKnownDeceasedFamily && !context.hasKnownDeceasedFamily()) {
             return false;
         }
+        if (this.requiresKnownRelationship && !context.hasKnownRelationship()) {
+            return false;
+        }
+        if (this.requiresKnownCurrentRelationship && !context.hasKnownCurrentRelationship()) {
+            return false;
+        }
+        if (this.requiresKnownPastRelationship && !context.hasKnownPastRelationship()) {
+            return false;
+        }
+        if (this.requiresKnownCrush && !context.hasKnownCrush()) {
+            return false;
+        }
+        if (this.requiresKnownDatingPartner && !context.hasKnownDatingPartner()) {
+            return false;
+        }
+        if (this.requiresKnownFiance && !context.hasKnownFiance()) {
+            return false;
+        }
+        if (this.requiresKnownRomanticSpouse && !context.hasKnownRomanticSpouse()) {
+            return false;
+        }
+        if (this.requiresKnownSeparatedPartner && !context.hasKnownSeparatedPartner()) {
+            return false;
+        }
+        if (this.requiresKnownWidowedPartner && !context.hasKnownWidowedPartner()) {
+            return false;
+        }
         return this.weight > 0;
     }
 
@@ -235,6 +271,17 @@ public record DialogueLine(
                 || this.requiresKnownDeceasedFamily) {
             score += 5;
         }
+        if (this.requiresKnownRelationship
+                || this.requiresKnownCurrentRelationship
+                || this.requiresKnownPastRelationship
+                || this.requiresKnownCrush
+                || this.requiresKnownDatingPartner
+                || this.requiresKnownFiance
+                || this.requiresKnownRomanticSpouse
+                || this.requiresKnownSeparatedPartner
+                || this.requiresKnownWidowedPartner) {
+            score += 5;
+        }
         if (this.giftAdviceKind != null) {
             score += 3;
         }
@@ -285,6 +332,15 @@ public record DialogueLine(
         private boolean requiresKnownNieceNephew;
         private boolean requiresKnownExtendedFamily;
         private boolean requiresKnownDeceasedFamily;
+        private boolean requiresKnownRelationship;
+        private boolean requiresKnownCurrentRelationship;
+        private boolean requiresKnownPastRelationship;
+        private boolean requiresKnownCrush;
+        private boolean requiresKnownDatingPartner;
+        private boolean requiresKnownFiance;
+        private boolean requiresKnownRomanticSpouse;
+        private boolean requiresKnownSeparatedPartner;
+        private boolean requiresKnownWidowedPartner;
         private GiftAdviceKind giftAdviceKind;
         private int weight = 10;
 
@@ -490,6 +546,51 @@ public record DialogueLine(
             return this;
         }
 
+        public Builder requiresKnownRelationship() {
+            this.requiresKnownRelationship = true;
+            return this;
+        }
+
+        public Builder requiresKnownCurrentRelationship() {
+            this.requiresKnownCurrentRelationship = true;
+            return this;
+        }
+
+        public Builder requiresKnownPastRelationship() {
+            this.requiresKnownPastRelationship = true;
+            return this;
+        }
+
+        public Builder requiresKnownCrush() {
+            this.requiresKnownCrush = true;
+            return this;
+        }
+
+        public Builder requiresKnownDatingPartner() {
+            this.requiresKnownDatingPartner = true;
+            return this;
+        }
+
+        public Builder requiresKnownFiance() {
+            this.requiresKnownFiance = true;
+            return this;
+        }
+
+        public Builder requiresKnownRomanticSpouse() {
+            this.requiresKnownRomanticSpouse = true;
+            return this;
+        }
+
+        public Builder requiresKnownSeparatedPartner() {
+            this.requiresKnownSeparatedPartner = true;
+            return this;
+        }
+
+        public Builder requiresKnownWidowedPartner() {
+            this.requiresKnownWidowedPartner = true;
+            return this;
+        }
+
         public Builder giftAdviceKind(GiftAdviceKind giftAdviceKind) {
             this.giftAdviceKind = giftAdviceKind;
             return this;
@@ -541,6 +642,15 @@ public record DialogueLine(
                     this.requiresKnownNieceNephew,
                     this.requiresKnownExtendedFamily,
                     this.requiresKnownDeceasedFamily,
+                    this.requiresKnownRelationship,
+                    this.requiresKnownCurrentRelationship,
+                    this.requiresKnownPastRelationship,
+                    this.requiresKnownCrush,
+                    this.requiresKnownDatingPartner,
+                    this.requiresKnownFiance,
+                    this.requiresKnownRomanticSpouse,
+                    this.requiresKnownSeparatedPartner,
+                    this.requiresKnownWidowedPartner,
                     this.giftAdviceKind,
                     this.weight
             );

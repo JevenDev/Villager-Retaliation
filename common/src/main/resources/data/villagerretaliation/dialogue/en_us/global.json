@@ -30,6 +30,14 @@
       "order": 2
     },
     {
+      "id": "adult_relationships",
+      "label": "Ask About Relationships",
+      "type": "question",
+      "show_for_babies": false,
+      "requires_known_relationship": true,
+      "order": 3
+    },
+    {
       "id": "adult_gift_preferences",
       "label": "Ask About Gifts",
       "type": "gift_preferences",
@@ -1178,6 +1186,105 @@
       "option": "adult_family",
       "text": "{relative} is family. That is enough to make me careful about who asks.",
       "requires_known_family": true,
+      "show_for_babies": false,
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 28
+    },
+    {
+      "id": "adult_relationship_current_soft",
+      "type": "question",
+      "option": "adult_relationships",
+      "text": "{partner} makes the village feel less like a place I survive and more like a place I choose.",
+      "requires_known_current_relationship": true,
+      "show_for_babies": false,
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral"
+      ],
+      "weight": 18
+    },
+    {
+      "id": "adult_relationship_crush_shy",
+      "type": "question",
+      "option": "adult_relationships",
+      "text": "I keep finding reasons to pass near {crush}. Maybe it is foolish. Maybe foolish things keep people kind.",
+      "requires_known_crush": true,
+      "show_for_babies": false,
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral"
+      ],
+      "weight": 24
+    },
+    {
+      "id": "adult_relationship_dating_warm",
+      "type": "question",
+      "option": "adult_relationships",
+      "text": "{dating_partner} and I are seeing where the road goes. Slowly is fine when the road matters.",
+      "requires_known_dating_partner": true,
+      "show_for_babies": false,
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral"
+      ],
+      "weight": 24
+    },
+    {
+      "id": "adult_relationship_engaged",
+      "type": "question",
+      "option": "adult_relationships",
+      "text": "{fiance} and I are trying to plan a future sturdy enough to survive this place.",
+      "requires_known_fiance": true,
+      "show_for_babies": false,
+      "weight": 24
+    },
+    {
+      "id": "adult_relationship_married",
+      "type": "question",
+      "option": "adult_relationships",
+      "text": "{romantic_spouse} knows which silences mean I am tired and which mean I need help. That is a rare comfort.",
+      "requires_known_romantic_spouse": true,
+      "show_for_babies": false,
+      "weight": 24
+    },
+    {
+      "id": "adult_relationship_separated",
+      "type": "question",
+      "option": "adult_relationships",
+      "text": "{ex_partner} and I had our season. Some roads part before they turn cruel, and that can be mercy.",
+      "requires_known_separated_partner": true,
+      "show_for_babies": false,
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral",
+        "cautious"
+      ],
+      "weight": 18
+    },
+    {
+      "id": "adult_relationship_widowed",
+      "type": "question",
+      "option": "adult_relationships",
+      "text": "{late_partner} is gone, but some mornings I still make room for them in my thoughts.",
+      "requires_known_widowed_partner": true,
+      "show_for_babies": false,
+      "weight": 18
+    },
+    {
+      "id": "adult_relationship_guarded",
+      "type": "question",
+      "option": "adult_relationships",
+      "text": "{partner} is not a market rumor. Ask gently, or do not ask.",
+      "requires_known_relationship": true,
       "show_for_babies": false,
       "dispositions": [
         "cautious",

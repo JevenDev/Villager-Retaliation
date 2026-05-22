@@ -381,6 +381,15 @@ public final class VillagerDialogueResources {
             boolean requiresKnownNieceNephew = readBoolean(entry, "requires_known_niece_nephew");
             boolean requiresKnownExtendedFamily = readBoolean(entry, "requires_known_extended_family");
             boolean requiresKnownDeceasedFamily = readBoolean(entry, "requires_known_deceased_family");
+            boolean requiresKnownRelationship = readBoolean(entry, "requires_known_relationship");
+            boolean requiresKnownCurrentRelationship = readBoolean(entry, "requires_known_current_relationship");
+            boolean requiresKnownPastRelationship = readBoolean(entry, "requires_known_past_relationship");
+            boolean requiresKnownCrush = readBoolean(entry, "requires_known_crush");
+            boolean requiresKnownDatingPartner = readBoolean(entry, "requires_known_dating_partner");
+            boolean requiresKnownFiance = readBoolean(entry, "requires_known_fiance");
+            boolean requiresKnownRomanticSpouse = readBoolean(entry, "requires_known_romantic_spouse");
+            boolean requiresKnownSeparatedPartner = readBoolean(entry, "requires_known_separated_partner");
+            boolean requiresKnownWidowedPartner = readBoolean(entry, "requires_known_widowed_partner");
             int order = readInt(entry, "order", index);
             options.put(id, new DialogueOptionDefinition(
                     id,
@@ -414,6 +423,15 @@ public final class VillagerDialogueResources {
                     requiresKnownNieceNephew,
                     requiresKnownExtendedFamily,
                     requiresKnownDeceasedFamily,
+                    requiresKnownRelationship,
+                    requiresKnownCurrentRelationship,
+                    requiresKnownPastRelationship,
+                    requiresKnownCrush,
+                    requiresKnownDatingPartner,
+                    requiresKnownFiance,
+                    requiresKnownRomanticSpouse,
+                    requiresKnownSeparatedPartner,
+                    requiresKnownWidowedPartner,
                     order
             ));
             index++;
@@ -689,6 +707,33 @@ public final class VillagerDialogueResources {
         }
         if (readBoolean(entry, "requires_known_deceased_family")) {
             builder.requiresKnownDeceasedFamily();
+        }
+        if (readBoolean(entry, "requires_known_relationship")) {
+            builder.requiresKnownRelationship();
+        }
+        if (readBoolean(entry, "requires_known_current_relationship")) {
+            builder.requiresKnownCurrentRelationship();
+        }
+        if (readBoolean(entry, "requires_known_past_relationship")) {
+            builder.requiresKnownPastRelationship();
+        }
+        if (readBoolean(entry, "requires_known_crush")) {
+            builder.requiresKnownCrush();
+        }
+        if (readBoolean(entry, "requires_known_dating_partner")) {
+            builder.requiresKnownDatingPartner();
+        }
+        if (readBoolean(entry, "requires_known_fiance")) {
+            builder.requiresKnownFiance();
+        }
+        if (readBoolean(entry, "requires_known_romantic_spouse")) {
+            builder.requiresKnownRomanticSpouse();
+        }
+        if (readBoolean(entry, "requires_known_separated_partner")) {
+            builder.requiresKnownSeparatedPartner();
+        }
+        if (readBoolean(entry, "requires_known_widowed_partner")) {
+            builder.requiresKnownWidowedPartner();
         }
         builder.showForAdults(readBoolean(entry, "show_for_adults", true));
         builder.showForBabies(readBoolean(entry, "show_for_babies", true));

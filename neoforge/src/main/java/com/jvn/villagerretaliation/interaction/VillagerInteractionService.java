@@ -505,6 +505,7 @@ public final class VillagerInteractionService {
                 reports.recruitmentMemory(),
                 reports.giftAdviceResultReport(),
                 VillagerSocialGraphService.familySnapshot(level, villager),
+                VillagerSocialGraphService.relationshipSnapshot(level, villager),
                 VillageEventMemory.recentForVillage(level, villager),
                 villager.getRandom(),
                 VillagerLocale.locale(player)

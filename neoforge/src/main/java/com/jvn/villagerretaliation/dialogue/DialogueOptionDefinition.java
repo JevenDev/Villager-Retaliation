@@ -35,6 +35,15 @@ public record DialogueOptionDefinition(
         boolean requiresKnownNieceNephew,
         boolean requiresKnownExtendedFamily,
         boolean requiresKnownDeceasedFamily,
+        boolean requiresKnownRelationship,
+        boolean requiresKnownCurrentRelationship,
+        boolean requiresKnownPastRelationship,
+        boolean requiresKnownCrush,
+        boolean requiresKnownDatingPartner,
+        boolean requiresKnownFiance,
+        boolean requiresKnownRomanticSpouse,
+        boolean requiresKnownSeparatedPartner,
+        boolean requiresKnownWidowedPartner,
         int order
 ) {
     public boolean matches(DialogueContext context, DialogueDisposition disposition) {
@@ -120,10 +129,79 @@ public record DialogueOptionDefinition(
         if (this.requiresKnownDeceasedFamily && !context.hasKnownDeceasedFamily()) {
             return false;
         }
+        if (this.requiresKnownRelationship && !context.hasKnownRelationship()) {
+            return false;
+        }
+        if (this.requiresKnownCurrentRelationship && !context.hasKnownCurrentRelationship()) {
+            return false;
+        }
+        if (this.requiresKnownPastRelationship && !context.hasKnownPastRelationship()) {
+            return false;
+        }
+        if (this.requiresKnownCrush && !context.hasKnownCrush()) {
+            return false;
+        }
+        if (this.requiresKnownDatingPartner && !context.hasKnownDatingPartner()) {
+            return false;
+        }
+        if (this.requiresKnownFiance && !context.hasKnownFiance()) {
+            return false;
+        }
+        if (this.requiresKnownRomanticSpouse && !context.hasKnownRomanticSpouse()) {
+            return false;
+        }
+        if (this.requiresKnownSeparatedPartner && !context.hasKnownSeparatedPartner()) {
+            return false;
+        }
+        if (this.requiresKnownWidowedPartner && !context.hasKnownWidowedPartner()) {
+            return false;
+        }
         return this.dispositions.isEmpty() || this.dispositions.contains(disposition);
     }
 
     public static DialogueOptionDefinition simple(String id, String label, DialogueRequestType requestType, int order) {
-        return new DialogueOptionDefinition(id, label, requestType, true, true, Set.of(), Set.of(), false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, order);
+        return new DialogueOptionDefinition(
+                id,
+                label,
+                requestType,
+                true,
+                true,
+                Set.of(),
+                Set.of(),
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                order
+        );
     }
 }

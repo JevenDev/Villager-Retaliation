@@ -296,6 +296,21 @@ public class VillagerSocialGraphSavedData extends SavedData {
     public VillagerRelationshipSnapshot relationshipSnapshot(ServerLevel level, Villager villager) {
         ensureProfile(level, villager);
         UUID villagerId = villager.getUUID();
+        boolean changed = false;
+        for (UUID spouseId : relationships(villagerId, RelationshipType.SPOUSE)) {
+            boolean spouseAlive = isKnownAlive(spouseId);
+            changed |= ensureRomanticBond(
+                    level,
+                    villagerId,
+                    spouseId,
+                    spouseAlive ? VillagerRelationshipStage.MARRIED : VillagerRelationshipStage.WIDOWED,
+                    spouseAlive ? "" : "partner died"
+            );
+        }
+        if (changed) {
+            setDirty();
+        }
+
         List<VillagerRelationshipSnapshot.RomanticBondView> current = new ArrayList<>();
         List<VillagerRelationshipSnapshot.RomanticBondView> past = new ArrayList<>();
 
@@ -444,6 +459,10 @@ public class VillagerSocialGraphSavedData extends SavedData {
         if (isTooCloselyRelated(first.getUUID(), second.getUUID())) {
             return BreedingValidation.blocked("Those villagers are too closely related to adopt together.");
         }
+        RelationshipValidation relationshipValidation = validateRomanticPair(level, first, second, VillagerRelationshipStage.MARRIED);
+        if (!relationshipValidation.allowed()) {
+            return BreedingValidation.blocked(relationshipValidation.reason());
+        }
         return BreedingValidation.success();
     }
 
@@ -474,9 +493,54 @@ public class VillagerSocialGraphSavedData extends SavedData {
     public void linkSpouses(ServerLevel level, Villager first, Villager second) {
         ensureProfile(level, first);
         ensureProfile(level, second);
-        if (addSymmetric(first.getUUID(), RelationshipType.SPOUSE, second.getUUID())) {
+        boolean changed = addSymmetric(first.getUUID(), RelationshipType.SPOUSE, second.getUUID());
+        changed |= ensureRomanticBond(level, first.getUUID(), second.getUUID(), VillagerRelationshipStage.MARRIED, "");
+        if (changed) {
             setDirty();
         }
+    }
+
+    private boolean ensureRomanticBond(
+            ServerLevel level,
+            UUID firstId,
+            UUID secondId,
+            VillagerRelationshipStage stage,
+            String endReason
+    ) {
+        if (firstId == null || secondId == null || firstId.equals(secondId) || stage == null) {
+            return false;
+        }
+
+        String safeEndReason = endReason == null ? "" : endReason;
+        RomanticPairKey key = RomanticPairKey.of(firstId, secondId);
+        RomanticBond bond = this.romanticBonds.get(key);
+        long gameTime = level.getGameTime();
+        int compatibility = deterministicCompatibility(key.first(), key.second());
+        int affection = defaultAffection(stage, compatibility);
+        if (bond == null) {
+            bond = RomanticBond.create(key.first(), key.second(), stage, affection, compatibility, gameTime);
+            if (!stage.active()) {
+                bond.setStage(stage, gameTime, safeEndReason);
+            }
+            this.romanticBonds.put(key, bond);
+            return true;
+        }
+
+        boolean changed = false;
+        if (bond.stage() != stage || (!stage.active() && !Objects.equals(bond.endReason(), safeEndReason))) {
+            bond.setStage(stage, gameTime, safeEndReason);
+            changed = true;
+        }
+        if (bond.affection() < affection) {
+            bond.setAffection(affection);
+            changed = true;
+        }
+        return changed;
+    }
+
+    private boolean isKnownAlive(UUID villagerId) {
+        VillagerProfile profile = this.profiles.get(villagerId);
+        return profile == null || profile.alive();
     }
 
     private boolean markRomanticBondsWidowed(ServerLevel level, UUID deadVillagerId, String deathCause) {
