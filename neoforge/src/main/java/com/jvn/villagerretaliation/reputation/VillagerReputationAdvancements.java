@@ -9,6 +9,7 @@ import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.notification.VillagerNotifications;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
+import com.jvn.villagerretaliation.village.VillageMembership;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -39,7 +40,6 @@ import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.phys.AABB;
 
 public final class VillagerReputationAdvancements {
-    private static final double VILLAGE_TRUST_SCAN_RADIUS = 64.0D;
     private static final int VILLAGE_HAS_EYES_WITNESSES = 3;
     private static final int REGULAR_CUSTOMER_TRADES = 10;
     private static final int COMMUNITY_SUPPORT_VILLAGERS = 5;
@@ -219,11 +219,7 @@ public final class VillagerReputationAdvancements {
     }
 
     private static List<Villager> nearbyVillagers(ServerLevel level, BlockPos origin) {
-        return level.getEntitiesOfClass(
-                Villager.class,
-                new AABB(origin).inflate(DANGEROUS_STORY_VILLAGER_RADIUS),
-                Villager::isAlive
-        );
+        return VillageMembership.villagersForLocalVillage(level, origin, DANGEROUS_STORY_VILLAGER_RADIUS);
     }
 
     private static void rememberDangerousStructureStory(
@@ -351,7 +347,7 @@ public final class VillagerReputationAdvancements {
     }
 
     public static void onIronGolemDamaged(ServerLevel level, ServerPlayer player, IronGolem ironGolem) {
-        if (level.isVillage(ironGolem.blockPosition())) {
+        if (VillageMembership.isVillagePosition(level, ironGolem.blockPosition())) {
             award(player, AN_UNWISE_DECISION);
         }
     }
@@ -369,7 +365,7 @@ public final class VillagerReputationAdvancements {
         }
 
         if (villager instanceof Villager villageResident
-                && level.isVillage(villageResident.blockPosition())
+                && VillageMembership.resolve(level, villageResident).isPresent()
                 && countTradedVillagersInVillage(level, villageResident, player) >= COMMUNITY_SUPPORT_VILLAGERS) {
             award(player, COMMUNITY_SUPPORT);
         }
@@ -409,7 +405,7 @@ public final class VillagerReputationAdvancements {
     }
 
     public static void onVillagePresenceCheck(ServerPlayer player) {
-        if (player.serverLevel().isVillage(player.blockPosition())) {
+        if (VillageMembership.isVillagePosition(player.serverLevel(), player.blockPosition())) {
             award(player, COMMONFOLK);
         }
     }
@@ -493,23 +489,13 @@ public final class VillagerReputationAdvancements {
     }
 
     private static boolean hasTrustedVillageCore(ServerLevel level, Villager anchor, ServerPlayer player) {
-        if (!level.isVillage(anchor.blockPosition())) {
-            return false;
-        }
-
-        AABB searchArea = anchor.getBoundingBox().inflate(VILLAGE_TRUST_SCAN_RADIUS);
-        int trustedVillagers = 0;
-        for (Villager candidate : level.getEntitiesOfClass(Villager.class, searchArea)) {
-            if (!candidate.isAlive() || !level.isVillage(candidate.blockPosition())) {
-                continue;
-            }
-
-            VillagerReputationLevel candidateLevel = VillagerReputationManager.getReputationLevel(level, candidate, player.getUUID());
-            if (candidateLevel.trustRank() >= VillagerReputationLevel.TRUSTED.trustRank() && ++trustedVillagers >= 5) {
-                return true;
-            }
-        }
-        return false;
+        return VillageMembership.resolve(level, anchor)
+                .map(area -> area.countMembers(candidate -> {
+                    VillagerReputationLevel candidateLevel =
+                            VillagerReputationManager.getReputationLevel(level, candidate, player.getUUID());
+                    return candidateLevel.trustRank() >= VillagerReputationLevel.TRUSTED.trustRank();
+                }, 5) >= 5)
+                .orElse(false);
     }
 
     private static int countTradedVillagersInVillage(ServerLevel level, Villager anchor, ServerPlayer player) {
@@ -518,17 +504,9 @@ public final class VillagerReputationAdvancements {
             return 0;
         }
 
-        AABB searchArea = anchor.getBoundingBox().inflate(VILLAGE_TRUST_SCAN_RADIUS);
-        int tradedInVillage = 0;
-        for (Villager candidate : level.getEntitiesOfClass(Villager.class, searchArea)) {
-            if (!candidate.isAlive() || !level.isVillage(candidate.blockPosition())) {
-                continue;
-            }
-            if (tradedVillagers.contains(candidate.getUUID()) && ++tradedInVillage >= COMMUNITY_SUPPORT_VILLAGERS) {
-                return tradedInVillage;
-            }
-        }
-        return tradedInVillage;
+        return VillageMembership.resolve(level, anchor)
+                .map(area -> area.countMembers(candidate -> tradedVillagers.contains(candidate.getUUID()), COMMUNITY_SUPPORT_VILLAGERS))
+                .orElse(0);
     }
 
     private static boolean hasWitnesses(ServerLevel level, Entity victim, int requiredWitnesses) {

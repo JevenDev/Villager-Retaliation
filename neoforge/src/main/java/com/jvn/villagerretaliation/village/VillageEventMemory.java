@@ -13,6 +13,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.level.Level;
 
 public final class VillageEventMemory {
@@ -83,6 +84,31 @@ public final class VillageEventMemory {
         List<MemoryEvent> relevant = new ArrayList<>();
         for (MemoryEvent event : events) {
             if (event.pos().distSqr(pos) <= RELEVANT_EVENT_RADIUS_SQR) {
+                relevant.add(event);
+            }
+        }
+        return relevant;
+    }
+
+    public static List<MemoryEvent> recentForVillage(ServerLevel level, Villager villager) {
+        if (villager == null || !villager.isAlive()) {
+            return List.of();
+        }
+        return VillageMembership.resolve(level, villager)
+                .map(area -> recentForArea(level, villager.blockPosition(), area))
+                .orElseGet(() -> recentNear(level, villager.blockPosition()));
+    }
+
+    private static List<MemoryEvent> recentForArea(ServerLevel level, BlockPos fallbackPos, VillageMembership.VillageArea area) {
+        prune(level);
+        ArrayDeque<MemoryEvent> events = EVENTS.get(level.dimension());
+        if (events == null || events.isEmpty()) {
+            return List.of();
+        }
+
+        List<MemoryEvent> relevant = new ArrayList<>();
+        for (MemoryEvent event : events) {
+            if (area.contains(event.pos()) || event.pos().distSqr(fallbackPos) <= RELEVANT_EVENT_RADIUS_SQR) {
                 relevant.add(event);
             }
         }

@@ -494,7 +494,7 @@ public final class VillagerInteractionService {
                 reports.curedRecognitionReport(),
                 reports.recruitmentMemory(),
                 reports.giftAdviceResultReport(),
-                VillageEventMemory.recentNear(level, villager.blockPosition()),
+                VillageEventMemory.recentForVillage(level, villager),
                 villager.getRandom(),
                 VillagerLocale.locale(player)
         );
