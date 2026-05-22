@@ -1517,15 +1517,13 @@ public class VillagerInteractionSavedData extends SavedData {
                         || !mapMemory.dimension().equals(dimension)) {
                     continue;
                 }
-                if (!currentStructureTest.test(mapMemory.structureId())) {
-                    continue;
-                }
                 double dx = x - (mapMemory.targetPos().getX() + 0.5D);
                 double dz = z - (mapMemory.targetPos().getZ() + 0.5D);
-                if (dx * dx + dz * dz <= radiusSqr) {
-                    this.cartographerMaps.set(index, mapMemory.withFound(true));
-                    discoveries.add(mapMemory.toReport(villagerId));
+                if (dx * dx + dz * dz > radiusSqr || !currentStructureTest.test(mapMemory.structureId())) {
+                    continue;
                 }
+                this.cartographerMaps.set(index, mapMemory.withFound(true));
+                discoveries.add(mapMemory.toReport(villagerId));
             }
             return discoveries;
         }
@@ -1566,17 +1564,18 @@ public class VillagerInteractionSavedData extends SavedData {
                 if (storyHint.reported()
                         || storyHint.found()
                         || storyHint.expiresAtGameTime() <= gameTime
-                        || !storyHint.dimension().equals(dimension)
-                        || !storyHint.matchesCurrentPlace(currentBiomeId, currentStructureTest)) {
+                        || !storyHint.dimension().equals(dimension)) {
                     continue;
                 }
                 double dx = x - (storyHint.targetPos().getX() + 0.5D);
                 double dz = z - (storyHint.targetPos().getZ() + 0.5D);
                 double discoveryRadiusSqr = storyHint.discoveryRadiusSqr(radiusSqr);
-                if (dx * dx + dz * dz <= discoveryRadiusSqr) {
-                    this.storyHints.set(index, storyHint.withFound(true));
-                    discoveries.add(storyHint.toReport(villagerId));
+                if (dx * dx + dz * dz > discoveryRadiusSqr
+                        || !storyHint.matchesCurrentPlace(currentBiomeId, currentStructureTest)) {
+                    continue;
                 }
+                this.storyHints.set(index, storyHint.withFound(true));
+                discoveries.add(storyHint.toReport(villagerId));
             }
             return discoveries;
         }
