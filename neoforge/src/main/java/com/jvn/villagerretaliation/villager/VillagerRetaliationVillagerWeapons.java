@@ -191,6 +191,29 @@ public final class VillagerRetaliationVillagerWeapons {
         return shouldPathfindForWeapon(villager, getPrimaryWeapon(villager), groundWeapon);
     }
 
+    public static boolean isBetterWeaponChoice(ItemStack candidate, ItemStack current) {
+        if (!isUsableWeapon(candidate)) {
+            return false;
+        }
+        if (!isUsableWeapon(current)) {
+            return true;
+        }
+
+        int candidatePriority = pickupPriority(candidate);
+        int currentPriority = pickupPriority(current);
+        if (candidatePriority != currentPriority) {
+            return candidatePriority < currentPriority;
+        }
+
+        int candidateTier = weaponTier(candidate);
+        int currentTier = weaponTier(current);
+        if (candidateTier != currentTier) {
+            return candidateTier > currentTier;
+        }
+
+        return candidate.isEnchanted() && !current.isEnchanted();
+    }
+
     private static boolean isMeleeWeapon(ItemStack stack) {
         return stack.is(Tags.Items.MELEE_WEAPON_TOOLS)
                 || stack.is(Tags.Items.MINING_TOOL_TOOLS)
@@ -206,29 +229,7 @@ public final class VillagerRetaliationVillagerWeapons {
             return false;
         }
 
-        if (!isUsableWeapon(equippedWeapon)) {
-            return true;
-        }
-
-        int equippedPriority = pickupPriority(equippedWeapon);
-        int groundPriority = pickupPriority(groundWeapon);
-        if (groundPriority < equippedPriority) {
-            return true;
-        }
-        if (groundPriority > equippedPriority) {
-            return false;
-        }
-
-        int equippedTier = weaponTier(equippedWeapon);
-        int groundTier = weaponTier(groundWeapon);
-        if (groundTier > equippedTier) {
-            return true;
-        }
-        if (groundTier < equippedTier) {
-            return false;
-        }
-
-        return groundWeapon.isEnchanted() && !equippedWeapon.isEnchanted();
+        return isBetterWeaponChoice(groundWeapon, equippedWeapon);
     }
 
     private static boolean isBetterPickupCandidate(

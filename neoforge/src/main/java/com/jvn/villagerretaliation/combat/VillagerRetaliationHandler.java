@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.combat;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil.ActiveRetaliationTarget;
+import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
@@ -11,7 +12,9 @@ import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerRules;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -43,6 +46,7 @@ import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
 import net.minecraft.world.entity.projectile.ThrownEgg;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.item.AxeItem;
+import net.minecraft.world.item.Equipable;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.AABB;
@@ -86,6 +90,7 @@ public final class VillagerRetaliationHandler {
     public static void releaseTemporaryWeaponForInventory(Villager villager) {
         VillagerClericPotionHelper.restoreHeldItemAndClearState(villager);
         RETALIATION.restoreTemporaryWeapon(villager);
+        VillagerInventoryAccess.returnBorrowedCombatWeapon(villager);
     }
 
     public static void onEntityAttributeModification(EntityAttributeModificationEvent event) {
@@ -214,8 +219,11 @@ public final class VillagerRetaliationHandler {
         }
 
         if (villager.isBaby()) {
-            VillagerRetaliationVillagerCombatUtil.resolveAttacker(villager, event.getSource()).ifPresent(attacker ->
-                    rallyNearbyVillagers(villager, attacker, VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get()));
+            VillagerRetaliationVillagerCombatUtil.resolveAttacker(villager, event.getSource()).ifPresent(attacker -> {
+                if (shouldRetaliateAgainstAttacker(villager, attacker)) {
+                    rallyNearbyVillagers(villager, attacker, VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get());
+                }
+            });
             return;
         }
 
@@ -224,6 +232,9 @@ public final class VillagerRetaliationHandler {
         }
 
         VillagerRetaliationVillagerCombatUtil.resolveAttacker(villager, event.getSource()).ifPresent(attacker -> {
+            if (!shouldRetaliateAgainstAttacker(villager, attacker)) {
+                return;
+            }
             if (isNitwitAlarm(villager)) {
                 rallyNearbyVillagers(villager, attacker, VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get());
                 return;
@@ -258,8 +269,10 @@ public final class VillagerRetaliationHandler {
         Optional<LivingEntity> attacker = event.getEntity() instanceof LivingEntity livingEntity
                 ? VillagerRetaliationVillagerCombatUtil.resolveAttacker(livingEntity, event.getSource())
                 : VillagerRetaliationVillagerCombatUtil.resolveAttacker(event.getSource());
+        double radius = VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get();
+        List<Villager> witnessVillagers = witnessVillagersNear(deceased, radius);
         if (deceasedIsVillager) {
-            triggerNitwitWitnessedDeathFlee(deceased, attacker.orElse(null), VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get());
+            triggerNitwitWitnessedDeathFlee(witnessVillagers, attacker.orElse(null));
         }
 
         if (attacker.isEmpty() || VillagerRetaliationVillagerCombatUtil.shouldIgnoreAttacker(attacker.get())) {
@@ -267,10 +280,12 @@ public final class VillagerRetaliationHandler {
         }
 
         LivingEntity resolvedAttacker = attacker.get();
-        double radius = VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get();
-        angerNearbyVillagers(deceased, resolvedAttacker, radius, deceasedIsVillager);
+        if (!shouldRetaliateAgainstAttacker(deceased instanceof Villager villager ? villager : null, resolvedAttacker)) {
+            return;
+        }
+        angerWitnessVillagers(witnessVillagers, resolvedAttacker, deceasedIsVillager);
         WanderingTraderRetaliationHandler.angerNearbyTradersFrom(deceased, resolvedAttacker, radius);
-        rallyFromNearbyNitwits(deceased, resolvedAttacker, radius);
+        rallyFromNitwitWitnesses(witnessVillagers, resolvedAttacker, deceasedIsVillager);
     }
 
     public static void onEntityTickPre(EntityTickEvent.Pre event) {
@@ -376,11 +391,13 @@ public final class VillagerRetaliationHandler {
             return;
         }
 
+        tryBorrowInventoryCombatWeapon(villager);
         if (tryAcquireGroundWeapon(villager, gameTime)) {
             return;
         }
 
         equipCombatWeapon(villager);
+        VillagerInteractionTracker.markGearReportsUsedInCombat(level, villager, hasEquippedWeaponGear(villager), hasEquippedArmorGear(villager));
         VillagerRetaliationRetaliationUtil.boostCombatMovement(villager);
 
         handleDefensiveRole(villager, gameTime);
@@ -498,7 +515,9 @@ public final class VillagerRetaliationHandler {
             return;
         }
         if (attacker instanceof Creeper creeper) {
-            enterCreeperAvoidanceState(villager, creeper, villager.level().getGameTime());
+            if (VillagerRetaliationConfig.VILLAGERS_FLEE_VISIBLE_CREEPERS.get()) {
+                enterCreeperAvoidanceState(villager, creeper, villager.level().getGameTime());
+            }
             return;
         }
         RETALIATION.anger(villager, attacker);
@@ -507,6 +526,7 @@ public final class VillagerRetaliationHandler {
     private static void tryAcquireHostileTarget(Villager villager) {
         if (RETALIATION.hasAnger(villager)
                 || !villager.isAlive()
+                || !VillagerRetaliationConfig.VILLAGERS_TARGET_HOSTILE_MOBS.get()
                 || !VillagerRetaliationVillagerRules.shouldSuppressFleeingBehavior(villager)
                 || !VillagerCombatRoles.canFightBack(villager)) {
             return;
@@ -541,10 +561,16 @@ public final class VillagerRetaliationHandler {
     }
 
     private static boolean shouldAvoidVisibleCreeper(Villager villager, LivingEntity target) {
-        return target instanceof Creeper && villager.hasLineOfSight(target);
+        return VillagerRetaliationConfig.VILLAGERS_FLEE_VISIBLE_CREEPERS.get()
+                && target instanceof Creeper
+                && villager.hasLineOfSight(target);
     }
 
     private static boolean tryFleeVisibleCreeper(Villager villager) {
+        if (!VillagerRetaliationConfig.VILLAGERS_FLEE_VISIBLE_CREEPERS.get()) {
+            return false;
+        }
+
         double creeperThreatRadius = VillagerRetaliationConfig.NATURAL_HOSTILE_TARGET_RADIUS.get();
         Optional<Creeper> visibleCreeper = VillagerRetaliationVillagerCombatUtil.findNearestVisibleCreeper(villager, creeperThreatRadius);
         if (visibleCreeper.isEmpty()) {
@@ -585,6 +611,21 @@ public final class VillagerRetaliationHandler {
         );
     }
 
+    private static boolean tryBorrowInventoryCombatWeapon(Villager villager) {
+        if (VillagerInventoryAccess.hasOpenInventory(villager)
+                || VillagerClericPotionHelper.isActivelyHandlingPotion(villager)
+                || VillagerRetaliationVillagerWeapons.hasUsableWeapon(villager)) {
+            return false;
+        }
+
+        boolean borrowed = VillagerInventoryAccess.tryBorrowCombatWeapon(villager);
+        if (borrowed) {
+            RETALIATION.discardTemporaryWeapon(villager);
+            VillagerRangedCombatHelper.seedInitialAttackDelay(villager, villager.getMainHandItem());
+        }
+        return borrowed;
+    }
+
     private static void clearAnger(Villager villager) {
         clearAnger(villager, true, true);
     }
@@ -610,8 +651,10 @@ public final class VillagerRetaliationHandler {
         VillagerRetaliationRetaliationUtil.restoreCombatMovement(villager);
         if (restoreWeapon && !preservePotionUse) {
             RETALIATION.restoreTemporaryWeapon(villager);
+            VillagerInventoryAccess.returnBorrowedCombatWeapon(villager);
         } else {
             RETALIATION.discardTemporaryWeapon(villager);
+            VillagerInventoryAccess.clearBorrowedCombatWeapon(villager);
         }
         VillagerRetaliationVillagerWeapons.maintainAcquiredWeaponAuthority(villager);
         RETALIATION.clearTransientState(villager);
@@ -622,6 +665,22 @@ public final class VillagerRetaliationHandler {
         if (stopNavigation) {
             villager.getNavigation().stop();
         }
+    }
+
+    private static boolean shouldRetaliateAgainstAttacker(Villager villager, LivingEntity attacker) {
+        return VillagerRetaliationConfig.VILLAGERS_RETALIATE_AGAINST_HOSTILE_MOBS.get()
+                || !isHostileMobAttacker(villager, attacker);
+    }
+
+    private static boolean isHostileMobAttacker(Villager villager, LivingEntity attacker) {
+        if (attacker instanceof Creeper) {
+            return true;
+        }
+        if (villager != null) {
+            return VillagerRetaliationVillagerCombatUtil.isNaturalHostileTarget(villager, attacker);
+        }
+        return attacker instanceof net.minecraft.world.entity.monster.Enemy
+                && !(attacker instanceof net.minecraft.world.entity.NeutralMob);
     }
 
     private static void syncMeleeAttackAttributes(Villager villager) {
@@ -656,6 +715,50 @@ public final class VillagerRetaliationHandler {
         }
     }
 
+    private static List<Villager> witnessVillagersNear(Entity sourceEntity, double radius) {
+        if (!(sourceEntity.level() instanceof ServerLevel level)) {
+            return List.of();
+        }
+
+        List<Villager> witnesses = new ArrayList<>();
+        AABB area = sourceEntity.getBoundingBox().inflate(radius);
+        for (Villager nearby : level.getEntitiesOfClass(Villager.class, area)) {
+            if (nearby != sourceEntity && canWitnessRetaliationEvent(nearby, sourceEntity)) {
+                witnesses.add(nearby);
+            }
+        }
+        return witnesses;
+    }
+
+    private static void angerWitnessVillagers(
+            List<Villager> witnesses,
+            LivingEntity attacker,
+            boolean witnessedVillagerKill) {
+        for (Villager witness : witnesses) {
+            if (!witness.isBaby() && shouldAggroFromWitness(witness, attacker, witnessedVillagerKill)) {
+                anger(witness, attacker);
+            }
+        }
+    }
+
+    private static void rallyFromNitwitWitnesses(
+            List<Villager> witnesses,
+            LivingEntity attacker,
+            boolean witnessedVillagerKill) {
+        long gameTime = attacker.level().getGameTime();
+        boolean rallied = false;
+        for (Villager witness : witnesses) {
+            if (!isNitwitAlarm(witness)) {
+                continue;
+            }
+            VillagerRetaliationVillagerBrainUtil.enterFleeState(witness, attacker, gameTime);
+            rallied = true;
+        }
+        if (rallied) {
+            angerWitnessVillagers(witnesses, attacker, witnessedVillagerKill);
+        }
+    }
+
     private static boolean shouldAggroFromWitness(Villager witness, LivingEntity attacker, boolean witnessedVillagerKill) {
         if (!(attacker instanceof Player player)) {
             return true;
@@ -685,19 +788,18 @@ public final class VillagerRetaliationHandler {
         }
     }
 
-    private static void triggerNitwitWitnessedDeathFlee(Entity deceased, LivingEntity attacker, double radius) {
-        if (!(deceased.level() instanceof ServerLevel level)) {
-            return;
-        }
-
-        AABB area = deceased.getBoundingBox().inflate(radius);
-        long gameTime = level.getGameTime();
-        for (Villager nearby : level.getEntitiesOfClass(Villager.class, area)) {
-            if (!isWitnessAlarmVillager(nearby) || !canWitnessRetaliationEvent(nearby, deceased)) {
+    private static void triggerNitwitWitnessedDeathFlee(List<Villager> witnesses, LivingEntity attacker) {
+        long gameTime = attacker == null ? 0L : attacker.level().getGameTime();
+        for (Villager nearby : witnesses) {
+            if (!isWitnessAlarmVillager(nearby)) {
                 continue;
             }
 
-            VillagerRetaliationVillagerBrainUtil.enterFleeState(nearby, attacker, gameTime);
+            if (attacker != null) {
+                VillagerRetaliationVillagerBrainUtil.enterFleeState(nearby, attacker, gameTime);
+            } else {
+                nearby.getNavigation().stop();
+            }
         }
     }
 
@@ -812,16 +914,23 @@ public final class VillagerRetaliationHandler {
         VillagerClericPotionHelper.clearState(villager);
         VillagerRetaliationRetaliationUtil.restoreCombatMovement(villager);
         RETALIATION.restoreTemporaryWeapon(villager);
+        VillagerInventoryAccess.returnBorrowedCombatWeapon(villager);
         villager.getNavigation().stop();
     }
 
     private static void equipCombatWeapon(Villager villager) {
         if (VillagerInventoryAccess.hasOpenInventory(villager)) {
             RETALIATION.restoreTemporaryWeapon(villager);
+            VillagerInventoryAccess.returnBorrowedCombatWeapon(villager);
             return;
         }
 
         if (VillagerClericPotionHelper.isActivelyHandlingPotion(villager)) {
+            return;
+        }
+
+        if (VillagerInventoryAccess.maintainBorrowedCombatWeapon(villager)) {
+            RETALIATION.discardTemporaryWeapon(villager);
             return;
         }
 
@@ -838,12 +947,30 @@ public final class VillagerRetaliationHandler {
             return;
         }
 
+        if (tryBorrowInventoryCombatWeapon(villager)) {
+            return;
+        }
+
         ItemStack weapon = VillagerCombatRoles.preferredWeapon(villager);
         if (weapon.isEmpty()) {
             return;
         }
 
         RETALIATION.equipTemporaryWeapon(villager, weapon);
+    }
+
+    private static boolean hasEquippedWeaponGear(Villager villager) {
+        return VillagerRetaliationVillagerEquipment.isPlayerManagedMainHand(villager)
+                || VillagerInventoryAccess.hasBorrowedCombatWeapon(villager)
+                || VillagerRetaliationVillagerWeapons.isUsableWeapon(villager.getOffhandItem());
+    }
+
+    private static boolean hasEquippedArmorGear(Villager villager) {
+        return !villager.getItemBySlot(EquipmentSlot.HEAD).isEmpty()
+                || !villager.getItemBySlot(EquipmentSlot.CHEST).isEmpty()
+                || !villager.getItemBySlot(EquipmentSlot.LEGS).isEmpty()
+                || !villager.getItemBySlot(EquipmentSlot.FEET).isEmpty()
+                || Equipable.get(villager.getOffhandItem()) != null;
     }
 
     private static void ensureProfessionMainHand(Villager villager) {
@@ -979,6 +1106,7 @@ public final class VillagerRetaliationHandler {
 
         VillagerRetaliationRetaliationUtil.restoreCombatMovement(villager);
         RETALIATION.restoreTemporaryWeapon(villager);
+        VillagerInventoryAccess.returnBorrowedCombatWeapon(villager);
         if (VillagerClericPotionHelper.tryOutOfCombatMilk(villager)) {
             return;
         }
@@ -1001,6 +1129,7 @@ public final class VillagerRetaliationHandler {
         VillagerClericPotionHelper.clearState(villager);
         VillagerRetaliationRetaliationUtil.restoreCombatMovement(villager);
         RETALIATION.restoreTemporaryWeapon(villager);
+        VillagerInventoryAccess.returnBorrowedCombatWeapon(villager);
     }
 
     private static boolean tryRepairNearbyIronGolem(Villager villager, ServerLevel level, long gameTime) {
@@ -1063,6 +1192,7 @@ public final class VillagerRetaliationHandler {
             RETALIATION.restoreTemporaryWeapon(villager);
         } else {
             RETALIATION.discardTemporaryWeapon(villager);
+            VillagerInventoryAccess.clearBorrowedCombatWeapon(villager);
         }
         RETALIATION.clearTransientState(villager);
         NEXT_SPECIAL_TICKS.remove(villager.getUUID());

@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil;
 import com.jvn.villagerretaliation.combat.VillagerPacificationResult;
 import com.jvn.villagerretaliation.combat.WanderingTraderRetaliationHandler;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueService;
+import com.jvn.villagerretaliation.interaction.VillagerCombatSurvivalService;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
@@ -17,6 +18,7 @@ import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.toucanlib.util.ToucanHazardAttribution;
+import com.jvn.villagerretaliation.util.VillagerDataWarmup;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerFleeBehaviorHandler;
@@ -27,6 +29,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -36,6 +39,8 @@ import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.WanderingTrader;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.raid.Raid;
+import net.minecraft.world.entity.raid.Raider;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.item.ItemStack;
@@ -51,10 +56,20 @@ import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
+import net.neoforged.neoforge.event.server.ServerStartedEvent;
+import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
 public final class VillagerRetaliationEvents {
     private VillagerRetaliationEvents() {
+    }
+
+    public static void onServerStarted(ServerStartedEvent event) {
+        VillagerDataWarmup.warm(event.getServer());
+    }
+
+    public static void onServerStopping(ServerStoppingEvent event) {
+        VillagerDataWarmup.clearCaches();
     }
 
     public static void onEntityAttributeModification(EntityAttributeModificationEvent event) {
@@ -71,6 +86,9 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onLivingDamage(LivingDamageEvent.Post event) {
+        if (event.getEntity() instanceof Villager villager && event.getNewDamage() > 0.0F) {
+            VillagerRecruitmentService.rememberFollowerDamage(villager);
+        }
         if (event.getEntity() instanceof Villager villager && event.getSource().getEntity() instanceof Player attacker) {
             VillagerRecruitmentService.stopFollowingIfFollowingAttacker(villager, attacker);
         }
@@ -97,7 +115,8 @@ public final class VillagerRetaliationEvents {
     public static void onLivingDeath(LivingDeathEvent event) {
         if (event.getEntity() instanceof Villager villager) {
             broadcastVillagerDeathMessage(villager, event.getSource());
-            VillagerRecruitmentService.notifyRecruitmentDeath(villager);
+            VillagerCombatSurvivalService.onVillagerDeath(villager);
+            VillagerRecruitmentService.notifyRecruitmentDeath(villager, event.getSource().getEntity());
         }
         VillagerRetaliationHandler.onLivingDeath(event);
         WanderingTraderRetaliationHandler.onLivingDeath(event);
@@ -112,7 +131,6 @@ public final class VillagerRetaliationEvents {
 
     public static void onEntityTickPre(EntityTickEvent.Pre event) {
         if (event.getEntity() instanceof Villager villager) {
-            VillagerConversationService.tickVillager(villager);
             VillagerRecruitmentService.onVillagerTickPre(villager);
             if (villager.level() instanceof ServerLevel level) {
                 VillagerAmbientIndicatorService.maybeEmitSleepIndicator(level, villager);
@@ -130,18 +148,19 @@ public final class VillagerRetaliationEvents {
         if (event.getEntity() instanceof Villager villager) {
             VillagerConversationService.tickVillager(villager);
             VillagerRecruitmentService.onVillagerTickPost(villager);
+            rememberWeatherEventNearVillager(villager);
         }
         clearIronGolemTargetingVillagers(event.getEntity());
         VillagerRetaliationHandler.onEntityTickPost(event);
         WanderingTraderRetaliationHandler.onEntityTickPost(event);
         VillagerFleeBehaviorHandler.onEntityTickPost(event);
+        if (event.getEntity() instanceof Villager villager) {
+            VillagerCombatSurvivalService.onVillagerTickPost(villager);
+        }
     }
 
     public static void onEntityJoinLevel(EntityJoinLevelEvent event) {
         VillagerRetaliationHandler.onEntityJoinLevel(event);
-        if (event.getEntity() instanceof AbstractVillager villager && villager.level() instanceof ServerLevel) {
-            VillagerPresetNameRegistry.ensurePresetNameAssigned(villager);
-        }
     }
 
     public static void onPlayerStartTracking(PlayerEvent.StartTracking event) {
@@ -298,6 +317,7 @@ public final class VillagerRetaliationEvents {
         }
         if (player instanceof ServerPlayer serverPlayer) {
             VillagerInteractionService.sendReceivedItemNotice(serverPlayer, villager, gift);
+            VillagerInteractionService.sendHighReputationGiftDialogue(serverPlayer, villager, gift);
         }
 
         VillagerReputationManager.markHighReputationGiftGiven(level, villager, player);
@@ -319,6 +339,9 @@ public final class VillagerRetaliationEvents {
         VillagerRetaliationHandler.onEntityLeaveLevel(event);
         WanderingTraderRetaliationHandler.onEntityLeaveLevel(event);
         VillagerConversationService.endForEntityLeaving(event.getEntity(), true);
+        if (event.getEntity() instanceof Villager villager) {
+            VillagerCombatSurvivalService.onVillagerLeaveLevel(villager);
+        }
     }
 
     private static void rememberVillageDamageEvent(LivingDamageEvent.Post event) {
@@ -330,6 +353,15 @@ public final class VillagerRetaliationEvents {
 
         Entity attacker = event.getSource().getEntity();
         VillageEventMemory.remember(level, VillageEventMemory.EventTag.VILLAGER_ATTACKED, villager.blockPosition(), villager, attacker);
+        if (event.getSource().is(DamageTypeTags.IS_FIRE)) {
+            VillageEventMemory.remember(level, VillageEventMemory.EventTag.VILLAGE_FIRE, villager.blockPosition(), villager, attacker);
+        }
+        if (attacker instanceof Enemy && isNight(level)) {
+            VillageEventMemory.remember(level, VillageEventMemory.EventTag.NIGHT_ATTACK, villager.blockPosition(), villager, attacker);
+        }
+        if (attacker instanceof Raider && isActiveRaidAt(level, attacker)) {
+            VillageEventMemory.remember(level, VillageEventMemory.EventTag.RAID, villager.blockPosition(), villager, attacker);
+        }
         if (attacker instanceof Player) {
             VillageEventMemory.remember(level, VillageEventMemory.EventTag.PLAYER_ATTACKED_VILLAGER, villager.blockPosition(), villager, attacker);
         }
@@ -347,18 +379,54 @@ public final class VillagerRetaliationEvents {
         } else if (deceased instanceof IronGolem golem) {
             VillageEventMemory.remember(level, VillageEventMemory.EventTag.GOLEM_KILLED, golem.blockPosition(), golem, attacker);
         } else if (deceased instanceof Enemy) {
+            if (isNight(level)) {
+                VillageEventMemory.remember(level, VillageEventMemory.EventTag.NIGHT_ATTACK, deceased.blockPosition(), deceased, attacker);
+            }
             if (attacker instanceof IronGolem) {
                 VillageEventMemory.remember(level, VillageEventMemory.EventTag.IRON_GOLEM_DEFEATED_MOB, deceased.blockPosition(), deceased, attacker);
             } else if (attacker instanceof Player) {
                 VillageEventMemory.remember(level, VillageEventMemory.EventTag.PLAYER_DEFENDED_VILLAGE, deceased.blockPosition(), deceased, attacker);
+                if (deceased instanceof Raider && isActiveRaidAt(level, deceased)) {
+                    VillageEventMemory.remember(level, VillageEventMemory.EventTag.RAID, deceased.blockPosition(), deceased, attacker);
+                    VillageEventMemory.remember(level, VillageEventMemory.EventTag.PLAYER_DEFENDED_RAID, deceased.blockPosition(), deceased, attacker);
+                }
             }
         }
     }
 
+    private static void rememberWeatherEventNearVillager(Villager villager) {
+        if (!(villager.level() instanceof ServerLevel level) || !level.isThundering()) {
+            return;
+        }
+        if (level.getGameTime() % 200L == Math.floorMod(villager.getUUID().getLeastSignificantBits(), 200L)) {
+            VillageEventMemory.remember(level, weatherEventTag(level, villager.blockPosition()), villager.blockPosition(), villager, null);
+        }
+    }
+
+    private static VillageEventMemory.EventTag weatherEventTag(ServerLevel level, net.minecraft.core.BlockPos pos) {
+        net.minecraft.world.level.biome.Biome biome = level.getBiome(pos).value();
+        if (!biome.hasPrecipitation()) {
+            return VillageEventMemory.EventTag.SANDSTORM;
+        }
+        if (biome.coldEnoughToSnow(pos)) {
+            return VillageEventMemory.EventTag.SNOWSTORM;
+        }
+        return VillageEventMemory.EventTag.THUNDERSTORM;
+    }
+
+    private static boolean isNight(ServerLevel level) {
+        long time = level.getDayTime() % 24000L;
+        return time >= 12542L && time < 23460L;
+    }
+
+    private static boolean isActiveRaidAt(ServerLevel level, Entity entity) {
+        Raid raid = level.getRaidAt(entity.blockPosition());
+        return raid != null && raid.isActive() && !raid.isVictory() && !raid.isLoss();
+    }
+
     private static void broadcastVillagerDeathMessage(Villager villager, DamageSource source) {
         if (!(villager.level() instanceof ServerLevel level)
-                || !level.getGameRules().getBoolean(GameRules.RULE_SHOWDEATHMESSAGES)
-                || villager.hasCustomName()) {
+                || !level.getGameRules().getBoolean(GameRules.RULE_SHOWDEATHMESSAGES)) {
             return;
         }
 

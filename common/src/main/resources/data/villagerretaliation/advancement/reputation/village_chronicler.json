@@ -1,0 +1,23 @@
+{
+  "parent": "villagerretaliation:reputation/story_keeper",
+  "display": {
+    "icon": {
+      "id": "minecraft:lectern"
+    },
+    "title": {
+      "translate": "advancements.villagerretaliation.reputation.village_chronicler.title"
+    },
+    "description": {
+      "translate": "advancements.villagerretaliation.reputation.village_chronicler.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

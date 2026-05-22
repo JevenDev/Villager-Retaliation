@@ -85,6 +85,7 @@ public class VillagerInteractionScreen extends Screen {
     private DialoguePage page = DialoguePage.ROOT;
     private int selectedOption;
     private boolean closingFromServer;
+    private boolean openingChat;
     private boolean draggingScrollbar;
     private float scrollbarDragOffset;
     private float optionScroll;
@@ -167,7 +168,11 @@ public class VillagerInteractionScreen extends Screen {
 
     public void closeFromServer() {
         this.closingFromServer = true;
-        this.minecraft.setScreen(null);
+        if (Minecraft.getInstance().screen != this) {
+            restoreChatWidthOverride();
+            ClientVillagerConversationState.clear();
+        }
+        Minecraft.getInstance().setScreen(null);
     }
 
     @Override
@@ -193,6 +198,10 @@ public class VillagerInteractionScreen extends Screen {
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (tryOpenVanillaChat(keyCode, scanCode)) {
+            return true;
+        }
+
         return switch (keyCode) {
             case GLFW.GLFW_KEY_ESCAPE -> {
                 goBackOrLeaveConversation();
@@ -266,6 +275,12 @@ public class VillagerInteractionScreen extends Screen {
 
     @Override
     public void removed() {
+        if (this.openingChat) {
+            this.openingChat = false;
+            super.removed();
+            return;
+        }
+
         restoreChatWidthOverride();
         ClientVillagerConversationState.clear();
         if (!this.closingFromServer) {
@@ -277,6 +292,24 @@ public class VillagerInteractionScreen extends Screen {
     @Override
     public boolean isPauseScreen() {
         return false;
+    }
+
+    private boolean tryOpenVanillaChat(int keyCode, int scanCode) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.options.keyChat.matches(keyCode, scanCode)) {
+            openVanillaChat("");
+            return true;
+        }
+        if (minecraft.options.keyCommand.matches(keyCode, scanCode)) {
+            openVanillaChat("/");
+            return true;
+        }
+        return false;
+    }
+
+    private void openVanillaChat(String initialText) {
+        this.openingChat = true;
+        Minecraft.getInstance().setScreen(new VillagerInteractionChatScreen(this, initialText));
     }
 
     private void rebuildOptions() {

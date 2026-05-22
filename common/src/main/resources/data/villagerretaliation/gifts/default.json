@@ -13,8 +13,13 @@
       "items": ["emerald", "diamond", "gold_ingot", "golden_apple", "enchanted_golden_apple", "experience_bottle"]
     },
     {
+      "reaction": "loved",
+      "items": ["emerald_block"],
+      "reputation_per_item": 54
+    },
+    {
       "reaction": "liked",
-      "items": ["bread", "apple", "cookie", "cake", "pumpkin_pie", "honey_bottle", "sweet_berries", "glow_berries", "milk_bucket"]
+      "items": ["bread", "apple", "cookie", "cake", "pumpkin_pie", "honey_bottle", "sweet_berries", "glow_berries", "milk_bucket", "emerald_ore", "deepslate_emerald_ore"]
     },
     {
       "professions": ["armorer"],

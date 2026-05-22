@@ -198,15 +198,17 @@ Config categories include:
 - `balance` - loot and drop rates
 - `retaliation` - anger rules, aggro radius, duration, line-of-sight witnesses
 - `reputation` - penalties, gains, thresholds, gossip, trade pricing
-- `combat` - profession combat toggles, armorer shields, clerics, farmers
+- `combat` - profession combat toggles, hostile mob targeting/retaliation, weapon pickup, armorer shields, clerics, farmers
 - `debugOverlay` - optional reputation display for testing
 - `wanderer` - wandering trader drop behavior
+
+Pack creators can tune monster-defense behavior independently with `combat.villagersTargetHostileMobs`, `combat.villagersRetaliateAgainstHostileMobs`, `combat.villagersStandGroundAgainstHostileMobs`, `combat.villagersPickUpGroundWeapons`, and the equivalent wandering trader options. `combat.naturalHostileTargetRadius` still controls the scan distance when proactive hostile mob targeting is enabled.
 
 ## Debug Overlay
 
 There is an optional client-side debug overlay for testing reputation.
 
-When enabled, it can show the villager's reputation tier and/or exact reputation value above their head. It can be limited by distance, sneaking, or advanced tooltips.
+When enabled, it can show the villager's reputation tier and/or exact reputation value above their head. Optional health and armor lines can be shown under the reputation line. It can be limited by distance, sneaking, or advanced tooltips.
 
 This is disabled by default and is mainly intended for testing and balancing.
 
@@ -218,7 +220,7 @@ Villager dialogue is loaded from datapack JSON under:
 data/villagerretaliation/dialogue/en_us/
 ```
 
-The built-in files live in `global.json` and `professions/<profession>.json`. Packs can add or replace files in the same namespace to add new dialogue, tune weights, add profession-specific lines, or expose new talk choices.
+The built-in files live in `global.json`, `professions/<profession>.json`, and optional nested files such as `professions/<profession>/share_stories.json`. Packs can add or replace files in the same namespace to add new dialogue, tune weights, add profession-specific lines, or expose new talk choices. Files directly under `professions/<profession>.json` and nested under `professions/<profession>/` automatically apply to that profession unless an entry provides its own `professions` filter.
 
 Dialogue uses the player's client language when the server knows it. Files in `dialogue/<locale>/` are layered over `dialogue/en_us/`, so translated packs can provide only the entries they need to replace. Matching `id` values replace fallback entries; entries without explicit ids use stable generated ids based on file path and order.
 
@@ -286,7 +288,92 @@ Dialogue choices are declared with an `options` array:
 }
 ```
 
-`type` controls the existing dialogue behavior and reputation handling: `chat`, `greeting`, `question`, `gift_preferences`, `story`, `joke`, or `insult`. `option` or `option_ids` binds a line to a custom choice. Lines can also filter by `professions`, `dispositions`, `weather`, `times`, `event_tags`, `player_event_tags`, `show_for_adults`, `show_for_babies`, `requires_recent_broken_bed_memory`, `requires_recent_direct_hit_memory`, and `first_conversation_only`. Higher `weight` values are picked more often.
+`type` controls the existing dialogue behavior and reputation handling: `chat`, `greeting`, `question`, `gift_preferences`, `gift_advice_followup`, `map_report`, `combat_survival_report`, `gear_report`, `recruitment_followup`, `apology`, `village_defense_report`, `story`, `share_story`, `joke`, or `insult`. `option` or `option_ids` binds a line to a custom choice. Lines can also filter by `professions`, `dispositions`, `weather`, `times`, `event_tags`, `player_event_tags`, `show_for_adults`, `show_for_babies`, `requires_recent_broken_bed_memory`, `requires_recent_direct_hit_memory`, `requires_gear_report_used_in_combat`, `requires_gear_report_unused_in_combat`, `recruitment_followup_scenarios`, `requires_recruitment_memory`, `recruitment_memory_scenarios`, `min_recruitment_follow_distance`, `requires_recruitment_boat_trip`, `requires_recruitment_ocean_crossing`, `requires_recruitment_swim_trip`, `excludes_recruitment_ocean_crossing`, and `first_conversation_only`. Opening and closing lines also support `first_conversation_only` and `first_village_interaction_only`. Recruitment memory chat lines can use `{follow_biome}` and `{follow_distance}` placeholders. Shared story lines can use `{target}` and `{target_article}` placeholders, and can filter to specific discovered structures or biomes with `story_structure`, `story_structures`, `story_biome`, or `story_biomes`. Options can set `requires_unreported_cartographer_map_discovery` to appear only after the player finds a cartographer dialogue map target and before they report it, `requires_unreported_gift_advice_result` to appear after the player tests that villager's gift advice on another villager and before the result is discussed, `requires_unreported_combat_survival_report` to appear after a followed villager or nearby fighting villager survives a raid/night hostile encounter and before that survival is acknowledged, `requires_unreported_gear_report` to appear after the player gives that villager armor or a usable weapon and before they ask how it is working, `requires_unreported_recruitment_followup` to appear after a follower is dismissed safely near the village, dismissed injured near the village, or betrayed by the player and before that outcome is discussed, `requires_unapologized_remembered_harm` to appear after the player hits that villager, breaks their bed, or is recently caught harming a nearby villager and before they apologize, `requires_unreported_village_defense` to appear for nearby villagers after the player kills raiders during an active raid and before that defense is discussed, or `requires_shareable_story` to appear only after the player has discovered a configured structure or biome near that villager. Higher `weight` values are picked more often.
+
+Structures that unlock `share_story` dialogue are loaded from datapack JSON under:
+
+```text
+data/villagerretaliation/story_structures/
+```
+
+Biomes that unlock `share_story` dialogue are loaded from datapack JSON under:
+
+```text
+data/villagerretaliation/story_biomes/
+```
+
+Each file can define one entry or an `entries` array. `structure` accepts any vanilla or modded structure id, and `biome` accepts any vanilla or modded biome id. `name` is optional; if omitted, the id path is converted into a readable name. Structure `radius` controls how close the player must be to the structure before nearby villagers can receive a story to share. The built-in pack includes every vanilla 1.21.1 biome and structure id, with at least five unique `share_story` responses per villager profession for each one.
+
+```json
+{
+  "radius": 96,
+  "entries": [
+    {
+      "structure": "minecraft:ancient_city",
+      "name": "Ancient City",
+      "radius": 128
+    },
+    {
+      "structure": "examplemod:haunted_keep",
+      "name": "Haunted Keep"
+    }
+  ]
+}
+```
+
+Biome entries use the same shape:
+
+```json
+{
+  "entries": [
+    {
+      "biome": "minecraft:deep_dark",
+      "name": "Deep Dark"
+    },
+    {
+      "biome": "examplemod:crystal_marsh",
+      "name": "Crystal Marsh"
+    }
+  ]
+}
+```
+
+When the player discovers one of these structures or biomes near villagers, those villagers can show the built-in `Share a Story` option until the story is told. Babies use their own baby-only `share_story` dialogue lines when available.
+
+Structure-specific shared-story lines can filter with `story_structure`:
+
+```json
+{
+  "lines": [
+    {
+      "id": "librarian_share_story_haunted_keep",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "story_structure": "examplemod:haunted_keep",
+      "text": "{target_article}. I will write that under warnings, not wonders.",
+      "weight": 24
+    },
+    {
+      "id": "farmer_share_story_crystal_marsh",
+      "type": "share_story",
+      "option": "adult_share_story",
+      "story_biome": "examplemod:crystal_marsh",
+      "text": "{target_article}? Then the fields should know which road not to trust.",
+      "weight": 24
+    }
+  ]
+}
+```
+
+Large dialogue sets can be split into nested profession files for readability:
+
+```text
+data/villagerretaliation/dialogue/en_us/professions/fisherman/share_stories.json
+```
+
+Lines in that file automatically default to the `fisherman` profession, so they do not need to repeat `"professions": ["fisherman"]` unless a pack intentionally wants a different filter.
+
+Gift advice is not always reliable. Villagers with low personal reputation toward the player can mislead them by recommending a gift that the target profession actually dislikes, and neutral or lightly trusted villagers can occasionally be wrong. Bad advice is not added to the known gift lists until the player tests it; returning to the recommender afterward can reveal a `gift_advice_followup` response.
 
 One-off villager replies are declared with `messages`:
 
@@ -397,6 +484,8 @@ Gift preference entries map items or item tags to a reaction. Profession-specifi
 ```
 
 Valid reactions are `loved`, `liked`, `neutral`, `disliked`, and `hated`. Each reaction has a default per-item reputation value, but `reputation_per_item` can override it for a specific entry.
+
+Gifted items are stored in the villager's inventory. Trusted-or-better villagers may keep a loved or liked gift as a visible keepsake when they have an empty hand, armor slot, or offhand slot for it.
 
 High-reputation reward entries decide what trusted villagers can give back:
 

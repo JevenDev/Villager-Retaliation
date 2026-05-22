@@ -155,7 +155,16 @@ public final class VillagerReputationNetworking {
     }
 
     public static void sendName(ServerPlayer player, AbstractVillager villager) {
-        if (villager.hasCustomName()) {
+        if (villager.hasCustomName() && villager.getCustomName() != null) {
+            String customName = villager.getCustomName().getString().trim();
+            if (!customName.isBlank()) {
+                PacketDistributor.sendToPlayer(player, new VillagerNameSyncPayload(
+                        villager.getId(),
+                        villager.getUUID(),
+                        "",
+                        customName
+                ));
+            }
             return;
         }
 

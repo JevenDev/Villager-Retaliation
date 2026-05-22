@@ -11,6 +11,7 @@ import com.jvn.villagerretaliation.dialogue.DialogueReputationService;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueService;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
+import com.jvn.villagerretaliation.dialogue.VillagerStoryHintService;
 import com.jvn.villagerretaliation.dialogue.GiftAdviceKind;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.network.OpenVillagerInteractionPayload;
@@ -30,8 +31,10 @@ import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.util.VillagerLocale;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
+import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import java.util.Map;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.sounds.SoundEvents;
@@ -43,6 +46,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Equipable;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.AABB;
@@ -73,7 +77,7 @@ public final class VillagerInteractionService {
         }
 
         if (VillagerRecruitmentService.isFollowing(villager, player)) {
-            VillagerRecruitmentService.stopFollowing(villager);
+            VillagerRecruitmentService.stopFollowing(player.serverLevel(), villager, player);
             VillagerRecruitmentService.sendNoLongerFollowingNotice(player, villager);
             focusVillagerOnPlayer(villager, player);
             sendVillagerNotice(player, villager, "interaction.follow_stay");
@@ -138,6 +142,7 @@ public final class VillagerInteractionService {
                 giftKnowledge.likedGiftNames(),
                 giftKnowledge.dislikedGiftNames()
         ));
+        VillagerAmbientIndicatorService.onConversationOpened(level, villager, player);
         broadcastVillagerChat(level, villager, greetingText);
     }
 
@@ -176,6 +181,15 @@ public final class VillagerInteractionService {
         VillagerAmbientIndicatorService.onDialogueResponse(level, villager, player, optionId, requestType, reputationEffect);
         String responseText = reputationEffect.responseOverride() == null ? result.text() : reputationEffect.responseOverride();
         VillagerInteractionTracker.rememberDialogue(level, villager, player, requestType, result.lineId());
+        if (requestType == DialogueRequestType.COMBAT_SURVIVAL_REPORT) {
+            VillagerInteractionTracker.claimUnreportedCombatSurvivalReport(level, villager, player);
+        } else if (requestType == DialogueRequestType.GEAR_REPORT) {
+            VillagerInteractionTracker.claimUnreportedGearReport(level, villager, player);
+        } else if (requestType == DialogueRequestType.RECRUITMENT_FOLLOWUP) {
+            VillagerInteractionTracker.claimUnreportedRecruitmentFollowup(level, villager, player);
+        } else if (requestType == DialogueRequestType.CURED_RECOGNITION) {
+            VillagerInteractionTracker.claimUnreportedCuredRecognition(level, villager, player);
+        }
         sendDialogueReputation(player, villager, level, requestType, reputationEffect);
         broadcastVillagerChat(level, villager, responseText);
         if (shouldRefuseDespisedConversation(villager, player)) {
@@ -261,7 +275,24 @@ public final class VillagerInteractionService {
         VillagerProfession profession = villager.getVillagerData().getProfession();
         VillagerGiftPreferences.GiftPreference giftPreference = VillagerGiftPreferences.evaluate(level, profession, giftedStack);
         int reputationValue = giftPreference.reputationValue();
+        VillagerGiftKnowledgeService.rememberGiftResult(level, player, profession, giftedStack, giftPreference);
+        Boolean giftAdviceLikedResult = giftAdviceLikedResult(giftPreference.reaction());
+        if (giftAdviceLikedResult != null) {
+            VillagerInteractionTracker.markGiftAdviceResult(
+                    level,
+                    villager,
+                    player,
+                    itemId(giftedStack),
+                    itemName(giftedStack),
+                    VillagerGiftKnowledgeService.professionKey(profession),
+                    VillagerInteractionTextUtil.professionName(profession, "villager").toLowerCase(java.util.Locale.ROOT),
+                    VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
+                    giftAdviceLikedResult
+            );
+        }
         VillagerReputationManager.addGiftReputation(level, villager, player, reputationValue);
+        VillagerGiftKeepsakes.storeGift(level, villager, player, giftedStack, giftPreference);
+        rememberGearGift(level, villager, player, giftedStack);
         VillageEventMemory.rememberGift(
                 level,
                 villager.blockPosition(),
@@ -334,6 +365,29 @@ public final class VillagerInteractionService {
         return "gift_response." + scope + "." + reaction;
     }
 
+    private static Boolean giftAdviceLikedResult(VillagerGiftPreferences.GiftReaction reaction) {
+        return switch (reaction) {
+            case LOVED, LIKED -> true;
+            case DISLIKED, HATED -> false;
+            case NEUTRAL -> null;
+        };
+    }
+
+    private static void rememberGearGift(ServerLevel level, Villager villager, ServerPlayer player, ItemStack giftedStack) {
+        String gearKind = gearKind(giftedStack);
+        if (!gearKind.isBlank()) {
+            VillagerInteractionTracker.rememberGearReport(level, villager, player, gearKind);
+        }
+    }
+
+    private static String gearKind(ItemStack stack) {
+        if (VillagerRetaliationVillagerWeapons.isUsableWeapon(stack)) {
+            return "weapon";
+        }
+        Equipable equipable = Equipable.get(stack);
+        return equipable == null ? "" : "armor";
+    }
+
     private static void sendGiftNotice(ServerPlayer player, Villager villager, ItemStack giftedStack, int reputationValue) {
         VillagerReputationNoticeKind kind = reputationValue < 0
                 ? VillagerReputationNoticeKind.GIFT_DISLIKED
@@ -387,6 +441,7 @@ public final class VillagerInteractionService {
                 reputation.level()
         ));
         PacketDistributor.sendToPlayer(player, new VillagerConversationEndedPayload(villager.getId(), goodbyeText));
+        VillagerAmbientIndicatorService.onConversationClosed(level, villager, player);
         broadcastVillagerChat(level, villager, goodbyeText);
         VillagerConversationService.endForPlayer(player, false);
     }
@@ -410,6 +465,7 @@ public final class VillagerInteractionService {
             VillagerInteractionTracker.InteractionState interactionState,
             int reputation,
             VillagerReputationLevel reputationLevel) {
+        VillagerInteractionTracker.ContextReports reports = VillagerInteractionTracker.contextReports(level, villager, player);
         return new DialogueContext(
                 level,
                 player,
@@ -418,24 +474,37 @@ public final class VillagerInteractionService {
                 reputation,
                 reputationLevel,
                 interactionState.firstConversation(),
+                interactionState.firstVillageInteraction(),
                 weatherState(level, villager),
                 timeOfDay(level),
                 interactionState.lastPositiveDialogueReputationGameTime(),
                 interactionState.lastNegativeDialogueReputationGameTime(),
                 interactionState.lastJokeReputationGameTime(),
+                interactionState.lastApologyDialogueGameTime(),
+                interactionState.lastVillageDefenseReportGameTime(),
                 interactionState.badFirstImpression(),
                 interactionState.lastBrokenBedGameTime(),
                 interactionState.lastDirectHitGameTime(),
                 interactionState.lastDirectHitWeapon(),
-                VillageEventMemory.recentNear(level, villager.blockPosition()),
+                reports.cartographerMapReport(),
+                reports.storyHintReport(),
+                reports.shareableStoryReport(),
+                reports.combatSurvivalReport(),
+                reports.gearReport(),
+                reports.recruitmentFollowupReport(),
+                reports.curedRecognitionReport(),
+                reports.recruitmentMemory(),
+                reports.giftAdviceResultReport(),
+                VillageEventMemory.recentForVillage(level, villager),
                 villager.getRandom(),
                 VillagerLocale.locale(player)
         );
     }
 
     private static ReputationSnapshot reputationSnapshot(ServerLevel level, Villager villager, ServerPlayer player) {
-        int reputation = VillagerReputationManager.getReputation(level, villager, player.getUUID());
-        return new ReputationSnapshot(reputation, VillagerReputationLevel.fromReputation(reputation));
+        VillagerReputationManager.ReputationSnapshot reputation =
+                VillagerReputationManager.getReputationSnapshot(level, villager, player.getUUID());
+        return new ReputationSnapshot(reputation.value(), reputation.level());
     }
 
     private static void sendDialogueReputation(ServerPlayer player, Villager villager, ServerLevel level) {
@@ -491,6 +560,42 @@ public final class VillagerInteractionService {
                             giftAdviceLine(context, GiftAdviceKind.ALREADY_KNOWN, "", "")
                     ));
         }
+        if (requestType == DialogueRequestType.GIFT_ADVICE_FOLLOWUP) {
+            return VillagerInteractionTracker
+                    .claimUnreportedGiftAdviceResult(context.level(), context.villager(), context.player())
+                    .map(report -> new VillagerDialogueService.DialogueResult(
+                            "gift_advice_followup_" + (report.liked() ? "liked" : "disliked"),
+                            giftAdviceFollowupLine(context, report)
+                    ))
+                    .orElseGet(() -> new VillagerDialogueService.DialogueResult(
+                            "gift_advice_followup_missing",
+                            VillagerDialogueResources.message(context, "gift_advice_followup.missing").orElse("")
+                    ));
+        }
+        if (requestType == DialogueRequestType.MAP_REPORT) {
+            return VillagerStoryHintService
+                    .selectCartographerMapReport(context)
+                    .orElseGet(() -> new VillagerDialogueService.DialogueResult(
+                            "cartographer_map_report_missing",
+                            VillagerDialogueResources.message(context, "cartographer_map_report.missing").orElse("")
+                    ));
+        }
+        if (requestType == DialogueRequestType.STORY_HINT_REPORT) {
+            return VillagerStoryHintService
+                    .selectStoryHintReport(context)
+                    .orElseGet(() -> new VillagerDialogueService.DialogueResult(
+                            "story_hint_report_missing",
+                            VillagerDialogueResources.message(context, "story_hint_report.missing").orElse("")
+                    ));
+        }
+        if (requestType == DialogueRequestType.SHARE_STORY) {
+            return VillagerStoryHintService
+                    .selectSharedStory(context, dialogueOption, interactionState.recentDialogueIds())
+                    .orElseGet(() -> new VillagerDialogueService.DialogueResult(
+                            "share_story_missing",
+                            VillagerDialogueResources.message(context, "share_story.missing").orElse("")
+                    ));
+        }
         return VillagerDialogueService.select(
                 context,
                 dialogueOption,
@@ -505,6 +610,56 @@ public final class VillagerInteractionService {
             String giftSubject) {
         return VillagerDialogueResources.giftAdviceLine(context, giftAdviceKind, giftItemName, giftSubject)
                 .orElse("");
+    }
+
+    private static String giftAdviceFollowupLine(
+            DialogueContext context,
+            VillagerInteractionTracker.GiftAdviceResultReport report) {
+        VillagerProfession testedProfession = professionFromKey(report.testedProfessionKey());
+        String professionName = report.testedProfessionName() == null || report.testedProfessionName().isBlank()
+                ? VillagerInteractionTextUtil.professionName(testedProfession, "villager").toLowerCase(java.util.Locale.ROOT)
+                : report.testedProfessionName();
+        String alternativeGift = report.liked()
+                ? ""
+                : VillagerGiftKnowledgeService
+                        .randomLikedGiftName(context.level(), testedProfession, report.itemId(), context.random())
+                        .orElse("something useful");
+        Map<String, String> replacements = Map.of(
+                "gift_item", report.itemName() == null || report.itemName().isBlank() ? "that gift" : report.itemName(),
+                "gift_subject", VillagerInteractionTextUtil.withIndefiniteArticle(professionName),
+                "tested_villager", report.testedVillagerName() == null || report.testedVillagerName().isBlank()
+                        ? "them"
+                        : report.testedVillagerName(),
+                "alternative_gift", alternativeGift
+        );
+        String key = report.liked() ? "gift_advice_followup.liked" : "gift_advice_followup.disliked";
+        return VillagerDialogueResources
+                .professionPriorityMessage(context, key, replacements)
+                .or(() -> VillagerDialogueResources.message(context, key, replacements))
+                .orElse("");
+    }
+
+    private static VillagerProfession professionFromKey(String key) {
+        if (key == null || key.isBlank()) {
+            return VillagerProfession.NONE;
+        }
+        return switch (key.toLowerCase(java.util.Locale.ROOT).replace("minecraft:", "")) {
+            case "armorer" -> VillagerProfession.ARMORER;
+            case "butcher" -> VillagerProfession.BUTCHER;
+            case "cartographer" -> VillagerProfession.CARTOGRAPHER;
+            case "cleric" -> VillagerProfession.CLERIC;
+            case "farmer" -> VillagerProfession.FARMER;
+            case "fisherman" -> VillagerProfession.FISHERMAN;
+            case "fletcher" -> VillagerProfession.FLETCHER;
+            case "leatherworker" -> VillagerProfession.LEATHERWORKER;
+            case "librarian" -> VillagerProfession.LIBRARIAN;
+            case "mason" -> VillagerProfession.MASON;
+            case "nitwit" -> VillagerProfession.NITWIT;
+            case "shepherd" -> VillagerProfession.SHEPHERD;
+            case "toolsmith" -> VillagerProfession.TOOLSMITH;
+            case "weaponsmith" -> VillagerProfession.WEAPONSMITH;
+            default -> VillagerProfession.NONE;
+        };
     }
 
     private static String message(DialogueContext context, String key) {
@@ -620,6 +775,37 @@ public final class VillagerInteractionService {
         );
     }
 
+    public static void sendHighReputationGiftDialogue(ServerPlayer player, Villager villager, ItemStack stack) {
+        if (stack.isEmpty() || !(villager.level() instanceof ServerLevel level)) {
+            return;
+        }
+
+        DialogueContext context = createDialogueContext(level, player, villager);
+        String responseText = VillagerDialogueResources
+                .professionPriorityMessage(context, "gift_given", Map.of("gift_item", itemName(stack)))
+                .orElse("");
+        broadcastVillagerChat(level, villager, responseText);
+    }
+
+    public static void sendGiftTakenBackDialogue(ServerPlayer player, Villager villager, ItemStack stack, int count, boolean stolen) {
+        if (stack.isEmpty() || !(villager.level() instanceof ServerLevel level)) {
+            return;
+        }
+
+        ItemStack displayedStack = stack.copyWithCount(Math.max(1, count));
+        DialogueContext context = createDialogueContext(level, player, villager);
+        String responseText = VillagerDialogueResources
+                .message(
+                        context,
+                        stolen ? "gift_taken_back.stolen" : "gift_taken_back.returned",
+                        Map.of("gift_item", itemName(displayedStack))
+                )
+                .orElse("");
+        focusVillagerOnPlayer(villager, player);
+        playGiftFeedback(level, villager, -1);
+        broadcastVillagerChat(level, villager, responseText);
+    }
+
     private static void broadcastVillagerChat(ServerLevel level, Villager villager, String text) {
         if (text == null || text.isBlank()) {
             return;
@@ -645,6 +831,10 @@ public final class VillagerInteractionService {
     private static String itemName(ItemStack stack) {
         String name = stack.getHoverName().getString();
         return stack.getCount() > 1 ? stack.getCount() + "x " + name : name;
+    }
+
+    private static String itemId(ItemStack stack) {
+        return BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
     }
 
     private static String displayName(Villager villager) {

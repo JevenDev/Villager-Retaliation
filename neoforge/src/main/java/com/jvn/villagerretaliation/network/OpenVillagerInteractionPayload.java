@@ -83,6 +83,17 @@ public record OpenVillagerInteractionPayload(
                     true,
                     Set.of(),
                     Set.of(),
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
                     buffer.readVarInt()
             ));
         }

@@ -1,14 +1,13 @@
 package com.jvn.villagerretaliation.client.interaction;
 
 import com.jvn.villagerretaliation.client.villager.VillagerNameClientCache;
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.network.OpenVillagerInteractionPayload;
 import com.jvn.villagerretaliation.network.VillagerNameSyncPayload;
 import com.jvn.villagerretaliation.network.VillagerConversationEndedPayload;
 import com.jvn.villagerretaliation.network.VillagerDialogueResponsePayload;
 import com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
@@ -16,16 +15,19 @@ import net.minecraft.client.GuiMessageTag;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 
 public final class VillagerInteractionClientHandler {
     private static final long VILLAGER_CHAT_CONTINUATION_WINDOW_MILLIS = 15_000L;
-    private static final int VILLAGER_CHAT_WRAP_PADDING_PIXELS = 24;
+    private static final int VILLAGER_CHAT_PRIMARY_TEXT_COLOR = 0xFFFFFF;
+    private static final int VILLAGER_CHAT_SECONDARY_TEXT_COLOR = 0xD8D8D8;
     private static int lastChatSpeakerEntityId = Integer.MIN_VALUE;
     private static String lastChatSpeakerLabel = "";
     private static long lastChatMessageMillis;
+    private static int currentChatGroupMessageIndex;
 
     private VillagerInteractionClientHandler() {
     }
@@ -72,6 +74,16 @@ public final class VillagerInteractionClientHandler {
                     payload.knownLikedGiftNames(),
                     payload.knownDislikedGiftNames()
             );
+        } else if (minecraft.screen instanceof VillagerInteractionChatScreen screen
+                && screen.matchesVillager(payload.entityId())) {
+            screen.updateReputation(
+                    payload.reputation(),
+                    payload.reputationLevel(),
+                    payload.mood(),
+                    payload.dialogueOptions(),
+                    payload.knownLikedGiftNames(),
+                    payload.knownDislikedGiftNames()
+            );
         }
     }
 
@@ -82,6 +94,9 @@ public final class VillagerInteractionClientHandler {
     public static void acceptConversationEnded(VillagerConversationEndedPayload payload) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.screen instanceof VillagerInteractionScreen screen
+                && screen.matchesVillager(payload.entityId())) {
+            screen.closeFromServer();
+        } else if (minecraft.screen instanceof VillagerInteractionChatScreen screen
                 && screen.matchesVillager(payload.entityId())) {
             screen.closeFromServer();
         }
@@ -97,10 +112,20 @@ public final class VillagerInteractionClientHandler {
                 ? resolveVillagerSpeakerName(minecraft, entityId)
                 : speakerLabel;
         int accentColor = villagerChatAccentColor(minecraft, entityId);
-        if (shouldStartVillagerChatGroup(entityId, resolvedSpeaker)) {
-            addVillagerChatMessage(minecraft, formatVillagerChatHeader(resolvedSpeaker, accentColor), accentColor);
+        boolean startsChatGroup = shouldStartVillagerChatGroup(entityId, resolvedSpeaker);
+        if (startsChatGroup) {
+            currentChatGroupMessageIndex = 0;
+            addVillagerChatSpeakerSeparator(minecraft, accentColor);
         }
-        addVillagerChatLines(minecraft, text, accentColor);
+        if (shouldSeparateVillagerChatMessage()) {
+            addVillagerChatSeparator(minecraft, accentColor);
+        }
+        addVillagerChatMessage(
+                minecraft,
+                formatVillagerChatMessage(text.strip(), currentChatGroupMessageIndex, startsChatGroup ? resolvedSpeaker : "", accentColor),
+                accentColor
+        );
+        currentChatGroupMessageIndex++;
         rememberVillagerChatGroup(entityId, resolvedSpeaker);
     }
 
@@ -108,10 +133,20 @@ public final class VillagerInteractionClientHandler {
         minecraft.gui.getChat().addMessage(message, null, villagerChatTag(accentColor));
     }
 
-    private static void addVillagerChatLines(Minecraft minecraft, String text, int accentColor) {
-        for (String line : wrapVillagerChatLine(minecraft, text)) {
-            addVillagerChatMessage(minecraft, formatVillagerChatLine(line), accentColor);
+    private static void addVillagerChatSeparator(Minecraft minecraft, int accentColor) {
+        if (VillagerRetaliationConfig.SEPARATE_VILLAGER_CHAT_MESSAGES.get()) {
+            addVillagerChatMessage(minecraft, Component.empty(), accentColor);
         }
+    }
+
+    private static void addVillagerChatSpeakerSeparator(Minecraft minecraft, int accentColor) {
+        if (VillagerRetaliationConfig.SEPARATE_VILLAGER_CHAT_SPEAKERS.get()) {
+            addVillagerChatMessage(minecraft, Component.empty(), accentColor);
+        }
+    }
+
+    private static boolean shouldSeparateVillagerChatMessage() {
+        return VillagerRetaliationConfig.SEPARATE_VILLAGER_CHAT_MESSAGES.get() && currentChatGroupMessageIndex > 0;
     }
 
     private static boolean shouldStartVillagerChatGroup(int entityId, String speakerLabel) {
@@ -137,6 +172,7 @@ public final class VillagerInteractionClientHandler {
         lastChatSpeakerEntityId = Integer.MIN_VALUE;
         lastChatSpeakerLabel = "";
         lastChatMessageMillis = 0L;
+        currentChatGroupMessageIndex = 0;
     }
 
     private static GuiMessageTag villagerChatTag(int accentColor) {
@@ -148,38 +184,13 @@ public final class VillagerInteractionClientHandler {
         );
     }
 
-    private static Component formatVillagerChatHeader(String speakerLabel, int accentColor) {
-        return Component.literal(speakerLabel).withStyle(style -> style.withColor(accentColor));
-    }
-
-    private static Component formatVillagerChatLine(String text) {
-        return Component.literal(text).withStyle(ChatFormatting.WHITE);
-    }
-
-    private static List<String> wrapVillagerChatLine(Minecraft minecraft, String text) {
-        int maxWidth = Math.max(40, minecraft.gui.getChat().getWidth() - VILLAGER_CHAT_WRAP_PADDING_PIXELS);
-        List<String> lines = new ArrayList<>();
-        String remaining = text.strip();
-        while (!remaining.isEmpty()) {
-            String candidate = minecraft.font.plainSubstrByWidth(remaining, maxWidth);
-            int splitIndex = candidate.length();
-            if (splitIndex < remaining.length()) {
-                int lastSpace = candidate.lastIndexOf(' ');
-                if (lastSpace > 0) {
-                    splitIndex = lastSpace;
-                }
-            }
-            if (splitIndex <= 0) {
-                splitIndex = Math.max(1, candidate.length());
-            }
-
-            String line = remaining.substring(0, splitIndex).stripTrailing();
-            if (!line.isEmpty()) {
-                lines.add(line);
-            }
-            remaining = remaining.substring(splitIndex).stripLeading();
+    private static Component formatVillagerChatMessage(String text, int lineIndex, String speakerLabel, int accentColor) {
+        int color = lineIndex % 2 == 0 ? VILLAGER_CHAT_PRIMARY_TEXT_COLOR : VILLAGER_CHAT_SECONDARY_TEXT_COLOR;
+        MutableComponent message = Component.empty();
+        if (speakerLabel != null && !speakerLabel.isBlank()) {
+            message.append(Component.literal(speakerLabel + ": ").withStyle(style -> style.withColor(accentColor)));
         }
-        return lines;
+        return message.append(Component.literal(text).withStyle(style -> style.withColor(color)));
     }
 
     private static int villagerChatAccentColor(Minecraft minecraft, int entityId) {

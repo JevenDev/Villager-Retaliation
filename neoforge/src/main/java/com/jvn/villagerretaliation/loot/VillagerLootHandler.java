@@ -8,7 +8,6 @@ import com.jvn.toucanlib.util.ToucanItemStacks;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.toucanlib.neoforge.loot.ToucanLivingDrops;
 import com.jvn.toucanlib.util.ToucanRandom;
-import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.npc.Villager;
@@ -21,8 +20,7 @@ public final class VillagerLootHandler {
     }
 
     public static void addDrops(Villager villager, LivingDropsEvent event) {
-        VillagerRetaliationVillagerWeapons.ensurePickedMainHandDrop(villager, event);
-        VillagerInventoryAccess.dropExtraInventory(villager);
+        VillagerInventoryAccess.dropAllInventoryAndEquipment(villager, event);
 
         if (!VillagerRetaliationConfig.ENABLE_VILLAGER_DROPS.get()
                 || villager.isBaby() && !VillagerRetaliationConfig.BABY_VILLAGERS_DROP_LOOT.get()) {

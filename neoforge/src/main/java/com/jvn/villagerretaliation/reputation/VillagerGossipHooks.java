@@ -1,7 +1,10 @@
 package com.jvn.villagerretaliation.reputation;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.village.VillageMembership;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import net.minecraft.server.level.ServerLevel;
@@ -32,16 +35,33 @@ public final class VillagerGossipHooks {
             gossipedAmount = originalAmount > 0 ? 1 : -1;
         }
 
-        AABB area = source.getBoundingBox().inflate(VillagerRetaliationConfig.GOSSIP_RADIUS.get());
+        List<Villager> receivers = gossipReceivers(level, source);
         int applied = 0;
-        for (Villager receiver : level.getEntitiesOfClass(Villager.class, area)) {
-            if (receiver == source || !receiver.isAlive()) {
-                continue;
-            }
+        for (Villager receiver : receivers) {
             VillagerReputationManager.addGossipReputation(level, receiver, playerId, gossipedAmount, sourceId);
             if (++applied >= 4) {
                 break;
             }
         }
+    }
+
+    private static List<Villager> gossipReceivers(ServerLevel level, Villager source) {
+        return VillageMembership.resolve(level, source)
+                .map(area -> sortedByDistance(source, area.membersMatching(receiver -> receiver != source && receiver.isAlive())))
+                .filter(receivers -> !receivers.isEmpty())
+                .orElseGet(() -> {
+                    AABB area = source.getBoundingBox().inflate(VillagerRetaliationConfig.GOSSIP_RADIUS.get());
+                    return sortedByDistance(source, level.getEntitiesOfClass(
+                            Villager.class,
+                            area,
+                            receiver -> receiver != source && receiver.isAlive()
+                    ));
+                });
+    }
+
+    private static List<Villager> sortedByDistance(Villager source, List<Villager> villagers) {
+        return villagers.stream()
+                .sorted(Comparator.comparingDouble(source::distanceToSqr))
+                .toList();
     }
 }

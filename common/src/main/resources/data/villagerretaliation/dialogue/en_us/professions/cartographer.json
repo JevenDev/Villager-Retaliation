@@ -1,4 +1,130 @@
 {
+  "messages": [
+    {
+      "key": "cartographer_map_report.missing",
+      "text": "Bring me news from the mark first. A map is not a story until someone walks it."
+    },
+    {
+      "key": "cartographer_map_report.structure.village",
+      "text": "You found {target_article}? Good. A village that can be reached can also be warned.",
+      "weight": 24
+    },
+    {
+      "key": "cartographer_map_report.structure.village",
+      "text": "{target_article}, then. I will mark the road in softer ink. People live at the end of that line.",
+      "weight": 22
+    },
+    {
+      "key": "cartographer_map_report.structure.temple",
+      "text": "So {target_article} still stands. Old stone keeps old trouble, but now the way there is honest.",
+      "weight": 24
+    },
+    {
+      "key": "cartographer_map_report.structure.temple",
+      "text": "{target_article}. Hm. I will note the hazards twice and the treasure not at all.",
+      "weight": 22
+    },
+    {
+      "key": "cartographer_map_report.structure.mansion",
+      "text": "You reached {target_article} and came back speaking. That is worth a darker border.",
+      "weight": 24
+    },
+    {
+      "key": "cartographer_map_report.structure.mansion",
+      "text": "{target_article}, confirmed. Some roofs are warnings. I will draw that one like it bites.",
+      "weight": 22
+    },
+    {
+      "key": "cartographer_map_report.structure.monument",
+      "text": "{target_article} under open water. Good work. The sea hides landmarks better than any fog.",
+      "weight": 24
+    },
+    {
+      "key": "cartographer_map_report.structure.monument",
+      "text": "You found {target_article}? Then the waves were telling the truth for once.",
+      "weight": 22
+    },
+    {
+      "key": "cartographer_map_report.structure.mineshaft",
+      "text": "{target_article}. Timber below ground means somebody trusted the dark too much.",
+      "weight": 24
+    },
+    {
+      "key": "cartographer_map_report.structure.mineshaft",
+      "text": "You found {target_article}. I will mark the descent and leave room for cave-ins.",
+      "weight": 22
+    },
+    {
+      "key": "cartographer_map_report.structure.ancient_city",
+      "text": "{target_article}. Keep your voice low even in the telling. Some places listen after you leave.",
+      "weight": 24
+    },
+    {
+      "key": "cartographer_map_report.structure.ancient_city",
+      "text": "You came back from {target_article}. I will mark it, but not invite anyone there lightly.",
+      "weight": 22
+    },
+    {
+      "key": "cartographer_map_report.structure.stronghold",
+      "text": "{target_article}, found at last. That is not a road; it is a question carved into stone.",
+      "weight": 24
+    },
+    {
+      "key": "cartographer_map_report.structure.stronghold",
+      "text": "You found {target_article}. Some maps point outward. That one points beneath everything.",
+      "weight": 22
+    },
+    {
+      "key": "cartographer_map_report.structure.nether",
+      "text": "{target_article}. Even the name makes the parchment feel warmer.",
+      "weight": 24
+    },
+    {
+      "key": "cartographer_map_report.structure.nether",
+      "text": "You found {target_article} and returned. I will not ask what followed you in memory.",
+      "weight": 22
+    },
+    {
+      "key": "cartographer_map_report.structure.outpost",
+      "text": "{target_article}. I will mark patrol risk on every road that brushes near it.",
+      "weight": 24
+    },
+    {
+      "key": "cartographer_map_report.structure.outpost",
+      "text": "You found {target_article}. Good. A tower seen on a map is a tower avoided in time.",
+      "weight": 22
+    },
+    {
+      "key": "cartographer_map_report.structure.ruins",
+      "text": "{target_article}. Ruins are never as empty as hopeful travelers claim.",
+      "weight": 24
+    },
+    {
+      "key": "cartographer_map_report.structure.ruins",
+      "text": "You found {target_article}. I will draw it lightly. The past dislikes being pinned down.",
+      "weight": 22
+    },
+    {
+      "key": "cartographer_map_report.structure.trial_chambers",
+      "text": "{target_article}. A place built to test feet, nerve, and poor judgment.",
+      "weight": 24
+    },
+    {
+      "key": "cartographer_map_report.structure.trial_chambers",
+      "text": "You found {target_article}. I will mark it as useful, dangerous, and not for the overconfident.",
+      "weight": 22
+    },
+    {
+      "key": "cartographer_map_report.structure.generic",
+      "text": "You found {target_article}. Good. The map was a promise; now it is a record.",
+      "weight": 24
+    },
+    {
+      "key": "cartographer_map_report.structure.generic",
+      "text": "{target_article}, confirmed. I will clean up the linework and pretend I was certain all along.",
+      "weight": 22
+    }
+  ],
   "openings": [
     {
       "id": "cartographer_opening",
@@ -9,6 +135,16 @@
     {
       "id": "cartographer_closing",
       "text": "Back to reading roads and borders, then."
+    }
+  ],
+  "options": [
+    {
+      "id": "cartographer_map_report",
+      "label": "Report Discovery",
+      "type": "map_report",
+      "show_for_babies": false,
+      "requires_unreported_cartographer_map_discovery": true,
+      "order": 4
     }
   ],
   "lines": [
@@ -94,6 +230,362 @@
         "hostile"
       ],
       "weight": 30
+    },
+    {
+      "id": "cartographer_cured_recognition_warm_1",
+      "type": "cured_recognition",
+      "text": "I lost every road for a while. You marked the way back.",
+      "weight": 30,
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ]
+    },
+    {
+      "id": "cartographer_cured_recognition_warm_2",
+      "type": "cured_recognition",
+      "text": "I remember your face like a landmark after a long, wrong journey.",
+      "weight": 30,
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ]
+    },
+    {
+      "id": "cartographer_cured_recognition_confused_1",
+      "type": "cured_recognition",
+      "text": "The map of that memory is torn, but your name sits near the center.",
+      "weight": 30,
+      "dispositions": [
+        "neutral",
+        "cautious"
+      ]
+    },
+    {
+      "id": "cartographer_cured_recognition_confused_2",
+      "type": "cured_recognition",
+      "text": "I remember wandering inside myself. Then a path opened, and you were beside it.",
+      "weight": 30,
+      "dispositions": [
+        "neutral",
+        "cautious"
+      ]
+    },
+    {
+      "id": "cartographer_cured_recognition_uneasy_1",
+      "type": "cured_recognition",
+      "text": "I remember you, yes. Some routes back home still pass through frightening country.",
+      "weight": 30,
+      "dispositions": [
+        "rude",
+        "hostile",
+        "fearful"
+      ]
+    },
+    {
+      "id": "cartographer_village_event_thunderstorm_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "Thunder shook the map table so hard loose maps tried to fly, but everyone near me is still standing.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cartographer_village_event_thunderstorm_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "I checked maps, compasses, and road marks after the lightning, then counted heads. No one should be alone after a sky like that.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cartographer_village_event_thunderstorm_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "Near the map table, the bell sounded small under that thunder. We stayed inside and kept the doors watched.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cartographer_village_event_thunderstorm_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "That thunder made everyone quiet. I checked the maps twice.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cartographer_village_event_thunderstorm_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "The sky can keep its lightning. I have maps to set right.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cartographer_village_event_fire_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "I checked dry parchment and map frames for sparks first, then checked faces for smoke and fear.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cartographer_village_event_fire_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "We passed water hand to hand and kept people away from the smoke. I checked the map table after.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cartographer_village_event_fire_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "The maps can wait. People come first.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cartographer_village_event_fire_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "We saved what we could reach around the map table, then stopped pretending things matter more than neighbors.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cartographer_village_event_fire_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "The smoke is thinning near the map table, but everyone is still sniffing the air like it might lie.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cartographer_village_event_raid_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "During a raid, maps can wait flat on the table; who makes it behind a door matters more.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cartographer_village_event_raid_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "The horns stopped, but my hands near the map table still expect another wave from the road.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cartographer_village_event_raid_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "We counted living neighbors before maps, compasses, and road marks. That is the only count worth starting with.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cartographer_village_event_raid_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "Raiders came looking for easy emeralds. They found barred doors near the map table and a bell that would not stop ringing.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cartographer_village_event_raid_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "From the map table, I saw fear cross the square; then I saw courage get there first.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cartographer_village_event_night_attack_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "Night trouble tests the loose latch by the map table first. We are fixing those before sunset.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cartographer_village_event_night_attack_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "I stayed near the road past the last torch and listened for anyone calling from the dark.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cartographer_village_event_night_attack_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "Dawn gave the map table enough light to count wounds, missing blocks, and who made it home.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cartographer_village_event_night_attack_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "The dark tested everyone. Most of us passed by keeping a fresh mark on the map between us and teeth.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cartographer_village_event_night_attack_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "We are safe enough near the map table, though every shadow is being inspected twice.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cartographer_village_event_sandstorm_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "sandstorm"
+      ],
+      "text": "The wind threw sand through every crack. I am still cleaning sand out of the compass case.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cartographer_village_event_sandstorm_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "sandstorm"
+      ],
+      "text": "I checked maps, compasses, and road marks, then checked who was coughing too hard to answer.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cartographer_village_event_sandstorm_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "sandstorm"
+      ],
+      "text": "Sand reached the map table, the hinges, and half our eyes, but no one has been reported missing.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cartographer_village_event_sandstorm_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "sandstorm"
+      ],
+      "text": "A hard wind teaches a cartographer which doors actually close and which ones only pretend.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cartographer_village_event_sandstorm_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "sandstorm"
+      ],
+      "text": "We are safe enough near the map table, though the whole village sounds like it is chewing gravel.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cartographer_village_event_snowstorm_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "snowstorm"
+      ],
+      "text": "Maps can wait flat on the table. Warm hands, clear paths, and full hearths come first.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cartographer_village_event_snowstorm_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "snowstorm"
+      ],
+      "text": "Snow piled against the doors, but everyone near the map table found shelter.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cartographer_village_event_snowstorm_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "snowstorm"
+      ],
+      "text": "Cold works quietly around the map table. We are checking on anyone who stayed quiet too long.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cartographer_village_event_snowstorm_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "snowstorm"
+      ],
+      "text": "I am clearing snow off the road signs and watching for footprints that stop too soon.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "cartographer_village_event_snowstorm_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "snowstorm"
+      ],
+      "text": "We are alright for now near the map table. Keep the fires fed and the paths open.",
+      "weight": 34,
+      "show_for_babies": false
     }
   ],
   "pacify": [

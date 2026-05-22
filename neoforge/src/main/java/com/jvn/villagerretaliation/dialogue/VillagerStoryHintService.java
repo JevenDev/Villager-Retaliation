@@ -2,7 +2,6 @@ package com.jvn.villagerretaliation.dialogue;
 
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
-import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.toucanlib.util.ToucanRandom;
 import com.mojang.datafixers.util.Pair;
@@ -40,6 +39,10 @@ public final class VillagerStoryHintService {
     private static final long POSITIVE_CACHE_TICKS = 20L * 60L * 10L;
     private static final long NEGATIVE_CACHE_TICKS = 20L * 30L;
     private static final long CARTOGRAPHER_MAP_COOLDOWN_TICKS = 20L * 60L * 20L * 2L;
+    private static final long CARTOGRAPHER_MAP_DISCOVERY_TICKS = 20L * 60L * 60L * 6L;
+    private static final long STORY_HINT_DISCOVERY_TICKS = 20L * 60L * 60L * 6L;
+    private static final int BIOME_HINT_DISCOVERY_RADIUS = 256;
+    private static final int STRUCTURE_HINT_DISCOVERY_RADIUS = 128;
     private static final double MIN_TARGET_SEPARATION_SQR = 96.0D * 96.0D;
     private static final Map<HintCacheKey, CachedLookup> CACHE = new HashMap<>();
     private static final Map<CartographerMapGiftKey, Long> CARTOGRAPHER_MAP_GIFTS = new HashMap<>();
@@ -58,6 +61,76 @@ public final class VillagerStoryHintService {
                 "story_hint_" + worldHint.kind().name().toLowerCase(Locale.ROOT),
                 worldHint.text()
         ));
+    }
+
+    public static Optional<VillagerDialogueService.DialogueResult> selectCartographerMapReport(DialogueContext context) {
+        return VillagerInteractionTracker.claimUnreportedCartographerMapDiscovery(context.level(), context.villager(), context.player())
+                .map(report -> {
+                    String targetName = report.targetName() == null || report.targetName().isBlank()
+                            ? VillagerInteractionTextUtil.resourcePathName(report.structureId())
+                            : report.targetName();
+                    String category = structureReportCategory(report.structureId());
+                    Map<String, String> replacements = Map.of(
+                            "target", targetName,
+                            "target_article", withArticle(targetName)
+                    );
+                    String text = VillagerDialogueResources
+                            .message(context, "cartographer_map_report.structure." + category, replacements)
+                            .or(() -> VillagerDialogueResources.message(context, "cartographer_map_report.structure.generic", replacements))
+                            .orElse("");
+                    return new VillagerDialogueService.DialogueResult(
+                            "cartographer_map_report_" + category + "_" + report.structureId().getPath(),
+                            text
+                    );
+                });
+    }
+
+    public static Optional<VillagerDialogueService.DialogueResult> selectStoryHintReport(DialogueContext context) {
+        return VillagerInteractionTracker.claimUnreportedStoryHintDiscovery(context.level(), context.villager(), context.player())
+                .map(report -> {
+                    String targetName = report.targetName() == null || report.targetName().isBlank()
+                            ? VillagerInteractionTextUtil.resourcePathName(report.targetId())
+                            : report.targetName();
+                    Map<String, String> replacements = Map.of(
+                            "target", targetName,
+                            "target_article", withArticle(targetName)
+                    );
+                    String key = report.kind() == VillagerInteractionTracker.StoryHintKind.BIOME
+                            ? "story_hint_report.biome"
+                            : "story_hint_report.structure." + structureReportCategory(report.targetId());
+                    String fallbackKey = report.kind() == VillagerInteractionTracker.StoryHintKind.BIOME
+                            ? "story_hint_report.generic"
+                            : "story_hint_report.structure.generic";
+                    String text = VillagerDialogueResources
+                            .message(context, key, replacements)
+                            .or(() -> VillagerDialogueResources.message(context, fallbackKey, replacements))
+                            .orElse("");
+                    return new VillagerDialogueService.DialogueResult(
+                            "story_hint_report_" + report.kind().name().toLowerCase(Locale.ROOT) + "_" + report.targetId().getPath(),
+                            text
+                    );
+                });
+    }
+
+    public static Optional<VillagerDialogueService.DialogueResult> selectSharedStory(
+            DialogueContext context,
+            DialogueOptionDefinition option,
+            List<String> recentDialogueIds) {
+        return VillagerInteractionTracker.claimShareableStory(context.level(), context.villager(), context.player())
+                .map(report -> {
+                    String targetName = report.targetName() == null || report.targetName().isBlank()
+                            ? VillagerInteractionTextUtil.resourcePathName(report.targetId())
+                            : report.targetName();
+                    VillagerDialogueService.DialogueResult result = VillagerDialogueService.select(context, option, recentDialogueIds);
+                    Map<String, String> replacements = Map.of(
+                            "target", targetName,
+                            "target_article", withArticle(targetName)
+                    );
+                    return new VillagerDialogueService.DialogueResult(
+                            "share_story_" + report.targetId().getPath() + "_" + result.lineId(),
+                            VillagerDialogueResources.resolveTemplate(result.text(), replacements)
+                    );
+                });
     }
 
     private static Optional<WorldHint> selectWorldHint(DialogueContext context, HintQuality quality) {
@@ -87,6 +160,7 @@ public final class VillagerStoryHintService {
             return cached.get().nextTarget(context.random()).map(target -> {
                 String name = VillagerInteractionTextUtil.resourcePathName(target.id());
                 HintPlacement placement = HintPlacement.from(origin, target.pos(), quality);
+                rememberStoryHint(context, target, name);
                 return new WorldHint(HintKind.BIOME, biomeText(context, name, placement, quality));
             });
         }
@@ -100,6 +174,7 @@ public final class VillagerStoryHintService {
         CachedTarget target = targets.get(context.random().nextInt(targets.size()));
         String name = VillagerInteractionTextUtil.resourcePathName(target.id());
         HintPlacement placement = HintPlacement.from(origin, target.pos(), quality);
+        rememberStoryHint(context, target, name);
         return Optional.of(new WorldHint(HintKind.BIOME, biomeText(context, name, placement, quality)));
     }
 
@@ -107,26 +182,44 @@ public final class VillagerStoryHintService {
         ServerLevel level = context.level();
         BlockPos origin = context.villager().blockPosition();
         List<CachedTarget> targets = new ArrayList<>();
-        int samplesPerRing = 12;
-        int ringStep = Math.max(160, quality.biomeRadius / 5);
-        double angleOffset = context.random().nextDouble() * Math.PI * 2.0D;
-        for (int radius = Math.max(160, quality.biomeMinRadius); radius <= quality.biomeRadius && targets.size() < quality.biomePoolSize; radius += ringStep) {
-            for (int sample = 0; sample < samplesPerRing && targets.size() < quality.biomePoolSize; sample++) {
-                double angle = angleOffset + (Math.PI * 2.0D * sample / samplesPerRing);
-                int x = origin.getX() + (int) Math.round(Math.cos(angle) * radius);
-                int z = origin.getZ() + (int) Math.round(Math.sin(angle) * radius);
-                Holder<Biome> biome = level.getUncachedNoiseBiome(
-                        QuartPos.fromBlock(x),
-                        QuartPos.fromBlock(origin.getY()),
-                        QuartPos.fromBlock(z)
+        int minRadius = Math.max(160, quality.biomeMinRadius);
+        int maxRadius = Math.max(minRadius, quality.biomeRadius);
+        int attempts = Math.max(48, quality.biomePoolSize * 24);
+        for (int attempt = 0; attempt < attempts && targets.size() < quality.biomePoolSize; attempt++) {
+            int radius = randomRadius(context.random(), minRadius, maxRadius);
+            double angle = context.random().nextDouble() * Math.PI * 2.0D;
+            int x = origin.getX() + (int) Math.round(Math.cos(angle) * radius);
+            int z = origin.getZ() + (int) Math.round(Math.sin(angle) * radius);
+            Holder<Biome> biome = level.getUncachedNoiseBiome(
+                    QuartPos.fromBlock(x),
+                    QuartPos.fromBlock(origin.getY()),
+                    QuartPos.fromBlock(z)
+            );
+            ResourceLocation biomeId = keyLocation(biome).orElse(null);
+            if (biomeId != null && !biome.is(currentBiome) && isNewTarget(targets, biomeId, x, z)) {
+                Pair<BlockPos, Holder<Biome>> nearest = level.findClosestBiome3d(
+                        candidate -> keyLocation(candidate).map(biomeId::equals).orElse(false),
+                        origin,
+                        maxRadius,
+                        32,
+                        64
                 );
-                ResourceLocation biomeId = keyLocation(biome).orElse(null);
-                if (biomeId != null && !biome.is(currentBiome) && isNewTarget(targets, biomeId, x, z)) {
-                    targets.add(new CachedTarget(HintKind.BIOME, biomeId, new BlockPos(x, origin.getY(), z)));
+                BlockPos targetPos = nearest == null ? new BlockPos(x, origin.getY(), z) : nearest.getFirst();
+                if (isNewTarget(targets, biomeId, targetPos.getX(), targetPos.getZ())) {
+                    targets.add(new CachedTarget(HintKind.BIOME, biomeId, targetPos));
                 }
             }
         }
         return targets;
+    }
+
+    private static int randomRadius(RandomSource random, int minRadius, int maxRadius) {
+        if (maxRadius <= minRadius) {
+            return minRadius;
+        }
+        double minSqr = (double) minRadius * minRadius;
+        double maxSqr = (double) maxRadius * maxRadius;
+        return (int) Math.round(Math.sqrt(minSqr + random.nextDouble() * (maxSqr - minSqr)));
     }
 
     private static Optional<WorldHint> findStructureHint(DialogueContext context, HintQuality quality) {
@@ -137,8 +230,11 @@ public final class VillagerStoryHintService {
         if (cached.isPresent()) {
             return cached.get().nextTarget(context.random()).map(target -> {
                 String name = VillagerInteractionTextUtil.resourcePathName(target.id());
-                HintPlacement placement = HintPlacement.from(origin, target.pos(), quality);
+                HintPlacement placement = HintPlacement.fromStructure(origin, target.pos(), target.id(), quality);
                 boolean gaveMap = maybeGiveCartographerMap(context, target, name);
+                if (!gaveMap) {
+                    rememberStoryHint(context, target, name);
+                }
                 return new WorldHint(
                         gaveMap ? HintKind.MAP : HintKind.STRUCTURE,
                         gaveMap
@@ -156,8 +252,11 @@ public final class VillagerStoryHintService {
 
         CachedTarget target = targets.get(context.random().nextInt(targets.size()));
         String name = VillagerInteractionTextUtil.resourcePathName(target.id());
-        HintPlacement placement = HintPlacement.from(origin, target.pos(), quality);
+        HintPlacement placement = HintPlacement.fromStructure(origin, target.pos(), target.id(), quality);
         boolean gaveMap = maybeGiveCartographerMap(context, target, name);
+        if (!gaveMap) {
+            rememberStoryHint(context, target, name);
+        }
         return Optional.of(new WorldHint(
                 gaveMap ? HintKind.MAP : HintKind.STRUCTURE,
                 gaveMap
@@ -189,8 +288,10 @@ public final class VillagerStoryHintService {
                 break;
             }
 
-            HintPlacement placement = HintPlacement.from(origin, nearest.getFirst(), quality);
             ResourceLocation structureId = keyLocation(nearest.getSecond()).orElse(null);
+            HintPlacement placement = structureId == null
+                    ? HintPlacement.from(origin, nearest.getFirst(), quality)
+                    : HintPlacement.fromStructure(origin, nearest.getFirst(), structureId, quality);
             if (placement.horizontalDistance >= MIN_STRUCTURE_DISTANCE
                     && structureId != null
                     && isNewTarget(targets, structureId, nearest.getFirst().getX(), nearest.getFirst().getZ())) {
@@ -200,6 +301,40 @@ public final class VillagerStoryHintService {
             remaining.removeIf(structure -> foundStructureId != null && keyLocation(structure).map(foundStructureId::equals).orElse(false));
         }
         return targets;
+    }
+
+    private static void rememberStoryHint(DialogueContext context, CachedTarget target, String targetName) {
+        VillagerInteractionTracker.StoryHintKind kind = switch (target.kind()) {
+            case BIOME -> VillagerInteractionTracker.StoryHintKind.BIOME;
+            case STRUCTURE -> VillagerInteractionTracker.StoryHintKind.STRUCTURE;
+            case MAP -> null;
+        };
+        if (kind == null) {
+            return;
+        }
+        VillagerInteractionTracker.rememberStoryHint(
+                context.level(),
+                context.villager(),
+                context.player(),
+                kind,
+                target.id(),
+                targetName,
+                target.pos(),
+                context.level().getGameTime() + STORY_HINT_DISCOVERY_TICKS,
+                discoveryRadiusFor(context, target)
+        );
+    }
+
+    private static int discoveryRadiusFor(DialogueContext context, CachedTarget target) {
+        if (target.kind() == HintKind.BIOME) {
+            return BIOME_HINT_DISCOVERY_RADIUS;
+        }
+        return DangerousStructureStoryResources.entries(context.level().getServer())
+                .stream()
+                .filter(entry -> entry.structureId().equals(target.id()))
+                .findFirst()
+                .map(DangerousStructureStoryResources.Entry::radius)
+                .orElse(STRUCTURE_HINT_DISCOVERY_RADIUS);
     }
 
     private static boolean maybeGiveCartographerMap(DialogueContext context, CachedTarget target, String targetName) {
@@ -221,7 +356,15 @@ public final class VillagerStoryHintService {
         if (!context.player().addItem(remainder) && !remainder.isEmpty()) {
             context.player().drop(remainder, false);
         }
-        VillagerReputationAdvancements.rememberDialogueMapTarget(context.player(), context.level(), target.pos());
+        VillagerInteractionTracker.rememberCartographerMap(
+                context.level(),
+                context.villager(),
+                context.player(),
+                target.id(),
+                targetName,
+                target.pos(),
+                gameTime + CARTOGRAPHER_MAP_DISCOVERY_TICKS
+        );
         VillagerInteractionService.sendReceivedItemNotice(context.player(), context.villager(), map);
 
         CARTOGRAPHER_MAP_GIFTS.put(giftKey, gameTime + CARTOGRAPHER_MAP_COOLDOWN_TICKS);
@@ -327,6 +470,44 @@ public final class VillagerStoryHintService {
         return VillagerDialogueResources.message(context, "story_hint.map", hintReplacements(name, placement)).orElse("");
     }
 
+    private static String structureReportCategory(ResourceLocation structureId) {
+        String path = structureId.getPath();
+        if (path.startsWith("village")) {
+            return "village";
+        }
+        if (path.contains("pyramid") || path.contains("temple") || path.equals("igloo")) {
+            return "temple";
+        }
+        if (path.contains("mansion")) {
+            return "mansion";
+        }
+        if (path.contains("monument")) {
+            return "monument";
+        }
+        if (path.contains("mineshaft")) {
+            return "mineshaft";
+        }
+        if (path.contains("ancient_city")) {
+            return "ancient_city";
+        }
+        if (path.contains("stronghold")) {
+            return "stronghold";
+        }
+        if (path.contains("fortress") || path.contains("bastion")) {
+            return "nether";
+        }
+        if (path.contains("outpost")) {
+            return "outpost";
+        }
+        if (path.contains("shipwreck") || path.contains("ruin")) {
+            return "ruins";
+        }
+        if (path.contains("trial_chambers")) {
+            return "trial_chambers";
+        }
+        return "generic";
+    }
+
     private static Map<String, String> hintReplacements(String name, HintPlacement placement) {
         return Map.of(
                 "target", name,
@@ -352,9 +533,9 @@ public final class VillagerStoryHintService {
         NONE(0, 0, 0, 0, 0, 0, 0, false, false, false),
         VAGUE(12, 700, 160, 0, 1, 0, 0, false, false, false),
         BIOME_NAME(24, 1100, 220, 0, 2, 0, 0, true, false, false),
-        PRECISE_BIOME(34, 1800, 360, 0, 3, 0, 64, true, true, false),
-        STRUCTURE_RUMOR(46, 2400, 480, 96, 3, 2, 128, true, false, true),
-        PRECISE_STRUCTURE(58, 3600, 720, 160, 4, 3, 64, true, true, true);
+        PRECISE_BIOME(34, 1800, 360, 0, 3, 0, 50, true, true, false),
+        STRUCTURE_RUMOR(46, 2400, 480, 96, 3, 2, 100, true, false, true),
+        PRECISE_STRUCTURE(58, 3600, 720, 160, 4, 3, 50, true, true, true);
 
         private final int chancePercent;
         private final int biomeRadius;
@@ -402,12 +583,20 @@ public final class VillagerStoryHintService {
         }
     }
 
-    private record HintPlacement(String direction, int horizontalDistance, int yDelta, HintQuality quality) {
+    private record HintPlacement(String direction, int horizontalDistance, int yDelta, HintQuality quality, boolean reliableVertical) {
         private static HintPlacement from(BlockPos origin, BlockPos target, HintQuality quality) {
+            return from(origin, target, quality, true);
+        }
+
+        private static HintPlacement fromStructure(BlockPos origin, BlockPos target, ResourceLocation structureId, HintQuality quality) {
+            return from(origin, target, quality, hasReliableStructureVertical(structureId, target));
+        }
+
+        private static HintPlacement from(BlockPos origin, BlockPos target, HintQuality quality, boolean reliableVertical) {
             int dx = target.getX() - origin.getX();
             int dz = target.getZ() - origin.getZ();
             int horizontalDistance = (int) Math.round(Math.sqrt((double) dx * dx + (double) dz * dz));
-            return new HintPlacement(direction(dx, dz), horizontalDistance, target.getY() - origin.getY(), quality);
+            return new HintPlacement(direction(dx, dz), horizontalDistance, target.getY() - origin.getY(), quality, reliableVertical);
         }
 
         private String vagueDirectionPhrase() {
@@ -424,6 +613,9 @@ public final class VillagerStoryHintService {
         }
 
         private String verticalPhrase() {
+            if (!this.reliableVertical) {
+                return "";
+            }
             if (this.yDelta < -36) {
                 return ", deep underground";
             }
@@ -434,6 +626,13 @@ public final class VillagerStoryHintService {
                 return ", high above the usual paths";
             }
             return "";
+        }
+
+        private static boolean hasReliableStructureVertical(ResourceLocation structureId, BlockPos target) {
+            if (target.getY() == 0) {
+                return false;
+            }
+            return !"village".equals(structureReportCategory(structureId));
         }
 
         private static String direction(int dx, int dz) {

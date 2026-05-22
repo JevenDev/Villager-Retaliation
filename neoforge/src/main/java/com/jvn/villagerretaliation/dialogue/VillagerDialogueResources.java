@@ -37,9 +37,25 @@ public final class VillagerDialogueResources {
         return load(server, VillagerLocale.DEFAULT_LOCALE).lines();
     }
 
+    public static void warm(MinecraftServer server) {
+        load(server, VillagerLocale.DEFAULT_LOCALE);
+    }
+
+    public static void clearCache() {
+        cachedDialoguePools = CachedDialoguePools.empty();
+    }
+
     public static List<String> openingLines(DialogueContext context, DialogueDisposition disposition) {
-        return load(context.level().getServer(), context.locale()).openings().stream()
+        List<ConversationLine> candidates = load(context.level().getServer(), context.locale()).openings().stream()
                 .filter(line -> line.matches(context, disposition))
+                .toList();
+        List<ConversationLine> firstInteractionCandidates = candidates.stream()
+                .filter(ConversationLine::firstInteractionSpecific)
+                .toList();
+        if (!firstInteractionCandidates.isEmpty()) {
+            candidates = firstInteractionCandidates;
+        }
+        return candidates.stream()
                 .map(ConversationLine::text)
                 .toList();
     }
@@ -59,6 +75,19 @@ public final class VillagerDialogueResources {
         DialogueDisposition disposition = VillagerDialogueService.moodFor(context);
         List<KeyedMessageLine> candidates = load(context.level().getServer(), context.locale()).messages().stream()
                 .filter(line -> line.matches(context, key, disposition))
+                .toList();
+        return selectMessage(candidates, context.random().nextInt(Math.max(1, totalMessageWeight(candidates))))
+                .map(line -> resolveTemplate(line.text(), replacements));
+    }
+
+    public static Optional<String> professionPriorityMessage(DialogueContext context, String key, Map<String, String> replacements) {
+        DialogueDisposition disposition = VillagerDialogueService.moodFor(context);
+        List<KeyedMessageLine> matches = load(context.level().getServer(), context.locale()).messages().stream()
+                .filter(line -> line.matches(context, key, disposition))
+                .toList();
+        boolean hasProfessionSpecificMatch = matches.stream().anyMatch(KeyedMessageLine::professionSpecific);
+        List<KeyedMessageLine> candidates = matches.stream()
+                .filter(line -> !hasProfessionSpecificMatch || line.professionSpecific())
                 .toList();
         return selectMessage(candidates, context.random().nextInt(Math.max(1, totalMessageWeight(candidates))))
                 .map(line -> resolveTemplate(line.text(), replacements));
@@ -327,6 +356,17 @@ public final class VillagerDialogueResources {
             boolean showForBabies = readBoolean(entry, "show_for_babies", true);
             Set<VillagerProfession> professions = readProfessions(entry, defaultProfessions);
             Set<DialogueDisposition> dispositions = readEnumSet(entry, "dispositions", DialogueDisposition.class);
+            boolean requiresUnreportedCartographerMapDiscovery = readBoolean(entry, "requires_unreported_cartographer_map_discovery");
+            boolean requiresUnreportedStoryHintDiscovery = readBoolean(entry, "requires_unreported_story_hint_discovery");
+            boolean requiresUnreportedCombatSurvivalReport = readBoolean(entry, "requires_unreported_combat_survival_report");
+            boolean requiresUnreportedGearReport = readBoolean(entry, "requires_unreported_gear_report");
+            boolean requiresUnreportedRecruitmentFollowup = readBoolean(entry, "requires_unreported_recruitment_followup");
+            boolean requiresUnreportedCuredRecognition = readBoolean(entry, "requires_unreported_cured_recognition");
+            boolean requiresRecentVillageEvent = readBoolean(entry, "requires_recent_village_event");
+            boolean requiresUnreportedGiftAdviceResult = readBoolean(entry, "requires_unreported_gift_advice_result");
+            boolean requiresUnapologizedRememberedHarm = readBoolean(entry, "requires_unapologized_remembered_harm");
+            boolean requiresUnreportedVillageDefense = readBoolean(entry, "requires_unreported_village_defense");
+            boolean requiresShareableStory = readBoolean(entry, "requires_shareable_story");
             int order = readInt(entry, "order", index);
             options.put(id, new DialogueOptionDefinition(
                     id,
@@ -336,6 +376,17 @@ public final class VillagerDialogueResources {
                     showForBabies,
                     professions,
                     dispositions,
+                    requiresUnreportedCartographerMapDiscovery,
+                    requiresUnreportedStoryHintDiscovery,
+                    requiresUnreportedCombatSurvivalReport,
+                    requiresUnreportedGearReport,
+                    requiresUnreportedRecruitmentFollowup,
+                    requiresUnreportedCuredRecognition,
+                    requiresRecentVillageEvent,
+                    requiresUnreportedGiftAdviceResult,
+                    requiresUnapologizedRememberedHarm,
+                    requiresUnreportedVillageDefense,
+                    requiresShareableStory,
                     order
             ));
             index++;
@@ -411,6 +462,8 @@ public final class VillagerDialogueResources {
             int weight = Math.max(1, readInt(entry, "weight", 10));
             boolean showForAdults = readBoolean(entry, "show_for_adults", true);
             boolean showForBabies = readBoolean(entry, "show_for_babies", true);
+            boolean firstConversationOnly = readBoolean(entry, "first_conversation_only");
+            boolean firstVillageInteractionOnly = readBoolean(entry, "first_village_interaction_only");
             String resolvedId = id.isBlank() ? fallbackId(location, key, index) : id;
             lines.put(resolvedId, new ConversationLine(
                     resolvedId,
@@ -419,7 +472,9 @@ public final class VillagerDialogueResources {
                     showForBabies,
                     professions,
                     dispositions,
-                    weight
+                    weight,
+                    firstConversationOnly,
+                    firstVillageInteractionOnly
             ));
             index++;
         }
@@ -501,11 +556,70 @@ public final class VillagerDialogueResources {
             builder.playerEventTags(playerEventTags.toArray(VillageEventMemory.EventTag[]::new));
         }
 
+        List<ResourceLocation> storyTargetIds = new ArrayList<>();
+        for (String value : readStringList(entry, "story_structure")) {
+            ResourceLocation id = ResourceLocation.tryParse(value);
+            if (id != null) {
+                storyTargetIds.add(id);
+            }
+        }
+        for (String value : readStringList(entry, "story_structures")) {
+            ResourceLocation id = ResourceLocation.tryParse(value);
+            if (id != null) {
+                storyTargetIds.add(id);
+            }
+        }
+        for (String value : readStringList(entry, "story_biome")) {
+            ResourceLocation id = ResourceLocation.tryParse(value);
+            if (id != null) {
+                storyTargetIds.add(id);
+            }
+        }
+        for (String value : readStringList(entry, "story_biomes")) {
+            ResourceLocation id = ResourceLocation.tryParse(value);
+            if (id != null) {
+                storyTargetIds.add(id);
+            }
+        }
+        if (!storyTargetIds.isEmpty()) {
+            builder.storyTargetIds(storyTargetIds.toArray(ResourceLocation[]::new));
+        }
+
         if (readBoolean(entry, "requires_recent_broken_bed_memory")) {
             builder.requiresRecentBrokenBedMemory();
         }
         if (readBoolean(entry, "requires_recent_direct_hit_memory")) {
             builder.requiresRecentDirectHitMemory();
+        }
+        if (readBoolean(entry, "requires_gear_report_used_in_combat")) {
+            builder.requiresGearReportUsedInCombat();
+        }
+        if (readBoolean(entry, "requires_gear_report_unused_in_combat")) {
+            builder.requiresGearReportUnusedInCombat();
+        }
+        List<String> recruitmentFollowupScenarios = readStringList(entry, "recruitment_followup_scenarios");
+        if (!recruitmentFollowupScenarios.isEmpty()) {
+            builder.recruitmentFollowupScenarios(recruitmentFollowupScenarios.toArray(String[]::new));
+        }
+        if (readBoolean(entry, "requires_recruitment_memory")) {
+            builder.requiresRecruitmentMemory();
+        }
+        List<String> recruitmentMemoryScenarios = readStringList(entry, "recruitment_memory_scenarios");
+        if (!recruitmentMemoryScenarios.isEmpty()) {
+            builder.recruitmentMemoryScenarios(recruitmentMemoryScenarios.toArray(String[]::new));
+        }
+        builder.minRecruitmentFollowDistance(readInt(entry, "min_recruitment_follow_distance", 0));
+        if (readBoolean(entry, "requires_recruitment_boat_trip")) {
+            builder.requiresRecruitmentBoatTrip();
+        }
+        if (readBoolean(entry, "requires_recruitment_ocean_crossing")) {
+            builder.requiresRecruitmentOceanCrossing();
+        }
+        if (readBoolean(entry, "requires_recruitment_swim_trip")) {
+            builder.requiresRecruitmentSwimTrip();
+        }
+        if (readBoolean(entry, "excludes_recruitment_ocean_crossing")) {
+            builder.excludesRecruitmentOceanCrossing();
         }
         if (readBoolean(entry, "first_conversation_only")) {
             builder.firstConversationOnly();
@@ -532,7 +646,7 @@ public final class VillagerDialogueResources {
 
         String key = path.substring(professionRoot.length(), path.length() - ".json".length());
         if (key.contains("/")) {
-            key = key.substring(key.lastIndexOf('/') + 1);
+            key = key.substring(0, key.indexOf('/'));
         }
         return parseProfession(key).map(Set::of).orElse(Set.of());
     }
@@ -679,13 +793,52 @@ public final class VillagerDialogueResources {
         return Optional.of(candidates.getLast());
     }
 
-    private static String resolveTemplate(String text, Map<String, String> replacements) {
+    static String resolveTemplate(String text, Map<String, String> replacements) {
         String resolved = text;
         Map<String, String> safeReplacements = new HashMap<>(replacements);
         for (Map.Entry<String, String> entry : safeReplacements.entrySet()) {
-            resolved = resolved.replace("{" + entry.getKey() + "}", entry.getValue() == null ? "" : entry.getValue());
+            resolved = replaceTemplateToken(
+                    resolved,
+                    "{" + entry.getKey() + "}",
+                    entry.getValue() == null ? "" : entry.getValue(),
+                    entry.getKey().endsWith("_article")
+            );
         }
         return resolved;
+    }
+
+    private static String replaceTemplateToken(String text, String token, String replacement, boolean capitalizeAtSentenceStart) {
+        StringBuilder builder = new StringBuilder(text.length());
+        int cursor = 0;
+        int index = text.indexOf(token);
+        while (index >= 0) {
+            builder.append(text, cursor, index);
+            builder.append(capitalizeAtSentenceStart && isSentenceStart(text, index)
+                    ? capitalizeFirstLetter(replacement)
+                    : replacement);
+            cursor = index + token.length();
+            index = text.indexOf(token, cursor);
+        }
+        builder.append(text, cursor, text.length());
+        return builder.toString();
+    }
+
+    private static boolean isSentenceStart(String text, int index) {
+        for (int i = index - 1; i >= 0; i--) {
+            char ch = text.charAt(i);
+            if (Character.isWhitespace(ch) || ch == '"' || ch == '\'' || ch == '(' || ch == '[') {
+                continue;
+            }
+            return ch == '.' || ch == '!' || ch == '?';
+        }
+        return true;
+    }
+
+    private static String capitalizeFirstLetter(String text) {
+        if (text == null || text.isEmpty()) {
+            return "";
+        }
+        return Character.toUpperCase(text.charAt(0)) + text.substring(1);
     }
 
     private record DialoguePool(
@@ -713,7 +866,9 @@ public final class VillagerDialogueResources {
             boolean showForBabies,
             Set<VillagerProfession> professions,
             Set<DialogueDisposition> dispositions,
-            int weight) {
+            int weight,
+            boolean firstConversationOnly,
+            boolean firstVillageInteractionOnly) {
         private boolean matches(DialogueContext context, DialogueDisposition disposition) {
             if (context.villager().isBaby()) {
                 if (!this.showForBabies) {
@@ -725,7 +880,17 @@ public final class VillagerDialogueResources {
             if (!this.professions.isEmpty() && !this.professions.contains(context.profession())) {
                 return false;
             }
+            if (this.firstConversationOnly && !context.firstConversation()) {
+                return false;
+            }
+            if (this.firstVillageInteractionOnly && !context.firstVillageInteraction()) {
+                return false;
+            }
             return this.dispositions.isEmpty() || this.dispositions.contains(disposition);
+        }
+
+        private boolean firstInteractionSpecific() {
+            return this.firstConversationOnly || this.firstVillageInteractionOnly;
         }
     }
 
@@ -775,6 +940,10 @@ public final class VillagerDialogueResources {
                 return false;
             }
             return this.dispositions.isEmpty() || this.dispositions.contains(disposition);
+        }
+
+        private boolean professionSpecific() {
+            return !this.professions.isEmpty();
         }
     }
 }

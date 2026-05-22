@@ -88,6 +88,11 @@ public final class VillagerReputationManager {
         return VillagerReputationLevel.fromReputation(getReputation(level, villager, playerId));
     }
 
+    public static ReputationSnapshot getReputationSnapshot(ServerLevel level, AbstractVillager villager, UUID playerId) {
+        int reputation = getReputation(level, villager, playerId);
+        return new ReputationSnapshot(reputation, VillagerReputationLevel.fromReputation(reputation));
+    }
+
     public static boolean isDespised(ServerLevel level, AbstractVillager villager, Player player) {
         return getReputationLevel(level, villager, player.getUUID()) == VillagerReputationLevel.DESPISED;
     }
@@ -339,5 +344,8 @@ public final class VillagerReputationManager {
             int reputation = getReputation(level, villager, playerId);
             VillagerReputationNetworking.sendReputation(serverPlayer, villager, reputation);
         }
+    }
+
+    public record ReputationSnapshot(int value, VillagerReputationLevel level) {
     }
 }

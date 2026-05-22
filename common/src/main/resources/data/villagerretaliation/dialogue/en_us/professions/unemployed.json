@@ -1,4 +1,56 @@
 {
+  "messages": [
+    {
+      "key": "gift_given",
+      "text": "Take {gift_item}. I may not have a trade, but I know how to say thanks.",
+      "weight": 24
+    },
+    {
+      "key": "gift_given",
+      "text": "Here, {gift_item}. Maybe one of us will find the perfect use for it.",
+      "weight": 24
+    },
+    {
+      "key": "gift_advice_followup.liked",
+      "text": "Good, {gift_item} worked. See? I can be useful without a workstation.",
+      "weight": 22
+    },
+    {
+      "key": "gift_advice_followup.liked",
+      "text": "{tested_villager} liked it? Excellent. I am putting that under possible talents.",
+      "weight": 22
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "text": "Ah. Then my career in advice pauses here. Try {alternative_gift} for {gift_subject}.",
+      "weight": 22
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "text": "{gift_item} was wrong? Let us call it research. {alternative_gift} should work better.",
+      "weight": 22
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "text": "This is why nobody pays me for advice. Try {alternative_gift}.",
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 20
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "text": "You came back? Fair. My next guess is {alternative_gift}.",
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
+      "weight": 20
+    }
+  ],
   "openings": [
     {
       "id": "unemployed_opening",
@@ -93,6 +145,362 @@
         "fearful"
       ],
       "weight": 30
+    },
+    {
+      "id": "unemployed_cured_recognition_warm_1",
+      "type": "cured_recognition",
+      "text": "I remember having no trade, no thoughts, almost no self. You helped with the important one.",
+      "weight": 30,
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ]
+    },
+    {
+      "id": "unemployed_cured_recognition_warm_2",
+      "type": "cured_recognition",
+      "text": "I did not know what I would become, but you made sure I could become anything.",
+      "weight": 30,
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ]
+    },
+    {
+      "id": "unemployed_cured_recognition_confused_1",
+      "type": "cured_recognition",
+      "text": "Your face is familiar. So is being confused, but this feels different.",
+      "weight": 30,
+      "dispositions": [
+        "neutral",
+        "cautious"
+      ]
+    },
+    {
+      "id": "unemployed_cured_recognition_confused_2",
+      "type": "cured_recognition",
+      "text": "I remember waking with empty hands and a head full of broken bells.",
+      "weight": 30,
+      "dispositions": [
+        "neutral",
+        "cautious"
+      ]
+    },
+    {
+      "id": "unemployed_cured_recognition_uneasy_1",
+      "type": "cured_recognition",
+      "text": "I remember you, though I still do not know what to do with the memory.",
+      "weight": 30,
+      "dispositions": [
+        "rude",
+        "hostile",
+        "fearful"
+      ]
+    },
+    {
+      "id": "unemployed_village_event_thunderstorm_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "Thunder shook the village square so hard every loose shutter complained, but everyone near me is still standing.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_thunderstorm_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "I checked beds, doors, and loose chores after the lightning, then counted heads. No one should be alone after a sky like that.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_thunderstorm_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "Near the village square, the bell sounded small under that thunder. We stayed inside and kept the doors watched.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_thunderstorm_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "That thunder made everyone quiet. I checked who still needed help.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_thunderstorm_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "The sky can keep its lightning. I have neighbors to check on.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_fire_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "I checked roofs, beds, and unlucky fences for sparks first, then checked faces for smoke and fear.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_fire_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "We passed water hand to hand and kept people away from the smoke. I checked the water bucket after.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_fire_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "Odd jobs can wait. People come first.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_fire_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "We saved what we could reach around the village square, then stopped pretending things matter more than neighbors.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_fire_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "The smoke is thinning near the village square, but everyone is still sniffing the air like it might lie.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_raid_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "During a raid, odd jobs can wait; who makes it behind a door matters more.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_raid_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "The horns stopped, but my hands near the village square still expect another wave from the road.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_raid_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "We counted living neighbors before beds, doors, and loose chores. That is the only count worth starting with.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_raid_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "Raiders came looking for easy emeralds. They found barred doors near the village square and a bell that would not stop ringing.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_raid_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "From the edge of the square, I saw fear run through the village; then I saw courage catch up.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_night_attack_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "Night trouble tests the loose latch by the village square first. We are fixing those before sunset.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_night_attack_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "I stayed near the gap between torches and listened for anyone calling from the dark.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_night_attack_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "Dawn gave the village square enough light to count wounds, missing blocks, and who made it home.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_night_attack_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "The dark tested everyone. Most of us passed by keeping a ready pair of hands between us and teeth.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_night_attack_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "We are safe enough near the village square, though every shadow is being inspected twice.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_sandstorm_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "sandstorm"
+      ],
+      "text": "The wind threw sand through every crack. I am still cleaning dust from the doorways.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_sandstorm_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "sandstorm"
+      ],
+      "text": "I checked beds, doors, and loose chores, then checked who was coughing too hard to answer.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_sandstorm_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "sandstorm"
+      ],
+      "text": "Sand reached the village square, the hinges, and half our eyes, but no one has been reported missing.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_sandstorm_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "sandstorm"
+      ],
+      "text": "A hard wind teaches a villager which doors actually close and which ones only pretend.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_sandstorm_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "sandstorm"
+      ],
+      "text": "We are safe enough near the village square, though the whole village sounds like it is chewing gravel.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_snowstorm_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "snowstorm"
+      ],
+      "text": "Odd jobs can wait. Warm hands, clear paths, and full hearths come first.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_snowstorm_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "snowstorm"
+      ],
+      "text": "Snow piled against the doors, but everyone near the village square found shelter.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_snowstorm_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "snowstorm"
+      ],
+      "text": "Cold works quietly around the village square. We are checking on anyone who stayed quiet too long.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_snowstorm_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "snowstorm"
+      ],
+      "text": "I am clearing snow from the meeting path and watching for footprints that stop too soon.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "unemployed_village_event_snowstorm_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "snowstorm"
+      ],
+      "text": "We are alright for now near the village square. Keep the fires fed and the paths open.",
+      "weight": 34,
+      "show_for_babies": false
     }
   ],
   "pacify": [

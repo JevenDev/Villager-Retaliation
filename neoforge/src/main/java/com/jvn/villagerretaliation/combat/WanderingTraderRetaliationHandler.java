@@ -57,6 +57,9 @@ public final class WanderingTraderRetaliationHandler {
 
         if (event.getEntity() instanceof WanderingTrader trader) {
             VillagerRetaliationVillagerCombatUtil.resolveAttacker(trader, event.getSource()).ifPresent(attacker -> {
+                if (!shouldRetaliateAgainstAttacker(attacker)) {
+                    return;
+                }
                 anger(trader, attacker);
                 if (!VillagerRetaliationConfig.ATTACK_AGGROS_ONLY_HIT_VILLAGER.get()) {
                     angerNearbyTraders(trader, attacker, VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get());
@@ -71,6 +74,9 @@ public final class WanderingTraderRetaliationHandler {
         }
 
         VillagerRetaliationVillagerCombatUtil.resolveAttacker(traderLlama, event.getSource()).ifPresent(attacker -> {
+            if (!shouldRetaliateAgainstAttacker(attacker)) {
+                return;
+            }
             anger(trader, attacker);
             if (!VillagerRetaliationConfig.ATTACK_AGGROS_ONLY_HIT_VILLAGER.get()) {
                 angerNearbyTraders(trader, attacker, VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get());
@@ -91,6 +97,7 @@ public final class WanderingTraderRetaliationHandler {
 
         VillagerRetaliationVillagerCombatUtil.resolveAttacker(trader, event.getSource())
                 .filter(attacker -> !VillagerRetaliationVillagerCombatUtil.shouldIgnoreAttacker(attacker))
+                .filter(WanderingTraderRetaliationHandler::shouldRetaliateAgainstAttacker)
                 .ifPresent(attacker -> angerNearbyTraders(trader, attacker, VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get()));
     }
 
@@ -252,15 +259,17 @@ public final class WanderingTraderRetaliationHandler {
             return;
         }
 
-        Optional<LivingEntity> memoryTarget = VillagerRetaliationVillagerCombatUtil.getMemoryIfRegistered(trader, MemoryModuleType.NEAREST_HOSTILE)
-                .filter(LivingEntity::isAlive)
-                .filter(target -> target != trader)
-                .filter(target -> VillagerRetaliationVillagerCombatUtil.isNaturalHostileTarget(trader, target))
-                .filter(target -> VillagerRetaliationVillagerCombatUtil.isWithinNaturalHostileTargetRange(trader, target))
-                .filter(trader::hasLineOfSight);
-        if (memoryTarget.isPresent()) {
-            anger(trader, memoryTarget.get());
-            return;
+        if (VillagerRetaliationConfig.WANDERING_TRADERS_TARGET_HOSTILE_MOBS.get()) {
+            Optional<LivingEntity> memoryTarget = VillagerRetaliationVillagerCombatUtil.getMemoryIfRegistered(trader, MemoryModuleType.NEAREST_HOSTILE)
+                    .filter(LivingEntity::isAlive)
+                    .filter(target -> target != trader)
+                    .filter(target -> VillagerRetaliationVillagerCombatUtil.isNaturalHostileTarget(trader, target))
+                    .filter(target -> VillagerRetaliationVillagerCombatUtil.isWithinNaturalHostileTargetRange(trader, target))
+                    .filter(trader::hasLineOfSight);
+            if (memoryTarget.isPresent()) {
+                anger(trader, memoryTarget.get());
+                return;
+            }
         }
 
         long gameTime = trader.level().getGameTime();
@@ -270,6 +279,9 @@ public final class WanderingTraderRetaliationHandler {
 
         NEXT_NATURAL_TARGET_SCAN_TICKS.put(trader.getUUID(), gameTime + NATURAL_TARGET_SCAN_INTERVAL_TICKS);
         if (tryAcquireReputationTarget(trader)) {
+            return;
+        }
+        if (!VillagerRetaliationConfig.WANDERING_TRADERS_TARGET_HOSTILE_MOBS.get()) {
             return;
         }
 
@@ -319,6 +331,16 @@ public final class WanderingTraderRetaliationHandler {
         );
     }
 
+    private static boolean shouldRetaliateAgainstAttacker(LivingEntity attacker) {
+        return VillagerRetaliationConfig.WANDERING_TRADERS_RETALIATE_AGAINST_HOSTILE_MOBS.get()
+                || !isHostileMobAttacker(attacker);
+    }
+
+    private static boolean isHostileMobAttacker(LivingEntity attacker) {
+        return attacker instanceof net.minecraft.world.entity.monster.Enemy
+                && !(attacker instanceof net.minecraft.world.entity.NeutralMob);
+    }
+
     private static void clearAnger(WanderingTrader trader) {
         clearAnger(trader, true);
     }
@@ -359,7 +381,9 @@ public final class WanderingTraderRetaliationHandler {
 
         AABB area = sourceEntity.getBoundingBox().inflate(radius);
         for (WanderingTrader nearby : level.getEntitiesOfClass(WanderingTrader.class, area)) {
-            if (nearby != sourceEntity && canWitnessRetaliationEvent(nearby, sourceEntity)) {
+            if (nearby != sourceEntity
+                    && canWitnessRetaliationEvent(nearby, sourceEntity)
+                    && shouldRetaliateAgainstAttacker(attacker)) {
                 anger(nearby, attacker);
             }
         }

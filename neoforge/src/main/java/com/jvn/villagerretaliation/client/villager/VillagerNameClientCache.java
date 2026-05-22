@@ -11,7 +11,9 @@ import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 
 public final class VillagerNameClientCache {
+    private static final long PRUNE_INTERVAL_TICKS = 40L;
     private static final Map<Integer, DisplayEntry> BY_ENTITY_ID = new HashMap<>();
+    private static long nextPruneGameTime;
 
     private VillagerNameClientCache() {
     }
@@ -43,6 +45,11 @@ public final class VillagerNameClientCache {
             clear();
             return;
         }
+        long gameTime = minecraft.level.getGameTime();
+        if (gameTime < nextPruneGameTime) {
+            return;
+        }
+        nextPruneGameTime = gameTime + PRUNE_INTERVAL_TICKS;
 
         Iterator<Integer> iterator = BY_ENTITY_ID.keySet().iterator();
         while (iterator.hasNext()) {
@@ -54,6 +61,7 @@ public final class VillagerNameClientCache {
 
     public static void clear() {
         BY_ENTITY_ID.clear();
+        nextPruneGameTime = 0L;
     }
 
     private record DisplayEntry(UUID villagerId, String nameKey, String fallbackName) {

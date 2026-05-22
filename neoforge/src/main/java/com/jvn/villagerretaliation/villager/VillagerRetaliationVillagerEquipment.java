@@ -139,6 +139,10 @@ public final class VillagerRetaliationVillagerEquipment {
         return owner == MainHandOwner.MANUAL || owner == MainHandOwner.PICKED_UP;
     }
 
+    public static boolean hasManagedMainHand(AbstractVillager villager) {
+        return mainHandOwner(villager) != MainHandOwner.NONE;
+    }
+
     public static boolean maintainPlayerManagedMainHand(AbstractVillager villager) {
         ItemStack expectedStack = playerManagedMainHand(villager);
         if (expectedStack.isEmpty()) {

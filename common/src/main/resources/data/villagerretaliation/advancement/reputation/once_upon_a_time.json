@@ -1,0 +1,23 @@
+{
+  "parent": "villagerretaliation:reputation/trusted_directions",
+  "display": {
+    "icon": {
+      "id": "minecraft:writable_book"
+    },
+    "title": {
+      "translate": "advancements.villagerretaliation.reputation.once_upon_a_time.title"
+    },
+    "description": {
+      "translate": "advancements.villagerretaliation.reputation.once_upon_a_time.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

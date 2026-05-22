@@ -29,6 +29,14 @@ public final class VillagerPresetNameRegistry {
     private VillagerPresetNameRegistry() {
     }
 
+    public static void warm(MinecraftServer server) {
+        loadNames(server);
+    }
+
+    public static void clearCache() {
+        cachedNamePool = CachedNamePool.empty();
+    }
+
     public static void ensurePresetNameAssigned(AbstractVillager villager) {
         if (villager.hasCustomName() || !(villager.level() instanceof ServerLevel level)) {
             return;

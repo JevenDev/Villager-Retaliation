@@ -30,6 +30,8 @@ public class VillagerRetaliation {
                 .listener(VillagerRetaliationEvents::onEntityAttributeModification)
                 .listener(VillagerReputationNetworking::registerPayloads);
         ToucanEventBuses.game()
+                .listener(VillagerRetaliationEvents::onServerStarted)
+                .listener(VillagerRetaliationEvents::onServerStopping)
                 .listener(VillagerRetaliationCommands::onRegisterCommands)
                 .listener(VillagerRetaliationEvents::onLivingDamagePre)
                 .listener(VillagerRetaliationEvents::onLivingDamage)

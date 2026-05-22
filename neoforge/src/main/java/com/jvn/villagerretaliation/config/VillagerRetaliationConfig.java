@@ -15,6 +15,8 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.BooleanValue SHIFT_RIGHT_CLICK_BYPASSES_INTERACTION_SCREEN;
     public static final ModConfigSpec.BooleanValue ENABLE_DIALOGUE_REPUTATION_EFFECTS;
     public static final ModConfigSpec.BooleanValue ENABLE_DIALOGUE_CAMERA_FOCUS;
+    public static final ModConfigSpec.BooleanValue SEPARATE_VILLAGER_CHAT_MESSAGES;
+    public static final ModConfigSpec.BooleanValue SEPARATE_VILLAGER_CHAT_SPEAKERS;
     public static final ModConfigSpec.DoubleValue DIALOGUE_CAMERA_ZOOM_AMOUNT;
     public static final ModConfigSpec.IntValue DIALOGUE_CAMERA_TRANSITION_TICKS;
     public static final ModConfigSpec.EnumValue<ReputationChangeDisplayMode> REPUTATION_CHANGE_DISPLAY_MODE;
@@ -92,6 +94,8 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.DoubleValue REPUTATION_DEBUG_OVERLAY_MAX_DISTANCE;
     public static final ModConfigSpec.BooleanValue REPUTATION_DEBUG_OVERLAY_SHOW_TIER;
     public static final ModConfigSpec.BooleanValue REPUTATION_DEBUG_OVERLAY_SHOW_NUMBER;
+    public static final ModConfigSpec.BooleanValue REPUTATION_DEBUG_OVERLAY_SHOW_HEALTH;
+    public static final ModConfigSpec.BooleanValue REPUTATION_DEBUG_OVERLAY_SHOW_ARMOR;
     public static final ModConfigSpec.BooleanValue REPUTATION_DEBUG_OVERLAY_REQUIRE_ADVANCED_TOOLTIPS;
     public static final ModConfigSpec.BooleanValue REPUTATION_DEBUG_OVERLAY_ONLY_WHEN_SNEAKING;
 
@@ -100,6 +104,14 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.BooleanValue ARMORERS_FIGHT_BACK;
     public static final ModConfigSpec.BooleanValue FLETCHERS_FIGHT_BACK;
     public static final ModConfigSpec.BooleanValue BUTCHERS_FIGHT_BACK;
+    public static final ModConfigSpec.BooleanValue VILLAGERS_TARGET_HOSTILE_MOBS;
+    public static final ModConfigSpec.BooleanValue WANDERING_TRADERS_TARGET_HOSTILE_MOBS;
+    public static final ModConfigSpec.BooleanValue VILLAGERS_RETALIATE_AGAINST_HOSTILE_MOBS;
+    public static final ModConfigSpec.BooleanValue WANDERING_TRADERS_RETALIATE_AGAINST_HOSTILE_MOBS;
+    public static final ModConfigSpec.BooleanValue VILLAGERS_STAND_GROUND_AGAINST_HOSTILE_MOBS;
+    public static final ModConfigSpec.BooleanValue VILLAGERS_FLEE_VISIBLE_CREEPERS;
+    public static final ModConfigSpec.BooleanValue VILLAGERS_PICK_UP_GROUND_WEAPONS;
+    public static final ModConfigSpec.BooleanValue WANDERING_TRADERS_PICK_UP_GROUND_WEAPONS;
     public static final ModConfigSpec.DoubleValue NATURAL_HOSTILE_TARGET_RADIUS;
     public static final ModConfigSpec.DoubleValue COMBAT_WEAPON_DROP_CHANCE;
     public static final ModConfigSpec.DoubleValue COMBAT_WEAPON_ENCHANT_CHANCE;
@@ -177,6 +189,14 @@ public final class VillagerRetaliationConfig {
                 .comment("Enables a subtle client-side FOV zoom while the Villager Retaliation dialogue screen is open.")
                 .translation("villagerretaliation.configuration.dialogue.enableDialogueCameraFocus")
                 .define("enableDialogueCameraFocus", true);
+        SEPARATE_VILLAGER_CHAT_MESSAGES = BUILDER
+                .comment("Adds a blank chat line between consecutive villager dialogue messages for readability.")
+                .translation("villagerretaliation.configuration.dialogue.separateVillagerChatMessages")
+                .define("separateVillagerChatMessages", false);
+        SEPARATE_VILLAGER_CHAT_SPEAKERS = BUILDER
+                .comment("Adds a blank chat line before a villager dialogue header when the speaker changes.")
+                .translation("villagerretaliation.configuration.dialogue.separateVillagerChatSpeakers")
+                .define("separateVillagerChatSpeakers", true);
         DIALOGUE_CAMERA_ZOOM_AMOUNT = BUILDER
                 .comment("FOV zoom amount used while the Villager Retaliation dialogue screen is open.")
                 .translation("villagerretaliation.configuration.dialogue.dialogueCameraZoomAmount")
@@ -410,6 +430,14 @@ public final class VillagerRetaliationConfig {
                 .comment("Shows the reputation number in the debug overlay.")
                 .translation("villagerretaliation.configuration.debugOverlay.reputationDebugOverlayShowNumber")
                 .define("reputationDebugOverlayShowNumber", true);
+        REPUTATION_DEBUG_OVERLAY_SHOW_HEALTH = BUILDER
+                .comment("Shows current and maximum health under the reputation debug overlay.")
+                .translation("villagerretaliation.configuration.debugOverlay.reputationDebugOverlayShowHealth")
+                .define("reputationDebugOverlayShowHealth", false);
+        REPUTATION_DEBUG_OVERLAY_SHOW_ARMOR = BUILDER
+                .comment("Shows the current armor value under the reputation debug overlay.")
+                .translation("villagerretaliation.configuration.debugOverlay.reputationDebugOverlayShowArmor")
+                .define("reputationDebugOverlayShowArmor", false);
         REPUTATION_DEBUG_OVERLAY_REQUIRE_ADVANCED_TOOLTIPS = BUILDER
                 .comment("Requires advanced tooltips (F3+H) for the reputation debug overlay.")
                 .translation("villagerretaliation.configuration.debugOverlay.reputationDebugOverlayRequireAdvancedTooltips")
@@ -436,7 +464,31 @@ public final class VillagerRetaliationConfig {
         BUTCHERS_FIGHT_BACK = BUILDER.comment("Allows butchers to retaliate with melee behavior.")
                 .translation("villagerretaliation.configuration.combat.butchersFightBack")
                 .define("butchersFightBack", true);
-        NATURAL_HOSTILE_TARGET_RADIUS = BUILDER.comment("Maximum range in blocks for villagers and wandering traders to proactively target visible hostile mobs.")
+        VILLAGERS_TARGET_HOSTILE_MOBS = BUILDER.comment("Allows adult villagers to proactively target visible hostile mobs.")
+                .translation("villagerretaliation.configuration.combat.villagersTargetHostileMobs")
+                .define("villagersTargetHostileMobs", true);
+        WANDERING_TRADERS_TARGET_HOSTILE_MOBS = BUILDER.comment("Allows wandering traders to proactively target visible hostile mobs.")
+                .translation("villagerretaliation.configuration.combat.wanderingTradersTargetHostileMobs")
+                .define("wanderingTradersTargetHostileMobs", true);
+        VILLAGERS_RETALIATE_AGAINST_HOSTILE_MOBS = BUILDER.comment("Allows adult villagers damaged by hostile mobs to fight back. Disable to keep monster encounters closer to vanilla fleeing behavior.")
+                .translation("villagerretaliation.configuration.combat.villagersRetaliateAgainstHostileMobs")
+                .define("villagersRetaliateAgainstHostileMobs", true);
+        WANDERING_TRADERS_RETALIATE_AGAINST_HOSTILE_MOBS = BUILDER.comment("Allows wandering traders damaged by hostile mobs to fight back.")
+                .translation("villagerretaliation.configuration.combat.wanderingTradersRetaliateAgainstHostileMobs")
+                .define("wanderingTradersRetaliateAgainstHostileMobs", true);
+        VILLAGERS_STAND_GROUND_AGAINST_HOSTILE_MOBS = BUILDER.comment("Allows armed villagers to suppress vanilla panic and stand their ground against hostile mobs. Disable if villagers should usually keep fleeing monsters.")
+                .translation("villagerretaliation.configuration.combat.villagersStandGroundAgainstHostileMobs")
+                .define("villagersStandGroundAgainstHostileMobs", true);
+        VILLAGERS_FLEE_VISIBLE_CREEPERS = BUILDER.comment("Makes villagers avoid visible creepers instead of trying to fight them.")
+                .translation("villagerretaliation.configuration.combat.villagersFleeVisibleCreepers")
+                .define("villagersFleeVisibleCreepers", true);
+        VILLAGERS_PICK_UP_GROUND_WEAPONS = BUILDER.comment("Allows villagers to pick up nearby dropped weapons while threatened.")
+                .translation("villagerretaliation.configuration.combat.villagersPickUpGroundWeapons")
+                .define("villagersPickUpGroundWeapons", true);
+        WANDERING_TRADERS_PICK_UP_GROUND_WEAPONS = BUILDER.comment("Allows wandering traders to pick up nearby dropped weapons while threatened.")
+                .translation("villagerretaliation.configuration.combat.wanderingTradersPickUpGroundWeapons")
+                .define("wanderingTradersPickUpGroundWeapons", true);
+        NATURAL_HOSTILE_TARGET_RADIUS = BUILDER.comment("Maximum range in blocks for villagers and wandering traders to proactively target visible hostile mobs. The explicit hostile mob targeting toggles must also be enabled.")
                 .translation("villagerretaliation.configuration.combat.naturalHostileTargetRadius")
                 .defineInRange("naturalHostileTargetRadius", 16.0D, 0.0D, 64.0D);
         BUILDER.comment("Chance for temporary retaliation main-hand weapons to drop on villager death.");

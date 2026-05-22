@@ -38,6 +38,14 @@ public final class VillagerNotificationResources {
     private VillagerNotificationResources() {
     }
 
+    public static void warm(MinecraftServer server) {
+        load(server, VillagerLocale.DEFAULT_LOCALE);
+    }
+
+    public static void clearCache() {
+        cachedNotificationPools = CachedNotificationPools.empty();
+    }
+
     public static Optional<ResolvedVillagerNotification> select(
             VillagerNotificationContext context,
             String trigger,

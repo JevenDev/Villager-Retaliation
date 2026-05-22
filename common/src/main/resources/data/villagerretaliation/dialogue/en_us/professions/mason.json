@@ -1,4 +1,56 @@
 {
+  "messages": [
+    {
+      "key": "gift_given",
+      "text": "Here, {gift_item}. Strong villages are built one fair exchange at a time.",
+      "weight": 24
+    },
+    {
+      "key": "gift_given",
+      "text": "Take {gift_item}. A steady hand deserves steady thanks.",
+      "weight": 24
+    },
+    {
+      "key": "gift_advice_followup.liked",
+      "text": "Good. {gift_item} sat square with {tested_villager}.",
+      "weight": 22
+    },
+    {
+      "key": "gift_advice_followup.liked",
+      "text": "Then the advice was level. {tested_villager} liked {gift_item}.",
+      "weight": 22
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "text": "That foundation cracked. For {gift_subject}, set {alternative_gift} instead.",
+      "weight": 22
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "text": "{gift_item} did not bear weight there? Try {alternative_gift}; sturdier choice.",
+      "weight": 22
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "text": "That advice cracked under pressure. Set {alternative_gift} in its place.",
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 20
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "text": "You built on weak stone. Use {alternative_gift} if you want it to stand.",
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
+      "weight": 20
+    }
+  ],
   "openings": [
     {
       "id": "mason_opening",
@@ -93,6 +145,362 @@
         "hostile"
       ],
       "weight": 30
+    },
+    {
+      "id": "mason_cured_recognition_warm_1",
+      "type": "cured_recognition",
+      "text": "I remember being rubble. You helped set the first stone back in place.",
+      "weight": 30,
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ]
+    },
+    {
+      "id": "mason_cured_recognition_warm_2",
+      "type": "cured_recognition",
+      "text": "The cure cracked the old dark apart. You were there when the wall held.",
+      "weight": 30,
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ]
+    },
+    {
+      "id": "mason_cured_recognition_confused_1",
+      "type": "cured_recognition",
+      "text": "Your face is carved into that memory, but weather has worn it strange.",
+      "weight": 30,
+      "dispositions": [
+        "neutral",
+        "cautious"
+      ]
+    },
+    {
+      "id": "mason_cured_recognition_confused_2",
+      "type": "cured_recognition",
+      "text": "I remember stone-cold hands, a golden taste, and standing upright again.",
+      "weight": 30,
+      "dispositions": [
+        "neutral",
+        "cautious"
+      ]
+    },
+    {
+      "id": "mason_cured_recognition_uneasy_1",
+      "type": "cured_recognition",
+      "text": "I remember you from beneath a collapsed roof of thoughts. Speak gently.",
+      "weight": 30,
+      "dispositions": [
+        "rude",
+        "hostile",
+        "fearful"
+      ]
+    },
+    {
+      "id": "mason_village_event_thunderstorm_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "Thunder shook the stonecutter so hard loose stones rattled in the wall, but everyone near me is still standing.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "mason_village_event_thunderstorm_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "I checked walls, steps, and cracked blocks after the lightning, then counted heads. No one should be alone after a sky like that.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "mason_village_event_thunderstorm_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "Near the stonecutter, the bell sounded small under that thunder. We stayed inside and kept the doors watched.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "mason_village_event_thunderstorm_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "That thunder made everyone quiet. I checked the doorframes twice.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "mason_village_event_thunderstorm_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "The sky can keep its lightning. I have doorframes to set right.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "mason_village_event_fire_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "I checked wooden beams set into stone for sparks first, then checked faces for smoke and fear.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "mason_village_event_fire_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "We passed water hand to hand and kept people away from the smoke. I checked the stonecutter after.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "mason_village_event_fire_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "The stonecutter can wait. People come first.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "mason_village_event_fire_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "We saved what we could reach around the stonecutter, then stopped pretending things matter more than neighbors.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "mason_village_event_fire_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "The smoke is thinning near the stonecutter, but everyone is still sniffing the air like it might lie.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "mason_village_event_raid_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "During a raid, the stonecutter can sit silent; who makes it behind a door matters more.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "mason_village_event_raid_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "The horns stopped, but my hands near the stonecutter still expect another wave from the road.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "mason_village_event_raid_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "We counted living neighbors before walls, steps, and cracked blocks. That is the only count worth starting with.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "mason_village_event_raid_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "Raiders came looking for easy emeralds. They found barred doors near the stonecutter and a bell that would not stop ringing.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "mason_village_event_raid_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "From the stonecutter, I saw fear cross the square; then I saw courage get there first.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "mason_village_event_night_attack_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "Night trouble tests the loose latch by the stonecutter first. We are fixing those before sunset.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "mason_village_event_night_attack_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "I stayed near the wall with the missing block and listened for anyone calling from the dark.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "mason_village_event_night_attack_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "Dawn gave the stonecutter enough light to count wounds, missing blocks, and who made it home.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "mason_village_event_night_attack_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "The dark tested everyone. Most of us passed by keeping a stack of spare stone between us and teeth.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "mason_village_event_night_attack_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "We are safe enough near the stonecutter, though every shadow is being inspected twice.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "mason_village_event_sandstorm_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "sandstorm"
+      ],
+      "text": "The wind threw sand through every crack. I am still cleaning sand from the mortar lines.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "mason_village_event_sandstorm_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "sandstorm"
+      ],
+      "text": "I checked walls, steps, and cracked blocks, then checked who was coughing too hard to answer.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "mason_village_event_sandstorm_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "sandstorm"
+      ],
+      "text": "Sand reached the stonecutter, the hinges, and half our eyes, but no one has been reported missing.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "mason_village_event_sandstorm_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "sandstorm"
+      ],
+      "text": "A hard wind teaches a mason which doors actually close and which ones only pretend.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "mason_village_event_sandstorm_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "sandstorm"
+      ],
+      "text": "We are safe enough near the stonecutter, though the whole village sounds like it is chewing gravel.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "mason_village_event_snowstorm_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "snowstorm"
+      ],
+      "text": "The stonecutter can sit silent. Warm hands, clear paths, and full hearths come first.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "mason_village_event_snowstorm_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "snowstorm"
+      ],
+      "text": "Snow piled against the doors, but everyone near the stonecutter found shelter.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "mason_village_event_snowstorm_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "snowstorm"
+      ],
+      "text": "Cold works quietly around the stonecutter. We are checking on anyone who stayed quiet too long.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "mason_village_event_snowstorm_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "snowstorm"
+      ],
+      "text": "I am clearing ice off the steps and watching for footprints that stop too soon.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "mason_village_event_snowstorm_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "snowstorm"
+      ],
+      "text": "We are alright for now near the stonecutter. Keep the fires fed and the paths open.",
+      "weight": 34,
+      "show_for_babies": false
     }
   ],
   "pacify": [

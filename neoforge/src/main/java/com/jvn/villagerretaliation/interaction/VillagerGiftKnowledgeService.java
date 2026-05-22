@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.interaction;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.GiftAdviceKind;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionSavedData;
+import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -13,6 +14,7 @@ import java.util.Set;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -58,18 +60,99 @@ public final class VillagerGiftKnowledgeService {
             return Optional.empty();
         }
 
-        VillagerGiftPreferences.GiftCandidate discovered = unknownCandidates.get(context.random().nextInt(unknownCandidates.size()));
+        GiftAdviceSelection selection = selectGiftAdviceCandidate(context, unknownCandidates);
+        VillagerGiftPreferences.GiftCandidate discovered = selection.candidate();
         String itemId = itemId(discovered.item());
-        boolean liked = discovered.positive();
+        boolean liked = selection.claimedLiked();
         String knowledgeKey = discovered.professionSpecific() ? professionKey : GLOBAL_PROFESSION_KEY;
-        data.rememberGiftKnowledge(player.getUUID(), knowledgeKey, itemId, liked);
-        data.setDirty();
+        if (selection.truthful()) {
+            if (data.rememberGiftKnowledge(player.getUUID(), knowledgeKey, itemId, discovered.positive())) {
+                data.setDirty();
+            }
+        }
+        if (liked) {
+            VillagerInteractionTracker.rememberGiftAdvice(
+                    level,
+                    context.villager(),
+                    player,
+                    itemId,
+                    itemName(discovered.item()),
+                    discovered.professionSpecific() ? professionKey : GLOBAL_PROFESSION_KEY
+            );
+        }
 
         return Optional.of(new GiftKnowledgeDiscovery(
                 giftAdviceKind(liked, discovered.professionSpecific()),
                 itemName(discovered.item()),
-                giftSubject(profession)
+                giftSubject(profession),
+                itemId,
+                discovered.professionSpecific() ? professionKey : GLOBAL_PROFESSION_KEY
         ));
+    }
+
+    private static GiftAdviceSelection selectGiftAdviceCandidate(
+            DialogueContext context,
+            List<VillagerGiftPreferences.GiftCandidate> unknownCandidates) {
+        List<VillagerGiftPreferences.GiftCandidate> wrongAdviceCandidates = unknownCandidates.stream()
+                .filter(candidate -> !candidate.positive())
+                .toList();
+        if (!wrongAdviceCandidates.isEmpty() && context.random().nextInt(100) < wrongAdviceChancePercent(context)) {
+            return new GiftAdviceSelection(
+                    wrongAdviceCandidates.get(context.random().nextInt(wrongAdviceCandidates.size())),
+                    true,
+                    false
+            );
+        }
+
+        VillagerGiftPreferences.GiftCandidate candidate = unknownCandidates.get(context.random().nextInt(unknownCandidates.size()));
+        return new GiftAdviceSelection(candidate, candidate.positive(), true);
+    }
+
+    private static int wrongAdviceChancePercent(DialogueContext context) {
+        return switch (context.reputationLevel()) {
+            case FEARED -> 55;
+            case DESPISED -> 45;
+            case HOSTILE -> 35;
+            case SUSPICIOUS -> 20;
+            case NEUTRAL -> 8;
+            case TRUSTED -> 2;
+            case RESPECTED -> 1;
+            case REVERED, ROYALTY -> 0;
+        };
+    }
+
+    public static void rememberGiftResult(
+            ServerLevel level,
+            ServerPlayer player,
+            VillagerProfession profession,
+            ItemStack giftedStack,
+            VillagerGiftPreferences.GiftPreference giftPreference) {
+        Boolean liked = knowledgePolarity(giftPreference.reaction());
+        if (liked == null || giftedStack.isEmpty()) {
+            return;
+        }
+
+        String knowledgeKey = giftPreference.professionSpecific() ? professionKey(profession) : GLOBAL_PROFESSION_KEY;
+        VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
+        if (data.rememberGiftKnowledge(player.getUUID(), knowledgeKey, itemId(giftedStack.getItem()), liked)) {
+            data.setDirty();
+        }
+    }
+
+    public static Optional<String> randomLikedGiftName(
+            ServerLevel level,
+            VillagerProfession profession,
+            String excludedItemId,
+            RandomSource random) {
+        List<VillagerGiftPreferences.GiftCandidate> candidates = VillagerGiftPreferences.giftCandidates(level, profession).stream()
+                .filter(candidate -> appliesToProfession(level, candidate, profession))
+                .filter(VillagerGiftPreferences.GiftCandidate::positive)
+                .filter(candidate -> !itemId(candidate.item()).equals(excludedItemId))
+                .toList();
+        if (candidates.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(itemName(candidates.get(random.nextInt(candidates.size())).item()));
     }
 
     private static List<VillagerGiftPreferences.GiftCandidate> unknownCandidates(
@@ -121,7 +204,15 @@ public final class VillagerGiftKnowledgeService {
         return liked ? GiftAdviceKind.GLOBAL_LIKED : GiftAdviceKind.GLOBAL_DISLIKED;
     }
 
-    private static String professionKey(VillagerProfession profession) {
+    private static Boolean knowledgePolarity(VillagerGiftPreferences.GiftReaction reaction) {
+        return switch (reaction) {
+            case LOVED, LIKED -> true;
+            case DISLIKED, HATED -> false;
+            case NEUTRAL -> null;
+        };
+    }
+
+    public static String professionKey(VillagerProfession profession) {
         if (profession == null) {
             return "none";
         }
@@ -140,6 +231,17 @@ public final class VillagerGiftKnowledgeService {
     public record GiftKnowledgeSnapshot(List<String> likedGiftNames, List<String> dislikedGiftNames) {
     }
 
-    public record GiftKnowledgeDiscovery(GiftAdviceKind adviceKind, String itemName, String subject) {
+    public record GiftKnowledgeDiscovery(
+            GiftAdviceKind adviceKind,
+            String itemName,
+            String subject,
+            String itemId,
+            String targetProfessionKey) {
+    }
+
+    private record GiftAdviceSelection(
+            VillagerGiftPreferences.GiftCandidate candidate,
+            boolean claimedLiked,
+            boolean truthful) {
     }
 }

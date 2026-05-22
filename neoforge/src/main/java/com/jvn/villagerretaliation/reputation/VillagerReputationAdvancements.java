@@ -2,6 +2,14 @@ package com.jvn.villagerretaliation.reputation;
 
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.dialogue.BiomeStoryResources;
+import com.jvn.villagerretaliation.dialogue.DangerousStructureStoryResources;
+import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
+import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
+import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
+import com.jvn.villagerretaliation.notification.VillagerNotifications;
+import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
+import com.jvn.villagerretaliation.village.VillageMembership;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -12,6 +20,10 @@ import java.util.UUID;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
+import net.minecraft.core.HolderSet;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -22,11 +34,12 @@ import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.phys.AABB;
 
 public final class VillagerReputationAdvancements {
-    private static final double VILLAGE_TRUST_SCAN_RADIUS = 64.0D;
     private static final int VILLAGE_HAS_EYES_WITNESSES = 3;
     private static final int REGULAR_CUSTOMER_TRADES = 10;
     private static final int COMMUNITY_SUPPORT_VILLAGERS = 5;
@@ -35,13 +48,25 @@ public final class VillagerReputationAdvancements {
     private static final long DIRECT_HIT_MEMORY_TICKS = 20L * 40L;
     private static final double HOSTILITY_SCAN_RADIUS = 64.0D;
     private static final double DIALOGUE_MAP_FOUND_RADIUS = 64.0D;
-    private static final long DIALOGUE_MAP_TARGET_TICKS = 20L * 60L * 60L * 6L;
+    private static final double STORY_HINT_FOUND_RADIUS = 256.0D;
+    private static final double DANGEROUS_STORY_VILLAGER_RADIUS = 64.0D;
+    private static final long DISCOVERY_SCAN_INTERVAL_TICKS = 20L;
+    private static final long DANGEROUS_STORY_SCAN_INTERVAL_TICKS = 20L * 5L;
+    private static final long DANGEROUS_STORY_INITIAL_SCAN_DELAY_TICKS = 20L * 10L;
+    private static final int DANGEROUS_STORY_STRUCTURES_PER_SCAN = 2;
+    private static final long STRUCTURE_STORY_CACHE_TICKS = 20L * 30L;
+    private static final int MAX_STRUCTURE_STORY_CACHE_ENTRIES = 256;
+    private static final long DANGEROUS_STORY_SHARE_TICKS = 20L * 60L * 60L * 6L;
 
     private static final Map<UUID, Map<UUID, Integer>> TRADE_COUNTS = new HashMap<>();
     private static final Map<UUID, Set<UUID>> TRADED_VILLAGERS = new HashMap<>();
     private static final Map<UUID, Map<UUID, Long>> RECENT_DIRECT_VILLAGER_HITS = new HashMap<>();
     private static final Map<UUID, Set<UUID>> HOSTILE_OR_WORSE_HISTORY = new HashMap<>();
-    private static final Map<UUID, DialogueMapTarget> DIALOGUE_MAP_TARGETS = new HashMap<>();
+    private static final Map<UUID, Long> NEXT_DISCOVERY_SCAN = new HashMap<>();
+    private static final Map<UUID, Long> NEXT_DANGEROUS_STORY_SCAN = new HashMap<>();
+    private static final Map<UUID, Integer> NEXT_DANGEROUS_STORY_INDEX = new HashMap<>();
+    private static final Map<UUID, Long> NEXT_BIOME_STORY_SCAN = new HashMap<>();
+    private static final Map<StructureStorySearchKey, StructureStorySearchResult> STRUCTURE_STORY_CACHE = new HashMap<>();
 
     private static final ResourceLocation ROOT = advancementId("reputation/root");
     private static final ResourceLocation COMMONFOLK = advancementId("reputation/commonfolk");
@@ -70,6 +95,12 @@ public final class VillagerReputationAdvancements {
     private static final ResourceLocation THE_VILLAGE_REMEMBERS = advancementId("reputation/the_village_remembers");
     private static final ResourceLocation NO_REST_FOR_THE_WICKED = advancementId("reputation/no_rest_for_the_wicked");
     private static final ResourceLocation TRUSTED_DIRECTIONS = advancementId("reputation/trusted_directions");
+    private static final ResourceLocation BAIT_AND_BETRAYAL = advancementId("reputation/bait_and_betrayal");
+    private static final ResourceLocation CHANGED_MY_MIND = advancementId("reputation/changed_my_mind");
+    private static final ResourceLocation ONCE_UPON_A_TIME = advancementId("reputation/once_upon_a_time");
+    private static final ResourceLocation STORY_KEEPER = advancementId("reputation/story_keeper");
+    private static final ResourceLocation VILLAGE_CHRONICLER = advancementId("reputation/village_chronicler");
+    private static final ResourceLocation LEGEND_TRADER = advancementId("reputation/legend_trader");
 
     private VillagerReputationAdvancements() {
     }
@@ -82,37 +113,249 @@ public final class VillagerReputationAdvancements {
         award(player, IM_SORRY);
     }
 
+    public static void onLuredVillagerKilled(ServerPlayer player) {
+        award(player, BAIT_AND_BETRAYAL);
+    }
+
+    public static void onGiftTakenBack(ServerPlayer player) {
+        award(player, CHANGED_MY_MIND);
+    }
+
     public static void onSleepingVillagerBedBroken(ServerPlayer player) {
         award(player, NO_REST_FOR_THE_WICKED);
     }
 
-    public static void rememberDialogueMapTarget(ServerPlayer player, ServerLevel level, BlockPos targetPos) {
-        DIALOGUE_MAP_TARGETS.put(player.getUUID(), new DialogueMapTarget(
-                level.dimension(),
-                targetPos.immutable(),
-                level.getGameTime() + DIALOGUE_MAP_TARGET_TICKS
-        ));
+    public static void onSharedStory(ServerPlayer player, int sharedStoryCount) {
+        if (sharedStoryCount >= 1) {
+            award(player, ONCE_UPON_A_TIME);
+        }
+        if (sharedStoryCount >= 5) {
+            award(player, STORY_KEEPER);
+        }
+        if (sharedStoryCount >= 10) {
+            award(player, VILLAGE_CHRONICLER);
+        }
+        if (sharedStoryCount >= 25) {
+            award(player, LEGEND_TRADER);
+        }
     }
 
     public static void onPlayerTick(ServerPlayer player) {
-        DialogueMapTarget target = DIALOGUE_MAP_TARGETS.get(player.getUUID());
-        if (target == null) {
-            return;
-        }
         ServerLevel level = player.serverLevel();
-        if (target.expiresAtGameTime() <= level.getGameTime()) {
-            DIALOGUE_MAP_TARGETS.remove(player.getUUID());
+        ResourceLocation currentBiomeId = level.getBiome(player.blockPosition())
+                .unwrapKey()
+                .map(ResourceKey::location)
+                .orElse(null);
+        long gameTime = level.getGameTime();
+        Long nextDiscoveryScan = NEXT_DISCOVERY_SCAN.get(player.getUUID());
+        if (nextDiscoveryScan == null || nextDiscoveryScan <= gameTime) {
+            NEXT_DISCOVERY_SCAN.put(player.getUUID(), gameTime + DISCOVERY_SCAN_INTERVAL_TICKS);
+            VillagerInteractionTracker.DiscoveryReports discoveries = VillagerInteractionTracker.markDiscoveriesNear(
+                    level,
+                    player,
+                    currentBiomeId,
+                    DIALOGUE_MAP_FOUND_RADIUS,
+                    STORY_HINT_FOUND_RADIUS
+            );
+            if (!discoveries.cartographerMapReports().isEmpty()) {
+                award(player, TRUSTED_DIRECTIONS);
+                discoveries.cartographerMapReports().forEach(discovery -> sendDialogueMapFoundNotice(player, discovery));
+            }
+            if (!discoveries.storyHintReports().isEmpty()) {
+                award(player, TRUSTED_DIRECTIONS);
+                discoveries.storyHintReports().forEach(discovery -> sendStoryHintFoundNotice(player, discovery));
+            }
+        }
+        if (currentBiomeId != null) {
+            rememberBiomeStories(player, currentBiomeId);
+        }
+        rememberDangerousStructureStories(player);
+    }
+
+    private static void rememberBiomeStories(ServerPlayer player, ResourceLocation currentBiomeId) {
+        ServerLevel level = player.serverLevel();
+        long gameTime = level.getGameTime();
+        Long nextScan = NEXT_BIOME_STORY_SCAN.get(player.getUUID());
+        if (nextScan != null && nextScan > gameTime) {
             return;
         }
-        if (!target.dimension().equals(level.dimension())) {
+        NEXT_BIOME_STORY_SCAN.put(player.getUUID(), gameTime + DANGEROUS_STORY_SCAN_INTERVAL_TICKS);
+
+        BiomeStoryResources.Entry storyBiome = BiomeStoryResources.entriesByBiome(level.getServer()).get(currentBiomeId);
+        if (storyBiome == null) {
+            return;
+        }
+        List<Villager> nearbyVillagers = nearbyVillagers(level, player.blockPosition());
+        if (nearbyVillagers.isEmpty()) {
+            return;
+        }
+        nearbyVillagers = shareableStoryCandidates(
+                level,
+                player,
+                nearbyVillagers,
+                VillagerInteractionTracker.StoryHintKind.BIOME,
+                storyBiome.biomeId(),
+                player.blockPosition()
+        );
+        if (nearbyVillagers.isEmpty()) {
             return;
         }
 
-        double dx = player.getX() - (target.pos().getX() + 0.5D);
-        double dz = player.getZ() - (target.pos().getZ() + 0.5D);
-        if (dx * dx + dz * dz <= DIALOGUE_MAP_FOUND_RADIUS * DIALOGUE_MAP_FOUND_RADIUS) {
-            award(player, TRUSTED_DIRECTIONS);
-            DIALOGUE_MAP_TARGETS.remove(player.getUUID());
+        long expiresAt = gameTime + DANGEROUS_STORY_SHARE_TICKS;
+        for (Villager villager : nearbyVillagers) {
+            VillagerInteractionTracker.rememberShareableStory(
+                    level,
+                    villager,
+                    player,
+                    VillagerInteractionTracker.StoryHintKind.BIOME,
+                    storyBiome.biomeId(),
+                    storyBiome.targetName(),
+                    player.blockPosition(),
+                    expiresAt
+            );
+        }
+    }
+
+    private static void rememberDangerousStructureStories(ServerPlayer player) {
+        ServerLevel level = player.serverLevel();
+        long gameTime = level.getGameTime();
+        UUID playerId = player.getUUID();
+        Long nextScan = NEXT_DANGEROUS_STORY_SCAN.get(player.getUUID());
+        if (nextScan == null) {
+            NEXT_DANGEROUS_STORY_SCAN.put(playerId, gameTime + DANGEROUS_STORY_INITIAL_SCAN_DELAY_TICKS);
+            return;
+        }
+        if (nextScan != null && nextScan > gameTime) {
+            return;
+        }
+        NEXT_DANGEROUS_STORY_SCAN.put(playerId, gameTime + DANGEROUS_STORY_SCAN_INTERVAL_TICKS);
+
+        List<DangerousStructureStoryResources.Entry> storyStructures = DangerousStructureStoryResources.entries(level.getServer());
+        if (storyStructures.isEmpty()) {
+            return;
+        }
+        List<Villager> nearbyVillagers = nearbyVillagers(level, player.blockPosition());
+        if (nearbyVillagers.isEmpty()) {
+            return;
+        }
+
+        Registry<Structure> registry = level.registryAccess().registryOrThrow(Registries.STRUCTURE);
+        int startIndex = Math.floorMod(
+                NEXT_DANGEROUS_STORY_INDEX.getOrDefault(playerId, playerId.hashCode()),
+                storyStructures.size()
+        );
+        int checks = Math.min(DANGEROUS_STORY_STRUCTURES_PER_SCAN, storyStructures.size());
+        for (int offset = 0; offset < checks; offset++) {
+            DangerousStructureStoryResources.Entry storyStructure =
+                    storyStructures.get((startIndex + offset) % storyStructures.size());
+            registry.getHolder(ResourceKey.create(Registries.STRUCTURE, storyStructure.structureId()))
+                    .ifPresent(holder -> rememberDangerousStructureStory(level, player, nearbyVillagers, storyStructure, holder));
+        }
+        NEXT_DANGEROUS_STORY_INDEX.put(playerId, (startIndex + checks) % storyStructures.size());
+    }
+
+    private static List<Villager> nearbyVillagers(ServerLevel level, BlockPos origin) {
+        return VillageMembership.villagersForLocalVillage(level, origin, DANGEROUS_STORY_VILLAGER_RADIUS);
+    }
+
+    private static void rememberDangerousStructureStory(
+            ServerLevel level,
+            ServerPlayer player,
+            List<Villager> nearbyVillagers,
+            DangerousStructureStoryResources.Entry storyStructure,
+            Holder.Reference<Structure> structure) {
+        BlockPos origin = player.blockPosition();
+        BlockPos targetPos = cachedNearestStoryStructure(level, origin, storyStructure, structure);
+        if (targetPos == null) {
+            return;
+        }
+        double dx = player.getX() - (targetPos.getX() + 0.5D);
+        double dz = player.getZ() - (targetPos.getZ() + 0.5D);
+        double radiusSqr = (double) storyStructure.radius() * storyStructure.radius();
+        if (dx * dx + dz * dz > radiusSqr) {
+            return;
+        }
+
+        nearbyVillagers = shareableStoryCandidates(
+                level,
+                player,
+                nearbyVillagers,
+                VillagerInteractionTracker.StoryHintKind.STRUCTURE,
+                storyStructure.structureId(),
+                targetPos
+        );
+        if (nearbyVillagers.isEmpty()) {
+            return;
+        }
+
+        long expiresAt = level.getGameTime() + DANGEROUS_STORY_SHARE_TICKS;
+        for (Villager villager : nearbyVillagers) {
+            VillagerInteractionTracker.rememberShareableStory(
+                    level,
+                    villager,
+                    player,
+                    VillagerInteractionTracker.StoryHintKind.STRUCTURE,
+                    storyStructure.structureId(),
+                    storyStructure.targetName(),
+                    targetPos,
+                    expiresAt
+            );
+        }
+    }
+
+    private static List<Villager> shareableStoryCandidates(
+            ServerLevel level,
+            ServerPlayer player,
+            List<Villager> villagers,
+            VillagerInteractionTracker.StoryHintKind kind,
+            ResourceLocation targetId,
+            BlockPos targetPos) {
+        return villagers.stream()
+                .filter(villager -> VillagerInteractionTracker.canRememberShareableStory(level, villager, player, kind, targetId, targetPos))
+                .toList();
+    }
+
+    private static BlockPos cachedNearestStoryStructure(
+            ServerLevel level,
+            BlockPos origin,
+            DangerousStructureStoryResources.Entry storyStructure,
+            Holder.Reference<Structure> structure) {
+        ChunkPos chunkPos = new ChunkPos(origin);
+        int searchRadius = Math.max(1, storyStructure.radius());
+        StructureStorySearchKey key = new StructureStorySearchKey(
+                level.dimension(),
+                chunkPos.x,
+                chunkPos.z,
+                storyStructure.structureId(),
+                searchRadius
+        );
+        long gameTime = level.getGameTime();
+        StructureStorySearchResult cached = STRUCTURE_STORY_CACHE.get(key);
+        if (cached != null && cached.expiresGameTime() > gameTime) {
+            return cached.pos();
+        }
+
+        com.mojang.datafixers.util.Pair<BlockPos, Holder<Structure>> nearest =
+                level.getChunkSource().getGenerator().findNearestMapStructure(
+                        level,
+                        HolderSet.direct(structure),
+                        origin,
+                        searchRadius,
+                        false
+                );
+        BlockPos result = nearest == null ? null : nearest.getFirst().immutable();
+        STRUCTURE_STORY_CACHE.put(key, new StructureStorySearchResult(result, gameTime + STRUCTURE_STORY_CACHE_TICKS));
+        pruneStructureStoryCache(gameTime);
+        return result;
+    }
+
+    private static void pruneStructureStoryCache(long gameTime) {
+        if (STRUCTURE_STORY_CACHE.size() <= MAX_STRUCTURE_STORY_CACHE_ENTRIES) {
+            return;
+        }
+        STRUCTURE_STORY_CACHE.entrySet().removeIf(entry -> entry.getValue().expiresGameTime() <= gameTime);
+        if (STRUCTURE_STORY_CACHE.size() > MAX_STRUCTURE_STORY_CACHE_ENTRIES) {
+            STRUCTURE_STORY_CACHE.clear();
         }
     }
 
@@ -142,7 +385,7 @@ public final class VillagerReputationAdvancements {
     }
 
     public static void onIronGolemDamaged(ServerLevel level, ServerPlayer player, IronGolem ironGolem) {
-        if (level.isVillage(ironGolem.blockPosition())) {
+        if (VillageMembership.isVillagePosition(level, ironGolem.blockPosition())) {
             award(player, AN_UNWISE_DECISION);
         }
     }
@@ -160,7 +403,7 @@ public final class VillagerReputationAdvancements {
         }
 
         if (villager instanceof Villager villageResident
-                && level.isVillage(villageResident.blockPosition())
+                && VillageMembership.resolve(level, villageResident).isPresent()
                 && countTradedVillagersInVillage(level, villageResident, player) >= COMMUNITY_SUPPORT_VILLAGERS) {
             award(player, COMMUNITY_SUPPORT);
         }
@@ -200,7 +443,7 @@ public final class VillagerReputationAdvancements {
     }
 
     public static void onVillagePresenceCheck(ServerPlayer player) {
-        if (player.serverLevel().isVillage(player.blockPosition())) {
+        if (VillageMembership.isVillagePosition(player.serverLevel(), player.blockPosition())) {
             award(player, COMMONFOLK);
         }
     }
@@ -284,23 +527,13 @@ public final class VillagerReputationAdvancements {
     }
 
     private static boolean hasTrustedVillageCore(ServerLevel level, Villager anchor, ServerPlayer player) {
-        if (!level.isVillage(anchor.blockPosition())) {
-            return false;
-        }
-
-        AABB searchArea = anchor.getBoundingBox().inflate(VILLAGE_TRUST_SCAN_RADIUS);
-        int trustedVillagers = 0;
-        for (Villager candidate : level.getEntitiesOfClass(Villager.class, searchArea)) {
-            if (!candidate.isAlive() || !level.isVillage(candidate.blockPosition())) {
-                continue;
-            }
-
-            VillagerReputationLevel candidateLevel = VillagerReputationManager.getReputationLevel(level, candidate, player.getUUID());
-            if (candidateLevel.trustRank() >= VillagerReputationLevel.TRUSTED.trustRank() && ++trustedVillagers >= 5) {
-                return true;
-            }
-        }
-        return false;
+        return VillageMembership.resolve(level, anchor)
+                .map(area -> area.countMembers(candidate -> {
+                    VillagerReputationLevel candidateLevel =
+                            VillagerReputationManager.getReputationLevel(level, candidate, player.getUUID());
+                    return candidateLevel.trustRank() >= VillagerReputationLevel.TRUSTED.trustRank();
+                }, 5) >= 5)
+                .orElse(false);
     }
 
     private static int countTradedVillagersInVillage(ServerLevel level, Villager anchor, ServerPlayer player) {
@@ -309,17 +542,9 @@ public final class VillagerReputationAdvancements {
             return 0;
         }
 
-        AABB searchArea = anchor.getBoundingBox().inflate(VILLAGE_TRUST_SCAN_RADIUS);
-        int tradedInVillage = 0;
-        for (Villager candidate : level.getEntitiesOfClass(Villager.class, searchArea)) {
-            if (!candidate.isAlive() || !level.isVillage(candidate.blockPosition())) {
-                continue;
-            }
-            if (tradedVillagers.contains(candidate.getUUID()) && ++tradedInVillage >= COMMUNITY_SUPPORT_VILLAGERS) {
-                return tradedInVillage;
-            }
-        }
-        return tradedInVillage;
+        return VillageMembership.resolve(level, anchor)
+                .map(area -> area.countMembers(candidate -> tradedVillagers.contains(candidate.getUUID()), COMMUNITY_SUPPORT_VILLAGERS))
+                .orElse(0);
     }
 
     private static boolean hasWitnesses(ServerLevel level, Entity victim, int requiredWitnesses) {
@@ -400,6 +625,59 @@ public final class VillagerReputationAdvancements {
         return VillagerRetaliation.id(path);
     }
 
-    private record DialogueMapTarget(ResourceKey<Level> dimension, BlockPos pos, long expiresAtGameTime) {
+    private static void sendDialogueMapFoundNotice(ServerPlayer player, VillagerInteractionTracker.CartographerMapReport discovery) {
+        ServerLevel level = player.serverLevel();
+        String targetName = discovery.targetName() == null || discovery.targetName().isBlank()
+                ? VillagerInteractionTextUtil.resourcePathName(discovery.structureId())
+                : discovery.targetName();
+        String fallbackText = "Found map destination: " + targetName;
+        Entity entity = level.getEntity(discovery.villagerId());
+        if (entity instanceof AbstractVillager villager) {
+            VillagerNotifications.sendHud(
+                    player,
+                    level,
+                    villager,
+                    "dialogue.map.found",
+                    VillagerNotifications.replacements("target", targetName),
+                    fallbackText,
+                    VillagerReputationNoticeKind.MAP_DISCOVERY
+            );
+            return;
+        }
+        VillagerReputationNetworking.sendNotice(player, fallbackText, VillagerReputationNoticeKind.MAP_DISCOVERY);
     }
+
+    private static void sendStoryHintFoundNotice(ServerPlayer player, VillagerInteractionTracker.StoryHintReport discovery) {
+        ServerLevel level = player.serverLevel();
+        String targetName = discovery.targetName() == null || discovery.targetName().isBlank()
+                ? VillagerInteractionTextUtil.resourcePathName(discovery.targetId())
+                : discovery.targetName();
+        String fallbackText = "Found rumored place: " + targetName;
+        Entity entity = level.getEntity(discovery.villagerId());
+        if (entity instanceof AbstractVillager villager) {
+            VillagerNotifications.sendHud(
+                    player,
+                    level,
+                    villager,
+                    "dialogue.rumor.found",
+                    VillagerNotifications.replacements("target", targetName),
+                    fallbackText,
+                    VillagerReputationNoticeKind.MAP_DISCOVERY
+            );
+            return;
+        }
+        VillagerReputationNetworking.sendNotice(player, fallbackText, VillagerReputationNoticeKind.MAP_DISCOVERY);
+    }
+
+    private record StructureStorySearchKey(
+            ResourceKey<Level> dimension,
+            int chunkX,
+            int chunkZ,
+            ResourceLocation structureId,
+            int searchRadius) {
+    }
+
+    private record StructureStorySearchResult(BlockPos pos, long expiresGameTime) {
+    }
+
 }

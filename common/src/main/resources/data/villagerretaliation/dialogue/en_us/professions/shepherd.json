@@ -1,4 +1,56 @@
 {
+  "messages": [
+    {
+      "key": "gift_given",
+      "text": "Take {gift_item}. A little comfort on the road never hurts.",
+      "weight": 24
+    },
+    {
+      "key": "gift_given",
+      "text": "Here, {gift_item}. Keep it close when the night gets cold.",
+      "weight": 24
+    },
+    {
+      "key": "gift_advice_followup.liked",
+      "text": "Good. {gift_item} suited {tested_villager} like the right dye on clean wool.",
+      "weight": 22
+    },
+    {
+      "key": "gift_advice_followup.liked",
+      "text": "Then the pattern held. {tested_villager} liked {gift_item}.",
+      "weight": 22
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "text": "Wrong color for that cloth. For {gift_subject}, try {alternative_gift}.",
+      "weight": 22
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "text": "{gift_item} clashed? Bring {alternative_gift}; softer on the eyes and temper.",
+      "weight": 22
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "text": "Wrong pattern. Pick up {alternative_gift} and leave {gift_item} out of it.",
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 20
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "text": "You followed the thread into a knot. Use {alternative_gift} next.",
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
+      "weight": 20
+    }
+  ],
   "openings": [
     {
       "id": "shepherd_opening",
@@ -93,6 +145,362 @@
         "hostile"
       ],
       "weight": 30
+    },
+    {
+      "id": "shepherd_cured_recognition_warm_1",
+      "type": "cured_recognition",
+      "text": "I remember being lost from the flock. You brought me back to the fold.",
+      "weight": 30,
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ]
+    },
+    {
+      "id": "shepherd_cured_recognition_warm_2",
+      "type": "cured_recognition",
+      "text": "My thoughts were all tangled wool. You helped card them straight.",
+      "weight": 30,
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ]
+    },
+    {
+      "id": "shepherd_cured_recognition_confused_1",
+      "type": "cured_recognition",
+      "text": "Your face feels familiar, soft in one place and snagged in another.",
+      "weight": 30,
+      "dispositions": [
+        "neutral",
+        "cautious"
+      ]
+    },
+    {
+      "id": "shepherd_cured_recognition_confused_2",
+      "type": "cured_recognition",
+      "text": "I remember shivering, then warmth returning one thread at a time.",
+      "weight": 30,
+      "dispositions": [
+        "neutral",
+        "cautious"
+      ]
+    },
+    {
+      "id": "shepherd_cured_recognition_uneasy_1",
+      "type": "cured_recognition",
+      "text": "I remember you through panic and wool-dark dreams. Keep your voice low.",
+      "weight": 30,
+      "dispositions": [
+        "rude",
+        "hostile",
+        "fearful"
+      ]
+    },
+    {
+      "id": "shepherd_village_event_thunderstorm_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "Thunder shook the loom so hard the flock pressed hard against the fence, but everyone near me is still standing.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "shepherd_village_event_thunderstorm_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "I checked wool, fences, and the flock after the lightning, then counted heads. No one should be alone after a sky like that.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "shepherd_village_event_thunderstorm_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "Near the loom, the bell sounded small under that thunder. We stayed inside and kept the doors watched.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "shepherd_village_event_thunderstorm_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "That thunder made everyone quiet. I checked the fences twice.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "shepherd_village_event_thunderstorm_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "The sky can keep its lightning. I have fences to set right.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "shepherd_village_event_fire_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "I checked wool, fences, and dry grass for sparks first, then checked faces for smoke and fear.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "shepherd_village_event_fire_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "We passed water hand to hand and kept people away from the smoke. I checked the wool after.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "shepherd_village_event_fire_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "The loom can wait. People come first.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "shepherd_village_event_fire_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "We saved what we could reach around the loom, then stopped pretending things matter more than neighbors.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "shepherd_village_event_fire_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "The smoke is thinning near the loom, but everyone is still sniffing the air like it might lie.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "shepherd_village_event_raid_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "During a raid, the loom can wait; who makes it behind a door matters more.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "shepherd_village_event_raid_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "The horns stopped, but my hands near the loom still expect another wave from the road.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "shepherd_village_event_raid_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "We counted living neighbors before wool, fences, and the flock. That is the only count worth starting with.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "shepherd_village_event_raid_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "Raiders came looking for easy emeralds. They found barred doors near the loom and a bell that would not stop ringing.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "shepherd_village_event_raid_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "From the loom, I saw fear cross the square; then I saw courage get there first.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "shepherd_village_event_night_attack_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "Night trouble tests the loose latch by the loom first. We are fixing those before sunset.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "shepherd_village_event_night_attack_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "I stayed near the pen beyond the lantern and listened for anyone calling from the dark.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "shepherd_village_event_night_attack_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "Dawn gave the loom enough light to count wounds, missing blocks, and who made it home.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "shepherd_village_event_night_attack_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "The dark tested everyone. Most of us passed by keeping a length of wool between us and teeth.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "shepherd_village_event_night_attack_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "We are safe enough near the loom, though every shadow is being inspected twice.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "shepherd_village_event_sandstorm_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "sandstorm"
+      ],
+      "text": "The wind threw sand through every crack. I am still cleaning dust from the wool.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "shepherd_village_event_sandstorm_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "sandstorm"
+      ],
+      "text": "I checked wool, fences, and the flock, then checked who was coughing too hard to answer.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "shepherd_village_event_sandstorm_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "sandstorm"
+      ],
+      "text": "Sand reached the loom, the hinges, and half our eyes, but no one has been reported missing.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "shepherd_village_event_sandstorm_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "sandstorm"
+      ],
+      "text": "A hard wind teaches a shepherd which doors actually close and which ones only pretend.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "shepherd_village_event_sandstorm_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "sandstorm"
+      ],
+      "text": "We are safe enough near the loom, though the whole village sounds like it is chewing gravel.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "shepherd_village_event_snowstorm_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "snowstorm"
+      ],
+      "text": "The loom can wait. Warm hands, clear paths, and full hearths come first.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "shepherd_village_event_snowstorm_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "snowstorm"
+      ],
+      "text": "Snow piled against the doors, but everyone near the loom found shelter.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "shepherd_village_event_snowstorm_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "snowstorm"
+      ],
+      "text": "Cold works quietly around the loom. We are checking on anyone who stayed quiet too long.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "shepherd_village_event_snowstorm_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "snowstorm"
+      ],
+      "text": "I am clearing snow off the fence rails and watching for footprints that stop too soon.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "shepherd_village_event_snowstorm_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "snowstorm"
+      ],
+      "text": "We are alright for now near the loom. Keep the fires fed and the paths open.",
+      "weight": 34,
+      "show_for_babies": false
     }
   ],
   "pacify": [

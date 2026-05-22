@@ -1,4 +1,56 @@
 {
+  "messages": [
+    {
+      "key": "gift_given",
+      "text": "Take {gift_item}. Better to carry thanks before you need steel.",
+      "weight": 24
+    },
+    {
+      "key": "gift_given",
+      "text": "Here, {gift_item}. I trust you to use it with a cooler head than most.",
+      "weight": 24
+    },
+    {
+      "key": "gift_advice_followup.liked",
+      "text": "Good. {gift_item} struck true with {tested_villager}.",
+      "weight": 22
+    },
+    {
+      "key": "gift_advice_followup.liked",
+      "text": "Then the advice kept its edge. {tested_villager} liked {gift_item}.",
+      "weight": 22
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "text": "That blade was poorly balanced. For {gift_subject}, try {alternative_gift}.",
+      "weight": 22
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "text": "{gift_item} missed clean? Bring {alternative_gift}; better weight for the hand.",
+      "weight": 22
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "text": "That advice had a dull edge. Try {alternative_gift}; it should bite better.",
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 20
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "text": "You swung with what I handed you. Next time, choose {alternative_gift}.",
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
+      "weight": 20
+    }
+  ],
   "openings": [
     {
       "id": "weaponsmith_opening",
@@ -93,6 +145,362 @@
         "hostile"
       ],
       "weight": 30
+    },
+    {
+      "id": "weaponsmith_cured_recognition_warm_1",
+      "type": "cured_recognition",
+      "text": "I remember fighting something inside me and losing. You gave me another weapon: morning.",
+      "weight": 30,
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ]
+    },
+    {
+      "id": "weaponsmith_cured_recognition_warm_2",
+      "type": "cured_recognition",
+      "text": "The cure struck true. I remember you standing on the right side of it.",
+      "weight": 30,
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ]
+    },
+    {
+      "id": "weaponsmith_cured_recognition_confused_1",
+      "type": "cured_recognition",
+      "text": "Your face rings like steel, but the battle around it is smoke.",
+      "weight": 30,
+      "dispositions": [
+        "neutral",
+        "cautious"
+      ]
+    },
+    {
+      "id": "weaponsmith_cured_recognition_confused_2",
+      "type": "cured_recognition",
+      "text": "I remember wanting to bite, then wanting to breathe. You were there between them.",
+      "weight": 30,
+      "dispositions": [
+        "neutral",
+        "cautious"
+      ]
+    },
+    {
+      "id": "weaponsmith_cured_recognition_uneasy_1",
+      "type": "cured_recognition",
+      "text": "I remember you, and I remember being dangerous. Do not make me relive either too quickly.",
+      "weight": 30,
+      "dispositions": [
+        "rude",
+        "hostile",
+        "fearful"
+      ]
+    },
+    {
+      "id": "weaponsmith_village_event_thunderstorm_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "Thunder shook the grindstone so hard the blades rang before anyone touched them, but everyone near me is still standing.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "weaponsmith_village_event_thunderstorm_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "I checked blades, axes, and watch posts after the lightning, then counted heads. No one should be alone after a sky like that.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "weaponsmith_village_event_thunderstorm_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "Near the grindstone, the bell sounded small under that thunder. We stayed inside and kept the doors watched.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "weaponsmith_village_event_thunderstorm_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "That thunder made everyone quiet. I checked the weapon racks twice.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "weaponsmith_village_event_thunderstorm_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "text": "The sky can keep its lightning. I have weapon racks to set right.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "weaponsmith_village_event_fire_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "I checked coal, handles, and weapon racks for sparks first, then checked faces for smoke and fear.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "weaponsmith_village_event_fire_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "We passed water hand to hand and kept people away from the smoke. I checked the coal and handles after.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "weaponsmith_village_event_fire_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "The grindstone can wait. People come first.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "weaponsmith_village_event_fire_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "We saved what we could reach around the grindstone, then stopped pretending things matter more than neighbors.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "weaponsmith_village_event_fire_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "The smoke is thinning near the grindstone, but everyone is still sniffing the air like it might lie.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "weaponsmith_village_event_raid_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "During a raid, the grindstone can wait; who makes it behind a door matters more.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "weaponsmith_village_event_raid_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "The horns stopped, but my hands near the grindstone still expect another wave from the road.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "weaponsmith_village_event_raid_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "We counted living neighbors before blades, axes, and watch posts. That is the only count worth starting with.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "weaponsmith_village_event_raid_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "Raiders came looking for easy emeralds. They found barred doors near the grindstone and a bell that would not stop ringing.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "weaponsmith_village_event_raid_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "text": "From the grindstone, I saw fear cross the square; then I saw courage get there first.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "weaponsmith_village_event_night_attack_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "Night trouble tests the loose latch by the grindstone first. We are fixing those before sunset.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "weaponsmith_village_event_night_attack_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "I stayed near the watch post past the torchlight and listened for anyone calling from the dark.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "weaponsmith_village_event_night_attack_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "Dawn gave the grindstone enough light to count wounds, missing blocks, and who made it home.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "weaponsmith_village_event_night_attack_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "The dark tested everyone. Most of us passed by keeping a sharpened edge between us and teeth.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "weaponsmith_village_event_night_attack_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "We are safe enough near the grindstone, though every shadow is being inspected twice.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "weaponsmith_village_event_sandstorm_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "sandstorm"
+      ],
+      "text": "The wind threw sand through every crack. I am still cleaning grit from the edges.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "weaponsmith_village_event_sandstorm_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "sandstorm"
+      ],
+      "text": "I checked blades, axes, and watch posts, then checked who was coughing too hard to answer.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "weaponsmith_village_event_sandstorm_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "sandstorm"
+      ],
+      "text": "Sand reached the grindstone, the hinges, and half our eyes, but no one has been reported missing.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "weaponsmith_village_event_sandstorm_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "sandstorm"
+      ],
+      "text": "A hard wind teaches a weaponsmith which doors actually close and which ones only pretend.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "weaponsmith_village_event_sandstorm_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "sandstorm"
+      ],
+      "text": "We are safe enough near the grindstone, though the whole village sounds like it is chewing gravel.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "weaponsmith_village_event_snowstorm_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "snowstorm"
+      ],
+      "text": "The grindstone can wait. Warm hands, clear paths, and full hearths come first.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "weaponsmith_village_event_snowstorm_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "snowstorm"
+      ],
+      "text": "Snow piled against the doors, but everyone near the grindstone found shelter.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "weaponsmith_village_event_snowstorm_3",
+      "type": "village_event_report",
+      "event_tags": [
+        "snowstorm"
+      ],
+      "text": "Cold works quietly around the grindstone. We are checking on anyone who stayed quiet too long.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "weaponsmith_village_event_snowstorm_4",
+      "type": "village_event_report",
+      "event_tags": [
+        "snowstorm"
+      ],
+      "text": "I am clearing ice off the axe heads and watching for footprints that stop too soon.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "weaponsmith_village_event_snowstorm_5",
+      "type": "village_event_report",
+      "event_tags": [
+        "snowstorm"
+      ],
+      "text": "We are alright for now near the grindstone. Keep the fires fed and the paths open.",
+      "weight": 34,
+      "show_for_babies": false
     }
   ],
   "pacify": [

@@ -7,6 +7,10 @@ import net.minecraft.world.entity.npc.VillagerProfession;
 
 public final class DialogueReputationService {
     private static final long DAY_TICKS = 24000L;
+    private static final int MAP_REPORT_REPUTATION_GAIN = 10;
+    private static final int COMBAT_SURVIVAL_REPORT_REPUTATION_GAIN = 12;
+    private static final int APOLOGY_REPUTATION_GAIN = 4;
+    private static final int VILLAGE_DEFENSE_REPORT_REPUTATION_GAIN = 8;
 
     private DialogueReputationService() {
     }
@@ -16,7 +20,9 @@ public final class DialogueReputationService {
                 || !VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()) {
             return DialogueReputationEffect.none(requestType);
         }
-        if (context.villager().isBaby() && requestType != DialogueRequestType.INSULT) {
+        if (context.villager().isBaby()
+                && requestType != DialogueRequestType.INSULT
+                && requestType != DialogueRequestType.APOLOGY) {
             return DialogueReputationEffect.none(requestType);
         }
 
@@ -86,6 +92,57 @@ public final class DialogueReputationService {
             case GREETING -> planGreeting(context, interactionState.firstConversation());
             case QUESTION -> planQuestion(context);
             case GIFT_PREFERENCES -> PlannedEffect.none();
+            case GIFT_ADVICE_FOLLOWUP -> PlannedEffect.none();
+            case MAP_REPORT -> new PlannedEffect(
+                    MAP_REPORT_REPUTATION_GAIN,
+                    "map_report",
+                    DialogueReputationEffect.CooldownCategory.NONE,
+                    false,
+                    null
+            );
+            case STORY_HINT_REPORT -> new PlannedEffect(
+                    MAP_REPORT_REPUTATION_GAIN,
+                    "story_hint_report",
+                    DialogueReputationEffect.CooldownCategory.NONE,
+                    false,
+                    null
+            );
+            case SHARE_STORY -> new PlannedEffect(
+                    MAP_REPORT_REPUTATION_GAIN,
+                    "share_story",
+                    DialogueReputationEffect.CooldownCategory.NONE,
+                    false,
+                    null
+            );
+            case COMBAT_SURVIVAL_REPORT -> new PlannedEffect(
+                    COMBAT_SURVIVAL_REPORT_REPUTATION_GAIN,
+                    "combat_survival_report",
+                    DialogueReputationEffect.CooldownCategory.NONE,
+                    false,
+                    null
+            );
+            case GEAR_REPORT -> PlannedEffect.none();
+            case RECRUITMENT_FOLLOWUP -> PlannedEffect.none();
+            case CURED_RECOGNITION -> PlannedEffect.none();
+            case VILLAGE_EVENT_REPORT -> PlannedEffect.none();
+            case APOLOGY -> context.hasUnapologizedRememberedHarm()
+                    ? new PlannedEffect(
+                    APOLOGY_REPUTATION_GAIN,
+                    "apology",
+                    DialogueReputationEffect.CooldownCategory.NONE,
+                    false,
+                    null
+            )
+                    : PlannedEffect.none();
+            case VILLAGE_DEFENSE_REPORT -> context.hasUnreportedVillageDefense()
+                    ? new PlannedEffect(
+                    VILLAGE_DEFENSE_REPORT_REPUTATION_GAIN,
+                    "village_defense_report",
+                    DialogueReputationEffect.CooldownCategory.NONE,
+                    false,
+                    null
+            )
+                    : PlannedEffect.none();
             case STORY -> planStory(context);
             case JOKE -> planJoke(context);
             case INSULT -> planInsult(context, interactionState.firstConversation());
@@ -116,7 +173,18 @@ public final class DialogueReputationService {
     }
 
     private static boolean isDialogueOptionExhausted(DialogueContext context, DialogueRequestType requestType, VillagerInteractionTracker.InteractionState interactionState) {
-        if (requestType == DialogueRequestType.INSULT) {
+        if (requestType == DialogueRequestType.INSULT
+                || requestType == DialogueRequestType.MAP_REPORT
+                || requestType == DialogueRequestType.STORY_HINT_REPORT
+                || requestType == DialogueRequestType.SHARE_STORY
+                || requestType == DialogueRequestType.COMBAT_SURVIVAL_REPORT
+                || requestType == DialogueRequestType.GEAR_REPORT
+                || requestType == DialogueRequestType.RECRUITMENT_FOLLOWUP
+                || requestType == DialogueRequestType.CURED_RECOGNITION
+                || requestType == DialogueRequestType.VILLAGE_EVENT_REPORT
+                || requestType == DialogueRequestType.GIFT_ADVICE_FOLLOWUP
+                || requestType == DialogueRequestType.APOLOGY
+                || requestType == DialogueRequestType.VILLAGE_DEFENSE_REPORT) {
             return false;
         }
         int limit = repeatedDialogueLimit(context.reputationLevel());
@@ -202,7 +270,7 @@ public final class DialogueReputationService {
     }
 
     private static boolean isBlockedByCooldown(VillagerInteractionTracker.InteractionState interactionState, PlannedEffect plannedEffect, long day) {
-        if (plannedEffect.delta() < 0) {
+        if (plannedEffect.delta() < 0 || plannedEffect.cooldownCategory() == DialogueReputationEffect.CooldownCategory.NONE) {
             return false;
         }
         return !hasDayCooldownElapsed(
