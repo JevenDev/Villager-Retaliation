@@ -1,14 +1,20 @@
 package com.jvn.villagerretaliation.dialogue;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderSet;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.level.levelgen.structure.Structure;
 
 public final class VillagerInteractionTracker {
     private VillagerInteractionTracker() {
@@ -16,7 +22,7 @@ public final class VillagerInteractionTracker {
 
     public static InteractionState getState(ServerLevel level, Villager villager, ServerPlayer player) {
         VillagerInteractionSavedData.InteractionEntry entry = VillagerInteractionSavedData.get(level)
-                .getOrCreate(villager.getUUID(), player.getUUID());
+                .getOrEmptyForRead(villager.getUUID(), player.getUUID());
         long gameTime = level.getGameTime();
         long day = level.getDayTime() / 24000L;
         long optionResetTicks = VillagerRetaliationConfig.REPEATED_DIALOGUE_OPTION_RESET_TICKS.get();
@@ -91,9 +97,14 @@ public final class VillagerInteractionTracker {
 
     public static List<CartographerMapReport> markCartographerMapDiscoveriesNear(ServerLevel level, ServerPlayer player, double radius) {
         VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
+        Map<ResourceLocation, Boolean> structuresAtPlayer = new HashMap<>();
         List<CartographerMapReport> discoveries = data.markCartographerMapDiscoveriesNear(
                 player.getUUID(),
                 level.dimension().location(),
+                structureId -> structuresAtPlayer.computeIfAbsent(
+                        structureId,
+                        id -> isPlayerInsideStructure(level, player.blockPosition(), id)
+                ),
                 player.getX(),
                 player.getZ(),
                 radius * radius,
@@ -128,8 +139,21 @@ public final class VillagerInteractionTracker {
             String targetName,
             BlockPos targetPos,
             long expiresAtGameTime) {
+        rememberStoryHint(level, villager, player, kind, targetId, targetName, targetPos, expiresAtGameTime, 0);
+    }
+
+    public static void rememberStoryHint(
+            ServerLevel level,
+            Villager villager,
+            ServerPlayer player,
+            StoryHintKind kind,
+            ResourceLocation targetId,
+            String targetName,
+            BlockPos targetPos,
+            long expiresAtGameTime,
+            int discoveryRadius) {
         VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
-        data.rememberStoryHint(
+        if (data.rememberStoryHint(
                 villager.getUUID(),
                 player.getUUID(),
                 level.dimension().location(),
@@ -138,9 +162,11 @@ public final class VillagerInteractionTracker {
                 targetName,
                 targetPos,
                 expiresAtGameTime,
+                discoveryRadius,
                 level.getGameTime()
-        );
-        data.setDirty();
+        )) {
+            data.setDirty();
+        }
     }
 
     public static List<StoryHintReport> markStoryHintDiscoveriesNear(
@@ -149,10 +175,15 @@ public final class VillagerInteractionTracker {
             ResourceLocation currentBiomeId,
             double radius) {
         VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
+        Map<ResourceLocation, Boolean> structuresAtPlayer = new HashMap<>();
         List<StoryHintReport> discoveries = data.markStoryHintDiscoveriesNear(
                 player.getUUID(),
                 level.dimension().location(),
                 currentBiomeId,
+                structureId -> structuresAtPlayer.computeIfAbsent(
+                        structureId,
+                        id -> isPlayerInsideStructure(level, player.blockPosition(), id)
+                ),
                 player.getX(),
                 player.getZ(),
                 radius * radius,
@@ -171,10 +202,15 @@ public final class VillagerInteractionTracker {
             double mapRadius,
             double storyRadius) {
         VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
+        Map<ResourceLocation, Boolean> structuresAtPlayer = new HashMap<>();
         DiscoveryReports reports = data.markDiscoveriesNear(
                 player.getUUID(),
                 level.dimension().location(),
                 currentBiomeId,
+                structureId -> structuresAtPlayer.computeIfAbsent(
+                        structureId,
+                        id -> isPlayerInsideStructure(level, player.blockPosition(), id)
+                ),
                 player.getX(),
                 player.getZ(),
                 mapRadius * mapRadius,
@@ -185,6 +221,17 @@ public final class VillagerInteractionTracker {
             data.setDirty();
         }
         return reports;
+    }
+
+    private static boolean isPlayerInsideStructure(ServerLevel level, BlockPos playerPos, ResourceLocation structureId) {
+        ResourceKey<Structure> structureKey = ResourceKey.create(Registries.STRUCTURE, structureId);
+        return level.registryAccess()
+                .registryOrThrow(Registries.STRUCTURE)
+                .getHolder(structureKey)
+                .map(holder -> level.structureManager()
+                        .getStructureWithPieceAt(playerPos, HolderSet.direct(holder))
+                        .isValid())
+                .orElse(false);
     }
 
     public static Optional<StoryHintReport> unreportedStoryHintDiscovery(ServerLevel level, Villager villager, ServerPlayer player) {
@@ -211,7 +258,7 @@ public final class VillagerInteractionTracker {
             BlockPos targetPos,
             long expiresAtGameTime) {
         VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
-        data.rememberShareableStory(
+        if (data.rememberShareableStory(
                 villager.getUUID(),
                 player.getUUID(),
                 level.dimension().location(),
@@ -221,8 +268,9 @@ public final class VillagerInteractionTracker {
                 targetPos,
                 expiresAtGameTime,
                 level.getGameTime()
-        );
-        data.setDirty();
+        )) {
+            data.setDirty();
+        }
     }
 
     public static Optional<StoryHintReport> shareableStory(ServerLevel level, Villager villager, ServerPlayer player) {
@@ -407,13 +455,13 @@ public final class VillagerInteractionTracker {
 
     public static long lastReputationGameTime(ServerLevel level, Villager villager, ServerPlayer player, DialogueRequestType requestType) {
         return VillagerInteractionSavedData.get(level)
-                .getOrCreate(villager.getUUID(), player.getUUID())
+                .getOrEmptyForRead(villager.getUUID(), player.getUUID())
                 .lastReputationGameTime(requestType);
     }
 
     public static long lastDialogueGameTime(ServerLevel level, Villager villager, ServerPlayer player, DialogueRequestType requestType) {
         return VillagerInteractionSavedData.get(level)
-                .getOrCreate(villager.getUUID(), player.getUUID())
+                .getOrEmptyForRead(villager.getUUID(), player.getUUID())
                 .lastDialogueGameTime(requestType);
     }
 
@@ -441,7 +489,7 @@ public final class VillagerInteractionTracker {
 
     public static boolean hasDisturbedSleepThisNight(ServerLevel level, Villager villager, ServerPlayer player, long night) {
         return VillagerInteractionSavedData.get(level)
-                .getOrCreate(villager.getUUID(), player.getUUID())
+                .getOrEmptyForRead(villager.getUUID(), player.getUUID())
                 .hasDisturbedSleepThisNight(night);
     }
 

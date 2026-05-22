@@ -7,6 +7,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
@@ -24,8 +25,7 @@ public final class VillageEventMemory {
     }
 
     public static void remember(ServerLevel level, EventTag tag, BlockPos pos, Entity source, Entity player) {
-        ArrayDeque<MemoryEvent> events = EVENTS.computeIfAbsent(level.dimension(), ignored -> new ArrayDeque<>());
-        events.addLast(new MemoryEvent(
+        remember(level, new MemoryEvent(
                 tag,
                 level.getGameTime(),
                 pos.immutable(),
@@ -34,7 +34,6 @@ public final class VillageEventMemory {
                 null,
                 null
         ));
-        prune(level);
     }
 
     public static void rememberGift(
@@ -46,8 +45,7 @@ public final class VillageEventMemory {
             String itemName,
             VillagerGiftPreferences.GiftReaction reaction,
             int reputationValue) {
-        ArrayDeque<MemoryEvent> events = EVENTS.computeIfAbsent(level.dimension(), ignored -> new ArrayDeque<>());
-        events.addLast(new MemoryEvent(
+        remember(level, new MemoryEvent(
                 giftTag(reaction),
                 level.getGameTime(),
                 pos.immutable(),
@@ -56,7 +54,6 @@ public final class VillageEventMemory {
                 new GiftMemory(villagerName, itemName, reaction, reputationValue),
                 null
         ));
-        prune(level);
     }
 
     public static void rememberCuredVillager(
@@ -65,8 +62,7 @@ public final class VillageEventMemory {
             Entity villager,
             UUID playerId,
             String villagerName) {
-        ArrayDeque<MemoryEvent> events = EVENTS.computeIfAbsent(level.dimension(), ignored -> new ArrayDeque<>());
-        events.addLast(new MemoryEvent(
+        remember(level, new MemoryEvent(
                 EventTag.PLAYER_CURED_VILLAGER,
                 level.getGameTime(),
                 pos.immutable(),
@@ -75,7 +71,6 @@ public final class VillageEventMemory {
                 null,
                 new CuredVillagerMemory(villagerName)
         ));
-        prune(level);
     }
 
     public static List<MemoryEvent> recentNear(ServerLevel level, BlockPos pos) {
@@ -94,6 +89,16 @@ public final class VillageEventMemory {
         return relevant;
     }
 
+    private static void remember(ServerLevel level, MemoryEvent event) {
+        Objects.requireNonNull(level, "level");
+        Objects.requireNonNull(event, "event");
+        Objects.requireNonNull(event.tag(), "event tag");
+        Objects.requireNonNull(event.pos(), "event position");
+        ArrayDeque<MemoryEvent> events = EVENTS.computeIfAbsent(level.dimension(), ignored -> new ArrayDeque<>());
+        events.addLast(event);
+        prune(level);
+    }
+
     private static void prune(ServerLevel level) {
         ArrayDeque<MemoryEvent> events = EVENTS.get(level.dimension());
         if (events == null) {
@@ -107,8 +112,36 @@ public final class VillageEventMemory {
     }
 
     public static boolean hasAny(List<MemoryEvent> events, EventTag... tags) {
-        EnumSet<EventTag> wanted = EnumSet.copyOf(List.of(tags));
+        if (events == null || events.isEmpty() || tags == null || tags.length == 0) {
+            return false;
+        }
+        EnumSet<EventTag> wanted = wantedTags(tags);
+        if (wanted.isEmpty()) {
+            return false;
+        }
         return events.stream().anyMatch(event -> wanted.contains(event.tag()));
+    }
+
+    public static boolean hasAnyForPlayer(List<MemoryEvent> events, UUID playerId, EventTag... tags) {
+        if (playerId == null || events == null || events.isEmpty() || tags == null || tags.length == 0) {
+            return false;
+        }
+        EnumSet<EventTag> wanted = wantedTags(tags);
+        if (wanted.isEmpty()) {
+            return false;
+        }
+        return events.stream().anyMatch(event ->
+                playerId.equals(event.playerId()) && wanted.contains(event.tag()));
+    }
+
+    private static EnumSet<EventTag> wantedTags(EventTag... tags) {
+        EnumSet<EventTag> wanted = EnumSet.noneOf(EventTag.class);
+        for (EventTag tag : tags) {
+            if (tag != null) {
+                wanted.add(tag);
+            }
+        }
+        return wanted;
     }
 
     public enum EventTag {

@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.inventory;
 
+import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import java.util.ArrayList;
@@ -164,6 +165,9 @@ public final class VillagerGiftReturnTracker {
         ServerLevel level = player.serverLevel();
         List<GiftLedgerEntry> entries = loadEntries(level, villager);
         boolean changed = false;
+        ItemStack firstReturnedStack = ItemStack.EMPTY;
+        int returnedCount = 0;
+        boolean stolenGift = false;
         for (GiftLedgerEntry entry : entries) {
             if (entry.count() <= 0 || entry.reputation() <= 0) {
                 continue;
@@ -178,7 +182,8 @@ public final class VillagerGiftReturnTracker {
             int revokedReputation = revokedReputation(entry, removedCount);
             entry.remove(removedCount, revokedReputation);
             decrease.remove(removedCount);
-            int extraPenalty = entry.playerId().equals(player.getUUID())
+            boolean returnedByGiver = entry.playerId().equals(player.getUUID());
+            int extraPenalty = returnedByGiver
                     ? RETURNED_GIFT_EXTRA_PENALTY
                     : STOLEN_GIFT_EXTRA_PENALTY;
             VillagerReputationManager.addGiftReputation(
@@ -188,6 +193,13 @@ public final class VillagerGiftReturnTracker {
                     -(revokedReputation + extraPenalty)
             );
             VillagerReputationAdvancements.onGiftTakenBack(player);
+            if (firstReturnedStack.isEmpty()) {
+                firstReturnedStack = entry.stack().copy();
+                returnedCount = removedCount;
+            } else if (isSameTrackedGiftItem(firstReturnedStack, entry.stack())) {
+                returnedCount += removedCount;
+            }
+            stolenGift |= !returnedByGiver;
             changed = true;
         }
 
@@ -195,6 +207,7 @@ public final class VillagerGiftReturnTracker {
             entries.removeIf(entry -> entry.count() <= 0 || entry.reputation() <= 0 || entry.stack().isEmpty());
             saveEntries(level, villager, entries);
             stripGiftTrackingFromPlayerInventory(player);
+            VillagerInteractionService.sendGiftTakenBackDialogue(player, villager, firstReturnedStack, returnedCount, stolenGift);
         }
     }
 

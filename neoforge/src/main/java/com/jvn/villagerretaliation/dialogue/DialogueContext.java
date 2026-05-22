@@ -53,11 +53,7 @@ public record DialogueContext(
     }
 
     public boolean hasRecentPlayerEvent(VillageEventMemory.EventTag... tags) {
-        UUID playerId = this.player.getUUID();
-        return this.recentEvents.stream().anyMatch(event ->
-                event.playerId() != null
-                        && event.playerId().equals(playerId)
-                        && java.util.List.of(tags).contains(event.tag()));
+        return VillageEventMemory.hasAnyForPlayer(this.recentEvents, this.player.getUUID(), tags);
     }
 
     public Optional<VillageEventMemory.MemoryEvent> recentGiftToThisVillager() {

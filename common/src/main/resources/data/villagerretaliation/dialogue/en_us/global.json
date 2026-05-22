@@ -5,14 +5,14 @@
       "label": "Small Talk",
       "type": "chat",
       "show_for_babies": false,
-      "order": 0
+      "order": 1
     },
     {
       "id": "adult_greeting",
       "label": "Greet",
       "type": "greeting",
       "show_for_babies": false,
-      "order": 1
+      "order": 0
     },
     {
       "id": "adult_question",
@@ -524,6 +524,36 @@
       "key": "gift_given",
       "text": "{gift_item} should serve you well. Consider it thanks from this village.",
       "weight": 18
+    },
+    {
+      "key": "gift_taken_back.returned",
+      "text": "So the {gift_item} was only kindness on loan?",
+      "weight": 18
+    },
+    {
+      "key": "gift_taken_back.returned",
+      "text": "You gave me {gift_item}, then took it back. I will remember both parts.",
+      "weight": 18
+    },
+    {
+      "key": "gift_taken_back.returned",
+      "text": "A gift loses its warmth when it walks away in your hands.",
+      "weight": 14
+    },
+    {
+      "key": "gift_taken_back.stolen",
+      "text": "That {gift_item} was not yours to take.",
+      "weight": 18
+    },
+    {
+      "key": "gift_taken_back.stolen",
+      "text": "Taking another person's gift from my keeping is a poor kind of bold.",
+      "weight": 18
+    },
+    {
+      "key": "gift_taken_back.stolen",
+      "text": "I know what was given to me. I also know who just took it.",
+      "weight": 14
     },
     {
       "key": "story_hint.biome.vague",

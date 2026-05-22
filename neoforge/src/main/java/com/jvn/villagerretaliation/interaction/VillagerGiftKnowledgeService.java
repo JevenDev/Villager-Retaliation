@@ -66,8 +66,9 @@ public final class VillagerGiftKnowledgeService {
         boolean liked = selection.claimedLiked();
         String knowledgeKey = discovered.professionSpecific() ? professionKey : GLOBAL_PROFESSION_KEY;
         if (selection.truthful()) {
-            data.rememberGiftKnowledge(player.getUUID(), knowledgeKey, itemId, discovered.positive());
-            data.setDirty();
+            if (data.rememberGiftKnowledge(player.getUUID(), knowledgeKey, itemId, discovered.positive())) {
+                data.setDirty();
+            }
         }
         if (liked) {
             VillagerInteractionTracker.rememberGiftAdvice(
@@ -133,8 +134,9 @@ public final class VillagerGiftKnowledgeService {
 
         String knowledgeKey = giftPreference.professionSpecific() ? professionKey(profession) : GLOBAL_PROFESSION_KEY;
         VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
-        data.rememberGiftKnowledge(player.getUUID(), knowledgeKey, itemId(giftedStack.getItem()), liked);
-        data.setDirty();
+        if (data.rememberGiftKnowledge(player.getUUID(), knowledgeKey, itemId(giftedStack.getItem()), liked)) {
+            data.setDirty();
+        }
     }
 
     public static Optional<String> randomLikedGiftName(

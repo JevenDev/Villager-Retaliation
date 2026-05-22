@@ -41,6 +41,8 @@ public final class VillagerStoryHintService {
     private static final long CARTOGRAPHER_MAP_COOLDOWN_TICKS = 20L * 60L * 20L * 2L;
     private static final long CARTOGRAPHER_MAP_DISCOVERY_TICKS = 20L * 60L * 60L * 6L;
     private static final long STORY_HINT_DISCOVERY_TICKS = 20L * 60L * 60L * 6L;
+    private static final int BIOME_HINT_DISCOVERY_RADIUS = 256;
+    private static final int STRUCTURE_HINT_DISCOVERY_RADIUS = 128;
     private static final double MIN_TARGET_SEPARATION_SQR = 96.0D * 96.0D;
     private static final Map<HintCacheKey, CachedLookup> CACHE = new HashMap<>();
     private static final Map<CartographerMapGiftKey, Long> CARTOGRAPHER_MAP_GIFTS = new HashMap<>();
@@ -318,8 +320,21 @@ public final class VillagerStoryHintService {
                 target.id(),
                 targetName,
                 target.pos(),
-                context.level().getGameTime() + STORY_HINT_DISCOVERY_TICKS
+                context.level().getGameTime() + STORY_HINT_DISCOVERY_TICKS,
+                discoveryRadiusFor(context, target)
         );
+    }
+
+    private static int discoveryRadiusFor(DialogueContext context, CachedTarget target) {
+        if (target.kind() == HintKind.BIOME) {
+            return BIOME_HINT_DISCOVERY_RADIUS;
+        }
+        return DangerousStructureStoryResources.entries(context.level().getServer())
+                .stream()
+                .filter(entry -> entry.structureId().equals(target.id()))
+                .findFirst()
+                .map(DangerousStructureStoryResources.Entry::radius)
+                .orElse(STRUCTURE_HINT_DISCOVERY_RADIUS);
     }
 
     private static boolean maybeGiveCartographerMap(DialogueContext context, CachedTarget target, String targetName) {
