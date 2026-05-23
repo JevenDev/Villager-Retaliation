@@ -92,6 +92,8 @@ insult
 | `order` | integer | array index | Lower values appear earlier. |
 | `professions` | string or array | any | Filters by villager profession. |
 | `dispositions` | string or array | any | Filters by mood/disposition. |
+| `player_items` | string or array | none | Requires the player to have one matching item or item tag. Prefix tags with `#`. |
+| `player_item_slots` | string or array | `hands` when `player_items` is set | Slots to check: `main_hand`, `off_hand`, `hands`, `armor`, `hotbar`, `inventory`, `equipment`, or `any`. |
 | `show_for_adults` | boolean | `true` | Adult visibility. |
 | `show_for_babies` | boolean | `true` | Baby visibility. |
 | `requires_unreported_cartographer_map_discovery` | boolean | `false` | Shows after an unreported cartographer map discovery. |
@@ -121,6 +123,8 @@ insult
 | `times` | string or array | any | `morning`, `afternoon`, `evening`, or `night`. |
 | `event_tags` | string or array | any | Requires a recent nearby event with a matching tag. |
 | `player_event_tags` | string or array | any | Requires a recent event associated with the player. |
+| `player_items` | string or array | none | Requires the player to have one matching item or item tag. Prefix tags with `#`. |
+| `player_item_slots` | string or array | `hands` when `player_items` is set | Slots to check: `main_hand`, `off_hand`, `hands`, `armor`, `hotbar`, `inventory`, `equipment`, or `any`. |
 | `story_structure` | string or array | any | Restricts `share_story` to one structure id. |
 | `story_structures` | string or array | any | Multiple structure ids. |
 | `story_biome` | string or array | any | Restricts `share_story` to one biome id. |
@@ -142,6 +146,36 @@ insult
 | `show_for_adults` | boolean | `true` | Adult visibility. |
 | `show_for_babies` | boolean | `true` | Baby visibility. |
 | `weight` | integer | `10` | Weighted selection. |
+
+Player item filters can also use singular aliases `player_item`, `player_item_tag`, and `player_item_slot`. Dialogue text can use `{player_item}`, `{held_item}`, `{player_item_id}`, `{held_item_id}`, `{player_item_slot}`, and `{held_item_slot}` when the selected line has a player item filter.
+
+Example option and line for a player holding a sword:
+
+```json
+{
+  "options": [
+    {
+      "id": "ask_about_weapon",
+      "label": "About my weapon",
+      "type": "question",
+      "player_items": ["#minecraft:swords"],
+      "player_item_slots": ["main_hand"],
+      "order": 8
+    }
+  ],
+  "lines": [
+    {
+      "id": "weapon_warning_1",
+      "type": "question",
+      "option": "ask_about_weapon",
+      "player_items": ["#minecraft:swords"],
+      "player_item_slots": ["main_hand"],
+      "text": "Careful where you point {held_item}.",
+      "weight": 20
+    }
+  ]
+}
+```
 
 ## Gift Advice Kinds
 

@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.dialogue;
 
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
+import com.jvn.villagerretaliation.util.VillagerPlayerItemCondition;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import java.util.EnumSet;
 import java.util.Set;
@@ -20,6 +21,7 @@ public record DialogueLine(
         Set<DialogueContext.TimeOfDay> timeOfDays,
         Set<VillageEventMemory.EventTag> eventTags,
         Set<VillageEventMemory.EventTag> playerEventTags,
+        VillagerPlayerItemCondition playerItemCondition,
         Set<ResourceLocation> storyTargetIds,
         boolean requiresRecentBrokenBedMemory,
         boolean requiresRecentDirectHitMemory,
@@ -96,6 +98,9 @@ public record DialogueLine(
             return false;
         }
         if (!this.playerEventTags.isEmpty() && !context.hasRecentPlayerEvent(this.playerEventTags.toArray(VillageEventMemory.EventTag[]::new))) {
+            return false;
+        }
+        if (!this.playerItemCondition.matches(context.player())) {
             return false;
         }
         if (!this.storyTargetIds.isEmpty()
@@ -232,6 +237,9 @@ public record DialogueLine(
         if (!this.playerEventTags.isEmpty()) {
             score += 5;
         }
+        if (!this.playerItemCondition.isEmpty()) {
+            score += 5;
+        }
         if (!this.storyTargetIds.isEmpty()) {
             score += 8;
         }
@@ -305,6 +313,7 @@ public record DialogueLine(
         private final Set<DialogueContext.TimeOfDay> timeOfDays = EnumSet.noneOf(DialogueContext.TimeOfDay.class);
         private final Set<VillageEventMemory.EventTag> eventTags = EnumSet.noneOf(VillageEventMemory.EventTag.class);
         private final Set<VillageEventMemory.EventTag> playerEventTags = EnumSet.noneOf(VillageEventMemory.EventTag.class);
+        private VillagerPlayerItemCondition playerItemCondition = VillagerPlayerItemCondition.empty();
         private final Set<ResourceLocation> storyTargetIds = new java.util.HashSet<>();
         private boolean requiresRecentBrokenBedMemory;
         private boolean requiresRecentDirectHitMemory;
@@ -386,6 +395,13 @@ public record DialogueLine(
 
         public Builder playerEventTags(VillageEventMemory.EventTag... eventTags) {
             this.playerEventTags.addAll(java.util.List.of(eventTags));
+            return this;
+        }
+
+        public Builder playerItemCondition(VillagerPlayerItemCondition playerItemCondition) {
+            this.playerItemCondition = playerItemCondition == null
+                    ? VillagerPlayerItemCondition.empty()
+                    : playerItemCondition;
             return this;
         }
 
@@ -615,6 +631,7 @@ public record DialogueLine(
                     Set.copyOf(this.timeOfDays),
                     Set.copyOf(this.eventTags),
                     Set.copyOf(this.playerEventTags),
+                    this.playerItemCondition,
                     Set.copyOf(this.storyTargetIds),
                     this.requiresRecentBrokenBedMemory,
                     this.requiresRecentDirectHitMemory,

@@ -79,12 +79,12 @@ public final class VillagerDialogueService {
         for (DialogueLine candidate : candidates) {
             selected -= effectiveWeight(candidate);
             if (selected < 0) {
-                return new DialogueResult(candidate.id(), resolveText(candidate.text(), context));
+                return new DialogueResult(candidate.id(), resolveText(candidate, context));
             }
         }
 
         DialogueLine fallback = candidates.getLast();
-        return new DialogueResult(fallback.id(), resolveText(fallback.text(), context));
+        return new DialogueResult(fallback.id(), resolveText(fallback, context));
     }
 
     public static String selectOpeningGreeting(DialogueContext context) {
@@ -430,6 +430,13 @@ public final class VillagerDialogueService {
                 .replace("{extended_relative_possessive}", toPossessive(context.familyTree().firstExtendedRelative()))
                 .replace("{relative}", context.familyTree().firstRelative())
                 .replace("{relative_possessive}", toPossessive(context.familyTree().firstRelative()));
+    }
+
+    private static String resolveText(DialogueLine line, DialogueContext context) {
+        return VillagerDialogueResources.resolveTemplate(
+                resolveText(line.text(), context),
+                line.playerItemCondition().replacements(context.player())
+        );
     }
 
     private static String curedVillagerName(DialogueContext context) {

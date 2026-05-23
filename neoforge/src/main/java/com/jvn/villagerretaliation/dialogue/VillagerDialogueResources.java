@@ -8,6 +8,7 @@ import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.combat.PacifyPaymentOffer;
 import com.jvn.villagerretaliation.combat.VillagerPacificationResult;
 import com.jvn.villagerretaliation.util.VillagerLocale;
+import com.jvn.villagerretaliation.util.VillagerPlayerItemCondition;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import java.io.IOException;
 import java.io.Reader;
@@ -357,6 +358,7 @@ public final class VillagerDialogueResources {
             boolean showForBabies = readBoolean(entry, "show_for_babies", true);
             Set<VillagerProfession> professions = readProfessions(entry, defaultProfessions);
             Set<DialogueDisposition> dispositions = readEnumSet(entry, "dispositions", DialogueDisposition.class);
+            VillagerPlayerItemCondition playerItemCondition = VillagerPlayerItemCondition.read(entry);
             boolean requiresUnreportedCartographerMapDiscovery = readBoolean(entry, "requires_unreported_cartographer_map_discovery");
             boolean requiresUnreportedStoryHintDiscovery = readBoolean(entry, "requires_unreported_story_hint_discovery");
             boolean requiresUnreportedCombatSurvivalReport = readBoolean(entry, "requires_unreported_combat_survival_report");
@@ -399,6 +401,7 @@ public final class VillagerDialogueResources {
                     showForBabies,
                     professions,
                     dispositions,
+                    playerItemCondition,
                     requiresUnreportedCartographerMapDiscovery,
                     requiresUnreportedStoryHintDiscovery,
                     requiresUnreportedCombatSurvivalReport,
@@ -599,6 +602,11 @@ public final class VillagerDialogueResources {
         Set<VillageEventMemory.EventTag> playerEventTags = readEnumSet(entry, "player_event_tags", VillageEventMemory.EventTag.class);
         if (!playerEventTags.isEmpty()) {
             builder.playerEventTags(playerEventTags.toArray(VillageEventMemory.EventTag[]::new));
+        }
+
+        VillagerPlayerItemCondition playerItemCondition = VillagerPlayerItemCondition.read(entry);
+        if (!playerItemCondition.isEmpty()) {
+            builder.playerItemCondition(playerItemCondition);
         }
 
         List<ResourceLocation> storyTargetIds = new ArrayList<>();

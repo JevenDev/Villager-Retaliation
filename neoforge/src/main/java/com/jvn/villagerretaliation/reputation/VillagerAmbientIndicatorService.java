@@ -51,7 +51,25 @@ public final class VillagerAmbientIndicatorService {
         }
 
         Player player = findMurmurTarget(level, villager);
-        if (player == null || villager.getRandom().nextInt(100) >= 30) {
+        if (player == null) {
+            delayNextMurmur(villager, gameTime, 3);
+            return;
+        }
+
+        if (VillagerNotifications.sendWorldText(
+                level,
+                villager,
+                player,
+                "ambient.player_item",
+                Map.of(),
+                VillagerWorldTextIndicatorKind.MURMUR,
+                "")) {
+            delayNextMurmur(villager, gameTime, 10 + villager.getRandom().nextInt(12));
+            pruneCooldowns(gameTime);
+            return;
+        }
+
+        if (villager.getRandom().nextInt(100) >= 30) {
             delayNextMurmur(villager, gameTime, 3);
             return;
         }
