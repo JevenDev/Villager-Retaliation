@@ -7,11 +7,13 @@ Notifications JSON controls short HUD messages and ambient world text above vill
 Notification files must be in the `villagerretaliation` namespace and include a locale:
 
 ```text
-data/villagerretaliation/notifications/en_us/global.json
-data/villagerretaliation/notifications/fr_fr/global.json
+data/villagerretaliation/notifications/en_us/my_pack_notifications.json
+data/villagerretaliation/notifications/fr_fr/my_pack_notifications.json
 ```
 
 The mod loads `en_us` first, then overlays the player's locale. Matching `id` values replace earlier definitions.
+
+Use a unique file name for addon notifications. A datapack file at `data/villagerretaliation/notifications/en_us/global.json` replaces the mod's built-in `global.json`, which can hide default notification text. Only use that exact path when you intentionally want a full-file override.
 
 ## Minimal Notification
 
@@ -46,6 +48,8 @@ The mod loads `en_us` first, then overlays the player's locale. Matching `id` va
 | `reputation_levels` | string or array | any | Reputation tier filter. |
 | `min_reputation` | integer | none | Minimum exact reputation. |
 | `max_reputation` | integer | none | Maximum exact reputation. |
+| `player_items` | string or array | none | Requires the player to have one matching item or item tag. Prefix tags with `#`. |
+| `player_item_slots` | string or array | `hands` when `player_items` is set | Slots to check: `main_hand`, `off_hand`, `hands`, `armor`, `hotbar`, `inventory`, `equipment`, or `any`. |
 | `show_for_adults` | boolean | `true` | Adult visibility. |
 | `show_for_babies` | boolean | `true` | Baby visibility. |
 | `weight` | integer | `10` | Weighted selection. |
@@ -95,9 +99,10 @@ The built-in notification file uses these trigger families:
 | Discovery | `dialogue.map.found`, `dialogue.rumor.found` |
 | Recruitment | `recruitment.follow_start`, `recruitment.follow_stop`, `recruitment.hired`, `recruitment.fired`, `recruitment.follower_death`, `recruitment.hired_death`, `recruitment.betrayed_follower_death` |
 | Reputation tiers | `reputation.tier.<level>.improved`, `reputation.tier.<level>.worsened` |
-| Ambient | `ambient.murmur`, `ambient.sleep_breathing`, `ambient.sleep_murmur` |
+| Ambient | `ambient.murmur`, `ambient.player_item`, `ambient.sleep_breathing`, `ambient.sleep_murmur` |
+| Combat | `combat.player_killed` |
 | Trade | `trade.completed`, `trade.refused` |
-| Alerts | `alert.villager_damaged`, `alert.witness_attack.player`, `alert.witness_attack`, `alert.witness_death.player`, `alert.witness_death` |
+| Alerts | `alert.player_attacked_villager`, `alert.villager_damaged`, `alert.witness_attack.player`, `alert.witness_attack`, `alert.witness_death.player`, `alert.witness_death` |
 
 For reputation tiers, `<level>` is one of:
 
@@ -126,6 +131,12 @@ Placeholder support depends on the trigger. Common built-in notification placeho
 
 Unknown placeholders are left as literal text.
 
+Player item filtered notifications can use `{player_item}`, `{held_item}`, `{player_item_id}`, `{held_item_id}`, `{player_item_slot}`, and `{held_item_slot}`. The singular aliases `player_item`, `player_item_tag`, and `player_item_slot` are also accepted as fields.
+
+Alert world text supports `{player}`, `{attacker}`, `{villager}`, `{villager_name}`, `{villager_kind}`, and `{profession}`. Use `alert.player_attacked_villager` for an immediate response from the damaged villager when the attacker is a player. If no entry matches, it falls back to `alert.villager_damaged`.
+
+`combat.player_killed` is emitted as world text above the villager or wandering trader credited with killing a player. It supports `{player}`, `{victim}`, `{villager}`, `{villager_name}`, `{villager_kind}`, and `{profession}`.
+
 ## Ambient World Text Example
 
 ```json
@@ -141,6 +152,25 @@ Unknown placeholders are left as literal text.
       "reputation_levels": ["trusted", "respected", "revered", "royalty"],
       "weight": 25,
       "chance": 0.5
+    }
+  ]
+}
+```
+
+## Player Item Example
+
+```json
+{
+  "notifications": [
+    {
+      "id": "my_pack.sword_warning",
+      "trigger": "ambient.player_item",
+      "text": "Easy with {held_item}.",
+      "world_text_kind": "alert",
+      "color": "#FFD166",
+      "player_items": ["#minecraft:swords"],
+      "player_item_slots": ["main_hand"],
+      "weight": 20
     }
   ]
 }
@@ -163,4 +193,3 @@ Unknown placeholders are left as literal text.
 ```
 
 Use the same `id` as the fallback entry to replace it for that locale.
-

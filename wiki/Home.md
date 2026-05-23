@@ -1,6 +1,6 @@
 # Villager Retaliation Wiki
 
-Villager Retaliation is data-driven in the places pack makers usually want to touch: dialogue, notifications, gifts, story discoveries, villager names, and combat villager models. This wiki is written for JSON authors, datapack authors, resource-pack authors, and modpack developers who want predictable hooks without touching Java.
+Villager Retaliation is data-driven in the places pack makers usually want to touch: dialogue, notifications, gifts, pacification payments, story discoveries, villager names, and combat villager models. This wiki is written for JSON authors, datapack authors, resource-pack authors, and modpack developers who want predictable hooks without touching Java.
 
 ## Quick Links
 
@@ -9,6 +9,7 @@ Villager Retaliation is data-driven in the places pack makers usually want to to
 - [Dialogue JSON](Dialogue.md) - conversation options, dialogue lines, openings, closings, pacify lines, keyed messages, localization overlays, and story placeholders.
 - [Notifications JSON](Notifications.md) - HUD notifications, ambient world text, trigger ids, colors, notice kinds, filters, and translated replacements.
 - [Gift JSON](Gifts.md) - gift preferences, reactions, item and tag selectors, profession overrides, priority, and high-reputation rewards.
+- [Pacification JSON](Pacification.md) - item or tag payments, modded currencies, costs, and profession-specific pacify rules.
 - [Story Discovery JSON](Story-Discovery.md) - structure and biome discovery lists used by `share_story` dialogue.
 - [Villager Names](Villager-Names.md) - replacing the preset name pool.
 - [Resource Pack Models And Textures](Resource-Pack-Models.md) - combat textures, combat model JSON, non-combat model opt-in, and EMF compatibility.
@@ -21,6 +22,7 @@ Villager Retaliation is data-driven in the places pack makers usually want to to
 | Dialogue | Datapack | `data/villagerretaliation/dialogue/<locale>/` |
 | Notifications and world text | Datapack | `data/villagerretaliation/notifications/<locale>/` |
 | Gifts and rewards | Datapack | `data/villagerretaliation/gifts/` |
+| Pacification payments | Datapack | `data/villagerretaliation/pacification/` |
 | Story structures | Datapack | `data/<namespace>/story_structures/` |
 | Story biomes | Datapack | `data/<namespace>/story_biomes/` |
 | Preset villager names | Datapack | `data/villagerretaliation/villager_names/preset_names.json` |
@@ -38,4 +40,3 @@ Villager Retaliation is data-driven in the places pack makers usually want to to
 ## Compatibility Notes
 
 Villager Retaliation is built around vanilla villager systems. The JSON files in this wiki add, replace, or filter mod-provided data; they do not register new villager professions, items, entities, structures, or biomes by themselves. Use normal Minecraft datapack, resource-pack, or mod systems for that, then reference the resulting ids from Villager Retaliation JSON.
-

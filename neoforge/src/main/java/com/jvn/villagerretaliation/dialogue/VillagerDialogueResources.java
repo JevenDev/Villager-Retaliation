@@ -5,8 +5,10 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.VillagerRetaliation;
+import com.jvn.villagerretaliation.combat.PacifyPaymentOffer;
 import com.jvn.villagerretaliation.combat.VillagerPacificationResult;
 import com.jvn.villagerretaliation.util.VillagerLocale;
+import com.jvn.villagerretaliation.util.VillagerPlayerItemCondition;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import java.io.IOException;
 import java.io.Reader;
@@ -143,7 +145,7 @@ public final class VillagerDialogueResources {
                 .findFirst();
     }
 
-    public static Optional<String> pacifyLine(DialogueContext context, VillagerPacificationResult result, int emeraldCost) {
+    public static Optional<String> pacifyLine(DialogueContext context, VillagerPacificationResult result, PacifyPaymentOffer payment) {
         List<PacifyLine> candidates = load(context.level().getServer(), context.locale()).pacifyLines().stream()
                 .filter(line -> line.matches(context, result))
                 .toList();
@@ -156,10 +158,10 @@ public final class VillagerDialogueResources {
         for (PacifyLine candidate : candidates) {
             selected -= candidate.weight();
             if (selected < 0) {
-                return Optional.of(resolvePacifyText(candidate.text(), emeraldCost));
+                return Optional.of(resolvePacifyText(candidate.text(), payment));
             }
         }
-        return Optional.of(resolvePacifyText(candidates.getLast().text(), emeraldCost));
+        return Optional.of(resolvePacifyText(candidates.getLast().text(), payment));
     }
 
     public static Optional<String> giftAdviceLine(
@@ -356,6 +358,7 @@ public final class VillagerDialogueResources {
             boolean showForBabies = readBoolean(entry, "show_for_babies", true);
             Set<VillagerProfession> professions = readProfessions(entry, defaultProfessions);
             Set<DialogueDisposition> dispositions = readEnumSet(entry, "dispositions", DialogueDisposition.class);
+            VillagerPlayerItemCondition playerItemCondition = VillagerPlayerItemCondition.read(entry);
             boolean requiresUnreportedCartographerMapDiscovery = readBoolean(entry, "requires_unreported_cartographer_map_discovery");
             boolean requiresUnreportedStoryHintDiscovery = readBoolean(entry, "requires_unreported_story_hint_discovery");
             boolean requiresUnreportedCombatSurvivalReport = readBoolean(entry, "requires_unreported_combat_survival_report");
@@ -367,6 +370,28 @@ public final class VillagerDialogueResources {
             boolean requiresUnapologizedRememberedHarm = readBoolean(entry, "requires_unapologized_remembered_harm");
             boolean requiresUnreportedVillageDefense = readBoolean(entry, "requires_unreported_village_defense");
             boolean requiresShareableStory = readBoolean(entry, "requires_shareable_story");
+            boolean requiresKnownFamily = readBoolean(entry, "requires_known_family");
+            boolean requiresKnownParent = readBoolean(entry, "requires_known_parent");
+            boolean requiresKnownSibling = readBoolean(entry, "requires_known_sibling");
+            boolean requiresKnownSpouse = readBoolean(entry, "requires_known_spouse");
+            boolean requiresKnownChild = readBoolean(entry, "requires_known_child");
+            boolean requiresKnownGrandparent = readBoolean(entry, "requires_known_grandparent");
+            boolean requiresKnownGrandchild = readBoolean(entry, "requires_known_grandchild");
+            boolean requiresKnownDescendant = readBoolean(entry, "requires_known_descendant");
+            boolean requiresKnownAuntUncle = readBoolean(entry, "requires_known_aunt_uncle");
+            boolean requiresKnownCousin = readBoolean(entry, "requires_known_cousin");
+            boolean requiresKnownNieceNephew = readBoolean(entry, "requires_known_niece_nephew");
+            boolean requiresKnownExtendedFamily = readBoolean(entry, "requires_known_extended_family");
+            boolean requiresKnownDeceasedFamily = readBoolean(entry, "requires_known_deceased_family");
+            boolean requiresKnownRelationship = readBoolean(entry, "requires_known_relationship");
+            boolean requiresKnownCurrentRelationship = readBoolean(entry, "requires_known_current_relationship");
+            boolean requiresKnownPastRelationship = readBoolean(entry, "requires_known_past_relationship");
+            boolean requiresKnownCrush = readBoolean(entry, "requires_known_crush");
+            boolean requiresKnownDatingPartner = readBoolean(entry, "requires_known_dating_partner");
+            boolean requiresKnownFiance = readBoolean(entry, "requires_known_fiance");
+            boolean requiresKnownRomanticSpouse = readBoolean(entry, "requires_known_romantic_spouse");
+            boolean requiresKnownSeparatedPartner = readBoolean(entry, "requires_known_separated_partner");
+            boolean requiresKnownWidowedPartner = readBoolean(entry, "requires_known_widowed_partner");
             int order = readInt(entry, "order", index);
             options.put(id, new DialogueOptionDefinition(
                     id,
@@ -376,6 +401,7 @@ public final class VillagerDialogueResources {
                     showForBabies,
                     professions,
                     dispositions,
+                    playerItemCondition,
                     requiresUnreportedCartographerMapDiscovery,
                     requiresUnreportedStoryHintDiscovery,
                     requiresUnreportedCombatSurvivalReport,
@@ -387,6 +413,28 @@ public final class VillagerDialogueResources {
                     requiresUnapologizedRememberedHarm,
                     requiresUnreportedVillageDefense,
                     requiresShareableStory,
+                    requiresKnownFamily,
+                    requiresKnownParent,
+                    requiresKnownSibling,
+                    requiresKnownSpouse,
+                    requiresKnownChild,
+                    requiresKnownGrandparent,
+                    requiresKnownGrandchild,
+                    requiresKnownDescendant,
+                    requiresKnownAuntUncle,
+                    requiresKnownCousin,
+                    requiresKnownNieceNephew,
+                    requiresKnownExtendedFamily,
+                    requiresKnownDeceasedFamily,
+                    requiresKnownRelationship,
+                    requiresKnownCurrentRelationship,
+                    requiresKnownPastRelationship,
+                    requiresKnownCrush,
+                    requiresKnownDatingPartner,
+                    requiresKnownFiance,
+                    requiresKnownRomanticSpouse,
+                    requiresKnownSeparatedPartner,
+                    requiresKnownWidowedPartner,
                     order
             ));
             index++;
@@ -556,6 +604,11 @@ public final class VillagerDialogueResources {
             builder.playerEventTags(playerEventTags.toArray(VillageEventMemory.EventTag[]::new));
         }
 
+        VillagerPlayerItemCondition playerItemCondition = VillagerPlayerItemCondition.read(entry);
+        if (!playerItemCondition.isEmpty()) {
+            builder.playerItemCondition(playerItemCondition);
+        }
+
         List<ResourceLocation> storyTargetIds = new ArrayList<>();
         for (String value : readStringList(entry, "story_structure")) {
             ResourceLocation id = ResourceLocation.tryParse(value);
@@ -623,6 +676,72 @@ public final class VillagerDialogueResources {
         }
         if (readBoolean(entry, "first_conversation_only")) {
             builder.firstConversationOnly();
+        }
+        if (readBoolean(entry, "requires_known_family")) {
+            builder.requiresKnownFamily();
+        }
+        if (readBoolean(entry, "requires_known_parent")) {
+            builder.requiresKnownParent();
+        }
+        if (readBoolean(entry, "requires_known_sibling")) {
+            builder.requiresKnownSibling();
+        }
+        if (readBoolean(entry, "requires_known_spouse")) {
+            builder.requiresKnownSpouse();
+        }
+        if (readBoolean(entry, "requires_known_child")) {
+            builder.requiresKnownChild();
+        }
+        if (readBoolean(entry, "requires_known_grandparent")) {
+            builder.requiresKnownGrandparent();
+        }
+        if (readBoolean(entry, "requires_known_grandchild")) {
+            builder.requiresKnownGrandchild();
+        }
+        if (readBoolean(entry, "requires_known_descendant")) {
+            builder.requiresKnownDescendant();
+        }
+        if (readBoolean(entry, "requires_known_aunt_uncle")) {
+            builder.requiresKnownAuntUncle();
+        }
+        if (readBoolean(entry, "requires_known_cousin")) {
+            builder.requiresKnownCousin();
+        }
+        if (readBoolean(entry, "requires_known_niece_nephew")) {
+            builder.requiresKnownNieceNephew();
+        }
+        if (readBoolean(entry, "requires_known_extended_family")) {
+            builder.requiresKnownExtendedFamily();
+        }
+        if (readBoolean(entry, "requires_known_deceased_family")) {
+            builder.requiresKnownDeceasedFamily();
+        }
+        if (readBoolean(entry, "requires_known_relationship")) {
+            builder.requiresKnownRelationship();
+        }
+        if (readBoolean(entry, "requires_known_current_relationship")) {
+            builder.requiresKnownCurrentRelationship();
+        }
+        if (readBoolean(entry, "requires_known_past_relationship")) {
+            builder.requiresKnownPastRelationship();
+        }
+        if (readBoolean(entry, "requires_known_crush")) {
+            builder.requiresKnownCrush();
+        }
+        if (readBoolean(entry, "requires_known_dating_partner")) {
+            builder.requiresKnownDatingPartner();
+        }
+        if (readBoolean(entry, "requires_known_fiance")) {
+            builder.requiresKnownFiance();
+        }
+        if (readBoolean(entry, "requires_known_romantic_spouse")) {
+            builder.requiresKnownRomanticSpouse();
+        }
+        if (readBoolean(entry, "requires_known_separated_partner")) {
+            builder.requiresKnownSeparatedPartner();
+        }
+        if (readBoolean(entry, "requires_known_widowed_partner")) {
+            builder.requiresKnownWidowedPartner();
         }
         builder.showForAdults(readBoolean(entry, "show_for_adults", true));
         builder.showForBabies(readBoolean(entry, "show_for_babies", true));
@@ -764,10 +883,14 @@ public final class VillagerDialogueResources {
         return slash < 0 ? remainder : remainder.substring(slash + 1);
     }
 
-    private static String resolvePacifyText(String text, int emeraldCost) {
+    private static String resolvePacifyText(String text, PacifyPaymentOffer payment) {
+        String count = Integer.toString(payment.count());
         return text
-                .replace("{emerald_cost}", Integer.toString(emeraldCost))
-                .replace("{emeralds}", emeraldCost == 1 ? "emerald" : "emeralds");
+                .replace("{emerald_cost}", count)
+                .replace("{emeralds}", payment.itemNameForCount())
+                .replace("{payment_cost}", count)
+                .replace("{payment_item}", payment.itemName())
+                .replace("{payment_items}", payment.itemNameForCount());
     }
 
     private static String resolveGiftAdviceText(String text, String giftItemName, String giftSubject) {

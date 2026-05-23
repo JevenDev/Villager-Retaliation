@@ -27,7 +27,13 @@ final class VillagerInteractionChatScreen extends ChatScreen {
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         this.interactionScreen.renderBackdropBehindChat(graphics);
         this.interactionScreen.render(graphics, mouseX, mouseY, partialTick);
-        super.render(graphics, mouseX, mouseY, partialTick);
+        VillagerInteractionScreen.ChatRenderLayout layout = this.interactionScreen.chatRenderLayout();
+        graphics.enableScissor(layout.left(), layout.top(), layout.right(), layout.bottom());
+        graphics.pose().pushPose();
+        graphics.pose().translate(layout.xOffset(), layout.yOffset(), 0.0F);
+        super.render(graphics, layout.translatedMouseX(mouseX), layout.translatedMouseY(mouseY), partialTick);
+        graphics.pose().popPose();
+        graphics.disableScissor();
     }
 
     @Override
@@ -44,6 +50,12 @@ final class VillagerInteractionChatScreen extends ChatScreen {
             return true;
         }
         return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        VillagerInteractionScreen.ChatRenderLayout layout = this.interactionScreen.chatRenderLayout();
+        return super.mouseClicked(mouseX - layout.xOffset(), mouseY - layout.yOffset(), button);
     }
 
     boolean matchesVillager(int entityId) {

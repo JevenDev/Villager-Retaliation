@@ -22,6 +22,22 @@
       "order": 2
     },
     {
+      "id": "adult_family",
+      "label": "Ask About Family",
+      "type": "question",
+      "show_for_babies": false,
+      "requires_known_family": true,
+      "order": 2
+    },
+    {
+      "id": "adult_relationships",
+      "label": "Ask About Relationships",
+      "type": "question",
+      "show_for_babies": false,
+      "requires_known_relationship": true,
+      "order": 3
+    },
+    {
       "id": "adult_gift_preferences",
       "label": "Ask About Gifts",
       "type": "gift_preferences",
@@ -146,6 +162,14 @@
       "label": "Ask What They Know",
       "type": "question",
       "show_for_adults": false,
+      "order": 2
+    },
+    {
+      "id": "baby_family",
+      "label": "Ask About Family",
+      "type": "question",
+      "show_for_adults": false,
+      "requires_known_family": true,
       "order": 2
     },
     {
@@ -1067,6 +1091,245 @@
     }
   ],
   "lines": [
+    {
+      "id": "adult_family_parent_warm",
+      "type": "question",
+      "option": "adult_family",
+      "text": "{parent} still checks in on me when the village gets loud. Family has a way of making even a crowded place feel anchored.",
+      "requires_known_parent": true,
+      "show_for_babies": false,
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral"
+      ],
+      "weight": 24
+    },
+    {
+      "id": "adult_family_child_warm",
+      "type": "question",
+      "option": "adult_family",
+      "text": "I keep an eye on {child}. Around here, every child learns quickly which footsteps mean help.",
+      "requires_known_child": true,
+      "show_for_babies": false,
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral"
+      ],
+      "weight": 24
+    },
+    {
+      "id": "adult_family_sibling_warm",
+      "type": "question",
+      "option": "adult_family",
+      "text": "{sibling} and I do not always agree, but I would still stand between them and trouble.",
+      "requires_known_sibling": true,
+      "show_for_babies": false,
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral"
+      ],
+      "weight": 22
+    },
+    {
+      "id": "adult_family_grandparent",
+      "type": "question",
+      "option": "adult_family",
+      "text": "{grandparent} taught the family which paths are safe after dark. Some advice survives longer than the person who first said it.",
+      "requires_known_grandparent": true,
+      "show_for_babies": false,
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral",
+        "cautious"
+      ],
+      "weight": 18
+    },
+    {
+      "id": "adult_family_descendant",
+      "type": "question",
+      "option": "adult_family",
+      "text": "When I think about {descendant}, I try to leave the village a little kinder than I found it.",
+      "requires_known_descendant": true,
+      "show_for_babies": false,
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral"
+      ],
+      "weight": 18
+    },
+    {
+      "id": "adult_family_extended",
+      "type": "question",
+      "option": "adult_family",
+      "text": "{extended_relative} is not in my house every night, but family branches still share the same weather.",
+      "requires_known_extended_family": true,
+      "show_for_babies": false,
+      "weight": 14
+    },
+    {
+      "id": "adult_family_deceased",
+      "type": "question",
+      "option": "adult_family",
+      "text": "We still say {deceased_family_possessive} name when the village gathers. Remembering is a kind of shelter.",
+      "requires_known_deceased_family": true,
+      "show_for_babies": false,
+      "weight": 16
+    },
+    {
+      "id": "adult_family_guarded",
+      "type": "question",
+      "option": "adult_family",
+      "text": "{relative} is family. That is enough to make me careful about who asks.",
+      "requires_known_family": true,
+      "show_for_babies": false,
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 28
+    },
+    {
+      "id": "adult_relationship_current_soft",
+      "type": "question",
+      "option": "adult_relationships",
+      "text": "{partner} makes the village feel less like a place I survive and more like a place I choose.",
+      "requires_known_current_relationship": true,
+      "show_for_babies": false,
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral"
+      ],
+      "weight": 18
+    },
+    {
+      "id": "adult_relationship_crush_shy",
+      "type": "question",
+      "option": "adult_relationships",
+      "text": "I keep finding reasons to pass near {crush}. Maybe it is foolish. Maybe foolish things keep people kind.",
+      "requires_known_crush": true,
+      "show_for_babies": false,
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral"
+      ],
+      "weight": 24
+    },
+    {
+      "id": "adult_relationship_dating_warm",
+      "type": "question",
+      "option": "adult_relationships",
+      "text": "{dating_partner} and I are seeing where the road goes. Slowly is fine when the road matters.",
+      "requires_known_dating_partner": true,
+      "show_for_babies": false,
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral"
+      ],
+      "weight": 24
+    },
+    {
+      "id": "adult_relationship_engaged",
+      "type": "question",
+      "option": "adult_relationships",
+      "text": "{fiance} and I are trying to plan a future sturdy enough to survive this place.",
+      "requires_known_fiance": true,
+      "show_for_babies": false,
+      "weight": 24
+    },
+    {
+      "id": "adult_relationship_married",
+      "type": "question",
+      "option": "adult_relationships",
+      "text": "{romantic_spouse} knows which silences mean I am tired and which mean I need help. That is a rare comfort.",
+      "requires_known_romantic_spouse": true,
+      "show_for_babies": false,
+      "weight": 24
+    },
+    {
+      "id": "adult_relationship_separated",
+      "type": "question",
+      "option": "adult_relationships",
+      "text": "{ex_partner} and I had our season. Some roads part before they turn cruel, and that can be mercy.",
+      "requires_known_separated_partner": true,
+      "show_for_babies": false,
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral",
+        "cautious"
+      ],
+      "weight": 18
+    },
+    {
+      "id": "adult_relationship_widowed",
+      "type": "question",
+      "option": "adult_relationships",
+      "text": "{late_partner} is gone, but some mornings I still make room for them in my thoughts.",
+      "requires_known_widowed_partner": true,
+      "show_for_babies": false,
+      "weight": 18
+    },
+    {
+      "id": "adult_relationship_guarded",
+      "type": "question",
+      "option": "adult_relationships",
+      "text": "{partner} is not a market rumor. Ask gently, or do not ask.",
+      "requires_known_relationship": true,
+      "show_for_babies": false,
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 28
+    },
+    {
+      "id": "baby_family_parent",
+      "type": "question",
+      "option": "baby_family",
+      "text": "{parent} says I should stay where the bell can hear me.",
+      "requires_known_parent": true,
+      "show_for_adults": false,
+      "weight": 28
+    },
+    {
+      "id": "baby_family_sibling",
+      "type": "question",
+      "option": "baby_family",
+      "text": "{sibling} thinks they are faster than me. They are not always right.",
+      "requires_known_sibling": true,
+      "show_for_adults": false,
+      "weight": 22
+    },
+    {
+      "id": "baby_family_grandparent",
+      "type": "question",
+      "option": "baby_family",
+      "text": "{grandparent} knows stories that start before my bed was even made.",
+      "requires_known_grandparent": true,
+      "show_for_adults": false,
+      "weight": 16
+    },
+    {
+      "id": "baby_family_cousin",
+      "type": "question",
+      "option": "baby_family",
+      "text": "{cousin} says we are related enough to share chores. I think that sounds suspicious.",
+      "requires_known_cousin": true,
+      "show_for_adults": false,
+      "weight": 14
+    },
     {
       "id": "recruitment_followup_safe_home",
       "type": "recruitment_followup",
@@ -8407,7 +8670,7 @@
       "outcomes": [
         "success"
       ],
-      "text": "Fine. I will stand down, but peace takes more than emeralds.",
+      "text": "Fine. I will stand down, but peace takes more than payment.",
       "weight": 20
     },
     {
@@ -8455,7 +8718,7 @@
       "outcomes": [
         "blocked_by_reputation"
       ],
-      "text": "No. Some things are not bought back with emeralds.",
+      "text": "No. Some things are not bought back with {payment_items}.",
       "dispositions": [
         "hostile",
         "fearful"

@@ -11,10 +11,10 @@ VillagerRetaliationExample/
     villagerretaliation/
       dialogue/
         en_us/
-          global.json
+          examplepack_dialogue.json
       notifications/
         en_us/
-          global.json
+          examplepack_notifications.json
       gifts/
         example_gifts.json
     examplepack/
@@ -38,7 +38,7 @@ VillagerRetaliationExample/
 ## Dialogue Example
 
 ```text
-data/villagerretaliation/dialogue/en_us/global.json
+data/villagerretaliation/dialogue/en_us/examplepack_dialogue.json
 ```
 
 ```json
@@ -75,6 +75,11 @@ data/villagerretaliation/dialogue/en_us/global.json
       "key": "sleep.broken_bed",
       "text": "That bed had a name in this house.",
       "weight": 15
+    },
+    {
+      "id": "examplepack.gift.librarian.rare_book",
+      "key": "examplepack.gift.librarian.rare_book",
+      "text": "{gift_item}? This belongs near a reading lamp, not forgotten in a chest."
     }
   ]
 }
@@ -83,7 +88,7 @@ data/villagerretaliation/dialogue/en_us/global.json
 ## Notifications Example
 
 ```text
-data/villagerretaliation/notifications/en_us/global.json
+data/villagerretaliation/notifications/en_us/examplepack_notifications.json
 ```
 
 ```json
@@ -106,6 +111,15 @@ data/villagerretaliation/notifications/en_us/global.json
       "world_text_kind": "negative",
       "reputation_levels": ["hostile", "despised", "feared"],
       "color": "red"
+    },
+    {
+      "id": "examplepack.combat.player_killed",
+      "trigger": "combat.player_killed",
+      "text": "{player} should have listened",
+      "world_text_kind": "alert",
+      "reputation_levels": ["hostile", "despised", "feared"],
+      "color": "#FFD166",
+      "weight": 20
     }
   ]
 }
@@ -124,6 +138,7 @@ data/villagerretaliation/gifts/example_gifts.json
       "professions": ["librarian"],
       "reaction": "loved",
       "items": ["minecraft:enchanted_book", "minecraft:name_tag"],
+      "response_key": "examplepack.gift.librarian.rare_book",
       "priority": 20
     },
     {
@@ -196,4 +211,3 @@ VillagerRetaliationResourceExample/
 ```
 
 Use the built-in `combat_villager.json` as the safest starting point, then change part dimensions or decorative children gradually.
-

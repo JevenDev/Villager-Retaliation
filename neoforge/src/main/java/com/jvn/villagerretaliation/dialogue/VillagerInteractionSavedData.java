@@ -633,6 +633,19 @@ public class VillagerInteractionSavedData extends SavedData {
         return liked ? entry.likedGifts.contains(itemId) : entry.dislikedGifts.contains(itemId);
     }
 
+    public boolean hasGiftKnowledge(UUID playerId, String... professionKeys) {
+        GiftKnowledgeBook book = this.giftKnowledge.get(playerId);
+        if (book == null || professionKeys == null || professionKeys.length == 0) {
+            return false;
+        }
+        for (String professionKey : professionKeys) {
+            if (book.hasKnownGifts(professionKey)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public boolean rememberGiftKnowledge(UUID playerId, String professionKey, String itemId, boolean liked) {
         GiftKnowledgeEntry entry = giftKnowledgeEntry(playerId, professionKey, true);
         boolean changed;
@@ -1517,15 +1530,13 @@ public class VillagerInteractionSavedData extends SavedData {
                         || !mapMemory.dimension().equals(dimension)) {
                     continue;
                 }
-                if (!currentStructureTest.test(mapMemory.structureId())) {
-                    continue;
-                }
                 double dx = x - (mapMemory.targetPos().getX() + 0.5D);
                 double dz = z - (mapMemory.targetPos().getZ() + 0.5D);
-                if (dx * dx + dz * dz <= radiusSqr) {
-                    this.cartographerMaps.set(index, mapMemory.withFound(true));
-                    discoveries.add(mapMemory.toReport(villagerId));
+                if (dx * dx + dz * dz > radiusSqr || !currentStructureTest.test(mapMemory.structureId())) {
+                    continue;
                 }
+                this.cartographerMaps.set(index, mapMemory.withFound(true));
+                discoveries.add(mapMemory.toReport(villagerId));
             }
             return discoveries;
         }
@@ -1566,17 +1577,18 @@ public class VillagerInteractionSavedData extends SavedData {
                 if (storyHint.reported()
                         || storyHint.found()
                         || storyHint.expiresAtGameTime() <= gameTime
-                        || !storyHint.dimension().equals(dimension)
-                        || !storyHint.matchesCurrentPlace(currentBiomeId, currentStructureTest)) {
+                        || !storyHint.dimension().equals(dimension)) {
                     continue;
                 }
                 double dx = x - (storyHint.targetPos().getX() + 0.5D);
                 double dz = z - (storyHint.targetPos().getZ() + 0.5D);
                 double discoveryRadiusSqr = storyHint.discoveryRadiusSqr(radiusSqr);
-                if (dx * dx + dz * dz <= discoveryRadiusSqr) {
-                    this.storyHints.set(index, storyHint.withFound(true));
-                    discoveries.add(storyHint.toReport(villagerId));
+                if (dx * dx + dz * dz > discoveryRadiusSqr
+                        || !storyHint.matchesCurrentPlace(currentBiomeId, currentStructureTest)) {
+                    continue;
                 }
+                this.storyHints.set(index, storyHint.withFound(true));
+                discoveries.add(storyHint.toReport(villagerId));
             }
             return discoveries;
         }
@@ -1977,10 +1989,19 @@ public class VillagerInteractionSavedData extends SavedData {
 
     private static class GiftKnowledgeBook {
         private final Map<String, GiftKnowledgeEntry> byProfession = new HashMap<>();
+
+        private boolean hasKnownGifts(String professionKey) {
+            GiftKnowledgeEntry entry = this.byProfession.get(professionKey);
+            return entry != null && entry.hasKnownGifts();
+        }
     }
 
     private static class GiftKnowledgeEntry {
         private final Set<String> likedGifts = new LinkedHashSet<>();
         private final Set<String> dislikedGifts = new LinkedHashSet<>();
+
+        private boolean hasKnownGifts() {
+            return !this.likedGifts.isEmpty() || !this.dislikedGifts.isEmpty();
+        }
     }
 }

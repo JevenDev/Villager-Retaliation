@@ -5,6 +5,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -18,6 +19,7 @@ import net.minecraft.world.level.Level;
 
 public final class VillageEventMemory {
     private static final long EVENT_TTL_TICKS = 20L * 60L * 10L;
+    private static final long WEATHER_EVENT_DEDUPE_TICKS = 200L;
     private static final int MAX_EVENTS_PER_DIMENSION = 80;
     private static final double RELEVANT_EVENT_RADIUS_SQR = 48.0D * 48.0D;
     private static final Map<ResourceKey<Level>, ArrayDeque<MemoryEvent>> EVENTS = new HashMap<>();
@@ -121,8 +123,16 @@ public final class VillageEventMemory {
         Objects.requireNonNull(event.tag(), "event tag");
         Objects.requireNonNull(event.pos(), "event position");
         ArrayDeque<MemoryEvent> events = EVENTS.computeIfAbsent(level.dimension(), ignored -> new ArrayDeque<>());
+        prune(level);
+        if (isDuplicateWeatherEvent(events, event)) {
+            return;
+        }
         events.addLast(event);
         prune(level);
+    }
+
+    public static void clear() {
+        EVENTS.clear();
     }
 
     private static void prune(ServerLevel level) {
@@ -135,6 +145,28 @@ public final class VillageEventMemory {
         while (!events.isEmpty() && (events.peekFirst().gameTime() < oldestAllowed || events.size() > MAX_EVENTS_PER_DIMENSION)) {
             events.removeFirst();
         }
+    }
+
+    private static boolean isDuplicateWeatherEvent(ArrayDeque<MemoryEvent> events, MemoryEvent event) {
+        if (!isWeatherEvent(event.tag())) {
+            return false;
+        }
+
+        Iterator<MemoryEvent> iterator = events.descendingIterator();
+        while (iterator.hasNext()) {
+            MemoryEvent previous = iterator.next();
+            if (event.gameTime() - previous.gameTime() > WEATHER_EVENT_DEDUPE_TICKS) {
+                return false;
+            }
+            if (previous.tag() == event.tag() && previous.pos().distSqr(event.pos()) <= RELEVANT_EVENT_RADIUS_SQR) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isWeatherEvent(EventTag tag) {
+        return tag == EventTag.THUNDERSTORM || tag == EventTag.SANDSTORM || tag == EventTag.SNOWSTORM;
     }
 
     public static boolean hasAny(List<MemoryEvent> events, EventTag... tags) {

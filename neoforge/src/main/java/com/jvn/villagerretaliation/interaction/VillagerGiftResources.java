@@ -12,9 +12,11 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -34,6 +36,7 @@ public final class VillagerGiftResources {
     private static final String GIFT_ROOT = "gifts";
 
     private static volatile CachedGiftPool cachedGiftPool = CachedGiftPool.empty();
+    private static final Map<GiftCandidateCacheKey, List<VillagerGiftPreferences.GiftCandidate>> GIFT_CANDIDATE_CACHE = new HashMap<>();
 
     private VillagerGiftResources() {
     }
@@ -44,6 +47,9 @@ public final class VillagerGiftResources {
 
     public static void clearCache() {
         cachedGiftPool = CachedGiftPool.empty();
+        synchronized (VillagerGiftResources.class) {
+            GIFT_CANDIDATE_CACHE.clear();
+        }
     }
 
     public static Optional<VillagerGiftPreferences.GiftPreference> preference(
@@ -67,14 +73,34 @@ public final class VillagerGiftResources {
                 selected.reaction(),
                 selected.professionSpecific(),
                 0,
-                selected.perItemReputation()
+                selected.perItemReputation(),
+                selected.responseKey()
         ));
     }
 
     public static List<VillagerGiftPreferences.GiftCandidate> giftCandidates(ServerLevel level, VillagerProfession profession) {
+        return giftCandidates(level.getServer(), profession);
+    }
+
+    private static List<VillagerGiftPreferences.GiftCandidate> giftCandidates(MinecraftServer server, VillagerProfession profession) {
+        GiftPool pool = load(server);
+        GiftCandidateCacheKey cacheKey = new GiftCandidateCacheKey(profession);
+        synchronized (VillagerGiftResources.class) {
+            List<VillagerGiftPreferences.GiftCandidate> cached = GIFT_CANDIDATE_CACHE.get(cacheKey);
+            if (cached != null) {
+                return cached;
+            }
+
+            List<VillagerGiftPreferences.GiftCandidate> candidates = buildGiftCandidates(pool, profession);
+            GIFT_CANDIDATE_CACHE.put(cacheKey, candidates);
+            return candidates;
+        }
+    }
+
+    private static List<VillagerGiftPreferences.GiftCandidate> buildGiftCandidates(GiftPool pool, VillagerProfession profession) {
         List<VillagerGiftPreferences.GiftCandidate> candidates = new ArrayList<>();
         Set<String> seen = new HashSet<>();
-        for (GiftPreferenceRule rule : load(level.getServer()).preferenceRules()) {
+        for (GiftPreferenceRule rule : pool.preferenceRules()) {
             if (!rule.appliesToProfession(profession)) {
                 continue;
             }
@@ -85,7 +111,7 @@ public final class VillagerGiftResources {
                 }
             }
         }
-        return candidates;
+        return List.copyOf(candidates);
     }
 
     public static ItemStack highReputationReward(ServerLevel level, Villager villager, VillagerReputationLevel reputationLevel) {
@@ -124,6 +150,7 @@ public final class VillagerGiftResources {
             }
 
             GiftPool loadedPool = read(server);
+            GIFT_CANDIDATE_CACHE.clear();
             cachedGiftPool = new CachedGiftPool(server, loadedPool);
             return loadedPool;
         }
@@ -187,11 +214,13 @@ public final class VillagerGiftResources {
             Set<VillagerProfession> professions = readProfessions(entry);
             int perItemReputation = readInt(entry, "reputation_per_item", reaction.get().defaultPerItemReputation());
             int priority = readInt(entry, "priority", 0);
+            String responseKey = readGiftResponseKey(entry);
             preferenceRules.add(new GiftPreferenceRule(
                     fallbackId(location, "preference", index),
                     professions,
                     reaction.get(),
                     perItemReputation,
+                    responseKey,
                     priority,
                     index,
                     selectors
@@ -367,6 +396,18 @@ public final class VillagerGiftResources {
         return element == null || !element.isJsonPrimitive() ? "" : element.getAsString().trim();
     }
 
+    private static String readGiftResponseKey(JsonObject entry) {
+        String responseKey = readString(entry, "response_key");
+        if (!responseKey.isBlank()) {
+            return responseKey;
+        }
+        responseKey = readString(entry, "dialogue_key");
+        if (!responseKey.isBlank()) {
+            return responseKey;
+        }
+        return readString(entry, "gift_response_key");
+    }
+
     private static int readInt(JsonObject entry, String key, int fallback) {
         JsonElement element = entry.get(key);
         return element == null || !element.isJsonPrimitive() ? fallback : element.getAsInt();
@@ -382,6 +423,9 @@ public final class VillagerGiftResources {
         }
     }
 
+    private record GiftCandidateCacheKey(VillagerProfession profession) {
+    }
+
     private record CachedGiftPool(MinecraftServer server, GiftPool pool) {
         private static CachedGiftPool empty() {
             return new CachedGiftPool(null, GiftPool.empty());
@@ -393,6 +437,7 @@ public final class VillagerGiftResources {
             Set<VillagerProfession> professions,
             VillagerGiftPreferences.GiftReaction reaction,
             int perItemReputation,
+            String responseKey,
             int priority,
             int order,
             List<ItemSelector> selectors) implements Comparable<GiftPreferenceRule> {

@@ -45,6 +45,7 @@ Total reputation from one gifted stack is clamped between `-100` and `120`.
       "items": ["minecraft:wheat", "minecraft:golden_carrot"],
       "tags": ["minecraft:villager_plantable_seeds"],
       "reputation_per_item": 6,
+      "response_key": "my_pack.gift.farmer.favorite_crop",
       "priority": 10
     }
   ]
@@ -62,9 +63,25 @@ Total reputation from one gifted stack is clamped between `-100` and `120`.
 | `tags` | string or array | none | One or more item tag ids. |
 | `professions` | string or array | any | If present, rule applies only to those professions. |
 | `reputation_per_item` | integer | reaction default | Overrides the per-item reputation value. |
+| `response_key` | string | reaction default | Dialogue message key to use when this rule matches. |
 | `priority` | integer | `0` | Higher priority wins among matching rules. |
 
 At least one item or tag selector is required.
+
+`response_key` keeps gift files language-neutral. Define the actual text in localized dialogue JSON with a matching message `key`:
+
+```json
+{
+  "messages": [
+    {
+      "key": "my_pack.gift.farmer.favorite_crop",
+      "text": "{gift_item}? Fresh enough for the whole village."
+    }
+  ]
+}
+```
+
+Custom gift responses can use `{gift_item}`, `{item}`, `{gift_item_id}`, and `{item_id}`. If the key is missing for a player's locale, the villager falls back to the normal `gift_response.global.*` or `gift_response.profession.*` reaction line.
 
 ## Item And Tag Selectors
 
@@ -140,4 +157,3 @@ data/villagerretaliation/gifts/default.json
 ```
 
 with your own `preferences` and `rewards` arrays.
-

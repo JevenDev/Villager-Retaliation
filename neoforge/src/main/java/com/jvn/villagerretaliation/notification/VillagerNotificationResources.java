@@ -9,6 +9,7 @@ import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.network.VillagerWorldTextIndicatorKind;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.util.VillagerLocale;
+import com.jvn.villagerretaliation.util.VillagerPlayerItemCondition;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
@@ -56,7 +57,7 @@ public final class VillagerNotificationResources {
                         || context.random().nextDouble() < Math.max(0.0D, definition.chance()))
                 .toList();
         return select(candidates, context.random())
-                .map(definition -> resolve(definition, replacements));
+                .map(definition -> resolve(definition, mergedReplacements(context, definition, replacements)));
     }
 
     public static Optional<ResolvedVillagerNotification> select(
@@ -203,11 +204,21 @@ public final class VillagerNotificationResources {
                 readBoolean(entry, "show_for_babies", true),
                 readProfessions(entry),
                 readEnumSet(entry, "reputation_levels", VillagerReputationLevel.class),
+                VillagerPlayerItemCondition.read(entry),
                 readOptionalInt(entry, "min_reputation").orElse(null),
                 readOptionalInt(entry, "max_reputation").orElse(null),
                 weight,
                 chance
         ));
+    }
+
+    private static Map<String, String> mergedReplacements(
+            VillagerNotificationContext context,
+            VillagerNotificationDefinition definition,
+            Map<String, String> replacements) {
+        Map<String, String> merged = new HashMap<>(definition.playerItemCondition().replacements(context.player()));
+        merged.putAll(replacements);
+        return merged;
     }
 
     private static Set<VillagerProfession> readProfessions(JsonObject entry) {

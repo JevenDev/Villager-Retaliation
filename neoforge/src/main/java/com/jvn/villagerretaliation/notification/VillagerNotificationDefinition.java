@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.notification;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.network.VillagerWorldTextIndicatorKind;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
+import com.jvn.villagerretaliation.util.VillagerPlayerItemCondition;
 import java.util.Set;
 import net.minecraft.world.entity.npc.VillagerProfession;
 
@@ -18,6 +19,7 @@ public record VillagerNotificationDefinition(
         boolean showForBabies,
         Set<VillagerProfession> professions,
         Set<VillagerReputationLevel> reputationLevels,
+        VillagerPlayerItemCondition playerItemCondition,
         Integer minReputation,
         Integer maxReputation,
         int weight,
@@ -37,6 +39,9 @@ public record VillagerNotificationDefinition(
             return false;
         }
         if (!this.reputationLevels.isEmpty() && !this.reputationLevels.contains(context.reputationLevel())) {
+            return false;
+        }
+        if (!this.playerItemCondition.matches(context.player())) {
             return false;
         }
         if (this.minReputation != null && context.reputation() < this.minReputation) {

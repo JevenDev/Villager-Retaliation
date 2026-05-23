@@ -15,7 +15,8 @@ public final class VillagerInteractionHudHider {
 
         if (VanillaGuiLayers.CHAT.equals(event.getName())
                 && Minecraft.getInstance().screen instanceof VillagerInteractionScreen screen) {
-            screen.renderBackdropBehindChat(event.getGuiGraphics());
+            screen.renderPositionedHudChat(event.getGuiGraphics());
+            event.setCanceled(true);
         }
 
         if (VanillaGuiLayers.CROSSHAIR.equals(event.getName())) {

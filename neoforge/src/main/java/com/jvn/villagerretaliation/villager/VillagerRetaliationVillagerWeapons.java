@@ -1,7 +1,11 @@
 package com.jvn.villagerretaliation.villager;
 
 import com.jvn.toucanlib.neoforge.loot.ToucanLivingDrops;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.function.Predicate;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.InteractionHand;
@@ -20,6 +24,10 @@ import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 public final class VillagerRetaliationVillagerWeapons {
     public static final double WEAPON_SEARCH_RADIUS = 12.0D;
     public static final double WEAPON_PICKUP_REACH_SQR = 2.25D;
+    private static final double WEAPON_SEARCH_RADIUS_SQR = WEAPON_SEARCH_RADIUS * WEAPON_SEARCH_RADIUS;
+    private static final long WEAPON_SEARCH_CACHE_TICKS = 10L;
+    private static final int MAX_WEAPON_SEARCH_CACHE_ENTRIES = 2048;
+    private static final Map<UUID, CachedWeaponSearch> NEAREST_WEAPON_CACHE = new HashMap<>();
 
     private VillagerRetaliationVillagerWeapons() {
     }
@@ -55,6 +63,31 @@ public final class VillagerRetaliationVillagerWeapons {
     }
 
     public static Optional<ItemEntity> findNearestWeapon(AbstractVillager villager) {
+        UUID villagerId = villager.getUUID();
+        long gameTime = villager.level().getGameTime();
+        CachedWeaponSearch cached = NEAREST_WEAPON_CACHE.get(villagerId);
+        if (cached != null && cached.isValid(gameTime)) {
+            if (cached.itemEntity() == null) {
+                return Optional.empty();
+            }
+            if (isCachedWeaponStillUsable(villager, cached.itemEntity())) {
+                return Optional.of(cached.itemEntity());
+            }
+        } else if (cached == null) {
+            long firstSearch = gameTime + scanStagger(villagerId, WEAPON_SEARCH_CACHE_TICKS);
+            if (firstSearch > gameTime) {
+                NEAREST_WEAPON_CACHE.put(villagerId, new CachedWeaponSearch(null, firstSearch));
+                return Optional.empty();
+            }
+        }
+
+        ItemEntity bestWeapon = findNearestWeaponUncached(villager);
+        NEAREST_WEAPON_CACHE.put(villagerId, new CachedWeaponSearch(bestWeapon, gameTime + WEAPON_SEARCH_CACHE_TICKS));
+        pruneNearestWeaponCache(gameTime);
+        return Optional.ofNullable(bestWeapon);
+    }
+
+    private static ItemEntity findNearestWeaponUncached(AbstractVillager villager) {
         AABB searchBox = villager.getBoundingBox().inflate(WEAPON_SEARCH_RADIUS);
         ItemStack equippedWeapon = getPrimaryWeapon(villager);
         ItemEntity bestWeapon = null;
@@ -83,7 +116,7 @@ public final class VillagerRetaliationVillagerWeapons {
             bestDistanceSqr = distanceSqr;
         }
 
-        return Optional.ofNullable(bestWeapon);
+        return bestWeapon;
     }
 
     public static void equipGroundWeapon(AbstractVillager villager, ItemEntity itemEntity) {
@@ -113,6 +146,7 @@ public final class VillagerRetaliationVillagerWeapons {
         if (groundStack.isEmpty()) {
             itemEntity.discard();
         }
+        clearNearestWeaponCache(villager);
     }
 
     public static void ensurePickedMainHandDrop(AbstractVillager villager, LivingDropsEvent event) {
@@ -163,10 +197,16 @@ public final class VillagerRetaliationVillagerWeapons {
 
     public static void clearTrackedPickup(AbstractVillager villager) {
         VillagerRetaliationVillagerEquipment.clearPickedUpMainHand(villager);
+        clearNearestWeaponCache(villager);
     }
 
     public static void clearTrackedPickupCache(AbstractVillager villager) {
         VillagerRetaliationVillagerEquipment.clearTrackedMainHandCache(villager);
+        clearNearestWeaponCache(villager);
+    }
+
+    public static void clearCache() {
+        NEAREST_WEAPON_CACHE.clear();
     }
 
     public static boolean isRangedWeapon(ItemStack stack) {
@@ -232,6 +272,37 @@ public final class VillagerRetaliationVillagerWeapons {
         return isBetterWeaponChoice(groundWeapon, equippedWeapon);
     }
 
+    private static boolean isCachedWeaponStillUsable(AbstractVillager villager, ItemEntity itemEntity) {
+        return itemEntity.level() == villager.level()
+                && canBePickedUp(itemEntity)
+                && villager.distanceToSqr(itemEntity) <= WEAPON_SEARCH_RADIUS_SQR
+                && shouldPathfindForWeapon(villager, getPrimaryWeapon(villager), itemEntity.getItem());
+    }
+
+    private static void clearNearestWeaponCache(AbstractVillager villager) {
+        NEAREST_WEAPON_CACHE.remove(villager.getUUID());
+    }
+
+    private static long scanStagger(UUID villagerId, long intervalTicks) {
+        if (intervalTicks <= 1L) {
+            return 0L;
+        }
+        return Math.floorMod(villagerId.getMostSignificantBits() ^ villagerId.getLeastSignificantBits(), intervalTicks);
+    }
+
+    private static void pruneNearestWeaponCache(long gameTime) {
+        NEAREST_WEAPON_CACHE.entrySet().removeIf(entry -> !entry.getValue().isValid(gameTime));
+        if (NEAREST_WEAPON_CACHE.size() <= MAX_WEAPON_SEARCH_CACHE_ENTRIES) {
+            return;
+        }
+
+        Iterator<Map.Entry<UUID, CachedWeaponSearch>> iterator = NEAREST_WEAPON_CACHE.entrySet().iterator();
+        while (NEAREST_WEAPON_CACHE.size() > MAX_WEAPON_SEARCH_CACHE_ENTRIES && iterator.hasNext()) {
+            iterator.next();
+            iterator.remove();
+        }
+    }
+
     private static boolean isBetterPickupCandidate(
             int priority,
             int tier,
@@ -292,5 +363,11 @@ public final class VillagerRetaliationVillagerWeapons {
             return 0;
         }
         return 0;
+    }
+
+    private record CachedWeaponSearch(ItemEntity itemEntity, long expiresGameTime) {
+        private boolean isValid(long gameTime) {
+            return gameTime < this.expiresGameTime;
+        }
     }
 }

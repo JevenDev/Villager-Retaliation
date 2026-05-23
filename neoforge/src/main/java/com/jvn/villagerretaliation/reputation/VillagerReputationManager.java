@@ -174,6 +174,22 @@ public final class VillagerReputationManager {
         return VillagerReputationSavedData.get(level).transferVillagerEntries(sourceVillagerId, targetVillagerId);
     }
 
+    public static boolean inheritReputationFromParents(ServerLevel level, Villager child, Villager parentA, Villager parentB) {
+        if (!VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()
+                || child == null
+                || parentA == null
+                || parentB == null) {
+            return false;
+        }
+        return VillagerReputationSavedData.get(level).inheritParentEntries(
+                child.getUUID(),
+                parentA.getUUID(),
+                parentB.getUUID(),
+                level.getGameTime(),
+                child.blockPosition()
+        );
+    }
+
     public static void pruneOldEntries(ServerLevel level) {
         if (!VillagerRetaliationConfig.REPUTATION_DECAY_ENABLED.get()) {
             return;

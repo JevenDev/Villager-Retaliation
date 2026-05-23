@@ -1,9 +1,13 @@
 package com.jvn.villagerretaliation.event;
 
+import com.jvn.villagerretaliation.combat.PacifyPaymentOffer;
+import com.jvn.villagerretaliation.combat.VillagerPacificationAttempt;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil;
 import com.jvn.villagerretaliation.combat.VillagerPacificationResult;
+import com.jvn.villagerretaliation.combat.VillagerPacifyPaymentResources;
 import com.jvn.villagerretaliation.combat.WanderingTraderRetaliationHandler;
+import com.jvn.villagerretaliation.debug.VillagerRetaliationDebugItems;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueService;
 import com.jvn.villagerretaliation.interaction.VillagerCombatSurvivalService;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
@@ -23,6 +27,7 @@ import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerFleeBehaviorHandler;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
+import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerRules;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -44,7 +49,6 @@ import net.minecraft.world.entity.raid.Raider;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameRules;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
@@ -55,6 +59,7 @@ import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.neoforge.event.AddReloadListenerEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
@@ -70,6 +75,14 @@ public final class VillagerRetaliationEvents {
 
     public static void onServerStopping(ServerStoppingEvent event) {
         VillagerDataWarmup.clearCaches();
+        VillagerRetaliationVillagerRules.clearCachedChecks();
+    }
+
+    public static void onAddReloadListeners(AddReloadListenerEvent event) {
+        event.addListener((barrier, resourceManager, preparationProfiler, reloadProfiler, backgroundExecutor, gameExecutor) ->
+                java.util.concurrent.CompletableFuture
+                        .runAsync(VillagerDataWarmup::clearResourceCaches, backgroundExecutor)
+                        .thenCompose(barrier::wait));
     }
 
     public static void onEntityAttributeModification(EntityAttributeModificationEvent event) {
@@ -113,6 +126,12 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onLivingDeath(LivingDeathEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player && player.level() instanceof ServerLevel level) {
+            VillagerRetaliationVillagerCombatUtil.resolveAttacker(player, event.getSource())
+                    .filter(AbstractVillager.class::isInstance)
+                    .map(AbstractVillager.class::cast)
+                    .ifPresent(killer -> VillagerAmbientIndicatorService.onPlayerKilled(level, killer, player));
+        }
         if (event.getEntity() instanceof Villager villager) {
             broadcastVillagerDeathMessage(villager, event.getSource());
             VillagerCombatSurvivalService.onVillagerDeath(villager);
@@ -179,15 +198,25 @@ public final class VillagerRetaliationEvents {
         }
 
         ItemStack interactionStack = player.getItemInHand(event.getHand());
-        ItemStack pacifyStack = interactionStack.is(Items.EMERALD) ? interactionStack : player.getOffhandItem();
+
+        if (event.getTarget() instanceof Villager villager
+                && player instanceof ServerPlayer
+                && VillagerRetaliationDebugItems.isDebugVillagerTool(interactionStack.getItem())) {
+            InteractionResult result = interactionStack.interactLivingEntity(player, villager, event.getHand());
+            if (result.consumesAction()) {
+                event.setCanceled(true);
+                event.setCancellationResult(result);
+                return;
+            }
+        }
 
         if (event.getTarget() instanceof Villager villager && player instanceof ServerPlayer serverPlayer) {
-            int requiredEmeralds = VillagerRetaliationRetaliationUtil.pacifyEmeraldCost(villager);
-            VillagerPacificationResult pacificationResult =
-                    VillagerRetaliationHandler.pacifyWithEmeralds(villager, player, pacifyStack);
-            if (pacificationResult.handled()) {
-                sendPacificationDialogue(serverPlayer, villager, pacificationResult, requiredEmeralds);
-                if (pacificationResult == VillagerPacificationResult.SUCCESS) {
+            ItemStack pacifyStack = selectPacifyPaymentStack(villager, player, interactionStack);
+            VillagerPacificationAttempt pacificationAttempt =
+                    VillagerRetaliationHandler.pacifyWithPayment(villager, player, pacifyStack);
+            if (pacificationAttempt.handled()) {
+                sendPacificationDialogue(serverPlayer, villager, pacificationAttempt.result(), pacificationAttempt.payment());
+                if (pacificationAttempt.result() == VillagerPacificationResult.SUCCESS) {
                     VillagerReputationAdvancements.onVillagerPacified(serverPlayer);
                 }
                 event.setCanceled(true);
@@ -223,7 +252,10 @@ public final class VillagerRetaliationEvents {
         }
 
         if (event.getTarget() instanceof WanderingTrader trader
-                && WanderingTraderRetaliationHandler.tryPacifyWithEmeralds(trader, player, pacifyStack)) {
+                && WanderingTraderRetaliationHandler.tryPacifyWithPayment(
+                trader,
+                player,
+                selectPacifyPaymentStack(trader, player, interactionStack))) {
             event.setCanceled(true);
             event.setCancellationResult(InteractionResult.SUCCESS);
             return;
@@ -240,19 +272,25 @@ public final class VillagerRetaliationEvents {
             ServerPlayer player,
             Villager villager,
             VillagerPacificationResult result,
-            int requiredEmeralds) {
-        if (!(villager.level() instanceof ServerLevel level)) {
+            PacifyPaymentOffer payment) {
+        if (payment == null || !(villager.level() instanceof ServerLevel level)) {
             return;
         }
 
         String text = VillagerDialogueService.selectPacifyLine(
                 VillagerInteractionService.createDialogueContext(level, player, villager),
                 result,
-                requiredEmeralds
+                payment
         );
         if (!text.isBlank()) {
             VillagerInteractionService.sendVillagerNotice(player, villager, text);
         }
+    }
+
+    private static ItemStack selectPacifyPaymentStack(AbstractVillager villager, Player player, ItemStack interactionStack) {
+        return VillagerPacifyPaymentResources.isEligiblePayment(villager, interactionStack)
+                ? interactionStack
+                : player.getOffhandItem();
     }
 
     public static void onEntityInteractSpecific(PlayerInteractEvent.EntityInteractSpecific event) {
@@ -341,6 +379,7 @@ public final class VillagerRetaliationEvents {
         VillagerConversationService.endForEntityLeaving(event.getEntity(), true);
         if (event.getEntity() instanceof Villager villager) {
             VillagerCombatSurvivalService.onVillagerLeaveLevel(villager);
+            VillagerRetaliationVillagerRules.clearCachedChecks(villager);
         }
     }
 

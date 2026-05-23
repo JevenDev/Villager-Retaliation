@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.dialogue;
 
+import com.jvn.villagerretaliation.util.VillagerPlayerItemCondition;
 import java.util.Set;
 import net.minecraft.world.entity.npc.VillagerProfession;
 
@@ -11,6 +12,7 @@ public record DialogueOptionDefinition(
         boolean showForBabies,
         Set<VillagerProfession> professions,
         Set<DialogueDisposition> dispositions,
+        VillagerPlayerItemCondition playerItemCondition,
         boolean requiresUnreportedCartographerMapDiscovery,
         boolean requiresUnreportedStoryHintDiscovery,
         boolean requiresUnreportedCombatSurvivalReport,
@@ -22,6 +24,28 @@ public record DialogueOptionDefinition(
         boolean requiresUnapologizedRememberedHarm,
         boolean requiresUnreportedVillageDefense,
         boolean requiresShareableStory,
+        boolean requiresKnownFamily,
+        boolean requiresKnownParent,
+        boolean requiresKnownSibling,
+        boolean requiresKnownSpouse,
+        boolean requiresKnownChild,
+        boolean requiresKnownGrandparent,
+        boolean requiresKnownGrandchild,
+        boolean requiresKnownDescendant,
+        boolean requiresKnownAuntUncle,
+        boolean requiresKnownCousin,
+        boolean requiresKnownNieceNephew,
+        boolean requiresKnownExtendedFamily,
+        boolean requiresKnownDeceasedFamily,
+        boolean requiresKnownRelationship,
+        boolean requiresKnownCurrentRelationship,
+        boolean requiresKnownPastRelationship,
+        boolean requiresKnownCrush,
+        boolean requiresKnownDatingPartner,
+        boolean requiresKnownFiance,
+        boolean requiresKnownRomanticSpouse,
+        boolean requiresKnownSeparatedPartner,
+        boolean requiresKnownWidowedPartner,
         int order
 ) {
     public boolean matches(DialogueContext context, DialogueDisposition disposition) {
@@ -33,6 +57,9 @@ public record DialogueOptionDefinition(
             return false;
         }
         if (!this.professions.isEmpty() && !this.professions.contains(context.profession())) {
+            return false;
+        }
+        if (!this.playerItemCondition.matches(context.player())) {
             return false;
         }
         if (this.requiresUnreportedCartographerMapDiscovery && !context.hasUnreportedCartographerMapDiscovery()) {
@@ -68,10 +95,119 @@ public record DialogueOptionDefinition(
         if (this.requiresShareableStory && !context.hasShareableStory()) {
             return false;
         }
+        if (this.requiresKnownFamily && !context.hasKnownFamily()) {
+            return false;
+        }
+        if (this.requiresKnownParent && !context.hasKnownParent()) {
+            return false;
+        }
+        if (this.requiresKnownSibling && !context.hasKnownSibling()) {
+            return false;
+        }
+        if (this.requiresKnownSpouse && !context.hasKnownSpouse()) {
+            return false;
+        }
+        if (this.requiresKnownChild && !context.hasKnownChild()) {
+            return false;
+        }
+        if (this.requiresKnownGrandparent && !context.hasKnownGrandparent()) {
+            return false;
+        }
+        if (this.requiresKnownGrandchild && !context.hasKnownGrandchild()) {
+            return false;
+        }
+        if (this.requiresKnownDescendant && !context.hasKnownDescendant()) {
+            return false;
+        }
+        if (this.requiresKnownAuntUncle && !context.hasKnownAuntUncle()) {
+            return false;
+        }
+        if (this.requiresKnownCousin && !context.hasKnownCousin()) {
+            return false;
+        }
+        if (this.requiresKnownNieceNephew && !context.hasKnownNieceNephew()) {
+            return false;
+        }
+        if (this.requiresKnownExtendedFamily && !context.hasKnownExtendedFamily()) {
+            return false;
+        }
+        if (this.requiresKnownDeceasedFamily && !context.hasKnownDeceasedFamily()) {
+            return false;
+        }
+        if (this.requiresKnownRelationship && !context.hasKnownRelationship()) {
+            return false;
+        }
+        if (this.requiresKnownCurrentRelationship && !context.hasKnownCurrentRelationship()) {
+            return false;
+        }
+        if (this.requiresKnownPastRelationship && !context.hasKnownPastRelationship()) {
+            return false;
+        }
+        if (this.requiresKnownCrush && !context.hasKnownCrush()) {
+            return false;
+        }
+        if (this.requiresKnownDatingPartner && !context.hasKnownDatingPartner()) {
+            return false;
+        }
+        if (this.requiresKnownFiance && !context.hasKnownFiance()) {
+            return false;
+        }
+        if (this.requiresKnownRomanticSpouse && !context.hasKnownRomanticSpouse()) {
+            return false;
+        }
+        if (this.requiresKnownSeparatedPartner && !context.hasKnownSeparatedPartner()) {
+            return false;
+        }
+        if (this.requiresKnownWidowedPartner && !context.hasKnownWidowedPartner()) {
+            return false;
+        }
         return this.dispositions.isEmpty() || this.dispositions.contains(disposition);
     }
 
     public static DialogueOptionDefinition simple(String id, String label, DialogueRequestType requestType, int order) {
-        return new DialogueOptionDefinition(id, label, requestType, true, true, Set.of(), Set.of(), false, false, false, false, false, false, false, false, false, false, false, order);
+        return new DialogueOptionDefinition(
+                id,
+                label,
+                requestType,
+                true,
+                true,
+                Set.of(),
+                Set.of(),
+                VillagerPlayerItemCondition.empty(),
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                false,
+                order
+        );
     }
 }

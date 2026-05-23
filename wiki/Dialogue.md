@@ -7,13 +7,15 @@ Dialogue JSON controls conversation choices, villager replies, one-off messages,
 Dialogue files must be in the `villagerretaliation` namespace:
 
 ```text
-data/villagerretaliation/dialogue/en_us/global.json
+data/villagerretaliation/dialogue/en_us/my_pack_dialogue.json
 data/villagerretaliation/dialogue/en_us/professions/farmer.json
 data/villagerretaliation/dialogue/en_us/professions/farmer/share_stories.json
-data/villagerretaliation/dialogue/fr_fr/global.json
+data/villagerretaliation/dialogue/fr_fr/my_pack_dialogue.json
 ```
 
 Files under `professions/<profession>.json` and `professions/<profession>/...json` automatically default entries to that profession unless the entry supplies its own `professions` filter.
+
+Use a unique file name for addon dialogue. A datapack file at `data/villagerretaliation/dialogue/en_us/global.json` replaces the mod's built-in `global.json`, which can hide default interaction-menu options, keyed messages, openings, closings, and other built-in dialogue data. Only use that exact path when you intentionally want a full-file override.
 
 ## Top-Level Sections
 
@@ -90,6 +92,8 @@ insult
 | `order` | integer | array index | Lower values appear earlier. |
 | `professions` | string or array | any | Filters by villager profession. |
 | `dispositions` | string or array | any | Filters by mood/disposition. |
+| `player_items` | string or array | none | Requires the player to have one matching item or item tag. Prefix tags with `#`. |
+| `player_item_slots` | string or array | `hands` when `player_items` is set | Slots to check: `main_hand`, `off_hand`, `hands`, `armor`, `hotbar`, `inventory`, `equipment`, or `any`. |
 | `show_for_adults` | boolean | `true` | Adult visibility. |
 | `show_for_babies` | boolean | `true` | Baby visibility. |
 | `requires_unreported_cartographer_map_discovery` | boolean | `false` | Shows after an unreported cartographer map discovery. |
@@ -119,6 +123,8 @@ insult
 | `times` | string or array | any | `morning`, `afternoon`, `evening`, or `night`. |
 | `event_tags` | string or array | any | Requires a recent nearby event with a matching tag. |
 | `player_event_tags` | string or array | any | Requires a recent event associated with the player. |
+| `player_items` | string or array | none | Requires the player to have one matching item or item tag. Prefix tags with `#`. |
+| `player_item_slots` | string or array | `hands` when `player_items` is set | Slots to check: `main_hand`, `off_hand`, `hands`, `armor`, `hotbar`, `inventory`, `equipment`, or `any`. |
 | `story_structure` | string or array | any | Restricts `share_story` to one structure id. |
 | `story_structures` | string or array | any | Multiple structure ids. |
 | `story_biome` | string or array | any | Restricts `share_story` to one biome id. |
@@ -140,6 +146,36 @@ insult
 | `show_for_adults` | boolean | `true` | Adult visibility. |
 | `show_for_babies` | boolean | `true` | Baby visibility. |
 | `weight` | integer | `10` | Weighted selection. |
+
+Player item filters can also use singular aliases `player_item`, `player_item_tag`, and `player_item_slot`. Dialogue text can use `{player_item}`, `{held_item}`, `{player_item_id}`, `{held_item_id}`, `{player_item_slot}`, and `{held_item_slot}` when the selected line has a player item filter.
+
+Example option and line for a player holding a sword:
+
+```json
+{
+  "options": [
+    {
+      "id": "ask_about_weapon",
+      "label": "About my weapon",
+      "type": "question",
+      "player_items": ["#minecraft:swords"],
+      "player_item_slots": ["main_hand"],
+      "order": 8
+    }
+  ],
+  "lines": [
+    {
+      "id": "weapon_warning_1",
+      "type": "question",
+      "option": "ask_about_weapon",
+      "player_items": ["#minecraft:swords"],
+      "player_item_slots": ["main_hand"],
+      "text": "Careful where you point {held_item}.",
+      "weight": 20
+    }
+  ]
+}
+```
 
 ## Gift Advice Kinds
 
@@ -228,6 +264,8 @@ Message fields:
 | `show_for_babies` | boolean | `true` | Baby visibility. |
 | `weight` | integer | `10` | Weighted selection. |
 
+Gift preference rules can set `response_key` to point at any message key. Those custom gift messages can use `{gift_item}`, `{item}`, `{gift_item_id}`, and `{item_id}` placeholders. If the custom key has no matching message, the default reaction message is used instead.
+
 ## Openings And Closings
 
 ```json
@@ -259,7 +297,7 @@ Openings and closings support `id`, `text`, `professions`, `dispositions`, `show
   "pacify": [
     {
       "id": "my_pack.pacify.accepted",
-      "text": "Fine. {emerald_cost} {emeralds}, and we try peace again.",
+      "text": "Fine. {payment_cost} {payment_items}, and we try peace again.",
       "outcomes": ["success"],
       "weight": 10
     }
@@ -270,9 +308,12 @@ Openings and closings support `id`, `text`, `professions`, `dispositions`, `show
 Pacify text supports:
 
 ```text
-{emerald_cost}
-{emeralds}
+{payment_cost}
+{payment_item}
+{payment_items}
 ```
+
+For older packs, `{emerald_cost}` still aliases `{payment_cost}`, and `{emeralds}` still aliases `{payment_items}`.
 
 The `outcomes` field filters by the internal pacification result enum. If omitted, the line can match any result.
 
@@ -301,7 +342,7 @@ blocked_by_reputation
 English fallback:
 
 ```text
-data/villagerretaliation/dialogue/en_us/global.json
+data/villagerretaliation/dialogue/en_us/my_pack_dialogue.json
 ```
 
 ```json
@@ -319,7 +360,7 @@ data/villagerretaliation/dialogue/en_us/global.json
 French replacement:
 
 ```text
-data/villagerretaliation/dialogue/fr_fr/global.json
+data/villagerretaliation/dialogue/fr_fr/my_pack_dialogue.json
 ```
 
 ```json

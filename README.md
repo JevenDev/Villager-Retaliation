@@ -41,7 +41,7 @@ Villagers are neutral instead of purely passive.
 
 By default, hitting a villager only angers that villager. Killing an adult villager can anger nearby adult villagers if they can witness it. Anger expires after a configurable duration, and creative/spectator players can be ignored.
 
-Villagers and wandering traders can also block trading while hostile. Hostile villagers can be pacified with emeralds, unless your reputation has fallen too low.
+Villagers and wandering traders can also block trading while hostile. Hostile villagers can be pacified with datapack-defined item payments, unless your reputation has fallen too low.
 
 ### Reputation
 
@@ -114,7 +114,7 @@ Lower trust can make villagers more dangerous or less willing to deal with you:
 - Hostile villagers can harass you with eggs or poisonous potatoes
 - Despised villagers can attack on sight when enabled
 - Feared villagers visibly react when you get close
-- Despised or feared villagers may refuse emerald pacification
+- Despised or feared villagers may refuse pacification payments
 - Babies, nitwits, and non-combat villagers can flee from hated players
 
 ## Loot
@@ -142,7 +142,7 @@ The mod includes a full reputation advancement tab.
 | --- | --- | --- | --- |
 | Village Relations | Task (Tab Root) | Automatically granted when any Villager Retaliation advancement is awarded. | No |
 | Commonfolk | Task | Interact with any villager, or enter a village. | No |
-| I'm Sorry! | Task | Pacify a hostile villager with emeralds. | No |
+| I'm Sorry! | Task | Pacify a hostile villager with a payment item. | No |
 | A Familiar Face | Task | Reach Trusted reputation with any villager. | No |
 | Respect Is Earned | Task | Reach Respected reputation with any villager. | No |
 | Friend of the Village | Goal | Reach Trusted with 5 villagers in one village area. | No |
@@ -175,15 +175,27 @@ Requires operator.
 
 ```mcfunction
 /villagerretaliation setNearbyReputation <integer>
+/villagerretaliation setNearestRelationship <crush|dating|engaged|married|separated>
 ```
 
 This sets nearby villagers' and wandering traders' reputation toward the executing player. It is mainly useful for testing tiers, trade pricing, despised behavior, feared behavior, pacification, and the debug overlay.
+
+`setNearestRelationship` is a relationship-system debug command. It applies the chosen romantic stage to the two nearest adult villagers, respecting the social graph's adult, alive, close-family, and exclusive-partner validation rules.
 
 Example:
 
 ```mcfunction
 /villagerretaliation setNearbyReputation -150
 ```
+
+Debug-only family testing items are available through commands:
+
+```mcfunction
+/give @s villagerretaliation:villager_breeding_stick
+/give @s villagerretaliation:villager_maturity_emerald
+```
+
+Right-click two adult villagers with the breeding stick to create a biological baby immediately, bypassing vanilla breeding cooldown. Biological births require opposite-gender parents and still respect close-family checks. Sneak-right-click the second adult instead to select any valid adult pair for adoption, then right-click an orphan baby villager. Same-gender adult pairs automatically enter adoption mode instead of creating a biological baby. Right-click a baby villager with the maturity emerald to make them an adult immediately.
 
 ## Configuration
 
@@ -288,7 +300,7 @@ Dialogue choices are declared with an `options` array:
 }
 ```
 
-`type` controls the existing dialogue behavior and reputation handling: `chat`, `greeting`, `question`, `gift_preferences`, `gift_advice_followup`, `map_report`, `combat_survival_report`, `gear_report`, `recruitment_followup`, `apology`, `village_defense_report`, `story`, `share_story`, `joke`, or `insult`. `option` or `option_ids` binds a line to a custom choice. Lines can also filter by `professions`, `dispositions`, `weather`, `times`, `event_tags`, `player_event_tags`, `show_for_adults`, `show_for_babies`, `requires_recent_broken_bed_memory`, `requires_recent_direct_hit_memory`, `requires_gear_report_used_in_combat`, `requires_gear_report_unused_in_combat`, `recruitment_followup_scenarios`, `requires_recruitment_memory`, `recruitment_memory_scenarios`, `min_recruitment_follow_distance`, `requires_recruitment_boat_trip`, `requires_recruitment_ocean_crossing`, `requires_recruitment_swim_trip`, `excludes_recruitment_ocean_crossing`, and `first_conversation_only`. Opening and closing lines also support `first_conversation_only` and `first_village_interaction_only`. Recruitment memory chat lines can use `{follow_biome}` and `{follow_distance}` placeholders. Shared story lines can use `{target}` and `{target_article}` placeholders, and can filter to specific discovered structures or biomes with `story_structure`, `story_structures`, `story_biome`, or `story_biomes`. Options can set `requires_unreported_cartographer_map_discovery` to appear only after the player finds a cartographer dialogue map target and before they report it, `requires_unreported_gift_advice_result` to appear after the player tests that villager's gift advice on another villager and before the result is discussed, `requires_unreported_combat_survival_report` to appear after a followed villager or nearby fighting villager survives a raid/night hostile encounter and before that survival is acknowledged, `requires_unreported_gear_report` to appear after the player gives that villager armor or a usable weapon and before they ask how it is working, `requires_unreported_recruitment_followup` to appear after a follower is dismissed safely near the village, dismissed injured near the village, or betrayed by the player and before that outcome is discussed, `requires_unapologized_remembered_harm` to appear after the player hits that villager, breaks their bed, or is recently caught harming a nearby villager and before they apologize, `requires_unreported_village_defense` to appear for nearby villagers after the player kills raiders during an active raid and before that defense is discussed, or `requires_shareable_story` to appear only after the player has discovered a configured structure or biome near that villager. Higher `weight` values are picked more often.
+`type` controls the existing dialogue behavior and reputation handling: `chat`, `greeting`, `question`, `gift_preferences`, `gift_advice_followup`, `map_report`, `combat_survival_report`, `gear_report`, `recruitment_followup`, `apology`, `village_defense_report`, `story`, `share_story`, `joke`, or `insult`. `option` or `option_ids` binds a line to a custom choice. Lines can also filter by `professions`, `dispositions`, `weather`, `times`, `event_tags`, `player_event_tags`, `player_items`, `player_item_slots`, `show_for_adults`, `show_for_babies`, `requires_recent_broken_bed_memory`, `requires_recent_direct_hit_memory`, `requires_gear_report_used_in_combat`, `requires_gear_report_unused_in_combat`, `recruitment_followup_scenarios`, `requires_recruitment_memory`, `recruitment_memory_scenarios`, `min_recruitment_follow_distance`, `requires_recruitment_boat_trip`, `requires_recruitment_ocean_crossing`, `requires_recruitment_swim_trip`, `excludes_recruitment_ocean_crossing`, `requires_known_family`, `requires_known_parent`, `requires_known_sibling`, `requires_known_spouse`, `requires_known_child`, `requires_known_grandparent`, `requires_known_grandchild`, `requires_known_descendant`, `requires_known_aunt_uncle`, `requires_known_cousin`, `requires_known_niece_nephew`, `requires_known_extended_family`, `requires_known_deceased_family`, `requires_known_relationship`, `requires_known_current_relationship`, `requires_known_past_relationship`, `requires_known_crush`, `requires_known_dating_partner`, `requires_known_fiance`, `requires_known_romantic_spouse`, `requires_known_separated_partner`, `requires_known_widowed_partner`, and `first_conversation_only`. Opening and closing lines also support `first_conversation_only` and `first_village_interaction_only`. Recruitment memory chat lines can use `{follow_biome}` and `{follow_distance}` placeholders. Player item-aware lines can use `{player_item}`, `{held_item}`, `{player_item_id}`, and `{player_item_slot}` placeholders. Family-aware lines can use `{parent}`, `{sibling}`, `{spouse}`, `{child}`, `{grandparent}`, `{ancestor}`, `{grandchild}`, `{descendant}`, `{aunt_uncle}`, `{cousin}`, `{niece_nephew}`, `{deceased_family}`, `{extended_relative}`, `{relative}`, and their `_possessive` variants. Relationship-aware lines can use `{partner}`, `{crush}`, `{dating_partner}`, `{fiance}`, `{romantic_spouse}`, `{ex_partner}`, `{late_partner}`, and their `_possessive` variants. Shared story lines can use `{target}` and `{target_article}` placeholders, and can filter to specific discovered structures or biomes with `story_structure`, `story_structures`, `story_biome`, or `story_biomes`. Options can set `requires_unreported_cartographer_map_discovery` to appear only after the player finds a cartographer dialogue map target and before they report it, `requires_unreported_gift_advice_result` to appear after the player tests that villager's gift advice on another villager and before the result is discussed, `requires_unreported_combat_survival_report` to appear after a followed villager or nearby fighting villager survives a raid/night hostile encounter and before that survival is acknowledged, `requires_unreported_gear_report` to appear after the player gives that villager armor or a usable weapon and before they ask how it is working, `requires_unreported_recruitment_followup` to appear after a follower is dismissed safely near the village, dismissed injured near the village, or betrayed by the player and before that outcome is discussed, `requires_unapologized_remembered_harm` to appear after the player hits that villager, breaks their bed, or is recently caught harming a nearby villager and before they apologize, `requires_unreported_village_defense` to appear for nearby villagers after the player kills raiders during an active raid and before that defense is discussed, any `requires_known_*` family or relationship filter to appear only when the social graph knows that relationship, or `requires_shareable_story` to appear only after the player has discovered a configured structure or biome near that villager. Higher `weight` values are picked more often.
 
 Structures that unlock `share_story` dialogue are loaded from datapack JSON under:
 
@@ -428,7 +440,7 @@ Each entry binds text and color to a trigger emitted by code. Dialogue can trigg
 
 `color`, `text_color`, and `chat_color` accept common color names or hex values such as `#FFD166`. HUD entries can set `kind` for existing notification behavior. World-text entries can set `world_text_kind`: `alert`, `murmur`, `positive`, `negative`, `trade`, `dialogue`, or `sleep`.
 
-Built-in triggers include `gift.liked`, `gift.neutral`, `gift.disliked`, `gift.received_item`, recruitment triggers such as `recruitment.follow_start`, reputation tier triggers such as `reputation.tier.trusted.improved`, dialogue triggers such as `dialogue.question`, ambient triggers such as `ambient.murmur`, sleep triggers, trade triggers, and villager alert triggers. Entries can filter by `professions`, `reputation_levels`, `min_reputation`, `max_reputation`, `show_for_adults`, `show_for_babies`, `chance`, and `weight`.
+Built-in triggers include `gift.liked`, `gift.neutral`, `gift.disliked`, `gift.received_item`, recruitment triggers such as `recruitment.follow_start`, reputation tier triggers such as `reputation.tier.trusted.improved`, dialogue triggers such as `dialogue.question`, ambient triggers such as `ambient.murmur` and `ambient.player_item`, sleep triggers, combat triggers such as `combat.player_killed`, trade triggers, and villager alert triggers such as `alert.player_attacked_villager`. Entries can filter by `professions`, `reputation_levels`, `min_reputation`, `max_reputation`, `player_items`, `player_item_slots`, `show_for_adults`, `show_for_babies`, `chance`, and `weight`.
 
 Notification text also follows the player's client language. Files in `notifications/<locale>/` overlay `notifications/en_us/` the same way dialogue files do.
 
@@ -471,7 +483,8 @@ Gift preference entries map items or item tags to a reaction. Profession-specifi
   "preferences": [
     {
       "reaction": "liked",
-      "items": ["minecraft:bread", "minecraft:apple"]
+      "items": ["minecraft:bread", "minecraft:apple"],
+      "response_key": "my_pack.gift.simple_food"
     },
     {
       "professions": ["farmer"],
@@ -483,7 +496,18 @@ Gift preference entries map items or item tags to a reaction. Profession-specifi
 }
 ```
 
-Valid reactions are `loved`, `liked`, `neutral`, `disliked`, and `hated`. Each reaction has a default per-item reputation value, but `reputation_per_item` can override it for a specific entry.
+Valid reactions are `loved`, `liked`, `neutral`, `disliked`, and `hated`. Each reaction has a default per-item reputation value, but `reputation_per_item` can override it for a specific entry. A gift preference can also set `response_key` to use a localized dialogue message when that specific item or tag rule matches; if the message key is missing, the normal reaction response is used.
+
+```json
+{
+  "messages": [
+    {
+      "key": "my_pack.gift.simple_food",
+      "text": "{gift_item}? Good food is never wasted."
+    }
+  ]
+}
+```
 
 Gifted items are stored in the villager's inventory. Trusted-or-better villagers may keep a loved or liked gift as a visible keepsake when they have an empty hand, armor slot, or offhand slot for it.
 

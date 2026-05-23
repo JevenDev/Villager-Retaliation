@@ -17,6 +17,7 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.BooleanValue ENABLE_DIALOGUE_CAMERA_FOCUS;
     public static final ModConfigSpec.BooleanValue SEPARATE_VILLAGER_CHAT_MESSAGES;
     public static final ModConfigSpec.BooleanValue SEPARATE_VILLAGER_CHAT_SPEAKERS;
+    public static final ModConfigSpec.EnumValue<InteractionChatPosition> INTERACTION_CHAT_POSITION;
     public static final ModConfigSpec.DoubleValue DIALOGUE_CAMERA_ZOOM_AMOUNT;
     public static final ModConfigSpec.IntValue DIALOGUE_CAMERA_TRANSITION_TICKS;
     public static final ModConfigSpec.EnumValue<ReputationChangeDisplayMode> REPUTATION_CHANGE_DISPLAY_MODE;
@@ -56,6 +57,7 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.IntValue REPEATED_QUESTION_REPUTATION_LOSS;
     public static final ModConfigSpec.IntValue REPEATED_DIALOGUE_OPTION_RESET_TICKS;
     public static final ModConfigSpec.IntValue GIFT_ANNOYANCE_REDUCTION_DIVISOR;
+    public static final ModConfigSpec.DoubleValue MAX_FOLLOW_DISTANCE;
     public static final ModConfigSpec.IntValue SLEEPING_VILLAGER_BOTHER_REPUTATION_LOSS;
     public static final ModConfigSpec.IntValue SLEEPING_VILLAGER_BED_BREAK_REPUTATION_LOSS;
     public static final ModConfigSpec.IntValue GREETING_REPUTATION_GAIN;
@@ -197,6 +199,10 @@ public final class VillagerRetaliationConfig {
                 .comment("Adds a blank chat line before a villager dialogue header when the speaker changes.")
                 .translation("villagerretaliation.configuration.dialogue.separateVillagerChatSpeakers")
                 .define("separateVillagerChatSpeakers", true);
+        INTERACTION_CHAT_POSITION = BUILDER
+                .comment("Where chat is anchored while the Villager Retaliation interaction menu is open.")
+                .translation("villagerretaliation.configuration.dialogue.interactionChatPosition")
+                .defineEnum("interactionChatPosition", InteractionChatPosition.BOTTOM_LEFT);
         DIALOGUE_CAMERA_ZOOM_AMOUNT = BUILDER
                 .comment("FOV zoom amount used while the Villager Retaliation dialogue screen is open.")
                 .translation("villagerretaliation.configuration.dialogue.dialogueCameraZoomAmount")
@@ -240,6 +246,9 @@ public final class VillagerRetaliationConfig {
         GIFT_ANNOYANCE_REDUCTION_DIVISOR = BUILDER.comment("Positive gift reputation value needed to reduce repeated dialogue annoyance by one use. Set to 0 to disable gift annoyance reduction.")
                 .translation("villagerretaliation.configuration.dialogue.giftAnnoyanceReductionDivisor")
                 .defineInRange("giftAnnoyanceReductionDivisor", 8, 0, 1000);
+        MAX_FOLLOW_DISTANCE = BUILDER.comment("Maximum player-to-villager distance in blocks before a following villager stops following.")
+                .translation("villagerretaliation.configuration.dialogue.maxFollowDistance")
+                .defineInRange("maxFollowDistance", 64.0D, 1.0D, 1024.0D);
         GREETING_REPUTATION_GAIN = BUILDER.comment("Reputation gained from an eligible friendly greeting.")
                 .translation("villagerretaliation.configuration.dialogue.greetingReputationGain")
                 .defineInRange("greetingReputationGain", 1, 0, 1000);

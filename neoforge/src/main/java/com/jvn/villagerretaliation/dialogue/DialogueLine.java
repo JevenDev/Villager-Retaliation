@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.dialogue;
 
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
+import com.jvn.villagerretaliation.util.VillagerPlayerItemCondition;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import java.util.EnumSet;
 import java.util.Set;
@@ -20,6 +21,7 @@ public record DialogueLine(
         Set<DialogueContext.TimeOfDay> timeOfDays,
         Set<VillageEventMemory.EventTag> eventTags,
         Set<VillageEventMemory.EventTag> playerEventTags,
+        VillagerPlayerItemCondition playerItemCondition,
         Set<ResourceLocation> storyTargetIds,
         boolean requiresRecentBrokenBedMemory,
         boolean requiresRecentDirectHitMemory,
@@ -34,6 +36,28 @@ public record DialogueLine(
         boolean requiresRecruitmentSwimTrip,
         boolean excludesRecruitmentOceanCrossing,
         boolean firstConversationOnly,
+        boolean requiresKnownFamily,
+        boolean requiresKnownParent,
+        boolean requiresKnownSibling,
+        boolean requiresKnownSpouse,
+        boolean requiresKnownChild,
+        boolean requiresKnownGrandparent,
+        boolean requiresKnownGrandchild,
+        boolean requiresKnownDescendant,
+        boolean requiresKnownAuntUncle,
+        boolean requiresKnownCousin,
+        boolean requiresKnownNieceNephew,
+        boolean requiresKnownExtendedFamily,
+        boolean requiresKnownDeceasedFamily,
+        boolean requiresKnownRelationship,
+        boolean requiresKnownCurrentRelationship,
+        boolean requiresKnownPastRelationship,
+        boolean requiresKnownCrush,
+        boolean requiresKnownDatingPartner,
+        boolean requiresKnownFiance,
+        boolean requiresKnownRomanticSpouse,
+        boolean requiresKnownSeparatedPartner,
+        boolean requiresKnownWidowedPartner,
         GiftAdviceKind giftAdviceKind,
         int weight
 ) {
@@ -74,6 +98,9 @@ public record DialogueLine(
             return false;
         }
         if (!this.playerEventTags.isEmpty() && !context.hasRecentPlayerEvent(this.playerEventTags.toArray(VillageEventMemory.EventTag[]::new))) {
+            return false;
+        }
+        if (!this.playerItemCondition.matches(context.player())) {
             return false;
         }
         if (!this.storyTargetIds.isEmpty()
@@ -119,6 +146,72 @@ public record DialogueLine(
         if (this.excludesRecruitmentOceanCrossing && context.hasRecruitmentMemoryOceanCrossing()) {
             return false;
         }
+        if (this.requiresKnownFamily && !context.hasKnownFamily()) {
+            return false;
+        }
+        if (this.requiresKnownParent && !context.hasKnownParent()) {
+            return false;
+        }
+        if (this.requiresKnownSibling && !context.hasKnownSibling()) {
+            return false;
+        }
+        if (this.requiresKnownSpouse && !context.hasKnownSpouse()) {
+            return false;
+        }
+        if (this.requiresKnownChild && !context.hasKnownChild()) {
+            return false;
+        }
+        if (this.requiresKnownGrandparent && !context.hasKnownGrandparent()) {
+            return false;
+        }
+        if (this.requiresKnownGrandchild && !context.hasKnownGrandchild()) {
+            return false;
+        }
+        if (this.requiresKnownDescendant && !context.hasKnownDescendant()) {
+            return false;
+        }
+        if (this.requiresKnownAuntUncle && !context.hasKnownAuntUncle()) {
+            return false;
+        }
+        if (this.requiresKnownCousin && !context.hasKnownCousin()) {
+            return false;
+        }
+        if (this.requiresKnownNieceNephew && !context.hasKnownNieceNephew()) {
+            return false;
+        }
+        if (this.requiresKnownExtendedFamily && !context.hasKnownExtendedFamily()) {
+            return false;
+        }
+        if (this.requiresKnownDeceasedFamily && !context.hasKnownDeceasedFamily()) {
+            return false;
+        }
+        if (this.requiresKnownRelationship && !context.hasKnownRelationship()) {
+            return false;
+        }
+        if (this.requiresKnownCurrentRelationship && !context.hasKnownCurrentRelationship()) {
+            return false;
+        }
+        if (this.requiresKnownPastRelationship && !context.hasKnownPastRelationship()) {
+            return false;
+        }
+        if (this.requiresKnownCrush && !context.hasKnownCrush()) {
+            return false;
+        }
+        if (this.requiresKnownDatingPartner && !context.hasKnownDatingPartner()) {
+            return false;
+        }
+        if (this.requiresKnownFiance && !context.hasKnownFiance()) {
+            return false;
+        }
+        if (this.requiresKnownRomanticSpouse && !context.hasKnownRomanticSpouse()) {
+            return false;
+        }
+        if (this.requiresKnownSeparatedPartner && !context.hasKnownSeparatedPartner()) {
+            return false;
+        }
+        if (this.requiresKnownWidowedPartner && !context.hasKnownWidowedPartner()) {
+            return false;
+        }
         return this.weight > 0;
     }
 
@@ -142,6 +235,9 @@ public record DialogueLine(
             score += 4;
         }
         if (!this.playerEventTags.isEmpty()) {
+            score += 5;
+        }
+        if (!this.playerItemCondition.isEmpty()) {
             score += 5;
         }
         if (!this.storyTargetIds.isEmpty()) {
@@ -168,6 +264,32 @@ public record DialogueLine(
         if (this.firstConversationOnly) {
             score += 2;
         }
+        if (this.requiresKnownFamily
+                || this.requiresKnownParent
+                || this.requiresKnownSibling
+                || this.requiresKnownSpouse
+                || this.requiresKnownChild
+                || this.requiresKnownGrandparent
+                || this.requiresKnownGrandchild
+                || this.requiresKnownDescendant
+                || this.requiresKnownAuntUncle
+                || this.requiresKnownCousin
+                || this.requiresKnownNieceNephew
+                || this.requiresKnownExtendedFamily
+                || this.requiresKnownDeceasedFamily) {
+            score += 5;
+        }
+        if (this.requiresKnownRelationship
+                || this.requiresKnownCurrentRelationship
+                || this.requiresKnownPastRelationship
+                || this.requiresKnownCrush
+                || this.requiresKnownDatingPartner
+                || this.requiresKnownFiance
+                || this.requiresKnownRomanticSpouse
+                || this.requiresKnownSeparatedPartner
+                || this.requiresKnownWidowedPartner) {
+            score += 5;
+        }
         if (this.giftAdviceKind != null) {
             score += 3;
         }
@@ -191,6 +313,7 @@ public record DialogueLine(
         private final Set<DialogueContext.TimeOfDay> timeOfDays = EnumSet.noneOf(DialogueContext.TimeOfDay.class);
         private final Set<VillageEventMemory.EventTag> eventTags = EnumSet.noneOf(VillageEventMemory.EventTag.class);
         private final Set<VillageEventMemory.EventTag> playerEventTags = EnumSet.noneOf(VillageEventMemory.EventTag.class);
+        private VillagerPlayerItemCondition playerItemCondition = VillagerPlayerItemCondition.empty();
         private final Set<ResourceLocation> storyTargetIds = new java.util.HashSet<>();
         private boolean requiresRecentBrokenBedMemory;
         private boolean requiresRecentDirectHitMemory;
@@ -205,6 +328,28 @@ public record DialogueLine(
         private boolean requiresRecruitmentSwimTrip;
         private boolean excludesRecruitmentOceanCrossing;
         private boolean firstConversationOnly;
+        private boolean requiresKnownFamily;
+        private boolean requiresKnownParent;
+        private boolean requiresKnownSibling;
+        private boolean requiresKnownSpouse;
+        private boolean requiresKnownChild;
+        private boolean requiresKnownGrandparent;
+        private boolean requiresKnownGrandchild;
+        private boolean requiresKnownDescendant;
+        private boolean requiresKnownAuntUncle;
+        private boolean requiresKnownCousin;
+        private boolean requiresKnownNieceNephew;
+        private boolean requiresKnownExtendedFamily;
+        private boolean requiresKnownDeceasedFamily;
+        private boolean requiresKnownRelationship;
+        private boolean requiresKnownCurrentRelationship;
+        private boolean requiresKnownPastRelationship;
+        private boolean requiresKnownCrush;
+        private boolean requiresKnownDatingPartner;
+        private boolean requiresKnownFiance;
+        private boolean requiresKnownRomanticSpouse;
+        private boolean requiresKnownSeparatedPartner;
+        private boolean requiresKnownWidowedPartner;
         private GiftAdviceKind giftAdviceKind;
         private int weight = 10;
 
@@ -250,6 +395,13 @@ public record DialogueLine(
 
         public Builder playerEventTags(VillageEventMemory.EventTag... eventTags) {
             this.playerEventTags.addAll(java.util.List.of(eventTags));
+            return this;
+        }
+
+        public Builder playerItemCondition(VillagerPlayerItemCondition playerItemCondition) {
+            this.playerItemCondition = playerItemCondition == null
+                    ? VillagerPlayerItemCondition.empty()
+                    : playerItemCondition;
             return this;
         }
 
@@ -345,6 +497,116 @@ public record DialogueLine(
             return this;
         }
 
+        public Builder requiresKnownFamily() {
+            this.requiresKnownFamily = true;
+            return this;
+        }
+
+        public Builder requiresKnownParent() {
+            this.requiresKnownParent = true;
+            return this;
+        }
+
+        public Builder requiresKnownSibling() {
+            this.requiresKnownSibling = true;
+            return this;
+        }
+
+        public Builder requiresKnownSpouse() {
+            this.requiresKnownSpouse = true;
+            return this;
+        }
+
+        public Builder requiresKnownChild() {
+            this.requiresKnownChild = true;
+            return this;
+        }
+
+        public Builder requiresKnownGrandparent() {
+            this.requiresKnownGrandparent = true;
+            return this;
+        }
+
+        public Builder requiresKnownGrandchild() {
+            this.requiresKnownGrandchild = true;
+            return this;
+        }
+
+        public Builder requiresKnownDescendant() {
+            this.requiresKnownDescendant = true;
+            return this;
+        }
+
+        public Builder requiresKnownAuntUncle() {
+            this.requiresKnownAuntUncle = true;
+            return this;
+        }
+
+        public Builder requiresKnownCousin() {
+            this.requiresKnownCousin = true;
+            return this;
+        }
+
+        public Builder requiresKnownNieceNephew() {
+            this.requiresKnownNieceNephew = true;
+            return this;
+        }
+
+        public Builder requiresKnownExtendedFamily() {
+            this.requiresKnownExtendedFamily = true;
+            return this;
+        }
+
+        public Builder requiresKnownDeceasedFamily() {
+            this.requiresKnownDeceasedFamily = true;
+            return this;
+        }
+
+        public Builder requiresKnownRelationship() {
+            this.requiresKnownRelationship = true;
+            return this;
+        }
+
+        public Builder requiresKnownCurrentRelationship() {
+            this.requiresKnownCurrentRelationship = true;
+            return this;
+        }
+
+        public Builder requiresKnownPastRelationship() {
+            this.requiresKnownPastRelationship = true;
+            return this;
+        }
+
+        public Builder requiresKnownCrush() {
+            this.requiresKnownCrush = true;
+            return this;
+        }
+
+        public Builder requiresKnownDatingPartner() {
+            this.requiresKnownDatingPartner = true;
+            return this;
+        }
+
+        public Builder requiresKnownFiance() {
+            this.requiresKnownFiance = true;
+            return this;
+        }
+
+        public Builder requiresKnownRomanticSpouse() {
+            this.requiresKnownRomanticSpouse = true;
+            return this;
+        }
+
+        public Builder requiresKnownSeparatedPartner() {
+            this.requiresKnownSeparatedPartner = true;
+            return this;
+        }
+
+        public Builder requiresKnownWidowedPartner() {
+            this.requiresKnownWidowedPartner = true;
+            return this;
+        }
+
         public Builder giftAdviceKind(GiftAdviceKind giftAdviceKind) {
             this.giftAdviceKind = giftAdviceKind;
             return this;
@@ -369,6 +631,7 @@ public record DialogueLine(
                     Set.copyOf(this.timeOfDays),
                     Set.copyOf(this.eventTags),
                     Set.copyOf(this.playerEventTags),
+                    this.playerItemCondition,
                     Set.copyOf(this.storyTargetIds),
                     this.requiresRecentBrokenBedMemory,
                     this.requiresRecentDirectHitMemory,
@@ -383,6 +646,28 @@ public record DialogueLine(
                     this.requiresRecruitmentSwimTrip,
                     this.excludesRecruitmentOceanCrossing,
                     this.firstConversationOnly,
+                    this.requiresKnownFamily,
+                    this.requiresKnownParent,
+                    this.requiresKnownSibling,
+                    this.requiresKnownSpouse,
+                    this.requiresKnownChild,
+                    this.requiresKnownGrandparent,
+                    this.requiresKnownGrandchild,
+                    this.requiresKnownDescendant,
+                    this.requiresKnownAuntUncle,
+                    this.requiresKnownCousin,
+                    this.requiresKnownNieceNephew,
+                    this.requiresKnownExtendedFamily,
+                    this.requiresKnownDeceasedFamily,
+                    this.requiresKnownRelationship,
+                    this.requiresKnownCurrentRelationship,
+                    this.requiresKnownPastRelationship,
+                    this.requiresKnownCrush,
+                    this.requiresKnownDatingPartner,
+                    this.requiresKnownFiance,
+                    this.requiresKnownRomanticSpouse,
+                    this.requiresKnownSeparatedPartner,
+                    this.requiresKnownWidowedPartner,
                     this.giftAdviceKind,
                     this.weight
             );

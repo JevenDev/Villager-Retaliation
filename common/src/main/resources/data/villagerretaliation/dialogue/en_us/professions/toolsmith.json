@@ -525,7 +525,7 @@
       "outcomes": [
         "blocked_by_reputation"
       ],
-      "text": "No. You are using emeralds like the wrong tool.",
+      "text": "No. You are using {payment_items} like the wrong tool.",
       "weight": 26
     }
   ]

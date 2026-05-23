@@ -1,6 +1,8 @@
 package com.jvn.villagerretaliation.client.interaction;
 
 import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
+import com.jvn.villagerretaliation.config.InteractionChatPosition;
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.DialogueDisposition;
 import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.network.VillagerConversationEndRequestPayload;
@@ -10,12 +12,16 @@ import com.jvn.villagerretaliation.network.VillagerInventoryRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerRecruitRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerTradeRequestPayload;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
+import com.jvn.villagerretaliation.social.VillagerFamilyTreeSnapshot;
+import com.jvn.villagerretaliation.social.VillagerRelationshipSnapshot;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
+import com.jvn.villagerretaliation.villager.VillagerGender;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.ChatComponent;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -34,6 +40,7 @@ public class VillagerInteractionScreen extends Screen {
     private static final int OPTION_HEIGHT = 18;
     private static final int OPTION_GAP = 0;
     private static final int OPTION_VIEWPORT_ROWS = 5;
+    private static final int INFO_PANEL_ROWS = 7;
     private static final int OPTION_TEXT_INSET = 10;
     private static final int OPTION_SCROLLBAR_OFFSET = 2;
     private static final int OPTION_SCROLLBAR_WIDTH = 2;
@@ -45,6 +52,10 @@ public class VillagerInteractionScreen extends Screen {
     private static final int VEIL_DITHER_START_OFFSET = OPTION_HEIGHT - 81;
     private static final int SCREEN_BOTTOM_MARGIN = 48;
     private static final int VEIL_TOP_DITHER_HEIGHT = 64;
+    private static final int CHAT_EDGE_MARGIN = 4;
+    private static final int CHAT_TOP_MARGIN = 12;
+    private static final int CHAT_INPUT_AND_GAP_HEIGHT = 38;
+    private static final int CHAT_EXTRA_WIDTH = 8;
     private static final float OPTION_SCROLL_LERP = 0.32F;
     private static final float OPTION_SCROLL_STEP = 12.0F;
     private static final float OPTION_HOVER_SCALE = 0.055F;
@@ -73,6 +84,7 @@ public class VillagerInteractionScreen extends Screen {
     private final int villagerEntityId;
     private final String villagerName;
     private final String professionName;
+    private final String genderName;
     private final boolean baby;
     private int reputation;
     private VillagerReputationLevel reputationLevel;
@@ -82,6 +94,8 @@ public class VillagerInteractionScreen extends Screen {
     private final List<DialogueOptionDefinition> dialogueOptions = new ArrayList<>();
     private final List<String> knownLikedGiftNames = new ArrayList<>();
     private final List<String> knownDislikedGiftNames = new ArrayList<>();
+    private final VillagerFamilyTreeSnapshot familyTree;
+    private final VillagerRelationshipSnapshot relationships;
     private DialoguePage page = DialoguePage.ROOT;
     private int selectedOption;
     private boolean closingFromServer;
@@ -98,6 +112,7 @@ public class VillagerInteractionScreen extends Screen {
             int villagerEntityId,
             String villagerName,
             String professionName,
+            String genderName,
             boolean baby,
             int reputation,
             VillagerReputationLevel reputationLevel,
@@ -105,11 +120,14 @@ public class VillagerInteractionScreen extends Screen {
             boolean followingPlayer,
             List<DialogueOptionDefinition> dialogueOptions,
             List<String> knownLikedGiftNames,
-            List<String> knownDislikedGiftNames) {
+            List<String> knownDislikedGiftNames,
+            VillagerFamilyTreeSnapshot familyTree,
+            VillagerRelationshipSnapshot relationships) {
         super(Component.literal("Villager Interaction"));
         this.villagerEntityId = villagerEntityId;
         this.villagerName = villagerName;
         this.professionName = professionName;
+        this.genderName = genderName == null || genderName.isBlank() ? "Unknown" : genderName;
         this.baby = baby;
         this.reputation = reputation;
         this.reputationLevel = reputationLevel;
@@ -118,6 +136,8 @@ public class VillagerInteractionScreen extends Screen {
         this.dialogueOptions.addAll(dialogueOptions);
         this.knownLikedGiftNames.addAll(knownLikedGiftNames);
         this.knownDislikedGiftNames.addAll(knownDislikedGiftNames);
+        this.familyTree = familyTree == null ? VillagerFamilyTreeSnapshot.EMPTY : familyTree;
+        this.relationships = relationships == null ? VillagerRelationshipSnapshot.EMPTY : relationships;
         ClientVillagerConversationState.start(villagerEntityId);
     }
 
@@ -182,7 +202,7 @@ public class VillagerInteractionScreen extends Screen {
         updateOptionScroll();
 
         int optionsTop = optionsTop();
-        renderConversationFocus(graphics, conversationInfoTop());
+        renderConversationFocus(graphics, conversationInfoTop(), mouseX, mouseY);
         renderDivider(graphics, optionsTop);
         renderTopBackButton(graphics, mouseX, mouseY);
         if (this.page == DialoguePage.GIFT) {
@@ -238,6 +258,8 @@ public class VillagerInteractionScreen extends Screen {
         }
 
         if (tryClickBackButton(mouseX, mouseY)
+                || tryClickFamilyButton(mouseX, mouseY)
+                || tryClickRelationshipButton(mouseX, mouseY)
                 || tryBeginScrollbarDrag(mouseX, mouseY)
                 || tryActivateHoveredOption(mouseX, mouseY)) {
             return true;
@@ -316,6 +338,14 @@ public class VillagerInteractionScreen extends Screen {
         this.options.clear();
         if (this.page == DialoguePage.TALK) {
             addDialogueOptions();
+        } else if (this.page == DialoguePage.FAMILY) {
+            addFamilyOptions();
+        } else if (this.page == DialoguePage.ANCESTRY) {
+            addAncestryOptions();
+        } else if (this.page == DialoguePage.DESCENDANTS) {
+            addDescendantOptions();
+        } else if (this.page == DialoguePage.RELATIONSHIPS) {
+            addRelationshipOptions();
         } else if (this.page == DialoguePage.RECRUIT) {
             addRecruitOptions();
         } else if (this.page == DialoguePage.ROOT) {
@@ -357,6 +387,9 @@ public class VillagerInteractionScreen extends Screen {
                 this.options.add(DialogueOption.enabled("Inventory", this::requestInventory));
             }
             this.options.add(DialogueOption.enabled("Recruit", this::openRecruitPage));
+            if (this.relationships.hasRelationships()) {
+                this.options.add(DialogueOption.enabled("Relationships", this::openRelationshipPage));
+            }
         }
         this.options.add(DialogueOption.enabled("Goodbye", this::leaveConversation));
     }
@@ -364,6 +397,93 @@ public class VillagerInteractionScreen extends Screen {
     private void addRecruitOptions() {
         this.options.add(DialogueOption.enabled("Hire", () -> requestRecruit(VillagerRecruitRequestPayload.Action.HIRE)));
         this.options.add(DialogueOption.enabled(this.followingPlayer ? "Stop Following" : "Follow Me", () -> requestRecruit(VillagerRecruitRequestPayload.Action.FOLLOW)));
+    }
+
+    private void addFamilyOptions() {
+        if (this.familyTree.hasAncestry()) {
+            this.options.add(DialogueOption.enabled("Ancestry", this::openAncestryPage));
+        }
+        if (this.familyTree.hasDescendants()) {
+            this.options.add(DialogueOption.enabled("Descendants", this::openDescendantsPage));
+        }
+        addFamilyRows("Father", this.familyTree.maleParents());
+        addFamilyRows("Mother", this.familyTree.femaleParents());
+        addFamilyRows("Birth-Father", this.familyTree.maleBirthParents());
+        addFamilyRows("Birth-Mother", this.familyTree.femaleBirthParents());
+        addFamilyRows("Adoptive Father", this.familyTree.maleAdoptiveParents());
+        addFamilyRows("Adoptive Mother", this.familyTree.femaleAdoptiveParents());
+        addFamilyRows("Step-Father", this.familyTree.maleStepParents());
+        addFamilyRows("Step-Mother", this.familyTree.femaleStepParents());
+        addFamilyRows("Brother", this.familyTree.brothers());
+        addFamilyRows("Sister", this.familyTree.sisters());
+        addFamilyRows("Uncle", this.familyTree.uncles());
+        addFamilyRows("Aunt", this.familyTree.aunts());
+        addFamilyRows("Nephew", this.familyTree.nephews());
+        addFamilyRows("Niece", this.familyTree.nieces());
+        addGenderedFamilyRows("Male Cousin", "Female Cousin", this.familyTree.cousins());
+        addGenderedFamilyRows("Husband", "Wife", this.familyTree.spouses());
+        addGenderedFamilyRows("Son", "Daughter", this.familyTree.children());
+        addFamilyRows("Friend", this.familyTree.friends());
+        addFamilyRows("Rival", this.familyTree.rivals());
+        if (this.options.isEmpty()) {
+            this.options.add(DialogueOption.enabled("No known family", () -> {
+            }));
+        }
+    }
+
+    private void addDescendantOptions() {
+        for (VillagerFamilyTreeSnapshot.DescendantGeneration generation : this.familyTree.descendants()) {
+            addFamilyRows(maleDescendantLabel(generation.generation()), VillagerFamilyTreeSnapshot.membersByGender(generation.descendants(), VillagerGender.MALE));
+            addFamilyRows(femaleDescendantLabel(generation.generation()), VillagerFamilyTreeSnapshot.membersByGender(generation.descendants(), VillagerGender.FEMALE));
+        }
+        if (this.options.isEmpty()) {
+            this.options.add(DialogueOption.enabled("No known descendants", () -> {
+            }));
+        }
+    }
+
+    private void addAncestryOptions() {
+        for (VillagerFamilyTreeSnapshot.AncestorGeneration generation : this.familyTree.ancestry()) {
+            addFamilyRows(maleAncestorLabel(generation.generation()), VillagerFamilyTreeSnapshot.membersByGender(generation.ancestors(), VillagerGender.MALE));
+            addFamilyRows(femaleAncestorLabel(generation.generation()), VillagerFamilyTreeSnapshot.membersByGender(generation.ancestors(), VillagerGender.FEMALE));
+        }
+        if (this.options.isEmpty()) {
+            this.options.add(DialogueOption.enabled("No known ancestry", () -> {
+            }));
+        }
+    }
+
+    private void addRelationshipOptions() {
+        for (VillagerRelationshipSnapshot.RomanticBondView bond : this.relationships.current()) {
+            this.options.add(DialogueOption.enabled(bond.displayLabel(), () -> {
+            }));
+        }
+        for (VillagerRelationshipSnapshot.RomanticBondView bond : this.relationships.past()) {
+            this.options.add(DialogueOption.enabled(bond.displayLabel(), () -> {
+            }));
+        }
+        if (this.options.isEmpty()) {
+            this.options.add(DialogueOption.enabled("No known relationships", () -> {
+            }));
+        }
+    }
+
+    private void addGenderedFamilyRows(
+            String maleLabel,
+            String femaleLabel,
+            List<VillagerFamilyTreeSnapshot.FamilyMember> members
+    ) {
+        addFamilyRows(maleLabel, VillagerFamilyTreeSnapshot.membersByGender(members, VillagerGender.MALE));
+        addFamilyRows(femaleLabel, VillagerFamilyTreeSnapshot.membersByGender(members, VillagerGender.FEMALE));
+    }
+
+    private void addFamilyRows(String label, List<VillagerFamilyTreeSnapshot.FamilyMember> members) {
+        for (VillagerFamilyTreeSnapshot.FamilyMember member : members) {
+            if (member != null && !member.name().isBlank()) {
+                this.options.add(DialogueOption.enabled(label + ": " + member.displayLabel(), () -> {
+                }));
+            }
+        }
     }
 
     private void addDialogueOption(String label, String optionId) {
@@ -383,6 +503,26 @@ public class VillagerInteractionScreen extends Screen {
 
     private void openRecruitPage() {
         this.page = DialoguePage.RECRUIT;
+        rebuildOptions();
+    }
+
+    private void openFamilyPage() {
+        this.page = DialoguePage.FAMILY;
+        rebuildOptions();
+    }
+
+    private void openRelationshipPage() {
+        this.page = DialoguePage.RELATIONSHIPS;
+        rebuildOptions();
+    }
+
+    private void openAncestryPage() {
+        this.page = DialoguePage.ANCESTRY;
+        rebuildOptions();
+    }
+
+    private void openDescendantsPage() {
+        this.page = DialoguePage.DESCENDANTS;
         rebuildOptions();
     }
 
@@ -414,9 +554,18 @@ public class VillagerInteractionScreen extends Screen {
         }
     }
 
+    private void navigateBackPage() {
+        if (this.page == DialoguePage.ANCESTRY || this.page == DialoguePage.DESCENDANTS) {
+            this.page = DialoguePage.FAMILY;
+            rebuildOptions();
+            return;
+        }
+        navigateToRootPage();
+    }
+
     private void goBackOrLeaveConversation() {
         if (canNavigateBack()) {
-            navigateToRootPage();
+            navigateBackPage();
         } else {
             leaveConversation();
         }
@@ -650,19 +799,105 @@ public class VillagerInteractionScreen extends Screen {
         VillagerInteractionScreenShaderRenderer.renderInteractionVeil(graphics, this.width, this.height, veilTop, VEIL_TOP_DITHER_HEIGHT);
     }
 
-    private void renderConversationFocus(GuiGraphics graphics, int optionsTop) {
+    void renderPositionedHudChat(GuiGraphics graphics) {
+        renderBackdropBehindChat(graphics);
+
+        Minecraft minecraft = Minecraft.getInstance();
+        ChatRenderLayout layout = chatRenderLayout();
+        graphics.enableScissor(layout.left(), layout.top(), layout.right(), layout.bottom());
+        graphics.pose().pushPose();
+        graphics.pose().translate(layout.xOffset(), layout.yOffset(), 0.0F);
+        minecraft.gui.getChat().render(graphics, minecraft.gui.getGuiTicks(), 0, 0, false);
+        graphics.pose().popPose();
+        graphics.disableScissor();
+    }
+
+    ChatRenderLayout chatRenderLayout() {
+        Minecraft minecraft = Minecraft.getInstance();
+        ChatComponent chat = minecraft.gui.getChat();
+        int chatWidth = chat.getWidth() + CHAT_EXTRA_WIDTH;
+        int chatHeight = chat.getHeight();
+        int groupWidth = Mth.clamp(chatWidth, 40, Math.max(40, this.width - CHAT_EDGE_MARGIN * 2));
+        int groupHeight = Mth.clamp(chatHeight + CHAT_INPUT_AND_GAP_HEIGHT, 40, Math.max(40, this.height - CHAT_EDGE_MARGIN * 2));
+        int vanillaTop = this.height - 40 - chatHeight;
+        int vanillaLeft = 0;
+
+        InteractionChatPosition position = VillagerRetaliationConfig.INTERACTION_CHAT_POSITION.get();
+        int targetLeft;
+        if (position.anchorsRight()) {
+            targetLeft = this.width - groupWidth - CHAT_EDGE_MARGIN;
+        } else if (position.anchorsCenter()) {
+            targetLeft = (this.width - groupWidth) / 2;
+        } else {
+            targetLeft = vanillaLeft;
+        }
+
+        int targetTop;
+        if (position.anchorsTop()) {
+            targetTop = CHAT_TOP_MARGIN;
+        } else if (position.anchorsMiddle()) {
+            targetTop = (this.height - groupHeight) / 2;
+        } else {
+            targetTop = vanillaTop;
+        }
+
+        targetLeft = Mth.clamp(targetLeft, 0, Math.max(0, this.width - groupWidth));
+        targetTop = Mth.clamp(targetTop, 0, Math.max(0, this.height - groupHeight));
+        return new ChatRenderLayout(
+                targetLeft,
+                targetTop,
+                targetLeft + groupWidth,
+                targetTop + groupHeight,
+                targetLeft - vanillaLeft,
+                targetTop - vanillaTop
+        );
+    }
+
+    private void renderConversationFocus(GuiGraphics graphics, int optionsTop, int mouseX, int mouseY) {
         int dividerX = dividerX();
         int infoBaseY = Mth.floor(optionTextTop(optionsTop));
         int infoLineGap = optionStride();
 
         drawRightAlignedInfo(graphics, this.villagerName, infoBaseY, INFO_VALUE_COLOR, dividerX);
         drawRightAlignedInfo(graphics, this.professionName, infoBaseY + infoLineGap, INFO_SECONDARY_COLOR, dividerX);
-        drawRightAlignedInfo(graphics, moodText(), infoBaseY + infoLineGap * 2, moodColor(this.mood), dividerX);
-        drawRightAlignedInfo(graphics, reputationText(), infoBaseY + infoLineGap * 3, INFO_LABEL_COLOR, dividerX);
+        drawRightAlignedInfo(graphics, genderText(), infoBaseY + infoLineGap * 2, INFO_SECONDARY_COLOR, dividerX);
+        drawRightAlignedInfo(graphics, moodText(), infoBaseY + infoLineGap * 3, moodColor(this.mood), dividerX);
+        drawRightAlignedInfo(graphics, reputationText(), infoBaseY + infoLineGap * 4, INFO_LABEL_COLOR, dividerX);
+        renderFamilyButton(graphics, mouseX, mouseY, infoBaseY + infoLineGap * 5, dividerX);
+        renderRelationshipButton(graphics, mouseX, mouseY, infoBaseY + infoLineGap * 6, dividerX);
     }
 
     private void drawRightAlignedInfo(GuiGraphics graphics, String text, int y, int color, int dividerX) {
         graphics.drawString(this.font, text, dividerX - 28 - this.font.width(text), y, color, false);
+    }
+
+    private void renderFamilyButton(GuiGraphics graphics, int mouseX, int mouseY, int y, int dividerX) {
+        String text = familyButtonText();
+        FamilyButtonBounds bounds = familyButtonBounds(y, dividerX, text);
+        boolean hovered = bounds.contains(mouseX, mouseY);
+        boolean familyPageActive = this.page == DialoguePage.FAMILY
+                || this.page == DialoguePage.ANCESTRY
+                || this.page == DialoguePage.DESCENDANTS;
+        int color = familyPageActive
+                ? INFO_VALUE_COLOR
+                : hovered ? 0xFFE5E5DE : INFO_SECONDARY_COLOR;
+        if (hovered || familyPageActive) {
+            graphics.fill(bounds.left() - 6, bounds.top() - 2, bounds.right() + 4, bounds.bottom() + 2, hovered ? 0x30000000 : 0x18000000);
+        }
+        graphics.drawString(this.font, text, bounds.left(), y, color, false);
+    }
+
+    private void renderRelationshipButton(GuiGraphics graphics, int mouseX, int mouseY, int y, int dividerX) {
+        String text = relationshipButtonText();
+        FamilyButtonBounds bounds = familyButtonBounds(y, dividerX, text);
+        boolean hovered = bounds.contains(mouseX, mouseY);
+        int color = this.page == DialoguePage.RELATIONSHIPS
+                ? INFO_VALUE_COLOR
+                : hovered ? 0xFFE5E5DE : INFO_SECONDARY_COLOR;
+        if (hovered || this.page == DialoguePage.RELATIONSHIPS) {
+            graphics.fill(bounds.left() - 6, bounds.top() - 2, bounds.right() + 4, bounds.bottom() + 2, hovered ? 0x30000000 : 0x18000000);
+        }
+        graphics.drawString(this.font, text, bounds.left(), y, color, false);
     }
 
     private void renderDivider(GuiGraphics graphics, int optionsTop) {
@@ -772,7 +1007,23 @@ public class VillagerInteractionScreen extends Screen {
             return false;
         }
 
-        navigateToRootPage();
+        navigateBackPage();
+        return true;
+    }
+
+    private boolean tryClickFamilyButton(double mouseX, double mouseY) {
+        if (!isPointInsideFamilyButton(mouseX, mouseY)) {
+            return false;
+        }
+        openFamilyPage();
+        return true;
+    }
+
+    private boolean tryClickRelationshipButton(double mouseX, double mouseY) {
+        if (!isPointInsideRelationshipButton(mouseX, mouseY)) {
+            return false;
+        }
+        openRelationshipPage();
         return true;
     }
 
@@ -998,9 +1249,14 @@ public class VillagerInteractionScreen extends Screen {
 
     private int infoPanelWidth() {
         return Math.max(
-                Math.max(this.font.width(this.villagerName), this.font.width(this.professionName)),
-                Math.max(this.font.width(moodText()), this.font.width(reputationText()))
+                Math.max(Math.max(this.font.width(this.villagerName), this.font.width(this.professionName)),
+                        Math.max(Math.max(this.font.width(genderText()), this.font.width(moodText())), this.font.width(reputationText()))),
+                Math.max(this.font.width(familyButtonText()), this.font.width(relationshipButtonText()))
         );
+    }
+
+    private String genderText() {
+        return "Gender: " + this.genderName;
     }
 
     private String moodText() {
@@ -1009,6 +1265,34 @@ public class VillagerInteractionScreen extends Screen {
 
     private String reputationText() {
         return "Reputation: " + this.reputation;
+    }
+
+    private String familyButtonText() {
+        int count = this.familyTree.relationshipCount();
+        return count <= 0 ? "Family Tree" : "Family Tree: " + count;
+    }
+
+    private String relationshipButtonText() {
+        int count = this.relationships.relationshipCount();
+        return count <= 0 ? "Relationships" : "Relationships: " + count;
+    }
+
+    private boolean isPointInsideFamilyButton(double mouseX, double mouseY) {
+        int infoBaseY = Mth.floor(optionTextTop(conversationInfoTop()));
+        int y = infoBaseY + optionStride() * 5;
+        return familyButtonBounds(y, dividerX(), familyButtonText()).contains(mouseX, mouseY);
+    }
+
+    private boolean isPointInsideRelationshipButton(double mouseX, double mouseY) {
+        int infoBaseY = Mth.floor(optionTextTop(conversationInfoTop()));
+        int y = infoBaseY + optionStride() * 6;
+        return familyButtonBounds(y, dividerX(), relationshipButtonText()).contains(mouseX, mouseY);
+    }
+
+    private FamilyButtonBounds familyButtonBounds(int y, int dividerX, String text) {
+        int width = this.font.width(text);
+        int left = dividerX - 28 - width;
+        return new FamilyButtonBounds(left, left + width, y, y + this.font.lineHeight);
     }
 
     private boolean canRequestVillagerInventory() {
@@ -1024,9 +1308,20 @@ public class VillagerInteractionScreen extends Screen {
             this.originalChatWidth = (Double) minecraft.options.chatWidth().get();
         }
 
-        int targetPixelWidth = Math.max(40, infoPanelLeft() - INFO_PANEL_CHAT_PADDING);
+        int targetPixelWidth = Math.max(40, interactionChatTargetPixelWidth());
         double targetChatWidth = Mth.clamp((targetPixelWidth - 40.0D) / 280.0D, 0.0D, this.originalChatWidth);
         minecraft.options.chatWidth().set(targetChatWidth);
+    }
+
+    private int interactionChatTargetPixelWidth() {
+        InteractionChatPosition position = VillagerRetaliationConfig.INTERACTION_CHAT_POSITION.get();
+        if (position.anchorsCenter()) {
+            return this.width - CHAT_EDGE_MARGIN * 2;
+        }
+        if (position.anchorsRight()) {
+            return this.width - optionsLeft() - OPTION_WIDTH - INFO_PANEL_CHAT_PADDING;
+        }
+        return infoPanelLeft() - INFO_PANEL_CHAT_PADDING;
     }
 
     private void restoreChatWidthOverride() {
@@ -1048,7 +1343,7 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     private int rootOptionViewportHeight() {
-        return OPTION_VIEWPORT_ROWS * OPTION_HEIGHT + Math.max(0, OPTION_VIEWPORT_ROWS - 1) * OPTION_GAP;
+        return INFO_PANEL_ROWS * OPTION_HEIGHT + Math.max(0, INFO_PANEL_ROWS - 1) * OPTION_GAP;
     }
 
     private float maxOptionScroll() {
@@ -1187,10 +1482,60 @@ public class VillagerInteractionScreen extends Screen {
         };
     }
 
+    private static String maleAncestorLabel(int generation) {
+        return ancestorPrefix(generation) + "father";
+    }
+
+    private static String femaleAncestorLabel(int generation) {
+        return ancestorPrefix(generation) + "mother";
+    }
+
+    private static String maleDescendantLabel(int generation) {
+        return descendantPrefix(generation) + "son";
+    }
+
+    private static String femaleDescendantLabel(int generation) {
+        return descendantPrefix(generation) + "daughter";
+    }
+
+    private static String ancestorPrefix(int generation) {
+        if (generation <= 2) {
+            return "Grand";
+        }
+
+        StringBuilder prefix = new StringBuilder();
+        for (int i = 0; i < generation - 2; i++) {
+            if (!prefix.isEmpty()) {
+                prefix.append("-");
+            }
+            prefix.append("Great");
+        }
+        return prefix.append("-grand").toString();
+    }
+
+    private static String descendantPrefix(int generation) {
+        if (generation <= 2) {
+            return "Grand";
+        }
+
+        StringBuilder prefix = new StringBuilder();
+        for (int i = 0; i < generation - 2; i++) {
+            if (!prefix.isEmpty()) {
+                prefix.append("-");
+            }
+            prefix.append("Great");
+        }
+        return prefix.append("-grand").toString();
+    }
+
     private enum DialoguePage {
         ROOT,
         TALK,
         GIFT,
+        FAMILY,
+        ANCESTRY,
+        DESCENDANTS,
+        RELATIONSHIPS,
         RECRUIT
     }
 
@@ -1220,5 +1565,24 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     private record GiftInfoIconBounds(int left, int top, int right, int bottom) {
+    }
+
+    record ChatRenderLayout(int left, int top, int right, int bottom, int xOffset, int yOffset) {
+        int translatedMouseX(int mouseX) {
+            return mouseX - this.xOffset;
+        }
+
+        int translatedMouseY(int mouseY) {
+            return mouseY - this.yOffset;
+        }
+    }
+
+    private record FamilyButtonBounds(int left, int right, int top, int bottom) {
+        boolean contains(double mouseX, double mouseY) {
+            return mouseX >= this.left
+                    && mouseX <= this.right
+                    && mouseY >= this.top - 2
+                    && mouseY <= this.bottom + 2;
+        }
     }
 }

@@ -525,7 +525,7 @@
       "outcomes": [
         "blocked_by_reputation"
       ],
-      "text": "No. This split runs too deep for emeralds.",
+      "text": "No. This split runs too deep for {payment_items}.",
       "weight": 26
     }
   ]

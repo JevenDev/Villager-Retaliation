@@ -154,11 +154,19 @@ public final class VillagerCombatSurvivalService {
     }
 
     private static LivingEntity nearbyHostileThreatIfReady(Villager villager, long gameTime) {
-        Long nextScan = NEXT_NEARBY_THREAT_SCAN_TICKS.get(villager.getUUID());
-        if (nextScan != null && nextScan > gameTime) {
+        UUID villagerId = villager.getUUID();
+        Long nextScan = NEXT_NEARBY_THREAT_SCAN_TICKS.get(villagerId);
+        if (nextScan == null) {
+            long firstScan = gameTime + scanStagger(villagerId, NEARBY_THREAT_SCAN_INTERVAL_TICKS);
+            if (firstScan > gameTime) {
+                NEXT_NEARBY_THREAT_SCAN_TICKS.put(villagerId, firstScan);
+                return null;
+            }
+        } else if (nextScan > gameTime) {
             return null;
         }
-        NEXT_NEARBY_THREAT_SCAN_TICKS.put(villager.getUUID(), gameTime + NEARBY_THREAT_SCAN_INTERVAL_TICKS);
+
+        NEXT_NEARBY_THREAT_SCAN_TICKS.put(villagerId, gameTime + NEARBY_THREAT_SCAN_INTERVAL_TICKS);
         return nearbyHostileThreat(villager);
     }
 
@@ -181,5 +189,12 @@ public final class VillagerCombatSurvivalService {
 
     private static boolean isNaturalHostile(Villager villager, LivingEntity target) {
         return target != null && VillagerRetaliationVillagerCombatUtil.isNaturalHostileTarget(villager, target);
+    }
+
+    private static long scanStagger(UUID villagerId, long intervalTicks) {
+        if (intervalTicks <= 1L) {
+            return 0L;
+        }
+        return Math.floorMod(villagerId.getMostSignificantBits() ^ villagerId.getLeastSignificantBits(), intervalTicks);
     }
 }

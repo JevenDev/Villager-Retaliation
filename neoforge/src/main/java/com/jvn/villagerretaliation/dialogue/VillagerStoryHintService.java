@@ -22,6 +22,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.RandomSource;
@@ -43,9 +44,11 @@ public final class VillagerStoryHintService {
     private static final long STORY_HINT_DISCOVERY_TICKS = 20L * 60L * 60L * 6L;
     private static final int BIOME_HINT_DISCOVERY_RADIUS = 256;
     private static final int STRUCTURE_HINT_DISCOVERY_RADIUS = 128;
+    private static final int MAX_STRUCTURE_SEARCHES_PER_LOOKUP = 1;
     private static final double MIN_TARGET_SEPARATION_SQR = 96.0D * 96.0D;
     private static final Map<HintCacheKey, CachedLookup> CACHE = new HashMap<>();
     private static final Map<CartographerMapGiftKey, Long> CARTOGRAPHER_MAP_GIFTS = new HashMap<>();
+    private static MinecraftServer cacheServer;
 
     private VillagerStoryHintService() {
     }
@@ -134,6 +137,7 @@ public final class VillagerStoryHintService {
     }
 
     private static Optional<WorldHint> selectWorldHint(DialogueContext context, HintQuality quality) {
+        ensureCacheServer(context.level().getServer());
         boolean tryStructureFirst = quality.canRevealStructures && context.random().nextBoolean();
         if (tryStructureFirst) {
             Optional<WorldHint> structureHint = findStructureHint(context, quality);
@@ -267,6 +271,9 @@ public final class VillagerStoryHintService {
 
     private static List<CachedTarget> locateStructureTargets(DialogueContext context, HintQuality quality) {
         ServerLevel level = context.level();
+        if (!level.getServer().getWorldData().worldGenOptions().generateStructures()) {
+            return List.of();
+        }
         BlockPos origin = context.villager().blockPosition();
         Registry<Structure> registry = level.registryAccess().registryOrThrow(Registries.STRUCTURE);
         List<Holder.Reference<Structure>> structures = new ArrayList<>(registry.holders().toList());
@@ -276,7 +283,8 @@ public final class VillagerStoryHintService {
 
         List<CachedTarget> targets = new ArrayList<>();
         List<Holder.Reference<Structure>> remaining = new ArrayList<>(structures);
-        for (int index = 0; index < quality.structurePoolSize && !remaining.isEmpty(); index++) {
+        int searchCount = Math.min(quality.structurePoolSize, MAX_STRUCTURE_SEARCHES_PER_LOOKUP);
+        for (int index = 0; index < searchCount && !remaining.isEmpty(); index++) {
             Pair<BlockPos, Holder<Structure>> nearest = level.getChunkSource().getGenerator().findNearestMapStructure(
                     level,
                     HolderSet.direct(remaining),
@@ -414,6 +422,15 @@ public final class VillagerStoryHintService {
         if (CACHE.size() > 256) {
             CACHE.clear();
         }
+    }
+
+    private static void ensureCacheServer(MinecraftServer server) {
+        if (cacheServer == server) {
+            return;
+        }
+        CACHE.clear();
+        CARTOGRAPHER_MAP_GIFTS.clear();
+        cacheServer = server;
     }
 
     private static Optional<ResourceLocation> keyLocation(Holder<?> holder) {

@@ -19,6 +19,7 @@ import net.minecraft.world.entity.npc.AbstractVillager;
 
 public final class VillagerPresetNameRegistry {
     public static final String PERSISTENT_NAME_KEY = "VillagerRetaliationName";
+    public static final String PERSISTENT_GENDER_KEY = "VillagerRetaliationGender";
 
     private static final String LEGACY_NAME_KEY_PREFIX = "villagerretaliation.villager_name.";
     private static final ResourceLocation PRESET_NAMES_RESOURCE =
@@ -30,7 +31,7 @@ public final class VillagerPresetNameRegistry {
     }
 
     public static void warm(MinecraftServer server) {
-        loadNames(server);
+        loadNamePool(server);
     }
 
     public static void clearCache() {
@@ -39,9 +40,13 @@ public final class VillagerPresetNameRegistry {
 
     public static void ensurePresetNameAssigned(AbstractVillager villager) {
         if (villager.hasCustomName() || !(villager.level() instanceof ServerLevel level)) {
+            if (villager.hasCustomName() && villager.level() instanceof ServerLevel serverLevel) {
+                resolveStoredGender(villager, serverLevel.getServer());
+            }
             return;
         }
         resolveStoredName(villager, level.getServer());
+        resolveStoredGender(villager, level.getServer());
     }
 
     public static Component resolveDisplayName(AbstractVillager villager) {
@@ -68,23 +73,37 @@ public final class VillagerPresetNameRegistry {
         return resolveClientStoredName(villager);
     }
 
+    public static VillagerGender resolveGender(AbstractVillager villager) {
+        if (villager.level() instanceof ServerLevel level) {
+            return resolveStoredGender(villager, level.getServer());
+        }
+        return resolveClientStoredGender(villager);
+    }
+
     private static String resolveStoredName(AbstractVillager villager, MinecraftServer server) {
         String storedName = villager.getPersistentData().getString(PERSISTENT_NAME_KEY).trim();
         if (!storedName.isBlank()) {
             if (!isLegacyNameKey(storedName)) {
+                resolveStoredGender(villager, server);
                 return storedName;
             }
 
-            String migratedName = migrateLegacyNameKey(storedName, loadNames(server));
+            String migratedName = migrateLegacyNameKey(storedName, loadNamePool(server).allNames());
             if (!migratedName.isBlank()) {
                 villager.getPersistentData().putString(PERSISTENT_NAME_KEY, migratedName);
             }
+            resolveStoredGender(villager, server);
             return migratedName;
         }
 
-        List<String> names = loadNames(server);
+        VillagerGender gender = resolveStoredGender(villager, server);
+        NamePool namePool = loadNamePool(server);
+        List<String> names = namePool.namesFor(gender);
         if (names.isEmpty()) {
-            return "";
+            names = namePool.allNames();
+            if (names.isEmpty()) {
+                return "";
+            }
         }
 
         String selectedName = names.get(Math.floorMod(villager.getUUID().hashCode(), names.size()));
@@ -95,6 +114,32 @@ public final class VillagerPresetNameRegistry {
     private static String resolveClientStoredName(AbstractVillager villager) {
         String storedName = villager.getPersistentData().getString(PERSISTENT_NAME_KEY).trim();
         return isLegacyNameKey(storedName) ? "" : storedName;
+    }
+
+    private static VillagerGender resolveStoredGender(AbstractVillager villager, MinecraftServer server) {
+        String storedGender = villager.getPersistentData().getString(PERSISTENT_GENDER_KEY).trim();
+        VillagerGender gender = VillagerGender.bySerializedName(storedGender);
+        if (gender != null) {
+            return gender;
+        }
+
+        String storedName = villager.hasCustomName() && villager.getCustomName() != null
+                ? villager.getCustomName().getString().trim()
+                : villager.getPersistentData().getString(PERSISTENT_NAME_KEY).trim();
+        gender = loadNamePool(server)
+                .genderForName(storedName)
+                .orElseGet(() -> deterministicGender(villager));
+        villager.getPersistentData().putString(PERSISTENT_GENDER_KEY, gender.serializedName());
+        return gender;
+    }
+
+    private static VillagerGender resolveClientStoredGender(AbstractVillager villager) {
+        VillagerGender storedGender = VillagerGender.bySerializedName(villager.getPersistentData().getString(PERSISTENT_GENDER_KEY));
+        return storedGender == null ? deterministicGender(villager) : storedGender;
+    }
+
+    private static VillagerGender deterministicGender(AbstractVillager villager) {
+        return Math.floorMod(villager.getUUID().hashCode(), 2) == 0 ? VillagerGender.MALE : VillagerGender.FEMALE;
     }
 
     private static boolean isLegacyNameKey(String value) {
@@ -115,56 +160,111 @@ public final class VillagerPresetNameRegistry {
         }
     }
 
-    private static List<String> loadNames(MinecraftServer server) {
+    private static NamePool loadNamePool(MinecraftServer server) {
         CachedNamePool current = cachedNamePool;
-        if (current.server() == server && !current.names().isEmpty()) {
-            return current.names();
+        if (current.server() == server && !current.namePool().isEmpty()) {
+            return current.namePool();
         }
 
         synchronized (VillagerPresetNameRegistry.class) {
             current = cachedNamePool;
-            if (current.server() == server && !current.names().isEmpty()) {
-                return current.names();
+            if (current.server() == server && !current.namePool().isEmpty()) {
+                return current.namePool();
             }
 
-            List<String> loadedNames = readNames(server);
-            cachedNamePool = new CachedNamePool(server, loadedNames);
-            return loadedNames;
+            NamePool loadedNamePool = readNamePool(server);
+            cachedNamePool = new CachedNamePool(server, loadedNamePool);
+            return loadedNamePool;
         }
     }
 
-    private static List<String> readNames(MinecraftServer server) {
+    private static NamePool readNamePool(MinecraftServer server) {
         Optional<Resource> resource = server.getResourceManager().getResource(PRESET_NAMES_RESOURCE);
         if (resource.isEmpty()) {
-            return List.of();
+            return NamePool.empty();
         }
 
         try (Reader reader = resource.get().openAsReader()) {
             JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
-            JsonArray names = root.getAsJsonArray("names");
-            if (names == null || names.isEmpty()) {
-                return List.of();
-            }
-
-            List<String> loadedNames = new ArrayList<>(names.size());
-            for (JsonElement element : names) {
-                if (!element.isJsonPrimitive()) {
-                    continue;
-                }
-                String value = element.getAsString().trim();
-                if (!value.isBlank()) {
-                    loadedNames.add(value);
-                }
-            }
-            return List.copyOf(loadedNames);
+            List<String> maleNames = readNames(root.getAsJsonArray("male_names"));
+            List<String> femaleNames = readNames(root.getAsJsonArray("female_names"));
+            List<String> fallbackNames = readNames(root.getAsJsonArray("names"));
+            return new NamePool(maleNames, femaleNames, fallbackNames);
         } catch (IOException | IllegalStateException exception) {
-            return List.of();
+            return NamePool.empty();
         }
     }
 
-    private record CachedNamePool(MinecraftServer server, List<String> names) {
+    private static List<String> readNames(JsonArray names) {
+        if (names == null || names.isEmpty()) {
+            return List.of();
+        }
+
+        List<String> loadedNames = new ArrayList<>(names.size());
+        for (JsonElement element : names) {
+            if (!element.isJsonPrimitive()) {
+                continue;
+            }
+            String value = element.getAsString().trim();
+            if (!value.isBlank()) {
+                loadedNames.add(value);
+            }
+        }
+        return List.copyOf(loadedNames);
+    }
+
+    private record NamePool(List<String> maleNames, List<String> femaleNames, List<String> fallbackNames) {
+        private static NamePool empty() {
+            return new NamePool(List.of(), List.of(), List.of());
+        }
+
+        private boolean isEmpty() {
+            return this.maleNames.isEmpty() && this.femaleNames.isEmpty() && this.fallbackNames.isEmpty();
+        }
+
+        private List<String> namesFor(VillagerGender gender) {
+            return switch (gender) {
+                case MALE -> this.maleNames;
+                case FEMALE -> this.femaleNames;
+            };
+        }
+
+        private List<String> allNames() {
+            if (this.maleNames.isEmpty() && this.femaleNames.isEmpty()) {
+                return this.fallbackNames;
+            }
+            List<String> names = new ArrayList<>(this.maleNames.size() + this.femaleNames.size() + this.fallbackNames.size());
+            names.addAll(this.maleNames);
+            names.addAll(this.femaleNames);
+            names.addAll(this.fallbackNames);
+            return List.copyOf(names);
+        }
+
+        private Optional<VillagerGender> genderForName(String name) {
+            if (name == null || name.isBlank()) {
+                return Optional.empty();
+            }
+            boolean male = containsIgnoreCase(this.maleNames, name);
+            boolean female = containsIgnoreCase(this.femaleNames, name);
+            if (male == female) {
+                return Optional.empty();
+            }
+            return Optional.of(male ? VillagerGender.MALE : VillagerGender.FEMALE);
+        }
+
+        private static boolean containsIgnoreCase(List<String> names, String name) {
+            for (String candidate : names) {
+                if (candidate.equalsIgnoreCase(name)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
+    private record CachedNamePool(MinecraftServer server, NamePool namePool) {
         private static CachedNamePool empty() {
-            return new CachedNamePool(null, List.of());
+            return new CachedNamePool(null, NamePool.empty());
         }
     }
 }

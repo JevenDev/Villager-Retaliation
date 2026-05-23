@@ -51,6 +51,7 @@ public final class VillagerInteractionClientHandler {
                 payload.entityId(),
                 villagerName,
                 payload.professionName(),
+                payload.genderName(),
                 payload.baby(),
                 payload.reputation(),
                 payload.reputationLevel(),
@@ -58,7 +59,9 @@ public final class VillagerInteractionClientHandler {
                 payload.followingPlayer(),
                 payload.dialogueOptions(),
                 payload.knownLikedGiftNames(),
-                payload.knownDislikedGiftNames()
+                payload.knownDislikedGiftNames(),
+                payload.familyTree(),
+                payload.relationships()
         ));
     }
 

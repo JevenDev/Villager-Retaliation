@@ -26,6 +26,7 @@ import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -54,6 +55,7 @@ public final class VillagerReputationAdvancements {
     private static final long DANGEROUS_STORY_SCAN_INTERVAL_TICKS = 20L * 5L;
     private static final long DANGEROUS_STORY_INITIAL_SCAN_DELAY_TICKS = 20L * 10L;
     private static final int DANGEROUS_STORY_STRUCTURES_PER_SCAN = 2;
+    private static final int STRUCTURE_SEARCH_BLOCKS_PER_CHUNK = 16;
     private static final long STRUCTURE_STORY_CACHE_TICKS = 20L * 30L;
     private static final int MAX_STRUCTURE_STORY_CACHE_ENTRIES = 256;
     private static final long DANGEROUS_STORY_SHARE_TICKS = 20L * 60L * 60L * 6L;
@@ -67,6 +69,7 @@ public final class VillagerReputationAdvancements {
     private static final Map<UUID, Integer> NEXT_DANGEROUS_STORY_INDEX = new HashMap<>();
     private static final Map<UUID, Long> NEXT_BIOME_STORY_SCAN = new HashMap<>();
     private static final Map<StructureStorySearchKey, StructureStorySearchResult> STRUCTURE_STORY_CACHE = new HashMap<>();
+    private static MinecraftServer structureStoryCacheServer;
 
     private static final ResourceLocation ROOT = advancementId("reputation/root");
     private static final ResourceLocation COMMONFOLK = advancementId("reputation/commonfolk");
@@ -220,9 +223,13 @@ public final class VillagerReputationAdvancements {
         ServerLevel level = player.serverLevel();
         long gameTime = level.getGameTime();
         UUID playerId = player.getUUID();
-        Long nextScan = NEXT_DANGEROUS_STORY_SCAN.get(player.getUUID());
+        Long nextScan = NEXT_DANGEROUS_STORY_SCAN.get(playerId);
         if (nextScan == null) {
-            NEXT_DANGEROUS_STORY_SCAN.put(playerId, gameTime + DANGEROUS_STORY_INITIAL_SCAN_DELAY_TICKS);
+            NEXT_DANGEROUS_STORY_SCAN.put(
+                    playerId,
+                    gameTime + DANGEROUS_STORY_INITIAL_SCAN_DELAY_TICKS
+                            + scanStagger(playerId, DANGEROUS_STORY_SCAN_INTERVAL_TICKS)
+            );
             return;
         }
         if (nextScan != null && nextScan > gameTime) {
@@ -320,14 +327,18 @@ public final class VillagerReputationAdvancements {
             BlockPos origin,
             DangerousStructureStoryResources.Entry storyStructure,
             Holder.Reference<Structure> structure) {
+        if (!level.getServer().getWorldData().worldGenOptions().generateStructures()) {
+            return null;
+        }
+        ensureStructureStoryCacheServer(level.getServer());
         ChunkPos chunkPos = new ChunkPos(origin);
-        int searchRadius = Math.max(1, storyStructure.radius());
+        int blockRadius = Math.max(1, storyStructure.radius());
         StructureStorySearchKey key = new StructureStorySearchKey(
                 level.dimension(),
                 chunkPos.x,
                 chunkPos.z,
                 storyStructure.structureId(),
-                searchRadius
+                blockRadius
         );
         long gameTime = level.getGameTime();
         StructureStorySearchResult cached = STRUCTURE_STORY_CACHE.get(key);
@@ -340,13 +351,32 @@ public final class VillagerReputationAdvancements {
                         level,
                         HolderSet.direct(structure),
                         origin,
-                        searchRadius,
+                        blockRadiusToChunkRadius(blockRadius),
                         false
                 );
         BlockPos result = nearest == null ? null : nearest.getFirst().immutable();
         STRUCTURE_STORY_CACHE.put(key, new StructureStorySearchResult(result, gameTime + STRUCTURE_STORY_CACHE_TICKS));
         pruneStructureStoryCache(gameTime);
         return result;
+    }
+
+    private static int blockRadiusToChunkRadius(int blockRadius) {
+        return Math.max(1, (blockRadius + STRUCTURE_SEARCH_BLOCKS_PER_CHUNK - 1) / STRUCTURE_SEARCH_BLOCKS_PER_CHUNK);
+    }
+
+    private static long scanStagger(UUID playerId, long intervalTicks) {
+        if (intervalTicks <= 1L) {
+            return 0L;
+        }
+        return Math.floorMod(playerId.getMostSignificantBits() ^ playerId.getLeastSignificantBits(), intervalTicks);
+    }
+
+    private static void ensureStructureStoryCacheServer(MinecraftServer server) {
+        if (structureStoryCacheServer == server) {
+            return;
+        }
+        STRUCTURE_STORY_CACHE.clear();
+        structureStoryCacheServer = server;
     }
 
     private static void pruneStructureStoryCache(long gameTime) {

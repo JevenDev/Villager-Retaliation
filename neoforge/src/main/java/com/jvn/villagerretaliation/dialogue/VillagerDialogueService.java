@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.dialogue;
 
+import com.jvn.villagerretaliation.combat.PacifyPaymentOffer;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.combat.VillagerPacificationResult;
 import com.jvn.toucanlib.util.ToucanRandom;
@@ -78,12 +79,12 @@ public final class VillagerDialogueService {
         for (DialogueLine candidate : candidates) {
             selected -= effectiveWeight(candidate);
             if (selected < 0) {
-                return new DialogueResult(candidate.id(), resolveText(candidate.text(), context));
+                return new DialogueResult(candidate.id(), resolveText(candidate, context));
             }
         }
 
         DialogueLine fallback = candidates.getLast();
-        return new DialogueResult(fallback.id(), resolveText(fallback.text(), context));
+        return new DialogueResult(fallback.id(), resolveText(fallback, context));
     }
 
     public static String selectOpeningGreeting(DialogueContext context) {
@@ -110,8 +111,8 @@ public final class VillagerDialogueService {
         );
     }
 
-    public static String selectPacifyLine(DialogueContext context, VillagerPacificationResult result, int emeraldCost) {
-        return VillagerDialogueResources.pacifyLine(context, result, emeraldCost).orElse("");
+    public static String selectPacifyLine(DialogueContext context, VillagerPacificationResult result, PacifyPaymentOffer payment) {
+        return VillagerDialogueResources.pacifyLine(context, result, payment).orElse("");
     }
 
     public static DialogueDisposition dispositionFor(VillagerReputationLevel reputationLevel) {
@@ -386,7 +387,56 @@ public final class VillagerDialogueService {
                 .replace("{follow_biome}", context.recruitmentMemoryBiome())
                 .replace("{follow_distance}", Integer.toString(context.recruitmentMemoryDistanceBlocks()))
                 .replace("{cured_villager}", curedVillagerName)
-                .replace("{cured_villager_possessive}", toPossessive(curedVillagerName));
+                .replace("{cured_villager_possessive}", toPossessive(curedVillagerName))
+                .replace("{partner}", context.relationships().firstRelationshipPartner())
+                .replace("{partner_possessive}", toPossessive(context.relationships().firstRelationshipPartner()))
+                .replace("{crush}", context.relationships().firstCrush())
+                .replace("{crush_possessive}", toPossessive(context.relationships().firstCrush()))
+                .replace("{dating_partner}", context.relationships().firstDatingPartner())
+                .replace("{dating_partner_possessive}", toPossessive(context.relationships().firstDatingPartner()))
+                .replace("{fiance}", context.relationships().firstFiance())
+                .replace("{fiance_possessive}", toPossessive(context.relationships().firstFiance()))
+                .replace("{romantic_spouse}", context.relationships().firstRomanticSpouse())
+                .replace("{romantic_spouse_possessive}", toPossessive(context.relationships().firstRomanticSpouse()))
+                .replace("{ex_partner}", context.relationships().firstSeparatedPartner())
+                .replace("{ex_partner_possessive}", toPossessive(context.relationships().firstSeparatedPartner()))
+                .replace("{late_partner}", context.relationships().firstWidowedPartner())
+                .replace("{late_partner_possessive}", toPossessive(context.relationships().firstWidowedPartner()))
+                .replace("{parent}", context.familyTree().firstParent())
+                .replace("{parent_possessive}", toPossessive(context.familyTree().firstParent()))
+                .replace("{sibling}", context.familyTree().firstSibling())
+                .replace("{sibling_possessive}", toPossessive(context.familyTree().firstSibling()))
+                .replace("{spouse}", context.familyTree().firstSpouse())
+                .replace("{spouse_possessive}", toPossessive(context.familyTree().firstSpouse()))
+                .replace("{child}", context.familyTree().firstChild())
+                .replace("{child_possessive}", toPossessive(context.familyTree().firstChild()))
+                .replace("{grandparent}", context.familyTree().firstGrandparent())
+                .replace("{grandparent_possessive}", toPossessive(context.familyTree().firstGrandparent()))
+                .replace("{ancestor}", context.familyTree().firstAncestor())
+                .replace("{ancestor_possessive}", toPossessive(context.familyTree().firstAncestor()))
+                .replace("{grandchild}", context.familyTree().firstGrandchild())
+                .replace("{grandchild_possessive}", toPossessive(context.familyTree().firstGrandchild()))
+                .replace("{descendant}", context.familyTree().firstDescendant())
+                .replace("{descendant_possessive}", toPossessive(context.familyTree().firstDescendant()))
+                .replace("{aunt_uncle}", context.familyTree().firstAuntUncle())
+                .replace("{aunt_uncle_possessive}", toPossessive(context.familyTree().firstAuntUncle()))
+                .replace("{cousin}", context.familyTree().firstCousin())
+                .replace("{cousin_possessive}", toPossessive(context.familyTree().firstCousin()))
+                .replace("{niece_nephew}", context.familyTree().firstNieceNephew())
+                .replace("{niece_nephew_possessive}", toPossessive(context.familyTree().firstNieceNephew()))
+                .replace("{deceased_family}", context.familyTree().firstDeceasedFamily())
+                .replace("{deceased_family_possessive}", toPossessive(context.familyTree().firstDeceasedFamily()))
+                .replace("{extended_relative}", context.familyTree().firstExtendedRelative())
+                .replace("{extended_relative_possessive}", toPossessive(context.familyTree().firstExtendedRelative()))
+                .replace("{relative}", context.familyTree().firstRelative())
+                .replace("{relative_possessive}", toPossessive(context.familyTree().firstRelative()));
+    }
+
+    private static String resolveText(DialogueLine line, DialogueContext context) {
+        return VillagerDialogueResources.resolveTemplate(
+                resolveText(line.text(), context),
+                line.playerItemCondition().replacements(context.player())
+        );
     }
 
     private static String curedVillagerName(DialogueContext context) {
