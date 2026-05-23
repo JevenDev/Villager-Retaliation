@@ -33,6 +33,11 @@ public final class VillagerDataWarmup {
     }
 
     public static void clearCaches() {
+        clearResourceCaches();
+        VillageEventMemory.clear();
+    }
+
+    public static void clearResourceCaches() {
         VillagerDialogueResources.clearCache();
         VillagerGiftResources.clearCache();
         VillagerPacifyPaymentResources.clearCache();
@@ -40,7 +45,6 @@ public final class VillagerDataWarmup {
         BiomeStoryResources.clearCache();
         DangerousStructureStoryResources.clearCache();
         VillagerPresetNameRegistry.clearCache();
-        VillageEventMemory.clear();
         VillageMembership.clearCache();
         VillagerRetaliationVillagerWeapons.clearCache();
     }

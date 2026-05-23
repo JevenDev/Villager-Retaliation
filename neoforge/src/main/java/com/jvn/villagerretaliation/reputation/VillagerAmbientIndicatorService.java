@@ -6,15 +6,19 @@ import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
 import com.jvn.villagerretaliation.dialogue.DialogueReputationEffect;
 import com.jvn.villagerretaliation.network.VillagerWorldTextIndicatorKind;
 import com.jvn.villagerretaliation.notification.VillagerNotifications;
+import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
+import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
+import net.minecraft.world.entity.npc.WanderingTrader;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
 
@@ -130,6 +134,23 @@ public final class VillagerAmbientIndicatorService {
                 return;
             }
         }
+    }
+
+    public static void onPlayerKilled(ServerLevel level, AbstractVillager killer, ServerPlayer player) {
+        if (!killer.isAlive()) {
+            return;
+        }
+
+        String fallbackText = random(killer.getRandom(), "Stay down", "You were warned", "Enough");
+        VillagerNotifications.sendWorldText(
+                level,
+                killer,
+                player,
+                "combat.player_killed",
+                playerKillReplacements(killer, player),
+                VillagerWorldTextIndicatorKind.ALERT,
+                fallbackText
+        );
     }
 
     public static void onTradeCompleted(ServerLevel level, AbstractVillager villager, Player player) {
@@ -311,6 +332,28 @@ public final class VillagerAmbientIndicatorService {
             return;
         }
         VillagerNotifications.sendWorldText(level, villager, player, trigger, fallbackTrigger, Map.of(), fallbackKind, fallbackText);
+    }
+
+    private static Map<String, String> playerKillReplacements(AbstractVillager villager, ServerPlayer player) {
+        return VillagerNotifications.replacements(
+                "player", player.getGameProfile().getName(),
+                "victim", player.getGameProfile().getName(),
+                "villager", VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
+                "villager_name", VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
+                "villager_kind", villagerKind(villager),
+                "profession", villagerProfessionName(villager)
+        );
+    }
+
+    private static String villagerKind(AbstractVillager villager) {
+        return villager instanceof WanderingTrader ? "wandering trader" : "villager";
+    }
+
+    private static String villagerProfessionName(AbstractVillager villager) {
+        if (villager instanceof Villager resident) {
+            return VillagerInteractionTextUtil.professionName(resident.getVillagerData().getProfession(), "villager").toLowerCase(java.util.Locale.ROOT);
+        }
+        return villagerKind(villager);
     }
 
     private static void delayNextMurmur(AbstractVillager villager, long gameTime, int extraSeconds) {

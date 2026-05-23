@@ -59,6 +59,7 @@ import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.neoforge.event.AddReloadListenerEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
@@ -75,6 +76,13 @@ public final class VillagerRetaliationEvents {
     public static void onServerStopping(ServerStoppingEvent event) {
         VillagerDataWarmup.clearCaches();
         VillagerRetaliationVillagerRules.clearCachedChecks();
+    }
+
+    public static void onAddReloadListeners(AddReloadListenerEvent event) {
+        event.addListener((barrier, resourceManager, preparationProfiler, reloadProfiler, backgroundExecutor, gameExecutor) ->
+                java.util.concurrent.CompletableFuture
+                        .runAsync(VillagerDataWarmup::clearResourceCaches, backgroundExecutor)
+                        .thenCompose(barrier::wait));
     }
 
     public static void onEntityAttributeModification(EntityAttributeModificationEvent event) {
@@ -118,6 +126,12 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onLivingDeath(LivingDeathEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player && player.level() instanceof ServerLevel level) {
+            VillagerRetaliationVillagerCombatUtil.resolveAttacker(player, event.getSource())
+                    .filter(AbstractVillager.class::isInstance)
+                    .map(AbstractVillager.class::cast)
+                    .ifPresent(killer -> VillagerAmbientIndicatorService.onPlayerKilled(level, killer, player));
+        }
         if (event.getEntity() instanceof Villager villager) {
             broadcastVillagerDeathMessage(villager, event.getSource());
             VillagerCombatSurvivalService.onVillagerDeath(villager);

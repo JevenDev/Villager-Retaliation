@@ -35,6 +35,7 @@ public class VillagerRetaliation {
         ToucanEventBuses.game()
                 .listener(VillagerRetaliationEvents::onServerStarted)
                 .listener(VillagerRetaliationEvents::onServerStopping)
+                .listener(VillagerRetaliationEvents::onAddReloadListeners)
                 .listener(VillagerRetaliationCommands::onRegisterCommands)
                 .listener(VillagerRetaliationEvents::onLivingDamagePre)
                 .listener(VillagerRetaliationEvents::onLivingDamage)

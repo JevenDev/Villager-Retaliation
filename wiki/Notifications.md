@@ -98,6 +98,7 @@ The built-in notification file uses these trigger families:
 | Recruitment | `recruitment.follow_start`, `recruitment.follow_stop`, `recruitment.hired`, `recruitment.fired`, `recruitment.follower_death`, `recruitment.hired_death`, `recruitment.betrayed_follower_death` |
 | Reputation tiers | `reputation.tier.<level>.improved`, `reputation.tier.<level>.worsened` |
 | Ambient | `ambient.murmur`, `ambient.sleep_breathing`, `ambient.sleep_murmur` |
+| Combat | `combat.player_killed` |
 | Trade | `trade.completed`, `trade.refused` |
 | Alerts | `alert.villager_damaged`, `alert.witness_attack.player`, `alert.witness_attack`, `alert.witness_death.player`, `alert.witness_death` |
 
@@ -127,6 +128,8 @@ Placeholder support depends on the trigger. Common built-in notification placeho
 ```
 
 Unknown placeholders are left as literal text.
+
+`combat.player_killed` is emitted as world text above the villager or wandering trader credited with killing a player. It supports `{player}`, `{victim}`, `{villager}`, `{villager_name}`, `{villager_kind}`, and `{profession}`.
 
 ## Ambient World Text Example
 

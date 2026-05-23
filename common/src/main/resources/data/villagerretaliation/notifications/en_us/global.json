@@ -401,6 +401,27 @@
       "color": "red"
     },
     {
+      "trigger": "combat.player_killed",
+      "text": "You were warned",
+      "world_text_kind": "alert",
+      "color": "#FFD166",
+      "weight": 20
+    },
+    {
+      "trigger": "combat.player_killed",
+      "text": "Stay down, {player}",
+      "world_text_kind": "alert",
+      "color": "#FFD166",
+      "weight": 10
+    },
+    {
+      "trigger": "combat.player_killed",
+      "text": "Enough",
+      "world_text_kind": "alert",
+      "color": "#FFD166",
+      "weight": 12
+    },
+    {
       "trigger": "alert.villager_damaged",
       "text": "!",
       "world_text_kind": "alert",

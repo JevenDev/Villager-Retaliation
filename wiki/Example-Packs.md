@@ -111,6 +111,15 @@ data/villagerretaliation/notifications/en_us/examplepack_notifications.json
       "world_text_kind": "negative",
       "reputation_levels": ["hostile", "despised", "feared"],
       "color": "red"
+    },
+    {
+      "id": "examplepack.combat.player_killed",
+      "trigger": "combat.player_killed",
+      "text": "{player} should have listened",
+      "world_text_kind": "alert",
+      "reputation_levels": ["hostile", "despised", "feared"],
+      "color": "#FFD166",
+      "weight": 20
     }
   ]
 }
