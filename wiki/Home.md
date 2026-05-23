@@ -7,7 +7,10 @@ Villager Retaliation is data-driven in the places pack makers usually want to to
 - [Pack Development Guide](Pack-Development.md) - folder layout, namespaces, reload behavior, override strategy, and testing workflow.
 - [JSON Reference](JSON-Reference.md) - shared conventions, enum values, filters, ids, weights, colors, and common pitfalls.
 - [Dialogue JSON](Dialogue.md) - conversation options, dialogue lines, openings, closings, pacify lines, keyed messages, localization overlays, and story placeholders.
+- [Dialogue Types](Dialogue-Types.md) - every current dialogue `type` value, with simple and expanded dropdown examples.
+- [Event Tags](Event-Tags.md) - every current `event_tags` / `player_event_tags` value, with simple and expanded dropdown examples.
 - [Notifications JSON](Notifications.md) - HUD notifications, ambient world text, trigger ids, colors, notice kinds, filters, and translated replacements.
+- [Notification Triggers](Notification-Triggers.md) - every built-in notification `trigger`, with simple and expanded dropdown examples.
 - [Gift JSON](Gifts.md) - gift preferences, reactions, item and tag selectors, profession overrides, priority, and high-reputation rewards.
 - [Pacification JSON](Pacification.md) - item or tag payments, modded currencies, costs, and profession-specific pacify rules.
 - [Story Discovery JSON](Story-Discovery.md) - structure and biome discovery lists used by `share_story` dialogue.

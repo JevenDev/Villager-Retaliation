@@ -82,6 +82,8 @@ joke
 insult
 ```
 
+See [Dialogue Types](Dialogue-Types.md) for simple and expanded dropdown examples for every current `type` value.
+
 ## Option Fields
 
 | Field | Type | Default | Notes |
@@ -107,6 +109,28 @@ insult
 | `requires_unapologized_remembered_harm` | boolean | `false` | Shows after remembered harm that has not been apologized for. |
 | `requires_unreported_village_defense` | boolean | `false` | Shows after the player defends the village. |
 | `requires_shareable_story` | boolean | `false` | Shows when the villager has a discovered structure or biome story. |
+| `requires_known_family` | boolean | `false` | Shows when the villager has any known family relationship. |
+| `requires_known_parent` | boolean | `false` | Shows when the villager has a known parent. |
+| `requires_known_sibling` | boolean | `false` | Shows when the villager has a known sibling. |
+| `requires_known_spouse` | boolean | `false` | Shows when the villager has a known family spouse. |
+| `requires_known_child` | boolean | `false` | Shows when the villager has a known child. |
+| `requires_known_grandparent` | boolean | `false` | Shows when the villager has a known grandparent. |
+| `requires_known_grandchild` | boolean | `false` | Shows when the villager has a known grandchild. |
+| `requires_known_descendant` | boolean | `false` | Shows when the villager has a known descendant. |
+| `requires_known_aunt_uncle` | boolean | `false` | Shows when the villager has a known aunt or uncle. |
+| `requires_known_cousin` | boolean | `false` | Shows when the villager has a known cousin. |
+| `requires_known_niece_nephew` | boolean | `false` | Shows when the villager has a known niece or nephew. |
+| `requires_known_extended_family` | boolean | `false` | Shows when the villager has known extended family. |
+| `requires_known_deceased_family` | boolean | `false` | Shows when the villager has a known deceased family member. |
+| `requires_known_relationship` | boolean | `false` | Shows when the villager has any known romantic relationship state. |
+| `requires_known_current_relationship` | boolean | `false` | Shows when the villager has a current romantic partner. |
+| `requires_known_past_relationship` | boolean | `false` | Shows when the villager has a past romantic partner. |
+| `requires_known_crush` | boolean | `false` | Shows when the villager has a known crush. |
+| `requires_known_dating_partner` | boolean | `false` | Shows when the villager is dating someone. |
+| `requires_known_fiance` | boolean | `false` | Shows when the villager is engaged. |
+| `requires_known_romantic_spouse` | boolean | `false` | Shows when the villager has a romantic spouse. |
+| `requires_known_separated_partner` | boolean | `false` | Shows when the villager has a separated partner. |
+| `requires_known_widowed_partner` | boolean | `false` | Shows when the villager has a late partner. |
 
 ## Line Fields
 
@@ -142,12 +166,40 @@ insult
 | `requires_recruitment_swim_trip` | boolean | `false` | Requires swim trip memory. |
 | `excludes_recruitment_ocean_crossing` | boolean | `false` | Rejects ocean crossing memory. |
 | `first_conversation_only` | boolean | `false` | Only appears in the first conversation. |
+| `requires_known_family` | boolean | `false` | Requires any known family relationship. |
+| `requires_known_parent` | boolean | `false` | Requires a known parent. |
+| `requires_known_sibling` | boolean | `false` | Requires a known sibling. |
+| `requires_known_spouse` | boolean | `false` | Requires a known family spouse. |
+| `requires_known_child` | boolean | `false` | Requires a known child. |
+| `requires_known_grandparent` | boolean | `false` | Requires a known grandparent. |
+| `requires_known_grandchild` | boolean | `false` | Requires a known grandchild. |
+| `requires_known_descendant` | boolean | `false` | Requires a known descendant. |
+| `requires_known_aunt_uncle` | boolean | `false` | Requires a known aunt or uncle. |
+| `requires_known_cousin` | boolean | `false` | Requires a known cousin. |
+| `requires_known_niece_nephew` | boolean | `false` | Requires a known niece or nephew. |
+| `requires_known_extended_family` | boolean | `false` | Requires known extended family. |
+| `requires_known_deceased_family` | boolean | `false` | Requires a known deceased family member. |
+| `requires_known_relationship` | boolean | `false` | Requires any known romantic relationship state. |
+| `requires_known_current_relationship` | boolean | `false` | Requires a current romantic partner. |
+| `requires_known_past_relationship` | boolean | `false` | Requires a past romantic partner. |
+| `requires_known_crush` | boolean | `false` | Requires a known crush. |
+| `requires_known_dating_partner` | boolean | `false` | Requires a dating partner. |
+| `requires_known_fiance` | boolean | `false` | Requires an engaged partner. |
+| `requires_known_romantic_spouse` | boolean | `false` | Requires a romantic spouse. |
+| `requires_known_separated_partner` | boolean | `false` | Requires a separated partner. |
+| `requires_known_widowed_partner` | boolean | `false` | Requires a late partner. |
 | `gift_advice` | enum | none | See gift advice kinds below. |
 | `show_for_adults` | boolean | `true` | Adult visibility. |
 | `show_for_babies` | boolean | `true` | Baby visibility. |
 | `weight` | integer | `10` | Weighted selection. |
 
-Player item filters can also use singular aliases `player_item`, `player_item_tag`, and `player_item_slot`. Dialogue text can use `{player_item}`, `{held_item}`, `{player_item_id}`, `{held_item_id}`, `{player_item_slot}`, and `{held_item_slot}` when the selected line has a player item filter.
+Player item filters can also use aliases `player_item`, `player_item_tag`, `player_item_tags`, and `player_item_slot`. Dialogue text can use `{player_item}`, `{held_item}`, `{player_item_id}`, `{held_item_id}`, `{player_item_slot}`, and `{held_item_slot}` when the selected line has a player item filter.
+
+Family-aware dialogue text can use `{parent}`, `{sibling}`, `{spouse}`, `{child}`, `{grandparent}`, `{ancestor}`, `{grandchild}`, `{descendant}`, `{aunt_uncle}`, `{cousin}`, `{niece_nephew}`, `{deceased_family}`, `{extended_relative}`, `{relative}`, and the matching `_possessive` variants.
+
+Relationship-aware dialogue text can use `{partner}`, `{crush}`, `{dating_partner}`, `{fiance}`, `{romantic_spouse}`, `{ex_partner}`, `{late_partner}`, and the matching `_possessive` variants.
+
+Recruitment memory lines can use `{follow_biome}` and `{follow_distance}`.
 
 Example option and line for a player holding a sword:
 
@@ -225,6 +277,8 @@ player_gave_neutral_gift
 player_gave_disliked_gift
 player_gave_hated_gift
 ```
+
+See [Event Tags](Event-Tags.md) for simple and expanded dropdown examples for every current tag, plus notes on which tags are currently remembered by built-in handlers.
 
 Lines that use `player_cured_villager` can use:
 

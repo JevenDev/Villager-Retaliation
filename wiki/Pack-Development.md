@@ -123,6 +123,7 @@ Before testing in game:
 1. Start with one JSON file and one obvious line or rule.
 2. Run `/reload`.
 3. Trigger the relevant interaction in a test world.
-4. Check latest logs for JSON parse warnings if a resource-pack model fails.
-5. Add filters one at a time after the unfiltered version works.
-6. For localized entries, test once with default `en_us` and once with the target language.
+4. For event-tagged dialogue, trigger the event near the target villager and talk to them before the short village-memory window expires.
+5. Check latest logs for JSON parse warnings if a resource-pack model fails.
+6. Add filters one at a time after the unfiltered version works.
+7. For localized entries, test once with default `en_us` and once with the target language.

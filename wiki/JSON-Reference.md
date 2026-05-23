@@ -59,6 +59,32 @@ unemployed
 
 `none` and `unemployed` both target villagers with no profession.
 
+## Common Filters
+
+Dialogue, notifications, gifts, pacification, and rewards share a few ideas even when the exact field list differs by page.
+
+Most filters are additive within a field: if you list several professions, any one of those professions can match. Different filter fields stack together: a line with both `professions` and `dispositions` must pass both filters.
+
+```json
+{
+  "professions": ["farmer", "fisherman"],
+  "dispositions": ["friendly", "respectful"],
+  "show_for_adults": true,
+  "show_for_babies": false
+}
+```
+
+Player item filters accept item ids and item tags. Prefix a tag with `#` inside `player_items`, or use `player_item_tag` / `player_item_tags`.
+
+```json
+{
+  "player_items": ["minecraft:bow", "#minecraft:arrows"],
+  "player_item_slots": ["hotbar", "inventory"]
+}
+```
+
+If `player_items` is set and no slot filter is supplied, the current default is `hands`.
+
 ## Reputation Levels
 
 These values are used by notifications and gift rewards:
@@ -92,6 +118,26 @@ fearful
 ```
 
 Leave `dispositions` empty or omit it when a line should work in any mood.
+
+## Dialogue Types And Notification Triggers
+
+Dialogue `type` values and notification `trigger` values have their own expandable example catalogs:
+
+- [Dialogue Types](Dialogue-Types.md) covers every current `options[].type` and `lines[].type` value.
+- [Notification Triggers](Notification-Triggers.md) covers every built-in notification `trigger` value from the current data files.
+
+## Village Event Tags
+
+Dialogue lines can filter recent village memories with `event_tags` and player-specific recent memories with `player_event_tags`.
+
+```json
+{
+  "event_tags": ["raid"],
+  "player_event_tags": ["player_defended_raid"]
+}
+```
+
+For the full current list, when each value is remembered, and dropdown examples for simple and expanded uses, see [Event Tags](Event-Tags.md).
 
 ## Weight And Chance
 

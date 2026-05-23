@@ -85,6 +85,32 @@ data/villagerretaliation/dialogue/en_us/examplepack_dialogue.json
 }
 ```
 
+## Event Tag Dialogue Example
+
+Use event tags when a line should only appear after a recent village memory. The full tag list and per-tag dropdown examples are in [Event Tags](Event-Tags.md).
+
+```json
+{
+  "lines": [
+    {
+      "id": "examplepack.raid.aftermath",
+      "type": "village_event_report",
+      "event_tags": ["raid"],
+      "text": "The banners are gone, but the village still hears them.",
+      "weight": 20
+    },
+    {
+      "id": "examplepack.raid.thanked_player",
+      "type": "village_defense_report",
+      "player_event_tags": ["player_defended_raid"],
+      "requires_unreported_village_defense": true,
+      "text": "You stood with us when it mattered.",
+      "weight": 30
+    }
+  ]
+}
+```
+
 ## Notifications Example
 
 ```text

@@ -104,6 +104,8 @@ The built-in notification file uses these trigger families:
 | Trade | `trade.completed`, `trade.refused` |
 | Alerts | `alert.player_attacked_villager`, `alert.villager_damaged`, `alert.witness_attack.player`, `alert.witness_attack`, `alert.witness_death.player`, `alert.witness_death` |
 
+See [Notification Triggers](Notification-Triggers.md) for simple and expanded dropdown examples for every built-in `trigger` value.
+
 For reputation tiers, `<level>` is one of:
 
 ```text
@@ -131,7 +133,7 @@ Placeholder support depends on the trigger. Common built-in notification placeho
 
 Unknown placeholders are left as literal text.
 
-Player item filtered notifications can use `{player_item}`, `{held_item}`, `{player_item_id}`, `{held_item_id}`, `{player_item_slot}`, and `{held_item_slot}`. The singular aliases `player_item`, `player_item_tag`, and `player_item_slot` are also accepted as fields.
+Player item filtered notifications can use `{player_item}`, `{held_item}`, `{player_item_id}`, `{held_item_id}`, `{player_item_slot}`, and `{held_item_slot}`. The aliases `player_item`, `player_item_tag`, `player_item_tags`, and `player_item_slot` are also accepted as fields.
 
 Alert world text supports `{player}`, `{attacker}`, `{villager}`, `{villager_name}`, `{villager_kind}`, and `{profession}`. Use `alert.player_attacked_villager` for an immediate response from the damaged villager when the attacker is a player. If no entry matches, it falls back to `alert.villager_damaged`.
 
