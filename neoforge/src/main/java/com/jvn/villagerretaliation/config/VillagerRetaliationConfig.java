@@ -56,6 +56,7 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.IntValue REPEATED_QUESTION_REPUTATION_LOSS;
     public static final ModConfigSpec.IntValue REPEATED_DIALOGUE_OPTION_RESET_TICKS;
     public static final ModConfigSpec.IntValue GIFT_ANNOYANCE_REDUCTION_DIVISOR;
+    public static final ModConfigSpec.DoubleValue MAX_FOLLOW_DISTANCE;
     public static final ModConfigSpec.IntValue SLEEPING_VILLAGER_BOTHER_REPUTATION_LOSS;
     public static final ModConfigSpec.IntValue SLEEPING_VILLAGER_BED_BREAK_REPUTATION_LOSS;
     public static final ModConfigSpec.IntValue GREETING_REPUTATION_GAIN;
@@ -240,6 +241,9 @@ public final class VillagerRetaliationConfig {
         GIFT_ANNOYANCE_REDUCTION_DIVISOR = BUILDER.comment("Positive gift reputation value needed to reduce repeated dialogue annoyance by one use. Set to 0 to disable gift annoyance reduction.")
                 .translation("villagerretaliation.configuration.dialogue.giftAnnoyanceReductionDivisor")
                 .defineInRange("giftAnnoyanceReductionDivisor", 8, 0, 1000);
+        MAX_FOLLOW_DISTANCE = BUILDER.comment("Maximum player-to-villager distance in blocks before a following villager stops following.")
+                .translation("villagerretaliation.configuration.dialogue.maxFollowDistance")
+                .defineInRange("maxFollowDistance", 64.0D, 1.0D, 1024.0D);
         GREETING_REPUTATION_GAIN = BUILDER.comment("Reputation gained from an eligible friendly greeting.")
                 .translation("villagerretaliation.configuration.dialogue.greetingReputationGain")
                 .defineInRange("greetingReputationGain", 1, 0, 1000);

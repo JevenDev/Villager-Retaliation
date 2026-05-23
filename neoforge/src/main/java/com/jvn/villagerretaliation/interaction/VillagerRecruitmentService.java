@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.interaction;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.notification.VillagerNotifications;
@@ -44,7 +45,6 @@ public final class VillagerRecruitmentService {
     private static final String HIRED_PLAYER_KEY = "VillagerRetaliationHiredPlayer";
     private static final double FOLLOW_START_DISTANCE_SQR = 5.0D * 5.0D;
     private static final double FOLLOW_STOP_DISTANCE_SQR = 2.5D * 2.5D;
-    private static final double FOLLOW_FORGET_DISTANCE_SQR = 96.0D * 96.0D;
     private static final double FOLLOW_SPEED = 0.62D;
     private static final long FOLLOW_TRAVEL_MEMORY_INTERVAL_TICKS = 20L;
     private static final long FOLLOW_REPUTATION_CHECK_INTERVAL_TICKS = 40L;
@@ -231,6 +231,11 @@ public final class VillagerRecruitmentService {
             clearFollowTarget(villager);
             return;
         }
+        if (isBeyondMaxFollowDistance(villager, player)) {
+            stopFollowing(level, villager, player);
+            sendNoLongerFollowingNotice(player, villager);
+            return;
+        }
         if (villager.isSleeping() || villager.isTrading() || villager.getTarget() != null || villager.getLastHurtByMob() != null) {
             suppressFollowerAi(villager);
             return;
@@ -268,8 +273,12 @@ public final class VillagerRecruitmentService {
                 && player.isAlive()
                 && !player.isSpectator()
                 && villager.isAlive()
-                && villager.distanceToSqr(player) <= FOLLOW_FORGET_DISTANCE_SQR
                 && hasRecentlyValidReputation(level, villager, player);
+    }
+
+    private static boolean isBeyondMaxFollowDistance(Villager villager, ServerPlayer player) {
+        double maxDistance = VillagerRetaliationConfig.MAX_FOLLOW_DISTANCE.get();
+        return villager.distanceToSqr(player) > maxDistance * maxDistance;
     }
 
     private static boolean hasRecentlyValidReputation(ServerLevel level, Villager villager, ServerPlayer player) {

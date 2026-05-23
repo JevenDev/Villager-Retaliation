@@ -357,7 +357,7 @@ public record VillagerFamilyTreeSnapshot(
         }
 
         public String displayLabel() {
-            return this.name + " (" + statusLabel() + ")";
+            return this.alive ? this.name : this.name + " (" + statusLabel() + ")";
         }
     }
 

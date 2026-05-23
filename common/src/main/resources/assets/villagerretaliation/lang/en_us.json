@@ -41,6 +41,7 @@
   "villagerretaliation.configuration.dialogue.repeatedQuestionReputationLoss": "Repeated Question Reputation Loss",
   "villagerretaliation.configuration.dialogue.repeatedDialogueOptionResetTicks": "Repeated Dialogue Option Reset Ticks",
   "villagerretaliation.configuration.dialogue.giftAnnoyanceReductionDivisor": "Gift Annoyance Reduction Divisor",
+  "villagerretaliation.configuration.dialogue.maxFollowDistance": "Max Follow Distance",
   "villagerretaliation.configuration.dialogue.greetingReputationGain": "Greeting Reputation Gain",
   "villagerretaliation.configuration.dialogue.questionReputationGain": "Question Reputation Gain",
   "villagerretaliation.configuration.dialogue.storyReputationGain": "Story Reputation Gain",
