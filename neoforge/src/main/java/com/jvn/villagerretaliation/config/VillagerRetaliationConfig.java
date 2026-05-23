@@ -17,6 +17,7 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.BooleanValue ENABLE_DIALOGUE_CAMERA_FOCUS;
     public static final ModConfigSpec.BooleanValue SEPARATE_VILLAGER_CHAT_MESSAGES;
     public static final ModConfigSpec.BooleanValue SEPARATE_VILLAGER_CHAT_SPEAKERS;
+    public static final ModConfigSpec.EnumValue<InteractionChatPosition> INTERACTION_CHAT_POSITION;
     public static final ModConfigSpec.DoubleValue DIALOGUE_CAMERA_ZOOM_AMOUNT;
     public static final ModConfigSpec.IntValue DIALOGUE_CAMERA_TRANSITION_TICKS;
     public static final ModConfigSpec.EnumValue<ReputationChangeDisplayMode> REPUTATION_CHANGE_DISPLAY_MODE;
@@ -198,6 +199,10 @@ public final class VillagerRetaliationConfig {
                 .comment("Adds a blank chat line before a villager dialogue header when the speaker changes.")
                 .translation("villagerretaliation.configuration.dialogue.separateVillagerChatSpeakers")
                 .define("separateVillagerChatSpeakers", true);
+        INTERACTION_CHAT_POSITION = BUILDER
+                .comment("Where chat is anchored while the Villager Retaliation interaction menu is open.")
+                .translation("villagerretaliation.configuration.dialogue.interactionChatPosition")
+                .defineEnum("interactionChatPosition", InteractionChatPosition.BOTTOM_LEFT);
         DIALOGUE_CAMERA_ZOOM_AMOUNT = BUILDER
                 .comment("FOV zoom amount used while the Villager Retaliation dialogue screen is open.")
                 .translation("villagerretaliation.configuration.dialogue.dialogueCameraZoomAmount")

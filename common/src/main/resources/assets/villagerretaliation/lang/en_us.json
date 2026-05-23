@@ -28,6 +28,7 @@
   "villagerretaliation.configuration.dialogue.enableDialogueCameraFocus": "Enable Dialogue Camera Focus",
   "villagerretaliation.configuration.dialogue.separateVillagerChatMessages": "Separate Villager Chat Messages",
   "villagerretaliation.configuration.dialogue.separateVillagerChatSpeakers": "Separate Villager Chat Speakers",
+  "villagerretaliation.configuration.dialogue.interactionChatPosition": "Interaction Chat Position",
   "villagerretaliation.configuration.dialogue.dialogueCameraZoomAmount": "Dialogue Camera Zoom Amount",
   "villagerretaliation.configuration.dialogue.dialogueCameraTransitionTicks": "Dialogue Camera Transition Ticks",
   "villagerretaliation.configuration.dialogue.freezeVillagerDuringDialogue": "Freeze Villager During Dialogue",

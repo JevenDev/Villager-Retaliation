@@ -1,6 +1,8 @@
 package com.jvn.villagerretaliation.client.interaction;
 
 import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
+import com.jvn.villagerretaliation.config.InteractionChatPosition;
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.DialogueDisposition;
 import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.network.VillagerConversationEndRequestPayload;
@@ -19,6 +21,7 @@ import java.util.List;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.ChatComponent;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -49,6 +52,10 @@ public class VillagerInteractionScreen extends Screen {
     private static final int VEIL_DITHER_START_OFFSET = OPTION_HEIGHT - 81;
     private static final int SCREEN_BOTTOM_MARGIN = 48;
     private static final int VEIL_TOP_DITHER_HEIGHT = 64;
+    private static final int CHAT_EDGE_MARGIN = 4;
+    private static final int CHAT_TOP_MARGIN = 12;
+    private static final int CHAT_INPUT_AND_GAP_HEIGHT = 38;
+    private static final int CHAT_EXTRA_WIDTH = 8;
     private static final float OPTION_SCROLL_LERP = 0.32F;
     private static final float OPTION_SCROLL_STEP = 12.0F;
     private static final float OPTION_HOVER_SCALE = 0.055F;
@@ -792,6 +799,60 @@ public class VillagerInteractionScreen extends Screen {
         VillagerInteractionScreenShaderRenderer.renderInteractionVeil(graphics, this.width, this.height, veilTop, VEIL_TOP_DITHER_HEIGHT);
     }
 
+    void renderPositionedHudChat(GuiGraphics graphics) {
+        renderBackdropBehindChat(graphics);
+
+        Minecraft minecraft = Minecraft.getInstance();
+        ChatRenderLayout layout = chatRenderLayout();
+        graphics.enableScissor(layout.left(), layout.top(), layout.right(), layout.bottom());
+        graphics.pose().pushPose();
+        graphics.pose().translate(layout.xOffset(), layout.yOffset(), 0.0F);
+        minecraft.gui.getChat().render(graphics, minecraft.gui.getGuiTicks(), 0, 0, false);
+        graphics.pose().popPose();
+        graphics.disableScissor();
+    }
+
+    ChatRenderLayout chatRenderLayout() {
+        Minecraft minecraft = Minecraft.getInstance();
+        ChatComponent chat = minecraft.gui.getChat();
+        int chatWidth = chat.getWidth() + CHAT_EXTRA_WIDTH;
+        int chatHeight = chat.getHeight();
+        int groupWidth = Mth.clamp(chatWidth, 40, Math.max(40, this.width - CHAT_EDGE_MARGIN * 2));
+        int groupHeight = Mth.clamp(chatHeight + CHAT_INPUT_AND_GAP_HEIGHT, 40, Math.max(40, this.height - CHAT_EDGE_MARGIN * 2));
+        int vanillaTop = this.height - 40 - chatHeight;
+        int vanillaLeft = 0;
+
+        InteractionChatPosition position = VillagerRetaliationConfig.INTERACTION_CHAT_POSITION.get();
+        int targetLeft;
+        if (position.anchorsRight()) {
+            targetLeft = this.width - groupWidth - CHAT_EDGE_MARGIN;
+        } else if (position.anchorsCenter()) {
+            targetLeft = (this.width - groupWidth) / 2;
+        } else {
+            targetLeft = vanillaLeft;
+        }
+
+        int targetTop;
+        if (position.anchorsTop()) {
+            targetTop = CHAT_TOP_MARGIN;
+        } else if (position.anchorsMiddle()) {
+            targetTop = (this.height - groupHeight) / 2;
+        } else {
+            targetTop = vanillaTop;
+        }
+
+        targetLeft = Mth.clamp(targetLeft, 0, Math.max(0, this.width - groupWidth));
+        targetTop = Mth.clamp(targetTop, 0, Math.max(0, this.height - groupHeight));
+        return new ChatRenderLayout(
+                targetLeft,
+                targetTop,
+                targetLeft + groupWidth,
+                targetTop + groupHeight,
+                targetLeft - vanillaLeft,
+                targetTop - vanillaTop
+        );
+    }
+
     private void renderConversationFocus(GuiGraphics graphics, int optionsTop, int mouseX, int mouseY) {
         int dividerX = dividerX();
         int infoBaseY = Mth.floor(optionTextTop(optionsTop));
@@ -1247,9 +1308,20 @@ public class VillagerInteractionScreen extends Screen {
             this.originalChatWidth = (Double) minecraft.options.chatWidth().get();
         }
 
-        int targetPixelWidth = Math.max(40, infoPanelLeft() - INFO_PANEL_CHAT_PADDING);
+        int targetPixelWidth = Math.max(40, interactionChatTargetPixelWidth());
         double targetChatWidth = Mth.clamp((targetPixelWidth - 40.0D) / 280.0D, 0.0D, this.originalChatWidth);
         minecraft.options.chatWidth().set(targetChatWidth);
+    }
+
+    private int interactionChatTargetPixelWidth() {
+        InteractionChatPosition position = VillagerRetaliationConfig.INTERACTION_CHAT_POSITION.get();
+        if (position.anchorsCenter()) {
+            return this.width - CHAT_EDGE_MARGIN * 2;
+        }
+        if (position.anchorsRight()) {
+            return this.width - optionsLeft() - OPTION_WIDTH - INFO_PANEL_CHAT_PADDING;
+        }
+        return infoPanelLeft() - INFO_PANEL_CHAT_PADDING;
     }
 
     private void restoreChatWidthOverride() {
@@ -1493,6 +1565,16 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     private record GiftInfoIconBounds(int left, int top, int right, int bottom) {
+    }
+
+    record ChatRenderLayout(int left, int top, int right, int bottom, int xOffset, int yOffset) {
+        int translatedMouseX(int mouseX) {
+            return mouseX - this.xOffset;
+        }
+
+        int translatedMouseY(int mouseY) {
+            return mouseY - this.yOffset;
+        }
     }
 
     private record FamilyButtonBounds(int left, int right, int top, int bottom) {
