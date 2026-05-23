@@ -62,6 +62,15 @@ Those entries still point at real structure or biome ids such as `minecraft:anci
 
 Minecraft resources are loaded from all active packs. Villager Retaliation then reads the matching JSON files in sorted resource-location order.
 
+For additive dialogue and notification packs, use your own file names, such as:
+
+```text
+data/villagerretaliation/dialogue/en_us/my_pack_dialogue.json
+data/villagerretaliation/notifications/en_us/my_pack_notifications.json
+```
+
+Do not put addon content in `data/villagerretaliation/dialogue/en_us/global.json` or `data/villagerretaliation/notifications/en_us/global.json` unless you mean to replace the mod's built-in file. Same-path datapack files replace the built-in file before Villager Retaliation reads entries, so a pack at those paths can hide default interaction-menu options, keyed messages, openings, closings, notification text, and other built-in data.
+
 Dialogue and notification entries support stable `id` values. When a later locale layer or later file defines the same `id`, it replaces the previous entry in that loaded pool. This is the cleanest way to translate or override one specific line without copying a full built-in file.
 
 Gifts do not use entry ids for replacement. Gift files contribute preference and reward rules. If you want a total replacement of the built-in gift table, override `data/villagerretaliation/gifts/default.json` at the same path with your replacement file.
@@ -81,8 +90,8 @@ Dialogue and notifications are locale-aware. The mod always loads `en_us` first,
 Example:
 
 ```text
-data/villagerretaliation/dialogue/en_us/global.json
-data/villagerretaliation/dialogue/fr_fr/global.json
+data/villagerretaliation/dialogue/en_us/my_pack_dialogue.json
+data/villagerretaliation/dialogue/fr_fr/my_pack_dialogue.json
 ```
 
 If both files define an entry with the same `id`, the `fr_fr` entry replaces the `en_us` entry for French players. Players using other languages keep the English fallback.
@@ -117,4 +126,3 @@ Before testing in game:
 4. Check latest logs for JSON parse warnings if a resource-pack model fails.
 5. Add filters one at a time after the unfiltered version works.
 6. For localized entries, test once with default `en_us` and once with the target language.
-

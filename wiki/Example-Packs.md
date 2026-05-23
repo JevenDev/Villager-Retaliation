@@ -11,10 +11,10 @@ VillagerRetaliationExample/
     villagerretaliation/
       dialogue/
         en_us/
-          global.json
+          examplepack_dialogue.json
       notifications/
         en_us/
-          global.json
+          examplepack_notifications.json
       gifts/
         example_gifts.json
     examplepack/
@@ -38,7 +38,7 @@ VillagerRetaliationExample/
 ## Dialogue Example
 
 ```text
-data/villagerretaliation/dialogue/en_us/global.json
+data/villagerretaliation/dialogue/en_us/examplepack_dialogue.json
 ```
 
 ```json
@@ -83,7 +83,7 @@ data/villagerretaliation/dialogue/en_us/global.json
 ## Notifications Example
 
 ```text
-data/villagerretaliation/notifications/en_us/global.json
+data/villagerretaliation/notifications/en_us/examplepack_notifications.json
 ```
 
 ```json
@@ -196,4 +196,3 @@ VillagerRetaliationResourceExample/
 ```
 
 Use the built-in `combat_villager.json` as the safest starting point, then change part dimensions or decorative children gradually.
-

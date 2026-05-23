@@ -7,11 +7,13 @@ Notifications JSON controls short HUD messages and ambient world text above vill
 Notification files must be in the `villagerretaliation` namespace and include a locale:
 
 ```text
-data/villagerretaliation/notifications/en_us/global.json
-data/villagerretaliation/notifications/fr_fr/global.json
+data/villagerretaliation/notifications/en_us/my_pack_notifications.json
+data/villagerretaliation/notifications/fr_fr/my_pack_notifications.json
 ```
 
 The mod loads `en_us` first, then overlays the player's locale. Matching `id` values replace earlier definitions.
+
+Use a unique file name for addon notifications. A datapack file at `data/villagerretaliation/notifications/en_us/global.json` replaces the mod's built-in `global.json`, which can hide default notification text. Only use that exact path when you intentionally want a full-file override.
 
 ## Minimal Notification
 
@@ -163,4 +165,3 @@ Unknown placeholders are left as literal text.
 ```
 
 Use the same `id` as the fallback entry to replace it for that locale.
-
