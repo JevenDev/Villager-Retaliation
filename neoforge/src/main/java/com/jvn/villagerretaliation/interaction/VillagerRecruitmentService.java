@@ -48,6 +48,7 @@ public final class VillagerRecruitmentService {
     private static final double FOLLOW_SPEED = 0.62D;
     private static final long FOLLOW_TRAVEL_MEMORY_INTERVAL_TICKS = 20L;
     private static final long FOLLOW_REPUTATION_CHECK_INTERVAL_TICKS = 40L;
+    private static final double FOLLOW_VEHICLE_BOARD_DISTANCE_SQR = 4.0D * 4.0D;
     private static final long RECENT_BETRAYED_FOLLOWER_DEATH_NOTICE_TICKS = 200L;
     private static final Map<UUID, RecentRecruitmentOwner> RECENT_BETRAYED_FOLLOWERS = new HashMap<>();
     private static final Map<UUID, Long> NEXT_FOLLOW_TRAVEL_MEMORY_TICKS = new HashMap<>();
@@ -231,6 +232,7 @@ public final class VillagerRecruitmentService {
             clearFollowTarget(villager);
             return;
         }
+        syncVehicleWithPlayer(villager, player);
         if (isBeyondMaxFollowDistance(villager, player)) {
             stopFollowing(level, villager, player);
             sendNoLongerFollowingNotice(player, villager);
@@ -243,14 +245,42 @@ public final class VillagerRecruitmentService {
 
         suppressFollowerAi(villager);
         villager.getLookControl().setLookAt(player, 30.0F, 30.0F);
+        if (isRidingSameVehicle(villager, player)) {
+            villager.getNavigation().stop();
+            return;
+        }
+
+        Entity followTarget = player.getVehicle() == null ? player : player.getVehicle();
         double distanceSqr = villager.distanceToSqr(player);
         if (distanceSqr > FOLLOW_START_DISTANCE_SQR) {
             villager.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
             villager.getBrain().eraseMemory(MemoryModuleType.PATH);
-            villager.getNavigation().moveTo(player, FOLLOW_SPEED);
+            villager.getNavigation().moveTo(followTarget, FOLLOW_SPEED);
         } else if (distanceSqr < FOLLOW_STOP_DISTANCE_SQR) {
             villager.getNavigation().stop();
         }
+    }
+
+    private static void syncVehicleWithPlayer(Villager villager, ServerPlayer player) {
+        Entity playerVehicle = player.getVehicle();
+        if (playerVehicle == null) {
+            dismountFollower(villager);
+            return;
+        }
+        if (villager.getVehicle() == playerVehicle) {
+            return;
+        }
+        if (villager.isPassenger()) {
+            dismountFollower(villager);
+        }
+        if (!villager.isPassenger() && villager.distanceToSqr(playerVehicle) <= FOLLOW_VEHICLE_BOARD_DISTANCE_SQR) {
+            villager.startRiding(playerVehicle);
+        }
+    }
+
+    private static boolean isRidingSameVehicle(Villager villager, ServerPlayer player) {
+        Entity playerVehicle = player.getVehicle();
+        return playerVehicle != null && villager.getVehicle() == playerVehicle;
     }
 
     private static void suppressFollowerAi(Villager villager) {
@@ -297,6 +327,7 @@ public final class VillagerRecruitmentService {
     private static void clearFollowTarget(Villager villager) {
         NEXT_FOLLOW_TRAVEL_MEMORY_TICKS.remove(villager.getUUID());
         NEXT_FOLLOW_REPUTATION_CHECK_TICKS.remove(villager.getUUID());
+        dismountFollower(villager);
         villager.getPersistentData().remove(FOLLOWING_PLAYER_KEY);
         villager.getPersistentData().remove(FOLLOW_START_HEALTH_KEY);
         villager.getPersistentData().remove(FOLLOW_MIN_HEALTH_KEY);
@@ -308,6 +339,12 @@ public final class VillagerRecruitmentService {
         villager.getPersistentData().remove(FOLLOW_USED_BOAT_KEY);
         villager.getPersistentData().remove(FOLLOW_CROSSED_OCEAN_KEY);
         villager.getNavigation().stop();
+    }
+
+    private static void dismountFollower(Villager villager) {
+        if (villager.isPassenger()) {
+            villager.stopRiding();
+        }
     }
 
     private static void beginFollowing(ServerLevel level, Villager villager, ServerPlayer player) {
