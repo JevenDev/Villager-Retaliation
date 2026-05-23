@@ -127,7 +127,7 @@ Villager Retaliation! adds configurable drops for villagers and wandering trader
 - Baby villager loot is disabled by default
 - Wandering traders can drop emeralds, invisibility potions, and safe copies of current trade results
 
-Profession loot generally requires player kill credit by default.
+Profession loot generally requires player kill credit by default, and profession-specific drops are backed by datapack loot-table rules.
 
 ## Advancements
 
@@ -232,7 +232,7 @@ Villager dialogue is loaded from datapack JSON under:
 data/villagerretaliation/dialogue/en_us/
 ```
 
-The built-in files live in `global.json`, `professions/<profession>.json`, and optional nested files such as `professions/<profession>/share_stories.json`. Packs can add or replace files in the same namespace to add new dialogue, tune weights, add profession-specific lines, or expose new talk choices. Files directly under `professions/<profession>.json` and nested under `professions/<profession>/` automatically apply to that profession unless an entry provides its own `professions` filter.
+The built-in files live in `global.json`, `professions/<profession>.json`, and optional nested files such as `professions/<profession>/share_stories.json`. Packs can add or replace files in the same namespace to add new dialogue, tune weights, add profession-specific lines, or expose new talk choices. Files directly under `professions/<profession>.json` and nested under `professions/<profession>/` automatically apply to that profession unless an entry provides its own `professions` filter. Custom professions can use namespaced folders such as `professions/examplemod/alchemist.json`, or full ids such as `examplemod:alchemist` in `professions` filters.
 
 Dialogue uses the player's client language when the server knows it. Files in `dialogue/<locale>/` are layered over `dialogue/en_us/`, so translated packs can provide only the entries they need to replace. Matching `id` values replace fallback entries; entries without explicit ids use stable generated ids based on file path and order.
 
@@ -476,7 +476,7 @@ data/villagerretaliation/gifts/
 
 Gift rules are not locale-specific because they describe item behavior rather than display text. The villager lines and HUD text that mention gifts still come from the localized dialogue and notification resources.
 
-Gift preference entries map items or item tags to a reaction. Profession-specific entries override global entries when both match the same item.
+Gift preference entries map items or item tags to a reaction. Profession-specific entries override global entries when both match the same item. Preferences and rewards can use stable `id` values so packs can replace or remove individual built-in rules.
 
 ```json
 {
@@ -528,7 +528,32 @@ High-reputation reward entries decide what trusted villagers can give back:
 }
 ```
 
-If any profession-specific reward matches, the generic rewards are ignored for that roll. Packs can add files for extra entries or override `gifts/default.json` to replace the built-in table.
+If any profession-specific reward matches, the generic rewards are ignored for that roll. Packs can add files for extra entries, use matching `id` values to replace one rule, use `"remove": true` to remove one rule, or set top-level `"replace": true` to rebuild the table from that file onward.
+
+## Data-driven profession loot
+
+Profession loot rules are loaded from datapack JSON under:
+
+```text
+data/villagerretaliation/profession_loot/
+```
+
+Each rule filters professions and points at a normal Minecraft loot table:
+
+```json
+{
+  "tables": [
+    {
+      "id": "my_pack.alchemist.common",
+      "professions": ["examplemod:alchemist"],
+      "loot_table": "my_pack:villager/profession/alchemist/common",
+      "chance": "always"
+    }
+  ]
+}
+```
+
+`chance` can be `always`, `rare`, `very_rare`, or a number from `0.0` to `1.0`. The `rare` and `very_rare` values use the mod config chances.
 
 ![compatibility](https://cdn.modrinth.com/data/cached_images/1252c11050b7daf8b8621712b58dd1005e7ba982.png)
 

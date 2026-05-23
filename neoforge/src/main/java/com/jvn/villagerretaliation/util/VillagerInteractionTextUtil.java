@@ -10,11 +10,7 @@ public final class VillagerInteractionTextUtil {
     }
 
     public static String professionName(VillagerProfession profession, String fallbackForNone) {
-        String rawName = profession == null ? null : profession.name();
-        if (rawName == null || rawName.isBlank() || "none".equalsIgnoreCase(rawName)) {
-            return fallbackForNone;
-        }
-        return ToucanText.titleCaseIdentifier(rawName);
+        return VillagerProfessionUtil.displayName(profession, fallbackForNone);
     }
 
     public static String reputationLevelName(VillagerReputationLevel level) {

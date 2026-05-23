@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Villager Retaliation Datapack Builder</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="app-header">
+        <div class="brand">
+          <img src="./assets/villager_retaliation_logo.png" alt="Villager Retaliation logo">
+          <div>
+            <p class="eyebrow">Villager Retaliation</p>
+            <h1>Datapack Builder</h1>
+          </div>
+        </div>
+        <div class="toolbar" aria-label="Datapack actions">
+          <label class="button button-secondary" for="import-input" title="Import a datapack zip or JSON files">
+            <span class="button-icon import-icon" aria-hidden="true"></span>
+            Import
+          </label>
+          <label class="button button-secondary" for="directory-input" title="Import an unpacked datapack folder">
+            <span class="button-icon folder-icon" aria-hidden="true"></span>
+            Folder
+          </label>
+          <button class="button button-secondary" id="starter-button" type="button" title="Load a small working example">
+            <span class="button-icon spark-icon" aria-hidden="true"></span>
+            Starter
+          </button>
+          <button class="button button-primary" id="export-button" type="button" title="Export a datapack zip">
+            <span class="button-icon export-icon" aria-hidden="true"></span>
+            Export
+          </button>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <aside class="sidebar" aria-label="Project files and validation">
+          <section class="panel">
+            <div class="panel-title">
+              <h2>Files</h2>
+              <span id="file-count">0</span>
+            </div>
+            <div id="file-tree" class="file-tree"></div>
+          </section>
+          <section class="panel">
+            <div class="panel-title">
+              <h2>Checks</h2>
+              <span id="check-count">0</span>
+            </div>
+            <div id="checks" class="checks"></div>
+          </section>
+        </aside>
+
+        <section class="builder" aria-label="Datapack builder">
+          <nav class="section-tabs" id="section-tabs" aria-label="Builder sections">
+            <button class="tab is-active has-tooltip" type="button" data-section="overview" data-tooltip="Set the datapack metadata, namespace, file slug, and locale." title="Set the datapack metadata, namespace, file slug, and locale.">Pack</button>
+            <button class="tab has-tooltip" type="button" data-section="dialogue" data-tooltip="Create talk options, villager lines, keyed messages, openings, closings, and pacify responses." title="Create talk options, villager lines, keyed messages, openings, closings, and pacify responses.">Dialogue</button>
+            <button class="tab has-tooltip" type="button" data-section="notifications" data-tooltip="Create HUD notifications and ambient world text entries." title="Create HUD notifications and ambient world text entries.">Notifications</button>
+            <button class="tab has-tooltip" type="button" data-section="gifts" data-tooltip="Define gift reactions, custom response keys, and high-reputation reward items." title="Define gift reactions, custom response keys, and high-reputation reward items.">Gifts</button>
+            <button class="tab has-tooltip" type="button" data-section="pacification" data-tooltip="Define held-item payments that can calm hostile villagers or wandering traders." title="Define held-item payments that can calm hostile villagers or wandering traders.">Pacification</button>
+            <button class="tab has-tooltip" type="button" data-section="stories" data-tooltip="Define structures and biomes that unlock share-story dialogue." title="Define structures and biomes that unlock share-story dialogue.">Stories</button>
+            <button class="tab has-tooltip" type="button" data-section="names" data-tooltip="Replace or extend preset villager name pools." title="Replace or extend preset villager name pools.">Names</button>
+          </nav>
+          <div id="builder-panel" class="builder-panel"></div>
+        </section>
+
+        <aside class="preview" aria-label="Generated JSON preview">
+          <div class="preview-header">
+            <div>
+              <p class="eyebrow">Output</p>
+              <h2 id="selected-path">pack.mcmeta</h2>
+            </div>
+            <div class="preview-actions">
+              <button class="icon-button" id="copy-file-button" type="button" title="Copy current file">
+                <span class="button-icon copy-icon" aria-hidden="true"></span>
+              </button>
+              <button class="icon-button" id="download-file-button" type="button" title="Download current file">
+                <span class="button-icon download-icon" aria-hidden="true"></span>
+              </button>
+            </div>
+          </div>
+          <pre class="code-preview"><code id="json-preview"></code></pre>
+        </aside>
+      </main>
+    </div>
+
+    <input id="import-input" class="visually-hidden" type="file" accept=".zip,.json,application/json,application/zip" multiple>
+    <input id="directory-input" class="visually-hidden" type="file" webkitdirectory directory multiple>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

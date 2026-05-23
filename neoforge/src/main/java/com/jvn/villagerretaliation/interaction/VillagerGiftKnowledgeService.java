@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.dialogue.GiftAdviceKind;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionSavedData;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
+import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -217,11 +218,7 @@ public final class VillagerGiftKnowledgeService {
     }
 
     public static String professionKey(VillagerProfession profession) {
-        if (profession == null) {
-            return "none";
-        }
-        String name = profession.name();
-        return name == null || name.isBlank() ? "none" : name;
+        return VillagerProfessionUtil.serializedKey(profession);
     }
 
     private static String itemId(Item item) {

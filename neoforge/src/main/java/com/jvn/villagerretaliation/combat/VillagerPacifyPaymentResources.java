@@ -6,13 +6,13 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.VillagerRetaliation;
+import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -216,30 +216,9 @@ public final class VillagerPacifyPaymentResources {
     private static Set<VillagerProfession> readProfessions(JsonObject entry) {
         Set<VillagerProfession> professions = new HashSet<>();
         for (String value : readStringList(entry, "professions")) {
-            parseProfession(value).ifPresent(professions::add);
+            VillagerProfessionUtil.parse(value).ifPresent(professions::add);
         }
         return Set.copyOf(professions);
-    }
-
-    private static Optional<VillagerProfession> parseProfession(String value) {
-        return switch (value.toLowerCase(Locale.ROOT).replace("minecraft:", "")) {
-            case "armorer" -> Optional.of(VillagerProfession.ARMORER);
-            case "butcher" -> Optional.of(VillagerProfession.BUTCHER);
-            case "cartographer" -> Optional.of(VillagerProfession.CARTOGRAPHER);
-            case "cleric" -> Optional.of(VillagerProfession.CLERIC);
-            case "farmer" -> Optional.of(VillagerProfession.FARMER);
-            case "fisherman" -> Optional.of(VillagerProfession.FISHERMAN);
-            case "fletcher" -> Optional.of(VillagerProfession.FLETCHER);
-            case "leatherworker" -> Optional.of(VillagerProfession.LEATHERWORKER);
-            case "librarian" -> Optional.of(VillagerProfession.LIBRARIAN);
-            case "mason" -> Optional.of(VillagerProfession.MASON);
-            case "nitwit" -> Optional.of(VillagerProfession.NITWIT);
-            case "shepherd" -> Optional.of(VillagerProfession.SHEPHERD);
-            case "toolsmith" -> Optional.of(VillagerProfession.TOOLSMITH);
-            case "weaponsmith" -> Optional.of(VillagerProfession.WEAPONSMITH);
-            case "none", "unemployed" -> Optional.of(VillagerProfession.NONE);
-            default -> Optional.empty();
-        };
     }
 
     private static VillagerProfession professionOf(AbstractVillager villager) {

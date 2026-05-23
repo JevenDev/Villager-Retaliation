@@ -33,6 +33,7 @@ import com.jvn.villagerretaliation.social.VillagerRelationshipSnapshot;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphService;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.util.VillagerLocale;
+import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
@@ -42,7 +43,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.server.level.ServerLevel;
@@ -161,19 +161,10 @@ public final class VillagerInteractionService {
         if (villager.isBaby()) {
             return "villagerretaliation.gui.profession.child";
         }
-        VillagerProfession profession = villager.getVillagerData().getProfession();
-        String rawName = profession == null ? "" : profession.name();
-        if (profession == null || profession == VillagerProfession.NONE || rawName.isBlank() || "none".equalsIgnoreCase(rawName)) {
-            return "villagerretaliation.gui.profession.unemployed";
-        }
-        ResourceLocation id = ResourceLocation.tryParse(rawName);
-        if (id != null) {
-            if ("minecraft".equals(id.getNamespace())) {
-                return "entity.minecraft.villager." + id.getPath().replace('/', '.');
-            }
-            return "entity.minecraft.villager." + id.getNamespace() + "." + id.getPath().replace('/', '.');
-        }
-        return "entity.minecraft.villager." + rawName;
+        return VillagerProfessionUtil.translationKey(
+                villager.getVillagerData().getProfession(),
+                "villagerretaliation.gui.profession.unemployed"
+        );
     }
 
     public static void handleDialogueRequest(ServerPlayer player, int entityId, String optionId) {
@@ -715,26 +706,7 @@ public final class VillagerInteractionService {
     }
 
     private static VillagerProfession professionFromKey(String key) {
-        if (key == null || key.isBlank()) {
-            return VillagerProfession.NONE;
-        }
-        return switch (key.toLowerCase(java.util.Locale.ROOT).replace("minecraft:", "")) {
-            case "armorer" -> VillagerProfession.ARMORER;
-            case "butcher" -> VillagerProfession.BUTCHER;
-            case "cartographer" -> VillagerProfession.CARTOGRAPHER;
-            case "cleric" -> VillagerProfession.CLERIC;
-            case "farmer" -> VillagerProfession.FARMER;
-            case "fisherman" -> VillagerProfession.FISHERMAN;
-            case "fletcher" -> VillagerProfession.FLETCHER;
-            case "leatherworker" -> VillagerProfession.LEATHERWORKER;
-            case "librarian" -> VillagerProfession.LIBRARIAN;
-            case "mason" -> VillagerProfession.MASON;
-            case "nitwit" -> VillagerProfession.NITWIT;
-            case "shepherd" -> VillagerProfession.SHEPHERD;
-            case "toolsmith" -> VillagerProfession.TOOLSMITH;
-            case "weaponsmith" -> VillagerProfession.WEAPONSMITH;
-            default -> VillagerProfession.NONE;
-        };
+        return VillagerProfessionUtil.parse(key).orElse(VillagerProfession.NONE);
     }
 
     private static String message(DialogueContext context, String key) {

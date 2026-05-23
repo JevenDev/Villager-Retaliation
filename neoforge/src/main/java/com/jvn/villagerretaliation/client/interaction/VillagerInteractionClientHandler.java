@@ -8,6 +8,7 @@ import com.jvn.villagerretaliation.network.VillagerConversationEndedPayload;
 import com.jvn.villagerretaliation.network.VillagerDialogueResponsePayload;
 import com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
+import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import java.util.Locale;
 import java.util.UUID;
 import net.minecraft.ChatFormatting;
@@ -17,7 +18,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
@@ -328,18 +328,7 @@ public final class VillagerInteractionClientHandler {
     }
 
     private static String professionTranslationKey(VillagerProfession profession) {
-        String rawName = profession == null ? "" : profession.name();
-        if (profession == null || profession == VillagerProfession.NONE || rawName.isBlank() || "none".equalsIgnoreCase(rawName)) {
-            return GUI_KEY_PREFIX + "profession.unemployed";
-        }
-        ResourceLocation id = ResourceLocation.tryParse(rawName);
-        if (id != null) {
-            if ("minecraft".equals(id.getNamespace())) {
-                return "entity.minecraft.villager." + id.getPath().replace('/', '.');
-            }
-            return "entity.minecraft.villager." + id.getNamespace() + "." + id.getPath().replace('/', '.');
-        }
-        return "entity.minecraft.villager." + rawName;
+        return VillagerProfessionUtil.translationKey(profession, GUI_KEY_PREFIX + "profession.unemployed");
     }
 
     private static String resolveGenderName(String genderName) {

@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:entity",
+  "pools": [
+    {
+      "rolls": { "type": "minecraft:uniform", "min": 2.0, "max": 4.0 },
+      "bonus_rolls": 0.0,
+      "entries": [
+        { "type": "minecraft:item", "name": "minecraft:clay_ball", "functions": [{ "function": "minecraft:set_count", "count": { "type": "minecraft:uniform", "min": 1.0, "max": 4.0 } }] },
+        { "type": "minecraft:item", "name": "minecraft:brick", "functions": [{ "function": "minecraft:set_count", "count": { "type": "minecraft:uniform", "min": 1.0, "max": 3.0 } }] },
+        { "type": "minecraft:item", "name": "minecraft:quartz", "functions": [{ "function": "minecraft:set_count", "count": { "type": "minecraft:uniform", "min": 1.0, "max": 2.0 } }] },
+        { "type": "minecraft:item", "name": "minecraft:stone", "functions": [{ "function": "minecraft:set_count", "count": { "type": "minecraft:uniform", "min": 1.0, "max": 4.0 } }] },
+        { "type": "minecraft:item", "name": "minecraft:terracotta", "functions": [{ "function": "minecraft:set_count", "count": { "type": "minecraft:uniform", "min": 1.0, "max": 3.0 } }] }
+      ]
+    }
+  ]
+}

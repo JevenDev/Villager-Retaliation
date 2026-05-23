@@ -1,6 +1,6 @@
 # Villager Retaliation Wiki
 
-Villager Retaliation is data-driven in the places pack makers usually want to touch: dialogue, notifications, gifts, pacification payments, story discoveries, villager names, and combat villager models. This wiki is written for JSON authors, datapack authors, resource-pack authors, and modpack developers who want predictable hooks without touching Java.
+Villager Retaliation is data-driven in the places pack makers usually want to touch: dialogue, notifications, gifts, pacification payments, profession loot, story discoveries, villager names, and combat villager models. This wiki is written for JSON authors, datapack authors, resource-pack authors, and modpack developers who want predictable hooks without touching Java.
 
 ## Quick Links
 
@@ -15,8 +15,9 @@ Villager Retaliation is data-driven in the places pack makers usually want to to
 - [Localization Guide](Localization.md) - how datapack locale folders and resource-pack language keys work together.
 - [Gift JSON](Gifts.md) - gift preferences, reactions, item and tag selectors, profession overrides, priority, and high-reputation rewards.
 - [Pacification JSON](Pacification.md) - item or tag payments, modded currencies, costs, and profession-specific pacify rules.
+- [Profession Loot JSON](Profession-Loot.md) - datapack profession loot rules backed by Minecraft loot tables.
 - [Story Discovery JSON](Story-Discovery.md) - structure and biome discovery lists used by `share_story` dialogue.
-- [Villager Names](Villager-Names.md) - replacing the preset name pool.
+- [Villager Names](Villager-Names.md) - adding to or replacing the preset name pool.
 - [Resource Pack Models And Textures](Resource-Pack-Models.md) - combat textures, combat model JSON, non-combat model opt-in, and EMF compatibility.
 - [Example Packs](Example-Packs.md) - copyable datapack and resource-pack examples.
 
@@ -29,9 +30,11 @@ Villager Retaliation is data-driven in the places pack makers usually want to to
 | Interaction GUI and reputation UI text | Resource pack | `assets/villagerretaliation/lang/<locale>.json` |
 | Gifts and rewards | Datapack | `data/villagerretaliation/gifts/` |
 | Pacification payments | Datapack | `data/villagerretaliation/pacification/` |
+| Profession loot rules | Datapack | `data/villagerretaliation/profession_loot/` |
+| Profession loot tables | Datapack | `data/<namespace>/loot_table/villager/profession/` |
 | Story structures | Datapack | `data/<namespace>/story_structures/` |
 | Story biomes | Datapack | `data/<namespace>/story_biomes/` |
-| Preset villager names | Datapack | `data/villagerretaliation/villager_names/preset_names.json` |
+| Preset villager names | Datapack | `data/villagerretaliation/villager_names/` |
 | Combat textures | Resource pack | `assets/minecraft/textures/entity/...` and `assets/villagerretaliation/textures/entity/...` |
 | Combat model | Resource pack | `assets/villagerretaliation/models/entity/villager/combat_villager.json` |
 | Optional non-combat model | Resource pack | `assets/villagerretaliation/models/entity/villager/render_options.json` |

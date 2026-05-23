@@ -46,7 +46,7 @@ public final class VillagerLootHandler {
 
         rollOutOfCombatWeaponDrop(villager, event, random);
 
-        for (ItemStack stack : ProfessionLootPools.roll(villager, random)) {
+        for (ItemStack stack : ProfessionLootResources.roll(villager, event, random)) {
             ToucanLivingDrops.addDrop(event, stack);
         }
     }

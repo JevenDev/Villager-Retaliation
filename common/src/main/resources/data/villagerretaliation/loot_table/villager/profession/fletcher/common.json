@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:entity",
+  "pools": [
+    {
+      "rolls": { "type": "minecraft:uniform", "min": 3.0, "max": 5.0 },
+      "bonus_rolls": 0.0,
+      "entries": [
+        { "type": "minecraft:item", "name": "minecraft:arrow", "functions": [{ "function": "minecraft:set_count", "count": { "type": "minecraft:uniform", "min": 1.0, "max": 3.0 } }] },
+        { "type": "minecraft:item", "name": "minecraft:flint", "functions": [{ "function": "minecraft:set_count", "count": { "type": "minecraft:uniform", "min": 1.0, "max": 2.0 } }] },
+        { "type": "minecraft:item", "name": "minecraft:feather", "functions": [{ "function": "minecraft:set_count", "count": { "type": "minecraft:uniform", "min": 1.0, "max": 4.0 } }] },
+        { "type": "minecraft:item", "name": "minecraft:stick", "functions": [{ "function": "minecraft:set_count", "count": { "type": "minecraft:uniform", "min": 1.0, "max": 8.0 } }] },
+        { "type": "minecraft:item", "name": "minecraft:string", "functions": [{ "function": "minecraft:set_count", "count": { "type": "minecraft:uniform", "min": 1.0, "max": 2.0 } }] },
+        { "type": "minecraft:item", "name": "minecraft:tripwire_hook", "functions": [{ "function": "minecraft:set_count", "count": { "type": "minecraft:uniform", "min": 1.0, "max": 2.0 } }] }
+      ]
+    }
+  ]
+}

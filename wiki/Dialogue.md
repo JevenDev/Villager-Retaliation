@@ -10,10 +10,11 @@ Dialogue files must be in the `villagerretaliation` namespace:
 data/villagerretaliation/dialogue/en_us/my_pack_dialogue.json
 data/villagerretaliation/dialogue/en_us/professions/farmer.json
 data/villagerretaliation/dialogue/en_us/professions/farmer/share_stories.json
+data/villagerretaliation/dialogue/en_us/professions/examplemod/alchemist.json
 data/villagerretaliation/dialogue/fr_fr/my_pack_dialogue.json
 ```
 
-Files under `professions/<profession>.json` and `professions/<profession>/...json` automatically default entries to that profession unless the entry supplies its own `professions` filter.
+Files under `professions/<profession>.json` and `professions/<profession>/...json` automatically default entries to that profession unless the entry supplies its own `professions` filter. For custom professions, use `professions/<namespace>/<path>.json`; for example, `professions/examplemod/alchemist.json` defaults to `examplemod:alchemist`.
 
 Use a unique file name for addon dialogue. A datapack file at `data/villagerretaliation/dialogue/en_us/global.json` replaces the mod's built-in `global.json`, which can hide default interaction-menu options, keyed messages, openings, closings, and other built-in dialogue data. Only use that exact path when you intentionally want a full-file override.
 

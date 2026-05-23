@@ -29,26 +29,35 @@ These pages describe the current supported format:
 - [Localization Guide](Localization.md)
 - [Gift JSON](Gifts.md)
 - [Pacification JSON](Pacification.md)
+- [Profession Loot JSON](Profession-Loot.md)
 - [Story Discovery JSON](Story-Discovery.md)
 - [Resource Pack Models And Textures](Resource-Pack-Models.md)
 
-## Unreleased
+## 1.0.0-beta.11 - Unreleased
 
-This section collects pack-facing changes for the next release. Once that release ships, these notes can move into a dated version section.
+Pack-facing beta.11 changes focus on making data-driven behavior easier to extend without full-file copies.
 
 ### Added
 
 - Added documentation for resource-pack language keys used by the interaction GUI, generated family and relationship rows, reputation overlays, villager chat labels, gender labels, mood labels, and fallback profession labels.
 - Added [Localization Guide](Localization.md) to explain how datapack locale folders and resource-pack language files work together.
+- Added namespaced custom profession support for dialogue defaults, dialogue filters, notification filters, gift filters, pacification filters, gift-knowledge keys, and profession display fallbacks.
+- Added [Profession Loot JSON](Profession-Loot.md) rule files under `data/villagerretaliation/profession_loot/`.
+- Added loot-table-backed profession drops through `loot_table` references. Loot tables can live in any namespace.
+- Added `id`, `remove`, and top-level `replace` support for gift preferences and gift rewards.
+- Added additive villager name files under `data/villagerretaliation/villager_names/`, plus top-level `replace` support.
 
 ### Modified
 
 - Villager profession and gender labels used by the interaction GUI are now documented as localization-friendly client values instead of server-supplied English display strings.
 - Villager dialogue speaker labels are now documented as client-localized GUI text instead of datapack text.
+- Built-in profession loot is now declared through datapack rule files and Minecraft loot tables instead of hardcoded Java pools.
+- Gift files can replace or remove individual rules by stable `id`; same-id later entries replace earlier rules.
+- Villager name files are additive by default instead of requiring packs to copy `preset_names.json` just to append names.
 
 ### Deprecated
 
-- Nothing recorded yet.
+- No beta.11 fields are deprecated. Full-file gift and name overrides still work, but individual ids and additive files are preferred for small changes.
 
 ### Removed
 
@@ -58,6 +67,10 @@ This section collects pack-facing changes for the next release. Once that releas
 
 - Datapacks that already translate dialogue and notifications should keep using `data/villagerretaliation/dialogue/<locale>/` and `data/villagerretaliation/notifications/<locale>/`.
 - Packs that want to translate interaction buttons, generated relationship/family labels, reputation labels, or profession display names should add a resource pack with `assets/villagerretaliation/lang/<locale>.json`.
+- Existing unnamespaced vanilla profession filters continue to work. New custom-profession filters should use full ids such as `examplemod:alchemist`.
+- Packs that copied `gifts/default.json` only to remove or change one rule can now add a smaller file with matching `id` or `"remove": true`.
+- Packs that copied `villager_names/preset_names.json` only to add names can now add a separate file under `villager_names/`.
+- Packs that want to change profession drops should add or remove `profession_loot` rules and point them at normal Minecraft loot tables.
 
 ## 2026-05 Documentation Baseline
 

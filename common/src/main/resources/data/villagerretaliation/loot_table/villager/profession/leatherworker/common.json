@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:entity",
+  "pools": [
+    {
+      "rolls": { "type": "minecraft:uniform", "min": 2.0, "max": 3.0 },
+      "bonus_rolls": 0.0,
+      "entries": [
+        { "type": "minecraft:item", "name": "minecraft:leather", "functions": [{ "function": "minecraft:set_count", "count": { "type": "minecraft:uniform", "min": 1.0, "max": 5.0 } }] },
+        { "type": "minecraft:item", "name": "minecraft:rabbit_hide", "functions": [{ "function": "minecraft:set_count", "count": { "type": "minecraft:uniform", "min": 1.0, "max": 3.0 } }] },
+        { "type": "minecraft:item", "name": "minecraft:leather_helmet" },
+        { "type": "minecraft:item", "name": "minecraft:leather_chestplate" },
+        { "type": "minecraft:item", "name": "minecraft:leather_leggings" },
+        { "type": "minecraft:item", "name": "minecraft:leather_boots" },
+        { "type": "minecraft:item", "name": "minecraft:brown_dye", "functions": [{ "function": "minecraft:set_count", "count": { "type": "minecraft:uniform", "min": 1.0, "max": 2.0 } }] },
+        { "type": "minecraft:item", "name": "minecraft:black_dye", "functions": [{ "function": "minecraft:set_count", "count": { "type": "minecraft:uniform", "min": 1.0, "max": 2.0 } }] },
+        { "type": "minecraft:item", "name": "minecraft:white_dye", "functions": [{ "function": "minecraft:set_count", "count": { "type": "minecraft:uniform", "min": 1.0, "max": 2.0 } }] },
+        { "type": "minecraft:item", "name": "minecraft:red_dye", "functions": [{ "function": "minecraft:set_count", "count": { "type": "minecraft:uniform", "min": 1.0, "max": 2.0 } }] },
+        { "type": "minecraft:item", "name": "minecraft:gray_dye", "functions": [{ "function": "minecraft:set_count", "count": { "type": "minecraft:uniform", "min": 1.0, "max": 2.0 } }] }
+      ]
+    }
+  ]
+}

@@ -16,8 +16,12 @@ Use a datapack for server-side behavior and text pools:
       dialogue/
       notifications/
       gifts/
+      profession_loot/
       villager_names/
+      loot_table/
+        villager/profession/
     <your_namespace>/
+      loot_table/
       story_structures/
       story_biomes/
 ```
@@ -53,17 +57,19 @@ Most Villager Retaliation data is intentionally scoped to the mod namespace:
 | Dialogue | `villagerretaliation` |
 | Notifications | `villagerretaliation` |
 | Gifts | `villagerretaliation` |
+| Profession loot rules | `villagerretaliation` |
 | Preset names | `villagerretaliation` |
 | Resource-pack models/textures | `villagerretaliation` or the vanilla texture paths documented on the model page |
 
-Story discovery files are the exception. Structure and biome story entries are loaded from any namespace:
+Story discovery files and referenced loot tables are the exceptions. Structure and biome story entries are loaded from any namespace:
 
 ```text
 data/my_pack/story_structures/ancient_places.json
 data/my_pack/story_biomes/rare_biomes.json
+data/my_pack/loot_table/villager/profession/alchemist/common.json
 ```
 
-Those entries still point at real structure or biome ids such as `minecraft:ancient_city` or `examplemod:crystal_marsh`.
+Story entries still point at real structure or biome ids such as `minecraft:ancient_city` or `examplemod:crystal_marsh`. Profession loot rule files stay in `villagerretaliation`, but their `loot_table` values can reference tables from any namespace.
 
 ## File Layering And Replacement
 
@@ -78,17 +84,17 @@ data/villagerretaliation/notifications/en_us/my_pack_notifications.json
 
 Do not put addon content in `data/villagerretaliation/dialogue/en_us/global.json` or `data/villagerretaliation/notifications/en_us/global.json` unless you mean to replace the mod's built-in file. Same-path datapack files replace the built-in file before Villager Retaliation reads entries, so a pack at those paths can hide default interaction-menu options, keyed messages, openings, closings, notification text, and other built-in data.
 
-Dialogue and notification entries support stable `id` values. When a later locale layer or later file defines the same `id`, it replaces the previous entry in that loaded pool. This is the cleanest way to translate or override one specific line without copying a full built-in file.
+Dialogue, notification, gift, and profession loot entries support stable `id` values. When a later locale layer or later file defines the same `id`, it replaces the previous entry in that loaded pool. This is the cleanest way to translate or override one specific line or rule without copying a full built-in file.
 
-Gifts do not use entry ids for replacement. Gift files contribute preference and reward rules. If you want a total replacement of the built-in gift table, override `data/villagerretaliation/gifts/default.json` at the same path with your replacement file.
+Gift preference, gift reward, and profession loot entries also support `"remove": true` when an `id` is supplied. Gift and profession loot files can set top-level `"replace": true` to clear previously loaded rules before reading that file.
 
-Preset names are loaded from one exact resource:
+Preset names are additive across JSON files under:
 
 ```text
-data/villagerretaliation/villager_names/preset_names.json
+data/villagerretaliation/villager_names/
 ```
 
-Replacing that file replaces the available name pool.
+Use a unique file name to add names. Set top-level `"replace": true` in a later-sorting file, or override `villager_names/preset_names.json`, when you intentionally want to replace the available name pool.
 
 ## Locale Layering
 
@@ -130,7 +136,7 @@ Before testing in game:
 - Validate JSON syntax with your editor or a JSON linter.
 - Confirm paths exactly match the documented roots.
 - Confirm enum values are spelled correctly. Values are case-insensitive in code, but lowercase snake case is recommended.
-- Give overrideable dialogue and notification entries explicit `id` values.
+- Give overrideable dialogue, notification, gift, and profession loot entries explicit `id` values.
 - Use a small test pack first, then expand once the hook works.
 
 ## Testing Checklist

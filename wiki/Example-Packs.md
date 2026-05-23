@@ -17,7 +17,11 @@ VillagerRetaliationExample/
           examplepack_notifications.json
       gifts/
         example_gifts.json
+      profession_loot/
+        example_loot.json
     examplepack/
+      loot_table/
+        villager/profession/alchemist/common.json
       story_structures/
         haunted_places.json
       story_biomes/
@@ -181,6 +185,53 @@ data/villagerretaliation/gifts/example_gifts.json
       "min_count": 2,
       "max_count": 5,
       "weight": 10
+    }
+  ]
+}
+```
+
+## Profession Loot Example
+
+```text
+data/villagerretaliation/profession_loot/example_loot.json
+```
+
+```json
+{
+  "tables": [
+    {
+      "id": "examplepack.alchemist.common",
+      "professions": ["examplemod:alchemist"],
+      "loot_table": "examplepack:villager/profession/alchemist/common",
+      "chance": "always"
+    }
+  ]
+}
+```
+
+```text
+data/examplepack/loot_table/villager/profession/alchemist/common.json
+```
+
+```json
+{
+  "type": "minecraft:entity",
+  "pools": [
+    {
+      "rolls": 1.0,
+      "bonus_rolls": 0.0,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:amethyst_shard",
+          "functions": [
+            {
+              "function": "minecraft:set_count",
+              "count": { "type": "minecraft:uniform", "min": 1.0, "max": 3.0 }
+            }
+          ]
+        }
+      ]
     }
   ]
 }

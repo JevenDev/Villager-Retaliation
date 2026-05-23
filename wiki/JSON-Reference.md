@@ -38,7 +38,7 @@ are both accepted by the loaders that use `professions`, filters, item lists, ta
 
 ## Common Professions
 
-Use lowercase names. `minecraft:` is optional for supported vanilla professions.
+Use lowercase ids. `minecraft:` is optional for vanilla professions.
 
 ```text
 armorer
@@ -60,6 +60,16 @@ unemployed
 ```
 
 `none` and `unemployed` both target villagers with no profession.
+
+Modded professions are supported anywhere a `professions` filter is accepted. Use the full registered id:
+
+```json
+{
+  "professions": ["examplemod:alchemist"]
+}
+```
+
+The profession must already be registered by a mod; Villager Retaliation JSON can reference professions, but it does not create them.
 
 ## Common Filters
 
@@ -170,7 +180,7 @@ Both default to `true`.
 
 ## Stable IDs
 
-Dialogue and notifications can generate fallback ids from file path and entry order, but explicit ids are strongly recommended:
+Dialogue, notifications, gifts, and profession loot can generate fallback ids from file path and entry order, but explicit ids are strongly recommended:
 
 ```json
 {
@@ -183,6 +193,7 @@ Use stable ids when:
 - You plan to translate a line.
 - You plan to override a built-in or pack-provided line.
 - You want entries to stay stable when you reorder JSON arrays.
+- You plan to remove or replace one gift rule or profession loot rule from another file.
 
 ## Common Color Values
 
@@ -213,5 +224,6 @@ They also accept `#RRGGBB`, `0xRRGGBB`, `#AARRGGBB`, or `0xAARRGGBB`.
 - JSON comments are not valid.
 - Trailing commas are not valid.
 - A misspelled enum value is silently ignored by many loaders.
+- A misspelled or unloaded custom profession id is ignored by profession filters.
 - A missing required field usually causes only that entry to be skipped.
 - A broken model JSON falls back to the built-in model, and logs a warning.

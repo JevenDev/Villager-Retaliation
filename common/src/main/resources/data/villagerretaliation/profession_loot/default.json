@@ -1,0 +1,50 @@
+{
+  "tables": [
+    { "id": "villagerretaliation.profession_loot.farmer.common", "professions": ["farmer"], "loot_table": "villagerretaliation:villager/profession/farmer/common" },
+    { "id": "villagerretaliation.profession_loot.farmer.rare", "professions": ["farmer"], "loot_table": "villagerretaliation:villager/profession/farmer/rare", "chance": "rare" },
+
+    { "id": "villagerretaliation.profession_loot.leatherworker.common", "professions": ["leatherworker"], "loot_table": "villagerretaliation:villager/profession/leatherworker/common" },
+    { "id": "villagerretaliation.profession_loot.leatherworker.very_rare", "professions": ["leatherworker"], "loot_table": "villagerretaliation:villager/profession/leatherworker/very_rare", "chance": "very_rare" },
+
+    { "id": "villagerretaliation.profession_loot.fisherman.common", "professions": ["fisherman"], "loot_table": "villagerretaliation:villager/profession/fisherman/common" },
+    { "id": "villagerretaliation.profession_loot.fisherman.rare", "professions": ["fisherman"], "loot_table": "villagerretaliation:villager/profession/fisherman/rare", "chance": "rare" },
+    { "id": "villagerretaliation.profession_loot.fisherman.very_rare", "professions": ["fisherman"], "loot_table": "villagerretaliation:villager/profession/fisherman/very_rare", "chance": "very_rare" },
+
+    { "id": "villagerretaliation.profession_loot.librarian.common", "professions": ["librarian"], "loot_table": "villagerretaliation:villager/profession/librarian/common" },
+    { "id": "villagerretaliation.profession_loot.librarian.rare", "professions": ["librarian"], "loot_table": "villagerretaliation:villager/profession/librarian/rare", "chance": "rare" },
+    { "id": "villagerretaliation.profession_loot.librarian.very_rare", "professions": ["librarian"], "loot_table": "villagerretaliation:villager/profession/librarian/very_rare", "chance": "very_rare" },
+
+    { "id": "villagerretaliation.profession_loot.shepherd.common", "professions": ["shepherd"], "loot_table": "villagerretaliation:villager/profession/shepherd/common" },
+    { "id": "villagerretaliation.profession_loot.shepherd.rare", "professions": ["shepherd"], "loot_table": "villagerretaliation:villager/profession/shepherd/rare", "chance": "rare" },
+
+    { "id": "villagerretaliation.profession_loot.butcher.common", "professions": ["butcher"], "loot_table": "villagerretaliation:villager/profession/butcher/common" },
+    { "id": "villagerretaliation.profession_loot.butcher.rare", "professions": ["butcher"], "loot_table": "villagerretaliation:villager/profession/butcher/rare", "chance": "rare" },
+
+    { "id": "villagerretaliation.profession_loot.cleric.common", "professions": ["cleric"], "loot_table": "villagerretaliation:villager/profession/cleric/common" },
+    { "id": "villagerretaliation.profession_loot.cleric.rare", "professions": ["cleric"], "loot_table": "villagerretaliation:villager/profession/cleric/rare", "chance": "rare" },
+    { "id": "villagerretaliation.profession_loot.cleric.very_rare", "professions": ["cleric"], "loot_table": "villagerretaliation:villager/profession/cleric/very_rare", "chance": "very_rare" },
+
+    { "id": "villagerretaliation.profession_loot.cartographer.common", "professions": ["cartographer"], "loot_table": "villagerretaliation:villager/profession/cartographer/common" },
+    { "id": "villagerretaliation.profession_loot.cartographer.rare", "professions": ["cartographer"], "loot_table": "villagerretaliation:villager/profession/cartographer/rare", "chance": "rare" },
+
+    { "id": "villagerretaliation.profession_loot.toolsmith.common", "professions": ["toolsmith"], "loot_table": "villagerretaliation:villager/profession/toolsmith/common" },
+    { "id": "villagerretaliation.profession_loot.toolsmith.rare", "professions": ["toolsmith"], "loot_table": "villagerretaliation:villager/profession/toolsmith/rare", "chance": "rare" },
+
+    { "id": "villagerretaliation.profession_loot.weaponsmith.common", "professions": ["weaponsmith"], "loot_table": "villagerretaliation:villager/profession/weaponsmith/common" },
+    { "id": "villagerretaliation.profession_loot.weaponsmith.rare", "professions": ["weaponsmith"], "loot_table": "villagerretaliation:villager/profession/weaponsmith/rare", "chance": "rare" },
+
+    { "id": "villagerretaliation.profession_loot.armorer.common", "professions": ["armorer"], "loot_table": "villagerretaliation:villager/profession/armorer/common" },
+    { "id": "villagerretaliation.profession_loot.armorer.rare", "professions": ["armorer"], "loot_table": "villagerretaliation:villager/profession/armorer/rare", "chance": "rare" },
+
+    { "id": "villagerretaliation.profession_loot.fletcher.common", "professions": ["fletcher"], "loot_table": "villagerretaliation:villager/profession/fletcher/common" },
+
+    { "id": "villagerretaliation.profession_loot.mason.common", "professions": ["mason"], "loot_table": "villagerretaliation:villager/profession/mason/common" },
+    { "id": "villagerretaliation.profession_loot.mason.rare", "professions": ["mason"], "loot_table": "villagerretaliation:villager/profession/mason/rare", "chance": "rare" },
+
+    { "id": "villagerretaliation.profession_loot.nitwit.common", "professions": ["nitwit"], "loot_table": "villagerretaliation:villager/profession/nitwit/common" },
+    { "id": "villagerretaliation.profession_loot.nitwit.rare", "professions": ["nitwit"], "loot_table": "villagerretaliation:villager/profession/nitwit/rare", "chance": "rare" },
+
+    { "id": "villagerretaliation.profession_loot.none.common", "professions": ["none"], "loot_table": "villagerretaliation:villager/profession/none/common" },
+    { "id": "villagerretaliation.profession_loot.none.rare", "professions": ["none"], "loot_table": "villagerretaliation:villager/profession/none/rare", "chance": "rare" }
+  ]
+}

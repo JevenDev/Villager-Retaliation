@@ -10,6 +10,7 @@ import com.jvn.villagerretaliation.network.VillagerWorldTextIndicatorKind;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.util.VillagerLocale;
 import com.jvn.villagerretaliation.util.VillagerPlayerItemCondition;
+import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
@@ -224,30 +225,9 @@ public final class VillagerNotificationResources {
     private static Set<VillagerProfession> readProfessions(JsonObject entry) {
         Set<VillagerProfession> professions = new HashSet<>();
         for (String value : readStringList(entry, "professions")) {
-            parseProfession(value).ifPresent(professions::add);
+            VillagerProfessionUtil.parse(value).ifPresent(professions::add);
         }
         return Set.copyOf(professions);
-    }
-
-    private static Optional<VillagerProfession> parseProfession(String value) {
-        return switch (value.toLowerCase(Locale.ROOT).replace("minecraft:", "")) {
-            case "armorer" -> Optional.of(VillagerProfession.ARMORER);
-            case "butcher" -> Optional.of(VillagerProfession.BUTCHER);
-            case "cartographer" -> Optional.of(VillagerProfession.CARTOGRAPHER);
-            case "cleric" -> Optional.of(VillagerProfession.CLERIC);
-            case "farmer" -> Optional.of(VillagerProfession.FARMER);
-            case "fisherman" -> Optional.of(VillagerProfession.FISHERMAN);
-            case "fletcher" -> Optional.of(VillagerProfession.FLETCHER);
-            case "leatherworker" -> Optional.of(VillagerProfession.LEATHERWORKER);
-            case "librarian" -> Optional.of(VillagerProfession.LIBRARIAN);
-            case "mason" -> Optional.of(VillagerProfession.MASON);
-            case "nitwit" -> Optional.of(VillagerProfession.NITWIT);
-            case "shepherd" -> Optional.of(VillagerProfession.SHEPHERD);
-            case "toolsmith" -> Optional.of(VillagerProfession.TOOLSMITH);
-            case "weaponsmith" -> Optional.of(VillagerProfession.WEAPONSMITH);
-            case "none", "unemployed" -> Optional.of(VillagerProfession.NONE);
-            default -> Optional.empty();
-        };
     }
 
     private static <E extends Enum<E>> Set<E> readEnumSet(JsonObject entry, String key, Class<E> enumClass) {
