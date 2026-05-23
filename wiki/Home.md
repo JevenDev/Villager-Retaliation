@@ -5,12 +5,14 @@ Villager Retaliation is data-driven in the places pack makers usually want to to
 ## Quick Links
 
 - [Pack Development Guide](Pack-Development.md) - folder layout, namespaces, reload behavior, override strategy, and testing workflow.
+- [Pack Format Changes](Pack-Format-Changes.md) - pack-facing added, modified, deprecated, and removed fields, tags, triggers, paths, and migration notes.
 - [JSON Reference](JSON-Reference.md) - shared conventions, enum values, filters, ids, weights, colors, and common pitfalls.
 - [Dialogue JSON](Dialogue.md) - conversation options, dialogue lines, openings, closings, pacify lines, keyed messages, localization overlays, and story placeholders.
 - [Dialogue Types](Dialogue-Types.md) - every current dialogue `type` value, with simple and expanded dropdown examples.
 - [Event Tags](Event-Tags.md) - every current `event_tags` / `player_event_tags` value, with simple and expanded dropdown examples.
 - [Notifications JSON](Notifications.md) - HUD notifications, ambient world text, trigger ids, colors, notice kinds, filters, and translated replacements.
 - [Notification Triggers](Notification-Triggers.md) - every built-in notification `trigger`, with simple and expanded dropdown examples.
+- [Localization Guide](Localization.md) - how datapack locale folders and resource-pack language keys work together.
 - [Gift JSON](Gifts.md) - gift preferences, reactions, item and tag selectors, profession overrides, priority, and high-reputation rewards.
 - [Pacification JSON](Pacification.md) - item or tag payments, modded currencies, costs, and profession-specific pacify rules.
 - [Story Discovery JSON](Story-Discovery.md) - structure and biome discovery lists used by `share_story` dialogue.
@@ -24,6 +26,7 @@ Villager Retaliation is data-driven in the places pack makers usually want to to
 | --- | --- | --- |
 | Dialogue | Datapack | `data/villagerretaliation/dialogue/<locale>/` |
 | Notifications and world text | Datapack | `data/villagerretaliation/notifications/<locale>/` |
+| Interaction GUI and reputation UI text | Resource pack | `assets/villagerretaliation/lang/<locale>.json` |
 | Gifts and rewards | Datapack | `data/villagerretaliation/gifts/` |
 | Pacification payments | Datapack | `data/villagerretaliation/pacification/` |
 | Story structures | Datapack | `data/<namespace>/story_structures/` |

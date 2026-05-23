@@ -7,6 +7,7 @@ import java.util.Optional;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.MerchantScreen;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.phys.AABB;
@@ -78,8 +79,12 @@ public final class VillagerReputationTradeScreenOverlay {
             return;
         }
 
-        Component title = Component.literal("Reputation");
-        Component tierAndValue = Component.literal(VillagerReputationIconSet.formatLevel(entry.level()) + ": " + entry.reputation())
+        Component title = Component.translatable("villagerretaliation.reputation.label");
+        Component tierAndValue = Component.literal(I18n.get(
+                        "villagerretaliation.reputation.tier_value_format",
+                        VillagerReputationIconSet.formatLevel(entry.level()),
+                        entry.reputation()
+                ))
                 .withStyle(VillagerReputationIconSet.colorFor(entry.level()));
         guiGraphics.renderTooltip(minecraft.font, List.of(title, tierAndValue), Optional.empty(), mouseX, mouseY);
     }

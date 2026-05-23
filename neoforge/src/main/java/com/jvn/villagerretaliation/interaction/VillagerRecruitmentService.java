@@ -491,7 +491,7 @@ public final class VillagerRecruitmentService {
                 new VillagerInteractionNoticePayload(
                         villager.getId(),
                         followerBetrayalResponse(villager, player),
-                        villagerSpeakerLabel(villager)
+                        ""
                 )
         );
     }
@@ -518,15 +518,6 @@ public final class VillagerRecruitmentService {
         }
         DialogueContext context = VillagerInteractionService.createDialogueContext(level, player, villager);
         return VillagerDialogueResources.message(context, "interaction.follow_betrayal").orElse("");
-    }
-
-    private static String villagerSpeakerLabel(Villager villager) {
-        String resolvedName = displayName(villager);
-        String profession = VillagerInteractionTextUtil.professionName(villager.getVillagerData().getProfession(), "Unemployed");
-        if (profession == null || profession.isBlank() || profession.equals("Villager")) {
-            return resolvedName;
-        }
-        return profession + " " + resolvedName;
     }
 
     private static String displayName(Villager villager) {

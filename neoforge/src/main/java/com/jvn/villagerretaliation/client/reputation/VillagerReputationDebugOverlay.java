@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Locale;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.network.chat.Component;
@@ -63,18 +64,26 @@ public final class VillagerReputationDebugOverlay {
         boolean showNumber = VillagerRetaliationConfig.REPUTATION_DEBUG_OVERLAY_SHOW_NUMBER.get();
         boolean showTier = VillagerRetaliationConfig.REPUTATION_DEBUG_OVERLAY_SHOW_TIER.get();
         if (showNumber && showTier) {
-            lines.add("Reputation: " + entry.reputation() + " (" + entry.level().name() + ")");
+            lines.add(I18n.get(
+                    "villagerretaliation.reputation.debug.value_and_level",
+                    entry.reputation(),
+                    VillagerReputationIconSet.formatLevel(entry.level())
+            ));
         } else if (showNumber) {
-            lines.add("Reputation: " + entry.reputation());
+            lines.add(I18n.get("villagerretaliation.reputation.value_format", entry.reputation()));
         } else if (showTier) {
-            lines.add(entry.level().name());
+            lines.add(VillagerReputationIconSet.formatLevel(entry.level()));
         }
 
         if (VillagerRetaliationConfig.REPUTATION_DEBUG_OVERLAY_SHOW_HEALTH.get()) {
-            lines.add(String.format(Locale.ROOT, "Health: %.1f / %.1f", villager.getHealth(), villager.getMaxHealth()));
+            lines.add(I18n.get(
+                    "villagerretaliation.reputation.debug.health",
+                    String.format(Locale.ROOT, "%.1f", villager.getHealth()),
+                    String.format(Locale.ROOT, "%.1f", villager.getMaxHealth())
+            ));
         }
         if (VillagerRetaliationConfig.REPUTATION_DEBUG_OVERLAY_SHOW_ARMOR.get()) {
-            lines.add("Armor: " + villager.getArmorValue());
+            lines.add(I18n.get("villagerretaliation.reputation.debug.armor", villager.getArmorValue()));
         }
 
         return lines;

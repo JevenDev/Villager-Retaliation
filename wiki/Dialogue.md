@@ -17,6 +17,8 @@ Files under `professions/<profession>.json` and `professions/<profession>/...jso
 
 Use a unique file name for addon dialogue. A datapack file at `data/villagerretaliation/dialogue/en_us/global.json` replaces the mod's built-in `global.json`, which can hide default interaction-menu options, keyed messages, openings, closings, and other built-in dialogue data. Only use that exact path when you intentionally want a full-file override.
 
+Dialogue files translate villager speech and keyed dialogue messages. They do not translate the client GUI around the conversation, such as Talk, Trade, Gift, Gender, Mood, Family Tree, or generated relationship rows. Put those strings in a resource-pack language file; see [Localization Guide](Localization.md).
+
 ## Top-Level Sections
 
 A dialogue file can contain any mix of these arrays:

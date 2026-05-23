@@ -2,6 +2,8 @@
 
 This guide covers how to build packs that target Villager Retaliation JSON and assets.
 
+For version-to-version pack migrations, see [Pack Format Changes](Pack-Format-Changes.md).
+
 ## Supported Pack Types
 
 Use a datapack for server-side behavior and text pools:
@@ -30,12 +32,17 @@ Use a resource pack for client-side textures and model JSON:
       textures/entity/villager/villager.png
       textures/entity/wandering_trader.png
     villagerretaliation/
+      lang/
+        en_us.json
+        fr_fr.json
       textures/entity/villager/villager.png
       textures/entity/wandering_trader/wandering_trader.png
       models/entity/villager/combat_villager.json
       models/entity/villager/render_options.json
       models/entity/villager/non_combat_villager.json
 ```
+
+Resource-pack language files translate client-side UI, including the interaction screen, generated family and relationship rows, reputation overlays, and Villager Retaliation chat labels. See [Localization Guide](Localization.md) for the split between datapack text and resource-pack language keys.
 
 ## Namespace Rules
 
@@ -96,6 +103,14 @@ data/villagerretaliation/dialogue/fr_fr/my_pack_dialogue.json
 
 If both files define an entry with the same `id`, the `fr_fr` entry replaces the `en_us` entry for French players. Players using other languages keep the English fallback.
 
+GUI labels are not loaded from datapack locale folders. Translate buttons, info rows, generated family and relationship labels, reputation labels, gender names, mood names, and fallback profession labels in a resource pack:
+
+```text
+assets/villagerretaliation/lang/fr_fr.json
+```
+
+Profession display names resolve through language keys too. Vanilla professions use Minecraft's keys such as `entity.minecraft.villager.farmer`; custom professions use `entity.minecraft.villager.<namespace>.<path>`, with path separators written as dots.
+
 ## Reloading
 
 Datapack changes are read through Minecraft's resource manager. In a development world, use:
@@ -127,3 +142,4 @@ Before testing in game:
 5. Check latest logs for JSON parse warnings if a resource-pack model fails.
 6. Add filters one at a time after the unfiltered version works.
 7. For localized entries, test once with default `en_us` and once with the target language.
+8. If the pack translates the GUI, enable the matching resource pack while testing the translated datapack.

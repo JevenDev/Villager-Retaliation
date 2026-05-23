@@ -2,6 +2,8 @@
 
 This page lists shared JSON conventions used across Villager Retaliation's data-driven systems.
 
+For migration notes between versions, see [Pack Format Changes](Pack-Format-Changes.md).
+
 ## Resource Location Shortcuts
 
 For gift and pacification item ids, unnamespaced values are treated as Minecraft ids:

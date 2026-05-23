@@ -15,6 +15,8 @@ The mod loads `en_us` first, then overlays the player's locale. Matching `id` va
 
 Use a unique file name for addon notifications. A datapack file at `data/villagerretaliation/notifications/en_us/global.json` replaces the mod's built-in `global.json`, which can hide default notification text. Only use that exact path when you intentionally want a full-file override.
 
+Notification files translate HUD notification text and ambient world text. They do not translate the interaction GUI, generated relationship/family labels, reputation overlay labels, or villager chat tag labels. Put those strings in a resource-pack language file; see [Localization Guide](Localization.md).
+
 ## Minimal Notification
 
 ```json
