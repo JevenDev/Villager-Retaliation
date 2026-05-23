@@ -230,6 +230,8 @@ Message fields:
 | `show_for_babies` | boolean | `true` | Baby visibility. |
 | `weight` | integer | `10` | Weighted selection. |
 
+Gift preference rules can set `response_key` to point at any message key. Those custom gift messages can use `{gift_item}`, `{item}`, `{gift_item_id}`, and `{item_id}` placeholders. If the custom key has no matching message, the default reaction message is used instead.
+
 ## Openings And Closings
 
 ```json

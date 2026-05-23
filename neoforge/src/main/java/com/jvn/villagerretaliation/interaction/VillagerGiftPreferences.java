@@ -59,13 +59,27 @@ public final class VillagerGiftPreferences {
         }
     }
 
-    public record GiftPreference(GiftReaction reaction, boolean professionSpecific, int reputationValue, int perItemReputation) {
+    public record GiftPreference(
+            GiftReaction reaction,
+            boolean professionSpecific,
+            int reputationValue,
+            int perItemReputation,
+            String responseKey) {
         public GiftPreference(GiftReaction reaction, boolean professionSpecific, int reputationValue) {
-            this(reaction, professionSpecific, reputationValue, reaction.defaultPerItemReputation());
+            this(reaction, professionSpecific, reputationValue, reaction.defaultPerItemReputation(), "");
+        }
+
+        public GiftPreference(GiftReaction reaction, boolean professionSpecific, int reputationValue, int perItemReputation) {
+            this(reaction, professionSpecific, reputationValue, perItemReputation, "");
         }
 
         private GiftPreference withReputationValue(int reputationValue) {
-            return new GiftPreference(this.reaction, this.professionSpecific, reputationValue, this.perItemReputation);
+            return new GiftPreference(
+                    this.reaction,
+                    this.professionSpecific,
+                    reputationValue,
+                    this.perItemReputation,
+                    this.responseKey);
         }
     }
 

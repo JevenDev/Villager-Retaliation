@@ -75,6 +75,11 @@ data/villagerretaliation/dialogue/en_us/examplepack_dialogue.json
       "key": "sleep.broken_bed",
       "text": "That bed had a name in this house.",
       "weight": 15
+    },
+    {
+      "id": "examplepack.gift.librarian.rare_book",
+      "key": "examplepack.gift.librarian.rare_book",
+      "text": "{gift_item}? This belongs near a reading lamp, not forgotten in a chest."
     }
   ]
 }
@@ -124,6 +129,7 @@ data/villagerretaliation/gifts/example_gifts.json
       "professions": ["librarian"],
       "reaction": "loved",
       "items": ["minecraft:enchanted_book", "minecraft:name_tag"],
+      "response_key": "examplepack.gift.librarian.rare_book",
       "priority": 20
     },
     {

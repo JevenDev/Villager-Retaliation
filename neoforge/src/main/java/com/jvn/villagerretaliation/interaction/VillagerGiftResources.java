@@ -73,7 +73,8 @@ public final class VillagerGiftResources {
                 selected.reaction(),
                 selected.professionSpecific(),
                 0,
-                selected.perItemReputation()
+                selected.perItemReputation(),
+                selected.responseKey()
         ));
     }
 
@@ -213,11 +214,13 @@ public final class VillagerGiftResources {
             Set<VillagerProfession> professions = readProfessions(entry);
             int perItemReputation = readInt(entry, "reputation_per_item", reaction.get().defaultPerItemReputation());
             int priority = readInt(entry, "priority", 0);
+            String responseKey = readGiftResponseKey(entry);
             preferenceRules.add(new GiftPreferenceRule(
                     fallbackId(location, "preference", index),
                     professions,
                     reaction.get(),
                     perItemReputation,
+                    responseKey,
                     priority,
                     index,
                     selectors
@@ -393,6 +396,18 @@ public final class VillagerGiftResources {
         return element == null || !element.isJsonPrimitive() ? "" : element.getAsString().trim();
     }
 
+    private static String readGiftResponseKey(JsonObject entry) {
+        String responseKey = readString(entry, "response_key");
+        if (!responseKey.isBlank()) {
+            return responseKey;
+        }
+        responseKey = readString(entry, "dialogue_key");
+        if (!responseKey.isBlank()) {
+            return responseKey;
+        }
+        return readString(entry, "gift_response_key");
+    }
+
     private static int readInt(JsonObject entry, String key, int fallback) {
         JsonElement element = entry.get(key);
         return element == null || !element.isJsonPrimitive() ? fallback : element.getAsInt();
@@ -422,6 +437,7 @@ public final class VillagerGiftResources {
             Set<VillagerProfession> professions,
             VillagerGiftPreferences.GiftReaction reaction,
             int perItemReputation,
+            String responseKey,
             int priority,
             int order,
             List<ItemSelector> selectors) implements Comparable<GiftPreferenceRule> {

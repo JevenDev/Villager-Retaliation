@@ -320,11 +320,7 @@ public final class VillagerInteractionService {
         VillagerAmbientIndicatorService.onGiftReceived(villager, reputationValue);
 
         DialogueContext giftContext = createDialogueContext(level, player, villager);
-        String responseText = VillagerDialogueResources.message(
-                giftContext,
-                giftResponseKey(giftPreference),
-                Map.of("gift_item", giftedStack.getHoverName().getString())
-        ).orElse("");
+        String responseText = giftResponseText(giftContext, giftPreference, giftedStack);
         sendDialogueReputation(player, villager, level);
         broadcastVillagerChat(level, villager, responseText);
     }
@@ -373,6 +369,26 @@ public final class VillagerInteractionService {
         String scope = giftPreference.professionSpecific() ? "profession" : "global";
         String reaction = giftPreference.reaction().name().toLowerCase(java.util.Locale.ROOT);
         return "gift_response." + scope + "." + reaction;
+    }
+
+    private static String giftResponseText(
+            DialogueContext context,
+            VillagerGiftPreferences.GiftPreference giftPreference,
+            ItemStack giftedStack) {
+        Map<String, String> replacements = Map.of(
+                "gift_item", giftedStack.getHoverName().getString(),
+                "item", itemName(giftedStack),
+                "gift_item_id", itemId(giftedStack),
+                "item_id", itemId(giftedStack)
+        );
+        String responseKey = giftPreference.responseKey();
+        if (responseKey != null && !responseKey.isBlank()) {
+            String customResponse = VillagerDialogueResources.message(context, responseKey, replacements).orElse("");
+            if (!customResponse.isBlank()) {
+                return customResponse;
+            }
+        }
+        return VillagerDialogueResources.message(context, giftResponseKey(giftPreference), replacements).orElse("");
     }
 
     private static Boolean giftAdviceLikedResult(VillagerGiftPreferences.GiftReaction reaction) {

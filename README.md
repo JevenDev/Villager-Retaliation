@@ -483,7 +483,8 @@ Gift preference entries map items or item tags to a reaction. Profession-specifi
   "preferences": [
     {
       "reaction": "liked",
-      "items": ["minecraft:bread", "minecraft:apple"]
+      "items": ["minecraft:bread", "minecraft:apple"],
+      "response_key": "my_pack.gift.simple_food"
     },
     {
       "professions": ["farmer"],
@@ -495,7 +496,18 @@ Gift preference entries map items or item tags to a reaction. Profession-specifi
 }
 ```
 
-Valid reactions are `loved`, `liked`, `neutral`, `disliked`, and `hated`. Each reaction has a default per-item reputation value, but `reputation_per_item` can override it for a specific entry.
+Valid reactions are `loved`, `liked`, `neutral`, `disliked`, and `hated`. Each reaction has a default per-item reputation value, but `reputation_per_item` can override it for a specific entry. A gift preference can also set `response_key` to use a localized dialogue message when that specific item or tag rule matches; if the message key is missing, the normal reaction response is used.
+
+```json
+{
+  "messages": [
+    {
+      "key": "my_pack.gift.simple_food",
+      "text": "{gift_item}? Good food is never wasted."
+    }
+  ]
+}
+```
 
 Gifted items are stored in the villager's inventory. Trusted-or-better villagers may keep a loved or liked gift as a visible keepsake when they have an empty hand, armor slot, or offhand slot for it.
 
