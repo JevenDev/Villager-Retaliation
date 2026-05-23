@@ -89,7 +89,15 @@ public final class VillagerAmbientIndicatorService {
             return;
         }
 
-        emitAlert(level, damaged, "alert.villager_damaged", "!");
+        Player attackingPlayer = attacker instanceof Player player ? player : null;
+        emitAlert(
+                level,
+                damaged,
+                attackingPlayer,
+                attackingPlayer == null ? "alert.villager_damaged" : "alert.player_attacked_villager",
+                attackingPlayer == null ? "" : "alert.villager_damaged",
+                alertReplacements(damaged, attacker),
+                "!");
 
         AABB area = damaged.getBoundingBox().inflate(ALERT_WITNESS_RADIUS);
         int alerted = 0;
@@ -103,7 +111,10 @@ public final class VillagerAmbientIndicatorService {
             emitAlert(
                     level,
                     witness,
+                    attackingPlayer,
                     attacker instanceof Player ? "alert.witness_attack.player" : "alert.witness_attack",
+                    "",
+                    alertReplacements(witness, attacker),
                     alertTextForWitness(witness, attacker)
             );
             alerted++;
@@ -126,7 +137,10 @@ public final class VillagerAmbientIndicatorService {
             emitAlert(
                     level,
                     witness,
+                    attacker instanceof Player player ? player : null,
                     attacker instanceof Player ? "alert.witness_death.player" : "alert.witness_death",
+                    "",
+                    alertReplacements(witness, attacker),
                     alertTextForDeath(witness, attacker)
             );
             alerted++;
@@ -301,13 +315,31 @@ public final class VillagerAmbientIndicatorService {
         return closest;
     }
 
-    private static void emitAlert(ServerLevel level, AbstractVillager villager, String trigger, String text) {
+    private static void emitAlert(
+            ServerLevel level,
+            AbstractVillager villager,
+            Player player,
+            String trigger,
+            String fallbackTrigger,
+            Map<String, String> replacements,
+            String text) {
         long gameTime = level.getGameTime();
         if (gameTime < NEXT_ALERT_TICK.getOrDefault(villager.getUUID(), 0L)) {
             return;
         }
         NEXT_ALERT_TICK.put(villager.getUUID(), gameTime + ALERT_COOLDOWN_TICKS);
-        emit(level, villager, null, trigger, VillagerWorldTextIndicatorKind.ALERT, text);
+        if (text == null || text.isBlank()) {
+            return;
+        }
+        VillagerNotifications.sendWorldText(
+                level,
+                villager,
+                player,
+                trigger,
+                fallbackTrigger,
+                replacements,
+                VillagerWorldTextIndicatorKind.ALERT,
+                text);
     }
 
     private static void emit(
@@ -338,6 +370,18 @@ public final class VillagerAmbientIndicatorService {
         return VillagerNotifications.replacements(
                 "player", player.getGameProfile().getName(),
                 "victim", player.getGameProfile().getName(),
+                "villager", VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
+                "villager_name", VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
+                "villager_kind", villagerKind(villager),
+                "profession", villagerProfessionName(villager)
+        );
+    }
+
+    private static Map<String, String> alertReplacements(AbstractVillager villager, Entity attacker) {
+        String attackerName = attacker == null ? "danger" : attacker.getDisplayName().getString();
+        return VillagerNotifications.replacements(
+                "attacker", attackerName,
+                "player", attacker instanceof Player player ? player.getGameProfile().getName() : attackerName,
                 "villager", VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
                 "villager_name", VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
                 "villager_kind", villagerKind(villager),

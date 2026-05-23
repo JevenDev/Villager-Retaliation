@@ -440,7 +440,7 @@ Each entry binds text and color to a trigger emitted by code. Dialogue can trigg
 
 `color`, `text_color`, and `chat_color` accept common color names or hex values such as `#FFD166`. HUD entries can set `kind` for existing notification behavior. World-text entries can set `world_text_kind`: `alert`, `murmur`, `positive`, `negative`, `trade`, `dialogue`, or `sleep`.
 
-Built-in triggers include `gift.liked`, `gift.neutral`, `gift.disliked`, `gift.received_item`, recruitment triggers such as `recruitment.follow_start`, reputation tier triggers such as `reputation.tier.trusted.improved`, dialogue triggers such as `dialogue.question`, ambient triggers such as `ambient.murmur`, sleep triggers, combat triggers such as `combat.player_killed`, trade triggers, and villager alert triggers. Entries can filter by `professions`, `reputation_levels`, `min_reputation`, `max_reputation`, `show_for_adults`, `show_for_babies`, `chance`, and `weight`.
+Built-in triggers include `gift.liked`, `gift.neutral`, `gift.disliked`, `gift.received_item`, recruitment triggers such as `recruitment.follow_start`, reputation tier triggers such as `reputation.tier.trusted.improved`, dialogue triggers such as `dialogue.question`, ambient triggers such as `ambient.murmur`, sleep triggers, combat triggers such as `combat.player_killed`, trade triggers, and villager alert triggers such as `alert.player_attacked_villager`. Entries can filter by `professions`, `reputation_levels`, `min_reputation`, `max_reputation`, `show_for_adults`, `show_for_babies`, `chance`, and `weight`.
 
 Notification text also follows the player's client language. Files in `notifications/<locale>/` overlay `notifications/en_us/` the same way dialogue files do.
 

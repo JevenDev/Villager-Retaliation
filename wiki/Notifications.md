@@ -100,7 +100,7 @@ The built-in notification file uses these trigger families:
 | Ambient | `ambient.murmur`, `ambient.sleep_breathing`, `ambient.sleep_murmur` |
 | Combat | `combat.player_killed` |
 | Trade | `trade.completed`, `trade.refused` |
-| Alerts | `alert.villager_damaged`, `alert.witness_attack.player`, `alert.witness_attack`, `alert.witness_death.player`, `alert.witness_death` |
+| Alerts | `alert.player_attacked_villager`, `alert.villager_damaged`, `alert.witness_attack.player`, `alert.witness_attack`, `alert.witness_death.player`, `alert.witness_death` |
 
 For reputation tiers, `<level>` is one of:
 
@@ -128,6 +128,8 @@ Placeholder support depends on the trigger. Common built-in notification placeho
 ```
 
 Unknown placeholders are left as literal text.
+
+Alert world text supports `{player}`, `{attacker}`, `{villager}`, `{villager_name}`, `{villager_kind}`, and `{profession}`. Use `alert.player_attacked_villager` for an immediate response from the damaged villager when the attacker is a player. If no entry matches, it falls back to `alert.villager_damaged`.
 
 `combat.player_killed` is emitted as world text above the villager or wandering trader credited with killing a player. It supports `{player}`, `{victim}`, `{villager}`, `{villager_name}`, `{villager_kind}`, and `{profession}`.
 

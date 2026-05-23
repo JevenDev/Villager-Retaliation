@@ -422,6 +422,12 @@
       "weight": 12
     },
     {
+      "trigger": "alert.player_attacked_villager",
+      "text": "!",
+      "world_text_kind": "alert",
+      "color": "#FFD166"
+    },
+    {
       "trigger": "alert.villager_damaged",
       "text": "!",
       "world_text_kind": "alert",
