@@ -271,6 +271,9 @@ public final class VillagerStoryHintService {
 
     private static List<CachedTarget> locateStructureTargets(DialogueContext context, HintQuality quality) {
         ServerLevel level = context.level();
+        if (!level.getServer().getWorldData().worldGenOptions().generateStructures()) {
+            return List.of();
+        }
         BlockPos origin = context.villager().blockPosition();
         Registry<Structure> registry = level.registryAccess().registryOrThrow(Registries.STRUCTURE);
         List<Holder.Reference<Structure>> structures = new ArrayList<>(registry.holders().toList());

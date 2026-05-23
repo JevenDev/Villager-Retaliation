@@ -327,6 +327,9 @@ public final class VillagerReputationAdvancements {
             BlockPos origin,
             DangerousStructureStoryResources.Entry storyStructure,
             Holder.Reference<Structure> structure) {
+        if (!level.getServer().getWorldData().worldGenOptions().generateStructures()) {
+            return null;
+        }
         ensureStructureStoryCacheServer(level.getServer());
         ChunkPos chunkPos = new ChunkPos(origin);
         int blockRadius = Math.max(1, storyStructure.radius());
