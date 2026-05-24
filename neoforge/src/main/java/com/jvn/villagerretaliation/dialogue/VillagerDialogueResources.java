@@ -9,6 +9,7 @@ import com.jvn.villagerretaliation.combat.PacifyPaymentOffer;
 import com.jvn.villagerretaliation.combat.VillagerPacificationResult;
 import com.jvn.villagerretaliation.util.VillagerLocale;
 import com.jvn.villagerretaliation.util.VillagerPlayerItemCondition;
+import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import java.io.IOException;
 import java.io.Reader;
@@ -764,40 +765,37 @@ public final class VillagerDialogueResources {
         }
 
         String key = path.substring(professionRoot.length(), path.length() - ".json".length());
-        if (key.contains("/")) {
-            key = key.substring(0, key.indexOf('/'));
+        Optional<VillagerProfession> namespacedProfession = parseNamespacedProfessionPath(key);
+        if (namespacedProfession.isPresent()) {
+            return Set.of(namespacedProfession.get());
         }
-        return parseProfession(key).map(Set::of).orElse(Set.of());
+        String firstSegment = key.contains("/") ? key.substring(0, key.indexOf('/')) : key;
+        return VillagerProfessionUtil.parse(firstSegment).map(Set::of).orElse(Set.of());
     }
 
     private static Set<VillagerProfession> readProfessions(JsonObject entry, Set<VillagerProfession> defaultProfessions) {
         Set<VillagerProfession> professions = java.util.HashSet.newHashSet(defaultProfessions.size() + 1);
         professions.addAll(defaultProfessions);
         for (String value : readStringList(entry, "professions")) {
-            parseProfession(value).ifPresent(professions::add);
+            VillagerProfessionUtil.parse(value).ifPresent(professions::add);
         }
         return Set.copyOf(professions);
     }
 
-    private static Optional<VillagerProfession> parseProfession(String value) {
-        return switch (value.toLowerCase(Locale.ROOT).replace("minecraft:", "")) {
-            case "armorer" -> Optional.of(VillagerProfession.ARMORER);
-            case "butcher" -> Optional.of(VillagerProfession.BUTCHER);
-            case "cartographer" -> Optional.of(VillagerProfession.CARTOGRAPHER);
-            case "cleric" -> Optional.of(VillagerProfession.CLERIC);
-            case "farmer" -> Optional.of(VillagerProfession.FARMER);
-            case "fisherman" -> Optional.of(VillagerProfession.FISHERMAN);
-            case "fletcher" -> Optional.of(VillagerProfession.FLETCHER);
-            case "leatherworker" -> Optional.of(VillagerProfession.LEATHERWORKER);
-            case "librarian" -> Optional.of(VillagerProfession.LIBRARIAN);
-            case "mason" -> Optional.of(VillagerProfession.MASON);
-            case "nitwit" -> Optional.of(VillagerProfession.NITWIT);
-            case "shepherd" -> Optional.of(VillagerProfession.SHEPHERD);
-            case "toolsmith" -> Optional.of(VillagerProfession.TOOLSMITH);
-            case "weaponsmith" -> Optional.of(VillagerProfession.WEAPONSMITH);
-            case "none", "unemployed" -> Optional.of(VillagerProfession.NONE);
-            default -> Optional.empty();
-        };
+    private static Optional<VillagerProfession> parseNamespacedProfessionPath(String key) {
+        String[] segments = key.split("/");
+        if (segments.length < 2) {
+            return Optional.empty();
+        }
+
+        for (int end = segments.length; end >= 2; end--) {
+            String path = String.join("/", java.util.Arrays.copyOfRange(segments, 1, end));
+            Optional<VillagerProfession> profession = VillagerProfessionUtil.parse(segments[0] + ":" + path);
+            if (profession.isPresent()) {
+                return profession;
+            }
+        }
+        return Optional.empty();
     }
 
     private static <E extends Enum<E>> Set<E> readEnumSet(JsonObject entry, String key, Class<E> enumClass) {

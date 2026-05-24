@@ -8,10 +8,10 @@ import com.jvn.villagerretaliation.VillagerRetaliation;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.packs.resources.Resource;
@@ -22,8 +22,7 @@ public final class VillagerPresetNameRegistry {
     public static final String PERSISTENT_GENDER_KEY = "VillagerRetaliationGender";
 
     private static final String LEGACY_NAME_KEY_PREFIX = "villagerretaliation.villager_name.";
-    private static final ResourceLocation PRESET_NAMES_RESOURCE =
-            VillagerRetaliation.id("villager_names/preset_names.json");
+    private static final String VILLAGER_NAMES_ROOT = "villager_names";
 
     private static volatile CachedNamePool cachedNamePool = CachedNamePool.empty();
 
@@ -179,19 +178,36 @@ public final class VillagerPresetNameRegistry {
     }
 
     private static NamePool readNamePool(MinecraftServer server) {
-        Optional<Resource> resource = server.getResourceManager().getResource(PRESET_NAMES_RESOURCE);
-        if (resource.isEmpty()) {
-            return NamePool.empty();
-        }
+        List<String> maleNames = new ArrayList<>();
+        List<String> femaleNames = new ArrayList<>();
+        List<String> fallbackNames = new ArrayList<>();
+        server.getResourceManager()
+                .listResources(VILLAGER_NAMES_ROOT, location -> location.getNamespace().equals(VillagerRetaliation.MOD_ID)
+                        && location.getPath().endsWith(".json"))
+                .entrySet()
+                .stream()
+                .sorted(Comparator.comparing(entry -> entry.getKey().toString()))
+                .forEach(entry -> readNameFile(entry.getValue(), maleNames, femaleNames, fallbackNames));
+        return new NamePool(List.copyOf(maleNames), List.copyOf(femaleNames), List.copyOf(fallbackNames));
+    }
 
-        try (Reader reader = resource.get().openAsReader()) {
+    private static void readNameFile(
+            Resource resource,
+            List<String> maleNames,
+            List<String> femaleNames,
+            List<String> fallbackNames) {
+        try (Reader reader = resource.openAsReader()) {
             JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
-            List<String> maleNames = readNames(root.getAsJsonArray("male_names"));
-            List<String> femaleNames = readNames(root.getAsJsonArray("female_names"));
-            List<String> fallbackNames = readNames(root.getAsJsonArray("names"));
-            return new NamePool(maleNames, femaleNames, fallbackNames);
+            if (readBoolean(root, "replace", false)) {
+                maleNames.clear();
+                femaleNames.clear();
+                fallbackNames.clear();
+            }
+            maleNames.addAll(readNames(root.getAsJsonArray("male_names")));
+            femaleNames.addAll(readNames(root.getAsJsonArray("female_names")));
+            fallbackNames.addAll(readNames(root.getAsJsonArray("names")));
         } catch (IOException | IllegalStateException exception) {
-            return NamePool.empty();
+            // Invalid name resources are ignored so one custom list cannot break every preset name.
         }
     }
 
@@ -211,6 +227,11 @@ public final class VillagerPresetNameRegistry {
             }
         }
         return List.copyOf(loadedNames);
+    }
+
+    private static boolean readBoolean(JsonObject entry, String key, boolean fallback) {
+        JsonElement element = entry.get(key);
+        return element == null || !element.isJsonPrimitive() ? fallback : element.getAsBoolean();
     }
 
     private record NamePool(List<String> maleNames, List<String> femaleNames, List<String> fallbackNames) {

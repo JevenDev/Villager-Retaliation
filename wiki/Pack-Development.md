@@ -2,6 +2,8 @@
 
 This guide covers how to build packs that target Villager Retaliation JSON and assets.
 
+For version-to-version pack migrations, see [Pack Format Changes](Pack-Format-Changes.md).
+
 ## Supported Pack Types
 
 Use a datapack for server-side behavior and text pools:
@@ -14,8 +16,12 @@ Use a datapack for server-side behavior and text pools:
       dialogue/
       notifications/
       gifts/
+      profession_loot/
       villager_names/
+      loot_table/
+        villager/profession/
     <your_namespace>/
+      loot_table/
       story_structures/
       story_biomes/
 ```
@@ -30,12 +36,17 @@ Use a resource pack for client-side textures and model JSON:
       textures/entity/villager/villager.png
       textures/entity/wandering_trader.png
     villagerretaliation/
+      lang/
+        en_us.json
+        fr_fr.json
       textures/entity/villager/villager.png
       textures/entity/wandering_trader/wandering_trader.png
       models/entity/villager/combat_villager.json
       models/entity/villager/render_options.json
       models/entity/villager/non_combat_villager.json
 ```
+
+Resource-pack language files translate client-side UI, including the interaction screen, generated family and relationship rows, reputation overlays, and Villager Retaliation chat labels. See [Localization Guide](Localization.md) for the split between datapack text and resource-pack language keys.
 
 ## Namespace Rules
 
@@ -46,17 +57,19 @@ Most Villager Retaliation data is intentionally scoped to the mod namespace:
 | Dialogue | `villagerretaliation` |
 | Notifications | `villagerretaliation` |
 | Gifts | `villagerretaliation` |
+| Profession loot rules | `villagerretaliation` |
 | Preset names | `villagerretaliation` |
 | Resource-pack models/textures | `villagerretaliation` or the vanilla texture paths documented on the model page |
 
-Story discovery files are the exception. Structure and biome story entries are loaded from any namespace:
+Story discovery files and referenced loot tables are the exceptions. Structure and biome story entries are loaded from any namespace:
 
 ```text
 data/my_pack/story_structures/ancient_places.json
 data/my_pack/story_biomes/rare_biomes.json
+data/my_pack/loot_table/villager/profession/alchemist/common.json
 ```
 
-Those entries still point at real structure or biome ids such as `minecraft:ancient_city` or `examplemod:crystal_marsh`.
+Story entries still point at real structure or biome ids such as `minecraft:ancient_city` or `examplemod:crystal_marsh`. Profession loot rule files stay in `villagerretaliation`, but their `loot_table` values can reference tables from any namespace.
 
 ## File Layering And Replacement
 
@@ -71,17 +84,17 @@ data/villagerretaliation/notifications/en_us/my_pack_notifications.json
 
 Do not put addon content in `data/villagerretaliation/dialogue/en_us/global.json` or `data/villagerretaliation/notifications/en_us/global.json` unless you mean to replace the mod's built-in file. Same-path datapack files replace the built-in file before Villager Retaliation reads entries, so a pack at those paths can hide default interaction-menu options, keyed messages, openings, closings, notification text, and other built-in data.
 
-Dialogue and notification entries support stable `id` values. When a later locale layer or later file defines the same `id`, it replaces the previous entry in that loaded pool. This is the cleanest way to translate or override one specific line without copying a full built-in file.
+Dialogue, notification, gift, and profession loot entries support stable `id` values. When a later locale layer or later file defines the same `id`, it replaces the previous entry in that loaded pool. This is the cleanest way to translate or override one specific line or rule without copying a full built-in file.
 
-Gifts do not use entry ids for replacement. Gift files contribute preference and reward rules. If you want a total replacement of the built-in gift table, override `data/villagerretaliation/gifts/default.json` at the same path with your replacement file.
+Gift preference, gift reward, and profession loot entries also support `"remove": true` when an `id` is supplied. Gift and profession loot files can set top-level `"replace": true` to clear previously loaded rules before reading that file.
 
-Preset names are loaded from one exact resource:
+Preset names are additive across JSON files under:
 
 ```text
-data/villagerretaliation/villager_names/preset_names.json
+data/villagerretaliation/villager_names/
 ```
 
-Replacing that file replaces the available name pool.
+Use a unique file name to add names. Set top-level `"replace": true` in a later-sorting file, or override `villager_names/preset_names.json`, when you intentionally want to replace the available name pool.
 
 ## Locale Layering
 
@@ -95,6 +108,14 @@ data/villagerretaliation/dialogue/fr_fr/my_pack_dialogue.json
 ```
 
 If both files define an entry with the same `id`, the `fr_fr` entry replaces the `en_us` entry for French players. Players using other languages keep the English fallback.
+
+GUI labels are not loaded from datapack locale folders. Translate buttons, info rows, generated family and relationship labels, reputation labels, gender names, mood names, and fallback profession labels in a resource pack:
+
+```text
+assets/villagerretaliation/lang/fr_fr.json
+```
+
+Profession display names resolve through language keys too. Vanilla professions use Minecraft's keys such as `entity.minecraft.villager.farmer`; custom professions use `entity.minecraft.villager.<namespace>.<path>`, with path separators written as dots.
 
 ## Reloading
 
@@ -115,7 +136,7 @@ Before testing in game:
 - Validate JSON syntax with your editor or a JSON linter.
 - Confirm paths exactly match the documented roots.
 - Confirm enum values are spelled correctly. Values are case-insensitive in code, but lowercase snake case is recommended.
-- Give overrideable dialogue and notification entries explicit `id` values.
+- Give overrideable dialogue, notification, gift, and profession loot entries explicit `id` values.
 - Use a small test pack first, then expand once the hook works.
 
 ## Testing Checklist
@@ -123,6 +144,8 @@ Before testing in game:
 1. Start with one JSON file and one obvious line or rule.
 2. Run `/reload`.
 3. Trigger the relevant interaction in a test world.
-4. Check latest logs for JSON parse warnings if a resource-pack model fails.
-5. Add filters one at a time after the unfiltered version works.
-6. For localized entries, test once with default `en_us` and once with the target language.
+4. For event-tagged dialogue, trigger the event near the target villager and talk to them before the short village-memory window expires.
+5. Check latest logs for JSON parse warnings if a resource-pack model fails.
+6. Add filters one at a time after the unfiltered version works.
+7. For localized entries, test once with default `en_us` and once with the target language.
+8. If the pack translates the GUI, enable the matching resource pack while testing the translated datapack.

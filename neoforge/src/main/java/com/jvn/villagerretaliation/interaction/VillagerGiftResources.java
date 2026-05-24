@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
+import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import com.jvn.toucanlib.util.ToucanRandom;
 import java.io.IOException;
 import java.io.Reader;
@@ -14,6 +15,7 @@ import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -157,8 +159,8 @@ public final class VillagerGiftResources {
     }
 
     private static GiftPool read(MinecraftServer server) {
-        List<GiftPreferenceRule> preferenceRules = new ArrayList<>();
-        List<GiftRewardRule> rewardRules = new ArrayList<>();
+        Map<String, GiftPreferenceRule> preferenceRules = new LinkedHashMap<>();
+        Map<String, GiftRewardRule> rewardRules = new LinkedHashMap<>();
         server.getResourceManager()
                 .listResources(GIFT_ROOT, location -> location.getNamespace().equals(VillagerRetaliation.MOD_ID)
                         && location.getPath().endsWith(".json"))
@@ -166,16 +168,20 @@ public final class VillagerGiftResources {
                 .stream()
                 .sorted(Comparator.comparing(entry -> entry.getKey().toString()))
                 .forEach(entry -> readFile(entry.getKey(), entry.getValue(), preferenceRules, rewardRules));
-        return new GiftPool(List.copyOf(preferenceRules), List.copyOf(rewardRules));
+        return new GiftPool(List.copyOf(preferenceRules.values()), List.copyOf(rewardRules.values()));
     }
 
     private static void readFile(
             ResourceLocation location,
             Resource resource,
-            List<GiftPreferenceRule> preferenceRules,
-            List<GiftRewardRule> rewardRules) {
+            Map<String, GiftPreferenceRule> preferenceRules,
+            Map<String, GiftRewardRule> rewardRules) {
         try (Reader reader = resource.openAsReader()) {
             JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
+            if (readBoolean(root, "replace", false)) {
+                preferenceRules.clear();
+                rewardRules.clear();
+            }
             readPreferenceRules(location, root, preferenceRules);
             readRewardRules(location, root, rewardRules);
         } catch (IOException | IllegalStateException exception) {
@@ -186,7 +192,7 @@ public final class VillagerGiftResources {
     private static void readPreferenceRules(
             ResourceLocation location,
             JsonObject root,
-            List<GiftPreferenceRule> preferenceRules) {
+            Map<String, GiftPreferenceRule> preferenceRules) {
         JsonArray entries = root.getAsJsonArray("preferences");
         if (entries == null) {
             return;
@@ -200,6 +206,15 @@ public final class VillagerGiftResources {
             }
 
             JsonObject entry = element.getAsJsonObject();
+            String id = readString(entry, "id");
+            if (readBoolean(entry, "remove", false)) {
+                if (!id.isBlank()) {
+                    preferenceRules.remove(id);
+                }
+                index++;
+                continue;
+            }
+
             Optional<VillagerGiftPreferences.GiftReaction> reaction = readEnum(
                     entry,
                     "reaction",
@@ -215,8 +230,9 @@ public final class VillagerGiftResources {
             int perItemReputation = readInt(entry, "reputation_per_item", reaction.get().defaultPerItemReputation());
             int priority = readInt(entry, "priority", 0);
             String responseKey = readGiftResponseKey(entry);
-            preferenceRules.add(new GiftPreferenceRule(
-                    fallbackId(location, "preference", index),
+            String resolvedId = id.isBlank() ? fallbackId(location, "preference", index) : id;
+            preferenceRules.put(resolvedId, new GiftPreferenceRule(
+                    resolvedId,
                     professions,
                     reaction.get(),
                     perItemReputation,
@@ -229,7 +245,7 @@ public final class VillagerGiftResources {
         }
     }
 
-    private static void readRewardRules(ResourceLocation location, JsonObject root, List<GiftRewardRule> rewardRules) {
+    private static void readRewardRules(ResourceLocation location, JsonObject root, Map<String, GiftRewardRule> rewardRules) {
         JsonArray entries = root.getAsJsonArray("rewards");
         if (entries == null) {
             return;
@@ -243,6 +259,15 @@ public final class VillagerGiftResources {
             }
 
             JsonObject entry = element.getAsJsonObject();
+            String id = readString(entry, "id");
+            if (readBoolean(entry, "remove", false)) {
+                if (!id.isBlank()) {
+                    rewardRules.remove(id);
+                }
+                index++;
+                continue;
+            }
+
             Item item = readItem(entry, "item").orElse(null);
             if (item == null || item == Items.AIR) {
                 index++;
@@ -251,8 +276,9 @@ public final class VillagerGiftResources {
 
             int minCount = Math.max(1, readInt(entry, "min_count", 1));
             int maxCount = Math.max(minCount, readInt(entry, "max_count", minCount));
-            rewardRules.add(new GiftRewardRule(
-                    fallbackId(location, "reward", index),
+            String resolvedId = id.isBlank() ? fallbackId(location, "reward", index) : id;
+            rewardRules.put(resolvedId, new GiftRewardRule(
+                    resolvedId,
                     readProfessions(entry),
                     readEnumSet(entry, "reputation_levels", VillagerReputationLevel.class),
                     item,
@@ -316,30 +342,9 @@ public final class VillagerGiftResources {
     private static Set<VillagerProfession> readProfessions(JsonObject entry) {
         Set<VillagerProfession> professions = new HashSet<>();
         for (String value : readStringList(entry, "professions")) {
-            parseProfession(value).ifPresent(professions::add);
+            VillagerProfessionUtil.parse(value).ifPresent(professions::add);
         }
         return Set.copyOf(professions);
-    }
-
-    private static Optional<VillagerProfession> parseProfession(String value) {
-        return switch (value.toLowerCase(Locale.ROOT).replace("minecraft:", "")) {
-            case "armorer" -> Optional.of(VillagerProfession.ARMORER);
-            case "butcher" -> Optional.of(VillagerProfession.BUTCHER);
-            case "cartographer" -> Optional.of(VillagerProfession.CARTOGRAPHER);
-            case "cleric" -> Optional.of(VillagerProfession.CLERIC);
-            case "farmer" -> Optional.of(VillagerProfession.FARMER);
-            case "fisherman" -> Optional.of(VillagerProfession.FISHERMAN);
-            case "fletcher" -> Optional.of(VillagerProfession.FLETCHER);
-            case "leatherworker" -> Optional.of(VillagerProfession.LEATHERWORKER);
-            case "librarian" -> Optional.of(VillagerProfession.LIBRARIAN);
-            case "mason" -> Optional.of(VillagerProfession.MASON);
-            case "nitwit" -> Optional.of(VillagerProfession.NITWIT);
-            case "shepherd" -> Optional.of(VillagerProfession.SHEPHERD);
-            case "toolsmith" -> Optional.of(VillagerProfession.TOOLSMITH);
-            case "weaponsmith" -> Optional.of(VillagerProfession.WEAPONSMITH);
-            case "none", "unemployed" -> Optional.of(VillagerProfession.NONE);
-            default -> Optional.empty();
-        };
     }
 
     private static <E extends Enum<E>> Set<E> readEnumSet(JsonObject entry, String key, Class<E> enumClass) {
@@ -411,6 +416,11 @@ public final class VillagerGiftResources {
     private static int readInt(JsonObject entry, String key, int fallback) {
         JsonElement element = entry.get(key);
         return element == null || !element.isJsonPrimitive() ? fallback : element.getAsInt();
+    }
+
+    private static boolean readBoolean(JsonObject entry, String key, boolean fallback) {
+        JsonElement element = entry.get(key);
+        return element == null || !element.isJsonPrimitive() ? fallback : element.getAsBoolean();
     }
 
     private static String fallbackId(ResourceLocation location, String group, int index) {

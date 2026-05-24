@@ -33,6 +33,7 @@ import com.jvn.villagerretaliation.social.VillagerRelationshipSnapshot;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphService;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.util.VillagerLocale;
+import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
@@ -139,8 +140,8 @@ public final class VillagerInteractionService {
                 villager.getId(),
                 "",
                 VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
-                villager.isBaby() ? "Child" : VillagerInteractionTextUtil.professionName(villager.getVillagerData().getProfession(), "Unemployed"),
-                VillagerPresetNameRegistry.resolveGender(villager).displayName(),
+                professionTranslationKey(villager),
+                VillagerPresetNameRegistry.resolveGender(villager).serializedName(),
                 villager.isBaby(),
                 reputation.value(),
                 reputation.level(),
@@ -154,6 +155,16 @@ public final class VillagerInteractionService {
         ));
         VillagerAmbientIndicatorService.onConversationOpened(level, villager, player);
         broadcastVillagerChat(level, villager, greetingText);
+    }
+
+    private static String professionTranslationKey(Villager villager) {
+        if (villager.isBaby()) {
+            return "villagerretaliation.gui.profession.child";
+        }
+        return VillagerProfessionUtil.translationKey(
+                villager.getVillagerData().getProfession(),
+                "villagerretaliation.gui.profession.unemployed"
+        );
     }
 
     public static void handleDialogueRequest(ServerPlayer player, int entityId, String optionId) {
@@ -695,26 +706,7 @@ public final class VillagerInteractionService {
     }
 
     private static VillagerProfession professionFromKey(String key) {
-        if (key == null || key.isBlank()) {
-            return VillagerProfession.NONE;
-        }
-        return switch (key.toLowerCase(java.util.Locale.ROOT).replace("minecraft:", "")) {
-            case "armorer" -> VillagerProfession.ARMORER;
-            case "butcher" -> VillagerProfession.BUTCHER;
-            case "cartographer" -> VillagerProfession.CARTOGRAPHER;
-            case "cleric" -> VillagerProfession.CLERIC;
-            case "farmer" -> VillagerProfession.FARMER;
-            case "fisherman" -> VillagerProfession.FISHERMAN;
-            case "fletcher" -> VillagerProfession.FLETCHER;
-            case "leatherworker" -> VillagerProfession.LEATHERWORKER;
-            case "librarian" -> VillagerProfession.LIBRARIAN;
-            case "mason" -> VillagerProfession.MASON;
-            case "nitwit" -> VillagerProfession.NITWIT;
-            case "shepherd" -> VillagerProfession.SHEPHERD;
-            case "toolsmith" -> VillagerProfession.TOOLSMITH;
-            case "weaponsmith" -> VillagerProfession.WEAPONSMITH;
-            default -> VillagerProfession.NONE;
-        };
+        return VillagerProfessionUtil.parse(key).orElse(VillagerProfession.NONE);
     }
 
     private static String message(DialogueContext context, String key) {
@@ -813,7 +805,7 @@ public final class VillagerInteractionService {
         }
         PacketDistributor.sendToPlayer(
                 player,
-                new VillagerInteractionNoticePayload(villager.getId(), resolvedText, villagerSpeakerLabel(villager))
+                new VillagerInteractionNoticePayload(villager.getId(), resolvedText, "")
         );
     }
 
@@ -873,7 +865,7 @@ public final class VillagerInteractionService {
         VillagerInteractionNoticePayload payload = new VillagerInteractionNoticePayload(
                 villager.getId(),
                 text,
-                villagerSpeakerLabel(villager)
+                ""
         );
         for (ServerPlayer nearbyPlayer : level.players()) {
             if (!nearbyPlayer.isAlive()
@@ -896,18 +888,6 @@ public final class VillagerInteractionService {
 
     private static String displayName(Villager villager) {
         return VillagerPresetNameRegistry.resolveDisplayName(villager).getString();
-    }
-
-    private static String villagerSpeakerLabel(Villager villager) {
-        String resolvedName = displayName(villager);
-        if (villager.isBaby()) {
-            return "Child " + resolvedName;
-        }
-        String profession = VillagerInteractionTextUtil.professionName(villager.getVillagerData().getProfession(), "Unemployed");
-        if (profession == null || profession.isBlank() || profession.equals("Villager")) {
-            return resolvedName;
-        }
-        return profession + " " + resolvedName;
     }
 
     private static DialogueContext.WeatherState weatherState(ServerLevel level, Villager villager) {

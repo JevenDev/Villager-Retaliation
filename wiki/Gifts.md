@@ -19,6 +19,7 @@ Gift files are not locale-specific. Dialogue and notification text handles local
 | --- | --- |
 | `preferences` | Item or tag rules that choose a gift reaction. |
 | `rewards` | Items villagers can return at high reputation. |
+| `replace` | If `true`, clears previously loaded preferences and rewards before this file is read. |
 
 ## Gift Reactions
 
@@ -40,6 +41,7 @@ Total reputation from one gifted stack is clamped between `-100` and `120`.
 {
   "preferences": [
     {
+      "id": "my_pack.farmer.favorite_crop",
       "professions": ["farmer"],
       "reaction": "loved",
       "items": ["minecraft:wheat", "minecraft:golden_carrot"],
@@ -56,6 +58,8 @@ Total reputation from one gifted stack is clamped between `-100` and `120`.
 
 | Field | Type | Default | Notes |
 | --- | --- | --- | --- |
+| `id` | string | generated | Stable id used for replacement and removal. |
+| `remove` | boolean | `false` | If `true`, removes the earlier preference with the same `id`. |
 | `reaction` | enum | required | `loved`, `liked`, `neutral`, `disliked`, or `hated`. |
 | `item` | string or array | none | One or more item ids. |
 | `items` | string or array | none | One or more item ids. |
@@ -67,6 +71,19 @@ Total reputation from one gifted stack is clamped between `-100` and `120`.
 | `priority` | integer | `0` | Higher priority wins among matching rules. |
 
 At least one item or tag selector is required.
+
+`remove` entries only need an `id`:
+
+```json
+{
+  "preferences": [
+    {
+      "id": "builtin.farmer.hated",
+      "remove": true
+    }
+  ]
+}
+```
 
 `response_key` keeps gift files language-neutral. Define the actual text in localized dialogue JSON with a matching message `key`:
 
@@ -118,6 +135,7 @@ That means a farmer-specific rule beats a global rule for the same item, even if
 {
   "rewards": [
     {
+      "id": "my_pack.reward.farmer.gold_carrots",
       "professions": ["farmer"],
       "reputation_levels": ["revered", "royalty"],
       "item": "minecraft:golden_carrot",
@@ -133,6 +151,8 @@ That means a farmer-specific rule beats a global rule for the same item, even if
 
 | Field | Type | Default | Notes |
 | --- | --- | --- | --- |
+| `id` | string | generated | Stable id used for replacement and removal. |
+| `remove` | boolean | `false` | If `true`, removes the earlier reward with the same `id`. |
 | `item` | string | required | Reward item id. |
 | `professions` | string or array | any | Profession filter. |
 | `reputation_levels` | string or array | any | Reputation tier filter. |
@@ -150,7 +170,19 @@ To add extra gifts while keeping the built-in table, create a new file:
 data/villagerretaliation/gifts/my_pack_extra_gifts.json
 ```
 
-To replace all built-in gifts, override:
+To replace one built-in entry, add a rule with the same `id`. The built-in defaults use ids such as `builtin.global.liked_food_and_emeralds`, `builtin.farmer.loved`, and `builtin.reward.farmer.royalty`.
+
+To remove one built-in entry, add a `remove` entry with the built-in id. To replace all earlier gift rules from that point in file order, set:
+
+```json
+{
+  "replace": true,
+  "preferences": [],
+  "rewards": []
+}
+```
+
+You can still replace all built-in gifts by overriding:
 
 ```text
 data/villagerretaliation/gifts/default.json

@@ -17,7 +17,11 @@ VillagerRetaliationExample/
           examplepack_notifications.json
       gifts/
         example_gifts.json
+      profession_loot/
+        example_loot.json
     examplepack/
+      loot_table/
+        villager/profession/alchemist/common.json
       story_structures/
         haunted_places.json
       story_biomes/
@@ -80,6 +84,32 @@ data/villagerretaliation/dialogue/en_us/examplepack_dialogue.json
       "id": "examplepack.gift.librarian.rare_book",
       "key": "examplepack.gift.librarian.rare_book",
       "text": "{gift_item}? This belongs near a reading lamp, not forgotten in a chest."
+    }
+  ]
+}
+```
+
+## Event Tag Dialogue Example
+
+Use event tags when a line should only appear after a recent village memory. The full tag list and per-tag dropdown examples are in [Event Tags](Event-Tags.md).
+
+```json
+{
+  "lines": [
+    {
+      "id": "examplepack.raid.aftermath",
+      "type": "village_event_report",
+      "event_tags": ["raid"],
+      "text": "The banners are gone, but the village still hears them.",
+      "weight": 20
+    },
+    {
+      "id": "examplepack.raid.thanked_player",
+      "type": "village_defense_report",
+      "player_event_tags": ["player_defended_raid"],
+      "requires_unreported_village_defense": true,
+      "text": "You stood with us when it mattered.",
+      "weight": 30
     }
   ]
 }
@@ -155,6 +185,53 @@ data/villagerretaliation/gifts/example_gifts.json
       "min_count": 2,
       "max_count": 5,
       "weight": 10
+    }
+  ]
+}
+```
+
+## Profession Loot Example
+
+```text
+data/villagerretaliation/profession_loot/example_loot.json
+```
+
+```json
+{
+  "tables": [
+    {
+      "id": "examplepack.alchemist.common",
+      "professions": ["examplemod:alchemist"],
+      "loot_table": "examplepack:villager/profession/alchemist/common",
+      "chance": "always"
+    }
+  ]
+}
+```
+
+```text
+data/examplepack/loot_table/villager/profession/alchemist/common.json
+```
+
+```json
+{
+  "type": "minecraft:entity",
+  "pools": [
+    {
+      "rolls": 1.0,
+      "bonus_rolls": 0.0,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:amethyst_shard",
+          "functions": [
+            {
+              "function": "minecraft:set_count",
+              "count": { "type": "minecraft:uniform", "min": 1.0, "max": 3.0 }
+            }
+          ]
+        }
+      ]
     }
   ]
 }

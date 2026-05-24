@@ -14,16 +14,17 @@ import com.jvn.villagerretaliation.network.VillagerTradeRequestPayload;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.social.VillagerFamilyTreeSnapshot;
 import com.jvn.villagerretaliation.social.VillagerRelationshipSnapshot;
-import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.villager.VillagerGender;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.ChatComponent;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
@@ -33,9 +34,10 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import org.lwjgl.glfw.GLFW;
 
 public class VillagerInteractionScreen extends Screen {
-    private static final String BACK_LABEL = "Back";
-    private static final String BACK_HINT_TEXT = "Esc: back";
-    private static final String LEAVE_HINT_TEXT = "Esc: leave";
+    private static final String GUI_KEY_PREFIX = "villagerretaliation.gui.";
+    private static final String BACK_LABEL_KEY = GUI_KEY_PREFIX + "back";
+    private static final String BACK_HINT_KEY = GUI_KEY_PREFIX + "hint.back";
+    private static final String LEAVE_HINT_KEY = GUI_KEY_PREFIX + "hint.leave";
     private static final int OPTION_WIDTH = 180;
     private static final int OPTION_HEIGHT = 18;
     private static final int OPTION_GAP = 0;
@@ -123,11 +125,11 @@ public class VillagerInteractionScreen extends Screen {
             List<String> knownDislikedGiftNames,
             VillagerFamilyTreeSnapshot familyTree,
             VillagerRelationshipSnapshot relationships) {
-        super(Component.literal("Villager Interaction"));
+        super(Component.translatable(GUI_KEY_PREFIX + "title"));
         this.villagerEntityId = villagerEntityId;
         this.villagerName = villagerName;
         this.professionName = professionName;
-        this.genderName = genderName == null || genderName.isBlank() ? "Unknown" : genderName;
+        this.genderName = localizedGenderName(genderName);
         this.baby = baby;
         this.reputation = reputation;
         this.reputationLevel = reputationLevel;
@@ -143,7 +145,7 @@ public class VillagerInteractionScreen extends Screen {
 
     @Override
     protected void init() {
-        this.giftButton = addRenderableWidget(Button.builder(Component.literal("Give"), button -> requestGift())
+        this.giftButton = addRenderableWidget(Button.builder(Component.translatable(GUI_KEY_PREFIX + "gift.give"), button -> requestGift())
                 .bounds(0, 0, INVENTORY_BUTTON_WIDTH, INVENTORY_BUTTON_HEIGHT)
                 .build());
         this.giftButton.visible = false;
@@ -379,91 +381,105 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     private void addRootOptions() {
-        this.options.add(DialogueOption.enabled("Talk", this::openTalkPage));
+        this.options.add(DialogueOption.enabled(translate("root.talk"), this::openTalkPage));
         if (!this.baby) {
-            this.options.add(DialogueOption.enabled("Trade", this::requestTrade));
-            this.options.add(DialogueOption.enabled("Gift", this::openGiftPage));
+            this.options.add(DialogueOption.enabled(translate("root.trade"), this::requestTrade));
+            this.options.add(DialogueOption.enabled(translate("root.gift"), this::openGiftPage));
             if (canRequestVillagerInventory()) {
-                this.options.add(DialogueOption.enabled("Inventory", this::requestInventory));
+                this.options.add(DialogueOption.enabled(translate("root.inventory"), this::requestInventory));
             }
-            this.options.add(DialogueOption.enabled("Recruit", this::openRecruitPage));
+            this.options.add(DialogueOption.enabled(translate("root.recruit"), this::openRecruitPage));
             if (this.relationships.hasRelationships()) {
-                this.options.add(DialogueOption.enabled("Relationships", this::openRelationshipPage));
+                this.options.add(DialogueOption.enabled(translate("root.relationships"), this::openRelationshipPage));
             }
         }
-        this.options.add(DialogueOption.enabled("Goodbye", this::leaveConversation));
+        this.options.add(DialogueOption.enabled(translate("root.goodbye"), this::leaveConversation));
     }
 
     private void addRecruitOptions() {
-        this.options.add(DialogueOption.enabled("Hire", () -> requestRecruit(VillagerRecruitRequestPayload.Action.HIRE)));
-        this.options.add(DialogueOption.enabled(this.followingPlayer ? "Stop Following" : "Follow Me", () -> requestRecruit(VillagerRecruitRequestPayload.Action.FOLLOW)));
+        this.options.add(DialogueOption.enabled(translate("recruit.hire"), () -> requestRecruit(VillagerRecruitRequestPayload.Action.HIRE)));
+        this.options.add(DialogueOption.enabled(
+                this.followingPlayer ? translate("recruit.stop_following") : translate("recruit.follow_me"),
+                () -> requestRecruit(VillagerRecruitRequestPayload.Action.FOLLOW)));
     }
 
     private void addFamilyOptions() {
         if (this.familyTree.hasAncestry()) {
-            this.options.add(DialogueOption.enabled("Ancestry", this::openAncestryPage));
+            this.options.add(DialogueOption.enabled(translate("family.ancestry"), this::openAncestryPage));
         }
         if (this.familyTree.hasDescendants()) {
-            this.options.add(DialogueOption.enabled("Descendants", this::openDescendantsPage));
+            this.options.add(DialogueOption.enabled(translate("family.descendants"), this::openDescendantsPage));
         }
-        addFamilyRows("Father", this.familyTree.maleParents());
-        addFamilyRows("Mother", this.familyTree.femaleParents());
-        addFamilyRows("Birth-Father", this.familyTree.maleBirthParents());
-        addFamilyRows("Birth-Mother", this.familyTree.femaleBirthParents());
-        addFamilyRows("Adoptive Father", this.familyTree.maleAdoptiveParents());
-        addFamilyRows("Adoptive Mother", this.familyTree.femaleAdoptiveParents());
-        addFamilyRows("Step-Father", this.familyTree.maleStepParents());
-        addFamilyRows("Step-Mother", this.familyTree.femaleStepParents());
-        addFamilyRows("Brother", this.familyTree.brothers());
-        addFamilyRows("Sister", this.familyTree.sisters());
-        addFamilyRows("Uncle", this.familyTree.uncles());
-        addFamilyRows("Aunt", this.familyTree.aunts());
-        addFamilyRows("Nephew", this.familyTree.nephews());
-        addFamilyRows("Niece", this.familyTree.nieces());
-        addGenderedFamilyRows("Male Cousin", "Female Cousin", this.familyTree.cousins());
-        addGenderedFamilyRows("Husband", "Wife", this.familyTree.spouses());
-        addGenderedFamilyRows("Son", "Daughter", this.familyTree.children());
-        addFamilyRows("Friend", this.familyTree.friends());
-        addFamilyRows("Rival", this.familyTree.rivals());
+        addFamilyRows("family.father", this.familyTree.maleParents());
+        addFamilyRows("family.mother", this.familyTree.femaleParents());
+        addFamilyRows("family.birth_father", this.familyTree.maleBirthParents());
+        addFamilyRows("family.birth_mother", this.familyTree.femaleBirthParents());
+        addFamilyRows("family.adoptive_father", this.familyTree.maleAdoptiveParents());
+        addFamilyRows("family.adoptive_mother", this.familyTree.femaleAdoptiveParents());
+        addFamilyRows("family.step_father", this.familyTree.maleStepParents());
+        addFamilyRows("family.step_mother", this.familyTree.femaleStepParents());
+        addFamilyRows("family.brother", this.familyTree.brothers());
+        addFamilyRows("family.sister", this.familyTree.sisters());
+        addFamilyRows("family.uncle", this.familyTree.uncles());
+        addFamilyRows("family.aunt", this.familyTree.aunts());
+        addFamilyRows("family.nephew", this.familyTree.nephews());
+        addFamilyRows("family.niece", this.familyTree.nieces());
+        addGenderedFamilyRows("family.male_cousin", "family.female_cousin", this.familyTree.cousins());
+        addGenderedFamilyRows("family.husband", "family.wife", this.familyTree.spouses());
+        addGenderedFamilyRows("family.son", "family.daughter", this.familyTree.children());
+        addFamilyRows("family.friend", this.familyTree.friends());
+        addFamilyRows("family.rival", this.familyTree.rivals());
         if (this.options.isEmpty()) {
-            this.options.add(DialogueOption.enabled("No known family", () -> {
+            this.options.add(DialogueOption.enabled(translate("family.none"), () -> {
             }));
         }
     }
 
     private void addDescendantOptions() {
         for (VillagerFamilyTreeSnapshot.DescendantGeneration generation : this.familyTree.descendants()) {
-            addFamilyRows(maleDescendantLabel(generation.generation()), VillagerFamilyTreeSnapshot.membersByGender(generation.descendants(), VillagerGender.MALE));
-            addFamilyRows(femaleDescendantLabel(generation.generation()), VillagerFamilyTreeSnapshot.membersByGender(generation.descendants(), VillagerGender.FEMALE));
+            addFamilyRows(
+                    maleDescendantLabel(generation.generation()),
+                    VillagerFamilyTreeSnapshot.membersByGender(generation.descendants(), VillagerGender.MALE)
+            );
+            addFamilyRows(
+                    femaleDescendantLabel(generation.generation()),
+                    VillagerFamilyTreeSnapshot.membersByGender(generation.descendants(), VillagerGender.FEMALE)
+            );
         }
         if (this.options.isEmpty()) {
-            this.options.add(DialogueOption.enabled("No known descendants", () -> {
+            this.options.add(DialogueOption.enabled(translate("family.no_descendants"), () -> {
             }));
         }
     }
 
     private void addAncestryOptions() {
         for (VillagerFamilyTreeSnapshot.AncestorGeneration generation : this.familyTree.ancestry()) {
-            addFamilyRows(maleAncestorLabel(generation.generation()), VillagerFamilyTreeSnapshot.membersByGender(generation.ancestors(), VillagerGender.MALE));
-            addFamilyRows(femaleAncestorLabel(generation.generation()), VillagerFamilyTreeSnapshot.membersByGender(generation.ancestors(), VillagerGender.FEMALE));
+            addFamilyRows(
+                    maleAncestorLabel(generation.generation()),
+                    VillagerFamilyTreeSnapshot.membersByGender(generation.ancestors(), VillagerGender.MALE)
+            );
+            addFamilyRows(
+                    femaleAncestorLabel(generation.generation()),
+                    VillagerFamilyTreeSnapshot.membersByGender(generation.ancestors(), VillagerGender.FEMALE)
+            );
         }
         if (this.options.isEmpty()) {
-            this.options.add(DialogueOption.enabled("No known ancestry", () -> {
+            this.options.add(DialogueOption.enabled(translate("family.no_ancestry"), () -> {
             }));
         }
     }
 
     private void addRelationshipOptions() {
         for (VillagerRelationshipSnapshot.RomanticBondView bond : this.relationships.current()) {
-            this.options.add(DialogueOption.enabled(bond.displayLabel(), () -> {
+            this.options.add(DialogueOption.enabled(relationshipLabel(bond), () -> {
             }));
         }
         for (VillagerRelationshipSnapshot.RomanticBondView bond : this.relationships.past()) {
-            this.options.add(DialogueOption.enabled(bond.displayLabel(), () -> {
+            this.options.add(DialogueOption.enabled(relationshipLabel(bond), () -> {
             }));
         }
         if (this.options.isEmpty()) {
-            this.options.add(DialogueOption.enabled("No known relationships", () -> {
+            this.options.add(DialogueOption.enabled(translate("relationships.none"), () -> {
             }));
         }
     }
@@ -477,10 +493,10 @@ public class VillagerInteractionScreen extends Screen {
         addFamilyRows(femaleLabel, VillagerFamilyTreeSnapshot.membersByGender(members, VillagerGender.FEMALE));
     }
 
-    private void addFamilyRows(String label, List<VillagerFamilyTreeSnapshot.FamilyMember> members) {
+    private void addFamilyRows(String labelKey, List<VillagerFamilyTreeSnapshot.FamilyMember> members) {
         for (VillagerFamilyTreeSnapshot.FamilyMember member : members) {
             if (member != null && !member.name().isBlank()) {
-                this.options.add(DialogueOption.enabled(label + ": " + member.displayLabel(), () -> {
+                this.options.add(DialogueOption.enabled(translate("family.row", localizedLabel(labelKey), familyMemberLabel(member)), () -> {
                 }));
             }
         }
@@ -710,7 +726,7 @@ public class VillagerInteractionScreen extends Screen {
 
     private String giftButtonLabel() {
         ItemStack selectedStack = stackForInventorySlot(this.selectedInventorySlot);
-        return selectedStack.getCount() > 1 ? "Give Stack" : "Give";
+        return selectedStack.getCount() > 1 ? translate("gift.give_stack") : translate("gift.give");
     }
 
     private void renderOption(
@@ -786,11 +802,11 @@ public class VillagerInteractionScreen extends Screen {
         int backgroundColor = hovered ? 0x30000000 : 0x18000000;
 
         graphics.fill(bounds.left() - 6, bounds.top() - 2, bounds.right() + 4, bounds.bottom() + 2, backgroundColor);
-        graphics.drawString(this.font, BACK_LABEL, bounds.left(), bounds.top(), textColor, false);
+        graphics.drawString(this.font, backLabel(), bounds.left(), bounds.top(), textColor, false);
     }
 
     private void renderHint(GuiGraphics graphics) {
-        String hintText = canNavigateBack() ? BACK_HINT_TEXT : LEAVE_HINT_TEXT;
+        String hintText = I18n.get(canNavigateBack() ? BACK_HINT_KEY : LEAVE_HINT_KEY);
         graphics.drawString(this.font, hintText, this.width - this.font.width(hintText) - 8, this.height - 14, 0x66FFFFFF, false);
     }
 
@@ -1149,22 +1165,22 @@ public class VillagerInteractionScreen extends Screen {
 
     private void renderGiftKnowledgeTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
         List<Component> tooltip = new ArrayList<>();
-        tooltip.add(Component.literal("Known gifts").withStyle(ChatFormatting.AQUA));
+        tooltip.add(Component.translatable(GUI_KEY_PREFIX + "gift.known_gifts").withStyle(ChatFormatting.AQUA));
         tooltip.add(Component.literal(this.professionName).withStyle(ChatFormatting.AQUA));
         tooltip.add(Component.empty());
         if (this.knownLikedGiftNames.isEmpty() && this.knownDislikedGiftNames.isEmpty()) {
-            tooltip.add(Component.literal("Ask villagers about gifts to learn more.").withStyle(ChatFormatting.GRAY));
+            tooltip.add(Component.translatable(GUI_KEY_PREFIX + "gift.learn_more").withStyle(ChatFormatting.GRAY));
         } else {
-            addGiftTooltipSection(tooltip, "Likes", this.knownLikedGiftNames, ChatFormatting.GREEN);
-            addGiftTooltipSection(tooltip, "Dislikes", this.knownDislikedGiftNames, ChatFormatting.RED);
+            addGiftTooltipSection(tooltip, "gift.likes", this.knownLikedGiftNames, ChatFormatting.GREEN);
+            addGiftTooltipSection(tooltip, "gift.dislikes", this.knownDislikedGiftNames, ChatFormatting.RED);
         }
         graphics.renderComponentTooltip(this.font, tooltip, mouseX, mouseY);
     }
 
-    private static void addGiftTooltipSection(List<Component> tooltip, String label, List<String> giftNames, ChatFormatting color) {
-        tooltip.add(Component.literal(label + ":").withStyle(color));
+    private static void addGiftTooltipSection(List<Component> tooltip, String labelKey, List<String> giftNames, ChatFormatting color) {
+        tooltip.add(Component.translatable(GUI_KEY_PREFIX + labelKey + "_header").withStyle(color));
         if (giftNames.isEmpty()) {
-            tooltip.add(Component.literal("  Unknown").withStyle(ChatFormatting.GRAY));
+            tooltip.add(Component.translatable(GUI_KEY_PREFIX + "gift.unknown_indented").withStyle(ChatFormatting.GRAY));
             return;
         }
         for (String giftName : giftNames) {
@@ -1220,7 +1236,7 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     private TopBackButtonBounds topBackButtonBounds() {
-        int textWidth = this.font.width(BACK_LABEL);
+        int textWidth = this.font.width(backLabel());
         int left = optionsLeft() + OPTION_TEXT_INSET;
         int top = (this.page == DialoguePage.GIFT ? giftInventoryTop() : optionsTop()) - this.font.lineHeight - TOP_BACK_BUTTON_GAP;
         int bottom = top + this.font.lineHeight;
@@ -1256,25 +1272,25 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     private String genderText() {
-        return "Gender: " + this.genderName;
+        return translate("info.gender", this.genderName);
     }
 
     private String moodText() {
-        return "Mood: " + this.mood.displayName();
+        return translate("info.mood", moodName(this.mood));
     }
 
     private String reputationText() {
-        return "Reputation: " + this.reputation;
+        return translate("info.reputation", this.reputation);
     }
 
     private String familyButtonText() {
         int count = this.familyTree.relationshipCount();
-        return count <= 0 ? "Family Tree" : "Family Tree: " + count;
+        return count <= 0 ? translate("family.tree") : translate("family.tree_count", count);
     }
 
     private String relationshipButtonText() {
         int count = this.relationships.relationshipCount();
-        return count <= 0 ? "Relationships" : "Relationships: " + count;
+        return count <= 0 ? translate("relationships.title") : translate("relationships.count", count);
     }
 
     private boolean isPointInsideFamilyButton(double mouseX, double mouseY) {
@@ -1483,49 +1499,84 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     private static String maleAncestorLabel(int generation) {
-        return ancestorPrefix(generation) + "father";
+        return generationLabel("family.ancestor.male.grand", generation);
     }
 
     private static String femaleAncestorLabel(int generation) {
-        return ancestorPrefix(generation) + "mother";
+        return generationLabel("family.ancestor.female.grand", generation);
     }
 
     private static String maleDescendantLabel(int generation) {
-        return descendantPrefix(generation) + "son";
+        return generationLabel("family.descendant.male.grand", generation);
     }
 
     private static String femaleDescendantLabel(int generation) {
-        return descendantPrefix(generation) + "daughter";
+        return generationLabel("family.descendant.female.grand", generation);
     }
 
-    private static String ancestorPrefix(int generation) {
-        if (generation <= 2) {
-            return "Grand";
+    private static String generationLabel(String grandKey, int generation) {
+        String label = translate(grandKey);
+        for (int i = 0; i < Math.max(0, generation - 2); i++) {
+            label = translate("family.great_prefix", label);
         }
-
-        StringBuilder prefix = new StringBuilder();
-        for (int i = 0; i < generation - 2; i++) {
-            if (!prefix.isEmpty()) {
-                prefix.append("-");
-            }
-            prefix.append("Great");
-        }
-        return prefix.append("-grand").toString();
+        return label;
     }
 
-    private static String descendantPrefix(int generation) {
-        if (generation <= 2) {
-            return "Grand";
+    private static String relationshipLabel(VillagerRelationshipSnapshot.RomanticBondView bond) {
+        String stage = translate("relationship.stage." + bond.stage().serializedName());
+        String status = translate(bond.partnerAlive() ? "relationships.status.alive" : "relationships.status.deceased");
+        if (bond.stage().active()) {
+            return translate(
+                    "relationships.active_format",
+                    stage,
+                    bond.partnerName(),
+                    status,
+                    bond.affection(),
+                    bond.compatibility()
+            );
         }
+        if (bond.endReason().isBlank()) {
+            return translate("relationships.past_format", stage, bond.partnerName(), status);
+        }
+        return translate("relationships.past_format_reason", stage, bond.partnerName(), status, bond.endReason());
+    }
 
-        StringBuilder prefix = new StringBuilder();
-        for (int i = 0; i < generation - 2; i++) {
-            if (!prefix.isEmpty()) {
-                prefix.append("-");
-            }
-            prefix.append("Great");
+    private static String familyMemberLabel(VillagerFamilyTreeSnapshot.FamilyMember member) {
+        if (member.alive()) {
+            return member.name();
         }
-        return prefix.append("-grand").toString();
+        return translate("family.member.deceased_format", member.name(), translate("relationships.status.deceased"));
+    }
+
+    private static String localizedLabel(String keyOrLabel) {
+        return hasTranslation(keyOrLabel) ? translate(keyOrLabel) : keyOrLabel;
+    }
+
+    private static String moodName(DialogueDisposition mood) {
+        if (mood == null) {
+            return translate("mood.neutral");
+        }
+        return translate("mood." + mood.name().toLowerCase(Locale.ROOT));
+    }
+
+    private static String localizedGenderName(String genderName) {
+        if (genderName == null || genderName.isBlank()) {
+            return translate("gender.unknown");
+        }
+        String key = "gender." + genderName.trim().toLowerCase(Locale.ROOT);
+        return hasTranslation(key) ? translate(key) : genderName;
+    }
+
+    private static String backLabel() {
+        return I18n.get(BACK_LABEL_KEY);
+    }
+
+    private static boolean hasTranslation(String key) {
+        return I18n.exists(GUI_KEY_PREFIX + key);
+    }
+
+    private static String translate(String key, Object... args) {
+        return I18n.get(GUI_KEY_PREFIX + key, args);
     }
 
     private enum DialoguePage {

@@ -1,0 +1,3497 @@
+const CONSTANTS = {
+  professions: [
+    "armorer",
+    "butcher",
+    "cartographer",
+    "cleric",
+    "farmer",
+    "fisherman",
+    "fletcher",
+    "leatherworker",
+    "librarian",
+    "mason",
+    "nitwit",
+    "shepherd",
+    "toolsmith",
+    "weaponsmith",
+    "none",
+    "unemployed"
+  ],
+  dispositions: ["friendly", "respectful", "neutral", "cautious", "rude", "hostile", "fearful"],
+  dialogueTypes: [
+    "chat",
+    "greeting",
+    "question",
+    "gift_preferences",
+    "gift_advice_followup",
+    "map_report",
+    "story_hint_report",
+    "combat_survival_report",
+    "gear_report",
+    "recruitment_followup",
+    "cured_recognition",
+    "village_event_report",
+    "apology",
+    "village_defense_report",
+    "story",
+    "share_story",
+    "joke",
+    "insult"
+  ],
+  notificationTriggers: [
+    "gift.liked",
+    "gift.neutral",
+    "gift.disliked",
+    "gift.received_item",
+    "gift.high_reputation",
+    "gift.world.liked",
+    "gift.world.neutral",
+    "gift.world.disliked",
+    "dialogue.greeting",
+    "dialogue.question",
+    "dialogue.cooldown",
+    "dialogue.joke.positive",
+    "dialogue.insult.negative",
+    "dialogue.map.found",
+    "dialogue.rumor.found",
+    "recruitment.follow_start",
+    "recruitment.follow_stop",
+    "recruitment.hired",
+    "recruitment.fired",
+    "recruitment.follower_death",
+    "recruitment.hired_death",
+    "recruitment.betrayed_follower_death",
+    "ambient.murmur",
+    "ambient.player_item",
+    "ambient.sleep_breathing",
+    "ambient.sleep_murmur",
+    "combat.player_killed",
+    "trade.completed",
+    "trade.refused",
+    "alert.player_attacked_villager",
+    "alert.villager_damaged",
+    "alert.witness_attack.player",
+    "alert.witness_attack",
+    "alert.witness_death.player",
+    "alert.witness_death"
+  ],
+  reputationLevels: ["royalty", "revered", "respected", "trusted", "neutral", "suspicious", "hostile", "despised", "feared"],
+  hudKinds: [
+    "default",
+    "map_discovery",
+    "received_item",
+    "gift_liked",
+    "gift_neutral",
+    "gift_disliked",
+    "villager_following",
+    "villager_dismissed",
+    "villager_hired",
+    "villager_fired",
+    "villager_death"
+  ],
+  worldTextKinds: ["alert", "murmur", "positive", "negative", "trade", "dialogue", "sleep"],
+  eventTags: [
+    "baby_born",
+    "iron_golem_defeated_mob",
+    "thunderstorm",
+    "sandstorm",
+    "snowstorm",
+    "village_fire",
+    "night_attack",
+    "raid",
+    "villager_death",
+    "villager_attacked",
+    "player_attacked_villager",
+    "player_defended_village",
+    "player_defended_raid",
+    "player_cured_villager",
+    "golem_created",
+    "golem_killed",
+    "nearby_hostile_mob",
+    "reputation_changed",
+    "player_gave_loved_gift",
+    "player_gave_liked_gift",
+    "player_gave_neutral_gift",
+    "player_gave_disliked_gift",
+    "player_gave_hated_gift"
+  ],
+  itemSlots: ["main_hand", "off_hand", "hands", "armor", "hotbar", "inventory", "equipment", "any"],
+  weather: ["clear", "rain", "thunder"],
+  times: ["morning", "afternoon", "evening", "night"],
+  giftAdvice: ["global_liked", "global_disliked", "profession_liked", "profession_disliked", "already_known"],
+  reactions: ["loved", "liked", "neutral", "disliked", "hated"],
+  colors: [
+    "white",
+    "gray",
+    "grey",
+    "dark_gray",
+    "black",
+    "red",
+    "dark_red",
+    "green",
+    "dark_green",
+    "blue",
+    "aqua",
+    "yellow",
+    "gold",
+    "purple",
+    "light_purple"
+  ],
+  pacifyOutcomes: ["not_applicable", "success", "not_enough_emeralds", "blocked_by_reputation"],
+  optionFlags: [
+    "requires_unreported_cartographer_map_discovery",
+    "requires_unreported_story_hint_discovery",
+    "requires_unreported_combat_survival_report",
+    "requires_unreported_gear_report",
+    "requires_unreported_recruitment_followup",
+    "requires_unreported_cured_recognition",
+    "requires_recent_village_event",
+    "requires_unreported_gift_advice_result",
+    "requires_unapologized_remembered_harm",
+    "requires_unreported_village_defense",
+    "requires_shareable_story",
+    "requires_known_family",
+    "requires_known_parent",
+    "requires_known_sibling",
+    "requires_known_spouse",
+    "requires_known_child",
+    "requires_known_grandparent",
+    "requires_known_grandchild",
+    "requires_known_descendant",
+    "requires_known_aunt_uncle",
+    "requires_known_cousin",
+    "requires_known_niece_nephew",
+    "requires_known_extended_family",
+    "requires_known_deceased_family",
+    "requires_known_relationship",
+    "requires_known_current_relationship",
+    "requires_known_past_relationship",
+    "requires_known_crush",
+    "requires_known_dating_partner",
+    "requires_known_fiance",
+    "requires_known_romantic_spouse",
+    "requires_known_separated_partner",
+    "requires_known_widowed_partner"
+  ],
+  lineFlags: [
+    "requires_recent_broken_bed_memory",
+    "requires_recent_direct_hit_memory",
+    "requires_gear_report_used_in_combat",
+    "requires_gear_report_unused_in_combat",
+    "requires_recruitment_memory",
+    "requires_recruitment_boat_trip",
+    "requires_recruitment_ocean_crossing",
+    "requires_recruitment_swim_trip",
+    "excludes_recruitment_ocean_crossing",
+    "first_conversation_only",
+    "requires_known_family",
+    "requires_known_parent",
+    "requires_known_sibling",
+    "requires_known_spouse",
+    "requires_known_child",
+    "requires_known_grandparent",
+    "requires_known_grandchild",
+    "requires_known_descendant",
+    "requires_known_aunt_uncle",
+    "requires_known_cousin",
+    "requires_known_niece_nephew",
+    "requires_known_extended_family",
+    "requires_known_deceased_family",
+    "requires_known_relationship",
+    "requires_known_current_relationship",
+    "requires_known_past_relationship",
+    "requires_known_crush",
+    "requires_known_dating_partner",
+    "requires_known_fiance",
+    "requires_known_romantic_spouse",
+    "requires_known_separated_partner",
+    "requires_known_widowed_partner"
+  ]
+};
+
+const DIALOGUE_KINDS = [
+  { key: "options", label: "Options", icon: "list-checks" },
+  { key: "lines", label: "Lines", icon: "message-square" },
+  { key: "messages", label: "Messages", icon: "message-circle" },
+  { key: "openings", label: "Openings", icon: "door-open" },
+  { key: "closings", label: "Closings", icon: "door-closed" },
+  { key: "pacify", label: "Pacify Lines", icon: "hand-heart" }
+];
+
+const GIFT_KINDS = [
+  { key: "preferences", label: "Preferences", icon: "heart" },
+  { key: "rewards", label: "Rewards", icon: "package-plus" }
+];
+
+const STORY_KINDS = [
+  { key: "structures", label: "Structures", icon: "landmark" },
+  { key: "biomes", label: "Biomes", icon: "trees" }
+];
+
+const KIND_TOOLTIPS = {
+  "dialogue.options": "Dialogue options add player choices to the villager talk menu. The option id is what matching lines use through option or option_ids.",
+  "dialogue.lines": "Dialogue lines are selected for a request type, then filtered by option, profession, disposition, memories, items, weather, time, and weight.",
+  "dialogue.messages": "Messages are keyed one-off text used by systems such as gifts. Gift response_key values look up matching message keys.",
+  "dialogue.openings": "Openings are localized lines used when a conversation starts.",
+  "dialogue.closings": "Closings are localized lines used when a conversation ends.",
+  "dialogue.pacify": "Pacify lines are localized responses shown after a pacification attempt and can filter by pacification outcome.",
+  "gifts.preferences": "Preferences choose gift reactions from item or tag selectors. Higher priority wins, then earlier rule order.",
+  "gifts.rewards": "Rewards define item rolls for trusted, respected, revered, or royalty villagers and can filter by profession and reputation tier.",
+  "stories.structures": "Structure entries live under data/<namespace>/story_structures and unlock share_story lines for structure targets.",
+  "stories.biomes": "Biome entries live under data/<namespace>/story_biomes and unlock share_story lines for biome targets."
+};
+
+const FIELD_TOOLTIPS = {
+  "meta-packName": "Used for the export zip name and project label. It does not change datapack paths.",
+  "meta-packFormat": "Written to pack.mcmeta as pack.pack_format. The wiki starter targets Minecraft 1.21.1 with format 34.",
+  "meta-namespace": "Used for generated story discovery files. Dialogue, notifications, gifts, pacification, and preset names must stay in the villagerretaliation namespace.",
+  "meta-slug": "Lowercase file stem used for generated file names and starter ids. Keep it stable if other files refer to those ids.",
+  "meta-locale": "Locale folder for dialogue and notifications. The mod loads en_us first, then overlays the player's locale by matching ids.",
+  "meta-description": "Text Minecraft shows in the datapack list inside pack.mcmeta.",
+  "dialogue-fileName": "Creates data/villagerretaliation/dialogue/<locale>/<file>.json. Avoid global unless intentionally replacing built-in dialogue.",
+  "dialogue-locale": "Locale folder for this dialogue file, such as en_us or fr_fr. Matching ids can override the en_us fallback.",
+  "dialogue-id": "Stable id for generated, translated, overridden, or removed entries. Explicit ids survive array reordering.",
+  "dialogue-label": "Text shown on the talk-menu button for this option.",
+  "dialogue-type": "Request type sent by an option and matched by lines. Option and line types must match.",
+  "dialogue-order": "Lower values appear earlier in the talk menu. If omitted, array order is used.",
+  "dialogue-professions": "Profession filter. Vanilla ids can omit minecraft:, custom professions need their full registered id, and blank means any profession.",
+  "dialogue-dispositions": "Mood filter derived from reputation and context: friendly, respectful, neutral, cautious, rude, hostile, or fearful.",
+  "dialogue-player_items": "Requires one matching player item or item tag. Prefix tags with #; aliases such as player_item_tag are accepted by the loader.",
+  "dialogue-player_item_slots": "Where to check player items. If player_items is set and slots are blank, the default is hands.",
+  "dialogue-text": "Localized villager text. Placeholder support depends on type and filters, such as {target}, {held_item}, family names, or recruitment values.",
+  "dialogue-option": "Restricts a line to option id(s), including custom ids or built-ins such as adult_share_story.",
+  "dialogue-weather": "Weather filter for lines: clear, rain, or thunder.",
+  "dialogue-times": "Time filter for lines: morning, afternoon, evening, or night.",
+  "dialogue-event_tags": "Requires a recent nearby village memory with a matching event tag.",
+  "dialogue-player_event_tags": "Requires a recent village memory associated with the current player.",
+  "dialogue-story_structure": "Restricts share_story lines to one or more structure ids from story discovery JSON.",
+  "dialogue-story_biome": "Restricts share_story lines to one or more biome ids from story discovery JSON.",
+  "dialogue-recruitment_followup_scenarios": "Filters recruitment follow-up lines by stored scenario ids.",
+  "dialogue-recruitment_memory_scenarios": "Filters recruitment memory lines by stored scenario ids.",
+  "dialogue-min_recruitment_follow_distance": "Minimum followed distance in blocks for recruitment memory lines.",
+  "dialogue-gift_advice": "Filters a line to a gift advice result such as global_liked, profession_disliked, or already_known.",
+  "dialogue-weight": "Weighted selection among matching entries. Missing weights usually default to 10.",
+  "dialogue-key": "Message lookup key used by systems such as gift preference response_key.",
+  "dialogue-outcomes": "Pacification result filter, such as success, not_enough_emeralds, blocked_by_reputation, or not_applicable.",
+  "notifications-fileName": "Creates data/villagerretaliation/notifications/<locale>/<file>.json. Avoid global unless intentionally replacing built-in notifications.",
+  "notifications-locale": "Locale folder for this notification file. en_us loads first, then the player's locale overlays matching ids.",
+  "notification-id": "Stable id for translation overlays and replacement. Generated ids work, but explicit ids are safer.",
+  "notification-trigger": "Event trigger emitted by the mod, such as gift.liked, ambient.murmur, trade.refused, or alert.witness_death.",
+  "notification-text": "Localized HUD or world text. Supported placeholders depend on the trigger.",
+  "notification-kind": "HUD notification category. Defaults to default when omitted.",
+  "notification-world_text_kind": "Ambient text style above villagers. The loader also accepts style as an alias.",
+  "notification-color": "Default color for text and chat unless text_color or chat_color is more specific. Accepts named colors, #RRGGBB, or #AARRGGBB.",
+  "notification-text_color": "On-screen text color override. Falls back to color when omitted.",
+  "notification-chat_color": "Chat/log color override. Falls back to text_color, then color.",
+  "notification-professions": "Profession filter for this notification. Blank means any profession.",
+  "notification-reputation_levels": "Reputation tier filter. Prefer tier names over assuming fixed numeric thresholds.",
+  "notification-min_reputation": "Minimum exact reputation value required.",
+  "notification-max_reputation": "Maximum exact reputation value allowed.",
+  "notification-player_items": "Requires one matching player item or item tag before this notification can match.",
+  "notification-player_item_slots": "Where to check player items. Defaults to hands when player_items is set.",
+  "notification-weight": "Weighted selection among matching notifications. Missing weights usually default to 10.",
+  "notification-chance": "Random chance gate from 0.0 to 1.0 before weighted selection.",
+  "gifts-fileName": "Creates data/villagerretaliation/gifts/<file>.json. Use default only when replacing the built-in default gift table.",
+  "gift-reaction": "Gift reaction: loved, liked, neutral, disliked, or hated. Each has a default reputation per item.",
+  "gift-priority": "Higher priority wins when multiple preference rules match. Ties use earlier rule order.",
+  "gift-items": "Gift item ids. Unnamespaced values count as minecraft ids; values beginning with # are treated as tags.",
+  "gift-tags": "Gift item tag ids, such as minecraft:villager_plantable_seeds. At least one item or tag selector is required.",
+  "gift-professions": "Profession filter. Profession-specific matches beat generic matches for the same gift or reward roll.",
+  "gift-reputation_per_item": "Overrides the reaction's default reputation per gifted item.",
+  "gift-response_key": "Dialogue message key for custom gift text. Define the localized text in dialogue messages.",
+  "gift-item": "Reward item id returned by high-reputation villagers.",
+  "gift-reputation_levels": "Reputation tiers that can receive this reward, such as trusted, respected, revered, or royalty.",
+  "gift-min_count": "Minimum reward stack count, clamped to at least 1.",
+  "gift-max_count": "Maximum reward stack count, clamped to at least the minimum.",
+  "gift-weight": "Weighted selection among matching rewards. Missing weights default to 10.",
+  "pacification-fileName": "Creates data/villagerretaliation/pacification/<file>.json. Use default only when replacing the built-in emerald rule.",
+  "pacification-items": "Payment item ids. Unnamespaced values count as minecraft ids; values beginning with # are treated as tags.",
+  "pacification-tags": "Payment tag ids, such as c:coins. At least one item or tag selector is required.",
+  "pacification-professions": "Profession filter for payment rules. Wandering traders match none.",
+  "pacification-count": "Exact number of items consumed, clamped from 1 to 64. When set, min/max are ignored.",
+  "pacification-min_count": "Minimum random payment cost when count is omitted, clamped from 1 to 64.",
+  "pacification-max_count": "Maximum random payment cost when count is omitted, clamped from min_count to 64.",
+  "pacification-name": "Singular item name used by pacify dialogue placeholders. Defaults to the held item name.",
+  "pacification-plural_name": "Plural item name used when count is not 1. Defaults to name.",
+  "pacification-priority": "Higher priority wins when multiple payment rules match. Ties use earlier rule order.",
+  "stories-namespace": "Namespace for story_structures and story_biomes files. Story discovery can live outside villagerretaliation.",
+  "stories-radius": "Root fallback radius for structure entries that omit their own radius. Defaults to 96.",
+  "stories-structureFileName": "Creates data/<namespace>/story_structures/<file>.json.",
+  "stories-biomeFileName": "Creates data/<namespace>/story_biomes/<file>.json.",
+  "story-structures": "Structure id or ids for share_story targets. Use full resource locations unless a page says a shortcut is supported.",
+  "story-biomes": "Biome id or ids for share_story targets. Use full resource locations.",
+  "story-name": "Readable target name used by {target} and {target_article}. If omitted, the id path is humanized.",
+  "story-radius": "Detection radius in blocks for this structure entry, clamped to at least 1.",
+  "names-male_names": "Preset names used for villagers assigned male identity. Only non-blank strings are loaded.",
+  "names-female_names": "Preset names used for villagers assigned female identity. Existing villagers with stored names are not renamed."
+};
+
+const FLAG_TOOLTIPS = {
+  show_for_adults: "Adult visibility. Defaults to true.",
+  show_for_babies: "Baby visibility. Defaults to true.",
+  first_conversation_only: "Only matches during the first conversation with that villager.",
+  first_village_interaction_only: "Only matches during the player's first interaction in that village context.",
+  requires_unreported_cartographer_map_discovery: "Requires a cartographer map discovery that has not been reported yet.",
+  requires_unreported_story_hint_discovery: "Requires a story hint discovery that has not been reported yet.",
+  requires_unreported_combat_survival_report: "Requires a waiting combat survival report.",
+  requires_unreported_gear_report: "Requires a waiting gear report after the player gives combat gear.",
+  requires_unreported_recruitment_followup: "Requires a waiting recruitment follow-up.",
+  requires_unreported_cured_recognition: "Requires cured villager recognition that has not been reported yet.",
+  requires_recent_village_event: "Requires a recent nearby village event memory.",
+  requires_unreported_gift_advice_result: "Requires a gift advice result the player has not discussed yet.",
+  requires_unapologized_remembered_harm: "Requires remembered harm that has not been apologized for.",
+  requires_unreported_village_defense: "Requires a village defense event that has not been reported yet.",
+  requires_shareable_story: "Requires a discovered structure or biome story the villager can share.",
+  requires_recent_broken_bed_memory: "Requires recent memory of the player breaking a villager bed.",
+  requires_recent_direct_hit_memory: "Requires recent memory of the player directly hitting a villager.",
+  requires_gear_report_used_in_combat: "Requires gifted gear that has been used in combat.",
+  requires_gear_report_unused_in_combat: "Requires gifted gear that has not yet been used in combat.",
+  requires_recruitment_memory: "Requires stored recruitment memory for the villager.",
+  requires_recruitment_boat_trip: "Requires a remembered boat trip during recruitment.",
+  requires_recruitment_ocean_crossing: "Requires a remembered ocean crossing during recruitment.",
+  requires_recruitment_swim_trip: "Requires a remembered swim trip during recruitment.",
+  excludes_recruitment_ocean_crossing: "Rejects lines when the recruitment memory includes an ocean crossing.",
+  requires_known_family: "Requires any known family relationship.",
+  requires_known_parent: "Requires a known parent.",
+  requires_known_sibling: "Requires a known sibling.",
+  requires_known_spouse: "Requires a known family spouse.",
+  requires_known_child: "Requires a known child.",
+  requires_known_grandparent: "Requires a known grandparent.",
+  requires_known_grandchild: "Requires a known grandchild.",
+  requires_known_descendant: "Requires a known descendant.",
+  requires_known_aunt_uncle: "Requires a known aunt or uncle.",
+  requires_known_cousin: "Requires a known cousin.",
+  requires_known_niece_nephew: "Requires a known niece or nephew.",
+  requires_known_extended_family: "Requires known extended family.",
+  requires_known_deceased_family: "Requires a known deceased family member.",
+  requires_known_relationship: "Requires any known romantic relationship state.",
+  requires_known_current_relationship: "Requires a current romantic partner.",
+  requires_known_past_relationship: "Requires a past romantic partner.",
+  requires_known_crush: "Requires a known crush.",
+  requires_known_dating_partner: "Requires a dating partner.",
+  requires_known_fiance: "Requires an engaged partner.",
+  requires_known_romantic_spouse: "Requires a romantic spouse.",
+  requires_known_separated_partner: "Requires a separated partner.",
+  requires_known_widowed_partner: "Requires a late partner."
+};
+
+const EVENT_TAG_TOOLTIPS = {
+  baby_born: "A baby was born near the village.",
+  iron_golem_defeated_mob: "An iron golem defeated a hostile mob.",
+  thunderstorm: "A thunderstorm affected the village.",
+  sandstorm: "A sandstorm-style village memory was recorded.",
+  snowstorm: "A snowstorm-style village memory was recorded.",
+  village_fire: "Fire threatened the village.",
+  night_attack: "Hostile mobs attacked near the village at night.",
+  raid: "A raid affected the village.",
+  villager_death: "A villager died near the village.",
+  villager_attacked: "A villager was attacked.",
+  player_attacked_villager: "The player attacked a villager.",
+  player_defended_village: "The player defended the village from hostiles.",
+  player_defended_raid: "The player defended the village during a raid.",
+  player_cured_villager: "The player cured a zombie villager.",
+  golem_created: "Accepted by the parser for golem creation memories.",
+  golem_killed: "An iron golem was killed.",
+  nearby_hostile_mob: "Accepted by the parser for nearby hostile mob memories.",
+  reputation_changed: "A relevant reputation change was remembered.",
+  player_gave_loved_gift: "The player gave a loved gift.",
+  player_gave_liked_gift: "The player gave a liked gift.",
+  player_gave_neutral_gift: "The player gave a neutral gift.",
+  player_gave_disliked_gift: "The player gave a disliked gift.",
+  player_gave_hated_gift: "The player gave a hated gift."
+};
+
+const DISPOSITION_TOOLTIPS = {
+  friendly: "High-trust or positive-context villager mood.",
+  respectful: "Respectful positive villager mood.",
+  neutral: "Neither especially trusting nor hostile.",
+  cautious: "Low-trust or wary villager mood.",
+  rude: "Irritated or negative villager mood.",
+  hostile: "Angry or hostile villager mood.",
+  fearful: "Fear-driven villager mood."
+};
+
+const ITEM_SLOT_TOOLTIPS = {
+  main_hand: "Checks the player's main hand.",
+  off_hand: "Checks the player's off hand.",
+  hands: "Checks main hand and off hand.",
+  armor: "Checks armor slots.",
+  hotbar: "Checks the hotbar.",
+  inventory: "Checks inventory slots.",
+  equipment: "Checks hands and armor.",
+  any: "Checks any carried or equipped slot."
+};
+
+const TAG_SUGGESTIONS = {
+  "dialogue-professions": CONSTANTS.professions,
+  "dialogue-dispositions": CONSTANTS.dispositions,
+  "dialogue-player_item_slots": CONSTANTS.itemSlots,
+  "dialogue-weather": CONSTANTS.weather,
+  "dialogue-times": CONSTANTS.times,
+  "dialogue-event_tags": CONSTANTS.eventTags,
+  "dialogue-player_event_tags": CONSTANTS.eventTags,
+  "dialogue-outcomes": CONSTANTS.pacifyOutcomes,
+  "notification-professions": CONSTANTS.professions,
+  "notification-reputation_levels": CONSTANTS.reputationLevels,
+  "notification-player_item_slots": CONSTANTS.itemSlots,
+  "gift-professions": CONSTANTS.professions,
+  "gift-reputation_levels": CONSTANTS.reputationLevels,
+  "pacification-professions": CONSTANTS.professions
+};
+
+const encoder = new TextEncoder();
+const decoder = new TextDecoder();
+
+let state = createInitialState();
+let activeSection = "overview";
+let activeDialogueKind = "options";
+let activeGiftKind = "preferences";
+let activeStoryKind = "structures";
+let editing = null;
+let selectedPath = "pack.mcmeta";
+let toastTimer = null;
+let showLeftPanel = true;
+let showRightPanel = true;
+let wrapPreviewLines = false;
+let previewEditTimer = null;
+let previewEditError = null;
+let fileTreeSignature = "";
+
+const els = {
+  workspace: document.querySelector(".workspace"),
+  leftRail: document.querySelector(".left-rail"),
+  rightRail: document.querySelector(".right-rail"),
+  tabs: document.querySelector("#section-tabs"),
+  panel: document.querySelector("#builder-panel"),
+  fileTree: document.querySelector("#file-tree"),
+  fileCount: document.querySelector("#file-count"),
+  checks: document.querySelector("#checks"),
+  checkCount: document.querySelector("#check-count"),
+  selectedPath: document.querySelector("#selected-path"),
+  preview: document.querySelector("#json-preview"),
+  importInput: document.querySelector("#import-input"),
+  directoryInput: document.querySelector("#directory-input"),
+  exportButton: document.querySelector("#export-button"),
+  starterButton: document.querySelector("#starter-button"),
+  leftPanelToggleButton: document.querySelector("#left-panel-toggle-button"),
+  rightPanelToggleButton: document.querySelector("#right-panel-toggle-button"),
+  wrapPreviewButton: document.querySelector("#wrap-preview-button"),
+  codePreview: document.querySelector(".code-preview"),
+  copyButton: document.querySelector("#copy-file-button"),
+  downloadButton: document.querySelector("#download-file-button"),
+  toast: document.querySelector("#toast")
+};
+
+const PANEL_SIZE_STORAGE_KEY = "vr-datapack-builder-panel-sizes";
+const PANEL_SIZE_VARS = {
+  left: "--left-panel-width",
+  right: "--right-panel-width",
+  checks: "--checks-panel-height",
+  files: "--files-panel-height"
+};
+const PANEL_SIZE_LIMITS = {
+  left: { min: 72, max: 430 },
+  right: { min: 320, max: 820 },
+  checks: { min: 78, max: 360 },
+  files: { min: 120, max: 560 }
+};
+const LEFT_PANEL_COMPACT_WIDTH = 230;
+const LEFT_PANEL_EXPANDED_SNAP_WIDTH = 286;
+const MIN_BUILDER_WIDTH = 360;
+const MIN_PREVIEW_HEIGHT = 180;
+let panelResizeState = null;
+
+function createInitialState() {
+  return {
+    meta: {
+      packName: "Villager Retaliation Pack",
+      description: "Custom Villager Retaliation datapack",
+      packFormat: 34,
+      namespace: "my_pack",
+      slug: "my_pack",
+      locale: "en_us"
+    },
+    dialogue: {
+      fileName: "my_pack_dialogue",
+      options: [],
+      lines: [],
+      messages: [],
+      openings: [],
+      closings: [],
+      pacify: []
+    },
+    notifications: {
+      fileName: "my_pack_notifications",
+      notifications: []
+    },
+    gifts: {
+      fileName: "my_pack_gifts",
+      preferences: [],
+      rewards: []
+    },
+    pacification: {
+      fileName: "my_pack_pacification",
+      payments: []
+    },
+    stories: {
+      namespace: "my_pack",
+      structureFileName: "my_pack_structures",
+      biomeFileName: "my_pack_biomes",
+      radius: 96,
+      structures: [],
+      biomes: []
+    },
+    names: {
+      male_names: [],
+      female_names: []
+    },
+    extraFiles: {}
+  };
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function icon(name, className = "inline-icon") {
+  return `<i data-lucide="${escapeHtml(name)}" class="${escapeHtml(className)}" aria-hidden="true"></i>`;
+}
+
+function renderIcons() {
+  if (window.lucide?.createIcons) {
+    try {
+      window.lucide.createIcons({
+        attrs: {
+          "stroke-width": 1.8
+        }
+      });
+    } catch {
+      // Text labels keep the builder usable if the icon CDN is unavailable.
+    }
+  }
+}
+
+function readPanelSizes() {
+  try {
+    return JSON.parse(localStorage.getItem(PANEL_SIZE_STORAGE_KEY) || "{}") || {};
+  } catch {
+    return {};
+  }
+}
+
+function writePanelSizes(sizes) {
+  try {
+    localStorage.setItem(PANEL_SIZE_STORAGE_KEY, JSON.stringify(sizes));
+  } catch {
+    // Resizing still works for the current session if storage is unavailable.
+  }
+}
+
+function applyStoredPanelSizes() {
+  const sizes = readPanelSizes();
+  for (const [target, value] of Object.entries(sizes)) {
+    const number = Number(value);
+    if (PANEL_SIZE_VARS[target] && Number.isFinite(number)) {
+      const clamped = clampPanelSize(target, number);
+      document.documentElement.style.setProperty(PANEL_SIZE_VARS[target], `${Math.round(clamped)}px`);
+    }
+  }
+  updateLeftPanelMode(Number(sizes.left));
+}
+
+function savePanelSize(target, value) {
+  const clamped = clampPanelSize(target, value);
+  document.documentElement.style.setProperty(PANEL_SIZE_VARS[target], `${Math.round(clamped)}px`);
+  const sizes = readPanelSizes();
+  sizes[target] = Math.round(clamped);
+  writePanelSizes(sizes);
+  if (target === "left") updateLeftPanelMode(clamped);
+}
+
+function resetPanelSize(target) {
+  if (!PANEL_SIZE_VARS[target]) return;
+  const property = PANEL_SIZE_VARS[target];
+  const hadInlineSize = Boolean(document.documentElement.style.getPropertyValue?.(property));
+  document.documentElement.style.removeProperty(property);
+  const sizes = readPanelSizes();
+  const hadStoredSize = Object.hasOwn(sizes, target);
+  delete sizes[target];
+  writePanelSizes(sizes);
+  if (target === "left") updateLeftPanelMode();
+  if (hadInlineSize || hadStoredSize) {
+    showToast("Panel size reset.");
+  }
+}
+
+function updateLeftPanelMode(width = undefined) {
+  const measuredWidth = Number.isFinite(width)
+    ? width
+    : els.leftRail.getBoundingClientRect().width;
+  els.leftRail.classList.toggle("is-compact", showLeftPanel && measuredWidth > 0 && measuredWidth <= LEFT_PANEL_COMPACT_WIDTH);
+}
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), Math.max(min, max));
+}
+
+function clampPanelSize(target, value) {
+  const base = PANEL_SIZE_LIMITS[target];
+  if (!base) return value;
+  let max = base.max;
+
+  if (target === "left" || target === "right") {
+    const workspaceWidth = els.workspace.getBoundingClientRect().width || window.innerWidth;
+    const leftWidth = target === "left" ? value : showLeftPanel ? els.leftRail.getBoundingClientRect().width : 0;
+    const rightWidth = target === "right" ? value : showRightPanel ? els.rightRail.getBoundingClientRect().width : 0;
+    const otherWidth = target === "left" ? rightWidth : leftWidth;
+    max = Math.min(base.max, workspaceWidth - otherWidth - MIN_BUILDER_WIDTH - 14);
+  }
+
+  if (target === "checks" || target === "files") {
+    const railHeight = els.rightRail.getBoundingClientRect().height;
+    const checksHeight = target === "checks" ? value : els.checks.closest(".checks-panel").getBoundingClientRect().height;
+    const filesHeight = target === "files" ? value : els.fileTree.closest(".files-panel").getBoundingClientRect().height;
+    const otherHeight = target === "checks" ? filesHeight : checksHeight;
+    max = Math.min(base.max, railHeight - otherHeight - MIN_PREVIEW_HEIGHT - 14);
+  }
+
+  return clamp(value, base.min, max);
+}
+
+function panelResizeStart(event) {
+  const handle = event.target.closest(".panel-resizer");
+  if (!handle) return;
+  const target = handle.dataset.resizeTarget;
+  if (!PANEL_SIZE_VARS[target]) return;
+  if (event.button === 1) {
+    event.preventDefault();
+    resetPanelSize(target);
+    return;
+  }
+  if (event.button !== 0) return;
+  event.preventDefault();
+  panelResizeState = {
+    target,
+    handle,
+    startX: event.clientX,
+    startY: event.clientY,
+    left: els.leftRail.getBoundingClientRect().width,
+    right: els.rightRail.getBoundingClientRect().width,
+    checks: els.checks.closest(".checks-panel").getBoundingClientRect().height,
+    files: els.fileTree.closest(".files-panel").getBoundingClientRect().height
+  };
+  handle.classList.add("is-dragging");
+  document.body.classList.add(target === "checks" || target === "files" ? "is-resizing-row" : "is-resizing");
+  document.addEventListener("pointermove", panelResizeMove);
+  document.addEventListener("pointerup", panelResizeEnd, { once: true });
+}
+
+function panelResizeMove(event) {
+  if (!panelResizeState) return;
+  const dx = event.clientX - panelResizeState.startX;
+  const dy = event.clientY - panelResizeState.startY;
+  const target = panelResizeState.target;
+  let next = {
+    left: panelResizeState.left + dx,
+    right: panelResizeState.right - dx,
+    checks: panelResizeState.checks + dy,
+    files: panelResizeState.files + dy
+  }[target];
+  if (target === "left") {
+    const startedCompact = panelResizeState.left <= LEFT_PANEL_COMPACT_WIDTH;
+    if (next <= LEFT_PANEL_COMPACT_WIDTH) {
+      next = PANEL_SIZE_LIMITS.left.min;
+    } else if (startedCompact) {
+      next = Math.max(next, LEFT_PANEL_EXPANDED_SNAP_WIDTH);
+    }
+  }
+  savePanelSize(target, next);
+}
+
+function panelResizeEnd() {
+  panelResizeState?.handle.classList.remove("is-dragging");
+  panelResizeState = null;
+  document.body.classList.remove("is-resizing", "is-resizing-row");
+  document.removeEventListener("pointermove", panelResizeMove);
+}
+
+function panelResizeKeydown(event) {
+  const handle = event.target.closest(".panel-resizer");
+  if (!handle || !PANEL_SIZE_VARS[handle.dataset.resizeTarget]) return;
+  const target = handle.dataset.resizeTarget;
+  const step = event.shiftKey ? 32 : 16;
+  const isColumn = target === "left" || target === "right";
+  const isRow = target === "checks" || target === "files";
+  let direction = 0;
+
+  if (isColumn && event.key === "ArrowLeft") direction = target === "left" ? -1 : 1;
+  if (isColumn && event.key === "ArrowRight") direction = target === "left" ? 1 : -1;
+  if (isRow && event.key === "ArrowUp") direction = -1;
+  if (isRow && event.key === "ArrowDown") direction = 1;
+  if (!direction) return;
+
+  event.preventDefault();
+  const current = {
+    left: els.leftRail.getBoundingClientRect().width,
+    right: els.rightRail.getBoundingClientRect().width,
+    checks: els.checks.closest(".checks-panel").getBoundingClientRect().height,
+    files: els.fileTree.closest(".files-panel").getBoundingClientRect().height
+  }[target];
+  let next = current + direction * step;
+  if (target === "left" && next <= LEFT_PANEL_COMPACT_WIDTH) {
+    next = PANEL_SIZE_LIMITS.left.min;
+  } else if (target === "left" && current <= LEFT_PANEL_COMPACT_WIDTH && direction > 0) {
+    next = LEFT_PANEL_EXPANDED_SNAP_WIDTH;
+  }
+  savePanelSize(target, next);
+}
+
+function panelResizeAuxClick(event) {
+  const handle = event.target.closest(".panel-resizer");
+  if (!handle || event.button !== 1) return;
+  event.preventDefault();
+  resetPanelSize(handle.dataset.resizeTarget);
+}
+
+function keepPanelSizesInRange() {
+  if (window.matchMedia?.("(max-width: 900px)").matches) return;
+  const sizes = readPanelSizes();
+  for (const target of Object.keys(PANEL_SIZE_VARS)) {
+    if (sizes[target] !== undefined) {
+      savePanelSize(target, Number(sizes[target]));
+    }
+  }
+}
+
+const MINECRAFT_COLORS = {
+  0: "#000000",
+  1: "#0000aa",
+  2: "#00aa00",
+  3: "#00aaaa",
+  4: "#aa0000",
+  5: "#aa00aa",
+  6: "#ffaa00",
+  7: "#aaaaaa",
+  8: "#555555",
+  9: "#5555ff",
+  a: "#55ff55",
+  b: "#55ffff",
+  c: "#ff5555",
+  d: "#ff55ff",
+  e: "#ffff55",
+  f: "#ffffff"
+};
+
+const MINECRAFT_STYLE_CODES = new Set(["l", "m", "n", "o"]);
+
+const tooltipLayer = document.createElement("div");
+tooltipLayer.id = "minecraft-tooltip";
+tooltipLayer.className = "minecraft-tooltip";
+tooltipLayer.setAttribute("role", "tooltip");
+tooltipLayer.setAttribute("aria-hidden", "true");
+document.body.appendChild(tooltipLayer);
+
+let activeTooltipTarget = null;
+let activeTooltipPointer = null;
+
+function minecraftTooltipHtml(source) {
+  const lines = String(source ?? "").replace(/\r\n?/g, "\n").split("\n");
+  return lines.map((line) => `<span class="minecraft-tooltip-line">${minecraftLineHtml(line)}</span>`).join("");
+}
+
+function minecraftLineHtml(line) {
+  const segments = [];
+  let style = defaultMinecraftStyle();
+  let text = "";
+
+  const flush = () => {
+    if (!text) return;
+    segments.push(`<span class="${minecraftStyleClass(style)}" style="color: ${style.color}">${escapeHtml(text)}</span>`);
+    text = "";
+  };
+
+  for (let index = 0; index < line.length; index++) {
+    const char = line[index];
+    const next = line[index + 1]?.toLowerCase();
+    if ((char === "&" || char === "\u00a7") && next && isMinecraftFormatCode(next)) {
+      flush();
+      style = applyMinecraftFormat(style, next);
+      index++;
+      continue;
+    }
+    text += char;
+  }
+  flush();
+
+  return segments.join("") || "&nbsp;";
+}
+
+function defaultMinecraftStyle() {
+  return {
+    color: MINECRAFT_COLORS.f,
+    bold: false,
+    italic: false,
+    underlined: false,
+    strikethrough: false
+  };
+}
+
+function isMinecraftFormatCode(code) {
+  return code === "r" || MINECRAFT_STYLE_CODES.has(code) || Object.hasOwn(MINECRAFT_COLORS, code);
+}
+
+function applyMinecraftFormat(style, code) {
+  if (code === "r") return defaultMinecraftStyle();
+  if (Object.hasOwn(MINECRAFT_COLORS, code)) {
+    return { ...defaultMinecraftStyle(), color: MINECRAFT_COLORS[code] };
+  }
+  return {
+    ...style,
+    bold: style.bold || code === "l",
+    italic: style.italic || code === "o",
+    underlined: style.underlined || code === "n",
+    strikethrough: style.strikethrough || code === "m"
+  };
+}
+
+function minecraftStyleClass(style) {
+  return [
+    style.bold ? "mc-bold" : "",
+    style.italic ? "mc-italic" : "",
+    style.underlined ? "mc-underlined" : "",
+    style.strikethrough ? "mc-strikethrough" : ""
+  ].filter(Boolean).join(" ");
+}
+
+function tooltipTarget(element) {
+  return element?.closest?.("[data-tooltip]");
+}
+
+function showTooltip(target, pointer = null) {
+  const text = target?.dataset.tooltip;
+  if (!text) return;
+  if (!pointer && target === activeTooltipTarget && activeTooltipPointer) return;
+  activeTooltipTarget = target;
+  activeTooltipPointer = pointer;
+  tooltipLayer.innerHTML = minecraftTooltipHtml(text);
+  tooltipLayer.setAttribute("aria-hidden", "false");
+  tooltipLayer.classList.add("is-visible");
+  target.setAttribute("aria-describedby", tooltipLayer.id);
+  requestAnimationFrame(positionTooltip);
+}
+
+function hideTooltip(target = activeTooltipTarget) {
+  if (!activeTooltipTarget || target !== activeTooltipTarget) return;
+  activeTooltipTarget.removeAttribute("aria-describedby");
+  activeTooltipTarget = null;
+  activeTooltipPointer = null;
+  tooltipLayer.classList.remove("is-visible");
+  tooltipLayer.setAttribute("aria-hidden", "true");
+  tooltipLayer.style.transform = "translate3d(-9999px, -9999px, 0)";
+}
+
+function positionTooltip() {
+  if (!activeTooltipTarget) return;
+  const rect = activeTooltipTarget.getBoundingClientRect();
+  const tooltipRect = tooltipLayer.getBoundingClientRect();
+  const gap = 10;
+  const margin = 12;
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+  let x;
+  let y;
+
+  if (activeTooltipPointer) {
+    x = activeTooltipPointer.x + 14;
+    y = activeTooltipPointer.y + 12;
+  } else if (activeTooltipTarget.closest(".section-tabs")) {
+    x = rect.right + 14;
+    y = rect.top + rect.height / 2 - tooltipRect.height / 2;
+  } else {
+    x = rect.left;
+    y = rect.bottom + gap;
+  }
+
+  if (x + tooltipRect.width > viewportWidth - margin) {
+    x = Math.max(margin, rect.left - tooltipRect.width - gap);
+  }
+  if (y + tooltipRect.height > viewportHeight - margin) {
+    y = Math.max(margin, rect.top - tooltipRect.height - gap);
+  }
+
+  x = Math.max(margin, Math.min(x, viewportWidth - tooltipRect.width - margin));
+  y = Math.max(margin, Math.min(y, viewportHeight - tooltipRect.height - margin));
+  tooltipLayer.style.transform = `translate3d(${Math.round(x)}px, ${Math.round(y)}px, 0)`;
+}
+
+function tooltipAttrs(text, className = "tooltip-label") {
+  if (!text) return "";
+  const tooltip = escapeHtml(text);
+  return ` class="${className}" data-tooltip="${tooltip}" tabindex="0"`;
+}
+
+function tooltipForField(id, help = "") {
+  return FIELD_TOOLTIPS[id] || help || "";
+}
+
+function tooltipForFlag(flag) {
+  return FLAG_TOOLTIPS[flag] || humanize(flag);
+}
+
+function tooltipForTag(fieldId, value) {
+  if (fieldId.includes("event_tags")) return EVENT_TAG_TOOLTIPS[value] || "Village-memory tag accepted by event_tags or player_event_tags.";
+  if (fieldId.includes("professions")) return value === "none" || value === "unemployed"
+    ? "Matches villagers with no profession."
+    : `Matches ${humanize(value)} villagers. Custom professions should use a full registered id.`;
+  if (fieldId.includes("dispositions")) return DISPOSITION_TOOLTIPS[value] || "Dialogue mood filter derived from reputation and context.";
+  if (fieldId.includes("reputation_levels")) return `Matches the ${humanize(value)} reputation tier. Prefer tier names over fixed numeric reputation.`;
+  if (fieldId.includes("player_item_slots")) return ITEM_SLOT_TOOLTIPS[value] || "Player item slot filter. Defaults to hands when player_items is set.";
+  if (fieldId.includes("weather")) return `Matches ${humanize(value)} weather.`;
+  if (fieldId.includes("times")) return `Matches the ${humanize(value)} time window.`;
+  if (fieldId.includes("outcomes")) return `Matches the ${humanize(value)} pacification result.`;
+  return `Insert ${value}.`;
+}
+
+function slugify(value, fallback = "my_pack") {
+  const slug = String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/['"]/g, "")
+    .replace(/[^a-z0-9_./-]+/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "");
+  return slug || fallback;
+}
+
+function namespaceify(value, fallback = "my_pack") {
+  const namespace = slugify(value, fallback).replace(/[^a-z0-9_.-]/g, "_");
+  return namespace || fallback;
+}
+
+function normalizeFileName(value, fallback) {
+  return slugify(value, fallback).replace(/\.json$/i, "");
+}
+
+function capitalize(value) {
+  const text = String(value || "");
+  return text ? text.charAt(0).toUpperCase() + text.slice(1) : "";
+}
+
+function humanize(value) {
+  return String(value || "")
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (match) => match.toUpperCase());
+}
+
+function parseList(value) {
+  if (Array.isArray(value)) return value.map(String).map((item) => item.trim()).filter(Boolean);
+  if (typeof value === "string") {
+    return value
+      .split(/[\n,]+/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+  return [];
+}
+
+function listToText(value) {
+  if (Array.isArray(value)) return value.join(", ");
+  return value || "";
+}
+
+function parseNumber(value) {
+  if (value === "" || value === null || value === undefined) return undefined;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : undefined;
+}
+
+function parseInteger(value) {
+  const number = parseNumber(value);
+  return number === undefined ? undefined : Math.trunc(number);
+}
+
+function cleanObject(value) {
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => cleanObject(item))
+      .filter((item) => item !== undefined && !(Array.isArray(item) && item.length === 0));
+  }
+  if (value && typeof value === "object" && !(value instanceof Uint8Array)) {
+    const result = {};
+    for (const [key, child] of Object.entries(value)) {
+      if (key.startsWith("__")) continue;
+      const cleaned = cleanObject(child);
+      const emptyArray = Array.isArray(cleaned) && cleaned.length === 0;
+      const emptyObject = cleaned && typeof cleaned === "object" && !Array.isArray(cleaned) && Object.keys(cleaned).length === 0;
+      if (cleaned !== undefined && cleaned !== "" && !emptyArray && !emptyObject) {
+        result[key] = cleaned;
+      }
+    }
+    return result;
+  }
+  return value === null ? undefined : value;
+}
+
+function hasAnyEntries(section, keys) {
+  return keys.some((key) => state[section][key].length > 0);
+}
+
+function makePackMeta() {
+  return cleanObject({
+    pack: {
+      pack_format: state.meta.packFormat || 34,
+      description: state.meta.description || state.meta.packName || "Villager Retaliation datapack"
+    }
+  });
+}
+
+function safeJson(value) {
+  return JSON.stringify(cleanObject(value), null, 2) + "\n";
+}
+
+function dialoguePath() {
+  return `data/villagerretaliation/dialogue/${state.meta.locale}/${state.dialogue.fileName}.json`;
+}
+
+function notificationsPath() {
+  return `data/villagerretaliation/notifications/${state.meta.locale}/${state.notifications.fileName}.json`;
+}
+
+function giftsPath() {
+  return `data/villagerretaliation/gifts/${state.gifts.fileName}.json`;
+}
+
+function pacificationPath() {
+  return `data/villagerretaliation/pacification/${state.pacification.fileName}.json`;
+}
+
+function structurePath() {
+  return `data/${state.stories.namespace}/story_structures/${state.stories.structureFileName}.json`;
+}
+
+function biomePath() {
+  return `data/${state.stories.namespace}/story_biomes/${state.stories.biomeFileName}.json`;
+}
+
+function namesPath() {
+  return "data/villagerretaliation/villager_names/preset_names.json";
+}
+
+function generatedFiles() {
+  const files = { ...state.extraFiles };
+  files["pack.mcmeta"] = safeJson(makePackMeta());
+
+  if (hasAnyEntries("dialogue", ["options", "lines", "messages", "openings", "closings", "pacify"])) {
+    Object.assign(files, generatedDialogueFiles());
+  }
+
+  if (state.notifications.notifications.length > 0) {
+    files[notificationsPath()] = safeJson({ notifications: state.notifications.notifications });
+  }
+
+  if (hasAnyEntries("gifts", ["preferences", "rewards"])) {
+    files[giftsPath()] = safeJson({
+      preferences: state.gifts.preferences,
+      rewards: state.gifts.rewards
+    });
+  }
+
+  if (state.pacification.payments.length > 0) {
+    files[pacificationPath()] = safeJson({ payments: state.pacification.payments });
+  }
+
+  if (state.stories.structures.length > 0) {
+    files[structurePath()] = safeJson({
+      radius: state.stories.radius || 96,
+      entries: state.stories.structures
+    });
+  }
+
+  if (state.stories.biomes.length > 0) {
+    files[biomePath()] = safeJson({ entries: state.stories.biomes });
+  }
+
+  if (state.names.male_names.length > 0 || state.names.female_names.length > 0) {
+    files[namesPath()] = safeJson({
+      male_names: state.names.male_names,
+      female_names: state.names.female_names
+    });
+  }
+
+  return files;
+}
+
+function generatedDialogueFiles() {
+  const grouped = new Map();
+  for (const kind of ["options", "lines", "messages", "openings", "closings", "pacify"]) {
+    for (const entry of state.dialogue[kind]) {
+      const path = entry.__sourcePath || dialoguePath();
+      if (!grouped.has(path)) {
+        grouped.set(path, {
+          options: [],
+          lines: [],
+          messages: [],
+          openings: [],
+          closings: [],
+          pacify: []
+        });
+      }
+      grouped.get(path)[kind].push(entry);
+    }
+  }
+  return Object.fromEntries([...grouped.entries()].map(([path, value]) => [path, safeJson(value)]));
+}
+
+function addCheck(checks, type, title, text) {
+  if (checks.some((check) => check.title === title && check.type === type)) return;
+  checks.push({ type, title, text });
+}
+
+function firstDuplicate(values) {
+  const seen = new Set();
+  for (const value of values.map(String).map((item) => item.trim()).filter(Boolean)) {
+    if (seen.has(value)) return value;
+    seen.add(value);
+  }
+  return "";
+}
+
+function entryValues(entry, keys) {
+  return keys.flatMap((key) => parseList(entry[key]));
+}
+
+function hasAnySelector(entry, keys) {
+  return keys.some((key) => parseList(entry[key]).length > 0 || Boolean(entry[key]));
+}
+
+function firstInvalidValue(entries, keys, predicate) {
+  for (const entry of entries) {
+    for (const value of entryValues(entry, keys)) {
+      if (!predicate(value)) return value;
+    }
+  }
+  return "";
+}
+
+function firstBlankListValue(entries, keys) {
+  for (const entry of entries) {
+    for (const key of keys) {
+      if (Array.isArray(entry[key]) && entry[key].some((value) => String(value).trim() === "")) {
+        return key;
+      }
+    }
+  }
+  return "";
+}
+
+function isValidFileName(value) {
+  const text = String(value || "").trim();
+  return /^[a-z0-9_.\/-]+$/.test(text) && !text.includes("//") && !text.startsWith("/") && !text.endsWith("/");
+}
+
+function isValidResourceLocation(value, { allowTag = false, requireNamespace = false } = {}) {
+  const text = String(value || "").trim();
+  if (!text) return false;
+  const isTag = text.startsWith("#");
+  if (isTag && !allowTag) return false;
+  const body = isTag ? text.slice(1) : text;
+  const pattern = requireNamespace
+    ? /^[a-z0-9_.-]+:[a-z0-9_./-]+$/
+    : /^(?:[a-z0-9_.-]+:)?[a-z0-9_./-]+$/;
+  return pattern.test(body);
+}
+
+function isValidProfession(value) {
+  return CONSTANTS.professions.includes(value) || isValidResourceLocation(value);
+}
+
+function isValidColor(value) {
+  return CONSTANTS.colors.includes(value) || /^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/.test(value);
+}
+
+function numberValue(value) {
+  if (value === undefined || value === null || value === "") return undefined;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : undefined;
+}
+
+function firstBadNumber(entries, keys, predicate = () => true) {
+  for (const entry of entries) {
+    for (const key of keys) {
+      if (entry[key] === undefined || entry[key] === null || entry[key] === "") continue;
+      const number = numberValue(entry[key]);
+      if (number === undefined || !predicate(number, entry, key)) return key;
+    }
+  }
+  return "";
+}
+
+function validate() {
+  const checks = [];
+  const namespacePattern = /^[a-z0-9_.-]+$/;
+  const localePattern = /^[a-z]{2}_[a-z]{2}$/;
+
+  if (previewEditError) {
+    addCheck(checks, "error", "Preview JSON", `Fix invalid JSON in ${previewEditError.path} before it can sync.`);
+  }
+
+  if (!namespacePattern.test(state.meta.namespace)) {
+    addCheck(checks, "error", "Pack namespace", "Use lowercase letters, numbers, underscores, dots, or hyphens.");
+  }
+  if (!localePattern.test(state.meta.locale)) {
+    addCheck(checks, "warning", "Locale", "Locale folders usually look like en_us or fr_fr.");
+  }
+  if (!Number.isInteger(state.meta.packFormat) || state.meta.packFormat < 1) {
+    addCheck(checks, "error", "Pack format", "pack_format must be a positive integer.");
+  }
+  if (!isValidFileName(state.meta.slug)) {
+    addCheck(checks, "error", "File slug", "Use lowercase letters, numbers, underscores, dots, hyphens, or path slashes.");
+  }
+  if (!isValidFileName(state.dialogue.fileName)) {
+    addCheck(checks, "error", "Dialogue file", "Dialogue file names must be lowercase datapack path names.");
+  }
+  if (!isValidFileName(state.notifications.fileName)) {
+    addCheck(checks, "error", "Notification file", "Notification file names must be lowercase datapack path names.");
+  }
+  if (!isValidFileName(state.gifts.fileName)) {
+    addCheck(checks, "error", "Gift file", "Gift file names must be lowercase datapack path names.");
+  }
+  if (!isValidFileName(state.pacification.fileName)) {
+    addCheck(checks, "error", "Pacification file", "Pacification file names must be lowercase datapack path names.");
+  }
+  if (!namespacePattern.test(state.stories.namespace)) {
+    addCheck(checks, "error", "Story namespace", "Story files need a valid lowercase namespace.");
+  }
+  if (!isValidFileName(state.stories.structureFileName) || !isValidFileName(state.stories.biomeFileName)) {
+    addCheck(checks, "error", "Story file", "Story file names must be lowercase datapack path names.");
+  }
+
+  for (const entry of state.dialogue.options) {
+    if (!entry.id || !entry.label || !entry.type) {
+      addCheck(checks, "error", "Dialogue option", "Every option needs an id, label, and type.");
+      break;
+    }
+  }
+  for (const entry of state.dialogue.lines) {
+    if (!entry.type || !entry.text) {
+      addCheck(checks, "error", "Dialogue line", "Every line needs a type and text.");
+      break;
+    }
+  }
+  for (const entry of state.dialogue.messages) {
+    if (!entry.key || !entry.text) {
+      addCheck(checks, "error", "Dialogue message", "Every message needs a key and text.");
+      break;
+    }
+  }
+  for (const kind of ["openings", "closings", "pacify"]) {
+    for (const entry of state.dialogue[kind]) {
+      if (!entry.text) {
+        const label = kind === "pacify" ? "pacify line" : kind.slice(0, -1);
+        addCheck(checks, "error", `Dialogue ${kind}`, `Every ${label} entry needs text.`);
+        break;
+      }
+    }
+  }
+  const duplicateOption = firstDuplicate(state.dialogue.options.map((entry) => entry.id));
+  if (duplicateOption) {
+    addCheck(checks, "warning", "Dialogue option ids", `Duplicate option id: ${duplicateOption}.`);
+  }
+  const duplicateMessage = firstDuplicate(state.dialogue.messages.map((entry) => entry.key));
+  if (duplicateMessage) {
+    addCheck(checks, "warning", "Dialogue message keys", `Duplicate message key: ${duplicateMessage}.`);
+  }
+  const allDialogueEntries = ["options", "lines", "messages", "openings", "closings", "pacify"].flatMap((kind) => state.dialogue[kind]);
+  const badDialogueType = firstInvalidValue([...state.dialogue.options, ...state.dialogue.lines], ["type"], (value) => CONSTANTS.dialogueTypes.includes(value));
+  if (badDialogueType) {
+    addCheck(checks, "warning", "Dialogue type", `Unknown dialogue type: ${badDialogueType}.`);
+  }
+  const badDisposition = firstInvalidValue(allDialogueEntries, ["dispositions"], (value) => CONSTANTS.dispositions.includes(value));
+  if (badDisposition) {
+    addCheck(checks, "warning", "Dialogue disposition", `Unknown disposition: ${badDisposition}.`);
+  }
+  const badDialogueProfession = firstInvalidValue(allDialogueEntries, ["professions"], isValidProfession);
+  if (badDialogueProfession) {
+    addCheck(checks, "warning", "Dialogue profession", `Invalid profession id: ${badDialogueProfession}.`);
+  }
+  const badDialogueItem = firstInvalidValue([...state.dialogue.options, ...state.dialogue.lines], ["player_items"], (value) => isValidResourceLocation(value, { allowTag: true }));
+  if (badDialogueItem) {
+    addCheck(checks, "error", "Dialogue item filter", `Invalid item or tag selector: ${badDialogueItem}.`);
+  }
+  const badDialogueSlot = firstInvalidValue([...state.dialogue.options, ...state.dialogue.lines], ["player_item_slots"], (value) => CONSTANTS.itemSlots.includes(value));
+  if (badDialogueSlot) {
+    addCheck(checks, "warning", "Dialogue item slot", `Unknown item slot: ${badDialogueSlot}.`);
+  }
+  const badWeather = firstInvalidValue(state.dialogue.lines, ["weather"], (value) => CONSTANTS.weather.includes(value));
+  if (badWeather) {
+    addCheck(checks, "warning", "Dialogue weather", `Unknown weather value: ${badWeather}.`);
+  }
+  const badTime = firstInvalidValue(state.dialogue.lines, ["times"], (value) => CONSTANTS.times.includes(value));
+  if (badTime) {
+    addCheck(checks, "warning", "Dialogue time", `Unknown time value: ${badTime}.`);
+  }
+  const badGiftAdvice = firstInvalidValue(state.dialogue.lines, ["gift_advice"], (value) => CONSTANTS.giftAdvice.includes(value));
+  if (badGiftAdvice) {
+    addCheck(checks, "warning", "Gift advice filter", `Unknown gift advice filter: ${badGiftAdvice}.`);
+  }
+  const badPacifyOutcome = firstInvalidValue(state.dialogue.pacify, ["outcomes"], (value) => CONSTANTS.pacifyOutcomes.includes(value));
+  if (badPacifyOutcome) {
+    addCheck(checks, "warning", "Pacify outcome", `Unknown pacify outcome: ${badPacifyOutcome}.`);
+  }
+  const badDialogueNumber = firstBadNumber(allDialogueEntries, ["order", "weight", "min_recruitment_follow_distance"], (value) => value >= 0);
+  if (badDialogueNumber) {
+    addCheck(checks, "error", "Dialogue number", `${humanize(badDialogueNumber)} must be a non-negative number.`);
+  }
+  const blankDialogueList = firstBlankListValue(allDialogueEntries, ["professions", "dispositions", "player_items", "player_item_slots", "weather", "times", "event_tags", "player_event_tags", "story_structures", "story_biomes", "outcomes"]);
+  if (blankDialogueList) {
+    addCheck(checks, "warning", "Dialogue list", `${humanize(blankDialogueList)} contains a blank value.`);
+  }
+
+  for (const entry of state.notifications.notifications) {
+    if (!entry.trigger || !entry.text) {
+      addCheck(checks, "error", "Notification", "Every notification needs a trigger and text.");
+      break;
+    }
+  }
+  const duplicateNotification = firstDuplicate(state.notifications.notifications.map((entry) => entry.id));
+  if (duplicateNotification) {
+    addCheck(checks, "warning", "Notification ids", `Duplicate notification id: ${duplicateNotification}.`);
+  }
+  const badHudKind = firstInvalidValue(state.notifications.notifications, ["kind"], (value) => CONSTANTS.hudKinds.includes(value));
+  if (badHudKind) {
+    addCheck(checks, "warning", "Notification HUD kind", `Unknown HUD kind: ${badHudKind}.`);
+  }
+  const badWorldKind = firstInvalidValue(state.notifications.notifications, ["world_text_kind", "style"], (value) => CONSTANTS.worldTextKinds.includes(value));
+  if (badWorldKind) {
+    addCheck(checks, "warning", "Notification world text", `Unknown world text kind: ${badWorldKind}.`);
+  }
+  const badNotificationColor = firstInvalidValue(state.notifications.notifications, ["color", "text_color", "chat_color"], isValidColor);
+  if (badNotificationColor) {
+    addCheck(checks, "warning", "Notification color", `Use a Minecraft color name or hex color instead of ${badNotificationColor}.`);
+  }
+  const badNotificationProfession = firstInvalidValue(state.notifications.notifications, ["professions"], isValidProfession);
+  if (badNotificationProfession) {
+    addCheck(checks, "warning", "Notification profession", `Invalid profession id: ${badNotificationProfession}.`);
+  }
+  const badReputationLevel = firstInvalidValue(state.notifications.notifications, ["reputation_levels"], (value) => CONSTANTS.reputationLevels.includes(value));
+  if (badReputationLevel) {
+    addCheck(checks, "warning", "Notification reputation", `Unknown reputation level: ${badReputationLevel}.`);
+  }
+  const badNotificationItem = firstInvalidValue(state.notifications.notifications, ["player_items"], (value) => isValidResourceLocation(value, { allowTag: true }));
+  if (badNotificationItem) {
+    addCheck(checks, "error", "Notification item filter", `Invalid item or tag selector: ${badNotificationItem}.`);
+  }
+  const badNotificationSlot = firstInvalidValue(state.notifications.notifications, ["player_item_slots"], (value) => CONSTANTS.itemSlots.includes(value));
+  if (badNotificationSlot) {
+    addCheck(checks, "warning", "Notification item slot", `Unknown item slot: ${badNotificationSlot}.`);
+  }
+  const badNotificationNumber = firstBadNumber(state.notifications.notifications, ["min_reputation", "max_reputation", "weight"], (value, entry, key) => key === "weight" ? value >= 0 : Number.isFinite(value));
+  if (badNotificationNumber) {
+    addCheck(checks, "error", "Notification number", `${humanize(badNotificationNumber)} has an invalid number.`);
+  }
+  for (const entry of state.notifications.notifications) {
+    const min = numberValue(entry.min_reputation);
+    const max = numberValue(entry.max_reputation);
+    if (min !== undefined && max !== undefined && min > max) {
+      addCheck(checks, "error", "Notification range", "Minimum reputation cannot be higher than maximum reputation.");
+      break;
+    }
+    const chance = numberValue(entry.chance);
+    if (chance !== undefined && (chance < 0 || chance > 1)) {
+      addCheck(checks, "error", "Notification chance", "Chance must be between 0 and 1.");
+      break;
+    }
+  }
+
+  for (const entry of state.gifts.preferences) {
+    if (!entry.reaction || !hasAnySelector(entry, ["items", "tags", "item", "tag"])) {
+      addCheck(checks, "error", "Gift preference", "Every preference needs a reaction and at least one item or tag.");
+      break;
+    }
+  }
+  for (const entry of state.gifts.rewards) {
+    if (!entry.item) {
+      addCheck(checks, "error", "Gift reward", "Every reward needs an item id.");
+      break;
+    }
+  }
+  const badReaction = firstInvalidValue(state.gifts.preferences, ["reaction"], (value) => CONSTANTS.reactions.includes(value));
+  if (badReaction) {
+    addCheck(checks, "error", "Gift reaction", `Unknown gift reaction: ${badReaction}.`);
+  }
+  const badGiftSelector = firstInvalidValue(state.gifts.preferences, ["items", "item", "tags", "tag"], (value) => isValidResourceLocation(value, { allowTag: true }));
+  if (badGiftSelector) {
+    addCheck(checks, "error", "Gift selector", `Invalid item or tag selector: ${badGiftSelector}.`);
+  }
+  const badGiftReward = firstInvalidValue(state.gifts.rewards, ["item"], (value) => isValidResourceLocation(value));
+  if (badGiftReward) {
+    addCheck(checks, "error", "Gift reward item", `Invalid reward item id: ${badGiftReward}.`);
+  }
+  const badGiftProfession = firstInvalidValue([...state.gifts.preferences, ...state.gifts.rewards], ["professions"], isValidProfession);
+  if (badGiftProfession) {
+    addCheck(checks, "warning", "Gift profession", `Invalid profession id: ${badGiftProfession}.`);
+  }
+  const badGiftReputation = firstInvalidValue(state.gifts.rewards, ["reputation_levels"], (value) => CONSTANTS.reputationLevels.includes(value));
+  if (badGiftReputation) {
+    addCheck(checks, "warning", "Gift reputation", `Unknown reputation level: ${badGiftReputation}.`);
+  }
+  const badGiftNumber = firstBadNumber([...state.gifts.preferences, ...state.gifts.rewards], ["priority", "reputation_per_item", "min_count", "max_count", "weight"], (value, entry, key) => {
+    if (key === "min_count" || key === "max_count") return value >= 1 && value <= 64;
+    if (key === "weight") return value > 0;
+    return Number.isFinite(value);
+  });
+  if (badGiftNumber) {
+    addCheck(checks, "error", "Gift number", `${humanize(badGiftNumber)} has an invalid number.`);
+  }
+  for (const entry of state.gifts.rewards) {
+    const min = numberValue(entry.min_count);
+    const max = numberValue(entry.max_count);
+    if (min !== undefined && max !== undefined && min > max) {
+      addCheck(checks, "error", "Gift count range", "Reward minimum count cannot be higher than maximum count.");
+      break;
+    }
+  }
+  const messageKeys = new Set(state.dialogue.messages.map((entry) => entry.key).filter(Boolean));
+  for (const entry of state.gifts.preferences) {
+    if (entry.response_key && !messageKeys.has(entry.response_key)) {
+      addCheck(checks, "warning", "Gift response key", `No dialogue message currently defines ${entry.response_key}.`);
+      break;
+    }
+  }
+
+  for (const entry of state.pacification.payments) {
+    if (!hasAnySelector(entry, ["items", "tags", "item", "tag"])) {
+      addCheck(checks, "error", "Pacification payment", "Every payment needs at least one item or tag.");
+      break;
+    }
+  }
+  const badPacificationSelector = firstInvalidValue(state.pacification.payments, ["items", "item", "tags", "tag"], (value) => isValidResourceLocation(value, { allowTag: true }));
+  if (badPacificationSelector) {
+    addCheck(checks, "error", "Pacification selector", `Invalid item or tag selector: ${badPacificationSelector}.`);
+  }
+  const badPacificationProfession = firstInvalidValue(state.pacification.payments, ["professions"], isValidProfession);
+  if (badPacificationProfession) {
+    addCheck(checks, "warning", "Pacification profession", `Invalid profession id: ${badPacificationProfession}.`);
+  }
+  const badPacificationNumber = firstBadNumber(state.pacification.payments, ["count", "min_count", "max_count"], (value) => value >= 1 && value <= 64);
+  if (badPacificationNumber) {
+    addCheck(checks, "error", "Pacification count", `${humanize(badPacificationNumber)} must be between 1 and 64.`);
+  }
+  for (const entry of state.pacification.payments) {
+    const min = numberValue(entry.min_count);
+    const max = numberValue(entry.max_count);
+    if (min !== undefined && max !== undefined && min > max) {
+      addCheck(checks, "error", "Pacification range", "Minimum count cannot be higher than maximum count.");
+      break;
+    }
+  }
+
+  const storyRadius = numberValue(state.stories.radius);
+  if (storyRadius !== undefined && storyRadius < 1) {
+    addCheck(checks, "error", "Story radius", "Story radius must be at least 1.");
+  }
+  for (const entry of state.stories.structures) {
+    if (!hasAnySelector(entry, ["structure", "structures"])) {
+      addCheck(checks, "error", "Story structure", "Every structure story needs a structure id.");
+      break;
+    }
+  }
+  for (const entry of state.stories.biomes) {
+    if (!hasAnySelector(entry, ["biome", "biomes"])) {
+      addCheck(checks, "error", "Story biome", "Every biome story needs a biome id.");
+      break;
+    }
+  }
+  const badStructure = firstInvalidValue(state.stories.structures, ["structure", "structures"], (value) => isValidResourceLocation(value, { requireNamespace: true }));
+  if (badStructure) {
+    addCheck(checks, "warning", "Story structure id", `Use a full structure id like namespace:path instead of ${badStructure}.`);
+  }
+  const badBiome = firstInvalidValue(state.stories.biomes, ["biome", "biomes"], (value) => isValidResourceLocation(value, { requireNamespace: true }));
+  if (badBiome) {
+    addCheck(checks, "warning", "Story biome id", `Use a full biome id like namespace:path instead of ${badBiome}.`);
+  }
+  const badStoryNumber = firstBadNumber(state.stories.structures, ["radius"], (value) => value >= 1);
+  if (badStoryNumber) {
+    addCheck(checks, "error", "Story entry radius", "Structure story radius must be at least 1.");
+  }
+  const blankNames = [...state.names.male_names, ...state.names.female_names].some((name) => String(name).trim() === "");
+  if (blankNames) {
+    addCheck(checks, "warning", "Preset names", "Preset name lists contain a blank value.");
+  }
+  const duplicateName = firstDuplicate([...state.names.male_names, ...state.names.female_names]);
+  if (duplicateName) {
+    addCheck(checks, "warning", "Duplicate preset name", `Preset name appears more than once: ${duplicateName}.`);
+  }
+
+  if (checks.length === 0) {
+    addCheck(checks, "ok", "Ready", "The generated datapack paths and required fields look good.");
+  }
+  return checks;
+}
+
+function render() {
+  hideTooltip();
+  renderWorkspaceChrome();
+  renderTabs();
+  renderPanel();
+  resizeTextareas(els.panel);
+  syncValueTags(els.panel);
+  renderFiles();
+  renderChecks();
+  renderPreview();
+  renderIcons();
+}
+
+function renderWorkspaceChrome() {
+  if (!els.leftPanelToggleButton || !els.rightPanelToggleButton) return;
+  els.workspace.classList.toggle("is-left-hidden", !showLeftPanel);
+  els.workspace.classList.toggle("is-right-hidden", !showRightPanel);
+  els.leftRail.classList.toggle("is-collapsed", !showLeftPanel);
+  els.rightRail.classList.toggle("is-collapsed", !showRightPanel);
+  updateLeftPanelMode();
+  els.leftRail.setAttribute("aria-label", showLeftPanel ? "Generator sections" : "Show sections");
+  els.rightRail.setAttribute("aria-label", showRightPanel ? "Output" : "Show output");
+  if (!showLeftPanel) {
+    els.leftRail.setAttribute("role", "button");
+    els.leftRail.setAttribute("tabindex", "0");
+  } else {
+    els.leftRail.removeAttribute("role");
+    els.leftRail.removeAttribute("tabindex");
+  }
+  if (!showRightPanel) {
+    els.rightRail.setAttribute("role", "button");
+    els.rightRail.setAttribute("tabindex", "0");
+  } else {
+    els.rightRail.removeAttribute("role");
+    els.rightRail.removeAttribute("tabindex");
+  }
+  els.leftPanelToggleButton.classList.toggle("is-on", showLeftPanel);
+  els.leftPanelToggleButton.setAttribute("aria-pressed", String(showLeftPanel));
+  els.leftPanelToggleButton.setAttribute("aria-label", showLeftPanel ? "Hide sections" : "Show sections");
+  els.leftPanelToggleButton.innerHTML = icon(showLeftPanel ? "panel-left-close" : "panel-left-open", "button-icon");
+  els.rightPanelToggleButton.classList.toggle("is-on", showRightPanel);
+  els.rightPanelToggleButton.setAttribute("aria-pressed", String(showRightPanel));
+  els.rightPanelToggleButton.setAttribute("aria-label", showRightPanel ? "Hide output" : "Show output");
+  els.rightPanelToggleButton.innerHTML = icon(showRightPanel ? "panel-right-close" : "panel-right-open", "button-icon");
+}
+
+function totalEntries(...collections) {
+  return collections.reduce((sum, collection) => sum + (Array.isArray(collection) ? collection.length : 0), 0);
+}
+
+function sectionCounts() {
+  return {
+    overview: state.meta.packName && state.meta.namespace && state.meta.slug ? "Ready" : "Setup",
+    dialogue: totalEntries(
+      state.dialogue.options,
+      state.dialogue.lines,
+      state.dialogue.messages,
+      state.dialogue.openings,
+      state.dialogue.closings,
+      state.dialogue.pacify
+    ),
+    notifications: totalEntries(state.notifications.notifications),
+    gifts: totalEntries(state.gifts.preferences, state.gifts.rewards),
+    pacification: totalEntries(state.pacification.payments),
+    stories: totalEntries(state.stories.structures, state.stories.biomes),
+    names: totalEntries(state.names.male_names, state.names.female_names)
+  };
+}
+
+function renderTabs() {
+  const counts = sectionCounts();
+  for (const tab of els.tabs.querySelectorAll(".tab")) {
+    const active = tab.dataset.section === activeSection;
+    const value = counts[tab.dataset.section] ?? "";
+    const counter = tab.querySelector(".tab-count");
+    tab.classList.toggle("is-active", active);
+    if (active) {
+      tab.setAttribute("aria-current", "step");
+    } else {
+      tab.removeAttribute("aria-current");
+    }
+    if (counter) {
+      counter.textContent = String(value);
+      counter.classList.toggle("is-empty", value === 0 || value === "Setup");
+    }
+  }
+}
+
+function renderFiles() {
+  const files = generatedFiles();
+  const paths = Object.keys(files).sort();
+  if (!paths.includes(selectedPath)) {
+    selectedPath = paths[0] || "pack.mcmeta";
+  }
+  els.fileCount.textContent = String(paths.length);
+  const signature = JSON.stringify({ paths, selectedPath });
+  if (signature === fileTreeSignature) {
+    return;
+  }
+  const scrollTop = els.fileTree.scrollTop;
+  els.fileTree.innerHTML = paths
+    .map((path) => {
+      const label = path.split("/").pop();
+      const folder = path.includes("/") ? path.slice(0, path.lastIndexOf("/")) : "root";
+      return `
+        <button class="file-button ${path === selectedPath ? "is-active" : ""}" type="button" data-path="${escapeHtml(path)}" title="${escapeHtml(path)}">
+          ${icon(label.endsWith(".mcmeta") ? "file-cog" : "file-json", "inline-icon")}
+          <span class="file-button-text">
+            <span class="file-name">${escapeHtml(label)}</span>
+            <small>${escapeHtml(folder)}</small>
+          </span>
+        </button>
+      `;
+    })
+    .join("");
+  fileTreeSignature = signature;
+  const maxScrollTop = Math.max(0, els.fileTree.scrollHeight - els.fileTree.clientHeight);
+  els.fileTree.scrollTop = Math.min(scrollTop, maxScrollTop);
+}
+
+function renderChecks() {
+  const checks = validate();
+  els.checkCount.textContent = String(checks.filter((check) => check.type !== "ok").length);
+  els.checks.innerHTML = checks
+    .map((check) => `
+      <div class="check ${escapeHtml(check.type)}">
+        ${icon(check.type === "error" ? "circle-alert" : check.type === "warning" ? "triangle-alert" : "circle-check", "inline-icon")}
+        <strong>${escapeHtml(check.title)}</strong>
+        <span>${escapeHtml(check.text)}</span>
+      </div>
+    `)
+    .join("");
+}
+
+function renderPreview() {
+  const files = generatedFiles();
+  const value = files[selectedPath];
+  els.selectedPath.textContent = selectedPath;
+  els.codePreview.classList.toggle("is-wrapped", wrapPreviewLines);
+  els.codePreview.classList.toggle("is-invalid", previewEditError?.path === selectedPath);
+  els.wrapPreviewButton.classList.toggle("is-on", wrapPreviewLines);
+  els.wrapPreviewButton.setAttribute("aria-pressed", String(wrapPreviewLines));
+  els.wrapPreviewButton.setAttribute("title", wrapPreviewLines ? "Keep preview lines unwrapped" : "Wrap preview lines");
+  if (value instanceof Uint8Array) {
+    els.preview.value = `Binary file preserved (${value.byteLength} bytes).`;
+    els.preview.readOnly = true;
+  } else {
+    els.preview.readOnly = false;
+    els.preview.value = value || "";
+  }
+}
+
+function renderPanel() {
+  if (activeSection === "overview") renderOverview();
+  if (activeSection === "dialogue") renderDialogue();
+  if (activeSection === "notifications") renderNotifications();
+  if (activeSection === "gifts") renderGifts();
+  if (activeSection === "pacification") renderPacification();
+  if (activeSection === "stories") renderStories();
+  if (activeSection === "names") renderNames();
+}
+
+function resizeTextareas(root = document) {
+  for (const textarea of root.querySelectorAll(".entry-form textarea")) {
+    textarea.style.height = "42px";
+    textarea.style.height = `${Math.max(42, textarea.scrollHeight)}px`;
+  }
+}
+
+function syncValueTags(root = document) {
+  for (const button of root.querySelectorAll(".value-tag")) {
+    const input = document.querySelector(`#${CSS.escape(button.dataset.target)}`);
+    const isAdded = input ? parseList(input.value).includes(button.dataset.value) : false;
+    button.classList.toggle("is-added", isAdded);
+    button.disabled = isAdded;
+    button.setAttribute("aria-disabled", String(isAdded));
+  }
+}
+
+function field({ id, label, value = "", type = "text", help = "", className = "", attrs = "" }) {
+  const tooltip = tooltipForField(id, help);
+  return `
+    <div class="field ${className}">
+      <label for="${id}"${tooltipAttrs(tooltip)}>${escapeHtml(label)}</label>
+      <input id="${id}" name="${id}" type="${type}" value="${escapeHtml(value)}" ${attrs}>
+      ${help ? `<small>${escapeHtml(help)}</small>` : ""}
+    </div>
+  `;
+}
+
+function textareaField({ id, label, value = "", help = "", className = "", rows = 3 }) {
+  const tooltip = tooltipForField(id, help);
+  return `
+    <div class="field ${className}">
+      <label for="${id}"${tooltipAttrs(tooltip)}>${escapeHtml(label)}</label>
+      <textarea id="${id}" name="${id}" rows="${rows}">${escapeHtml(value)}</textarea>
+      ${help ? `<small>${escapeHtml(help)}</small>` : ""}
+    </div>
+  `;
+}
+
+function selectField({ id, label, value = "", options, help = "", className = "", allowBlank = true, multiple = false }) {
+  const tooltip = tooltipForField(id, help);
+  const selected = Array.isArray(value) ? value : parseList(value);
+  const renderedOptions = [
+    allowBlank && !multiple ? `<option value=""></option>` : "",
+    ...options.map((option) => {
+      const isSelected = multiple ? selected.includes(option) : value === option;
+      return `<option value="${escapeHtml(option)}" ${isSelected ? "selected" : ""}>${escapeHtml(humanize(option))}</option>`;
+    })
+  ].join("");
+  return `
+    <div class="field ${className}">
+      <label for="${id}"${tooltipAttrs(tooltip)}>${escapeHtml(label)}</label>
+      <select id="${id}" name="${id}" ${multiple ? "multiple" : ""}>${renderedOptions}</select>
+      ${help ? `<small>${escapeHtml(help)}</small>` : ""}
+    </div>
+  `;
+}
+
+function listField({ id, label, value = [], help = "", className = "" }) {
+  const tags = TAG_SUGGESTIONS[id] || [];
+  return textareaField({
+    id,
+    label,
+    value: listToText(value),
+    help,
+    className,
+    rows: 2
+  }).replace("</div>", `${renderValueTags(id, tags)}</div>`);
+}
+
+function renderValueTags(fieldId, tags) {
+  if (!tags.length) return "";
+  return `
+    <div class="value-tags" aria-label="${escapeHtml(fieldId)} suggestions">
+      ${tags.map((tag) => {
+        const tooltip = tooltipForTag(fieldId, tag);
+        return `
+          <button class="value-tag has-tooltip" type="button" data-action="insert-tag" data-target="${escapeHtml(fieldId)}" data-value="${escapeHtml(tag)}" data-tooltip="${escapeHtml(tooltip)}">
+            ${icon("plus", "inline-icon")}
+            ${escapeHtml(tag)}
+          </button>
+        `;
+      }).join("")}
+    </div>
+  `;
+}
+
+function toggle({ id, label, checked = false, tooltip = "" }) {
+  const tip = tooltip || tooltipForField(id, "") || tooltipForFlag(id.replace(/^[^-]+-/, ""));
+  return `
+    <div class="toggle has-tooltip" data-tooltip="${escapeHtml(tip)}">
+      <input id="${id}" name="${id}" type="checkbox" ${checked ? "checked" : ""}>
+      <span class="toggle-name">${escapeHtml(label)}</span>
+      <button class="toggle-choice toggle-false" type="button" data-toggle-target="${id}" data-toggle-value="false" aria-pressed="${checked ? "false" : "true"}">False</button>
+      <button class="toggle-choice toggle-true" type="button" data-toggle-target="${id}" data-toggle-value="true" aria-pressed="${checked ? "true" : "false"}">True</button>
+    </div>
+  `;
+}
+
+function toggleGrid(flags, entry, prefix) {
+  return `
+    <div class="field full">
+      <label>${prefix === "option" ? "Visibility and Requirements" : "Extra Filters"}</label>
+      <div class="toggle-grid">
+        ${toggle({ id: `${prefix}-show_for_adults`, label: "Show for adults", checked: entry.show_for_adults !== false, tooltip: tooltipForFlag("show_for_adults") })}
+        ${toggle({ id: `${prefix}-show_for_babies`, label: "Show for babies", checked: entry.show_for_babies !== false, tooltip: tooltipForFlag("show_for_babies") })}
+        ${flags.map((flag) => toggle({ id: `${prefix}-${flag}`, label: humanize(flag), checked: entry[flag] === true, tooltip: tooltipForFlag(flag) })).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function renderOverview() {
+  els.panel.innerHTML = `
+    <div class="builder-content">
+      <div class="builder-header">
+        <div class="panel-title-main">
+          ${icon("settings-2", "section-icon")}
+          <div>
+            <h2>Pack Setup</h2>
+            <p class="path-label">pack.mcmeta</p>
+          </div>
+        </div>
+        <span class="pill">Pack format 34</span>
+      </div>
+      <div class="form-grid overview-grid">
+        ${field({ id: "meta-packName", label: "Pack name", value: state.meta.packName, className: "span-7" })}
+        ${field({ id: "meta-packFormat", label: "Pack format", value: state.meta.packFormat, type: "number", help: "Use 34 for this Minecraft target.", className: "span-5" })}
+        ${field({ id: "meta-namespace", label: "Story namespace", value: state.meta.namespace, help: "Story discovery can use your namespace.", className: "span-6" })}
+        ${field({ id: "meta-slug", label: "File slug", value: state.meta.slug, help: "Used in generated file names.", className: "span-6" })}
+        ${field({ id: "meta-locale", label: "Locale", value: state.meta.locale, help: "Dialogue and notifications load en_us first.", className: "span-5" })}
+        ${textareaField({ id: "meta-description", label: "Description", value: state.meta.description, className: "span-12", rows: 2 })}
+      </div>
+    </div>
+  `;
+}
+
+function renderEntryTabs(kinds, activeKey, scope) {
+  return `
+    <div class="entry-tabs" data-scope="${scope}">
+      ${kinds.map((kind) => `
+        <button class="entry-tab has-tooltip ${kind.key === activeKey ? "is-active" : ""}" type="button" data-kind="${kind.key}" data-tooltip="${escapeHtml(KIND_TOOLTIPS[`${scope}.${kind.key}`] || "")}">
+          ${icon(kind.icon || "circle", "inline-icon")}
+          ${escapeHtml(kind.label)}
+        </button>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderEntryList(collection, kind, section) {
+  if (collection.length === 0) {
+    return `<div class="empty-state">No ${escapeHtml(humanize(kind).toLowerCase())} yet.</div>`;
+  }
+  return collection
+    .map((entry, index) => {
+      const title = entry.id || entry.key || entry.trigger || entry.label || entry.text || entry.item || entry.name || `${humanize(kind)} ${index + 1}`;
+      const detail = entry.type || entry.reaction || entry.world_text_kind || entry.structure || entry.biome || entry.items?.join(", ") || "";
+      const active = editing && editing.section === section && editing.kind === kind && editing.index === index;
+      return `
+        <article class="entry-card ${active ? "is-active" : ""}" data-section="${section}" data-kind="${kind}" data-index="${index}" tabindex="0" role="button" aria-label="Edit ${escapeHtml(title)}">
+          <div class="entry-object-header">
+            <span class="entry-object-title">
+              ${icon("square-pen", "inline-icon")}
+              ${escapeHtml(title)}
+            </span>
+            <button class="entry-delete danger" type="button" data-action="delete-entry" data-section="${section}" data-kind="${kind}" data-index="${index}" aria-label="Delete ${escapeHtml(title)}">
+              ${icon("trash-2", "button-icon")}
+            </button>
+          </div>
+          ${detail ? `<small>${escapeHtml(detail)}</small>` : ""}
+        </article>
+      `;
+    })
+    .join("");
+}
+
+function renderDialogue() {
+  const collection = state.dialogue[activeDialogueKind];
+  const entry = editing?.section === "dialogue" && editing.kind === activeDialogueKind
+    ? collection[editing.index]
+    : {};
+  els.panel.innerHTML = `
+    <div class="builder-content">
+      <div class="builder-header">
+        <div class="panel-title-main">
+          ${icon("message-square-text", "section-icon")}
+          <div>
+            <h2>Dialogue</h2>
+            <p class="path-label">data/villagerretaliation/dialogue</p>
+          </div>
+        </div>
+        <button class="button button-secondary" type="button" data-action="add-dialogue-example">${icon("plus", "button-icon")}Add Example</button>
+      </div>
+      <div class="form-grid">
+        ${field({ id: "dialogue-fileName", label: "Dialogue file", value: state.dialogue.fileName, help: "Avoid global unless replacing the built-in file." })}
+        ${field({ id: "dialogue-locale", label: "Locale", value: state.meta.locale })}
+      </div>
+      ${renderEntryTabs(DIALOGUE_KINDS, activeDialogueKind, "dialogue")}
+      <div class="entry-layout">
+        <div class="entry-list">${renderEntryList(collection, activeDialogueKind, "dialogue")}</div>
+        <form class="entry-form" data-form="dialogue" data-kind="${activeDialogueKind}">
+          ${renderDialogueForm(activeDialogueKind, entry)}
+        </form>
+      </div>
+    </div>
+  `;
+}
+
+function renderDialogueForm(kind, entry) {
+  const action = editing?.section === "dialogue" && editing.kind === kind ? "Update" : "Add";
+  const commonFilters = `
+    ${listField({ id: "dialogue-professions", label: "Professions", value: entry.professions, help: "Blank means any profession." })}
+    ${listField({ id: "dialogue-dispositions", label: "Dispositions", value: entry.dispositions, help: "Blank means any mood." })}
+  `;
+
+  if (kind === "options") {
+    return `
+      <div class="form-grid">
+        ${field({ id: "dialogue-id", label: "Option id", value: entry.id })}
+        ${field({ id: "dialogue-label", label: "Button label", value: entry.label })}
+        ${selectField({ id: "dialogue-type", label: "Dialogue type", value: entry.type, options: CONSTANTS.dialogueTypes, allowBlank: false })}
+        ${field({ id: "dialogue-order", label: "Order", value: entry.order ?? "", type: "number" })}
+        ${commonFilters}
+        ${listField({ id: "dialogue-player_items", label: "Required player items or tags", value: entry.player_items, help: "Use #minecraft:swords for item tags." })}
+        ${listField({ id: "dialogue-player_item_slots", label: "Item slots", value: entry.player_item_slots, help: CONSTANTS.itemSlots.join(", ") })}
+        ${toggleGrid(CONSTANTS.optionFlags, entry, "option")}
+      </div>
+      ${formActions(action, "save-dialogue-entry", "clear-dialogue-form")}
+    `;
+  }
+
+  if (kind === "lines") {
+    return `
+      <div class="form-grid">
+        ${field({ id: "dialogue-id", label: "Line id", value: entry.id })}
+        ${selectField({ id: "dialogue-type", label: "Dialogue type", value: entry.type, options: CONSTANTS.dialogueTypes, allowBlank: false })}
+        ${textareaField({ id: "dialogue-text", label: "Line text", value: entry.text, className: "full", rows: 3 })}
+        ${listField({ id: "dialogue-option", label: "Option id(s)", value: entry.option ?? entry.option_ids, help: "Link to a custom or built-in talk option." })}
+        ${commonFilters}
+        ${listField({ id: "dialogue-weather", label: "Weather", value: entry.weather, help: CONSTANTS.weather.join(", ") })}
+        ${listField({ id: "dialogue-times", label: "Times", value: entry.times, help: CONSTANTS.times.join(", ") })}
+        ${listField({ id: "dialogue-event_tags", label: "Village event tags", value: entry.event_tags })}
+        ${listField({ id: "dialogue-player_event_tags", label: "Player event tags", value: entry.player_event_tags })}
+        ${listField({ id: "dialogue-player_items", label: "Required player items or tags", value: entry.player_items })}
+        ${listField({ id: "dialogue-player_item_slots", label: "Item slots", value: entry.player_item_slots })}
+        ${listField({ id: "dialogue-story_structure", label: "Story structures", value: entry.story_structure ?? entry.story_structures })}
+        ${listField({ id: "dialogue-story_biome", label: "Story biomes", value: entry.story_biome ?? entry.story_biomes })}
+        ${listField({ id: "dialogue-recruitment_followup_scenarios", label: "Recruitment follow-up scenarios", value: entry.recruitment_followup_scenarios })}
+        ${listField({ id: "dialogue-recruitment_memory_scenarios", label: "Recruitment memory scenarios", value: entry.recruitment_memory_scenarios })}
+        ${field({ id: "dialogue-min_recruitment_follow_distance", label: "Minimum follow distance", value: entry.min_recruitment_follow_distance ?? "", type: "number" })}
+        ${selectField({ id: "dialogue-gift_advice", label: "Gift advice filter", value: entry.gift_advice, options: CONSTANTS.giftAdvice })}
+        ${field({ id: "dialogue-weight", label: "Weight", value: entry.weight ?? "", type: "number" })}
+        ${toggleGrid(CONSTANTS.lineFlags, entry, "line")}
+      </div>
+      ${formActions(action, "save-dialogue-entry", "clear-dialogue-form")}
+    `;
+  }
+
+  if (kind === "messages") {
+    return `
+      <div class="form-grid">
+        ${field({ id: "dialogue-id", label: "Message id", value: entry.id })}
+        ${field({ id: "dialogue-key", label: "Message key", value: entry.key, help: "Gift rules can point response_key at custom message keys." })}
+        ${textareaField({ id: "dialogue-text", label: "Message text", value: entry.text, className: "full", rows: 3 })}
+        ${commonFilters}
+        ${field({ id: "dialogue-weight", label: "Weight", value: entry.weight ?? "", type: "number" })}
+        ${toggleGrid([], entry, "message")}
+      </div>
+      ${formActions(action, "save-dialogue-entry", "clear-dialogue-form")}
+    `;
+  }
+
+  if (kind === "pacify") {
+    return `
+      <div class="form-grid">
+        ${field({ id: "dialogue-id", label: "Pacify line id", value: entry.id })}
+        ${textareaField({ id: "dialogue-text", label: "Pacify text", value: entry.text, className: "full", rows: 3 })}
+        ${listField({ id: "dialogue-outcomes", label: "Outcomes", value: entry.outcomes, help: CONSTANTS.pacifyOutcomes.join(", ") })}
+        ${commonFilters}
+        ${field({ id: "dialogue-weight", label: "Weight", value: entry.weight ?? "", type: "number" })}
+        ${toggleGrid([], entry, "pacify")}
+      </div>
+      ${formActions(action, "save-dialogue-entry", "clear-dialogue-form")}
+    `;
+  }
+
+  return `
+    <div class="form-grid">
+      ${field({ id: "dialogue-id", label: `${capitalize(kind.slice(0, -1))} id`, value: entry.id })}
+      ${textareaField({ id: "dialogue-text", label: "Text", value: entry.text, className: "full", rows: 3 })}
+      ${commonFilters}
+      ${field({ id: "dialogue-weight", label: "Weight", value: entry.weight ?? "", type: "number" })}
+      ${toggleGrid(["first_conversation_only", "first_village_interaction_only"], entry, "opening")}
+    </div>
+    ${formActions(action, "save-dialogue-entry", "clear-dialogue-form")}
+  `;
+}
+
+function formActions(actionLabel, saveAction, clearAction) {
+  return `
+    <div class="form-actions">
+      <button class="button button-primary" type="submit" data-action="${saveAction}">${icon(actionLabel === "Update" ? "save" : "plus", "button-icon")}${actionLabel}</button>
+      <button class="button button-secondary" type="button" data-action="${clearAction}">${icon("rotate-ccw", "button-icon")}Clear</button>
+    </div>
+  `;
+}
+
+function renderNotifications() {
+  const collection = state.notifications.notifications;
+  const entry = editing?.section === "notifications" ? collection[editing.index] : {};
+  els.panel.innerHTML = `
+    <div class="builder-content">
+      <div class="builder-header">
+        <div class="panel-title-main">
+          ${icon("bell-ring", "section-icon")}
+          <div>
+            <h2>Notifications</h2>
+            <p class="path-label">data/villagerretaliation/notifications</p>
+          </div>
+        </div>
+        <button class="button button-secondary" type="button" data-action="add-notification-example">${icon("plus", "button-icon")}Add Example</button>
+      </div>
+      <div class="form-grid">
+        ${field({ id: "notifications-fileName", label: "Notification file", value: state.notifications.fileName, help: "Avoid global unless replacing the built-in file." })}
+        ${field({ id: "notifications-locale", label: "Locale", value: state.meta.locale })}
+      </div>
+      <div class="entry-layout">
+        <div class="entry-list">${renderEntryList(collection, "notifications", "notifications")}</div>
+        <form class="entry-form" data-form="notifications">
+          <div class="form-grid">
+            ${field({ id: "notification-id", label: "Notification id", value: entry.id })}
+            ${field({ id: "notification-trigger", label: "Trigger", value: entry.trigger, attrs: 'list="notification-triggers"', help: "Use a built-in trigger or a custom trigger emitted by code." })}
+            ${textareaField({ id: "notification-text", label: "Text", value: entry.text, className: "full", rows: 3 })}
+            ${selectField({ id: "notification-kind", label: "HUD kind", value: entry.kind, options: CONSTANTS.hudKinds })}
+            ${selectField({ id: "notification-world_text_kind", label: "World text kind", value: entry.world_text_kind ?? entry.style, options: CONSTANTS.worldTextKinds })}
+            ${field({ id: "notification-color", label: "Color", value: entry.color, attrs: 'list="color-values"', help: "Named color, #RRGGBB, or #AARRGGBB." })}
+            ${field({ id: "notification-text_color", label: "Text color", value: entry.text_color, attrs: 'list="color-values"' })}
+            ${field({ id: "notification-chat_color", label: "Chat color", value: entry.chat_color, attrs: 'list="color-values"' })}
+            ${listField({ id: "notification-professions", label: "Professions", value: entry.professions })}
+            ${listField({ id: "notification-reputation_levels", label: "Reputation levels", value: entry.reputation_levels })}
+            ${field({ id: "notification-min_reputation", label: "Minimum reputation", value: entry.min_reputation ?? "", type: "number" })}
+            ${field({ id: "notification-max_reputation", label: "Maximum reputation", value: entry.max_reputation ?? "", type: "number" })}
+            ${listField({ id: "notification-player_items", label: "Required player items or tags", value: entry.player_items })}
+            ${listField({ id: "notification-player_item_slots", label: "Item slots", value: entry.player_item_slots })}
+            ${field({ id: "notification-weight", label: "Weight", value: entry.weight ?? "", type: "number" })}
+            ${field({ id: "notification-chance", label: "Chance", value: entry.chance ?? "", type: "number", attrs: 'min="0" max="1" step="0.01"' })}
+            ${toggleGrid([], entry, "notification")}
+          </div>
+          ${formActions(editing?.section === "notifications" ? "Update" : "Add", "save-notification", "clear-notification-form")}
+        </form>
+      </div>
+      ${datalist("notification-triggers", CONSTANTS.notificationTriggers)}
+      ${datalist("color-values", CONSTANTS.colors)}
+    </div>
+  `;
+}
+
+function datalist(id, values) {
+  return `<datalist id="${id}">${values.map((value) => `<option value="${escapeHtml(value)}"></option>`).join("")}</datalist>`;
+}
+
+function renderGifts() {
+  const collection = state.gifts[activeGiftKind];
+  const entry = editing?.section === "gifts" && editing.kind === activeGiftKind ? collection[editing.index] : {};
+  els.panel.innerHTML = `
+    <div class="builder-content">
+      <div class="builder-header">
+        <div class="panel-title-main">
+          ${icon("gift", "section-icon")}
+          <div>
+            <h2>Gifts</h2>
+            <p class="path-label">data/villagerretaliation/gifts</p>
+          </div>
+        </div>
+        <button class="button button-secondary" type="button" data-action="add-gift-example">${icon("plus", "button-icon")}Add Example</button>
+      </div>
+      <div class="form-grid one">
+        ${field({ id: "gifts-fileName", label: "Gift file", value: state.gifts.fileName, help: "Use default only when replacing all built-in gifts." })}
+      </div>
+      ${renderEntryTabs(GIFT_KINDS, activeGiftKind, "gifts")}
+      <div class="entry-layout">
+        <div class="entry-list">${renderEntryList(collection, activeGiftKind, "gifts")}</div>
+        <form class="entry-form" data-form="gifts" data-kind="${activeGiftKind}">
+          ${renderGiftForm(activeGiftKind, entry)}
+        </form>
+      </div>
+    </div>
+  `;
+}
+
+function renderGiftForm(kind, entry) {
+  if (kind === "preferences") {
+    return `
+      <div class="form-grid">
+        ${selectField({ id: "gift-reaction", label: "Reaction", value: entry.reaction, options: CONSTANTS.reactions, allowBlank: false })}
+        ${field({ id: "gift-priority", label: "Priority", value: entry.priority ?? "", type: "number" })}
+        ${listField({ id: "gift-items", label: "Items", value: entry.items ?? entry.item, help: "Unnamespaced values count as minecraft ids." })}
+        ${listField({ id: "gift-tags", label: "Tags", value: entry.tags ?? entry.tag })}
+        ${listField({ id: "gift-professions", label: "Professions", value: entry.professions })}
+        ${field({ id: "gift-reputation_per_item", label: "Reputation per item", value: entry.reputation_per_item ?? "", type: "number" })}
+        ${field({ id: "gift-response_key", label: "Response key", value: entry.response_key, className: "full", help: "Add a dialogue message with this key for custom gift text." })}
+      </div>
+      ${formActions(editing?.section === "gifts" && editing.kind === kind ? "Update" : "Add", "save-gift-entry", "clear-gift-form")}
+    `;
+  }
+  return `
+    <div class="form-grid">
+      ${field({ id: "gift-item", label: "Reward item", value: entry.item })}
+      ${listField({ id: "gift-professions", label: "Professions", value: entry.professions })}
+      ${listField({ id: "gift-reputation_levels", label: "Reputation levels", value: entry.reputation_levels })}
+      ${field({ id: "gift-min_count", label: "Minimum count", value: entry.min_count ?? "", type: "number" })}
+      ${field({ id: "gift-max_count", label: "Maximum count", value: entry.max_count ?? "", type: "number" })}
+      ${field({ id: "gift-weight", label: "Weight", value: entry.weight ?? "", type: "number" })}
+    </div>
+    ${formActions(editing?.section === "gifts" && editing.kind === kind ? "Update" : "Add", "save-gift-entry", "clear-gift-form")}
+  `;
+}
+
+function renderPacification() {
+  const collection = state.pacification.payments;
+  const entry = editing?.section === "pacification" ? collection[editing.index] : {};
+  els.panel.innerHTML = `
+    <div class="builder-content">
+      <div class="builder-header">
+        <div class="panel-title-main">
+          ${icon("hand-coins", "section-icon")}
+          <div>
+            <h2>Pacification Payments</h2>
+            <p class="path-label">data/villagerretaliation/pacification</p>
+          </div>
+        </div>
+        <button class="button button-secondary" type="button" data-action="add-pacification-example">${icon("plus", "button-icon")}Add Example</button>
+      </div>
+      <div class="form-grid one">
+        ${field({ id: "pacification-fileName", label: "Pacification file", value: state.pacification.fileName, help: "Use default only when replacing the built-in emerald rule." })}
+      </div>
+      <div class="entry-layout">
+        <div class="entry-list">${renderEntryList(collection, "payments", "pacification")}</div>
+        <form class="entry-form" data-form="pacification">
+          <div class="form-grid">
+            ${listField({ id: "pacification-items", label: "Items", value: entry.items ?? entry.item })}
+            ${listField({ id: "pacification-tags", label: "Tags", value: entry.tags ?? entry.tag })}
+            ${listField({ id: "pacification-professions", label: "Professions", value: entry.professions })}
+            ${field({ id: "pacification-count", label: "Exact count", value: entry.count ?? "", type: "number" })}
+            ${field({ id: "pacification-min_count", label: "Minimum count", value: entry.min_count ?? "", type: "number" })}
+            ${field({ id: "pacification-max_count", label: "Maximum count", value: entry.max_count ?? "", type: "number" })}
+            ${field({ id: "pacification-name", label: "Singular name", value: entry.name })}
+            ${field({ id: "pacification-plural_name", label: "Plural name", value: entry.plural_name })}
+            ${field({ id: "pacification-priority", label: "Priority", value: entry.priority ?? "", type: "number" })}
+          </div>
+          ${formActions(editing?.section === "pacification" ? "Update" : "Add", "save-pacification", "clear-pacification-form")}
+        </form>
+      </div>
+    </div>
+  `;
+}
+
+function renderStories() {
+  const collection = state.stories[activeStoryKind];
+  const entry = editing?.section === "stories" && editing.kind === activeStoryKind ? collection[editing.index] : {};
+  els.panel.innerHTML = `
+    <div class="builder-content">
+      <div class="builder-header">
+        <div class="panel-title-main">
+          ${icon("map", "section-icon")}
+          <div>
+            <h2>Story Discovery</h2>
+            <p class="path-label">data/&lt;namespace&gt;/story_*</p>
+          </div>
+        </div>
+        <button class="button button-secondary" type="button" data-action="add-story-example">${icon("plus", "button-icon")}Add Example</button>
+      </div>
+      <div class="form-grid">
+        ${field({ id: "stories-namespace", label: "Story namespace", value: state.stories.namespace })}
+        ${field({ id: "stories-radius", label: "Default structure radius", value: state.stories.radius ?? "", type: "number" })}
+        ${field({ id: "stories-structureFileName", label: "Structure file", value: state.stories.structureFileName })}
+        ${field({ id: "stories-biomeFileName", label: "Biome file", value: state.stories.biomeFileName })}
+      </div>
+      ${renderEntryTabs(STORY_KINDS, activeStoryKind, "stories")}
+      <div class="entry-layout">
+        <div class="entry-list">${renderEntryList(collection, activeStoryKind, "stories")}</div>
+        <form class="entry-form" data-form="stories" data-kind="${activeStoryKind}">
+          ${renderStoryForm(activeStoryKind, entry)}
+        </form>
+      </div>
+    </div>
+  `;
+}
+
+function renderStoryForm(kind, entry) {
+  if (kind === "structures") {
+    return `
+      <div class="form-grid">
+        ${listField({ id: "story-structures", label: "Structure id(s)", value: entry.structure ?? entry.structures, help: "Use full ids like minecraft:ancient_city." })}
+        ${field({ id: "story-name", label: "Display name", value: entry.name })}
+        ${field({ id: "story-radius", label: "Radius", value: entry.radius ?? "", type: "number" })}
+      </div>
+      ${formActions(editing?.section === "stories" && editing.kind === kind ? "Update" : "Add", "save-story-entry", "clear-story-form")}
+    `;
+  }
+  return `
+    <div class="form-grid">
+      ${listField({ id: "story-biomes", label: "Biome id(s)", value: entry.biome ?? entry.biomes, help: "Use full ids like minecraft:deep_dark." })}
+      ${field({ id: "story-name", label: "Display name", value: entry.name })}
+    </div>
+    ${formActions(editing?.section === "stories" && editing.kind === kind ? "Update" : "Add", "save-story-entry", "clear-story-form")}
+  `;
+}
+
+function renderNames() {
+  els.panel.innerHTML = `
+    <div class="builder-content">
+      <div class="builder-header">
+        <div class="panel-title-main">
+          ${icon("user-round", "section-icon")}
+          <div>
+            <h2>Preset Names</h2>
+            <p class="path-label">data/villagerretaliation/villager_names</p>
+          </div>
+        </div>
+        <button class="button button-secondary" type="button" data-action="add-name-example">${icon("plus", "button-icon")}Add Example</button>
+      </div>
+      <div class="form-grid">
+        ${textareaField({ id: "names-male_names", label: "Male names", value: state.names.male_names.join("\n"), rows: 8, help: "One name per line.", className: "full" })}
+        ${textareaField({ id: "names-female_names", label: "Female names", value: state.names.female_names.join("\n"), rows: 8, help: "One name per line.", className: "full" })}
+      </div>
+    </div>
+  `;
+}
+
+function readValue(id) {
+  const element = document.querySelector(`#${id}`);
+  if (!element) return "";
+  if (element.type === "checkbox") return element.checked;
+  return element.value;
+}
+
+function readList(id) {
+  return parseList(readValue(id));
+}
+
+function readBooleans(prefix, flags, base = {}) {
+  const entry = { ...base };
+  const adult = readValue(`${prefix}-show_for_adults`);
+  const baby = readValue(`${prefix}-show_for_babies`);
+  if (adult === false) entry.show_for_adults = false;
+  if (baby === false) entry.show_for_babies = false;
+  for (const flag of flags) {
+    if (readValue(`${prefix}-${flag}`) === true) {
+      entry[flag] = true;
+    }
+  }
+  return entry;
+}
+
+function saveDialogueEntry(event) {
+  event.preventDefault();
+  const kind = activeDialogueKind;
+  let entry = {};
+  if (kind === "options") {
+    entry = readBooleans("option", CONSTANTS.optionFlags, {
+      id: readValue("dialogue-id").trim(),
+      label: readValue("dialogue-label").trim(),
+      type: readValue("dialogue-type"),
+      order: parseInteger(readValue("dialogue-order")),
+      professions: readList("dialogue-professions"),
+      dispositions: readList("dialogue-dispositions"),
+      player_items: readList("dialogue-player_items"),
+      player_item_slots: readList("dialogue-player_item_slots")
+    });
+  } else if (kind === "lines") {
+    const optionIds = readList("dialogue-option");
+    const storyStructures = readList("dialogue-story_structure");
+    const storyBiomes = readList("dialogue-story_biome");
+    entry = readBooleans("line", CONSTANTS.lineFlags, {
+      id: readValue("dialogue-id").trim(),
+      type: readValue("dialogue-type"),
+      text: readValue("dialogue-text").trim(),
+      option: optionIds.length <= 1 ? optionIds[0] : optionIds,
+      professions: readList("dialogue-professions"),
+      dispositions: readList("dialogue-dispositions"),
+      weather: readList("dialogue-weather"),
+      times: readList("dialogue-times"),
+      event_tags: readList("dialogue-event_tags"),
+      player_event_tags: readList("dialogue-player_event_tags"),
+      player_items: readList("dialogue-player_items"),
+      player_item_slots: readList("dialogue-player_item_slots"),
+      story_structures: storyStructures,
+      story_biomes: storyBiomes,
+      recruitment_followup_scenarios: readList("dialogue-recruitment_followup_scenarios"),
+      recruitment_memory_scenarios: readList("dialogue-recruitment_memory_scenarios"),
+      min_recruitment_follow_distance: parseInteger(readValue("dialogue-min_recruitment_follow_distance")),
+      gift_advice: readValue("dialogue-gift_advice"),
+      weight: parseInteger(readValue("dialogue-weight"))
+    });
+  } else if (kind === "messages") {
+    entry = readBooleans("message", [], {
+      id: readValue("dialogue-id").trim(),
+      key: readValue("dialogue-key").trim(),
+      text: readValue("dialogue-text").trim(),
+      professions: readList("dialogue-professions"),
+      dispositions: readList("dialogue-dispositions"),
+      weight: parseInteger(readValue("dialogue-weight"))
+    });
+  } else if (kind === "pacify") {
+    entry = readBooleans("pacify", [], {
+      id: readValue("dialogue-id").trim(),
+      text: readValue("dialogue-text").trim(),
+      outcomes: readList("dialogue-outcomes"),
+      professions: readList("dialogue-professions"),
+      dispositions: readList("dialogue-dispositions"),
+      weight: parseInteger(readValue("dialogue-weight"))
+    });
+  } else {
+    entry = readBooleans("opening", ["first_conversation_only", "first_village_interaction_only"], {
+      id: readValue("dialogue-id").trim(),
+      text: readValue("dialogue-text").trim(),
+      professions: readList("dialogue-professions"),
+      dispositions: readList("dialogue-dispositions"),
+      weight: parseInteger(readValue("dialogue-weight"))
+    });
+  }
+  upsertEntry("dialogue", kind, cleanObject(entry));
+}
+
+function saveNotification(event) {
+  event.preventDefault();
+  const entry = readBooleans("notification", [], {
+    id: readValue("notification-id").trim(),
+    trigger: readValue("notification-trigger").trim(),
+    text: readValue("notification-text").trim(),
+    kind: readValue("notification-kind"),
+    world_text_kind: readValue("notification-world_text_kind"),
+    color: readValue("notification-color").trim(),
+    text_color: readValue("notification-text_color").trim(),
+    chat_color: readValue("notification-chat_color").trim(),
+    professions: readList("notification-professions"),
+    reputation_levels: readList("notification-reputation_levels"),
+    min_reputation: parseInteger(readValue("notification-min_reputation")),
+    max_reputation: parseInteger(readValue("notification-max_reputation")),
+    player_items: readList("notification-player_items"),
+    player_item_slots: readList("notification-player_item_slots"),
+    weight: parseInteger(readValue("notification-weight")),
+    chance: parseNumber(readValue("notification-chance"))
+  });
+  upsertEntry("notifications", "notifications", cleanObject(entry));
+}
+
+function saveGiftEntry(event) {
+  event.preventDefault();
+  const kind = activeGiftKind;
+  const entry = kind === "preferences"
+    ? {
+        reaction: readValue("gift-reaction"),
+        items: readList("gift-items"),
+        tags: readList("gift-tags"),
+        professions: readList("gift-professions"),
+        reputation_per_item: parseInteger(readValue("gift-reputation_per_item")),
+        response_key: readValue("gift-response_key").trim(),
+        priority: parseInteger(readValue("gift-priority"))
+      }
+    : {
+        item: readValue("gift-item").trim(),
+        professions: readList("gift-professions"),
+        reputation_levels: readList("gift-reputation_levels"),
+        min_count: parseInteger(readValue("gift-min_count")),
+        max_count: parseInteger(readValue("gift-max_count")),
+        weight: parseInteger(readValue("gift-weight"))
+      };
+  upsertEntry("gifts", kind, cleanObject(entry));
+}
+
+function savePacification(event) {
+  event.preventDefault();
+  const entry = {
+    items: readList("pacification-items"),
+    tags: readList("pacification-tags"),
+    professions: readList("pacification-professions"),
+    count: parseInteger(readValue("pacification-count")),
+    min_count: parseInteger(readValue("pacification-min_count")),
+    max_count: parseInteger(readValue("pacification-max_count")),
+    name: readValue("pacification-name").trim(),
+    plural_name: readValue("pacification-plural_name").trim(),
+    priority: parseInteger(readValue("pacification-priority"))
+  };
+  upsertEntry("pacification", "payments", cleanObject(entry));
+}
+
+function saveStoryEntry(event) {
+  event.preventDefault();
+  const kind = activeStoryKind;
+  const ids = kind === "structures" ? readList("story-structures") : readList("story-biomes");
+  const entry = kind === "structures"
+    ? {
+        structures: ids,
+        name: readValue("story-name").trim(),
+        radius: parseInteger(readValue("story-radius"))
+      }
+    : {
+        biomes: ids,
+        name: readValue("story-name").trim()
+      };
+  upsertEntry("stories", kind, cleanObject(entry));
+}
+
+function upsertEntry(section, kind, entry) {
+  if (editing && editing.section === section && editing.kind === kind) {
+    const existing = state[section][kind][editing.index];
+    if (existing?.__sourcePath) {
+      entry.__sourcePath = existing.__sourcePath;
+    }
+    state[section][kind][editing.index] = entry;
+    showToast("Entry updated.");
+  } else {
+    state[section][kind].push(entry);
+    showToast("Entry added.");
+  }
+  editing = null;
+  selectedPath = inferSelectedPath(section);
+  render();
+}
+
+function inferSelectedPath(section) {
+  if (section === "dialogue") return dialoguePath();
+  if (section === "notifications") return notificationsPath();
+  if (section === "gifts") return giftsPath();
+  if (section === "pacification") return pacificationPath();
+  if (section === "stories") return activeStoryKind === "structures" ? structurePath() : biomePath();
+  if (section === "names") return namesPath();
+  return selectedPath;
+}
+
+function clearEditing() {
+  editing = null;
+  render();
+}
+
+function insertTag(targetId, value) {
+  const input = document.querySelector(`#${CSS.escape(targetId)}`);
+  if (!input) return;
+  const values = parseList(input.value);
+  if (!values.includes(value)) {
+    values.push(value);
+    input.value = values.join(", ");
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+  input.focus();
+}
+
+function deleteEntry(section, kind, index) {
+  state[section][kind].splice(index, 1);
+  editing = null;
+  showToast("Entry deleted.");
+  render();
+}
+
+function addDialogueExample() {
+  const slug = state.meta.slug || "my_pack";
+  if (activeDialogueKind === "options") {
+    state.dialogue.options.push({
+      id: `${slug}.ask_local_rumors`,
+      label: "Ask Local Rumors",
+      type: "story",
+      order: 30,
+      show_for_babies: false
+    });
+  } else if (activeDialogueKind === "lines") {
+    state.dialogue.lines.push({
+      id: `${slug}.rumor.generic`,
+      option: `${slug}.ask_local_rumors`,
+      type: "story",
+      text: "Roads keep secrets. Villages keep better ones.",
+      weight: 10
+    });
+  } else if (activeDialogueKind === "messages") {
+    state.dialogue.messages.push({
+      id: `${slug}.gift.librarian.rare_book`,
+      key: `${slug}.gift.librarian.rare_book`,
+      text: "{gift_item}? This belongs near a reading lamp, not forgotten in a chest."
+    });
+  } else if (activeDialogueKind === "pacify") {
+    state.dialogue.pacify.push({
+      id: `${slug}.pacify.accepted`,
+      text: "Fine. {payment_cost} {payment_items}, and we try peace again.",
+      outcomes: ["success"],
+      weight: 10
+    });
+  } else {
+    state.dialogue[activeDialogueKind].push({
+      id: `${slug}.${activeDialogueKind}.farmer`,
+      text: "Good to see a steady face.",
+      professions: ["farmer"],
+      weight: 10
+    });
+  }
+  selectedPath = dialoguePath();
+  render();
+}
+
+function addNotificationExample() {
+  const slug = state.meta.slug || "my_pack";
+  state.notifications.notifications.push({
+    id: `${slug}.ambient.trusted_farmer`,
+    trigger: "ambient.murmur",
+    text: "Good harvest follows good neighbors",
+    world_text_kind: "murmur",
+    professions: ["farmer"],
+    reputation_levels: ["trusted", "respected", "revered", "royalty"],
+    color: "#DCEBA6",
+    weight: 20
+  });
+  selectedPath = notificationsPath();
+  render();
+}
+
+function addGiftExample() {
+  if (activeGiftKind === "preferences") {
+    state.gifts.preferences.push({
+      professions: ["librarian"],
+      reaction: "loved",
+      items: ["minecraft:enchanted_book", "minecraft:name_tag"],
+      response_key: `${state.meta.slug}.gift.librarian.rare_book`,
+      priority: 20
+    });
+  } else {
+    state.gifts.rewards.push({
+      professions: ["librarian"],
+      reputation_levels: ["revered", "royalty"],
+      item: "minecraft:book",
+      min_count: 2,
+      max_count: 5,
+      weight: 10
+    });
+  }
+  selectedPath = giftsPath();
+  render();
+}
+
+function addPacificationExample() {
+  state.pacification.payments.push({
+    items: ["minecraft:emerald", "minecraft:diamond"],
+    min_count: 3,
+    max_count: 32
+  });
+  selectedPath = pacificationPath();
+  render();
+}
+
+function addStoryExample() {
+  if (activeStoryKind === "structures") {
+    state.stories.structures.push({
+      structure: "examplemod:haunted_keep",
+      name: "Haunted Keep",
+      radius: 128
+    });
+    selectedPath = structurePath();
+  } else {
+    state.stories.biomes.push({
+      biome: "examplemod:crystal_marsh",
+      name: "Crystal Marsh"
+    });
+    selectedPath = biomePath();
+  }
+  render();
+}
+
+function addNameExample() {
+  state.names.male_names = unique([...state.names.male_names, "Ada", "Bram"]);
+  state.names.female_names = unique([...state.names.female_names, "Cora", "Dorian"]);
+  selectedPath = namesPath();
+  render();
+}
+
+function loadStarterPack() {
+  state = createInitialState();
+  state.meta.packName = "Village Rumors";
+  state.meta.description = "Starter Villager Retaliation datapack";
+  state.meta.namespace = "village_rumors";
+  state.meta.slug = "village_rumors";
+  state.dialogue.fileName = "village_rumors_dialogue";
+  state.notifications.fileName = "village_rumors_notifications";
+  state.gifts.fileName = "village_rumors_gifts";
+  state.stories.namespace = "village_rumors";
+  state.stories.structureFileName = "village_rumors_structures";
+  state.stories.biomeFileName = "village_rumors_biomes";
+  state.dialogue.options.push({
+    id: "village_rumors.ask_local_rumors",
+    label: "Ask Local Rumors",
+    type: "story",
+    order: 30,
+    show_for_babies: false
+  });
+  state.dialogue.lines.push(
+    {
+      id: "village_rumors.rumor.generic",
+      option: "village_rumors.ask_local_rumors",
+      type: "story",
+      text: "Roads keep secrets. Villages keep better ones.",
+      weight: 10
+    },
+    {
+      id: "village_rumors.share_story.haunted_keep",
+      type: "share_story",
+      option: "adult_share_story",
+      story_structure: "examplemod:haunted_keep",
+      text: "{target_article}. If you found it, walk home before dark.",
+      weight: 30
+    }
+  );
+  state.dialogue.messages.push({
+    id: "village_rumors.gift.librarian.rare_book",
+    key: "village_rumors.gift.librarian.rare_book",
+    text: "{gift_item}? This belongs near a reading lamp, not forgotten in a chest."
+  });
+  state.notifications.notifications.push({
+    id: "village_rumors.ambient.trusted_farmer",
+    trigger: "ambient.murmur",
+    text: "Good harvest follows good neighbors",
+    world_text_kind: "murmur",
+    professions: ["farmer"],
+    reputation_levels: ["trusted", "respected", "revered", "royalty"],
+    color: "#DCEBA6",
+    weight: 20
+  });
+  state.gifts.preferences.push({
+    professions: ["librarian"],
+    reaction: "loved",
+    items: ["minecraft:enchanted_book", "minecraft:name_tag"],
+    response_key: "village_rumors.gift.librarian.rare_book",
+    priority: 20
+  });
+  state.gifts.rewards.push({
+    professions: ["librarian"],
+    reputation_levels: ["revered", "royalty"],
+    item: "minecraft:book",
+    min_count: 2,
+    max_count: 5,
+    weight: 10
+  });
+  state.stories.structures.push({
+    structure: "examplemod:haunted_keep",
+    name: "Haunted Keep",
+    radius: 128
+  });
+  state.stories.biomes.push({
+    biome: "examplemod:crystal_marsh",
+    name: "Crystal Marsh"
+  });
+  selectedPath = dialoguePath();
+  editing = null;
+  render();
+  showToast("Starter pack loaded.");
+}
+
+function unique(values) {
+  return [...new Set(values.filter(Boolean))];
+}
+
+function updateOverviewFromInput(target) {
+  const id = target.id;
+  if (id === "meta-packName") state.meta.packName = target.value;
+  if (id === "meta-description") state.meta.description = target.value;
+  if (id === "meta-packFormat") state.meta.packFormat = parseInteger(target.value) || 34;
+  if (id === "meta-namespace") {
+    state.meta.namespace = namespaceify(target.value);
+    state.stories.namespace = state.meta.namespace;
+  }
+  if (id === "meta-slug") {
+    const slug = normalizeFileName(target.value, "my_pack");
+    state.meta.slug = slug;
+    state.dialogue.fileName = `${slug}_dialogue`;
+    state.notifications.fileName = `${slug}_notifications`;
+    state.gifts.fileName = `${slug}_gifts`;
+    state.pacification.fileName = `${slug}_pacification`;
+    state.stories.structureFileName = `${slug}_structures`;
+    state.stories.biomeFileName = `${slug}_biomes`;
+  }
+  if (id === "meta-locale") state.meta.locale = slugify(target.value, "en_us");
+}
+
+function updateSectionSettings(target) {
+  if (target.id === "dialogue-fileName") state.dialogue.fileName = normalizeFileName(target.value, `${state.meta.slug}_dialogue`);
+  if (target.id === "dialogue-locale") state.meta.locale = slugify(target.value, "en_us");
+  if (target.id === "notifications-fileName") state.notifications.fileName = normalizeFileName(target.value, `${state.meta.slug}_notifications`);
+  if (target.id === "notifications-locale") state.meta.locale = slugify(target.value, "en_us");
+  if (target.id === "gifts-fileName") state.gifts.fileName = normalizeFileName(target.value, `${state.meta.slug}_gifts`);
+  if (target.id === "pacification-fileName") state.pacification.fileName = normalizeFileName(target.value, `${state.meta.slug}_pacification`);
+  if (target.id === "stories-namespace") state.stories.namespace = namespaceify(target.value, state.meta.namespace);
+  if (target.id === "stories-radius") state.stories.radius = parseInteger(target.value) || 96;
+  if (target.id === "stories-structureFileName") state.stories.structureFileName = normalizeFileName(target.value, `${state.meta.slug}_structures`);
+  if (target.id === "stories-biomeFileName") state.stories.biomeFileName = normalizeFileName(target.value, `${state.meta.slug}_biomes`);
+  if (target.id === "names-male_names") state.names.male_names = parseList(target.value);
+  if (target.id === "names-female_names") state.names.female_names = parseList(target.value);
+}
+
+function showToast(message) {
+  window.clearTimeout(toastTimer);
+  els.toast.textContent = message;
+  els.toast.classList.add("is-visible");
+  toastTimer = window.setTimeout(() => {
+    els.toast.classList.remove("is-visible");
+  }, 2400);
+}
+
+function downloadBlob(blob, name) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = name;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+async function copyCurrentFile() {
+  const files = generatedFiles();
+  const value = files[selectedPath];
+  if (value instanceof Uint8Array) {
+    showToast("Binary files cannot be copied as text.");
+    return;
+  }
+  await navigator.clipboard.writeText(els.preview.value || "");
+  showToast("Copied current file.");
+}
+
+function downloadCurrentFile() {
+  const files = generatedFiles();
+  const generated = files[selectedPath] || "";
+  const value = generated instanceof Uint8Array ? generated : els.preview.value;
+  const blob = value instanceof Uint8Array
+    ? new Blob([value])
+    : new Blob([value], { type: "application/json" });
+  downloadBlob(blob, selectedPath.split("/").pop() || "datapack-file");
+}
+
+function applyPreviewEdit() {
+  const source = els.preview.value;
+  if (generatedFiles()[selectedPath] instanceof Uint8Array) return;
+  const applied = applyEditedFile(selectedPath, source);
+  if (!applied) {
+    previewEditError = { path: selectedPath };
+    els.codePreview.classList.add("is-invalid");
+    renderChecks();
+    return;
+  }
+  previewEditError = null;
+  els.codePreview.classList.remove("is-invalid");
+  renderTabs();
+  renderPanel();
+  resizeTextareas(els.panel);
+  syncValueTags(els.panel);
+  renderFiles();
+  renderChecks();
+  renderIcons();
+}
+
+function applyEditedFile(path, source) {
+  if (path === "pack.mcmeta") {
+    const json = parseEditedJson(source);
+    if (!json) return false;
+    const pack = json.pack || {};
+    if (Object.hasOwn(pack, "description")) state.meta.description = pack.description || "";
+    if (Object.hasOwn(pack, "pack_format")) {
+      const packFormat = Number(pack.pack_format);
+      state.meta.packFormat = Number.isFinite(packFormat) ? Math.trunc(packFormat) : pack.pack_format;
+    }
+    return true;
+  }
+
+  if (path.match(/^data\/villagerretaliation\/dialogue\/([^/]+)\/(.+)\.json$/)) {
+    const json = parseEditedJson(source);
+    if (!json) return false;
+    replaceDialogueFile(path, json);
+    return true;
+  }
+
+  const notificationMatch = path.match(/^data\/villagerretaliation\/notifications\/([^/]+)\/(.+)\.json$/);
+  if (notificationMatch) {
+    const json = parseEditedJson(source);
+    if (!json) return false;
+    state.meta.locale = notificationMatch[1];
+    state.notifications.fileName = normalizeFileName(notificationMatch[2].split("/").pop(), state.notifications.fileName);
+    state.notifications.notifications = cleanArray(json.notifications);
+    return true;
+  }
+
+  const giftMatch = path.match(/^data\/villagerretaliation\/gifts\/(.+)\.json$/);
+  if (giftMatch) {
+    const json = parseEditedJson(source);
+    if (!json) return false;
+    state.gifts.fileName = normalizeFileName(giftMatch[1].split("/").pop(), state.gifts.fileName);
+    state.gifts.preferences = cleanArray(json.preferences);
+    state.gifts.rewards = cleanArray(json.rewards);
+    return true;
+  }
+
+  const pacificationMatch = path.match(/^data\/villagerretaliation\/pacification\/(.+)\.json$/);
+  if (pacificationMatch) {
+    const json = parseEditedJson(source);
+    if (!json) return false;
+    state.pacification.fileName = normalizeFileName(pacificationMatch[1].split("/").pop(), state.pacification.fileName);
+    state.pacification.payments = cleanArray(json.payments);
+    return true;
+  }
+
+  const structureMatch = path.match(/^data\/([^/]+)\/story_structures\/(.+)\.json$/);
+  if (structureMatch) {
+    const json = parseEditedJson(source);
+    if (!json) return false;
+    state.stories.namespace = structureMatch[1];
+    state.stories.structureFileName = normalizeFileName(structureMatch[2].split("/").pop(), state.stories.structureFileName);
+    state.stories.radius = parseInteger(json.radius) || state.stories.radius;
+    state.stories.structures = cleanArray(normalizeStoryEntries(json, "structure"));
+    return true;
+  }
+
+  const biomeMatch = path.match(/^data\/([^/]+)\/story_biomes\/(.+)\.json$/);
+  if (biomeMatch) {
+    const json = parseEditedJson(source);
+    if (!json) return false;
+    state.stories.namespace = biomeMatch[1];
+    state.stories.biomeFileName = normalizeFileName(biomeMatch[2].split("/").pop(), state.stories.biomeFileName);
+    state.stories.biomes = cleanArray(normalizeStoryEntries(json, "biome"));
+    return true;
+  }
+
+  if (path === namesPath()) {
+    const json = parseEditedJson(source);
+    if (!json) return false;
+    state.names.male_names = unique([...parseList(json.male_names), ...parseList(json.names)]);
+    state.names.female_names = parseList(json.female_names);
+    return true;
+  }
+
+  state.extraFiles[path] = source;
+  return true;
+}
+
+function parseEditedJson(source) {
+  try {
+    return JSON.parse(source);
+  } catch {
+    return null;
+  }
+}
+
+function cleanArray(entries) {
+  return Array.isArray(entries) ? entries.map((entry) => cleanObject(entry)) : [];
+}
+
+function replaceDialogueFile(path, json) {
+  const dialogueMatch = path.match(/^data\/villagerretaliation\/dialogue\/([^/]+)\/(.+)\.json$/);
+  state.meta.locale = dialogueMatch[1];
+  state.dialogue.fileName = normalizeFileName(dialogueMatch[2].split("/").pop(), state.dialogue.fileName);
+  for (const kind of ["options", "lines", "messages", "openings", "closings", "pacify"]) {
+    state.dialogue[kind] = state.dialogue[kind].filter((entry) => (entry.__sourcePath || dialoguePath()) !== path);
+    state.dialogue[kind].push(...cleanArray(json[kind]).map((entry) => ({ ...entry, __sourcePath: path })));
+  }
+}
+
+async function exportZip() {
+  const files = generatedFiles();
+  const zip = createZip(files);
+  const name = `${slugify(state.meta.packName || state.meta.slug, "villager_retaliation_pack")}.zip`;
+  downloadBlob(new Blob([zip], { type: "application/zip" }), name);
+  showToast("Datapack zip exported.");
+}
+
+function normalizeImportedPaths(fileMap) {
+  const paths = Object.keys(fileMap);
+  const packPath = paths.find((path) => path === "pack.mcmeta" || path.endsWith("/pack.mcmeta"));
+  if (!packPath || packPath === "pack.mcmeta") return fileMap;
+  const prefix = packPath.slice(0, -"pack.mcmeta".length);
+  const normalized = {};
+  for (const [path, value] of Object.entries(fileMap)) {
+    normalized[path.startsWith(prefix) ? path.slice(prefix.length) : path] = value;
+  }
+  return normalized;
+}
+
+function isTextPath(path) {
+  return /\.(json|mcmeta|mcfunction|txt|md|lang)$/i.test(path);
+}
+
+function importedKnownKind(path) {
+  if (/^data\/villagerretaliation\/dialogue\/[^/]+\/.+\.json$/.test(path)) return "dialogue";
+  if (/^data\/villagerretaliation\/notifications\/[^/]+\/.+\.json$/.test(path)) return "notifications";
+  if (/^data\/villagerretaliation\/gifts\/.+\.json$/.test(path)) return "gifts";
+  if (/^data\/villagerretaliation\/pacification\/.+\.json$/.test(path)) return "pacification";
+  if (/^data\/[^/]+\/story_structures\/.+\.json$/.test(path)) return "story_structures";
+  if (/^data\/[^/]+\/story_biomes\/.+\.json$/.test(path)) return "story_biomes";
+  if (path === namesPath()) return "names";
+  return "";
+}
+
+async function handleImport(files, replaceProject = false) {
+  if (!files.length) return;
+  if (replaceProject) {
+    state = createInitialState();
+  }
+  const imported = {};
+  for (const file of files) {
+    const path = (file.webkitRelativePath || file.name).replaceAll("\\", "/");
+    if (/\.zip$/i.test(file.name)) {
+      const zipFiles = await readZip(new Uint8Array(await file.arrayBuffer()));
+      Object.assign(imported, normalizeImportedPaths(zipFiles));
+    } else {
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      imported[path] = isTextPath(path) ? decoder.decode(bytes) : bytes;
+    }
+  }
+  ingestFiles(normalizeImportedPaths(imported));
+  selectedPath = Object.keys(generatedFiles()).sort()[0] || "pack.mcmeta";
+  editing = null;
+  render();
+  showToast("Import complete.");
+}
+
+function ingestFiles(files) {
+  const extra = {};
+  for (const [path, value] of Object.entries(files)) {
+    const normalizedPath = path.replace(/^\/+/, "");
+    if (normalizedPath.endsWith("/")) continue;
+    if (normalizedPath === "pack.mcmeta" && typeof value === "string") {
+      try {
+        const json = JSON.parse(value);
+        state.meta.description = json.pack?.description || state.meta.description;
+        state.meta.packFormat = Number(json.pack?.pack_format) || state.meta.packFormat;
+      } catch {
+        extra[normalizedPath] = value;
+      }
+      continue;
+    }
+    if (typeof value === "string" && ingestKnownJson(normalizedPath, value)) {
+      continue;
+    }
+    extra[normalizedPath] = value;
+  }
+  state.extraFiles = { ...state.extraFiles, ...extra };
+}
+
+function ingestKnownJson(path, source) {
+  let json;
+  try {
+    json = JSON.parse(source);
+  } catch {
+    return false;
+  }
+
+  const dialogueMatch = path.match(/^data\/villagerretaliation\/dialogue\/([^/]+)\/(.+)\.json$/);
+  if (dialogueMatch) {
+    state.meta.locale = dialogueMatch[1];
+    state.dialogue.fileName = normalizeFileName(dialogueMatch[2].split("/").pop(), state.dialogue.fileName);
+    const profession = dialogueMatch[2].match(/^professions\/([^/]+)/)?.[1];
+    mergeArray("dialogue", "options", withDefaultProfession(json.options, profession), path);
+    mergeArray("dialogue", "lines", withDefaultProfession(json.lines, profession), path);
+    mergeArray("dialogue", "messages", withDefaultProfession(json.messages, profession), path);
+    mergeArray("dialogue", "openings", withDefaultProfession(json.openings, profession), path);
+    mergeArray("dialogue", "closings", withDefaultProfession(json.closings, profession), path);
+    mergeArray("dialogue", "pacify", withDefaultProfession(json.pacify, profession), path);
+    return true;
+  }
+
+  const notificationMatch = path.match(/^data\/villagerretaliation\/notifications\/([^/]+)\/(.+)\.json$/);
+  if (notificationMatch) {
+    state.meta.locale = notificationMatch[1];
+    state.notifications.fileName = normalizeFileName(notificationMatch[2].split("/").pop(), state.notifications.fileName);
+    mergeArray("notifications", "notifications", json.notifications);
+    return true;
+  }
+
+  const giftMatch = path.match(/^data\/villagerretaliation\/gifts\/(.+)\.json$/);
+  if (giftMatch) {
+    state.gifts.fileName = normalizeFileName(giftMatch[1].split("/").pop(), state.gifts.fileName);
+    mergeArray("gifts", "preferences", json.preferences);
+    mergeArray("gifts", "rewards", json.rewards);
+    return true;
+  }
+
+  const pacificationMatch = path.match(/^data\/villagerretaliation\/pacification\/(.+)\.json$/);
+  if (pacificationMatch) {
+    state.pacification.fileName = normalizeFileName(pacificationMatch[1].split("/").pop(), state.pacification.fileName);
+    mergeArray("pacification", "payments", json.payments);
+    return true;
+  }
+
+  const structureMatch = path.match(/^data\/([^/]+)\/story_structures\/(.+)\.json$/);
+  if (structureMatch) {
+    state.stories.namespace = structureMatch[1];
+    state.stories.structureFileName = normalizeFileName(structureMatch[2].split("/").pop(), state.stories.structureFileName);
+    if (json.radius) state.stories.radius = json.radius;
+    mergeArray("stories", "structures", normalizeStoryEntries(json, "structure"));
+    return true;
+  }
+
+  const biomeMatch = path.match(/^data\/([^/]+)\/story_biomes\/(.+)\.json$/);
+  if (biomeMatch) {
+    state.stories.namespace = biomeMatch[1];
+    state.stories.biomeFileName = normalizeFileName(biomeMatch[2].split("/").pop(), state.stories.biomeFileName);
+    mergeArray("stories", "biomes", normalizeStoryEntries(json, "biome"));
+    return true;
+  }
+
+  if (path === namesPath()) {
+    state.names.male_names = unique([...state.names.male_names, ...parseList(json.male_names), ...parseList(json.names)]);
+    state.names.female_names = unique([...state.names.female_names, ...parseList(json.female_names)]);
+    return true;
+  }
+
+  if (Array.isArray(json.options) || Array.isArray(json.lines) || Array.isArray(json.messages) || Array.isArray(json.openings) || Array.isArray(json.closings) || Array.isArray(json.pacify)) {
+    mergeArray("dialogue", "options", json.options);
+    mergeArray("dialogue", "lines", json.lines);
+    mergeArray("dialogue", "messages", json.messages);
+    mergeArray("dialogue", "openings", json.openings);
+    mergeArray("dialogue", "closings", json.closings);
+    mergeArray("dialogue", "pacify", json.pacify);
+    return true;
+  }
+
+  if (Array.isArray(json.male_names) || Array.isArray(json.female_names) || Array.isArray(json.names)) {
+    state.names.male_names = unique([...state.names.male_names, ...parseList(json.male_names), ...parseList(json.names)]);
+    state.names.female_names = unique([...state.names.female_names, ...parseList(json.female_names)]);
+    return true;
+  }
+
+  let matchedTopLevelPackJson = false;
+  if (Array.isArray(json.notifications)) {
+    mergeArray("notifications", "notifications", json.notifications);
+    matchedTopLevelPackJson = true;
+  }
+  if (Array.isArray(json.preferences)) {
+    mergeArray("gifts", "preferences", json.preferences);
+    matchedTopLevelPackJson = true;
+  }
+  if (Array.isArray(json.rewards)) {
+    mergeArray("gifts", "rewards", json.rewards);
+    matchedTopLevelPackJson = true;
+  }
+  if (Array.isArray(json.payments)) {
+    mergeArray("pacification", "payments", json.payments);
+    matchedTopLevelPackJson = true;
+  }
+  if (matchedTopLevelPackJson) return true;
+
+  const detected = detectJsonKind(json);
+  if (detected) {
+    mergeArray(detected.section, detected.kind, json[detected.key]);
+    return true;
+  }
+
+  return false;
+}
+
+function detectJsonKind(json) {
+  if (Array.isArray(json.notifications)) return { section: "notifications", kind: "notifications", key: "notifications" };
+  if (Array.isArray(json.preferences)) return { section: "gifts", kind: "preferences", key: "preferences" };
+  if (Array.isArray(json.rewards)) return { section: "gifts", kind: "rewards", key: "rewards" };
+  if (Array.isArray(json.payments)) return { section: "pacification", kind: "payments", key: "payments" };
+  return null;
+}
+
+function normalizeStoryEntries(json, type) {
+  if (Array.isArray(json.entries)) return json.entries;
+  if (type === "structure" && (json.structure || json.structures)) return [json];
+  if (type === "biome" && (json.biome || json.biomes)) return [json];
+  return [];
+}
+
+function withDefaultProfession(entries, profession) {
+  if (!Array.isArray(entries) || !profession) return entries;
+  return entries.map((entry) => entry.professions ? entry : { ...entry, professions: [profession] });
+}
+
+function mergeArray(section, kind, entries, sourcePath = "") {
+  if (!Array.isArray(entries)) return;
+  state[section][kind].push(...entries.map((entry) => {
+    const cleaned = cleanObject(entry);
+    if (sourcePath && cleaned && typeof cleaned === "object") {
+      cleaned.__sourcePath = sourcePath;
+    }
+    return cleaned;
+  }));
+}
+
+function readUint16(bytes, offset) {
+  return bytes[offset] | (bytes[offset + 1] << 8);
+}
+
+function readUint32(bytes, offset) {
+  return (bytes[offset] | (bytes[offset + 1] << 8) | (bytes[offset + 2] << 16) | (bytes[offset + 3] << 24)) >>> 0;
+}
+
+async function readZip(bytes) {
+  let eocd = -1;
+  for (let i = bytes.length - 22; i >= Math.max(0, bytes.length - 66000); i--) {
+    if (readUint32(bytes, i) === 0x06054b50) {
+      eocd = i;
+      break;
+    }
+  }
+  if (eocd < 0) throw new Error("Could not find zip directory.");
+  const count = readUint16(bytes, eocd + 10);
+  let offset = readUint32(bytes, eocd + 16);
+  const result = {};
+  for (let index = 0; index < count; index++) {
+    if (readUint32(bytes, offset) !== 0x02014b50) break;
+    const flags = readUint16(bytes, offset + 8);
+    const method = readUint16(bytes, offset + 10);
+    const compressedSize = readUint32(bytes, offset + 20);
+    const nameLength = readUint16(bytes, offset + 28);
+    const extraLength = readUint16(bytes, offset + 30);
+    const commentLength = readUint16(bytes, offset + 32);
+    const localOffset = readUint32(bytes, offset + 42);
+    const nameBytes = bytes.slice(offset + 46, offset + 46 + nameLength);
+    const name = new TextDecoder(flags & 0x0800 ? "utf-8" : "utf-8").decode(nameBytes);
+    offset += 46 + nameLength + extraLength + commentLength;
+    if (name.endsWith("/")) continue;
+
+    const localNameLength = readUint16(bytes, localOffset + 26);
+    const localExtraLength = readUint16(bytes, localOffset + 28);
+    const dataStart = localOffset + 30 + localNameLength + localExtraLength;
+    const compressed = bytes.slice(dataStart, dataStart + compressedSize);
+    const data = await decompressZipEntry(compressed, method);
+    result[name] = isTextPath(name) ? decoder.decode(data) : data;
+  }
+  return result;
+}
+
+async function decompressZipEntry(data, method) {
+  if (method === 0) return data;
+  if (method !== 8) throw new Error(`Unsupported zip compression method ${method}.`);
+  if (!("DecompressionStream" in window)) {
+    throw new Error("This browser cannot decompress deflated zip entries.");
+  }
+  try {
+    const stream = new Blob([data]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+    return new Uint8Array(await new Response(stream).arrayBuffer());
+  } catch {
+    const stream = new Blob([data]).stream().pipeThrough(new DecompressionStream("deflate"));
+    return new Uint8Array(await new Response(stream).arrayBuffer());
+  }
+}
+
+function createZip(files) {
+  const localParts = [];
+  const centralParts = [];
+  let offset = 0;
+  const now = new Date();
+  const { dosTime, dosDate } = toDosDateTime(now);
+
+  for (const [path, value] of Object.entries(files).sort(([a], [b]) => a.localeCompare(b))) {
+    const nameBytes = encoder.encode(path);
+    const data = value instanceof Uint8Array ? value : encoder.encode(String(value));
+    const crc = crc32(data);
+    const localHeader = concatBytes(
+      u32(0x04034b50),
+      u16(20),
+      u16(0x0800),
+      u16(0),
+      u16(dosTime),
+      u16(dosDate),
+      u32(crc),
+      u32(data.length),
+      u32(data.length),
+      u16(nameBytes.length),
+      u16(0),
+      nameBytes
+    );
+    localParts.push(localHeader, data);
+    const centralHeader = concatBytes(
+      u32(0x02014b50),
+      u16(20),
+      u16(20),
+      u16(0x0800),
+      u16(0),
+      u16(dosTime),
+      u16(dosDate),
+      u32(crc),
+      u32(data.length),
+      u32(data.length),
+      u16(nameBytes.length),
+      u16(0),
+      u16(0),
+      u16(0),
+      u16(0),
+      u32(0),
+      u32(offset),
+      nameBytes
+    );
+    centralParts.push(centralHeader);
+    offset += localHeader.length + data.length;
+  }
+
+  const centralOffset = offset;
+  const centralDirectory = concatBytes(...centralParts);
+  const end = concatBytes(
+    u32(0x06054b50),
+    u16(0),
+    u16(0),
+    u16(centralParts.length),
+    u16(centralParts.length),
+    u32(centralDirectory.length),
+    u32(centralOffset),
+    u16(0)
+  );
+
+  return concatBytes(...localParts, centralDirectory, end);
+}
+
+function toDosDateTime(date) {
+  const dosTime = (date.getHours() << 11) | (date.getMinutes() << 5) | Math.floor(date.getSeconds() / 2);
+  const dosDate = ((date.getFullYear() - 1980) << 9) | ((date.getMonth() + 1) << 5) | date.getDate();
+  return { dosTime, dosDate };
+}
+
+function u16(value) {
+  return new Uint8Array([value & 0xff, (value >>> 8) & 0xff]);
+}
+
+function u32(value) {
+  return new Uint8Array([value & 0xff, (value >>> 8) & 0xff, (value >>> 16) & 0xff, (value >>> 24) & 0xff]);
+}
+
+function concatBytes(...parts) {
+  const length = parts.reduce((sum, part) => sum + part.length, 0);
+  const result = new Uint8Array(length);
+  let offset = 0;
+  for (const part of parts) {
+    result.set(part, offset);
+    offset += part.length;
+  }
+  return result;
+}
+
+const crcTable = (() => {
+  const table = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) {
+      c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    }
+    table[n] = c >>> 0;
+  }
+  return table;
+})();
+
+function crc32(data) {
+  let c = 0xffffffff;
+  for (let i = 0; i < data.length; i++) {
+    c = crcTable[(c ^ data[i]) & 0xff] ^ (c >>> 8);
+  }
+  return (c ^ 0xffffffff) >>> 0;
+}
+
+els.tabs.addEventListener("click", (event) => {
+  const button = event.target.closest(".tab");
+  if (!button) return;
+  activeSection = button.dataset.section;
+  editing = null;
+  render();
+});
+
+els.panel.addEventListener("click", (event) => {
+  const entryTab = event.target.closest(".entry-tab");
+  if (entryTab) {
+    const scope = entryTab.closest(".entry-tabs").dataset.scope;
+    if (scope === "dialogue") activeDialogueKind = entryTab.dataset.kind;
+    if (scope === "gifts") activeGiftKind = entryTab.dataset.kind;
+    if (scope === "stories") activeStoryKind = entryTab.dataset.kind;
+    editing = null;
+    render();
+    return;
+  }
+
+  const toggleButton = event.target.closest("[data-toggle-target]");
+  if (toggleButton) {
+    const input = document.querySelector(`#${CSS.escape(toggleButton.dataset.toggleTarget)}`);
+    if (!input) return;
+    input.checked = toggleButton.dataset.toggleValue === "true";
+    const toggleRoot = toggleButton.closest(".toggle");
+    toggleRoot?.querySelector(".toggle-false")?.setAttribute("aria-pressed", String(!input.checked));
+    toggleRoot?.querySelector(".toggle-true")?.setAttribute("aria-pressed", String(input.checked));
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+    return;
+  }
+
+  const actionButton = event.target.closest("[data-action]");
+  if (!actionButton) {
+    const entryCard = event.target.closest(".entry-card");
+    if (entryCard) {
+      editing = {
+        section: entryCard.dataset.section,
+        kind: entryCard.dataset.kind,
+        index: Number(entryCard.dataset.index)
+      };
+      render();
+    }
+    return;
+  }
+  const action = actionButton.dataset.action;
+  if (action === "insert-tag") {
+    insertTag(actionButton.dataset.target, actionButton.dataset.value);
+    return;
+  }
+  if (action === "edit-entry") {
+    editing = {
+      section: actionButton.dataset.section,
+      kind: actionButton.dataset.kind,
+      index: Number(actionButton.dataset.index)
+    };
+    render();
+  }
+  if (action === "delete-entry") {
+    deleteEntry(actionButton.dataset.section, actionButton.dataset.kind, Number(actionButton.dataset.index));
+    return;
+  }
+  if (action === "clear-dialogue-form" || action === "clear-notification-form" || action === "clear-gift-form" || action === "clear-pacification-form" || action === "clear-story-form") {
+    clearEditing();
+  }
+  if (action === "add-dialogue-example") addDialogueExample();
+  if (action === "add-notification-example") addNotificationExample();
+  if (action === "add-gift-example") addGiftExample();
+  if (action === "add-pacification-example") addPacificationExample();
+  if (action === "add-story-example") addStoryExample();
+  if (action === "add-name-example") addNameExample();
+});
+
+els.panel.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") return;
+  const entryCard = event.target.closest(".entry-card");
+  if (!entryCard || event.target.closest("button")) return;
+  event.preventDefault();
+  editing = {
+    section: entryCard.dataset.section,
+    kind: entryCard.dataset.kind,
+    index: Number(entryCard.dataset.index)
+  };
+  render();
+});
+
+els.panel.addEventListener("submit", (event) => {
+  const form = event.target.closest("form");
+  if (!form) return;
+  if (form.dataset.form === "dialogue") saveDialogueEntry(event);
+  if (form.dataset.form === "notifications") saveNotification(event);
+  if (form.dataset.form === "gifts") saveGiftEntry(event);
+  if (form.dataset.form === "pacification") savePacification(event);
+  if (form.dataset.form === "stories") saveStoryEntry(event);
+});
+
+els.panel.addEventListener("input", (event) => {
+  if (event.target.matches(".entry-form textarea")) {
+    resizeTextareas(event.target.closest(".entry-form"));
+  }
+  if (event.target.matches("textarea")) {
+    syncValueTags(event.target.closest(".field") || els.panel);
+  }
+  if (activeSection === "overview") updateOverviewFromInput(event.target);
+  updateSectionSettings(event.target);
+  renderFiles();
+  renderChecks();
+  renderPreview();
+});
+
+els.fileTree.addEventListener("click", (event) => {
+  const button = event.target.closest(".file-button");
+  if (!button) return;
+  selectedPath = button.dataset.path;
+  if (previewEditError?.path !== selectedPath) previewEditError = null;
+  renderFiles();
+  renderChecks();
+  renderPreview();
+});
+
+els.importInput.addEventListener("change", async () => {
+  try {
+    await handleImport([...els.importInput.files], [...els.importInput.files].some((file) => /\.zip$/i.test(file.name)));
+  } catch (error) {
+    showToast(error.message || "Import failed.");
+  } finally {
+    els.importInput.value = "";
+  }
+});
+
+els.directoryInput.addEventListener("change", async () => {
+  try {
+    await handleImport([...els.directoryInput.files], true);
+  } catch (error) {
+    showToast(error.message || "Folder import failed.");
+  } finally {
+    els.directoryInput.value = "";
+  }
+});
+
+els.exportButton.addEventListener("click", exportZip);
+els.starterButton.addEventListener("click", loadStarterPack);
+els.leftPanelToggleButton.addEventListener("click", (event) => {
+  event.stopPropagation();
+  showLeftPanel = !showLeftPanel;
+  renderWorkspaceChrome();
+  renderIcons();
+});
+els.rightPanelToggleButton.addEventListener("click", (event) => {
+  event.stopPropagation();
+  showRightPanel = !showRightPanel;
+  renderWorkspaceChrome();
+  renderIcons();
+});
+els.leftRail.addEventListener("click", () => {
+  if (showLeftPanel) return;
+  showLeftPanel = true;
+  renderWorkspaceChrome();
+  renderIcons();
+});
+els.rightRail.addEventListener("click", () => {
+  if (showRightPanel) return;
+  showRightPanel = true;
+  renderWorkspaceChrome();
+  renderIcons();
+});
+els.leftRail.addEventListener("keydown", (event) => {
+  if (showLeftPanel || (event.key !== "Enter" && event.key !== " ")) return;
+  event.preventDefault();
+  showLeftPanel = true;
+  renderWorkspaceChrome();
+  renderIcons();
+});
+els.rightRail.addEventListener("keydown", (event) => {
+  if (showRightPanel || (event.key !== "Enter" && event.key !== " ")) return;
+  event.preventDefault();
+  showRightPanel = true;
+  renderWorkspaceChrome();
+  renderIcons();
+});
+els.wrapPreviewButton.addEventListener("click", () => {
+  wrapPreviewLines = !wrapPreviewLines;
+  renderPreview();
+  renderIcons();
+});
+document.addEventListener("pointerdown", panelResizeStart);
+document.addEventListener("auxclick", panelResizeAuxClick);
+document.addEventListener("keydown", panelResizeKeydown);
+els.preview.addEventListener("input", () => {
+  window.clearTimeout(previewEditTimer);
+  previewEditTimer = window.setTimeout(applyPreviewEdit, 180);
+});
+document.addEventListener("pointerover", (event) => {
+  const target = tooltipTarget(event.target);
+  if (!target) return;
+  showTooltip(target, { x: event.clientX, y: event.clientY });
+});
+document.addEventListener("mouseover", (event) => {
+  const target = tooltipTarget(event.target);
+  if (!target || target === activeTooltipTarget) return;
+  showTooltip(target, { x: event.clientX, y: event.clientY });
+});
+document.addEventListener("pointermove", (event) => {
+  if (!activeTooltipTarget || !activeTooltipTarget.contains(event.target)) return;
+  activeTooltipPointer = { x: event.clientX, y: event.clientY };
+  positionTooltip();
+});
+document.addEventListener("mousemove", (event) => {
+  if (!activeTooltipTarget || !activeTooltipTarget.contains(event.target)) return;
+  activeTooltipPointer = { x: event.clientX, y: event.clientY };
+  positionTooltip();
+});
+document.addEventListener("pointerout", (event) => {
+  const target = tooltipTarget(event.target);
+  if (!target || target.contains(event.relatedTarget)) return;
+  hideTooltip(target);
+});
+document.addEventListener("mouseout", (event) => {
+  const target = tooltipTarget(event.target);
+  if (!target || target.contains(event.relatedTarget)) return;
+  hideTooltip(target);
+});
+document.addEventListener("focusin", (event) => {
+  const target = tooltipTarget(event.target);
+  if (target) showTooltip(target);
+});
+document.addEventListener("focusout", (event) => {
+  const target = tooltipTarget(event.target);
+  if (target) hideTooltip(target);
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") hideTooltip();
+});
+document.addEventListener("scroll", positionTooltip, true);
+window.addEventListener("resize", () => {
+  keepPanelSizesInRange();
+  positionTooltip();
+});
+els.copyButton.addEventListener("click", copyCurrentFile);
+els.downloadButton.addEventListener("click", downloadCurrentFile);
+
+applyStoredPanelSizes();
+render();

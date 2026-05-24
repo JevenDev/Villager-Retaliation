@@ -9,6 +9,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.tooltip.TooltipRenderUtil;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.player.Player;
@@ -160,7 +161,7 @@ public final class VillagerReputationHoverTooltipOverlay {
             return;
         }
         Font font = minecraft.font;
-        String label = "Reputation: " + entry.reputation();
+        String label = I18n.get("villagerretaliation.reputation.value_format", entry.reputation());
         int textWidth = font.width(label);
         int tooltipWidth = ICON_SIZE + ICON_TEXT_GAP + textWidth;
         int tooltipHeight = ICON_SIZE;
