@@ -13,7 +13,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
 final class VillagerRetaliationRetaliationRuntime<T extends AbstractVillager> {
-    private static final long GROUND_WEAPON_SCAN_COOLDOWN_TICKS = 5L;
+    private static final long GROUND_WEAPON_SCAN_COOLDOWN_TICKS = 10L;
 
     private final String persistentTagRoot;
     private final Map<UUID, AngerTarget> angerTargets = new HashMap<>();
@@ -64,12 +64,17 @@ final class VillagerRetaliationRetaliationRuntime<T extends AbstractVillager> {
 
     boolean tryAcquireGroundWeapon(T villager, double movementSpeed, Runnable beforeEquip, long gameTime) {
         UUID villagerId = villager.getUUID();
+        boolean hadPursuedWeapon = this.pursuedGroundWeaponIds.containsKey(villagerId);
         ItemEntity pursuedWeapon = currentPursuedGroundWeapon(villager);
         if (pursuedWeapon != null) {
             if (VillagerRetaliationRetaliationUtil.tryAcquireGroundWeapon(villager, pursuedWeapon, movementSpeed, beforeEquip)) {
                 return true;
             }
             this.pursuedGroundWeaponIds.remove(villagerId);
+            VillagerRetaliationRetaliationUtil.clearGroundWeaponPursuitState(villager);
+        } else if (hadPursuedWeapon) {
+            this.pursuedGroundWeaponIds.remove(villagerId);
+            VillagerRetaliationRetaliationUtil.clearGroundWeaponPursuitState(villager);
         }
 
         if (gameTime < this.nextGroundWeaponScanTicks.getOrDefault(villagerId, 0L)) {
@@ -88,6 +93,7 @@ final class VillagerRetaliationRetaliationRuntime<T extends AbstractVillager> {
                 })
                 .orElseGet(() -> {
                     this.pursuedGroundWeaponIds.remove(villagerId);
+                    VillagerRetaliationRetaliationUtil.clearGroundWeaponPursuitState(villager);
                     return false;
                 });
     }

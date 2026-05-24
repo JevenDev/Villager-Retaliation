@@ -41,7 +41,11 @@ public final class VillagerRetaliationRetaliationUtil {
     private static final int MIN_PATH_RECALCULATION_TICKS = 4;
     private static final int RANDOM_PATH_RECALCULATION_TICKS = 7;
     private static final double PATHED_TARGET_MOVED_DISTANCE_SQR = 1.0D;
+    private static final int MIN_GROUND_WEAPON_PURSUIT_RECALCULATION_TICKS = 4;
+    private static final int RANDOM_GROUND_WEAPON_PURSUIT_RECALCULATION_TICKS = 7;
+    private static final double PURSUED_WEAPON_MOVED_DISTANCE_SQR = 0.25D;
     private static final Map<UUID, RetaliationPathState> PATH_STATES = new HashMap<>();
+    private static final Map<UUID, GroundWeaponPursuitState> GROUND_WEAPON_PURSUIT_STATES = new HashMap<>();
     private static final ResourceLocation COMBAT_MOVEMENT_SPEED_MODIFIER_ID =
             VillagerRetaliation.id("combat_movement_speed");
     private static final AttributeModifier COMBAT_MOVEMENT_SPEED_MODIFIER =
@@ -90,6 +94,7 @@ public final class VillagerRetaliationRetaliationUtil {
                 || itemEntity.hasPickUpDelay()
                 || itemEntity.getItem().isEmpty()
                 || !VillagerRetaliationVillagerWeapons.shouldPathfindForWeapon(villager, itemEntity.getItem())) {
+            clearGroundWeaponPursuitState(villager);
             return false;
         }
 
@@ -97,10 +102,43 @@ public final class VillagerRetaliationRetaliationUtil {
             beforeEquip.run();
             VillagerRetaliationVillagerWeapons.equipGroundWeapon(villager, itemEntity);
             VillagerRangedCombatHelper.seedInitialAttackDelay(villager, villager.getMainHandItem());
+            clearGroundWeaponPursuitState(villager);
             return false;
         }
 
-        BehaviorUtils.setWalkAndLookTargetMemories(villager, itemEntity, (float) movementSpeed, 0);
+        if (shouldRefreshGroundWeaponPursuit(villager, itemEntity)) {
+            BehaviorUtils.setWalkAndLookTargetMemories(villager, itemEntity, (float) movementSpeed, 0);
+        }
+        return true;
+    }
+
+    private static boolean shouldRefreshGroundWeaponPursuit(AbstractVillager villager, ItemEntity itemEntity) {
+        UUID villagerId = villager.getUUID();
+        UUID itemId = itemEntity.getUUID();
+        GroundWeaponPursuitState state = GROUND_WEAPON_PURSUIT_STATES.get(villagerId);
+        boolean targetChanged = state == null || !state.targetId().equals(itemId);
+        int ticksUntilNextRefresh = targetChanged
+                ? 0
+                : Math.max(state.ticksUntilNextRefresh() - 1, 0);
+        boolean itemMoved = targetChanged
+                || itemEntity.distanceToSqr(state.targetX(), state.targetY(), state.targetZ()) >= PURSUED_WEAPON_MOVED_DISTANCE_SQR;
+        boolean shouldRefresh = ticksUntilNextRefresh <= 0
+                && (itemMoved || villager.getNavigation().isDone() || villager.getRandom().nextFloat() < 0.05F);
+
+        if (!shouldRefresh) {
+            GROUND_WEAPON_PURSUIT_STATES.put(villagerId, state.withTicksUntilNextRefresh(ticksUntilNextRefresh));
+            return false;
+        }
+
+        int nextRefresh = MIN_GROUND_WEAPON_PURSUIT_RECALCULATION_TICKS
+                + villager.getRandom().nextInt(RANDOM_GROUND_WEAPON_PURSUIT_RECALCULATION_TICKS);
+        GROUND_WEAPON_PURSUIT_STATES.put(villagerId, new GroundWeaponPursuitState(
+                itemId,
+                itemEntity.getX(),
+                itemEntity.getY(),
+                itemEntity.getZ(),
+                nextRefresh
+        ));
         return true;
     }
 
@@ -353,6 +391,11 @@ public final class VillagerRetaliationRetaliationUtil {
 
     public static void clearPathingState(AbstractVillager villager) {
         PATH_STATES.remove(villager.getUUID());
+        clearGroundWeaponPursuitState(villager);
+    }
+
+    public static void clearGroundWeaponPursuitState(AbstractVillager villager) {
+        GROUND_WEAPON_PURSUIT_STATES.remove(villager.getUUID());
     }
 
     private static boolean hasClearMeleeLine(AbstractVillager villager, LivingEntity target) {
@@ -501,6 +544,24 @@ public final class VillagerRetaliationRetaliationUtil {
                     this.pathedTargetZ,
                     ticksUntilNextPathRecalculation,
                     this.failedPathFindingPenalty
+            );
+        }
+    }
+
+    private record GroundWeaponPursuitState(
+            UUID targetId,
+            double targetX,
+            double targetY,
+            double targetZ,
+            int ticksUntilNextRefresh
+    ) {
+        GroundWeaponPursuitState withTicksUntilNextRefresh(int ticksUntilNextRefresh) {
+            return new GroundWeaponPursuitState(
+                    this.targetId,
+                    this.targetX,
+                    this.targetY,
+                    this.targetZ,
+                    ticksUntilNextRefresh
             );
         }
     }
