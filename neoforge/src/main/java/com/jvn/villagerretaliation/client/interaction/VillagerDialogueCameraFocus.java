@@ -13,6 +13,10 @@ public final class VillagerDialogueCameraFocus {
     private static final float CAMERA_TURN_MIN_TICK_LERP = 0.08F;
     private static final float CAMERA_TURN_MAX_TICK_LERP = 0.25F;
     private static final double CAMERA_TURN_FIRST_FRAME_DELTA_TICKS = 1.0D / 3.0D;
+    private static final double CAMERA_DISTANCE_ZOOM_START = 4.0D;
+    private static final double CAMERA_DISTANCE_ZOOM_END = 12.0D;
+    private static final double CAMERA_DISTANCE_ZOOM_BONUS = 0.10D;
+    private static final double CAMERA_MAX_ZOOM_AMOUNT = 0.45D;
 
     private static boolean cameraTurnInitialized;
     private static float cameraTurnYaw;
@@ -28,7 +32,7 @@ public final class VillagerDialogueCameraFocus {
             return;
         }
 
-        double zoomAmount = VillagerRetaliationConfig.DIALOGUE_CAMERA_ZOOM_AMOUNT.get();
+        double zoomAmount = distanceAdjustedZoomAmount(event);
         if (zoomAmount <= 0.0D) {
             return;
         }
@@ -41,6 +45,26 @@ public final class VillagerDialogueCameraFocus {
         double easedProgress = smoothstep(Mth.clamp(progress, 0.0D, 1.0D));
         double zoomMultiplier = 1.0D - zoomAmount * easedProgress;
         event.setFOV(event.getFOV() * zoomMultiplier);
+    }
+
+    private static double distanceAdjustedZoomAmount(ViewportEvent event) {
+        double zoomAmount = VillagerRetaliationConfig.DIALOGUE_CAMERA_ZOOM_AMOUNT.get();
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null || !ClientVillagerConversationState.active()) {
+            return zoomAmount;
+        }
+
+        Entity villager = minecraft.level.getEntity(ClientVillagerConversationState.focusedVillagerEntityId());
+        if (villager == null || !villager.isAlive()) {
+            return zoomAmount;
+        }
+
+        double distance = event.getCamera().getPosition().distanceTo(targetPosition(villager));
+        double distanceProgress = Mth.clamp(
+                (distance - CAMERA_DISTANCE_ZOOM_START) / (CAMERA_DISTANCE_ZOOM_END - CAMERA_DISTANCE_ZOOM_START),
+                0.0D,
+                1.0D);
+        return Mth.clamp(zoomAmount + CAMERA_DISTANCE_ZOOM_BONUS * smoothstep(distanceProgress), 0.0D, CAMERA_MAX_ZOOM_AMOUNT);
     }
 
     public static void onClientTick(ClientTickEvent.Post event) {
