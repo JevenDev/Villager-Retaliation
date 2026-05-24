@@ -210,140 +210,140 @@ const CONSTANTS = {
 };
 
 const DIALOGUE_KINDS = [
-  { key: "options", label: "Options" },
-  { key: "lines", label: "Lines" },
-  { key: "messages", label: "Messages" },
-  { key: "openings", label: "Openings" },
-  { key: "closings", label: "Closings" },
-  { key: "pacify", label: "Pacify Lines" }
+  { key: "options", label: "Options", icon: "list-checks" },
+  { key: "lines", label: "Lines", icon: "message-square" },
+  { key: "messages", label: "Messages", icon: "message-circle" },
+  { key: "openings", label: "Openings", icon: "door-open" },
+  { key: "closings", label: "Closings", icon: "door-closed" },
+  { key: "pacify", label: "Pacify Lines", icon: "hand-heart" }
 ];
 
 const GIFT_KINDS = [
-  { key: "preferences", label: "Preferences" },
-  { key: "rewards", label: "Rewards" }
+  { key: "preferences", label: "Preferences", icon: "heart" },
+  { key: "rewards", label: "Rewards", icon: "package-plus" }
 ];
 
 const STORY_KINDS = [
-  { key: "structures", label: "Structures" },
-  { key: "biomes", label: "Biomes" }
+  { key: "structures", label: "Structures", icon: "landmark" },
+  { key: "biomes", label: "Biomes", icon: "trees" }
 ];
 
 const KIND_TOOLTIPS = {
-  "dialogue.options": "Adds choices to the villager talk menu.",
-  "dialogue.lines": "Adds villager responses for a dialogue request type.",
-  "dialogue.messages": "Adds keyed one-off text used by specific systems and gift responses.",
-  "dialogue.openings": "Adds lines used when a conversation starts.",
-  "dialogue.closings": "Adds lines used when a conversation ends.",
-  "dialogue.pacify": "Adds text shown after a pacification attempt.",
-  "gifts.preferences": "Maps items or item tags to loved, liked, neutral, disliked, or hated gift reactions.",
-  "gifts.rewards": "Defines items trusted villagers can give back at high reputation.",
-  "stories.structures": "Defines structure ids that villagers can remember and turn into shared stories.",
-  "stories.biomes": "Defines biome ids that villagers can remember and turn into shared stories."
+  "dialogue.options": "Dialogue options add player choices to the villager talk menu. The option id is what matching lines use through option or option_ids.",
+  "dialogue.lines": "Dialogue lines are selected for a request type, then filtered by option, profession, disposition, memories, items, weather, time, and weight.",
+  "dialogue.messages": "Messages are keyed one-off text used by systems such as gifts. Gift response_key values look up matching message keys.",
+  "dialogue.openings": "Openings are localized lines used when a conversation starts.",
+  "dialogue.closings": "Closings are localized lines used when a conversation ends.",
+  "dialogue.pacify": "Pacify lines are localized responses shown after a pacification attempt and can filter by pacification outcome.",
+  "gifts.preferences": "Preferences choose gift reactions from item or tag selectors. Higher priority wins, then earlier rule order.",
+  "gifts.rewards": "Rewards define item rolls for trusted, respected, revered, or royalty villagers and can filter by profession and reputation tier.",
+  "stories.structures": "Structure entries live under data/<namespace>/story_structures and unlock share_story lines for structure targets.",
+  "stories.biomes": "Biome entries live under data/<namespace>/story_biomes and unlock share_story lines for biome targets."
 };
 
 const FIELD_TOOLTIPS = {
-  "meta-packName": "Used as the project name and exported zip filename.",
-  "meta-packFormat": "Written into pack.mcmeta. The wiki starter uses 34 for this Minecraft target.",
-  "meta-namespace": "Namespace used for story discovery files. Most other Villager Retaliation data must stay in the villagerretaliation namespace.",
-  "meta-slug": "Lowercase file stem used for generated file names and starter ids.",
-  "meta-locale": "Dialogue and notifications load en_us first, then overlay the player's locale.",
-  "meta-description": "Text Minecraft shows for the datapack in the pack list.",
-  "dialogue-fileName": "JSON file under data/villagerretaliation/dialogue/<locale>/. Use a unique name unless intentionally replacing built-in data.",
-  "dialogue-locale": "Locale folder for this dialogue file, such as en_us or fr_fr.",
-  "dialogue-id": "Stable id for translations and overrides. Reusing the same id can replace an earlier dialogue entry.",
-  "dialogue-label": "Button text shown in the villager talk menu.",
-  "dialogue-type": "Dialogue request type. Lines must use the same type as the option that asks for them.",
-  "dialogue-order": "Lower numbers appear earlier in the talk menu.",
-  "dialogue-professions": "Limits this entry to specific villager professions. Blank means any profession.",
-  "dialogue-dispositions": "Limits this entry to villager moods derived from reputation and context.",
-  "dialogue-player_items": "Requires the player to have one matching item or item tag. Prefix item tags with #.",
-  "dialogue-player_item_slots": "Controls where the player item check looks. If items are set and slots are blank, the mod defaults to hands.",
-  "dialogue-text": "Villager text. Supported placeholders depend on the dialogue type and filters.",
-  "dialogue-option": "Restricts a line to one or more option ids, including built-in options like adult_share_story.",
-  "dialogue-weather": "Limits a line to clear, rain, or thunder.",
-  "dialogue-times": "Limits a line to morning, afternoon, evening, or night.",
+  "meta-packName": "Used for the export zip name and project label. It does not change datapack paths.",
+  "meta-packFormat": "Written to pack.mcmeta as pack.pack_format. The wiki starter targets Minecraft 1.21.1 with format 34.",
+  "meta-namespace": "Used for generated story discovery files. Dialogue, notifications, gifts, pacification, and preset names must stay in the villagerretaliation namespace.",
+  "meta-slug": "Lowercase file stem used for generated file names and starter ids. Keep it stable if other files refer to those ids.",
+  "meta-locale": "Locale folder for dialogue and notifications. The mod loads en_us first, then overlays the player's locale by matching ids.",
+  "meta-description": "Text Minecraft shows in the datapack list inside pack.mcmeta.",
+  "dialogue-fileName": "Creates data/villagerretaliation/dialogue/<locale>/<file>.json. Avoid global unless intentionally replacing built-in dialogue.",
+  "dialogue-locale": "Locale folder for this dialogue file, such as en_us or fr_fr. Matching ids can override the en_us fallback.",
+  "dialogue-id": "Stable id for generated, translated, overridden, or removed entries. Explicit ids survive array reordering.",
+  "dialogue-label": "Text shown on the talk-menu button for this option.",
+  "dialogue-type": "Request type sent by an option and matched by lines. Option and line types must match.",
+  "dialogue-order": "Lower values appear earlier in the talk menu. If omitted, array order is used.",
+  "dialogue-professions": "Profession filter. Vanilla ids can omit minecraft:, custom professions need their full registered id, and blank means any profession.",
+  "dialogue-dispositions": "Mood filter derived from reputation and context: friendly, respectful, neutral, cautious, rude, hostile, or fearful.",
+  "dialogue-player_items": "Requires one matching player item or item tag. Prefix tags with #; aliases such as player_item_tag are accepted by the loader.",
+  "dialogue-player_item_slots": "Where to check player items. If player_items is set and slots are blank, the default is hands.",
+  "dialogue-text": "Localized villager text. Placeholder support depends on type and filters, such as {target}, {held_item}, family names, or recruitment values.",
+  "dialogue-option": "Restricts a line to option id(s), including custom ids or built-ins such as adult_share_story.",
+  "dialogue-weather": "Weather filter for lines: clear, rain, or thunder.",
+  "dialogue-times": "Time filter for lines: morning, afternoon, evening, or night.",
   "dialogue-event_tags": "Requires a recent nearby village memory with a matching event tag.",
-  "dialogue-player_event_tags": "Requires a recent village memory associated with the player.",
-  "dialogue-story_structure": "Restricts share_story lines to one or more structure ids.",
-  "dialogue-story_biome": "Restricts share_story lines to one or more biome ids.",
-  "dialogue-recruitment_followup_scenarios": "Limits recruitment follow-up lines to stored follow-up scenario ids.",
-  "dialogue-recruitment_memory_scenarios": "Limits recruitment memory lines to stored recruitment scenario ids.",
-  "dialogue-min_recruitment_follow_distance": "Requires the villager to have followed at least this many blocks.",
-  "dialogue-gift_advice": "Limits the line to a specific kind of gift advice result.",
-  "dialogue-weight": "Higher values are more likely when several matching entries are available.",
-  "dialogue-key": "Code or gift preference key this message responds to.",
-  "dialogue-outcomes": "Limits pacify text to specific pacification result outcomes.",
-  "notifications-fileName": "JSON file under data/villagerretaliation/notifications/<locale>/. Use a unique name unless replacing built-in data.",
-  "notifications-locale": "Locale folder for this notification file, such as en_us or fr_fr.",
-  "notification-id": "Stable id for translations and overrides.",
-  "notification-trigger": "Event trigger emitted by the mod, such as gift.liked or ambient.murmur.",
-  "notification-text": "HUD or world text. Supported placeholders depend on the trigger.",
-  "notification-kind": "HUD notification category used by the client.",
-  "notification-world_text_kind": "Visual style for ambient text above villagers.",
-  "notification-color": "Default text/chat color. Accepts named colors or hex values.",
-  "notification-text_color": "On-screen text color override.",
-  "notification-chat_color": "Chat/log text color override.",
-  "notification-professions": "Limits this notification to specific villager professions.",
-  "notification-reputation_levels": "Limits this notification to specific reputation tiers.",
+  "dialogue-player_event_tags": "Requires a recent village memory associated with the current player.",
+  "dialogue-story_structure": "Restricts share_story lines to one or more structure ids from story discovery JSON.",
+  "dialogue-story_biome": "Restricts share_story lines to one or more biome ids from story discovery JSON.",
+  "dialogue-recruitment_followup_scenarios": "Filters recruitment follow-up lines by stored scenario ids.",
+  "dialogue-recruitment_memory_scenarios": "Filters recruitment memory lines by stored scenario ids.",
+  "dialogue-min_recruitment_follow_distance": "Minimum followed distance in blocks for recruitment memory lines.",
+  "dialogue-gift_advice": "Filters a line to a gift advice result such as global_liked, profession_disliked, or already_known.",
+  "dialogue-weight": "Weighted selection among matching entries. Missing weights usually default to 10.",
+  "dialogue-key": "Message lookup key used by systems such as gift preference response_key.",
+  "dialogue-outcomes": "Pacification result filter, such as success, not_enough_emeralds, blocked_by_reputation, or not_applicable.",
+  "notifications-fileName": "Creates data/villagerretaliation/notifications/<locale>/<file>.json. Avoid global unless intentionally replacing built-in notifications.",
+  "notifications-locale": "Locale folder for this notification file. en_us loads first, then the player's locale overlays matching ids.",
+  "notification-id": "Stable id for translation overlays and replacement. Generated ids work, but explicit ids are safer.",
+  "notification-trigger": "Event trigger emitted by the mod, such as gift.liked, ambient.murmur, trade.refused, or alert.witness_death.",
+  "notification-text": "Localized HUD or world text. Supported placeholders depend on the trigger.",
+  "notification-kind": "HUD notification category. Defaults to default when omitted.",
+  "notification-world_text_kind": "Ambient text style above villagers. The loader also accepts style as an alias.",
+  "notification-color": "Default color for text and chat unless text_color or chat_color is more specific. Accepts named colors, #RRGGBB, or #AARRGGBB.",
+  "notification-text_color": "On-screen text color override. Falls back to color when omitted.",
+  "notification-chat_color": "Chat/log color override. Falls back to text_color, then color.",
+  "notification-professions": "Profession filter for this notification. Blank means any profession.",
+  "notification-reputation_levels": "Reputation tier filter. Prefer tier names over assuming fixed numeric thresholds.",
   "notification-min_reputation": "Minimum exact reputation value required.",
   "notification-max_reputation": "Maximum exact reputation value allowed.",
-  "notification-player_items": "Requires the player to have one matching item or item tag.",
-  "notification-player_item_slots": "Controls where the player item check looks.",
-  "notification-weight": "Higher values are more likely when several matching notifications are available.",
+  "notification-player_items": "Requires one matching player item or item tag before this notification can match.",
+  "notification-player_item_slots": "Where to check player items. Defaults to hands when player_items is set.",
+  "notification-weight": "Weighted selection among matching notifications. Missing weights usually default to 10.",
   "notification-chance": "Random chance gate from 0.0 to 1.0 before weighted selection.",
-  "gifts-fileName": "JSON file under data/villagerretaliation/gifts/. Use default only to replace all built-in gifts.",
-  "gift-reaction": "How the villager reacts to matching items, and the default reputation change.",
-  "gift-priority": "Higher priority wins when several gift preference rules match.",
-  "gift-items": "Gift item ids. Unnamespaced ids are treated as minecraft ids; # values are item tags.",
-  "gift-tags": "Gift item tag ids, such as minecraft:villager_plantable_seeds.",
-  "gift-professions": "Limits the gift rule or reward to specific professions.",
-  "gift-reputation_per_item": "Overrides the default reputation gained or lost per gifted item.",
-  "gift-response_key": "Dialogue message key used for custom gift response text.",
-  "gift-item": "Reward item id returned by trusted villagers.",
-  "gift-reputation_levels": "Reputation tiers that can receive this reward.",
-  "gift-min_count": "Minimum reward stack count.",
-  "gift-max_count": "Maximum reward stack count.",
-  "gift-weight": "Higher values are more likely when several rewards match.",
-  "pacification-fileName": "JSON file under data/villagerretaliation/pacification/. Use default only to replace the built-in emerald rule.",
-  "pacification-items": "Payment item ids. Unnamespaced ids are treated as minecraft ids; # values are item tags.",
-  "pacification-tags": "Payment item tag ids, such as c:coins.",
-  "pacification-professions": "Limits the payment rule to specific professions. Wandering traders match none.",
-  "pacification-count": "Exact number of items consumed when this payment is used.",
-  "pacification-min_count": "Minimum random payment cost when exact count is blank.",
-  "pacification-max_count": "Maximum random payment cost when exact count is blank.",
-  "pacification-name": "Singular item name used by pacify dialogue placeholders.",
-  "pacification-plural_name": "Plural item name used by pacify dialogue placeholders.",
-  "pacification-priority": "Higher priority wins when several payment rules match.",
-  "stories-namespace": "Namespace used for story_structures and story_biomes files.",
-  "stories-radius": "Fallback detection radius for structure story entries that do not set their own radius.",
-  "stories-structureFileName": "JSON file under data/<namespace>/story_structures/.",
-  "stories-biomeFileName": "JSON file under data/<namespace>/story_biomes/.",
-  "story-structures": "Structure ids that can unlock share_story dialogue.",
-  "story-biomes": "Biome ids that can unlock share_story dialogue.",
-  "story-name": "Readable target name used by {target} and {target_article}.",
-  "story-radius": "Detection radius in blocks for this structure entry.",
-  "names-male_names": "Names used for villagers assigned male identity.",
-  "names-female_names": "Names used for villagers assigned female identity."
+  "gifts-fileName": "Creates data/villagerretaliation/gifts/<file>.json. Use default only when replacing the built-in default gift table.",
+  "gift-reaction": "Gift reaction: loved, liked, neutral, disliked, or hated. Each has a default reputation per item.",
+  "gift-priority": "Higher priority wins when multiple preference rules match. Ties use earlier rule order.",
+  "gift-items": "Gift item ids. Unnamespaced values count as minecraft ids; values beginning with # are treated as tags.",
+  "gift-tags": "Gift item tag ids, such as minecraft:villager_plantable_seeds. At least one item or tag selector is required.",
+  "gift-professions": "Profession filter. Profession-specific matches beat generic matches for the same gift or reward roll.",
+  "gift-reputation_per_item": "Overrides the reaction's default reputation per gifted item.",
+  "gift-response_key": "Dialogue message key for custom gift text. Define the localized text in dialogue messages.",
+  "gift-item": "Reward item id returned by high-reputation villagers.",
+  "gift-reputation_levels": "Reputation tiers that can receive this reward, such as trusted, respected, revered, or royalty.",
+  "gift-min_count": "Minimum reward stack count, clamped to at least 1.",
+  "gift-max_count": "Maximum reward stack count, clamped to at least the minimum.",
+  "gift-weight": "Weighted selection among matching rewards. Missing weights default to 10.",
+  "pacification-fileName": "Creates data/villagerretaliation/pacification/<file>.json. Use default only when replacing the built-in emerald rule.",
+  "pacification-items": "Payment item ids. Unnamespaced values count as minecraft ids; values beginning with # are treated as tags.",
+  "pacification-tags": "Payment tag ids, such as c:coins. At least one item or tag selector is required.",
+  "pacification-professions": "Profession filter for payment rules. Wandering traders match none.",
+  "pacification-count": "Exact number of items consumed, clamped from 1 to 64. When set, min/max are ignored.",
+  "pacification-min_count": "Minimum random payment cost when count is omitted, clamped from 1 to 64.",
+  "pacification-max_count": "Maximum random payment cost when count is omitted, clamped from min_count to 64.",
+  "pacification-name": "Singular item name used by pacify dialogue placeholders. Defaults to the held item name.",
+  "pacification-plural_name": "Plural item name used when count is not 1. Defaults to name.",
+  "pacification-priority": "Higher priority wins when multiple payment rules match. Ties use earlier rule order.",
+  "stories-namespace": "Namespace for story_structures and story_biomes files. Story discovery can live outside villagerretaliation.",
+  "stories-radius": "Root fallback radius for structure entries that omit their own radius. Defaults to 96.",
+  "stories-structureFileName": "Creates data/<namespace>/story_structures/<file>.json.",
+  "stories-biomeFileName": "Creates data/<namespace>/story_biomes/<file>.json.",
+  "story-structures": "Structure id or ids for share_story targets. Use full resource locations unless a page says a shortcut is supported.",
+  "story-biomes": "Biome id or ids for share_story targets. Use full resource locations.",
+  "story-name": "Readable target name used by {target} and {target_article}. If omitted, the id path is humanized.",
+  "story-radius": "Detection radius in blocks for this structure entry, clamped to at least 1.",
+  "names-male_names": "Preset names used for villagers assigned male identity. Only non-blank strings are loaded.",
+  "names-female_names": "Preset names used for villagers assigned female identity. Existing villagers with stored names are not renamed."
 };
 
 const FLAG_TOOLTIPS = {
-  show_for_adults: "When off, adult villagers will not use this entry.",
-  show_for_babies: "When off, baby villagers will not use this entry.",
+  show_for_adults: "Adult visibility. Defaults to true.",
+  show_for_babies: "Baby visibility. Defaults to true.",
   first_conversation_only: "Only matches during the first conversation with that villager.",
   first_village_interaction_only: "Only matches during the player's first interaction in that village context.",
-  requires_unreported_cartographer_map_discovery: "Shows after an unreported cartographer map discovery.",
-  requires_unreported_story_hint_discovery: "Shows after an unreported story hint discovery.",
-  requires_unreported_combat_survival_report: "Shows after a villager survival report is waiting.",
-  requires_unreported_gear_report: "Shows after the player gives combat gear and has not asked about it yet.",
-  requires_unreported_recruitment_followup: "Shows after a recruitment follow-up is waiting.",
-  requires_unreported_cured_recognition: "Shows after cured villager recognition is waiting.",
-  requires_recent_village_event: "Shows when a nearby remembered village event can be reported.",
-  requires_unreported_gift_advice_result: "Shows after the player tests gift advice and has not discussed the result yet.",
-  requires_unapologized_remembered_harm: "Shows after remembered harm that has not been apologized for.",
-  requires_unreported_village_defense: "Shows after the player defends the village and the defense has not been reported.",
-  requires_shareable_story: "Shows when the villager has a discovered structure or biome story to share.",
-  requires_recent_broken_bed_memory: "Requires a recent memory of the player breaking a villager bed.",
-  requires_recent_direct_hit_memory: "Requires a recent memory of the player directly hitting a villager.",
+  requires_unreported_cartographer_map_discovery: "Requires a cartographer map discovery that has not been reported yet.",
+  requires_unreported_story_hint_discovery: "Requires a story hint discovery that has not been reported yet.",
+  requires_unreported_combat_survival_report: "Requires a waiting combat survival report.",
+  requires_unreported_gear_report: "Requires a waiting gear report after the player gives combat gear.",
+  requires_unreported_recruitment_followup: "Requires a waiting recruitment follow-up.",
+  requires_unreported_cured_recognition: "Requires cured villager recognition that has not been reported yet.",
+  requires_recent_village_event: "Requires a recent nearby village event memory.",
+  requires_unreported_gift_advice_result: "Requires a gift advice result the player has not discussed yet.",
+  requires_unapologized_remembered_harm: "Requires remembered harm that has not been apologized for.",
+  requires_unreported_village_defense: "Requires a village defense event that has not been reported yet.",
+  requires_shareable_story: "Requires a discovered structure or biome story the villager can share.",
+  requires_recent_broken_bed_memory: "Requires recent memory of the player breaking a villager bed.",
+  requires_recent_direct_hit_memory: "Requires recent memory of the player directly hitting a villager.",
   requires_gear_report_used_in_combat: "Requires gifted gear that has been used in combat.",
   requires_gear_report_unused_in_combat: "Requires gifted gear that has not yet been used in combat.",
   requires_recruitment_memory: "Requires stored recruitment memory for the villager.",
@@ -452,9 +452,15 @@ let selectedPath = "pack.mcmeta";
 let toastTimer = null;
 let showLeftPanel = true;
 let showRightPanel = true;
+let wrapPreviewLines = false;
+let previewEditTimer = null;
+let previewEditError = null;
+let fileTreeSignature = "";
 
 const els = {
   workspace: document.querySelector(".workspace"),
+  leftRail: document.querySelector(".left-rail"),
+  rightRail: document.querySelector(".right-rail"),
   tabs: document.querySelector("#section-tabs"),
   panel: document.querySelector("#builder-panel"),
   fileTree: document.querySelector("#file-tree"),
@@ -469,6 +475,8 @@ const els = {
   starterButton: document.querySelector("#starter-button"),
   leftPanelToggleButton: document.querySelector("#left-panel-toggle-button"),
   rightPanelToggleButton: document.querySelector("#right-panel-toggle-button"),
+  wrapPreviewButton: document.querySelector("#wrap-preview-button"),
+  codePreview: document.querySelector(".code-preview"),
   copyButton: document.querySelector("#copy-file-button"),
   downloadButton: document.querySelector("#download-file-button"),
   toast: document.querySelector("#toast")
@@ -530,6 +538,185 @@ function escapeHtml(value) {
     .replace(/"/g, "&quot;");
 }
 
+function icon(name, className = "inline-icon") {
+  return `<i data-lucide="${escapeHtml(name)}" class="${escapeHtml(className)}" aria-hidden="true"></i>`;
+}
+
+function renderIcons() {
+  if (window.lucide?.createIcons) {
+    try {
+      window.lucide.createIcons({
+        attrs: {
+          "stroke-width": 1.8
+        }
+      });
+    } catch {
+      // Text labels keep the builder usable if the icon CDN is unavailable.
+    }
+  }
+}
+
+const MINECRAFT_COLORS = {
+  0: "#000000",
+  1: "#0000aa",
+  2: "#00aa00",
+  3: "#00aaaa",
+  4: "#aa0000",
+  5: "#aa00aa",
+  6: "#ffaa00",
+  7: "#aaaaaa",
+  8: "#555555",
+  9: "#5555ff",
+  a: "#55ff55",
+  b: "#55ffff",
+  c: "#ff5555",
+  d: "#ff55ff",
+  e: "#ffff55",
+  f: "#ffffff"
+};
+
+const MINECRAFT_STYLE_CODES = new Set(["l", "m", "n", "o"]);
+
+const tooltipLayer = document.createElement("div");
+tooltipLayer.id = "minecraft-tooltip";
+tooltipLayer.className = "minecraft-tooltip";
+tooltipLayer.setAttribute("role", "tooltip");
+tooltipLayer.setAttribute("aria-hidden", "true");
+document.body.appendChild(tooltipLayer);
+
+let activeTooltipTarget = null;
+let activeTooltipPointer = null;
+
+function minecraftTooltipHtml(source) {
+  const lines = String(source ?? "").replace(/\r\n?/g, "\n").split("\n");
+  return lines.map((line) => `<span class="minecraft-tooltip-line">${minecraftLineHtml(line)}</span>`).join("");
+}
+
+function minecraftLineHtml(line) {
+  const segments = [];
+  let style = defaultMinecraftStyle();
+  let text = "";
+
+  const flush = () => {
+    if (!text) return;
+    segments.push(`<span class="${minecraftStyleClass(style)}" style="color: ${style.color}">${escapeHtml(text)}</span>`);
+    text = "";
+  };
+
+  for (let index = 0; index < line.length; index++) {
+    const char = line[index];
+    const next = line[index + 1]?.toLowerCase();
+    if ((char === "&" || char === "\u00a7") && next && isMinecraftFormatCode(next)) {
+      flush();
+      style = applyMinecraftFormat(style, next);
+      index++;
+      continue;
+    }
+    text += char;
+  }
+  flush();
+
+  return segments.join("") || "&nbsp;";
+}
+
+function defaultMinecraftStyle() {
+  return {
+    color: MINECRAFT_COLORS.f,
+    bold: false,
+    italic: false,
+    underlined: false,
+    strikethrough: false
+  };
+}
+
+function isMinecraftFormatCode(code) {
+  return code === "r" || MINECRAFT_STYLE_CODES.has(code) || Object.hasOwn(MINECRAFT_COLORS, code);
+}
+
+function applyMinecraftFormat(style, code) {
+  if (code === "r") return defaultMinecraftStyle();
+  if (Object.hasOwn(MINECRAFT_COLORS, code)) {
+    return { ...defaultMinecraftStyle(), color: MINECRAFT_COLORS[code] };
+  }
+  return {
+    ...style,
+    bold: style.bold || code === "l",
+    italic: style.italic || code === "o",
+    underlined: style.underlined || code === "n",
+    strikethrough: style.strikethrough || code === "m"
+  };
+}
+
+function minecraftStyleClass(style) {
+  return [
+    style.bold ? "mc-bold" : "",
+    style.italic ? "mc-italic" : "",
+    style.underlined ? "mc-underlined" : "",
+    style.strikethrough ? "mc-strikethrough" : ""
+  ].filter(Boolean).join(" ");
+}
+
+function tooltipTarget(element) {
+  return element?.closest?.("[data-tooltip]");
+}
+
+function showTooltip(target, pointer = null) {
+  const text = target?.dataset.tooltip;
+  if (!text) return;
+  if (!pointer && target === activeTooltipTarget && activeTooltipPointer) return;
+  activeTooltipTarget = target;
+  activeTooltipPointer = pointer;
+  tooltipLayer.innerHTML = minecraftTooltipHtml(text);
+  tooltipLayer.setAttribute("aria-hidden", "false");
+  tooltipLayer.classList.add("is-visible");
+  target.setAttribute("aria-describedby", tooltipLayer.id);
+  requestAnimationFrame(positionTooltip);
+}
+
+function hideTooltip(target = activeTooltipTarget) {
+  if (!activeTooltipTarget || target !== activeTooltipTarget) return;
+  activeTooltipTarget.removeAttribute("aria-describedby");
+  activeTooltipTarget = null;
+  activeTooltipPointer = null;
+  tooltipLayer.classList.remove("is-visible");
+  tooltipLayer.setAttribute("aria-hidden", "true");
+  tooltipLayer.style.transform = "translate3d(-9999px, -9999px, 0)";
+}
+
+function positionTooltip() {
+  if (!activeTooltipTarget) return;
+  const rect = activeTooltipTarget.getBoundingClientRect();
+  const tooltipRect = tooltipLayer.getBoundingClientRect();
+  const gap = 10;
+  const margin = 12;
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+  let x;
+  let y;
+
+  if (activeTooltipPointer) {
+    x = activeTooltipPointer.x + 14;
+    y = activeTooltipPointer.y + 12;
+  } else if (activeTooltipTarget.closest(".section-tabs")) {
+    x = rect.right + 14;
+    y = rect.top + rect.height / 2 - tooltipRect.height / 2;
+  } else {
+    x = rect.left;
+    y = rect.bottom + gap;
+  }
+
+  if (x + tooltipRect.width > viewportWidth - margin) {
+    x = Math.max(margin, rect.left - tooltipRect.width - gap);
+  }
+  if (y + tooltipRect.height > viewportHeight - margin) {
+    y = Math.max(margin, rect.top - tooltipRect.height - gap);
+  }
+
+  x = Math.max(margin, Math.min(x, viewportWidth - tooltipRect.width - margin));
+  y = Math.max(margin, Math.min(y, viewportHeight - tooltipRect.height - margin));
+  tooltipLayer.style.transform = `translate3d(${Math.round(x)}px, ${Math.round(y)}px, 0)`;
+}
+
 function tooltipAttrs(text, className = "tooltip-label") {
   if (!text) return "";
   const tooltip = escapeHtml(text);
@@ -545,13 +732,13 @@ function tooltipForFlag(flag) {
 }
 
 function tooltipForTag(fieldId, value) {
-  if (fieldId.includes("event_tags")) return EVENT_TAG_TOOLTIPS[value] || "Accepted village event tag.";
+  if (fieldId.includes("event_tags")) return EVENT_TAG_TOOLTIPS[value] || "Village-memory tag accepted by event_tags or player_event_tags.";
   if (fieldId.includes("professions")) return value === "none" || value === "unemployed"
     ? "Matches villagers with no profession."
-    : `Matches ${humanize(value)} villagers.`;
-  if (fieldId.includes("dispositions")) return DISPOSITION_TOOLTIPS[value] || "Villager mood filter.";
-  if (fieldId.includes("reputation_levels")) return `Matches villagers at the ${humanize(value)} reputation tier.`;
-  if (fieldId.includes("player_item_slots")) return ITEM_SLOT_TOOLTIPS[value] || "Player item slot filter.";
+    : `Matches ${humanize(value)} villagers. Custom professions should use a full registered id.`;
+  if (fieldId.includes("dispositions")) return DISPOSITION_TOOLTIPS[value] || "Dialogue mood filter derived from reputation and context.";
+  if (fieldId.includes("reputation_levels")) return `Matches the ${humanize(value)} reputation tier. Prefer tier names over fixed numeric reputation.`;
+  if (fieldId.includes("player_item_slots")) return ITEM_SLOT_TOOLTIPS[value] || "Player item slot filter. Defaults to hands when player_items is set.";
   if (fieldId.includes("weather")) return `Matches ${humanize(value)} weather.`;
   if (fieldId.includes("times")) return `Matches the ${humanize(value)} time window.`;
   if (fieldId.includes("outcomes")) return `Matches the ${humanize(value)} pacification result.`;
@@ -625,6 +812,7 @@ function cleanObject(value) {
   if (value && typeof value === "object" && !(value instanceof Uint8Array)) {
     const result = {};
     for (const [key, child] of Object.entries(value)) {
+      if (key.startsWith("__")) continue;
       const cleaned = cleanObject(child);
       const emptyArray = Array.isArray(cleaned) && cleaned.length === 0;
       const emptyObject = cleaned && typeof cleaned === "object" && !Array.isArray(cleaned) && Object.keys(cleaned).length === 0;
@@ -687,14 +875,7 @@ function generatedFiles() {
   files["pack.mcmeta"] = safeJson(makePackMeta());
 
   if (hasAnyEntries("dialogue", ["options", "lines", "messages", "openings", "closings", "pacify"])) {
-    files[dialoguePath()] = safeJson({
-      options: state.dialogue.options,
-      lines: state.dialogue.lines,
-      messages: state.dialogue.messages,
-      openings: state.dialogue.openings,
-      closings: state.dialogue.closings,
-      pacify: state.dialogue.pacify
-    });
+    Object.assign(files, generatedDialogueFiles());
   }
 
   if (state.notifications.notifications.length > 0) {
@@ -733,101 +914,457 @@ function generatedFiles() {
   return files;
 }
 
+function generatedDialogueFiles() {
+  const grouped = new Map();
+  for (const kind of ["options", "lines", "messages", "openings", "closings", "pacify"]) {
+    for (const entry of state.dialogue[kind]) {
+      const path = entry.__sourcePath || dialoguePath();
+      if (!grouped.has(path)) {
+        grouped.set(path, {
+          options: [],
+          lines: [],
+          messages: [],
+          openings: [],
+          closings: [],
+          pacify: []
+        });
+      }
+      grouped.get(path)[kind].push(entry);
+    }
+  }
+  return Object.fromEntries([...grouped.entries()].map(([path, value]) => [path, safeJson(value)]));
+}
+
+function addCheck(checks, type, title, text) {
+  if (checks.some((check) => check.title === title && check.type === type)) return;
+  checks.push({ type, title, text });
+}
+
+function firstDuplicate(values) {
+  const seen = new Set();
+  for (const value of values.map(String).map((item) => item.trim()).filter(Boolean)) {
+    if (seen.has(value)) return value;
+    seen.add(value);
+  }
+  return "";
+}
+
+function entryValues(entry, keys) {
+  return keys.flatMap((key) => parseList(entry[key]));
+}
+
+function hasAnySelector(entry, keys) {
+  return keys.some((key) => parseList(entry[key]).length > 0 || Boolean(entry[key]));
+}
+
+function firstInvalidValue(entries, keys, predicate) {
+  for (const entry of entries) {
+    for (const value of entryValues(entry, keys)) {
+      if (!predicate(value)) return value;
+    }
+  }
+  return "";
+}
+
+function firstBlankListValue(entries, keys) {
+  for (const entry of entries) {
+    for (const key of keys) {
+      if (Array.isArray(entry[key]) && entry[key].some((value) => String(value).trim() === "")) {
+        return key;
+      }
+    }
+  }
+  return "";
+}
+
+function isValidFileName(value) {
+  const text = String(value || "").trim();
+  return /^[a-z0-9_.\/-]+$/.test(text) && !text.includes("//") && !text.startsWith("/") && !text.endsWith("/");
+}
+
+function isValidResourceLocation(value, { allowTag = false, requireNamespace = false } = {}) {
+  const text = String(value || "").trim();
+  if (!text) return false;
+  const isTag = text.startsWith("#");
+  if (isTag && !allowTag) return false;
+  const body = isTag ? text.slice(1) : text;
+  const pattern = requireNamespace
+    ? /^[a-z0-9_.-]+:[a-z0-9_./-]+$/
+    : /^(?:[a-z0-9_.-]+:)?[a-z0-9_./-]+$/;
+  return pattern.test(body);
+}
+
+function isValidProfession(value) {
+  return CONSTANTS.professions.includes(value) || isValidResourceLocation(value);
+}
+
+function isValidColor(value) {
+  return CONSTANTS.colors.includes(value) || /^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/.test(value);
+}
+
+function numberValue(value) {
+  if (value === undefined || value === null || value === "") return undefined;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : undefined;
+}
+
+function firstBadNumber(entries, keys, predicate = () => true) {
+  for (const entry of entries) {
+    for (const key of keys) {
+      if (entry[key] === undefined || entry[key] === null || entry[key] === "") continue;
+      const number = numberValue(entry[key]);
+      if (number === undefined || !predicate(number, entry, key)) return key;
+    }
+  }
+  return "";
+}
+
 function validate() {
   const checks = [];
   const namespacePattern = /^[a-z0-9_.-]+$/;
   const localePattern = /^[a-z]{2}_[a-z]{2}$/;
 
+  if (previewEditError) {
+    addCheck(checks, "error", "Preview JSON", `Fix invalid JSON in ${previewEditError.path} before it can sync.`);
+  }
+
   if (!namespacePattern.test(state.meta.namespace)) {
-    checks.push({ type: "error", title: "Pack namespace", text: "Use lowercase letters, numbers, underscores, dots, or hyphens." });
+    addCheck(checks, "error", "Pack namespace", "Use lowercase letters, numbers, underscores, dots, or hyphens.");
   }
   if (!localePattern.test(state.meta.locale)) {
-    checks.push({ type: "warning", title: "Locale", text: "Locale folders usually look like en_us or fr_fr." });
+    addCheck(checks, "warning", "Locale", "Locale folders usually look like en_us or fr_fr.");
   }
   if (!Number.isInteger(state.meta.packFormat) || state.meta.packFormat < 1) {
-    checks.push({ type: "error", title: "Pack format", text: "pack_format must be a positive integer." });
+    addCheck(checks, "error", "Pack format", "pack_format must be a positive integer.");
+  }
+  if (!isValidFileName(state.meta.slug)) {
+    addCheck(checks, "error", "File slug", "Use lowercase letters, numbers, underscores, dots, hyphens, or path slashes.");
+  }
+  if (!isValidFileName(state.dialogue.fileName)) {
+    addCheck(checks, "error", "Dialogue file", "Dialogue file names must be lowercase datapack path names.");
+  }
+  if (!isValidFileName(state.notifications.fileName)) {
+    addCheck(checks, "error", "Notification file", "Notification file names must be lowercase datapack path names.");
+  }
+  if (!isValidFileName(state.gifts.fileName)) {
+    addCheck(checks, "error", "Gift file", "Gift file names must be lowercase datapack path names.");
+  }
+  if (!isValidFileName(state.pacification.fileName)) {
+    addCheck(checks, "error", "Pacification file", "Pacification file names must be lowercase datapack path names.");
+  }
+  if (!namespacePattern.test(state.stories.namespace)) {
+    addCheck(checks, "error", "Story namespace", "Story files need a valid lowercase namespace.");
+  }
+  if (!isValidFileName(state.stories.structureFileName) || !isValidFileName(state.stories.biomeFileName)) {
+    addCheck(checks, "error", "Story file", "Story file names must be lowercase datapack path names.");
   }
 
   for (const entry of state.dialogue.options) {
     if (!entry.id || !entry.label || !entry.type) {
-      checks.push({ type: "error", title: "Dialogue option", text: "Every option needs an id, label, and type." });
+      addCheck(checks, "error", "Dialogue option", "Every option needs an id, label, and type.");
       break;
     }
   }
   for (const entry of state.dialogue.lines) {
     if (!entry.type || !entry.text) {
-      checks.push({ type: "error", title: "Dialogue line", text: "Every line needs a type and text." });
+      addCheck(checks, "error", "Dialogue line", "Every line needs a type and text.");
       break;
     }
   }
   for (const entry of state.dialogue.messages) {
     if (!entry.key || !entry.text) {
-      checks.push({ type: "error", title: "Dialogue message", text: "Every message needs a key and text." });
+      addCheck(checks, "error", "Dialogue message", "Every message needs a key and text.");
       break;
     }
   }
+  for (const kind of ["openings", "closings", "pacify"]) {
+    for (const entry of state.dialogue[kind]) {
+      if (!entry.text) {
+        const label = kind === "pacify" ? "pacify line" : kind.slice(0, -1);
+        addCheck(checks, "error", `Dialogue ${kind}`, `Every ${label} entry needs text.`);
+        break;
+      }
+    }
+  }
+  const duplicateOption = firstDuplicate(state.dialogue.options.map((entry) => entry.id));
+  if (duplicateOption) {
+    addCheck(checks, "warning", "Dialogue option ids", `Duplicate option id: ${duplicateOption}.`);
+  }
+  const duplicateMessage = firstDuplicate(state.dialogue.messages.map((entry) => entry.key));
+  if (duplicateMessage) {
+    addCheck(checks, "warning", "Dialogue message keys", `Duplicate message key: ${duplicateMessage}.`);
+  }
+  const allDialogueEntries = ["options", "lines", "messages", "openings", "closings", "pacify"].flatMap((kind) => state.dialogue[kind]);
+  const badDialogueType = firstInvalidValue([...state.dialogue.options, ...state.dialogue.lines], ["type"], (value) => CONSTANTS.dialogueTypes.includes(value));
+  if (badDialogueType) {
+    addCheck(checks, "warning", "Dialogue type", `Unknown dialogue type: ${badDialogueType}.`);
+  }
+  const badDisposition = firstInvalidValue(allDialogueEntries, ["dispositions"], (value) => CONSTANTS.dispositions.includes(value));
+  if (badDisposition) {
+    addCheck(checks, "warning", "Dialogue disposition", `Unknown disposition: ${badDisposition}.`);
+  }
+  const badDialogueProfession = firstInvalidValue(allDialogueEntries, ["professions"], isValidProfession);
+  if (badDialogueProfession) {
+    addCheck(checks, "warning", "Dialogue profession", `Invalid profession id: ${badDialogueProfession}.`);
+  }
+  const badDialogueItem = firstInvalidValue([...state.dialogue.options, ...state.dialogue.lines], ["player_items"], (value) => isValidResourceLocation(value, { allowTag: true }));
+  if (badDialogueItem) {
+    addCheck(checks, "error", "Dialogue item filter", `Invalid item or tag selector: ${badDialogueItem}.`);
+  }
+  const badDialogueSlot = firstInvalidValue([...state.dialogue.options, ...state.dialogue.lines], ["player_item_slots"], (value) => CONSTANTS.itemSlots.includes(value));
+  if (badDialogueSlot) {
+    addCheck(checks, "warning", "Dialogue item slot", `Unknown item slot: ${badDialogueSlot}.`);
+  }
+  const badWeather = firstInvalidValue(state.dialogue.lines, ["weather"], (value) => CONSTANTS.weather.includes(value));
+  if (badWeather) {
+    addCheck(checks, "warning", "Dialogue weather", `Unknown weather value: ${badWeather}.`);
+  }
+  const badTime = firstInvalidValue(state.dialogue.lines, ["times"], (value) => CONSTANTS.times.includes(value));
+  if (badTime) {
+    addCheck(checks, "warning", "Dialogue time", `Unknown time value: ${badTime}.`);
+  }
+  const badGiftAdvice = firstInvalidValue(state.dialogue.lines, ["gift_advice"], (value) => CONSTANTS.giftAdvice.includes(value));
+  if (badGiftAdvice) {
+    addCheck(checks, "warning", "Gift advice filter", `Unknown gift advice filter: ${badGiftAdvice}.`);
+  }
+  const badPacifyOutcome = firstInvalidValue(state.dialogue.pacify, ["outcomes"], (value) => CONSTANTS.pacifyOutcomes.includes(value));
+  if (badPacifyOutcome) {
+    addCheck(checks, "warning", "Pacify outcome", `Unknown pacify outcome: ${badPacifyOutcome}.`);
+  }
+  const badDialogueNumber = firstBadNumber(allDialogueEntries, ["order", "weight", "min_recruitment_follow_distance"], (value) => value >= 0);
+  if (badDialogueNumber) {
+    addCheck(checks, "error", "Dialogue number", `${humanize(badDialogueNumber)} must be a non-negative number.`);
+  }
+  const blankDialogueList = firstBlankListValue(allDialogueEntries, ["professions", "dispositions", "player_items", "player_item_slots", "weather", "times", "event_tags", "player_event_tags", "story_structures", "story_biomes", "outcomes"]);
+  if (blankDialogueList) {
+    addCheck(checks, "warning", "Dialogue list", `${humanize(blankDialogueList)} contains a blank value.`);
+  }
+
   for (const entry of state.notifications.notifications) {
     if (!entry.trigger || !entry.text) {
-      checks.push({ type: "error", title: "Notification", text: "Every notification needs a trigger and text." });
+      addCheck(checks, "error", "Notification", "Every notification needs a trigger and text.");
       break;
     }
   }
+  const duplicateNotification = firstDuplicate(state.notifications.notifications.map((entry) => entry.id));
+  if (duplicateNotification) {
+    addCheck(checks, "warning", "Notification ids", `Duplicate notification id: ${duplicateNotification}.`);
+  }
+  const badHudKind = firstInvalidValue(state.notifications.notifications, ["kind"], (value) => CONSTANTS.hudKinds.includes(value));
+  if (badHudKind) {
+    addCheck(checks, "warning", "Notification HUD kind", `Unknown HUD kind: ${badHudKind}.`);
+  }
+  const badWorldKind = firstInvalidValue(state.notifications.notifications, ["world_text_kind", "style"], (value) => CONSTANTS.worldTextKinds.includes(value));
+  if (badWorldKind) {
+    addCheck(checks, "warning", "Notification world text", `Unknown world text kind: ${badWorldKind}.`);
+  }
+  const badNotificationColor = firstInvalidValue(state.notifications.notifications, ["color", "text_color", "chat_color"], isValidColor);
+  if (badNotificationColor) {
+    addCheck(checks, "warning", "Notification color", `Use a Minecraft color name or hex color instead of ${badNotificationColor}.`);
+  }
+  const badNotificationProfession = firstInvalidValue(state.notifications.notifications, ["professions"], isValidProfession);
+  if (badNotificationProfession) {
+    addCheck(checks, "warning", "Notification profession", `Invalid profession id: ${badNotificationProfession}.`);
+  }
+  const badReputationLevel = firstInvalidValue(state.notifications.notifications, ["reputation_levels"], (value) => CONSTANTS.reputationLevels.includes(value));
+  if (badReputationLevel) {
+    addCheck(checks, "warning", "Notification reputation", `Unknown reputation level: ${badReputationLevel}.`);
+  }
+  const badNotificationItem = firstInvalidValue(state.notifications.notifications, ["player_items"], (value) => isValidResourceLocation(value, { allowTag: true }));
+  if (badNotificationItem) {
+    addCheck(checks, "error", "Notification item filter", `Invalid item or tag selector: ${badNotificationItem}.`);
+  }
+  const badNotificationSlot = firstInvalidValue(state.notifications.notifications, ["player_item_slots"], (value) => CONSTANTS.itemSlots.includes(value));
+  if (badNotificationSlot) {
+    addCheck(checks, "warning", "Notification item slot", `Unknown item slot: ${badNotificationSlot}.`);
+  }
+  const badNotificationNumber = firstBadNumber(state.notifications.notifications, ["min_reputation", "max_reputation", "weight"], (value, entry, key) => key === "weight" ? value >= 0 : Number.isFinite(value));
+  if (badNotificationNumber) {
+    addCheck(checks, "error", "Notification number", `${humanize(badNotificationNumber)} has an invalid number.`);
+  }
+  for (const entry of state.notifications.notifications) {
+    const min = numberValue(entry.min_reputation);
+    const max = numberValue(entry.max_reputation);
+    if (min !== undefined && max !== undefined && min > max) {
+      addCheck(checks, "error", "Notification range", "Minimum reputation cannot be higher than maximum reputation.");
+      break;
+    }
+    const chance = numberValue(entry.chance);
+    if (chance !== undefined && (chance < 0 || chance > 1)) {
+      addCheck(checks, "error", "Notification chance", "Chance must be between 0 and 1.");
+      break;
+    }
+  }
+
   for (const entry of state.gifts.preferences) {
-    if (!entry.reaction || (!entry.items?.length && !entry.tags?.length && !entry.item && !entry.tag)) {
-      checks.push({ type: "error", title: "Gift preference", text: "Every preference needs a reaction and at least one item or tag." });
+    if (!entry.reaction || !hasAnySelector(entry, ["items", "tags", "item", "tag"])) {
+      addCheck(checks, "error", "Gift preference", "Every preference needs a reaction and at least one item or tag.");
       break;
     }
   }
   for (const entry of state.gifts.rewards) {
     if (!entry.item) {
-      checks.push({ type: "error", title: "Gift reward", text: "Every reward needs an item id." });
+      addCheck(checks, "error", "Gift reward", "Every reward needs an item id.");
       break;
     }
+  }
+  const badReaction = firstInvalidValue(state.gifts.preferences, ["reaction"], (value) => CONSTANTS.reactions.includes(value));
+  if (badReaction) {
+    addCheck(checks, "error", "Gift reaction", `Unknown gift reaction: ${badReaction}.`);
+  }
+  const badGiftSelector = firstInvalidValue(state.gifts.preferences, ["items", "item", "tags", "tag"], (value) => isValidResourceLocation(value, { allowTag: true }));
+  if (badGiftSelector) {
+    addCheck(checks, "error", "Gift selector", `Invalid item or tag selector: ${badGiftSelector}.`);
+  }
+  const badGiftReward = firstInvalidValue(state.gifts.rewards, ["item"], (value) => isValidResourceLocation(value));
+  if (badGiftReward) {
+    addCheck(checks, "error", "Gift reward item", `Invalid reward item id: ${badGiftReward}.`);
+  }
+  const badGiftProfession = firstInvalidValue([...state.gifts.preferences, ...state.gifts.rewards], ["professions"], isValidProfession);
+  if (badGiftProfession) {
+    addCheck(checks, "warning", "Gift profession", `Invalid profession id: ${badGiftProfession}.`);
+  }
+  const badGiftReputation = firstInvalidValue(state.gifts.rewards, ["reputation_levels"], (value) => CONSTANTS.reputationLevels.includes(value));
+  if (badGiftReputation) {
+    addCheck(checks, "warning", "Gift reputation", `Unknown reputation level: ${badGiftReputation}.`);
+  }
+  const badGiftNumber = firstBadNumber([...state.gifts.preferences, ...state.gifts.rewards], ["priority", "reputation_per_item", "min_count", "max_count", "weight"], (value, entry, key) => {
+    if (key === "min_count" || key === "max_count") return value >= 1 && value <= 64;
+    if (key === "weight") return value > 0;
+    return Number.isFinite(value);
+  });
+  if (badGiftNumber) {
+    addCheck(checks, "error", "Gift number", `${humanize(badGiftNumber)} has an invalid number.`);
+  }
+  for (const entry of state.gifts.rewards) {
+    const min = numberValue(entry.min_count);
+    const max = numberValue(entry.max_count);
+    if (min !== undefined && max !== undefined && min > max) {
+      addCheck(checks, "error", "Gift count range", "Reward minimum count cannot be higher than maximum count.");
+      break;
+    }
+  }
+  const messageKeys = new Set(state.dialogue.messages.map((entry) => entry.key).filter(Boolean));
+  for (const entry of state.gifts.preferences) {
+    if (entry.response_key && !messageKeys.has(entry.response_key)) {
+      addCheck(checks, "warning", "Gift response key", `No dialogue message currently defines ${entry.response_key}.`);
+      break;
+    }
+  }
+
+  for (const entry of state.pacification.payments) {
+    if (!hasAnySelector(entry, ["items", "tags", "item", "tag"])) {
+      addCheck(checks, "error", "Pacification payment", "Every payment needs at least one item or tag.");
+      break;
+    }
+  }
+  const badPacificationSelector = firstInvalidValue(state.pacification.payments, ["items", "item", "tags", "tag"], (value) => isValidResourceLocation(value, { allowTag: true }));
+  if (badPacificationSelector) {
+    addCheck(checks, "error", "Pacification selector", `Invalid item or tag selector: ${badPacificationSelector}.`);
+  }
+  const badPacificationProfession = firstInvalidValue(state.pacification.payments, ["professions"], isValidProfession);
+  if (badPacificationProfession) {
+    addCheck(checks, "warning", "Pacification profession", `Invalid profession id: ${badPacificationProfession}.`);
+  }
+  const badPacificationNumber = firstBadNumber(state.pacification.payments, ["count", "min_count", "max_count"], (value) => value >= 1 && value <= 64);
+  if (badPacificationNumber) {
+    addCheck(checks, "error", "Pacification count", `${humanize(badPacificationNumber)} must be between 1 and 64.`);
   }
   for (const entry of state.pacification.payments) {
-    if (!entry.items?.length && !entry.tags?.length && !entry.item && !entry.tag) {
-      checks.push({ type: "error", title: "Pacification payment", text: "Every payment needs at least one item or tag." });
+    const min = numberValue(entry.min_count);
+    const max = numberValue(entry.max_count);
+    if (min !== undefined && max !== undefined && min > max) {
+      addCheck(checks, "error", "Pacification range", "Minimum count cannot be higher than maximum count.");
       break;
     }
   }
+
+  const storyRadius = numberValue(state.stories.radius);
+  if (storyRadius !== undefined && storyRadius < 1) {
+    addCheck(checks, "error", "Story radius", "Story radius must be at least 1.");
+  }
   for (const entry of state.stories.structures) {
-    if (!entry.structure && !entry.structures?.length) {
-      checks.push({ type: "error", title: "Story structure", text: "Every structure story needs a structure id." });
+    if (!hasAnySelector(entry, ["structure", "structures"])) {
+      addCheck(checks, "error", "Story structure", "Every structure story needs a structure id.");
       break;
     }
   }
   for (const entry of state.stories.biomes) {
-    if (!entry.biome && !entry.biomes?.length) {
-      checks.push({ type: "error", title: "Story biome", text: "Every biome story needs a biome id." });
+    if (!hasAnySelector(entry, ["biome", "biomes"])) {
+      addCheck(checks, "error", "Story biome", "Every biome story needs a biome id.");
       break;
     }
   }
+  const badStructure = firstInvalidValue(state.stories.structures, ["structure", "structures"], (value) => isValidResourceLocation(value, { requireNamespace: true }));
+  if (badStructure) {
+    addCheck(checks, "warning", "Story structure id", `Use a full structure id like namespace:path instead of ${badStructure}.`);
+  }
+  const badBiome = firstInvalidValue(state.stories.biomes, ["biome", "biomes"], (value) => isValidResourceLocation(value, { requireNamespace: true }));
+  if (badBiome) {
+    addCheck(checks, "warning", "Story biome id", `Use a full biome id like namespace:path instead of ${badBiome}.`);
+  }
+  const badStoryNumber = firstBadNumber(state.stories.structures, ["radius"], (value) => value >= 1);
+  if (badStoryNumber) {
+    addCheck(checks, "error", "Story entry radius", "Structure story radius must be at least 1.");
+  }
+  const blankNames = [...state.names.male_names, ...state.names.female_names].some((name) => String(name).trim() === "");
+  if (blankNames) {
+    addCheck(checks, "warning", "Preset names", "Preset name lists contain a blank value.");
+  }
+  const duplicateName = firstDuplicate([...state.names.male_names, ...state.names.female_names]);
+  if (duplicateName) {
+    addCheck(checks, "warning", "Duplicate preset name", `Preset name appears more than once: ${duplicateName}.`);
+  }
+
   if (checks.length === 0) {
-    checks.push({ type: "ok", title: "Ready", text: "The generated datapack paths and required fields look good." });
+    addCheck(checks, "ok", "Ready", "The generated datapack paths and required fields look good.");
   }
   return checks;
 }
 
 function render() {
+  hideTooltip();
   renderWorkspaceChrome();
   renderTabs();
   renderPanel();
+  resizeTextareas(els.panel);
+  syncValueTags(els.panel);
   renderFiles();
   renderChecks();
   renderPreview();
+  renderIcons();
 }
 
 function renderWorkspaceChrome() {
+  if (!els.leftPanelToggleButton || !els.rightPanelToggleButton) return;
   els.workspace.classList.toggle("is-left-hidden", !showLeftPanel);
   els.workspace.classList.toggle("is-right-hidden", !showRightPanel);
+  els.leftRail.classList.toggle("is-collapsed", !showLeftPanel);
+  els.rightRail.classList.toggle("is-collapsed", !showRightPanel);
+  els.leftRail.setAttribute("aria-label", showLeftPanel ? "Generator sections" : "Show sections");
+  els.rightRail.setAttribute("aria-label", showRightPanel ? "Output" : "Show output");
+  if (!showLeftPanel) {
+    els.leftRail.setAttribute("role", "button");
+    els.leftRail.setAttribute("tabindex", "0");
+  } else {
+    els.leftRail.removeAttribute("role");
+    els.leftRail.removeAttribute("tabindex");
+  }
+  if (!showRightPanel) {
+    els.rightRail.setAttribute("role", "button");
+    els.rightRail.setAttribute("tabindex", "0");
+  } else {
+    els.rightRail.removeAttribute("role");
+    els.rightRail.removeAttribute("tabindex");
+  }
   els.leftPanelToggleButton.classList.toggle("is-on", showLeftPanel);
   els.leftPanelToggleButton.setAttribute("aria-pressed", String(showLeftPanel));
-  els.leftPanelToggleButton.setAttribute("aria-label", showLeftPanel ? "Hide left panel" : "Show left panel");
-  els.leftPanelToggleButton.textContent = showLeftPanel ? "<" : ">";
+  els.leftPanelToggleButton.setAttribute("aria-label", showLeftPanel ? "Hide sections" : "Show sections");
+  els.leftPanelToggleButton.innerHTML = icon(showLeftPanel ? "panel-left-close" : "panel-left-open", "button-icon");
   els.rightPanelToggleButton.classList.toggle("is-on", showRightPanel);
   els.rightPanelToggleButton.setAttribute("aria-pressed", String(showRightPanel));
-  els.rightPanelToggleButton.setAttribute("aria-label", showRightPanel ? "Hide right panel" : "Show right panel");
-  els.rightPanelToggleButton.textContent = showRightPanel ? ">" : "<";
+  els.rightPanelToggleButton.setAttribute("aria-label", showRightPanel ? "Hide output" : "Show output");
+  els.rightPanelToggleButton.innerHTML = icon(showRightPanel ? "panel-right-close" : "panel-right-open", "button-icon");
 }
 
 function totalEntries(...collections) {
@@ -879,18 +1416,29 @@ function renderFiles() {
     selectedPath = paths[0] || "pack.mcmeta";
   }
   els.fileCount.textContent = String(paths.length);
+  const signature = JSON.stringify({ paths, selectedPath });
+  if (signature === fileTreeSignature) {
+    return;
+  }
+  const scrollTop = els.fileTree.scrollTop;
   els.fileTree.innerHTML = paths
     .map((path) => {
       const label = path.split("/").pop();
       const folder = path.includes("/") ? path.slice(0, path.lastIndexOf("/")) : "root";
       return `
-        <button class="file-button ${path === selectedPath ? "is-active" : ""}" type="button" data-path="${escapeHtml(path)}">
-          ${escapeHtml(label)}
-          <small>${escapeHtml(folder)}</small>
+        <button class="file-button ${path === selectedPath ? "is-active" : ""}" type="button" data-path="${escapeHtml(path)}" title="${escapeHtml(path)}">
+          ${icon(label.endsWith(".mcmeta") ? "file-cog" : "file-json", "inline-icon")}
+          <span class="file-button-text">
+            <span class="file-name">${escapeHtml(label)}</span>
+            <small>${escapeHtml(folder)}</small>
+          </span>
         </button>
       `;
     })
     .join("");
+  fileTreeSignature = signature;
+  const maxScrollTop = Math.max(0, els.fileTree.scrollHeight - els.fileTree.clientHeight);
+  els.fileTree.scrollTop = Math.min(scrollTop, maxScrollTop);
 }
 
 function renderChecks() {
@@ -899,6 +1447,7 @@ function renderChecks() {
   els.checks.innerHTML = checks
     .map((check) => `
       <div class="check ${escapeHtml(check.type)}">
+        ${icon(check.type === "error" ? "circle-alert" : check.type === "warning" ? "triangle-alert" : "circle-check", "inline-icon")}
         <strong>${escapeHtml(check.title)}</strong>
         <span>${escapeHtml(check.text)}</span>
       </div>
@@ -910,10 +1459,17 @@ function renderPreview() {
   const files = generatedFiles();
   const value = files[selectedPath];
   els.selectedPath.textContent = selectedPath;
+  els.codePreview.classList.toggle("is-wrapped", wrapPreviewLines);
+  els.codePreview.classList.toggle("is-invalid", previewEditError?.path === selectedPath);
+  els.wrapPreviewButton.classList.toggle("is-on", wrapPreviewLines);
+  els.wrapPreviewButton.setAttribute("aria-pressed", String(wrapPreviewLines));
+  els.wrapPreviewButton.setAttribute("title", wrapPreviewLines ? "Keep preview lines unwrapped" : "Wrap preview lines");
   if (value instanceof Uint8Array) {
-    els.preview.textContent = `Binary file preserved (${value.byteLength} bytes).`;
+    els.preview.value = `Binary file preserved (${value.byteLength} bytes).`;
+    els.preview.readOnly = true;
   } else {
-    els.preview.textContent = value || "";
+    els.preview.readOnly = false;
+    els.preview.value = value || "";
   }
 }
 
@@ -925,6 +1481,23 @@ function renderPanel() {
   if (activeSection === "pacification") renderPacification();
   if (activeSection === "stories") renderStories();
   if (activeSection === "names") renderNames();
+}
+
+function resizeTextareas(root = document) {
+  for (const textarea of root.querySelectorAll(".entry-form textarea")) {
+    textarea.style.height = "42px";
+    textarea.style.height = `${Math.max(42, textarea.scrollHeight)}px`;
+  }
+}
+
+function syncValueTags(root = document) {
+  for (const button of root.querySelectorAll(".value-tag")) {
+    const input = document.querySelector(`#${CSS.escape(button.dataset.target)}`);
+    const isAdded = input ? parseList(input.value).includes(button.dataset.value) : false;
+    button.classList.toggle("is-added", isAdded);
+    button.disabled = isAdded;
+    button.setAttribute("aria-disabled", String(isAdded));
+  }
 }
 
 function field({ id, label, value = "", type = "text", help = "", className = "", attrs = "" }) {
@@ -988,6 +1561,7 @@ function renderValueTags(fieldId, tags) {
         const tooltip = tooltipForTag(fieldId, tag);
         return `
           <button class="value-tag has-tooltip" type="button" data-action="insert-tag" data-target="${escapeHtml(fieldId)}" data-value="${escapeHtml(tag)}" data-tooltip="${escapeHtml(tooltip)}">
+            ${icon("plus", "inline-icon")}
             ${escapeHtml(tag)}
           </button>
         `;
@@ -999,12 +1573,12 @@ function renderValueTags(fieldId, tags) {
 function toggle({ id, label, checked = false, tooltip = "" }) {
   const tip = tooltip || tooltipForField(id, "") || tooltipForFlag(id.replace(/^[^-]+-/, ""));
   return `
-    <label class="toggle has-tooltip" for="${id}" data-tooltip="${escapeHtml(tip)}">
+    <div class="toggle has-tooltip" data-tooltip="${escapeHtml(tip)}">
       <input id="${id}" name="${id}" type="checkbox" ${checked ? "checked" : ""}>
       <span class="toggle-name">${escapeHtml(label)}</span>
-      <span class="toggle-choice toggle-false" aria-hidden="true">False</span>
-      <span class="toggle-choice toggle-true" aria-hidden="true">True</span>
-    </label>
+      <button class="toggle-choice toggle-false" type="button" data-toggle-target="${id}" data-toggle-value="false" aria-pressed="${checked ? "false" : "true"}">False</button>
+      <button class="toggle-choice toggle-true" type="button" data-toggle-target="${id}" data-toggle-value="true" aria-pressed="${checked ? "true" : "false"}">True</button>
+    </div>
   `;
 }
 
@@ -1025,11 +1599,14 @@ function renderOverview() {
   els.panel.innerHTML = `
     <div class="builder-content">
       <div class="builder-header">
-        <div>
-          <p class="eyebrow">Project</p>
-          <h2>Pack Setup</h2>
+        <div class="panel-title-main">
+          ${icon("settings-2", "section-icon")}
+          <div>
+            <h2>Pack Setup</h2>
+            <p class="path-label">pack.mcmeta</p>
+          </div>
         </div>
-        <span class="pill">Minecraft 1.21.1 docs</span>
+        <span class="pill">Pack format 34</span>
       </div>
       <div class="form-grid overview-grid">
         ${field({ id: "meta-packName", label: "Pack name", value: state.meta.packName, className: "span-7" })}
@@ -1048,6 +1625,7 @@ function renderEntryTabs(kinds, activeKey, scope) {
     <div class="entry-tabs" data-scope="${scope}">
       ${kinds.map((kind) => `
         <button class="entry-tab has-tooltip ${kind.key === activeKey ? "is-active" : ""}" type="button" data-kind="${kind.key}" data-tooltip="${escapeHtml(KIND_TOOLTIPS[`${scope}.${kind.key}`] || "")}">
+          ${icon(kind.icon || "circle", "inline-icon")}
           ${escapeHtml(kind.label)}
         </button>
       `).join("")}
@@ -1065,13 +1643,14 @@ function renderEntryList(collection, kind, section) {
       const detail = entry.type || entry.reaction || entry.world_text_kind || entry.structure || entry.biome || entry.items?.join(", ") || "";
       const active = editing && editing.section === section && editing.kind === kind && editing.index === index;
       return `
-        <article class="entry-card ${active ? "is-active" : ""}">
+        <article class="entry-card ${active ? "is-active" : ""}" data-section="${section}" data-kind="${kind}" data-index="${index}" tabindex="0" role="button" aria-label="Edit ${escapeHtml(title)}">
           <div class="entry-object-header">
-            <button class="entry-object-title" type="button" data-action="edit-entry" data-section="${section}" data-kind="${kind}" data-index="${index}">
+            <span class="entry-object-title">
+              ${icon("square-pen", "inline-icon")}
               ${escapeHtml(title)}
-            </button>
+            </span>
             <button class="entry-delete danger" type="button" data-action="delete-entry" data-section="${section}" data-kind="${kind}" data-index="${index}" aria-label="Delete ${escapeHtml(title)}">
-              <span class="trash-icon" aria-hidden="true"></span>
+              ${icon("trash-2", "button-icon")}
             </button>
           </div>
           ${detail ? `<small>${escapeHtml(detail)}</small>` : ""}
@@ -1089,11 +1668,14 @@ function renderDialogue() {
   els.panel.innerHTML = `
     <div class="builder-content">
       <div class="builder-header">
-        <div>
-          <p class="eyebrow">data/villagerretaliation/dialogue</p>
-          <h2>Dialogue</h2>
+        <div class="panel-title-main">
+          ${icon("message-square-text", "section-icon")}
+          <div>
+            <h2>Dialogue</h2>
+            <p class="path-label">data/villagerretaliation/dialogue</p>
+          </div>
         </div>
-        <button class="button button-secondary" type="button" data-action="add-dialogue-example">Add Example</button>
+        <button class="button button-secondary" type="button" data-action="add-dialogue-example">${icon("plus", "button-icon")}Add Example</button>
       </div>
       <div class="form-grid">
         ${field({ id: "dialogue-fileName", label: "Dialogue file", value: state.dialogue.fileName, help: "Avoid global unless replacing the built-in file." })}
@@ -1203,8 +1785,8 @@ function renderDialogueForm(kind, entry) {
 function formActions(actionLabel, saveAction, clearAction) {
   return `
     <div class="form-actions">
-      <button class="button button-primary" type="submit" data-action="${saveAction}">${actionLabel}</button>
-      <button class="button button-secondary" type="button" data-action="${clearAction}">Clear</button>
+      <button class="button button-primary" type="submit" data-action="${saveAction}">${icon(actionLabel === "Update" ? "save" : "plus", "button-icon")}${actionLabel}</button>
+      <button class="button button-secondary" type="button" data-action="${clearAction}">${icon("rotate-ccw", "button-icon")}Clear</button>
     </div>
   `;
 }
@@ -1215,11 +1797,14 @@ function renderNotifications() {
   els.panel.innerHTML = `
     <div class="builder-content">
       <div class="builder-header">
-        <div>
-          <p class="eyebrow">data/villagerretaliation/notifications</p>
-          <h2>Notifications</h2>
+        <div class="panel-title-main">
+          ${icon("bell-ring", "section-icon")}
+          <div>
+            <h2>Notifications</h2>
+            <p class="path-label">data/villagerretaliation/notifications</p>
+          </div>
         </div>
-        <button class="button button-secondary" type="button" data-action="add-notification-example">Add Example</button>
+        <button class="button button-secondary" type="button" data-action="add-notification-example">${icon("plus", "button-icon")}Add Example</button>
       </div>
       <div class="form-grid">
         ${field({ id: "notifications-fileName", label: "Notification file", value: state.notifications.fileName, help: "Avoid global unless replacing the built-in file." })}
@@ -1266,11 +1851,14 @@ function renderGifts() {
   els.panel.innerHTML = `
     <div class="builder-content">
       <div class="builder-header">
-        <div>
-          <p class="eyebrow">data/villagerretaliation/gifts</p>
-          <h2>Gifts</h2>
+        <div class="panel-title-main">
+          ${icon("gift", "section-icon")}
+          <div>
+            <h2>Gifts</h2>
+            <p class="path-label">data/villagerretaliation/gifts</p>
+          </div>
         </div>
-        <button class="button button-secondary" type="button" data-action="add-gift-example">Add Example</button>
+        <button class="button button-secondary" type="button" data-action="add-gift-example">${icon("plus", "button-icon")}Add Example</button>
       </div>
       <div class="form-grid one">
         ${field({ id: "gifts-fileName", label: "Gift file", value: state.gifts.fileName, help: "Use default only when replacing all built-in gifts." })}
@@ -1320,11 +1908,14 @@ function renderPacification() {
   els.panel.innerHTML = `
     <div class="builder-content">
       <div class="builder-header">
-        <div>
-          <p class="eyebrow">data/villagerretaliation/pacification</p>
-          <h2>Pacification Payments</h2>
+        <div class="panel-title-main">
+          ${icon("hand-coins", "section-icon")}
+          <div>
+            <h2>Pacification Payments</h2>
+            <p class="path-label">data/villagerretaliation/pacification</p>
+          </div>
         </div>
-        <button class="button button-secondary" type="button" data-action="add-pacification-example">Add Example</button>
+        <button class="button button-secondary" type="button" data-action="add-pacification-example">${icon("plus", "button-icon")}Add Example</button>
       </div>
       <div class="form-grid one">
         ${field({ id: "pacification-fileName", label: "Pacification file", value: state.pacification.fileName, help: "Use default only when replacing the built-in emerald rule." })}
@@ -1356,11 +1947,14 @@ function renderStories() {
   els.panel.innerHTML = `
     <div class="builder-content">
       <div class="builder-header">
-        <div>
-          <p class="eyebrow">data/&lt;namespace&gt;/story_*</p>
-          <h2>Story Discovery</h2>
+        <div class="panel-title-main">
+          ${icon("map", "section-icon")}
+          <div>
+            <h2>Story Discovery</h2>
+            <p class="path-label">data/&lt;namespace&gt;/story_*</p>
+          </div>
         </div>
-        <button class="button button-secondary" type="button" data-action="add-story-example">Add Example</button>
+        <button class="button button-secondary" type="button" data-action="add-story-example">${icon("plus", "button-icon")}Add Example</button>
       </div>
       <div class="form-grid">
         ${field({ id: "stories-namespace", label: "Story namespace", value: state.stories.namespace })}
@@ -1403,11 +1997,14 @@ function renderNames() {
   els.panel.innerHTML = `
     <div class="builder-content">
       <div class="builder-header">
-        <div>
-          <p class="eyebrow">data/villagerretaliation/villager_names</p>
-          <h2>Preset Names</h2>
+        <div class="panel-title-main">
+          ${icon("user-round", "section-icon")}
+          <div>
+            <h2>Preset Names</h2>
+            <p class="path-label">data/villagerretaliation/villager_names</p>
+          </div>
         </div>
-        <button class="button button-secondary" type="button" data-action="add-name-example">Add Example</button>
+        <button class="button button-secondary" type="button" data-action="add-name-example">${icon("plus", "button-icon")}Add Example</button>
       </div>
       <div class="form-grid">
         ${textareaField({ id: "names-male_names", label: "Male names", value: state.names.male_names.join("\n"), rows: 8, help: "One name per line.", className: "full" })}
@@ -1594,6 +2191,10 @@ function saveStoryEntry(event) {
 
 function upsertEntry(section, kind, entry) {
   if (editing && editing.section === section && editing.kind === kind) {
+    const existing = state[section][kind][editing.index];
+    if (existing?.__sourcePath) {
+      entry.__sourcePath = existing.__sourcePath;
+    }
     state[section][kind][editing.index] = entry;
     showToast("Entry updated.");
   } else {
@@ -1905,17 +2506,143 @@ async function copyCurrentFile() {
     showToast("Binary files cannot be copied as text.");
     return;
   }
-  await navigator.clipboard.writeText(value || "");
+  await navigator.clipboard.writeText(els.preview.value || "");
   showToast("Copied current file.");
 }
 
 function downloadCurrentFile() {
   const files = generatedFiles();
-  const value = files[selectedPath] || "";
+  const generated = files[selectedPath] || "";
+  const value = generated instanceof Uint8Array ? generated : els.preview.value;
   const blob = value instanceof Uint8Array
     ? new Blob([value])
     : new Blob([value], { type: "application/json" });
   downloadBlob(blob, selectedPath.split("/").pop() || "datapack-file");
+}
+
+function applyPreviewEdit() {
+  const source = els.preview.value;
+  if (generatedFiles()[selectedPath] instanceof Uint8Array) return;
+  const applied = applyEditedFile(selectedPath, source);
+  if (!applied) {
+    previewEditError = { path: selectedPath };
+    els.codePreview.classList.add("is-invalid");
+    renderChecks();
+    return;
+  }
+  previewEditError = null;
+  els.codePreview.classList.remove("is-invalid");
+  renderTabs();
+  renderPanel();
+  resizeTextareas(els.panel);
+  syncValueTags(els.panel);
+  renderFiles();
+  renderChecks();
+  renderIcons();
+}
+
+function applyEditedFile(path, source) {
+  if (path === "pack.mcmeta") {
+    const json = parseEditedJson(source);
+    if (!json) return false;
+    const pack = json.pack || {};
+    if (Object.hasOwn(pack, "description")) state.meta.description = pack.description || "";
+    if (Object.hasOwn(pack, "pack_format")) {
+      const packFormat = Number(pack.pack_format);
+      state.meta.packFormat = Number.isFinite(packFormat) ? Math.trunc(packFormat) : pack.pack_format;
+    }
+    return true;
+  }
+
+  if (path.match(/^data\/villagerretaliation\/dialogue\/([^/]+)\/(.+)\.json$/)) {
+    const json = parseEditedJson(source);
+    if (!json) return false;
+    replaceDialogueFile(path, json);
+    return true;
+  }
+
+  const notificationMatch = path.match(/^data\/villagerretaliation\/notifications\/([^/]+)\/(.+)\.json$/);
+  if (notificationMatch) {
+    const json = parseEditedJson(source);
+    if (!json) return false;
+    state.meta.locale = notificationMatch[1];
+    state.notifications.fileName = normalizeFileName(notificationMatch[2].split("/").pop(), state.notifications.fileName);
+    state.notifications.notifications = cleanArray(json.notifications);
+    return true;
+  }
+
+  const giftMatch = path.match(/^data\/villagerretaliation\/gifts\/(.+)\.json$/);
+  if (giftMatch) {
+    const json = parseEditedJson(source);
+    if (!json) return false;
+    state.gifts.fileName = normalizeFileName(giftMatch[1].split("/").pop(), state.gifts.fileName);
+    state.gifts.preferences = cleanArray(json.preferences);
+    state.gifts.rewards = cleanArray(json.rewards);
+    return true;
+  }
+
+  const pacificationMatch = path.match(/^data\/villagerretaliation\/pacification\/(.+)\.json$/);
+  if (pacificationMatch) {
+    const json = parseEditedJson(source);
+    if (!json) return false;
+    state.pacification.fileName = normalizeFileName(pacificationMatch[1].split("/").pop(), state.pacification.fileName);
+    state.pacification.payments = cleanArray(json.payments);
+    return true;
+  }
+
+  const structureMatch = path.match(/^data\/([^/]+)\/story_structures\/(.+)\.json$/);
+  if (structureMatch) {
+    const json = parseEditedJson(source);
+    if (!json) return false;
+    state.stories.namespace = structureMatch[1];
+    state.stories.structureFileName = normalizeFileName(structureMatch[2].split("/").pop(), state.stories.structureFileName);
+    state.stories.radius = parseInteger(json.radius) || state.stories.radius;
+    state.stories.structures = cleanArray(normalizeStoryEntries(json, "structure"));
+    return true;
+  }
+
+  const biomeMatch = path.match(/^data\/([^/]+)\/story_biomes\/(.+)\.json$/);
+  if (biomeMatch) {
+    const json = parseEditedJson(source);
+    if (!json) return false;
+    state.stories.namespace = biomeMatch[1];
+    state.stories.biomeFileName = normalizeFileName(biomeMatch[2].split("/").pop(), state.stories.biomeFileName);
+    state.stories.biomes = cleanArray(normalizeStoryEntries(json, "biome"));
+    return true;
+  }
+
+  if (path === namesPath()) {
+    const json = parseEditedJson(source);
+    if (!json) return false;
+    state.names.male_names = unique([...parseList(json.male_names), ...parseList(json.names)]);
+    state.names.female_names = parseList(json.female_names);
+    return true;
+  }
+
+  state.extraFiles[path] = source;
+  return true;
+}
+
+function parseEditedJson(source) {
+  try {
+    return JSON.parse(source);
+  } catch {
+    return null;
+  }
+}
+
+function cleanArray(entries) {
+  return Array.isArray(entries) ? entries.map((entry) => cleanObject(entry)) : [];
+}
+
+function replaceDialogueFile(path, json) {
+  const dialogueMatch = path.match(/^data\/villagerretaliation\/dialogue\/([^/]+)\/(.+)\.json$/);
+  state.meta.locale = dialogueMatch[1];
+  state.dialogue.fileName = normalizeFileName(dialogueMatch[2].split("/").pop(), state.dialogue.fileName);
+  for (const kind of ["options", "lines", "messages", "openings", "closings", "pacify"]) {
+    state.dialogue[kind] = state.dialogue[kind].filter((entry) => (entry.__sourcePath || dialoguePath()) !== path);
+    state.dialogue[kind].push(...cleanArray(json[kind]).map((entry) => ({ ...entry, __sourcePath: path })));
+  }
 }
 
 async function exportZip() {
@@ -1978,14 +2705,6 @@ async function handleImport(files, replaceProject = false) {
 
 function ingestFiles(files) {
   const extra = {};
-  const knownCounts = {};
-  for (const path of Object.keys(files)) {
-    const normalizedPath = path.replace(/^\/+/, "");
-    const kind = importedKnownKind(normalizedPath);
-    if (kind) {
-      knownCounts[kind] = (knownCounts[kind] || 0) + 1;
-    }
-  }
   for (const [path, value] of Object.entries(files)) {
     const normalizedPath = path.replace(/^\/+/, "");
     if (normalizedPath.endsWith("/")) continue;
@@ -1997,11 +2716,6 @@ function ingestFiles(files) {
       } catch {
         extra[normalizedPath] = value;
       }
-      continue;
-    }
-    const knownKind = importedKnownKind(normalizedPath);
-    if (knownKind && knownCounts[knownKind] > 1) {
-      extra[normalizedPath] = value;
       continue;
     }
     if (typeof value === "string" && ingestKnownJson(normalizedPath, value)) {
@@ -2025,12 +2739,12 @@ function ingestKnownJson(path, source) {
     state.meta.locale = dialogueMatch[1];
     state.dialogue.fileName = normalizeFileName(dialogueMatch[2].split("/").pop(), state.dialogue.fileName);
     const profession = dialogueMatch[2].match(/^professions\/([^/]+)/)?.[1];
-    mergeArray("dialogue", "options", withDefaultProfession(json.options, profession));
-    mergeArray("dialogue", "lines", withDefaultProfession(json.lines, profession));
-    mergeArray("dialogue", "messages", withDefaultProfession(json.messages, profession));
-    mergeArray("dialogue", "openings", withDefaultProfession(json.openings, profession));
-    mergeArray("dialogue", "closings", withDefaultProfession(json.closings, profession));
-    mergeArray("dialogue", "pacify", withDefaultProfession(json.pacify, profession));
+    mergeArray("dialogue", "options", withDefaultProfession(json.options, profession), path);
+    mergeArray("dialogue", "lines", withDefaultProfession(json.lines, profession), path);
+    mergeArray("dialogue", "messages", withDefaultProfession(json.messages, profession), path);
+    mergeArray("dialogue", "openings", withDefaultProfession(json.openings, profession), path);
+    mergeArray("dialogue", "closings", withDefaultProfession(json.closings, profession), path);
+    mergeArray("dialogue", "pacify", withDefaultProfession(json.pacify, profession), path);
     return true;
   }
 
@@ -2144,9 +2858,15 @@ function withDefaultProfession(entries, profession) {
   return entries.map((entry) => entry.professions ? entry : { ...entry, professions: [profession] });
 }
 
-function mergeArray(section, kind, entries) {
+function mergeArray(section, kind, entries, sourcePath = "") {
   if (!Array.isArray(entries)) return;
-  state[section][kind].push(...entries.map((entry) => cleanObject(entry)));
+  state[section][kind].push(...entries.map((entry) => {
+    const cleaned = cleanObject(entry);
+    if (sourcePath && cleaned && typeof cleaned === "object") {
+      cleaned.__sourcePath = sourcePath;
+    }
+    return cleaned;
+  }));
 }
 
 function readUint16(bytes, offset) {
@@ -2339,8 +3059,32 @@ els.panel.addEventListener("click", (event) => {
     return;
   }
 
+  const toggleButton = event.target.closest("[data-toggle-target]");
+  if (toggleButton) {
+    const input = document.querySelector(`#${CSS.escape(toggleButton.dataset.toggleTarget)}`);
+    if (!input) return;
+    input.checked = toggleButton.dataset.toggleValue === "true";
+    const toggleRoot = toggleButton.closest(".toggle");
+    toggleRoot?.querySelector(".toggle-false")?.setAttribute("aria-pressed", String(!input.checked));
+    toggleRoot?.querySelector(".toggle-true")?.setAttribute("aria-pressed", String(input.checked));
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+    return;
+  }
+
   const actionButton = event.target.closest("[data-action]");
-  if (!actionButton) return;
+  if (!actionButton) {
+    const entryCard = event.target.closest(".entry-card");
+    if (entryCard) {
+      editing = {
+        section: entryCard.dataset.section,
+        kind: entryCard.dataset.kind,
+        index: Number(entryCard.dataset.index)
+      };
+      render();
+    }
+    return;
+  }
   const action = actionButton.dataset.action;
   if (action === "insert-tag") {
     insertTag(actionButton.dataset.target, actionButton.dataset.value);
@@ -2356,6 +3100,7 @@ els.panel.addEventListener("click", (event) => {
   }
   if (action === "delete-entry") {
     deleteEntry(actionButton.dataset.section, actionButton.dataset.kind, Number(actionButton.dataset.index));
+    return;
   }
   if (action === "clear-dialogue-form" || action === "clear-notification-form" || action === "clear-gift-form" || action === "clear-pacification-form" || action === "clear-story-form") {
     clearEditing();
@@ -2366,6 +3111,19 @@ els.panel.addEventListener("click", (event) => {
   if (action === "add-pacification-example") addPacificationExample();
   if (action === "add-story-example") addStoryExample();
   if (action === "add-name-example") addNameExample();
+});
+
+els.panel.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") return;
+  const entryCard = event.target.closest(".entry-card");
+  if (!entryCard || event.target.closest("button")) return;
+  event.preventDefault();
+  editing = {
+    section: entryCard.dataset.section,
+    kind: entryCard.dataset.kind,
+    index: Number(entryCard.dataset.index)
+  };
+  render();
 });
 
 els.panel.addEventListener("submit", (event) => {
@@ -2379,6 +3137,12 @@ els.panel.addEventListener("submit", (event) => {
 });
 
 els.panel.addEventListener("input", (event) => {
+  if (event.target.matches(".entry-form textarea")) {
+    resizeTextareas(event.target.closest(".entry-form"));
+  }
+  if (event.target.matches("textarea")) {
+    syncValueTags(event.target.closest(".field") || els.panel);
+  }
   if (activeSection === "overview") updateOverviewFromInput(event.target);
   updateSectionSettings(event.target);
   renderFiles();
@@ -2390,7 +3154,9 @@ els.fileTree.addEventListener("click", (event) => {
   const button = event.target.closest(".file-button");
   if (!button) return;
   selectedPath = button.dataset.path;
+  if (previewEditError?.path !== selectedPath) previewEditError = null;
   renderFiles();
+  renderChecks();
   renderPreview();
 });
 
@@ -2416,14 +3182,96 @@ els.directoryInput.addEventListener("change", async () => {
 
 els.exportButton.addEventListener("click", exportZip);
 els.starterButton.addEventListener("click", loadStarterPack);
-els.leftPanelToggleButton.addEventListener("click", () => {
+els.leftPanelToggleButton.addEventListener("click", (event) => {
+  event.stopPropagation();
   showLeftPanel = !showLeftPanel;
   renderWorkspaceChrome();
+  renderIcons();
 });
-els.rightPanelToggleButton.addEventListener("click", () => {
+els.rightPanelToggleButton.addEventListener("click", (event) => {
+  event.stopPropagation();
   showRightPanel = !showRightPanel;
   renderWorkspaceChrome();
+  renderIcons();
 });
+els.leftRail.addEventListener("click", () => {
+  if (showLeftPanel) return;
+  showLeftPanel = true;
+  renderWorkspaceChrome();
+  renderIcons();
+});
+els.rightRail.addEventListener("click", () => {
+  if (showRightPanel) return;
+  showRightPanel = true;
+  renderWorkspaceChrome();
+  renderIcons();
+});
+els.leftRail.addEventListener("keydown", (event) => {
+  if (showLeftPanel || (event.key !== "Enter" && event.key !== " ")) return;
+  event.preventDefault();
+  showLeftPanel = true;
+  renderWorkspaceChrome();
+  renderIcons();
+});
+els.rightRail.addEventListener("keydown", (event) => {
+  if (showRightPanel || (event.key !== "Enter" && event.key !== " ")) return;
+  event.preventDefault();
+  showRightPanel = true;
+  renderWorkspaceChrome();
+  renderIcons();
+});
+els.wrapPreviewButton.addEventListener("click", () => {
+  wrapPreviewLines = !wrapPreviewLines;
+  renderPreview();
+  renderIcons();
+});
+els.preview.addEventListener("input", () => {
+  window.clearTimeout(previewEditTimer);
+  previewEditTimer = window.setTimeout(applyPreviewEdit, 180);
+});
+document.addEventListener("pointerover", (event) => {
+  const target = tooltipTarget(event.target);
+  if (!target) return;
+  showTooltip(target, { x: event.clientX, y: event.clientY });
+});
+document.addEventListener("mouseover", (event) => {
+  const target = tooltipTarget(event.target);
+  if (!target || target === activeTooltipTarget) return;
+  showTooltip(target, { x: event.clientX, y: event.clientY });
+});
+document.addEventListener("pointermove", (event) => {
+  if (!activeTooltipTarget || !activeTooltipTarget.contains(event.target)) return;
+  activeTooltipPointer = { x: event.clientX, y: event.clientY };
+  positionTooltip();
+});
+document.addEventListener("mousemove", (event) => {
+  if (!activeTooltipTarget || !activeTooltipTarget.contains(event.target)) return;
+  activeTooltipPointer = { x: event.clientX, y: event.clientY };
+  positionTooltip();
+});
+document.addEventListener("pointerout", (event) => {
+  const target = tooltipTarget(event.target);
+  if (!target || target.contains(event.relatedTarget)) return;
+  hideTooltip(target);
+});
+document.addEventListener("mouseout", (event) => {
+  const target = tooltipTarget(event.target);
+  if (!target || target.contains(event.relatedTarget)) return;
+  hideTooltip(target);
+});
+document.addEventListener("focusin", (event) => {
+  const target = tooltipTarget(event.target);
+  if (target) showTooltip(target);
+});
+document.addEventListener("focusout", (event) => {
+  const target = tooltipTarget(event.target);
+  if (target) hideTooltip(target);
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") hideTooltip();
+});
+document.addEventListener("scroll", positionTooltip, true);
+window.addEventListener("resize", positionTooltip);
 els.copyButton.addEventListener("click", copyCurrentFile);
 els.downloadButton.addEventListener("click", downloadCurrentFile);
 

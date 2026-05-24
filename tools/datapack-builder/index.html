@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Villager Retaliation Datapack Builder</title>
+    <title>Villager Retaliation Datapack Generator</title>
     <link rel="stylesheet" href="./styles.css">
   </head>
   <body>
@@ -11,131 +11,112 @@
       <header class="app-header">
         <div class="brand">
           <img src="./assets/villager_retaliation_logo.png" alt="Villager Retaliation logo">
-          <div>
-            <p class="eyebrow">Villager Retaliation</p>
-            <h1>Datapack Creator</h1>
-          </div>
+          <h1>Villager Retaliation Datapack Generator</h1>
         </div>
+
         <div class="toolbar" aria-label="Datapack actions">
+          <a class="button button-secondary" href="https://github.com/JevenDev/Villager-Retaliation/blob/1.21.1/wiki/Home.md" target="_blank" rel="noopener noreferrer" title="Open the Villager Retaliation wiki on GitHub">
+            <i data-lucide="book-open" class="button-icon" aria-hidden="true"></i>
+            Wiki
+          </a>
           <label class="button button-secondary" for="import-input" title="Import a datapack zip or JSON files">
-            <span class="button-icon import-icon" aria-hidden="true"></span>
+            <i data-lucide="upload" class="button-icon" aria-hidden="true"></i>
             Import
           </label>
           <label class="button button-secondary" for="directory-input" title="Import an unpacked datapack folder">
-            <span class="button-icon folder-icon" aria-hidden="true"></span>
+            <i data-lucide="folder-open" class="button-icon" aria-hidden="true"></i>
             Folder
           </label>
           <button class="button button-secondary" id="starter-button" type="button" title="Load a small working example">
-            <span class="button-icon spark-icon" aria-hidden="true"></span>
-            Starter
+            <i data-lucide="package-plus" class="button-icon" aria-hidden="true"></i>
+            Preset
           </button>
           <button class="button button-primary" id="export-button" type="button" title="Export a datapack zip">
-            <span class="button-icon export-icon" aria-hidden="true"></span>
+            <i data-lucide="download" class="button-icon" aria-hidden="true"></i>
             Export
           </button>
         </div>
       </header>
 
       <main class="workspace">
-        <aside class="left-rail" aria-label="Creator navigation">
-          <div class="rail-chrome">
-            <button class="rail-toggle rail-toggle-left is-on" id="left-panel-toggle-button" type="button" aria-pressed="true" aria-label="Hide left panel">
-              &lt;
-            </button>
-          </div>
-          <section class="panel workflow-panel">
-            <div class="panel-title">
-              <div>
-                <p class="eyebrow">Workflow</p>
-                <h2>Build Steps</h2>
-              </div>
-            </div>
-            <nav class="section-tabs" id="section-tabs" aria-label="Builder sections">
-              <button class="tab is-active has-tooltip" type="button" data-section="overview" data-tooltip="Set the datapack metadata, namespace, file slug, and locale.">
-                <span class="step-index" aria-hidden="true">01</span>
-                <span class="tab-copy">
-                  <span class="tab-label">Pack</span>
-                  <span class="tab-detail">Metadata and paths</span>
-                </span>
-                <span class="tab-count" aria-label="Pack status">Setup</span>
-              </button>
-              <button class="tab has-tooltip" type="button" data-section="dialogue" data-tooltip="Create talk options, villager lines, keyed messages, openings, closings, and pacify responses.">
-                <span class="step-index" aria-hidden="true">02</span>
-                <span class="tab-copy">
-                  <span class="tab-label">Dialogue</span>
-                  <span class="tab-detail">Talk options and lines</span>
-                </span>
-                <span class="tab-count" aria-label="Dialogue entry count">0</span>
-              </button>
-              <button class="tab has-tooltip" type="button" data-section="notifications" data-tooltip="Create HUD notifications and ambient world text entries.">
-                <span class="step-index" aria-hidden="true">03</span>
-                <span class="tab-copy">
-                  <span class="tab-label">Notifications</span>
-                  <span class="tab-detail">HUD and world text</span>
-                </span>
-                <span class="tab-count" aria-label="Notification entry count">0</span>
-              </button>
-              <button class="tab has-tooltip" type="button" data-section="gifts" data-tooltip="Define gift reactions, custom response keys, and high-reputation reward items.">
-                <span class="step-index" aria-hidden="true">04</span>
-                <span class="tab-copy">
-                  <span class="tab-label">Gifts</span>
-                  <span class="tab-detail">Reactions and rewards</span>
-                </span>
-                <span class="tab-count" aria-label="Gift entry count">0</span>
-              </button>
-              <button class="tab has-tooltip" type="button" data-section="pacification" data-tooltip="Define held-item payments that can calm hostile villagers or wandering traders.">
-                <span class="step-index" aria-hidden="true">05</span>
-                <span class="tab-copy">
-                  <span class="tab-label">Pacification</span>
-                  <span class="tab-detail">Peace payments</span>
-                </span>
-                <span class="tab-count" aria-label="Pacification entry count">0</span>
-              </button>
-              <button class="tab has-tooltip" type="button" data-section="stories" data-tooltip="Define structures and biomes that unlock share-story dialogue.">
-                <span class="step-index" aria-hidden="true">06</span>
-                <span class="tab-copy">
-                  <span class="tab-label">Stories</span>
-                  <span class="tab-detail">Structures and biomes</span>
-                </span>
-                <span class="tab-count" aria-label="Story entry count">0</span>
-              </button>
-              <button class="tab has-tooltip" type="button" data-section="names" data-tooltip="Replace or extend preset villager name pools.">
-                <span class="step-index" aria-hidden="true">07</span>
-                <span class="tab-copy">
-                  <span class="tab-label">Names</span>
-                  <span class="tab-detail">Preset name pools</span>
-                </span>
-                <span class="tab-count" aria-label="Name count">0</span>
-              </button>
-            </nav>
-          </section>
+        <aside class="left-rail" aria-label="Generator sections">
+          <button class="rail-toggle rail-toggle-left is-on" id="left-panel-toggle-button" type="button" aria-pressed="true" aria-label="Hide sections">
+            <i data-lucide="panel-left-close" class="button-icon" aria-hidden="true"></i>
+          </button>
 
-          <section class="panel files-panel">
-            <div class="panel-title">
-              <div>
-                <p class="eyebrow">Output</p>
-                <h2>Generated Files</h2>
-              </div>
-              <span id="file-count">0</span>
-            </div>
-            <div id="file-tree" class="file-tree"></div>
-          </section>
+          <nav class="section-tabs" id="section-tabs" aria-label="Builder sections">
+            <button class="tab is-active has-tooltip" type="button" data-section="overview" data-tooltip="Set pack.mcmeta, export name, locale, and namespace.">
+              <i data-lucide="settings-2" class="tab-icon" aria-hidden="true"></i>
+              <span class="tab-copy">
+                <span class="tab-label">Pack</span>
+                <span class="tab-detail">Metadata and paths</span>
+              </span>
+              <span class="tab-count" aria-label="Pack status">Setup</span>
+            </button>
+            <button class="tab has-tooltip" type="button" data-section="dialogue" data-tooltip="Create dialogue options, lines, messages, openings, closings, and pacify responses.">
+              <i data-lucide="message-square-text" class="tab-icon" aria-hidden="true"></i>
+              <span class="tab-copy">
+                <span class="tab-label">Dialogue</span>
+                <span class="tab-detail">Talk options and lines</span>
+              </span>
+              <span class="tab-count" aria-label="Dialogue entry count">0</span>
+            </button>
+            <button class="tab has-tooltip" type="button" data-section="notifications" data-tooltip="Create HUD notifications and ambient world text entries.">
+              <i data-lucide="bell-ring" class="tab-icon" aria-hidden="true"></i>
+              <span class="tab-copy">
+                <span class="tab-label">Notifications</span>
+                <span class="tab-detail">HUD and world text</span>
+              </span>
+              <span class="tab-count" aria-label="Notification entry count">0</span>
+            </button>
+            <button class="tab has-tooltip" type="button" data-section="gifts" data-tooltip="Define gift preferences and high-reputation reward rolls.">
+              <i data-lucide="gift" class="tab-icon" aria-hidden="true"></i>
+              <span class="tab-copy">
+                <span class="tab-label">Gifts</span>
+                <span class="tab-detail">Reactions and rewards</span>
+              </span>
+              <span class="tab-count" aria-label="Gift entry count">0</span>
+            </button>
+            <button class="tab has-tooltip" type="button" data-section="pacification" data-tooltip="Define held-item payment rules used to calm hostile villagers.">
+              <i data-lucide="hand-coins" class="tab-icon" aria-hidden="true"></i>
+              <span class="tab-copy">
+                <span class="tab-label">Pacification</span>
+                <span class="tab-detail">Peace payments</span>
+              </span>
+              <span class="tab-count" aria-label="Pacification entry count">0</span>
+            </button>
+            <button class="tab has-tooltip" type="button" data-section="stories" data-tooltip="Define structure and biome story targets for share_story dialogue.">
+              <i data-lucide="map" class="tab-icon" aria-hidden="true"></i>
+              <span class="tab-copy">
+                <span class="tab-label">Stories</span>
+                <span class="tab-detail">Structures and biomes</span>
+              </span>
+              <span class="tab-count" aria-label="Story entry count">0</span>
+            </button>
+            <button class="tab has-tooltip" type="button" data-section="names" data-tooltip="Add preset male and female villager names.">
+              <i data-lucide="user-round" class="tab-icon" aria-hidden="true"></i>
+              <span class="tab-copy">
+                <span class="tab-label">Names</span>
+                <span class="tab-detail">Preset name pools</span>
+              </span>
+              <span class="tab-count" aria-label="Name count">0</span>
+            </button>
+          </nav>
         </aside>
 
         <section class="builder" aria-label="Datapack builder">
           <div id="builder-panel" class="builder-panel"></div>
         </section>
 
-        <aside class="right-rail" aria-label="Validation and preview">
-          <div class="rail-chrome">
-            <button class="rail-toggle rail-toggle-right is-on" id="right-panel-toggle-button" type="button" aria-pressed="true" aria-label="Hide right panel">
-              &gt;
-            </button>
-          </div>
+        <aside class="right-rail" aria-label="Output">
+          <button class="rail-toggle rail-toggle-right is-on" id="right-panel-toggle-button" type="button" aria-pressed="true" aria-label="Hide output">
+            <i data-lucide="panel-right-close" class="button-icon" aria-hidden="true"></i>
+          </button>
+
           <section class="panel checks-panel">
             <div class="panel-title">
-              <div>
-                <p class="eyebrow">Status</p>
+              <div class="panel-title-main">
+                <i data-lucide="shield-check" class="section-icon" aria-hidden="true"></i>
                 <h2>Checks</h2>
               </div>
               <span id="check-count">0</span>
@@ -143,22 +124,33 @@
             <div id="checks" class="checks"></div>
           </section>
 
+          <section class="panel files-panel">
+            <div class="panel-title">
+              <div class="panel-title-main">
+                <i data-lucide="files" class="section-icon" aria-hidden="true"></i>
+                <h2>Files</h2>
+              </div>
+              <span id="file-count">0</span>
+            </div>
+            <div id="file-tree" class="file-tree"></div>
+          </section>
+
           <section class="preview" aria-label="Generated JSON preview">
             <div class="preview-header">
-              <div>
-                <p class="eyebrow">Preview</p>
-                <h2 id="selected-path">pack.mcmeta</h2>
-              </div>
+              <h2 id="selected-path">pack.mcmeta</h2>
               <div class="preview-actions">
+                <button class="icon-button" id="wrap-preview-button" type="button" aria-pressed="false" title="Wrap preview lines">
+                  <i data-lucide="wrap-text" class="button-icon" aria-hidden="true"></i>
+                </button>
                 <button class="icon-button" id="copy-file-button" type="button" title="Copy current file">
-                  <span class="button-icon copy-icon" aria-hidden="true"></span>
+                  <i data-lucide="copy" class="button-icon" aria-hidden="true"></i>
                 </button>
                 <button class="icon-button" id="download-file-button" type="button" title="Download current file">
-                  <span class="button-icon download-icon" aria-hidden="true"></span>
+                  <i data-lucide="file-down" class="button-icon" aria-hidden="true"></i>
                 </button>
               </div>
             </div>
-            <pre class="code-preview"><code id="json-preview"></code></pre>
+            <textarea class="code-preview" id="json-preview" spellcheck="false" aria-label="Edit selected generated file"></textarea>
           </section>
         </aside>
       </main>
@@ -169,6 +161,7 @@
 
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <script src="./app.js"></script>
   </body>
 </html>
