@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
 import com.jvn.villagerretaliation.dialogue.DialogueReputationEffect;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueService;
+import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.network.VillagerWorldTextIndicatorKind;
 import com.jvn.villagerretaliation.notification.VillagerNotifications;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
@@ -120,14 +121,17 @@ public final class VillagerAmbientIndicatorService {
         }
 
         Player attackingPlayer = attacker instanceof Player player ? player : null;
-        emitAlert(
+        boolean victimAlerted = emitAlert(
                 level,
                 damaged,
                 attackingPlayer,
                 attackingPlayer == null ? "alert.villager_damaged" : "alert.player_attacked_villager",
                 attackingPlayer == null ? "" : "alert.villager_damaged",
                 alertReplacements(damaged, attacker),
-                "!");
+                alertTextForDamaged(damaged, attacker));
+        if (victimAlerted && damaged instanceof Villager villager && villager.isBaby()) {
+            broadcastBabyDamagedChat(level, villager, attacker);
+        }
 
         AABB area = damaged.getBoundingBox().inflate(ALERT_WITNESS_RADIUS);
         int alerted = 0;
@@ -158,13 +162,15 @@ public final class VillagerAmbientIndicatorService {
         AABB area = killed.getBoundingBox().inflate(ALERT_WITNESS_RADIUS);
         int alerted = 0;
         for (AbstractVillager witness : level.getEntitiesOfClass(AbstractVillager.class, area)) {
-            if (witness == killed || !witness.isAlive() || witness.isBaby()) {
+            if (witness == killed
+                    || !witness.isAlive()
+                    || witness.isBaby() && !VillagerRetaliationConfig.BABY_VILLAGERS_FLEE_WITNESSED_DEATHS.get()) {
                 continue;
             }
             if (!witness.hasLineOfSight(killed)) {
                 continue;
             }
-            emitAlert(
+            boolean witnessAlerted = emitAlert(
                     level,
                     witness,
                     attacker instanceof Player player ? player : null,
@@ -173,6 +179,9 @@ public final class VillagerAmbientIndicatorService {
                     alertReplacements(witness, attacker),
                     alertTextForDeath(witness, attacker)
             );
+            if (witnessAlerted && witness instanceof Villager villager && villager.isBaby()) {
+                broadcastBabyWitnessedDeathChat(level, villager, attacker);
+            }
             alerted++;
             if (alerted >= MAX_ALERT_WITNESSES) {
                 return;
@@ -445,7 +454,7 @@ public final class VillagerAmbientIndicatorService {
         return closest;
     }
 
-    private static void emitAlert(
+    private static boolean emitAlert(
             ServerLevel level,
             AbstractVillager villager,
             Player player,
@@ -455,13 +464,13 @@ public final class VillagerAmbientIndicatorService {
             String text) {
         long gameTime = level.getGameTime();
         if (gameTime < NEXT_ALERT_TICK.getOrDefault(villager.getUUID(), 0L)) {
-            return;
+            return false;
         }
         NEXT_ALERT_TICK.put(villager.getUUID(), gameTime + ALERT_COOLDOWN_TICKS);
         if (text == null || text.isBlank()) {
-            return;
+            return false;
         }
-        VillagerNotifications.sendWorldText(
+        return VillagerNotifications.sendWorldText(
                 level,
                 villager,
                 player,
@@ -676,11 +685,53 @@ public final class VillagerAmbientIndicatorService {
         return random(witness.getRandom(), "!", "Danger!", "Run!");
     }
 
+    private static String alertTextForDamaged(AbstractVillager damaged, Entity attacker) {
+        if (damaged.isBaby()) {
+            return random(damaged.getRandom(), "Ow!", "Stop!", "Help!");
+        }
+        return "!";
+    }
+
     private static String alertTextForDeath(AbstractVillager witness, Entity attacker) {
+        if (witness.isBaby()) {
+            return random(witness.getRandom(), "No no no!", "Run!", "Help!");
+        }
         if (attacker instanceof Player) {
             return random(witness.getRandom(), "No!", "Murder!", "Bell!");
         }
         return random(witness.getRandom(), "No!", "Danger!", "Bell!");
+    }
+
+    private static void broadcastBabyDamagedChat(ServerLevel level, Villager villager, Entity attacker) {
+        VillagerInteractionService.broadcastForcedVillagerChat(
+                level,
+                villager,
+                babyDamagedChat(villager, attacker),
+                VillagerInteractionService.villagerSpeakerLabel(villager)
+        );
+    }
+
+    private static void broadcastBabyWitnessedDeathChat(ServerLevel level, Villager villager, Entity attacker) {
+        VillagerInteractionService.broadcastForcedVillagerChat(
+                level,
+                villager,
+                babyWitnessedDeathChat(villager, attacker),
+                VillagerInteractionService.villagerSpeakerLabel(villager)
+        );
+    }
+
+    private static String babyDamagedChat(Villager villager, Entity attacker) {
+        if (attacker instanceof Player) {
+            return random(villager.getRandom(), "Ow! Why would you do that?", "Stop! That hurts!", "Help! They hit me!");
+        }
+        return random(villager.getRandom(), "Ow! Something hit me!", "Help! That hurt!", "I want to go home!");
+    }
+
+    private static String babyWitnessedDeathChat(Villager villager, Entity attacker) {
+        if (attacker instanceof Player) {
+            return random(villager.getRandom(), "No no no! I saw what you did!", "Help! They hurt them!", "I want the grownups!");
+        }
+        return random(villager.getRandom(), "No no no! Run!", "Where are the grownups?", "Hide! Hide now!");
     }
 
     private static String random(RandomSource random, String first, String second, String third) {

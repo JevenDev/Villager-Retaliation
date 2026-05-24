@@ -246,6 +246,8 @@ Config categories include:
 
 Pack creators can tune monster-defense behavior independently with `combat.villagersTargetHostileMobs`, `combat.villagersRetaliateAgainstHostileMobs`, `combat.villagersStandGroundAgainstHostileMobs`, `combat.villagersPickUpGroundWeapons`, and the equivalent wandering trader options. `combat.naturalHostileTargetRadius` still controls the scan distance when proactive hostile mob targeting is enabled.
 
+Baby villagers flee witnessed villager deaths by default through `retaliation.babyVillagersFleeWitnessedDeaths`. Disable it to keep the original nitwit-only alarm behavior for witnessed deaths.
+
 ## Debug Overlay
 
 There is an optional client-side debug overlay for testing reputation.

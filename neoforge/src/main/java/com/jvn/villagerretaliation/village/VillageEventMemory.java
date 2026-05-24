@@ -344,6 +344,7 @@ public final class VillageEventMemory {
     private static boolean isNoisyEvent(EventTag tag) {
         return tag == EventTag.REPUTATION_CHANGED
                 || tag == EventTag.VILLAGER_ATTACKED
+                || tag == EventTag.BABY_VILLAGER_ATTACKED
                 || tag == EventTag.PLAYER_ATTACKED_VILLAGER
                 || tag == EventTag.PLAYER_CONTAINER_THEFT
                 || tag == EventTag.NIGHT_ATTACK
@@ -410,6 +411,7 @@ public final class VillageEventMemory {
         RAID,
         VILLAGER_DEATH,
         VILLAGER_ATTACKED,
+        BABY_VILLAGER_ATTACKED,
         PLAYER_ATTACKED_VILLAGER,
         PLAYER_DEFENDED_VILLAGE,
         PLAYER_DEFENDED_RAID,

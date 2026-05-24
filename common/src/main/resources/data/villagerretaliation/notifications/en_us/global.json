@@ -571,13 +571,75 @@
       "trigger": "alert.player_attacked_villager",
       "text": "!",
       "world_text_kind": "alert",
-      "color": "#FFD166"
+      "color": "#FFD166",
+      "show_for_babies": false
     },
     {
       "trigger": "alert.villager_damaged",
       "text": "!",
       "world_text_kind": "alert",
-      "color": "#FFD166"
+      "color": "#FFD166",
+      "show_for_babies": false
+    },
+    {
+      "id": "baby_attacked_player_ow",
+      "trigger": "alert.player_attacked_villager",
+      "text": "Ow!",
+      "world_text_kind": "alert",
+      "color": "#FFD166",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "weight": 14
+    },
+    {
+      "id": "baby_attacked_player_stop",
+      "trigger": "alert.player_attacked_villager",
+      "text": "Stop!",
+      "world_text_kind": "alert",
+      "color": "#FFD166",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "weight": 12
+    },
+    {
+      "id": "baby_attacked_player_help",
+      "trigger": "alert.player_attacked_villager",
+      "text": "Help!",
+      "world_text_kind": "alert",
+      "color": "#FFD166",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "weight": 12
+    },
+    {
+      "id": "baby_damaged_ow",
+      "trigger": "alert.villager_damaged",
+      "text": "Ow!",
+      "world_text_kind": "alert",
+      "color": "#FFD166",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "weight": 14
+    },
+    {
+      "id": "baby_damaged_help",
+      "trigger": "alert.villager_damaged",
+      "text": "Help!",
+      "world_text_kind": "alert",
+      "color": "#FFD166",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "weight": 12
+    },
+    {
+      "id": "baby_damaged_home",
+      "trigger": "alert.villager_damaged",
+      "text": "I want to go home!",
+      "world_text_kind": "alert",
+      "color": "#FFD166",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "weight": 8
     },
     {
       "trigger": "alert.witness_attack.player",
@@ -595,13 +657,95 @@
       "trigger": "alert.witness_death.player",
       "text": "Murder!",
       "world_text_kind": "alert",
-      "color": "#FFD166"
+      "color": "#FFD166",
+      "show_for_babies": false
     },
     {
       "trigger": "alert.witness_death",
       "text": "Bell!",
       "world_text_kind": "alert",
-      "color": "#FFD166"
+      "color": "#FFD166",
+      "show_for_babies": false
+    },
+    {
+      "id": "baby_witness_death_player_no_no",
+      "trigger": "alert.witness_death.player",
+      "text": "No no no!",
+      "world_text_kind": "alert",
+      "color": "#FFD166",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "weight": 14
+    },
+    {
+      "id": "baby_witness_death_player_i_saw",
+      "trigger": "alert.witness_death.player",
+      "text": "I saw!",
+      "world_text_kind": "alert",
+      "color": "#FFD166",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "weight": 10
+    },
+    {
+      "id": "baby_witness_death_player_help",
+      "trigger": "alert.witness_death.player",
+      "text": "Help!",
+      "world_text_kind": "alert",
+      "color": "#FFD166",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "weight": 12
+    },
+    {
+      "id": "baby_witness_death_player_run",
+      "trigger": "alert.witness_death.player",
+      "text": "Run!",
+      "world_text_kind": "alert",
+      "color": "#FFD166",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "weight": 12
+    },
+    {
+      "id": "baby_witness_death_no_no",
+      "trigger": "alert.witness_death",
+      "text": "No no no!",
+      "world_text_kind": "alert",
+      "color": "#FFD166",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "weight": 14
+    },
+    {
+      "id": "baby_witness_death_where_grownups",
+      "trigger": "alert.witness_death",
+      "text": "Where are the grownups?",
+      "world_text_kind": "alert",
+      "color": "#FFD166",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "weight": 8
+    },
+    {
+      "id": "baby_witness_death_hide",
+      "trigger": "alert.witness_death",
+      "text": "Hide!",
+      "world_text_kind": "alert",
+      "color": "#FFD166",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "weight": 12
+    },
+    {
+      "id": "baby_witness_death_help",
+      "trigger": "alert.witness_death",
+      "text": "Help!",
+      "world_text_kind": "alert",
+      "color": "#FFD166",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "weight": 12
     }
   ]
 }

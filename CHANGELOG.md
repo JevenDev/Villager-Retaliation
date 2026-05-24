@@ -26,6 +26,9 @@
 - Added built-in `retaliation_started_chat` combat barks for player targets, raiders, undead, monsters, and generic retaliation targets.
 - Added built-in unarmed-villager `retaliation_started_chat` combat barks.
 - Added loot-table-specific forced dialogue scenes for weaponsmith, temple, cartographer, and armorer village chests.
+- Added default-on baby villager fleeing when they witness a villager death, configurable with `retaliation.babyVillagersFleeWitnessedDeaths`.
+- Added baby-specific witnessed-death alert lines.
+- Added baby-specific hit alert lines and village-event dialogue for baby villager attacks.
 
 ### Changed
 

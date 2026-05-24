@@ -315,7 +315,7 @@ public final class VillagerDialogueResources {
             Set<DialogueDisposition> dispositions = readEnumSet(entry, "dispositions", DialogueDisposition.class);
             int weight = Math.max(1, readInt(entry, "weight", 10));
             boolean showForAdults = readBoolean(entry, "show_for_adults", true);
-            boolean showForBabies = readBoolean(entry, "show_for_babies", true);
+            boolean showForBabies = readBoolean(entry, "show_for_babies", professions.isEmpty());
             String resolvedId = id.isBlank() ? fallbackId(location, "message", index) : id;
             messages.put(resolvedId, new KeyedMessageLine(
                     resolvedId,
@@ -519,7 +519,7 @@ public final class VillagerDialogueResources {
             Set<DialogueDisposition> dispositions = readEnumSet(entry, "dispositions", DialogueDisposition.class);
             int weight = Math.max(1, readInt(entry, "weight", 10));
             boolean showForAdults = readBoolean(entry, "show_for_adults", true);
-            boolean showForBabies = readBoolean(entry, "show_for_babies", true);
+            boolean showForBabies = readBoolean(entry, "show_for_babies", professions.isEmpty());
             boolean firstConversationOnly = readBoolean(entry, "first_conversation_only");
             boolean firstVillageInteractionOnly = readBoolean(entry, "first_village_interaction_only");
             String resolvedId = id.isBlank() ? fallbackId(location, key, index) : id;

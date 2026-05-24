@@ -228,7 +228,7 @@ public final class VillagerRetaliationHandler {
         if (villager.isBaby()) {
             VillagerRetaliationVillagerCombatUtil.resolveAttacker(villager, event.getSource()).ifPresent(attacker -> {
                 if (shouldRetaliateAgainstAttacker(villager, attacker)) {
-                    rallyNearbyVillagers(villager, attacker, VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get());
+                    rallyNearbyVillagers(villager, attacker, VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get(), false);
                 }
             });
             return;
@@ -257,6 +257,7 @@ public final class VillagerRetaliationHandler {
     public static void onLivingDeath(LivingDeathEvent event) {
         Entity deceased = event.getEntity();
         boolean deceasedIsVillager = deceased instanceof Villager;
+        boolean deceasedIsBabyVillager = deceased instanceof Villager villager && villager.isBaby();
         if (deceased instanceof Villager villager) {
             // Keep temporary combat weapons equipped on death so vanilla equipment drops can roll.
             clearAnger(villager, false);
@@ -269,10 +270,6 @@ public final class VillagerRetaliationHandler {
                 || !(deceased.level() instanceof ServerLevel level)) {
             return;
         }
-        if (deceased instanceof Villager villager && villager.isBaby()) {
-            return;
-        }
-
         Optional<LivingEntity> attacker = event.getEntity() instanceof LivingEntity livingEntity
                 ? VillagerRetaliationVillagerCombatUtil.resolveAttacker(livingEntity, event.getSource())
                 : VillagerRetaliationVillagerCombatUtil.resolveAttacker(event.getSource());
@@ -280,6 +277,9 @@ public final class VillagerRetaliationHandler {
         List<Villager> witnessVillagers = witnessVillagersNear(deceased, radius);
         if (deceasedIsVillager) {
             triggerNitwitWitnessedDeathFlee(witnessVillagers, attacker.orElse(null));
+        }
+        if (deceasedIsBabyVillager) {
+            return;
         }
 
         if (attacker.isEmpty() || VillagerRetaliationVillagerCombatUtil.shouldIgnoreAttacker(attacker.get())) {
@@ -763,10 +763,19 @@ public final class VillagerRetaliationHandler {
     }
 
     private static void angerNearbyVillagers(Entity sourceEntity, LivingEntity attacker, double radius) {
-        angerNearbyVillagers(sourceEntity, attacker, radius, false);
+        angerNearbyVillagers(sourceEntity, attacker, radius, false, true);
     }
 
     private static void angerNearbyVillagers(Entity sourceEntity, LivingEntity attacker, double radius, boolean witnessedVillagerKill) {
+        angerNearbyVillagers(sourceEntity, attacker, radius, witnessedVillagerKill, true);
+    }
+
+    private static void angerNearbyVillagers(
+            Entity sourceEntity,
+            LivingEntity attacker,
+            double radius,
+            boolean witnessedVillagerKill,
+            boolean announceRetaliation) {
         if (!(sourceEntity.level() instanceof ServerLevel level)) {
             return;
         }
@@ -777,7 +786,7 @@ public final class VillagerRetaliationHandler {
                     && !nearby.isBaby()
                     && canWitnessRetaliationEvent(nearby, sourceEntity)
                     && shouldAggroFromWitness(nearby, attacker, witnessedVillagerKill)) {
-                anger(nearby, attacker);
+                anger(nearby, attacker, announceRetaliation, announceRetaliation);
             }
         }
     }
@@ -835,10 +844,18 @@ public final class VillagerRetaliationHandler {
     }
 
     private static void rallyNearbyVillagers(Villager alarmVillager, LivingEntity attacker, double radius) {
+        rallyNearbyVillagers(alarmVillager, attacker, radius, true);
+    }
+
+    private static void rallyNearbyVillagers(
+            Villager alarmVillager,
+            LivingEntity attacker,
+            double radius,
+            boolean announceRetaliation) {
         // Keep alarm villagers in panic/flee behavior while still spreading the threat to fighters.
         long gameTime = alarmVillager.level().getGameTime();
         VillagerRetaliationVillagerBrainUtil.enterFleeState(alarmVillager, attacker, gameTime);
-        angerNearbyVillagers(alarmVillager, attacker, radius);
+        angerNearbyVillagers(alarmVillager, attacker, radius, false, announceRetaliation);
         WanderingTraderRetaliationHandler.angerNearbyTradersFrom(alarmVillager, attacker, radius);
     }
 
@@ -875,7 +892,8 @@ public final class VillagerRetaliationHandler {
     }
 
     private static boolean isWitnessAlarmVillager(Villager villager) {
-        return villager.isBaby() || isNitwitAlarm(villager);
+        return isNitwitAlarm(villager)
+                || villager.isBaby() && VillagerRetaliationConfig.BABY_VILLAGERS_FLEE_WITNESSED_DEATHS.get();
     }
 
     private static boolean canWitnessRetaliationEvent(Villager witness, Entity sourceEntity) {

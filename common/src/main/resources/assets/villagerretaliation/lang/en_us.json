@@ -63,6 +63,7 @@
   "villagerretaliation.configuration.balance.veryRareDropChance": "Very Rare Drop Chance",
   "villagerretaliation.configuration.retaliation.attackAggrosOnlyHitVillager": "Attack Aggros Only Hit Villager",
   "villagerretaliation.configuration.retaliation.killingVillagerAggrosNearbyVillagers": "Killing Villager Aggros Nearby Villagers",
+  "villagerretaliation.configuration.retaliation.babyVillagersFleeWitnessedDeaths": "Baby Villagers Flee Witnessed Deaths",
   "villagerretaliation.configuration.retaliation.villagerKillAggroRadius": "Villager Kill Aggro Radius",
   "villagerretaliation.configuration.retaliation.retaliationWitnessesRequireLineOfSight": "Retaliation Witnesses Require Line Of Sight",
   "villagerretaliation.configuration.retaliation.aggroDurationTicks": "Aggro Duration Ticks",

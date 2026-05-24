@@ -398,6 +398,9 @@ public final class VillagerRetaliationEvents {
 
         Entity attacker = event.getSource().getEntity();
         VillageEventMemory.remember(level, VillageEventMemory.EventTag.VILLAGER_ATTACKED, villager.blockPosition(), villager, attacker);
+        if (villager.isBaby()) {
+            VillageEventMemory.remember(level, VillageEventMemory.EventTag.BABY_VILLAGER_ATTACKED, villager.blockPosition(), villager, attacker);
+        }
         if (event.getSource().is(DamageTypeTags.IS_FIRE)) {
             VillageEventMemory.remember(level, VillageEventMemory.EventTag.VILLAGE_FIRE, villager.blockPosition(), villager, attacker);
         }

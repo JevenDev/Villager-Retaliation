@@ -39,6 +39,7 @@ public final class VillagerRetaliationConfig {
 
     public static final ModConfigSpec.BooleanValue ATTACK_AGGROS_ONLY_HIT_VILLAGER;
     public static final ModConfigSpec.BooleanValue KILLING_VILLAGER_AGGROS_NEARBY_VILLAGERS;
+    public static final ModConfigSpec.BooleanValue BABY_VILLAGERS_FLEE_WITNESSED_DEATHS;
     public static final ModConfigSpec.DoubleValue VILLAGER_KILL_AGGRO_RADIUS;
     public static final ModConfigSpec.BooleanValue RETALIATION_WITNESSES_REQUIRE_LINE_OF_SIGHT;
     public static final ModConfigSpec.IntValue AGGRO_DURATION_TICKS;
@@ -320,6 +321,10 @@ public final class VillagerRetaliationConfig {
                 .comment("When true, killing an adult villager angers nearby adult villagers.")
                 .translation("villagerretaliation.configuration.retaliation.killingVillagerAggrosNearbyVillagers")
                 .define("killingVillagerAggrosNearbyVillagers", true);
+        BABY_VILLAGERS_FLEE_WITNESSED_DEATHS = BUILDER
+                .comment("When true, baby villagers that witness a villager death panic and flee like nitwit alarm witnesses. Disable to keep the original adult/nitwit-only witness behavior.")
+                .translation("villagerretaliation.configuration.retaliation.babyVillagersFleeWitnessedDeaths")
+                .define("babyVillagersFleeWitnessedDeaths", true);
         VILLAGER_KILL_AGGRO_RADIUS = BUILDER
                 .comment("Radius in blocks for nearby villager aggro after a villager is killed.")
                 .translation("villagerretaliation.configuration.retaliation.villagerKillAggroRadius")

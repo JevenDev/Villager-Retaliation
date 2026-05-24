@@ -8950,6 +8950,32 @@
       "show_for_babies": false
     },
     {
+      "id": "event_player_attack_baby_1",
+      "type": "village_event_report",
+      "player_event_tags": [
+        "player_attacked_villager"
+      ],
+      "event_tags": [
+        "baby_villager_attacked"
+      ],
+      "text": "I heard someone small cry. I do not want to talk about that sound.",
+      "weight": 30,
+      "show_for_adults": false
+    },
+    {
+      "id": "event_player_attack_baby_2",
+      "type": "village_event_report",
+      "player_event_tags": [
+        "player_attacked_villager"
+      ],
+      "event_tags": [
+        "baby_villager_attacked"
+      ],
+      "text": "Grownups say accidents happen. That did not sound like an accident.",
+      "weight": 24,
+      "show_for_adults": false
+    },
+    {
       "id": "event_villager_attacked_baby_1",
       "type": "village_event_report",
       "event_tags": [
@@ -8957,6 +8983,26 @@
       ],
       "text": "Someone got hurt. I do not like the sound the village made after.",
       "weight": 24,
+      "show_for_adults": false
+    },
+    {
+      "id": "event_villager_death_baby_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "villager_death"
+      ],
+      "text": "I saw everybody run, and then one voice was gone.",
+      "weight": 30,
+      "show_for_adults": false
+    },
+    {
+      "id": "event_villager_death_baby_2",
+      "type": "village_event_report",
+      "event_tags": [
+        "villager_death"
+      ],
+      "text": "The bell sounded too loud after that. Everything did.",
+      "weight": 26,
       "show_for_adults": false
     },
     {
