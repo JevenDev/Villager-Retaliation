@@ -126,8 +126,14 @@ public final class VillagerRetaliationVillagerCombatUtil {
             return directAttacker;
         }
 
-        return ToucanHazardAttribution.resolveVanillaHazardOwner(victim, source)
+        Optional<LivingEntity> hazardOwner = ToucanHazardAttribution.resolveVanillaHazardOwner(victim, source)
+                .filter(LivingEntity.class::isInstance)
                 .map(LivingEntity.class::cast);
+        if (hazardOwner.isPresent()) {
+            return hazardOwner;
+        }
+
+        return Optional.ofNullable(victim.getKillCredit());
     }
 
     public static boolean shouldIgnoreAttacker(LivingEntity attacker) {

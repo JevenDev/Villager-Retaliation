@@ -8,6 +8,7 @@ import java.util.UUID;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.util.Mth;
 import net.minecraft.util.Unit;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
@@ -27,11 +28,12 @@ final class VillagerRangedCombatHelper {
     private static final Map<UUID, Integer> SEE_TIME = new HashMap<>();
     private static final Map<UUID, Integer> ATTACK_DELAY = new HashMap<>();
     private static final Map<UUID, CrossbowState> CROSSBOW_STATE = new HashMap<>();
-    private static final double MAX_BOW_OR_CROSSBOW_DISTANCE_SQR = 225.0D;
+    private static final double MAX_BOW_DISTANCE_SQR = 225.0D;
     private static final int BOW_DRAW_TICKS = 20;
     private static final int BOW_ATTACK_INTERVAL_TICKS = 20;
     private static final int INITIAL_RANGED_WINDUP_TICKS = 2;
-    private static final int CROSSBOW_ATTACK_INTERVAL_TICKS = 40;
+    private static final double CROSSBOW_BACK_UP_DISTANCE = 5.0D;
+    private static final float CROSSBOW_BACK_UP_STRAFE_SPEED = 0.75F;
     private static final int CROSSBOW_POST_LOAD_DELAY_BASE_TICKS = 20;
     private static final int CROSSBOW_POST_LOAD_DELAY_RANDOM_TICKS = 20;
     private static final double TRIDENT_MAX_DISTANCE_SQR = 144.0D;
@@ -62,17 +64,17 @@ final class VillagerRangedCombatHelper {
             return tryTridentAttack(villager, target, level, distanceSqr, movementSpeed);
         }
 
-        if (distanceSqr > MAX_BOW_OR_CROSSBOW_DISTANCE_SQR) {
+        boolean hasLineOfSight = villager.hasLineOfSight(target);
+        if (VillagerRetaliationVillagerWeapons.isCrossbowWeapon(rangedWeapon)) {
+            handleCrossbowAttack(villager, target, level, rangedWeapon, hasLineOfSight, movementSpeed);
+            return true;
+        }
+
+        if (distanceSqr > MAX_BOW_DISTANCE_SQR) {
             return false;
         }
 
-        boolean hasLineOfSight = villager.hasLineOfSight(target);
         int seeTime = updateSeeTime(villager, hasLineOfSight);
-
-        if (VillagerRetaliationVillagerWeapons.isCrossbowWeapon(rangedWeapon)) {
-            handleCrossbowAttack(villager, target, level, distanceSqr, hasLineOfSight, seeTime, movementSpeed);
-            return true;
-        }
         if (VillagerRetaliationVillagerWeapons.isBowWeapon(rangedWeapon)) {
             handleBowAttack(villager, target, level, distanceSqr, hasLineOfSight, seeTime, movementSpeed);
             return true;
@@ -91,12 +93,15 @@ final class VillagerRangedCombatHelper {
                 villager.stopUsingItem();
             }
         }
+        clearChargedCrossbows(villager);
     }
 
     static void seedInitialAttackDelay(AbstractVillager villager, ItemStack equippedWeapon) {
-        if (VillagerRetaliationVillagerWeapons.isBowWeapon(equippedWeapon)
-                || VillagerRetaliationVillagerWeapons.isCrossbowWeapon(equippedWeapon)) {
+        if (VillagerRetaliationVillagerWeapons.isBowWeapon(equippedWeapon)) {
             ATTACK_DELAY.put(villager.getUUID(), INITIAL_RANGED_WINDUP_TICKS);
+        } else if (VillagerRetaliationVillagerWeapons.isCrossbowWeapon(equippedWeapon)) {
+            ATTACK_DELAY.remove(villager.getUUID());
+            CROSSBOW_STATE.remove(villager.getUUID());
         }
     }
 
@@ -228,52 +233,40 @@ final class VillagerRangedCombatHelper {
             AbstractVillager villager,
             LivingEntity target,
             ServerLevel level,
-            double distanceSqr,
+            ItemStack rangedWeapon,
             boolean hasLineOfSight,
-            int seeTime,
             double movementSpeed
     ) {
-        int attackDelay = ATTACK_DELAY.getOrDefault(villager.getUUID(), 0);
-        if (attackDelay > 0) {
-            attackDelay--;
-            ATTACK_DELAY.put(villager.getUUID(), attackDelay);
+        if (!hasLineOfSight || !isWithinCrossbowAttackRange(villager, target, rangedWeapon)) {
+            stopCrossbowAttack(villager);
+            VillagerRetaliationRetaliationUtil.moveTowardReachableRetaliationTarget(villager, target, movementSpeed);
+            return;
         }
 
+        villager.getNavigation().stop();
+        villager.getLookControl().setLookAt(target, 30.0F, 30.0F);
+        if (target.closerThan(villager, CROSSBOW_BACK_UP_DISTANCE)) {
+            villager.getMoveControl().strafe(-CROSSBOW_BACK_UP_STRAFE_SPEED, 0.0F);
+            villager.setYRot(Mth.rotateIfNecessary(villager.getYRot(), villager.yHeadRot, 0.0F));
+        }
+
+        UUID villagerId = villager.getUUID();
         CrossbowState state = CROSSBOW_STATE.getOrDefault(villager.getUUID(), CrossbowState.UNCHARGED);
-        if (state == CrossbowState.UNCHARGED && isHoldingChargedCrossbow(villager)) {
-            state = attackDelay > 0 ? CrossbowState.CHARGED : CrossbowState.READY_TO_ATTACK;
-            CROSSBOW_STATE.put(villager.getUUID(), state);
-        }
-
-        boolean shouldMove = (distanceSqr > 64.0D || seeTime < 5) && attackDelay == 0;
-        if (shouldMove) {
-            VillagerRetaliationRetaliationUtil.moveTowardReachableRetaliationTarget(
-                    villager,
-                    target,
-                    state == CrossbowState.UNCHARGED ? movementSpeed : 0.25D
-            );
-        } else {
-            villager.getNavigation().stop();
-        }
-
         if (state == CrossbowState.UNCHARGED) {
-            if (!shouldMove) {
-                villager.startUsingItem(VillagerRetaliationVillagerWeapons.getHoldingHand(villager, VillagerRetaliationVillagerWeapons::isCrossbowWeapon));
-                CROSSBOW_STATE.put(villager.getUUID(), CrossbowState.CHARGING);
-            }
+            villager.startUsingItem(VillagerRetaliationVillagerWeapons.getHoldingHand(villager, VillagerRetaliationVillagerWeapons::isCrossbowWeapon));
+            CROSSBOW_STATE.put(villagerId, CrossbowState.CHARGING);
             return;
         }
 
         if (state == CrossbowState.CHARGING) {
             if (!villager.isUsingItem()) {
-                CROSSBOW_STATE.put(villager.getUUID(), CrossbowState.UNCHARGED);
+                CROSSBOW_STATE.put(villagerId, CrossbowState.UNCHARGED);
                 return;
             }
 
             ItemStack using = villager.getUseItem();
             if (!(using.getItem() instanceof CrossbowItem)) {
-                CROSSBOW_STATE.put(villager.getUUID(), CrossbowState.UNCHARGED);
-                villager.stopUsingItem();
+                stopCrossbowAttack(villager);
                 return;
             }
 
@@ -281,44 +274,51 @@ final class VillagerRangedCombatHelper {
             if (chargeTicks >= CrossbowItem.getChargeDuration(using, villager)) {
                 villager.releaseUsingItem();
                 ensureCrossbowMarkedCharged(villager);
-                CROSSBOW_STATE.put(villager.getUUID(), CrossbowState.CHARGED);
-                ATTACK_DELAY.put(villager.getUUID(), nextCrossbowPostLoadDelay(villager));
+                CROSSBOW_STATE.put(villagerId, CrossbowState.CHARGED);
+                ATTACK_DELAY.put(villagerId, nextCrossbowPostLoadDelay(villager));
             }
             return;
         }
 
         if (state == CrossbowState.CHARGED) {
+            int attackDelay = ATTACK_DELAY.getOrDefault(villagerId, 0);
             if (attackDelay > 0) {
-                return;
+                attackDelay--;
+                ATTACK_DELAY.put(villagerId, attackDelay);
+                if (attackDelay > 0) {
+                    return;
+                }
             }
-            CROSSBOW_STATE.put(villager.getUUID(), CrossbowState.READY_TO_ATTACK);
+            CROSSBOW_STATE.put(villagerId, CrossbowState.READY_TO_ATTACK);
             return;
         }
 
-        if (CROSSBOW_STATE.get(villager.getUUID()) == CrossbowState.READY_TO_ATTACK && hasLineOfSight) {
-            fireCrossbowLikePillager(villager, target, level);
-            ATTACK_DELAY.put(villager.getUUID(), CROSSBOW_ATTACK_INTERVAL_TICKS);
-            CROSSBOW_STATE.put(villager.getUUID(), CrossbowState.UNCHARGED);
+        if (state == CrossbowState.READY_TO_ATTACK) {
+            if (fireCrossbowLikePillager(villager, target, level)) {
+                ATTACK_DELAY.remove(villagerId);
+                CROSSBOW_STATE.put(villagerId, CrossbowState.UNCHARGED);
+            } else {
+                stopCrossbowAttack(villager);
+            }
         }
     }
 
-    private static void fireCrossbowLikePillager(AbstractVillager villager, LivingEntity target, ServerLevel level) {
+    private static boolean fireCrossbowLikePillager(AbstractVillager villager, LivingEntity target, ServerLevel level) {
         InteractionHand hand = VillagerRetaliationVillagerWeapons.getHoldingHand(villager, VillagerRetaliationVillagerWeapons::isCrossbowWeapon);
         ItemStack weapon = villager.getItemInHand(hand);
         if (!(weapon.getItem() instanceof CrossbowItem crossbowItem)) {
-            return;
+            return false;
         }
 
         if (!CrossbowItem.isCharged(weapon)) {
-            weapon.set(DataComponents.CHARGED_PROJECTILES, ChargedProjectiles.of(List.of(resolveDefaultCrossbowProjectile(villager, weapon))));
-            villager.setItemInHand(hand, weapon.copy());
-            weapon = villager.getItemInHand(hand);
+            return false;
         }
         clampToSingleChargedProjectile(weapon);
 
         crossbowItem.performShooting(level, villager, hand, weapon, 1.6F, (float) (14 - level.getDifficulty().getId() * 4), target);
         weapon.set(DataComponents.CHARGED_PROJECTILES, ChargedProjectiles.EMPTY);
         villager.setItemInHand(hand, weapon.copy());
+        return true;
     }
 
     private static void clampToSingleChargedProjectile(ItemStack weapon) {
@@ -340,10 +340,34 @@ final class VillagerRangedCombatHelper {
                 + villager.getRandom().nextInt(CROSSBOW_POST_LOAD_DELAY_RANDOM_TICKS);
     }
 
-    private static boolean isHoldingChargedCrossbow(AbstractVillager villager) {
-        InteractionHand hand = VillagerRetaliationVillagerWeapons.getHoldingHand(villager, VillagerRetaliationVillagerWeapons::isCrossbowWeapon);
+    private static boolean isWithinCrossbowAttackRange(AbstractVillager villager, LivingEntity target, ItemStack weapon) {
+        if (!(weapon.getItem() instanceof CrossbowItem crossbowItem)) {
+            return false;
+        }
+
+        return villager.closerThan(target, (double) crossbowItem.getDefaultProjectileRange());
+    }
+
+    private static void stopCrossbowAttack(AbstractVillager villager) {
+        if (villager.isUsingItem() && VillagerRetaliationVillagerWeapons.isCrossbowWeapon(villager.getUseItem())) {
+            villager.stopUsingItem();
+        }
+        ATTACK_DELAY.remove(villager.getUUID());
+        CROSSBOW_STATE.remove(villager.getUUID());
+        clearChargedCrossbows(villager);
+    }
+
+    private static void clearChargedCrossbows(AbstractVillager villager) {
+        clearChargedCrossbow(villager, InteractionHand.MAIN_HAND);
+        clearChargedCrossbow(villager, InteractionHand.OFF_HAND);
+    }
+
+    private static void clearChargedCrossbow(AbstractVillager villager, InteractionHand hand) {
         ItemStack weapon = villager.getItemInHand(hand);
-        return weapon.getItem() instanceof CrossbowItem && CrossbowItem.isCharged(weapon);
+        if (weapon.getItem() instanceof CrossbowItem && CrossbowItem.isCharged(weapon)) {
+            weapon.set(DataComponents.CHARGED_PROJECTILES, ChargedProjectiles.EMPTY);
+            villager.setItemInHand(hand, weapon.copy());
+        }
     }
 
     private static void ensureCrossbowMarkedCharged(AbstractVillager villager) {

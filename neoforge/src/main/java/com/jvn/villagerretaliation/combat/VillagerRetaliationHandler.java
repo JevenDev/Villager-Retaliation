@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.combat;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil.ActiveRetaliationTarget;
+import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil.AngerTarget;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
@@ -30,8 +31,10 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.animal.IronGolem;
@@ -295,7 +298,7 @@ public final class VillagerRetaliationHandler {
             return;
         }
 
-        if (RETALIATION.hasAnger(villager) && VillagerRetaliationVillagerRules.shouldSuppressFleeingBehavior(villager)) {
+        if (shouldSuppressFleeingForRetaliation(villager)) {
             suppressVanillaPanic(villager);
         }
     }
@@ -424,11 +427,15 @@ public final class VillagerRetaliationHandler {
 
         double movementSpeed = VillagerCombatRoles.movementSpeed(villager)
                 * (isArmorerActivelyBlocking(villager) ? ARMORER_BLOCKING_SPEED_FACTOR : 1.0D);
-        VillagerRetaliationRetaliationUtil.moveTowardReachableRetaliationTarget(villager, target, movementSpeed);
-        if (VillagerRetaliationRetaliationUtil.canUseMeleeCombatMode(villager)
-                && VillagerRetaliationRetaliationUtil.canMeleeHit(villager, target)
-                && allowMeleeAttack
-                && meleeAttackReady) {
+        boolean canUseMeleeCombat = VillagerRetaliationRetaliationUtil.canUseMeleeCombatMode(villager);
+        boolean canMeleeHit = canUseMeleeCombat && VillagerRetaliationRetaliationUtil.canMeleeHit(villager, target);
+        if (canMeleeHit) {
+            villager.getNavigation().stop();
+            VillagerRetaliationRetaliationUtil.clearPathingState(villager);
+        } else {
+            VillagerRetaliationRetaliationUtil.moveTowardMeleeRetaliationTarget(villager, target, movementSpeed);
+        }
+        if (canMeleeHit && allowMeleeAttack && meleeAttackReady) {
             var attackHand = VillagerRetaliationVillagerCombatUtil.selectAttackHand(villager);
             villager.swing(attackHand, true);
             syncMeleeAttackAttributes(villager);
@@ -595,6 +602,7 @@ public final class VillagerRetaliationHandler {
     }
 
     private static void enterCreeperAvoidanceState(Villager villager, LivingEntity creeper, long gameTime) {
+        VillagerRetaliationVillagerRules.clearCachedChecks(villager);
         enterFleeState(villager, creeper, gameTime);
     }
 
@@ -607,7 +615,6 @@ public final class VillagerRetaliationHandler {
 
     private static boolean tryAcquireGroundWeapon(Villager villager, long gameTime) {
         if (!villager.isAlive()
-                || !VillagerRetaliationVillagerRules.shouldSuppressFleeingBehavior(villager)
                 || !VillagerCombatRoles.canScavengeGroundWeapons(villager)
                 || VillagerRetaliationVillagerEquipment.isPlayerManagedMainHand(villager)
                 || VillagerInventoryAccess.hasOpenInventory(villager)
@@ -693,6 +700,29 @@ public final class VillagerRetaliationHandler {
         }
         return attacker instanceof net.minecraft.world.entity.monster.Enemy
                 && !(attacker instanceof net.minecraft.world.entity.NeutralMob);
+    }
+
+    private static boolean shouldSuppressFleeingForRetaliation(Villager villager) {
+        if (!RETALIATION.hasAnger(villager) || !VillagerCombatRoles.canFightBack(villager)) {
+            return false;
+        }
+        if (!(villager.level() instanceof ServerLevel level)) {
+            return true;
+        }
+
+        AngerTarget angerTarget = RETALIATION.angerTarget(villager);
+        if (angerTarget == null) {
+            return false;
+        }
+        Entity targetEntity = level.getEntity(angerTarget.targetId());
+        if (!(targetEntity instanceof LivingEntity target)) {
+            return true;
+        }
+        if (target instanceof Creeper) {
+            return false;
+        }
+        return !isNaturalHostileTarget(villager, target)
+                || VillagerRetaliationVillagerRules.canStandGroundAgainstHostileMobs(villager);
     }
 
     private static void syncMeleeAttackAttributes(Villager villager) {
@@ -829,7 +859,17 @@ public final class VillagerRetaliationHandler {
     }
 
     private static void suppressVanillaPanic(Villager villager) {
+        Brain<Villager> brain = villager.getBrain();
         VillagerRetaliationVillagerBrainUtil.clearThreatMemories(villager);
+        brain.eraseMemory(MemoryModuleType.HEARD_BELL_TIME);
+        brain.eraseMemory(MemoryModuleType.HIDING_PLACE);
+        brain.eraseMemory(MemoryModuleType.WALK_TARGET);
+        brain.eraseMemory(MemoryModuleType.PATH);
+        brain.eraseMemory(MemoryModuleType.LOOK_TARGET);
+        if (brain.isActive(Activity.PANIC) || brain.isActive(Activity.HIDE)) {
+            brain.setDefaultActivity(Activity.IDLE);
+            brain.setActiveActivityIfPossible(Activity.IDLE);
+        }
     }
 
     private static void handleDefensiveRole(Villager villager, long gameTime) {
@@ -1043,6 +1083,12 @@ public final class VillagerRetaliationHandler {
                 ensureArmorerShieldBlocking(villager);
                 return false;
             }
+            stopArmorerShieldBlocking(villager);
+            return true;
+        }
+
+        if (inMeleeRange && meleeAttackReady) {
+            stopArmorerShieldBlocking(villager);
             return true;
         }
 

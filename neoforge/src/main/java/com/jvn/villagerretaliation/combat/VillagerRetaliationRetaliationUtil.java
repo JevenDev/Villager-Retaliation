@@ -19,20 +19,12 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
-import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.ai.behavior.BehaviorUtils;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.AbstractVillager;
-import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.ClipContext;
-import net.minecraft.world.level.pathfinder.Node;
-import net.minecraft.world.level.pathfinder.Path;
-import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.HitResult;
-import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.AABB;
 
 public final class VillagerRetaliationRetaliationUtil {
     private static final String PERSISTENT_TARGET_UUID = "Target";
@@ -41,6 +33,8 @@ public final class VillagerRetaliationRetaliationUtil {
     private static final int MIN_PATH_RECALCULATION_TICKS = 4;
     private static final int RANDOM_PATH_RECALCULATION_TICKS = 7;
     private static final double PATHED_TARGET_MOVED_DISTANCE_SQR = 1.0D;
+    private static final double MELEE_EDGE_REACH = 0.45D;
+    private static final double CLOSE_MELEE_STEERING_DISTANCE_SQR = 9.0D;
     private static final int MIN_GROUND_WEAPON_PURSUIT_RECALCULATION_TICKS = 4;
     private static final int RANDOM_GROUND_WEAPON_PURSUIT_RECALCULATION_TICKS = 7;
     private static final double PURSUED_WEAPON_MOVED_DISTANCE_SQR = 0.25D;
@@ -48,8 +42,6 @@ public final class VillagerRetaliationRetaliationUtil {
     private static final Map<UUID, GroundWeaponPursuitState> GROUND_WEAPON_PURSUIT_STATES = new HashMap<>();
     private static final ResourceLocation COMBAT_MOVEMENT_SPEED_MODIFIER_ID =
             VillagerRetaliation.id("combat_movement_speed");
-    private static final AttributeModifier COMBAT_MOVEMENT_SPEED_MODIFIER =
-            new AttributeModifier(COMBAT_MOVEMENT_SPEED_MODIFIER_ID, 0.25D, AttributeModifier.Operation.ADD_VALUE);
 
     private VillagerRetaliationRetaliationUtil() {
     }
@@ -68,6 +60,7 @@ public final class VillagerRetaliationRetaliationUtil {
         AngerTarget angerTarget = new AngerTarget(attacker.getUUID(), gameTime);
         angerTargets.put(villager.getUUID(), angerTarget);
         persistAnger(villager, persistentTagRoot, angerTarget);
+        clearPathingState(villager);
         return true;
     }
 
@@ -91,14 +84,14 @@ public final class VillagerRetaliationRetaliationUtil {
             Runnable beforeEquip
     ) {
         if (!itemEntity.isAlive()
-                || itemEntity.hasPickUpDelay()
                 || itemEntity.getItem().isEmpty()
                 || !VillagerRetaliationVillagerWeapons.shouldPathfindForWeapon(villager, itemEntity.getItem())) {
             clearGroundWeaponPursuitState(villager);
             return false;
         }
 
-        if (villager.distanceToSqr(itemEntity) <= VillagerRetaliationVillagerWeapons.WEAPON_PICKUP_REACH_SQR) {
+        if (!itemEntity.hasPickUpDelay()
+                && villager.distanceToSqr(itemEntity) <= VillagerRetaliationVillagerWeapons.WEAPON_PICKUP_REACH_SQR) {
             beforeEquip.run();
             VillagerRetaliationVillagerWeapons.equipGroundWeapon(villager, itemEntity);
             VillagerRangedCombatHelper.seedInitialAttackDelay(villager, villager.getMainHandItem());
@@ -107,7 +100,8 @@ public final class VillagerRetaliationRetaliationUtil {
         }
 
         if (shouldRefreshGroundWeaponPursuit(villager, itemEntity)) {
-            BehaviorUtils.setWalkAndLookTargetMemories(villager, itemEntity, (float) movementSpeed, 0);
+            villager.getLookControl().setLookAt(itemEntity, 30.0F, 30.0F);
+            villager.getNavigation().moveTo(itemEntity, movementSpeed);
         }
         return true;
     }
@@ -276,6 +270,10 @@ public final class VillagerRetaliationRetaliationUtil {
             clearAnger.run();
             return null;
         }
+        if (!villager.canAttack(target)) {
+            clearAnger.run();
+            return null;
+        }
         if (!canFightBack.test(villager)) {
             clearAnger.run();
             return null;
@@ -308,23 +306,36 @@ public final class VillagerRetaliationRetaliationUtil {
     }
 
     public static boolean canMeleeHit(AbstractVillager villager, LivingEntity target) {
-        if (!target.isAlive() || !villager.hasLineOfSight(target)) {
-            return false;
-        }
+        return target.isAlive()
+                && villager.hasLineOfSight(target)
+                && villager.isWithinMeleeAttackRange(target)
+                && isWithinTightMeleeAttackRange(villager, target);
+    }
 
-        boolean inMeleeRange;
-        if (villager instanceof Villager) {
-            inMeleeRange = villager.isWithinMeleeAttackRange(target);
-        } else {
-            double reachInflation = VillagerRetaliationVillagerWeapons.hasUsableWeapon(villager) ? 1.0D : 0.6D;
-            inMeleeRange = villager.getBoundingBox().inflate(reachInflation).intersects(target.getBoundingBox());
-        }
-
-        return inMeleeRange && hasClearMeleeLine(villager, target);
+    private static boolean isWithinTightMeleeAttackRange(AbstractVillager villager, LivingEntity target) {
+        AABB villagerBox = villager.getBoundingBox();
+        AABB targetBox = target.getHitbox();
+        double xGap = Math.max(0.0D, Math.max(villagerBox.minX - targetBox.maxX, targetBox.minX - villagerBox.maxX));
+        double zGap = Math.max(0.0D, Math.max(villagerBox.minZ - targetBox.maxZ, targetBox.minZ - villagerBox.maxZ));
+        return villagerBox.maxY > targetBox.minY
+                && targetBox.maxY > villagerBox.minY
+                && xGap * xGap + zGap * zGap <= MELEE_EDGE_REACH * MELEE_EDGE_REACH;
     }
 
     public static boolean isWithinRetaliationPursuitRange(AbstractVillager villager, LivingEntity target) {
         return villager.distanceToSqr(target) <= MAX_RETALIATION_PURSUIT_DISTANCE_SQR;
+    }
+
+    public static boolean moveTowardMeleeRetaliationTarget(AbstractVillager villager, LivingEntity target, double movementSpeed) {
+        boolean moved = moveTowardReachableRetaliationTarget(villager, target, movementSpeed);
+        if (!canMeleeHit(villager, target)
+                && villager.hasLineOfSight(target)
+                && villager.distanceToSqr(target) <= CLOSE_MELEE_STEERING_DISTANCE_SQR) {
+            villager.getLookControl().setLookAt(target, 30.0F, 30.0F);
+            villager.getMoveControl().setWantedPosition(target.getX(), target.getY(), target.getZ(), movementSpeed);
+            return true;
+        }
+        return moved;
     }
 
     public static boolean moveTowardReachableRetaliationTarget(AbstractVillager villager, LivingEntity target, double movementSpeed) {
@@ -343,29 +354,17 @@ public final class VillagerRetaliationRetaliationUtil {
                 : Math.max(state.ticksUntilNextPathRecalculation() - 1, 0);
         boolean targetMoved = targetChanged
                 || target.distanceToSqr(state.pathedTargetX(), state.pathedTargetY(), state.pathedTargetZ()) >= PATHED_TARGET_MOVED_DISTANCE_SQR;
-        boolean shouldRecalculatePath = ticksUntilNextPathRecalculation <= 0
-                && (targetMoved || villager.getNavigation().isDone() || villager.getRandom().nextFloat() < 0.05F);
+        boolean navigationDone = villager.getNavigation().isDone();
+        boolean shouldRecalculatePath = navigationDone
+                || ticksUntilNextPathRecalculation <= 0
+                && (targetMoved || villager.getRandom().nextFloat() < 0.05F);
 
         if (!shouldRecalculatePath) {
             PATH_STATES.put(villagerId, state.withTicksUntilNextPathRecalculation(ticksUntilNextPathRecalculation));
             return !villager.getNavigation().isDone();
         }
 
-        int failedPathFindingPenalty = targetChanged ? 0 : state.failedPathFindingPenalty();
-        Path currentPath = villager.getNavigation().getPath();
-        if (currentPath != null) {
-            Node endNode = currentPath.getEndNode();
-            if (endNode != null && target.distanceToSqr(endNode.x, endNode.y, endNode.z) < PATHED_TARGET_MOVED_DISTANCE_SQR) {
-                failedPathFindingPenalty = 0;
-            } else {
-                failedPathFindingPenalty += 10;
-            }
-        } else if (!targetChanged) {
-            failedPathFindingPenalty += 10;
-        }
-
         ticksUntilNextPathRecalculation = MIN_PATH_RECALCULATION_TICKS + villager.getRandom().nextInt(RANDOM_PATH_RECALCULATION_TICKS);
-        ticksUntilNextPathRecalculation += failedPathFindingPenalty;
         double distanceSqr = villager.distanceToSqr(target);
         if (distanceSqr > 1024.0D) {
             ticksUntilNextPathRecalculation += 10;
@@ -383,8 +382,7 @@ public final class VillagerRetaliationRetaliationUtil {
                 target.getX(),
                 target.getY(),
                 target.getZ(),
-                ticksUntilNextPathRecalculation,
-                failedPathFindingPenalty
+                ticksUntilNextPathRecalculation
         ));
         return moved || !villager.getNavigation().isDone();
     }
@@ -396,20 +394,6 @@ public final class VillagerRetaliationRetaliationUtil {
 
     public static void clearGroundWeaponPursuitState(AbstractVillager villager) {
         GROUND_WEAPON_PURSUIT_STATES.remove(villager.getUUID());
-    }
-
-    private static boolean hasClearMeleeLine(AbstractVillager villager, LivingEntity target) {
-        Vec3 origin = villager.getEyePosition();
-        Vec3 targetCenter = target.getBoundingBox().getCenter();
-        // Validate both center mass and lower body to reject corner-peek wall hits.
-        Vec3 targetLowerBody = target.position().add(0.0D, target.getBbHeight() * 0.35D, 0.0D);
-        return !isWallBlocking(villager, origin, targetCenter)
-                && !isWallBlocking(villager, origin, targetLowerBody);
-    }
-
-    private static boolean isWallBlocking(AbstractVillager villager, Vec3 start, Vec3 end) {
-        BlockHitResult hitResult = villager.level().clip(new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, villager));
-        return hitResult.getType() == HitResult.Type.BLOCK;
     }
 
     public static <T extends AbstractVillager> boolean maintainTemporaryWeapon(
@@ -476,12 +460,7 @@ public final class VillagerRetaliationRetaliationUtil {
     public static <T extends AbstractVillager> void boostCombatMovement(
             T villager
     ) {
-        AttributeInstance movementSpeed = villager.getAttribute(Attributes.MOVEMENT_SPEED);
-        if (movementSpeed == null) {
-            return;
-        }
-
-        movementSpeed.addOrUpdateTransientModifier(COMBAT_MOVEMENT_SPEED_MODIFIER);
+        restoreCombatMovement(villager);
     }
 
     public static <T extends AbstractVillager> void restoreCombatMovement(T villager) {
@@ -533,8 +512,7 @@ public final class VillagerRetaliationRetaliationUtil {
             double pathedTargetX,
             double pathedTargetY,
             double pathedTargetZ,
-            int ticksUntilNextPathRecalculation,
-            int failedPathFindingPenalty
+            int ticksUntilNextPathRecalculation
     ) {
         RetaliationPathState withTicksUntilNextPathRecalculation(int ticksUntilNextPathRecalculation) {
             return new RetaliationPathState(
@@ -542,8 +520,7 @@ public final class VillagerRetaliationRetaliationUtil {
                     this.pathedTargetX,
                     this.pathedTargetY,
                     this.pathedTargetZ,
-                    ticksUntilNextPathRecalculation,
-                    this.failedPathFindingPenalty
+                    ticksUntilNextPathRecalculation
             );
         }
     }

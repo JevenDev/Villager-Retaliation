@@ -18,6 +18,7 @@ import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.alchemy.Potions;
 
 public final class VillagerCombatRoles {
+    private static final double PIGLIN_ALIGNED_COMBAT_SPEED_MODIFIER = 0.7D;
     public static final double PLAYER_FIST_DAMAGE = 1.0D;
     private static final double VINDICATOR_STYLE_WEAPON_BASE_DAMAGE = 5.0D;
     private static final float FARMER_BREAD_WEAPON_CHANCE = 0.12F;
@@ -110,7 +111,7 @@ public final class VillagerCombatRoles {
     }
 
     public static double movementSpeed(Villager villager) {
-        return 0.5D;
+        return PIGLIN_ALIGNED_COMBAT_SPEED_MODIFIER;
     }
 
     public static int attackCooldown(Villager villager) {

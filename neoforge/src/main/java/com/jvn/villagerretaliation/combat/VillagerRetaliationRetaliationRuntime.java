@@ -14,12 +14,16 @@ import net.minecraft.world.item.ItemStack;
 
 final class VillagerRetaliationRetaliationRuntime<T extends AbstractVillager> {
     private static final long GROUND_WEAPON_SCAN_COOLDOWN_TICKS = 10L;
+    private static final long GROUND_WEAPON_PURSUIT_GIVE_UP_TICKS = 200L;
+    private static final long GROUND_WEAPON_PURSUIT_DISABLE_TICKS = 200L;
 
     private final String persistentTagRoot;
     private final Map<UUID, AngerTarget> angerTargets = new HashMap<>();
     private final Map<UUID, Long> nextAttackTicks = new HashMap<>();
     private final Map<UUID, Long> nextGroundWeaponScanTicks = new HashMap<>();
     private final Map<UUID, UUID> pursuedGroundWeaponIds = new HashMap<>();
+    private final Map<UUID, Long> groundWeaponPursuitStartTicks = new HashMap<>();
+    private final Map<UUID, Long> groundWeaponPickupDisabledUntilTicks = new HashMap<>();
     private final Map<UUID, TemporaryWeaponState> temporaryWeapons = new HashMap<>();
 
     VillagerRetaliationRetaliationRuntime(String persistentTagRoot) {
@@ -64,17 +68,27 @@ final class VillagerRetaliationRetaliationRuntime<T extends AbstractVillager> {
 
     boolean tryAcquireGroundWeapon(T villager, double movementSpeed, Runnable beforeEquip, long gameTime) {
         UUID villagerId = villager.getUUID();
+        long disabledUntil = this.groundWeaponPickupDisabledUntilTicks.getOrDefault(villagerId, 0L);
+        if (gameTime < disabledUntil) {
+            return false;
+        }
+        if (disabledUntil != 0L) {
+            this.groundWeaponPickupDisabledUntilTicks.remove(villagerId);
+        }
+
         boolean hadPursuedWeapon = this.pursuedGroundWeaponIds.containsKey(villagerId);
         ItemEntity pursuedWeapon = currentPursuedGroundWeapon(villager);
         if (pursuedWeapon != null) {
+            if (hasGroundWeaponPursuitTimedOut(villager, gameTime)) {
+                disableGroundWeaponPursuit(villager, gameTime);
+                return false;
+            }
             if (VillagerRetaliationRetaliationUtil.tryAcquireGroundWeapon(villager, pursuedWeapon, movementSpeed, beforeEquip)) {
                 return true;
             }
-            this.pursuedGroundWeaponIds.remove(villagerId);
-            VillagerRetaliationRetaliationUtil.clearGroundWeaponPursuitState(villager);
+            clearGroundWeaponPursuit(villager);
         } else if (hadPursuedWeapon) {
-            this.pursuedGroundWeaponIds.remove(villagerId);
-            VillagerRetaliationRetaliationUtil.clearGroundWeaponPursuitState(villager);
+            clearGroundWeaponPursuit(villager);
         }
 
         if (gameTime < this.nextGroundWeaponScanTicks.getOrDefault(villagerId, 0L)) {
@@ -85,15 +99,15 @@ final class VillagerRetaliationRetaliationRuntime<T extends AbstractVillager> {
         return VillagerRetaliationVillagerWeapons.findNearestWeapon(villager)
                 .map(itemEntity -> {
                     this.pursuedGroundWeaponIds.put(villagerId, itemEntity.getUUID());
+                    this.groundWeaponPursuitStartTicks.put(villagerId, gameTime);
                     boolean pursuing = VillagerRetaliationRetaliationUtil.tryAcquireGroundWeapon(villager, itemEntity, movementSpeed, beforeEquip);
                     if (!pursuing) {
-                        this.pursuedGroundWeaponIds.remove(villagerId);
+                        clearGroundWeaponPursuit(villager);
                     }
                     return pursuing;
                 })
                 .orElseGet(() -> {
-                    this.pursuedGroundWeaponIds.remove(villagerId);
-                    VillagerRetaliationRetaliationUtil.clearGroundWeaponPursuitState(villager);
+                    clearGroundWeaponPursuit(villager);
                     return false;
                 });
     }
@@ -129,8 +143,33 @@ final class VillagerRetaliationRetaliationRuntime<T extends AbstractVillager> {
         this.nextAttackTicks.remove(villagerId);
         this.nextGroundWeaponScanTicks.remove(villagerId);
         this.pursuedGroundWeaponIds.remove(villagerId);
+        this.groundWeaponPursuitStartTicks.remove(villagerId);
+        this.groundWeaponPickupDisabledUntilTicks.remove(villagerId);
         this.temporaryWeapons.remove(villagerId);
         VillagerRetaliationRetaliationUtil.clearPathingState(villager);
+    }
+
+    private boolean hasGroundWeaponPursuitTimedOut(T villager, long gameTime) {
+        UUID villagerId = villager.getUUID();
+        Long startedAt = this.groundWeaponPursuitStartTicks.get(villagerId);
+        if (startedAt == null) {
+            this.groundWeaponPursuitStartTicks.put(villagerId, gameTime);
+            return false;
+        }
+
+        return gameTime - startedAt > GROUND_WEAPON_PURSUIT_GIVE_UP_TICKS;
+    }
+
+    private void disableGroundWeaponPursuit(T villager, long gameTime) {
+        clearGroundWeaponPursuit(villager);
+        this.groundWeaponPickupDisabledUntilTicks.put(villager.getUUID(), gameTime + GROUND_WEAPON_PURSUIT_DISABLE_TICKS);
+    }
+
+    private void clearGroundWeaponPursuit(T villager) {
+        UUID villagerId = villager.getUUID();
+        this.pursuedGroundWeaponIds.remove(villagerId);
+        this.groundWeaponPursuitStartTicks.remove(villagerId);
+        VillagerRetaliationRetaliationUtil.clearGroundWeaponPursuitState(villager);
     }
 
     private ItemEntity currentPursuedGroundWeapon(T villager) {

@@ -175,10 +175,15 @@ public final class WanderingTraderRetaliationHandler {
             return;
         }
 
-        VillagerRetaliationRetaliationUtil.moveTowardReachableRetaliationTarget(trader, target, WanderingTraderCombatRoles.movementSpeed(trader));
-        if (VillagerRetaliationRetaliationUtil.canUseMeleeCombatMode(trader)
-                && VillagerRetaliationRetaliationUtil.canMeleeHit(trader, target)
-                && RETALIATION.isAttackReady(trader, gameTime)) {
+        boolean canUseMeleeCombat = VillagerRetaliationRetaliationUtil.canUseMeleeCombatMode(trader);
+        boolean canMeleeHit = canUseMeleeCombat && VillagerRetaliationRetaliationUtil.canMeleeHit(trader, target);
+        if (canMeleeHit) {
+            trader.getNavigation().stop();
+            VillagerRetaliationRetaliationUtil.clearPathingState(trader);
+        } else {
+            VillagerRetaliationRetaliationUtil.moveTowardMeleeRetaliationTarget(trader, target, WanderingTraderCombatRoles.movementSpeed(trader));
+        }
+        if (canMeleeHit && RETALIATION.isAttackReady(trader, gameTime)) {
             var attackHand = VillagerRetaliationVillagerCombatUtil.selectAttackHand(trader);
             trader.swing(attackHand, true);
             syncMeleeAttackAttributes(trader);

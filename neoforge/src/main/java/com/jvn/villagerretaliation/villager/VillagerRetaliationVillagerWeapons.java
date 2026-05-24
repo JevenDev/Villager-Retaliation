@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.villager;
 
 import com.jvn.toucanlib.neoforge.loot.ToucanLivingDrops;
+import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -10,6 +11,7 @@ import java.util.function.Predicate;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.item.BowItem;
@@ -19,10 +21,11 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.TridentItem;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.common.Tags;
+import net.neoforged.neoforge.event.EventHooks;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 
 public final class VillagerRetaliationVillagerWeapons {
-    public static final double WEAPON_SEARCH_RADIUS = 12.0D;
+    public static final double WEAPON_SEARCH_RADIUS = 9.0D;
     public static final double WEAPON_PICKUP_REACH_SQR = 2.25D;
     private static final double WEAPON_SEARCH_RADIUS_SQR = WEAPON_SEARCH_RADIUS * WEAPON_SEARCH_RADIUS;
     private static final long WEAPON_SEARCH_CACHE_TICKS = 10L;
@@ -63,6 +66,11 @@ public final class VillagerRetaliationVillagerWeapons {
     }
 
     public static Optional<ItemEntity> findNearestWeapon(AbstractVillager villager) {
+        if (!canSearchForGroundWeapon(villager)) {
+            clearNearestWeaponCache(villager);
+            return Optional.empty();
+        }
+
         UUID villagerId = villager.getUUID();
         long gameTime = villager.level().getGameTime();
         CachedWeaponSearch cached = NEAREST_WEAPON_CACHE.get(villagerId);
@@ -72,12 +80,6 @@ public final class VillagerRetaliationVillagerWeapons {
             }
             if (isCachedWeaponStillUsable(villager, cached.itemEntity())) {
                 return Optional.of(cached.itemEntity());
-            }
-        } else if (cached == null) {
-            long firstSearch = gameTime + scanStagger(villagerId, WEAPON_SEARCH_CACHE_TICKS);
-            if (firstSearch > gameTime) {
-                NEAREST_WEAPON_CACHE.put(villagerId, new CachedWeaponSearch(null, firstSearch));
-                return Optional.empty();
             }
         }
 
@@ -91,28 +93,19 @@ public final class VillagerRetaliationVillagerWeapons {
         AABB searchBox = villager.getBoundingBox().inflate(WEAPON_SEARCH_RADIUS);
         ItemStack equippedWeapon = getPrimaryWeapon(villager);
         ItemEntity bestWeapon = null;
-        int bestPriority = Integer.MAX_VALUE;
-        int bestTier = Integer.MIN_VALUE;
-        boolean bestEnchanted = false;
         double bestDistanceSqr = Double.MAX_VALUE;
-        for (ItemEntity itemEntity : villager.level().getEntitiesOfClass(ItemEntity.class, searchBox, VillagerRetaliationVillagerWeapons::canBePickedUp)) {
+        for (ItemEntity itemEntity : villager.level().getEntitiesOfClass(ItemEntity.class, searchBox, VillagerRetaliationVillagerWeapons::canBeWantedGroundWeapon)) {
             ItemStack itemStack = itemEntity.getItem();
-            if (!shouldPathfindForWeapon(villager, equippedWeapon, itemStack)) {
+            if (!isEligibleVisibleGroundWeapon(villager, itemEntity, equippedWeapon, itemStack)) {
                 continue;
             }
 
-            int priority = pickupPriority(itemStack);
-            int tier = weaponTier(itemStack);
-            boolean enchanted = itemStack.isEnchanted();
             double distanceSqr = villager.distanceToSqr(itemEntity);
-            if (bestWeapon != null && !isBetterPickupCandidate(priority, tier, enchanted, distanceSqr, bestPriority, bestTier, bestEnchanted, bestDistanceSqr)) {
+            if (distanceSqr >= bestDistanceSqr) {
                 continue;
             }
 
             bestWeapon = itemEntity;
-            bestPriority = priority;
-            bestTier = tier;
-            bestEnchanted = enchanted;
             bestDistanceSqr = distanceSqr;
         }
 
@@ -129,6 +122,7 @@ public final class VillagerRetaliationVillagerWeapons {
             return;
         }
 
+        villager.getNavigation().stop();
         ItemStack equippedStack = groundStack.copyWithCount(1);
         ItemStack previousMainHand = villager.getMainHandItem().copy();
         if (!previousMainHand.isEmpty()) {
@@ -231,6 +225,15 @@ public final class VillagerRetaliationVillagerWeapons {
         return shouldPathfindForWeapon(villager, getPrimaryWeapon(villager), groundWeapon);
     }
 
+    public static boolean canSearchForGroundWeapon(AbstractVillager villager) {
+        return villager.isAlive()
+                && EventHooks.canEntityGrief(villager.level(), villager)
+                && VillagerRetaliationVillagerCombatUtil.getMemoryIfRegistered(
+                        villager,
+                        MemoryModuleType.ITEM_PICKUP_COOLDOWN_TICKS
+                ).isEmpty();
+    }
+
     public static boolean isBetterWeaponChoice(ItemStack candidate, ItemStack current) {
         if (!isUsableWeapon(candidate)) {
             return false;
@@ -260,12 +263,14 @@ public final class VillagerRetaliationVillagerWeapons {
                 || stack.is(Tags.Items.TOOLS_MACE);
     }
 
-    private static boolean canBePickedUp(ItemEntity itemEntity) {
-        return itemEntity.isAlive() && !itemEntity.hasPickUpDelay() && !itemEntity.getItem().isEmpty();
+    private static boolean canBeWantedGroundWeapon(ItemEntity itemEntity) {
+        return !itemEntity.isRemoved() && !itemEntity.getItem().isEmpty();
     }
 
     private static boolean shouldPathfindForWeapon(AbstractVillager villager, ItemStack equippedWeapon, ItemStack groundWeapon) {
-        if (!isUsableWeapon(groundWeapon) || VillagerRetaliationVillagerEquipment.isPlayerManagedMainHand(villager)) {
+        if (!canSearchForGroundWeapon(villager)
+                || !isUsableWeapon(groundWeapon)
+                || VillagerRetaliationVillagerEquipment.isPlayerManagedMainHand(villager)) {
             return false;
         }
 
@@ -274,20 +279,24 @@ public final class VillagerRetaliationVillagerWeapons {
 
     private static boolean isCachedWeaponStillUsable(AbstractVillager villager, ItemEntity itemEntity) {
         return itemEntity.level() == villager.level()
-                && canBePickedUp(itemEntity)
+                && isEligibleVisibleGroundWeapon(villager, itemEntity, getPrimaryWeapon(villager), itemEntity.getItem());
+    }
+
+    private static boolean isEligibleVisibleGroundWeapon(
+            AbstractVillager villager,
+            ItemEntity itemEntity,
+            ItemStack equippedWeapon,
+            ItemStack groundWeapon
+    ) {
+        return canBeWantedGroundWeapon(itemEntity)
                 && villager.distanceToSqr(itemEntity) <= WEAPON_SEARCH_RADIUS_SQR
-                && shouldPathfindForWeapon(villager, getPrimaryWeapon(villager), itemEntity.getItem());
+                && villager.hasLineOfSight(itemEntity)
+                && villager.level().getWorldBorder().isWithinBounds(itemEntity.blockPosition())
+                && shouldPathfindForWeapon(villager, equippedWeapon, groundWeapon);
     }
 
     private static void clearNearestWeaponCache(AbstractVillager villager) {
         NEAREST_WEAPON_CACHE.remove(villager.getUUID());
-    }
-
-    private static long scanStagger(UUID villagerId, long intervalTicks) {
-        if (intervalTicks <= 1L) {
-            return 0L;
-        }
-        return Math.floorMod(villagerId.getMostSignificantBits() ^ villagerId.getLeastSignificantBits(), intervalTicks);
     }
 
     private static void pruneNearestWeaponCache(long gameTime) {
@@ -301,28 +310,6 @@ public final class VillagerRetaliationVillagerWeapons {
             iterator.next();
             iterator.remove();
         }
-    }
-
-    private static boolean isBetterPickupCandidate(
-            int priority,
-            int tier,
-            boolean enchanted,
-            double distanceSqr,
-            int bestPriority,
-            int bestTier,
-            boolean bestEnchanted,
-            double bestDistanceSqr
-    ) {
-        if (priority != bestPriority) {
-            return priority < bestPriority;
-        }
-        if (tier != bestTier) {
-            return tier > bestTier;
-        }
-        if (enchanted != bestEnchanted) {
-            return enchanted;
-        }
-        return distanceSqr < bestDistanceSqr;
     }
 
     private static int pickupPriority(ItemStack stack) {

@@ -10,6 +10,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 public final class WanderingTraderCombatRoles {
+    private static final double PIGLIN_ALIGNED_COMBAT_SPEED_MODIFIER = 0.7D;
     private static final List<Item> PREFERRED_WEAPON_POOL = List.of(
             Items.IRON_SWORD,
             Items.IRON_AXE,
@@ -55,7 +56,7 @@ public final class WanderingTraderCombatRoles {
     }
 
     public static double movementSpeed(WanderingTrader trader) {
-        return 0.4D;
+        return PIGLIN_ALIGNED_COMBAT_SPEED_MODIFIER;
     }
 
     public static int attackCooldown(WanderingTrader trader) {
