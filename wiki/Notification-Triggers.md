@@ -6,6 +6,8 @@ Use a stable `id` for anything you may translate or override later. The examples
 
 Enum-like fields are case-insensitive in code, but trigger strings should be written exactly as shown.
 
+Entries can use `text` for one output or `lines` for several equal variations. Filters, `chance`, and `weight` select the notification entry first; if it has `lines`, one variation is selected at random.
+
 ```json
 {
   "notifications": [
@@ -1984,7 +1986,7 @@ Expanded:
 <details>
 <summary><strong>alert.player_attacked_villager</strong></summary>
 
-Fires as an immediate response from a damaged villager when the attacker is a player. Supports `{player}`, `{attacker}`, `{villager}`, `{villager_name}`, `{villager_kind}`, and `{profession}`.
+Fires as an immediate response from a damaged villager when the attacker is a player. Supports `{player}`, `{attacker}`, `{villager}`, `{villager_name}`, `{villager_kind}`, and `{profession}`. Baby-specific hit text can use this trigger with `show_for_adults: false` and `show_for_babies: true`; when the damaged villager is a baby and the world-text alert is shown, the mod also sends a baby-specific villager chat line.
 
 Simple:
 
@@ -2025,7 +2027,7 @@ Expanded:
 <details>
 <summary><strong>alert.villager_damaged</strong></summary>
 
-Fires when a villager is damaged and no more specific alert wins. Supports `{attacker}`, `{villager}`, `{villager_name}`, `{villager_kind}`, and `{profession}`.
+Fires when a villager is damaged and no more specific alert wins. Supports `{attacker}`, `{villager}`, `{villager_name}`, `{villager_kind}`, and `{profession}`. Baby-specific fallback text can use this trigger with `show_for_adults: false` and `show_for_babies: true`.
 
 Simple:
 
@@ -2148,7 +2150,7 @@ Expanded:
 <details>
 <summary><strong>alert.witness_death.player</strong></summary>
 
-Fires when a villager witnesses a player-caused death. Supports `{player}`, `{attacker}`, `{villager}`, `{villager_name}`, `{villager_kind}`, and `{profession}`.
+Fires when a villager witnesses a player-caused death. Supports `{player}`, `{attacker}`, `{villager}`, `{villager_name}`, `{villager_kind}`, and `{profession}`. Baby witnesses can use this trigger when `retaliation.babyVillagersFleeWitnessedDeaths` is enabled; built-in data uses baby-only entries for child witness-death lines.
 
 Simple:
 
@@ -2189,7 +2191,7 @@ Expanded:
 <details>
 <summary><strong>alert.witness_death</strong></summary>
 
-Fires when a villager witnesses a non-player-caused death. Supports `{attacker}`, `{villager}`, `{villager_name}`, `{villager_kind}`, and `{profession}`.
+Fires when a villager witnesses a non-player-caused death. Supports `{attacker}`, `{villager}`, `{villager_name}`, `{villager_kind}`, and `{profession}`. Baby witnesses can use this trigger when `retaliation.babyVillagersFleeWitnessedDeaths` is enabled.
 
 Simple:
 

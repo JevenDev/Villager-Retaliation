@@ -7,12 +7,12 @@ Villager Retaliation is data-driven in the places pack makers usually want to to
 - [Pack Development Guide](Pack-Development.md) - folder layout, namespaces, reload behavior, override strategy, and testing workflow.
 - [Datapack Generator](Datapack-Generator.md) - browser-based builder for creating, importing, previewing, and exporting Villager Retaliation datapacks.
 - [Pack Format Changes](Pack-Format-Changes.md) - pack-facing added, modified, deprecated, and removed fields, tags, triggers, paths, and migration notes.
-- [JSON Reference](JSON-Reference.md) - shared conventions, enum values, filters, ids, weights, colors, and common pitfalls.
-- [Dialogue JSON](Dialogue.md) - conversation options, dialogue lines, openings, closings, pacify lines, keyed messages, localization overlays, and story placeholders.
+- [JSON Reference](JSON-Reference.md) - shared conventions, text/line variation rules, enum values, filters, ids, weights, colors, and common pitfalls.
+- [Dialogue JSON](Dialogue.md) - conversation options, dialogue lines, line variations, openings, closings, pacify lines, keyed messages, localization overlays, and story placeholders.
 - [Forced Dialogue JSON](Forced-Dialogue.md) - event-driven locked dialogue moments, including witnessed container theft outcomes and aggro choices.
 - [Dialogue Types](Dialogue-Types.md) - every current dialogue `type` value, with simple and expanded dropdown examples.
 - [Event Tags](Event-Tags.md) - every current `event_tags` / `player_event_tags` value, with simple and expanded dropdown examples.
-- [Notifications JSON](Notifications.md) - HUD notifications, ambient world text, trigger ids, colors, notice kinds, filters, and translated replacements.
+- [Notifications JSON](Notifications.md) - HUD notifications, ambient world text, line variations, trigger ids, colors, notice kinds, filters, and translated replacements.
 - [Notification Triggers](Notification-Triggers.md) - every built-in notification `trigger`, with simple and expanded dropdown examples.
 - [Localization Guide](Localization.md) - how datapack locale folders and resource-pack language keys work together.
 - [Gift JSON](Gifts.md) - gift preferences, reactions, item and tag selectors, profession overrides, priority, and high-reputation rewards.

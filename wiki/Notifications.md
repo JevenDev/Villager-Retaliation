@@ -33,13 +33,40 @@ Notification files translate HUD notification text and ambient world text. They 
 }
 ```
 
+## Text And Line Variations
+
+Notification entries can use either `text` for one output or `lines` for several equal variations. The entry passes its filters and `chance`, then weighted selection chooses an entry, then one line variation is selected at random.
+
+```json
+{
+  "notifications": [
+    {
+      "id": "my_pack.baby_hit_alert",
+      "trigger": "alert.player_attacked_villager",
+      "lines": [
+        "Ow!",
+        "Stop!",
+        "Help!"
+      ],
+      "world_text_kind": "alert",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "weight": 30
+    }
+  ]
+}
+```
+
+Use `text` for single-line entries. Use `lines` when several entries would otherwise share the same trigger, filters, chance, and style.
+
 ## Fields
 
 | Field | Type | Default | Notes |
 | --- | --- | --- | --- |
 | `id` | string | generated | Stable id for translations and overrides. |
 | `trigger` | string | required | Event trigger emitted by the mod. |
-| `text` | string | required | HUD/world text. Supports trigger-specific placeholders. |
+| `text` | string | required unless `lines` is set | HUD/world text. Supports trigger-specific placeholders. |
+| `lines` | array | required unless `text` is set | Alternate HUD/world texts. One is selected at random after this entry wins weighted selection. |
 | `kind` | enum | `default` | HUD notification category. |
 | `world_text_kind` | enum | `dialogue` | Style used for world text. |
 | `style` | enum | `dialogue` | Alias for `world_text_kind`. |
@@ -143,7 +170,9 @@ Player item filtered notifications can use `{player_item}`, `{held_item}`, `{pla
 
 Equipment-filtered notifications can use `requires_villager_armed` or `requires_villager_unarmed`, so the same trigger can show different text for armed defenders and empty-handed villagers.
 
-Alert world text supports `{player}`, `{attacker}`, `{villager}`, `{villager_name}`, `{villager_kind}`, and `{profession}`. Use `alert.player_attacked_villager` for an immediate response from the damaged villager when the attacker is a player. If no entry matches, it falls back to `alert.villager_damaged`.
+Alert world text supports `{player}`, `{attacker}`, `{villager}`, `{villager_name}`, `{villager_kind}`, and `{profession}`. Use `alert.player_attacked_villager` for an immediate response from the damaged villager when the attacker is a player. If no entry matches, it falls back to `alert.villager_damaged`. Baby villagers can use the same alert triggers with `show_for_adults: false` and `show_for_babies: true`.
+
+When a baby villager is damaged and an alert world-text line is emitted, the mod also sends a baby-specific villager chat line for the hit. Built-in data uses baby-only `alert.player_attacked_villager` and `alert.villager_damaged` entries for the in-world alert text.
 
 `combat.retaliation_started` is emitted as world text when a villager or wandering trader acquires a new retaliation target. It supports `{target}`, `{target_name}`, `{target_kind}`, `{target_type}`, `{player}`, `{villager}`, `{villager_name}`, `{villager_kind}`, and `{profession}`. Use `target_entity_types` to target specific mobs or players.
 
@@ -152,6 +181,8 @@ Alert world text supports `{player}`, `{attacker}`, `{villager}`, `{villager_nam
 `combat.attack_landed` is emitted as world text when a villager or wandering trader lands a damaging hit on a living target. It supports `{target}`, `{target_name}`, `{target_kind}`, `{target_type}`, `{player}`, `{villager}`, `{villager_name}`, `{villager_kind}`, and `{profession}`. Use `target_entity_types` to target specific mobs or players.
 
 `combat.player_killed` is emitted as world text above the villager or wandering trader credited with killing a player. It supports `{player}`, `{victim}`, `{villager}`, `{villager_name}`, `{villager_kind}`, and `{profession}`.
+
+`alert.witness_death.player` and `alert.witness_death` can be shown by baby witnesses when `retaliation.babyVillagersFleeWitnessedDeaths` is enabled. Built-in data keeps adult and baby witness-death alert text separate with `show_for_babies` / `show_for_adults` filters.
 
 ## Ambient World Text Example
 

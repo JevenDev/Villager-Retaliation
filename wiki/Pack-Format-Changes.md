@@ -46,6 +46,7 @@ Pack-facing beta.11 changes focus on making data-driven behavior easier to exten
 - Added chat-only forced-dialogue triggers `container_theft_chat`, `container_opened_chat`, and `retaliation_started_chat` for villager-styled event lines that do not open the locked interaction screen.
 - Added non-player target support for `retaliation_started_chat`. When the retaliation target is not a player, the line is broadcast to nearby players instead of opening a player-facing conversation.
 - Added notification trigger `combat.flee_started` for villagers that keep fleeing a hostile instead of standing ground.
+- Added `lines` array support to normal dialogue entries, keyed dialogue messages, conversation openings, conversation closings, pacify lines, and notifications. These entries can still use `text` for a single line.
 - Added forced dialogue entry `chance` for `_chat` triggers so event callouts can be occasional instead of firing every time.
 - Added forced dialogue witness equipment filters `requires_witness_unarmed` / `witness_unarmed` and `requires_witness_armed` / `witness_armed`.
 - Added villager equipment filters `requires_villager_unarmed` / `villager_unarmed` and `requires_villager_armed` / `villager_armed` anywhere a pack rule is evaluated against a villager: dialogue options, lines, messages, openings, closings, pacify lines, notifications, gift preferences, gift rewards, pacification payments, and profession loot rules.
@@ -57,11 +58,13 @@ Pack-facing beta.11 changes focus on making data-driven behavior easier to exten
 - Added forced dialogue `take_stolen_items` / `return_stolen_items` support for removing the specific stacks stolen during `container_theft` and moving them into the villager inventory, source container, or another item destination.
 - Added forced dialogue placeholders: `{villager}`, `{player}`, `{container}`, `{count}`, `{item}`, `{item_id}`, `{item_count}`, `{item_stack}`, `{items}`, `{loot_table}`, `{payment_count}`, `{payment_items}`, `{stolen_item}`, `{stolen_item_id}`, `{stolen_count}`, `{stolen_item_count}`, `{stolen_stack}`, `{stolen_items}`, `{x}`, `{y}`, and `{z}`.
 - Added `player_container_theft` village memory tag, `requires_container_theft_to_self`, `requires_container_theft_from_other`, and theft-memory placeholders `{stolen_item}`, `{stolen_item_id}`, `{stolen_count}`, `{stolen_item_count}`, `{stolen_stack}`, `{stolen_container}`, `{stolen_loot_table}`, `{theft_witness}`, and `{theft_witness_possessive}`.
+- Added `baby_villager_attacked` village memory tag for player attacks against baby villagers.
 - Added forced dialogue editing, import, preview, validation, starter data, and export support to the [Datapack Generator](Datapack-Generator.md), including line variations, witness professions, custom leave options, `take_items`, `take_stolen_items`, item destinations, and reputation-gated option validation.
 - Added `small_talk` as the required general conversation dialogue request type.
 - Added a VR version selector to the Datapack Generator. Exported beta.11+ packs write `villagerretaliation.pack_version` in `pack.mcmeta`, and import uses it to restore the matching generator target.
 - Added more built-in dialogue lines for reputation tiers, retaliation aftermath, apologies, village defense, raids, golem loss, fire, gifts, gear reports, recruitment memories, and container-theft gossip.
 - Added built-in `retaliation_started_chat` combat barks for player targets, raiders, undead, monsters, generic retaliation targets, and unarmed villagers.
+- Added built-in baby-only alert text for baby villagers being hit and for baby villagers witnessing a villager death.
 - Added loot-table-specific built-in forced dialogue scenes for vanilla village profession chests, with profession-specific robbery responses and lower-priority village/general fallbacks.
 - Added documentation for resource-pack language keys used by the interaction GUI, generated family and relationship rows, reputation overlays, villager chat labels, gender labels, mood labels, and fallback profession labels.
 - Added [Localization Guide](Localization.md) to explain how datapack locale folders and resource-pack language files work together.
@@ -78,6 +81,9 @@ Pack-facing beta.11 changes focus on making data-driven behavior easier to exten
 - The built-in village chest forced-dialogue options now vary by reputation: high-reputation players can receive warnings, mid-reputation players can offer normal payment, and low-reputation players can face higher payment costs or harsher outcomes.
 - Built-in dialogue tone now emphasizes the mod's memory and consequence loop: villagers react to personal reputation, remember harm, gossip about theft, and treat defense as meaningful without instantly erasing past behavior.
 - Built-in dialogue data and wiki examples now use `small_talk` instead of `chat` for normal Talk menu conversation, keeping that request type distinct from villager-styled event chat lines.
+- Profession-filtered keyed messages, openings, and closings now default to adult-only unless `show_for_babies: true` is supplied, so job-site and profession flavor does not appear on baby villagers by accident.
+- Baby villagers can now participate in witnessed-death flee alerts when `retaliation.babyVillagersFleeWitnessedDeaths` is enabled. The built-in data keeps adult and baby alert wording separate with age filters.
+- Hitting a baby villager now records both `player_attacked_villager` and `baby_villager_attacked`, and built-in immediate alert/chat wording uses child-specific lines.
 - Villager profession and gender labels used by the interaction GUI are now documented as localization-friendly client values instead of server-supplied English display strings.
 - Villager dialogue speaker labels are now documented as client-localized GUI text instead of datapack text.
 - Built-in profession loot is now declared through datapack rule files and Minecraft loot tables instead of hardcoded Java pools.
@@ -103,6 +109,8 @@ Pack-facing beta.11 changes focus on making data-driven behavior easier to exten
 - Packs that want to change the built-in theft confrontation can add an entry under `forced_dialogue/`, or intentionally override `data/villagerretaliation/forced_dialogue/default.json`.
 - Packs that use dialogue `type: "chat"` must migrate to `type: "small_talk"` before targeting beta.11+. This applies to both dialogue `options` and `lines`.
 - Packs that only want an event line in villager chat should use the `_chat` forced-dialogue triggers. Keep `container_theft`, `container_opened`, and `retaliation_started` for locked forced-dialogue scenes or outcomes.
+- Packs with several identical dialogue, message, opening, closing, pacify, or notification entries can collapse them into one entry with `lines`. To preserve the old overall selection odds, set the new entry's `weight` to the sum of the old entry weights.
+- Packs that intentionally want profession-filtered openings or keyed messages for baby villagers should now set `show_for_babies: true` explicitly.
 
 ## 2026-05 Documentation Baseline
 

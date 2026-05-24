@@ -36,6 +36,30 @@ and:
 
 are both accepted by the loaders that use `professions`, filters, item lists, tags, and story target lists. Arrays are clearer for pack documentation and future edits.
 
+## Text Or Lines
+
+Speech-like entries usually accept `text` for one output or `lines` for several equal variations.
+
+```json
+{
+  "text": "Good to see you."
+}
+```
+
+```json
+{
+  "lines": [
+    "Good to see you.",
+    "Welcome back.",
+    "Hello again."
+  ]
+}
+```
+
+Normal dialogue `lines`, keyed dialogue `messages`, `openings`, `closings`, `pacify` entries, notifications, and forced dialogue entries all support this pattern. Keep `text` for single-line entries. Use `lines` when multiple variants share the same filters and weight.
+
+Selection is entry-first: filters and `chance` are checked, `weight` chooses a matching entry, and then one value from `lines` is selected at random. If you collapse several old entries into one `lines` entry, set the new `weight` to the old total when you want the same overall odds.
+
 ## Common Professions
 
 Use lowercase ids. `minecraft:` is optional for vanilla professions.
@@ -219,6 +243,8 @@ Container theft memories use `player_container_theft` and can be narrowed with `
 
 Retaliation memories use `villager_retaliation_started` and can be narrowed with `requires_retaliation_to_self`, `requires_retaliation_from_other`, and `retaliation_target_entity_types`. Retaliation lines can reference `{retaliation_target}`, `{retaliation_target_name}`, `{retaliation_target_kind}`, `{retaliation_target_type}`, `{retaliation_witness}`, and `{retaliation_witness_possessive}`.
 
+Baby villager hit memories use `baby_villager_attacked`. Pair it with `player_event_tags: ["player_attacked_villager"]` when a line should accuse or react to the current player.
+
 For the full current list, when each value is remembered, and dropdown examples for simple and expanded uses, see [Event Tags](Event-Tags.md).
 
 ## Weight And Chance
@@ -247,6 +273,10 @@ Most dialogue and notification entries support:
 ```
 
 Both default to `true`.
+
+For keyed dialogue `messages`, `openings`, and `closings`, entries with a profession filter default to adult-only unless they explicitly set `show_for_babies: true`. This prevents profession/job-site lines from appearing on baby villagers unless a pack opts in.
+
+Baby villagers can flee from witnessed villager deaths when `retaliation.babyVillagersFleeWitnessedDeaths` is enabled. Built-in notification data separates adult and baby witness-death alert text with `show_for_adults` and `show_for_babies`, and baby-hit alerts use the same age filters on `alert.player_attacked_villager` / `alert.villager_damaged`.
 
 ## Stable IDs
 

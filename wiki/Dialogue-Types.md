@@ -7,6 +7,8 @@ Dialogue `type` values connect menu options to the kind of response the villager
 
 For a custom option, the option `id` and the line `option` / `option_ids` should usually be paired. Built-in options such as `adult_share_story` can be targeted directly by addon lines.
 
+Examples use `text` for compactness. Any dialogue line example can use `lines` instead when several variations share the same filters and weight.
+
 Enum values are case-insensitive in code, but lowercase snake case is recommended.
 
 ```json

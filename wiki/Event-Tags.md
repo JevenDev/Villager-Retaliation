@@ -18,6 +18,7 @@ Enum values are case-insensitive in code, but lowercase snake case is the recomm
 | Tag | Usually remembered when | Good fit for |
 | --- | --- | --- |
 | `baby_born` | A villager baby is created and linked to parents. | Family, village growth, gossip after breeding. |
+| `baby_villager_attacked` | A player damages a baby villager. | Child-specific hurt reactions, adult concern, and baby-only follow-up dialogue. |
 | `iron_golem_defeated_mob` | An iron golem kills a hostile mob. | Relief after golem defense. |
 | `thunderstorm` | A thunderstorm is noticed near a villager in a rainy biome. | Weather anxiety and storm chatter. |
 | `sandstorm` | A thunderstorm is noticed near a villager in a dry biome with no precipitation. | Desert or badlands storm flavor. |
@@ -82,6 +83,50 @@ Expanded:
       "requires_known_child": true,
       "text": "You helped bring {child} into this village. The fields will know that kindness.",
       "weight": 30
+    }
+  ]
+}
+```
+
+</details>
+
+<details>
+<summary><strong>baby_villager_attacked</strong></summary>
+
+Use this after a player damages a baby villager. It is usually paired with `player_event_tags: ["player_attacked_villager"]` when the line should be about the current player's action.
+
+Simple:
+
+```json
+{
+  "lines": [
+    {
+      "id": "my_pack.event.baby_villager_attacked.simple",
+      "type": "village_event_report",
+      "event_tags": ["baby_villager_attacked"],
+      "text": "Someone small got hurt. That sound stays in a village."
+    }
+  ]
+}
+```
+
+Expanded:
+
+```json
+{
+  "lines": [
+    {
+      "id": "my_pack.event.baby_villager_attacked.player",
+      "type": "apology",
+      "player_event_tags": ["player_attacked_villager"],
+      "event_tags": ["baby_villager_attacked"],
+      "show_for_babies": false,
+      "dispositions": ["cautious", "rude", "hostile"],
+      "lines": [
+        "You made a child cry. There is no brave version of that story.",
+        "Everyone heard the little one yell. Start explaining there."
+      ],
+      "weight": 40
     }
   ]
 }

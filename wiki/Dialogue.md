@@ -62,6 +62,33 @@ A dialogue file can contain any mix of these arrays:
 
 The option id is what the player clicks. The line's `option` or `option_ids` links it to that choice.
 
+## Text And Line Variations
+
+Dialogue entries that output speech can use either `text` for one line or `lines` for several equal line variations. This applies to `lines`, `messages`, `openings`, `closings`, and `pacify` entries. The entry is selected by its normal `weight` first; if it has `lines`, one variation is then selected at random.
+
+Use `lines` when several entries would otherwise have the same filters and weight:
+
+```json
+{
+  "lines": [
+    {
+      "id": "my_pack.weather_rain_farmer",
+      "option": "my_pack.ask_weather",
+      "type": "question",
+      "weather": ["rain"],
+      "lines": [
+        "Good for wheat, bad for boots.",
+        "Rain keeps the fields honest.",
+        "The rows will like this more than travelers do."
+      ],
+      "weight": 30
+    }
+  ]
+}
+```
+
+Older `text` entries still work and are still clearer for single-line entries.
+
 ## Dialogue Request Types
 
 Use these values in `type`:
@@ -152,7 +179,8 @@ See [Dialogue Types](Dialogue-Types.md) for simple and expanded dropdown example
 | --- | --- | --- | --- |
 | `id` | string | generated | Stable line id. |
 | `type` | enum | required | Must match the requested dialogue type. |
-| `text` | string | required | The response text. |
+| `text` | string | required unless `lines` is set | The response text. |
+| `lines` | array | required unless `text` is set | Alternate response texts. One is selected at random after this entry wins weighted selection. |
 | `option` | string or array | none | Restricts the line to option id(s). |
 | `option_ids` | string or array | none | Same purpose as `option`. |
 | `professions` | string or array | inherited/any | Filters by profession. |
@@ -285,6 +313,7 @@ Use these in `event_tags` or `player_event_tags`:
 
 ```text
 baby_born
+baby_villager_attacked
 iron_golem_defeated_mob
 thunderstorm
 sandstorm
@@ -360,13 +389,14 @@ Message fields:
 | --- | --- | --- | --- |
 | `id` | string | generated | Use for translations and overrides. |
 | `key` | string | required | Must match a key emitted by the mod. |
-| `text` | string | required | Message text. |
+| `text` | string | required unless `lines` is set | Message text. |
+| `lines` | array | required unless `text` is set | Alternate message texts. One is selected at random after this message entry wins weighted selection. |
 | `professions` | string or array | inherited/any | Profession filter. |
 | `dispositions` | string or array | any | Disposition filter. |
 | `requires_villager_unarmed` | boolean | `false` | Requires the villager to have no usable weapon in either hand. |
 | `requires_villager_armed` | boolean | `false` | Requires the villager to have a usable weapon in either hand. |
 | `show_for_adults` | boolean | `true` | Adult visibility. |
-| `show_for_babies` | boolean | `true` | Baby visibility. |
+| `show_for_babies` | boolean | `true`, or `false` on profession-filtered messages | Baby visibility. |
 | `weight` | integer | `10` | Weighted selection. |
 
 Gift preference rules can set `response_key` to point at any message key. Those custom gift messages can use `{gift_item}`, `{item}`, `{gift_item_id}`, and `{item_id}` placeholders. If the custom key has no matching message, the default reaction message is used instead.
@@ -393,7 +423,9 @@ Gift preference rules can set `response_key` to point at any message key. Those 
 }
 ```
 
-Openings and closings support `id`, `text`, `professions`, `dispositions`, `requires_villager_unarmed`, `requires_villager_armed`, `show_for_adults`, `show_for_babies`, `first_conversation_only`, `first_village_interaction_only`, and `weight`.
+Openings and closings support `id`, `text`, `lines`, `professions`, `dispositions`, `requires_villager_unarmed`, `requires_villager_armed`, `show_for_adults`, `show_for_babies`, `first_conversation_only`, `first_village_interaction_only`, and `weight`.
+
+For `messages`, `openings`, and `closings`, entries with a profession filter default to adult-only unless they explicitly set `show_for_babies: true`. This keeps profession/job-site flavor from being selected for baby villagers by accident. Unfiltered entries still default to both adults and babies.
 
 ## Pacify Lines
 
@@ -402,7 +434,10 @@ Openings and closings support `id`, `text`, `professions`, `dispositions`, `requ
   "pacify": [
     {
       "id": "my_pack.pacify.accepted",
-      "text": "Fine. {payment_cost} {payment_items}, and we try peace again.",
+      "lines": [
+        "Fine. {payment_cost} {payment_items}, and we try peace again.",
+        "That pays for peace today. Do not make me price it twice."
+      ],
       "outcomes": ["success"],
       "weight": 10
     }
@@ -420,7 +455,7 @@ Pacify text supports:
 
 For older packs, `{emerald_cost}` still aliases `{payment_cost}`, and `{emeralds}` still aliases `{payment_items}`.
 
-The `outcomes` field filters by the internal pacification result enum. If omitted, the line can match any result. Pacify lines also support `professions`, `dispositions`, `requires_villager_unarmed`, `requires_villager_armed`, and `weight`.
+The `outcomes` field filters by the internal pacification result enum. If omitted, the line can match any result. Pacify lines also support `text`, `lines`, `professions`, `dispositions`, `requires_villager_unarmed`, `requires_villager_armed`, and `weight`.
 
 Valid pacify outcomes are:
 
