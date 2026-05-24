@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.player.Player;
 
@@ -25,8 +26,20 @@ public final class VillagerNotifications {
             Map<String, String> replacements,
             String fallbackText,
             VillagerReputationNoticeKind fallbackKind) {
+        return resolve(level, villager, player, null, trigger, replacements, fallbackText, fallbackKind);
+    }
+
+    public static ResolvedVillagerNotification resolve(
+            ServerLevel level,
+            AbstractVillager villager,
+            Player player,
+            LivingEntity target,
+            String trigger,
+            Map<String, String> replacements,
+            String fallbackText,
+            VillagerReputationNoticeKind fallbackKind) {
         return VillagerNotificationResources
-                .select(context(level, villager, player), trigger, replacements)
+                .select(context(level, villager, player, target), trigger, replacements)
                 .orElse(new ResolvedVillagerNotification(
                         fallbackText,
                         ResolvedVillagerNotification.DEFAULT_COLOR,
@@ -44,9 +57,21 @@ public final class VillagerNotifications {
             Map<String, String> replacements,
             String fallbackText,
             VillagerReputationNoticeKind fallbackKind) {
+        sendHud(player, level, villager, null, trigger, replacements, fallbackText, fallbackKind);
+    }
+
+    public static void sendHud(
+            ServerPlayer player,
+            ServerLevel level,
+            AbstractVillager villager,
+            LivingEntity target,
+            String trigger,
+            Map<String, String> replacements,
+            String fallbackText,
+            VillagerReputationNoticeKind fallbackKind) {
         VillagerReputationNetworking.sendNotice(
                 player,
-                resolve(level, villager, player, trigger, replacements, fallbackText, fallbackKind)
+                resolve(level, villager, player, target, trigger, replacements, fallbackText, fallbackKind)
         );
     }
 
@@ -58,7 +83,19 @@ public final class VillagerNotifications {
             Map<String, String> replacements,
             VillagerWorldTextIndicatorKind fallbackKind,
             String fallbackText) {
-        return sendWorldText(level, villager, player, trigger, "", replacements, fallbackKind, fallbackText);
+        return sendWorldText(level, villager, player, null, trigger, "", replacements, fallbackKind, fallbackText);
+    }
+
+    public static boolean sendWorldText(
+            ServerLevel level,
+            AbstractVillager villager,
+            Player player,
+            LivingEntity target,
+            String trigger,
+            Map<String, String> replacements,
+            VillagerWorldTextIndicatorKind fallbackKind,
+            String fallbackText) {
+        return sendWorldText(level, villager, player, target, trigger, "", replacements, fallbackKind, fallbackText);
     }
 
     public static boolean sendWorldText(
@@ -70,7 +107,20 @@ public final class VillagerNotifications {
             Map<String, String> replacements,
             VillagerWorldTextIndicatorKind fallbackKind,
             String fallbackText) {
-        VillagerNotificationContext context = context(level, villager, player);
+        return sendWorldText(level, villager, player, null, trigger, fallbackTrigger, replacements, fallbackKind, fallbackText);
+    }
+
+    public static boolean sendWorldText(
+            ServerLevel level,
+            AbstractVillager villager,
+            Player player,
+            LivingEntity target,
+            String trigger,
+            String fallbackTrigger,
+            Map<String, String> replacements,
+            VillagerWorldTextIndicatorKind fallbackKind,
+            String fallbackText) {
+        VillagerNotificationContext context = context(level, villager, player, target);
         ResolvedVillagerNotification notification = VillagerNotificationResources
                 .select(context, trigger, replacements)
                 .or(() -> fallbackTrigger == null || fallbackTrigger.isBlank()
@@ -104,6 +154,14 @@ public final class VillagerNotifications {
     }
 
     private static VillagerNotificationContext context(ServerLevel level, AbstractVillager villager, Player player) {
+        return context(level, villager, player, null);
+    }
+
+    private static VillagerNotificationContext context(
+            ServerLevel level,
+            AbstractVillager villager,
+            Player player,
+            LivingEntity target) {
         VillagerReputationManager.ReputationSnapshot reputation = player == null
                 ? new VillagerReputationManager.ReputationSnapshot(0, VillagerReputationLevel.NEUTRAL)
                 : VillagerReputationManager.getReputationSnapshot(level, villager, player.getUUID());
@@ -111,6 +169,7 @@ public final class VillagerNotifications {
                 level,
                 villager,
                 player,
+                target,
                 reputation.value(),
                 reputation.level(),
                 villager.getRandom(),

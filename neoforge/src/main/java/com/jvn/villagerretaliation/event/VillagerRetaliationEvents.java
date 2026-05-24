@@ -111,6 +111,7 @@ public final class VillagerRetaliationEvents {
         }
         VillagerRetaliationHandler.onLivingDamage(event);
         WanderingTraderRetaliationHandler.onLivingDamage(event);
+        rememberVillagerAttackLanded(event);
         rememberVillageDamageEvent(event);
         if (event.getEntity() instanceof Villager villager && event.getNewDamage() > 0.0F) {
             VillagerConversationService.endForVillager(villager, true);
@@ -409,6 +410,20 @@ public final class VillagerRetaliationEvents {
         if (attacker instanceof Player) {
             VillageEventMemory.remember(level, VillageEventMemory.EventTag.PLAYER_ATTACKED_VILLAGER, villager.blockPosition(), villager, attacker);
         }
+    }
+
+    private static void rememberVillagerAttackLanded(LivingDamageEvent.Post event) {
+        if (!(event.getEntity().level() instanceof ServerLevel level)
+                || event.getNewDamage() <= 0.0F
+                || !(event.getEntity() instanceof LivingEntity target)) {
+            return;
+        }
+
+        VillagerRetaliationVillagerCombatUtil.resolveAttacker(target, event.getSource())
+                .filter(AbstractVillager.class::isInstance)
+                .map(AbstractVillager.class::cast)
+                .filter(attacker -> attacker != target)
+                .ifPresent(attacker -> VillagerAmbientIndicatorService.onAttackLanded(level, attacker, target));
     }
 
     private static void rememberVillageDeathEvent(LivingDeathEvent event) {

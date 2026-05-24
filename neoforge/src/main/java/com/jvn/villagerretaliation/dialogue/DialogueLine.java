@@ -24,6 +24,9 @@ public record DialogueLine(
         Set<VillageEventMemory.EventTag> playerEventTags,
         boolean requiresContainerTheftToSelf,
         boolean requiresContainerTheftFromOther,
+        boolean requiresRetaliationToSelf,
+        boolean requiresRetaliationFromOther,
+        Set<ResourceLocation> retaliationTargetEntityTypes,
         VillagerReputationCondition reputationCondition,
         VillagerPlayerItemCondition playerItemCondition,
         Set<ResourceLocation> storyTargetIds,
@@ -111,6 +114,19 @@ public record DialogueLine(
             return false;
         }
         if (this.requiresContainerTheftFromOther && context.recentContainerTheftFromAnotherVillager().isEmpty()) {
+            return false;
+        }
+        if (this.requiresRetaliationToSelf && context.recentRetaliationToThisVillager().isEmpty()) {
+            return false;
+        }
+        if (this.requiresRetaliationFromOther && context.recentRetaliationFromAnotherVillager().isEmpty()) {
+            return false;
+        }
+        if (!this.retaliationTargetEntityTypes.isEmpty()
+                && context.recentRetaliation()
+                .map(event -> event.retaliation() != null
+                        && this.retaliationTargetEntityTypes.contains(ResourceLocation.tryParse(event.retaliation().targetTypeId())))
+                .orElse(false) == false) {
             return false;
         }
         if (!this.playerItemCondition.matches(context.player())) {
@@ -256,6 +272,9 @@ public record DialogueLine(
         if (this.requiresContainerTheftToSelf || this.requiresContainerTheftFromOther) {
             score += 5;
         }
+        if (this.requiresRetaliationToSelf || this.requiresRetaliationFromOther || !this.retaliationTargetEntityTypes.isEmpty()) {
+            score += 5;
+        }
         if (!this.playerItemCondition.isEmpty()) {
             score += 5;
         }
@@ -334,6 +353,9 @@ public record DialogueLine(
         private final Set<VillageEventMemory.EventTag> playerEventTags = EnumSet.noneOf(VillageEventMemory.EventTag.class);
         private boolean requiresContainerTheftToSelf;
         private boolean requiresContainerTheftFromOther;
+        private boolean requiresRetaliationToSelf;
+        private boolean requiresRetaliationFromOther;
+        private final Set<ResourceLocation> retaliationTargetEntityTypes = new java.util.HashSet<>();
         private VillagerReputationCondition reputationCondition = VillagerReputationCondition.empty();
         private VillagerPlayerItemCondition playerItemCondition = VillagerPlayerItemCondition.empty();
         private final Set<ResourceLocation> storyTargetIds = new java.util.HashSet<>();
@@ -427,6 +449,25 @@ public record DialogueLine(
 
         public Builder requiresContainerTheftFromOther() {
             this.requiresContainerTheftFromOther = true;
+            return this;
+        }
+
+        public Builder requiresRetaliationToSelf() {
+            this.requiresRetaliationToSelf = true;
+            return this;
+        }
+
+        public Builder requiresRetaliationFromOther() {
+            this.requiresRetaliationFromOther = true;
+            return this;
+        }
+
+        public Builder retaliationTargetEntityTypes(ResourceLocation... entityTypeIds) {
+            for (ResourceLocation entityTypeId : entityTypeIds) {
+                if (entityTypeId != null) {
+                    this.retaliationTargetEntityTypes.add(entityTypeId);
+                }
+            }
             return this;
         }
 
@@ -672,6 +713,9 @@ public record DialogueLine(
                     Set.copyOf(this.playerEventTags),
                     this.requiresContainerTheftToSelf,
                     this.requiresContainerTheftFromOther,
+                    this.requiresRetaliationToSelf,
+                    this.requiresRetaliationFromOther,
+                    Set.copyOf(this.retaliationTargetEntityTypes),
                     this.reputationCondition,
                     this.playerItemCondition,
                     Set.copyOf(this.storyTargetIds),

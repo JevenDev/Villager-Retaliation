@@ -451,7 +451,7 @@ public final class VillagerDialogueService {
 
     private static String resolveText(String text, DialogueContext context) {
         String curedVillagerName = curedVillagerName(context);
-        return resolveContainerTheftText(text
+        return resolveRetaliationText(resolveContainerTheftText(text
                 .replace("{attack_weapon}", context.rememberedAttackWeapon())
                 .replace("{gear_kind}", context.gearReportKind())
                 .replace("{follow_biome}", context.recruitmentMemoryBiome())
@@ -499,12 +499,18 @@ public final class VillagerDialogueService {
                 .replace("{extended_relative}", context.familyTree().firstExtendedRelative())
                 .replace("{extended_relative_possessive}", toPossessive(context.familyTree().firstExtendedRelative()))
                 .replace("{relative}", context.familyTree().firstRelative())
-                .replace("{relative_possessive}", toPossessive(context.familyTree().firstRelative())), context);
+                .replace("{relative_possessive}", toPossessive(context.familyTree().firstRelative())), context), context);
     }
 
     private static String resolveContainerTheftText(String text, DialogueContext context) {
         return context.recentContainerTheft()
                 .map(event -> VillagerDialogueResources.resolveTemplate(text, containerTheftReplacements(event, context)))
+                .orElse(text);
+    }
+
+    private static String resolveRetaliationText(String text, DialogueContext context) {
+        return context.recentRetaliation()
+                .map(event -> VillagerDialogueResources.resolveTemplate(text, retaliationReplacements(event, context)))
                 .orElse(text);
     }
 
@@ -549,6 +555,36 @@ public final class VillagerDialogueService {
                 "stolen_loot_table", lootTable,
                 "theft_witness", villagerName,
                 "theft_witness_possessive", toPossessive(villagerName)
+        );
+    }
+
+    private static Map<String, String> retaliationReplacements(VillageEventMemory.MemoryEvent event, DialogueContext context) {
+        VillageEventMemory.RetaliationMemory retaliation = event.retaliation();
+        String targetName = retaliation == null || retaliation.targetName() == null || retaliation.targetName().isBlank()
+                ? "threat"
+                : retaliation.targetName();
+        String targetTypeId = retaliation == null || retaliation.targetTypeId() == null ? "" : retaliation.targetTypeId();
+        String targetKind = targetTypeId.isBlank()
+                ? targetName.toLowerCase(Locale.ROOT)
+                : targetTypeId.contains(":")
+                ? targetTypeId.substring(targetTypeId.indexOf(':') + 1).replace('_', ' ')
+                : targetTypeId.replace('_', ' ');
+        String villagerName = resolveRememberedVillagerName(
+                context,
+                event.sourceId(),
+                retaliation == null ? "" : retaliation.villagerName()
+        );
+        return Map.of(
+                "retaliation_target", targetName,
+                "retaliation_target_name", targetName,
+                "retaliation_target_kind", targetKind,
+                "retaliation_target_type", targetTypeId,
+                "retaliation_witness", villagerName,
+                "retaliation_witness_possessive", toPossessive(villagerName),
+                "target", targetName,
+                "target_name", targetName,
+                "target_kind", targetKind,
+                "target_type", targetTypeId
         );
     }
 

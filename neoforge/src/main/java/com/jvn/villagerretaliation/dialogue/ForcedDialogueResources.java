@@ -44,13 +44,30 @@ public final class ForcedDialogueResources {
     }
 
     public static Optional<ForcedDialogueDefinition> select(MinecraftServer server, ForcedDialogueTrigger trigger, ResourceLocation lootTable) {
-        return selectCandidates(server, trigger, lootTable).stream().findFirst();
+        return select(server, trigger, lootTable, null).stream().findFirst();
     }
 
     public static List<ForcedDialogueDefinition> selectCandidates(MinecraftServer server, ForcedDialogueTrigger trigger, ResourceLocation lootTable) {
+        return select(server, trigger, lootTable, null);
+    }
+
+    public static List<ForcedDialogueDefinition> selectCandidates(
+            MinecraftServer server,
+            ForcedDialogueTrigger trigger,
+            ResourceLocation lootTable,
+            ResourceLocation targetEntityType) {
+        return select(server, trigger, lootTable, targetEntityType);
+    }
+
+    private static List<ForcedDialogueDefinition> select(
+            MinecraftServer server,
+            ForcedDialogueTrigger trigger,
+            ResourceLocation lootTable,
+            ResourceLocation targetEntityType) {
         return load(server).stream()
                 .filter(definition -> definition.trigger() == trigger)
                 .filter(definition -> definition.matchesLootTable(lootTable))
+                .filter(definition -> definition.matchesTargetEntityType(targetEntityType))
                 .sorted(Comparator.comparingInt(ForcedDialogueDefinition::priority)
                         .thenComparing(definition -> definition.lootTables().isEmpty() ? 1 : 0))
                 .toList();
@@ -147,7 +164,10 @@ public final class ForcedDialogueResources {
                 readInt(entry, "priority", 0),
                 readInt(entry, "min_recent_container_thefts", 0),
                 readInt(entry, "max_recent_container_thefts", Integer.MAX_VALUE),
+                readInt(entry, "min_recent_retaliations", 0),
+                readInt(entry, "max_recent_retaliations", Integer.MAX_VALUE),
                 readLootTables(entry),
+                readTargetEntityTypes(entry),
                 readProfessions(entry),
                 options,
                 leaveOption,
@@ -181,6 +201,18 @@ public final class ForcedDialogueResources {
             }
         }
         return Set.copyOf(lootTables);
+    }
+
+    private static Set<ResourceLocation> readTargetEntityTypes(JsonObject entry) {
+        java.util.LinkedHashSet<ResourceLocation> entityTypes = new java.util.LinkedHashSet<>();
+        readResourceLocation(entry, "target_entity_type").ifPresent(entityTypes::add);
+        for (String value : readStringList(entry, "target_entity_types")) {
+            parseResourceLocation(value).ifPresent(entityTypes::add);
+        }
+        for (String value : readStringList(entry, "target_entities")) {
+            parseResourceLocation(value).ifPresent(entityTypes::add);
+        }
+        return Set.copyOf(entityTypes);
     }
 
     private static List<String> readLines(JsonObject entry) {
@@ -391,6 +423,10 @@ public final class ForcedDialogueResources {
         Map<String, String> replacements = new HashMap<>();
         replacements.put("villager", context.villagerName());
         replacements.put("player", context.playerName());
+        replacements.put("target", context.targetName());
+        replacements.put("target_name", context.targetName());
+        replacements.put("target_kind", context.targetKind());
+        replacements.put("target_type", context.targetType());
         replacements.put("item", context.itemName());
         replacements.put("item_id", context.itemId());
         replacements.put("count", Integer.toString(context.itemCount()));
@@ -407,6 +443,8 @@ public final class ForcedDialogueResources {
         replacements.put("loot_table", context.lootTable());
         replacements.put("prior_container_thefts", Integer.toString(context.priorContainerThefts()));
         replacements.put("container_theft_offense", Integer.toString(context.priorContainerThefts() + 1));
+        replacements.put("prior_retaliations", Integer.toString(context.priorRetaliations()));
+        replacements.put("retaliation_offense", Integer.toString(context.priorRetaliations() + 1));
         replacements.put("x", Integer.toString(context.x()));
         replacements.put("y", Integer.toString(context.y()));
         replacements.put("z", Integer.toString(context.z()));
@@ -525,7 +563,8 @@ public final class ForcedDialogueResources {
 
     public enum ForcedDialogueTrigger {
         CONTAINER_THEFT,
-        CONTAINER_OPENED
+        CONTAINER_OPENED,
+        RETALIATION_STARTED
     }
 
     public enum ForcedDialogueItemDestination {
@@ -550,7 +589,10 @@ public final class ForcedDialogueResources {
             int priority,
             int minRecentContainerThefts,
             int maxRecentContainerThefts,
+            int minRecentRetaliations,
+            int maxRecentRetaliations,
             Set<ResourceLocation> lootTables,
+            Set<ResourceLocation> targetEntityTypes,
             Set<VillagerProfession> witnessProfessions,
             List<ForcedDialogueOption> options,
             ForcedDialogueOption leaveOption,
@@ -566,12 +608,20 @@ public final class ForcedDialogueResources {
             return this.lootTables.isEmpty() || (lootTable != null && this.lootTables.contains(lootTable));
         }
 
+        private boolean matchesTargetEntityType(ResourceLocation targetEntityType) {
+            return this.targetEntityTypes.isEmpty() || (targetEntityType != null && this.targetEntityTypes.contains(targetEntityType));
+        }
+
         public boolean matchesWitness(Villager villager) {
             return this.witnessProfessions.isEmpty() || this.witnessProfessions.contains(villager.getVillagerData().getProfession());
         }
 
         public boolean matchesRecentContainerThefts(int count) {
             return count >= this.minRecentContainerThefts && count <= this.maxRecentContainerThefts;
+        }
+
+        public boolean matchesRecentRetaliations(int count) {
+            return count >= this.minRecentRetaliations && count <= this.maxRecentRetaliations;
         }
     }
 
@@ -654,6 +704,9 @@ public final class ForcedDialogueResources {
     public record ForcedDialogueContext(
             String villagerName,
             String playerName,
+            String targetName,
+            String targetKind,
+            String targetType,
             String itemName,
             String itemId,
             int itemCount,
@@ -662,6 +715,7 @@ public final class ForcedDialogueResources {
             String containerName,
             String lootTable,
             int priorContainerThefts,
+            int priorRetaliations,
             int x,
             int y,
             int z) {

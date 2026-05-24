@@ -65,6 +65,8 @@ const CONSTANTS = {
     "ambient.player_item",
     "ambient.sleep_breathing",
     "ambient.sleep_murmur",
+    "combat.retaliation_started",
+    "combat.attack_landed",
     "combat.player_killed",
     "trade.completed",
     "trade.refused",
@@ -75,7 +77,7 @@ const CONSTANTS = {
     "alert.witness_death.player",
     "alert.witness_death"
   ],
-  forcedDialogueTriggers: ["container_theft", "container_opened"],
+  forcedDialogueTriggers: ["container_theft", "container_opened", "retaliation_started"],
   reputationLevels: ["royalty", "revered", "respected", "trusted", "neutral", "suspicious", "hostile", "despised", "feared"],
   hudKinds: [
     "default",
@@ -115,7 +117,8 @@ const CONSTANTS = {
     "player_gave_neutral_gift",
     "player_gave_disliked_gift",
     "player_gave_hated_gift",
-    "player_container_theft"
+    "player_container_theft",
+    "villager_retaliation_started"
   ],
   itemSlots: ["main_hand", "off_hand", "hands", "armor", "hotbar", "inventory", "equipment", "any"],
   forcedItemDestinations: ["discard", "villager_inventory", "villager_inventory_then_source_container", "source_container", "drop_at_villager", "drop_at_container"],
@@ -182,6 +185,8 @@ const CONSTANTS = {
     "requires_recent_direct_hit_memory",
     "requires_container_theft_to_self",
     "requires_container_theft_from_other",
+    "requires_retaliation_to_self",
+    "requires_retaliation_from_other",
     "requires_gear_report_used_in_combat",
     "requires_gear_report_unused_in_combat",
     "requires_recruitment_memory",
@@ -288,6 +293,7 @@ const FIELD_TOOLTIPS = {
   "dialogue-times": "Time filter for lines: morning, afternoon, evening, or night.",
   "dialogue-event_tags": "Requires a recent nearby village memory with a matching event tag.",
   "dialogue-player_event_tags": "Requires a recent village memory associated with the current player.",
+  "dialogue-retaliation_target_entity_types": "Restricts retaliation-memory lines to recent villager retaliation targets such as minecraft:player or minecraft:zombie.",
   "dialogue-story_structure": "Restricts share_story lines to one or more structure ids from story discovery JSON.",
   "dialogue-story_biome": "Restricts share_story lines to one or more biome ids from story discovery JSON.",
   "dialogue-recruitment_followup_scenarios": "Filters recruitment follow-up lines by stored scenario ids.",
@@ -299,19 +305,22 @@ const FIELD_TOOLTIPS = {
   "dialogue-outcomes": "Pacification result filter, such as success, not_enough_emeralds, blocked_by_reputation, or not_applicable.",
   "forcedDialogue-fileName": "Creates data/villagerretaliation/forced_dialogue/<file>.json. Use default only when replacing the built-in theft confrontation.",
   "forced-id": "Stable id for this forced dialogue rule. Duplicate ids can override or collide depending on load order.",
-  "forced-trigger": "Event trigger for the forced conversation. container_theft fires after items are removed; container_opened fires when config watches container opening.",
+  "forced-trigger": "Event trigger for the forced conversation. container_theft fires after items are removed; container_opened fires when config watches container opening; retaliation_started fires when a villager acquires a player retaliation target.",
   "forced-line": "Villager opening line shown when the forced conversation opens. Put each variation on its own line.",
   "forced-priority": "Lower priority wins when multiple forced dialogue rules match the same event.",
   "forced-witness_radius": "Maximum block distance for witnesses to detect the event.",
   "forced-reputation": "Optional reputation change applied when this rule runs.",
   "forced-witness_professions": "Optional profession ids for the witnessing villager, such as armorer or minecraft:weaponsmith.",
+  "forced-target_entity_types": "Optional retaliation target entity ids such as minecraft:player. Useful for retaliation_started entries.",
+  "forced-min_recent_retaliations": "Optional minimum earlier villager_retaliation_started memories for this player near the villager's village.",
+  "forced-max_recent_retaliations": "Optional maximum earlier villager_retaliation_started memories for this player near the villager's village.",
   "forced-force_camera_towards_villager": "Smoothly turns the player's camera toward the witnessing villager while this forced dialogue is active.",
   "forced-options_json": "JSON array of player response options. Each option can set label, response, reputation, aggro, aggro_chance, end_conversation, order, take_items, take_stolen_items, reputation_levels, min_reputation, and max_reputation.",
   "forced-leave_option_json": "Optional JSON object or array for forced Leave/Escape outcomes. Uses option fields such as label, response, reputation, aggro_chance, take_stolen_items, and reputation_levels.",
   "notifications-fileName": "Creates data/villagerretaliation/notifications/<locale>/<file>.json. Avoid global unless intentionally replacing built-in notifications.",
   "notifications-locale": "Locale folder for this notification file. en_us loads first, then the player's locale overlays matching ids.",
   "notification-id": "Stable id for translation overlays and replacement. Generated ids work, but explicit ids are safer.",
-  "notification-trigger": "Event trigger emitted by the mod, such as gift.liked, ambient.murmur, trade.refused, or alert.witness_death.",
+  "notification-trigger": "Event trigger emitted by the mod, such as gift.liked, combat.retaliation_started, trade.refused, or alert.witness_death.",
   "notification-text": "Localized HUD or world text. Supported placeholders depend on the trigger.",
   "notification-kind": "HUD notification category. Defaults to default when omitted.",
   "notification-world_text_kind": "Ambient text style above villagers. The loader also accepts style as an alias.",
@@ -382,6 +391,8 @@ const FLAG_TOOLTIPS = {
   requires_recent_direct_hit_memory: "Requires recent memory of the player directly hitting a villager.",
   requires_container_theft_to_self: "Requires a recent container theft memory witnessed by this villager.",
   requires_container_theft_from_other: "Requires a recent container theft memory reported by another villager.",
+  requires_retaliation_to_self: "Requires a recent retaliation-start memory from this villager.",
+  requires_retaliation_from_other: "Requires a recent retaliation-start memory from another villager.",
   requires_gear_report_used_in_combat: "Requires gifted gear that has been used in combat.",
   requires_gear_report_unused_in_combat: "Requires gifted gear that has not yet been used in combat.",
   requires_recruitment_memory: "Requires stored recruitment memory for the villager.",
@@ -437,7 +448,8 @@ const EVENT_TAG_TOOLTIPS = {
   player_gave_neutral_gift: "The player gave a neutral gift.",
   player_gave_disliked_gift: "The player gave a disliked gift.",
   player_gave_hated_gift: "The player gave a hated gift.",
-  player_container_theft: "The player was witnessed taking items from a watched container."
+  player_container_theft: "The player was witnessed taking items from a watched container.",
+  villager_retaliation_started: "A villager or wandering trader acquired a new retaliation target."
 };
 
 const DISPOSITION_TOOLTIPS = {
@@ -470,9 +482,11 @@ const TAG_SUGGESTIONS = {
   "dialogue-times": CONSTANTS.times,
   "dialogue-event_tags": CONSTANTS.eventTags,
   "dialogue-player_event_tags": CONSTANTS.eventTags,
+  "dialogue-retaliation_target_entity_types": ["minecraft:player", "minecraft:zombie", "minecraft:skeleton", "minecraft:creeper", "minecraft:raider"],
   "dialogue-outcomes": CONSTANTS.pacifyOutcomes,
   "forced-trigger": CONSTANTS.forcedDialogueTriggers,
   "forced-witness_professions": CONSTANTS.professions,
+  "forced-target_entity_types": ["minecraft:player", "minecraft:zombie", "minecraft:skeleton", "minecraft:creeper", "minecraft:raider"],
   "notification-professions": CONSTANTS.professions,
   "notification-reputation_levels": CONSTANTS.reputationLevels,
   "notification-player_item_slots": CONSTANTS.itemSlots,
@@ -1486,9 +1500,13 @@ function validate() {
       break;
     }
   }
-  const blankDialogueList = firstBlankListValue(allDialogueEntries, ["professions", "dispositions", "reputation_level", "reputation_levels", "player_items", "player_item_slots", "weather", "times", "event_tags", "player_event_tags", "story_structures", "story_biomes", "outcomes"]);
+  const blankDialogueList = firstBlankListValue(allDialogueEntries, ["professions", "dispositions", "reputation_level", "reputation_levels", "player_items", "player_item_slots", "weather", "times", "event_tags", "player_event_tags", "retaliation_target_entity_types", "story_structures", "story_biomes", "outcomes"]);
   if (blankDialogueList) {
     addCheck(checks, "warning", "Dialogue list", `${humanize(blankDialogueList)} contains a blank value.`);
+  }
+  const badDialogueRetaliationTarget = firstInvalidValue(allDialogueEntries, ["retaliation_target_entity_types", "retaliation_target_entities"], isValidResourceLocation);
+  if (badDialogueRetaliationTarget) {
+    addCheck(checks, "error", "Dialogue retaliation target", `Invalid retaliation target entity id: ${badDialogueRetaliationTarget}.`);
   }
 
   for (const entry of state.forcedDialogue.entries) {
@@ -1513,13 +1531,25 @@ function validate() {
   if (badForcedLootTable) {
     addCheck(checks, "error", "Forced dialogue loot table", `Invalid loot table id: ${badForcedLootTable}.`);
   }
-  const badForcedNumber = firstBadNumber(state.forcedDialogue.entries, ["priority", "reputation", "witness_radius"], (value, entry, key) => key === "witness_radius" ? value >= 1 : Number.isFinite(value));
+  const badForcedTargetEntity = firstInvalidValue(state.forcedDialogue.entries, ["target_entity_type", "target_entity_types", "target_entities"], isValidResourceLocation);
+  if (badForcedTargetEntity) {
+    addCheck(checks, "error", "Forced dialogue target", `Invalid target entity id: ${badForcedTargetEntity}.`);
+  }
+  const badForcedNumber = firstBadNumber(state.forcedDialogue.entries, ["priority", "reputation", "witness_radius", "min_recent_retaliations", "max_recent_retaliations"], (value, entry, key) => key === "witness_radius" ? value >= 1 : Number.isFinite(value) && value >= 0);
   if (badForcedNumber) {
     addCheck(checks, "error", "Forced dialogue number", `${humanize(badForcedNumber)} has an invalid number.`);
   }
-  const blankForcedList = firstBlankListValue(state.forcedDialogue.entries, ["lines", "loot_tables", "witness_profession", "witness_professions", "professions"]);
+  const blankForcedList = firstBlankListValue(state.forcedDialogue.entries, ["lines", "loot_tables", "witness_profession", "witness_professions", "professions", "target_entity_types", "target_entities"]);
   if (blankForcedList) {
     addCheck(checks, "warning", "Forced dialogue list", `${humanize(blankForcedList)} contains a blank value.`);
+  }
+  const badForcedRetaliationRange = state.forcedDialogue.entries.some((entry) => {
+    const min = entry.min_recent_retaliations;
+    const max = entry.max_recent_retaliations;
+    return Number.isFinite(min) && Number.isFinite(max) && min > max;
+  });
+  if (badForcedRetaliationRange) {
+    addCheck(checks, "error", "Forced dialogue retaliation range", "Min recent retaliations must be less than or equal to max recent retaliations.");
   }
   for (const entry of state.forcedDialogue.entries) {
     const options = Array.isArray(entry.options) ? entry.options : [];
@@ -1632,6 +1662,10 @@ function validate() {
   const badReputationLevel = firstInvalidValue(state.notifications.notifications, ["reputation_levels"], (value) => CONSTANTS.reputationLevels.includes(value));
   if (badReputationLevel) {
     addCheck(checks, "warning", "Notification reputation", `Unknown reputation level: ${badReputationLevel}.`);
+  }
+  const badNotificationTargetEntity = firstInvalidValue(state.notifications.notifications, ["target_entity_types", "target_entities"], isValidResourceLocation);
+  if (badNotificationTargetEntity) {
+    addCheck(checks, "error", "Notification target filter", `Invalid target entity id: ${badNotificationTargetEntity}.`);
   }
   const badNotificationItem = firstInvalidValue(state.notifications.notifications, ["player_items"], (value) => isValidResourceLocation(value, { allowTag: true }));
   if (badNotificationItem) {
@@ -2212,6 +2246,7 @@ function renderDialogueForm(kind, entry) {
         ${listField({ id: "dialogue-times", label: "Times", value: entry.times, help: CONSTANTS.times.join(", ") })}
         ${listField({ id: "dialogue-event_tags", label: "Village event tags", value: entry.event_tags })}
         ${listField({ id: "dialogue-player_event_tags", label: "Player event tags", value: entry.player_event_tags })}
+        ${listField({ id: "dialogue-retaliation_target_entity_types", label: "Retaliation target entity types", value: entry.retaliation_target_entity_types ?? entry.retaliation_target_entities })}
         ${listField({ id: "dialogue-player_items", label: "Required player items or tags", value: entry.player_items })}
         ${listField({ id: "dialogue-player_item_slots", label: "Item slots", value: entry.player_item_slots })}
         ${listField({ id: "dialogue-story_structure", label: "Story structures", value: entry.story_structure ?? entry.story_structures })}
@@ -2307,6 +2342,9 @@ function renderForcedDialogue() {
             ${field({ id: "forced-reputation", label: "Reputation change", value: entry.reputation ?? "", type: "number" })}
             ${listField({ id: "forced-witness_professions", label: "Witness professions", value: entry.witness_professions ?? entry.witness_profession ?? entry.professions, help: "Optional. Restrict to a witnessing profession such as armorer, cleric, or weaponsmith." })}
             ${listField({ id: "forced-loot_tables", label: "Loot tables", value: entry.loot_tables ?? entry.loot_table, help: "Optional. Match generated containers from loot tables like minecraft:chests/village/village_armorer." })}
+            ${listField({ id: "forced-target_entity_types", label: "Target entity types", value: entry.target_entity_types ?? entry.target_entity_type ?? entry.target_entities, help: "Optional. Useful for retaliation_started, for example minecraft:player." })}
+            ${field({ id: "forced-min_recent_retaliations", label: "Min prior retaliations", value: entry.min_recent_retaliations ?? "", type: "number", attrs: 'min="0" step="1"' })}
+            ${field({ id: "forced-max_recent_retaliations", label: "Max prior retaliations", value: entry.max_recent_retaliations ?? "", type: "number", attrs: 'min="0" step="1"' })}
             <div class="field full">
               <label>Event Behavior</label>
               <div class="toggle-grid">
@@ -2359,6 +2397,7 @@ function renderNotifications() {
             ${field({ id: "notification-chat_color", label: "Chat color", value: entry.chat_color, attrs: 'list="color-values"' })}
             ${listField({ id: "notification-professions", label: "Professions", value: entry.professions })}
             ${listField({ id: "notification-reputation_levels", label: "Reputation levels", value: entry.reputation_levels })}
+            ${listField({ id: "notification-target_entity_types", label: "Target entity types", value: entry.target_entity_types ?? entry.target_entities })}
             ${field({ id: "notification-min_reputation", label: "Minimum reputation", value: entry.min_reputation ?? "", type: "number" })}
             ${field({ id: "notification-max_reputation", label: "Maximum reputation", value: entry.max_reputation ?? "", type: "number" })}
             ${listField({ id: "notification-player_items", label: "Required player items or tags", value: entry.player_items })}
@@ -2610,6 +2649,7 @@ function saveDialogueEntry(event) {
       times: readList("dialogue-times"),
       event_tags: readList("dialogue-event_tags"),
       player_event_tags: readList("dialogue-player_event_tags"),
+      retaliation_target_entity_types: readList("dialogue-retaliation_target_entity_types"),
       player_items: readList("dialogue-player_items"),
       player_item_slots: readList("dialogue-player_item_slots"),
       story_structures: storyStructures,
@@ -2694,6 +2734,9 @@ function saveForcedDialogue(event) {
     reputation: parseInteger(readValue("forced-reputation")),
     witness_professions: readList("forced-witness_professions"),
     loot_tables: readList("forced-loot_tables"),
+    target_entity_types: readList("forced-target_entity_types"),
+    min_recent_retaliations: parseInteger(readValue("forced-min_recent_retaliations")),
+    max_recent_retaliations: parseInteger(readValue("forced-max_recent_retaliations")),
     options
   };
   if (Array.isArray(leaveOption)) {
@@ -2723,6 +2766,7 @@ function saveNotification(event) {
     chat_color: readValue("notification-chat_color").trim(),
     professions: readList("notification-professions"),
     reputation_levels: readList("notification-reputation_levels"),
+    target_entity_types: readList("notification-target_entity_types"),
     min_reputation: parseInteger(readValue("notification-min_reputation")),
     max_reputation: parseInteger(readValue("notification-max_reputation")),
     player_items: readList("notification-player_items"),
@@ -4003,7 +4047,12 @@ els.panel.addEventListener("input", (event) => {
 els.panel.addEventListener("change", (event) => {
   if (activeSection === "overview") updateOverviewFromInput(event.target);
   updateSectionSettings(event.target);
-  render();
+  if (event.target.matches("textarea")) {
+    syncValueTags(event.target.closest(".field") || els.panel);
+  }
+  renderFiles();
+  renderChecks();
+  renderPreview();
 });
 
 els.fileTree.addEventListener("click", (event) => {

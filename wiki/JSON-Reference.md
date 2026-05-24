@@ -150,7 +150,7 @@ Forced dialogue files live under:
 data/villagerretaliation/forced_dialogue/*.json
 ```
 
-They define event-driven dialogue moments that can interrupt the player with a locked option list. Built-in triggers include `container_theft`, fired when a player removes items from a chest, barrel, or shulker box after a villager witnesses the theft with line of sight, and `container_opened`, fired when the server config watches container opening instead of theft. The default config watches opening of generated containers, and the built-in default pack targets vanilla village chest loot tables.
+They define event-driven dialogue moments that can interrupt the player with a locked option list. Built-in triggers include `container_theft`, fired when a player removes items from a chest, barrel, or shulker box after a villager witnesses the theft with line of sight, `container_opened`, fired when the server config watches container opening instead of theft, and `retaliation_started`, fired when a villager acquires the current player as a retaliation target. The default config watches opening of generated containers, and the built-in default pack targets vanilla village chest loot tables.
 
 ```json
 {
@@ -186,13 +186,13 @@ They define event-driven dialogue moments that can interrupt the player with a l
 }
 ```
 
-Forced dialogue supports either one root object or an `entries` array. `priority` chooses between multiple matching definitions, with lower numbers winning. Entries can use `line` for one opening or `lines` for random opening variations. They can also use `witness_profession`, `witness_professions`, or `professions` to require a specific witnessing villager profession, `force_camera_towards_villager` to smoothly focus the player camera during the forced conversation, and `loot_table` or `loot_tables` to match specific generated container loot tables. The mod remembers a generated container's original loot table after first detection so later opens can still match after Minecraft clears the live loot table.
+Forced dialogue supports either one root object or an `entries` array. `priority` chooses between multiple matching definitions, with lower numbers winning. Entries can use `line` for one opening or `lines` for random opening variations. They can also use `witness_profession`, `witness_professions`, or `professions` to require a specific witnessing villager profession, `force_camera_towards_villager` to smoothly focus the player camera during the forced conversation, `loot_table` or `loot_tables` to match specific generated container loot tables, and `target_entity_type` / `target_entity_types` to match retaliation targets such as `minecraft:player`. `min_recent_retaliations` and `max_recent_retaliations` let packs escalate repeated aggro incidents. The mod remembers a generated container's original loot table after first detection so later opens can still match after Minecraft clears the live loot table.
 
 Options can use `reputation_level`, `reputation_levels`, `min_reputation`, and `max_reputation` to appear only for matching current reputation with the witness. Options can also use `take_items` to remove a total `count` of matching `item` / `items` or `tag` / `tags` from the player's inventory before the option succeeds, or `take_stolen_items` / `return_stolen_items` to remove the exact stacks stolen during a `container_theft` event. Removed items can be discarded, moved into the witnessing villager's inventory, returned to the source container, moved into the villager inventory and then the source container, or dropped at the villager/container through `destination` and `overflow_destination`. `aggro_chance` gives any option a 0.0 to 1.0 chance to aggro after its outcome.
 
 Escape and unexpected closes use `leave_option` or the first matching `leave_options` entry, so leaving can have its own response, reputation, stolen-item return, aggro chance, and end-conversation behavior. If a `container_theft` entry does not define either leave field, the generated default returns stolen stacks through `villager_inventory_then_source_container` and rolls an aggro chance based on the player's reputation tier.
 
-Template tokens currently include `{villager}`, `{player}`, `{container}`, `{count}`, `{item}`, `{item_id}`, `{item_count}`, `{item_stack}`, `{items}`, `{loot_table}`, `{payment_count}`, `{payment_items}`, `{stolen_item}`, `{stolen_item_id}`, `{stolen_count}`, `{stolen_item_count}`, `{stolen_stack}`, `{stolen_items}`, `{x}`, `{y}`, and `{z}`.
+Template tokens currently include `{villager}`, `{player}`, `{target}`, `{target_name}`, `{target_kind}`, `{target_type}`, `{container}`, `{count}`, `{item}`, `{item_id}`, `{item_count}`, `{item_stack}`, `{items}`, `{loot_table}`, `{prior_retaliations}`, `{retaliation_offense}`, `{payment_count}`, `{payment_items}`, `{stolen_item}`, `{stolen_item_id}`, `{stolen_count}`, `{stolen_item_count}`, `{stolen_stack}`, `{stolen_items}`, `{x}`, `{y}`, and `{z}`.
 
 ## Village Event Tags
 
@@ -206,6 +206,8 @@ Dialogue lines can filter recent village memories with `event_tags` and player-s
 ```
 
 Container theft memories use `player_container_theft` and can be narrowed with `requires_container_theft_to_self` or `requires_container_theft_from_other`. Theft lines can reference `{stolen_item}`, `{stolen_count}`, `{stolen_stack}`, `{stolen_container}`, `{theft_witness}`, and `{theft_witness_possessive}`.
+
+Retaliation memories use `villager_retaliation_started` and can be narrowed with `requires_retaliation_to_self`, `requires_retaliation_from_other`, and `retaliation_target_entity_types`. Retaliation lines can reference `{retaliation_target}`, `{retaliation_target_name}`, `{retaliation_target_kind}`, `{retaliation_target_type}`, `{retaliation_witness}`, and `{retaliation_witness_possessive}`.
 
 For the full current list, when each value is remembered, and dropdown examples for simple and expanded uses, see [Event Tags](Event-Tags.md).
 

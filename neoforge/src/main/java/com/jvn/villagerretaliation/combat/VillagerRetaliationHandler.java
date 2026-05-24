@@ -3,9 +3,11 @@ package com.jvn.villagerretaliation.combat;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil.ActiveRetaliationTarget;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil.AngerTarget;
+import com.jvn.villagerretaliation.dialogue.ForcedDialogueService;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
+import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
@@ -527,10 +529,21 @@ public final class VillagerRetaliationHandler {
         if (villager.level().isClientSide || villager.isBaby()) {
             return;
         }
-        anger(villager, attacker);
+        anger(villager, attacker, false, true);
+    }
+
+    public static void forceAngerSilently(Villager villager, LivingEntity attacker) {
+        if (villager.level().isClientSide || villager.isBaby()) {
+            return;
+        }
+        anger(villager, attacker, false, false);
     }
 
     private static void anger(Villager villager, LivingEntity attacker) {
+        anger(villager, attacker, true, true);
+    }
+
+    private static void anger(Villager villager, LivingEntity attacker, boolean allowForcedDialogue, boolean announceRetaliation) {
         if (villager.isBaby()) {
             return;
         }
@@ -540,7 +553,19 @@ public final class VillagerRetaliationHandler {
             }
             return;
         }
-        RETALIATION.anger(villager, attacker);
+        if (allowForcedDialogue
+                && attacker instanceof net.minecraft.server.level.ServerPlayer player
+                && villager.level() instanceof ServerLevel level
+                && ForcedDialogueService.triggerRetaliationStarted(level, villager, player)) {
+            return;
+        }
+        AngerTarget previousTarget = RETALIATION.angerTarget(villager);
+        if (RETALIATION.anger(villager, attacker)
+                && (previousTarget == null || !previousTarget.targetId().equals(attacker.getUUID()))
+                && announceRetaliation
+                && villager.level() instanceof ServerLevel level) {
+            VillagerAmbientIndicatorService.onRetaliationStarted(level, villager, attacker);
+        }
     }
 
     private static void tryAcquireHostileTarget(Villager villager) {

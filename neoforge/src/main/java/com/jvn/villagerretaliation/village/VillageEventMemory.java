@@ -12,9 +12,11 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Supplier;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.level.Level;
 
@@ -42,6 +44,7 @@ public final class VillageEventMemory {
                 player == null ? null : player.getUUID(),
                 null,
                 null,
+                null,
                 null
         ));
     }
@@ -63,6 +66,7 @@ public final class VillageEventMemory {
                 player == null ? null : player.getUUID(),
                 new GiftMemory(villagerName, itemName, reaction, reputationValue),
                 null,
+                null,
                 null
         ));
     }
@@ -79,6 +83,7 @@ public final class VillageEventMemory {
                 pos.immutable(),
                 villager == null ? null : villager.getUUID(),
                 playerId,
+                null,
                 null,
                 null,
                 new CuredVillagerMemory(villagerName)
@@ -104,6 +109,35 @@ public final class VillageEventMemory {
                 player == null ? null : player.getUUID(),
                 null,
                 new ContainerTheftMemory(villagerName, itemName, itemId, itemCount, containerName, lootTable),
+                null,
+                null
+        ));
+    }
+
+    public static void rememberRetaliation(
+            ServerLevel level,
+            BlockPos pos,
+            Entity villager,
+            LivingEntity target,
+            String villagerName) {
+        if (target == null) {
+            return;
+        }
+        remember(level, new MemoryEvent(
+                EventTag.VILLAGER_RETALIATION_STARTED,
+                level.getGameTime(),
+                pos.immutable(),
+                villager == null ? null : villager.getUUID(),
+                target instanceof net.minecraft.world.entity.player.Player player ? player.getUUID() : null,
+                null,
+                null,
+                new RetaliationMemory(
+                        villagerName,
+                        target.getDisplayName().getString(),
+                        BuiltInRegistries.ENTITY_TYPE.getKey(target.getType()) == null
+                                ? ""
+                                : BuiltInRegistries.ENTITY_TYPE.getKey(target.getType()).toString()
+                ),
                 null
         ));
     }
@@ -260,6 +294,9 @@ public final class VillageEventMemory {
         if (!isNoisyEvent(event.tag())) {
             return false;
         }
+        if (event.tag() == EventTag.VILLAGER_RETALIATION_STARTED) {
+            return isDuplicateRetaliationEvent(events, event);
+        }
 
         Iterator<MemoryEvent> iterator = events.descendingIterator();
         while (iterator.hasNext()) {
@@ -270,6 +307,30 @@ public final class VillageEventMemory {
             if (previous.tag() == event.tag()
                     && Objects.equals(previous.playerId(), event.playerId())
                     && previous.pos().distSqr(event.pos()) <= RELEVANT_EVENT_RADIUS_SQR) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isDuplicateRetaliationEvent(ArrayDeque<MemoryEvent> events, MemoryEvent event) {
+        Iterator<MemoryEvent> iterator = events.descendingIterator();
+        while (iterator.hasNext()) {
+            MemoryEvent previous = iterator.next();
+            if (event.gameTime() - previous.gameTime() > NOISY_EVENT_DEDUPE_TICKS) {
+                return false;
+            }
+            if (previous.tag() != event.tag()
+                    || previous.retaliation() == null
+                    || event.retaliation() == null) {
+                continue;
+            }
+            if (previous.pos().distSqr(event.pos()) > RELEVANT_EVENT_RADIUS_SQR) {
+                continue;
+            }
+            if (Objects.equals(previous.sourceId(), event.sourceId())
+                    && Objects.equals(previous.playerId(), event.playerId())
+                    && Objects.equals(previous.retaliation().targetTypeId(), event.retaliation().targetTypeId())) {
                 return true;
             }
         }
@@ -288,7 +349,8 @@ public final class VillageEventMemory {
                 || tag == EventTag.NIGHT_ATTACK
                 || tag == EventTag.RAID
                 || tag == EventTag.PLAYER_DEFENDED_VILLAGE
-                || tag == EventTag.PLAYER_DEFENDED_RAID;
+                || tag == EventTag.PLAYER_DEFENDED_RAID
+                || tag == EventTag.VILLAGER_RETALIATION_STARTED;
     }
 
     public static boolean hasAny(List<MemoryEvent> events, EventTag... tags) {
@@ -361,7 +423,8 @@ public final class VillageEventMemory {
         PLAYER_GAVE_NEUTRAL_GIFT,
         PLAYER_GAVE_DISLIKED_GIFT,
         PLAYER_GAVE_HATED_GIFT,
-        PLAYER_CONTAINER_THEFT
+        PLAYER_CONTAINER_THEFT,
+        VILLAGER_RETALIATION_STARTED
     }
 
     private static EventTag giftTag(VillagerGiftPreferences.GiftReaction reaction) {
@@ -382,6 +445,7 @@ public final class VillageEventMemory {
             UUID playerId,
             GiftMemory gift,
             ContainerTheftMemory containerTheft,
+            RetaliationMemory retaliation,
             CuredVillagerMemory curedVillager) {
     }
 
@@ -395,6 +459,12 @@ public final class VillageEventMemory {
             int itemCount,
             String containerName,
             String lootTable) {
+    }
+
+    public record RetaliationMemory(
+            String villagerName,
+            String targetName,
+            String targetTypeId) {
     }
 
     public record CuredVillagerMemory(String villagerName) {

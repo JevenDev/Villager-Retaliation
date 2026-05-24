@@ -193,6 +193,26 @@ public record DialogueContext(
         return recentContainerTheftToThisVillager().or(this::recentContainerTheftFromAnotherVillager);
     }
 
+    public Optional<VillageEventMemory.MemoryEvent> recentRetaliationToThisVillager() {
+        UUID villagerId = this.villager.getUUID();
+        return this.recentEvents.stream()
+                .filter(event -> event.retaliation() != null)
+                .filter(event -> villagerId.equals(event.sourceId()))
+                .max(Comparator.comparingLong(VillageEventMemory.MemoryEvent::gameTime));
+    }
+
+    public Optional<VillageEventMemory.MemoryEvent> recentRetaliationFromAnotherVillager() {
+        UUID villagerId = this.villager.getUUID();
+        return this.recentEvents.stream()
+                .filter(event -> event.retaliation() != null)
+                .filter(event -> !villagerId.equals(event.sourceId()))
+                .max(Comparator.comparingLong(VillageEventMemory.MemoryEvent::gameTime));
+    }
+
+    public Optional<VillageEventMemory.MemoryEvent> recentRetaliation() {
+        return recentRetaliationToThisVillager().or(this::recentRetaliationFromAnotherVillager);
+    }
+
     public boolean hasRecentDirectHitMemory() {
         return this.lastDirectHitGameTime != Long.MIN_VALUE
                 && this.level.getGameTime() - this.lastDirectHitGameTime <= DIRECT_HIT_MEMORY_TICKS;

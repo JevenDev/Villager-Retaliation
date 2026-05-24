@@ -41,6 +41,7 @@ Enum values are case-insensitive in code, but lowercase snake case is the recomm
 | `player_gave_disliked_gift` | A player gives a gift with `disliked` reaction. | Awkward or annoyed gift gossip. |
 | `player_gave_hated_gift` | A player gives a gift with `hated` reaction. | Serious offense after a bad gift. |
 | `player_container_theft` | A player is witnessed taking items from a watched container. | Theft accusations, restitution, and village gossip. |
+| `villager_retaliation_started` | A villager or wandering trader acquires a new retaliation target. | Gossip after a fight, follow-up warnings, or reactive combat chatter. |
 
 ## Dropdown Examples
 
@@ -130,6 +131,54 @@ Expanded:
       "dispositions": ["cautious", "rude", "hostile"],
       "text": "I still remember you trying to take my {stolen_item}.",
       "weight": 35
+    }
+  ]
+}
+```
+
+</details>
+
+<details>
+<summary><strong>villager_retaliation_started</strong></summary>
+
+Use this after a villager or wandering trader acquires a new retaliation target. Lines can use `{retaliation_target}`, `{retaliation_target_name}`, `{retaliation_target_kind}`, `{retaliation_target_type}`, `{retaliation_witness}`, and `{retaliation_witness_possessive}`. Add `requires_retaliation_to_self`, `requires_retaliation_from_other`, or `retaliation_target_entity_types` on dialogue lines when you want more specific filtering.
+
+Simple:
+
+```json
+{
+  "lines": [
+    {
+      "id": "my_pack.event.retaliation_started.simple",
+      "type": "chat",
+      "event_tags": ["villager_retaliation_started"],
+      "text": "{retaliation_witness} still looks ready to finish {retaliation_target}."
+    }
+  ]
+}
+```
+
+Expanded:
+
+```json
+{
+  "lines": [
+    {
+      "id": "my_pack.event.retaliation_started.self_zombie",
+      "type": "greeting",
+      "event_tags": ["villager_retaliation_started"],
+      "requires_retaliation_to_self": true,
+      "retaliation_target_entity_types": ["minecraft:zombie", "minecraft:husk"],
+      "text": "I almost buried my axe in that {retaliation_target_kind}.",
+      "weight": 30
+    },
+    {
+      "id": "my_pack.event.retaliation_started.player_target",
+      "type": "chat",
+      "player_event_tags": ["villager_retaliation_started"],
+      "dispositions": ["hostile", "fearful"],
+      "text": "{retaliation_witness} has not forgotten choosing you as the threat.",
+      "weight": 30
     }
   ]
 }

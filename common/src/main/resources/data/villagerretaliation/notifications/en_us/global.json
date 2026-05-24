@@ -401,6 +401,64 @@
       "color": "red"
     },
     {
+      "trigger": "combat.retaliation_started",
+      "text": "Back off!",
+      "world_text_kind": "alert",
+      "color": "#FFD166",
+      "weight": 20
+    },
+    {
+      "trigger": "combat.retaliation_started",
+      "text": "Get them!",
+      "world_text_kind": "alert",
+      "color": "#FFD166",
+      "weight": 12
+    },
+    {
+      "trigger": "combat.retaliation_started",
+      "text": "Die, {target}!",
+      "world_text_kind": "alert",
+      "color": "#FFD166",
+      "weight": 10
+    },
+    {
+      "trigger": "combat.retaliation_started",
+      "text": "You again, {player}?",
+      "world_text_kind": "alert",
+      "color": "#FFD166",
+      "target_entity_types": ["minecraft:player"],
+      "weight": 8
+    },
+    {
+      "trigger": "combat.attack_landed",
+      "text": "Take that!",
+      "world_text_kind": "alert",
+      "color": "#FFD166",
+      "weight": 20
+    },
+    {
+      "trigger": "combat.attack_landed",
+      "text": "Got you!",
+      "world_text_kind": "alert",
+      "color": "#FFD166",
+      "weight": 16
+    },
+    {
+      "trigger": "combat.attack_landed",
+      "text": "That's for the village!",
+      "world_text_kind": "alert",
+      "color": "#FFD166",
+      "weight": 10
+    },
+    {
+      "trigger": "combat.attack_landed",
+      "text": "Stay back, {player}!",
+      "world_text_kind": "alert",
+      "color": "#FFD166",
+      "target_entity_types": ["minecraft:player"],
+      "weight": 8
+    },
+    {
       "trigger": "combat.player_killed",
       "text": "You were warned",
       "world_text_kind": "alert",

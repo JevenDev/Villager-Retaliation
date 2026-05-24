@@ -7,14 +7,19 @@ import com.jvn.villagerretaliation.dialogue.DialogueReputationEffect;
 import com.jvn.villagerretaliation.network.VillagerWorldTextIndicatorKind;
 import com.jvn.villagerretaliation.notification.VillagerNotifications;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
+import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
@@ -27,12 +32,16 @@ public final class VillagerAmbientIndicatorService {
     private static final long MURMUR_BASE_COOLDOWN_TICKS = 20L * 12L;
     private static final long SLEEP_BASE_COOLDOWN_TICKS = 20L * 4L;
     private static final long ALERT_COOLDOWN_TICKS = 20L * 3L;
+    private static final long RETALIATION_START_COOLDOWN_TICKS = 20L * 3L;
+    private static final long ATTACK_LANDED_COOLDOWN_TICKS = 20L;
     private static final double MURMUR_RADIUS = 5.5D;
     private static final double ALERT_WITNESS_RADIUS = 10.0D;
     private static final int MAX_ALERT_WITNESSES = 6;
     private static final Map<UUID, Long> NEXT_MURMUR_TICK = new HashMap<>();
     private static final Map<UUID, Long> NEXT_ALERT_TICK = new HashMap<>();
     private static final Map<UUID, Long> NEXT_SLEEP_TICK = new HashMap<>();
+    private static final Map<UUID, RetaliationAnnouncementState> RETALIATION_ANNOUNCEMENTS = new HashMap<>();
+    private static final Map<UUID, RetaliationAnnouncementState> ATTACK_LANDED_ANNOUNCEMENTS = new HashMap<>();
 
     private VillagerAmbientIndicatorService() {
     }
@@ -183,6 +192,73 @@ public final class VillagerAmbientIndicatorService {
                 VillagerWorldTextIndicatorKind.ALERT,
                 fallbackText
         );
+    }
+
+    public static void onRetaliationStarted(ServerLevel level, AbstractVillager villager, LivingEntity target) {
+        if (!villager.isAlive() || !target.isAlive()) {
+            return;
+        }
+
+        long gameTime = level.getGameTime();
+        RetaliationAnnouncementState state = RETALIATION_ANNOUNCEMENTS.get(villager.getUUID());
+        if (state != null
+                && state.targetId().equals(target.getUUID())
+                && gameTime < state.nextAllowedTick()) {
+            return;
+        }
+
+        RETALIATION_ANNOUNCEMENTS.put(
+                villager.getUUID(),
+                new RetaliationAnnouncementState(target.getUUID(), gameTime + RETALIATION_START_COOLDOWN_TICKS)
+        );
+        VillageEventMemory.rememberRetaliation(
+                level,
+                villager.blockPosition(),
+                villager,
+                target,
+                VillagerPresetNameRegistry.resolveDisplayName(villager).getString()
+        );
+        VillagerNotifications.sendWorldText(
+                level,
+                villager,
+                target instanceof Player player ? player : null,
+                target,
+                "combat.retaliation_started",
+                retaliationReplacements(villager, target),
+                VillagerWorldTextIndicatorKind.ALERT,
+                ""
+        );
+        pruneCooldowns(gameTime);
+    }
+
+    public static void onAttackLanded(ServerLevel level, AbstractVillager villager, LivingEntity target) {
+        if (!villager.isAlive() || !target.isAlive()) {
+            return;
+        }
+
+        long gameTime = level.getGameTime();
+        RetaliationAnnouncementState state = ATTACK_LANDED_ANNOUNCEMENTS.get(villager.getUUID());
+        if (state != null
+                && state.targetId().equals(target.getUUID())
+                && gameTime < state.nextAllowedTick()) {
+            return;
+        }
+
+        ATTACK_LANDED_ANNOUNCEMENTS.put(
+                villager.getUUID(),
+                new RetaliationAnnouncementState(target.getUUID(), gameTime + ATTACK_LANDED_COOLDOWN_TICKS)
+        );
+        VillagerNotifications.sendWorldText(
+                level,
+                villager,
+                target instanceof Player player ? player : null,
+                target,
+                "combat.attack_landed",
+                retaliationReplacements(villager, target),
+                VillagerWorldTextIndicatorKind.ALERT,
+                random(villager.getRandom(), "Take that", "Got you", "There")
+        );
+        pruneCooldowns(gameTime);
     }
 
     public static void onTradeCompleted(ServerLevel level, AbstractVillager villager, Player player) {
@@ -395,6 +471,23 @@ public final class VillagerAmbientIndicatorService {
         );
     }
 
+    private static Map<String, String> retaliationReplacements(AbstractVillager villager, LivingEntity target) {
+        ResourceLocation targetTypeId = BuiltInRegistries.ENTITY_TYPE.getKey(target.getType());
+        String targetName = target.getDisplayName().getString();
+        String targetKind = target.getType().getDescription().getString().toLowerCase(Locale.ROOT);
+        return VillagerNotifications.replacements(
+                "target", targetName,
+                "target_name", targetName,
+                "target_kind", targetKind,
+                "target_type", targetTypeId == null ? "" : targetTypeId.toString(),
+                "player", target instanceof Player player ? player.getGameProfile().getName() : "",
+                "villager", VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
+                "villager_name", VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
+                "villager_kind", villagerKind(villager),
+                "profession", villagerProfessionName(villager)
+        );
+    }
+
     private static Map<String, String> alertReplacements(AbstractVillager villager, Entity attacker) {
         String attackerName = attacker == null ? "danger" : attacker.getDisplayName().getString();
         return VillagerNotifications.replacements(
@@ -576,5 +669,14 @@ public final class VillagerAmbientIndicatorService {
         if (NEXT_SLEEP_TICK.size() > 512) {
             NEXT_SLEEP_TICK.entrySet().removeIf(entry -> entry.getValue() < gameTime);
         }
+        if (RETALIATION_ANNOUNCEMENTS.size() > 512) {
+            RETALIATION_ANNOUNCEMENTS.entrySet().removeIf(entry -> entry.getValue().nextAllowedTick() < gameTime);
+        }
+        if (ATTACK_LANDED_ANNOUNCEMENTS.size() > 512) {
+            ATTACK_LANDED_ANNOUNCEMENTS.entrySet().removeIf(entry -> entry.getValue().nextAllowedTick() < gameTime);
+        }
+    }
+
+    private record RetaliationAnnouncementState(UUID targetId, long nextAllowedTick) {
     }
 }

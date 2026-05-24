@@ -163,6 +163,9 @@ See [Dialogue Types](Dialogue-Types.md) for simple and expanded dropdown example
 | `player_event_tags` | string or array | any | Requires a recent event associated with the player. |
 | `requires_container_theft_to_self` | boolean | `false` | Requires recent player container-theft memory witnessed by this villager. |
 | `requires_container_theft_from_other` | boolean | `false` | Requires recent player container-theft memory witnessed by another villager. |
+| `requires_retaliation_to_self` | boolean | `false` | Requires recent retaliation-start memory from this villager. |
+| `requires_retaliation_from_other` | boolean | `false` | Requires recent retaliation-start memory from another villager. |
+| `retaliation_target_entity_types` | string or array | any | Restricts retaliation-memory lines to target entity ids such as `minecraft:player` or `minecraft:zombie`. |
 | `player_items` | string or array | none | Requires the player to have one matching item or item tag. Prefix tags with `#`. |
 | `player_item_slots` | string or array | `hands` when `player_items` is set | Slots to check: `main_hand`, `off_hand`, `hands`, `armor`, `hotbar`, `inventory`, `equipment`, or `any`. |
 | `story_structure` | string or array | any | Restricts `share_story` to one structure id. |
@@ -220,6 +223,8 @@ Relationship-aware dialogue text can use `{partner}`, `{crush}`, `{dating_partne
 Recruitment memory lines can use `{follow_biome}` and `{follow_distance}`.
 
 Container theft memory lines can use `{stolen_item}`, `{stolen_item_id}`, `{stolen_count}`, `{stolen_item_count}`, `{stolen_stack}`, `{stolen_container}`, `{stolen_loot_table}`, `{theft_witness}`, and `{theft_witness_possessive}`. Use `player_event_tags: ["player_container_theft"]` to target the memory, then add `requires_container_theft_to_self` for lines like "my {stolen_item}" or `requires_container_theft_from_other` for gossip like "{theft_witness} told me about {stolen_stack}."
+
+Retaliation memory lines can use `{retaliation_target}`, `{retaliation_target_name}`, `{retaliation_target_kind}`, `{retaliation_target_type}`, `{retaliation_witness}`, and `{retaliation_witness_possessive}`. Use `event_tags: ["villager_retaliation_started"]` for village gossip, `player_event_tags: ["villager_retaliation_started"]` when the current player was the target, and add `requires_retaliation_to_self`, `requires_retaliation_from_other`, or `retaliation_target_entity_types` when you want direct/self-or-other or mob-type-specific lines.
 
 Example option and line for a player holding a sword:
 
@@ -297,6 +302,7 @@ player_gave_neutral_gift
 player_gave_disliked_gift
 player_gave_hated_gift
 player_container_theft
+villager_retaliation_started
 ```
 
 Example reputation-gated line:

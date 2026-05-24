@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.combat;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil.ActiveRetaliationTarget;
 import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
+import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
@@ -259,7 +260,12 @@ public final class WanderingTraderRetaliationHandler {
     }
 
     private static void anger(WanderingTrader trader, LivingEntity attacker) {
-        RETALIATION.anger(trader, attacker);
+        VillagerRetaliationRetaliationUtil.AngerTarget previousTarget = RETALIATION.angerTarget(trader);
+        if (RETALIATION.anger(trader, attacker)
+                && (previousTarget == null || !previousTarget.targetId().equals(attacker.getUUID()))
+                && trader.level() instanceof ServerLevel level) {
+            VillagerAmbientIndicatorService.onRetaliationStarted(level, trader, attacker);
+        }
     }
 
     private static void tryAcquireHostileTarget(WanderingTrader trader) {

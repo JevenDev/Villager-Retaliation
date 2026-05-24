@@ -1823,6 +1823,81 @@ Expanded:
 </details>
 
 <details>
+<summary><strong>combat.retaliation_started</strong></summary>
+
+Fires as world text when a villager or wandering trader acquires a new retaliation target. Supports `{target}`, `{target_name}`, `{target_kind}`, `{target_type}`, `{player}`, `{villager}`, `{villager_name}`, `{villager_kind}`, and `{profession}`.
+
+Simple:
+
+```json
+{
+  "notifications": [
+    {
+      "id": "my_pack.trigger.combat_retaliation_started.simple",
+      "trigger": "combat.retaliation_started",
+      "text": "Die, {target}!",
+      "world_text_kind": "alert",
+      "color": "red"
+    }
+  ]
+}
+```
+
+Expanded:
+
+```json
+{
+  "notifications": [
+    {
+      "id": "my_pack.trigger.combat_retaliation_started.zombie_only",
+      "trigger": "combat.retaliation_started",
+      "text": "{villager_name} turns on the {target_kind}.",
+      "world_text_kind": "alert",
+      "professions": ["weaponsmith", "toolsmith"],
+      "target_entity_types": ["minecraft:zombie", "minecraft:husk"],
+      "text_color": "#F97066",
+      "weight": 18
+    }
+  ]
+}
+```
+
+</details>
+
+<details>
+<summary><strong>combat.attack_landed</strong></summary>
+
+Fires as world text when a villager or wandering trader lands a damaging hit on a living target. Supports `{target}`, `{target_name}`, `{target_kind}`, `{target_type}`, `{player}`, `{villager}`, `{villager_name}`, `{villager_kind}`, and `{profession}`.
+
+```json
+{
+  "notifications": [
+    {
+      "id": "my_pack.trigger.combat_attack_landed.simple",
+      "trigger": "combat.attack_landed",
+      "text": "Take that, {target}!",
+      "world_text_kind": "alert"
+    }
+  ]
+}
+```
+
+```json
+{
+  "notifications": [
+    {
+      "id": "my_pack.trigger.combat_attack_landed.raiders_only",
+      "trigger": "combat.attack_landed",
+      "text": "{villager_name} strikes the {target_kind}.",
+      "world_text_kind": "alert",
+      "target_entity_types": ["minecraft:pillager", "minecraft:vindicator", "minecraft:evoker"]
+    }
+  ]
+}
+```
+</details>
+
+<details>
 <summary><strong>combat.player_killed</strong></summary>
 
 Fires as world text above the villager or wandering trader credited with killing a player. Supports `{player}`, `{victim}`, `{villager}`, `{villager_name}`, `{villager_kind}`, and `{profession}`.
@@ -2109,4 +2184,3 @@ Expanded:
 ```
 
 </details>
-

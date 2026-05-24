@@ -48,6 +48,8 @@ Notification files translate HUD notification text and ambient world text. They 
 | `chat_color` | color | `text_color` | Chat/log color where used. |
 | `professions` | string or array | any | Profession filter. |
 | `reputation_levels` | string or array | any | Reputation tier filter. |
+| `target_entity_types` | string or array | any | Retaliation target entity ids such as `minecraft:player` or `minecraft:zombie`. |
+| `target_entities` | string or array | any | Alias for `target_entity_types`. |
 | `min_reputation` | integer | none | Minimum exact reputation. |
 | `max_reputation` | integer | none | Maximum exact reputation. |
 | `player_items` | string or array | none | Requires the player to have one matching item or item tag. Prefix tags with `#`. |
@@ -102,7 +104,7 @@ The built-in notification file uses these trigger families:
 | Recruitment | `recruitment.follow_start`, `recruitment.follow_stop`, `recruitment.hired`, `recruitment.fired`, `recruitment.follower_death`, `recruitment.hired_death`, `recruitment.betrayed_follower_death` |
 | Reputation tiers | `reputation.tier.<level>.improved`, `reputation.tier.<level>.worsened` |
 | Ambient | `ambient.murmur`, `ambient.player_item`, `ambient.sleep_breathing`, `ambient.sleep_murmur` |
-| Combat | `combat.player_killed` |
+| Combat | `combat.retaliation_started`, `combat.attack_landed`, `combat.player_killed` |
 | Trade | `trade.completed`, `trade.refused` |
 | Alerts | `alert.player_attacked_villager`, `alert.villager_damaged`, `alert.witness_attack.player`, `alert.witness_attack`, `alert.witness_death.player`, `alert.witness_death` |
 
@@ -138,6 +140,10 @@ Unknown placeholders are left as literal text.
 Player item filtered notifications can use `{player_item}`, `{held_item}`, `{player_item_id}`, `{held_item_id}`, `{player_item_slot}`, and `{held_item_slot}`. The aliases `player_item`, `player_item_tag`, `player_item_tags`, and `player_item_slot` are also accepted as fields.
 
 Alert world text supports `{player}`, `{attacker}`, `{villager}`, `{villager_name}`, `{villager_kind}`, and `{profession}`. Use `alert.player_attacked_villager` for an immediate response from the damaged villager when the attacker is a player. If no entry matches, it falls back to `alert.villager_damaged`.
+
+`combat.retaliation_started` is emitted as world text when a villager or wandering trader acquires a new retaliation target. It supports `{target}`, `{target_name}`, `{target_kind}`, `{target_type}`, `{player}`, `{villager}`, `{villager_name}`, `{villager_kind}`, and `{profession}`. Use `target_entity_types` to target specific mobs or players.
+
+`combat.attack_landed` is emitted as world text when a villager or wandering trader lands a damaging hit on a living target. It supports `{target}`, `{target_name}`, `{target_kind}`, `{target_type}`, `{player}`, `{villager}`, `{villager_name}`, `{villager_kind}`, and `{profession}`. Use `target_entity_types` to target specific mobs or players.
 
 `combat.player_killed` is emitted as world text above the villager or wandering trader credited with killing a player. It supports `{player}`, `{victim}`, `{villager}`, `{villager_name}`, `{villager_kind}`, and `{profession}`.
 

@@ -205,6 +205,7 @@ public final class VillagerNotificationResources {
                 readBoolean(entry, "show_for_babies", true),
                 readProfessions(entry),
                 readEnumSet(entry, "reputation_levels", VillagerReputationLevel.class),
+                readResourceLocations(entry, "target_entity_types", "target_entities", "target_entity_type", "target_entity"),
                 VillagerPlayerItemCondition.read(entry),
                 readOptionalInt(entry, "min_reputation").orElse(null),
                 readOptionalInt(entry, "max_reputation").orElse(null),
@@ -228,6 +229,16 @@ public final class VillagerNotificationResources {
             VillagerProfessionUtil.parse(value).ifPresent(professions::add);
         }
         return Set.copyOf(professions);
+    }
+
+    private static Set<ResourceLocation> readResourceLocations(JsonObject entry, String... keys) {
+        Set<ResourceLocation> ids = new HashSet<>();
+        for (String key : keys) {
+            for (String value : readStringList(entry, key)) {
+                parseResourceLocation(value).ifPresent(ids::add);
+            }
+        }
+        return Set.copyOf(ids);
     }
 
     private static <E extends Enum<E>> Set<E> readEnumSet(JsonObject entry, String key, Class<E> enumClass) {
@@ -331,6 +342,14 @@ public final class VillagerNotificationResources {
     private static Optional<Integer> readOptionalInt(JsonObject entry, String key) {
         JsonElement element = entry.get(key);
         return element == null || !element.isJsonPrimitive() ? Optional.empty() : Optional.of(element.getAsInt());
+    }
+
+    private static Optional<ResourceLocation> parseResourceLocation(String value) {
+        String normalized = value == null ? "" : value.trim();
+        if (normalized.isBlank()) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(ResourceLocation.tryParse(normalized));
     }
 
     private static String readString(JsonObject entry, String key) {

@@ -1,6 +1,6 @@
 # Forced Dialogue JSON
 
-Forced dialogue JSON controls event-driven conversation moments that can interrupt the player with a locked list of choices. Use it for scenes like a villager catching the player stealing from a village chest, warning them, and deciding whether the encounter ends peacefully or turns into aggro.
+Forced dialogue JSON controls event-driven conversation moments that can interrupt the player with a locked list of choices. Use it for scenes like a villager catching the player stealing from a village chest, or stopping to warn the player just before retaliation turns into a fight.
 
 ## Paths
 
@@ -67,8 +67,12 @@ or an `entries` array:
 | `reputation` | integer | `0` | Reputation change applied to the witnessing villager when the event is caught. |
 | `loot_table` | string | none | Optional single loot table id this entry can match. |
 | `loot_tables` | array | none | Optional loot table ids this entry can match. If omitted, the entry can match any watched container. |
+| `target_entity_type` | string | none | Optional single retaliation target entity id such as `minecraft:player`. |
+| `target_entity_types` | array | none | Optional retaliation target entity ids. `target_entities` is also accepted as an alias. |
 | `min_recent_container_thefts` | integer | `0` | Minimum remembered container thefts by this player near the witness's village before this entry can trigger. |
 | `max_recent_container_thefts` | integer | unlimited | Maximum remembered container thefts by this player near the witness's village before this entry can trigger. |
+| `min_recent_retaliations` | integer | `0` | Minimum earlier `villager_retaliation_started` memories for this player near the villager's village. Useful for escalation. |
+| `max_recent_retaliations` | integer | unlimited | Maximum earlier `villager_retaliation_started` memories for this player near the villager's village. |
 | `options` | array | generated Leave option | Choices shown in the forced dialogue screen. |
 | `leave_option` | object | generated Leave option | Outcome used by the visible Leave choice, Escape, and unexpected client closes. Uses the same fields as an option except the id is always `leave`. |
 | `leave_options` | array | generated theft return options for `container_theft`, otherwise generated Leave option | Reputation-filtered Leave/Escape outcomes. The first matching option by `order` is used. |
@@ -187,6 +191,12 @@ Generated-container detection initially checks for an unresolved loot table thro
 
 The built-in `default.json` includes village-specific entries for vanilla village chest loot tables, plus a lower-priority generic theft fallback for packs or configs that still want broad theft detection.
 
+### `retaliation_started`
+
+Fires when a villager acquires a new retaliation target and that target is the current player. This lets datapacks intercept the moment just before combat fully commits, so a villager can warn, accuse, demand payment, or go straight to violence depending on the selected entry.
+
+`retaliation_started` uses the retaliating villager as the witness, so `witness_profession`, `requires_line_of_sight`, `witness_radius`, `target_entity_type`, `target_entity_types`, `min_recent_retaliations`, and `max_recent_retaliations` are the most relevant filters. Because forced dialogue is player-facing, this trigger currently only starts a forced conversation when the retaliation target is a player.
+
 Forced dialogue entries can optionally filter by generated container loot table:
 
 ```json
@@ -210,6 +220,10 @@ Forced dialogue `line`, `lines`, option `response`, and `leave_option.response` 
 ```text
 {villager}
 {player}
+{target}
+{target_name}
+{target_kind}
+{target_type}
 {container}
 {count}
 {item}
@@ -220,6 +234,8 @@ Forced dialogue `line`, `lines`, option `response`, and `leave_option.response` 
 {loot_table}
 {prior_container_thefts}
 {container_theft_offense}
+{prior_retaliations}
+{retaliation_offense}
 {payment_count}
 {payment_items}
 {stolen_item}
@@ -233,7 +249,7 @@ Forced dialogue `line`, `lines`, option `response`, and `leave_option.response` 
 {z}
 ```
 
-`{container}` is the block display name, `{item}` / `{stolen_item}` is the representative removed item name, `{item_stack}` / `{stolen_stack}` includes the representative item count, `{items}` / `{stolen_items}` lists all removed stacks, `{count}` / `{stolen_count}` is the representative removed stack count for `container_theft`, `{loot_table}` is the matched generated loot table id when one exists, `{prior_container_thefts}` is the number of remembered earlier container thefts by this player near the witness's village, `{container_theft_offense}` is that count plus the current theft, `{payment_count}` and `{payment_items}` describe a `take_items` option, and `{x}`, `{y}`, `{z}` are the container position.
+`{target}` / `{target_name}` is the retaliation target display name, `{target_kind}` is a lowercased entity description such as `player`, `{target_type}` is the entity id, `{container}` is the block display name, `{item}` / `{stolen_item}` is the representative removed item name, `{item_stack}` / `{stolen_stack}` includes the representative item count, `{items}` / `{stolen_items}` lists all removed stacks, `{count}` / `{stolen_count}` is the representative removed stack count for `container_theft`, `{loot_table}` is the matched generated loot table id when one exists, `{prior_container_thefts}` is the number of remembered earlier container thefts by this player near the witness's village, `{container_theft_offense}` is that count plus the current theft, `{prior_retaliations}` is the number of earlier remembered retaliation starts for the same player near this village, `{retaliation_offense}` is that count plus the current retaliation, `{payment_count}` and `{payment_items}` describe a `take_items` option, and `{x}`, `{y}`, `{z}` are the container or villager position.
 
 ## Example
 

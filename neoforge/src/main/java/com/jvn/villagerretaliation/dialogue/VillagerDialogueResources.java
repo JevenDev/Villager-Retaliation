@@ -615,6 +615,28 @@ public final class VillagerDialogueResources {
         if (readBoolean(entry, "requires_container_theft_from_other")) {
             builder.requiresContainerTheftFromOther();
         }
+        if (readBoolean(entry, "requires_retaliation_to_self")) {
+            builder.requiresRetaliationToSelf();
+        }
+        if (readBoolean(entry, "requires_retaliation_from_other")) {
+            builder.requiresRetaliationFromOther();
+        }
+        List<ResourceLocation> retaliationTargetEntityTypes = new ArrayList<>();
+        for (String value : readStringList(entry, "retaliation_target_entity_types")) {
+            ResourceLocation id = ResourceLocation.tryParse(value);
+            if (id != null) {
+                retaliationTargetEntityTypes.add(id);
+            }
+        }
+        for (String value : readStringList(entry, "retaliation_target_entities")) {
+            ResourceLocation id = ResourceLocation.tryParse(value);
+            if (id != null) {
+                retaliationTargetEntityTypes.add(id);
+            }
+        }
+        if (!retaliationTargetEntityTypes.isEmpty()) {
+            builder.retaliationTargetEntityTypes(retaliationTargetEntityTypes.toArray(ResourceLocation[]::new));
+        }
         VillagerReputationCondition reputationCondition = VillagerReputationCondition.read(entry);
         if (!reputationCondition.isEmpty()) {
             builder.reputationCondition(reputationCondition);
