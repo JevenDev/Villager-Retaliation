@@ -10,6 +10,8 @@ Open that file in a modern browser to create, import, preview, validate, and exp
 
 The generator is a static page. It does not need a server, does not upload pack data anywhere, and exports a normal datapack zip with `pack.mcmeta` at the root.
 
+Use the VR version selector in Pack Setup when creating a pack. Exported beta.11 and newer packs include `villagerretaliation.pack_version` in `pack.mcmeta`, so importing them later restores the matching generator target automatically. Older or hand-written packs may not have that marker; select the intended VR version manually before continuing.
+
 ## What It Builds
 
 The generator writes these datapack paths:
