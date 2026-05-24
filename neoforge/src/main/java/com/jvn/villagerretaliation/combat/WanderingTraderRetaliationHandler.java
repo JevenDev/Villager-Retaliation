@@ -18,7 +18,6 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.animal.horse.TraderLlama;
 import net.minecraft.world.entity.npc.WanderingTrader;
 import net.minecraft.world.entity.player.Player;
@@ -265,19 +264,6 @@ public final class WanderingTraderRetaliationHandler {
             return;
         }
 
-        if (VillagerRetaliationConfig.WANDERING_TRADERS_TARGET_HOSTILE_MOBS.get()) {
-            Optional<LivingEntity> memoryTarget = VillagerRetaliationVillagerCombatUtil.getMemoryIfRegistered(trader, MemoryModuleType.NEAREST_HOSTILE)
-                    .filter(LivingEntity::isAlive)
-                    .filter(target -> target != trader)
-                    .filter(target -> VillagerRetaliationVillagerCombatUtil.isNaturalHostileTarget(trader, target))
-                    .filter(target -> VillagerRetaliationVillagerCombatUtil.isWithinNaturalHostileTargetRange(trader, target))
-                    .filter(trader::hasLineOfSight);
-            if (memoryTarget.isPresent()) {
-                anger(trader, memoryTarget.get());
-                return;
-            }
-        }
-
         long gameTime = trader.level().getGameTime();
         if (gameTime < NEXT_NATURAL_TARGET_SCAN_TICKS.getOrDefault(trader.getUUID(), 0L)) {
             return;
@@ -288,6 +274,12 @@ public final class WanderingTraderRetaliationHandler {
             return;
         }
         if (!VillagerRetaliationConfig.WANDERING_TRADERS_TARGET_HOSTILE_MOBS.get()) {
+            return;
+        }
+
+        Optional<LivingEntity> memoryTarget = VillagerRetaliationVillagerCombatUtil.findNaturalHostileMemoryTarget(trader);
+        if (memoryTarget.isPresent()) {
+            anger(trader, memoryTarget.get());
             return;
         }
 

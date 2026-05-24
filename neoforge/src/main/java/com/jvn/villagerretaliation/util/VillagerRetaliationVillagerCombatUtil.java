@@ -9,9 +9,11 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.NeutralMob;
 import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.ai.targeting.TargetingConditions;
 import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.npc.AbstractVillager;
@@ -48,23 +50,28 @@ public final class VillagerRetaliationVillagerCombatUtil {
         }
 
         AABB searchArea = villager.getBoundingBox().inflate(radius);
-        LivingEntity closestVisible = null;
-        double closestVisibleDistance = Double.MAX_VALUE;
-        double maxDistanceSqr = radius * radius;
-
-        for (LivingEntity candidate : level.getEntitiesOfClass(
-                LivingEntity.class,
-                searchArea,
-                target -> isNaturalHostileTarget(villager, target)
-        )) {
-            double distance = villager.distanceToSqr(candidate);
-            if (distance <= maxDistanceSqr && villager.hasLineOfSight(candidate) && distance < closestVisibleDistance) {
-                closestVisibleDistance = distance;
-                closestVisible = candidate;
-            }
-        }
+        TargetingConditions targetingConditions = TargetingConditions.forCombat()
+                .range(radius)
+                .selector(target -> isNaturalHostileTarget(villager, target));
+        LivingEntity closestVisible = level.getNearestEntity(
+                level.getEntitiesOfClass(Mob.class, searchArea, target -> isNaturalHostileTarget(villager, target)),
+                targetingConditions,
+                villager,
+                villager.getX(),
+                villager.getEyeY(),
+                villager.getZ()
+        );
 
         return Optional.ofNullable(closestVisible);
+    }
+
+    public static Optional<LivingEntity> findNaturalHostileMemoryTarget(AbstractVillager villager) {
+        return getMemoryIfRegistered(villager, MemoryModuleType.NEAREST_HOSTILE)
+                .filter(LivingEntity::isAlive)
+                .filter(target -> target != villager)
+                .filter(target -> isNaturalHostileTarget(villager, target))
+                .filter(target -> isWithinNaturalHostileTargetRange(villager, target))
+                .filter(villager::hasLineOfSight);
     }
 
     public static boolean hasVisibleCreeperThreat(AbstractVillager villager, double radius) {

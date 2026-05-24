@@ -32,7 +32,6 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.animal.IronGolem;
@@ -546,20 +545,15 @@ public final class VillagerRetaliationHandler {
             return;
         }
 
-        Optional<LivingEntity> memoryTarget = VillagerRetaliationVillagerCombatUtil.getMemoryIfRegistered(villager, MemoryModuleType.NEAREST_HOSTILE)
-                .filter(LivingEntity::isAlive)
-                .filter(target -> target != villager)
-                .filter(target -> VillagerRetaliationVillagerCombatUtil.isNaturalHostileTarget(villager, target))
-                .filter(target -> VillagerRetaliationVillagerCombatUtil.isWithinNaturalHostileTargetRange(villager, target))
-                .filter(villager::hasLineOfSight)
-                .filter(target -> !shouldAvoidVisibleCreeper(villager, target));
-        if (memoryTarget.isPresent()) {
-            anger(villager, memoryTarget.get());
+        long gameTime = villager.level().getGameTime();
+        if (!consumeScanSlot(villager, NEXT_NATURAL_TARGET_SCAN_TICKS, gameTime, NATURAL_TARGET_SCAN_INTERVAL_TICKS)) {
             return;
         }
 
-        long gameTime = villager.level().getGameTime();
-        if (!consumeScanSlot(villager, NEXT_NATURAL_TARGET_SCAN_TICKS, gameTime, NATURAL_TARGET_SCAN_INTERVAL_TICKS)) {
+        Optional<LivingEntity> memoryTarget = VillagerRetaliationVillagerCombatUtil.findNaturalHostileMemoryTarget(villager)
+                .filter(target -> !shouldAvoidVisibleCreeper(villager, target));
+        if (memoryTarget.isPresent()) {
+            anger(villager, memoryTarget.get());
             return;
         }
 
