@@ -314,6 +314,19 @@ public final class VillageEventMemory {
                 playerId.equals(event.playerId()) && wanted.contains(event.tag()));
     }
 
+    public static int countForPlayer(List<MemoryEvent> events, UUID playerId, EventTag... tags) {
+        if (playerId == null || events == null || events.isEmpty() || tags == null || tags.length == 0) {
+            return 0;
+        }
+        EnumSet<EventTag> wanted = wantedTags(tags);
+        if (wanted.isEmpty()) {
+            return 0;
+        }
+        return (int) events.stream()
+                .filter(event -> playerId.equals(event.playerId()) && wanted.contains(event.tag()))
+                .count();
+    }
+
     private static EnumSet<EventTag> wantedTags(EventTag... tags) {
         EnumSet<EventTag> wanted = EnumSet.noneOf(EventTag.class);
         for (EventTag tag : tags) {

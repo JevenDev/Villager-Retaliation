@@ -145,6 +145,8 @@ public final class ForcedDialogueResources {
                 Math.max(1.0D, readDouble(entry, "witness_radius", 12.0D)),
                 readInt(entry, "reputation", 0),
                 readInt(entry, "priority", 0),
+                readInt(entry, "min_recent_container_thefts", 0),
+                readInt(entry, "max_recent_container_thefts", Integer.MAX_VALUE),
                 readLootTables(entry),
                 readProfessions(entry),
                 options,
@@ -403,6 +405,8 @@ public final class ForcedDialogueResources {
         replacements.put("stolen_items", context.itemList());
         replacements.put("container", context.containerName());
         replacements.put("loot_table", context.lootTable());
+        replacements.put("prior_container_thefts", Integer.toString(context.priorContainerThefts()));
+        replacements.put("container_theft_offense", Integer.toString(context.priorContainerThefts() + 1));
         replacements.put("x", Integer.toString(context.x()));
         replacements.put("y", Integer.toString(context.y()));
         replacements.put("z", Integer.toString(context.z()));
@@ -544,6 +548,8 @@ public final class ForcedDialogueResources {
             double witnessRadius,
             int reputationDelta,
             int priority,
+            int minRecentContainerThefts,
+            int maxRecentContainerThefts,
             Set<ResourceLocation> lootTables,
             Set<VillagerProfession> witnessProfessions,
             List<ForcedDialogueOption> options,
@@ -562,6 +568,10 @@ public final class ForcedDialogueResources {
 
         public boolean matchesWitness(Villager villager) {
             return this.witnessProfessions.isEmpty() || this.witnessProfessions.contains(villager.getVillagerData().getProfession());
+        }
+
+        public boolean matchesRecentContainerThefts(int count) {
+            return count >= this.minRecentContainerThefts && count <= this.maxRecentContainerThefts;
         }
     }
 
@@ -651,6 +661,7 @@ public final class ForcedDialogueResources {
             String itemList,
             String containerName,
             String lootTable,
+            int priorContainerThefts,
             int x,
             int y,
             int z) {

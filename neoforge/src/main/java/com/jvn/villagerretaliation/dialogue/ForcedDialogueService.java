@@ -632,6 +632,13 @@ public final class ForcedDialogueService {
         if (witness == null) {
             return false;
         }
+        int priorContainerThefts = VillageEventMemory.countForPlayer(
+                VillageEventMemory.recentForVillage(level, witness),
+                player.getUUID(),
+                VillageEventMemory.EventTag.PLAYER_CONTAINER_THEFT);
+        if (!definition.matchesRecentContainerThefts(priorContainerThefts)) {
+            return false;
+        }
 
         ItemStack representativeStack = representativeRemovedStack(removedStacks);
         ForcedDialogueContext context = new ForcedDialogueContext(
@@ -644,6 +651,7 @@ public final class ForcedDialogueService {
                 removedStacks.isEmpty() ? "items" : itemListName(removedStacks),
                 snapshot.containerName().getString(),
                 snapshot.lootTable() == null ? "" : snapshot.lootTable().toString(),
+                priorContainerThefts,
                 snapshot.pos().getX(),
                 snapshot.pos().getY(),
                 snapshot.pos().getZ()

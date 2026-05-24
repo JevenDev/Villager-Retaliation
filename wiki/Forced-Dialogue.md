@@ -67,6 +67,8 @@ or an `entries` array:
 | `reputation` | integer | `0` | Reputation change applied to the witnessing villager when the event is caught. |
 | `loot_table` | string | none | Optional single loot table id this entry can match. |
 | `loot_tables` | array | none | Optional loot table ids this entry can match. If omitted, the entry can match any watched container. |
+| `min_recent_container_thefts` | integer | `0` | Minimum remembered container thefts by this player near the witness's village before this entry can trigger. |
+| `max_recent_container_thefts` | integer | unlimited | Maximum remembered container thefts by this player near the witness's village before this entry can trigger. |
 | `options` | array | generated Leave option | Choices shown in the forced dialogue screen. |
 | `leave_option` | object | generated Leave option | Outcome used by the visible Leave choice, Escape, and unexpected client closes. Uses the same fields as an option except the id is always `leave`. |
 | `leave_options` | array | generated theft return options for `container_theft`, otherwise generated Leave option | Reputation-filtered Leave/Escape outcomes. The first matching option by `order` is used. |
@@ -216,6 +218,8 @@ Forced dialogue `line`, `lines`, option `response`, and `leave_option.response` 
 {item_stack}
 {items}
 {loot_table}
+{prior_container_thefts}
+{container_theft_offense}
 {payment_count}
 {payment_items}
 {stolen_item}
@@ -229,7 +233,7 @@ Forced dialogue `line`, `lines`, option `response`, and `leave_option.response` 
 {z}
 ```
 
-`{container}` is the block display name, `{item}` / `{stolen_item}` is the representative removed item name, `{item_stack}` / `{stolen_stack}` includes the representative item count, `{items}` / `{stolen_items}` lists all removed stacks, `{count}` / `{stolen_count}` is the representative removed stack count for `container_theft`, `{loot_table}` is the matched generated loot table id when one exists, `{payment_count}` and `{payment_items}` describe a `take_items` option, and `{x}`, `{y}`, `{z}` are the container position.
+`{container}` is the block display name, `{item}` / `{stolen_item}` is the representative removed item name, `{item_stack}` / `{stolen_stack}` includes the representative item count, `{items}` / `{stolen_items}` lists all removed stacks, `{count}` / `{stolen_count}` is the representative removed stack count for `container_theft`, `{loot_table}` is the matched generated loot table id when one exists, `{prior_container_thefts}` is the number of remembered earlier container thefts by this player near the witness's village, `{container_theft_offense}` is that count plus the current theft, `{payment_count}` and `{payment_items}` describe a `take_items` option, and `{x}`, `{y}`, `{z}` are the container position.
 
 ## Example
 

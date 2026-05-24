@@ -1,6 +1,106 @@
 {
   "entries": [
     {
+      "id": "repeated_village_container_theft_final_warning",
+      "trigger": "container_theft",
+      "priority": -40,
+      "witness_radius": 16,
+      "requires_line_of_sight": true,
+      "initiate_dialogue": false,
+      "aggro_immediately": true,
+      "reputation": -25,
+      "min_recent_container_thefts": 2,
+      "force_camera_towards_villager": true,
+      "lines": [
+        "No. I already caught you in our belongings twice. This ends now.",
+        "Again? You were warned. The village is done asking.",
+        "Three times with your hands in village stores. No more words."
+      ]
+    },
+    {
+      "id": "repeated_village_container_theft_second_warning",
+      "trigger": "container_theft",
+      "priority": -30,
+      "witness_radius": 16,
+      "requires_line_of_sight": true,
+      "initiate_dialogue": true,
+      "aggro_immediately": false,
+      "reputation": -18,
+      "min_recent_container_thefts": 1,
+      "max_recent_container_thefts": 1,
+      "options": [
+        {
+          "id": "return_repeat_theft",
+          "label": "Give it back",
+          "response": "You already had your warning. Returning it is the smallest part of making this right.",
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 0,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "You already had your warning. Returning it is the smallest part of making this right.",
+            "failure_response": "You do not have {stolen_stack} to return. Then this was never about a mistake.",
+            "failure_reputation": -8,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "id": "pay_repeat_theft",
+          "label": "Pay restitution",
+          "response": "That pays for the goods. It does not buy back the warning you wasted.",
+          "reputation": -2,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 1,
+          "take_items": {
+            "items": [
+              "minecraft:emerald"
+            ],
+            "count": 25,
+            "destination": "villager_inventory",
+            "overflow_destination": "drop_at_villager",
+            "success_response": "Twenty-five emeralds. That pays for the goods. It does not buy back the warning you wasted.",
+            "failure_response": "You cannot pay the restitution either. Then you are out of excuses.",
+            "failure_reputation": -8,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "id": "threaten_repeat_witness",
+          "label": "Threaten them",
+          "response": "I already let you walk once. I will not do it again.",
+          "reputation": -14,
+          "aggro": true,
+          "end_conversation": true,
+          "order": 2
+        }
+      ],
+      "force_camera_towards_villager": true,
+      "lines": [
+        "I already caught you putting your hands into our belongings once and let you off. Put {stolen_stack} back.",
+        "Again? I warned you once about village stores. This time you make it right.",
+        "You were given a warning for this once. Return {stolen_stack}, or pay for what you keep taking."
+      ],
+      "leave_option": {
+        "label": "Leave",
+        "response": "Walking away after a second theft is not a warning. It is a choice.",
+        "reputation": -10,
+        "aggro_chance": 0.75,
+        "end_conversation": true,
+        "take_stolen_items": {
+          "destination": "villager_inventory_then_source_container",
+          "success_response": "Walking away after a second theft is not a warning. It is a choice.",
+          "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+          "failure_reputation": -8,
+          "failure_aggro": true,
+          "failure_end_conversation": true
+        }
+      }
+    },
+    {
       "id": "witnessed_village_weaponsmith_container_theft",
       "trigger": "container_theft",
       "priority": -10,
