@@ -26,7 +26,6 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.BooleanValue FREEZE_VILLAGER_DURING_DIALOGUE;
     public static final ModConfigSpec.DoubleValue MAX_DIALOGUE_DISTANCE;
     public static final ModConfigSpec.EnumValue<ContainerForcedDialogueTrigger> CONTAINER_FORCED_DIALOGUE_TRIGGER;
-    public static final ModConfigSpec.EnumValue<WatchedContainerScope> WATCHED_CONTAINER_SCOPE;
     public static final ModConfigSpec.BooleanValue VILLAGER_REPUTATION_HOVER_TOOLTIP_REQUIRES_EMERALD;
 
     public static final ModConfigSpec.BooleanValue BABY_VILLAGERS_DROP_LOOT;
@@ -230,10 +229,6 @@ public final class VillagerRetaliationConfig {
                 .comment("When watched containers should trigger forced dialogue: THEFT_ONLY waits until items are removed, OPENING triggers as soon as the container is opened.")
                 .translation("villagerretaliation.configuration.dialogue.containerForcedDialogueTrigger")
                 .defineEnum("containerForcedDialogueTrigger", ContainerForcedDialogueTrigger.OPENING);
-        WATCHED_CONTAINER_SCOPE = BUILDER
-                .comment("Which watched containers can trigger forced dialogue. WORLD_GENERATED_ONLY requires the clicked container to have an unresolved loot table.")
-                .translation("villagerretaliation.configuration.dialogue.watchedContainerScope")
-                .defineEnum("watchedContainerScope", WatchedContainerScope.WORLD_GENERATED_ONLY);
         DIALOGUE_POSITIVE_REPUTATION_COOLDOWN_DAYS = BUILDER.comment("Minimum Minecraft day changes between positive dialogue reputation gains for the same player and villager.")
                 .translation("villagerretaliation.configuration.dialogue.dialoguePositiveReputationCooldownDays")
                 .defineInRange("dialoguePositiveReputationCooldownDays", 1, 0, 30);

@@ -105,6 +105,7 @@ See [Dialogue Types](Dialogue-Types.md) for simple and expanded dropdown example
 | `max_reputation` | integer | none | Maximum exact reputation value with this villager. |
 | `player_items` | string or array | none | Requires the player to have one matching item or item tag. Prefix tags with `#`. |
 | `player_item_slots` | string or array | `hands` when `player_items` is set | Slots to check: `main_hand`, `off_hand`, `hands`, `armor`, `hotbar`, `inventory`, `equipment`, or `any`. |
+| `force_camera_towards_villager` | boolean | `false` | Smoothly turns the player's camera toward this villager while the selected response is shown. |
 | `show_for_adults` | boolean | `true` | Adult visibility. |
 | `show_for_babies` | boolean | `true` | Baby visibility. |
 | `requires_unreported_cartographer_map_discovery` | boolean | `false` | Shows after an unreported cartographer map discovery. |

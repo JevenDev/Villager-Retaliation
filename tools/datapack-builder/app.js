@@ -118,7 +118,7 @@ const CONSTANTS = {
     "player_container_theft"
   ],
   itemSlots: ["main_hand", "off_hand", "hands", "armor", "hotbar", "inventory", "equipment", "any"],
-  forcedItemDestinations: ["discard", "villager_inventory", "source_container", "drop_at_villager", "drop_at_container"],
+  forcedItemDestinations: ["discard", "villager_inventory", "villager_inventory_then_source_container", "source_container", "drop_at_villager", "drop_at_container"],
   weather: ["clear", "rain", "thunder"],
   times: ["morning", "afternoon", "evening", "night"],
   giftAdvice: ["global_liked", "global_disliked", "profession_liked", "profession_disliked", "already_known"],
@@ -142,6 +142,7 @@ const CONSTANTS = {
   ],
   pacifyOutcomes: ["not_applicable", "success", "not_enough_emeralds", "blocked_by_reputation"],
   optionFlags: [
+    "force_camera_towards_villager",
     "requires_unreported_cartographer_map_discovery",
     "requires_unreported_story_hint_discovery",
     "requires_unreported_combat_survival_report",
@@ -284,11 +285,14 @@ const FIELD_TOOLTIPS = {
   "forcedDialogue-fileName": "Creates data/villagerretaliation/forced_dialogue/<file>.json. Use default only when replacing the built-in theft confrontation.",
   "forced-id": "Stable id for this forced dialogue rule. Duplicate ids can override or collide depending on load order.",
   "forced-trigger": "Event trigger for the forced conversation. container_theft fires after items are removed; container_opened fires when config watches container opening.",
-  "forced-line": "Villager line shown when the forced conversation opens.",
-  "forced-priority": "Higher priority wins when multiple forced dialogue rules match the same event.",
+  "forced-line": "Villager opening line shown when the forced conversation opens. Put each variation on its own line.",
+  "forced-priority": "Lower priority wins when multiple forced dialogue rules match the same event.",
   "forced-witness_radius": "Maximum block distance for witnesses to detect the event.",
   "forced-reputation": "Optional reputation change applied when this rule runs.",
-  "forced-options_json": "JSON array of player response options. Each option can set label, response, reputation, aggro, end_conversation, order, take_items, reputation_levels, min_reputation, and max_reputation.",
+  "forced-witness_professions": "Optional profession ids for the witnessing villager, such as armorer or minecraft:weaponsmith.",
+  "forced-force_camera_towards_villager": "Smoothly turns the player's camera toward the witnessing villager while this forced dialogue is active.",
+  "forced-options_json": "JSON array of player response options. Each option can set label, response, reputation, aggro, end_conversation, order, take_items, take_stolen_items, reputation_levels, min_reputation, and max_reputation.",
+  "forced-leave_option_json": "Optional JSON object for the forced Leave/Escape outcome. Uses option fields such as label, response, reputation, aggro, and end_conversation.",
   "notifications-fileName": "Creates data/villagerretaliation/notifications/<locale>/<file>.json. Avoid global unless intentionally replacing built-in notifications.",
   "notifications-locale": "Locale folder for this notification file. en_us loads first, then the player's locale overlays matching ids.",
   "notification-id": "Stable id for translation overlays and replacement. Generated ids work, but explicit ids are safer.",
@@ -345,6 +349,7 @@ const FIELD_TOOLTIPS = {
 const FLAG_TOOLTIPS = {
   show_for_adults: "Adult visibility. Defaults to true.",
   show_for_babies: "Baby visibility. Defaults to true.",
+  force_camera_towards_villager: "Smoothly turns the player's camera toward the speaking villager when this dialogue choice is used.",
   first_conversation_only: "Only matches during the first conversation with that villager.",
   first_village_interaction_only: "Only matches during the player's first interaction in that village context.",
   requires_unreported_cartographer_map_discovery: "Requires a cartographer map discovery that has not been reported yet.",
@@ -452,6 +457,7 @@ const TAG_SUGGESTIONS = {
   "dialogue-player_event_tags": CONSTANTS.eventTags,
   "dialogue-outcomes": CONSTANTS.pacifyOutcomes,
   "forced-trigger": CONSTANTS.forcedDialogueTriggers,
+  "forced-witness_professions": CONSTANTS.professions,
   "notification-professions": CONSTANTS.professions,
   "notification-reputation_levels": CONSTANTS.reputationLevels,
   "notification-player_item_slots": CONSTANTS.itemSlots,
@@ -1028,6 +1034,11 @@ function listToText(value) {
   return value || "";
 }
 
+function prettyJson(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).length === 0) return "";
+  return JSON.stringify(value, null, 2);
+}
+
 function parseNumber(value) {
   if (value === "" || value === null || value === undefined) return undefined;
   const number = Number(value);
@@ -1415,8 +1426,8 @@ function validate() {
   }
 
   for (const entry of state.forcedDialogue.entries) {
-    if (!entry.trigger || !entry.line) {
-      addCheck(checks, "error", "Forced dialogue", "Every forced dialogue entry needs a trigger and line.");
+    if (!entry.trigger || !hasForcedDialogueLine(entry)) {
+      addCheck(checks, "error", "Forced dialogue", "Every forced dialogue entry needs a trigger and opening line.");
       break;
     }
   }
@@ -1428,11 +1439,19 @@ function validate() {
   if (badForcedTrigger) {
     addCheck(checks, "warning", "Forced dialogue trigger", `Unknown forced dialogue trigger: ${badForcedTrigger}.`);
   }
+  const badForcedProfession = firstInvalidValue(state.forcedDialogue.entries, ["witness_profession", "witness_professions", "professions"], isValidProfession);
+  if (badForcedProfession) {
+    addCheck(checks, "warning", "Forced dialogue witness", `Invalid witness profession id: ${badForcedProfession}.`);
+  }
+  const badForcedLootTable = firstInvalidValue(state.forcedDialogue.entries, ["loot_table", "loot_tables"], isValidResourceLocation);
+  if (badForcedLootTable) {
+    addCheck(checks, "error", "Forced dialogue loot table", `Invalid loot table id: ${badForcedLootTable}.`);
+  }
   const badForcedNumber = firstBadNumber(state.forcedDialogue.entries, ["priority", "reputation", "witness_radius"], (value, entry, key) => key === "witness_radius" ? value >= 1 : Number.isFinite(value));
   if (badForcedNumber) {
     addCheck(checks, "error", "Forced dialogue number", `${humanize(badForcedNumber)} has an invalid number.`);
   }
-  const blankForcedList = firstBlankListValue(state.forcedDialogue.entries, ["loot_tables"]);
+  const blankForcedList = firstBlankListValue(state.forcedDialogue.entries, ["lines", "loot_tables", "witness_profession", "witness_professions", "professions"]);
   if (blankForcedList) {
     addCheck(checks, "warning", "Forced dialogue list", `${humanize(blankForcedList)} contains a blank value.`);
   }
@@ -1476,6 +1495,9 @@ function validate() {
     const payments = options
       .map((option) => option.take_items || option.payment)
       .filter((payment) => payment && typeof payment === "object" && !Array.isArray(payment));
+    const stolenReturns = options
+      .map((option) => option.take_stolen_items || option.return_stolen_items)
+      .filter((stolenReturn) => stolenReturn && typeof stolenReturn === "object" && !Array.isArray(stolenReturn));
     for (const payment of payments) {
       if (!hasAnySelector(payment, ["items", "item", "tags", "tag"])) {
         addCheck(checks, "error", "Forced option payment", "Every take_items payment needs at least one item or tag.");
@@ -1499,6 +1521,16 @@ function validate() {
     const badPaymentNumber = firstBadNumber(payments, ["count", "amount", "success_reputation", "failure_reputation"], (value, entry, key) => key === "count" || key === "amount" ? value >= 1 : Number.isFinite(value));
     if (badPaymentNumber) {
       addCheck(checks, "error", "Forced option payment", `${humanize(badPaymentNumber)} has an invalid payment number.`);
+      break;
+    }
+    const badStolenReturnDestination = firstInvalidValue(stolenReturns, ["destination", "overflow_destination"], (value) => CONSTANTS.forcedItemDestinations.includes(value));
+    if (badStolenReturnDestination) {
+      addCheck(checks, "warning", "Forced stolen item return", `Unknown stolen-item destination: ${badStolenReturnDestination}.`);
+      break;
+    }
+    const badStolenReturnNumber = firstBadNumber(stolenReturns, ["success_reputation", "failure_reputation"], Number.isFinite);
+    if (badStolenReturnNumber) {
+      addCheck(checks, "error", "Forced stolen item return", `${humanize(badStolenReturnNumber)} has an invalid number.`);
       break;
     }
   }
@@ -2189,10 +2221,11 @@ function renderForcedDialogue() {
           <div class="form-grid">
             ${field({ id: "forced-id", label: "Entry id", value: entry.id })}
             ${selectField({ id: "forced-trigger", label: "Trigger", value: entry.trigger, options: CONSTANTS.forcedDialogueTriggers, allowBlank: false })}
-            ${textareaField({ id: "forced-line", label: "Opening line", value: entry.line, className: "full", rows: 3 })}
+            ${textareaField({ id: "forced-line", label: "Opening line(s)", value: forcedDialogueLineValue(entry), className: "full", rows: 3 })}
             ${field({ id: "forced-priority", label: "Priority", value: entry.priority ?? "", type: "number" })}
             ${field({ id: "forced-witness_radius", label: "Witness radius", value: entry.witness_radius ?? "", type: "number", attrs: 'min="1" step="1"' })}
             ${field({ id: "forced-reputation", label: "Reputation change", value: entry.reputation ?? "", type: "number" })}
+            ${listField({ id: "forced-witness_professions", label: "Witness professions", value: entry.witness_professions ?? entry.witness_profession ?? entry.professions, help: "Optional. Restrict to a witnessing profession such as armorer, cleric, or weaponsmith." })}
             ${listField({ id: "forced-loot_tables", label: "Loot tables", value: entry.loot_tables ?? entry.loot_table, help: "Optional. Match generated containers from loot tables like minecraft:chests/village/village_armorer." })}
             <div class="field full">
               <label>Event Behavior</label>
@@ -2200,9 +2233,11 @@ function renderForcedDialogue() {
                 ${toggle({ id: "forced-requires_line_of_sight", label: "Requires line of sight", checked: entry.requires_line_of_sight !== false })}
                 ${toggle({ id: "forced-initiate_dialogue", label: "Initiates dialogue", checked: entry.initiate_dialogue !== false })}
                 ${toggle({ id: "forced-aggro_immediately", label: "Aggro immediately", checked: entry.aggro_immediately === true })}
+                ${toggle({ id: "forced-force_camera_towards_villager", label: "Force camera to villager", checked: entry.force_camera_towards_villager === true })}
               </div>
             </div>
-            ${textareaField({ id: "forced-options_json", label: "Options JSON", value: optionsJson, help: "Use an array of player choices with id, label, response, reputation, aggro, end_conversation, order, and optional take_items.", className: "full", rows: 7 })}
+            ${textareaField({ id: "forced-options_json", label: "Options JSON", value: optionsJson, help: "Use an array of player choices with id, label, response, reputation, aggro, end_conversation, order, and optional take_items or take_stolen_items.", className: "full", rows: 7 })}
+            ${textareaField({ id: "forced-leave_option_json", label: "Leave option JSON", value: prettyJson(entry.leave_option), help: "Optional. Outcome for the visible Leave choice, Escape, and unexpected closes.", className: "full", rows: 4 })}
           </div>
           ${formActions(editing?.section === "forcedDialogue" ? "Update" : "Add", "save-forced-dialogue", "clear-forced-dialogue-form")}
         </form>
@@ -2548,23 +2583,46 @@ function parseJsonArrayField(id, label) {
   return null;
 }
 
+function parseJsonObjectField(id, label) {
+  const source = readValue(id).trim();
+  if (!source) return {};
+  try {
+    const value = JSON.parse(source);
+    if (value && typeof value === "object" && !Array.isArray(value)) return value;
+  } catch {
+    // Toast below gives the user one clear correction.
+  }
+  showToast(`${label} must be a JSON object.`);
+  return null;
+}
+
 function saveForcedDialogue(event) {
   event.preventDefault();
   const options = parseJsonArrayField("forced-options_json", "Options JSON");
   if (options === null) return;
+  const leaveOption = parseJsonObjectField("forced-leave_option_json", "Leave option JSON");
+  if (leaveOption === null) return;
   const entry = {
     id: readValue("forced-id").trim(),
     trigger: readValue("forced-trigger"),
-    line: readValue("forced-line").trim(),
     priority: parseInteger(readValue("forced-priority")),
     witness_radius: parseInteger(readValue("forced-witness_radius")),
     requires_line_of_sight: readValue("forced-requires_line_of_sight"),
     initiate_dialogue: readValue("forced-initiate_dialogue"),
     aggro_immediately: readValue("forced-aggro_immediately"),
+    force_camera_towards_villager: readValue("forced-force_camera_towards_villager"),
     reputation: parseInteger(readValue("forced-reputation")),
+    witness_professions: readList("forced-witness_professions"),
     loot_tables: readList("forced-loot_tables"),
-    options
+    options,
+    leave_option: leaveOption
   };
+  const lines = readForcedDialogueLines();
+  if (lines.length === 1) {
+    entry.line = lines[0];
+  } else if (lines.length > 1) {
+    entry.lines = lines;
+  }
   upsertEntry("forcedDialogue", "entries", cleanObject(entry));
 }
 
@@ -2748,11 +2806,18 @@ function addForcedDialogueExample() {
   state.forcedDialogue.entries.push({
     id: `${slug}.container_theft.warning`,
     trigger: "container_theft",
-    line: "Stop right there. I saw your hands in that chest.",
+    lines: [
+      "Stop right there. I saw you take {stolen_stack}.",
+      "That {container} is not yours to empty. Put {stolen_stack} back.",
+      "Village stores are not free supplies. Return {stolen_stack}."
+    ],
     priority: 20,
+    loot_tables: ["minecraft:chests/village/village_plains_house"],
+    witness_professions: ["farmer"],
     witness_radius: 12,
     requires_line_of_sight: true,
     initiate_dialogue: true,
+    force_camera_towards_villager: true,
     aggro_immediately: false,
     reputation: -5,
     options: [
@@ -2762,7 +2827,13 @@ function addForcedDialogueExample() {
         response: "See that you do.",
         reputation: 2,
         end_conversation: true,
-        order: 0
+        order: 0,
+        take_stolen_items: {
+          destination: "villager_inventory_then_source_container",
+          failure_response: "You do not have {stolen_stack} to return.",
+          failure_reputation: -2,
+          failure_end_conversation: false
+        }
       },
       {
         id: `${slug}.offer_payment`,
@@ -2800,7 +2871,14 @@ function addForcedDialogueExample() {
         end_conversation: true,
         order: 10
       }
-    ]
+    ],
+    leave_option: {
+      label: "Leave",
+      response: "Walking away is still a choice.",
+      reputation: -1,
+      end_conversation: true,
+      order: 1000
+    }
   });
   selectedPath = forcedDialoguePath();
   render();
@@ -3443,7 +3521,25 @@ function detectJsonKind(json) {
 }
 
 function isForcedDialogueEntry(entry) {
-  return Boolean(entry && typeof entry === "object" && entry.trigger && (entry.line || Array.isArray(entry.options)));
+  return Boolean(entry && typeof entry === "object" && entry.trigger && (hasForcedDialogueLine(entry) || Array.isArray(entry.options)));
+}
+
+function hasForcedDialogueLine(entry) {
+  return Boolean(entry?.line || (Array.isArray(entry?.lines) && entry.lines.some((line) => String(line ?? "").trim())));
+}
+
+function forcedDialogueLineValue(entry) {
+  if (Array.isArray(entry?.lines) && entry.lines.length > 0) {
+    return entry.lines.join("\n");
+  }
+  return entry?.line ?? "";
+}
+
+function readForcedDialogueLines() {
+  return readValue("forced-line")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
 }
 
 function normalizeForcedDialogueEntries(json) {

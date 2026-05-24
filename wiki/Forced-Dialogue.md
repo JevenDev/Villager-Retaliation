@@ -23,7 +23,10 @@ A forced dialogue file can be a single entry:
 {
   "id": "my_pack.theft_warning",
   "trigger": "container_theft",
-  "line": "Stop right there."
+  "lines": [
+    "Stop right there.",
+    "I saw what you took."
+  ]
 }
 ```
 
@@ -35,7 +38,10 @@ or an `entries` array:
     {
       "id": "my_pack.theft_warning",
       "trigger": "container_theft",
-      "line": "Stop right there."
+      "lines": [
+        "Stop right there.",
+        "I saw what you took."
+      ]
     }
   ]
 }
@@ -48,18 +54,25 @@ or an `entries` array:
 | `id` | string | generated from file path | Stable id for replacement by later-loading files. |
 | `trigger` | enum | required | Event that can start this forced dialogue. |
 | `event` | enum | none | Alias for `trigger`. |
-| `line` | string | required | Villager line shown when the event fires. |
+| `line` | string | required unless `lines` is set | Villager line shown when the event fires. |
+| `lines` | array | required unless `line` is set | Alternate villager lines. One is selected at random when the event fires. |
 | `priority` | integer | `0` | Lower values win when multiple entries match the same trigger. |
 | `witness_radius` | number | `12.0` | Search radius for a witnessing villager. |
+| `witness_profession` | string | any | Restricts this entry to a witnessing villager profession. |
+| `witness_professions` | array | any | Restricts this entry to one of several witnessing villager professions. `professions` is also accepted as an alias. |
 | `requires_line_of_sight` | boolean | `true` | Requires the witness to see the player and event block. |
 | `initiate_dialogue` | boolean | `true` | Opens the locked interaction screen when true; otherwise only says `line`. |
 | `aggro_immediately` | boolean | `false` | Makes the witness attack immediately after the event line. |
+| `force_camera_towards_villager` | boolean | `false` | Smoothly turns the player's camera toward the witnessing villager while this forced dialogue is active. |
 | `reputation` | integer | `0` | Reputation change applied to the witnessing villager when the event is caught. |
 | `loot_table` | string | none | Optional single loot table id this entry can match. |
 | `loot_tables` | array | none | Optional loot table ids this entry can match. If omitted, the entry can match any watched container. |
 | `options` | array | generated Leave option | Choices shown in the forced dialogue screen. |
+| `leave_option` | object | generated Leave option | Outcome used by the visible Leave choice, Escape, and unexpected client closes. Uses the same fields as an option except the id is always `leave`. |
 
 When multiple entries match, lower `priority` wins. If priority is tied, an entry with matching `loot_table` or `loot_tables` wins over a generic entry.
+
+Use `lines` when an event can happen often. The selected line is resolved through the same placeholders as `line`, so variations can reference `{stolen_stack}`, `{container}`, `{villager}`, and the other forced-dialogue tokens.
 
 ## Option Fields
 
@@ -77,8 +90,11 @@ When multiple entries match, lower `priority` wins. If priority is tied, an entr
 | `min_reputation` | integer | none | Minimum exact reputation value with the witnessing villager. |
 | `max_reputation` | integer | none | Maximum exact reputation value with the witnessing villager. |
 | `take_items` | object | none | Removes a configured payment from the player's inventory before the option succeeds. |
+| `take_stolen_items` | boolean or object | none | For `container_theft`, removes the specific item stacks stolen from the source container before the option succeeds. |
 
 Use reputation filters to change the choices available for the same event. For example, a trusted player can receive an `accept_warning` option while a hostile player only sees a higher-cost `take_items` payment or an aggro response.
+
+Escape does not bypass forced dialogue. Pressing Escape activates the entry's `leave_option`, so pack makers can attach response text, reputation changes, aggro, or other outcomes to leaving.
 
 ### `take_items`
 
@@ -112,13 +128,32 @@ Forced dialogue options can take items from the player before applying the optio
 | --- | --- |
 | `discard` | Removes the items from the player. This is the default. |
 | `villager_inventory` | Moves the items into the witnessing villager's inventory. |
+| `villager_inventory_then_source_container` | Moves as much as possible into the witnessing villager's inventory, then returns the rest to the source container. |
 | `source_container` | Moves the items into the container that started the forced dialogue. |
 | `drop_at_villager` | Drops the items at the witnessing villager. |
 | `drop_at_container` | Drops the items at the source container. |
 
 When the destination is an inventory or container, `require_space` defaults to `true`, so the option fails unless the full payment can fit. Set `overflow_destination` to a drop or discard destination to allow overflow while keeping the payment successful.
 
+`villager_inventory_then_source_container` first tries to put returned items into the witnessing villager's inventory, then puts any remainder back into the source container. This is useful for stolen-item return choices.
+
 If the player does not have enough matching items, the normal option response and reputation do not apply. Instead, `failure_response`, `failure_reputation`, `failure_end_conversation`, and `failure_aggro` control what happens. Leaving `failure_end_conversation` false keeps the forced dialogue open so the player can choose another response.
+
+### `take_stolen_items`
+
+`take_stolen_items` is for `container_theft` options such as "Return it". It removes the exact item stacks that were missing from the container snapshot. It can be `true` for defaults, or an object with these fields:
+
+| Field | Type | Default | Purpose |
+| --- | --- | --- | --- |
+| `destination` | enum | `villager_inventory_then_source_container` | Where the returned stolen items go. |
+| `overflow_destination` | enum | none | Optional fallback if the destination leaves a remainder. |
+| `require_space` | boolean | `true` | Fails unless the destination can accept the items. |
+| `success_response` | string | option `response` | Response after the stolen items are successfully removed. |
+| `failure_response` | string | none | Response if the player no longer has the stolen items. |
+| `success_reputation` | integer | `0` | Extra reputation change after a successful return. |
+| `failure_reputation` | integer | `0` | Reputation change after a failed return. |
+| `failure_end_conversation` | boolean | `false` | Closes the forced dialogue after a failed return. |
+| `failure_aggro` | boolean | `false` | Makes the villager attack after a failed return. |
 
 ## Triggers
 
@@ -140,9 +175,9 @@ shulker boxes
 
 The built-in events require a villager witness with line of sight to the player and the container block. If no adult villager can witness the event, no forced dialogue starts.
 
-Server config controls whether watched containers trigger on actual theft or on opening. By default, Villager Retaliation watches `OPENING` and `WORLD_GENERATED_ONLY`, so the built-in village chest confrontation fires when a player opens a generated village chest before its loot table unpacks. Servers can switch back to theft-only behavior or broaden the scope to all watched containers.
+Server config controls whether generated watched containers trigger on actual theft or on opening. By default, Villager Retaliation watches `OPENING`, so the built-in village chest confrontation fires when a player opens a generated village chest. The mod records the container's original loot table the first time it sees one, allowing later opens to keep matching generated-container forced dialogue after Minecraft unpacks and clears the live loot table. Servers can switch back to theft-only behavior.
 
-Generated-container detection checks for an unresolved loot table through Minecraft's `RandomizableContainer` interface, so modded generated containers can participate when they expose loot tables the same way vanilla generated containers do.
+Generated-container detection initially checks for an unresolved loot table through Minecraft's `RandomizableContainer` interface, so modded generated containers can participate when they expose loot tables the same way vanilla generated containers do.
 
 The built-in `default.json` includes village-specific entries for vanilla village chest loot tables, plus a lower-priority generic theft fallback for packs or configs that still want broad theft detection.
 
@@ -152,14 +187,19 @@ Forced dialogue entries can optionally filter by generated container loot table:
 {
   "id": "examplepack.armorer_chest_opened",
   "trigger": "container_opened",
+  "witness_professions": ["armorer"],
   "loot_tables": ["minecraft:chests/village/village_armorer"],
-  "line": "That chest belongs to the armorer."
+  "lines": [
+    "That chest belongs to the armorer.",
+    "Close the armory chest. Those supplies are counted."
+  ],
+  "force_camera_towards_villager": true
 }
 ```
 
 ## Placeholders
 
-Forced dialogue `line` and option `response` text can use:
+Forced dialogue `line`, `lines`, option `response`, and `leave_option.response` text can use:
 
 ```text
 {villager}
@@ -167,15 +207,25 @@ Forced dialogue `line` and option `response` text can use:
 {container}
 {count}
 {item}
+{item_id}
+{item_count}
+{item_stack}
+{items}
 {loot_table}
 {payment_count}
 {payment_items}
+{stolen_item}
+{stolen_item_id}
+{stolen_count}
+{stolen_item_count}
+{stolen_stack}
+{stolen_items}
 {x}
 {y}
 {z}
 ```
 
-`{container}` is the block display name, `{count}` is the number of removed items for `container_theft`, `{loot_table}` is the matched generated loot table id when one exists, `{payment_count}` and `{payment_items}` describe a `take_items` option, and `{x}`, `{y}`, `{z}` are the container position.
+`{container}` is the block display name, `{item}` / `{stolen_item}` is the representative removed item name, `{item_stack}` / `{stolen_stack}` includes the representative item count, `{items}` / `{stolen_items}` lists all removed stacks, `{count}` / `{stolen_count}` is the representative removed stack count for `container_theft`, `{loot_table}` is the matched generated loot table id when one exists, `{payment_count}` and `{payment_items}` describe a `take_items` option, and `{x}`, `{y}`, `{z}` are the container position.
 
 ## Example
 
@@ -189,10 +239,29 @@ Forced dialogue `line` and option `response` text can use:
       "witness_radius": 12.0,
       "requires_line_of_sight": true,
       "initiate_dialogue": true,
+      "force_camera_towards_villager": true,
       "aggro_immediately": false,
       "reputation": -8,
-      "line": "Stop right there. That {container} is not yours to empty.",
+      "lines": [
+        "Stop right there. I watched you take {stolen_stack}.",
+        "That {container} is not yours to empty. Put {stolen_stack} back.",
+        "Village stores are not free supplies. Return {stolen_stack}."
+      ],
       "options": [
+        {
+          "id": "return_items",
+          "label": "Return it",
+          "response": "Good. A returned item is easier to forgive than a hidden one.",
+          "reputation": 4,
+          "end_conversation": true,
+          "order": 0,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "failure_response": "You do not have {stolen_stack} to return.",
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          }
+        },
         {
           "id": "apologize",
           "label": "Apologize",
@@ -200,7 +269,7 @@ Forced dialogue `line` and option `response` text can use:
           "reputation": 2,
           "aggro": false,
           "end_conversation": true,
-          "order": 0
+          "order": 1
         },
         {
           "id": "deny",
@@ -209,7 +278,7 @@ Forced dialogue `line` and option `response` text can use:
           "reputation": -4,
           "aggro": true,
           "end_conversation": true,
-          "order": 1
+          "order": 2
         },
         {
           "id": "threaten",
@@ -218,9 +287,16 @@ Forced dialogue `line` and option `response` text can use:
           "reputation": -8,
           "aggro": true,
           "end_conversation": true,
-          "order": 2
+          "order": 3
         }
-      ]
+      ],
+      "leave_option": {
+        "label": "Leave",
+        "response": "Walking away is still a choice.",
+        "reputation": -1,
+        "end_conversation": true,
+        "order": 1000
+      }
     }
   ]
 }

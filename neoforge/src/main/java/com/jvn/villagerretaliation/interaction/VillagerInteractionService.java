@@ -119,6 +119,10 @@ public final class VillagerInteractionService {
     }
 
     public static void openInteractionScreen(ServerPlayer player, Villager villager) {
+        openInteractionScreen(player, villager, false);
+    }
+
+    public static void openInteractionScreen(ServerPlayer player, Villager villager, boolean forceCameraTowardsVillager) {
         ServerLevel level = player.serverLevel();
         ReputationSnapshot reputation = reputationSnapshot(level, villager, player);
         VillagerInteractionTracker.InteractionState interactionState = VillagerInteractionTracker.getState(level, villager, player);
@@ -149,6 +153,7 @@ public final class VillagerInteractionService {
                 mood,
                 VillagerRecruitmentService.isFollowing(villager, player),
                 false,
+                forceCameraTowardsVillager,
                 dialogueOptions,
                 giftKnowledge.likedGiftNames(),
                 giftKnowledge.dislikedGiftNames(),
@@ -164,11 +169,20 @@ public final class VillagerInteractionService {
             Villager villager,
             String openingText,
             List<DialogueOptionDefinition> dialogueOptions) {
+        return openForcedDialogue(player, villager, openingText, dialogueOptions, forceCameraTowardsVillager(dialogueOptions));
+    }
+
+    public static boolean openForcedDialogue(
+            ServerPlayer player,
+            Villager villager,
+            String openingText,
+            List<DialogueOptionDefinition> dialogueOptions,
+            boolean forceCameraTowardsVillager) {
         if (!VillagerConversationService.start(player, villager)) {
             return false;
         }
 
-        openForcedInteractionScreen(player, villager, dialogueOptions);
+        openForcedInteractionScreen(player, villager, dialogueOptions, forceCameraTowardsVillager);
         focusVillagerOnPlayer(villager, player);
         if (!openingText.isBlank()) {
             broadcastVillagerChat(player.serverLevel(), villager, openingText);
@@ -179,7 +193,8 @@ public final class VillagerInteractionService {
     private static void openForcedInteractionScreen(
             ServerPlayer player,
             Villager villager,
-            List<DialogueOptionDefinition> dialogueOptions) {
+            List<DialogueOptionDefinition> dialogueOptions,
+            boolean forceCameraTowardsVillager) {
         ServerLevel level = player.serverLevel();
         ReputationSnapshot reputation = reputationSnapshot(level, villager, player);
         DialogueContext context = createDialogueContext(level, player, villager);
@@ -197,6 +212,7 @@ public final class VillagerInteractionService {
                 VillagerDialogueService.moodFor(context),
                 VillagerRecruitmentService.isFollowing(villager, player),
                 true,
+                forceCameraTowardsVillager,
                 dialogueOptions,
                 giftKnowledge.likedGiftNames(),
                 giftKnowledge.dislikedGiftNames(),
@@ -263,7 +279,7 @@ public final class VillagerInteractionService {
         } else if (requestType == DialogueRequestType.CURED_RECOGNITION) {
             VillagerInteractionTracker.claimUnreportedCuredRecognition(level, villager, player);
         }
-        sendDialogueReputation(player, villager, level, requestType, reputationEffect);
+        sendDialogueReputation(player, villager, level, requestType, reputationEffect, dialogueOption.forceCameraTowardsVillager());
         broadcastVillagerChat(level, villager, responseText);
         if (shouldRefuseDespisedConversation(villager, player)) {
             VillagerConversationService.endForPlayer(player, true);
@@ -519,6 +535,9 @@ public final class VillagerInteractionService {
             VillagerConversationService.endForPlayer(player, true);
             return;
         }
+        if (ForcedDialogueService.handleLeaveRequest(player, villager, true)) {
+            return;
+        }
         ForcedDialogueService.endForPlayer(player);
 
         ServerLevel level = player.serverLevel();
@@ -628,13 +647,21 @@ public final class VillagerInteractionService {
     }
 
     private static void sendDialogueReputation(ServerPlayer player, Villager villager, ServerLevel level) {
-        sendDialogueReputation(player, villager, level, null, null);
+        sendDialogueReputation(player, villager, level, null, null, false);
     }
 
     public static void sendForcedDialogueReputation(
             ServerPlayer player,
             Villager villager,
             List<DialogueOptionDefinition> dialogueOptions) {
+        sendForcedDialogueReputation(player, villager, dialogueOptions, forceCameraTowardsVillager(dialogueOptions));
+    }
+
+    public static void sendForcedDialogueReputation(
+            ServerPlayer player,
+            Villager villager,
+            List<DialogueOptionDefinition> dialogueOptions,
+            boolean forceCameraTowardsVillager) {
         ServerLevel level = player.serverLevel();
         ReputationSnapshot reputation = reputationSnapshot(level, villager, player);
         DialogueContext context = createDialogueContext(level, player, villager);
@@ -645,6 +672,7 @@ public final class VillagerInteractionService {
                 reputation.value(),
                 reputation.level(),
                 VillagerDialogueService.moodFor(context),
+                forceCameraTowardsVillager,
                 dialogueOptions,
                 giftKnowledge.likedGiftNames(),
                 giftKnowledge.dislikedGiftNames()
@@ -656,7 +684,8 @@ public final class VillagerInteractionService {
             Villager villager,
             ServerLevel level,
             DialogueRequestType requestType,
-            DialogueReputationEffect reputationEffect) {
+            DialogueReputationEffect reputationEffect,
+            boolean forceCameraTowardsVillager) {
         ReputationSnapshot reputation = reputationSnapshot(level, villager, player);
         DialogueContext context = createDialogueContext(
                 level,
@@ -677,10 +706,15 @@ public final class VillagerInteractionService {
                 reputation.value(),
                 reputation.level(),
                 mood,
+                forceCameraTowardsVillager,
                 dialogueOptions,
                 giftKnowledge.likedGiftNames(),
                 giftKnowledge.dislikedGiftNames()
         ));
+    }
+
+    private static boolean forceCameraTowardsVillager(List<DialogueOptionDefinition> dialogueOptions) {
+        return dialogueOptions.stream().anyMatch(DialogueOptionDefinition::forceCameraTowardsVillager);
     }
 
     private static VillagerDialogueService.DialogueResult selectDialogueResult(

@@ -5,12 +5,11 @@
       "trigger": "container_theft",
       "priority": -10,
       "loot_table": "minecraft:chests/village/village_weaponsmith",
-      "witness_radius": 12.0,
+      "witness_radius": 12,
       "requires_line_of_sight": true,
       "initiate_dialogue": true,
       "aggro_immediately": false,
       "reputation": -12,
-      "line": "Step away from that {container}. Those blades were stored for the village, not for quiet hands.",
       "options": [
         {
           "id": "return_blade",
@@ -19,7 +18,14 @@
           "reputation": 5,
           "aggro": false,
           "end_conversation": true,
-          "order": 0
+          "order": 0,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "Good. A blade taken in secret cuts trust first.",
+            "failure_response": "You do not have {stolen_stack} to return. Do not make the theft harder to forgive.",
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          }
         },
         {
           "id": "accept_warning",
@@ -97,6 +103,22 @@
           "end_conversation": true,
           "order": 4
         }
+      ],
+      "force_camera_towards_villager": true,
+      "witness_professions": [
+        "weaponsmith"
+      ],
+      "leave_option": {
+        "label": "Leave",
+        "response": "Leaving does not make this disappear.",
+        "reputation": -1,
+        "end_conversation": true,
+        "order": 1000
+      },
+      "lines": [
+        "Put {stolen_stack} back. That stock belongs in the forge chest.",
+        "I saw {stolen_stack} leave that {container}. Return it.",
+        "Those supplies are counted for village work. Put {stolen_stack} back."
       ]
     },
     {
@@ -104,12 +126,11 @@
       "trigger": "container_theft",
       "priority": -10,
       "loot_table": "minecraft:chests/village/village_temple",
-      "witness_radius": 12.0,
+      "witness_radius": 12,
       "requires_line_of_sight": true,
       "initiate_dialogue": true,
       "aggro_immediately": false,
       "reputation": -12,
-      "line": "That {container} holds offerings and remedies. Taking from it takes from the frightened and the sick.",
       "options": [
         {
           "id": "return_offering",
@@ -118,7 +139,14 @@
           "reputation": 5,
           "aggro": false,
           "end_conversation": true,
-          "order": 0
+          "order": 0,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "Return it, then let your next kindness arrive before your next mistake.",
+            "failure_response": "You do not have {stolen_stack} to return. Do not make the theft harder to forgive.",
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          }
         },
         {
           "id": "ask_forgiveness",
@@ -159,6 +187,22 @@
           "end_conversation": true,
           "order": 3
         }
+      ],
+      "force_camera_towards_villager": true,
+      "witness_professions": [
+        "cleric"
+      ],
+      "leave_option": {
+        "label": "Leave",
+        "response": "Leaving does not make this disappear.",
+        "reputation": -1,
+        "end_conversation": true,
+        "order": 1000
+      },
+      "lines": [
+        "Put {stolen_stack} back. That {container} holds offerings and remedies.",
+        "I saw you take {stolen_stack} from the temple stores. Return it.",
+        "Those supplies are for the frightened and the sick. Put {stolen_stack} back."
       ]
     },
     {
@@ -166,12 +210,11 @@
       "trigger": "container_opened",
       "priority": -10,
       "loot_table": "minecraft:chests/village/village_cartographer",
-      "witness_radius": 12.0,
+      "witness_radius": 12,
       "requires_line_of_sight": true,
       "initiate_dialogue": true,
       "aggro_immediately": false,
       "reputation": -4,
-      "line": "Careful with that {container}. Maps look like paper until someone depends on the route.",
       "options": [
         {
           "id": "close_it",
@@ -215,6 +258,22 @@
           "end_conversation": true,
           "order": 3
         }
+      ],
+      "force_camera_towards_villager": true,
+      "witness_professions": [
+        "cartographer"
+      ],
+      "leave_option": {
+        "label": "Leave",
+        "response": "Leaving does not make this disappear.",
+        "reputation": -1,
+        "end_conversation": true,
+        "order": 1000
+      },
+      "lines": [
+        "Careful with that {container}. Maps look like paper until someone depends on the route.",
+        "Close that cartography chest. A wrong hand can lose a whole road.",
+        "Those records are not for browsing with both hands in the chest."
       ]
     },
     {
@@ -222,12 +281,11 @@
       "trigger": "container_opened",
       "priority": -10,
       "loot_table": "minecraft:chests/village/village_armorer",
-      "witness_radius": 12.0,
+      "witness_radius": 12,
       "requires_line_of_sight": true,
       "initiate_dialogue": true,
       "aggro_immediately": false,
       "reputation": -4,
-      "line": "That {container} is not a display case. It is what stands between villagers and teeth.",
       "options": [
         {
           "id": "close_it",
@@ -277,6 +335,922 @@
           "end_conversation": true,
           "order": 3
         }
+      ],
+      "force_camera_towards_villager": true,
+      "witness_professions": [
+        "armorer"
+      ],
+      "leave_option": {
+        "label": "Leave",
+        "response": "Leaving does not make this disappear.",
+        "reputation": -1,
+        "end_conversation": true,
+        "order": 1000
+      },
+      "lines": [
+        "That {container} is not a display case. It is what stands between villagers and danger.",
+        "Close the armory chest. Protection only works when we know where it is.",
+        "That armor stock is counted for the village. Step back."
+      ]
+    },
+    {
+      "id": "witnessed_village_armorer_container_theft",
+      "trigger": "container_theft",
+      "priority": -10,
+      "loot_table": "minecraft:chests/village/village_armorer",
+      "witness_professions": [
+        "armorer"
+      ],
+      "witness_radius": 12,
+      "requires_line_of_sight": true,
+      "initiate_dialogue": true,
+      "aggro_immediately": false,
+      "force_camera_towards_villager": true,
+      "reputation": -12,
+      "options": [
+        {
+          "id": "return_armor",
+          "label": "Return it",
+          "response": "Good. Armor belongs where the village can reach it.",
+          "reputation": 5,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 0,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "Good. Armor belongs where the village can reach it.",
+            "failure_response": "You do not have {stolen_stack} to return. Do not make the theft harder to forgive.",
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          }
+        },
+        {
+          "id": "apologize",
+          "label": "Apologize",
+          "response": "You understand the danger, then. Keep your hands away from our protection.",
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 1
+        },
+        {
+          "id": "offer_payment",
+          "label": "Offer payment",
+          "response": "Payment after taking is not permission. It is only the start of making it right.",
+          "reputation_levels": [
+            "neutral",
+            "suspicious",
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "take_items": {
+            "items": [
+              "minecraft:emerald"
+            ],
+            "count": 10,
+            "destination": "villager_inventory",
+            "overflow_destination": "drop_at_villager",
+            "success_response": "Ten emeralds will cover the missing protection. The warning stays.",
+            "failure_response": "You cannot pay 10 emeralds. Empty pockets do not answer for full hands.",
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          },
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 2
+        },
+        {
+          "id": "deny",
+          "label": "Deny it",
+          "response": "Armor has weight. So does a lie.",
+          "reputation": -5,
+          "aggro": true,
+          "end_conversation": true,
+          "order": 3
+        },
+        {
+          "id": "threaten",
+          "label": "Threaten them",
+          "response": "Then you are the danger I was preparing for.",
+          "reputation": -9,
+          "aggro": true,
+          "end_conversation": true,
+          "order": 4
+        }
+      ],
+      "leave_option": {
+        "label": "Leave",
+        "response": "Leaving does not make this disappear.",
+        "reputation": -1,
+        "end_conversation": true,
+        "order": 1000
+      },
+      "lines": [
+        "Put {stolen_stack} back. That {container} keeps the village protected.",
+        "I saw {stolen_stack} leave the armory chest. Return it.",
+        "Protection starts with stocked supplies. Put {stolen_stack} back."
+      ]
+    },
+    {
+      "id": "witnessed_village_butcher_container_theft",
+      "trigger": "container_theft",
+      "priority": -10,
+      "loot_table": "minecraft:chests/village/village_butcher",
+      "witness_professions": [
+        "butcher"
+      ],
+      "witness_radius": 12,
+      "requires_line_of_sight": true,
+      "initiate_dialogue": true,
+      "aggro_immediately": false,
+      "force_camera_towards_villager": true,
+      "reputation": -12,
+      "options": [
+        {
+          "id": "return_food",
+          "label": "Return it",
+          "response": "Good. Food returned quickly still feeds the right mouths.",
+          "reputation": 5,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 0,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "Good. Food returned quickly still feeds the right mouths.",
+            "failure_response": "You do not have {stolen_stack} to return. Do not make the theft harder to forgive.",
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          }
+        },
+        {
+          "id": "apologize",
+          "label": "Apologize",
+          "response": "Hungry people ask. Thieves make everyone hungrier.",
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 1
+        },
+        {
+          "id": "offer_payment",
+          "label": "Offer payment",
+          "response": "Payment after taking is not permission. It is only the start of making it right.",
+          "reputation_levels": [
+            "neutral",
+            "suspicious",
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "take_items": {
+            "items": [
+              "minecraft:emerald"
+            ],
+            "count": 6,
+            "destination": "villager_inventory",
+            "overflow_destination": "drop_at_villager",
+            "success_response": "Six emeralds replaces the food. Next time, speak before taking.",
+            "failure_response": "You cannot pay 6 emeralds. Empty pockets do not answer for full hands.",
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          },
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 2
+        },
+        {
+          "id": "deny",
+          "label": "Deny it",
+          "response": "I know the sound of my stores leaving.",
+          "reputation": -5,
+          "aggro": true,
+          "end_conversation": true,
+          "order": 3
+        },
+        {
+          "id": "threaten",
+          "label": "Threaten them",
+          "response": "Threats do not season theft into something better.",
+          "reputation": -9,
+          "aggro": true,
+          "end_conversation": true,
+          "order": 4
+        }
+      ],
+      "leave_option": {
+        "label": "Leave",
+        "response": "Leaving does not make this disappear.",
+        "reputation": -1,
+        "end_conversation": true,
+        "order": 1000
+      },
+      "lines": [
+        "Put {stolen_stack} back. That food and stock are counted for village tables.",
+        "I saw {stolen_stack} leave the butcher chest. Return it.",
+        "Those stores feed more than one mouth. Put {stolen_stack} back."
+      ]
+    },
+    {
+      "id": "witnessed_village_cartographer_container_theft",
+      "trigger": "container_theft",
+      "priority": -10,
+      "loot_table": "minecraft:chests/village/village_cartographer",
+      "witness_professions": [
+        "cartographer"
+      ],
+      "witness_radius": 12,
+      "requires_line_of_sight": true,
+      "initiate_dialogue": true,
+      "aggro_immediately": false,
+      "force_camera_towards_villager": true,
+      "reputation": -12,
+      "options": [
+        {
+          "id": "return_maps",
+          "label": "Return it",
+          "response": "Good. A returned map still points in the right direction.",
+          "reputation": 5,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 0,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "Good. A returned map still points in the right direction.",
+            "failure_response": "You do not have {stolen_stack} to return. Do not make the theft harder to forgive.",
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          }
+        },
+        {
+          "id": "apologize",
+          "label": "Apologize",
+          "response": "An apology is a start. Permission is the route you skipped.",
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 1
+        },
+        {
+          "id": "offer_payment",
+          "label": "Offer payment",
+          "response": "Payment after taking is not permission. It is only the start of making it right.",
+          "reputation_levels": [
+            "neutral",
+            "suspicious",
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "take_items": {
+            "items": [
+              "minecraft:emerald"
+            ],
+            "count": 8,
+            "destination": "villager_inventory",
+            "overflow_destination": "drop_at_villager",
+            "success_response": "Eight emeralds will replace the supplies. Do not chart another path through my chest.",
+            "failure_response": "You cannot pay 8 emeralds. Empty pockets do not answer for full hands.",
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          },
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 2
+        },
+        {
+          "id": "deny",
+          "label": "Deny it",
+          "response": "I notice missing marks. I notice missing goods too.",
+          "reputation": -5,
+          "aggro": true,
+          "end_conversation": true,
+          "order": 3
+        },
+        {
+          "id": "threaten",
+          "label": "Threaten them",
+          "response": "Threats are a poor compass.",
+          "reputation": -9,
+          "aggro": true,
+          "end_conversation": true,
+          "order": 4
+        }
+      ],
+      "leave_option": {
+        "label": "Leave",
+        "response": "Leaving does not make this disappear.",
+        "reputation": -1,
+        "end_conversation": true,
+        "order": 1000
+      },
+      "lines": [
+        "Put {stolen_stack} back. That {container} keeps our routes and records safe.",
+        "I saw {stolen_stack} leave the cartography chest. Return it.",
+        "Maps, paper, tools, all of it matters here. Put {stolen_stack} back."
+      ]
+    },
+    {
+      "id": "witnessed_village_fisher_container_theft",
+      "trigger": "container_theft",
+      "priority": -10,
+      "loot_table": "minecraft:chests/village/village_fisher",
+      "witness_professions": [
+        "fisherman"
+      ],
+      "witness_radius": 12,
+      "requires_line_of_sight": true,
+      "initiate_dialogue": true,
+      "aggro_immediately": false,
+      "force_camera_towards_villager": true,
+      "reputation": -12,
+      "options": [
+        {
+          "id": "return_catch",
+          "label": "Return it",
+          "response": "Good. The catch returns before trust sinks any deeper.",
+          "reputation": 5,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 0,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "Good. The catch returns before trust sinks any deeper.",
+            "failure_response": "You do not have {stolen_stack} to return. Do not make the theft harder to forgive.",
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          }
+        },
+        {
+          "id": "apologize",
+          "label": "Apologize",
+          "response": "Then remember patience before hunger next time.",
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 1
+        },
+        {
+          "id": "offer_payment",
+          "label": "Offer payment",
+          "response": "Payment after taking is not permission. It is only the start of making it right.",
+          "reputation_levels": [
+            "neutral",
+            "suspicious",
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "take_items": {
+            "items": [
+              "minecraft:emerald"
+            ],
+            "count": 6,
+            "destination": "villager_inventory",
+            "overflow_destination": "drop_at_villager",
+            "success_response": "Six emeralds will refill the stores. Keep your hands off the nets.",
+            "failure_response": "You cannot pay 6 emeralds. Empty pockets do not answer for full hands.",
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          },
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 2
+        },
+        {
+          "id": "deny",
+          "label": "Deny it",
+          "response": "I know what I hauled in, and I know what you hauled out.",
+          "reputation": -5,
+          "aggro": true,
+          "end_conversation": true,
+          "order": 3
+        },
+        {
+          "id": "threaten",
+          "label": "Threaten them",
+          "response": "Then you have mistaken a fisherman for easy prey.",
+          "reputation": -9,
+          "aggro": true,
+          "end_conversation": true,
+          "order": 4
+        }
+      ],
+      "leave_option": {
+        "label": "Leave",
+        "response": "Leaving does not make this disappear.",
+        "reputation": -1,
+        "end_conversation": true,
+        "order": 1000
+      },
+      "lines": [
+        "Put {stolen_stack} back. Those stores came from cold water and long patience.",
+        "I saw {stolen_stack} leave the fisher chest. Return it.",
+        "Nets, meals, bait, whatever you took, put {stolen_stack} back."
+      ]
+    },
+    {
+      "id": "witnessed_village_fletcher_container_theft",
+      "trigger": "container_theft",
+      "priority": -10,
+      "loot_table": "minecraft:chests/village/village_fletcher",
+      "witness_professions": [
+        "fletcher"
+      ],
+      "witness_radius": 12,
+      "requires_line_of_sight": true,
+      "initiate_dialogue": true,
+      "aggro_immediately": false,
+      "force_camera_towards_villager": true,
+      "reputation": -12,
+      "options": [
+        {
+          "id": "return_arrows",
+          "label": "Return it",
+          "response": "Good. Arrows should leave the village only with purpose.",
+          "reputation": 5,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 0,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "Good. Arrows should leave the village only with purpose.",
+            "failure_response": "You do not have {stolen_stack} to return. Do not make the theft harder to forgive.",
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          }
+        },
+        {
+          "id": "apologize",
+          "label": "Apologize",
+          "response": "Then aim that apology at better choices.",
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 1
+        },
+        {
+          "id": "offer_payment",
+          "label": "Offer payment",
+          "response": "Payment after taking is not permission. It is only the start of making it right.",
+          "reputation_levels": [
+            "neutral",
+            "suspicious",
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "take_items": {
+            "items": [
+              "minecraft:emerald"
+            ],
+            "count": 7,
+            "destination": "villager_inventory",
+            "overflow_destination": "drop_at_villager",
+            "success_response": "Seven emeralds covers the stock. Do not reach for the fletching chest again.",
+            "failure_response": "You cannot pay 7 emeralds. Empty pockets do not answer for full hands.",
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          },
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 2
+        },
+        {
+          "id": "deny",
+          "label": "Deny it",
+          "response": "I can spot a bent arrow. I can spot a crooked answer.",
+          "reputation": -5,
+          "aggro": true,
+          "end_conversation": true,
+          "order": 3
+        },
+        {
+          "id": "threaten",
+          "label": "Threaten them",
+          "response": "Then every arrow in this village has a clearer target.",
+          "reputation": -9,
+          "aggro": true,
+          "end_conversation": true,
+          "order": 4
+        }
+      ],
+      "leave_option": {
+        "label": "Leave",
+        "response": "Leaving does not make this disappear.",
+        "reputation": -1,
+        "end_conversation": true,
+        "order": 1000
+      },
+      "lines": [
+        "Put {stolen_stack} back. That chest keeps the village ready.",
+        "I saw {stolen_stack} leave the fletcher chest. Return it.",
+        "Those supplies are for work and defense. Put {stolen_stack} back."
+      ]
+    },
+    {
+      "id": "witnessed_village_mason_container_theft",
+      "trigger": "container_theft",
+      "priority": -10,
+      "loot_table": "minecraft:chests/village/village_mason",
+      "witness_professions": [
+        "mason"
+      ],
+      "witness_radius": 12,
+      "requires_line_of_sight": true,
+      "initiate_dialogue": true,
+      "aggro_immediately": false,
+      "force_camera_towards_villager": true,
+      "reputation": -12,
+      "options": [
+        {
+          "id": "return_stone",
+          "label": "Return it",
+          "response": "Good. A returned block keeps its place in the wall.",
+          "reputation": 5,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 0,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "Good. A returned block keeps its place in the wall.",
+            "failure_response": "You do not have {stolen_stack} to return. Do not make the theft harder to forgive.",
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          }
+        },
+        {
+          "id": "apologize",
+          "label": "Apologize",
+          "response": "Words are softer than stone. Build better habits.",
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 1
+        },
+        {
+          "id": "offer_payment",
+          "label": "Offer payment",
+          "response": "Payment after taking is not permission. It is only the start of making it right.",
+          "reputation_levels": [
+            "neutral",
+            "suspicious",
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "take_items": {
+            "items": [
+              "minecraft:emerald"
+            ],
+            "count": 7,
+            "destination": "villager_inventory",
+            "overflow_destination": "drop_at_villager",
+            "success_response": "Seven emeralds will replace the stock. Keep your hands off the work chest.",
+            "failure_response": "You cannot pay 7 emeralds. Empty pockets do not answer for full hands.",
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          },
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 2
+        },
+        {
+          "id": "deny",
+          "label": "Deny it",
+          "response": "Stone leaves dust. Theft leaves a mark too.",
+          "reputation": -5,
+          "aggro": true,
+          "end_conversation": true,
+          "order": 3
+        },
+        {
+          "id": "threaten",
+          "label": "Threaten them",
+          "response": "Threaten a mason and you learn what a wall is for.",
+          "reputation": -9,
+          "aggro": true,
+          "end_conversation": true,
+          "order": 4
+        }
+      ],
+      "leave_option": {
+        "label": "Leave",
+        "response": "Leaving does not make this disappear.",
+        "reputation": -1,
+        "end_conversation": true,
+        "order": 1000
+      },
+      "lines": [
+        "Put {stolen_stack} back. That material was set aside for village work.",
+        "I saw {stolen_stack} leave the mason chest. Return it.",
+        "Walls do not stay standing when supplies vanish. Put {stolen_stack} back."
+      ]
+    },
+    {
+      "id": "witnessed_village_shepherd_container_theft",
+      "trigger": "container_theft",
+      "priority": -10,
+      "loot_table": "minecraft:chests/village/village_shepherd",
+      "witness_professions": [
+        "shepherd"
+      ],
+      "witness_radius": 12,
+      "requires_line_of_sight": true,
+      "initiate_dialogue": true,
+      "aggro_immediately": false,
+      "force_camera_towards_villager": true,
+      "reputation": -12,
+      "options": [
+        {
+          "id": "return_wool",
+          "label": "Return it",
+          "response": "Good. Returned work can still warm someone.",
+          "reputation": 5,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 0,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "Good. Returned work can still warm someone.",
+            "failure_response": "You do not have {stolen_stack} to return. Do not make the theft harder to forgive.",
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          }
+        },
+        {
+          "id": "apologize",
+          "label": "Apologize",
+          "response": "Then mind the fence next time, and the boundary too.",
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 1
+        },
+        {
+          "id": "offer_payment",
+          "label": "Offer payment",
+          "response": "Payment after taking is not permission. It is only the start of making it right.",
+          "reputation_levels": [
+            "neutral",
+            "suspicious",
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "take_items": {
+            "items": [
+              "minecraft:emerald"
+            ],
+            "count": 5,
+            "destination": "villager_inventory",
+            "overflow_destination": "drop_at_villager",
+            "success_response": "Five emeralds covers the stock. Do not shear from our chest again.",
+            "failure_response": "You cannot pay 5 emeralds. Empty pockets do not answer for full hands.",
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          },
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 2
+        },
+        {
+          "id": "deny",
+          "label": "Deny it",
+          "response": "I count my flock and my stores. You are short on truth.",
+          "reputation": -5,
+          "aggro": true,
+          "end_conversation": true,
+          "order": 3
+        },
+        {
+          "id": "threaten",
+          "label": "Threaten them",
+          "response": "Threats are a thin blanket.",
+          "reputation": -9,
+          "aggro": true,
+          "end_conversation": true,
+          "order": 4
+        }
+      ],
+      "leave_option": {
+        "label": "Leave",
+        "response": "Leaving does not make this disappear.",
+        "reputation": -1,
+        "end_conversation": true,
+        "order": 1000
+      },
+      "lines": [
+        "Put {stolen_stack} back. Those stores were gathered for the village.",
+        "I saw {stolen_stack} leave the shepherd chest. Return it.",
+        "That work keeps people clothed and warm. Put {stolen_stack} back."
+      ]
+    },
+    {
+      "id": "witnessed_village_leatherworker_container_theft",
+      "trigger": "container_theft",
+      "priority": -10,
+      "loot_table": "minecraft:chests/village/village_tannery",
+      "witness_professions": [
+        "leatherworker"
+      ],
+      "witness_radius": 12,
+      "requires_line_of_sight": true,
+      "initiate_dialogue": true,
+      "aggro_immediately": false,
+      "force_camera_towards_villager": true,
+      "reputation": -12,
+      "options": [
+        {
+          "id": "return_leather",
+          "label": "Return it",
+          "response": "Good. Returned work still carries fewer stains than stolen work.",
+          "reputation": 5,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 0,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "Good. Returned work still carries fewer stains than stolen work.",
+            "failure_response": "You do not have {stolen_stack} to return. Do not make the theft harder to forgive.",
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          }
+        },
+        {
+          "id": "apologize",
+          "label": "Apologize",
+          "response": "Then wear the lesson better than you wore the excuse.",
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 1
+        },
+        {
+          "id": "offer_payment",
+          "label": "Offer payment",
+          "response": "Payment after taking is not permission. It is only the start of making it right.",
+          "reputation_levels": [
+            "neutral",
+            "suspicious",
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "take_items": {
+            "items": [
+              "minecraft:emerald"
+            ],
+            "count": 7,
+            "destination": "villager_inventory",
+            "overflow_destination": "drop_at_villager",
+            "success_response": "Seven emeralds replaces the leatherwork. Ask before touching my stores.",
+            "failure_response": "You cannot pay 7 emeralds. Empty pockets do not answer for full hands.",
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          },
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 2
+        },
+        {
+          "id": "deny",
+          "label": "Deny it",
+          "response": "Leather keeps marks. So does a village.",
+          "reputation": -5,
+          "aggro": true,
+          "end_conversation": true,
+          "order": 3
+        },
+        {
+          "id": "threaten",
+          "label": "Threaten them",
+          "response": "Threats will not tan this into honesty.",
+          "reputation": -9,
+          "aggro": true,
+          "end_conversation": true,
+          "order": 4
+        }
+      ],
+      "leave_option": {
+        "label": "Leave",
+        "response": "Leaving does not make this disappear.",
+        "reputation": -1,
+        "end_conversation": true,
+        "order": 1000
+      },
+      "lines": [
+        "Put {stolen_stack} back. That stock took time and work to prepare.",
+        "I saw {stolen_stack} leave the tannery chest. Return it.",
+        "Leatherwork, tools, scraps, all of it is accounted for. Put {stolen_stack} back."
+      ]
+    },
+    {
+      "id": "witnessed_village_toolsmith_container_theft",
+      "trigger": "container_theft",
+      "priority": -10,
+      "loot_table": "minecraft:chests/village/village_toolsmith",
+      "witness_professions": [
+        "toolsmith"
+      ],
+      "witness_radius": 12,
+      "requires_line_of_sight": true,
+      "initiate_dialogue": true,
+      "aggro_immediately": false,
+      "force_camera_towards_villager": true,
+      "reputation": -12,
+      "options": [
+        {
+          "id": "return_tools",
+          "label": "Return it",
+          "response": "Good. Work can continue when tools return.",
+          "reputation": 5,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 0,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "Good. Work can continue when tools return.",
+            "failure_response": "You do not have {stolen_stack} to return. Do not make the theft harder to forgive.",
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          }
+        },
+        {
+          "id": "apologize",
+          "label": "Apologize",
+          "response": "An apology is useful only if your hands learn from it.",
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 1
+        },
+        {
+          "id": "offer_payment",
+          "label": "Offer payment",
+          "response": "Payment after taking is not permission. It is only the start of making it right.",
+          "reputation_levels": [
+            "neutral",
+            "suspicious",
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "take_items": {
+            "items": [
+              "minecraft:emerald"
+            ],
+            "count": 9,
+            "destination": "villager_inventory",
+            "overflow_destination": "drop_at_villager",
+            "success_response": "Nine emeralds covers the stock. Touch the chest again and the price will not be coins.",
+            "failure_response": "You cannot pay 9 emeralds. Empty pockets do not answer for full hands.",
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          },
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 2
+        },
+        {
+          "id": "deny",
+          "label": "Deny it",
+          "response": "I know every tool by handle and wear. I know when one is missing.",
+          "reputation": -5,
+          "aggro": true,
+          "end_conversation": true,
+          "order": 3
+        },
+        {
+          "id": "threaten",
+          "label": "Threaten them",
+          "response": "Threaten the hand that makes tools and you may meet what they are for.",
+          "reputation": -9,
+          "aggro": true,
+          "end_conversation": true,
+          "order": 4
+        }
+      ],
+      "leave_option": {
+        "label": "Leave",
+        "response": "Leaving does not make this disappear.",
+        "reputation": -1,
+        "end_conversation": true,
+        "order": 1000
+      },
+      "lines": [
+        "Put {stolen_stack} back. Those stores keep the village working.",
+        "I saw {stolen_stack} leave the toolsmith chest. Return it.",
+        "Every missing tool or supply costs someone a day of work. Put {stolen_stack} back."
       ]
     },
     {
@@ -301,12 +1275,11 @@
         "minecraft:chests/village/village_toolsmith",
         "minecraft:chests/village/village_weaponsmith"
       ],
-      "witness_radius": 12.0,
+      "witness_radius": 12,
       "requires_line_of_sight": true,
       "initiate_dialogue": true,
       "aggro_immediately": false,
       "reputation": -10,
-      "line": "Stop right there. That {container} was stocked for this village, and I watched you take from it.",
       "options": [
         {
           "id": "return_items",
@@ -315,7 +1288,14 @@
           "reputation": 4,
           "aggro": false,
           "end_conversation": true,
-          "order": 0
+          "order": 0,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "Then do it now. A village remembers the hand that returns what it took.",
+            "failure_response": "You do not have {stolen_stack} to return. Do not make the theft harder to forgive.",
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          }
         },
         {
           "id": "apologize",
@@ -438,18 +1418,30 @@
           "end_conversation": true,
           "order": 9
         }
+      ],
+      "force_camera_towards_villager": true,
+      "leave_option": {
+        "label": "Leave",
+        "response": "Leaving does not make this disappear.",
+        "reputation": -1,
+        "end_conversation": true,
+        "order": 1000
+      },
+      "lines": [
+        "Stop right there. I watched you take {stolen_stack} from that {container}.",
+        "That {container} was stocked for the village. Put {stolen_stack} back.",
+        "Village stores are not free supplies. Return {stolen_stack}."
       ]
     },
     {
       "id": "witnessed_container_theft",
       "trigger": "container_theft",
       "priority": 10,
-      "witness_radius": 12.0,
+      "witness_radius": 12,
       "requires_line_of_sight": true,
       "initiate_dialogue": true,
       "aggro_immediately": false,
       "reputation": -8,
-      "line": "Stop right there. That {container} is not yours to empty.",
       "options": [
         {
           "id": "apologize",
@@ -467,7 +1459,14 @@
           "reputation": 3,
           "aggro": false,
           "end_conversation": true,
-          "order": 1
+          "order": 1,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "Good. Let your next choice be quieter and kinder.",
+            "failure_response": "You do not have {stolen_stack} to return. Do not make the theft harder to forgive.",
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          }
         },
         {
           "id": "deny",
@@ -487,6 +1486,775 @@
           "end_conversation": true,
           "order": 3
         }
+      ],
+      "force_camera_towards_villager": true,
+      "leave_option": {
+        "label": "Leave",
+        "response": "Leaving does not make this disappear.",
+        "reputation": -1,
+        "end_conversation": true,
+        "order": 1000
+      },
+      "lines": [
+        "Stop right there. {stolen_stack} from that {container} is not yours to carry away.",
+        "I saw what you took. Put {stolen_stack} back.",
+        "That was not yours. Return {stolen_stack}."
+      ]
+    },
+    {
+      "id": "witnessed_village_weaponsmith_container_opened",
+      "trigger": "container_opened",
+      "priority": -10,
+      "loot_table": "minecraft:chests/village/village_weaponsmith",
+      "witness_professions": [
+        "weaponsmith"
+      ],
+      "witness_radius": 12,
+      "requires_line_of_sight": true,
+      "initiate_dialogue": true,
+      "aggro_immediately": false,
+      "force_camera_towards_villager": true,
+      "reputation": -4,
+      "options": [
+        {
+          "id": "close_it",
+          "label": "Close it",
+          "response": "Good. Blades stay useful when trust stays sharper than curiosity.",
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 0
+        },
+        {
+          "id": "ask_permission",
+          "label": "Ask permission",
+          "response": "Ask first next time. A village can share with people who speak before the lid opens.",
+          "reputation": 1,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 1
+        },
+        {
+          "id": "offer_payment",
+          "label": "Offer payment",
+          "response": "Payment is not permission, but it proves you understand there was a cost.",
+          "reputation_levels": [
+            "neutral",
+            "suspicious",
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "take_items": {
+            "items": [
+              "minecraft:emerald"
+            ],
+            "count": 3,
+            "destination": "villager_inventory",
+            "overflow_destination": "drop_at_villager",
+            "success_response": "Three emeralds is enough for me to believe you meant no harm. Ask before touching village stores again.",
+            "failure_response": "You do not have three emeralds to offer. Close the chest and choose your next words carefully.",
+            "failure_reputation": -1,
+            "failure_end_conversation": false
+          },
+          "reputation": 1,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 2
+        },
+        {
+          "id": "deny",
+          "label": "Deny it",
+          "response": "I saw the lid move under your hand. Do not make me doubt my own eyes.",
+          "reputation": -4,
+          "aggro": true,
+          "end_conversation": true,
+          "order": 3
+        }
+      ],
+      "leave_option": {
+        "label": "Step away",
+        "response": "That is right. Back from the chest.",
+        "reputation": 0,
+        "end_conversation": true,
+        "order": 1000
+      },
+      "lines": [
+        "That {container} holds village steel. Ask before your hands find the hilt.",
+        "Close the forge chest. Every missing piece makes the village weaker.",
+        "Those supplies are not a public rack. Step back and ask."
+      ]
+    },
+    {
+      "id": "witnessed_village_temple_container_opened",
+      "trigger": "container_opened",
+      "priority": -10,
+      "loot_table": "minecraft:chests/village/village_temple",
+      "witness_professions": [
+        "cleric"
+      ],
+      "witness_radius": 12,
+      "requires_line_of_sight": true,
+      "initiate_dialogue": true,
+      "aggro_immediately": false,
+      "force_camera_towards_villager": true,
+      "reputation": -4,
+      "options": [
+        {
+          "id": "close_it",
+          "label": "Close it",
+          "response": "Good. Leave healing stores where frightened hands can find them.",
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 0
+        },
+        {
+          "id": "ask_permission",
+          "label": "Ask permission",
+          "response": "Ask first next time. A village can share with people who speak before the lid opens.",
+          "reputation": 1,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 1
+        },
+        {
+          "id": "offer_payment",
+          "label": "Offer payment",
+          "response": "Payment is not permission, but it proves you understand there was a cost.",
+          "reputation_levels": [
+            "neutral",
+            "suspicious",
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "take_items": {
+            "items": [
+              "minecraft:emerald"
+            ],
+            "count": 3,
+            "destination": "villager_inventory",
+            "overflow_destination": "drop_at_villager",
+            "success_response": "Three emeralds is enough for me to believe you meant no harm. Ask before touching village stores again.",
+            "failure_response": "You do not have three emeralds to offer. Close the chest and choose your next words carefully.",
+            "failure_reputation": -1,
+            "failure_end_conversation": false
+          },
+          "reputation": 1,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 2
+        },
+        {
+          "id": "deny",
+          "label": "Deny it",
+          "response": "I saw the lid move under your hand. Do not make me doubt my own eyes.",
+          "reputation": -4,
+          "aggro": true,
+          "end_conversation": true,
+          "order": 3
+        }
+      ],
+      "leave_option": {
+        "label": "Step away",
+        "response": "That is right. Back from the chest.",
+        "reputation": 0,
+        "end_conversation": true,
+        "order": 1000
+      },
+      "lines": [
+        "That {container} holds remedies and offerings. The sick should not have to compete with your pockets.",
+        "Close the temple stores. Those supplies are for need, not curiosity.",
+        "Offerings and remedies stay accounted for. Step back from the chest."
+      ]
+    },
+    {
+      "id": "witnessed_village_butcher_container_opened",
+      "trigger": "container_opened",
+      "priority": -10,
+      "loot_table": "minecraft:chests/village/village_butcher",
+      "witness_professions": [
+        "butcher"
+      ],
+      "witness_radius": 12,
+      "requires_line_of_sight": true,
+      "initiate_dialogue": true,
+      "aggro_immediately": false,
+      "force_camera_towards_villager": true,
+      "reputation": -4,
+      "options": [
+        {
+          "id": "close_it",
+          "label": "Close it",
+          "response": "Good. Food shared honestly tastes better.",
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 0
+        },
+        {
+          "id": "ask_permission",
+          "label": "Ask permission",
+          "response": "Ask first next time. A village can share with people who speak before the lid opens.",
+          "reputation": 1,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 1
+        },
+        {
+          "id": "offer_payment",
+          "label": "Offer payment",
+          "response": "Payment is not permission, but it proves you understand there was a cost.",
+          "reputation_levels": [
+            "neutral",
+            "suspicious",
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "take_items": {
+            "items": [
+              "minecraft:emerald"
+            ],
+            "count": 3,
+            "destination": "villager_inventory",
+            "overflow_destination": "drop_at_villager",
+            "success_response": "Three emeralds is enough for me to believe you meant no harm. Ask before touching village stores again.",
+            "failure_response": "You do not have three emeralds to offer. Close the chest and choose your next words carefully.",
+            "failure_reputation": -1,
+            "failure_end_conversation": false
+          },
+          "reputation": 1,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 2
+        },
+        {
+          "id": "deny",
+          "label": "Deny it",
+          "response": "I saw the lid move under your hand. Do not make me doubt my own eyes.",
+          "reputation": -4,
+          "aggro": true,
+          "end_conversation": true,
+          "order": 3
+        }
+      ],
+      "leave_option": {
+        "label": "Step away",
+        "response": "That is right. Back from the chest.",
+        "reputation": 0,
+        "end_conversation": true,
+        "order": 1000
+      },
+      "lines": [
+        "That {container} feeds more than one table. Close it before supper becomes suspicion.",
+        "Close the butcher chest. Village food is counted before it is shared.",
+        "If you are hungry, ask. Do not start with the latch."
+      ]
+    },
+    {
+      "id": "witnessed_village_fisher_container_opened",
+      "trigger": "container_opened",
+      "priority": -10,
+      "loot_table": "minecraft:chests/village/village_fisher",
+      "witness_professions": [
+        "fisherman"
+      ],
+      "witness_radius": 12,
+      "requires_line_of_sight": true,
+      "initiate_dialogue": true,
+      "aggro_immediately": false,
+      "force_camera_towards_villager": true,
+      "reputation": -4,
+      "options": [
+        {
+          "id": "close_it",
+          "label": "Close it",
+          "response": "Good. The river gives enough trouble without neighbors taking more.",
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 0
+        },
+        {
+          "id": "ask_permission",
+          "label": "Ask permission",
+          "response": "Ask first next time. A village can share with people who speak before the lid opens.",
+          "reputation": 1,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 1
+        },
+        {
+          "id": "offer_payment",
+          "label": "Offer payment",
+          "response": "Payment is not permission, but it proves you understand there was a cost.",
+          "reputation_levels": [
+            "neutral",
+            "suspicious",
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "take_items": {
+            "items": [
+              "minecraft:emerald"
+            ],
+            "count": 3,
+            "destination": "villager_inventory",
+            "overflow_destination": "drop_at_villager",
+            "success_response": "Three emeralds is enough for me to believe you meant no harm. Ask before touching village stores again.",
+            "failure_response": "You do not have three emeralds to offer. Close the chest and choose your next words carefully.",
+            "failure_reputation": -1,
+            "failure_end_conversation": false
+          },
+          "reputation": 1,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 2
+        },
+        {
+          "id": "deny",
+          "label": "Deny it",
+          "response": "I saw the lid move under your hand. Do not make me doubt my own eyes.",
+          "reputation": -4,
+          "aggro": true,
+          "end_conversation": true,
+          "order": 3
+        }
+      ],
+      "leave_option": {
+        "label": "Step away",
+        "response": "That is right. Back from the chest.",
+        "reputation": 0,
+        "end_conversation": true,
+        "order": 1000
+      },
+      "lines": [
+        "Those supplies keep nets mended and bellies full. Do not fish from my chest.",
+        "Close the fisher chest. The catch is counted before it is shared.",
+        "Ask before reaching into stores pulled from cold water."
+      ]
+    },
+    {
+      "id": "witnessed_village_fletcher_container_opened",
+      "trigger": "container_opened",
+      "priority": -10,
+      "loot_table": "minecraft:chests/village/village_fletcher",
+      "witness_professions": [
+        "fletcher"
+      ],
+      "witness_radius": 12,
+      "requires_line_of_sight": true,
+      "initiate_dialogue": true,
+      "aggro_immediately": false,
+      "force_camera_towards_villager": true,
+      "reputation": -4,
+      "options": [
+        {
+          "id": "close_it",
+          "label": "Close it",
+          "response": "Good. Arrows should fly at threats, not vanish into pockets.",
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 0
+        },
+        {
+          "id": "ask_permission",
+          "label": "Ask permission",
+          "response": "Ask first next time. A village can share with people who speak before the lid opens.",
+          "reputation": 1,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 1
+        },
+        {
+          "id": "offer_payment",
+          "label": "Offer payment",
+          "response": "Payment is not permission, but it proves you understand there was a cost.",
+          "reputation_levels": [
+            "neutral",
+            "suspicious",
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "take_items": {
+            "items": [
+              "minecraft:emerald"
+            ],
+            "count": 3,
+            "destination": "villager_inventory",
+            "overflow_destination": "drop_at_villager",
+            "success_response": "Three emeralds is enough for me to believe you meant no harm. Ask before touching village stores again.",
+            "failure_response": "You do not have three emeralds to offer. Close the chest and choose your next words carefully.",
+            "failure_reputation": -1,
+            "failure_end_conversation": false
+          },
+          "reputation": 1,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 2
+        },
+        {
+          "id": "deny",
+          "label": "Deny it",
+          "response": "I saw the lid move under your hand. Do not make me doubt my own eyes.",
+          "reputation": -4,
+          "aggro": true,
+          "end_conversation": true,
+          "order": 3
+        }
+      ],
+      "leave_option": {
+        "label": "Step away",
+        "response": "That is right. Back from the chest.",
+        "reputation": 0,
+        "end_conversation": true,
+        "order": 1000
+      },
+      "lines": [
+        "That {container} keeps arrows ready for trouble. Step back from it.",
+        "Close the fletcher chest. Defense starts with knowing what is stocked.",
+        "Those supplies have a target, and it is not your pocket."
+      ]
+    },
+    {
+      "id": "witnessed_village_mason_container_opened",
+      "trigger": "container_opened",
+      "priority": -10,
+      "loot_table": "minecraft:chests/village/village_mason",
+      "witness_professions": [
+        "mason"
+      ],
+      "witness_radius": 12,
+      "requires_line_of_sight": true,
+      "initiate_dialogue": true,
+      "aggro_immediately": false,
+      "force_camera_towards_villager": true,
+      "reputation": -4,
+      "options": [
+        {
+          "id": "close_it",
+          "label": "Close it",
+          "response": "Good. Stone stays useful when it stays accounted for.",
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 0
+        },
+        {
+          "id": "ask_permission",
+          "label": "Ask permission",
+          "response": "Ask first next time. A village can share with people who speak before the lid opens.",
+          "reputation": 1,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 1
+        },
+        {
+          "id": "offer_payment",
+          "label": "Offer payment",
+          "response": "Payment is not permission, but it proves you understand there was a cost.",
+          "reputation_levels": [
+            "neutral",
+            "suspicious",
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "take_items": {
+            "items": [
+              "minecraft:emerald"
+            ],
+            "count": 3,
+            "destination": "villager_inventory",
+            "overflow_destination": "drop_at_villager",
+            "success_response": "Three emeralds is enough for me to believe you meant no harm. Ask before touching village stores again.",
+            "failure_response": "You do not have three emeralds to offer. Close the chest and choose your next words carefully.",
+            "failure_reputation": -1,
+            "failure_end_conversation": false
+          },
+          "reputation": 1,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 2
+        },
+        {
+          "id": "deny",
+          "label": "Deny it",
+          "response": "I saw the lid move under your hand. Do not make me doubt my own eyes.",
+          "reputation": -4,
+          "aggro": true,
+          "end_conversation": true,
+          "order": 3
+        }
+      ],
+      "leave_option": {
+        "label": "Step away",
+        "response": "That is right. Back from the chest.",
+        "reputation": 0,
+        "end_conversation": true,
+        "order": 1000
+      },
+      "lines": [
+        "Those materials hold walls together. Do not chip away at the village from a chest.",
+        "Close the mason chest. Every missing piece shows up somewhere.",
+        "Stone, clay, tools, all of it is counted. Step back."
+      ]
+    },
+    {
+      "id": "witnessed_village_shepherd_container_opened",
+      "trigger": "container_opened",
+      "priority": -10,
+      "loot_table": "minecraft:chests/village/village_shepherd",
+      "witness_professions": [
+        "shepherd"
+      ],
+      "witness_radius": 12,
+      "requires_line_of_sight": true,
+      "initiate_dialogue": true,
+      "aggro_immediately": false,
+      "force_camera_towards_villager": true,
+      "reputation": -4,
+      "options": [
+        {
+          "id": "close_it",
+          "label": "Close it",
+          "response": "Good. Fences are easier to mend than trust.",
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 0
+        },
+        {
+          "id": "ask_permission",
+          "label": "Ask permission",
+          "response": "Ask first next time. A village can share with people who speak before the lid opens.",
+          "reputation": 1,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 1
+        },
+        {
+          "id": "offer_payment",
+          "label": "Offer payment",
+          "response": "Payment is not permission, but it proves you understand there was a cost.",
+          "reputation_levels": [
+            "neutral",
+            "suspicious",
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "take_items": {
+            "items": [
+              "minecraft:emerald"
+            ],
+            "count": 3,
+            "destination": "villager_inventory",
+            "overflow_destination": "drop_at_villager",
+            "success_response": "Three emeralds is enough for me to believe you meant no harm. Ask before touching village stores again.",
+            "failure_response": "You do not have three emeralds to offer. Close the chest and choose your next words carefully.",
+            "failure_reputation": -1,
+            "failure_end_conversation": false
+          },
+          "reputation": 1,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 2
+        },
+        {
+          "id": "deny",
+          "label": "Deny it",
+          "response": "I saw the lid move under your hand. Do not make me doubt my own eyes.",
+          "reputation": -4,
+          "aggro": true,
+          "end_conversation": true,
+          "order": 3
+        }
+      ],
+      "leave_option": {
+        "label": "Step away",
+        "response": "That is right. Back from the chest.",
+        "reputation": 0,
+        "end_conversation": true,
+        "order": 1000
+      },
+      "lines": [
+        "That wool and work belong to this village. Keep your hands where I can see them.",
+        "Close the shepherd chest. Warmth is shared better by asking.",
+        "Those stores took work to gather. Step back from the chest."
+      ]
+    },
+    {
+      "id": "witnessed_village_leatherworker_container_opened",
+      "trigger": "container_opened",
+      "priority": -10,
+      "loot_table": "minecraft:chests/village/village_tannery",
+      "witness_professions": [
+        "leatherworker"
+      ],
+      "witness_radius": 12,
+      "requires_line_of_sight": true,
+      "initiate_dialogue": true,
+      "aggro_immediately": false,
+      "force_camera_towards_villager": true,
+      "reputation": -4,
+      "options": [
+        {
+          "id": "close_it",
+          "label": "Close it",
+          "response": "Good. Take your needs to a trade, not a latch.",
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 0
+        },
+        {
+          "id": "ask_permission",
+          "label": "Ask permission",
+          "response": "Ask first next time. A village can share with people who speak before the lid opens.",
+          "reputation": 1,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 1
+        },
+        {
+          "id": "offer_payment",
+          "label": "Offer payment",
+          "response": "Payment is not permission, but it proves you understand there was a cost.",
+          "reputation_levels": [
+            "neutral",
+            "suspicious",
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "take_items": {
+            "items": [
+              "minecraft:emerald"
+            ],
+            "count": 3,
+            "destination": "villager_inventory",
+            "overflow_destination": "drop_at_villager",
+            "success_response": "Three emeralds is enough for me to believe you meant no harm. Ask before touching village stores again.",
+            "failure_response": "You do not have three emeralds to offer. Close the chest and choose your next words carefully.",
+            "failure_reputation": -1,
+            "failure_end_conversation": false
+          },
+          "reputation": 1,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 2
+        },
+        {
+          "id": "deny",
+          "label": "Deny it",
+          "response": "I saw the lid move under your hand. Do not make me doubt my own eyes.",
+          "reputation": -4,
+          "aggro": true,
+          "end_conversation": true,
+          "order": 3
+        }
+      ],
+      "leave_option": {
+        "label": "Step away",
+        "response": "That is right. Back from the chest.",
+        "reputation": 0,
+        "end_conversation": true,
+        "order": 1000
+      },
+      "lines": [
+        "That {container} holds leatherwork for people who earned it. Close it.",
+        "Close the tannery chest. Prepared stock is not spare just because it is stored.",
+        "Ask before reaching into work that took this long to finish."
+      ]
+    },
+    {
+      "id": "witnessed_village_toolsmith_container_opened",
+      "trigger": "container_opened",
+      "priority": -10,
+      "loot_table": "minecraft:chests/village/village_toolsmith",
+      "witness_professions": [
+        "toolsmith"
+      ],
+      "witness_radius": 12,
+      "requires_line_of_sight": true,
+      "initiate_dialogue": true,
+      "aggro_immediately": false,
+      "force_camera_towards_villager": true,
+      "reputation": -4,
+      "options": [
+        {
+          "id": "close_it",
+          "label": "Close it",
+          "response": "Good. Work goes better when tools stay where they belong.",
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 0
+        },
+        {
+          "id": "ask_permission",
+          "label": "Ask permission",
+          "response": "Ask first next time. A village can share with people who speak before the lid opens.",
+          "reputation": 1,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 1
+        },
+        {
+          "id": "offer_payment",
+          "label": "Offer payment",
+          "response": "Payment is not permission, but it proves you understand there was a cost.",
+          "reputation_levels": [
+            "neutral",
+            "suspicious",
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "take_items": {
+            "items": [
+              "minecraft:emerald"
+            ],
+            "count": 3,
+            "destination": "villager_inventory",
+            "overflow_destination": "drop_at_villager",
+            "success_response": "Three emeralds is enough for me to believe you meant no harm. Ask before touching village stores again.",
+            "failure_response": "You do not have three emeralds to offer. Close the chest and choose your next words carefully.",
+            "failure_reputation": -1,
+            "failure_end_conversation": false
+          },
+          "reputation": 1,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 2
+        },
+        {
+          "id": "deny",
+          "label": "Deny it",
+          "response": "I saw the lid move under your hand. Do not make me doubt my own eyes.",
+          "reputation": -4,
+          "aggro": true,
+          "end_conversation": true,
+          "order": 3
+        }
+      ],
+      "leave_option": {
+        "label": "Step away",
+        "response": "That is right. Back from the chest.",
+        "reputation": 0,
+        "end_conversation": true,
+        "order": 1000
+      },
+      "lines": [
+        "Those tools keep this village working. Do not help yourself to another day of labor.",
+        "Close the toolsmith chest. Work stops when tools wander.",
+        "Every tool in there has a job. Step back and ask."
       ]
     },
     {
@@ -511,12 +2279,11 @@
         "minecraft:chests/village/village_toolsmith",
         "minecraft:chests/village/village_weaponsmith"
       ],
-      "witness_radius": 12.0,
+      "witness_radius": 12,
       "requires_line_of_sight": true,
       "initiate_dialogue": true,
       "aggro_immediately": false,
       "reputation": -4,
-      "line": "Careful. That {container} was stocked for the village, not passing hands.",
       "options": [
         {
           "id": "close_it",
@@ -624,6 +2391,19 @@
           "end_conversation": true,
           "order": 8
         }
+      ],
+      "force_camera_towards_villager": true,
+      "leave_option": {
+        "label": "Leave",
+        "response": "Leaving does not make this disappear.",
+        "reputation": -1,
+        "end_conversation": true,
+        "order": 1000
+      },
+      "lines": [
+        "Careful. That {container} was stocked for the village, not passing hands.",
+        "Close that {container}. Village stores are shared by asking first.",
+        "That chest belongs to the village. Step back and speak plainly."
       ]
     }
   ]

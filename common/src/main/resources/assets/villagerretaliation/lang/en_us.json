@@ -35,7 +35,6 @@
   "villagerretaliation.configuration.dialogue.freezeVillagerDuringDialogue": "Freeze Villager During Dialogue",
   "villagerretaliation.configuration.dialogue.maxDialogueDistance": "Max Dialogue Distance",
   "villagerretaliation.configuration.dialogue.containerForcedDialogueTrigger": "Container Forced Dialogue Trigger",
-  "villagerretaliation.configuration.dialogue.watchedContainerScope": "Watched Container Scope",
   "villagerretaliation.configuration.dialogue.dialoguePositiveReputationCooldownDays": "Dialogue Positive Reputation Cooldown Days",
   "villagerretaliation.configuration.dialogue.repeatedQuestionPositiveLimit": "Repeated Question Positive Limit",
   "villagerretaliation.configuration.dialogue.trustedRepeatedDialogueLimitBonus": "Trusted Repeated Dialogue Limit Bonus",

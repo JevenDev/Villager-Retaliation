@@ -7,6 +7,7 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.util.VillagerInventoryItemRemoval;
+import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import com.jvn.villagerretaliation.util.VillagerReputationCondition;
 import java.io.IOException;
 import java.io.Reader;
@@ -22,6 +23,9 @@ import java.util.Set;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.VillagerProfession;
 
 public final class ForcedDialogueResources {
     private static final String RESOURCE_ROOT = "forced_dialogue";
@@ -39,11 +43,16 @@ public final class ForcedDialogueResources {
     }
 
     public static Optional<ForcedDialogueDefinition> select(MinecraftServer server, ForcedDialogueTrigger trigger, ResourceLocation lootTable) {
+        return selectCandidates(server, trigger, lootTable).stream().findFirst();
+    }
+
+    public static List<ForcedDialogueDefinition> selectCandidates(MinecraftServer server, ForcedDialogueTrigger trigger, ResourceLocation lootTable) {
         return load(server).stream()
                 .filter(definition -> definition.trigger() == trigger)
                 .filter(definition -> definition.matchesLootTable(lootTable))
-                .min(Comparator.comparingInt(ForcedDialogueDefinition::priority)
-                        .thenComparing(definition -> definition.lootTables().isEmpty() ? 1 : 0));
+                .sorted(Comparator.comparingInt(ForcedDialogueDefinition::priority)
+                        .thenComparing(definition -> definition.lootTables().isEmpty() ? 1 : 0))
+                .toList();
     }
 
     private static List<ForcedDialogueDefinition> load(MinecraftServer server) {
@@ -105,8 +114,8 @@ public final class ForcedDialogueResources {
         if (trigger.isEmpty()) {
             trigger = readEnum(entry, "event", ForcedDialogueTrigger.class);
         }
-        String line = readString(entry, "line");
-        if (trigger.isEmpty() || line.isBlank()) {
+        List<String> lines = readLines(entry);
+        if (trigger.isEmpty() || lines.isEmpty()) {
             return Optional.empty();
         }
 
@@ -115,34 +124,44 @@ public final class ForcedDialogueResources {
             id = fallbackId(location, index);
         }
 
-        List<ForcedDialogueOption> options = readOptions(entry);
-        if (options.isEmpty()) {
-            options = List.of(new ForcedDialogueOption(
-                    "leave",
-                    "Leave",
-                    "",
-                    0,
-                    false,
-                    true,
-                    0,
-                    ForcedDialogueItemPayment.empty(),
-                    VillagerReputationCondition.empty()
-            ));
-        }
+        ForcedDialogueOption leaveOption = readLeaveOption(entry);
+        List<ForcedDialogueOption> options = readOptions(entry, leaveOption);
+        String leaveOptionId = leaveOption.id();
+        leaveOption = options.stream()
+                .filter(option -> option.id().equals(leaveOptionId))
+                .findFirst()
+                .orElse(leaveOption);
 
         return Optional.of(new ForcedDialogueDefinition(
                 id,
                 trigger.get(),
-                line,
+                lines,
                 readBoolean(entry, "initiate_dialogue", true),
                 readBoolean(entry, "aggro_immediately"),
+                readBoolean(entry, "force_camera_towards_villager"),
                 readBoolean(entry, "requires_line_of_sight", true),
                 Math.max(1.0D, readDouble(entry, "witness_radius", 12.0D)),
                 readInt(entry, "reputation", 0),
                 readInt(entry, "priority", 0),
                 readLootTables(entry),
-                options
+                readProfessions(entry),
+                options,
+                leaveOption
         ));
+    }
+
+    private static Set<VillagerProfession> readProfessions(JsonObject entry) {
+        java.util.LinkedHashSet<VillagerProfession> professions = new java.util.LinkedHashSet<>();
+        for (String value : readStringList(entry, "witness_profession")) {
+            VillagerProfessionUtil.parse(value).ifPresent(professions::add);
+        }
+        for (String value : readStringList(entry, "witness_professions")) {
+            VillagerProfessionUtil.parse(value).ifPresent(professions::add);
+        }
+        for (String value : readStringList(entry, "professions")) {
+            VillagerProfessionUtil.parse(value).ifPresent(professions::add);
+        }
+        return Set.copyOf(professions);
     }
 
     private static Set<ResourceLocation> readLootTables(JsonObject entry) {
@@ -159,10 +178,22 @@ public final class ForcedDialogueResources {
         return Set.copyOf(lootTables);
     }
 
-    private static List<ForcedDialogueOption> readOptions(JsonObject entry) {
+    private static List<String> readLines(JsonObject entry) {
+        List<String> lines = new ArrayList<>(readStringList(entry, "lines"));
+        String line = readString(entry, "line");
+        if (!line.isBlank()) {
+            lines.add(0, line);
+        }
+        return lines.stream()
+                .filter(value -> !value.isBlank())
+                .distinct()
+                .toList();
+    }
+
+    private static List<ForcedDialogueOption> readOptions(JsonObject entry, ForcedDialogueOption leaveOption) {
         JsonArray entries = entry.getAsJsonArray("options");
         if (entries == null) {
-            return List.of();
+            return List.of(leaveOption);
         }
 
         List<ForcedDialogueOption> options = new ArrayList<>();
@@ -179,20 +210,67 @@ public final class ForcedDialogueResources {
                 index++;
                 continue;
             }
-            options.add(new ForcedDialogueOption(
-                    id,
-                    label,
-                    readString(option, "response"),
-                    readInt(option, "reputation", 0),
-                    readBoolean(option, "aggro"),
-                    readBoolean(option, "end_conversation", true),
-                    readInt(option, "order", index),
-                    readItemPayment(option),
-                    VillagerReputationCondition.read(option)
-            ));
+            options.add(readOption(option, id, label, index));
             index++;
         }
+        if (options.stream().noneMatch(option -> option.id().equals(leaveOption.id()))) {
+            options.add(leaveOption);
+        }
         return List.copyOf(options);
+    }
+
+    private static ForcedDialogueOption readLeaveOption(JsonObject entry) {
+        JsonElement element = entry.get("leave_option");
+        if (element == null) {
+            element = entry.get("escape_option");
+        }
+        JsonObject option = element != null && element.isJsonObject() ? element.getAsJsonObject() : new JsonObject();
+        String label = readString(option, "label");
+        return readOption(option, "leave", label.isBlank() ? "Leave" : label, 1000);
+    }
+
+    private static ForcedDialogueOption readOption(JsonObject option, String id, String label, int fallbackOrder) {
+        return new ForcedDialogueOption(
+                id,
+                label,
+                readString(option, "response"),
+                readInt(option, "reputation", 0),
+                readBoolean(option, "aggro"),
+                readBoolean(option, "end_conversation", true),
+                readInt(option, "order", fallbackOrder),
+                readStolenItemReturn(option),
+                readItemPayment(option),
+                VillagerReputationCondition.read(option)
+        );
+    }
+
+    private static ForcedDialogueStolenItemReturn readStolenItemReturn(JsonObject option) {
+        return readStolenItemReturnJson(option, "take_stolen_items")
+                .or(() -> readStolenItemReturnJson(option, "return_stolen_items"))
+                .map(entry -> new ForcedDialogueStolenItemReturn(
+                        readString(entry, "success_response"),
+                        readString(entry, "failure_response"),
+                        readInt(entry, "success_reputation", 0),
+                        readInt(entry, "failure_reputation", 0),
+                        readBoolean(entry, "failure_aggro"),
+                        readBoolean(entry, "failure_end_conversation"),
+                        readEnum(entry, "destination", ForcedDialogueItemDestination.class)
+                                .orElse(ForcedDialogueItemDestination.VILLAGER_INVENTORY_THEN_SOURCE_CONTAINER),
+                        readEnum(entry, "overflow_destination", ForcedDialogueItemDestination.class).orElse(null),
+                        readBoolean(entry, "require_space", true)
+                ))
+                .orElse(ForcedDialogueStolenItemReturn.empty());
+    }
+
+    private static Optional<JsonObject> readStolenItemReturnJson(JsonObject option, String key) {
+        JsonElement element = option.get(key);
+        if (element == null) {
+            return Optional.empty();
+        }
+        if (element.isJsonPrimitive() && element.getAsBoolean()) {
+            return Optional.of(new JsonObject());
+        }
+        return element.isJsonObject() ? Optional.of(element.getAsJsonObject()) : Optional.empty();
     }
 
     private static ForcedDialogueItemPayment readItemPayment(JsonObject option) {
@@ -232,7 +310,17 @@ public final class ForcedDialogueResources {
         replacements.put("villager", context.villagerName());
         replacements.put("player", context.playerName());
         replacements.put("item", context.itemName());
+        replacements.put("item_id", context.itemId());
         replacements.put("count", Integer.toString(context.itemCount()));
+        replacements.put("item_count", Integer.toString(context.itemCount()));
+        replacements.put("item_stack", context.itemStack());
+        replacements.put("items", context.itemList());
+        replacements.put("stolen_item", context.itemName());
+        replacements.put("stolen_item_id", context.itemId());
+        replacements.put("stolen_count", Integer.toString(context.itemCount()));
+        replacements.put("stolen_item_count", Integer.toString(context.itemCount()));
+        replacements.put("stolen_stack", context.itemStack());
+        replacements.put("stolen_items", context.itemList());
         replacements.put("container", context.containerName());
         replacements.put("loot_table", context.lootTable());
         replacements.put("x", Integer.toString(context.x()));
@@ -257,6 +345,31 @@ public final class ForcedDialogueResources {
     private static String readString(JsonObject entry, String key) {
         JsonElement element = entry.get(key);
         return element == null || !element.isJsonPrimitive() ? "" : element.getAsString().trim();
+    }
+
+    private static List<String> readStringList(JsonObject entry, String key) {
+        JsonElement element = entry.get(key);
+        if (element == null) {
+            return List.of();
+        }
+        if (element.isJsonPrimitive()) {
+            String value = element.getAsString().trim();
+            return value.isBlank() ? List.of() : List.of(value);
+        }
+        if (!element.isJsonArray()) {
+            return List.of();
+        }
+
+        List<String> values = new ArrayList<>();
+        for (JsonElement child : element.getAsJsonArray()) {
+            if (child.isJsonPrimitive()) {
+                String value = child.getAsString().trim();
+                if (!value.isBlank()) {
+                    values.add(value);
+                }
+            }
+        }
+        return List.copyOf(values);
     }
 
     private static Optional<ResourceLocation> readResourceLocation(JsonObject entry, String key) {
@@ -327,6 +440,7 @@ public final class ForcedDialogueResources {
     public enum ForcedDialogueItemDestination {
         DISCARD,
         VILLAGER_INVENTORY,
+        VILLAGER_INVENTORY_THEN_SOURCE_CONTAINER,
         SOURCE_CONTAINER,
         DROP_AT_VILLAGER,
         DROP_AT_CONTAINER
@@ -335,17 +449,31 @@ public final class ForcedDialogueResources {
     public record ForcedDialogueDefinition(
             String id,
             ForcedDialogueTrigger trigger,
-            String line,
+            List<String> lines,
             boolean initiateDialogue,
             boolean aggroImmediately,
+            boolean forceCameraTowardsVillager,
             boolean requiresLineOfSight,
             double witnessRadius,
             int reputationDelta,
             int priority,
             Set<ResourceLocation> lootTables,
-            List<ForcedDialogueOption> options) {
+            Set<VillagerProfession> witnessProfessions,
+            List<ForcedDialogueOption> options,
+            ForcedDialogueOption leaveOption) {
+        public String selectLine(RandomSource random) {
+            if (this.lines.isEmpty()) {
+                return "";
+            }
+            return this.lines.get(random.nextInt(this.lines.size()));
+        }
+
         private boolean matchesLootTable(ResourceLocation lootTable) {
             return this.lootTables.isEmpty() || (lootTable != null && this.lootTables.contains(lootTable));
+        }
+
+        public boolean matchesWitness(Villager villager) {
+            return this.witnessProfessions.isEmpty() || this.witnessProfessions.contains(villager.getVillagerData().getProfession());
         }
     }
 
@@ -357,8 +485,39 @@ public final class ForcedDialogueResources {
             boolean aggro,
             boolean endConversation,
             int order,
+            ForcedDialogueStolenItemReturn stolenItemReturn,
             ForcedDialogueItemPayment itemPayment,
             VillagerReputationCondition reputationCondition) {
+    }
+
+    public record ForcedDialogueStolenItemReturn(
+            String successResponse,
+            String failureResponse,
+            int successReputationDelta,
+            int failureReputationDelta,
+            boolean failureAggro,
+            boolean failureEndConversation,
+            ForcedDialogueItemDestination destination,
+            ForcedDialogueItemDestination overflowDestination,
+            boolean requireSpace) {
+        private static final ForcedDialogueStolenItemReturn EMPTY = new ForcedDialogueStolenItemReturn(
+                "",
+                "",
+                0,
+                0,
+                false,
+                false,
+                ForcedDialogueItemDestination.VILLAGER_INVENTORY_THEN_SOURCE_CONTAINER,
+                null,
+                true);
+
+        private static ForcedDialogueStolenItemReturn empty() {
+            return EMPTY;
+        }
+
+        public boolean isEmpty() {
+            return this == EMPTY;
+        }
     }
 
     public record ForcedDialogueItemPayment(
@@ -397,7 +556,10 @@ public final class ForcedDialogueResources {
             String villagerName,
             String playerName,
             String itemName,
+            String itemId,
             int itemCount,
+            String itemStack,
+            String itemList,
             String containerName,
             String lootTable,
             int x,

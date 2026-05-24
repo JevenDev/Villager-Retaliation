@@ -29,6 +29,7 @@ public record OpenVillagerInteractionPayload(
         DialogueDisposition mood,
         boolean followingPlayer,
         boolean forcedDialogue,
+        boolean forceCameraTowardsVillager,
         List<DialogueOptionDefinition> dialogueOptions,
         List<String> knownLikedGiftNames,
         List<String> knownDislikedGiftNames,
@@ -51,6 +52,7 @@ public record OpenVillagerInteractionPayload(
         buffer.writeEnum(payload.mood());
         buffer.writeBoolean(payload.followingPlayer());
         buffer.writeBoolean(payload.forcedDialogue());
+        buffer.writeBoolean(payload.forceCameraTowardsVillager());
         writeDialogueOptions(buffer, payload.dialogueOptions());
         writeStringList(buffer, payload.knownLikedGiftNames());
         writeStringList(buffer, payload.knownDislikedGiftNames());
@@ -71,6 +73,7 @@ public record OpenVillagerInteractionPayload(
                 buffer.readEnum(DialogueDisposition.class),
                 buffer.readBoolean(),
                 buffer.readBoolean(),
+                buffer.readBoolean(),
                 readDialogueOptions(buffer),
                 readStringList(buffer),
                 readStringList(buffer),
@@ -85,6 +88,7 @@ public record OpenVillagerInteractionPayload(
             buffer.writeUtf(option.id(), 128);
             buffer.writeUtf(option.label(), 128);
             buffer.writeEnum(option.requestType());
+            buffer.writeBoolean(option.forceCameraTowardsVillager());
             buffer.writeVarInt(option.order());
         }
     }
@@ -103,6 +107,7 @@ public record OpenVillagerInteractionPayload(
                     Set.of(),
                     VillagerPlayerItemCondition.empty(),
                     VillagerReputationCondition.empty(),
+                    buffer.readBoolean(),
                     false,
                     false,
                     false,

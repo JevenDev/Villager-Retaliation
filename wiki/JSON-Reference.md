@@ -161,7 +161,10 @@ They define event-driven dialogue moments that can interrupt the player with a l
   "initiate_dialogue": true,
   "aggro_immediately": false,
   "reputation": -8,
-  "line": "Stop right there. That {container} is not yours to empty.",
+  "lines": [
+    "Stop right there. That {container} is not yours to empty.",
+    "I saw what you took. Put {stolen_stack} back."
+  ],
   "options": [
     {
       "id": "apologize",
@@ -183,7 +186,11 @@ They define event-driven dialogue moments that can interrupt the player with a l
 }
 ```
 
-Forced dialogue supports either one root object or an `entries` array. `priority` chooses between multiple matching definitions, with lower numbers winning. Entries can optionally use `loot_table` or `loot_tables` to match specific generated container loot tables. Options can use `reputation_level`, `reputation_levels`, `min_reputation`, and `max_reputation` to appear only for matching current reputation with the witness. Options can also use `take_items` to remove a total `count` of matching `item` / `items` or `tag` / `tags` from the player's inventory before the option succeeds, with separate failure response, reputation, end-conversation, and aggro fields. Removed items can be discarded, moved into the witnessing villager's inventory, returned to the source container, or dropped at the villager/container through `destination` and `overflow_destination`. Template tokens currently include `{villager}`, `{player}`, `{container}`, `{count}`, `{item}`, `{loot_table}`, `{payment_count}`, `{payment_items}`, `{x}`, `{y}`, and `{z}`.
+Forced dialogue supports either one root object or an `entries` array. `priority` chooses between multiple matching definitions, with lower numbers winning. Entries can use `line` for one opening or `lines` for random opening variations. They can also use `witness_profession`, `witness_professions`, or `professions` to require a specific witnessing villager profession, `force_camera_towards_villager` to smoothly focus the player camera during the forced conversation, and `loot_table` or `loot_tables` to match specific generated container loot tables. The mod remembers a generated container's original loot table after first detection so later opens can still match after Minecraft clears the live loot table.
+
+Options can use `reputation_level`, `reputation_levels`, `min_reputation`, and `max_reputation` to appear only for matching current reputation with the witness. Options can also use `take_items` to remove a total `count` of matching `item` / `items` or `tag` / `tags` from the player's inventory before the option succeeds, or `take_stolen_items` / `return_stolen_items` to remove the exact stacks stolen during a `container_theft` event. Removed items can be discarded, moved into the witnessing villager's inventory, returned to the source container, moved into the villager inventory and then the source container, or dropped at the villager/container through `destination` and `overflow_destination`. Escape and unexpected closes use `leave_option`, so leaving can have its own response, reputation, aggro, and end-conversation behavior.
+
+Template tokens currently include `{villager}`, `{player}`, `{container}`, `{count}`, `{item}`, `{item_id}`, `{item_count}`, `{item_stack}`, `{items}`, `{loot_table}`, `{payment_count}`, `{payment_items}`, `{stolen_item}`, `{stolen_item_id}`, `{stolen_count}`, `{stolen_item_count}`, `{stolen_stack}`, `{stolen_items}`, `{x}`, `{y}`, and `{z}`.
 
 ## Village Event Tags
 

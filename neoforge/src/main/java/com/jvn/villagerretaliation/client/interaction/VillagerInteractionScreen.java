@@ -38,6 +38,7 @@ public class VillagerInteractionScreen extends Screen {
     private static final String BACK_LABEL_KEY = GUI_KEY_PREFIX + "back";
     private static final String BACK_HINT_KEY = GUI_KEY_PREFIX + "hint.back";
     private static final String LEAVE_HINT_KEY = GUI_KEY_PREFIX + "hint.leave";
+    private static final String FORCED_LEAVE_OPTION_ID = "leave";
     private static final int OPTION_WIDTH = 180;
     private static final int OPTION_HEIGHT = 18;
     private static final int OPTION_GAP = 0;
@@ -122,6 +123,7 @@ public class VillagerInteractionScreen extends Screen {
             DialogueDisposition mood,
             boolean followingPlayer,
             boolean forcedDialogue,
+            boolean forceCameraTowardsVillager,
             List<DialogueOptionDefinition> dialogueOptions,
             List<String> knownLikedGiftNames,
             List<String> knownDislikedGiftNames,
@@ -146,7 +148,7 @@ public class VillagerInteractionScreen extends Screen {
         if (forcedDialogue) {
             this.page = DialoguePage.TALK;
         }
-        ClientVillagerConversationState.start(villagerEntityId);
+        ClientVillagerConversationState.start(villagerEntityId, forceCameraTowardsVillager);
     }
 
     @Override
@@ -177,12 +179,14 @@ public class VillagerInteractionScreen extends Screen {
             int reputation,
             VillagerReputationLevel reputationLevel,
             DialogueDisposition mood,
+            boolean forceCameraTowardsVillager,
             List<DialogueOptionDefinition> dialogueOptions,
             List<String> knownLikedGiftNames,
             List<String> knownDislikedGiftNames) {
         this.reputation = reputation;
         this.reputationLevel = reputationLevel;
         this.mood = mood;
+        ClientVillagerConversationState.setForceCameraTowardsVillager(forceCameraTowardsVillager);
         this.dialogueOptions.clear();
         this.dialogueOptions.addAll(dialogueOptions);
         this.knownLikedGiftNames.clear();
@@ -593,6 +597,10 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     private void goBackOrLeaveConversation() {
+        if (this.forcedDialogue) {
+            requestDialogue(FORCED_LEAVE_OPTION_ID);
+            return;
+        }
         if (canNavigateBack()) {
             navigateBackPage();
         } else {

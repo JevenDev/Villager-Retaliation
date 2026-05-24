@@ -11,14 +11,16 @@ public final class ClientVillagerConversationState {
     private static int focusedVillagerEntityId = -1;
     private static int cameraFocusTicks;
     private static int cameraReleaseTicks;
+    private static boolean forceCameraTowardsVillager;
 
     private ClientVillagerConversationState() {
     }
 
-    public static void start(int entityId) {
+    public static void start(int entityId, boolean forceCamera) {
         focusedVillagerEntityId = entityId;
         cameraFocusTicks = 0;
         cameraReleaseTicks = 0;
+        forceCameraTowardsVillager = forceCamera;
     }
 
     public static int focusedVillagerEntityId() {
@@ -31,6 +33,14 @@ public final class ClientVillagerConversationState {
 
     public static boolean cameraActive() {
         return active() || cameraReleaseTicks > 0;
+    }
+
+    public static boolean forceCameraTowardsVillager() {
+        return active() && forceCameraTowardsVillager;
+    }
+
+    public static void setForceCameraTowardsVillager(boolean forceCamera) {
+        forceCameraTowardsVillager = forceCamera;
     }
 
     public static void tickCameraFocus() {
@@ -74,6 +84,7 @@ public final class ClientVillagerConversationState {
 
     public static void clear() {
         focusedVillagerEntityId = -1;
+        forceCameraTowardsVillager = false;
         if (cameraFocusTicks > 0) {
             cameraReleaseTicks = CAMERA_RELEASE_TICKS;
         }

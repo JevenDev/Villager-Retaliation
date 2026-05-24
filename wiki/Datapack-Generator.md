@@ -26,9 +26,9 @@ The generator writes these datapack paths:
 | Stories - Biomes | `data/<namespace>/story_biomes/<file>.json` |
 | Names | `data/villagerretaliation/villager_names/preset_names.json` |
 
-Forced dialogue entries use the Forced tab. Use it for event-driven conversations such as witnessed container opening or theft, including line-of-sight checks, generated-container loot-table targeting, immediate aggro, dialogue options, reputation changes, item payments, and aggro after specific responses. See [Forced Dialogue JSON](Forced-Dialogue.md) for the raw schema.
+Forced dialogue entries use the Forced tab. Use it for event-driven conversations such as witnessed container opening or theft, including line variations, witness profession filters, line-of-sight checks, generated-container loot-table targeting, forced camera focus, immediate aggro, dialogue options, custom Leave/Escape outcomes, reputation changes, stolen-item returns, item payments, and aggro after specific responses. See [Forced Dialogue JSON](Forced-Dialogue.md) for the raw schema.
 
-The Dialogue tab supports reputation-gated options and lines through `reputation_levels`, `min_reputation`, and `max_reputation`. Forced dialogue options use the same fields inside the Options JSON editor, which lets one event show a warning to trusted players, a normal payment to neutral players, and a harsher response to low-reputation players.
+The Dialogue tab supports reputation-gated options and lines through `reputation_levels`, `min_reputation`, and `max_reputation`. Forced dialogue options use the same fields inside the Options JSON editor, which lets one event show a warning to trusted players, a normal payment to neutral players, and a harsher response to low-reputation players. Forced opening variations are entered one per line in the Forced tab's Opening line(s) field.
 
 The generator is meant for datapacks. Use a resource pack separately for GUI language keys, villager textures, and model JSON.
 

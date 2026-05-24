@@ -362,6 +362,7 @@ public final class VillagerDialogueResources {
             Set<DialogueDisposition> dispositions = readEnumSet(entry, "dispositions", DialogueDisposition.class);
             VillagerPlayerItemCondition playerItemCondition = VillagerPlayerItemCondition.read(entry);
             VillagerReputationCondition reputationCondition = VillagerReputationCondition.read(entry);
+            boolean forceCameraTowardsVillager = readBoolean(entry, "force_camera_towards_villager");
             boolean requiresUnreportedCartographerMapDiscovery = readBoolean(entry, "requires_unreported_cartographer_map_discovery");
             boolean requiresUnreportedStoryHintDiscovery = readBoolean(entry, "requires_unreported_story_hint_discovery");
             boolean requiresUnreportedCombatSurvivalReport = readBoolean(entry, "requires_unreported_combat_survival_report");
@@ -406,6 +407,7 @@ public final class VillagerDialogueResources {
                     dispositions,
                     playerItemCondition,
                     reputationCondition,
+                    forceCameraTowardsVillager,
                     requiresUnreportedCartographerMapDiscovery,
                     requiresUnreportedStoryHintDiscovery,
                     requiresUnreportedCombatSurvivalReport,

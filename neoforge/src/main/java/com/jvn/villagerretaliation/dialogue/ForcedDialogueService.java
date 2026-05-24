@@ -3,12 +3,12 @@ package com.jvn.villagerretaliation.dialogue;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
 import com.jvn.villagerretaliation.config.ContainerForcedDialogueTrigger;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
-import com.jvn.villagerretaliation.config.WatchedContainerScope;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources.ForcedDialogueContext;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources.ForcedDialogueDefinition;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources.ForcedDialogueItemDestination;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources.ForcedDialogueItemPayment;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources.ForcedDialogueOption;
+import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources.ForcedDialogueStolenItemReturn;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources.ForcedDialogueTrigger;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
@@ -55,6 +55,7 @@ import net.neoforged.neoforge.event.entity.player.PlayerContainerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 
 public final class ForcedDialogueService {
+    private static final String LEAVE_OPTION_ID = "leave";
     private static final long RECENT_CONTAINER_CLICK_TICKS = 8L;
     private static final long FORCED_SESSION_TIMEOUT_TICKS = 20L * 60L;
     private static final Map<UUID, RecentContainerClick> RECENT_CONTAINER_CLICKS = new HashMap<>();
@@ -73,7 +74,7 @@ public final class ForcedDialogueService {
 
         BlockPos pos = event.getPos();
         BlockState state = level.getBlockState(pos);
-        ResourceLocation lootTable = containerLootTable(level, pos);
+        ResourceLocation lootTable = generatedContainerLootTable(level, pos);
         if (!isEligibleWatchedContainer(state, lootTable)) {
             return;
         }
@@ -161,10 +162,43 @@ public final class ForcedDialogueService {
             return true;
         }
 
-        ForcedDialogueOption option = selected.get();
+        return handleSelectedOption(player, villager, session, selected.get(), false);
+    }
+
+    public static boolean handleLeaveRequest(ServerPlayer player, Villager villager, boolean forceEndConversation) {
+        ForcedDialogueSession session = FORCED_SESSIONS.get(player.getUUID());
+        if (session == null || !session.villagerId().equals(villager.getUUID())) {
+            return false;
+        }
+        Optional<ForcedDialogueOption> selected = session.definition().options().stream()
+                .filter(option -> option.id().equals(LEAVE_OPTION_ID))
+                .findFirst()
+                .or(() -> Optional.of(session.definition().leaveOption()));
+        return handleSelectedOption(player, villager, session, selected.get(), forceEndConversation);
+    }
+
+    private static boolean handleSelectedOption(
+            ServerPlayer player,
+            Villager villager,
+            ForcedDialogueSession session,
+        ForcedDialogueOption option,
+        boolean forceEndConversation) {
+        ForcedDialogueStolenItemReturn stolenItemReturn = option.stolenItemReturn();
+        boolean returnedStolenItems = false;
+        if (!stolenItemReturn.isEmpty()) {
+            Optional<List<ItemStack>> returnedStacks = executeStolenItemReturn(player, villager, session, stolenItemReturn);
+            if (returnedStacks.isEmpty()) {
+                handleFailedStolenItemReturn(player, villager, session, stolenItemReturn, forceEndConversation);
+                return true;
+            }
+            returnedStolenItems = true;
+            if (stolenItemReturn.successReputationDelta() != 0 && VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()) {
+                VillagerReputationManager.addDialogueReputation(player.serverLevel(), villager, player, stolenItemReturn.successReputationDelta());
+            }
+        }
         ForcedDialogueItemPayment itemPayment = option.itemPayment();
         if (!itemPayment.isEmpty() && !executeItemPayment(player, villager, session, itemPayment)) {
-            handleFailedItemPayment(player, villager, session, itemPayment);
+            handleFailedItemPayment(player, villager, session, itemPayment, forceEndConversation);
             return true;
         }
 
@@ -176,9 +210,13 @@ public final class ForcedDialogueService {
                 && VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()) {
             VillagerReputationManager.addDialogueReputation(player.serverLevel(), villager, player, itemPayment.successReputationDelta());
         }
-        String responseText = !itemPayment.isEmpty() && !itemPayment.successResponse().isBlank()
-                ? itemPayment.successResponse()
-                : option.response();
+        String responseText = option.response();
+        if (returnedStolenItems && !stolenItemReturn.successResponse().isBlank()) {
+            responseText = stolenItemReturn.successResponse();
+        }
+        if (!itemPayment.isEmpty() && !itemPayment.successResponse().isBlank()) {
+            responseText = itemPayment.successResponse();
+        }
         String response = ForcedDialogueResources.resolveTemplate(responseText, session.context(), itemPayment.removal().replacements());
         if (!response.isBlank()) {
             VillagerInteractionService.broadcastVillagerChat(
@@ -188,24 +226,65 @@ public final class ForcedDialogueService {
                     VillagerInteractionService.villagerSpeakerLabel(villager)
             );
         }
-        if (option.endConversation()) {
+        if (option.endConversation() || forceEndConversation) {
             FORCED_SESSIONS.remove(player.getUUID());
             VillagerConversationService.endForPlayer(player, true);
         } else {
-            VillagerInteractionService.sendForcedDialogueReputation(player, villager, forcedOptions(session.definition(), player.serverLevel(), villager, player));
+            VillagerInteractionService.sendForcedDialogueReputation(
+                    player,
+                    villager,
+                    forcedOptions(session.definition(), player.serverLevel(), villager, player),
+                    session.definition().forceCameraTowardsVillager());
         }
         if (option.aggro()) {
+            FORCED_SESSIONS.remove(player.getUUID());
             VillagerConversationService.endForPlayer(player, true);
             VillagerRetaliationHandler.forceAnger(villager, player);
         }
         return true;
     }
 
+    private static void handleFailedStolenItemReturn(
+            ServerPlayer player,
+            Villager villager,
+            ForcedDialogueSession session,
+            ForcedDialogueStolenItemReturn stolenItemReturn,
+            boolean forceEndConversation) {
+        if (stolenItemReturn.failureReputationDelta() != 0 && VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()) {
+            VillagerReputationManager.addDialogueReputation(player.serverLevel(), villager, player, stolenItemReturn.failureReputationDelta());
+        }
+
+        String response = ForcedDialogueResources.resolveTemplate(stolenItemReturn.failureResponse(), session.context());
+        if (!response.isBlank()) {
+            VillagerInteractionService.broadcastVillagerChat(
+                    player.serverLevel(),
+                    villager,
+                    response,
+                    VillagerInteractionService.villagerSpeakerLabel(villager)
+            );
+        }
+
+        if (stolenItemReturn.failureEndConversation() || stolenItemReturn.failureAggro() || forceEndConversation) {
+            FORCED_SESSIONS.remove(player.getUUID());
+            VillagerConversationService.endForPlayer(player, true);
+        } else {
+            VillagerInteractionService.sendForcedDialogueReputation(
+                    player,
+                    villager,
+                    forcedOptions(session.definition(), player.serverLevel(), villager, player),
+                    session.definition().forceCameraTowardsVillager());
+        }
+        if (stolenItemReturn.failureAggro()) {
+            VillagerRetaliationHandler.forceAnger(villager, player);
+        }
+    }
+
     private static void handleFailedItemPayment(
             ServerPlayer player,
             Villager villager,
             ForcedDialogueSession session,
-            ForcedDialogueItemPayment itemPayment) {
+            ForcedDialogueItemPayment itemPayment,
+            boolean forceEndConversation) {
         if (itemPayment.failureReputationDelta() != 0 && VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()) {
             VillagerReputationManager.addDialogueReputation(player.serverLevel(), villager, player, itemPayment.failureReputationDelta());
         }
@@ -223,11 +302,15 @@ public final class ForcedDialogueService {
             );
         }
 
-        if (itemPayment.failureEndConversation() || itemPayment.failureAggro()) {
+        if (itemPayment.failureEndConversation() || itemPayment.failureAggro() || forceEndConversation) {
             FORCED_SESSIONS.remove(player.getUUID());
             VillagerConversationService.endForPlayer(player, true);
         } else {
-            VillagerInteractionService.sendForcedDialogueReputation(player, villager, forcedOptions(session.definition(), player.serverLevel(), villager, player));
+            VillagerInteractionService.sendForcedDialogueReputation(
+                    player,
+                    villager,
+                    forcedOptions(session.definition(), player.serverLevel(), villager, player),
+                    session.definition().forceCameraTowardsVillager());
         }
         if (itemPayment.failureAggro()) {
             VillagerRetaliationHandler.forceAnger(villager, player);
@@ -271,6 +354,101 @@ public final class ForcedDialogueService {
         return !itemPayment.requireSpace() || remainder.isEmpty();
     }
 
+    private static Optional<List<ItemStack>> executeStolenItemReturn(
+            ServerPlayer player,
+            Villager villager,
+            ForcedDialogueSession session,
+            ForcedDialogueStolenItemReturn stolenItemReturn) {
+        if (session.removedStacks().isEmpty()) {
+            return Optional.empty();
+        }
+
+        Optional<ItemTransferTarget> target = transferTarget(player, villager, session, stolenItemReturn.destination());
+        if (target.isEmpty()) {
+            return Optional.empty();
+        }
+
+        Optional<ItemTransferTarget> overflowTarget = Optional.ofNullable(stolenItemReturn.overflowDestination())
+                .flatMap(destination -> transferTarget(player, villager, session, destination));
+        boolean targetFits = target.get().canAccept(session.removedStacks());
+        if (stolenItemReturn.requireSpace() && !targetFits && overflowTarget.isEmpty()) {
+            return Optional.empty();
+        }
+        if (overflowTarget.isPresent() && !overflowTarget.get().canAccept(session.removedStacks())) {
+            return Optional.empty();
+        }
+
+        Optional<List<ItemStack>> removedStacks = removeSpecificStacks(player, session.removedStacks());
+        if (removedStacks.isEmpty()) {
+            return Optional.empty();
+        }
+
+        List<ItemStack> remainder = target.get().accept(removedStacks.get());
+        if (!remainder.isEmpty() && overflowTarget.isPresent()) {
+            remainder = overflowTarget.get().accept(remainder);
+        }
+        return !stolenItemReturn.requireSpace() || remainder.isEmpty()
+                ? Optional.of(removedStacks.get())
+                : Optional.empty();
+    }
+
+    private static Optional<List<ItemStack>> removeSpecificStacks(ServerPlayer player, List<ItemStack> targets) {
+        if (!canRemoveSpecificStacks(player, targets)) {
+            return Optional.empty();
+        }
+
+        List<ItemStack> removedStacks = new ArrayList<>();
+        for (ItemStack target : targets) {
+            int remaining = target.getCount();
+            for (ItemStack stack : removablePlayerStacks(player)) {
+                if (remaining <= 0) {
+                    break;
+                }
+                if (stack.isEmpty() || !ItemStack.isSameItemSameComponents(stack, target)) {
+                    continue;
+                }
+
+                int removed = Math.min(remaining, stack.getCount());
+                removedStacks.add(stack.copyWithCount(removed));
+                stack.shrink(removed);
+                remaining -= removed;
+            }
+        }
+        player.getInventory().setChanged();
+        return Optional.of(List.copyOf(removedStacks));
+    }
+
+    private static boolean canRemoveSpecificStacks(ServerPlayer player, List<ItemStack> targets) {
+        List<ItemStack> availableStacks = removablePlayerStacks(player).stream()
+                .map(ItemStack::copy)
+                .toList();
+        for (ItemStack target : targets) {
+            int remaining = target.getCount();
+            for (ItemStack stack : availableStacks) {
+                if (remaining <= 0) {
+                    break;
+                }
+                if (stack.isEmpty() || !ItemStack.isSameItemSameComponents(stack, target)) {
+                    continue;
+                }
+
+                int removed = Math.min(remaining, stack.getCount());
+                stack.shrink(removed);
+                remaining -= removed;
+            }
+            if (remaining > 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static List<ItemStack> removablePlayerStacks(ServerPlayer player) {
+        List<ItemStack> stacks = new ArrayList<>(player.getInventory().items);
+        stacks.addAll(player.getInventory().offhand);
+        return stacks;
+    }
+
     private static Optional<ItemTransferTarget> transferTarget(
             ServerPlayer player,
             Villager villager,
@@ -279,6 +457,8 @@ public final class ForcedDialogueService {
         return switch (destination) {
             case DISCARD -> Optional.of(discardTransferTarget());
             case VILLAGER_INVENTORY -> Optional.of(villagerInventoryTransferTarget(villager));
+            case VILLAGER_INVENTORY_THEN_SOURCE_CONTAINER -> sourceContainer(player, session)
+                    .map(container -> chainedTransferTarget(villagerInventoryTransferTarget(villager), containerTransferTarget(container)));
             case SOURCE_CONTAINER -> sourceContainer(player, session).map(ForcedDialogueService::containerTransferTarget);
             case DROP_AT_VILLAGER -> Optional.of(dropAtVillagerTransferTarget(villager));
             case DROP_AT_CONTAINER -> sourceContainerLevel(player, session)
@@ -345,6 +525,21 @@ public final class ForcedDialogueService {
         };
     }
 
+    private static ItemTransferTarget chainedTransferTarget(ItemTransferTarget primary, ItemTransferTarget fallback) {
+        return new ItemTransferTarget() {
+            @Override
+            public boolean canAccept(List<ItemStack> stacks) {
+                return primary.canAccept(stacks) || fallback.canAccept(stacks);
+            }
+
+            @Override
+            public List<ItemStack> accept(List<ItemStack> stacks) {
+                List<ItemStack> remainder = primary.accept(stacks);
+                return remainder.isEmpty() ? List.of() : fallback.accept(remainder);
+            }
+        };
+    }
+
     private static ItemTransferTarget dropAtVillagerTransferTarget(Villager villager) {
         return new ItemTransferTarget() {
             @Override
@@ -390,8 +585,9 @@ public final class ForcedDialogueService {
             int removedCount,
             List<ItemStack> removedStacks) {
         ForcedDialogueResources
-                .select(level.getServer(), ForcedDialogueTrigger.CONTAINER_THEFT, snapshot.lootTable())
-                .ifPresent(definition -> trigger(level, player, snapshot, removedCount, removedStacks, definition));
+                .selectCandidates(level.getServer(), ForcedDialogueTrigger.CONTAINER_THEFT, snapshot.lootTable())
+                .stream()
+                .anyMatch(definition -> trigger(level, player, snapshot, removedCount, removedStacks, definition));
     }
 
     private static void triggerContainerOpened(
@@ -399,11 +595,12 @@ public final class ForcedDialogueService {
             ServerPlayer player,
             ContainerSnapshot snapshot) {
         ForcedDialogueResources
-                .select(level.getServer(), ForcedDialogueTrigger.CONTAINER_OPENED, snapshot.lootTable())
-                .ifPresent(definition -> trigger(level, player, snapshot, 0, List.of(), definition));
+                .selectCandidates(level.getServer(), ForcedDialogueTrigger.CONTAINER_OPENED, snapshot.lootTable())
+                .stream()
+                .anyMatch(definition -> trigger(level, player, snapshot, 0, List.of(), definition));
     }
 
-    private static void trigger(
+    private static boolean trigger(
             ServerLevel level,
             ServerPlayer player,
             ContainerSnapshot snapshot,
@@ -412,14 +609,18 @@ public final class ForcedDialogueService {
             ForcedDialogueDefinition definition) {
         Villager witness = findWitness(level, player, snapshot.pos(), definition).orElse(null);
         if (witness == null) {
-            return;
+            return false;
         }
 
+        ItemStack representativeStack = representativeRemovedStack(removedStacks);
         ForcedDialogueContext context = new ForcedDialogueContext(
                 VillagerPresetNameRegistry.resolveDisplayName(witness).getString(),
                 player.getDisplayName().getString(),
-                "items",
-                removedCount,
+                representativeStack.isEmpty() ? "items" : representativeStack.getHoverName().getString(),
+                representativeStack.isEmpty() ? "" : BuiltInRegistries.ITEM.getKey(representativeStack.getItem()).toString(),
+                representativeStack.isEmpty() ? removedCount : representativeStack.getCount(),
+                representativeStack.isEmpty() ? "items" : itemStackName(representativeStack),
+                removedStacks.isEmpty() ? "items" : itemListName(removedStacks),
                 snapshot.containerName().getString(),
                 snapshot.lootTable() == null ? "" : snapshot.lootTable().toString(),
                 snapshot.pos().getX(),
@@ -434,34 +635,41 @@ public final class ForcedDialogueService {
             rememberContainerTheft(level, witness, player, snapshot, removedStacks, removedCount);
         }
 
-        String line = ForcedDialogueResources.resolveTemplate(definition.line(), context);
+        String line = ForcedDialogueResources.resolveTemplate(definition.selectLine(level.getRandom()), context);
         if (definition.aggroImmediately()) {
             if (!line.isBlank()) {
                 VillagerInteractionService.sendVillagerNotice(player, witness, line);
             }
             VillagerRetaliationHandler.forceAnger(witness, player);
-            return;
+            return true;
         }
 
         if (!definition.initiateDialogue()) {
             if (!line.isBlank()) {
                 VillagerInteractionService.sendVillagerNotice(player, witness, line);
             }
-            return;
+            return true;
         }
 
-        if (VillagerInteractionService.openForcedDialogue(player, witness, line, forcedOptions(definition, level, witness, player))) {
+        if (VillagerInteractionService.openForcedDialogue(
+                player,
+                witness,
+                line,
+                forcedOptions(definition, level, witness, player),
+                definition.forceCameraTowardsVillager())) {
             FORCED_SESSIONS.put(player.getUUID(), new ForcedDialogueSession(
                     witness.getUUID(),
                     definition,
                     context,
                     snapshot.dimension(),
                     snapshot.pos(),
+                    removedStacks,
                     level.getGameTime()
             ));
         } else if (!line.isBlank()) {
             VillagerInteractionService.sendVillagerNotice(player, witness, line);
         }
+        return true;
     }
 
     private static List<DialogueOptionDefinition> forcedOptions(
@@ -487,6 +695,7 @@ public final class ForcedDialogueService {
         double radiusSqr = radius * radius;
         AABB area = AABB.ofSize(Vec3.atCenterOf(pos), radius * 2.0D, radius * 2.0D, radius * 2.0D);
         return level.getEntitiesOfClass(Villager.class, area, villager -> villager.isAlive() && !villager.isBaby()).stream()
+                .filter(definition::matchesWitness)
                 .filter(villager -> villager.distanceToSqr(player) <= radiusSqr || villager.blockPosition().distSqr(pos) <= radiusSqr)
                 .filter(villager -> !definition.requiresLineOfSight() || hasTheftLineOfSight(level, villager, player, pos))
                 .min(Comparator.comparingDouble(villager -> villager.distanceToSqr(player)));
@@ -513,11 +722,21 @@ public final class ForcedDialogueService {
         if (!isWatchedContainer(state) && lootTable == null) {
             return false;
         }
-        return VillagerRetaliationConfig.WATCHED_CONTAINER_SCOPE.get() != WatchedContainerScope.WORLD_GENERATED_ONLY
-                || lootTable != null;
+        return lootTable != null;
     }
 
-    private static ResourceLocation containerLootTable(ServerLevel level, BlockPos pos) {
+    private static ResourceLocation generatedContainerLootTable(ServerLevel level, BlockPos pos) {
+        ResourceLocation liveLootTable = liveContainerLootTable(level, pos);
+        if (liveLootTable != null) {
+            GeneratedContainerSavedData.get(level).remember(level.dimension(), pos, liveLootTable);
+            return liveLootTable;
+        }
+        return GeneratedContainerSavedData.get(level)
+                .lootTable(level.dimension(), pos)
+                .orElse(null);
+    }
+
+    private static ResourceLocation liveContainerLootTable(ServerLevel level, BlockPos pos) {
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (blockEntity instanceof RandomizableContainer container) {
             ResourceKey<LootTable> lootTable = container.getLootTable();
@@ -608,6 +827,18 @@ public final class ForcedDialogueService {
                 .max(Comparator.comparingInt(ItemStack::getCount))
                 .map(ItemStack::copy)
                 .orElse(ItemStack.EMPTY);
+    }
+
+    private static String itemStackName(ItemStack stack) {
+        String name = stack.getHoverName().getString();
+        return stack.getCount() > 1 ? stack.getCount() + "x " + name : name;
+    }
+
+    private static String itemListName(List<ItemStack> stacks) {
+        return stacks.stream()
+                .map(ForcedDialogueService::itemStackName)
+                .reduce((left, right) -> left + ", " + right)
+                .orElse("items");
     }
 
     private static boolean canInsertAll(Container container, List<ItemStack> stacks) {
@@ -733,6 +964,7 @@ public final class ForcedDialogueService {
             ForcedDialogueContext context,
             net.minecraft.resources.ResourceKey<Level> sourceContainerDimension,
             BlockPos sourceContainerPos,
+            List<ItemStack> removedStacks,
             long startedGameTime) {
     }
 

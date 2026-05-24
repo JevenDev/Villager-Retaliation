@@ -63,6 +63,7 @@ public final class VillagerInteractionClientHandler {
                 payload.mood(),
                 payload.followingPlayer(),
                 payload.forcedDialogue(),
+                payload.forceCameraTowardsVillager(),
                 payload.dialogueOptions(),
                 payload.knownLikedGiftNames(),
                 payload.knownDislikedGiftNames(),
@@ -79,6 +80,7 @@ public final class VillagerInteractionClientHandler {
                     payload.reputation(),
                     payload.reputationLevel(),
                     payload.mood(),
+                    payload.forceCameraTowardsVillager(),
                     payload.dialogueOptions(),
                     payload.knownLikedGiftNames(),
                     payload.knownDislikedGiftNames()
@@ -89,6 +91,7 @@ public final class VillagerInteractionClientHandler {
                     payload.reputation(),
                     payload.reputationLevel(),
                     payload.mood(),
+                    payload.forceCameraTowardsVillager(),
                     payload.dialogueOptions(),
                     payload.knownLikedGiftNames(),
                     payload.knownDislikedGiftNames()

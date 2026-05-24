@@ -151,7 +151,7 @@ Before testing in game:
 3. Trigger the relevant interaction in a test world.
 4. For event-tagged dialogue, trigger the event near the target villager and talk to them before the short village-memory window expires.
 5. For forced dialogue, trigger the event with an adult villager close enough to witness it; `container_theft` and `container_opened` also need line of sight by default.
-6. For generated-container forced dialogue, test with a container that still has an unresolved loot table, such as a newly generated village chest. Player-placed chests only match when the server config allows all watched containers.
+6. For generated-container forced dialogue, test first with a container that still has an unresolved loot table, such as a newly generated village chest. After the first detected open, the mod remembers that container's original loot table for later opens. Player-placed chests do not match forced-dialogue container triggers.
 7. Check latest logs for JSON parse warnings if a resource-pack model fails.
 8. Add filters one at a time after the unfiltered version works.
 9. For reputation-gated options or lines, test with `/villagerretaliation setNearbyReputation <value>` and confirm each tier sees the intended choices.

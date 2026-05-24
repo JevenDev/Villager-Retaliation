@@ -18,6 +18,7 @@ public record VillagerDialogueResponsePayload(
         int reputation,
         VillagerReputationLevel reputationLevel,
         DialogueDisposition mood,
+        boolean forceCameraTowardsVillager,
         List<DialogueOptionDefinition> dialogueOptions,
         List<String> knownLikedGiftNames,
         List<String> knownDislikedGiftNames)
@@ -31,6 +32,7 @@ public record VillagerDialogueResponsePayload(
         buffer.writeVarInt(payload.reputation());
         buffer.writeEnum(payload.reputationLevel());
         buffer.writeEnum(payload.mood());
+        buffer.writeBoolean(payload.forceCameraTowardsVillager());
         writeDialogueOptions(buffer, payload.dialogueOptions());
         writeStringList(buffer, payload.knownLikedGiftNames());
         writeStringList(buffer, payload.knownDislikedGiftNames());
@@ -42,6 +44,7 @@ public record VillagerDialogueResponsePayload(
                 buffer.readVarInt(),
                 buffer.readEnum(VillagerReputationLevel.class),
                 buffer.readEnum(DialogueDisposition.class),
+                buffer.readBoolean(),
                 readDialogueOptions(buffer),
                 readStringList(buffer),
                 readStringList(buffer)
@@ -54,6 +57,7 @@ public record VillagerDialogueResponsePayload(
             buffer.writeUtf(option.id(), 128);
             buffer.writeUtf(option.label(), 128);
             buffer.writeEnum(option.requestType());
+            buffer.writeBoolean(option.forceCameraTowardsVillager());
             buffer.writeVarInt(option.order());
         }
     }
@@ -72,6 +76,7 @@ public record VillagerDialogueResponsePayload(
                     Set.of(),
                     VillagerPlayerItemCondition.empty(),
                     VillagerReputationCondition.empty(),
+                    buffer.readBoolean(),
                     false,
                     false,
                     false,

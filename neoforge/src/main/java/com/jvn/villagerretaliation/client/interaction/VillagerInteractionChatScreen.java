@@ -66,6 +66,7 @@ final class VillagerInteractionChatScreen extends ChatScreen {
             int reputation,
             VillagerReputationLevel reputationLevel,
             DialogueDisposition mood,
+            boolean forceCameraTowardsVillager,
             List<DialogueOptionDefinition> dialogueOptions,
             List<String> knownLikedGiftNames,
             List<String> knownDislikedGiftNames) {
@@ -73,6 +74,7 @@ final class VillagerInteractionChatScreen extends ChatScreen {
                 reputation,
                 reputationLevel,
                 mood,
+                forceCameraTowardsVillager,
                 dialogueOptions,
                 knownLikedGiftNames,
                 knownDislikedGiftNames
