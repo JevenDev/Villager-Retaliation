@@ -301,6 +301,8 @@ const FIELD_TOOLTIPS = {
   "dialogue-event_tags": "Requires a recent nearby village memory with a matching event tag.",
   "dialogue-player_event_tags": "Requires a recent village memory associated with the current player.",
   "dialogue-retaliation_target_entity_types": "Restricts retaliation-memory lines to recent villager retaliation targets such as minecraft:player or minecraft:zombie.",
+  "dialogue-requires_villager_unarmed": "Requires the speaking villager to have no usable weapon in either hand.",
+  "dialogue-requires_villager_armed": "Requires the speaking villager to have a usable weapon in either hand.",
   "dialogue-story_structure": "Restricts share_story lines to one or more structure ids from story discovery JSON.",
   "dialogue-story_biome": "Restricts share_story lines to one or more biome ids from story discovery JSON.",
   "dialogue-recruitment_followup_scenarios": "Filters recruitment follow-up lines by stored scenario ids.",
@@ -318,6 +320,9 @@ const FIELD_TOOLTIPS = {
   "forced-witness_radius": "Maximum block distance for witnesses to detect the event.",
   "forced-reputation": "Optional reputation change applied when this rule runs.",
   "forced-witness_professions": "Optional profession ids for the witnessing villager, such as armorer or minecraft:weaponsmith.",
+  "forced-requires_witness_unarmed": "Requires the witnessing villager to have no usable weapon in either hand.",
+  "forced-requires_witness_armed": "Requires the witnessing villager to have a usable weapon in either hand.",
+  "forced-chance": "Random chance from 0.0 to 1.0 before a matching chat-event line is shown. Locked forced-dialogue scenes ignore this field.",
   "forced-target_entity_types": "Optional retaliation target entity ids such as minecraft:player. Useful for retaliation_started entries.",
   "forced-min_recent_retaliations": "Optional minimum earlier villager_retaliation_started memories for this player near the villager's village.",
   "forced-max_recent_retaliations": "Optional maximum earlier villager_retaliation_started memories for this player near the villager's village.",
@@ -336,6 +341,8 @@ const FIELD_TOOLTIPS = {
   "notification-text_color": "On-screen text color override. Falls back to color when omitted.",
   "notification-chat_color": "Chat/log color override. Falls back to text_color, then color.",
   "notification-professions": "Profession filter for this notification. Blank means any profession.",
+  "notification-requires_villager_unarmed": "Requires the notification villager to have no usable weapon in either hand.",
+  "notification-requires_villager_armed": "Requires the notification villager to have a usable weapon in either hand.",
   "notification-reputation_levels": "Reputation tier filter. Prefer tier names over assuming fixed numeric thresholds.",
   "notification-min_reputation": "Minimum exact reputation value required.",
   "notification-max_reputation": "Maximum exact reputation value allowed.",
@@ -349,6 +356,8 @@ const FIELD_TOOLTIPS = {
   "gift-items": "Gift item ids. Unnamespaced values count as minecraft ids; values beginning with # are treated as tags.",
   "gift-tags": "Gift item tag ids, such as minecraft:villager_plantable_seeds. At least one item or tag selector is required.",
   "gift-professions": "Profession filter. Profession-specific matches beat generic matches for the same gift or reward roll.",
+  "gift-requires_villager_unarmed": "Requires the gift rule villager to have no usable weapon in either hand.",
+  "gift-requires_villager_armed": "Requires the gift rule villager to have a usable weapon in either hand.",
   "gift-reputation_per_item": "Overrides the reaction's default reputation per gifted item.",
   "gift-response_key": "Dialogue message key for custom gift text. Define the localized text in dialogue messages.",
   "gift-item": "Reward item id returned by high-reputation villagers.",
@@ -360,6 +369,8 @@ const FIELD_TOOLTIPS = {
   "pacification-items": "Payment item ids. Unnamespaced values count as minecraft ids; values beginning with # are treated as tags.",
   "pacification-tags": "Payment tag ids, such as c:coins. At least one item or tag selector is required.",
   "pacification-professions": "Profession filter for payment rules. Wandering traders match none.",
+  "pacification-requires_villager_unarmed": "Requires the pacification villager to have no usable weapon in either hand.",
+  "pacification-requires_villager_armed": "Requires the pacification villager to have a usable weapon in either hand.",
   "pacification-count": "Exact number of items consumed, clamped from 1 to 64. When set, min/max are ignored.",
   "pacification-min_count": "Minimum random payment cost when count is omitted, clamped from 1 to 64.",
   "pacification-max_count": "Maximum random payment cost when count is omitted, clamped from min_count to 64.",
@@ -2105,6 +2116,24 @@ function toggleGrid(flags, entry, prefix) {
   `;
 }
 
+function villagerEquipmentToggles(prefix, entry, subject = "villager") {
+  const unarmedKey = `requires_${subject}_unarmed`;
+  const armedKey = `requires_${subject}_armed`;
+  return `
+    ${toggle({ id: `${prefix}-${unarmedKey}`, label: `Requires unarmed ${subject}`, checked: entry[unarmedKey] || entry[`${subject}_unarmed`] })}
+    ${toggle({ id: `${prefix}-${armedKey}`, label: `Requires armed ${subject}`, checked: entry[armedKey] || entry[`${subject}_armed`] })}
+  `;
+}
+
+function readVillagerEquipment(prefix, subject = "villager") {
+  const unarmedKey = `requires_${subject}_unarmed`;
+  const armedKey = `requires_${subject}_armed`;
+  return {
+    [unarmedKey]: readValue(`${prefix}-${unarmedKey}`) ? true : undefined,
+    [armedKey]: readValue(`${prefix}-${armedKey}`) ? true : undefined
+  };
+}
+
 function renderOverview() {
   const version = packVersionInfo();
   els.panel.innerHTML = `
@@ -2217,6 +2246,7 @@ function renderDialogueForm(kind, entry) {
   const commonFilters = `
     ${listField({ id: "dialogue-professions", label: "Professions", value: entry.professions, help: "Blank means any profession." })}
     ${listField({ id: "dialogue-dispositions", label: "Dispositions", value: entry.dispositions, help: "Blank means any mood." })}
+    ${villagerEquipmentToggles("dialogue", entry)}
   `;
   const reputationFilters = `
     ${listField({ id: "dialogue-reputation_levels", label: "Reputation levels", value: entry.reputation_levels ?? entry.reputation_level })}
@@ -2346,9 +2376,11 @@ function renderForcedDialogue() {
             ${selectField({ id: "forced-trigger", label: "Trigger", value: entry.trigger, options: CONSTANTS.forcedDialogueTriggers, allowBlank: false })}
             ${textareaField({ id: "forced-line", label: "Opening line(s)", value: forcedDialogueLineValue(entry), className: "full", rows: 3 })}
             ${field({ id: "forced-priority", label: "Priority", value: entry.priority ?? "", type: "number" })}
+            ${field({ id: "forced-chance", label: "Chat chance", value: entry.chance ?? "", type: "number", attrs: 'min="0" max="1" step="0.01"' })}
             ${field({ id: "forced-witness_radius", label: "Witness radius", value: entry.witness_radius ?? "", type: "number", attrs: 'min="1" step="1"' })}
             ${field({ id: "forced-reputation", label: "Reputation change", value: entry.reputation ?? "", type: "number" })}
             ${listField({ id: "forced-witness_professions", label: "Witness professions", value: entry.witness_professions ?? entry.witness_profession ?? entry.professions, help: "Optional. Restrict to a witnessing profession such as armorer, cleric, or weaponsmith." })}
+            ${villagerEquipmentToggles("forced", entry, "witness")}
             ${listField({ id: "forced-loot_tables", label: "Loot tables", value: entry.loot_tables ?? entry.loot_table, help: "Optional. Match generated containers from loot tables like minecraft:chests/village/village_armorer." })}
             ${listField({ id: "forced-target_entity_types", label: "Target entity types", value: entry.target_entity_types ?? entry.target_entity_type ?? entry.target_entities, help: "Optional. Useful for retaliation_started, for example minecraft:player." })}
             ${field({ id: "forced-min_recent_retaliations", label: "Min prior retaliations", value: entry.min_recent_retaliations ?? "", type: "number", attrs: 'min="0" step="1"' })}
@@ -2404,6 +2436,7 @@ function renderNotifications() {
             ${field({ id: "notification-text_color", label: "Text color", value: entry.text_color, attrs: 'list="color-values"' })}
             ${field({ id: "notification-chat_color", label: "Chat color", value: entry.chat_color, attrs: 'list="color-values"' })}
             ${listField({ id: "notification-professions", label: "Professions", value: entry.professions })}
+            ${villagerEquipmentToggles("notification", entry)}
             ${listField({ id: "notification-reputation_levels", label: "Reputation levels", value: entry.reputation_levels })}
             ${listField({ id: "notification-target_entity_types", label: "Target entity types", value: entry.target_entity_types ?? entry.target_entities })}
             ${field({ id: "notification-min_reputation", label: "Minimum reputation", value: entry.min_reputation ?? "", type: "number" })}
@@ -2465,6 +2498,7 @@ function renderGiftForm(kind, entry) {
         ${listField({ id: "gift-items", label: "Items", value: entry.items ?? entry.item, help: "Unnamespaced values count as minecraft ids." })}
         ${listField({ id: "gift-tags", label: "Tags", value: entry.tags ?? entry.tag })}
         ${listField({ id: "gift-professions", label: "Professions", value: entry.professions })}
+        ${villagerEquipmentToggles("gift", entry)}
         ${field({ id: "gift-reputation_per_item", label: "Reputation per item", value: entry.reputation_per_item ?? "", type: "number" })}
         ${field({ id: "gift-response_key", label: "Response key", value: entry.response_key, className: "full", help: "Add a dialogue message with this key for custom gift text." })}
       </div>
@@ -2475,6 +2509,7 @@ function renderGiftForm(kind, entry) {
     <div class="form-grid">
       ${field({ id: "gift-item", label: "Reward item", value: entry.item })}
       ${listField({ id: "gift-professions", label: "Professions", value: entry.professions })}
+      ${villagerEquipmentToggles("gift", entry)}
       ${listField({ id: "gift-reputation_levels", label: "Reputation levels", value: entry.reputation_levels })}
       ${field({ id: "gift-min_count", label: "Minimum count", value: entry.min_count ?? "", type: "number" })}
       ${field({ id: "gift-max_count", label: "Maximum count", value: entry.max_count ?? "", type: "number" })}
@@ -2509,6 +2544,7 @@ function renderPacification() {
             ${listField({ id: "pacification-items", label: "Items", value: entry.items ?? entry.item })}
             ${listField({ id: "pacification-tags", label: "Tags", value: entry.tags ?? entry.tag })}
             ${listField({ id: "pacification-professions", label: "Professions", value: entry.professions })}
+            ${villagerEquipmentToggles("pacification", entry)}
             ${field({ id: "pacification-count", label: "Exact count", value: entry.count ?? "", type: "number" })}
             ${field({ id: "pacification-min_count", label: "Minimum count", value: entry.min_count ?? "", type: "number" })}
             ${field({ id: "pacification-max_count", label: "Maximum count", value: entry.max_count ?? "", type: "number" })}
@@ -2633,6 +2669,7 @@ function saveDialogueEntry(event) {
       order: parseInteger(readValue("dialogue-order")),
       professions: readList("dialogue-professions"),
       dispositions: readList("dialogue-dispositions"),
+      ...readVillagerEquipment("dialogue"),
       reputation_levels: readList("dialogue-reputation_levels"),
       min_reputation: parseInteger(readValue("dialogue-min_reputation")),
       max_reputation: parseInteger(readValue("dialogue-max_reputation")),
@@ -2650,6 +2687,7 @@ function saveDialogueEntry(event) {
       option: optionIds.length <= 1 ? optionIds[0] : optionIds,
       professions: readList("dialogue-professions"),
       dispositions: readList("dialogue-dispositions"),
+      ...readVillagerEquipment("dialogue"),
       reputation_levels: readList("dialogue-reputation_levels"),
       min_reputation: parseInteger(readValue("dialogue-min_reputation")),
       max_reputation: parseInteger(readValue("dialogue-max_reputation")),
@@ -2675,6 +2713,7 @@ function saveDialogueEntry(event) {
       text: readValue("dialogue-text").trim(),
       professions: readList("dialogue-professions"),
       dispositions: readList("dialogue-dispositions"),
+      ...readVillagerEquipment("dialogue"),
       weight: parseInteger(readValue("dialogue-weight"))
     });
   } else if (kind === "pacify") {
@@ -2684,6 +2723,7 @@ function saveDialogueEntry(event) {
       outcomes: readList("dialogue-outcomes"),
       professions: readList("dialogue-professions"),
       dispositions: readList("dialogue-dispositions"),
+      ...readVillagerEquipment("dialogue"),
       weight: parseInteger(readValue("dialogue-weight"))
     });
   } else {
@@ -2692,6 +2732,7 @@ function saveDialogueEntry(event) {
       text: readValue("dialogue-text").trim(),
       professions: readList("dialogue-professions"),
       dispositions: readList("dialogue-dispositions"),
+      ...readVillagerEquipment("dialogue"),
       weight: parseInteger(readValue("dialogue-weight"))
     });
   }
@@ -2734,6 +2775,7 @@ function saveForcedDialogue(event) {
     id: readValue("forced-id").trim(),
     trigger: readValue("forced-trigger"),
     priority: parseInteger(readValue("forced-priority")),
+    chance: parseNumber(readValue("forced-chance")),
     witness_radius: parseInteger(readValue("forced-witness_radius")),
     requires_line_of_sight: readValue("forced-requires_line_of_sight"),
     initiate_dialogue: readValue("forced-initiate_dialogue"),
@@ -2741,6 +2783,7 @@ function saveForcedDialogue(event) {
     force_camera_towards_villager: readValue("forced-force_camera_towards_villager"),
     reputation: parseInteger(readValue("forced-reputation")),
     witness_professions: readList("forced-witness_professions"),
+    ...readVillagerEquipment("forced", "witness"),
     loot_tables: readList("forced-loot_tables"),
     target_entity_types: readList("forced-target_entity_types"),
     min_recent_retaliations: parseInteger(readValue("forced-min_recent_retaliations")),
@@ -2773,6 +2816,7 @@ function saveNotification(event) {
     text_color: readValue("notification-text_color").trim(),
     chat_color: readValue("notification-chat_color").trim(),
     professions: readList("notification-professions"),
+    ...readVillagerEquipment("notification"),
     reputation_levels: readList("notification-reputation_levels"),
     target_entity_types: readList("notification-target_entity_types"),
     min_reputation: parseInteger(readValue("notification-min_reputation")),
@@ -2794,6 +2838,7 @@ function saveGiftEntry(event) {
         items: readList("gift-items"),
         tags: readList("gift-tags"),
         professions: readList("gift-professions"),
+        ...readVillagerEquipment("gift"),
         reputation_per_item: parseInteger(readValue("gift-reputation_per_item")),
         response_key: readValue("gift-response_key").trim(),
         priority: parseInteger(readValue("gift-priority"))
@@ -2801,6 +2846,7 @@ function saveGiftEntry(event) {
     : {
         item: readValue("gift-item").trim(),
         professions: readList("gift-professions"),
+        ...readVillagerEquipment("gift"),
         reputation_levels: readList("gift-reputation_levels"),
         min_count: parseInteger(readValue("gift-min_count")),
         max_count: parseInteger(readValue("gift-max_count")),
@@ -2815,6 +2861,7 @@ function savePacification(event) {
     items: readList("pacification-items"),
     tags: readList("pacification-tags"),
     professions: readList("pacification-professions"),
+    ...readVillagerEquipment("pacification"),
     count: parseInteger(readValue("pacification-count")),
     min_count: parseInteger(readValue("pacification-min_count")),
     max_count: parseInteger(readValue("pacification-max_count")),

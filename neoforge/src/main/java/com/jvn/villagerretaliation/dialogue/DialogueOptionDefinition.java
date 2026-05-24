@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.dialogue;
 
 import com.jvn.villagerretaliation.util.VillagerPlayerItemCondition;
+import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
 import com.jvn.villagerretaliation.util.VillagerReputationCondition;
 import java.util.Set;
 import net.minecraft.world.entity.npc.VillagerProfession;
@@ -13,6 +14,7 @@ public record DialogueOptionDefinition(
         boolean showForBabies,
         Set<VillagerProfession> professions,
         Set<DialogueDisposition> dispositions,
+        VillagerEquipmentCondition equipmentCondition,
         VillagerPlayerItemCondition playerItemCondition,
         VillagerReputationCondition reputationCondition,
         boolean forceCameraTowardsVillager,
@@ -60,6 +62,9 @@ public record DialogueOptionDefinition(
             return false;
         }
         if (!this.professions.isEmpty() && !this.professions.contains(context.profession())) {
+            return false;
+        }
+        if (!this.equipmentCondition.matches(context.villager())) {
             return false;
         }
         if (!this.playerItemCondition.matches(context.player())) {
@@ -179,6 +184,7 @@ public record DialogueOptionDefinition(
                 true,
                 Set.of(),
                 Set.of(),
+                VillagerEquipmentCondition.empty(),
                 VillagerPlayerItemCondition.empty(),
                 VillagerReputationCondition.empty(),
                 false,

@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.dialogue.DialogueDisposition;
 import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
+import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
 import com.jvn.villagerretaliation.util.VillagerPlayerItemCondition;
 import com.jvn.villagerretaliation.util.VillagerReputationCondition;
 import java.util.ArrayList;
@@ -74,6 +75,7 @@ public record VillagerDialogueResponsePayload(
                     true,
                     Set.of(),
                     Set.of(),
+                    VillagerEquipmentCondition.empty(),
                     VillagerPlayerItemCondition.empty(),
                     VillagerReputationCondition.empty(),
                     buffer.readBoolean(),

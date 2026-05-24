@@ -66,6 +66,8 @@ Total reputation from one gifted stack is clamped between `-100` and `120`.
 | `tag` | string or array | none | One or more item tag ids. |
 | `tags` | string or array | none | One or more item tag ids. |
 | `professions` | string or array | any | If present, rule applies only to those professions. |
+| `requires_villager_unarmed` | boolean | `false` | Requires the receiving villager to have no usable weapon in either hand. `villager_unarmed` is also accepted as an alias. |
+| `requires_villager_armed` | boolean | `false` | Requires the receiving villager to have a usable weapon in either hand. `villager_armed` is also accepted as an alias. |
 | `reputation_per_item` | integer | reaction default | Overrides the per-item reputation value. |
 | `response_key` | string | reaction default | Dialogue message key to use when this rule matches. |
 | `priority` | integer | `0` | Higher priority wins among matching rules. |
@@ -155,12 +157,14 @@ That means a farmer-specific rule beats a global rule for the same item, even if
 | `remove` | boolean | `false` | If `true`, removes the earlier reward with the same `id`. |
 | `item` | string | required | Reward item id. |
 | `professions` | string or array | any | Profession filter. |
+| `requires_villager_unarmed` | boolean | `false` | Requires the rewarding villager to have no usable weapon in either hand. |
+| `requires_villager_armed` | boolean | `false` | Requires the rewarding villager to have a usable weapon in either hand. |
 | `reputation_levels` | string or array | any | Reputation tier filter. |
 | `min_count` | integer | `1` | Minimum stack count, clamped to at least 1. |
 | `max_count` | integer | `min_count` | Maximum stack count, clamped to at least `min_count`. |
 | `weight` | integer | `10` | Weighted selection. |
 
-If any profession-specific reward matches, generic rewards are ignored for that reward roll.
+If any profession-specific reward matches, generic rewards are ignored for that reward roll. Equipment-specific gift preference and reward rules only match when the gift is evaluated for a concrete villager, such as the villager receiving the gift or giving a high-reputation reward.
 
 ## Add-On Pack Strategy
 

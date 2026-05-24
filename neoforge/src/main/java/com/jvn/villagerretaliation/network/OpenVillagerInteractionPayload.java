@@ -7,6 +7,7 @@ import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.social.VillagerFamilyTreeSnapshot;
 import com.jvn.villagerretaliation.social.VillagerRelationshipSnapshot;
 import com.jvn.villagerretaliation.social.VillagerRelationshipStage;
+import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
 import com.jvn.villagerretaliation.util.VillagerPlayerItemCondition;
 import com.jvn.villagerretaliation.util.VillagerReputationCondition;
 import com.jvn.villagerretaliation.villager.VillagerGender;
@@ -105,6 +106,7 @@ public record OpenVillagerInteractionPayload(
                     true,
                     Set.of(),
                     Set.of(),
+                    VillagerEquipmentCondition.empty(),
                     VillagerPlayerItemCondition.empty(),
                     VillagerReputationCondition.empty(),
                     buffer.readBoolean(),

@@ -54,6 +54,8 @@ data/my_pack/loot_table/villager/profession/alchemist/common.json
 | `id` | string | generated | Stable id used for replacement and removal. |
 | `remove` | boolean | `false` | If `true`, removes the earlier rule with the same `id`. |
 | `professions` | string or array | any | Profession filter. Vanilla ids may omit `minecraft:`; custom professions should use full ids. |
+| `requires_villager_unarmed` | boolean | `false` | Requires the villager to have no usable weapon in either hand. `villager_unarmed` is also accepted as an alias. |
+| `requires_villager_armed` | boolean | `false` | Requires the villager to have a usable weapon in either hand. `villager_armed` is also accepted as an alias. |
 | `loot_table` | string | required | Loot table id to roll when the rule matches. |
 | `chance` | string or number | `always` | `always`, `rare`, `very_rare`, or a fixed number from `0.0` to `1.0`. |
 
@@ -111,3 +113,5 @@ To replace the full built-in table, use `replace: true` in a later-sorting file 
 ```
 
 Profession loot still obeys the main villager loot config gates, including the global profession-drop chance and the optional player-kill requirement.
+
+Equipment filters are evaluated against the defeated villager, so packs can add separate loot tables for armed defenders and unarmed villagers.

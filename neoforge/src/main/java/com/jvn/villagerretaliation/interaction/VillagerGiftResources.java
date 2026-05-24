@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
+import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import com.jvn.toucanlib.util.ToucanRandom;
 import java.io.IOException;
@@ -58,8 +59,23 @@ public final class VillagerGiftResources {
             ServerLevel level,
             VillagerProfession profession,
             ItemStack stack) {
+        return preference(level, null, profession, stack);
+    }
+
+    public static Optional<VillagerGiftPreferences.GiftPreference> preference(
+            ServerLevel level,
+            Villager villager,
+            ItemStack stack) {
+        return preference(level, villager, villager.getVillagerData().getProfession(), stack);
+    }
+
+    private static Optional<VillagerGiftPreferences.GiftPreference> preference(
+            ServerLevel level,
+            Villager villager,
+            VillagerProfession profession,
+            ItemStack stack) {
         List<GiftPreferenceRule> matches = load(level.getServer()).preferenceRules().stream()
-                .filter(rule -> rule.matches(profession, stack))
+                .filter(rule -> rule.matches(villager, profession, stack))
                 .sorted(GiftPreferenceRule::compareTo)
                 .toList();
         if (matches.isEmpty()) {
@@ -103,7 +119,7 @@ public final class VillagerGiftResources {
         List<VillagerGiftPreferences.GiftCandidate> candidates = new ArrayList<>();
         Set<String> seen = new HashSet<>();
         for (GiftPreferenceRule rule : pool.preferenceRules()) {
-            if (!rule.appliesToProfession(profession)) {
+            if (!rule.appliesToProfession(profession) || !rule.equipmentCondition().isEmpty()) {
                 continue;
             }
             for (Item item : rule.items()) {
@@ -118,7 +134,7 @@ public final class VillagerGiftResources {
 
     public static ItemStack highReputationReward(ServerLevel level, Villager villager, VillagerReputationLevel reputationLevel) {
         List<GiftRewardRule> matches = load(level.getServer()).rewardRules().stream()
-                .filter(rule -> rule.matches(villager.getVillagerData().getProfession(), reputationLevel))
+                .filter(rule -> rule.matches(villager, reputationLevel))
                 .toList();
         if (matches.isEmpty()) {
             return ItemStack.EMPTY;
@@ -239,6 +255,7 @@ public final class VillagerGiftResources {
                     responseKey,
                     priority,
                     index,
+                    VillagerEquipmentCondition.read(entry),
                     selectors
             ));
             index++;
@@ -285,6 +302,7 @@ public final class VillagerGiftResources {
                     minCount,
                     maxCount,
                     Math.max(1, readInt(entry, "weight", 10)),
+                    VillagerEquipmentCondition.read(entry),
                     index
             ));
             index++;
@@ -450,9 +468,12 @@ public final class VillagerGiftResources {
             String responseKey,
             int priority,
             int order,
+            VillagerEquipmentCondition equipmentCondition,
             List<ItemSelector> selectors) implements Comparable<GiftPreferenceRule> {
-        private boolean matches(VillagerProfession profession, ItemStack stack) {
-            return appliesToProfession(profession) && this.selectors.stream().anyMatch(selector -> selector.matches(stack));
+        private boolean matches(Villager villager, VillagerProfession profession, ItemStack stack) {
+            return appliesToProfession(profession)
+                    && this.equipmentCondition.matches(villager)
+                    && this.selectors.stream().anyMatch(selector -> selector.matches(stack));
         }
 
         private boolean appliesToProfession(VillagerProfession profession) {
@@ -482,9 +503,14 @@ public final class VillagerGiftResources {
             int minCount,
             int maxCount,
             int weight,
+            VillagerEquipmentCondition equipmentCondition,
             int order) {
-        private boolean matches(VillagerProfession profession, VillagerReputationLevel reputationLevel) {
+        private boolean matches(Villager villager, VillagerReputationLevel reputationLevel) {
+            VillagerProfession profession = villager.getVillagerData().getProfession();
             if (!this.professions.isEmpty() && !this.professions.contains(profession)) {
+                return false;
+            }
+            if (!this.equipmentCondition.matches(villager)) {
                 return false;
             }
             return this.reputationLevels.isEmpty() || this.reputationLevels.contains(reputationLevel);

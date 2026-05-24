@@ -101,6 +101,8 @@ See [Dialogue Types](Dialogue-Types.md) for simple and expanded dropdown example
 | `order` | integer | array index | Lower values appear earlier. |
 | `professions` | string or array | any | Filters by villager profession. |
 | `dispositions` | string or array | any | Filters by mood/disposition. |
+| `requires_villager_unarmed` | boolean | `false` | Requires the villager to have no usable weapon in either hand. `villager_unarmed` is also accepted as an alias. |
+| `requires_villager_armed` | boolean | `false` | Requires the villager to have a usable weapon in either hand. `villager_armed` is also accepted as an alias. |
 | `reputation_level` | string or array | any | Alias for `reputation_levels`. |
 | `reputation_levels` | string or array | any | Filters by the player's current reputation tier with this villager: `royalty`, `revered`, `respected`, `trusted`, `neutral`, `suspicious`, `hostile`, `despised`, or `feared`. |
 | `min_reputation` | integer | none | Minimum exact reputation value with this villager. |
@@ -155,6 +157,8 @@ See [Dialogue Types](Dialogue-Types.md) for simple and expanded dropdown example
 | `option_ids` | string or array | none | Same purpose as `option`. |
 | `professions` | string or array | inherited/any | Filters by profession. |
 | `dispositions` | string or array | any | Filters by disposition. |
+| `requires_villager_unarmed` | boolean | `false` | Requires the speaking villager to have no usable weapon in either hand. `villager_unarmed` is also accepted as an alias. |
+| `requires_villager_armed` | boolean | `false` | Requires the speaking villager to have a usable weapon in either hand. `villager_armed` is also accepted as an alias. |
 | `reputation_level` | string or array | any | Alias for `reputation_levels`. |
 | `reputation_levels` | string or array | any | Filters by the player's current reputation tier with this villager. |
 | `min_reputation` | integer | none | Minimum exact reputation value with this villager. |
@@ -359,6 +363,8 @@ Message fields:
 | `text` | string | required | Message text. |
 | `professions` | string or array | inherited/any | Profession filter. |
 | `dispositions` | string or array | any | Disposition filter. |
+| `requires_villager_unarmed` | boolean | `false` | Requires the villager to have no usable weapon in either hand. |
+| `requires_villager_armed` | boolean | `false` | Requires the villager to have a usable weapon in either hand. |
 | `show_for_adults` | boolean | `true` | Adult visibility. |
 | `show_for_babies` | boolean | `true` | Baby visibility. |
 | `weight` | integer | `10` | Weighted selection. |
@@ -387,7 +393,7 @@ Gift preference rules can set `response_key` to point at any message key. Those 
 }
 ```
 
-Openings and closings support `id`, `text`, `professions`, `dispositions`, `show_for_adults`, `show_for_babies`, `first_conversation_only`, `first_village_interaction_only`, and `weight`.
+Openings and closings support `id`, `text`, `professions`, `dispositions`, `requires_villager_unarmed`, `requires_villager_armed`, `show_for_adults`, `show_for_babies`, `first_conversation_only`, `first_village_interaction_only`, and `weight`.
 
 ## Pacify Lines
 
@@ -414,7 +420,7 @@ Pacify text supports:
 
 For older packs, `{emerald_cost}` still aliases `{payment_cost}`, and `{emeralds}` still aliases `{payment_items}`.
 
-The `outcomes` field filters by the internal pacification result enum. If omitted, the line can match any result.
+The `outcomes` field filters by the internal pacification result enum. If omitted, the line can match any result. Pacify lines also support `professions`, `dispositions`, `requires_villager_unarmed`, `requires_villager_armed`, and `weight`.
 
 Valid pacify outcomes are:
 

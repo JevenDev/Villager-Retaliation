@@ -97,6 +97,16 @@ Player item filters accept item ids and item tags. Prefix a tag with `#` inside 
 
 If `player_items` is set and no slot filter is supplied, the current default is `hands`.
 
+Villager equipment filters are available anywhere the rule is evaluated against a specific villager: dialogue options, lines, messages, openings, closings, pacify lines, notifications, gift preferences, gift rewards, pacification payments, and profession loot rules. Use `requires_villager_armed` to require a usable weapon in either hand, or `requires_villager_unarmed` to require no usable weapon. The shorter aliases `villager_armed` and `villager_unarmed` are also accepted.
+
+```json
+{
+  "requires_villager_armed": true
+}
+```
+
+Forced dialogue entries use witness-specific names for the same check: `requires_witness_armed` / `witness_armed` and `requires_witness_unarmed` / `witness_unarmed`.
+
 ## Reputation Levels
 
 These values are used by notifications and gift rewards:

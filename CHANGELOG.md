@@ -8,6 +8,9 @@
 - Added witnessed container forced-dialogue triggers: `container_theft` and `container_opened`.
 - Added chat-only forced-dialogue triggers: `container_theft_chat`, `container_opened_chat`, and `retaliation_started_chat`.
 - Added `retaliation_started_chat` support for non-player retaliation targets, broadcasting the villager line to nearby players.
+- Added forced-dialogue chat `chance` support for occasional event callouts.
+- Added forced dialogue witness equipment filters for armed and unarmed villagers.
+- Added armed and unarmed villager filters across villager-backed pack rules, including dialogue options, lines, messages, openings, closings, pacify lines, notifications, gifts, pacification payments, and profession loot.
 - Added config support for choosing theft-only container confrontations or opening-based confrontations, and for limiting watched containers to world-generated loot-table containers or allowing all watched containers.
 - Added loot-table filters for forced dialogue entries through `loot_table` and `loot_tables`, so packs can target vanilla or modded generated containers.
 - Added forced dialogue options with responses, reputation changes, aggro behavior, ordering, and conversation-ending behavior.
@@ -16,9 +19,11 @@
 - Added shared reputation condition fields for dialogue options, dialogue lines, and forced-dialogue options: `reputation_level`, `reputation_levels`, `min_reputation`, and `max_reputation`.
 - Added village container theft memories and gossip through `player_container_theft`, `requires_container_theft_to_self`, and `requires_container_theft_from_other`.
 - Added theft-memory placeholders for dialogue, including `{stolen_item}`, `{stolen_count}`, `{stolen_stack}`, `{stolen_container}`, `{stolen_loot_table}`, `{theft_witness}`, and `{theft_witness_possessive}`.
-- Added datapack-builder support for forced dialogue, item payments, generated-container loot table filters, reputation-gated dialogue, and theft-memory event tags.
+- Added datapack-builder support for forced dialogue, item payments, generated-container loot table filters, reputation-gated dialogue, armed/unarmed villager filters, and theft-memory event tags.
 - Added datapack-builder support for the `small_talk` dialogue type and `_chat` forced-dialogue triggers.
 - Added a larger built-in dialogue/event library covering reputation tiers, retaliation aftermath, apologies, village defense, raids, golem loss, fire, gifts, gear reports, recruitment memories, and container-theft gossip.
+- Added built-in `retaliation_started_chat` combat barks for player targets, raiders, undead, monsters, and generic retaliation targets.
+- Added built-in unarmed-villager `retaliation_started_chat` combat barks.
 - Added loot-table-specific forced dialogue scenes for weaponsmith, temple, cartographer, and armorer village chests.
 
 ### Changed

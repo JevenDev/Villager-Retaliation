@@ -405,6 +405,8 @@
       "text": "Back off!",
       "world_text_kind": "alert",
       "color": "#FFD166",
+      "requires_villager_armed": true,
+      "chance": 0.35,
       "weight": 20
     },
     {
@@ -412,6 +414,8 @@
       "text": "Get them!",
       "world_text_kind": "alert",
       "color": "#FFD166",
+      "requires_villager_armed": true,
+      "chance": 0.35,
       "weight": 12
     },
     {
@@ -419,6 +423,8 @@
       "text": "Die, {target}!",
       "world_text_kind": "alert",
       "color": "#FFD166",
+      "requires_villager_armed": true,
+      "chance": 0.35,
       "weight": 10
     },
     {
@@ -426,8 +432,60 @@
       "text": "You again, {player}?",
       "world_text_kind": "alert",
       "color": "#FFD166",
+      "requires_villager_armed": true,
       "target_entity_types": ["minecraft:player"],
+      "chance": 0.35,
       "weight": 8
+    },
+    {
+      "trigger": "combat.retaliation_started",
+      "text": "Help! {target} is here!",
+      "world_text_kind": "alert",
+      "color": "#FFD166",
+      "requires_villager_unarmed": true,
+      "target_entity_types": ["minecraft:pillager", "minecraft:vindicator", "minecraft:evoker", "minecraft:ravager", "minecraft:witch", "minecraft:zombie", "minecraft:zombie_villager", "minecraft:husk", "minecraft:drowned", "minecraft:skeleton", "minecraft:stray", "minecraft:wither_skeleton", "minecraft:bogged", "minecraft:phantom", "minecraft:creeper", "minecraft:spider", "minecraft:cave_spider", "minecraft:slime", "minecraft:magma_cube", "minecraft:enderman"],
+      "chance": 0.35,
+      "weight": 20
+    },
+    {
+      "trigger": "combat.retaliation_started",
+      "text": "I need help!",
+      "world_text_kind": "alert",
+      "color": "#FFD166",
+      "requires_villager_unarmed": true,
+      "target_entity_types": ["minecraft:pillager", "minecraft:vindicator", "minecraft:evoker", "minecraft:ravager", "minecraft:witch", "minecraft:zombie", "minecraft:zombie_villager", "minecraft:husk", "minecraft:drowned", "minecraft:skeleton", "minecraft:stray", "minecraft:wither_skeleton", "minecraft:bogged", "minecraft:phantom", "minecraft:creeper", "minecraft:spider", "minecraft:cave_spider", "minecraft:slime", "minecraft:magma_cube", "minecraft:enderman"],
+      "chance": 0.35,
+      "weight": 16
+    },
+    {
+      "trigger": "combat.retaliation_started",
+      "text": "Bell! Ring the bell!",
+      "world_text_kind": "alert",
+      "color": "#FFD166",
+      "requires_villager_unarmed": true,
+      "target_entity_types": ["minecraft:pillager", "minecraft:vindicator", "minecraft:evoker", "minecraft:ravager", "minecraft:witch", "minecraft:zombie", "minecraft:zombie_villager", "minecraft:husk", "minecraft:drowned", "minecraft:skeleton", "minecraft:stray", "minecraft:wither_skeleton", "minecraft:bogged", "minecraft:phantom", "minecraft:creeper", "minecraft:spider", "minecraft:cave_spider", "minecraft:slime", "minecraft:magma_cube", "minecraft:enderman"],
+      "chance": 0.35,
+      "weight": 12
+    },
+    {
+      "trigger": "combat.retaliation_started",
+      "text": "No weapon. Still no running, {player}.",
+      "world_text_kind": "alert",
+      "color": "#FFD166",
+      "requires_villager_unarmed": true,
+      "target_entity_types": ["minecraft:player"],
+      "chance": 0.35,
+      "weight": 14
+    },
+    {
+      "trigger": "combat.retaliation_started",
+      "text": "I cannot fight you properly, but I will remember.",
+      "world_text_kind": "alert",
+      "color": "#FFD166",
+      "requires_villager_unarmed": true,
+      "target_entity_types": ["minecraft:player"],
+      "chance": 0.35,
+      "weight": 10
     },
     {
       "trigger": "combat.attack_landed",

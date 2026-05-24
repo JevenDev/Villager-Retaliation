@@ -24,6 +24,15 @@ public final class VillagerGiftPreferences {
                 .orElse(new GiftPreference(GiftReaction.NEUTRAL, false, 0));
     }
 
+    public static GiftPreference evaluate(ServerLevel level, Villager villager, ItemStack stack) {
+        if (stack.isEmpty()) {
+            return new GiftPreference(GiftReaction.NEUTRAL, false, 0);
+        }
+        return VillagerGiftResources.preference(level, villager, stack)
+                .map(preference -> preference.withReputationValue(reputationValue(preference.reaction(), preference.perItemReputation(), stack)))
+                .orElse(new GiftPreference(GiftReaction.NEUTRAL, false, 0));
+    }
+
     public static List<GiftCandidate> giftCandidates(ServerLevel level, VillagerProfession profession) {
         return VillagerGiftResources.giftCandidates(level, profession);
     }

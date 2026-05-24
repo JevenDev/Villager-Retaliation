@@ -57,9 +57,12 @@ or an `entries` array:
 | `line` | string | required unless `lines` is set | Villager line shown when the event fires. |
 | `lines` | array | required unless `line` is set | Alternate villager lines. One is selected at random when the event fires. |
 | `priority` | integer | `0` | Lower values win when multiple entries match the same trigger. |
+| `chance` | number | `1.0` | Random chance from `0.0` to `1.0` before a matching `_chat` trigger sends its line. Locked forced-dialogue scenes ignore this field. |
 | `witness_radius` | number | `12.0` | Search radius for a witnessing villager. |
 | `witness_profession` | string | any | Restricts this entry to a witnessing villager profession. |
 | `witness_professions` | array | any | Restricts this entry to one of several witnessing villager professions. `professions` is also accepted as an alias. |
+| `requires_witness_unarmed` | boolean | `false` | Requires the witnessing villager to have no usable weapon in either hand. `witness_unarmed` is also accepted as an alias. |
+| `requires_witness_armed` | boolean | `false` | Requires the witnessing villager to have a usable weapon in either hand. `witness_armed` is also accepted as an alias. |
 | `requires_line_of_sight` | boolean | `true` | Requires the witness to see the player and event block. |
 | `initiate_dialogue` | boolean | `true` | Opens the locked interaction screen when true; otherwise only says `line`. For clearer chat-only entries, prefer the `_chat` triggers below. |
 | `aggro_immediately` | boolean | `false` | Makes the witness attack immediately after the event line. |
@@ -80,6 +83,8 @@ or an `entries` array:
 When multiple entries match, lower `priority` wins. If priority is tied, an entry with matching `loot_table` or `loot_tables` wins over a generic entry.
 
 Use `lines` when an event can happen often. The selected line is resolved through the same placeholders as `line`, so variations can reference `{stolen_stack}`, `{container}`, `{villager}`, and the other forced-dialogue tokens.
+
+Use `chance` on `_chat` triggers when a callout should be occasional. If the chance roll fails, the event stays silent and does not fall through to lower-priority chat entries.
 
 ## Chat Event Triggers
 
@@ -221,7 +226,7 @@ The built-in `default.json` includes village-specific entries for vanilla villag
 
 Fires when a villager acquires a new retaliation target and that target is the current player. This lets datapacks intercept the moment just before combat fully commits, so a villager can warn, accuse, demand payment, or go straight to violence depending on the selected entry.
 
-`retaliation_started` uses the retaliating villager as the witness, so `witness_profession`, `requires_line_of_sight`, `witness_radius`, `target_entity_type`, `target_entity_types`, `min_recent_retaliations`, and `max_recent_retaliations` are the most relevant filters. Because forced dialogue is player-facing, this trigger currently only starts a forced conversation when the retaliation target is a player.
+`retaliation_started` uses the retaliating villager as the witness, so `witness_profession`, `requires_witness_unarmed`, `requires_witness_armed`, `requires_line_of_sight`, `witness_radius`, `target_entity_type`, `target_entity_types`, `min_recent_retaliations`, and `max_recent_retaliations` are the most relevant filters. Because forced dialogue is player-facing, this trigger currently only starts a forced conversation when the retaliation target is a player.
 
 Use `retaliation_started_chat` for a separate chat-only line on the same event. Unlike the forced-conversation `retaliation_started` trigger, the chat trigger can also fire for non-player targets and broadcasts that line to nearby players.
 

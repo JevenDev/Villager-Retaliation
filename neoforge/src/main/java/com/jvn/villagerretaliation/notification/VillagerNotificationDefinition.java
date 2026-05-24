@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.notification;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.network.VillagerWorldTextIndicatorKind;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
+import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
 import com.jvn.villagerretaliation.util.VillagerPlayerItemCondition;
 import java.util.Set;
 import net.minecraft.resources.ResourceLocation;
@@ -21,6 +22,7 @@ public record VillagerNotificationDefinition(
         Set<VillagerProfession> professions,
         Set<VillagerReputationLevel> reputationLevels,
         Set<ResourceLocation> targetEntityTypes,
+        VillagerEquipmentCondition equipmentCondition,
         VillagerPlayerItemCondition playerItemCondition,
         Integer minReputation,
         Integer maxReputation,
@@ -48,6 +50,9 @@ public record VillagerNotificationDefinition(
             if (targetEntityTypeId == null || !this.targetEntityTypes.contains(targetEntityTypeId)) {
                 return false;
             }
+        }
+        if (!this.equipmentCondition.matches(context.villager())) {
+            return false;
         }
         if (!this.playerItemCondition.matches(context.player())) {
             return false;

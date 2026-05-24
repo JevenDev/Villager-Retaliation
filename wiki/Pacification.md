@@ -43,6 +43,8 @@ Pacification files are not locale-specific. Dialogue text handles localization.
 | `tag` | string or array | none | One or more item tag ids. |
 | `tags` | string or array | none | One or more item tag ids. |
 | `professions` | string or array | any | If present, rule applies only to those villager professions. Wandering traders match `none`. |
+| `requires_villager_unarmed` | boolean | `false` | Requires the villager being pacified to have no usable weapon in either hand. `villager_unarmed` is also accepted as an alias. |
+| `requires_villager_armed` | boolean | `false` | Requires the villager being pacified to have a usable weapon in either hand. `villager_armed` is also accepted as an alias. |
 | `count` | integer | none | Exact number of items to consume. Clamped from `1` to `64`. |
 | `min_count` | integer | `1` | Minimum random cost when `count` is omitted. Clamped from `1` to `64`. |
 | `max_count` | integer | `min_count` | Maximum random cost when `count` is omitted. Clamped from `1` to `64`. |
@@ -78,5 +80,7 @@ When multiple payment rules match:
 1. Higher `priority` wins.
 2. Earlier rule order wins when priority ties.
 3. If any matching rule is profession-specific, generic matches are ignored.
+
+Equipment filters let packs charge a different payment for an armed hostile villager than for an empty-handed one.
 
 To keep vanilla emerald pacification and add modded currency, add a new file under `data/villagerretaliation/pacification/`. To replace the built-in emerald rule, override `data/villagerretaliation/pacification/default.json`.

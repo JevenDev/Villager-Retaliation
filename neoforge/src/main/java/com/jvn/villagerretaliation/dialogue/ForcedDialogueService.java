@@ -653,6 +653,9 @@ public final class ForcedDialogueService {
             LivingEntity target,
             ForcedDialogueDefinition definition,
             ResourceLocation targetTypeId) {
+        if (!rollChance(level, definition.chance())) {
+            return true;
+        }
         String villagerName = VillagerPresetNameRegistry.resolveDisplayName(villager).getString();
         String targetName = target.getDisplayName().getString();
         String targetKind = target.getType().getDescription().getString().toLowerCase(Locale.ROOT);
@@ -861,6 +864,9 @@ public final class ForcedDialogueService {
             ForcedDialogueDefinition definition,
             int priorRetaliations,
             ResourceLocation targetTypeId) {
+        if (!rollChance(level, definition.chance())) {
+            return true;
+        }
         String villagerName = VillagerPresetNameRegistry.resolveDisplayName(villager).getString();
         String targetName = player.getDisplayName().getString();
         String targetKind = player.getType().getDescription().getString().toLowerCase(Locale.ROOT);

@@ -45,7 +45,10 @@ Pack-facing beta.11 changes focus on making data-driven behavior easier to exten
 - Added built-in `container_opened` forced dialogue trigger for configs that confront players when they open watched containers.
 - Added chat-only forced-dialogue triggers `container_theft_chat`, `container_opened_chat`, and `retaliation_started_chat` for villager-styled event lines that do not open the locked interaction screen.
 - Added non-player target support for `retaliation_started_chat`. When the retaliation target is not a player, the line is broadcast to nearby players instead of opening a player-facing conversation.
-- Added forced dialogue entry fields: `trigger`, `event`, `line`, `lines`, `priority`, `witness_radius`, `witness_profession`, `witness_professions`, `requires_line_of_sight`, `initiate_dialogue`, `aggro_immediately`, `force_camera_towards_villager`, `reputation`, `loot_table`, `loot_tables`, `options`, `leave_option`, and `leave_options`.
+- Added forced dialogue entry `chance` for `_chat` triggers so event callouts can be occasional instead of firing every time.
+- Added forced dialogue witness equipment filters `requires_witness_unarmed` / `witness_unarmed` and `requires_witness_armed` / `witness_armed`.
+- Added villager equipment filters `requires_villager_unarmed` / `villager_unarmed` and `requires_villager_armed` / `villager_armed` anywhere a pack rule is evaluated against a villager: dialogue options, lines, messages, openings, closings, pacify lines, notifications, gift preferences, gift rewards, pacification payments, and profession loot rules.
+- Added forced dialogue entry fields: `trigger`, `event`, `line`, `lines`, `priority`, `chance`, `witness_radius`, `witness_profession`, `witness_professions`, `requires_witness_unarmed`, `requires_witness_armed`, `requires_line_of_sight`, `initiate_dialogue`, `aggro_immediately`, `force_camera_towards_villager`, `reputation`, `loot_table`, `loot_tables`, `options`, `leave_option`, and `leave_options`.
 - Added forced dialogue option fields: `id`, `label`, `response`, `reputation`, `aggro`, `aggro_chance`, `end_conversation`, `order`, and `take_items`.
 - Added shared reputation condition fields `reputation_level`, `reputation_levels`, `min_reputation`, and `max_reputation` to dialogue options, dialogue lines, and forced dialogue options.
 - Added forced dialogue `take_items` support for removing a total `count` of matching item ids or tags from the player's inventory, with separate failure response, reputation, end-conversation, and aggro behavior.
@@ -57,6 +60,7 @@ Pack-facing beta.11 changes focus on making data-driven behavior easier to exten
 - Added `small_talk` as the required general conversation dialogue request type.
 - Added a VR version selector to the Datapack Generator. Exported beta.11+ packs write `villagerretaliation.pack_version` in `pack.mcmeta`, and import uses it to restore the matching generator target.
 - Added more built-in dialogue lines for reputation tiers, retaliation aftermath, apologies, village defense, raids, golem loss, fire, gifts, gear reports, recruitment memories, and container-theft gossip.
+- Added built-in `retaliation_started_chat` combat barks for player targets, raiders, undead, monsters, generic retaliation targets, and unarmed villagers.
 - Added loot-table-specific built-in forced dialogue scenes for vanilla village profession chests, with profession-specific robbery responses and lower-priority village/general fallbacks.
 - Added documentation for resource-pack language keys used by the interaction GUI, generated family and relationship rows, reputation overlays, villager chat labels, gender labels, mood labels, and fallback profession labels.
 - Added [Localization Guide](Localization.md) to explain how datapack locale folders and resource-pack language files work together.

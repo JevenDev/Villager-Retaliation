@@ -362,7 +362,7 @@ public final class VillagerInteractionService {
         ItemStack giftedStack = player.getInventory().removeItem(inventorySlot, selectedStack.getCount());
         player.getInventory().setChanged();
         VillagerProfession profession = villager.getVillagerData().getProfession();
-        VillagerGiftPreferences.GiftPreference giftPreference = VillagerGiftPreferences.evaluate(level, profession, giftedStack);
+        VillagerGiftPreferences.GiftPreference giftPreference = VillagerGiftPreferences.evaluate(level, villager, giftedStack);
         int reputationValue = giftPreference.reputationValue();
         VillagerGiftKnowledgeService.rememberGiftResult(level, player, profession, giftedStack, giftPreference);
         Boolean giftAdviceLikedResult = giftAdviceLikedResult(giftPreference.reaction());

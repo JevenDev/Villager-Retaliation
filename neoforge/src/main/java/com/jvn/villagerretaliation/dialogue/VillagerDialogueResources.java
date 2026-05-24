@@ -7,6 +7,7 @@ import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.combat.PacifyPaymentOffer;
 import com.jvn.villagerretaliation.combat.VillagerPacificationResult;
+import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
 import com.jvn.villagerretaliation.util.VillagerLocale;
 import com.jvn.villagerretaliation.util.VillagerPlayerItemCondition;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
@@ -324,6 +325,7 @@ public final class VillagerDialogueResources {
                     showForBabies,
                     professions,
                     dispositions,
+                    VillagerEquipmentCondition.read(entry),
                     weight
             ));
             index++;
@@ -362,6 +364,7 @@ public final class VillagerDialogueResources {
             Set<DialogueDisposition> dispositions = readEnumSet(entry, "dispositions", DialogueDisposition.class);
             VillagerPlayerItemCondition playerItemCondition = VillagerPlayerItemCondition.read(entry);
             VillagerReputationCondition reputationCondition = VillagerReputationCondition.read(entry);
+            VillagerEquipmentCondition equipmentCondition = VillagerEquipmentCondition.read(entry);
             boolean forceCameraTowardsVillager = readBoolean(entry, "force_camera_towards_villager");
             boolean requiresUnreportedCartographerMapDiscovery = readBoolean(entry, "requires_unreported_cartographer_map_discovery");
             boolean requiresUnreportedStoryHintDiscovery = readBoolean(entry, "requires_unreported_story_hint_discovery");
@@ -405,6 +408,7 @@ public final class VillagerDialogueResources {
                     showForBabies,
                     professions,
                     dispositions,
+                    equipmentCondition,
                     playerItemCondition,
                     reputationCondition,
                     forceCameraTowardsVillager,
@@ -526,6 +530,7 @@ public final class VillagerDialogueResources {
                     showForBabies,
                     professions,
                     dispositions,
+                    VillagerEquipmentCondition.read(entry),
                     weight,
                     firstConversationOnly,
                     firstVillageInteractionOnly
@@ -570,6 +575,7 @@ public final class VillagerDialogueResources {
                     professions,
                     dispositions,
                     outcomes,
+                    VillagerEquipmentCondition.read(entry),
                     weight
             ));
             index++;
@@ -637,6 +643,7 @@ public final class VillagerDialogueResources {
         if (!retaliationTargetEntityTypes.isEmpty()) {
             builder.retaliationTargetEntityTypes(retaliationTargetEntityTypes.toArray(ResourceLocation[]::new));
         }
+        builder.equipmentCondition(VillagerEquipmentCondition.read(entry));
         VillagerReputationCondition reputationCondition = VillagerReputationCondition.read(entry);
         if (!reputationCondition.isEmpty()) {
             builder.reputationCondition(reputationCondition);
@@ -1024,6 +1031,7 @@ public final class VillagerDialogueResources {
             boolean showForBabies,
             Set<VillagerProfession> professions,
             Set<DialogueDisposition> dispositions,
+            VillagerEquipmentCondition equipmentCondition,
             int weight,
             boolean firstConversationOnly,
             boolean firstVillageInteractionOnly) {
@@ -1036,6 +1044,9 @@ public final class VillagerDialogueResources {
                 return false;
             }
             if (!this.professions.isEmpty() && !this.professions.contains(context.profession())) {
+                return false;
+            }
+            if (!this.equipmentCondition.matches(context.villager())) {
                 return false;
             }
             if (this.firstConversationOnly && !context.firstConversation()) {
@@ -1058,9 +1069,13 @@ public final class VillagerDialogueResources {
             Set<VillagerProfession> professions,
             Set<DialogueDisposition> dispositions,
             Set<VillagerPacificationResult> outcomes,
+            VillagerEquipmentCondition equipmentCondition,
             int weight) {
         private boolean matches(DialogueContext context, VillagerPacificationResult result) {
             if (!this.professions.isEmpty() && !this.professions.contains(context.profession())) {
+                return false;
+            }
+            if (!this.equipmentCondition.matches(context.villager())) {
                 return false;
             }
             if (!this.dispositions.isEmpty() && !this.dispositions.contains(VillagerDialogueService.moodFor(context))) {
@@ -1078,6 +1093,7 @@ public final class VillagerDialogueResources {
             boolean showForBabies,
             Set<VillagerProfession> professions,
             Set<DialogueDisposition> dispositions,
+            VillagerEquipmentCondition equipmentCondition,
             int weight) {
         private boolean matches(String key) {
             return this.key.equals(key);
@@ -1095,6 +1111,9 @@ public final class VillagerDialogueResources {
                 return false;
             }
             if (!this.professions.isEmpty() && !this.professions.contains(context.profession())) {
+                return false;
+            }
+            if (!this.equipmentCondition.matches(context.villager())) {
                 return false;
             }
             return this.dispositions.isEmpty() || this.dispositions.contains(disposition);

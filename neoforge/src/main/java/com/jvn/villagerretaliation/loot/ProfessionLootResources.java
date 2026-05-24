@@ -7,6 +7,7 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import com.jvn.toucanlib.util.ToucanRandom;
 import java.io.IOException;
@@ -60,9 +61,8 @@ public final class ProfessionLootResources {
         }
 
         ProfessionLootRulePool pool = load(level.getServer());
-        VillagerProfession profession = villager.getVillagerData().getProfession();
         List<ProfessionLootRule> rules = pool.rules().stream()
-                .filter(rule -> rule.matches(profession))
+                .filter(rule -> rule.matches(villager))
                 .toList();
         if (rules.isEmpty()) {
             return List.of();
@@ -191,6 +191,7 @@ public final class ProfessionLootResources {
                     resolvedId,
                     readProfessions(entry),
                     ResourceKey.create(Registries.LOOT_TABLE, lootTable.get()),
+                    VillagerEquipmentCondition.read(entry),
                     readChance(entry)
             ));
             index++;
@@ -320,9 +321,12 @@ public final class ProfessionLootResources {
             String id,
             Set<VillagerProfession> professions,
             ResourceKey<LootTable> lootTableKey,
+            VillagerEquipmentCondition equipmentCondition,
             ChanceGate chance) {
-        private boolean matches(VillagerProfession profession) {
-            return this.professions.isEmpty() || this.professions.contains(profession);
+        private boolean matches(Villager villager) {
+            VillagerProfession profession = villager.getVillagerData().getProfession();
+            return (this.professions.isEmpty() || this.professions.contains(profession))
+                    && this.equipmentCondition.matches(villager);
         }
     }
 }

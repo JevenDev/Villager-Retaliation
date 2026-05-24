@@ -47,6 +47,8 @@ Notification files translate HUD notification text and ambient world text. They 
 | `text_color` | color | `color` | On-screen text color. |
 | `chat_color` | color | `text_color` | Chat/log color where used. |
 | `professions` | string or array | any | Profession filter. |
+| `requires_villager_unarmed` | boolean | `false` | Requires the notification villager to have no usable weapon in either hand. `villager_unarmed` is also accepted as an alias. |
+| `requires_villager_armed` | boolean | `false` | Requires the notification villager to have a usable weapon in either hand. `villager_armed` is also accepted as an alias. |
 | `reputation_levels` | string or array | any | Reputation tier filter. |
 | `target_entity_types` | string or array | any | Retaliation target entity ids such as `minecraft:player` or `minecraft:zombie`. |
 | `target_entities` | string or array | any | Alias for `target_entity_types`. |
@@ -138,6 +140,8 @@ Placeholder support depends on the trigger. Common built-in notification placeho
 Unknown placeholders are left as literal text.
 
 Player item filtered notifications can use `{player_item}`, `{held_item}`, `{player_item_id}`, `{held_item_id}`, `{player_item_slot}`, and `{held_item_slot}`. The aliases `player_item`, `player_item_tag`, `player_item_tags`, and `player_item_slot` are also accepted as fields.
+
+Equipment-filtered notifications can use `requires_villager_armed` or `requires_villager_unarmed`, so the same trigger can show different text for armed defenders and empty-handed villagers.
 
 Alert world text supports `{player}`, `{attacker}`, `{villager}`, `{villager_name}`, `{villager_kind}`, and `{profession}`. Use `alert.player_attacked_villager` for an immediate response from the damaged villager when the attacker is a player. If no entry matches, it falls back to `alert.villager_damaged`.
 

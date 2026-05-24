@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.VillagerRetaliation;
+import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
 import com.jvn.villagerretaliation.util.VillagerInventoryItemRemoval;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import com.jvn.villagerretaliation.util.VillagerReputationCondition;
@@ -160,6 +161,7 @@ public final class ForcedDialogueResources {
                 readBoolean(entry, "force_camera_towards_villager"),
                 readBoolean(entry, "requires_line_of_sight", true),
                 Math.max(1.0D, readDouble(entry, "witness_radius", 12.0D)),
+                clampChance(readDouble(entry, "chance", 1.0D)),
                 readInt(entry, "reputation", 0),
                 readInt(entry, "priority", 0),
                 readInt(entry, "min_recent_container_thefts", 0),
@@ -169,6 +171,7 @@ public final class ForcedDialogueResources {
                 readLootTables(entry),
                 readTargetEntityTypes(entry),
                 readProfessions(entry),
+                VillagerEquipmentCondition.read(entry, "witness"),
                 options,
                 leaveOption,
                 leaveOptions
@@ -588,6 +591,7 @@ public final class ForcedDialogueResources {
             boolean forceCameraTowardsVillager,
             boolean requiresLineOfSight,
             double witnessRadius,
+            double chance,
             int reputationDelta,
             int priority,
             int minRecentContainerThefts,
@@ -597,6 +601,7 @@ public final class ForcedDialogueResources {
             Set<ResourceLocation> lootTables,
             Set<ResourceLocation> targetEntityTypes,
             Set<VillagerProfession> witnessProfessions,
+            VillagerEquipmentCondition witnessEquipmentCondition,
             List<ForcedDialogueOption> options,
             ForcedDialogueOption leaveOption,
             List<ForcedDialogueOption> leaveOptions) {
@@ -616,7 +621,10 @@ public final class ForcedDialogueResources {
         }
 
         public boolean matchesWitness(Villager villager) {
-            return this.witnessProfessions.isEmpty() || this.witnessProfessions.contains(villager.getVillagerData().getProfession());
+            if (!this.witnessProfessions.isEmpty() && !this.witnessProfessions.contains(villager.getVillagerData().getProfession())) {
+                return false;
+            }
+            return this.witnessEquipmentCondition.matches(villager);
         }
 
         public boolean matchesRecentContainerThefts(int count) {

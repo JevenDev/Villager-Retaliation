@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.VillagerRetaliation;
+import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import java.io.IOException;
 import java.io.Reader;
@@ -55,9 +56,8 @@ public final class VillagerPacifyPaymentResources {
         if (server == null) {
             return false;
         }
-        VillagerProfession profession = professionOf(villager);
         return load(server).paymentRules().stream()
-                .anyMatch(rule -> rule.matches(profession, stack));
+                .anyMatch(rule -> rule.matches(villager, stack));
     }
 
     public static Optional<PacifyPaymentOffer> offerFor(AbstractVillager villager, ItemStack stack) {
@@ -69,9 +69,8 @@ public final class VillagerPacifyPaymentResources {
             return Optional.empty();
         }
 
-        VillagerProfession profession = professionOf(villager);
         List<PaymentRule> matches = load(server).paymentRules().stream()
-                .filter(rule -> rule.matches(profession, stack))
+                .filter(rule -> rule.matches(villager, stack))
                 .sorted(PaymentRule::compareTo)
                 .toList();
         if (matches.isEmpty()) {
@@ -159,6 +158,7 @@ public final class VillagerPacifyPaymentResources {
                     readString(entry, "name"),
                     readString(entry, "plural_name"),
                     readInt(entry, "priority", 0),
+                    VillagerEquipmentCondition.read(entry),
                     index
             ));
             index++;
@@ -296,9 +296,12 @@ public final class VillagerPacifyPaymentResources {
             String itemName,
             String pluralItemName,
             int priority,
+            VillagerEquipmentCondition equipmentCondition,
             int order) implements Comparable<PaymentRule> {
-        private boolean matches(VillagerProfession profession, ItemStack stack) {
-            return appliesToProfession(profession) && this.selectors.stream().anyMatch(selector -> selector.matches(stack));
+        private boolean matches(AbstractVillager villager, ItemStack stack) {
+            return appliesToProfession(professionOf(villager))
+                    && this.equipmentCondition.matches(villager)
+                    && this.selectors.stream().anyMatch(selector -> selector.matches(stack));
         }
 
         private boolean appliesToProfession(VillagerProfession profession) {

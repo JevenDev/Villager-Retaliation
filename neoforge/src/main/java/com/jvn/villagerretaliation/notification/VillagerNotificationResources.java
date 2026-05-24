@@ -8,6 +8,7 @@ import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.network.VillagerWorldTextIndicatorKind;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
+import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
 import com.jvn.villagerretaliation.util.VillagerLocale;
 import com.jvn.villagerretaliation.util.VillagerPlayerItemCondition;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
@@ -206,6 +207,7 @@ public final class VillagerNotificationResources {
                 readProfessions(entry),
                 readEnumSet(entry, "reputation_levels", VillagerReputationLevel.class),
                 readResourceLocations(entry, "target_entity_types", "target_entities", "target_entity_type", "target_entity"),
+                VillagerEquipmentCondition.read(entry),
                 VillagerPlayerItemCondition.read(entry),
                 readOptionalInt(entry, "min_reputation").orElse(null),
                 readOptionalInt(entry, "max_reputation").orElse(null),

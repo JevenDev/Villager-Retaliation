@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.dialogue;
 
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
+import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
 import com.jvn.villagerretaliation.util.VillagerPlayerItemCondition;
 import com.jvn.villagerretaliation.util.VillagerReputationCondition;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
@@ -27,6 +28,7 @@ public record DialogueLine(
         boolean requiresRetaliationToSelf,
         boolean requiresRetaliationFromOther,
         Set<ResourceLocation> retaliationTargetEntityTypes,
+        VillagerEquipmentCondition equipmentCondition,
         VillagerReputationCondition reputationCondition,
         VillagerPlayerItemCondition playerItemCondition,
         Set<ResourceLocation> storyTargetIds,
@@ -127,6 +129,9 @@ public record DialogueLine(
                 .map(event -> event.retaliation() != null
                         && this.retaliationTargetEntityTypes.contains(ResourceLocation.tryParse(event.retaliation().targetTypeId())))
                 .orElse(false) == false) {
+            return false;
+        }
+        if (!this.equipmentCondition.matches(context.villager())) {
             return false;
         }
         if (!this.playerItemCondition.matches(context.player())) {
@@ -275,6 +280,9 @@ public record DialogueLine(
         if (this.requiresRetaliationToSelf || this.requiresRetaliationFromOther || !this.retaliationTargetEntityTypes.isEmpty()) {
             score += 5;
         }
+        if (!this.equipmentCondition.isEmpty()) {
+            score += 4;
+        }
         if (!this.playerItemCondition.isEmpty()) {
             score += 5;
         }
@@ -356,6 +364,7 @@ public record DialogueLine(
         private boolean requiresRetaliationToSelf;
         private boolean requiresRetaliationFromOther;
         private final Set<ResourceLocation> retaliationTargetEntityTypes = new java.util.HashSet<>();
+        private VillagerEquipmentCondition equipmentCondition = VillagerEquipmentCondition.empty();
         private VillagerReputationCondition reputationCondition = VillagerReputationCondition.empty();
         private VillagerPlayerItemCondition playerItemCondition = VillagerPlayerItemCondition.empty();
         private final Set<ResourceLocation> storyTargetIds = new java.util.HashSet<>();
@@ -468,6 +477,23 @@ public record DialogueLine(
                     this.retaliationTargetEntityTypes.add(entityTypeId);
                 }
             }
+            return this;
+        }
+
+        public Builder requiresVillagerUnarmed() {
+            this.equipmentCondition = new VillagerEquipmentCondition(true, this.equipmentCondition.requiresArmed());
+            return this;
+        }
+
+        public Builder requiresVillagerArmed() {
+            this.equipmentCondition = new VillagerEquipmentCondition(this.equipmentCondition.requiresUnarmed(), true);
+            return this;
+        }
+
+        public Builder equipmentCondition(VillagerEquipmentCondition equipmentCondition) {
+            this.equipmentCondition = equipmentCondition == null
+                    ? VillagerEquipmentCondition.empty()
+                    : equipmentCondition;
             return this;
         }
 
@@ -716,6 +742,7 @@ public record DialogueLine(
                     this.requiresRetaliationToSelf,
                     this.requiresRetaliationFromOther,
                     Set.copyOf(this.retaliationTargetEntityTypes),
+                    this.equipmentCondition,
                     this.reputationCondition,
                     this.playerItemCondition,
                     Set.copyOf(this.storyTargetIds),
