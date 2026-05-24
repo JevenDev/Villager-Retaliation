@@ -9,6 +9,7 @@ import com.jvn.villagerretaliation.combat.VillagerPacifyPaymentResources;
 import com.jvn.villagerretaliation.combat.WanderingTraderRetaliationHandler;
 import com.jvn.villagerretaliation.debug.VillagerRetaliationDebugItems;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueService;
+import com.jvn.villagerretaliation.dialogue.ForcedDialogueService;
 import com.jvn.villagerretaliation.interaction.VillagerCombatSurvivalService;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
@@ -317,6 +318,7 @@ public final class VillagerRetaliationEvents {
             }
         }
 
+        ForcedDialogueService.rememberPotentialContainerOpen(event);
         ToucanHazardAttribution.rememberPlayerPlacedVanillaHazard(
                 event.getEntity(),
                 event.getLevel(),

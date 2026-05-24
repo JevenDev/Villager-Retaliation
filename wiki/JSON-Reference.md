@@ -138,6 +138,51 @@ Dialogue `type` values and notification `trigger` values have their own expandab
 - [Dialogue Types](Dialogue-Types.md) covers every current `options[].type` and `lines[].type` value.
 - [Notification Triggers](Notification-Triggers.md) covers every built-in notification `trigger` value from the current data files.
 
+## Forced Dialogue Events
+
+For the full field reference, trigger behavior, and examples, see [Forced Dialogue JSON](Forced-Dialogue.md).
+
+Forced dialogue files live under:
+
+```text
+data/villagerretaliation/forced_dialogue/*.json
+```
+
+They define event-driven dialogue moments that can interrupt the player with a locked option list. The first built-in trigger is `container_theft`, fired when a player removes items from a chest, barrel, or shulker box after a villager witnesses the theft with line of sight.
+
+```json
+{
+  "id": "witnessed_container_theft",
+  "trigger": "container_theft",
+  "witness_radius": 12.0,
+  "requires_line_of_sight": true,
+  "initiate_dialogue": true,
+  "aggro_immediately": false,
+  "reputation": -8,
+  "line": "Stop right there. That {container} is not yours to empty.",
+  "options": [
+    {
+      "id": "apologize",
+      "label": "Apologize",
+      "response": "Words are easy after the lid closes.",
+      "reputation": 2,
+      "aggro": false,
+      "end_conversation": true
+    },
+    {
+      "id": "deny",
+      "label": "Deny it",
+      "response": "I watched you take from it.",
+      "reputation": -4,
+      "aggro": true,
+      "end_conversation": true
+    }
+  ]
+}
+```
+
+Forced dialogue supports either one root object or an `entries` array. `priority` chooses between multiple matching definitions, with lower numbers winning. Template tokens currently include `{villager}`, `{player}`, `{container}`, `{count}`, `{item}`, `{x}`, `{y}`, and `{z}`.
+
 ## Village Event Tags
 
 Dialogue lines can filter recent village memories with `event_tags` and player-specific recent memories with `player_event_tags`.

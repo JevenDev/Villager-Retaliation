@@ -12,12 +12,13 @@ The generator is a static page. It does not need a server, does not upload pack 
 
 ## What It Builds
 
-The generator writes the same datapack paths documented in this wiki:
+The generator writes these datapack paths:
 
 | Tab | Generated path |
 | --- | --- |
 | Overview | `pack.mcmeta` |
 | Dialogue | `data/villagerretaliation/dialogue/<locale>/<file>.json` |
+| Forced | `data/villagerretaliation/forced_dialogue/<file>.json` |
 | Notifications | `data/villagerretaliation/notifications/<locale>/<file>.json` |
 | Gifts | `data/villagerretaliation/gifts/<file>.json` |
 | Pacification | `data/villagerretaliation/pacification/<file>.json` |
@@ -25,13 +26,15 @@ The generator writes the same datapack paths documented in this wiki:
 | Stories - Biomes | `data/<namespace>/story_biomes/<file>.json` |
 | Names | `data/villagerretaliation/villager_names/preset_names.json` |
 
+Forced dialogue entries use the Forced tab. Use it for event-driven conversations such as witnessed container theft, including line-of-sight checks, immediate aggro, dialogue options, reputation changes, and aggro after specific responses. See [Forced Dialogue JSON](Forced-Dialogue.md) for the raw schema.
+
 The generator is meant for datapacks. Use a resource pack separately for GUI language keys, villager textures, and model JSON.
 
 ## Quick Start
 
 1. Open `tools/datapack-builder/index.html` in a browser.
 2. In Overview, set the pack name, `pack_format`, default namespace, file slug, locale, and description.
-3. Use the tabs to add dialogue, notifications, gift preferences, high-reputation rewards, pacification payments, story targets, or preset villager names.
+3. Use the tabs to add dialogue, forced dialogue events, notifications, gift preferences, high-reputation rewards, pacification payments, story targets, or preset villager names.
 4. Watch the preview panel to confirm the generated file path and JSON.
 5. Use the validation panel to catch missing selectors, bad ids, and common path mistakes.
 6. Click Export to download the datapack zip.
@@ -43,7 +46,7 @@ For a fast starting point, use the generator's starter pack action, then edit or
 
 Use Import to load an existing datapack zip or one or more JSON files. Use Import Folder to load an unpacked datapack directory when your browser supports directory selection.
 
-The generator recognizes Villager Retaliation dialogue, notifications, gifts, pacification, story discovery, preset names, and `pack.mcmeta`. Unknown files are preserved as extra files when possible, so imported datapacks can usually be exported again without losing unrelated datapack content.
+The generator recognizes Villager Retaliation dialogue, forced dialogue, notifications, gifts, pacification, story discovery, preset names, and `pack.mcmeta`. Unknown files are preserved as extra files when possible, so imported datapacks can usually be exported again without losing unrelated datapack content.
 
 When importing dialogue, the generator can merge files from normal locale folders and profession subfolders. Check the preview paths after import, especially if the original pack used several files for the same system.
 

@@ -7,6 +7,7 @@ import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.DialogueDisposition;
 import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
+import com.jvn.villagerretaliation.dialogue.ForcedDialogueService;
 import com.jvn.villagerretaliation.dialogue.DialogueReputationEffect;
 import com.jvn.villagerretaliation.dialogue.DialogueReputationService;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueService;
@@ -147,6 +148,7 @@ public final class VillagerInteractionService {
                 reputation.level(),
                 mood,
                 VillagerRecruitmentService.isFollowing(villager, player),
+                false,
                 dialogueOptions,
                 giftKnowledge.likedGiftNames(),
                 giftKnowledge.dislikedGiftNames(),
@@ -155,6 +157,53 @@ public final class VillagerInteractionService {
         ));
         VillagerAmbientIndicatorService.onConversationOpened(level, villager, player);
         broadcastVillagerChat(level, villager, greetingText);
+    }
+
+    public static boolean openForcedDialogue(
+            ServerPlayer player,
+            Villager villager,
+            String openingText,
+            List<DialogueOptionDefinition> dialogueOptions) {
+        if (!VillagerConversationService.start(player, villager)) {
+            return false;
+        }
+
+        openForcedInteractionScreen(player, villager, dialogueOptions);
+        focusVillagerOnPlayer(villager, player);
+        if (!openingText.isBlank()) {
+            broadcastVillagerChat(player.serverLevel(), villager, openingText);
+        }
+        return true;
+    }
+
+    private static void openForcedInteractionScreen(
+            ServerPlayer player,
+            Villager villager,
+            List<DialogueOptionDefinition> dialogueOptions) {
+        ServerLevel level = player.serverLevel();
+        ReputationSnapshot reputation = reputationSnapshot(level, villager, player);
+        DialogueContext context = createDialogueContext(level, player, villager);
+        VillagerGiftKnowledgeService.GiftKnowledgeSnapshot giftKnowledge =
+                VillagerGiftKnowledgeService.knownGifts(level, player, villager.getVillagerData().getProfession());
+        PacketDistributor.sendToPlayer(player, new OpenVillagerInteractionPayload(
+                villager.getId(),
+                "",
+                VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
+                professionTranslationKey(villager),
+                VillagerPresetNameRegistry.resolveGender(villager).serializedName(),
+                villager.isBaby(),
+                reputation.value(),
+                reputation.level(),
+                VillagerDialogueService.moodFor(context),
+                VillagerRecruitmentService.isFollowing(villager, player),
+                true,
+                dialogueOptions,
+                giftKnowledge.likedGiftNames(),
+                giftKnowledge.dislikedGiftNames(),
+                VillagerSocialGraphService.familySnapshot(level, villager),
+                VillagerSocialGraphService.relationshipSnapshot(level, villager)
+        ));
+        VillagerAmbientIndicatorService.onConversationOpened(level, villager, player);
     }
 
     private static String professionTranslationKey(Villager villager) {
@@ -175,6 +224,9 @@ public final class VillagerInteractionService {
         }
         if (!VillagerConversationService.validate(player, villager)) {
             sendVillagerNotice(player, villager, "interaction.conversation_ended");
+            return;
+        }
+        if (ForcedDialogueService.handleDialogueRequest(player, villager, optionId)) {
             return;
         }
         if (shouldRefuseDespisedConversation(villager, player)) {
@@ -463,9 +515,11 @@ public final class VillagerInteractionService {
     public static void handleConversationEndRequest(ServerPlayer player, int entityId) {
         Villager villager = resolveVillager(player, entityId);
         if (villager == null || !VillagerConversationService.validate(player, villager)) {
+            ForcedDialogueService.endForPlayer(player);
             VillagerConversationService.endForPlayer(player, true);
             return;
         }
+        ForcedDialogueService.endForPlayer(player);
 
         ServerLevel level = player.serverLevel();
         ReputationSnapshot reputation = reputationSnapshot(level, villager, player);
@@ -575,6 +629,26 @@ public final class VillagerInteractionService {
 
     private static void sendDialogueReputation(ServerPlayer player, Villager villager, ServerLevel level) {
         sendDialogueReputation(player, villager, level, null, null);
+    }
+
+    public static void sendForcedDialogueReputation(
+            ServerPlayer player,
+            Villager villager,
+            List<DialogueOptionDefinition> dialogueOptions) {
+        ServerLevel level = player.serverLevel();
+        ReputationSnapshot reputation = reputationSnapshot(level, villager, player);
+        DialogueContext context = createDialogueContext(level, player, villager);
+        VillagerGiftKnowledgeService.GiftKnowledgeSnapshot giftKnowledge =
+                VillagerGiftKnowledgeService.knownGifts(level, player, villager.getVillagerData().getProfession());
+        PacketDistributor.sendToPlayer(player, new VillagerDialogueResponsePayload(
+                villager.getId(),
+                reputation.value(),
+                reputation.level(),
+                VillagerDialogueService.moodFor(context),
+                dialogueOptions,
+                giftKnowledge.likedGiftNames(),
+                giftKnowledge.dislikedGiftNames()
+        ));
     }
 
     private static void sendDialogueReputation(
@@ -855,7 +929,7 @@ public final class VillagerInteractionService {
         broadcastVillagerChat(level, villager, responseText);
     }
 
-    private static void broadcastVillagerChat(ServerLevel level, Villager villager, String text) {
+    public static void broadcastVillagerChat(ServerLevel level, Villager villager, String text) {
         if (text == null || text.isBlank()) {
             return;
         }

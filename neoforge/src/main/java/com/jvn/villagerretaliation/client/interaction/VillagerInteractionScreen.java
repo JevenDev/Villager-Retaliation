@@ -92,6 +92,7 @@ public class VillagerInteractionScreen extends Screen {
     private VillagerReputationLevel reputationLevel;
     private DialogueDisposition mood;
     private boolean followingPlayer;
+    private final boolean forcedDialogue;
     private final List<DialogueOption> options = new ArrayList<>();
     private final List<DialogueOptionDefinition> dialogueOptions = new ArrayList<>();
     private final List<String> knownLikedGiftNames = new ArrayList<>();
@@ -120,6 +121,7 @@ public class VillagerInteractionScreen extends Screen {
             VillagerReputationLevel reputationLevel,
             DialogueDisposition mood,
             boolean followingPlayer,
+            boolean forcedDialogue,
             List<DialogueOptionDefinition> dialogueOptions,
             List<String> knownLikedGiftNames,
             List<String> knownDislikedGiftNames,
@@ -135,11 +137,15 @@ public class VillagerInteractionScreen extends Screen {
         this.reputationLevel = reputationLevel;
         this.mood = mood;
         this.followingPlayer = followingPlayer;
+        this.forcedDialogue = forcedDialogue;
         this.dialogueOptions.addAll(dialogueOptions);
         this.knownLikedGiftNames.addAll(knownLikedGiftNames);
         this.knownDislikedGiftNames.addAll(knownDislikedGiftNames);
         this.familyTree = familyTree == null ? VillagerFamilyTreeSnapshot.EMPTY : familyTree;
         this.relationships = relationships == null ? VillagerRelationshipSnapshot.EMPTY : relationships;
+        if (forcedDialogue) {
+            this.page = DialoguePage.TALK;
+        }
         ClientVillagerConversationState.start(villagerEntityId);
     }
 
@@ -351,7 +357,11 @@ public class VillagerInteractionScreen extends Screen {
         } else if (this.page == DialoguePage.RECRUIT) {
             addRecruitOptions();
         } else if (this.page == DialoguePage.ROOT) {
-            addRootOptions();
+            if (this.forcedDialogue) {
+                addDialogueOptions();
+            } else {
+                addRootOptions();
+            }
         }
         this.selectedOption = this.options.isEmpty() ? -1 : 0;
         this.optionScroll = 0.0F;
@@ -563,6 +573,9 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     private void navigateToRootPage() {
+        if (this.forcedDialogue) {
+            return;
+        }
         if (this.page != DialoguePage.ROOT) {
             this.page = DialoguePage.ROOT;
             this.selectedInventorySlot = -1;
@@ -1216,11 +1229,11 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     private boolean isTopBackButtonVisible() {
-        return canNavigateBack();
+        return !this.forcedDialogue && canNavigateBack();
     }
 
     private boolean canNavigateBack() {
-        return this.page != DialoguePage.ROOT;
+        return !this.forcedDialogue && this.page != DialoguePage.ROOT;
     }
 
     private boolean isPointInsideTopBackButton(double mouseX, double mouseY) {

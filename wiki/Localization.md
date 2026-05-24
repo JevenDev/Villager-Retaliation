@@ -2,7 +2,7 @@
 
 Villager Retaliation has two localization layers:
 
-- **Datapack text** for dialogue, notifications, ambient world text, and villager name pools.
+- **Datapack text** for dialogue, forced dialogue, notifications, ambient world text, and villager name pools.
 - **Resource-pack language keys** for client UI labels, generated GUI rows, reputation overlays, and Minecraft entity names.
 
 Use both layers when translating the whole experience. A datapack can translate villager speech and notification text, but it cannot translate the interaction-screen buttons by itself. A resource pack can translate the GUI, but it cannot replace datapack dialogue pools by itself.
@@ -45,6 +45,8 @@ Use the same `id` in the fallback entry and the translated entry. The translated
 ```
 
 Players using `fr_fr` see the French line. Players using any other language keep the `en_us` fallback.
+
+Forced dialogue files under `data/villagerretaliation/forced_dialogue/` are datapack text too, but they are not locale-folder based. Put forced-dialogue wording directly in the forced-dialogue entry that should be active for that pack.
 
 ## Resource-Pack Language Files
 

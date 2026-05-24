@@ -75,6 +75,7 @@ const CONSTANTS = {
     "alert.witness_death.player",
     "alert.witness_death"
   ],
+  forcedDialogueTriggers: ["container_theft"],
   reputationLevels: ["royalty", "revered", "respected", "trusted", "neutral", "suspicious", "hostile", "despised", "feared"],
   hudKinds: [
     "default",
@@ -273,6 +274,14 @@ const FIELD_TOOLTIPS = {
   "dialogue-weight": "Weighted selection among matching entries. Missing weights usually default to 10.",
   "dialogue-key": "Message lookup key used by systems such as gift preference response_key.",
   "dialogue-outcomes": "Pacification result filter, such as success, not_enough_emeralds, blocked_by_reputation, or not_applicable.",
+  "forcedDialogue-fileName": "Creates data/villagerretaliation/forced_dialogue/<file>.json. Use default only when replacing the built-in theft confrontation.",
+  "forced-id": "Stable id for this forced dialogue rule. Duplicate ids can override or collide depending on load order.",
+  "forced-trigger": "Event trigger for the forced conversation. container_theft fires when a villager sees the player take from a container.",
+  "forced-line": "Villager line shown when the forced conversation opens.",
+  "forced-priority": "Higher priority wins when multiple forced dialogue rules match the same event.",
+  "forced-witness_radius": "Maximum block distance for witnesses to detect the event.",
+  "forced-reputation": "Optional reputation change applied when this rule runs.",
+  "forced-options_json": "JSON array of player response options. Each option can set label, response, reputation, aggro, end_conversation, and order.",
   "notifications-fileName": "Creates data/villagerretaliation/notifications/<locale>/<file>.json. Avoid global unless intentionally replacing built-in notifications.",
   "notifications-locale": "Locale folder for this notification file. en_us loads first, then the player's locale overlays matching ids.",
   "notification-id": "Stable id for translation overlays and replacement. Generated ids work, but explicit ids are safer.",
@@ -431,6 +440,7 @@ const TAG_SUGGESTIONS = {
   "dialogue-event_tags": CONSTANTS.eventTags,
   "dialogue-player_event_tags": CONSTANTS.eventTags,
   "dialogue-outcomes": CONSTANTS.pacifyOutcomes,
+  "forced-trigger": CONSTANTS.forcedDialogueTriggers,
   "notification-professions": CONSTANTS.professions,
   "notification-reputation_levels": CONSTANTS.reputationLevels,
   "notification-player_item_slots": CONSTANTS.itemSlots,
@@ -519,6 +529,10 @@ function createInitialState() {
       openings: [],
       closings: [],
       pacify: []
+    },
+    forcedDialogue: {
+      fileName: "my_pack_forced_dialogue",
+      entries: []
     },
     notifications: {
       fileName: "my_pack_notifications",
@@ -1057,6 +1071,10 @@ function dialoguePath() {
   return `data/villagerretaliation/dialogue/${state.meta.locale}/${state.dialogue.fileName}.json`;
 }
 
+function forcedDialoguePath() {
+  return `data/villagerretaliation/forced_dialogue/${state.forcedDialogue.fileName}.json`;
+}
+
 function notificationsPath() {
   return `data/villagerretaliation/notifications/${state.meta.locale}/${state.notifications.fileName}.json`;
 }
@@ -1087,6 +1105,10 @@ function generatedFiles() {
 
   if (hasAnyEntries("dialogue", ["options", "lines", "messages", "openings", "closings", "pacify"])) {
     Object.assign(files, generatedDialogueFiles());
+  }
+
+  if (state.forcedDialogue.entries.length > 0) {
+    Object.assign(files, generatedForcedDialogueFiles());
   }
 
   if (state.notifications.notifications.length > 0) {
@@ -1142,6 +1164,16 @@ function generatedDialogueFiles() {
       }
       grouped.get(path)[kind].push(entry);
     }
+  }
+  return Object.fromEntries([...grouped.entries()].map(([path, value]) => [path, safeJson(value)]));
+}
+
+function generatedForcedDialogueFiles() {
+  const grouped = new Map();
+  for (const entry of state.forcedDialogue.entries) {
+    const path = entry.__sourcePath || forcedDialoguePath();
+    if (!grouped.has(path)) grouped.set(path, { entries: [] });
+    grouped.get(path).entries.push(entry);
   }
   return Object.fromEntries([...grouped.entries()].map(([path, value]) => [path, safeJson(value)]));
 }
@@ -1254,6 +1286,9 @@ function validate() {
   if (!isValidFileName(state.dialogue.fileName)) {
     addCheck(checks, "error", "Dialogue file", "Dialogue file names must be lowercase datapack path names.");
   }
+  if (!isValidFileName(state.forcedDialogue.fileName)) {
+    addCheck(checks, "error", "Forced dialogue file", "Forced dialogue file names must be lowercase datapack path names.");
+  }
   if (!isValidFileName(state.notifications.fileName)) {
     addCheck(checks, "error", "Notification file", "Notification file names must be lowercase datapack path names.");
   }
@@ -1349,6 +1384,44 @@ function validate() {
   const blankDialogueList = firstBlankListValue(allDialogueEntries, ["professions", "dispositions", "player_items", "player_item_slots", "weather", "times", "event_tags", "player_event_tags", "story_structures", "story_biomes", "outcomes"]);
   if (blankDialogueList) {
     addCheck(checks, "warning", "Dialogue list", `${humanize(blankDialogueList)} contains a blank value.`);
+  }
+
+  for (const entry of state.forcedDialogue.entries) {
+    if (!entry.trigger || !entry.line) {
+      addCheck(checks, "error", "Forced dialogue", "Every forced dialogue entry needs a trigger and line.");
+      break;
+    }
+  }
+  const duplicateForcedDialogue = firstDuplicate(state.forcedDialogue.entries.map((entry) => entry.id));
+  if (duplicateForcedDialogue) {
+    addCheck(checks, "warning", "Forced dialogue ids", `Duplicate forced dialogue id: ${duplicateForcedDialogue}.`);
+  }
+  const badForcedTrigger = firstInvalidValue(state.forcedDialogue.entries, ["trigger"], (value) => CONSTANTS.forcedDialogueTriggers.includes(value));
+  if (badForcedTrigger) {
+    addCheck(checks, "warning", "Forced dialogue trigger", `Unknown forced dialogue trigger: ${badForcedTrigger}.`);
+  }
+  const badForcedNumber = firstBadNumber(state.forcedDialogue.entries, ["priority", "reputation", "witness_radius"], (value, entry, key) => key === "witness_radius" ? value >= 1 : Number.isFinite(value));
+  if (badForcedNumber) {
+    addCheck(checks, "error", "Forced dialogue number", `${humanize(badForcedNumber)} has an invalid number.`);
+  }
+  for (const entry of state.forcedDialogue.entries) {
+    const options = Array.isArray(entry.options) ? entry.options : [];
+    for (const option of options) {
+      if (!option.id || !option.label) {
+        addCheck(checks, "error", "Forced dialogue option", "Every forced dialogue option needs an id and label.");
+        break;
+      }
+    }
+    const duplicateForcedOption = firstDuplicate(options.map((option) => option.id));
+    if (duplicateForcedOption) {
+      addCheck(checks, "warning", "Forced option ids", `Duplicate forced option id: ${duplicateForcedOption}.`);
+      break;
+    }
+    const badOptionNumber = firstBadNumber(options, ["order", "reputation"], Number.isFinite);
+    if (badOptionNumber) {
+      addCheck(checks, "error", "Forced option number", `${humanize(badOptionNumber)} has an invalid number.`);
+      break;
+    }
   }
 
   for (const entry of state.notifications.notifications) {
@@ -1594,6 +1667,7 @@ function sectionCounts() {
       state.dialogue.closings,
       state.dialogue.pacify
     ),
+    forcedDialogue: totalEntries(state.forcedDialogue.entries),
     notifications: totalEntries(state.notifications.notifications),
     gifts: totalEntries(state.gifts.preferences, state.gifts.rewards),
     pacification: totalEntries(state.pacification.payments),
@@ -1688,6 +1762,7 @@ function renderPreview() {
 function renderPanel() {
   if (activeSection === "overview") renderOverview();
   if (activeSection === "dialogue") renderDialogue();
+  if (activeSection === "forcedDialogue") renderForcedDialogue();
   if (activeSection === "notifications") renderNotifications();
   if (activeSection === "gifts") renderGifts();
   if (activeSection === "pacification") renderPacification();
@@ -1999,6 +2074,52 @@ function formActions(actionLabel, saveAction, clearAction) {
     <div class="form-actions">
       <button class="button button-primary" type="submit" data-action="${saveAction}">${icon(actionLabel === "Update" ? "save" : "plus", "button-icon")}${actionLabel}</button>
       <button class="button button-secondary" type="button" data-action="${clearAction}">${icon("rotate-ccw", "button-icon")}Clear</button>
+    </div>
+  `;
+}
+
+function renderForcedDialogue() {
+  const collection = state.forcedDialogue.entries;
+  const entry = editing?.section === "forcedDialogue" ? collection[editing.index] : {};
+  const optionsJson = Array.isArray(entry.options) ? JSON.stringify(entry.options, null, 2) : "";
+  els.panel.innerHTML = `
+    <div class="builder-content">
+      <div class="builder-header">
+        <div class="panel-title-main">
+          ${icon("octagon-alert", "section-icon")}
+          <div>
+            <h2>Forced Dialogue</h2>
+            <p class="path-label">data/villagerretaliation/forced_dialogue</p>
+          </div>
+        </div>
+        <button class="button button-secondary" type="button" data-action="add-forced-dialogue-example">${icon("plus", "button-icon")}Add Example</button>
+      </div>
+      <div class="form-grid one">
+        ${field({ id: "forcedDialogue-fileName", label: "Forced dialogue file", value: state.forcedDialogue.fileName, help: "Avoid default unless replacing the built-in theft rule." })}
+      </div>
+      <div class="entry-layout">
+        <div class="entry-list">${renderEntryList(collection, "entries", "forcedDialogue")}</div>
+        <form class="entry-form" data-form="forcedDialogue">
+          <div class="form-grid">
+            ${field({ id: "forced-id", label: "Entry id", value: entry.id })}
+            ${selectField({ id: "forced-trigger", label: "Trigger", value: entry.trigger, options: CONSTANTS.forcedDialogueTriggers, allowBlank: false })}
+            ${textareaField({ id: "forced-line", label: "Opening line", value: entry.line, className: "full", rows: 3 })}
+            ${field({ id: "forced-priority", label: "Priority", value: entry.priority ?? "", type: "number" })}
+            ${field({ id: "forced-witness_radius", label: "Witness radius", value: entry.witness_radius ?? "", type: "number", attrs: 'min="1" step="1"' })}
+            ${field({ id: "forced-reputation", label: "Reputation change", value: entry.reputation ?? "", type: "number" })}
+            <div class="field full">
+              <label>Event Behavior</label>
+              <div class="toggle-grid">
+                ${toggle({ id: "forced-requires_line_of_sight", label: "Requires line of sight", checked: entry.requires_line_of_sight !== false })}
+                ${toggle({ id: "forced-initiate_dialogue", label: "Initiates dialogue", checked: entry.initiate_dialogue !== false })}
+                ${toggle({ id: "forced-aggro_immediately", label: "Aggro immediately", checked: entry.aggro_immediately === true })}
+              </div>
+            </div>
+            ${textareaField({ id: "forced-options_json", label: "Options JSON", value: optionsJson, help: "Use an array of player choices with id, label, response, reputation, aggro, end_conversation, and order.", className: "full", rows: 7 })}
+          </div>
+          ${formActions(editing?.section === "forcedDialogue" ? "Update" : "Add", "save-forced-dialogue", "clear-forced-dialogue-form")}
+        </form>
+      </div>
     </div>
   `;
 }
@@ -2321,6 +2442,38 @@ function saveDialogueEntry(event) {
   upsertEntry("dialogue", kind, cleanObject(entry));
 }
 
+function parseJsonArrayField(id, label) {
+  const source = readValue(id).trim();
+  if (!source) return [];
+  try {
+    const value = JSON.parse(source);
+    if (Array.isArray(value)) return value;
+  } catch {
+    // Toast below gives the user one clear correction.
+  }
+  showToast(`${label} must be a JSON array.`);
+  return null;
+}
+
+function saveForcedDialogue(event) {
+  event.preventDefault();
+  const options = parseJsonArrayField("forced-options_json", "Options JSON");
+  if (options === null) return;
+  const entry = {
+    id: readValue("forced-id").trim(),
+    trigger: readValue("forced-trigger"),
+    line: readValue("forced-line").trim(),
+    priority: parseInteger(readValue("forced-priority")),
+    witness_radius: parseInteger(readValue("forced-witness_radius")),
+    requires_line_of_sight: readValue("forced-requires_line_of_sight"),
+    initiate_dialogue: readValue("forced-initiate_dialogue"),
+    aggro_immediately: readValue("forced-aggro_immediately"),
+    reputation: parseInteger(readValue("forced-reputation")),
+    options
+  };
+  upsertEntry("forcedDialogue", "entries", cleanObject(entry));
+}
+
 function saveNotification(event) {
   event.preventDefault();
   const entry = readBooleans("notification", [], {
@@ -2420,6 +2573,7 @@ function upsertEntry(section, kind, entry) {
 
 function inferSelectedPath(section) {
   if (section === "dialogue") return dialoguePath();
+  if (section === "forcedDialogue") return forcedDialoguePath();
   if (section === "notifications") return notificationsPath();
   if (section === "gifts") return giftsPath();
   if (section === "pacification") return pacificationPath();
@@ -2492,6 +2646,42 @@ function addDialogueExample() {
     });
   }
   selectedPath = dialoguePath();
+  render();
+}
+
+function addForcedDialogueExample() {
+  const slug = state.meta.slug || "my_pack";
+  state.forcedDialogue.entries.push({
+    id: `${slug}.container_theft.warning`,
+    trigger: "container_theft",
+    line: "Stop right there. I saw your hands in that chest.",
+    priority: 20,
+    witness_radius: 12,
+    requires_line_of_sight: true,
+    initiate_dialogue: true,
+    aggro_immediately: false,
+    reputation: -5,
+    options: [
+      {
+        id: `${slug}.return_items`,
+        label: "I'll put it back.",
+        response: "See that you do.",
+        reputation: 2,
+        end_conversation: true,
+        order: 0
+      },
+      {
+        id: `${slug}.refuse`,
+        label: "Try and stop me.",
+        response: "Then you leave me no choice.",
+        reputation: -10,
+        aggro: true,
+        end_conversation: true,
+        order: 10
+      }
+    ]
+  });
+  selectedPath = forcedDialoguePath();
   render();
 }
 
@@ -2576,6 +2766,7 @@ function loadStarterPack() {
   state.meta.namespace = "village_rumors";
   state.meta.slug = "village_rumors";
   state.dialogue.fileName = "village_rumors_dialogue";
+  state.forcedDialogue.fileName = "village_rumors_forced_dialogue";
   state.notifications.fileName = "village_rumors_notifications";
   state.gifts.fileName = "village_rumors_gifts";
   state.stories.namespace = "village_rumors";
@@ -2609,6 +2800,36 @@ function loadStarterPack() {
     id: "village_rumors.gift.librarian.rare_book",
     key: "village_rumors.gift.librarian.rare_book",
     text: "{gift_item}? This belongs near a reading lamp, not forgotten in a chest."
+  });
+  state.forcedDialogue.entries.push({
+    id: "village_rumors.container_theft.warning",
+    trigger: "container_theft",
+    line: "Stop right there. That chest is not yours.",
+    priority: 20,
+    witness_radius: 12,
+    requires_line_of_sight: true,
+    initiate_dialogue: true,
+    aggro_immediately: false,
+    reputation: -5,
+    options: [
+      {
+        id: "village_rumors.apologize",
+        label: "Sorry. I'll put it back.",
+        response: "Apology heard. Action expected.",
+        reputation: 2,
+        end_conversation: true,
+        order: 0
+      },
+      {
+        id: "village_rumors.refuse",
+        label: "It is mine now.",
+        response: "Then we settle this the hard way.",
+        reputation: -10,
+        aggro: true,
+        end_conversation: true,
+        order: 10
+      }
+    ]
   });
   state.notifications.notifications.push({
     id: "village_rumors.ambient.trusted_farmer",
@@ -2667,6 +2888,7 @@ function updateOverviewFromInput(target) {
     const slug = normalizeFileName(target.value, "my_pack");
     state.meta.slug = slug;
     state.dialogue.fileName = `${slug}_dialogue`;
+    state.forcedDialogue.fileName = `${slug}_forced_dialogue`;
     state.notifications.fileName = `${slug}_notifications`;
     state.gifts.fileName = `${slug}_gifts`;
     state.pacification.fileName = `${slug}_pacification`;
@@ -2679,6 +2901,7 @@ function updateOverviewFromInput(target) {
 function updateSectionSettings(target) {
   if (target.id === "dialogue-fileName") state.dialogue.fileName = normalizeFileName(target.value, `${state.meta.slug}_dialogue`);
   if (target.id === "dialogue-locale") state.meta.locale = slugify(target.value, "en_us");
+  if (target.id === "forcedDialogue-fileName") state.forcedDialogue.fileName = normalizeFileName(target.value, `${state.meta.slug}_forced_dialogue`);
   if (target.id === "notifications-fileName") state.notifications.fileName = normalizeFileName(target.value, `${state.meta.slug}_notifications`);
   if (target.id === "notifications-locale") state.meta.locale = slugify(target.value, "en_us");
   if (target.id === "gifts-fileName") state.gifts.fileName = normalizeFileName(target.value, `${state.meta.slug}_gifts`);
@@ -2773,6 +2996,14 @@ function applyEditedFile(path, source) {
     return true;
   }
 
+  const forcedDialogueMatch = path.match(/^data\/villagerretaliation\/forced_dialogue\/(.+)\.json$/);
+  if (forcedDialogueMatch) {
+    const json = parseEditedJson(source);
+    if (!json) return false;
+    replaceForcedDialogueFile(path, json);
+    return true;
+  }
+
   const notificationMatch = path.match(/^data\/villagerretaliation\/notifications\/([^/]+)\/(.+)\.json$/);
   if (notificationMatch) {
     const json = parseEditedJson(source);
@@ -2857,6 +3088,13 @@ function replaceDialogueFile(path, json) {
   }
 }
 
+function replaceForcedDialogueFile(path, json) {
+  const forcedDialogueMatch = path.match(/^data\/villagerretaliation\/forced_dialogue\/(.+)\.json$/);
+  state.forcedDialogue.fileName = normalizeFileName(forcedDialogueMatch[1].split("/").pop(), state.forcedDialogue.fileName);
+  state.forcedDialogue.entries = state.forcedDialogue.entries.filter((entry) => (entry.__sourcePath || forcedDialoguePath()) !== path);
+  state.forcedDialogue.entries.push(...cleanArray(normalizeForcedDialogueEntries(json)).map((entry) => ({ ...entry, __sourcePath: path })));
+}
+
 async function exportZip() {
   const files = generatedFiles();
   const zip = createZip(files);
@@ -2883,6 +3121,7 @@ function isTextPath(path) {
 
 function importedKnownKind(path) {
   if (/^data\/villagerretaliation\/dialogue\/[^/]+\/.+\.json$/.test(path)) return "dialogue";
+  if (/^data\/villagerretaliation\/forced_dialogue\/.+\.json$/.test(path)) return "forced_dialogue";
   if (/^data\/villagerretaliation\/notifications\/[^/]+\/.+\.json$/.test(path)) return "notifications";
   if (/^data\/villagerretaliation\/gifts\/.+\.json$/.test(path)) return "gifts";
   if (/^data\/villagerretaliation\/pacification\/.+\.json$/.test(path)) return "pacification";
@@ -2968,6 +3207,13 @@ function ingestKnownJson(path, source) {
     return true;
   }
 
+  const forcedDialogueMatch = path.match(/^data\/villagerretaliation\/forced_dialogue\/(.+)\.json$/);
+  if (forcedDialogueMatch) {
+    state.forcedDialogue.fileName = normalizeFileName(forcedDialogueMatch[1].split("/").pop(), state.forcedDialogue.fileName);
+    mergeArray("forcedDialogue", "entries", normalizeForcedDialogueEntries(json), path);
+    return true;
+  }
+
   const giftMatch = path.match(/^data\/villagerretaliation\/gifts\/(.+)\.json$/);
   if (giftMatch) {
     state.gifts.fileName = normalizeFileName(giftMatch[1].split("/").pop(), state.gifts.fileName);
@@ -3022,6 +3268,12 @@ function ingestKnownJson(path, source) {
     return true;
   }
 
+  const forcedEntries = normalizeForcedDialogueEntries(json);
+  if (forcedEntries.length > 0) {
+    mergeArray("forcedDialogue", "entries", forcedEntries);
+    return true;
+  }
+
   let matchedTopLevelPackJson = false;
   if (Array.isArray(json.notifications)) {
     mergeArray("notifications", "notifications", json.notifications);
@@ -3051,11 +3303,22 @@ function ingestKnownJson(path, source) {
 }
 
 function detectJsonKind(json) {
+  if (Array.isArray(json.entries) && json.entries.some(isForcedDialogueEntry)) return { section: "forcedDialogue", kind: "entries", key: "entries" };
   if (Array.isArray(json.notifications)) return { section: "notifications", kind: "notifications", key: "notifications" };
   if (Array.isArray(json.preferences)) return { section: "gifts", kind: "preferences", key: "preferences" };
   if (Array.isArray(json.rewards)) return { section: "gifts", kind: "rewards", key: "rewards" };
   if (Array.isArray(json.payments)) return { section: "pacification", kind: "payments", key: "payments" };
   return null;
+}
+
+function isForcedDialogueEntry(entry) {
+  return Boolean(entry && typeof entry === "object" && entry.trigger && (entry.line || Array.isArray(entry.options)));
+}
+
+function normalizeForcedDialogueEntries(json) {
+  if (Array.isArray(json.entries) && json.entries.some(isForcedDialogueEntry)) return json.entries;
+  if (isForcedDialogueEntry(json)) return [json];
+  return [];
 }
 
 function normalizeStoryEntries(json, type) {
@@ -3314,10 +3577,11 @@ els.panel.addEventListener("click", (event) => {
     deleteEntry(actionButton.dataset.section, actionButton.dataset.kind, Number(actionButton.dataset.index));
     return;
   }
-  if (action === "clear-dialogue-form" || action === "clear-notification-form" || action === "clear-gift-form" || action === "clear-pacification-form" || action === "clear-story-form") {
+  if (action === "clear-dialogue-form" || action === "clear-forced-dialogue-form" || action === "clear-notification-form" || action === "clear-gift-form" || action === "clear-pacification-form" || action === "clear-story-form") {
     clearEditing();
   }
   if (action === "add-dialogue-example") addDialogueExample();
+  if (action === "add-forced-dialogue-example") addForcedDialogueExample();
   if (action === "add-notification-example") addNotificationExample();
   if (action === "add-gift-example") addGiftExample();
   if (action === "add-pacification-example") addPacificationExample();
@@ -3342,6 +3606,7 @@ els.panel.addEventListener("submit", (event) => {
   const form = event.target.closest("form");
   if (!form) return;
   if (form.dataset.form === "dialogue") saveDialogueEntry(event);
+  if (form.dataset.form === "forcedDialogue") saveForcedDialogue(event);
   if (form.dataset.form === "notifications") saveNotification(event);
   if (form.dataset.form === "gifts") saveGiftEntry(event);
   if (form.dataset.form === "pacification") savePacification(event);

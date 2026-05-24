@@ -2,6 +2,8 @@
 
 Dialogue JSON controls conversation choices, villager replies, one-off messages, opening lines, closing lines, and pacification responses.
 
+For event-driven locked conversations such as a villager catching the player stealing from a chest, see [Forced Dialogue JSON](Forced-Dialogue.md). Forced dialogue uses a separate datapack path and does not add normal Talk menu options.
+
 ## Paths
 
 Dialogue files must be in the `villagerretaliation` namespace:

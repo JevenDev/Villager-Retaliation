@@ -22,6 +22,7 @@ These pages describe the current supported format:
 
 - [JSON Reference](JSON-Reference.md)
 - [Dialogue JSON](Dialogue.md)
+- [Forced Dialogue JSON](Forced-Dialogue.md)
 - [Dialogue Types](Dialogue-Types.md)
 - [Event Tags](Event-Tags.md)
 - [Notifications JSON](Notifications.md)
@@ -39,6 +40,12 @@ Pack-facing beta.11 changes focus on making data-driven behavior easier to exten
 
 ### Added
 
+- Added [Forced Dialogue JSON](Forced-Dialogue.md) under `data/villagerretaliation/forced_dialogue/` for event-driven locked dialogue moments.
+- Added built-in `container_theft` forced dialogue trigger for witnessed chest, barrel, and shulker theft.
+- Added forced dialogue entry fields: `trigger`, `event`, `line`, `priority`, `witness_radius`, `requires_line_of_sight`, `initiate_dialogue`, `aggro_immediately`, `reputation`, and `options`.
+- Added forced dialogue option fields: `id`, `label`, `response`, `reputation`, `aggro`, `end_conversation`, and `order`.
+- Added forced dialogue placeholders: `{villager}`, `{player}`, `{container}`, `{count}`, `{item}`, `{x}`, `{y}`, and `{z}`.
+- Added forced dialogue editing, import, preview, validation, starter data, and export support to the [Datapack Generator](Datapack-Generator.md).
 - Added documentation for resource-pack language keys used by the interaction GUI, generated family and relationship rows, reputation overlays, villager chat labels, gender labels, mood labels, and fallback profession labels.
 - Added [Localization Guide](Localization.md) to explain how datapack locale folders and resource-pack language files work together.
 - Added namespaced custom profession support for dialogue defaults, dialogue filters, notification filters, gift filters, pacification filters, gift-knowledge keys, and profession display fallbacks.
@@ -49,6 +56,7 @@ Pack-facing beta.11 changes focus on making data-driven behavior easier to exten
 
 ### Modified
 
+- The interaction screen now has a locked forced-dialogue mode for event moments. In this mode, normal root actions such as Talk, Trade, Gift, Inventory, Recruit, Family, and Relationships are hidden until the event option resolves.
 - Villager profession and gender labels used by the interaction GUI are now documented as localization-friendly client values instead of server-supplied English display strings.
 - Villager dialogue speaker labels are now documented as client-localized GUI text instead of datapack text.
 - Built-in profession loot is now declared through datapack rule files and Minecraft loot tables instead of hardcoded Java pools.
@@ -71,6 +79,7 @@ Pack-facing beta.11 changes focus on making data-driven behavior easier to exten
 - Packs that copied `gifts/default.json` only to remove or change one rule can now add a smaller file with matching `id` or `"remove": true`.
 - Packs that copied `villager_names/preset_names.json` only to add names can now add a separate file under `villager_names/`.
 - Packs that want to change profession drops should add or remove `profession_loot` rules and point them at normal Minecraft loot tables.
+- Packs that want to change the built-in theft confrontation can add an entry under `forced_dialogue/`, or intentionally override `data/villagerretaliation/forced_dialogue/default.json`.
 
 ## 2026-05 Documentation Baseline
 

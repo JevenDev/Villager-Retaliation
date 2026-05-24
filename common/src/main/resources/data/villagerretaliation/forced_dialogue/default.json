@@ -1,0 +1,44 @@
+{
+  "entries": [
+    {
+      "id": "witnessed_container_theft",
+      "trigger": "container_theft",
+      "priority": 0,
+      "witness_radius": 12.0,
+      "requires_line_of_sight": true,
+      "initiate_dialogue": true,
+      "aggro_immediately": false,
+      "reputation": -8,
+      "line": "Stop right there. That {container} is not yours to empty.",
+      "options": [
+        {
+          "id": "apologize",
+          "label": "Apologize",
+          "response": "Words are easy after the lid closes. Put your hands to better use.",
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 0
+        },
+        {
+          "id": "deny",
+          "label": "Deny it",
+          "response": "I watched you take from it. Do not make me repeat myself.",
+          "reputation": -4,
+          "aggro": true,
+          "end_conversation": true,
+          "order": 1
+        },
+        {
+          "id": "threaten",
+          "label": "Threaten them",
+          "response": "Then we are past talking.",
+          "reputation": -8,
+          "aggro": true,
+          "end_conversation": true,
+          "order": 2
+        }
+      ]
+    }
+  ]
+}

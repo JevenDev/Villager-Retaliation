@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.util;
 import com.jvn.villagerretaliation.combat.VillagerPacifyPaymentResources;
 import com.jvn.villagerretaliation.dialogue.BiomeStoryResources;
 import com.jvn.villagerretaliation.dialogue.DangerousStructureStoryResources;
+import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionSavedData;
 import com.jvn.villagerretaliation.interaction.VillagerGiftResources;
@@ -26,6 +27,7 @@ public final class VillagerDataWarmup {
         ProfessionLootResources.warm(server);
         VillagerPacifyPaymentResources.warm(server);
         VillagerNotificationResources.warm(server);
+        ForcedDialogueResources.warm(server);
         BiomeStoryResources.warm(server);
         DangerousStructureStoryResources.warm(server);
         VillagerPresetNameRegistry.warm(server);
@@ -45,6 +47,7 @@ public final class VillagerDataWarmup {
         ProfessionLootResources.clearCache();
         VillagerPacifyPaymentResources.clearCache();
         VillagerNotificationResources.clearCache();
+        ForcedDialogueResources.clearCache();
         BiomeStoryResources.clearCache();
         DangerousStructureStoryResources.clearCache();
         VillagerPresetNameRegistry.clearCache();

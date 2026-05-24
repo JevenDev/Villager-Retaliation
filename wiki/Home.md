@@ -1,6 +1,6 @@
 # Villager Retaliation Wiki
 
-Villager Retaliation is data-driven in the places pack makers usually want to touch: dialogue, notifications, gifts, pacification payments, profession loot, story discoveries, villager names, and combat villager models. This wiki is written for JSON authors, datapack authors, resource-pack authors, and modpack developers who want predictable hooks without touching Java.
+Villager Retaliation is data-driven in the places pack makers usually want to touch: dialogue, forced dialogue events, notifications, gifts, pacification payments, profession loot, story discoveries, villager names, and combat villager models. This wiki is written for JSON authors, datapack authors, resource-pack authors, and modpack developers who want predictable hooks without touching Java.
 
 ## Quick Links
 
@@ -9,6 +9,7 @@ Villager Retaliation is data-driven in the places pack makers usually want to to
 - [Pack Format Changes](Pack-Format-Changes.md) - pack-facing added, modified, deprecated, and removed fields, tags, triggers, paths, and migration notes.
 - [JSON Reference](JSON-Reference.md) - shared conventions, enum values, filters, ids, weights, colors, and common pitfalls.
 - [Dialogue JSON](Dialogue.md) - conversation options, dialogue lines, openings, closings, pacify lines, keyed messages, localization overlays, and story placeholders.
+- [Forced Dialogue JSON](Forced-Dialogue.md) - event-driven locked dialogue moments, including witnessed container theft outcomes and aggro choices.
 - [Dialogue Types](Dialogue-Types.md) - every current dialogue `type` value, with simple and expanded dropdown examples.
 - [Event Tags](Event-Tags.md) - every current `event_tags` / `player_event_tags` value, with simple and expanded dropdown examples.
 - [Notifications JSON](Notifications.md) - HUD notifications, ambient world text, trigger ids, colors, notice kinds, filters, and translated replacements.
@@ -27,6 +28,7 @@ Villager Retaliation is data-driven in the places pack makers usually want to to
 | Area | Pack type | Root path |
 | --- | --- | --- |
 | Dialogue | Datapack | `data/villagerretaliation/dialogue/<locale>/` |
+| Forced dialogue events | Datapack | `data/villagerretaliation/forced_dialogue/` |
 | Notifications and world text | Datapack | `data/villagerretaliation/notifications/<locale>/` |
 | Interaction GUI and reputation UI text | Resource pack | `assets/villagerretaliation/lang/<locale>.json` |
 | Gifts and rewards | Datapack | `data/villagerretaliation/gifts/` |

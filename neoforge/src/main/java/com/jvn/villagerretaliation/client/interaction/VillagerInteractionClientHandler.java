@@ -62,6 +62,7 @@ public final class VillagerInteractionClientHandler {
                 payload.reputationLevel(),
                 payload.mood(),
                 payload.followingPlayer(),
+                payload.forcedDialogue(),
                 payload.dialogueOptions(),
                 payload.knownLikedGiftNames(),
                 payload.knownDislikedGiftNames(),

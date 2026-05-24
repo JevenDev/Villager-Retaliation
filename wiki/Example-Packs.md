@@ -12,6 +12,8 @@ VillagerRetaliationExample/
       dialogue/
         en_us/
           examplepack_dialogue.json
+      forced_dialogue/
+        examplepack_events.json
       notifications/
         en_us/
           examplepack_notifications.json
@@ -110,6 +112,46 @@ Use event tags when a line should only appear after a recent village memory. The
       "requires_unreported_village_defense": true,
       "text": "You stood with us when it mattered.",
       "weight": 30
+    }
+  ]
+}
+```
+
+## Forced Dialogue Example
+
+```text
+data/villagerretaliation/forced_dialogue/examplepack_events.json
+```
+
+```json
+{
+  "entries": [
+    {
+      "id": "examplepack.strict_theft_warning",
+      "trigger": "container_theft",
+      "witness_radius": 10.0,
+      "requires_line_of_sight": true,
+      "initiate_dialogue": true,
+      "reputation": -6,
+      "line": "Hands off that {container}. I saw what you took.",
+      "options": [
+        {
+          "id": "return_and_apologize",
+          "label": "Apologize",
+          "response": "Then prove it next time before the village has to ask.",
+          "reputation": 2,
+          "aggro": false,
+          "order": 0
+        },
+        {
+          "id": "talk_back",
+          "label": "Talk back",
+          "response": "Wrong answer.",
+          "reputation": -6,
+          "aggro": true,
+          "order": 1
+        }
+      ]
     }
   ]
 }

@@ -27,6 +27,7 @@ public record OpenVillagerInteractionPayload(
         VillagerReputationLevel reputationLevel,
         DialogueDisposition mood,
         boolean followingPlayer,
+        boolean forcedDialogue,
         List<DialogueOptionDefinition> dialogueOptions,
         List<String> knownLikedGiftNames,
         List<String> knownDislikedGiftNames,
@@ -48,6 +49,7 @@ public record OpenVillagerInteractionPayload(
         buffer.writeEnum(payload.reputationLevel());
         buffer.writeEnum(payload.mood());
         buffer.writeBoolean(payload.followingPlayer());
+        buffer.writeBoolean(payload.forcedDialogue());
         writeDialogueOptions(buffer, payload.dialogueOptions());
         writeStringList(buffer, payload.knownLikedGiftNames());
         writeStringList(buffer, payload.knownDislikedGiftNames());
@@ -66,6 +68,7 @@ public record OpenVillagerInteractionPayload(
                 buffer.readVarInt(),
                 buffer.readEnum(VillagerReputationLevel.class),
                 buffer.readEnum(DialogueDisposition.class),
+                buffer.readBoolean(),
                 buffer.readBoolean(),
                 readDialogueOptions(buffer),
                 readStringList(buffer),
