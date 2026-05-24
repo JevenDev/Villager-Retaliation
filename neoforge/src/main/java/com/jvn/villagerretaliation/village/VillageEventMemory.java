@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.function.Supplier;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
@@ -19,10 +20,15 @@ import net.minecraft.world.level.Level;
 
 public final class VillageEventMemory {
     private static final long EVENT_TTL_TICKS = 20L * 60L * 10L;
+    private static final long EVENT_PRUNE_INTERVAL_TICKS = 20L;
     private static final long WEATHER_EVENT_DEDUPE_TICKS = 200L;
+    private static final long NOISY_EVENT_DEDUPE_TICKS = 40L;
+    private static final long RECENT_QUERY_CACHE_TICKS = 20L;
     private static final int MAX_EVENTS_PER_DIMENSION = 80;
     private static final double RELEVANT_EVENT_RADIUS_SQR = 48.0D * 48.0D;
     private static final Map<ResourceKey<Level>, ArrayDeque<MemoryEvent>> EVENTS = new HashMap<>();
+    private static final Map<ResourceKey<Level>, Long> NEXT_PRUNE_TICKS = new HashMap<>();
+    private static final Map<RecentQueryKey, CachedRecentEvents> RECENT_QUERY_CACHE = new HashMap<>();
 
     private VillageEventMemory() {
     }
@@ -77,19 +83,11 @@ public final class VillageEventMemory {
     }
 
     public static List<MemoryEvent> recentNear(ServerLevel level, BlockPos pos) {
-        prune(level);
-        ArrayDeque<MemoryEvent> events = EVENTS.get(level.dimension());
-        if (events == null || events.isEmpty()) {
-            return List.of();
-        }
-
-        List<MemoryEvent> relevant = new ArrayList<>();
-        for (MemoryEvent event : events) {
-            if (event.pos().distSqr(pos) <= RELEVANT_EVENT_RADIUS_SQR) {
-                relevant.add(event);
-            }
-        }
-        return relevant;
+        return cachedRecentEvents(
+                level,
+                RecentQueryKey.near(level, pos),
+                () -> recentNearUncached(level, pos)
+        );
     }
 
     public static List<MemoryEvent> recentForVillage(ServerLevel level, Villager villager) {
@@ -102,7 +100,31 @@ public final class VillageEventMemory {
     }
 
     private static List<MemoryEvent> recentForArea(ServerLevel level, BlockPos fallbackPos, VillageMembership.VillageArea area) {
-        prune(level);
+        return cachedRecentEvents(
+                level,
+                RecentQueryKey.area(level, fallbackPos, area.centerBlock()),
+                () -> recentForAreaUncached(level, fallbackPos, area)
+        );
+    }
+
+    private static List<MemoryEvent> recentNearUncached(ServerLevel level, BlockPos pos) {
+        pruneIfReady(level);
+        ArrayDeque<MemoryEvent> events = EVENTS.get(level.dimension());
+        if (events == null || events.isEmpty()) {
+            return List.of();
+        }
+
+        List<MemoryEvent> relevant = new ArrayList<>();
+        for (MemoryEvent event : events) {
+            if (event.pos().distSqr(pos) <= RELEVANT_EVENT_RADIUS_SQR) {
+                relevant.add(event);
+            }
+        }
+        return List.copyOf(relevant);
+    }
+
+    private static List<MemoryEvent> recentForAreaUncached(ServerLevel level, BlockPos fallbackPos, VillageMembership.VillageArea area) {
+        pruneIfReady(level);
         ArrayDeque<MemoryEvent> events = EVENTS.get(level.dimension());
         if (events == null || events.isEmpty()) {
             return List.of();
@@ -114,7 +136,22 @@ public final class VillageEventMemory {
                 relevant.add(event);
             }
         }
-        return relevant;
+        return List.copyOf(relevant);
+    }
+
+    private static List<MemoryEvent> cachedRecentEvents(
+            ServerLevel level,
+            RecentQueryKey cacheKey,
+            Supplier<List<MemoryEvent>> eventsSupplier) {
+        long gameTime = level.getGameTime();
+        CachedRecentEvents cached = RECENT_QUERY_CACHE.get(cacheKey);
+        if (cached != null && cached.isValid(gameTime)) {
+            return cached.events();
+        }
+
+        List<MemoryEvent> events = eventsSupplier.get();
+        RECENT_QUERY_CACHE.put(cacheKey, new CachedRecentEvents(events, gameTime + RECENT_QUERY_CACHE_TICKS));
+        return events;
     }
 
     private static void remember(ServerLevel level, MemoryEvent event) {
@@ -123,28 +160,56 @@ public final class VillageEventMemory {
         Objects.requireNonNull(event.tag(), "event tag");
         Objects.requireNonNull(event.pos(), "event position");
         ArrayDeque<MemoryEvent> events = EVENTS.computeIfAbsent(level.dimension(), ignored -> new ArrayDeque<>());
-        prune(level);
-        if (isDuplicateWeatherEvent(events, event)) {
+        pruneIfReady(level);
+        if (isDuplicateEvent(events, event)) {
             return;
         }
         events.addLast(event);
-        prune(level);
+        trimToMaxEvents(events);
+        invalidateRecentCache(level.dimension());
     }
 
     public static void clear() {
         EVENTS.clear();
+        NEXT_PRUNE_TICKS.clear();
+        RECENT_QUERY_CACHE.clear();
     }
 
-    private static void prune(ServerLevel level) {
+    private static void pruneIfReady(ServerLevel level) {
         ArrayDeque<MemoryEvent> events = EVENTS.get(level.dimension());
         if (events == null) {
             return;
         }
 
+        long gameTime = level.getGameTime();
+        long nextPrune = NEXT_PRUNE_TICKS.getOrDefault(level.dimension(), 0L);
+        if (gameTime < nextPrune && events.size() <= MAX_EVENTS_PER_DIMENSION) {
+            return;
+        }
+
+        pruneNow(level, events, gameTime);
+    }
+
+    private static void pruneNow(ServerLevel level, ArrayDeque<MemoryEvent> events, long gameTime) {
         long oldestAllowed = level.getGameTime() - EVENT_TTL_TICKS;
         while (!events.isEmpty() && (events.peekFirst().gameTime() < oldestAllowed || events.size() > MAX_EVENTS_PER_DIMENSION)) {
             events.removeFirst();
         }
+        NEXT_PRUNE_TICKS.put(level.dimension(), gameTime + EVENT_PRUNE_INTERVAL_TICKS);
+    }
+
+    private static void trimToMaxEvents(ArrayDeque<MemoryEvent> events) {
+        while (events.size() > MAX_EVENTS_PER_DIMENSION) {
+            events.removeFirst();
+        }
+    }
+
+    private static void invalidateRecentCache(ResourceKey<Level> dimension) {
+        RECENT_QUERY_CACHE.keySet().removeIf(key -> key.dimension().equals(dimension));
+    }
+
+    private static boolean isDuplicateEvent(ArrayDeque<MemoryEvent> events, MemoryEvent event) {
+        return isDuplicateWeatherEvent(events, event) || isDuplicateNoisyEvent(events, event);
     }
 
     private static boolean isDuplicateWeatherEvent(ArrayDeque<MemoryEvent> events, MemoryEvent event) {
@@ -165,8 +230,38 @@ public final class VillageEventMemory {
         return false;
     }
 
+    private static boolean isDuplicateNoisyEvent(ArrayDeque<MemoryEvent> events, MemoryEvent event) {
+        if (!isNoisyEvent(event.tag())) {
+            return false;
+        }
+
+        Iterator<MemoryEvent> iterator = events.descendingIterator();
+        while (iterator.hasNext()) {
+            MemoryEvent previous = iterator.next();
+            if (event.gameTime() - previous.gameTime() > NOISY_EVENT_DEDUPE_TICKS) {
+                return false;
+            }
+            if (previous.tag() == event.tag()
+                    && Objects.equals(previous.playerId(), event.playerId())
+                    && previous.pos().distSqr(event.pos()) <= RELEVANT_EVENT_RADIUS_SQR) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static boolean isWeatherEvent(EventTag tag) {
         return tag == EventTag.THUNDERSTORM || tag == EventTag.SANDSTORM || tag == EventTag.SNOWSTORM;
+    }
+
+    private static boolean isNoisyEvent(EventTag tag) {
+        return tag == EventTag.REPUTATION_CHANGED
+                || tag == EventTag.VILLAGER_ATTACKED
+                || tag == EventTag.PLAYER_ATTACKED_VILLAGER
+                || tag == EventTag.NIGHT_ATTACK
+                || tag == EventTag.RAID
+                || tag == EventTag.PLAYER_DEFENDED_VILLAGE
+                || tag == EventTag.PLAYER_DEFENDED_RAID;
     }
 
     public static boolean hasAny(List<MemoryEvent> events, EventTag... tags) {
@@ -252,5 +347,25 @@ public final class VillageEventMemory {
     }
 
     public record CuredVillagerMemory(String villagerName) {
+    }
+
+    private record RecentQueryKey(
+            ResourceKey<Level> dimension,
+            String kind,
+            BlockPos pos,
+            BlockPos areaCenter) {
+        private static RecentQueryKey near(ServerLevel level, BlockPos pos) {
+            return new RecentQueryKey(level.dimension(), "near", pos.immutable(), BlockPos.ZERO);
+        }
+
+        private static RecentQueryKey area(ServerLevel level, BlockPos fallbackPos, BlockPos areaCenter) {
+            return new RecentQueryKey(level.dimension(), "area", fallbackPos.immutable(), areaCenter.immutable());
+        }
+    }
+
+    private record CachedRecentEvents(List<MemoryEvent> events, long expiresGameTime) {
+        private boolean isValid(long gameTime) {
+            return gameTime < this.expiresGameTime;
+        }
     }
 }
