@@ -235,7 +235,7 @@ public final class ForcedDialogueService {
         }
         String response = ForcedDialogueResources.resolveTemplate(responseText, session.context(), itemPayment.removal().replacements());
         if (!response.isBlank()) {
-            VillagerInteractionService.broadcastVillagerChat(
+            VillagerInteractionService.broadcastForcedVillagerChat(
                     player.serverLevel(),
                     villager,
                     response,
@@ -277,7 +277,7 @@ public final class ForcedDialogueService {
 
         String response = ForcedDialogueResources.resolveTemplate(stolenItemReturn.failureResponse(), session.context());
         if (!response.isBlank()) {
-            VillagerInteractionService.broadcastVillagerChat(
+            VillagerInteractionService.broadcastForcedVillagerChat(
                     player.serverLevel(),
                     villager,
                     response,
@@ -315,7 +315,7 @@ public final class ForcedDialogueService {
                 session.context(),
                 itemPayment.removal().replacements());
         if (!response.isBlank()) {
-            VillagerInteractionService.broadcastVillagerChat(
+            VillagerInteractionService.broadcastForcedVillagerChat(
                     player.serverLevel(),
                     villager,
                     response,

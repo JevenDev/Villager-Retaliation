@@ -34,6 +34,7 @@
   "villagerretaliation.configuration.dialogue.dialogueCameraTransitionTicks": "Dialogue Camera Transition Ticks",
   "villagerretaliation.configuration.dialogue.freezeVillagerDuringDialogue": "Freeze Villager During Dialogue",
   "villagerretaliation.configuration.dialogue.maxDialogueDistance": "Max Dialogue Distance",
+  "villagerretaliation.configuration.dialogue.maxForcedDialogueDistance": "Max Forced Dialogue Distance",
   "villagerretaliation.configuration.dialogue.containerForcedDialogueTrigger": "Container Forced Dialogue Trigger",
   "villagerretaliation.configuration.dialogue.dialoguePositiveReputationCooldownDays": "Dialogue Positive Reputation Cooldown Days",
   "villagerretaliation.configuration.dialogue.repeatedQuestionPositiveLimit": "Repeated Question Positive Limit",

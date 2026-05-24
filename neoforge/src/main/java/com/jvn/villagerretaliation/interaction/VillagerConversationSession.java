@@ -12,16 +12,18 @@ public final class VillagerConversationSession {
     private final int villagerEntityId;
     private final ResourceKey<Level> dimension;
     private final BlockPos startPosition;
+    private final boolean forced;
     private long lastInteractionGameTime;
     private boolean active = true;
 
     public VillagerConversationSession(UUID playerId, UUID villagerId, int villagerEntityId, ResourceKey<Level> dimension,
-            BlockPos startPosition, long gameTime) {
+            BlockPos startPosition, long gameTime, boolean forced) {
         this.playerId = playerId;
         this.villagerId = villagerId;
         this.villagerEntityId = villagerEntityId;
         this.dimension = dimension;
         this.startPosition = startPosition;
+        this.forced = forced;
         this.lastInteractionGameTime = gameTime;
     }
 
@@ -43,6 +45,10 @@ public final class VillagerConversationSession {
 
     public BlockPos startPosition() {
         return this.startPosition;
+    }
+
+    public boolean forced() {
+        return this.forced;
     }
 
     public long lastInteractionGameTime() {

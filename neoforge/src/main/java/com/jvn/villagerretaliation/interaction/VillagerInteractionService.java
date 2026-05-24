@@ -67,7 +67,7 @@ public final class VillagerInteractionService {
         return hand == InteractionHand.MAIN_HAND
                 && VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get()
                 && !shouldBypassInteractionScreen(player.getItemInHand(hand))
-                && canUseInteractionTarget(player, villager, true);
+                && shouldStayConversable(player, villager);
     }
 
     public static boolean shouldHandleSleepingInteraction(Villager villager, ServerPlayer player, InteractionHand hand) {
@@ -75,7 +75,7 @@ public final class VillagerInteractionService {
                 && VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get()
                 && !shouldBypassInteractionScreen(player.getItemInHand(hand))
                 && villager.isSleeping()
-                && canUseInteractionTarget(player, villager, true);
+                && shouldStayConversable(player, villager);
     }
 
     public static InteractionResult handleVillagerRightClick(Villager villager, ServerPlayer player) {
@@ -178,14 +178,14 @@ public final class VillagerInteractionService {
             String openingText,
             List<DialogueOptionDefinition> dialogueOptions,
             boolean forceCameraTowardsVillager) {
-        if (!VillagerConversationService.start(player, villager)) {
+        if (!VillagerConversationService.startForced(player, villager)) {
             return false;
         }
 
         openForcedInteractionScreen(player, villager, dialogueOptions, forceCameraTowardsVillager);
         focusVillagerOnPlayer(villager, player);
         if (!openingText.isBlank()) {
-            broadcastVillagerChat(player.serverLevel(), villager, openingText);
+            broadcastForcedVillagerChat(player.serverLevel(), villager, openingText);
         }
         return true;
     }
@@ -866,11 +866,22 @@ public final class VillagerInteractionService {
     }
 
     public static boolean canUseInteractionSystem(ServerPlayer player, Villager villager) {
-        return canUseInteractionTarget(player, villager, false);
+        return canUseInteractionTarget(player, villager, false, VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get());
+    }
+
+    public static boolean canUseForcedInteractionSystem(ServerPlayer player, Villager villager) {
+        return canUseInteractionTarget(player, villager, false, VillagerRetaliationConfig.MAX_FORCED_DIALOGUE_DISTANCE.get());
     }
 
     public static boolean shouldStayConversable(ServerPlayer player, Villager villager) {
-        return canUseInteractionTarget(player, villager, true);
+        return shouldStayConversable(player, villager, false);
+    }
+
+    public static boolean shouldStayConversable(ServerPlayer player, Villager villager, boolean forced) {
+        double maxDistance = forced
+                ? VillagerRetaliationConfig.MAX_FORCED_DIALOGUE_DISTANCE.get()
+                : VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get();
+        return canUseInteractionTarget(player, villager, true, maxDistance);
     }
 
     private static boolean shouldBypassInteractionScreen(ItemStack stack) {
@@ -879,8 +890,7 @@ public final class VillagerInteractionService {
                 || VillagerRetaliationDebugItems.isDebugVillagerTool(stack.getItem());
     }
 
-    private static boolean canUseInteractionTarget(ServerPlayer player, Villager villager, boolean allowSleeping) {
-        double maxDistance = VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get();
+    private static boolean canUseInteractionTarget(ServerPlayer player, Villager villager, boolean allowSleeping, double maxDistance) {
         return villager.isAlive()
                 && (allowSleeping || !villager.isSleeping())
                 && !villager.isTrading()
@@ -968,11 +978,22 @@ public final class VillagerInteractionService {
     }
 
     public static void broadcastVillagerChat(ServerLevel level, Villager villager, String text, String speakerLabel) {
+        broadcastVillagerChat(level, villager, text, speakerLabel, VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get());
+    }
+
+    public static void broadcastForcedVillagerChat(ServerLevel level, Villager villager, String text) {
+        broadcastForcedVillagerChat(level, villager, text, "");
+    }
+
+    public static void broadcastForcedVillagerChat(ServerLevel level, Villager villager, String text, String speakerLabel) {
+        broadcastVillagerChat(level, villager, text, speakerLabel, VillagerRetaliationConfig.MAX_FORCED_DIALOGUE_DISTANCE.get());
+    }
+
+    private static void broadcastVillagerChat(ServerLevel level, Villager villager, String text, String speakerLabel, double radius) {
         if (text == null || text.isBlank()) {
             return;
         }
 
-        double radius = VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get();
         double radiusSqr = radius * radius;
         VillagerInteractionNoticePayload payload = new VillagerInteractionNoticePayload(
                 villager.getId(),
@@ -1069,7 +1090,7 @@ public final class VillagerInteractionService {
         }
 
         Villager sleepingVillager = findSleepingVillagerAtBed(level, pos);
-        if (sleepingVillager == null || !canUseInteractionTarget(player, sleepingVillager, true)) {
+        if (sleepingVillager == null || !shouldStayConversable(player, sleepingVillager)) {
             return InteractionResult.PASS;
         }
         return handleSleepingVillagerInteraction(sleepingVillager, player);
@@ -1077,7 +1098,7 @@ public final class VillagerInteractionService {
 
     public static void handleSleepingVillagerBedBroken(ServerLevel level, ServerPlayer player, BlockPos pos) {
         Villager sleepingVillager = findSleepingVillagerAtBed(level, pos);
-        if (sleepingVillager == null || !canUseInteractionTarget(player, sleepingVillager, true)) {
+        if (sleepingVillager == null || !shouldStayConversable(player, sleepingVillager)) {
             return;
         }
 

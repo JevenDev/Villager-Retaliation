@@ -25,6 +25,7 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.BooleanValue COLLAPSE_REPUTATION_CHANGE_NOTIFICATIONS;
     public static final ModConfigSpec.BooleanValue FREEZE_VILLAGER_DURING_DIALOGUE;
     public static final ModConfigSpec.DoubleValue MAX_DIALOGUE_DISTANCE;
+    public static final ModConfigSpec.DoubleValue MAX_FORCED_DIALOGUE_DISTANCE;
     public static final ModConfigSpec.EnumValue<ContainerForcedDialogueTrigger> CONTAINER_FORCED_DIALOGUE_TRIGGER;
     public static final ModConfigSpec.BooleanValue VILLAGER_REPUTATION_HOVER_TOOLTIP_REQUIRES_EMERALD;
 
@@ -225,6 +226,10 @@ public final class VillagerRetaliationConfig {
                 .comment("Maximum player-to-villager distance in blocks before a dialogue conversation closes.")
                 .translation("villagerretaliation.configuration.dialogue.maxDialogueDistance")
                 .defineInRange("maxDialogueDistance", 7.0D, 3.0D, 16.0D);
+        MAX_FORCED_DIALOGUE_DISTANCE = BUILDER
+                .comment("Maximum player-to-villager distance in blocks before a forced dialogue conversation closes.")
+                .translation("villagerretaliation.configuration.dialogue.maxForcedDialogueDistance")
+                .defineInRange("maxForcedDialogueDistance", 16.0D, 3.0D, 32.0D);
         CONTAINER_FORCED_DIALOGUE_TRIGGER = BUILDER
                 .comment("When watched containers should trigger forced dialogue: THEFT_ONLY waits until items are removed, OPENING triggers as soon as the container is opened.")
                 .translation("villagerretaliation.configuration.dialogue.containerForcedDialogueTrigger")

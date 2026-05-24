@@ -14,6 +14,9 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class VillagerConversationService {
     private static final int IDLE_TIMEOUT_TICKS = 20 * 60 * 2;
+    private static final double FORCED_DIALOGUE_APPROACH_START_DISTANCE = 5.5D;
+    private static final double FORCED_DIALOGUE_APPROACH_STOP_DISTANCE = 4.0D;
+    private static final double FORCED_DIALOGUE_APPROACH_SPEED = 0.55D;
     private static final Map<UUID, VillagerConversationSession> SESSIONS_BY_PLAYER = new HashMap<>();
     private static final Map<UUID, UUID> PLAYER_BY_VILLAGER = new HashMap<>();
 
@@ -21,7 +24,18 @@ public final class VillagerConversationService {
     }
 
     public static boolean start(ServerPlayer player, Villager villager) {
-        if (!VillagerInteractionService.canUseInteractionSystem(player, villager)) {
+        return start(player, villager, false);
+    }
+
+    public static boolean startForced(ServerPlayer player, Villager villager) {
+        return start(player, villager, true);
+    }
+
+    private static boolean start(ServerPlayer player, Villager villager, boolean forced) {
+        boolean canStart = forced
+                ? VillagerInteractionService.canUseForcedInteractionSystem(player, villager)
+                : VillagerInteractionService.canUseInteractionSystem(player, villager);
+        if (!canStart) {
             return false;
         }
 
@@ -37,11 +51,12 @@ public final class VillagerConversationService {
                 villager.getId(),
                 player.level().dimension(),
                 villager.blockPosition(),
-                player.serverLevel().getGameTime()
+                player.serverLevel().getGameTime(),
+                forced
         );
         SESSIONS_BY_PLAYER.put(player.getUUID(), session);
         PLAYER_BY_VILLAGER.put(villager.getUUID(), player.getUUID());
-        holdVillager(villager, player);
+        holdVillager(villager, player, session);
         return true;
     }
 
@@ -55,7 +70,7 @@ public final class VillagerConversationService {
             return false;
         }
         session.touch(player.serverLevel().getGameTime());
-        holdVillager(villager, player);
+        holdVillager(villager, player, session);
         return true;
     }
 
@@ -105,7 +120,7 @@ public final class VillagerConversationService {
             return;
         }
 
-        holdVillager(villager, player);
+        holdVillager(villager, player, session);
     }
 
     public static void endForEntityLeaving(Entity entity, boolean notifyClient) {
@@ -129,7 +144,7 @@ public final class VillagerConversationService {
         if (player.level().dimension() != session.dimension()) {
             return false;
         }
-        if (!VillagerInteractionService.shouldStayConversable(player, villager)) {
+        if (!VillagerInteractionService.shouldStayConversable(player, villager, session.forced())) {
             return false;
         }
         if (villager.getTarget() != null || villager.getLastHurtByMob() != null) {
@@ -139,13 +154,30 @@ public final class VillagerConversationService {
         return idleTicks <= IDLE_TIMEOUT_TICKS;
     }
 
-    private static void holdVillager(Villager villager, ServerPlayer player) {
+    private static void holdVillager(Villager villager, ServerPlayer player, VillagerConversationSession session) {
         if (villager.isSleeping()) {
             villager.stopSleeping();
         }
         villager.getLookControl().setLookAt(player, 30.0F, 30.0F);
+        if (session.forced() && approachPlayerForForcedDialogue(villager, player)) {
+            return;
+        }
         if (VillagerRetaliationConfig.FREEZE_VILLAGER_DURING_DIALOGUE.get() && !villager.getNavigation().isDone()) {
             villager.getNavigation().stop();
         }
+    }
+
+    private static boolean approachPlayerForForcedDialogue(Villager villager, ServerPlayer player) {
+        double distanceSqr = villager.distanceToSqr(player);
+        if (distanceSqr <= FORCED_DIALOGUE_APPROACH_STOP_DISTANCE * FORCED_DIALOGUE_APPROACH_STOP_DISTANCE) {
+            if (!villager.getNavigation().isDone()) {
+                villager.getNavigation().stop();
+            }
+            return false;
+        }
+        if (distanceSqr <= FORCED_DIALOGUE_APPROACH_START_DISTANCE * FORCED_DIALOGUE_APPROACH_START_DISTANCE) {
+            return !villager.getNavigation().isDone();
+        }
+        return villager.getNavigation().moveTo(player, FORCED_DIALOGUE_APPROACH_SPEED);
     }
 }
