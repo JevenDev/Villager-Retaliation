@@ -10,6 +10,7 @@ import com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
@@ -273,12 +274,22 @@ public final class VillagerInteractionClientHandler {
         }
         Entity entity = minecraft.level.getEntity(entityId);
         if (!(entity instanceof Villager villager)) {
-            return I18n.get(GUI_KEY_PREFIX + "speaker.villager");
+            return VillagerNameClientCache.displayName(entityId)
+                    .map(Component::getString)
+                    .filter(name -> !name.isBlank())
+                    .orElseGet(() -> I18n.get(GUI_KEY_PREFIX + "speaker.villager"));
         }
         if (villager.isBaby()) {
             return I18n.get(GUI_KEY_PREFIX + "speaker.child");
         }
         String profession = localizedProfessionName(villager);
+        Optional<String> cachedDisplayName = VillagerNameClientCache.displayName(entityId)
+                .map(Component::getString)
+                .map(String::trim)
+                .filter(name -> !name.isBlank());
+        if (cachedDisplayName.isPresent()) {
+            return formatSpeakerLabel(cachedDisplayName.get(), profession);
+        }
         if (!villager.hasCustomName()) {
             return isGenericProfession(profession)
                     ? I18n.get(GUI_KEY_PREFIX + "speaker.villager")

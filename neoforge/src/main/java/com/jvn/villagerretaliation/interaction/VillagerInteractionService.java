@@ -550,9 +550,9 @@ public final class VillagerInteractionService {
                 reputation.value(),
                 reputation.level()
         ));
-        PacketDistributor.sendToPlayer(player, new VillagerConversationEndedPayload(villager.getId(), goodbyeText));
         VillagerAmbientIndicatorService.onConversationClosed(level, villager, player);
         broadcastVillagerChat(level, villager, goodbyeText);
+        PacketDistributor.sendToPlayer(player, new VillagerConversationEndedPayload(villager.getId(), goodbyeText));
         VillagerConversationService.endForPlayer(player, false);
     }
 
