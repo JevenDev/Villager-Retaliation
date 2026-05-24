@@ -482,6 +482,25 @@ const els = {
   toast: document.querySelector("#toast")
 };
 
+const PANEL_SIZE_STORAGE_KEY = "vr-datapack-builder-panel-sizes";
+const PANEL_SIZE_VARS = {
+  left: "--left-panel-width",
+  right: "--right-panel-width",
+  checks: "--checks-panel-height",
+  files: "--files-panel-height"
+};
+const PANEL_SIZE_LIMITS = {
+  left: { min: 72, max: 430 },
+  right: { min: 320, max: 820 },
+  checks: { min: 78, max: 360 },
+  files: { min: 120, max: 560 }
+};
+const LEFT_PANEL_COMPACT_WIDTH = 230;
+const LEFT_PANEL_EXPANDED_SNAP_WIDTH = 286;
+const MIN_BUILDER_WIDTH = 360;
+const MIN_PREVIEW_HEIGHT = 180;
+let panelResizeState = null;
+
 function createInitialState() {
   return {
     meta: {
@@ -552,6 +571,198 @@ function renderIcons() {
       });
     } catch {
       // Text labels keep the builder usable if the icon CDN is unavailable.
+    }
+  }
+}
+
+function readPanelSizes() {
+  try {
+    return JSON.parse(localStorage.getItem(PANEL_SIZE_STORAGE_KEY) || "{}") || {};
+  } catch {
+    return {};
+  }
+}
+
+function writePanelSizes(sizes) {
+  try {
+    localStorage.setItem(PANEL_SIZE_STORAGE_KEY, JSON.stringify(sizes));
+  } catch {
+    // Resizing still works for the current session if storage is unavailable.
+  }
+}
+
+function applyStoredPanelSizes() {
+  const sizes = readPanelSizes();
+  for (const [target, value] of Object.entries(sizes)) {
+    const number = Number(value);
+    if (PANEL_SIZE_VARS[target] && Number.isFinite(number)) {
+      const clamped = clampPanelSize(target, number);
+      document.documentElement.style.setProperty(PANEL_SIZE_VARS[target], `${Math.round(clamped)}px`);
+    }
+  }
+  updateLeftPanelMode(Number(sizes.left));
+}
+
+function savePanelSize(target, value) {
+  const clamped = clampPanelSize(target, value);
+  document.documentElement.style.setProperty(PANEL_SIZE_VARS[target], `${Math.round(clamped)}px`);
+  const sizes = readPanelSizes();
+  sizes[target] = Math.round(clamped);
+  writePanelSizes(sizes);
+  if (target === "left") updateLeftPanelMode(clamped);
+}
+
+function resetPanelSize(target) {
+  if (!PANEL_SIZE_VARS[target]) return;
+  const property = PANEL_SIZE_VARS[target];
+  const hadInlineSize = Boolean(document.documentElement.style.getPropertyValue?.(property));
+  document.documentElement.style.removeProperty(property);
+  const sizes = readPanelSizes();
+  const hadStoredSize = Object.hasOwn(sizes, target);
+  delete sizes[target];
+  writePanelSizes(sizes);
+  if (target === "left") updateLeftPanelMode();
+  if (hadInlineSize || hadStoredSize) {
+    showToast("Panel size reset.");
+  }
+}
+
+function updateLeftPanelMode(width = undefined) {
+  const measuredWidth = Number.isFinite(width)
+    ? width
+    : els.leftRail.getBoundingClientRect().width;
+  els.leftRail.classList.toggle("is-compact", showLeftPanel && measuredWidth > 0 && measuredWidth <= LEFT_PANEL_COMPACT_WIDTH);
+}
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), Math.max(min, max));
+}
+
+function clampPanelSize(target, value) {
+  const base = PANEL_SIZE_LIMITS[target];
+  if (!base) return value;
+  let max = base.max;
+
+  if (target === "left" || target === "right") {
+    const workspaceWidth = els.workspace.getBoundingClientRect().width || window.innerWidth;
+    const leftWidth = target === "left" ? value : showLeftPanel ? els.leftRail.getBoundingClientRect().width : 0;
+    const rightWidth = target === "right" ? value : showRightPanel ? els.rightRail.getBoundingClientRect().width : 0;
+    const otherWidth = target === "left" ? rightWidth : leftWidth;
+    max = Math.min(base.max, workspaceWidth - otherWidth - MIN_BUILDER_WIDTH - 14);
+  }
+
+  if (target === "checks" || target === "files") {
+    const railHeight = els.rightRail.getBoundingClientRect().height;
+    const checksHeight = target === "checks" ? value : els.checks.closest(".checks-panel").getBoundingClientRect().height;
+    const filesHeight = target === "files" ? value : els.fileTree.closest(".files-panel").getBoundingClientRect().height;
+    const otherHeight = target === "checks" ? filesHeight : checksHeight;
+    max = Math.min(base.max, railHeight - otherHeight - MIN_PREVIEW_HEIGHT - 14);
+  }
+
+  return clamp(value, base.min, max);
+}
+
+function panelResizeStart(event) {
+  const handle = event.target.closest(".panel-resizer");
+  if (!handle) return;
+  const target = handle.dataset.resizeTarget;
+  if (!PANEL_SIZE_VARS[target]) return;
+  if (event.button === 1) {
+    event.preventDefault();
+    resetPanelSize(target);
+    return;
+  }
+  if (event.button !== 0) return;
+  event.preventDefault();
+  panelResizeState = {
+    target,
+    handle,
+    startX: event.clientX,
+    startY: event.clientY,
+    left: els.leftRail.getBoundingClientRect().width,
+    right: els.rightRail.getBoundingClientRect().width,
+    checks: els.checks.closest(".checks-panel").getBoundingClientRect().height,
+    files: els.fileTree.closest(".files-panel").getBoundingClientRect().height
+  };
+  handle.classList.add("is-dragging");
+  document.body.classList.add(target === "checks" || target === "files" ? "is-resizing-row" : "is-resizing");
+  document.addEventListener("pointermove", panelResizeMove);
+  document.addEventListener("pointerup", panelResizeEnd, { once: true });
+}
+
+function panelResizeMove(event) {
+  if (!panelResizeState) return;
+  const dx = event.clientX - panelResizeState.startX;
+  const dy = event.clientY - panelResizeState.startY;
+  const target = panelResizeState.target;
+  let next = {
+    left: panelResizeState.left + dx,
+    right: panelResizeState.right - dx,
+    checks: panelResizeState.checks + dy,
+    files: panelResizeState.files + dy
+  }[target];
+  if (target === "left") {
+    const startedCompact = panelResizeState.left <= LEFT_PANEL_COMPACT_WIDTH;
+    if (next <= LEFT_PANEL_COMPACT_WIDTH) {
+      next = PANEL_SIZE_LIMITS.left.min;
+    } else if (startedCompact) {
+      next = Math.max(next, LEFT_PANEL_EXPANDED_SNAP_WIDTH);
+    }
+  }
+  savePanelSize(target, next);
+}
+
+function panelResizeEnd() {
+  panelResizeState?.handle.classList.remove("is-dragging");
+  panelResizeState = null;
+  document.body.classList.remove("is-resizing", "is-resizing-row");
+  document.removeEventListener("pointermove", panelResizeMove);
+}
+
+function panelResizeKeydown(event) {
+  const handle = event.target.closest(".panel-resizer");
+  if (!handle || !PANEL_SIZE_VARS[handle.dataset.resizeTarget]) return;
+  const target = handle.dataset.resizeTarget;
+  const step = event.shiftKey ? 32 : 16;
+  const isColumn = target === "left" || target === "right";
+  const isRow = target === "checks" || target === "files";
+  let direction = 0;
+
+  if (isColumn && event.key === "ArrowLeft") direction = target === "left" ? -1 : 1;
+  if (isColumn && event.key === "ArrowRight") direction = target === "left" ? 1 : -1;
+  if (isRow && event.key === "ArrowUp") direction = -1;
+  if (isRow && event.key === "ArrowDown") direction = 1;
+  if (!direction) return;
+
+  event.preventDefault();
+  const current = {
+    left: els.leftRail.getBoundingClientRect().width,
+    right: els.rightRail.getBoundingClientRect().width,
+    checks: els.checks.closest(".checks-panel").getBoundingClientRect().height,
+    files: els.fileTree.closest(".files-panel").getBoundingClientRect().height
+  }[target];
+  let next = current + direction * step;
+  if (target === "left" && next <= LEFT_PANEL_COMPACT_WIDTH) {
+    next = PANEL_SIZE_LIMITS.left.min;
+  } else if (target === "left" && current <= LEFT_PANEL_COMPACT_WIDTH && direction > 0) {
+    next = LEFT_PANEL_EXPANDED_SNAP_WIDTH;
+  }
+  savePanelSize(target, next);
+}
+
+function panelResizeAuxClick(event) {
+  const handle = event.target.closest(".panel-resizer");
+  if (!handle || event.button !== 1) return;
+  event.preventDefault();
+  resetPanelSize(handle.dataset.resizeTarget);
+}
+
+function keepPanelSizesInRange() {
+  if (window.matchMedia?.("(max-width: 900px)").matches) return;
+  const sizes = readPanelSizes();
+  for (const target of Object.keys(PANEL_SIZE_VARS)) {
+    if (sizes[target] !== undefined) {
+      savePanelSize(target, Number(sizes[target]));
     }
   }
 }
@@ -1341,6 +1552,7 @@ function renderWorkspaceChrome() {
   els.workspace.classList.toggle("is-right-hidden", !showRightPanel);
   els.leftRail.classList.toggle("is-collapsed", !showLeftPanel);
   els.rightRail.classList.toggle("is-collapsed", !showRightPanel);
+  updateLeftPanelMode();
   els.leftRail.setAttribute("aria-label", showLeftPanel ? "Generator sections" : "Show sections");
   els.rightRail.setAttribute("aria-label", showRightPanel ? "Output" : "Show output");
   if (!showLeftPanel) {
@@ -3225,6 +3437,9 @@ els.wrapPreviewButton.addEventListener("click", () => {
   renderPreview();
   renderIcons();
 });
+document.addEventListener("pointerdown", panelResizeStart);
+document.addEventListener("auxclick", panelResizeAuxClick);
+document.addEventListener("keydown", panelResizeKeydown);
 els.preview.addEventListener("input", () => {
   window.clearTimeout(previewEditTimer);
   previewEditTimer = window.setTimeout(applyPreviewEdit, 180);
@@ -3271,8 +3486,12 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") hideTooltip();
 });
 document.addEventListener("scroll", positionTooltip, true);
-window.addEventListener("resize", positionTooltip);
+window.addEventListener("resize", () => {
+  keepPanelSizesInRange();
+  positionTooltip();
+});
 els.copyButton.addEventListener("click", copyCurrentFile);
 els.downloadButton.addEventListener("click", downloadCurrentFile);
 
+applyStoredPanelSizes();
 render();
