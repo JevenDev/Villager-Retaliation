@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.inventory;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
+import java.util.List;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -38,6 +39,10 @@ public final class VillagerInventoryAccess {
 
     public static ItemStack addItem(Villager villager, ItemStack stack) {
         return VillagerInventoryContainer.addItem(villager, stack);
+    }
+
+    public static boolean canAddItems(Villager villager, List<ItemStack> stacks) {
+        return VillagerInventoryContainer.canAddItems(villager, stacks);
     }
 
     public static boolean hasUsableWeapon(Villager villager) {

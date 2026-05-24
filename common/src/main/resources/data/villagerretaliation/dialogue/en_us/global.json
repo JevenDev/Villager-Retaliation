@@ -924,6 +924,66 @@
     {
       "key": "story_hint_report.generic",
       "text": "You found the place I mentioned. Good. I will remember that."
+    },
+    {
+      "key": "container_theft_memory.direct",
+      "text": "I still remember you trying to take my {stolen_stack}.",
+      "weight": 30
+    },
+    {
+      "key": "container_theft_memory.direct",
+      "text": "That {stolen_item} from the {stolen_container}? I have not forgotten.",
+      "weight": 28
+    },
+    {
+      "key": "container_theft_memory.direct",
+      "text": "You put your hands on village stores once. I am watching them now.",
+      "weight": 24
+    },
+    {
+      "key": "container_theft_memory.direct",
+      "text": "Trust is counted in small things. Last time, it was counted in {stolen_stack}.",
+      "weight": 26
+    },
+    {
+      "key": "container_theft_memory.direct",
+      "text": "I remember the {stolen_container}, the missing {stolen_item}, and your face beside both.",
+      "weight": 25
+    },
+    {
+      "key": "container_theft_memory.direct",
+      "text": "If you came to repay what happened with the {stolen_item}, start by keeping your hands visible.",
+      "weight": 22
+    },
+    {
+      "key": "container_theft_memory.village",
+      "text": "{theft_witness} told me about you stealing {stolen_stack}. Not cool.",
+      "weight": 30
+    },
+    {
+      "key": "container_theft_memory.village",
+      "text": "Word travels faster than full pockets. {theft_witness} saw the {stolen_item}.",
+      "weight": 28
+    },
+    {
+      "key": "container_theft_memory.village",
+      "text": "Around here, a missing {stolen_item} becomes everybody's story.",
+      "weight": 24
+    },
+    {
+      "key": "container_theft_memory.village",
+      "text": "{theft_witness_possessive} warning reached more doors than you opened.",
+      "weight": 25
+    },
+    {
+      "key": "container_theft_memory.village",
+      "text": "People here share bread, tools, and warnings. You became the warning after that {stolen_stack}.",
+      "weight": 24
+    },
+    {
+      "key": "container_theft_memory.village",
+      "text": "I was not there, but {theft_witness} was. That is enough for me to watch the {stolen_container}.",
+      "weight": 23
     }
   ],
   "openings": [
@@ -8662,6 +8722,555 @@
       "weight": 32,
       "show_for_adults": false,
       "show_for_babies": true
+    },
+    {
+      "id": "container_theft_memory_direct_chat_1",
+      "type": "chat",
+      "player_event_tags": [
+        "player_container_theft"
+      ],
+      "requires_container_theft_to_self": true,
+      "text": "I still remember you trying to take my {stolen_item}.",
+      "weight": 34,
+      "show_for_babies": false,
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ]
+    },
+    {
+      "id": "container_theft_memory_direct_question_1",
+      "type": "question",
+      "player_event_tags": [
+        "player_container_theft"
+      ],
+      "requires_container_theft_to_self": true,
+      "text": "You want an answer after the {stolen_stack} from the {stolen_container}? Fine. Ask, but ask honestly.",
+      "weight": 30,
+      "show_for_babies": false,
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ]
+    },
+    {
+      "id": "container_theft_memory_village_chat_1",
+      "type": "chat",
+      "player_event_tags": [
+        "player_container_theft"
+      ],
+      "requires_container_theft_from_other": true,
+      "text": "{theft_witness} told me about you stealing {stolen_stack}. Not cool.",
+      "weight": 32,
+      "show_for_babies": false,
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ]
+    },
+    {
+      "id": "container_theft_memory_village_greeting_1",
+      "type": "greeting",
+      "player_event_tags": [
+        "player_container_theft"
+      ],
+      "requires_container_theft_from_other": true,
+      "text": "I know what happened at the {stolen_container}. {theft_witness_possessive} story reached me.",
+      "weight": 30,
+      "show_for_babies": false,
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ]
+    },
+    {
+      "id": "reputation_royalty_greeting_1",
+      "type": "greeting",
+      "text": "When you arrive, people stand a little straighter. That is not fear. That is what trust looks like after it has survived trouble.",
+      "weight": 28,
+      "show_for_babies": false,
+      "reputation_levels": [
+        "royalty"
+      ]
+    },
+    {
+      "id": "reputation_revered_chat_1",
+      "type": "chat",
+      "text": "Some players pass through villages like weather. You left roots.",
+      "weight": 26,
+      "show_for_babies": false,
+      "reputation_levels": [
+        "revered",
+        "royalty"
+      ]
+    },
+    {
+      "id": "reputation_respected_question_1",
+      "type": "question",
+      "text": "People listen when you speak here. That is useful. It is also a responsibility.",
+      "weight": 24,
+      "show_for_babies": false,
+      "reputation_levels": [
+        "respected",
+        "revered",
+        "royalty"
+      ]
+    },
+    {
+      "id": "reputation_trusted_greeting_1",
+      "type": "greeting",
+      "text": "Good to see you. The village keeps its doors easier when your footsteps are nearby.",
+      "weight": 28,
+      "show_for_babies": false,
+      "reputation_levels": [
+        "trusted",
+        "respected",
+        "revered",
+        "royalty"
+      ]
+    },
+    {
+      "id": "reputation_neutral_chat_1",
+      "type": "chat",
+      "text": "We do not know what kind of neighbor you are yet. Villages learn quickly.",
+      "weight": 22,
+      "show_for_babies": false,
+      "reputation_levels": [
+        "neutral"
+      ]
+    },
+    {
+      "id": "reputation_suspicious_greeting_1",
+      "type": "greeting",
+      "text": "Hello. That is all I am ready to offer for now.",
+      "weight": 26,
+      "show_for_babies": false,
+      "reputation_levels": [
+        "suspicious"
+      ]
+    },
+    {
+      "id": "reputation_hostile_chat_1",
+      "type": "chat",
+      "text": "You have a talent for making people check where the exits are.",
+      "weight": 28,
+      "show_for_babies": false,
+      "reputation_levels": [
+        "hostile"
+      ]
+    },
+    {
+      "id": "reputation_despised_question_1",
+      "type": "question",
+      "text": "You want answers? Start with why anyone here should give you one.",
+      "weight": 30,
+      "show_for_babies": false,
+      "reputation_levels": [
+        "despised"
+      ]
+    },
+    {
+      "id": "reputation_feared_greeting_1",
+      "type": "greeting",
+      "text": "I see you. Everyone sees you. Please keep walking peacefully.",
+      "weight": 32,
+      "show_for_babies": false,
+      "reputation_levels": [
+        "feared"
+      ]
+    },
+    {
+      "id": "baby_reputation_low_chat_1",
+      "type": "chat",
+      "text": "The adults get quiet when you come near.",
+      "weight": 24,
+      "show_for_adults": false,
+      "reputation_levels": [
+        "hostile",
+        "despised",
+        "feared"
+      ]
+    },
+    {
+      "id": "baby_reputation_high_greeting_1",
+      "type": "greeting",
+      "text": "Hi! They said you help when bad things come.",
+      "weight": 24,
+      "show_for_adults": false,
+      "reputation_levels": [
+        "trusted",
+        "respected",
+        "revered",
+        "royalty"
+      ]
+    },
+    {
+      "id": "event_player_attack_apology_1",
+      "type": "apology",
+      "player_event_tags": [
+        "player_attacked_villager"
+      ],
+      "requires_recent_direct_hit_memory": true,
+      "text": "I can hear the apology. I can also remember the hit. Both are true right now.",
+      "weight": 35,
+      "show_for_babies": false,
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ]
+    },
+    {
+      "id": "event_player_attack_apology_2",
+      "type": "apology",
+      "player_event_tags": [
+        "player_attacked_villager"
+      ],
+      "text": "If you want this village to believe you, let your next ten choices be quieter than that one.",
+      "weight": 28,
+      "show_for_babies": false
+    },
+    {
+      "id": "event_player_attack_report_1",
+      "type": "village_event_report",
+      "player_event_tags": [
+        "player_attacked_villager"
+      ],
+      "text": "We are not training dummies with jobs. When one of us is hurt, all of us count who stood nearby.",
+      "weight": 30,
+      "show_for_babies": false
+    },
+    {
+      "id": "event_villager_attacked_baby_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "villager_attacked"
+      ],
+      "text": "Someone got hurt. I do not like the sound the village made after.",
+      "weight": 24,
+      "show_for_adults": false
+    },
+    {
+      "id": "event_villager_death_shared_6",
+      "type": "village_event_report",
+      "event_tags": [
+        "villager_death"
+      ],
+      "text": "A village is not just beds and bells. When one voice is gone, every room gets bigger.",
+      "weight": 32
+    },
+    {
+      "id": "event_villager_death_hostile_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "villager_death"
+      ],
+      "text": "If you came to ask whether we forget death quickly, no.",
+      "weight": 34,
+      "show_for_babies": false,
+      "dispositions": [
+        "rude",
+        "hostile",
+        "fearful"
+      ]
+    },
+    {
+      "id": "event_player_defended_village_trusted_1",
+      "type": "village_defense_report",
+      "player_event_tags": [
+        "player_defended_village"
+      ],
+      "text": "You stood between trouble and our doors. That is the sort of thing people remember without needing a ledger.",
+      "weight": 34,
+      "show_for_babies": false,
+      "reputation_levels": [
+        "trusted",
+        "respected",
+        "revered",
+        "royalty"
+      ]
+    },
+    {
+      "id": "event_player_defended_village_suspicious_1",
+      "type": "village_defense_report",
+      "player_event_tags": [
+        "player_defended_village"
+      ],
+      "text": "You helped. I am not too proud to say that. I am also not ready to stop being careful.",
+      "weight": 32,
+      "show_for_babies": false,
+      "reputation_levels": [
+        "suspicious",
+        "hostile",
+        "despised",
+        "feared"
+      ]
+    },
+    {
+      "id": "event_player_defended_raid_respected_1",
+      "type": "village_defense_report",
+      "player_event_tags": [
+        "player_defended_raid"
+      ],
+      "event_tags": [
+        "raid"
+      ],
+      "text": "During the raid, you did not ask who owed you. You just moved. That matters.",
+      "weight": 36,
+      "show_for_babies": false,
+      "reputation_levels": [
+        "respected",
+        "revered",
+        "royalty"
+      ]
+    },
+    {
+      "id": "event_player_defended_raid_low_rep_1",
+      "type": "village_defense_report",
+      "player_event_tags": [
+        "player_defended_raid"
+      ],
+      "event_tags": [
+        "raid"
+      ],
+      "text": "You fought the raiders. I saw it. Good deeds do not erase bad ones, but they do get written down.",
+      "weight": 34,
+      "show_for_babies": false,
+      "reputation_levels": [
+        "suspicious",
+        "hostile",
+        "despised",
+        "feared"
+      ]
+    },
+    {
+      "id": "event_golem_defeated_mob_6",
+      "type": "village_event_report",
+      "event_tags": [
+        "iron_golem_defeated_mob"
+      ],
+      "text": "The iron one moved before panic could. That sound is ugly, but it means we get another morning.",
+      "weight": 26
+    },
+    {
+      "id": "event_golem_killed_alarm_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "golem_killed"
+      ],
+      "text": "When iron falls, flesh starts counting windows.",
+      "weight": 30
+    },
+    {
+      "id": "event_golem_killed_armorer_1",
+      "type": "village_event_report",
+      "professions": [
+        "armorer"
+      ],
+      "event_tags": [
+        "golem_killed"
+      ],
+      "text": "I know what failed on that frame. I do not yet know whether we have enough iron to forgive the failure.",
+      "weight": 32,
+      "show_for_babies": false
+    },
+    {
+      "id": "event_village_fire_player_suspicion_1",
+      "type": "village_event_report",
+      "event_tags": [
+        "village_fire"
+      ],
+      "text": "Fire does not care who placed it. Villagers do.",
+      "weight": 30,
+      "show_for_babies": false,
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ]
+    },
+    {
+      "id": "event_night_attack_farmer_1",
+      "type": "village_event_report",
+      "professions": [
+        "farmer"
+      ],
+      "event_tags": [
+        "night_attack"
+      ],
+      "text": "I can replant crops. I cannot replant a night's sleep.",
+      "weight": 30,
+      "show_for_babies": false
+    },
+    {
+      "id": "event_raid_weaponsmith_1",
+      "type": "village_event_report",
+      "professions": [
+        "weaponsmith"
+      ],
+      "event_tags": [
+        "raid"
+      ],
+      "text": "After a raid, every blade in the village feels too dull and too late.",
+      "weight": 32,
+      "show_for_babies": false
+    },
+    {
+      "id": "event_cured_villager_gratitude_1",
+      "type": "cured_recognition",
+      "player_event_tags": [
+        "player_cured_villager"
+      ],
+      "text": "I remember hunger, then a bottle, then your face coming back into focus. That is a strange debt to carry.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "event_gift_loved_gossip_1",
+      "type": "gift_preferences",
+      "player_event_tags": [
+        "player_gave_loved_gift"
+      ],
+      "text": "A good gift says you paid attention before you spent anything.",
+      "weight": 30,
+      "show_for_babies": false
+    },
+    {
+      "id": "event_gift_hated_gossip_1",
+      "type": "gift_preferences",
+      "player_event_tags": [
+        "player_gave_hated_gift"
+      ],
+      "text": "A bad gift can land like an insult. Some apologies are wrapped before they are spoken.",
+      "weight": 30,
+      "show_for_babies": false,
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile"
+      ]
+    },
+    {
+      "id": "event_reputation_changed_positive_1",
+      "type": "chat",
+      "player_event_tags": [
+        "reputation_changed"
+      ],
+      "text": "Your name has been moving through conversations lately. For once, mostly upward.",
+      "weight": 24,
+      "show_for_babies": false,
+      "min_reputation": 75
+    },
+    {
+      "id": "event_reputation_changed_negative_1",
+      "type": "chat",
+      "player_event_tags": [
+        "reputation_changed"
+      ],
+      "text": "The bell is not the only thing that carries warnings through a village.",
+      "weight": 26,
+      "show_for_babies": false,
+      "max_reputation": -75
+    },
+    {
+      "id": "sleep_broken_bed_apology_1",
+      "type": "apology",
+      "requires_recent_broken_bed_memory": true,
+      "text": "A bed is where fear is supposed to stop for the night. Breaking one says more than you think.",
+      "weight": 32
+    },
+    {
+      "id": "gear_report_used_combat_1",
+      "type": "gear_report",
+      "requires_gear_report_used_in_combat": true,
+      "text": "The gear held. I did too. That is not the same as enjoying the test.",
+      "weight": 28,
+      "show_for_babies": false
+    },
+    {
+      "id": "gear_report_unused_combat_1",
+      "type": "gear_report",
+      "requires_gear_report_unused_in_combat": true,
+      "text": "I have kept the gear ready. Around here, ready is a kind of prayer.",
+      "weight": 28,
+      "show_for_babies": false
+    },
+    {
+      "id": "recruitment_followup_betrayal_shadow_1",
+      "type": "recruitment_followup",
+      "requires_recruitment_memory": true,
+      "min_recruitment_follow_distance": 128,
+      "text": "Following you taught me something about the world. I am still deciding what it taught me about you.",
+      "weight": 30,
+      "show_for_babies": false
+    },
+    {
+      "id": "container_theft_memory_direct_hostile_1",
+      "type": "chat",
+      "player_event_tags": [
+        "player_container_theft"
+      ],
+      "requires_container_theft_to_self": true,
+      "text": "You stole {stolen_stack}. If you expected the village to file that under small mistakes, you misread us.",
+      "weight": 34,
+      "show_for_babies": false,
+      "reputation_levels": [
+        "hostile",
+        "despised",
+        "feared"
+      ]
+    },
+    {
+      "id": "container_theft_memory_direct_trusted_1",
+      "type": "chat",
+      "player_event_tags": [
+        "player_container_theft"
+      ],
+      "requires_container_theft_to_self": true,
+      "text": "The {stolen_item} bothered me because I thought better of you. I would like to be right again.",
+      "weight": 32,
+      "show_for_babies": false,
+      "reputation_levels": [
+        "trusted",
+        "respected",
+        "revered",
+        "royalty"
+      ]
+    },
+    {
+      "id": "container_theft_memory_village_profession_cleric_1",
+      "type": "question",
+      "professions": [
+        "cleric"
+      ],
+      "player_event_tags": [
+        "player_container_theft"
+      ],
+      "requires_container_theft_from_other": true,
+      "text": "{theft_witness} says you took {stolen_stack}. Confession is cleaner when it arrives before proof.",
+      "weight": 34,
+      "show_for_babies": false
+    },
+    {
+      "id": "container_theft_memory_village_baby_1",
+      "type": "chat",
+      "player_event_tags": [
+        "player_container_theft"
+      ],
+      "requires_container_theft_from_other": true,
+      "text": "Someone said you took {stolen_item}. Are you giving it back?",
+      "weight": 26,
+      "show_for_adults": false
     }
   ],
   "pacify": [

@@ -44,9 +44,15 @@ Pack-facing beta.11 changes focus on making data-driven behavior easier to exten
 - Added built-in `container_theft` forced dialogue trigger for witnessed chest, barrel, and shulker theft.
 - Added built-in `container_opened` forced dialogue trigger for configs that confront players when they open watched containers.
 - Added forced dialogue entry fields: `trigger`, `event`, `line`, `priority`, `witness_radius`, `requires_line_of_sight`, `initiate_dialogue`, `aggro_immediately`, `reputation`, `loot_table`, `loot_tables`, and `options`.
-- Added forced dialogue option fields: `id`, `label`, `response`, `reputation`, `aggro`, `end_conversation`, and `order`.
-- Added forced dialogue placeholders: `{villager}`, `{player}`, `{container}`, `{count}`, `{item}`, `{loot_table}`, `{x}`, `{y}`, and `{z}`.
-- Added forced dialogue editing, import, preview, validation, starter data, and export support to the [Datapack Generator](Datapack-Generator.md).
+- Added forced dialogue option fields: `id`, `label`, `response`, `reputation`, `aggro`, `end_conversation`, `order`, and `take_items`.
+- Added shared reputation condition fields `reputation_level`, `reputation_levels`, `min_reputation`, and `max_reputation` to dialogue options, dialogue lines, and forced dialogue options.
+- Added forced dialogue `take_items` support for removing a total `count` of matching item ids or tags from the player's inventory, with separate failure response, reputation, end-conversation, and aggro behavior.
+- Added `take_items.destination`, `take_items.overflow_destination`, and `take_items.require_space` so removed items can be discarded, stored in the witnessing villager's inventory, returned to the source container, or dropped at the villager/container.
+- Added forced dialogue placeholders: `{villager}`, `{player}`, `{container}`, `{count}`, `{item}`, `{loot_table}`, `{payment_count}`, `{payment_items}`, `{x}`, `{y}`, and `{z}`.
+- Added `player_container_theft` village memory tag, `requires_container_theft_to_self`, `requires_container_theft_from_other`, and theft-memory placeholders `{stolen_item}`, `{stolen_item_id}`, `{stolen_count}`, `{stolen_item_count}`, `{stolen_stack}`, `{stolen_container}`, `{stolen_loot_table}`, `{theft_witness}`, and `{theft_witness_possessive}`.
+- Added forced dialogue editing, import, preview, validation, starter data, and export support to the [Datapack Generator](Datapack-Generator.md), including `take_items` and reputation-gated option validation.
+- Added more built-in dialogue lines for reputation tiers, retaliation aftermath, apologies, village defense, raids, golem loss, fire, gifts, gear reports, recruitment memories, and container-theft gossip.
+- Added loot-table-specific built-in forced dialogue scenes for weaponsmith, temple, cartographer, and armorer village chests.
 - Added documentation for resource-pack language keys used by the interaction GUI, generated family and relationship rows, reputation overlays, villager chat labels, gender labels, mood labels, and fallback profession labels.
 - Added [Localization Guide](Localization.md) to explain how datapack locale folders and resource-pack language files work together.
 - Added namespaced custom profession support for dialogue defaults, dialogue filters, notification filters, gift filters, pacification filters, gift-knowledge keys, and profession display fallbacks.
@@ -58,6 +64,9 @@ Pack-facing beta.11 changes focus on making data-driven behavior easier to exten
 ### Modified
 
 - The interaction screen now has a locked forced-dialogue mode for event moments. In this mode, normal root actions such as Talk, Trade, Gift, Inventory, Recruit, Family, and Relationships are hidden until the event option resolves.
+- The built-in container forced-dialogue config now defaults to opening generated containers, and the default forced-dialogue pack targets vanilla village chest loot tables for village chest confrontations.
+- The built-in village chest forced-dialogue options now vary by reputation: high-reputation players can receive warnings, mid-reputation players can offer normal payment, and low-reputation players can face higher payment costs or harsher outcomes.
+- Built-in dialogue tone now emphasizes the mod's memory and consequence loop: villagers react to personal reputation, remember harm, gossip about theft, and treat defense as meaningful without instantly erasing past behavior.
 - Villager profession and gender labels used by the interaction GUI are now documented as localization-friendly client values instead of server-supplied English display strings.
 - Villager dialogue speaker labels are now documented as client-localized GUI text instead of datapack text.
 - Built-in profession loot is now declared through datapack rule files and Minecraft loot tables instead of hardcoded Java pools.

@@ -6,6 +6,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.VillagerRetaliation;
+import com.jvn.villagerretaliation.util.VillagerInventoryItemRemoval;
+import com.jvn.villagerretaliation.util.VillagerReputationCondition;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
@@ -122,7 +124,9 @@ public final class ForcedDialogueResources {
                     0,
                     false,
                     true,
-                    0
+                    0,
+                    ForcedDialogueItemPayment.empty(),
+                    VillagerReputationCondition.empty()
             ));
         }
 
@@ -182,14 +186,48 @@ public final class ForcedDialogueResources {
                     readInt(option, "reputation", 0),
                     readBoolean(option, "aggro"),
                     readBoolean(option, "end_conversation", true),
-                    readInt(option, "order", index)
+                    readInt(option, "order", index),
+                    readItemPayment(option),
+                    VillagerReputationCondition.read(option)
             ));
             index++;
         }
         return List.copyOf(options);
     }
 
+    private static ForcedDialogueItemPayment readItemPayment(JsonObject option) {
+        return readPaymentJson(option, "take_items")
+                .or(() -> readPaymentJson(option, "payment"))
+                .map(payment -> new ForcedDialogueItemPayment(
+                        payment.removal(),
+                        readString(payment.entry(), "success_response"),
+                        readString(payment.entry(), "failure_response"),
+                        readInt(payment.entry(), "success_reputation", 0),
+                        readInt(payment.entry(), "failure_reputation", 0),
+                        readBoolean(payment.entry(), "failure_aggro"),
+                        readBoolean(payment.entry(), "failure_end_conversation"),
+                        readEnum(payment.entry(), "destination", ForcedDialogueItemDestination.class)
+                                .orElse(ForcedDialogueItemDestination.DISCARD),
+                        readEnum(payment.entry(), "overflow_destination", ForcedDialogueItemDestination.class).orElse(null),
+                        readBoolean(payment.entry(), "require_space", true)
+                ))
+                .orElse(ForcedDialogueItemPayment.empty());
+    }
+
+    private static Optional<PaymentJson> readPaymentJson(JsonObject option, String key) {
+        JsonElement element = option.get(key);
+        if (element == null || !element.isJsonObject()) {
+            return Optional.empty();
+        }
+        return VillagerInventoryItemRemoval.read(option, key)
+                .map(removal -> new PaymentJson(element.getAsJsonObject(), removal));
+    }
+
     static String resolveTemplate(String text, ForcedDialogueContext context) {
+        return resolveTemplate(text, context, Map.of());
+    }
+
+    static String resolveTemplate(String text, ForcedDialogueContext context, Map<String, String> extraReplacements) {
         Map<String, String> replacements = new HashMap<>();
         replacements.put("villager", context.villagerName());
         replacements.put("player", context.playerName());
@@ -200,6 +238,7 @@ public final class ForcedDialogueResources {
         replacements.put("x", Integer.toString(context.x()));
         replacements.put("y", Integer.toString(context.y()));
         replacements.put("z", Integer.toString(context.z()));
+        replacements.putAll(extraReplacements);
         return VillagerDialogueResources.resolveTemplate(text, replacements);
     }
 
@@ -275,9 +314,22 @@ public final class ForcedDialogueResources {
         }
     }
 
+    private record PaymentJson(
+            JsonObject entry,
+            VillagerInventoryItemRemoval removal) {
+    }
+
     public enum ForcedDialogueTrigger {
         CONTAINER_THEFT,
         CONTAINER_OPENED
+    }
+
+    public enum ForcedDialogueItemDestination {
+        DISCARD,
+        VILLAGER_INVENTORY,
+        SOURCE_CONTAINER,
+        DROP_AT_VILLAGER,
+        DROP_AT_CONTAINER
     }
 
     public record ForcedDialogueDefinition(
@@ -304,7 +356,41 @@ public final class ForcedDialogueResources {
             int reputationDelta,
             boolean aggro,
             boolean endConversation,
-            int order) {
+            int order,
+            ForcedDialogueItemPayment itemPayment,
+            VillagerReputationCondition reputationCondition) {
+    }
+
+    public record ForcedDialogueItemPayment(
+            VillagerInventoryItemRemoval removal,
+            String successResponse,
+            String failureResponse,
+            int successReputationDelta,
+            int failureReputationDelta,
+            boolean failureAggro,
+            boolean failureEndConversation,
+            ForcedDialogueItemDestination destination,
+            ForcedDialogueItemDestination overflowDestination,
+            boolean requireSpace) {
+        private static final ForcedDialogueItemPayment EMPTY = new ForcedDialogueItemPayment(
+                VillagerInventoryItemRemoval.empty(),
+                "",
+                "",
+                0,
+                0,
+                false,
+                false,
+                ForcedDialogueItemDestination.DISCARD,
+                null,
+                true);
+
+        private static ForcedDialogueItemPayment empty() {
+            return EMPTY;
+        }
+
+        public boolean isEmpty() {
+            return this.removal.isEmpty();
+        }
     }
 
     public record ForcedDialogueContext(

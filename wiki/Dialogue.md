@@ -99,6 +99,10 @@ See [Dialogue Types](Dialogue-Types.md) for simple and expanded dropdown example
 | `order` | integer | array index | Lower values appear earlier. |
 | `professions` | string or array | any | Filters by villager profession. |
 | `dispositions` | string or array | any | Filters by mood/disposition. |
+| `reputation_level` | string or array | any | Alias for `reputation_levels`. |
+| `reputation_levels` | string or array | any | Filters by the player's current reputation tier with this villager: `royalty`, `revered`, `respected`, `trusted`, `neutral`, `suspicious`, `hostile`, `despised`, or `feared`. |
+| `min_reputation` | integer | none | Minimum exact reputation value with this villager. |
+| `max_reputation` | integer | none | Maximum exact reputation value with this villager. |
 | `player_items` | string or array | none | Requires the player to have one matching item or item tag. Prefix tags with `#`. |
 | `player_item_slots` | string or array | `hands` when `player_items` is set | Slots to check: `main_hand`, `off_hand`, `hands`, `armor`, `hotbar`, `inventory`, `equipment`, or `any`. |
 | `show_for_adults` | boolean | `true` | Adult visibility. |
@@ -148,10 +152,16 @@ See [Dialogue Types](Dialogue-Types.md) for simple and expanded dropdown example
 | `option_ids` | string or array | none | Same purpose as `option`. |
 | `professions` | string or array | inherited/any | Filters by profession. |
 | `dispositions` | string or array | any | Filters by disposition. |
+| `reputation_level` | string or array | any | Alias for `reputation_levels`. |
+| `reputation_levels` | string or array | any | Filters by the player's current reputation tier with this villager. |
+| `min_reputation` | integer | none | Minimum exact reputation value with this villager. |
+| `max_reputation` | integer | none | Maximum exact reputation value with this villager. |
 | `weather` | string or array | any | `clear`, `rain`, or `thunder`. |
 | `times` | string or array | any | `morning`, `afternoon`, `evening`, or `night`. |
 | `event_tags` | string or array | any | Requires a recent nearby event with a matching tag. |
 | `player_event_tags` | string or array | any | Requires a recent event associated with the player. |
+| `requires_container_theft_to_self` | boolean | `false` | Requires recent player container-theft memory witnessed by this villager. |
+| `requires_container_theft_from_other` | boolean | `false` | Requires recent player container-theft memory witnessed by another villager. |
 | `player_items` | string or array | none | Requires the player to have one matching item or item tag. Prefix tags with `#`. |
 | `player_item_slots` | string or array | `hands` when `player_items` is set | Slots to check: `main_hand`, `off_hand`, `hands`, `armor`, `hotbar`, `inventory`, `equipment`, or `any`. |
 | `story_structure` | string or array | any | Restricts `share_story` to one structure id. |
@@ -198,6 +208,8 @@ See [Dialogue Types](Dialogue-Types.md) for simple and expanded dropdown example
 | `show_for_babies` | boolean | `true` | Baby visibility. |
 | `weight` | integer | `10` | Weighted selection. |
 
+Reputation filters on options and lines check the player's current reputation with the specific villager being spoken to. Use `reputation_levels` for tier-based behavior, or `min_reputation` / `max_reputation` when you need an exact numeric boundary.
+
 Player item filters can also use aliases `player_item`, `player_item_tag`, `player_item_tags`, and `player_item_slot`. Dialogue text can use `{player_item}`, `{held_item}`, `{player_item_id}`, `{held_item_id}`, `{player_item_slot}`, and `{held_item_slot}` when the selected line has a player item filter.
 
 Family-aware dialogue text can use `{parent}`, `{sibling}`, `{spouse}`, `{child}`, `{grandparent}`, `{ancestor}`, `{grandchild}`, `{descendant}`, `{aunt_uncle}`, `{cousin}`, `{niece_nephew}`, `{deceased_family}`, `{extended_relative}`, `{relative}`, and the matching `_possessive` variants.
@@ -205,6 +217,8 @@ Family-aware dialogue text can use `{parent}`, `{sibling}`, `{spouse}`, `{child}
 Relationship-aware dialogue text can use `{partner}`, `{crush}`, `{dating_partner}`, `{fiance}`, `{romantic_spouse}`, `{ex_partner}`, `{late_partner}`, and the matching `_possessive` variants.
 
 Recruitment memory lines can use `{follow_biome}` and `{follow_distance}`.
+
+Container theft memory lines can use `{stolen_item}`, `{stolen_item_id}`, `{stolen_count}`, `{stolen_item_count}`, `{stolen_stack}`, `{stolen_container}`, `{stolen_loot_table}`, `{theft_witness}`, and `{theft_witness_possessive}`. Use `player_event_tags: ["player_container_theft"]` to target the memory, then add `requires_container_theft_to_self` for lines like "my {stolen_item}" or `requires_container_theft_from_other` for gossip like "{theft_witness} told me about {stolen_stack}."
 
 Example option and line for a player holding a sword:
 
@@ -281,6 +295,23 @@ player_gave_liked_gift
 player_gave_neutral_gift
 player_gave_disliked_gift
 player_gave_hated_gift
+player_container_theft
+```
+
+Example reputation-gated line:
+
+```json
+{
+  "lines": [
+    {
+      "id": "my_pack.low_rep_warning",
+      "type": "chat",
+      "reputation_levels": ["hostile", "despised", "feared"],
+      "text": "People here still remember what you cost us.",
+      "weight": 20
+    }
+  ]
+}
 ```
 
 See [Event Tags](Event-Tags.md) for simple and expanded dropdown examples for every current tag, plus notes on which tags are currently remembered by built-in handlers.

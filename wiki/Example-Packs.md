@@ -67,6 +67,13 @@ data/villagerretaliation/dialogue/en_us/examplepack_dialogue.json
       "weight": 10
     },
     {
+      "id": "examplepack.low_rep_chat",
+      "type": "chat",
+      "reputation_levels": ["hostile", "despised", "feared"],
+      "text": "You will find fewer open doors here than you remember.",
+      "weight": 20
+    },
+    {
       "id": "examplepack.share_story.haunted_keep",
       "type": "share_story",
       "option": "adult_share_story",
@@ -144,12 +151,38 @@ data/villagerretaliation/forced_dialogue/examplepack_events.json
           "order": 0
         },
         {
+          "id": "trusted_warning",
+          "label": "Accept warning",
+          "response": "You have helped us before, so I will treat this as a mistake. Close it.",
+          "reputation_levels": ["trusted", "respected", "revered", "royalty"],
+          "reputation": 1,
+          "order": 1
+        },
+        {
+          "id": "offer_payment",
+          "label": "Offer payment",
+          "response": "Payment does not make it yours, but it can make things right.",
+          "reputation_levels": ["neutral", "suspicious"],
+          "take_items": {
+            "items": ["minecraft:emerald"],
+            "count": 8,
+            "destination": "villager_inventory",
+            "overflow_destination": "drop_at_villager",
+            "failure_response": "Do not offer emeralds you do not have.",
+            "failure_reputation": -2,
+            "failure_end_conversation": false
+          },
+          "reputation": 2,
+          "order": 2
+        },
+        {
           "id": "talk_back",
           "label": "Talk back",
           "response": "Wrong answer.",
+          "reputation_levels": ["hostile", "despised", "feared"],
           "reputation": -6,
           "aggro": true,
-          "order": 1
+          "order": 3
         }
       ]
     }

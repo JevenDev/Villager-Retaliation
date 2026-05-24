@@ -29,6 +29,7 @@ Adult villagers can defend themselves, react to crimes they witness, use profess
 - Make villagers suspicious, hostile, despised, or feared if you push things too far
 - Talk to villagers through a reputation-aware interaction screen
 - Get different dialogue depending on reputation, profession, recent events, and local village activity
+- Let villagers confront players for opening or stealing from generated village chests
 - Give gifts, discover preferences, and see trusted villagers keep favorite items as keepsakes
 - Learn village stories, follow villager map hints, and build family or relationship history
 - Keep babies defenseless and nitwits cowardly as intended
@@ -80,6 +81,8 @@ The interaction screen gives players a dedicated way to talk, give gifts, recrui
 Trusted villagers may greet you warmly, suspicious villagers may be cold, and hostile villagers may insult or refuse you. The goal is to make each villager feel more personal without breaking the vanilla feel.
 
 Villagers can also share stories about discovered structures and biomes, give unreliable or reputation-aware gift advice, remember family and romantic relationships, and be recruited to follow or help the player when conditions allow.
+
+Villagers can confront players for opening or stealing from watched containers, including generated village chests. Data packs can customize the event dialogue, target specific loot tables, require item payments, and show different responses based on the player's current reputation with the witnessing villager.
 
 ### Profession Combat
 
@@ -255,7 +258,7 @@ This is disabled by default and is mainly intended for testing and balancing.
 
 Villager Retaliation! has built-in datapack and resource-pack support for creators who want to tune the experience without writing Java.
 
-Datapacks can add or replace villager dialogue, notification text, ambient world text, gift preferences, pacification payments, profession loot, story discoveries, and preset villager names. These systems are data-driven so addon packs and modpacks can make villages feel warmer, harsher, funnier, stranger, or more tied to their own worldbuilding.
+Datapacks can add or replace villager dialogue, forced dialogue events, notification text, ambient world text, gift preferences, pacification payments, profession loot, story discoveries, and preset villager names. These systems are data-driven so addon packs and modpacks can make villages feel warmer, harsher, funnier, stranger, or more tied to their own worldbuilding.
 
 Resource packs can translate the interaction GUI and reputation UI, replace normal and combat villager textures, customize wandering trader textures, and override the combat-capable villager model used when villagers need independent arms for weapons, shields, bows, potions, and throwing animations.
 
@@ -265,9 +268,17 @@ There is also a local browser-based datapack generator included in the GitHub re
 tools/datapack-builder/index.html
 ```
 
-Open it in a browser to create, import, preview, validate, and export Villager Retaliation datapacks. It can generate the current datapack paths for dialogue, notifications, gifts, pacification, story discovery, preset names, and `pack.mcmeta`.
+Open it in a browser to create, import, preview, validate, and export Villager Retaliation datapacks. It can generate the current datapack paths for dialogue, forced dialogue, notifications, gifts, pacification, story discovery, preset names, and `pack.mcmeta`.
 
 For full pack-author documentation, examples, JSON references, and model notes, use the [GitHub pack docs](https://github.com/JevenDev/Villager-Retaliation/tree/1.21.1/wiki) rather than this Modrinth page.
+
+## Documentation
+
+- [Changelog](CHANGELOG.md)
+- [Wiki Home](wiki/Home.md)
+- [Pack Format Changes](wiki/Pack-Format-Changes.md)
+- [Forced Dialogue JSON](wiki/Forced-Dialogue.md)
+- [Dialogue JSON](wiki/Dialogue.md)
 
 ![compatibility](https://cdn.modrinth.com/data/cached_images/1252c11050b7daf8b8621712b58dd1005e7ba982.png)
 

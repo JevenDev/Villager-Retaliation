@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.dialogue;
 
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.util.VillagerPlayerItemCondition;
+import com.jvn.villagerretaliation.util.VillagerReputationCondition;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import java.util.EnumSet;
 import java.util.Set;
@@ -21,6 +22,9 @@ public record DialogueLine(
         Set<DialogueContext.TimeOfDay> timeOfDays,
         Set<VillageEventMemory.EventTag> eventTags,
         Set<VillageEventMemory.EventTag> playerEventTags,
+        boolean requiresContainerTheftToSelf,
+        boolean requiresContainerTheftFromOther,
+        VillagerReputationCondition reputationCondition,
         VillagerPlayerItemCondition playerItemCondition,
         Set<ResourceLocation> storyTargetIds,
         boolean requiresRecentBrokenBedMemory,
@@ -88,6 +92,9 @@ public record DialogueLine(
         if (!this.dispositions.isEmpty() && !this.dispositions.contains(disposition)) {
             return false;
         }
+        if (!this.reputationCondition.matches(context.reputation(), context.reputationLevel())) {
+            return false;
+        }
         if (!this.weatherStates.isEmpty() && !this.weatherStates.contains(context.weather())) {
             return false;
         }
@@ -98,6 +105,12 @@ public record DialogueLine(
             return false;
         }
         if (!this.playerEventTags.isEmpty() && !context.hasRecentPlayerEvent(this.playerEventTags.toArray(VillageEventMemory.EventTag[]::new))) {
+            return false;
+        }
+        if (this.requiresContainerTheftToSelf && context.recentContainerTheftToThisVillager().isEmpty()) {
+            return false;
+        }
+        if (this.requiresContainerTheftFromOther && context.recentContainerTheftFromAnotherVillager().isEmpty()) {
             return false;
         }
         if (!this.playerItemCondition.matches(context.player())) {
@@ -231,10 +244,16 @@ public record DialogueLine(
         if (!this.dispositions.isEmpty()) {
             score += 2;
         }
+        if (!this.reputationCondition.isEmpty()) {
+            score += 3;
+        }
         if (!this.eventTags.isEmpty()) {
             score += 4;
         }
         if (!this.playerEventTags.isEmpty()) {
+            score += 5;
+        }
+        if (this.requiresContainerTheftToSelf || this.requiresContainerTheftFromOther) {
             score += 5;
         }
         if (!this.playerItemCondition.isEmpty()) {
@@ -313,6 +332,9 @@ public record DialogueLine(
         private final Set<DialogueContext.TimeOfDay> timeOfDays = EnumSet.noneOf(DialogueContext.TimeOfDay.class);
         private final Set<VillageEventMemory.EventTag> eventTags = EnumSet.noneOf(VillageEventMemory.EventTag.class);
         private final Set<VillageEventMemory.EventTag> playerEventTags = EnumSet.noneOf(VillageEventMemory.EventTag.class);
+        private boolean requiresContainerTheftToSelf;
+        private boolean requiresContainerTheftFromOther;
+        private VillagerReputationCondition reputationCondition = VillagerReputationCondition.empty();
         private VillagerPlayerItemCondition playerItemCondition = VillagerPlayerItemCondition.empty();
         private final Set<ResourceLocation> storyTargetIds = new java.util.HashSet<>();
         private boolean requiresRecentBrokenBedMemory;
@@ -398,10 +420,27 @@ public record DialogueLine(
             return this;
         }
 
+        public Builder requiresContainerTheftToSelf() {
+            this.requiresContainerTheftToSelf = true;
+            return this;
+        }
+
+        public Builder requiresContainerTheftFromOther() {
+            this.requiresContainerTheftFromOther = true;
+            return this;
+        }
+
         public Builder playerItemCondition(VillagerPlayerItemCondition playerItemCondition) {
             this.playerItemCondition = playerItemCondition == null
                     ? VillagerPlayerItemCondition.empty()
                     : playerItemCondition;
+            return this;
+        }
+
+        public Builder reputationCondition(VillagerReputationCondition reputationCondition) {
+            this.reputationCondition = reputationCondition == null
+                    ? VillagerReputationCondition.empty()
+                    : reputationCondition;
             return this;
         }
 
@@ -631,6 +670,9 @@ public record DialogueLine(
                     Set.copyOf(this.timeOfDays),
                     Set.copyOf(this.eventTags),
                     Set.copyOf(this.playerEventTags),
+                    this.requiresContainerTheftToSelf,
+                    this.requiresContainerTheftFromOther,
+                    this.reputationCondition,
                     this.playerItemCondition,
                     Set.copyOf(this.storyTargetIds),
                     this.requiresRecentBrokenBedMemory,

@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import net.minecraft.core.NonNullList;
@@ -217,6 +218,19 @@ final class VillagerInventoryContainer implements Container {
         fillEmptySlots(inventory, remainder);
         saveFullInventory(villager, inventory);
         return remainder;
+    }
+
+    static boolean canAddItems(Villager villager, List<ItemStack> stacks) {
+        NonNullList<ItemStack> inventory = loadFullInventory(villager);
+        for (ItemStack stack : stacks) {
+            ItemStack remainder = stack.copy();
+            mergeIntoExistingStacks(inventory, remainder);
+            fillEmptySlots(inventory, remainder);
+            if (!remainder.isEmpty()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     static boolean hasUsableWeapon(Villager villager) {

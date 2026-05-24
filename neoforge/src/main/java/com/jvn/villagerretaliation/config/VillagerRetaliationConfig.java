@@ -229,11 +229,11 @@ public final class VillagerRetaliationConfig {
         CONTAINER_FORCED_DIALOGUE_TRIGGER = BUILDER
                 .comment("When watched containers should trigger forced dialogue: THEFT_ONLY waits until items are removed, OPENING triggers as soon as the container is opened.")
                 .translation("villagerretaliation.configuration.dialogue.containerForcedDialogueTrigger")
-                .defineEnum("containerForcedDialogueTrigger", ContainerForcedDialogueTrigger.THEFT_ONLY);
+                .defineEnum("containerForcedDialogueTrigger", ContainerForcedDialogueTrigger.OPENING);
         WATCHED_CONTAINER_SCOPE = BUILDER
                 .comment("Which watched containers can trigger forced dialogue. WORLD_GENERATED_ONLY requires the clicked container to have an unresolved loot table.")
                 .translation("villagerretaliation.configuration.dialogue.watchedContainerScope")
-                .defineEnum("watchedContainerScope", WatchedContainerScope.ALL_CONTAINERS);
+                .defineEnum("watchedContainerScope", WatchedContainerScope.WORLD_GENERATED_ONLY);
         DIALOGUE_POSITIVE_REPUTATION_COOLDOWN_DAYS = BUILDER.comment("Minimum Minecraft day changes between positive dialogue reputation gains for the same player and villager.")
                 .translation("villagerretaliation.configuration.dialogue.dialoguePositiveReputationCooldownDays")
                 .defineInRange("dialoguePositiveReputationCooldownDays", 1, 0, 30);

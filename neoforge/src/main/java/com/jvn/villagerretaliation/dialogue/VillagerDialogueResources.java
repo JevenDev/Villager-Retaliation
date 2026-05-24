@@ -10,6 +10,7 @@ import com.jvn.villagerretaliation.combat.VillagerPacificationResult;
 import com.jvn.villagerretaliation.util.VillagerLocale;
 import com.jvn.villagerretaliation.util.VillagerPlayerItemCondition;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
+import com.jvn.villagerretaliation.util.VillagerReputationCondition;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import java.io.IOException;
 import java.io.Reader;
@@ -360,6 +361,7 @@ public final class VillagerDialogueResources {
             Set<VillagerProfession> professions = readProfessions(entry, defaultProfessions);
             Set<DialogueDisposition> dispositions = readEnumSet(entry, "dispositions", DialogueDisposition.class);
             VillagerPlayerItemCondition playerItemCondition = VillagerPlayerItemCondition.read(entry);
+            VillagerReputationCondition reputationCondition = VillagerReputationCondition.read(entry);
             boolean requiresUnreportedCartographerMapDiscovery = readBoolean(entry, "requires_unreported_cartographer_map_discovery");
             boolean requiresUnreportedStoryHintDiscovery = readBoolean(entry, "requires_unreported_story_hint_discovery");
             boolean requiresUnreportedCombatSurvivalReport = readBoolean(entry, "requires_unreported_combat_survival_report");
@@ -403,6 +405,7 @@ public final class VillagerDialogueResources {
                     professions,
                     dispositions,
                     playerItemCondition,
+                    reputationCondition,
                     requiresUnreportedCartographerMapDiscovery,
                     requiresUnreportedStoryHintDiscovery,
                     requiresUnreportedCombatSurvivalReport,
@@ -603,6 +606,16 @@ public final class VillagerDialogueResources {
         Set<VillageEventMemory.EventTag> playerEventTags = readEnumSet(entry, "player_event_tags", VillageEventMemory.EventTag.class);
         if (!playerEventTags.isEmpty()) {
             builder.playerEventTags(playerEventTags.toArray(VillageEventMemory.EventTag[]::new));
+        }
+        if (readBoolean(entry, "requires_container_theft_to_self")) {
+            builder.requiresContainerTheftToSelf();
+        }
+        if (readBoolean(entry, "requires_container_theft_from_other")) {
+            builder.requiresContainerTheftFromOther();
+        }
+        VillagerReputationCondition reputationCondition = VillagerReputationCondition.read(entry);
+        if (!reputationCondition.isEmpty()) {
+            builder.reputationCondition(reputationCondition);
         }
 
         VillagerPlayerItemCondition playerItemCondition = VillagerPlayerItemCondition.read(entry);

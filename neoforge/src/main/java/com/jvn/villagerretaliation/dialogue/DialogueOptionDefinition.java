@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.dialogue;
 
 import com.jvn.villagerretaliation.util.VillagerPlayerItemCondition;
+import com.jvn.villagerretaliation.util.VillagerReputationCondition;
 import java.util.Set;
 import net.minecraft.world.entity.npc.VillagerProfession;
 
@@ -13,6 +14,7 @@ public record DialogueOptionDefinition(
         Set<VillagerProfession> professions,
         Set<DialogueDisposition> dispositions,
         VillagerPlayerItemCondition playerItemCondition,
+        VillagerReputationCondition reputationCondition,
         boolean requiresUnreportedCartographerMapDiscovery,
         boolean requiresUnreportedStoryHintDiscovery,
         boolean requiresUnreportedCombatSurvivalReport,
@@ -60,6 +62,9 @@ public record DialogueOptionDefinition(
             return false;
         }
         if (!this.playerItemCondition.matches(context.player())) {
+            return false;
+        }
+        if (!this.reputationCondition.matches(context.reputation(), context.reputationLevel())) {
             return false;
         }
         if (this.requiresUnreportedCartographerMapDiscovery && !context.hasUnreportedCartographerMapDiscovery()) {
@@ -174,6 +179,7 @@ public record DialogueOptionDefinition(
                 Set.of(),
                 Set.of(),
                 VillagerPlayerItemCondition.empty(),
+                VillagerReputationCondition.empty(),
                 false,
                 false,
                 false,

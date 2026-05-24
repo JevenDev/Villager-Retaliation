@@ -26,7 +26,9 @@ The generator writes these datapack paths:
 | Stories - Biomes | `data/<namespace>/story_biomes/<file>.json` |
 | Names | `data/villagerretaliation/villager_names/preset_names.json` |
 
-Forced dialogue entries use the Forced tab. Use it for event-driven conversations such as witnessed container theft, including line-of-sight checks, immediate aggro, dialogue options, reputation changes, and aggro after specific responses. See [Forced Dialogue JSON](Forced-Dialogue.md) for the raw schema.
+Forced dialogue entries use the Forced tab. Use it for event-driven conversations such as witnessed container opening or theft, including line-of-sight checks, generated-container loot-table targeting, immediate aggro, dialogue options, reputation changes, item payments, and aggro after specific responses. See [Forced Dialogue JSON](Forced-Dialogue.md) for the raw schema.
+
+The Dialogue tab supports reputation-gated options and lines through `reputation_levels`, `min_reputation`, and `max_reputation`. Forced dialogue options use the same fields inside the Options JSON editor, which lets one event show a warning to trusted players, a normal payment to neutral players, and a harsher response to low-reputation players.
 
 The generator is meant for datapacks. Use a resource pack separately for GUI language keys, villager textures, and model JSON.
 
@@ -59,6 +61,7 @@ The right-side preview shows the file that will be written for the active tab. U
 - Custom ids are stable and namespaced to your pack.
 - Story structures and biomes use full ids like `minecraft:ancient_city`.
 - Item tags include `#`, such as `#minecraft:arrows`.
+- Reputation filters use known tiers such as `trusted`, `neutral`, or `hostile`, unless you intentionally use numeric `min_reputation` / `max_reputation`.
 
 The single-file download button saves only the currently previewed JSON file. Export saves the full datapack zip.
 

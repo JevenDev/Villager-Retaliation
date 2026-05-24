@@ -114,9 +114,11 @@ const CONSTANTS = {
     "player_gave_liked_gift",
     "player_gave_neutral_gift",
     "player_gave_disliked_gift",
-    "player_gave_hated_gift"
+    "player_gave_hated_gift",
+    "player_container_theft"
   ],
   itemSlots: ["main_hand", "off_hand", "hands", "armor", "hotbar", "inventory", "equipment", "any"],
+  forcedItemDestinations: ["discard", "villager_inventory", "source_container", "drop_at_villager", "drop_at_container"],
   weather: ["clear", "rain", "thunder"],
   times: ["morning", "afternoon", "evening", "night"],
   giftAdvice: ["global_liked", "global_disliked", "profession_liked", "profession_disliked", "already_known"],
@@ -177,6 +179,8 @@ const CONSTANTS = {
   lineFlags: [
     "requires_recent_broken_bed_memory",
     "requires_recent_direct_hit_memory",
+    "requires_container_theft_to_self",
+    "requires_container_theft_from_other",
     "requires_gear_report_used_in_combat",
     "requires_gear_report_unused_in_combat",
     "requires_recruitment_memory",
@@ -257,6 +261,9 @@ const FIELD_TOOLTIPS = {
   "dialogue-order": "Lower values appear earlier in the talk menu. If omitted, array order is used.",
   "dialogue-professions": "Profession filter. Vanilla ids can omit minecraft:, custom professions need their full registered id, and blank means any profession.",
   "dialogue-dispositions": "Mood filter derived from reputation and context: friendly, respectful, neutral, cautious, rude, hostile, or fearful.",
+  "dialogue-reputation_levels": "Exact reputation tier filter for dialogue options and lines. Prefer tier names over fixed numeric reputation.",
+  "dialogue-min_reputation": "Minimum exact reputation value required for dialogue options and lines.",
+  "dialogue-max_reputation": "Maximum exact reputation value allowed for dialogue options and lines.",
   "dialogue-player_items": "Requires one matching player item or item tag. Prefix tags with #; aliases such as player_item_tag are accepted by the loader.",
   "dialogue-player_item_slots": "Where to check player items. If player_items is set and slots are blank, the default is hands.",
   "dialogue-text": "Localized villager text. Placeholder support depends on type and filters, such as {target}, {held_item}, family names, or recruitment values.",
@@ -281,7 +288,7 @@ const FIELD_TOOLTIPS = {
   "forced-priority": "Higher priority wins when multiple forced dialogue rules match the same event.",
   "forced-witness_radius": "Maximum block distance for witnesses to detect the event.",
   "forced-reputation": "Optional reputation change applied when this rule runs.",
-  "forced-options_json": "JSON array of player response options. Each option can set label, response, reputation, aggro, end_conversation, and order.",
+  "forced-options_json": "JSON array of player response options. Each option can set label, response, reputation, aggro, end_conversation, order, take_items, reputation_levels, min_reputation, and max_reputation.",
   "notifications-fileName": "Creates data/villagerretaliation/notifications/<locale>/<file>.json. Avoid global unless intentionally replacing built-in notifications.",
   "notifications-locale": "Locale folder for this notification file. en_us loads first, then the player's locale overlays matching ids.",
   "notification-id": "Stable id for translation overlays and replacement. Generated ids work, but explicit ids are safer.",
@@ -353,6 +360,8 @@ const FLAG_TOOLTIPS = {
   requires_shareable_story: "Requires a discovered structure or biome story the villager can share.",
   requires_recent_broken_bed_memory: "Requires recent memory of the player breaking a villager bed.",
   requires_recent_direct_hit_memory: "Requires recent memory of the player directly hitting a villager.",
+  requires_container_theft_to_self: "Requires a recent container theft memory witnessed by this villager.",
+  requires_container_theft_from_other: "Requires a recent container theft memory reported by another villager.",
   requires_gear_report_used_in_combat: "Requires gifted gear that has been used in combat.",
   requires_gear_report_unused_in_combat: "Requires gifted gear that has not yet been used in combat.",
   requires_recruitment_memory: "Requires stored recruitment memory for the villager.",
@@ -407,7 +416,8 @@ const EVENT_TAG_TOOLTIPS = {
   player_gave_liked_gift: "The player gave a liked gift.",
   player_gave_neutral_gift: "The player gave a neutral gift.",
   player_gave_disliked_gift: "The player gave a disliked gift.",
-  player_gave_hated_gift: "The player gave a hated gift."
+  player_gave_hated_gift: "The player gave a hated gift.",
+  player_container_theft: "The player was witnessed taking items from a watched container."
 };
 
 const DISPOSITION_TOOLTIPS = {
@@ -434,6 +444,7 @@ const ITEM_SLOT_TOOLTIPS = {
 const TAG_SUGGESTIONS = {
   "dialogue-professions": CONSTANTS.professions,
   "dialogue-dispositions": CONSTANTS.dispositions,
+  "dialogue-reputation_levels": CONSTANTS.reputationLevels,
   "dialogue-player_item_slots": CONSTANTS.itemSlots,
   "dialogue-weather": CONSTANTS.weather,
   "dialogue-times": CONSTANTS.times,
@@ -1361,6 +1372,11 @@ function validate() {
   if (badDialogueSlot) {
     addCheck(checks, "warning", "Dialogue item slot", `Unknown item slot: ${badDialogueSlot}.`);
   }
+  const reputationConditionEntries = [...state.dialogue.options, ...state.dialogue.lines];
+  const badDialogueReputation = firstInvalidValue(reputationConditionEntries, ["reputation_level", "reputation_levels"], (value) => CONSTANTS.reputationLevels.includes(value));
+  if (badDialogueReputation) {
+    addCheck(checks, "warning", "Dialogue reputation", `Unknown reputation level: ${badDialogueReputation}.`);
+  }
   const badWeather = firstInvalidValue(state.dialogue.lines, ["weather"], (value) => CONSTANTS.weather.includes(value));
   if (badWeather) {
     addCheck(checks, "warning", "Dialogue weather", `Unknown weather value: ${badWeather}.`);
@@ -1381,7 +1397,19 @@ function validate() {
   if (badDialogueNumber) {
     addCheck(checks, "error", "Dialogue number", `${humanize(badDialogueNumber)} must be a non-negative number.`);
   }
-  const blankDialogueList = firstBlankListValue(allDialogueEntries, ["professions", "dispositions", "player_items", "player_item_slots", "weather", "times", "event_tags", "player_event_tags", "story_structures", "story_biomes", "outcomes"]);
+  const badDialogueReputationNumber = firstBadNumber(reputationConditionEntries, ["min_reputation", "max_reputation"], Number.isFinite);
+  if (badDialogueReputationNumber) {
+    addCheck(checks, "error", "Dialogue reputation", `${humanize(badDialogueReputationNumber)} has an invalid number.`);
+  }
+  for (const entry of reputationConditionEntries) {
+    const min = numberValue(entry.min_reputation);
+    const max = numberValue(entry.max_reputation);
+    if (min !== undefined && max !== undefined && min > max) {
+      addCheck(checks, "error", "Dialogue reputation", "Minimum reputation cannot be higher than maximum reputation.");
+      break;
+    }
+  }
+  const blankDialogueList = firstBlankListValue(allDialogueEntries, ["professions", "dispositions", "reputation_level", "reputation_levels", "player_items", "player_item_slots", "weather", "times", "event_tags", "player_event_tags", "story_structures", "story_biomes", "outcomes"]);
   if (blankDialogueList) {
     addCheck(checks, "warning", "Dialogue list", `${humanize(blankDialogueList)} contains a blank value.`);
   }
@@ -1424,6 +1452,53 @@ function validate() {
     const badOptionNumber = firstBadNumber(options, ["order", "reputation"], Number.isFinite);
     if (badOptionNumber) {
       addCheck(checks, "error", "Forced option number", `${humanize(badOptionNumber)} has an invalid number.`);
+      break;
+    }
+    const badForcedOptionReputation = firstInvalidValue(options, ["reputation_level", "reputation_levels"], (value) => CONSTANTS.reputationLevels.includes(value));
+    if (badForcedOptionReputation) {
+      addCheck(checks, "warning", "Forced option reputation", `Unknown reputation level: ${badForcedOptionReputation}.`);
+      break;
+    }
+    const badForcedOptionReputationNumber = firstBadNumber(options, ["min_reputation", "max_reputation"], Number.isFinite);
+    if (badForcedOptionReputationNumber) {
+      addCheck(checks, "error", "Forced option reputation", `${humanize(badForcedOptionReputationNumber)} has an invalid number.`);
+      break;
+    }
+    const badForcedOptionReputationRange = options.some((option) => {
+      const min = numberValue(option.min_reputation);
+      const max = numberValue(option.max_reputation);
+      return min !== undefined && max !== undefined && min > max;
+    });
+    if (badForcedOptionReputationRange) {
+      addCheck(checks, "error", "Forced option reputation", "Minimum reputation cannot be higher than maximum reputation.");
+      break;
+    }
+    const payments = options
+      .map((option) => option.take_items || option.payment)
+      .filter((payment) => payment && typeof payment === "object" && !Array.isArray(payment));
+    for (const payment of payments) {
+      if (!hasAnySelector(payment, ["items", "item", "tags", "tag"])) {
+        addCheck(checks, "error", "Forced option payment", "Every take_items payment needs at least one item or tag.");
+        break;
+      }
+      if (payment.count === undefined && payment.amount === undefined) {
+        addCheck(checks, "error", "Forced option payment", "Every take_items payment needs a count.");
+        break;
+      }
+    }
+    const badPaymentSelector = firstInvalidValue(payments, ["items", "item", "tags", "tag"], (value) => isValidResourceLocation(value, { allowTag: true }));
+    if (badPaymentSelector) {
+      addCheck(checks, "error", "Forced option payment", `Invalid take_items item or tag selector: ${badPaymentSelector}.`);
+      break;
+    }
+    const badPaymentDestination = firstInvalidValue(payments, ["destination", "overflow_destination"], (value) => CONSTANTS.forcedItemDestinations.includes(value));
+    if (badPaymentDestination) {
+      addCheck(checks, "warning", "Forced option payment", `Unknown take_items destination: ${badPaymentDestination}.`);
+      break;
+    }
+    const badPaymentNumber = firstBadNumber(payments, ["count", "amount", "success_reputation", "failure_reputation"], (value, entry, key) => key === "count" || key === "amount" ? value >= 1 : Number.isFinite(value));
+    if (badPaymentNumber) {
+      addCheck(checks, "error", "Forced option payment", `${humanize(badPaymentNumber)} has an invalid payment number.`);
       break;
     }
   }
@@ -1989,6 +2064,11 @@ function renderDialogueForm(kind, entry) {
     ${listField({ id: "dialogue-professions", label: "Professions", value: entry.professions, help: "Blank means any profession." })}
     ${listField({ id: "dialogue-dispositions", label: "Dispositions", value: entry.dispositions, help: "Blank means any mood." })}
   `;
+  const reputationFilters = `
+    ${listField({ id: "dialogue-reputation_levels", label: "Reputation levels", value: entry.reputation_levels ?? entry.reputation_level })}
+    ${field({ id: "dialogue-min_reputation", label: "Minimum reputation", value: entry.min_reputation ?? "", type: "number" })}
+    ${field({ id: "dialogue-max_reputation", label: "Maximum reputation", value: entry.max_reputation ?? "", type: "number" })}
+  `;
 
   if (kind === "options") {
     return `
@@ -1998,6 +2078,7 @@ function renderDialogueForm(kind, entry) {
         ${selectField({ id: "dialogue-type", label: "Dialogue type", value: entry.type, options: CONSTANTS.dialogueTypes, allowBlank: false })}
         ${field({ id: "dialogue-order", label: "Order", value: entry.order ?? "", type: "number" })}
         ${commonFilters}
+        ${reputationFilters}
         ${listField({ id: "dialogue-player_items", label: "Required player items or tags", value: entry.player_items, help: "Use #minecraft:swords for item tags." })}
         ${listField({ id: "dialogue-player_item_slots", label: "Item slots", value: entry.player_item_slots, help: CONSTANTS.itemSlots.join(", ") })}
         ${toggleGrid(CONSTANTS.optionFlags, entry, "option")}
@@ -2014,6 +2095,7 @@ function renderDialogueForm(kind, entry) {
         ${textareaField({ id: "dialogue-text", label: "Line text", value: entry.text, className: "full", rows: 3 })}
         ${listField({ id: "dialogue-option", label: "Option id(s)", value: entry.option ?? entry.option_ids, help: "Link to a custom or built-in talk option." })}
         ${commonFilters}
+        ${reputationFilters}
         ${listField({ id: "dialogue-weather", label: "Weather", value: entry.weather, help: CONSTANTS.weather.join(", ") })}
         ${listField({ id: "dialogue-times", label: "Times", value: entry.times, help: CONSTANTS.times.join(", ") })}
         ${listField({ id: "dialogue-event_tags", label: "Village event tags", value: entry.event_tags })}
@@ -2120,7 +2202,7 @@ function renderForcedDialogue() {
                 ${toggle({ id: "forced-aggro_immediately", label: "Aggro immediately", checked: entry.aggro_immediately === true })}
               </div>
             </div>
-            ${textareaField({ id: "forced-options_json", label: "Options JSON", value: optionsJson, help: "Use an array of player choices with id, label, response, reputation, aggro, end_conversation, and order.", className: "full", rows: 7 })}
+            ${textareaField({ id: "forced-options_json", label: "Options JSON", value: optionsJson, help: "Use an array of player choices with id, label, response, reputation, aggro, end_conversation, order, and optional take_items.", className: "full", rows: 7 })}
           </div>
           ${formActions(editing?.section === "forcedDialogue" ? "Update" : "Add", "save-forced-dialogue", "clear-forced-dialogue-form")}
         </form>
@@ -2389,6 +2471,9 @@ function saveDialogueEntry(event) {
       order: parseInteger(readValue("dialogue-order")),
       professions: readList("dialogue-professions"),
       dispositions: readList("dialogue-dispositions"),
+      reputation_levels: readList("dialogue-reputation_levels"),
+      min_reputation: parseInteger(readValue("dialogue-min_reputation")),
+      max_reputation: parseInteger(readValue("dialogue-max_reputation")),
       player_items: readList("dialogue-player_items"),
       player_item_slots: readList("dialogue-player_item_slots")
     });
@@ -2403,6 +2488,9 @@ function saveDialogueEntry(event) {
       option: optionIds.length <= 1 ? optionIds[0] : optionIds,
       professions: readList("dialogue-professions"),
       dispositions: readList("dialogue-dispositions"),
+      reputation_levels: readList("dialogue-reputation_levels"),
+      min_reputation: parseInteger(readValue("dialogue-min_reputation")),
+      max_reputation: parseInteger(readValue("dialogue-max_reputation")),
       weather: readList("dialogue-weather"),
       times: readList("dialogue-times"),
       event_tags: readList("dialogue-event_tags"),
@@ -2677,6 +2765,33 @@ function addForcedDialogueExample() {
         order: 0
       },
       {
+        id: `${slug}.offer_payment`,
+        label: "Offer payment.",
+        response: "That will help replace what you disturbed.",
+        reputation_levels: ["neutral", "suspicious"],
+        take_items: {
+          items: ["minecraft:emerald"],
+          count: 8,
+          destination: "villager_inventory",
+          overflow_destination: "drop_at_villager",
+          failure_response: "You do not have enough emeralds to make that offer.",
+          failure_reputation: -2,
+          failure_end_conversation: false
+        },
+        reputation: 2,
+        end_conversation: true,
+        order: 5
+      },
+      {
+        id: `${slug}.trusted_warning`,
+        label: "Accept warning.",
+        response: "You have earned some trust here. Keep it by leaving village stores alone.",
+        reputation_levels: ["trusted", "respected", "revered", "royalty"],
+        reputation: 1,
+        end_conversation: true,
+        order: 6
+      },
+      {
         id: `${slug}.refuse`,
         label: "Try and stop me.",
         response: "Then you leave me no choice.",
@@ -2830,10 +2945,20 @@ function loadStarterPack() {
         id: "village_rumors.refuse",
         label: "It is mine now.",
         response: "Then we settle this the hard way.",
+        reputation_levels: ["suspicious", "hostile", "despised", "feared"],
         reputation: -10,
         aggro: true,
         end_conversation: true,
         order: 10
+      },
+      {
+        id: "village_rumors.trusted_warning",
+        label: "Accept warning.",
+        response: "I know your better choices too. Let this be one of them.",
+        reputation_levels: ["trusted", "respected", "revered", "royalty"],
+        reputation: 1,
+        end_conversation: true,
+        order: 5
       }
     ]
   });

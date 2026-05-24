@@ -930,6 +930,10 @@ public final class VillagerInteractionService {
     }
 
     public static void broadcastVillagerChat(ServerLevel level, Villager villager, String text) {
+        broadcastVillagerChat(level, villager, text, "");
+    }
+
+    public static void broadcastVillagerChat(ServerLevel level, Villager villager, String text, String speakerLabel) {
         if (text == null || text.isBlank()) {
             return;
         }
@@ -939,7 +943,7 @@ public final class VillagerInteractionService {
         VillagerInteractionNoticePayload payload = new VillagerInteractionNoticePayload(
                 villager.getId(),
                 text,
-                ""
+                speakerLabel == null ? "" : speakerLabel
         );
         for (ServerPlayer nearbyPlayer : level.players()) {
             if (!nearbyPlayer.isAlive()
@@ -949,6 +953,17 @@ public final class VillagerInteractionService {
             }
             PacketDistributor.sendToPlayer(nearbyPlayer, payload);
         }
+    }
+
+    public static String villagerSpeakerLabel(Villager villager) {
+        String name = displayName(villager);
+        if (villager.isBaby()) {
+            return name;
+        }
+        String profession = VillagerInteractionTextUtil
+                .professionName(villager.getVillagerData().getProfession(), "")
+                .trim();
+        return profession.isBlank() ? name : profession + " " + name;
     }
 
     private static String itemName(ItemStack stack) {

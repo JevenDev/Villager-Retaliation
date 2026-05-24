@@ -41,6 +41,7 @@ public final class VillageEventMemory {
                 source == null ? null : source.getUUID(),
                 player == null ? null : player.getUUID(),
                 null,
+                null,
                 null
         ));
     }
@@ -61,6 +62,7 @@ public final class VillageEventMemory {
                 villager == null ? null : villager.getUUID(),
                 player == null ? null : player.getUUID(),
                 new GiftMemory(villagerName, itemName, reaction, reputationValue),
+                null,
                 null
         ));
     }
@@ -78,7 +80,31 @@ public final class VillageEventMemory {
                 villager == null ? null : villager.getUUID(),
                 playerId,
                 null,
+                null,
                 new CuredVillagerMemory(villagerName)
+        ));
+    }
+
+    public static void rememberContainerTheft(
+            ServerLevel level,
+            BlockPos pos,
+            Entity villager,
+            Entity player,
+            String villagerName,
+            String itemName,
+            String itemId,
+            int itemCount,
+            String containerName,
+            String lootTable) {
+        remember(level, new MemoryEvent(
+                EventTag.PLAYER_CONTAINER_THEFT,
+                level.getGameTime(),
+                pos.immutable(),
+                villager == null ? null : villager.getUUID(),
+                player == null ? null : player.getUUID(),
+                null,
+                new ContainerTheftMemory(villagerName, itemName, itemId, itemCount, containerName, lootTable),
+                null
         ));
     }
 
@@ -258,6 +284,7 @@ public final class VillageEventMemory {
         return tag == EventTag.REPUTATION_CHANGED
                 || tag == EventTag.VILLAGER_ATTACKED
                 || tag == EventTag.PLAYER_ATTACKED_VILLAGER
+                || tag == EventTag.PLAYER_CONTAINER_THEFT
                 || tag == EventTag.NIGHT_ATTACK
                 || tag == EventTag.RAID
                 || tag == EventTag.PLAYER_DEFENDED_VILLAGE
@@ -320,7 +347,8 @@ public final class VillageEventMemory {
         PLAYER_GAVE_LIKED_GIFT,
         PLAYER_GAVE_NEUTRAL_GIFT,
         PLAYER_GAVE_DISLIKED_GIFT,
-        PLAYER_GAVE_HATED_GIFT
+        PLAYER_GAVE_HATED_GIFT,
+        PLAYER_CONTAINER_THEFT
     }
 
     private static EventTag giftTag(VillagerGiftPreferences.GiftReaction reaction) {
@@ -340,10 +368,20 @@ public final class VillageEventMemory {
             UUID sourceId,
             UUID playerId,
             GiftMemory gift,
+            ContainerTheftMemory containerTheft,
             CuredVillagerMemory curedVillager) {
     }
 
     public record GiftMemory(String villagerName, String itemName, VillagerGiftPreferences.GiftReaction reaction, int reputationValue) {
+    }
+
+    public record ContainerTheftMemory(
+            String villagerName,
+            String itemName,
+            String itemId,
+            int itemCount,
+            String containerName,
+            String lootTable) {
     }
 
     public record CuredVillagerMemory(String villagerName) {

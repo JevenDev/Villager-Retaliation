@@ -150,8 +150,10 @@ Before testing in game:
 2. Run `/reload`.
 3. Trigger the relevant interaction in a test world.
 4. For event-tagged dialogue, trigger the event near the target villager and talk to them before the short village-memory window expires.
-5. For forced dialogue, trigger the event with an adult villager close enough to witness it; `container_theft` also needs line of sight by default.
-6. Check latest logs for JSON parse warnings if a resource-pack model fails.
-7. Add filters one at a time after the unfiltered version works.
-8. For localized entries, test once with default `en_us` and once with the target language.
-9. If the pack translates the GUI, enable the matching resource pack while testing the translated datapack.
+5. For forced dialogue, trigger the event with an adult villager close enough to witness it; `container_theft` and `container_opened` also need line of sight by default.
+6. For generated-container forced dialogue, test with a container that still has an unresolved loot table, such as a newly generated village chest. Player-placed chests only match when the server config allows all watched containers.
+7. Check latest logs for JSON parse warnings if a resource-pack model fails.
+8. Add filters one at a time after the unfiltered version works.
+9. For reputation-gated options or lines, test with `/villagerretaliation setNearbyReputation <value>` and confirm each tier sees the intended choices.
+10. For localized entries, test once with default `en_us` and once with the target language.
+11. If the pack translates the GUI, enable the matching resource pack while testing the translated datapack.

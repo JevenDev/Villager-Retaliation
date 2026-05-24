@@ -45,6 +45,10 @@ public final class VillagerDialogueService {
         if (giftMemory.isPresent()) {
             return giftMemory.get();
         }
+        Optional<DialogueResult> containerTheftMemory = selectContainerTheftMemoryLine(context, requestType, recentDialogueIds);
+        if (containerTheftMemory.isPresent()) {
+            return containerTheftMemory.get();
+        }
 
         DialogueDisposition disposition = moodFor(context);
         List<DialogueLine> availableLines = availableLines(context);
@@ -91,6 +95,10 @@ public final class VillagerDialogueService {
         Optional<String> giftMemory = selectOpeningGiftMemoryLine(context);
         if (giftMemory.isPresent()) {
             return giftMemory.get();
+        }
+        Optional<String> containerTheftMemory = selectOpeningContainerTheftMemoryLine(context);
+        if (containerTheftMemory.isPresent()) {
+            return containerTheftMemory.get();
         }
         DialogueDisposition disposition = moodFor(context);
         return selectConversationLine(
@@ -191,6 +199,10 @@ public final class VillagerDialogueService {
             moodRank -= 2;
             maxDrift = Math.max(maxDrift, 2);
         }
+        if (context.hasRecentPlayerEvent(VillageEventMemory.EventTag.PLAYER_CONTAINER_THEFT)) {
+            moodRank--;
+            maxDrift = Math.max(maxDrift, 2);
+        }
         if (context.hasRecentEvent(VillageEventMemory.EventTag.VILLAGER_DEATH, VillageEventMemory.EventTag.RAID)) {
             moodRank--;
         }
@@ -288,6 +300,64 @@ public final class VillagerDialogueService {
         return villageGift.map(memoryEvent -> villageGiftLine(memoryEvent, context));
     }
 
+    private static Optional<DialogueResult> selectContainerTheftMemoryLine(
+            DialogueContext context,
+            DialogueRequestType requestType,
+            List<String> recentDialogueIds) {
+        if (requestType != DialogueRequestType.CHAT && requestType != DialogueRequestType.GREETING) {
+            return Optional.empty();
+        }
+        int chance = requestType == DialogueRequestType.CHAT ? 40 : 25;
+        if (context.random().nextInt(100) >= chance) {
+            return Optional.empty();
+        }
+
+        Optional<VillageEventMemory.MemoryEvent> directTheft = context.recentContainerTheftToThisVillager();
+        if (directTheft.isPresent()) {
+            String id = "container_theft_memory_direct";
+            if (!recentDialogueIds.contains(id)) {
+                return Optional.of(new DialogueResult(id, directContainerTheftLine(directTheft.get(), context)));
+            }
+        }
+
+        Optional<VillageEventMemory.MemoryEvent> villageTheft = context.recentContainerTheftFromAnotherVillager();
+        if (villageTheft.isPresent()) {
+            String id = "container_theft_memory_village";
+            if (!recentDialogueIds.contains(id)) {
+                return Optional.of(new DialogueResult(id, villageContainerTheftLine(villageTheft.get(), context)));
+            }
+        }
+        return Optional.empty();
+    }
+
+    private static Optional<String> selectOpeningContainerTheftMemoryLine(DialogueContext context) {
+        if (context.random().nextInt(100) >= 25) {
+            return Optional.empty();
+        }
+        Optional<VillageEventMemory.MemoryEvent> directTheft = context.recentContainerTheftToThisVillager();
+        if (directTheft.isPresent()) {
+            return Optional.of(directContainerTheftLine(directTheft.get(), context));
+        }
+        Optional<VillageEventMemory.MemoryEvent> villageTheft = context.recentContainerTheftFromAnotherVillager();
+        return villageTheft.map(memoryEvent -> villageContainerTheftLine(memoryEvent, context));
+    }
+
+    private static String directContainerTheftLine(VillageEventMemory.MemoryEvent event, DialogueContext context) {
+        return VillagerDialogueResources.message(
+                context,
+                "container_theft_memory.direct",
+                containerTheftReplacements(event, context)
+        ).orElse("");
+    }
+
+    private static String villageContainerTheftLine(VillageEventMemory.MemoryEvent event, DialogueContext context) {
+        return VillagerDialogueResources.message(
+                context,
+                "container_theft_memory.village",
+                containerTheftReplacements(event, context)
+        ).orElse("");
+    }
+
     private static String directGiftLine(VillageEventMemory.GiftMemory gift, DialogueContext context) {
         return VillagerDialogueResources.message(
                 context,
@@ -381,7 +451,7 @@ public final class VillagerDialogueService {
 
     private static String resolveText(String text, DialogueContext context) {
         String curedVillagerName = curedVillagerName(context);
-        return text
+        return resolveContainerTheftText(text
                 .replace("{attack_weapon}", context.rememberedAttackWeapon())
                 .replace("{gear_kind}", context.gearReportKind())
                 .replace("{follow_biome}", context.recruitmentMemoryBiome())
@@ -429,7 +499,13 @@ public final class VillagerDialogueService {
                 .replace("{extended_relative}", context.familyTree().firstExtendedRelative())
                 .replace("{extended_relative_possessive}", toPossessive(context.familyTree().firstExtendedRelative()))
                 .replace("{relative}", context.familyTree().firstRelative())
-                .replace("{relative_possessive}", toPossessive(context.familyTree().firstRelative()));
+                .replace("{relative_possessive}", toPossessive(context.familyTree().firstRelative())), context);
+    }
+
+    private static String resolveContainerTheftText(String text, DialogueContext context) {
+        return context.recentContainerTheft()
+                .map(event -> VillagerDialogueResources.resolveTemplate(text, containerTheftReplacements(event, context)))
+                .orElse(text);
     }
 
     private static String resolveText(DialogueLine line, DialogueContext context) {
@@ -449,6 +525,31 @@ public final class VillagerDialogueService {
                     return resolveRememberedVillagerName(context, event.sourceId(), fallbackName);
                 })
                 .orElse("someone here");
+    }
+
+    private static Map<String, String> containerTheftReplacements(VillageEventMemory.MemoryEvent event, DialogueContext context) {
+        VillageEventMemory.ContainerTheftMemory theft = event.containerTheft();
+        String itemName = theft == null || theft.itemName() == null || theft.itemName().isBlank() ? "items" : theft.itemName();
+        String itemId = theft == null || theft.itemId() == null ? "" : theft.itemId();
+        String containerName = theft == null || theft.containerName() == null || theft.containerName().isBlank() ? "container" : theft.containerName();
+        String lootTable = theft == null || theft.lootTable() == null ? "" : theft.lootTable();
+        int count = theft == null ? 0 : Math.max(0, theft.itemCount());
+        String villagerName = resolveRememberedVillagerName(
+                context,
+                event.sourceId(),
+                theft == null ? "" : theft.villagerName()
+        );
+        return Map.of(
+                "stolen_item", itemName,
+                "stolen_item_id", itemId,
+                "stolen_count", Integer.toString(count),
+                "stolen_item_count", Integer.toString(count),
+                "stolen_stack", count + "x " + itemName,
+                "stolen_container", containerName,
+                "stolen_loot_table", lootTable,
+                "theft_witness", villagerName,
+                "theft_witness_possessive", toPossessive(villagerName)
+        );
     }
 
     private static String toPossessive(String name) {

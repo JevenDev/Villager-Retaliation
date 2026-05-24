@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.util.VillagerPlayerItemCondition;
+import com.jvn.villagerretaliation.util.VillagerReputationCondition;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -70,6 +71,7 @@ public record VillagerDialogueResponsePayload(
                     Set.of(),
                     Set.of(),
                     VillagerPlayerItemCondition.empty(),
+                    VillagerReputationCondition.empty(),
                     false,
                     false,
                     false,

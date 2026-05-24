@@ -40,6 +40,7 @@ Enum values are case-insensitive in code, but lowercase snake case is the recomm
 | `player_gave_neutral_gift` | A player gives a gift with `neutral` reaction. | Mild gift reactions. |
 | `player_gave_disliked_gift` | A player gives a gift with `disliked` reaction. | Awkward or annoyed gift gossip. |
 | `player_gave_hated_gift` | A player gives a gift with `hated` reaction. | Serious offense after a bad gift. |
+| `player_container_theft` | A player is witnessed taking items from a watched container. | Theft accusations, restitution, and village gossip. |
 
 ## Dropdown Examples
 
@@ -80,6 +81,55 @@ Expanded:
       "requires_known_child": true,
       "text": "You helped bring {child} into this village. The fields will know that kindness.",
       "weight": 30
+    }
+  ]
+}
+```
+
+</details>
+
+<details>
+<summary><strong>player_container_theft</strong></summary>
+
+Use this when a player is witnessed taking items from a watched container. Lines can use `{stolen_item}`, `{stolen_item_id}`, `{stolen_count}`, `{stolen_item_count}`, `{stolen_stack}`, `{stolen_container}`, `{stolen_loot_table}`, `{theft_witness}`, and `{theft_witness_possessive}`.
+
+Simple:
+
+```json
+{
+  "lines": [
+    {
+      "id": "my_pack.event.container_theft.simple",
+      "type": "chat",
+      "player_event_tags": ["player_container_theft"],
+      "text": "I heard about the {stolen_stack}. Village stores are not souvenirs."
+    }
+  ]
+}
+```
+
+Expanded:
+
+```json
+{
+  "lines": [
+    {
+      "id": "my_pack.event.container_theft.gossip",
+      "type": "greeting",
+      "player_event_tags": ["player_container_theft"],
+      "requires_container_theft_from_other": true,
+      "dispositions": ["cautious", "rude", "hostile"],
+      "text": "{theft_witness} told me about you stealing {stolen_stack}. Not cool.",
+      "weight": 35
+    },
+    {
+      "id": "my_pack.event.container_theft.direct",
+      "type": "chat",
+      "player_event_tags": ["player_container_theft"],
+      "requires_container_theft_to_self": true,
+      "dispositions": ["cautious", "rude", "hostile"],
+      "text": "I still remember you trying to take my {stolen_item}.",
+      "weight": 35
     }
   ]
 }

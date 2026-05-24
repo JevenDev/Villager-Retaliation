@@ -169,6 +169,30 @@ public record DialogueContext(
                 .max(Comparator.comparingLong(VillageEventMemory.MemoryEvent::gameTime));
     }
 
+    public Optional<VillageEventMemory.MemoryEvent> recentContainerTheftToThisVillager() {
+        UUID playerId = this.player.getUUID();
+        UUID villagerId = this.villager.getUUID();
+        return this.recentEvents.stream()
+                .filter(event -> event.containerTheft() != null)
+                .filter(event -> playerId.equals(event.playerId()))
+                .filter(event -> villagerId.equals(event.sourceId()))
+                .max(Comparator.comparingLong(VillageEventMemory.MemoryEvent::gameTime));
+    }
+
+    public Optional<VillageEventMemory.MemoryEvent> recentContainerTheftFromAnotherVillager() {
+        UUID playerId = this.player.getUUID();
+        UUID villagerId = this.villager.getUUID();
+        return this.recentEvents.stream()
+                .filter(event -> event.containerTheft() != null)
+                .filter(event -> playerId.equals(event.playerId()))
+                .filter(event -> !villagerId.equals(event.sourceId()))
+                .max(Comparator.comparingLong(VillageEventMemory.MemoryEvent::gameTime));
+    }
+
+    public Optional<VillageEventMemory.MemoryEvent> recentContainerTheft() {
+        return recentContainerTheftToThisVillager().or(this::recentContainerTheftFromAnotherVillager);
+    }
+
     public boolean hasRecentDirectHitMemory() {
         return this.lastDirectHitGameTime != Long.MIN_VALUE
                 && this.level.getGameTime() - this.lastDirectHitGameTime <= DIRECT_HIT_MEMORY_TICKS;
@@ -353,7 +377,8 @@ public record DialogueContext(
         }
         UUID playerId = this.player.getUUID();
         for (VillageEventMemory.MemoryEvent event : this.recentEvents) {
-            if (event.tag() == VillageEventMemory.EventTag.PLAYER_ATTACKED_VILLAGER
+            if ((event.tag() == VillageEventMemory.EventTag.PLAYER_ATTACKED_VILLAGER
+                    || event.tag() == VillageEventMemory.EventTag.PLAYER_CONTAINER_THEFT)
                     && playerId.equals(event.playerId())) {
                 latest = Math.max(latest, event.gameTime());
             }

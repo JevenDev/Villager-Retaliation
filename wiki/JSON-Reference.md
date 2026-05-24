@@ -131,6 +131,8 @@ fearful
 
 Leave `dispositions` empty or omit it when a line should work in any mood.
 
+Dialogue options and lines can also check the player's current reputation with the specific villager using `reputation_level`, `reputation_levels`, `min_reputation`, and `max_reputation`. These fields let packs show different choices or lines for trusted, neutral, suspicious, hostile, or exact numeric reputation ranges without writing a new event system.
+
 ## Dialogue Types And Notification Triggers
 
 Dialogue `type` values and notification `trigger` values have their own expandable example catalogs:
@@ -148,7 +150,7 @@ Forced dialogue files live under:
 data/villagerretaliation/forced_dialogue/*.json
 ```
 
-They define event-driven dialogue moments that can interrupt the player with a locked option list. Built-in triggers include `container_theft`, fired when a player removes items from a chest, barrel, or shulker box after a villager witnesses the theft with line of sight, and `container_opened`, fired when the server config watches container opening instead of theft.
+They define event-driven dialogue moments that can interrupt the player with a locked option list. Built-in triggers include `container_theft`, fired when a player removes items from a chest, barrel, or shulker box after a villager witnesses the theft with line of sight, and `container_opened`, fired when the server config watches container opening instead of theft. The default config watches opening of generated containers, and the built-in default pack targets vanilla village chest loot tables.
 
 ```json
 {
@@ -181,7 +183,7 @@ They define event-driven dialogue moments that can interrupt the player with a l
 }
 ```
 
-Forced dialogue supports either one root object or an `entries` array. `priority` chooses between multiple matching definitions, with lower numbers winning. Entries can optionally use `loot_table` or `loot_tables` to match specific generated container loot tables. Template tokens currently include `{villager}`, `{player}`, `{container}`, `{count}`, `{item}`, `{loot_table}`, `{x}`, `{y}`, and `{z}`.
+Forced dialogue supports either one root object or an `entries` array. `priority` chooses between multiple matching definitions, with lower numbers winning. Entries can optionally use `loot_table` or `loot_tables` to match specific generated container loot tables. Options can use `reputation_level`, `reputation_levels`, `min_reputation`, and `max_reputation` to appear only for matching current reputation with the witness. Options can also use `take_items` to remove a total `count` of matching `item` / `items` or `tag` / `tags` from the player's inventory before the option succeeds, with separate failure response, reputation, end-conversation, and aggro fields. Removed items can be discarded, moved into the witnessing villager's inventory, returned to the source container, or dropped at the villager/container through `destination` and `overflow_destination`. Template tokens currently include `{villager}`, `{player}`, `{container}`, `{count}`, `{item}`, `{loot_table}`, `{payment_count}`, `{payment_items}`, `{x}`, `{y}`, and `{z}`.
 
 ## Village Event Tags
 
@@ -193,6 +195,8 @@ Dialogue lines can filter recent village memories with `event_tags` and player-s
   "player_event_tags": ["player_defended_raid"]
 }
 ```
+
+Container theft memories use `player_container_theft` and can be narrowed with `requires_container_theft_to_self` or `requires_container_theft_from_other`. Theft lines can reference `{stolen_item}`, `{stolen_count}`, `{stolen_stack}`, `{stolen_container}`, `{theft_witness}`, and `{theft_witness_possessive}`.
 
 For the full current list, when each value is remembered, and dropdown examples for simple and expanded uses, see [Event Tags](Event-Tags.md).
 
