@@ -29,6 +29,8 @@ Adult villagers can defend themselves, react to crimes they witness, use profess
 - Make villagers suspicious, hostile, despised, or feared if you push things too far
 - Talk to villagers through a reputation-aware interaction screen
 - Get different dialogue depending on reputation, profession, recent events, and local village activity
+- Give gifts, discover preferences, and see trusted villagers keep favorite items as keepsakes
+- Learn village stories, follow villager map hints, and build family or relationship history
 - Keep babies defenseless and nitwits cowardly as intended
 
 ![features](https://cdn.modrinth.com/data/cached_images/ec0e4dc78ec1a652eb11b233dd2926f7461fe770.png)
@@ -77,6 +79,8 @@ The interaction screen gives players a dedicated way to talk, give gifts, recrui
 
 Trusted villagers may greet you warmly, suspicious villagers may be cold, and hostile villagers may insult or refuse you. The goal is to make each villager feel more personal without breaking the vanilla feel.
 
+Villagers can also share stories about discovered structures and biomes, give unreliable or reputation-aware gift advice, remember family and romantic relationships, and be recruited to follow or help the player when conditions allow.
+
 ### Profession Combat
 
 Villagers fight in ways that match their profession.
@@ -91,10 +95,12 @@ Villagers fight in ways that match their profession.
 | Fletcher | Uses bows or crossbows |
 | Farmer | Can defend themselves and heal with bread |
 | Cleric | Uses potions for defense, attacks, and ally support |
-| Librarian | Can fight with book-themed |
+| Librarian | Can fight with book-themed melee |
 | Nitwit | Usually flees unless holding a usable weapon |
 
 Fletchers and other villagers holding ranged weapons can use bows, crossbows, and tridents. Crossbows use charge/hold/fire states, and tridents use a thrown attack.
+
+When enabled, villagers and wandering traders can also target, retaliate against, or stand ground against hostile mobs, making villages feel more self-protective without replacing vanilla villagers.
 
 ### Cleric Support
 
@@ -126,6 +132,7 @@ Lower trust can make villagers more dangerous or less willing to deal with you:
 - Feared villagers visibly react when you get close
 - Despised or feared villagers may refuse pacification payments
 - Babies, nitwits, and non-combat villagers can flee from hated players
+- Low-reputation villagers may block trade or refuse normal interaction
 
 ## Loot
 
@@ -134,6 +141,7 @@ Villager Retaliation! adds configurable drops for villagers and wandering trader
 - Villagers can drop emeralds and bread
 - Adult villagers can roll profession-themed loot
 - Combat weapons can drop at configurable rates
+- Equipped gear can be given through the villager inventory interaction
 - Baby villager loot is disabled by default
 - Wandering traders can drop emeralds, invisibility potions, and safe copies of current trade results
 
@@ -158,10 +166,12 @@ The mod includes a full reputation advancement tab.
 | Friend of the Village | Goal | Reach Trusted with 5 villagers in one village area. | No |
 | Local Legend | Challenge | Reach Revered reputation with any villager. | No |
 | Crowned by the Village | Challenge | Reach Royalty reputation with any villager. | No |
+| Cover Them in Debris | Challenge | Equip a villager with a full set of netherite armor. | Yes |
 | Second Chance | Goal | Cure a zombie villager that retains known reputation data for you. | No |
 | The Village Remembers | Goal | Move from Suspicious or lower back to Neutral or higher. | No |
 | Bad First Impression | Task | Reach Suspicious reputation with any villager. | No |
 | Hands Off | Task | Damage a villager. | No |
+| No Rest For The Wicked | Challenge | Break the bed of a sleeping villager. | Yes |
 | The Village Has Eyes | Goal | Harm or kill a villager while at least 3 adult villagers can witness it. | No |
 | Marked | Challenge | Reach Feared reputation with any villager. | No |
 | Village Enemy | Challenge | Have 5 or more villagers targeting you at the same time. | No |
@@ -174,6 +184,13 @@ The mod includes a full reputation advancement tab.
 | An Unwise Decision | Goal | Damage an iron golem associated with a village. | No |
 | Peace Offering | Challenge | After being Hostile or worse with a villager, return to Neutral or higher with that villager. | Yes |
 | Accidentally, Of Course | Challenge | A villager dies from a player-attributed environmental hazard without direct player damage. | Yes |
+| Bait and Betrayal | Challenge | Have a villager follow you, then kill them. | Yes |
+| Changed My Mind | Task | Take back a gift from a villager. | No |
+| Trusted Directions | Goal | Follow a map given through villager dialogue. | Yes |
+| Once Upon a Time | Task | Share a discovered story with a villager. | No |
+| Story Keeper | Goal | Share 5 discovered stories with villagers. | No |
+| Village Chronicler | Goal | Share 10 discovered stories with villagers. | No |
+| Legend Trader | Challenge | Share 25 discovered stories with villagers. | No |
 
 </details>
 
