@@ -46,6 +46,9 @@ public final class VillagerRecruitmentService {
     private static final double FOLLOW_START_DISTANCE_SQR = 5.0D * 5.0D;
     private static final double FOLLOW_STOP_DISTANCE_SQR = 2.5D * 2.5D;
     private static final double FOLLOW_SPEED = 0.62D;
+    private static final int FOLLOW_PATH_RECALCULATION_MIN_TICKS = 4;
+    private static final int FOLLOW_PATH_RECALCULATION_RANDOM_TICKS = 7;
+    private static final double FOLLOW_TARGET_MOVED_DISTANCE_SQR = 1.0D;
     private static final long FOLLOW_TRAVEL_MEMORY_INTERVAL_TICKS = 20L;
     private static final long FOLLOW_REPUTATION_CHECK_INTERVAL_TICKS = 40L;
     private static final double FOLLOW_VEHICLE_BOARD_DISTANCE_SQR = 4.0D * 4.0D;
@@ -53,6 +56,8 @@ public final class VillagerRecruitmentService {
     private static final Map<UUID, RecentRecruitmentOwner> RECENT_BETRAYED_FOLLOWERS = new HashMap<>();
     private static final Map<UUID, Long> NEXT_FOLLOW_TRAVEL_MEMORY_TICKS = new HashMap<>();
     private static final Map<UUID, Long> NEXT_FOLLOW_REPUTATION_CHECK_TICKS = new HashMap<>();
+    private static final Map<UUID, Long> LAST_FOLLOWER_AI_SUPPRESSION_TICKS = new HashMap<>();
+    private static final Map<UUID, FollowPathState> FOLLOW_PATH_STATES = new HashMap<>();
 
     private VillagerRecruitmentService() {
     }
@@ -217,7 +222,7 @@ public final class VillagerRecruitmentService {
         if (villager.level().isClientSide || !isFollowingAnyPlayer(villager)) {
             return;
         }
-        suppressFollowerAi(villager);
+        suppressFollowerAiIfNeeded(villager);
     }
 
     public static void onVillagerTickPost(Villager villager) {
@@ -239,25 +244,23 @@ public final class VillagerRecruitmentService {
             return;
         }
         if (villager.isSleeping() || villager.isTrading() || villager.getTarget() != null || villager.getLastHurtByMob() != null) {
-            suppressFollowerAi(villager);
+            suppressFollowerAiIfNeeded(villager);
             return;
         }
 
-        suppressFollowerAi(villager);
+        suppressFollowerAiIfNeeded(villager);
         villager.getLookControl().setLookAt(player, 30.0F, 30.0F);
         if (isRidingSameVehicle(villager, player)) {
-            villager.getNavigation().stop();
+            stopFollowNavigation(villager);
             return;
         }
 
         Entity followTarget = player.getVehicle() == null ? player : player.getVehicle();
         double distanceSqr = villager.distanceToSqr(player);
         if (distanceSqr > FOLLOW_START_DISTANCE_SQR) {
-            villager.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
-            villager.getBrain().eraseMemory(MemoryModuleType.PATH);
-            villager.getNavigation().moveTo(followTarget, FOLLOW_SPEED);
+            moveTowardFollowTarget(villager, followTarget, FOLLOW_SPEED);
         } else if (distanceSqr < FOLLOW_STOP_DISTANCE_SQR) {
-            villager.getNavigation().stop();
+            stopFollowNavigation(villager);
         }
     }
 
@@ -283,6 +286,22 @@ public final class VillagerRecruitmentService {
         return playerVehicle != null && villager.getVehicle() == playerVehicle;
     }
 
+    private static void suppressFollowerAiIfNeeded(Villager villager) {
+        if (!(villager.level() instanceof ServerLevel level)) {
+            suppressFollowerAi(villager);
+            return;
+        }
+
+        UUID villagerId = villager.getUUID();
+        long gameTime = level.getGameTime();
+        if (LAST_FOLLOWER_AI_SUPPRESSION_TICKS.getOrDefault(villagerId, Long.MIN_VALUE) == gameTime) {
+            return;
+        }
+
+        LAST_FOLLOWER_AI_SUPPRESSION_TICKS.put(villagerId, gameTime);
+        suppressFollowerAi(villager);
+    }
+
     private static void suppressFollowerAi(Villager villager) {
         Brain<Villager> brain = villager.getBrain();
         brain.eraseMemory(MemoryModuleType.WALK_TARGET);
@@ -296,6 +315,67 @@ public final class VillagerRecruitmentService {
         villager.setLastHurtByMob(null);
         brain.setDefaultActivity(Activity.IDLE);
         brain.setActiveActivityIfPossible(Activity.IDLE);
+    }
+
+    private static boolean moveTowardFollowTarget(Villager villager, Entity followTarget, double speed) {
+        if (!(villager.level() instanceof ServerLevel level)) {
+            return false;
+        }
+
+        UUID villagerId = villager.getUUID();
+        long gameTime = level.getGameTime();
+        FollowPathState state = FOLLOW_PATH_STATES.get(villagerId);
+        boolean targetChanged = state == null || !state.targetId().equals(followTarget.getUUID());
+        boolean targetMoved = state == null
+                || followTarget.distanceToSqr(state.targetX(), state.targetY(), state.targetZ()) >= FOLLOW_TARGET_MOVED_DISTANCE_SQR;
+        boolean shouldRecalculate = targetChanged
+                || targetMoved
+                || villager.getNavigation().isDone()
+                || gameTime >= state.nextRecalculationGameTime()
+                || villager.getRandom().nextFloat() < 0.05F;
+
+        if (!shouldRecalculate) {
+            return true;
+        }
+
+        Brain<Villager> brain = villager.getBrain();
+        brain.eraseMemory(MemoryModuleType.WALK_TARGET);
+        brain.eraseMemory(MemoryModuleType.PATH);
+
+        int failedPathFindingPenalty = targetChanged || state == null ? 0 : state.failedPathFindingPenalty();
+        long recalculationDelay = FOLLOW_PATH_RECALCULATION_MIN_TICKS
+                + villager.getRandom().nextInt(FOLLOW_PATH_RECALCULATION_RANDOM_TICKS);
+        double distanceSqr = villager.distanceToSqr(followTarget);
+        if (distanceSqr > 1024.0D) {
+            recalculationDelay += 10L;
+        } else if (distanceSqr > 256.0D) {
+            recalculationDelay += 5L;
+        }
+
+        boolean moved = villager.getNavigation().moveTo(followTarget, speed);
+        if (moved) {
+            failedPathFindingPenalty = 0;
+        } else {
+            failedPathFindingPenalty += 15;
+            recalculationDelay += failedPathFindingPenalty;
+        }
+
+        FOLLOW_PATH_STATES.put(villagerId, new FollowPathState(
+                followTarget.getUUID(),
+                followTarget.getX(),
+                followTarget.getY(),
+                followTarget.getZ(),
+                gameTime + recalculationDelay,
+                failedPathFindingPenalty
+        ));
+        return moved;
+    }
+
+    private static void stopFollowNavigation(Villager villager) {
+        FOLLOW_PATH_STATES.remove(villager.getUUID());
+        if (!villager.getNavigation().isDone()) {
+            villager.getNavigation().stop();
+        }
     }
 
     private static boolean isValidFollowTarget(ServerLevel level, Villager villager, ServerPlayer player) {
@@ -325,8 +405,11 @@ public final class VillagerRecruitmentService {
     }
 
     private static void clearFollowTarget(Villager villager) {
-        NEXT_FOLLOW_TRAVEL_MEMORY_TICKS.remove(villager.getUUID());
-        NEXT_FOLLOW_REPUTATION_CHECK_TICKS.remove(villager.getUUID());
+        UUID villagerId = villager.getUUID();
+        NEXT_FOLLOW_TRAVEL_MEMORY_TICKS.remove(villagerId);
+        NEXT_FOLLOW_REPUTATION_CHECK_TICKS.remove(villagerId);
+        LAST_FOLLOWER_AI_SUPPRESSION_TICKS.remove(villagerId);
+        FOLLOW_PATH_STATES.remove(villagerId);
         dismountFollower(villager);
         villager.getPersistentData().remove(FOLLOWING_PLAYER_KEY);
         villager.getPersistentData().remove(FOLLOW_START_HEALTH_KEY);
@@ -525,5 +608,15 @@ public final class VillagerRecruitmentService {
     }
 
     private record RecentRecruitmentOwner(UUID playerId, long expiresGameTime) {
+    }
+
+    private record FollowPathState(
+            UUID targetId,
+            double targetX,
+            double targetY,
+            double targetZ,
+            long nextRecalculationGameTime,
+            int failedPathFindingPenalty
+    ) {
     }
 }

@@ -144,7 +144,7 @@ public final class VillagerConversationService {
             villager.stopSleeping();
         }
         villager.getLookControl().setLookAt(player, 30.0F, 30.0F);
-        if (VillagerRetaliationConfig.FREEZE_VILLAGER_DURING_DIALOGUE.get()) {
+        if (VillagerRetaliationConfig.FREEZE_VILLAGER_DURING_DIALOGUE.get() && !villager.getNavigation().isDone()) {
             villager.getNavigation().stop();
         }
     }

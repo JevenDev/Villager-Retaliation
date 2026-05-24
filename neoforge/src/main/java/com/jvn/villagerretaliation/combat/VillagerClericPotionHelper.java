@@ -15,6 +15,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.WanderingTrader;
@@ -32,6 +33,8 @@ final class VillagerClericPotionHelper {
     private static final Map<UUID, Long> HEALING_REDRINK_COOLDOWN_UNTIL = new HashMap<>();
     private static final double MAX_THROW_DISTANCE_SQR = 144.0D;
     private static final int THROW_INTERVAL_TICKS = 60;
+    private static final int COMBAT_SUPPORT_SCAN_INTERVAL_TICKS = 10;
+    private static final int SUPPORT_TARGET_CACHE_TICKS = 10;
     private static final int PASSIVE_SUPPORT_SCAN_INTERVAL_TICKS = 20;
     private static final int HEALING_REDRINK_COOLDOWN_TICKS = 40;
     private static final int FIRE_RESISTANCE_TICKS = 20 * 180;
@@ -44,7 +47,9 @@ final class VillagerClericPotionHelper {
     private static final double SPLASH_RADIUS = 4.0D;
     private static final float SUPPORT_HEAL_HEALTH_RATIO = 0.6F;
     private static final float SUPPORT_HEAL_MIN_MISSING_HEALTH = 4.0F;
+    private static final Map<UUID, Long> NEXT_COMBAT_SUPPORT_SCAN_TICKS = new HashMap<>();
     private static final Map<UUID, Long> NEXT_PASSIVE_SUPPORT_SCAN_TICKS = new HashMap<>();
+    private static final Map<UUID, SupportTargetState> SUPPORT_TARGET_CACHE = new HashMap<>();
 
     private VillagerClericPotionHelper() {
     }
@@ -107,8 +112,10 @@ final class VillagerClericPotionHelper {
 
     static void clearAllState(Villager villager) {
         clearState(villager);
+        NEXT_COMBAT_SUPPORT_SCAN_TICKS.remove(villager.getUUID());
         NEXT_PASSIVE_SUPPORT_SCAN_TICKS.remove(villager.getUUID());
         HEALING_REDRINK_COOLDOWN_UNTIL.remove(villager.getUUID());
+        SUPPORT_TARGET_CACHE.remove(villager.getUUID());
     }
 
     static boolean tickDrinkingIfActive(Villager villager) {
@@ -205,19 +212,32 @@ final class VillagerClericPotionHelper {
     }
 
     private static boolean consumePassiveSupportScanSlot(Villager villager, long gameTime) {
+        return consumeSupportScanSlot(villager, gameTime, NEXT_PASSIVE_SUPPORT_SCAN_TICKS, PASSIVE_SUPPORT_SCAN_INTERVAL_TICKS);
+    }
+
+    private static boolean consumeCombatSupportScanSlot(Villager villager, long gameTime) {
+        return consumeSupportScanSlot(villager, gameTime, NEXT_COMBAT_SUPPORT_SCAN_TICKS, COMBAT_SUPPORT_SCAN_INTERVAL_TICKS);
+    }
+
+    private static boolean consumeSupportScanSlot(
+            Villager villager,
+            long gameTime,
+            Map<UUID, Long> nextScanTicks,
+            long intervalTicks
+    ) {
         UUID villagerId = villager.getUUID();
-        Long nextScan = NEXT_PASSIVE_SUPPORT_SCAN_TICKS.get(villagerId);
+        Long nextScan = nextScanTicks.get(villagerId);
         if (nextScan == null) {
-            long firstScan = gameTime + scanStagger(villagerId, PASSIVE_SUPPORT_SCAN_INTERVAL_TICKS);
+            long firstScan = gameTime + scanStagger(villagerId, intervalTicks);
             if (firstScan > gameTime) {
-                NEXT_PASSIVE_SUPPORT_SCAN_TICKS.put(villagerId, firstScan);
+                nextScanTicks.put(villagerId, firstScan);
                 return false;
             }
         } else if (gameTime < nextScan) {
             return false;
         }
 
-        NEXT_PASSIVE_SUPPORT_SCAN_TICKS.put(villagerId, gameTime + PASSIVE_SUPPORT_SCAN_INTERVAL_TICKS);
+        nextScanTicks.put(villagerId, gameTime + intervalTicks);
         return true;
     }
 
@@ -238,8 +258,10 @@ final class VillagerClericPotionHelper {
     static void restoreHeldItemAndClearState(Villager villager) {
         PotionUseState state = DRINKING_POTIONS.remove(villager.getUUID());
         ATTACK_DELAY.remove(villager.getUUID());
+        NEXT_COMBAT_SUPPORT_SCAN_TICKS.remove(villager.getUUID());
         NEXT_PASSIVE_SUPPORT_SCAN_TICKS.remove(villager.getUUID());
         HEALING_REDRINK_COOLDOWN_UNTIL.remove(villager.getUUID());
+        SUPPORT_TARGET_CACHE.remove(villager.getUUID());
         if (state != null && villager.isAlive()) {
             villager.stopUsingItem();
             VillagerRetaliationVillagerEquipment.restoreVisualMainHand(villager, state.resumeMainHand());
@@ -379,7 +401,7 @@ final class VillagerClericPotionHelper {
     }
 
     private static PotionThrowPlan chooseThrowPlan(Villager villager, LivingEntity target, ServerLevel level, double distanceSqr) {
-        LivingEntity supportTarget = findSupportTarget(
+        LivingEntity supportTarget = findCachedCombatSupportTarget(
                 villager,
                 level,
                 MAX_THROW_DISTANCE_SQR,
@@ -401,6 +423,39 @@ final class VillagerClericPotionHelper {
         return new PotionThrowPlan(target, splashPotion);
     }
 
+    private static LivingEntity findCachedCombatSupportTarget(
+            Villager villager,
+            ServerLevel level,
+            double maxDistanceSqr,
+            float healthThreshold,
+            boolean requireLineOfSight
+    ) {
+        UUID villagerId = villager.getUUID();
+        SupportTargetState cachedTarget = SUPPORT_TARGET_CACHE.get(villagerId);
+        if (cachedTarget != null && level.getGameTime() <= cachedTarget.expiresGameTime()) {
+            Entity entity = level.getEntity(cachedTarget.targetId());
+            if (entity instanceof LivingEntity livingEntity
+                    && villager.distanceToSqr(livingEntity) <= maxDistanceSqr
+                    && isSupportTarget(villager, livingEntity, healthThreshold, requireLineOfSight)) {
+                return livingEntity;
+            }
+            SUPPORT_TARGET_CACHE.remove(villagerId);
+        }
+
+        if (!consumeCombatSupportScanSlot(villager, level.getGameTime())) {
+            return null;
+        }
+
+        LivingEntity supportTarget = findSupportTarget(villager, level, maxDistanceSqr, healthThreshold, requireLineOfSight);
+        if (supportTarget != null) {
+            SUPPORT_TARGET_CACHE.put(
+                    villagerId,
+                    new SupportTargetState(supportTarget.getUUID(), level.getGameTime() + SUPPORT_TARGET_CACHE_TICKS)
+            );
+        }
+        return supportTarget;
+    }
+
     private static LivingEntity findSupportTarget(
             Villager villager,
             ServerLevel level,
@@ -409,23 +464,59 @@ final class VillagerClericPotionHelper {
             boolean requireLineOfSight
     ) {
         AABB searchArea = villager.getBoundingBox().inflate(Math.sqrt(maxDistanceSqr));
-        LivingEntity bestTarget = null;
-        float bestScore = Float.NEGATIVE_INFINITY;
-        for (LivingEntity candidate : level.getEntitiesOfClass(
-                LivingEntity.class,
-                searchArea,
-                entity -> isSupportTarget(villager, entity, healthThreshold, requireLineOfSight)
-        )) {
-            if (villager.distanceToSqr(candidate) > maxDistanceSqr) {
+        SupportCandidate bestTarget = null;
+        bestTarget = bestSupportCandidate(
+                villager,
+                level.getEntitiesOfClass(Villager.class, searchArea),
+                maxDistanceSqr,
+                healthThreshold,
+                requireLineOfSight,
+                bestTarget
+        );
+        bestTarget = bestSupportCandidate(
+                villager,
+                level.getEntitiesOfClass(WanderingTrader.class, searchArea),
+                maxDistanceSqr,
+                healthThreshold,
+                requireLineOfSight,
+                bestTarget
+        );
+        bestTarget = bestSupportCandidate(
+                villager,
+                level.getEntitiesOfClass(Player.class, searchArea),
+                maxDistanceSqr,
+                healthThreshold,
+                requireLineOfSight,
+                bestTarget
+        );
+        return bestTarget == null ? null : bestTarget.target();
+    }
+
+    private static SupportCandidate bestSupportCandidate(
+            Villager villager,
+            Iterable<? extends LivingEntity> candidates,
+            double maxDistanceSqr,
+            float healthThreshold,
+            boolean requireLineOfSight,
+            SupportCandidate bestTarget
+    ) {
+        for (LivingEntity candidate : candidates) {
+            if (!isSupportTarget(villager, candidate, healthThreshold, requireLineOfSight)) {
                 continue;
             }
+
+            double distanceSqr = villager.distanceToSqr(candidate);
+            if (distanceSqr > maxDistanceSqr) {
+                continue;
+            }
+
             float missingHealth = candidate.getMaxHealth() - candidate.getHealth();
             float healthRatio = candidate.getHealth() / candidate.getMaxHealth();
             float score = missingHealth + (1.0F - healthRatio) * 8.0F;
-            if (score > bestScore
-                    || score == bestScore && bestTarget != null && villager.distanceToSqr(candidate) < villager.distanceToSqr(bestTarget)) {
-                bestTarget = candidate;
-                bestScore = score;
+            if (bestTarget == null
+                    || score > bestTarget.score()
+                    || score == bestTarget.score() && distanceSqr < bestTarget.distanceSqr()) {
+                bestTarget = new SupportCandidate(candidate, score, distanceSqr);
             }
         }
         return bestTarget;
@@ -557,5 +648,11 @@ final class VillagerClericPotionHelper {
     }
 
     private record PotionThrowPlan(LivingEntity aimTarget, ItemStack potionStack) {
+    }
+
+    private record SupportTargetState(UUID targetId, long expiresGameTime) {
+    }
+
+    private record SupportCandidate(LivingEntity target, float score, double distanceSqr) {
     }
 }
