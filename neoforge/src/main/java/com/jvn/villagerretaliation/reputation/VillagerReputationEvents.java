@@ -11,11 +11,9 @@ import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
@@ -35,8 +33,9 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.inventory.MerchantMenu;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.entity.ai.village.poi.PoiManager;
+import net.minecraft.world.entity.ai.village.poi.PoiTypes;
 import net.minecraft.world.level.block.BellBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -58,12 +57,12 @@ public final class VillagerReputationEvents {
     private static final long COMMONFOLK_VILLAGE_SCAN_INTERVAL_TICKS = 40L;
     private static final long NEGATIVE_REPUTATION_BELL_COOLDOWN_TICKS = 20L * 10L;
     private static final long NEGATIVE_REPUTATION_BELL_CACHE_TICKS = 20L * 5L;
-    private static final int NEGATIVE_REPUTATION_BELL_SEARCH_HORIZONTAL_RADIUS = 32;
-    private static final int NEGATIVE_REPUTATION_BELL_SEARCH_VERTICAL_RADIUS = 8;
+    private static final int NEGATIVE_REPUTATION_BELL_SEARCH_RADIUS = 32;
     private static final int CURED_VILLAGER_REPUTATION = 100;
     private static final Map<UUID, PlayerContribution> HOSTILE_PLAYER_CONTRIBUTIONS = new HashMap<>();
     private static final Map<UUID, Long> NEGATIVE_REPUTATION_BELL_COOLDOWNS = new HashMap<>();
     private static final Map<BellSearchKey, BellSearchResult> NEGATIVE_REPUTATION_BELL_CACHE = new HashMap<>();
+    private static final Map<BellCooldownKey, Long> NEGATIVE_REPUTATION_BELL_POSITION_COOLDOWNS = new HashMap<>();
 
     private VillagerReputationEvents() {
     }
@@ -577,6 +576,12 @@ public final class VillagerReputationEvents {
         if (bellPos.isEmpty()) {
             return;
         }
+        BellCooldownKey bellCooldownKey = BellCooldownKey.of(level, bellPos.get());
+        long bellCooldownUntil = NEGATIVE_REPUTATION_BELL_POSITION_COOLDOWNS.getOrDefault(bellCooldownKey, 0L);
+        if (gameTime < bellCooldownUntil) {
+            NEGATIVE_REPUTATION_BELL_COOLDOWNS.put(villager.getUUID(), gameTime + NEGATIVE_REPUTATION_BELL_COOLDOWN_TICKS);
+            return;
+        }
 
         BlockState bellState = level.getBlockState(bellPos.get());
         if (!(bellState.getBlock() instanceof BellBlock bellBlock)) {
@@ -585,99 +590,60 @@ public final class VillagerReputationEvents {
 
         if (bellBlock.attemptToRing(villager, level, bellPos.get(), null)) {
             NEGATIVE_REPUTATION_BELL_COOLDOWNS.put(villager.getUUID(), gameTime + NEGATIVE_REPUTATION_BELL_COOLDOWN_TICKS);
+            NEGATIVE_REPUTATION_BELL_POSITION_COOLDOWNS.put(bellCooldownKey, gameTime + NEGATIVE_REPUTATION_BELL_COOLDOWN_TICKS);
         }
     }
 
     private static Optional<BlockPos> findNearestBell(ServerLevel level, AbstractVillager villager) {
         BlockPos origin = villager.blockPosition();
         if (villager instanceof Villager villageResident) {
+            Optional<BlockPos> meetingBell = knownMeetingPointBell(level, villageResident);
+            if (meetingBell.isPresent()) {
+                return meetingBell;
+            }
             Optional<VillageMembership.VillageArea> villageArea = VillageMembership.resolve(level, villageResident);
             if (villageArea.isPresent()) {
-                Optional<BlockPos> knownBell = knownVillageBell(level, villageArea.get(), origin);
-                if (knownBell.isPresent()) {
-                    return knownBell;
-                }
-                return findNearestBell(
-                        level,
-                        villageArea.get().centerBlock(),
-                        NEGATIVE_REPUTATION_BELL_SEARCH_HORIZONTAL_RADIUS,
-                        NEGATIVE_REPUTATION_BELL_SEARCH_VERTICAL_RADIUS
-                );
+                return findNearestBell(level, villageArea.get().centerBlock(), NEGATIVE_REPUTATION_BELL_SEARCH_RADIUS);
             }
         }
-        return findNearestBell(
-                level,
-                origin,
-                NEGATIVE_REPUTATION_BELL_SEARCH_HORIZONTAL_RADIUS,
-                NEGATIVE_REPUTATION_BELL_SEARCH_VERTICAL_RADIUS
-        );
+        return findNearestBell(level, origin, NEGATIVE_REPUTATION_BELL_SEARCH_RADIUS);
     }
 
-    private static Optional<BlockPos> findNearestBell(ServerLevel level, BlockPos origin, int horizontalRadius, int verticalRadius) {
-        ChunkPos chunkPos = new ChunkPos(origin);
-        BellSearchKey cacheKey = new BellSearchKey(level.dimension(), chunkPos.x, chunkPos.z, horizontalRadius, verticalRadius);
+    private static Optional<BlockPos> findNearestBell(ServerLevel level, BlockPos origin, int radius) {
+        BellSearchKey cacheKey = BellSearchKey.of(level, origin, radius);
         long gameTime = level.getGameTime();
         BellSearchResult cached = NEGATIVE_REPUTATION_BELL_CACHE.get(cacheKey);
         if (cached != null && gameTime < cached.expiresGameTime()) {
             return Optional.ofNullable(cached.pos());
         }
 
-        BlockPos min = origin.offset(
-                -horizontalRadius,
-                -verticalRadius,
-                -horizontalRadius);
-        BlockPos max = origin.offset(
-                horizontalRadius,
-                verticalRadius,
-                horizontalRadius);
-
-        BlockPos best = null;
-        double bestDistanceSqr = Double.MAX_VALUE;
-        for (BlockPos candidate : BlockPos.betweenClosed(min, max)) {
-            BlockState state = level.getBlockState(candidate);
-            if (!(state.getBlock() instanceof BellBlock)) {
-                continue;
-            }
-
-            double distanceSqr = candidate.distSqr(origin);
-            if (distanceSqr < bestDistanceSqr) {
-                bestDistanceSqr = distanceSqr;
-                best = candidate.immutable();
-            }
-        }
-        NEGATIVE_REPUTATION_BELL_CACHE.put(cacheKey, new BellSearchResult(best, gameTime + NEGATIVE_REPUTATION_BELL_CACHE_TICKS));
-        return Optional.ofNullable(best);
+        Optional<BlockPos> bellPos = level.getPoiManager()
+                .findClosest(
+                        poiType -> poiType.is(PoiTypes.MEETING),
+                        pos -> level.getBlockState(pos).getBlock() instanceof BellBlock,
+                        origin,
+                        radius,
+                        PoiManager.Occupancy.ANY
+                )
+                .map(BlockPos::immutable);
+        NEGATIVE_REPUTATION_BELL_CACHE.put(cacheKey, new BellSearchResult(bellPos.orElse(null), gameTime + NEGATIVE_REPUTATION_BELL_CACHE_TICKS));
+        return bellPos;
     }
 
-    private static Optional<BlockPos> knownVillageBell(
-            ServerLevel level,
-            VillageMembership.VillageArea villageArea,
-            BlockPos origin) {
-        Set<BlockPos> seen = new HashSet<>();
-        BlockPos best = null;
-        double bestDistanceSqr = Double.MAX_VALUE;
-        for (Villager villager : villageArea.members()) {
-            Optional<BlockPos> meetingPoint = VillageMembership.meetingPoint(level, villager);
-            if (meetingPoint.isEmpty() || !seen.add(meetingPoint.get())) {
-                continue;
-            }
-            BlockState state = level.getBlockState(meetingPoint.get());
-            if (!(state.getBlock() instanceof BellBlock)) {
-                continue;
-            }
-
-            double distanceSqr = meetingPoint.get().distSqr(origin);
-            if (distanceSqr < bestDistanceSqr) {
-                bestDistanceSqr = distanceSqr;
-                best = meetingPoint.get().immutable();
-            }
+    private static Optional<BlockPos> knownMeetingPointBell(ServerLevel level, Villager villager) {
+        Optional<BlockPos> meetingPoint = VillageMembership.meetingPoint(level, villager);
+        if (meetingPoint.isEmpty()) {
+            return Optional.empty();
         }
-        return Optional.ofNullable(best);
+        return level.getBlockState(meetingPoint.get()).getBlock() instanceof BellBlock
+                ? meetingPoint.map(BlockPos::immutable)
+                : Optional.empty();
     }
 
     private static void pruneNegativeReputationBellState(long gameTime) {
         NEGATIVE_REPUTATION_BELL_COOLDOWNS.entrySet().removeIf(entry -> entry.getValue() <= gameTime);
         NEGATIVE_REPUTATION_BELL_CACHE.entrySet().removeIf(entry -> entry.getValue().expiresGameTime() <= gameTime);
+        NEGATIVE_REPUTATION_BELL_POSITION_COOLDOWNS.entrySet().removeIf(entry -> entry.getValue() <= gameTime);
     }
 
     private static void syncNearbyDebug(ServerLevel level, AbstractVillager villager) {
@@ -697,9 +663,24 @@ public final class VillagerReputationEvents {
     private record NearbyPlayerReputation(Player player, double distanceSqr, boolean visible, VillagerReputationLevel reputationLevel) {
     }
 
-    private record BellSearchKey(ResourceKey<Level> dimension, int chunkX, int chunkZ, int horizontalRadius, int verticalRadius) {
+    private record BellSearchKey(ResourceKey<Level> dimension, int sectionX, int sectionY, int sectionZ, int radius) {
+        private static BellSearchKey of(ServerLevel level, BlockPos origin, int radius) {
+            return new BellSearchKey(
+                    level.dimension(),
+                    net.minecraft.core.SectionPos.blockToSectionCoord(origin.getX()),
+                    net.minecraft.core.SectionPos.blockToSectionCoord(origin.getY()),
+                    net.minecraft.core.SectionPos.blockToSectionCoord(origin.getZ()),
+                    radius
+            );
+        }
     }
 
     private record BellSearchResult(BlockPos pos, long expiresGameTime) {
+    }
+
+    private record BellCooldownKey(ResourceKey<Level> dimension, BlockPos pos) {
+        private static BellCooldownKey of(ServerLevel level, BlockPos pos) {
+            return new BellCooldownKey(level.dimension(), pos.immutable());
+        }
     }
 }
