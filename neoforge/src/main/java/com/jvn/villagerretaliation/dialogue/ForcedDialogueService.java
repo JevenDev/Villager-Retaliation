@@ -153,6 +153,9 @@ public final class ForcedDialogueService {
             FORCED_SESSIONS.remove(player.getUUID());
             return false;
         }
+        if (LEAVE_OPTION_ID.equals(optionId)) {
+            return handleLeaveRequest(player, villager, false);
+        }
 
         Optional<ForcedDialogueOption> selected = session.definition().options().stream()
                 .filter(option -> option.id().equals(optionId))
@@ -170,11 +173,24 @@ public final class ForcedDialogueService {
         if (session == null || !session.villagerId().equals(villager.getUUID())) {
             return false;
         }
-        Optional<ForcedDialogueOption> selected = session.definition().options().stream()
-                .filter(option -> option.id().equals(LEAVE_OPTION_ID))
-                .findFirst()
-                .or(() -> Optional.of(session.definition().leaveOption()));
+        Optional<ForcedDialogueOption> selected = selectLeaveOption(player, villager, session);
         return handleSelectedOption(player, villager, session, selected.get(), forceEndConversation);
+    }
+
+    private static Optional<ForcedDialogueOption> selectLeaveOption(
+            ServerPlayer player,
+            Villager villager,
+            ForcedDialogueSession session) {
+        VillagerReputationManager.ReputationSnapshot reputation =
+                VillagerReputationManager.getReputationSnapshot(player.serverLevel(), villager, player.getUUID());
+        return session.definition().leaveOptions().stream()
+                .filter(option -> option.reputationCondition().matches(reputation.value(), reputation.level()))
+                .sorted(Comparator.comparingInt(ForcedDialogueOption::order).thenComparing(ForcedDialogueOption::id))
+                .findFirst()
+                .or(() -> session.definition().options().stream()
+                        .filter(option -> option.id().equals(LEAVE_OPTION_ID))
+                        .findFirst())
+                .or(() -> Optional.of(session.definition().leaveOption()));
     }
 
     private static boolean handleSelectedOption(
@@ -226,6 +242,7 @@ public final class ForcedDialogueService {
                     VillagerInteractionService.villagerSpeakerLabel(villager)
             );
         }
+        boolean aggro = option.aggro() || rollChance(player.serverLevel(), option.aggroChance());
         if (option.endConversation() || forceEndConversation) {
             FORCED_SESSIONS.remove(player.getUUID());
             VillagerConversationService.endForPlayer(player, true);
@@ -236,12 +253,16 @@ public final class ForcedDialogueService {
                     forcedOptions(session.definition(), player.serverLevel(), villager, player),
                     session.definition().forceCameraTowardsVillager());
         }
-        if (option.aggro()) {
+        if (aggro) {
             FORCED_SESSIONS.remove(player.getUUID());
             VillagerConversationService.endForPlayer(player, true);
             VillagerRetaliationHandler.forceAnger(villager, player);
         }
         return true;
+    }
+
+    private static boolean rollChance(ServerLevel level, double chance) {
+        return chance > 0.0D && level.getRandom().nextDouble() < chance;
     }
 
     private static void handleFailedStolenItemReturn(

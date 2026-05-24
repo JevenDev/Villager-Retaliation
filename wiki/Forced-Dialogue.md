@@ -69,10 +69,13 @@ or an `entries` array:
 | `loot_tables` | array | none | Optional loot table ids this entry can match. If omitted, the entry can match any watched container. |
 | `options` | array | generated Leave option | Choices shown in the forced dialogue screen. |
 | `leave_option` | object | generated Leave option | Outcome used by the visible Leave choice, Escape, and unexpected client closes. Uses the same fields as an option except the id is always `leave`. |
+| `leave_options` | array | generated theft return options for `container_theft`, otherwise generated Leave option | Reputation-filtered Leave/Escape outcomes. The first matching option by `order` is used. |
 
 When multiple entries match, lower `priority` wins. If priority is tied, an entry with matching `loot_table` or `loot_tables` wins over a generic entry.
 
 Use `lines` when an event can happen often. The selected line is resolved through the same placeholders as `line`, so variations can reference `{stolen_stack}`, `{container}`, `{villager}`, and the other forced-dialogue tokens.
+
+If a `container_theft` entry does not define `leave_option` or `leave_options`, the generated default Leave outcome takes the stolen stacks back with `villager_inventory_then_source_container`, applies a reputation penalty, and rolls an aggro chance based on reputation: trusted or better is low risk, neutral/suspicious is moderate risk, and hostile/despised/feared is high risk.
 
 ## Option Fields
 
@@ -83,6 +86,7 @@ Use `lines` when an event can happen often. The selected line is resolved throug
 | `response` | string | none | Villager response after the player chooses this option. |
 | `reputation` | integer | `0` | Reputation change applied after this option. |
 | `aggro` | boolean | `false` | Makes the villager attack after this option. |
+| `aggro_chance` | number | `0.0` | Chance from `0.0` to `1.0` that the villager attacks after this option. |
 | `end_conversation` | boolean | `true` | Closes the forced dialogue after this option. |
 | `order` | integer | option index | Sort order in the locked option list. |
 | `reputation_level` | string or array | any | Alias for `reputation_levels`. |
@@ -94,7 +98,7 @@ Use `lines` when an event can happen often. The selected line is resolved throug
 
 Use reputation filters to change the choices available for the same event. For example, a trusted player can receive an `accept_warning` option while a hostile player only sees a higher-cost `take_items` payment or an aggro response.
 
-Escape does not bypass forced dialogue. Pressing Escape activates the entry's `leave_option`, so pack makers can attach response text, reputation changes, aggro, or other outcomes to leaving.
+Escape does not bypass forced dialogue. Pressing Escape activates the entry's matching `leave_option` / `leave_options` outcome, so pack makers can attach response text, reputation changes, stolen-item returns, aggro chance, or other outcomes to leaving.
 
 ### `take_items`
 
@@ -290,13 +294,24 @@ Forced dialogue `line`, `lines`, option `response`, and `leave_option.response` 
           "order": 3
         }
       ],
-      "leave_option": {
-        "label": "Leave",
-        "response": "Walking away is still a choice.",
-        "reputation": -1,
-        "end_conversation": true,
-        "order": 1000
-      }
+      "leave_options": [
+        {
+          "label": "Leave",
+          "response": "I will take {stolen_items} back. Walking away does not make this settled.",
+          "reputation_levels": ["neutral", "suspicious"],
+          "reputation": -4,
+          "aggro_chance": 0.25,
+          "end_conversation": true,
+          "order": 1000,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        }
+      ]
     }
   ]
 }

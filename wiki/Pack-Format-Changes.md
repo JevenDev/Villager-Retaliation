@@ -43,8 +43,8 @@ Pack-facing beta.11 changes focus on making data-driven behavior easier to exten
 - Added [Forced Dialogue JSON](Forced-Dialogue.md) under `data/villagerretaliation/forced_dialogue/` for event-driven locked dialogue moments.
 - Added built-in `container_theft` forced dialogue trigger for witnessed chest, barrel, and shulker theft.
 - Added built-in `container_opened` forced dialogue trigger for configs that confront players when they open watched containers.
-- Added forced dialogue entry fields: `trigger`, `event`, `line`, `lines`, `priority`, `witness_radius`, `witness_profession`, `witness_professions`, `requires_line_of_sight`, `initiate_dialogue`, `aggro_immediately`, `force_camera_towards_villager`, `reputation`, `loot_table`, `loot_tables`, `options`, and `leave_option`.
-- Added forced dialogue option fields: `id`, `label`, `response`, `reputation`, `aggro`, `end_conversation`, `order`, and `take_items`.
+- Added forced dialogue entry fields: `trigger`, `event`, `line`, `lines`, `priority`, `witness_radius`, `witness_profession`, `witness_professions`, `requires_line_of_sight`, `initiate_dialogue`, `aggro_immediately`, `force_camera_towards_villager`, `reputation`, `loot_table`, `loot_tables`, `options`, `leave_option`, and `leave_options`.
+- Added forced dialogue option fields: `id`, `label`, `response`, `reputation`, `aggro`, `aggro_chance`, `end_conversation`, `order`, and `take_items`.
 - Added shared reputation condition fields `reputation_level`, `reputation_levels`, `min_reputation`, and `max_reputation` to dialogue options, dialogue lines, and forced dialogue options.
 - Added forced dialogue `take_items` support for removing a total `count` of matching item ids or tags from the player's inventory, with separate failure response, reputation, end-conversation, and aggro behavior.
 - Added `take_items.destination`, `take_items.overflow_destination`, and `take_items.require_space` so removed items can be discarded, stored in the witnessing villager's inventory, returned to the source container, or dropped at the villager/container.

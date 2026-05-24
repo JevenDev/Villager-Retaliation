@@ -306,8 +306,8 @@ const FIELD_TOOLTIPS = {
   "forced-reputation": "Optional reputation change applied when this rule runs.",
   "forced-witness_professions": "Optional profession ids for the witnessing villager, such as armorer or minecraft:weaponsmith.",
   "forced-force_camera_towards_villager": "Smoothly turns the player's camera toward the witnessing villager while this forced dialogue is active.",
-  "forced-options_json": "JSON array of player response options. Each option can set label, response, reputation, aggro, end_conversation, order, take_items, take_stolen_items, reputation_levels, min_reputation, and max_reputation.",
-  "forced-leave_option_json": "Optional JSON object for the forced Leave/Escape outcome. Uses option fields such as label, response, reputation, aggro, and end_conversation.",
+  "forced-options_json": "JSON array of player response options. Each option can set label, response, reputation, aggro, aggro_chance, end_conversation, order, take_items, take_stolen_items, reputation_levels, min_reputation, and max_reputation.",
+  "forced-leave_option_json": "Optional JSON object or array for forced Leave/Escape outcomes. Uses option fields such as label, response, reputation, aggro_chance, take_stolen_items, and reputation_levels.",
   "notifications-fileName": "Creates data/villagerretaliation/notifications/<locale>/<file>.json. Avoid global unless intentionally replacing built-in notifications.",
   "notifications-locale": "Locale folder for this notification file. en_us loads first, then the player's locale overlays matching ids.",
   "notification-id": "Stable id for translation overlays and replacement. Generated ids work, but explicit ids are safer.",
@@ -1523,6 +1523,8 @@ function validate() {
   }
   for (const entry of state.forcedDialogue.entries) {
     const options = Array.isArray(entry.options) ? entry.options : [];
+    const leaveOptions = forcedLeaveOptions(entry);
+    const actionableOptions = [...options, ...leaveOptions];
     for (const option of options) {
       if (!option.id || !option.label) {
         addCheck(checks, "error", "Forced dialogue option", "Every forced dialogue option needs an id and label.");
@@ -1534,22 +1536,22 @@ function validate() {
       addCheck(checks, "warning", "Forced option ids", `Duplicate forced option id: ${duplicateForcedOption}.`);
       break;
     }
-    const badOptionNumber = firstBadNumber(options, ["order", "reputation"], Number.isFinite);
+    const badOptionNumber = firstBadNumber(actionableOptions, ["order", "reputation", "aggro_chance"], (value, entry, key) => key === "aggro_chance" ? value >= 0 && value <= 1 : Number.isFinite(value));
     if (badOptionNumber) {
       addCheck(checks, "error", "Forced option number", `${humanize(badOptionNumber)} has an invalid number.`);
       break;
     }
-    const badForcedOptionReputation = firstInvalidValue(options, ["reputation_level", "reputation_levels"], (value) => CONSTANTS.reputationLevels.includes(value));
+    const badForcedOptionReputation = firstInvalidValue(actionableOptions, ["reputation_level", "reputation_levels"], (value) => CONSTANTS.reputationLevels.includes(value));
     if (badForcedOptionReputation) {
       addCheck(checks, "warning", "Forced option reputation", `Unknown reputation level: ${badForcedOptionReputation}.`);
       break;
     }
-    const badForcedOptionReputationNumber = firstBadNumber(options, ["min_reputation", "max_reputation"], Number.isFinite);
+    const badForcedOptionReputationNumber = firstBadNumber(actionableOptions, ["min_reputation", "max_reputation"], Number.isFinite);
     if (badForcedOptionReputationNumber) {
       addCheck(checks, "error", "Forced option reputation", `${humanize(badForcedOptionReputationNumber)} has an invalid number.`);
       break;
     }
-    const badForcedOptionReputationRange = options.some((option) => {
+    const badForcedOptionReputationRange = actionableOptions.some((option) => {
       const min = numberValue(option.min_reputation);
       const max = numberValue(option.max_reputation);
       return min !== undefined && max !== undefined && min > max;
@@ -1558,10 +1560,10 @@ function validate() {
       addCheck(checks, "error", "Forced option reputation", "Minimum reputation cannot be higher than maximum reputation.");
       break;
     }
-    const payments = options
+    const payments = actionableOptions
       .map((option) => option.take_items || option.payment)
       .filter((payment) => payment && typeof payment === "object" && !Array.isArray(payment));
-    const stolenReturns = options
+    const stolenReturns = actionableOptions
       .map((option) => option.take_stolen_items || option.return_stolen_items)
       .filter((stolenReturn) => stolenReturn && typeof stolenReturn === "object" && !Array.isArray(stolenReturn));
     for (const payment of payments) {
@@ -2314,8 +2316,8 @@ function renderForcedDialogue() {
                 ${toggle({ id: "forced-force_camera_towards_villager", label: "Force camera to villager", checked: entry.force_camera_towards_villager === true })}
               </div>
             </div>
-            ${textareaField({ id: "forced-options_json", label: "Options JSON", value: optionsJson, help: "Use an array of player choices with id, label, response, reputation, aggro, end_conversation, order, and optional take_items or take_stolen_items.", className: "full", rows: 7 })}
-            ${textareaField({ id: "forced-leave_option_json", label: "Leave option JSON", value: prettyJson(entry.leave_option), help: "Optional. Outcome for the visible Leave choice, Escape, and unexpected closes.", className: "full", rows: 4 })}
+            ${textareaField({ id: "forced-options_json", label: "Options JSON", value: optionsJson, help: "Use an array of player choices with id, label, response, reputation, aggro, aggro_chance, end_conversation, order, and optional take_items or take_stolen_items.", className: "full", rows: 7 })}
+            ${textareaField({ id: "forced-leave_option_json", label: "Leave option(s) JSON", value: prettyJson(entry.leave_options ?? entry.leave_option), help: "Optional. Object for one Leave outcome, or array for reputation-gated outcomes.", className: "full", rows: 4 })}
           </div>
           ${formActions(editing?.section === "forcedDialogue" ? "Update" : "Add", "save-forced-dialogue", "clear-forced-dialogue-form")}
         </form>
@@ -2661,16 +2663,16 @@ function parseJsonArrayField(id, label) {
   return null;
 }
 
-function parseJsonObjectField(id, label) {
+function parseJsonObjectOrArrayField(id, label) {
   const source = readValue(id).trim();
   if (!source) return {};
   try {
     const value = JSON.parse(source);
-    if (value && typeof value === "object" && !Array.isArray(value)) return value;
+    if (value && typeof value === "object") return value;
   } catch {
     // Toast below gives the user one clear correction.
   }
-  showToast(`${label} must be a JSON object.`);
+  showToast(`${label} must be a JSON object or array.`);
   return null;
 }
 
@@ -2678,7 +2680,7 @@ function saveForcedDialogue(event) {
   event.preventDefault();
   const options = parseJsonArrayField("forced-options_json", "Options JSON");
   if (options === null) return;
-  const leaveOption = parseJsonObjectField("forced-leave_option_json", "Leave option JSON");
+  const leaveOption = parseJsonObjectOrArrayField("forced-leave_option_json", "Leave option JSON");
   if (leaveOption === null) return;
   const entry = {
     id: readValue("forced-id").trim(),
@@ -2692,9 +2694,13 @@ function saveForcedDialogue(event) {
     reputation: parseInteger(readValue("forced-reputation")),
     witness_professions: readList("forced-witness_professions"),
     loot_tables: readList("forced-loot_tables"),
-    options,
-    leave_option: leaveOption
+    options
   };
+  if (Array.isArray(leaveOption)) {
+    entry.leave_options = leaveOption;
+  } else {
+    entry.leave_option = leaveOption;
+  }
   const lines = readForcedDialogueLines();
   if (lines.length === 1) {
     entry.line = lines[0];
@@ -2950,13 +2956,56 @@ function addForcedDialogueExample() {
         order: 10
       }
     ],
-    leave_option: {
-      label: "Leave",
-      response: "Walking away is still a choice.",
-      reputation: -1,
-      end_conversation: true,
-      order: 1000
-    }
+    leave_options: [
+      {
+        label: "Leave",
+        response: "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+        reputation_levels: ["trusted", "respected", "revered", "royalty"],
+        reputation: -2,
+        aggro_chance: 0.05,
+        end_conversation: true,
+        order: 1000,
+        take_stolen_items: {
+          destination: "villager_inventory_then_source_container",
+          failure_response: "You no longer have {stolen_items}. Then we are past excuses.",
+          failure_reputation: -5,
+          failure_aggro: true,
+          failure_end_conversation: true
+        }
+      },
+      {
+        label: "Leave",
+        response: "I will take {stolen_items} back. Walking away does not make this settled.",
+        reputation_levels: ["neutral", "suspicious"],
+        reputation: -4,
+        aggro_chance: 0.25,
+        end_conversation: true,
+        order: 1001,
+        take_stolen_items: {
+          destination: "villager_inventory_then_source_container",
+          failure_response: "You no longer have {stolen_items}. Then we are past excuses.",
+          failure_reputation: -5,
+          failure_aggro: true,
+          failure_end_conversation: true
+        }
+      },
+      {
+        label: "Leave",
+        response: "No. I will take {stolen_items} back, and you are done running from this.",
+        reputation_levels: ["hostile", "despised", "feared"],
+        reputation: -8,
+        aggro_chance: 0.75,
+        end_conversation: true,
+        order: 1002,
+        take_stolen_items: {
+          destination: "villager_inventory_then_source_container",
+          failure_response: "You no longer have {stolen_items}. Then we are past excuses.",
+          failure_reputation: -5,
+          failure_aggro: true,
+          failure_end_conversation: true
+        }
+      }
+    ]
   });
   selectedPath = forcedDialoguePath();
   render();
@@ -3618,6 +3667,11 @@ function isForcedDialogueEntry(entry) {
 
 function hasForcedDialogueLine(entry) {
   return Boolean(entry?.line || (Array.isArray(entry?.lines) && entry.lines.some((line) => String(line ?? "").trim())));
+}
+
+function forcedLeaveOptions(entry) {
+  if (Array.isArray(entry?.leave_options)) return entry.leave_options;
+  return entry?.leave_option && typeof entry.leave_option === "object" ? [entry.leave_option] : [];
 }
 
 function forcedDialogueLineValue(entry) {

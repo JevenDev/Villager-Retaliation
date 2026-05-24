@@ -108,17 +108,75 @@
       "witness_professions": [
         "weaponsmith"
       ],
-      "leave_option": {
-        "label": "Leave",
-        "response": "Leaving does not make this disappear.",
-        "reputation": -1,
-        "end_conversation": true,
-        "order": 1000
-      },
       "lines": [
         "Put {stolen_stack} back. That stock belongs in the forge chest.",
         "I saw {stolen_stack} leave that {container}. Return it.",
         "Those supplies are counted for village work. Put {stolen_stack} back."
+      ],
+      "leave_options": [
+        {
+          "label": "Leave",
+          "response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+          "reputation_levels": [
+            "trusted",
+            "respected",
+            "revered",
+            "royalty"
+          ],
+          "reputation": -2,
+          "aggro_chance": 0.05,
+          "end_conversation": true,
+          "order": 1000,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+            "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "response": "I will take {stolen_items} back. Walking away does not make this settled.",
+          "reputation_levels": [
+            "neutral",
+            "suspicious"
+          ],
+          "reputation": -4,
+          "aggro_chance": 0.25,
+          "end_conversation": true,
+          "order": 1001,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "I will take {stolen_items} back. Walking away does not make this settled.",
+            "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "response": "No. I will take {stolen_items} back, and you are done running from this.",
+          "reputation_levels": [
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "reputation": -8,
+          "aggro_chance": 0.75,
+          "end_conversation": true,
+          "order": 1002,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "No. I will take {stolen_items} back, and you are done running from this.",
+            "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        }
       ]
     },
     {
@@ -192,17 +250,75 @@
       "witness_professions": [
         "cleric"
       ],
-      "leave_option": {
-        "label": "Leave",
-        "response": "Leaving does not make this disappear.",
-        "reputation": -1,
-        "end_conversation": true,
-        "order": 1000
-      },
       "lines": [
         "Put {stolen_stack} back. That {container} holds offerings and remedies.",
         "I saw you take {stolen_stack} from the temple stores. Return it.",
         "Those supplies are for the frightened and the sick. Put {stolen_stack} back."
+      ],
+      "leave_options": [
+        {
+          "label": "Leave",
+          "response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+          "reputation_levels": [
+            "trusted",
+            "respected",
+            "revered",
+            "royalty"
+          ],
+          "reputation": -2,
+          "aggro_chance": 0.05,
+          "end_conversation": true,
+          "order": 1000,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+            "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "response": "I will take {stolen_items} back. Walking away does not make this settled.",
+          "reputation_levels": [
+            "neutral",
+            "suspicious"
+          ],
+          "reputation": -4,
+          "aggro_chance": 0.25,
+          "end_conversation": true,
+          "order": 1001,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "I will take {stolen_items} back. Walking away does not make this settled.",
+            "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "response": "No. I will take {stolen_items} back, and you are done running from this.",
+          "reputation_levels": [
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "reputation": -8,
+          "aggro_chance": 0.75,
+          "end_conversation": true,
+          "order": 1002,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "No. I will take {stolen_items} back, and you are done running from this.",
+            "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        }
       ]
     },
     {
@@ -440,17 +556,75 @@
           "order": 4
         }
       ],
-      "leave_option": {
-        "label": "Leave",
-        "response": "Leaving does not make this disappear.",
-        "reputation": -1,
-        "end_conversation": true,
-        "order": 1000
-      },
       "lines": [
         "Put {stolen_stack} back. That {container} keeps the village protected.",
         "I saw {stolen_stack} leave the armory chest. Return it.",
         "Protection starts with stocked supplies. Put {stolen_stack} back."
+      ],
+      "leave_options": [
+        {
+          "label": "Leave",
+          "response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+          "reputation_levels": [
+            "trusted",
+            "respected",
+            "revered",
+            "royalty"
+          ],
+          "reputation": -2,
+          "aggro_chance": 0.05,
+          "end_conversation": true,
+          "order": 1000,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+            "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "response": "I will take {stolen_items} back. Walking away does not make this settled.",
+          "reputation_levels": [
+            "neutral",
+            "suspicious"
+          ],
+          "reputation": -4,
+          "aggro_chance": 0.25,
+          "end_conversation": true,
+          "order": 1001,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "I will take {stolen_items} back. Walking away does not make this settled.",
+            "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "response": "No. I will take {stolen_items} back, and you are done running from this.",
+          "reputation_levels": [
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "reputation": -8,
+          "aggro_chance": 0.75,
+          "end_conversation": true,
+          "order": 1002,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "No. I will take {stolen_items} back, and you are done running from this.",
+            "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        }
       ]
     },
     {
@@ -540,17 +714,75 @@
           "order": 4
         }
       ],
-      "leave_option": {
-        "label": "Leave",
-        "response": "Leaving does not make this disappear.",
-        "reputation": -1,
-        "end_conversation": true,
-        "order": 1000
-      },
       "lines": [
         "Put {stolen_stack} back. That food and stock are counted for village tables.",
         "I saw {stolen_stack} leave the butcher chest. Return it.",
         "Those stores feed more than one mouth. Put {stolen_stack} back."
+      ],
+      "leave_options": [
+        {
+          "label": "Leave",
+          "response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+          "reputation_levels": [
+            "trusted",
+            "respected",
+            "revered",
+            "royalty"
+          ],
+          "reputation": -2,
+          "aggro_chance": 0.05,
+          "end_conversation": true,
+          "order": 1000,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+            "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "response": "I will take {stolen_items} back. Walking away does not make this settled.",
+          "reputation_levels": [
+            "neutral",
+            "suspicious"
+          ],
+          "reputation": -4,
+          "aggro_chance": 0.25,
+          "end_conversation": true,
+          "order": 1001,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "I will take {stolen_items} back. Walking away does not make this settled.",
+            "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "response": "No. I will take {stolen_items} back, and you are done running from this.",
+          "reputation_levels": [
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "reputation": -8,
+          "aggro_chance": 0.75,
+          "end_conversation": true,
+          "order": 1002,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "No. I will take {stolen_items} back, and you are done running from this.",
+            "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        }
       ]
     },
     {
@@ -640,17 +872,75 @@
           "order": 4
         }
       ],
-      "leave_option": {
-        "label": "Leave",
-        "response": "Leaving does not make this disappear.",
-        "reputation": -1,
-        "end_conversation": true,
-        "order": 1000
-      },
       "lines": [
         "Put {stolen_stack} back. That {container} keeps our routes and records safe.",
         "I saw {stolen_stack} leave the cartography chest. Return it.",
         "Maps, paper, tools, all of it matters here. Put {stolen_stack} back."
+      ],
+      "leave_options": [
+        {
+          "label": "Leave",
+          "response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+          "reputation_levels": [
+            "trusted",
+            "respected",
+            "revered",
+            "royalty"
+          ],
+          "reputation": -2,
+          "aggro_chance": 0.05,
+          "end_conversation": true,
+          "order": 1000,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+            "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "response": "I will take {stolen_items} back. Walking away does not make this settled.",
+          "reputation_levels": [
+            "neutral",
+            "suspicious"
+          ],
+          "reputation": -4,
+          "aggro_chance": 0.25,
+          "end_conversation": true,
+          "order": 1001,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "I will take {stolen_items} back. Walking away does not make this settled.",
+            "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "response": "No. I will take {stolen_items} back, and you are done running from this.",
+          "reputation_levels": [
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "reputation": -8,
+          "aggro_chance": 0.75,
+          "end_conversation": true,
+          "order": 1002,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "No. I will take {stolen_items} back, and you are done running from this.",
+            "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        }
       ]
     },
     {
@@ -740,17 +1030,75 @@
           "order": 4
         }
       ],
-      "leave_option": {
-        "label": "Leave",
-        "response": "Leaving does not make this disappear.",
-        "reputation": -1,
-        "end_conversation": true,
-        "order": 1000
-      },
       "lines": [
         "Put {stolen_stack} back. Those stores came from cold water and long patience.",
         "I saw {stolen_stack} leave the fisher chest. Return it.",
         "Nets, meals, bait, whatever you took, put {stolen_stack} back."
+      ],
+      "leave_options": [
+        {
+          "label": "Leave",
+          "response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+          "reputation_levels": [
+            "trusted",
+            "respected",
+            "revered",
+            "royalty"
+          ],
+          "reputation": -2,
+          "aggro_chance": 0.05,
+          "end_conversation": true,
+          "order": 1000,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+            "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "response": "I will take {stolen_items} back. Walking away does not make this settled.",
+          "reputation_levels": [
+            "neutral",
+            "suspicious"
+          ],
+          "reputation": -4,
+          "aggro_chance": 0.25,
+          "end_conversation": true,
+          "order": 1001,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "I will take {stolen_items} back. Walking away does not make this settled.",
+            "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "response": "No. I will take {stolen_items} back, and you are done running from this.",
+          "reputation_levels": [
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "reputation": -8,
+          "aggro_chance": 0.75,
+          "end_conversation": true,
+          "order": 1002,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "No. I will take {stolen_items} back, and you are done running from this.",
+            "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        }
       ]
     },
     {
@@ -840,17 +1188,75 @@
           "order": 4
         }
       ],
-      "leave_option": {
-        "label": "Leave",
-        "response": "Leaving does not make this disappear.",
-        "reputation": -1,
-        "end_conversation": true,
-        "order": 1000
-      },
       "lines": [
         "Put {stolen_stack} back. That chest keeps the village ready.",
         "I saw {stolen_stack} leave the fletcher chest. Return it.",
         "Those supplies are for work and defense. Put {stolen_stack} back."
+      ],
+      "leave_options": [
+        {
+          "label": "Leave",
+          "response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+          "reputation_levels": [
+            "trusted",
+            "respected",
+            "revered",
+            "royalty"
+          ],
+          "reputation": -2,
+          "aggro_chance": 0.05,
+          "end_conversation": true,
+          "order": 1000,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+            "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "response": "I will take {stolen_items} back. Walking away does not make this settled.",
+          "reputation_levels": [
+            "neutral",
+            "suspicious"
+          ],
+          "reputation": -4,
+          "aggro_chance": 0.25,
+          "end_conversation": true,
+          "order": 1001,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "I will take {stolen_items} back. Walking away does not make this settled.",
+            "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "response": "No. I will take {stolen_items} back, and you are done running from this.",
+          "reputation_levels": [
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "reputation": -8,
+          "aggro_chance": 0.75,
+          "end_conversation": true,
+          "order": 1002,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "No. I will take {stolen_items} back, and you are done running from this.",
+            "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        }
       ]
     },
     {
@@ -940,17 +1346,75 @@
           "order": 4
         }
       ],
-      "leave_option": {
-        "label": "Leave",
-        "response": "Leaving does not make this disappear.",
-        "reputation": -1,
-        "end_conversation": true,
-        "order": 1000
-      },
       "lines": [
         "Put {stolen_stack} back. That material was set aside for village work.",
         "I saw {stolen_stack} leave the mason chest. Return it.",
         "Walls do not stay standing when supplies vanish. Put {stolen_stack} back."
+      ],
+      "leave_options": [
+        {
+          "label": "Leave",
+          "response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+          "reputation_levels": [
+            "trusted",
+            "respected",
+            "revered",
+            "royalty"
+          ],
+          "reputation": -2,
+          "aggro_chance": 0.05,
+          "end_conversation": true,
+          "order": 1000,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+            "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "response": "I will take {stolen_items} back. Walking away does not make this settled.",
+          "reputation_levels": [
+            "neutral",
+            "suspicious"
+          ],
+          "reputation": -4,
+          "aggro_chance": 0.25,
+          "end_conversation": true,
+          "order": 1001,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "I will take {stolen_items} back. Walking away does not make this settled.",
+            "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "response": "No. I will take {stolen_items} back, and you are done running from this.",
+          "reputation_levels": [
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "reputation": -8,
+          "aggro_chance": 0.75,
+          "end_conversation": true,
+          "order": 1002,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "No. I will take {stolen_items} back, and you are done running from this.",
+            "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        }
       ]
     },
     {
@@ -1040,17 +1504,75 @@
           "order": 4
         }
       ],
-      "leave_option": {
-        "label": "Leave",
-        "response": "Leaving does not make this disappear.",
-        "reputation": -1,
-        "end_conversation": true,
-        "order": 1000
-      },
       "lines": [
         "Put {stolen_stack} back. Those stores were gathered for the village.",
         "I saw {stolen_stack} leave the shepherd chest. Return it.",
         "That work keeps people clothed and warm. Put {stolen_stack} back."
+      ],
+      "leave_options": [
+        {
+          "label": "Leave",
+          "response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+          "reputation_levels": [
+            "trusted",
+            "respected",
+            "revered",
+            "royalty"
+          ],
+          "reputation": -2,
+          "aggro_chance": 0.05,
+          "end_conversation": true,
+          "order": 1000,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+            "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "response": "I will take {stolen_items} back. Walking away does not make this settled.",
+          "reputation_levels": [
+            "neutral",
+            "suspicious"
+          ],
+          "reputation": -4,
+          "aggro_chance": 0.25,
+          "end_conversation": true,
+          "order": 1001,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "I will take {stolen_items} back. Walking away does not make this settled.",
+            "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "response": "No. I will take {stolen_items} back, and you are done running from this.",
+          "reputation_levels": [
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "reputation": -8,
+          "aggro_chance": 0.75,
+          "end_conversation": true,
+          "order": 1002,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "No. I will take {stolen_items} back, and you are done running from this.",
+            "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        }
       ]
     },
     {
@@ -1140,17 +1662,75 @@
           "order": 4
         }
       ],
-      "leave_option": {
-        "label": "Leave",
-        "response": "Leaving does not make this disappear.",
-        "reputation": -1,
-        "end_conversation": true,
-        "order": 1000
-      },
       "lines": [
         "Put {stolen_stack} back. That stock took time and work to prepare.",
         "I saw {stolen_stack} leave the tannery chest. Return it.",
         "Leatherwork, tools, scraps, all of it is accounted for. Put {stolen_stack} back."
+      ],
+      "leave_options": [
+        {
+          "label": "Leave",
+          "response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+          "reputation_levels": [
+            "trusted",
+            "respected",
+            "revered",
+            "royalty"
+          ],
+          "reputation": -2,
+          "aggro_chance": 0.05,
+          "end_conversation": true,
+          "order": 1000,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+            "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "response": "I will take {stolen_items} back. Walking away does not make this settled.",
+          "reputation_levels": [
+            "neutral",
+            "suspicious"
+          ],
+          "reputation": -4,
+          "aggro_chance": 0.25,
+          "end_conversation": true,
+          "order": 1001,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "I will take {stolen_items} back. Walking away does not make this settled.",
+            "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "response": "No. I will take {stolen_items} back, and you are done running from this.",
+          "reputation_levels": [
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "reputation": -8,
+          "aggro_chance": 0.75,
+          "end_conversation": true,
+          "order": 1002,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "No. I will take {stolen_items} back, and you are done running from this.",
+            "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        }
       ]
     },
     {
@@ -1240,17 +1820,75 @@
           "order": 4
         }
       ],
-      "leave_option": {
-        "label": "Leave",
-        "response": "Leaving does not make this disappear.",
-        "reputation": -1,
-        "end_conversation": true,
-        "order": 1000
-      },
       "lines": [
         "Put {stolen_stack} back. Those stores keep the village working.",
         "I saw {stolen_stack} leave the toolsmith chest. Return it.",
         "Every missing tool or supply costs someone a day of work. Put {stolen_stack} back."
+      ],
+      "leave_options": [
+        {
+          "label": "Leave",
+          "response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+          "reputation_levels": [
+            "trusted",
+            "respected",
+            "revered",
+            "royalty"
+          ],
+          "reputation": -2,
+          "aggro_chance": 0.05,
+          "end_conversation": true,
+          "order": 1000,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+            "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "response": "I will take {stolen_items} back. Walking away does not make this settled.",
+          "reputation_levels": [
+            "neutral",
+            "suspicious"
+          ],
+          "reputation": -4,
+          "aggro_chance": 0.25,
+          "end_conversation": true,
+          "order": 1001,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "I will take {stolen_items} back. Walking away does not make this settled.",
+            "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "response": "No. I will take {stolen_items} back, and you are done running from this.",
+          "reputation_levels": [
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "reputation": -8,
+          "aggro_chance": 0.75,
+          "end_conversation": true,
+          "order": 1002,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "No. I will take {stolen_items} back, and you are done running from this.",
+            "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        }
       ]
     },
     {
@@ -1420,17 +2058,75 @@
         }
       ],
       "force_camera_towards_villager": true,
-      "leave_option": {
-        "label": "Leave",
-        "response": "Leaving does not make this disappear.",
-        "reputation": -1,
-        "end_conversation": true,
-        "order": 1000
-      },
       "lines": [
         "Stop right there. I watched you take {stolen_stack} from that {container}.",
         "That {container} was stocked for the village. Put {stolen_stack} back.",
         "Village stores are not free supplies. Return {stolen_stack}."
+      ],
+      "leave_options": [
+        {
+          "label": "Leave",
+          "response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+          "reputation_levels": [
+            "trusted",
+            "respected",
+            "revered",
+            "royalty"
+          ],
+          "reputation": -2,
+          "aggro_chance": 0.05,
+          "end_conversation": true,
+          "order": 1000,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+            "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "response": "I will take {stolen_items} back. Walking away does not make this settled.",
+          "reputation_levels": [
+            "neutral",
+            "suspicious"
+          ],
+          "reputation": -4,
+          "aggro_chance": 0.25,
+          "end_conversation": true,
+          "order": 1001,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "I will take {stolen_items} back. Walking away does not make this settled.",
+            "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "response": "No. I will take {stolen_items} back, and you are done running from this.",
+          "reputation_levels": [
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "reputation": -8,
+          "aggro_chance": 0.75,
+          "end_conversation": true,
+          "order": 1002,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "No. I will take {stolen_items} back, and you are done running from this.",
+            "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        }
       ]
     },
     {
@@ -1488,17 +2184,75 @@
         }
       ],
       "force_camera_towards_villager": true,
-      "leave_option": {
-        "label": "Leave",
-        "response": "Leaving does not make this disappear.",
-        "reputation": -1,
-        "end_conversation": true,
-        "order": 1000
-      },
       "lines": [
         "Stop right there. {stolen_stack} from that {container} is not yours to carry away.",
         "I saw what you took. Put {stolen_stack} back.",
         "That was not yours. Return {stolen_stack}."
+      ],
+      "leave_options": [
+        {
+          "label": "Leave",
+          "response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+          "reputation_levels": [
+            "trusted",
+            "respected",
+            "revered",
+            "royalty"
+          ],
+          "reputation": -2,
+          "aggro_chance": 0.05,
+          "end_conversation": true,
+          "order": 1000,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+            "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "response": "I will take {stolen_items} back. Walking away does not make this settled.",
+          "reputation_levels": [
+            "neutral",
+            "suspicious"
+          ],
+          "reputation": -4,
+          "aggro_chance": 0.25,
+          "end_conversation": true,
+          "order": 1001,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "I will take {stolen_items} back. Walking away does not make this settled.",
+            "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        },
+        {
+          "label": "Leave",
+          "response": "No. I will take {stolen_items} back, and you are done running from this.",
+          "reputation_levels": [
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "reputation": -8,
+          "aggro_chance": 0.75,
+          "end_conversation": true,
+          "order": 1002,
+          "take_stolen_items": {
+            "destination": "villager_inventory_then_source_container",
+            "success_response": "No. I will take {stolen_items} back, and you are done running from this.",
+            "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": true
+          }
+        }
       ]
     },
     {

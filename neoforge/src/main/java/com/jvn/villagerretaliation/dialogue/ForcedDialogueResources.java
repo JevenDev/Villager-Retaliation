@@ -29,6 +29,7 @@ import net.minecraft.world.entity.npc.VillagerProfession;
 
 public final class ForcedDialogueResources {
     private static final String RESOURCE_ROOT = "forced_dialogue";
+    private static final String LEAVE_OPTION_ID = "leave";
     private static volatile CachedForcedDialogues cachedDialogues = CachedForcedDialogues.empty();
 
     private ForcedDialogueResources() {
@@ -124,7 +125,8 @@ public final class ForcedDialogueResources {
             id = fallbackId(location, index);
         }
 
-        ForcedDialogueOption leaveOption = readLeaveOption(entry);
+        List<ForcedDialogueOption> leaveOptions = readLeaveOptions(entry, trigger.get());
+        ForcedDialogueOption leaveOption = leaveOptions.stream().findFirst().orElse(defaultLeaveOption());
         List<ForcedDialogueOption> options = readOptions(entry, leaveOption);
         String leaveOptionId = leaveOption.id();
         leaveOption = options.stream()
@@ -146,7 +148,8 @@ public final class ForcedDialogueResources {
                 readLootTables(entry),
                 readProfessions(entry),
                 options,
-                leaveOption
+                leaveOption,
+                leaveOptions
         ));
     }
 
@@ -219,14 +222,90 @@ public final class ForcedDialogueResources {
         return List.copyOf(options);
     }
 
-    private static ForcedDialogueOption readLeaveOption(JsonObject entry) {
+    private static List<ForcedDialogueOption> readLeaveOptions(JsonObject entry, ForcedDialogueTrigger trigger) {
+        JsonArray options = entry.getAsJsonArray("leave_options");
+        if (options != null) {
+            List<ForcedDialogueOption> leaveOptions = new ArrayList<>();
+            int index = 0;
+            for (JsonElement element : options) {
+                if (element.isJsonObject()) {
+                    JsonObject option = element.getAsJsonObject();
+                    String label = readString(option, "label");
+                    leaveOptions.add(readOption(option, LEAVE_OPTION_ID, label.isBlank() ? "Leave" : label, 1000 + index));
+                }
+                index++;
+            }
+            if (!leaveOptions.isEmpty()) {
+                return List.copyOf(leaveOptions);
+            }
+        }
+
         JsonElement element = entry.get("leave_option");
         if (element == null) {
             element = entry.get("escape_option");
         }
+        if (element == null && trigger == ForcedDialogueTrigger.CONTAINER_THEFT) {
+            return defaultTheftLeaveOptions();
+        }
         JsonObject option = element != null && element.isJsonObject() ? element.getAsJsonObject() : new JsonObject();
         String label = readString(option, "label");
-        return readOption(option, "leave", label.isBlank() ? "Leave" : label, 1000);
+        return List.of(readOption(option, LEAVE_OPTION_ID, label.isBlank() ? "Leave" : label, 1000));
+    }
+
+    private static ForcedDialogueOption defaultLeaveOption() {
+        return readOption(new JsonObject(), LEAVE_OPTION_ID, "Leave", 1000);
+    }
+
+    private static List<ForcedDialogueOption> defaultTheftLeaveOptions() {
+        JsonObject trusted = defaultTheftLeaveOption(
+                List.of("trusted", "respected", "revered", "royalty"),
+                "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+                -2,
+                0.05D,
+                1000);
+        JsonObject wary = defaultTheftLeaveOption(
+                List.of("neutral", "suspicious"),
+                "I will take {stolen_items} back. Walking away does not make this settled.",
+                -4,
+                0.25D,
+                1001);
+        JsonObject hostile = defaultTheftLeaveOption(
+                List.of("hostile", "despised", "feared"),
+                "No. I will take {stolen_items} back, and you are done running from this.",
+                -8,
+                0.75D,
+                1002);
+        return List.of(
+                readOption(trusted, LEAVE_OPTION_ID, "Leave", 1000),
+                readOption(wary, LEAVE_OPTION_ID, "Leave", 1001),
+                readOption(hostile, LEAVE_OPTION_ID, "Leave", 1002));
+    }
+
+    private static JsonObject defaultTheftLeaveOption(
+            List<String> reputationLevels,
+            String response,
+            int reputation,
+            double aggroChance,
+            int order) {
+        JsonObject option = new JsonObject();
+        option.addProperty("label", "Leave");
+        option.addProperty("response", response);
+        option.addProperty("reputation", reputation);
+        option.addProperty("end_conversation", true);
+        option.addProperty("aggro_chance", aggroChance);
+        option.addProperty("order", order);
+        JsonArray levels = new JsonArray();
+        reputationLevels.forEach(levels::add);
+        option.add("reputation_levels", levels);
+        JsonObject stolenItems = new JsonObject();
+        stolenItems.addProperty("destination", "villager_inventory_then_source_container");
+        stolenItems.addProperty("success_response", response);
+        stolenItems.addProperty("failure_response", "You no longer have {stolen_items}. Then we are past excuses.");
+        stolenItems.addProperty("failure_reputation", -5);
+        stolenItems.addProperty("failure_aggro", true);
+        stolenItems.addProperty("failure_end_conversation", true);
+        option.add("take_stolen_items", stolenItems);
+        return option;
     }
 
     private static ForcedDialogueOption readOption(JsonObject option, String id, String label, int fallbackOrder) {
@@ -236,6 +315,7 @@ public final class ForcedDialogueResources {
                 readString(option, "response"),
                 readInt(option, "reputation", 0),
                 readBoolean(option, "aggro"),
+                clampChance(readDouble(option, "aggro_chance", 0.0D)),
                 readBoolean(option, "end_conversation", true),
                 readInt(option, "order", fallbackOrder),
                 readStolenItemReturn(option),
@@ -417,6 +497,13 @@ public final class ForcedDialogueResources {
         return element == null || !element.isJsonPrimitive() ? fallback : element.getAsBoolean();
     }
 
+    private static double clampChance(double value) {
+        if (!Double.isFinite(value)) {
+            return 0.0D;
+        }
+        return Math.max(0.0D, Math.min(1.0D, value));
+    }
+
     private static String fallbackId(ResourceLocation location, int index) {
         return location.getPath().replace('/', '_').replace(".json", "") + "_" + index;
     }
@@ -460,7 +547,8 @@ public final class ForcedDialogueResources {
             Set<ResourceLocation> lootTables,
             Set<VillagerProfession> witnessProfessions,
             List<ForcedDialogueOption> options,
-            ForcedDialogueOption leaveOption) {
+            ForcedDialogueOption leaveOption,
+            List<ForcedDialogueOption> leaveOptions) {
         public String selectLine(RandomSource random) {
             if (this.lines.isEmpty()) {
                 return "";
@@ -483,6 +571,7 @@ public final class ForcedDialogueResources {
             String response,
             int reputationDelta,
             boolean aggro,
+            double aggroChance,
             boolean endConversation,
             int order,
             ForcedDialogueStolenItemReturn stolenItemReturn,
