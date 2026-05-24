@@ -516,7 +516,7 @@ public final class VillagerDialogueService {
 
     private static String resolveText(DialogueLine line, DialogueContext context) {
         return VillagerDialogueResources.resolveTemplate(
-                resolveText(line.text(), context),
+                resolveText(line.selectText(context.random()), context),
                 line.playerItemCondition().replacements(context.player())
         );
     }

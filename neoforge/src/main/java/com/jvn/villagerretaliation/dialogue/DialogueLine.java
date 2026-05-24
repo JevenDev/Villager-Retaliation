@@ -6,13 +6,15 @@ import com.jvn.villagerretaliation.util.VillagerPlayerItemCondition;
 import com.jvn.villagerretaliation.util.VillagerReputationCondition;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Set;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.npc.VillagerProfession;
 
 public record DialogueLine(
         String id,
-        String text,
+        List<String> lines,
         DialogueRequestType requestType,
         Set<String> optionIds,
         boolean showForAdults,
@@ -70,6 +72,17 @@ public record DialogueLine(
         GiftAdviceKind giftAdviceKind,
         int weight
 ) {
+    public String text() {
+        return this.lines.isEmpty() ? "" : this.lines.getFirst();
+    }
+
+    public String selectText(RandomSource random) {
+        if (this.lines.isEmpty()) {
+            return "";
+        }
+        return this.lines.get(random.nextInt(this.lines.size()));
+    }
+
     public boolean matches(DialogueContext context, DialogueRequestType requestedType, DialogueDisposition disposition) {
         return matches(context, requestedType, "", disposition);
     }
@@ -343,13 +356,17 @@ public record DialogueLine(
     }
 
     public static Builder builder(String id, DialogueRequestType requestType, String text) {
-        return new Builder(id, requestType, text);
+        return builder(id, requestType, List.of(text));
+    }
+
+    public static Builder builder(String id, DialogueRequestType requestType, List<String> lines) {
+        return new Builder(id, requestType, lines);
     }
 
     public static class Builder {
         private final String id;
         private final DialogueRequestType requestType;
-        private final String text;
+        private final List<String> lines;
         private final Set<String> optionIds = new java.util.HashSet<>();
         private boolean showForAdults = true;
         private boolean showForBabies = true;
@@ -407,9 +424,13 @@ public record DialogueLine(
         private int weight = 10;
 
         protected Builder(String id, DialogueRequestType requestType, String text) {
+            this(id, requestType, List.of(text));
+        }
+
+        protected Builder(String id, DialogueRequestType requestType, List<String> lines) {
             this.id = id;
             this.requestType = requestType;
-            this.text = text;
+            this.lines = List.copyOf(lines);
         }
 
         public Builder professions(VillagerProfession... professions) {
@@ -726,7 +747,7 @@ public record DialogueLine(
         public DialogueLine build() {
             return new DialogueLine(
                     this.id,
-                    this.text,
+                    this.lines,
                     this.requestType,
                     Set.copyOf(this.optionIds),
                     this.showForAdults,

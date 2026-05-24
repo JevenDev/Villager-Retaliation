@@ -28,6 +28,7 @@ import java.util.Set;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.npc.VillagerProfession;
 
 public final class VillagerDialogueResources {
@@ -61,14 +62,14 @@ public final class VillagerDialogueResources {
             candidates = firstInteractionCandidates;
         }
         return candidates.stream()
-                .map(ConversationLine::text)
+                .map(line -> line.selectText(context.random()))
                 .toList();
     }
 
     public static List<String> closingLines(DialogueContext context, DialogueDisposition disposition) {
         return load(context.level().getServer(), context.locale()).closings().stream()
                 .filter(line -> line.matches(context, disposition))
-                .map(ConversationLine::text)
+                .map(line -> line.selectText(context.random()))
                 .toList();
     }
 
@@ -82,7 +83,7 @@ public final class VillagerDialogueResources {
                 .filter(line -> line.matches(context, key, disposition))
                 .toList();
         return selectMessage(candidates, context.random().nextInt(Math.max(1, totalMessageWeight(candidates))))
-                .map(line -> resolveTemplate(line.text(), replacements));
+                .map(line -> resolveTemplate(line.selectText(context.random()), replacements));
     }
 
     public static Optional<String> professionPriorityMessage(DialogueContext context, String key, Map<String, String> replacements) {
@@ -95,7 +96,7 @@ public final class VillagerDialogueResources {
                 .filter(line -> !hasProfessionSpecificMatch || line.professionSpecific())
                 .toList();
         return selectMessage(candidates, context.random().nextInt(Math.max(1, totalMessageWeight(candidates))))
-                .map(line -> resolveTemplate(line.text(), replacements));
+                .map(line -> resolveTemplate(line.selectText(context.random()), replacements));
     }
 
     public static Optional<String> globalMessage(MinecraftServer server, net.minecraft.util.RandomSource random, String key) {
@@ -128,7 +129,7 @@ public final class VillagerDialogueResources {
                 .filter(line -> line.matches(key))
                 .toList();
         return selectMessage(candidates, random.nextInt(Math.max(1, totalMessageWeight(candidates))))
-                .map(line -> resolveTemplate(line.text(), replacements));
+                .map(line -> resolveTemplate(line.selectText(random), replacements));
     }
 
     public static List<DialogueOptionDefinition> dialogueOptions(DialogueContext context, DialogueDisposition disposition) {
@@ -161,10 +162,10 @@ public final class VillagerDialogueResources {
         for (PacifyLine candidate : candidates) {
             selected -= candidate.weight();
             if (selected < 0) {
-                return Optional.of(resolvePacifyText(candidate.text(), payment));
+                return Optional.of(resolvePacifyText(candidate.selectText(context.random()), payment));
             }
         }
-        return Optional.of(resolvePacifyText(candidates.getLast().text(), payment));
+        return Optional.of(resolvePacifyText(candidates.getLast().selectText(context.random()), payment));
     }
 
     public static Optional<String> giftAdviceLine(
@@ -186,10 +187,10 @@ public final class VillagerDialogueResources {
         for (DialogueLine candidate : candidates) {
             selected -= Math.max(1, candidate.weight());
             if (selected < 0) {
-                return Optional.of(resolveGiftAdviceText(candidate.text(), giftItemName, giftSubject));
+                return Optional.of(resolveGiftAdviceText(candidate.selectText(context.random()), giftItemName, giftSubject));
             }
         }
-        return Optional.of(resolveGiftAdviceText(candidates.getLast().text(), giftItemName, giftSubject));
+        return Optional.of(resolveGiftAdviceText(candidates.getLast().selectText(context.random()), giftItemName, giftSubject));
     }
 
     private static DialoguePool load(MinecraftServer server, String locale) {
@@ -304,8 +305,8 @@ public final class VillagerDialogueResources {
 
             JsonObject entry = element.getAsJsonObject();
             String key = readString(entry, "key");
-            String text = readString(entry, "text");
-            if (key.isBlank() || text.isBlank()) {
+            List<String> entryLines = readLines(entry);
+            if (key.isBlank() || entryLines.isEmpty()) {
                 index++;
                 continue;
             }
@@ -320,7 +321,7 @@ public final class VillagerDialogueResources {
             messages.put(resolvedId, new KeyedMessageLine(
                     resolvedId,
                     key,
-                    text,
+                    entryLines,
                     showForAdults,
                     showForBabies,
                     professions,
@@ -470,8 +471,8 @@ public final class VillagerDialogueResources {
 
             JsonObject entry = element.getAsJsonObject();
             Optional<DialogueRequestType> requestType = readEnum(entry, "type", DialogueRequestType.class);
-            String text = readString(entry, "text");
-            if (requestType.isEmpty() || text.isBlank()) {
+            List<String> entryLines = readLines(entry);
+            if (requestType.isEmpty() || entryLines.isEmpty()) {
                 index++;
                 continue;
             }
@@ -481,7 +482,7 @@ public final class VillagerDialogueResources {
             DialogueLine.Builder builder = DialogueLine.builder(
                     resolvedId,
                     requestType.get(),
-                    text
+                    entryLines
             );
             applyDialogueOptions(builder, entry, defaultProfessions);
             lines.put(resolvedId, builder.build());
@@ -508,8 +509,8 @@ public final class VillagerDialogueResources {
             }
 
             JsonObject entry = element.getAsJsonObject();
-            String text = readString(entry, "text");
-            if (text.isBlank()) {
+            List<String> entryLines = readLines(entry);
+            if (entryLines.isEmpty()) {
                 index++;
                 continue;
             }
@@ -525,7 +526,7 @@ public final class VillagerDialogueResources {
             String resolvedId = id.isBlank() ? fallbackId(location, key, index) : id;
             lines.put(resolvedId, new ConversationLine(
                     resolvedId,
-                    text,
+                    entryLines,
                     showForAdults,
                     showForBabies,
                     professions,
@@ -557,8 +558,8 @@ public final class VillagerDialogueResources {
             }
 
             JsonObject entry = element.getAsJsonObject();
-            String text = readString(entry, "text");
-            if (text.isBlank()) {
+            List<String> entryLines = readLines(entry);
+            if (entryLines.isEmpty()) {
                 index++;
                 continue;
             }
@@ -571,7 +572,7 @@ public final class VillagerDialogueResources {
             String resolvedId = id.isBlank() ? fallbackId(location, "pacify", index) : id;
             lines.put(resolvedId, new PacifyLine(
                     resolvedId,
-                    text,
+                    entryLines,
                     professions,
                     dispositions,
                     outcomes,
@@ -891,6 +892,15 @@ public final class VillagerDialogueResources {
         return values;
     }
 
+    private static List<String> readLines(JsonObject entry) {
+        List<String> lines = readStringList(entry, "lines");
+        if (!lines.isEmpty()) {
+            return lines;
+        }
+        String text = readString(entry, "text");
+        return text.isBlank() ? List.of() : List.of(text);
+    }
+
     private static String readString(JsonObject entry, String key) {
         JsonElement element = entry.get(key);
         return element == null || !element.isJsonPrimitive() ? "" : element.getAsString().trim();
@@ -1026,7 +1036,7 @@ public final class VillagerDialogueResources {
 
     private record ConversationLine(
             String id,
-            String text,
+            List<String> lines,
             boolean showForAdults,
             boolean showForBabies,
             Set<VillagerProfession> professions,
@@ -1035,6 +1045,10 @@ public final class VillagerDialogueResources {
             int weight,
             boolean firstConversationOnly,
             boolean firstVillageInteractionOnly) {
+        private String selectText(RandomSource random) {
+            return this.lines.get(random.nextInt(this.lines.size()));
+        }
+
         private boolean matches(DialogueContext context, DialogueDisposition disposition) {
             if (context.villager().isBaby()) {
                 if (!this.showForBabies) {
@@ -1065,12 +1079,16 @@ public final class VillagerDialogueResources {
 
     private record PacifyLine(
             String id,
-            String text,
+            List<String> lines,
             Set<VillagerProfession> professions,
             Set<DialogueDisposition> dispositions,
             Set<VillagerPacificationResult> outcomes,
             VillagerEquipmentCondition equipmentCondition,
             int weight) {
+        private String selectText(RandomSource random) {
+            return this.lines.get(random.nextInt(this.lines.size()));
+        }
+
         private boolean matches(DialogueContext context, VillagerPacificationResult result) {
             if (!this.professions.isEmpty() && !this.professions.contains(context.profession())) {
                 return false;
@@ -1088,13 +1106,17 @@ public final class VillagerDialogueResources {
     private record KeyedMessageLine(
             String id,
             String key,
-            String text,
+            List<String> lines,
             boolean showForAdults,
             boolean showForBabies,
             Set<VillagerProfession> professions,
             Set<DialogueDisposition> dispositions,
             VillagerEquipmentCondition equipmentCondition,
             int weight) {
+        private String selectText(RandomSource random) {
+            return this.lines.get(random.nextInt(this.lines.size()));
+        }
+
         private boolean matches(String key) {
             return this.key.equals(key);
         }

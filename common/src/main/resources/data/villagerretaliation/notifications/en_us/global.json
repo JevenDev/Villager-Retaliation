@@ -170,175 +170,177 @@
     },
     {
       "trigger": "ambient.murmur",
-      "text": "Our hero",
       "world_text_kind": "murmur",
       "color": "#E9EEF5",
-      "reputation_levels": ["royalty"],
-      "weight": 10
+      "reputation_levels": [
+        "royalty"
+      ],
+      "lines": [
+        "Our hero",
+        "There they are",
+        "Good omen"
+      ],
+      "weight": 30
     },
     {
       "trigger": "ambient.murmur",
-      "text": "There they are",
       "world_text_kind": "murmur",
-      "color": "#E9EEF5",
-      "reputation_levels": ["royalty"],
-      "weight": 10
+      "reputation_levels": [
+        "revered"
+      ],
+      "lines": [
+        "Good folk",
+        "Trusted face",
+        "Welcome back"
+      ],
+      "weight": 30
     },
     {
       "trigger": "ambient.murmur",
-      "text": "Good omen",
       "world_text_kind": "murmur",
-      "color": "#E9EEF5",
-      "reputation_levels": ["royalty"],
-      "weight": 10
-    },
-    {
-      "trigger": "ambient.murmur",
-      "text": "Good folk",
-      "world_text_kind": "murmur",
-      "reputation_levels": ["revered"]
-    },
-    {
-      "trigger": "ambient.murmur",
-      "text": "Trusted face",
-      "world_text_kind": "murmur",
-      "reputation_levels": ["revered"]
-    },
-    {
-      "trigger": "ambient.murmur",
-      "text": "Welcome back",
-      "world_text_kind": "murmur",
-      "reputation_levels": ["revered"]
-    },
-    {
-      "trigger": "ambient.murmur",
-      "text": "Friendly one",
-      "world_text_kind": "murmur",
-      "reputation_levels": ["respected"]
-    },
-    {
-      "trigger": "ambient.murmur",
-      "text": "Good day",
-      "world_text_kind": "murmur",
-      "reputation_levels": ["respected"]
-    },
-    {
-      "trigger": "ambient.murmur",
-      "text": "Steady hands",
-      "world_text_kind": "murmur",
-      "reputation_levels": ["respected"]
+      "reputation_levels": [
+        "respected"
+      ],
+      "lines": [
+        "Friendly one",
+        "Good day",
+        "Steady hands"
+      ],
+      "weight": 30
     },
     {
       "trigger": "ambient.murmur",
       "text": "I know them",
       "world_text_kind": "murmur",
-      "reputation_levels": ["trusted"]
+      "reputation_levels": [
+        "trusted"
+      ]
     },
     {
       "trigger": "ambient.murmur",
       "text": "Seems alright",
       "world_text_kind": "murmur",
-      "reputation_levels": ["trusted", "neutral"]
+      "reputation_levels": [
+        "trusted",
+        "neutral"
+      ]
     },
     {
       "trigger": "ambient.murmur",
-      "text": "Careful",
       "world_text_kind": "murmur",
-      "reputation_levels": ["suspicious"]
+      "reputation_levels": [
+        "suspicious"
+      ],
+      "lines": [
+        "Careful",
+        "Watch them"
+      ],
+      "weight": 20
     },
     {
       "trigger": "ambient.murmur",
-      "text": "Watch them",
       "world_text_kind": "murmur",
-      "reputation_levels": ["suspicious"]
-    },
-    {
-      "trigger": "ambient.murmur",
-      "text": "Not welcome",
-      "world_text_kind": "murmur",
-      "reputation_levels": ["hostile"]
-    },
-    {
-      "trigger": "ambient.murmur",
-      "text": "Stay ready",
-      "world_text_kind": "murmur",
-      "reputation_levels": ["hostile"]
+      "reputation_levels": [
+        "hostile"
+      ],
+      "lines": [
+        "Not welcome",
+        "Stay ready"
+      ],
+      "weight": 20
     },
     {
       "trigger": "ambient.murmur",
       "text": "Sound the bell",
       "world_text_kind": "murmur",
-      "reputation_levels": ["despised"]
+      "reputation_levels": [
+        "despised"
+      ]
     },
     {
       "trigger": "ambient.murmur",
       "text": "Stay back",
       "world_text_kind": "murmur",
-      "reputation_levels": ["feared"]
+      "reputation_levels": [
+        "feared"
+      ]
     },
     {
       "trigger": "ambient.sleep_breathing",
-      "text": "ZZZ",
       "world_text_kind": "sleep",
-      "color": "#A9E8FF"
-    },
-    {
-      "trigger": "ambient.sleep_breathing",
-      "text": "*snores*",
-      "world_text_kind": "sleep",
-      "color": "#A9E8FF"
-    },
-    {
-      "trigger": "ambient.sleep_murmur",
-      "text": "warm bed",
-      "world_text_kind": "sleep",
-      "color": "#A9E8FF"
+      "color": "#A9E8FF",
+      "lines": [
+        "ZZZ",
+        "*snores*"
+      ],
+      "weight": 20
     },
     {
       "trigger": "ambient.sleep_murmur",
-      "text": "quiet night",
       "world_text_kind": "sleep",
-      "color": "#A9E8FF"
+      "color": "#A9E8FF",
+      "lines": [
+        "warm bed",
+        "quiet night"
+      ],
+      "weight": 20
     },
     {
       "trigger": "ambient.sleep_murmur",
       "text": "ripe wheat",
       "world_text_kind": "sleep",
       "color": "#A9E8FF",
-      "professions": ["farmer"]
+      "professions": [
+        "farmer"
+      ]
     },
     {
       "trigger": "ambient.sleep_murmur",
       "text": "fresh ink",
       "world_text_kind": "sleep",
       "color": "#A9E8FF",
-      "professions": ["librarian"]
+      "professions": [
+        "librarian"
+      ]
     },
     {
       "trigger": "trade.completed",
       "text": "A pleasure",
       "world_text_kind": "trade",
       "color": "#6BFFB4",
-      "reputation_levels": ["royalty", "revered"]
+      "reputation_levels": [
+        "royalty",
+        "revered"
+      ]
     },
     {
       "trigger": "trade.completed",
       "text": "Good trade",
       "world_text_kind": "trade",
       "color": "#6BFFB4",
-      "reputation_levels": ["respected", "trusted", "neutral"]
+      "reputation_levels": [
+        "respected",
+        "trusted",
+        "neutral"
+      ]
     },
     {
       "trigger": "trade.completed",
       "text": "Be quick",
       "world_text_kind": "trade",
-      "reputation_levels": ["suspicious", "hostile", "despised"]
+      "reputation_levels": [
+        "suspicious",
+        "hostile",
+        "despised"
+      ]
     },
     {
       "trigger": "trade.completed",
       "text": "Please go",
       "world_text_kind": "trade",
-      "reputation_levels": ["feared"]
+      "reputation_levels": [
+        "feared"
+      ]
     },
     {
       "trigger": "trade.refused",
@@ -402,30 +404,16 @@
     },
     {
       "trigger": "combat.retaliation_started",
-      "text": "Back off!",
       "world_text_kind": "alert",
       "color": "#FFD166",
       "requires_villager_armed": true,
-      "chance": 0.35,
-      "weight": 20
-    },
-    {
-      "trigger": "combat.retaliation_started",
-      "text": "Get them!",
-      "world_text_kind": "alert",
-      "color": "#FFD166",
-      "requires_villager_armed": true,
-      "chance": 0.35,
-      "weight": 12
-    },
-    {
-      "trigger": "combat.retaliation_started",
-      "text": "Die, {target}!",
-      "world_text_kind": "alert",
-      "color": "#FFD166",
-      "requires_villager_armed": true,
-      "chance": 0.35,
-      "weight": 10
+      "chance": 0.725375,
+      "lines": [
+        "Back off!",
+        "Get them!",
+        "Die, {target}!"
+      ],
+      "weight": 42
     },
     {
       "trigger": "combat.retaliation_started",
@@ -433,139 +421,128 @@
       "world_text_kind": "alert",
       "color": "#FFD166",
       "requires_villager_armed": true,
-      "target_entity_types": ["minecraft:player"],
+      "target_entity_types": [
+        "minecraft:player"
+      ],
       "chance": 0.35,
       "weight": 8
     },
     {
       "trigger": "combat.retaliation_started",
-      "text": "Help! {target} is here!",
       "world_text_kind": "alert",
       "color": "#FFD166",
       "requires_villager_unarmed": true,
-      "target_entity_types": ["minecraft:pillager", "minecraft:vindicator", "minecraft:evoker", "minecraft:ravager", "minecraft:witch", "minecraft:zombie", "minecraft:zombie_villager", "minecraft:husk", "minecraft:drowned", "minecraft:skeleton", "minecraft:stray", "minecraft:wither_skeleton", "minecraft:bogged", "minecraft:phantom", "minecraft:creeper", "minecraft:spider", "minecraft:cave_spider", "minecraft:slime", "minecraft:magma_cube", "minecraft:enderman"],
-      "chance": 0.35,
-      "weight": 20
+      "target_entity_types": [
+        "minecraft:pillager",
+        "minecraft:vindicator",
+        "minecraft:evoker",
+        "minecraft:ravager",
+        "minecraft:witch",
+        "minecraft:zombie",
+        "minecraft:zombie_villager",
+        "minecraft:husk",
+        "minecraft:drowned",
+        "minecraft:skeleton",
+        "minecraft:stray",
+        "minecraft:wither_skeleton",
+        "minecraft:bogged",
+        "minecraft:phantom",
+        "minecraft:creeper",
+        "minecraft:spider",
+        "minecraft:cave_spider",
+        "minecraft:slime",
+        "minecraft:magma_cube",
+        "minecraft:enderman"
+      ],
+      "chance": 0.725375,
+      "lines": [
+        "Help! {target} is here!",
+        "I need help!",
+        "Bell! Ring the bell!"
+      ],
+      "weight": 48
     },
     {
       "trigger": "combat.retaliation_started",
-      "text": "I need help!",
       "world_text_kind": "alert",
       "color": "#FFD166",
       "requires_villager_unarmed": true,
-      "target_entity_types": ["minecraft:pillager", "minecraft:vindicator", "minecraft:evoker", "minecraft:ravager", "minecraft:witch", "minecraft:zombie", "minecraft:zombie_villager", "minecraft:husk", "minecraft:drowned", "minecraft:skeleton", "minecraft:stray", "minecraft:wither_skeleton", "minecraft:bogged", "minecraft:phantom", "minecraft:creeper", "minecraft:spider", "minecraft:cave_spider", "minecraft:slime", "minecraft:magma_cube", "minecraft:enderman"],
-      "chance": 0.35,
-      "weight": 16
-    },
-    {
-      "trigger": "combat.retaliation_started",
-      "text": "Bell! Ring the bell!",
-      "world_text_kind": "alert",
-      "color": "#FFD166",
-      "requires_villager_unarmed": true,
-      "target_entity_types": ["minecraft:pillager", "minecraft:vindicator", "minecraft:evoker", "minecraft:ravager", "minecraft:witch", "minecraft:zombie", "minecraft:zombie_villager", "minecraft:husk", "minecraft:drowned", "minecraft:skeleton", "minecraft:stray", "minecraft:wither_skeleton", "minecraft:bogged", "minecraft:phantom", "minecraft:creeper", "minecraft:spider", "minecraft:cave_spider", "minecraft:slime", "minecraft:magma_cube", "minecraft:enderman"],
-      "chance": 0.35,
-      "weight": 12
-    },
-    {
-      "trigger": "combat.retaliation_started",
-      "text": "No weapon. Still no running, {player}.",
-      "world_text_kind": "alert",
-      "color": "#FFD166",
-      "requires_villager_unarmed": true,
-      "target_entity_types": ["minecraft:player"],
-      "chance": 0.35,
-      "weight": 14
-    },
-    {
-      "trigger": "combat.retaliation_started",
-      "text": "I cannot fight you properly, but I will remember.",
-      "world_text_kind": "alert",
-      "color": "#FFD166",
-      "requires_villager_unarmed": true,
-      "target_entity_types": ["minecraft:player"],
-      "chance": 0.35,
-      "weight": 10
+      "target_entity_types": [
+        "minecraft:player"
+      ],
+      "chance": 0.5775,
+      "lines": [
+        "No weapon. Still no running, {player}.",
+        "I cannot fight you properly, but I will remember."
+      ],
+      "weight": 24
     },
     {
       "trigger": "combat.flee_started",
-      "text": "Help! {target} is here!",
       "world_text_kind": "alert",
       "color": "#FFD166",
       "requires_villager_unarmed": true,
-      "target_entity_types": ["minecraft:pillager", "minecraft:vindicator", "minecraft:evoker", "minecraft:ravager", "minecraft:witch", "minecraft:zombie", "minecraft:zombie_villager", "minecraft:husk", "minecraft:drowned", "minecraft:skeleton", "minecraft:stray", "minecraft:wither_skeleton", "minecraft:bogged", "minecraft:phantom", "minecraft:creeper", "minecraft:spider", "minecraft:cave_spider", "minecraft:slime", "minecraft:magma_cube", "minecraft:enderman"],
-      "chance": 0.35,
-      "weight": 20
-    },
-    {
-      "trigger": "combat.flee_started",
-      "text": "I need help!",
-      "world_text_kind": "alert",
-      "color": "#FFD166",
-      "requires_villager_unarmed": true,
-      "target_entity_types": ["minecraft:pillager", "minecraft:vindicator", "minecraft:evoker", "minecraft:ravager", "minecraft:witch", "minecraft:zombie", "minecraft:zombie_villager", "minecraft:husk", "minecraft:drowned", "minecraft:skeleton", "minecraft:stray", "minecraft:wither_skeleton", "minecraft:bogged", "minecraft:phantom", "minecraft:creeper", "minecraft:spider", "minecraft:cave_spider", "minecraft:slime", "minecraft:magma_cube", "minecraft:enderman"],
-      "chance": 0.35,
-      "weight": 16
-    },
-    {
-      "trigger": "combat.flee_started",
-      "text": "Bell! Ring the bell!",
-      "world_text_kind": "alert",
-      "color": "#FFD166",
-      "requires_villager_unarmed": true,
-      "target_entity_types": ["minecraft:pillager", "minecraft:vindicator", "minecraft:evoker", "minecraft:ravager", "minecraft:witch", "minecraft:zombie", "minecraft:zombie_villager", "minecraft:husk", "minecraft:drowned", "minecraft:skeleton", "minecraft:stray", "minecraft:wither_skeleton", "minecraft:bogged", "minecraft:phantom", "minecraft:creeper", "minecraft:spider", "minecraft:cave_spider", "minecraft:slime", "minecraft:magma_cube", "minecraft:enderman"],
-      "chance": 0.35,
-      "weight": 12
-    },
-    {
-      "trigger": "combat.attack_landed",
-      "text": "Take that!",
-      "world_text_kind": "alert",
-      "color": "#FFD166",
-      "weight": 20
-    },
-    {
-      "trigger": "combat.attack_landed",
-      "text": "Got you!",
-      "world_text_kind": "alert",
-      "color": "#FFD166",
-      "weight": 16
+      "target_entity_types": [
+        "minecraft:pillager",
+        "minecraft:vindicator",
+        "minecraft:evoker",
+        "minecraft:ravager",
+        "minecraft:witch",
+        "minecraft:zombie",
+        "minecraft:zombie_villager",
+        "minecraft:husk",
+        "minecraft:drowned",
+        "minecraft:skeleton",
+        "minecraft:stray",
+        "minecraft:wither_skeleton",
+        "minecraft:bogged",
+        "minecraft:phantom",
+        "minecraft:creeper",
+        "minecraft:spider",
+        "minecraft:cave_spider",
+        "minecraft:slime",
+        "minecraft:magma_cube",
+        "minecraft:enderman"
+      ],
+      "chance": 0.725375,
+      "lines": [
+        "Help! {target} is here!",
+        "I need help!",
+        "Bell! Ring the bell!"
+      ],
+      "weight": 48
     },
     {
       "trigger": "combat.attack_landed",
-      "text": "That's for the village!",
       "world_text_kind": "alert",
       "color": "#FFD166",
-      "weight": 10
+      "lines": [
+        "Take that!",
+        "Got you!",
+        "That's for the village!"
+      ],
+      "weight": 46
     },
     {
       "trigger": "combat.attack_landed",
       "text": "Stay back, {player}!",
       "world_text_kind": "alert",
       "color": "#FFD166",
-      "target_entity_types": ["minecraft:player"],
+      "target_entity_types": [
+        "minecraft:player"
+      ],
       "weight": 8
     },
     {
       "trigger": "combat.player_killed",
-      "text": "You were warned",
       "world_text_kind": "alert",
       "color": "#FFD166",
-      "weight": 20
-    },
-    {
-      "trigger": "combat.player_killed",
-      "text": "Stay down, {player}",
-      "world_text_kind": "alert",
-      "color": "#FFD166",
-      "weight": 10
-    },
-    {
-      "trigger": "combat.player_killed",
-      "text": "Enough",
-      "world_text_kind": "alert",
-      "color": "#FFD166",
-      "weight": 12
+      "lines": [
+        "You were warned",
+        "Stay down, {player}",
+        "Enough"
+      ],
+      "weight": 42
     },
     {
       "trigger": "alert.player_attacked_villager",
@@ -583,63 +560,31 @@
     },
     {
       "id": "baby_attacked_player_ow",
+      "lines": [
+        "Ow!",
+        "Stop!",
+        "Help!"
+      ],
       "trigger": "alert.player_attacked_villager",
-      "text": "Ow!",
       "world_text_kind": "alert",
       "color": "#FFD166",
       "show_for_adults": false,
       "show_for_babies": true,
-      "weight": 14
-    },
-    {
-      "id": "baby_attacked_player_stop",
-      "trigger": "alert.player_attacked_villager",
-      "text": "Stop!",
-      "world_text_kind": "alert",
-      "color": "#FFD166",
-      "show_for_adults": false,
-      "show_for_babies": true,
-      "weight": 12
-    },
-    {
-      "id": "baby_attacked_player_help",
-      "trigger": "alert.player_attacked_villager",
-      "text": "Help!",
-      "world_text_kind": "alert",
-      "color": "#FFD166",
-      "show_for_adults": false,
-      "show_for_babies": true,
-      "weight": 12
+      "weight": 38
     },
     {
       "id": "baby_damaged_ow",
+      "lines": [
+        "Ow!",
+        "Help!",
+        "I want to go home!"
+      ],
       "trigger": "alert.villager_damaged",
-      "text": "Ow!",
       "world_text_kind": "alert",
       "color": "#FFD166",
       "show_for_adults": false,
       "show_for_babies": true,
-      "weight": 14
-    },
-    {
-      "id": "baby_damaged_help",
-      "trigger": "alert.villager_damaged",
-      "text": "Help!",
-      "world_text_kind": "alert",
-      "color": "#FFD166",
-      "show_for_adults": false,
-      "show_for_babies": true,
-      "weight": 12
-    },
-    {
-      "id": "baby_damaged_home",
-      "trigger": "alert.villager_damaged",
-      "text": "I want to go home!",
-      "world_text_kind": "alert",
-      "color": "#FFD166",
-      "show_for_adults": false,
-      "show_for_babies": true,
-      "weight": 8
+      "weight": 34
     },
     {
       "trigger": "alert.witness_attack.player",
@@ -669,83 +614,33 @@
     },
     {
       "id": "baby_witness_death_player_no_no",
+      "lines": [
+        "No no no!",
+        "I saw!",
+        "Help!",
+        "Run!"
+      ],
       "trigger": "alert.witness_death.player",
-      "text": "No no no!",
       "world_text_kind": "alert",
       "color": "#FFD166",
       "show_for_adults": false,
       "show_for_babies": true,
-      "weight": 14
-    },
-    {
-      "id": "baby_witness_death_player_i_saw",
-      "trigger": "alert.witness_death.player",
-      "text": "I saw!",
-      "world_text_kind": "alert",
-      "color": "#FFD166",
-      "show_for_adults": false,
-      "show_for_babies": true,
-      "weight": 10
-    },
-    {
-      "id": "baby_witness_death_player_help",
-      "trigger": "alert.witness_death.player",
-      "text": "Help!",
-      "world_text_kind": "alert",
-      "color": "#FFD166",
-      "show_for_adults": false,
-      "show_for_babies": true,
-      "weight": 12
-    },
-    {
-      "id": "baby_witness_death_player_run",
-      "trigger": "alert.witness_death.player",
-      "text": "Run!",
-      "world_text_kind": "alert",
-      "color": "#FFD166",
-      "show_for_adults": false,
-      "show_for_babies": true,
-      "weight": 12
+      "weight": 48
     },
     {
       "id": "baby_witness_death_no_no",
+      "lines": [
+        "No no no!",
+        "Where are the grownups?",
+        "Hide!",
+        "Help!"
+      ],
       "trigger": "alert.witness_death",
-      "text": "No no no!",
       "world_text_kind": "alert",
       "color": "#FFD166",
       "show_for_adults": false,
       "show_for_babies": true,
-      "weight": 14
-    },
-    {
-      "id": "baby_witness_death_where_grownups",
-      "trigger": "alert.witness_death",
-      "text": "Where are the grownups?",
-      "world_text_kind": "alert",
-      "color": "#FFD166",
-      "show_for_adults": false,
-      "show_for_babies": true,
-      "weight": 8
-    },
-    {
-      "id": "baby_witness_death_hide",
-      "trigger": "alert.witness_death",
-      "text": "Hide!",
-      "world_text_kind": "alert",
-      "color": "#FFD166",
-      "show_for_adults": false,
-      "show_for_babies": true,
-      "weight": 12
-    },
-    {
-      "id": "baby_witness_death_help",
-      "trigger": "alert.witness_death",
-      "text": "Help!",
-      "world_text_kind": "alert",
-      "color": "#FFD166",
-      "show_for_adults": false,
-      "show_for_babies": true,
-      "weight": 12
+      "weight": 46
     }
   ]
 }

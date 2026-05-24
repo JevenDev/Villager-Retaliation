@@ -5,14 +5,16 @@ import com.jvn.villagerretaliation.network.VillagerWorldTextIndicatorKind;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
 import com.jvn.villagerretaliation.util.VillagerPlayerItemCondition;
+import java.util.List;
 import java.util.Set;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.npc.VillagerProfession;
 
 public record VillagerNotificationDefinition(
         String id,
         String trigger,
-        String text,
+        List<String> lines,
         int textColor,
         int chatColor,
         VillagerReputationNoticeKind noticeKind,
@@ -28,6 +30,17 @@ public record VillagerNotificationDefinition(
         Integer maxReputation,
         int weight,
         double chance) {
+    public String text() {
+        return this.lines.isEmpty() ? "" : this.lines.getFirst();
+    }
+
+    public String selectText(RandomSource random) {
+        if (this.lines.isEmpty()) {
+            return "";
+        }
+        return this.lines.get(random.nextInt(this.lines.size()));
+    }
+
     public boolean matches(VillagerNotificationContext context, String trigger) {
         if (!this.trigger.equals(trigger)) {
             return false;

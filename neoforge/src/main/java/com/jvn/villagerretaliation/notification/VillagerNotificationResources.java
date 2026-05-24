@@ -59,7 +59,7 @@ public final class VillagerNotificationResources {
                         || context.random().nextDouble() < Math.max(0.0D, definition.chance()))
                 .toList();
         return select(candidates, context.random())
-                .map(definition -> resolve(definition, mergedReplacements(context, definition, replacements)));
+                .map(definition -> resolve(definition, mergedReplacements(context, definition, replacements), context.random()));
     }
 
     public static Optional<ResolvedVillagerNotification> select(
@@ -87,9 +87,10 @@ public final class VillagerNotificationResources {
 
     private static ResolvedVillagerNotification resolve(
             VillagerNotificationDefinition definition,
-            Map<String, String> replacements) {
+            Map<String, String> replacements,
+            RandomSource random) {
         return new ResolvedVillagerNotification(
-                resolveTemplate(definition.text(), replacements),
+                resolveTemplate(definition.selectText(random), replacements),
                 definition.textColor(),
                 definition.chatColor(),
                 definition.noticeKind(),
@@ -176,8 +177,8 @@ public final class VillagerNotificationResources {
             JsonObject entry,
             int index) {
         String trigger = readString(entry, "trigger");
-        String text = readString(entry, "text");
-        if (trigger.isBlank() || text.isBlank()) {
+        List<String> lines = readLines(entry);
+        if (trigger.isBlank() || lines.isEmpty()) {
             return Optional.empty();
         }
 
@@ -197,7 +198,7 @@ public final class VillagerNotificationResources {
         return Optional.of(new VillagerNotificationDefinition(
                 id.isBlank() ? fallbackId(location, index) : id,
                 trigger,
-                text,
+                lines,
                 textColor,
                 chatColor,
                 noticeKind,
@@ -344,6 +345,15 @@ public final class VillagerNotificationResources {
     private static Optional<Integer> readOptionalInt(JsonObject entry, String key) {
         JsonElement element = entry.get(key);
         return element == null || !element.isJsonPrimitive() ? Optional.empty() : Optional.of(element.getAsInt());
+    }
+
+    private static List<String> readLines(JsonObject entry) {
+        List<String> lines = readStringList(entry, "lines");
+        if (!lines.isEmpty()) {
+            return lines;
+        }
+        String text = readString(entry, "text");
+        return text.isBlank() ? List.of() : List.of(text);
     }
 
     private static Optional<ResourceLocation> parseResourceLocation(String value) {
