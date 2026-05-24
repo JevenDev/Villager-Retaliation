@@ -1,0 +1,67 @@
+name: Deploy Datapack Builder
+
+on:
+  push:
+    branches: ["1.21.1"]
+    paths:
+      - "tools/datapack-builder/**"
+      - ".github/workflows/deploy-pages.yml"
+  pull_request:
+    branches: ["1.21.1"]
+    paths:
+      - "tools/datapack-builder/**"
+      - ".github/workflows/deploy-pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Validate static site
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check JavaScript syntax
+        run: node --check tools/datapack-builder/app.js
+
+      - name: Verify Pages entry files
+        run: |
+          test -f tools/datapack-builder/index.html
+          test -f tools/datapack-builder/styles.css
+          test -f tools/datapack-builder/app.js
+
+  deploy:
+    name: Deploy to GitHub Pages
+    if: github.event_name != 'pull_request'
+    needs: validate
+    runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload static site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: tools/datapack-builder
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
