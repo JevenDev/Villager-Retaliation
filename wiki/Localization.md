@@ -77,6 +77,35 @@ Example:
 
 Keep `%s` placeholders in the translated string. You can reorder them if the target language needs a different sentence structure.
 
+## Format Keys
+
+Some resource-pack language keys are format strings. Keep the same number of `%s` placeholders unless the key notes otherwise. Minecraft uses the values passed by the mod at runtime, so removing a required placeholder can hide information, and adding extra placeholders can display incorrectly.
+
+| Key | Arguments |
+| --- | --- |
+| `container.villagerretaliation.villager_inventory` | villager name |
+| `villagerretaliation.reputation.value_format` | reputation value |
+| `villagerretaliation.reputation.tier_value_format` | reputation tier, reputation value |
+| `villagerretaliation.reputation.debug.value_and_level` | reputation value, reputation tier |
+| `villagerretaliation.reputation.debug.health` | current health, max health |
+| `villagerretaliation.reputation.debug.armor` | armor value |
+| `villagerretaliation.gui.info.gender` | localized gender |
+| `villagerretaliation.gui.info.mood` | localized mood |
+| `villagerretaliation.gui.info.reputation` | reputation value |
+| `villagerretaliation.gui.speaker.profession` | localized profession |
+| `villagerretaliation.gui.speaker.named` | localized profession, villager name |
+| `villagerretaliation.gui.chat.speaker_prefix` | speaker label |
+| `villagerretaliation.gui.family.tree_count` | known family count |
+| `villagerretaliation.gui.family.row` | relationship label, member name |
+| `villagerretaliation.gui.family.member.deceased_format` | member name, deceased status |
+| `villagerretaliation.gui.family.great_prefix` | existing ancestor or descendant label |
+| `villagerretaliation.gui.relationships.count` | known relationship count |
+| `villagerretaliation.gui.relationships.active_format` | stage, partner name, status, affection, compatibility |
+| `villagerretaliation.gui.relationships.past_format` | stage, partner name, status |
+| `villagerretaliation.gui.relationships.past_format_reason` | stage, partner name, status, end reason |
+
+Configuration screen keys such as `villagerretaliation.configuration.title` and `villagerretaliation.configuration.section.villagerretaliation.common.toml` also use `%s` for the mod or section name.
+
 ## Profession Names
 
 The interaction GUI resolves villager profession names through language keys instead of server-side English strings.

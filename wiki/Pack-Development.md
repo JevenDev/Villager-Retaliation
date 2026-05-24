@@ -4,6 +4,8 @@ This guide covers how to build packs that target Villager Retaliation JSON and a
 
 For version-to-version pack migrations, see [Pack Format Changes](Pack-Format-Changes.md).
 
+For a guided browser tool that creates, imports, previews, validates, and exports Villager Retaliation datapacks, see the [Datapack Generator](Datapack-Generator.md).
+
 ## Supported Pack Types
 
 Use a datapack for server-side behavior and text pools:
