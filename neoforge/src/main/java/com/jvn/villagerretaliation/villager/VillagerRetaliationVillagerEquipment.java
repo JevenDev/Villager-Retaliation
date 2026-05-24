@@ -151,7 +151,9 @@ public final class VillagerRetaliationVillagerEquipment {
 
         ItemStack mainHand = villager.getMainHandItem();
         if (ItemStack.isSameItem(mainHand, expectedStack)) {
-            setPlayerManagedMainHand(villager, mainHand);
+            if (!sameStack(mainHand, expectedStack)) {
+                setPlayerManagedMainHand(villager, mainHand);
+            }
             return true;
         }
 
@@ -303,10 +305,20 @@ public final class VillagerRetaliationVillagerEquipment {
 
     private static void setEquipment(AbstractVillager villager, EquipmentSlot slot, ItemStack stack, boolean guaranteedDrop) {
         ItemStack equipmentStack = stack.isEmpty() ? ItemStack.EMPTY : stack.copy();
+        if (sameStack(villager.getItemBySlot(slot), equipmentStack)) {
+            if (guaranteedDrop && !equipmentStack.isEmpty()) {
+                villager.setGuaranteedDrop(slot);
+            }
+            return;
+        }
         villager.setItemSlot(slot, equipmentStack);
         if (guaranteedDrop && !equipmentStack.isEmpty()) {
             villager.setGuaranteedDrop(slot);
         }
+    }
+
+    private static boolean sameStack(ItemStack first, ItemStack second) {
+        return first.getCount() == second.getCount() && ItemStack.isSameItemSameComponents(first, second);
     }
 
     private static String rolledRoleKey(AbstractVillager villager) {

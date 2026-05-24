@@ -31,7 +31,9 @@ final class VillagerInventoryContainer implements Container {
     private static final String BORROWED_COMBAT_WEAPON_SLOT_TAG = "Slot";
     private static final String BORROWED_COMBAT_WEAPON_STACK_TAG = "Stack";
     private static final String BORROWED_COMBAT_WEAPON_RETURN_FAILURES_TAG = "ReturnFailures";
+    private static final long USABLE_WEAPON_CACHE_TICKS = 20L;
     private static final Map<UUID, Integer> OPEN_INVENTORIES = new HashMap<>();
+    private static final Map<UUID, CachedInventoryWeaponCheck> USABLE_WEAPON_CACHE = new HashMap<>();
     private static final EquipmentSlot[] ARMOR_SLOTS = {
             EquipmentSlot.HEAD,
             EquipmentSlot.CHEST,
@@ -144,6 +146,7 @@ final class VillagerInventoryContainer implements Container {
     public void setChanged() {
         saveInventory();
         saveExtraInventory();
+        invalidateUsableWeaponCache(this.villager);
     }
 
     @Override
@@ -217,7 +220,20 @@ final class VillagerInventoryContainer implements Container {
     }
 
     static boolean hasUsableWeapon(Villager villager) {
+        UUID villagerId = villager.getUUID();
+        long gameTime = villager.level().getGameTime();
+        CachedInventoryWeaponCheck cached = USABLE_WEAPON_CACHE.get(villagerId);
+        if (cached != null && cached.expiresGameTime() > gameTime) {
+            return cached.hasUsableWeapon();
+        }
+
         NonNullList<ItemStack> inventory = loadFullInventory(villager);
+        boolean hasUsableWeapon = hasUsableWeapon(inventory);
+        USABLE_WEAPON_CACHE.put(villagerId, new CachedInventoryWeaponCheck(hasUsableWeapon, gameTime + USABLE_WEAPON_CACHE_TICKS));
+        return hasUsableWeapon;
+    }
+
+    private static boolean hasUsableWeapon(NonNullList<ItemStack> inventory) {
         for (ItemStack stack : inventory) {
             if (VillagerRetaliationVillagerWeapons.isUsableWeapon(stack)) {
                 return true;
@@ -238,7 +254,9 @@ final class VillagerInventoryContainer implements Container {
 
         ItemStack mainHand = villager.getMainHandItem();
         if (ItemStack.isSameItem(mainHand, borrowedWeapon.stack())) {
-            persistBorrowedCombatWeapon(villager, borrowedWeapon.slot(), mainHand.copy(), borrowedWeapon.returnFailures());
+            if (!sameStack(mainHand, borrowedWeapon.stack())) {
+                persistBorrowedCombatWeapon(villager, borrowedWeapon.slot(), mainHand.copy(), borrowedWeapon.returnFailures());
+            }
             return true;
         }
 
@@ -430,12 +448,14 @@ final class VillagerInventoryContainer implements Container {
         }
         CompoundTag tag = ContainerHelper.saveAllItems(new CompoundTag(), extraInventory, true, villager.level().registryAccess());
         villager.getPersistentData().put(EXTRA_INVENTORY_TAG, tag);
+        invalidateUsableWeaponCache(villager);
     }
 
     private static void clearFullInventory(Villager villager) {
         NonNullList<ItemStack> emptyInventory = NonNullList.withSize(INVENTORY_SLOT_COUNT, ItemStack.EMPTY);
         saveFullInventory(villager, emptyInventory);
         villager.getPersistentData().remove(EXTRA_INVENTORY_TAG);
+        invalidateUsableWeaponCache(villager);
     }
 
     private static ItemStack addItemToPreferredSlot(Villager villager, ItemStack stack, int preferredSlot) {
@@ -591,6 +611,14 @@ final class VillagerInventoryContainer implements Container {
         return borrowedWeapon != null && ItemStack.isSameItem(villager.getMainHandItem(), borrowedWeapon.stack());
     }
 
+    private static void invalidateUsableWeaponCache(Villager villager) {
+        USABLE_WEAPON_CACHE.remove(villager.getUUID());
+    }
+
+    private static boolean sameStack(ItemStack first, ItemStack second) {
+        return first.getCount() == second.getCount() && ItemStack.isSameItemSameComponents(first, second);
+    }
+
     private static int matchingGiftItemCount(ItemStack stack, UUID playerId, ItemStack target) {
         return VillagerGiftReturnTracker.isStoredGiftFrom(stack, playerId)
                 && VillagerGiftReturnTracker.isSameTrackedGiftItem(stack, target)
@@ -609,6 +637,9 @@ final class VillagerInventoryContainer implements Container {
     }
 
     private record BorrowedCombatWeapon(int slot, ItemStack stack, int returnFailures) {
+    }
+
+    private record CachedInventoryWeaponCheck(boolean hasUsableWeapon, long expiresGameTime) {
     }
 
     private void saveExtraInventory() {
