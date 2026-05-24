@@ -66,7 +66,7 @@
   "lines": [
     {
       "id": "unemployed_chat_work",
-      "type": "chat",
+      "type": "small_talk",
       "text": "Finding the right work is harder when everyone asks if you found it yet.",
       "weight": 30
     },
@@ -90,7 +90,7 @@
     },
     {
       "id": "unemployed_new_chat_waiting",
-      "type": "chat",
+      "type": "small_talk",
       "text": "Waiting for work is still work if you look worried enough.",
       "weight": 28
     },
@@ -120,7 +120,7 @@
     },
     {
       "id": "unemployed_new_chat_errands",
-      "type": "chat",
+      "type": "small_talk",
       "text": "People with trades get tasks. People without trades get errands.",
       "weight": 28
     },
@@ -138,7 +138,7 @@
     },
     {
       "id": "unemployed_new_cautious_useful",
-      "type": "chat",
+      "type": "small_talk",
       "text": "I am trying to look useful, not involved.",
       "dispositions": [
         "cautious",

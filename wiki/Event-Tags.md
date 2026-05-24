@@ -59,7 +59,7 @@ Simple:
   "lines": [
     {
       "id": "my_pack.event.baby_born.simple",
-      "type": "chat",
+      "type": "small_talk",
       "event_tags": ["baby_born"],
       "text": "There is a new little voice in the village today."
     }
@@ -101,7 +101,7 @@ Simple:
   "lines": [
     {
       "id": "my_pack.event.container_theft.simple",
-      "type": "chat",
+      "type": "small_talk",
       "player_event_tags": ["player_container_theft"],
       "text": "I heard about the {stolen_stack}. Village stores are not souvenirs."
     }
@@ -125,7 +125,7 @@ Expanded:
     },
     {
       "id": "my_pack.event.container_theft.direct",
-      "type": "chat",
+      "type": "small_talk",
       "player_event_tags": ["player_container_theft"],
       "requires_container_theft_to_self": true,
       "dispositions": ["cautious", "rude", "hostile"],
@@ -150,7 +150,7 @@ Simple:
   "lines": [
     {
       "id": "my_pack.event.retaliation_started.simple",
-      "type": "chat",
+      "type": "small_talk",
       "event_tags": ["villager_retaliation_started"],
       "text": "{retaliation_witness} still looks ready to finish {retaliation_target}."
     }
@@ -174,7 +174,7 @@ Expanded:
     },
     {
       "id": "my_pack.event.retaliation_started.player_target",
-      "type": "chat",
+      "type": "small_talk",
       "player_event_tags": ["villager_retaliation_started"],
       "dispositions": ["hostile", "fearful"],
       "text": "{retaliation_witness} has not forgotten choosing you as the threat.",
@@ -238,7 +238,7 @@ Simple:
   "lines": [
     {
       "id": "my_pack.event.thunderstorm.simple",
-      "type": "chat",
+      "type": "small_talk",
       "event_tags": ["thunderstorm"],
       "text": "Thunder makes every roof sound thinner."
     }
@@ -279,7 +279,7 @@ Simple:
   "lines": [
     {
       "id": "my_pack.event.sandstorm.simple",
-      "type": "chat",
+      "type": "small_talk",
       "event_tags": ["sandstorm"],
       "text": "The wind has teeth today."
     }
@@ -319,7 +319,7 @@ Simple:
   "lines": [
     {
       "id": "my_pack.event.snowstorm.simple",
-      "type": "chat",
+      "type": "small_talk",
       "event_tags": ["snowstorm"],
       "text": "Snow can hide a lot of bad footsteps."
     }
@@ -360,7 +360,7 @@ Simple:
   "lines": [
     {
       "id": "my_pack.event.village_fire.simple",
-      "type": "chat",
+      "type": "small_talk",
       "event_tags": ["village_fire"],
       "text": "Smoke near a village is never just smoke."
     }
@@ -481,7 +481,7 @@ Simple:
   "lines": [
     {
       "id": "my_pack.event.villager_death.simple",
-      "type": "chat",
+      "type": "small_talk",
       "event_tags": ["villager_death"],
       "text": "A quiet house feels louder than it should."
     }
@@ -522,7 +522,7 @@ Simple:
   "lines": [
     {
       "id": "my_pack.event.villager_attacked.simple",
-      "type": "chat",
+      "type": "small_talk",
       "event_tags": ["villager_attacked"],
       "text": "Someone was hurt. That changes the air."
     }
@@ -602,7 +602,7 @@ Simple:
   "lines": [
     {
       "id": "my_pack.event.player_defended_village.simple",
-      "type": "chat",
+      "type": "small_talk",
       "player_event_tags": ["player_defended_village"],
       "text": "You kept trouble from our doors."
     }
@@ -764,7 +764,7 @@ Simple:
   "lines": [
     {
       "id": "my_pack.event.golem_killed.simple",
-      "type": "chat",
+      "type": "small_talk",
       "event_tags": ["golem_killed"],
       "text": "The village feels smaller without that iron step."
     }
@@ -845,7 +845,7 @@ Simple:
   "lines": [
     {
       "id": "my_pack.event.reputation_changed.simple",
-      "type": "chat",
+      "type": "small_talk",
       "player_event_tags": ["reputation_changed"],
       "text": "People notice patterns."
     }
@@ -885,7 +885,7 @@ Simple:
   "lines": [
     {
       "id": "my_pack.event.gift_loved.simple",
-      "type": "chat",
+      "type": "small_talk",
       "player_event_tags": ["player_gave_loved_gift"],
       "text": "That gift will be talked about for a while."
     }
@@ -924,7 +924,7 @@ Simple:
   "lines": [
     {
       "id": "my_pack.event.gift_liked.simple",
-      "type": "chat",
+      "type": "small_talk",
       "player_event_tags": ["player_gave_liked_gift"],
       "text": "That was a decent gift."
     }
@@ -963,7 +963,7 @@ Simple:
   "lines": [
     {
       "id": "my_pack.event.gift_neutral.simple",
-      "type": "chat",
+      "type": "small_talk",
       "player_event_tags": ["player_gave_neutral_gift"],
       "text": "A gift is still a choice, even when it misses."
     }
@@ -1002,7 +1002,7 @@ Simple:
   "lines": [
     {
       "id": "my_pack.event.gift_disliked.simple",
-      "type": "chat",
+      "type": "small_talk",
       "player_event_tags": ["player_gave_disliked_gift"],
       "text": "Some gifts make silence work harder."
     }
@@ -1041,7 +1041,7 @@ Simple:
   "lines": [
     {
       "id": "my_pack.event.gift_hated.simple",
-      "type": "chat",
+      "type": "small_talk",
       "player_event_tags": ["player_gave_hated_gift"],
       "text": "That gift did damage without a blade."
     }

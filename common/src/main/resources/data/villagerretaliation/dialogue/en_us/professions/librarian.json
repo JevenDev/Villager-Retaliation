@@ -66,7 +66,7 @@
   "lines": [
     {
       "id": "librarian_chat_pages",
-      "type": "chat",
+      "type": "small_talk",
       "text": "Missing pages worry me less than people who never read warnings.",
       "weight": 30
     },
@@ -90,7 +90,7 @@
     },
     {
       "id": "librarian_new_chat_ink",
-      "type": "chat",
+      "type": "small_talk",
       "text": "Ink is quiet until someone needs proof.",
       "weight": 28
     },
@@ -120,7 +120,7 @@
     },
     {
       "id": "librarian_new_chat_shelf",
-      "type": "chat",
+      "type": "small_talk",
       "text": "A tidy shelf is proof that peace can be arranged, briefly.",
       "weight": 28
     },
@@ -138,7 +138,7 @@
     },
     {
       "id": "librarian_new_hostile_memory",
-      "type": "chat",
+      "type": "small_talk",
       "text": "You may prefer I forget. I have chosen a profession that argues otherwise.",
       "dispositions": [
         "rude",

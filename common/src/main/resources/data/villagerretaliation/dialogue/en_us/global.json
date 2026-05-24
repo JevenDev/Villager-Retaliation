@@ -3,7 +3,7 @@
     {
       "id": "adult_chat",
       "label": "Small Talk",
-      "type": "chat",
+      "type": "small_talk",
       "show_for_babies": false,
       "order": 1
     },
@@ -153,7 +153,7 @@
     {
       "id": "baby_chat",
       "label": "Ask About Today",
-      "type": "chat",
+      "type": "small_talk",
       "show_for_adults": false,
       "order": 1
     },
@@ -2358,7 +2358,7 @@
     },
     {
       "id": "chat_follow_memory_biome",
-      "type": "chat",
+      "type": "small_talk",
       "option": "adult_chat",
       "text": "Remember when you made me follow you across {follow_biome}? I still know that road by ache alone.",
       "requires_recruitment_memory": true,
@@ -2368,7 +2368,7 @@
     },
     {
       "id": "chat_follow_memory_long_walk",
-      "type": "chat",
+      "type": "small_talk",
       "option": "adult_chat",
       "text": "Remember when you made me follow you over {follow_distance} blocks? My legs complained for days.",
       "requires_recruitment_memory": true,
@@ -2379,7 +2379,7 @@
     },
     {
       "id": "chat_follow_memory_boat",
-      "type": "chat",
+      "type": "small_talk",
       "option": "adult_chat",
       "text": "Remember when you took me along in a boat? I was not sure whether to thank you or ask where the oars had gone.",
       "requires_recruitment_memory": true,
@@ -2389,7 +2389,7 @@
     },
     {
       "id": "chat_follow_memory_ocean_swim",
-      "type": "chat",
+      "type": "small_talk",
       "option": "adult_chat",
       "text": "Remember when you took me across ocean water without a boat? I remember every splash.",
       "requires_recruitment_memory": true,
@@ -2399,7 +2399,7 @@
     },
     {
       "id": "chat_follow_memory_boat_long",
-      "type": "chat",
+      "type": "small_talk",
       "option": "adult_chat",
       "text": "That boat trip was part of a {follow_distance} block outing. Water did some of the work, but not enough.",
       "requires_recruitment_memory": true,
@@ -2410,7 +2410,7 @@
     },
     {
       "id": "chat_follow_memory_betrayed",
-      "type": "chat",
+      "type": "small_talk",
       "option": "adult_chat",
       "text": "Remember when I followed you and you hit me? I do. Still hurts.",
       "requires_recruitment_memory": true,
@@ -2422,7 +2422,7 @@
     },
     {
       "id": "chat_follow_memory_injured",
-      "type": "chat",
+      "type": "small_talk",
       "option": "adult_chat",
       "text": "I remember following you home hurt. I was grateful, but not exactly comfortable.",
       "requires_recruitment_memory": true,
@@ -2434,7 +2434,7 @@
     },
     {
       "id": "chat_follow_memory_armorer",
-      "type": "chat",
+      "type": "small_talk",
       "option": "adult_chat",
       "professions": [
         "armorer"
@@ -2446,7 +2446,7 @@
     },
     {
       "id": "chat_follow_memory_armorer_boat",
-      "type": "chat",
+      "type": "small_talk",
       "option": "adult_chat",
       "professions": [
         "armorer"
@@ -2459,7 +2459,7 @@
     },
     {
       "id": "chat_follow_memory_butcher",
-      "type": "chat",
+      "type": "small_talk",
       "option": "adult_chat",
       "professions": [
         "butcher"
@@ -2472,7 +2472,7 @@
     },
     {
       "id": "chat_follow_memory_cartographer_boat",
-      "type": "chat",
+      "type": "small_talk",
       "option": "adult_chat",
       "professions": [
         "cartographer"
@@ -2485,7 +2485,7 @@
     },
     {
       "id": "chat_follow_memory_cartographer",
-      "type": "chat",
+      "type": "small_talk",
       "option": "adult_chat",
       "professions": [
         "cartographer"
@@ -2497,7 +2497,7 @@
     },
     {
       "id": "chat_follow_memory_cleric_betrayed",
-      "type": "chat",
+      "type": "small_talk",
       "option": "adult_chat",
       "professions": [
         "cleric"
@@ -2512,7 +2512,7 @@
     },
     {
       "id": "chat_follow_memory_fisherman_boat",
-      "type": "chat",
+      "type": "small_talk",
       "option": "adult_chat",
       "professions": [
         "fisherman"
@@ -2525,7 +2525,7 @@
     },
     {
       "id": "chat_follow_memory_farmer",
-      "type": "chat",
+      "type": "small_talk",
       "option": "adult_chat",
       "professions": [
         "farmer"
@@ -2538,7 +2538,7 @@
     },
     {
       "id": "chat_follow_memory_leatherworker_boat",
-      "type": "chat",
+      "type": "small_talk",
       "option": "adult_chat",
       "professions": [
         "leatherworker"
@@ -2551,7 +2551,7 @@
     },
     {
       "id": "chat_follow_memory_fisherman",
-      "type": "chat",
+      "type": "small_talk",
       "option": "adult_chat",
       "professions": [
         "fisherman"
@@ -2564,7 +2564,7 @@
     },
     {
       "id": "chat_follow_memory_fletcher",
-      "type": "chat",
+      "type": "small_talk",
       "option": "adult_chat",
       "professions": [
         "fletcher"
@@ -2576,7 +2576,7 @@
     },
     {
       "id": "chat_follow_memory_shepherd_boat",
-      "type": "chat",
+      "type": "small_talk",
       "option": "adult_chat",
       "professions": [
         "shepherd"
@@ -2589,7 +2589,7 @@
     },
     {
       "id": "chat_follow_memory_leatherworker",
-      "type": "chat",
+      "type": "small_talk",
       "option": "adult_chat",
       "professions": [
         "leatherworker"
@@ -2602,7 +2602,7 @@
     },
     {
       "id": "chat_follow_memory_librarian",
-      "type": "chat",
+      "type": "small_talk",
       "option": "adult_chat",
       "professions": [
         "librarian"
@@ -2614,7 +2614,7 @@
     },
     {
       "id": "chat_follow_memory_mason",
-      "type": "chat",
+      "type": "small_talk",
       "option": "adult_chat",
       "professions": [
         "mason"
@@ -2628,7 +2628,7 @@
     },
     {
       "id": "chat_follow_memory_shepherd",
-      "type": "chat",
+      "type": "small_talk",
       "option": "adult_chat",
       "professions": [
         "shepherd"
@@ -2641,7 +2641,7 @@
     },
     {
       "id": "chat_follow_memory_toolsmith",
-      "type": "chat",
+      "type": "small_talk",
       "option": "adult_chat",
       "professions": [
         "toolsmith"
@@ -2653,7 +2653,7 @@
     },
     {
       "id": "chat_follow_memory_weaponsmith_betrayed",
-      "type": "chat",
+      "type": "small_talk",
       "option": "adult_chat",
       "professions": [
         "weaponsmith"
@@ -2668,7 +2668,7 @@
     },
     {
       "id": "chat_follow_memory_unemployed",
-      "type": "chat",
+      "type": "small_talk",
       "option": "adult_chat",
       "professions": [
         "unemployed"
@@ -2681,7 +2681,7 @@
     },
     {
       "id": "chat_follow_memory_nitwit",
-      "type": "chat",
+      "type": "small_talk",
       "option": "adult_chat",
       "professions": [
         "nitwit"
@@ -2693,7 +2693,7 @@
     },
     {
       "id": "chat_follow_memory_nitwit_boat",
-      "type": "chat",
+      "type": "small_talk",
       "option": "adult_chat",
       "professions": [
         "nitwit"
@@ -2706,7 +2706,7 @@
     },
     {
       "id": "chat_follow_memory_butcher_boat",
-      "type": "chat",
+      "type": "small_talk",
       "option": "adult_chat",
       "professions": [
         "butcher"
@@ -2719,7 +2719,7 @@
     },
     {
       "id": "chat_follow_memory_cleric_boat",
-      "type": "chat",
+      "type": "small_talk",
       "option": "adult_chat",
       "professions": [
         "cleric"
@@ -2732,7 +2732,7 @@
     },
     {
       "id": "chat_follow_memory_farmer_boat",
-      "type": "chat",
+      "type": "small_talk",
       "option": "adult_chat",
       "professions": [
         "farmer"
@@ -2745,7 +2745,7 @@
     },
     {
       "id": "chat_follow_memory_fletcher_boat",
-      "type": "chat",
+      "type": "small_talk",
       "option": "adult_chat",
       "professions": [
         "fletcher"
@@ -2758,7 +2758,7 @@
     },
     {
       "id": "chat_follow_memory_librarian_boat",
-      "type": "chat",
+      "type": "small_talk",
       "option": "adult_chat",
       "professions": [
         "librarian"
@@ -2771,7 +2771,7 @@
     },
     {
       "id": "chat_follow_memory_mason_boat",
-      "type": "chat",
+      "type": "small_talk",
       "option": "adult_chat",
       "professions": [
         "mason"
@@ -2784,7 +2784,7 @@
     },
     {
       "id": "chat_follow_memory_toolsmith_boat",
-      "type": "chat",
+      "type": "small_talk",
       "option": "adult_chat",
       "professions": [
         "toolsmith"
@@ -2797,7 +2797,7 @@
     },
     {
       "id": "chat_follow_memory_weaponsmith_boat",
-      "type": "chat",
+      "type": "small_talk",
       "option": "adult_chat",
       "professions": [
         "weaponsmith"
@@ -2810,7 +2810,7 @@
     },
     {
       "id": "chat_follow_memory_unemployed_boat",
-      "type": "chat",
+      "type": "small_talk",
       "option": "adult_chat",
       "professions": [
         "unemployed"
@@ -2823,7 +2823,7 @@
     },
     {
       "id": "chat_follow_memory_cartographer_ocean_boat",
-      "type": "chat",
+      "type": "small_talk",
       "option": "adult_chat",
       "professions": [
         "cartographer"
@@ -2837,7 +2837,7 @@
     },
     {
       "id": "chat_follow_memory_fisherman_ocean_boat",
-      "type": "chat",
+      "type": "small_talk",
       "option": "adult_chat",
       "professions": [
         "fisherman"
@@ -2851,7 +2851,7 @@
     },
     {
       "id": "chat_follow_memory_fisherman_ocean_swim",
-      "type": "chat",
+      "type": "small_talk",
       "option": "adult_chat",
       "professions": [
         "fisherman"
@@ -2864,7 +2864,7 @@
     },
     {
       "id": "chat_follow_memory_leatherworker_ocean_swim",
-      "type": "chat",
+      "type": "small_talk",
       "option": "adult_chat",
       "professions": [
         "leatherworker"
@@ -7376,7 +7376,7 @@
     },
     {
       "id": "baby_chat_hiding_place",
-      "type": "chat",
+      "type": "small_talk",
       "option": "baby_chat",
       "text": "I found a really good hiding place, but I cannot tell you or it stops being good.",
       "show_for_adults": false,
@@ -7384,7 +7384,7 @@
     },
     {
       "id": "baby_chat_bell",
-      "type": "chat",
+      "type": "small_talk",
       "option": "baby_chat",
       "text": "The bell is loud up close. I learned that by mistake.",
       "show_for_adults": false,
@@ -7482,7 +7482,7 @@
     },
     {
       "id": "global_chat_paths",
-      "type": "chat",
+      "type": "small_talk",
       "text": "The paths tell you plenty if you watch who hurries and who lingers.",
       "weight": 22
     },
@@ -7500,7 +7500,7 @@
     },
     {
       "id": "global_hit_memory",
-      "type": "chat",
+      "type": "small_talk",
       "text": "I still remember that {attack_weapon}. Conversations get colder after that.",
       "requires_recent_direct_hit_memory": true,
       "dispositions": [
@@ -7519,7 +7519,7 @@
     },
     {
       "id": "global_new_chat_square",
-      "type": "chat",
+      "type": "small_talk",
       "text": "The square tells you who is busy, who is worried, and who is pretending not to be either.",
       "weight": 22
     },
@@ -7549,7 +7549,7 @@
     },
     {
       "id": "global_new_chat_work",
-      "type": "chat",
+      "type": "small_talk",
       "text": "Most village work is simple until everyone depends on it being done right.",
       "weight": 22
     },
@@ -7567,7 +7567,7 @@
     },
     {
       "id": "global_new_hit_memory",
-      "type": "chat",
+      "type": "small_talk",
       "text": "It is hard to speak plainly while remembering that {attack_weapon}.",
       "requires_recent_direct_hit_memory": true,
       "dispositions": [
@@ -7981,7 +7981,7 @@
     },
     {
       "id": "village_cure_acknowledgement_respectful_2",
-      "type": "chat",
+      "type": "small_talk",
       "player_event_tags": [
         "player_cured_villager"
       ],
@@ -8008,7 +8008,7 @@
     },
     {
       "id": "village_cure_acknowledgement_neutral_2",
-      "type": "chat",
+      "type": "small_talk",
       "player_event_tags": [
         "player_cured_villager"
       ],
@@ -8035,7 +8035,7 @@
     },
     {
       "id": "village_cure_acknowledgement_wary_2",
-      "type": "chat",
+      "type": "small_talk",
       "player_event_tags": [
         "player_cured_villager"
       ],
@@ -8074,7 +8074,7 @@
     },
     {
       "id": "village_cure_acknowledgement_baby_2",
-      "type": "chat",
+      "type": "small_talk",
       "player_event_tags": [
         "player_cured_villager"
       ],
@@ -8725,7 +8725,7 @@
     },
     {
       "id": "container_theft_memory_direct_chat_1",
-      "type": "chat",
+      "type": "small_talk",
       "player_event_tags": [
         "player_container_theft"
       ],
@@ -8759,7 +8759,7 @@
     },
     {
       "id": "container_theft_memory_village_chat_1",
-      "type": "chat",
+      "type": "small_talk",
       "player_event_tags": [
         "player_container_theft"
       ],
@@ -8803,7 +8803,7 @@
     },
     {
       "id": "reputation_revered_chat_1",
-      "type": "chat",
+      "type": "small_talk",
       "text": "Some players pass through villages like weather. You left roots.",
       "weight": 26,
       "show_for_babies": false,
@@ -8839,7 +8839,7 @@
     },
     {
       "id": "reputation_neutral_chat_1",
-      "type": "chat",
+      "type": "small_talk",
       "text": "We do not know what kind of neighbor you are yet. Villages learn quickly.",
       "weight": 22,
       "show_for_babies": false,
@@ -8859,7 +8859,7 @@
     },
     {
       "id": "reputation_hostile_chat_1",
-      "type": "chat",
+      "type": "small_talk",
       "text": "You have a talent for making people check where the exits are.",
       "weight": 28,
       "show_for_babies": false,
@@ -8889,7 +8889,7 @@
     },
     {
       "id": "baby_reputation_low_chat_1",
-      "type": "chat",
+      "type": "small_talk",
       "text": "The adults get quiet when you come near.",
       "weight": 24,
       "show_for_adults": false,
@@ -9162,7 +9162,7 @@
     },
     {
       "id": "event_reputation_changed_positive_1",
-      "type": "chat",
+      "type": "small_talk",
       "player_event_tags": [
         "reputation_changed"
       ],
@@ -9173,7 +9173,7 @@
     },
     {
       "id": "event_reputation_changed_negative_1",
-      "type": "chat",
+      "type": "small_talk",
       "player_event_tags": [
         "reputation_changed"
       ],
@@ -9216,7 +9216,7 @@
     },
     {
       "id": "container_theft_memory_direct_hostile_1",
-      "type": "chat",
+      "type": "small_talk",
       "player_event_tags": [
         "player_container_theft"
       ],
@@ -9232,7 +9232,7 @@
     },
     {
       "id": "container_theft_memory_direct_trusted_1",
-      "type": "chat",
+      "type": "small_talk",
       "player_event_tags": [
         "player_container_theft"
       ],
@@ -9263,7 +9263,7 @@
     },
     {
       "id": "container_theft_memory_village_baby_1",
-      "type": "chat",
+      "type": "small_talk",
       "player_event_tags": [
         "player_container_theft"
       ],

@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
 import com.jvn.villagerretaliation.dialogue.DialogueReputationEffect;
+import com.jvn.villagerretaliation.dialogue.ForcedDialogueService;
 import com.jvn.villagerretaliation.network.VillagerWorldTextIndicatorKind;
 import com.jvn.villagerretaliation.notification.VillagerNotifications;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
@@ -218,6 +219,9 @@ public final class VillagerAmbientIndicatorService {
                 target,
                 VillagerPresetNameRegistry.resolveDisplayName(villager).getString()
         );
+        if (villager instanceof Villager resident) {
+            ForcedDialogueService.triggerRetaliationChat(level, resident, target);
+        }
         VillagerNotifications.sendWorldText(
                 level,
                 villager,
@@ -349,7 +353,7 @@ public final class VillagerAmbientIndicatorService {
                 case VILLAGE_EVENT_REPORT -> random(villager.getRandom(), "Everyone?", "Afterward", "Checking");
                 case APOLOGY -> random(villager.getRandom(), "Apology", "Heard", "Careful");
                 case VILLAGE_DEFENSE_REPORT -> random(villager.getRandom(), "Raid ended", "You fought", "Afterward");
-                case CHAT -> random(villager.getRandom(), "I suppose", "Small talk", "Alright");
+                case SMALL_TALK -> random(villager.getRandom(), "I suppose", "Small talk", "Alright");
                 case STORY -> random(villager.getRandom(), "Listen", "Long story", "I remember");
                 case JOKE -> random(villager.getRandom(), "Heh", "Not bad", "Oh dear");
                 case INSULT -> random(villager.getRandom(), "Careful", "Really?", "Watch it");

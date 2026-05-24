@@ -68,7 +68,7 @@ data/villagerretaliation/dialogue/en_us/examplepack_dialogue.json
     },
     {
       "id": "examplepack.low_rep_chat",
-      "type": "chat",
+      "type": "small_talk",
       "reputation_levels": ["hostile", "despised", "feared"],
       "text": "You will find fewer open doors here than you remember.",
       "weight": 20

@@ -88,7 +88,7 @@ public final class DialogueReputationService {
             );
         }
         return switch (requestType) {
-            case CHAT -> PlannedEffect.none();
+            case SMALL_TALK -> PlannedEffect.none();
             case GREETING -> planGreeting(context, interactionState.firstConversation());
             case QUESTION -> planQuestion(context);
             case GIFT_PREFERENCES -> PlannedEffect.none();

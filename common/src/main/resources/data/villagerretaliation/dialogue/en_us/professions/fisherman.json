@@ -66,7 +66,7 @@
   "lines": [
     {
       "id": "fisherman_chat_nets",
-      "type": "chat",
+      "type": "small_talk",
       "text": "Empty nets at dusk make every rumor sound heavier.",
       "weight": 30
     },
@@ -90,7 +90,7 @@
     },
     {
       "id": "fisherman_new_chat_water",
-      "type": "chat",
+      "type": "small_talk",
       "text": "Water looks calm right up until it proves it was thinking.",
       "weight": 28
     },
@@ -120,7 +120,7 @@
     },
     {
       "id": "fisherman_new_chat_weather",
-      "type": "chat",
+      "type": "small_talk",
       "text": "Weather has more moods than any trader I have met.",
       "weight": 28
     },
@@ -138,7 +138,7 @@
     },
     {
       "id": "fisherman_new_cautious_distance",
-      "type": "chat",
+      "type": "small_talk",
       "text": "I keep space between myself and uncertain weather. People are no different.",
       "dispositions": [
         "cautious",

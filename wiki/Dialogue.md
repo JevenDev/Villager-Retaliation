@@ -67,7 +67,7 @@ The option id is what the player clicks. The line's `option` or `option_ids` lin
 Use these values in `type`:
 
 ```text
-chat
+small_talk
 greeting
 question
 gift_preferences
@@ -86,6 +86,8 @@ share_story
 joke
 insult
 ```
+
+Packs must use `small_talk` for this dialogue request type. Older `chat` values are no longer accepted, so update existing dialogue options and lines before targeting beta.11+.
 
 See [Dialogue Types](Dialogue-Types.md) for simple and expanded dropdown examples for every current `type` value.
 
@@ -312,7 +314,7 @@ Example reputation-gated line:
   "lines": [
     {
       "id": "my_pack.low_rep_warning",
-      "type": "chat",
+      "type": "small_talk",
       "reputation_levels": ["hostile", "despised", "feared"],
       "text": "People here still remember what you cost us.",
       "weight": 20

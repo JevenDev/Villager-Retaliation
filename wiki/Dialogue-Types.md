@@ -33,7 +33,7 @@ Enum values are case-insensitive in code, but lowercase snake case is recommende
 
 | Type | Common use |
 | --- | --- |
-| `chat` | General conversation. |
+| `small_talk` | General conversation. Replaces the older `chat` value, which is no longer accepted. |
 | `greeting` | Greeting-style replies. |
 | `question` | Answers to player questions. |
 | `gift_preferences` | Gift preference hints and advice. |
@@ -57,9 +57,9 @@ Enum values are case-insensitive in code, but lowercase snake case is recommende
 Each dropdown starts with a minimal implementation, then an expanded version that shows realistic filters, placeholders, or companion fields.
 
 <details>
-<summary><strong>chat</strong></summary>
+<summary><strong>small_talk</strong></summary>
 
-Use `chat` for general conversation that does not need a special system report.
+Use `small_talk` for general conversation that does not need a special system report.
 
 Simple:
 
@@ -68,7 +68,7 @@ Simple:
   "lines": [
     {
       "id": "my_pack.chat.simple",
-      "type": "chat",
+      "type": "small_talk",
       "text": "Some days are quieter than others."
     }
   ]
@@ -83,14 +83,14 @@ Expanded:
     {
       "id": "my_pack.ask_small_talk",
       "label": "Make Small Talk",
-      "type": "chat",
+      "type": "small_talk",
       "order": 12
     }
   ],
   "lines": [
     {
       "id": "my_pack.chat.farmer_morning",
-      "type": "chat",
+      "type": "small_talk",
       "option": "my_pack.ask_small_talk",
       "professions": ["farmer"],
       "times": ["morning"],
@@ -892,4 +892,3 @@ Expanded:
 ```
 
 </details>
-

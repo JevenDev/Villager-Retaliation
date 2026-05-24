@@ -66,7 +66,7 @@
   "lines": [
     {
       "id": "butcher_chat_work",
-      "type": "chat",
+      "type": "small_talk",
       "text": "A smokehouse tells you fast who understands patience.",
       "weight": 30
     },
@@ -90,7 +90,7 @@
     },
     {
       "id": "butcher_new_chat_salt",
-      "type": "chat",
+      "type": "small_talk",
       "text": "Salt is patient. That is why it keeps food better than most people keep promises.",
       "weight": 28
     },
@@ -120,7 +120,7 @@
     },
     {
       "id": "butcher_new_chat_supper",
-      "type": "chat",
+      "type": "small_talk",
       "text": "People think about courage until supper is late. Then they think about supper.",
       "weight": 28
     },

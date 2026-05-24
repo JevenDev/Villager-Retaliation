@@ -19,7 +19,7 @@ const CONSTANTS = {
   ],
   dispositions: ["friendly", "respectful", "neutral", "cautious", "rude", "hostile", "fearful"],
   dialogueTypes: [
-    "chat",
+    "small_talk",
     "greeting",
     "question",
     "gift_preferences",
@@ -77,7 +77,14 @@ const CONSTANTS = {
     "alert.witness_death.player",
     "alert.witness_death"
   ],
-  forcedDialogueTriggers: ["container_theft", "container_opened", "retaliation_started"],
+  forcedDialogueTriggers: [
+    "container_theft",
+    "container_opened",
+    "retaliation_started",
+    "container_theft_chat",
+    "container_opened_chat",
+    "retaliation_started_chat"
+  ],
   reputationLevels: ["royalty", "revered", "respected", "trusted", "neutral", "suspicious", "hostile", "despised", "feared"],
   hudKinds: [
     "default",
@@ -305,8 +312,8 @@ const FIELD_TOOLTIPS = {
   "dialogue-outcomes": "Pacification result filter, such as success, not_enough_emeralds, blocked_by_reputation, or not_applicable.",
   "forcedDialogue-fileName": "Creates data/villagerretaliation/forced_dialogue/<file>.json. Use default only when replacing the built-in theft confrontation.",
   "forced-id": "Stable id for this forced dialogue rule. Duplicate ids can override or collide depending on load order.",
-  "forced-trigger": "Event trigger for the forced conversation. container_theft fires after items are removed; container_opened fires when config watches container opening; retaliation_started fires when a villager acquires a player retaliation target.",
-  "forced-line": "Villager opening line shown when the forced conversation opens. Put each variation on its own line.",
+  "forced-trigger": "Event trigger for the forced conversation or chat line. Use *_chat triggers for villager-styled chat without opening the interaction menu.",
+  "forced-line": "Villager line shown when the event fires. If Initiates dialogue is off, this is sent as villager-styled chat only. Put each variation on its own line.",
   "forced-priority": "Lower priority wins when multiple forced dialogue rules match the same event.",
   "forced-witness_radius": "Maximum block distance for witnesses to detect the event.",
   "forced-reputation": "Optional reputation change applied when this rule runs.",
@@ -314,6 +321,7 @@ const FIELD_TOOLTIPS = {
   "forced-target_entity_types": "Optional retaliation target entity ids such as minecraft:player. Useful for retaliation_started entries.",
   "forced-min_recent_retaliations": "Optional minimum earlier villager_retaliation_started memories for this player near the villager's village.",
   "forced-max_recent_retaliations": "Optional maximum earlier villager_retaliation_started memories for this player near the villager's village.",
+  "forced-initiate_dialogue": "Opens the locked interaction menu when enabled. Turn it off to send only the villager line as chat.",
   "forced-force_camera_towards_villager": "Smoothly turns the player's camera toward the witnessing villager while this forced dialogue is active.",
   "forced-options_json": "JSON array of player response options. Each option can set label, response, reputation, aggro, aggro_chance, end_conversation, order, take_items, take_stolen_items, reputation_levels, min_reputation, and max_reputation.",
   "forced-leave_option_json": "Optional JSON object or array for forced Leave/Escape outcomes. Uses option fields such as label, response, reputation, aggro_chance, take_stolen_items, and reputation_levels.",

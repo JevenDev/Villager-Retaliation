@@ -43,6 +43,8 @@ Pack-facing beta.11 changes focus on making data-driven behavior easier to exten
 - Added [Forced Dialogue JSON](Forced-Dialogue.md) under `data/villagerretaliation/forced_dialogue/` for event-driven locked dialogue moments.
 - Added built-in `container_theft` forced dialogue trigger for witnessed chest, barrel, and shulker theft.
 - Added built-in `container_opened` forced dialogue trigger for configs that confront players when they open watched containers.
+- Added chat-only forced-dialogue triggers `container_theft_chat`, `container_opened_chat`, and `retaliation_started_chat` for villager-styled event lines that do not open the locked interaction screen.
+- Added non-player target support for `retaliation_started_chat`. When the retaliation target is not a player, the line is broadcast to nearby players instead of opening a player-facing conversation.
 - Added forced dialogue entry fields: `trigger`, `event`, `line`, `lines`, `priority`, `witness_radius`, `witness_profession`, `witness_professions`, `requires_line_of_sight`, `initiate_dialogue`, `aggro_immediately`, `force_camera_towards_villager`, `reputation`, `loot_table`, `loot_tables`, `options`, `leave_option`, and `leave_options`.
 - Added forced dialogue option fields: `id`, `label`, `response`, `reputation`, `aggro`, `aggro_chance`, `end_conversation`, `order`, and `take_items`.
 - Added shared reputation condition fields `reputation_level`, `reputation_levels`, `min_reputation`, and `max_reputation` to dialogue options, dialogue lines, and forced dialogue options.
@@ -52,6 +54,7 @@ Pack-facing beta.11 changes focus on making data-driven behavior easier to exten
 - Added forced dialogue placeholders: `{villager}`, `{player}`, `{container}`, `{count}`, `{item}`, `{item_id}`, `{item_count}`, `{item_stack}`, `{items}`, `{loot_table}`, `{payment_count}`, `{payment_items}`, `{stolen_item}`, `{stolen_item_id}`, `{stolen_count}`, `{stolen_item_count}`, `{stolen_stack}`, `{stolen_items}`, `{x}`, `{y}`, and `{z}`.
 - Added `player_container_theft` village memory tag, `requires_container_theft_to_self`, `requires_container_theft_from_other`, and theft-memory placeholders `{stolen_item}`, `{stolen_item_id}`, `{stolen_count}`, `{stolen_item_count}`, `{stolen_stack}`, `{stolen_container}`, `{stolen_loot_table}`, `{theft_witness}`, and `{theft_witness_possessive}`.
 - Added forced dialogue editing, import, preview, validation, starter data, and export support to the [Datapack Generator](Datapack-Generator.md), including line variations, witness professions, custom leave options, `take_items`, `take_stolen_items`, item destinations, and reputation-gated option validation.
+- Added `small_talk` as the required general conversation dialogue request type.
 - Added a VR version selector to the Datapack Generator. Exported beta.11+ packs write `villagerretaliation.pack_version` in `pack.mcmeta`, and import uses it to restore the matching generator target.
 - Added more built-in dialogue lines for reputation tiers, retaliation aftermath, apologies, village defense, raids, golem loss, fire, gifts, gear reports, recruitment memories, and container-theft gossip.
 - Added loot-table-specific built-in forced dialogue scenes for vanilla village profession chests, with profession-specific robbery responses and lower-priority village/general fallbacks.
@@ -69,6 +72,7 @@ Pack-facing beta.11 changes focus on making data-driven behavior easier to exten
 - The built-in container forced-dialogue config now defaults to opening generated containers, and the default forced-dialogue pack targets vanilla village chest loot tables for village chest confrontations.
 - The built-in village chest forced-dialogue options now vary by reputation: high-reputation players can receive warnings, mid-reputation players can offer normal payment, and low-reputation players can face higher payment costs or harsher outcomes.
 - Built-in dialogue tone now emphasizes the mod's memory and consequence loop: villagers react to personal reputation, remember harm, gossip about theft, and treat defense as meaningful without instantly erasing past behavior.
+- Built-in dialogue data and wiki examples now use `small_talk` instead of `chat` for normal Talk menu conversation, keeping that request type distinct from villager-styled event chat lines.
 - Villager profession and gender labels used by the interaction GUI are now documented as localization-friendly client values instead of server-supplied English display strings.
 - Villager dialogue speaker labels are now documented as client-localized GUI text instead of datapack text.
 - Built-in profession loot is now declared through datapack rule files and Minecraft loot tables instead of hardcoded Java pools.
@@ -77,11 +81,11 @@ Pack-facing beta.11 changes focus on making data-driven behavior easier to exten
 
 ### Deprecated
 
-- No beta.11 fields are deprecated. Full-file gift and name overrides still work, but individual ids and additive files are preferred for small changes.
+- Full-file gift and name overrides still work, but individual ids and additive files are preferred for small changes.
 
 ### Removed
 
-- Nothing recorded yet.
+- Removed support for the legacy dialogue request type value `chat`. Use `small_talk` instead.
 
 ### Migration Notes
 
@@ -92,6 +96,8 @@ Pack-facing beta.11 changes focus on making data-driven behavior easier to exten
 - Packs that copied `villager_names/preset_names.json` only to add names can now add a separate file under `villager_names/`.
 - Packs that want to change profession drops should add or remove `profession_loot` rules and point them at normal Minecraft loot tables.
 - Packs that want to change the built-in theft confrontation can add an entry under `forced_dialogue/`, or intentionally override `data/villagerretaliation/forced_dialogue/default.json`.
+- Packs that use dialogue `type: "chat"` must migrate to `type: "small_talk"` before targeting beta.11+. This applies to both dialogue `options` and `lines`.
+- Packs that only want an event line in villager chat should use the `_chat` forced-dialogue triggers. Keep `container_theft`, `container_opened`, and `retaliation_started` for locked forced-dialogue scenes or outcomes.
 
 ## 2026-05 Documentation Baseline
 

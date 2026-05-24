@@ -28,7 +28,7 @@ Villager Retaliation is data-driven in the places pack makers usually want to to
 | Area | Pack type | Root path |
 | --- | --- | --- |
 | Dialogue | Datapack | `data/villagerretaliation/dialogue/<locale>/` |
-| Forced dialogue events | Datapack | `data/villagerretaliation/forced_dialogue/` |
+| Forced dialogue and chat event lines | Datapack | `data/villagerretaliation/forced_dialogue/` |
 | Notifications and world text | Datapack | `data/villagerretaliation/notifications/<locale>/` |
 | Interaction GUI and reputation UI text | Resource pack | `assets/villagerretaliation/lang/<locale>.json` |
 | Gifts and rewards | Datapack | `data/villagerretaliation/gifts/` |

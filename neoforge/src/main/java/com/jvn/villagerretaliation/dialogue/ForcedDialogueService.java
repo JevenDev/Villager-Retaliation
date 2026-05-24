@@ -35,6 +35,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
 import net.minecraft.world.Containers;
 import net.minecraft.world.RandomizableContainer;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
@@ -602,6 +603,13 @@ public final class ForcedDialogueService {
 
     public static boolean triggerRetaliationStarted(ServerLevel level, Villager villager, ServerPlayer player) {
         ResourceLocation targetTypeId = BuiltInRegistries.ENTITY_TYPE.getKey(player.getType());
+        int priorRetaliations = VillageEventMemory.countForPlayer(
+                VillageEventMemory.recentForVillage(level, villager),
+                player.getUUID(),
+                VillageEventMemory.EventTag.VILLAGER_RETALIATION_STARTED
+        );
+        triggerRetaliationChat(level, villager, player, priorRetaliations, targetTypeId);
+
         List<ForcedDialogueDefinition> candidates = ForcedDialogueResources
                 .selectCandidates(level.getServer(), ForcedDialogueTrigger.RETALIATION_STARTED, null, targetTypeId)
                 .stream()
@@ -613,11 +621,6 @@ public final class ForcedDialogueService {
             return false;
         }
 
-        int priorRetaliations = VillageEventMemory.countForPlayer(
-                VillageEventMemory.recentForVillage(level, villager),
-                player.getUUID(),
-                VillageEventMemory.EventTag.VILLAGER_RETALIATION_STARTED
-        );
         for (ForcedDialogueDefinition definition : candidates) {
             if (!definition.matchesRecentRetaliations(priorRetaliations)) {
                 continue;
@@ -629,12 +632,68 @@ public final class ForcedDialogueService {
         return false;
     }
 
+    public static void triggerRetaliationChat(ServerLevel level, Villager villager, LivingEntity target) {
+        if (target instanceof ServerPlayer) {
+            return;
+        }
+        ResourceLocation targetTypeId = BuiltInRegistries.ENTITY_TYPE.getKey(target.getType());
+        ForcedDialogueResources
+                .selectCandidates(level.getServer(), ForcedDialogueTrigger.RETALIATION_STARTED_CHAT, null, targetTypeId)
+                .stream()
+                .filter(definition -> definition.matchesWitness(villager))
+                .filter(definition -> villager.distanceToSqr(target) <= definition.witnessRadius() * definition.witnessRadius())
+                .filter(definition -> !definition.requiresLineOfSight() || villager.hasLineOfSight(target))
+                .filter(definition -> definition.matchesRecentRetaliations(0))
+                .anyMatch(definition -> triggerRetaliationChat(level, villager, target, definition, targetTypeId));
+    }
+
+    private static boolean triggerRetaliationChat(
+            ServerLevel level,
+            Villager villager,
+            LivingEntity target,
+            ForcedDialogueDefinition definition,
+            ResourceLocation targetTypeId) {
+        String villagerName = VillagerPresetNameRegistry.resolveDisplayName(villager).getString();
+        String targetName = target.getDisplayName().getString();
+        String targetKind = target.getType().getDescription().getString().toLowerCase(Locale.ROOT);
+        ForcedDialogueContext context = new ForcedDialogueContext(
+                villagerName,
+                "",
+                targetName,
+                targetKind,
+                targetTypeId == null ? "" : targetTypeId.toString(),
+                targetName,
+                targetTypeId == null ? "" : targetTypeId.toString(),
+                1,
+                targetName,
+                targetName,
+                "",
+                "",
+                0,
+                0,
+                villager.blockPosition().getX(),
+                villager.blockPosition().getY(),
+                villager.blockPosition().getZ()
+        );
+        String line = ForcedDialogueResources.resolveTemplate(definition.selectLine(level.getRandom()), context);
+        if (!line.isBlank()) {
+            VillagerInteractionService.broadcastForcedVillagerChat(
+                    level,
+                    villager,
+                    line,
+                    VillagerInteractionService.villagerSpeakerLabel(villager)
+            );
+        }
+        return true;
+    }
+
     private static void triggerContainerTheft(
             ServerLevel level,
             ServerPlayer player,
             ContainerSnapshot snapshot,
             int removedCount,
             List<ItemStack> removedStacks) {
+        triggerContainerChat(level, player, snapshot, removedCount, removedStacks, ForcedDialogueTrigger.CONTAINER_THEFT_CHAT);
         ForcedDialogueResources
                 .selectCandidates(level.getServer(), ForcedDialogueTrigger.CONTAINER_THEFT, snapshot.lootTable())
                 .stream()
@@ -645,10 +704,70 @@ public final class ForcedDialogueService {
             ServerLevel level,
             ServerPlayer player,
             ContainerSnapshot snapshot) {
+        triggerContainerChat(level, player, snapshot, 0, List.of(), ForcedDialogueTrigger.CONTAINER_OPENED_CHAT);
         ForcedDialogueResources
                 .selectCandidates(level.getServer(), ForcedDialogueTrigger.CONTAINER_OPENED, snapshot.lootTable())
                 .stream()
                 .anyMatch(definition -> trigger(level, player, snapshot, 0, List.of(), definition));
+    }
+
+    private static void triggerContainerChat(
+            ServerLevel level,
+            ServerPlayer player,
+            ContainerSnapshot snapshot,
+            int removedCount,
+            List<ItemStack> removedStacks,
+            ForcedDialogueTrigger trigger) {
+        ForcedDialogueResources
+                .selectCandidates(level.getServer(), trigger, snapshot.lootTable())
+                .stream()
+                .anyMatch(definition -> triggerContainerChat(level, player, snapshot, removedCount, removedStacks, definition));
+    }
+
+    private static boolean triggerContainerChat(
+            ServerLevel level,
+            ServerPlayer player,
+            ContainerSnapshot snapshot,
+            int removedCount,
+            List<ItemStack> removedStacks,
+            ForcedDialogueDefinition definition) {
+        Villager witness = findWitness(level, player, snapshot.pos(), definition).orElse(null);
+        if (witness == null) {
+            return false;
+        }
+        int priorContainerThefts = VillageEventMemory.countForPlayer(
+                VillageEventMemory.recentForVillage(level, witness),
+                player.getUUID(),
+                VillageEventMemory.EventTag.PLAYER_CONTAINER_THEFT);
+        if (!definition.matchesRecentContainerThefts(priorContainerThefts)) {
+            return false;
+        }
+
+        ItemStack representativeStack = representativeRemovedStack(removedStacks);
+        ForcedDialogueContext context = new ForcedDialogueContext(
+                VillagerPresetNameRegistry.resolveDisplayName(witness).getString(),
+                player.getDisplayName().getString(),
+                player.getDisplayName().getString(),
+                "player",
+                BuiltInRegistries.ENTITY_TYPE.getKey(player.getType()).toString(),
+                representativeStack.isEmpty() ? "items" : representativeStack.getHoverName().getString(),
+                representativeStack.isEmpty() ? "" : BuiltInRegistries.ITEM.getKey(representativeStack.getItem()).toString(),
+                representativeStack.isEmpty() ? removedCount : representativeStack.getCount(),
+                representativeStack.isEmpty() ? "items" : itemStackName(representativeStack),
+                removedStacks.isEmpty() ? "items" : itemListName(removedStacks),
+                snapshot.containerName().getString(),
+                snapshot.lootTable() == null ? "" : snapshot.lootTable().toString(),
+                priorContainerThefts,
+                0,
+                snapshot.pos().getX(),
+                snapshot.pos().getY(),
+                snapshot.pos().getZ()
+        );
+        String line = ForcedDialogueResources.resolveTemplate(definition.selectLine(level.getRandom()), context);
+        if (!line.isBlank()) {
+            VillagerInteractionService.sendVillagerNotice(player, witness, line);
+        }
+        return true;
     }
 
     private static boolean trigger(
@@ -807,6 +926,58 @@ public final class ForcedDialogueService {
         return true;
     }
 
+    private static void triggerRetaliationChat(
+            ServerLevel level,
+            Villager villager,
+            ServerPlayer player,
+            int priorRetaliations,
+            ResourceLocation targetTypeId) {
+        ForcedDialogueResources
+                .selectCandidates(level.getServer(), ForcedDialogueTrigger.RETALIATION_STARTED_CHAT, null, targetTypeId)
+                .stream()
+                .filter(definition -> definition.matchesWitness(villager))
+                .filter(definition -> villager.distanceToSqr(player) <= definition.witnessRadius() * definition.witnessRadius())
+                .filter(definition -> !definition.requiresLineOfSight() || villager.hasLineOfSight(player))
+                .filter(definition -> definition.matchesRecentRetaliations(priorRetaliations))
+                .anyMatch(definition -> triggerRetaliationChat(level, villager, player, definition, priorRetaliations, targetTypeId));
+    }
+
+    private static boolean triggerRetaliationChat(
+            ServerLevel level,
+            Villager villager,
+            ServerPlayer player,
+            ForcedDialogueDefinition definition,
+            int priorRetaliations,
+            ResourceLocation targetTypeId) {
+        String villagerName = VillagerPresetNameRegistry.resolveDisplayName(villager).getString();
+        String targetName = player.getDisplayName().getString();
+        String targetKind = player.getType().getDescription().getString().toLowerCase(Locale.ROOT);
+        ForcedDialogueContext context = new ForcedDialogueContext(
+                villagerName,
+                player.getDisplayName().getString(),
+                targetName,
+                targetKind,
+                targetTypeId == null ? "" : targetTypeId.toString(),
+                targetName,
+                targetTypeId == null ? "" : targetTypeId.toString(),
+                1,
+                targetName,
+                targetName,
+                "",
+                "",
+                0,
+                priorRetaliations,
+                villager.blockPosition().getX(),
+                villager.blockPosition().getY(),
+                villager.blockPosition().getZ()
+        );
+        String line = ForcedDialogueResources.resolveTemplate(definition.selectLine(level.getRandom()), context);
+        if (!line.isBlank()) {
+            VillagerInteractionService.sendVillagerNotice(player, villager, line);
+        }
+        return true;
+    }
+
     private static List<DialogueOptionDefinition> forcedOptions(
             ForcedDialogueDefinition definition,
             ServerLevel level,
@@ -817,7 +988,7 @@ public final class ForcedDialogueService {
         return definition.options().stream()
                 .filter(option -> option.reputationCondition().matches(reputation.value(), reputation.level()))
                 .sorted(Comparator.comparingInt(ForcedDialogueOption::order).thenComparing(ForcedDialogueOption::id))
-                .map(option -> DialogueOptionDefinition.simple(option.id(), option.label(), DialogueRequestType.CHAT, option.order()))
+                .map(option -> DialogueOptionDefinition.simple(option.id(), option.label(), DialogueRequestType.SMALL_TALK, option.order()))
                 .toList();
     }
 

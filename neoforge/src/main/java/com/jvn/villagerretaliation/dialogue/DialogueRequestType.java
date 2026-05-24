@@ -1,7 +1,7 @@
 package com.jvn.villagerretaliation.dialogue;
 
 public enum DialogueRequestType {
-    CHAT,
+    SMALL_TALK,
     GREETING,
     QUESTION,
     GIFT_PREFERENCES,

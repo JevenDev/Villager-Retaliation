@@ -67,7 +67,7 @@
   "lines": [
     {
       "id": "cleric_chat_remedies",
-      "type": "chat",
+      "type": "small_talk",
       "text": "Some remedies need glass bottles. Some need time and a quieter voice.",
       "weight": 30
     },
@@ -91,7 +91,7 @@
     },
     {
       "id": "cleric_new_chat_brew",
-      "type": "chat",
+      "type": "small_talk",
       "text": "A good brew needs time, heat, and someone willing to wait quietly.",
       "weight": 28
     },
@@ -121,7 +121,7 @@
     },
     {
       "id": "cleric_new_chat_wounds",
-      "type": "chat",
+      "type": "small_talk",
       "text": "Some hurts close cleanly. Some wait for a quieter day.",
       "weight": 28
     },
@@ -139,7 +139,7 @@
     },
     {
       "id": "cleric_new_fearful_calm",
-      "type": "chat",
+      "type": "small_talk",
       "text": "Speak gently. I have already heard enough harsh things today.",
       "dispositions": [
         "fearful",

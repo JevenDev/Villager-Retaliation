@@ -66,7 +66,7 @@
   "lines": [
     {
       "id": "nitwit_chat_thought",
-      "type": "chat",
+      "type": "small_talk",
       "text": "I had a thought once. Left it somewhere safe, probably.",
       "weight": 30
     },
@@ -90,7 +90,7 @@
     },
     {
       "id": "nitwit_new_chat_button",
-      "type": "chat",
+      "type": "small_talk",
       "text": "I found a button once. No wall, just ambition.",
       "weight": 28
     },
@@ -120,7 +120,7 @@
     },
     {
       "id": "nitwit_new_chat_shadow",
-      "type": "chat",
+      "type": "small_talk",
       "text": "I tried following my shadow, but it got behind me somehow.",
       "weight": 28
     },
@@ -138,7 +138,7 @@
     },
     {
       "id": "nitwit_new_cautious_simple",
-      "type": "chat",
+      "type": "small_talk",
       "text": "I can be silly from over here. Over here feels better.",
       "dispositions": [
         "cautious",

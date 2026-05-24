@@ -66,7 +66,7 @@
   "lines": [
     {
       "id": "armorer_chat_work",
-      "type": "chat",
+      "type": "small_talk",
       "text": "Most of my day is fitting mail and shields. It sounds simple until everything depends on it.",
       "weight": 30
     },
@@ -90,7 +90,7 @@
     },
     {
       "id": "armorer_new_chat_straps",
-      "type": "chat",
+      "type": "small_talk",
       "text": "A loose strap looks harmless until someone trusts it in a fight.",
       "weight": 28
     },
@@ -120,7 +120,7 @@
     },
     {
       "id": "armorer_new_chat_plate",
-      "type": "chat",
+      "type": "small_talk",
       "text": "Every plate I fit is a small promise that someone gets another chance.",
       "weight": 28
     },

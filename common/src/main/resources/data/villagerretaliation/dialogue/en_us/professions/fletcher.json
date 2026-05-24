@@ -66,7 +66,7 @@
   "lines": [
     {
       "id": "fletcher_chat_feathers",
-      "type": "chat",
+      "type": "small_talk",
       "text": "Clean feathers and straight shafts make trouble keep its distance.",
       "weight": 30
     },
@@ -90,7 +90,7 @@
     },
     {
       "id": "fletcher_new_chat_feather",
-      "type": "chat",
+      "type": "small_talk",
       "text": "A crooked feather makes a promise the arrow cannot keep.",
       "weight": 28
     },
@@ -120,7 +120,7 @@
     },
     {
       "id": "fletcher_new_chat_patrol",
-      "type": "chat",
+      "type": "small_talk",
       "text": "The best warning is the one that reaches trouble before trouble reaches us.",
       "weight": 28
     },
