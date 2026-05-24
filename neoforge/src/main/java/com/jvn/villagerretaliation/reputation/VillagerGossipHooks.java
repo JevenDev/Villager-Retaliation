@@ -2,7 +2,9 @@ package com.jvn.villagerretaliation.reputation;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.village.VillageMembership;
-import java.util.Comparator;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,7 +15,10 @@ import net.minecraft.world.phys.AABB;
 
 public final class VillagerGossipHooks {
     private static final long GOSSIP_INTERVAL_TICKS = 20L * 30L;
+    private static final int GOSSIP_RECEIVERS_PER_SOURCE = 4;
+    private static final int PENDING_GOSSIP_PER_TICK = 8;
     private static final Map<UUID, Long> NEXT_GOSSIP_TICKS = new HashMap<>();
+    private static final Deque<PendingGossip> PENDING_GOSSIP = new ArrayDeque<>();
 
     private VillagerGossipHooks() {
     }
@@ -35,23 +40,40 @@ public final class VillagerGossipHooks {
             gossipedAmount = originalAmount > 0 ? 1 : -1;
         }
 
-        List<Villager> receivers = gossipReceivers(level, source);
-        int applied = 0;
-        for (Villager receiver : receivers) {
-            VillagerReputationManager.addGossipReputation(level, receiver, playerId, gossipedAmount, sourceId);
-            if (++applied >= 4) {
-                break;
+        PENDING_GOSSIP.addLast(new PendingGossip(level, source, playerId, gossipedAmount));
+    }
+
+    public static void processPending(long gameTime) {
+        int processed = 0;
+        while (processed < PENDING_GOSSIP_PER_TICK && !PENDING_GOSSIP.isEmpty()) {
+            PendingGossip gossip = PENDING_GOSSIP.removeFirst();
+            if (gossip.level().getServer() == null) {
+                continue;
             }
+            for (Villager receiver : gossipReceivers(gossip.level(), gossip.source())) {
+                VillagerReputationManager.addGossipReputation(gossip.level(), receiver, gossip.playerId(), gossip.amount(), gossip.source().getUUID());
+            }
+            processed++;
         }
+        pruneCooldowns(gameTime);
+    }
+
+    public static void clear() {
+        NEXT_GOSSIP_TICKS.clear();
+        PENDING_GOSSIP.clear();
+    }
+
+    private static void pruneCooldowns(long gameTime) {
+        NEXT_GOSSIP_TICKS.entrySet().removeIf(entry -> entry.getValue() <= gameTime);
     }
 
     private static List<Villager> gossipReceivers(ServerLevel level, Villager source) {
         return VillageMembership.resolve(level, source)
-                .map(area -> sortedByDistance(source, area.membersMatching(receiver -> receiver != source && receiver.isAlive())))
+                .map(area -> nearestReceivers(source, area.membersMatching(receiver -> receiver != source && receiver.isAlive())))
                 .filter(receivers -> !receivers.isEmpty())
                 .orElseGet(() -> {
                     AABB area = source.getBoundingBox().inflate(VillagerRetaliationConfig.GOSSIP_RADIUS.get());
-                    return sortedByDistance(source, level.getEntitiesOfClass(
+                    return nearestReceivers(source, level.getEntitiesOfClass(
                             Villager.class,
                             area,
                             receiver -> receiver != source && receiver.isAlive()
@@ -59,9 +81,25 @@ public final class VillagerGossipHooks {
                 });
     }
 
-    private static List<Villager> sortedByDistance(Villager source, List<Villager> villagers) {
-        return villagers.stream()
-                .sorted(Comparator.comparingDouble(source::distanceToSqr))
-                .toList();
+    private static List<Villager> nearestReceivers(Villager source, Iterable<Villager> candidates) {
+        List<Villager> nearest = new ArrayList<>(GOSSIP_RECEIVERS_PER_SOURCE);
+        for (Villager candidate : candidates) {
+            int insertAt = 0;
+            double distanceSqr = source.distanceToSqr(candidate);
+            while (insertAt < nearest.size() && source.distanceToSqr(nearest.get(insertAt)) <= distanceSqr) {
+                insertAt++;
+            }
+            if (insertAt >= GOSSIP_RECEIVERS_PER_SOURCE) {
+                continue;
+            }
+            nearest.add(insertAt, candidate);
+            if (nearest.size() > GOSSIP_RECEIVERS_PER_SOURCE) {
+                nearest.remove(nearest.size() - 1);
+            }
+        }
+        return nearest;
+    }
+
+    private record PendingGossip(ServerLevel level, Villager source, UUID playerId, int amount) {
     }
 }

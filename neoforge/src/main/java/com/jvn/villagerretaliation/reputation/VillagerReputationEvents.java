@@ -172,8 +172,8 @@ public final class VillagerReputationEvents {
             int gain = positiveWitnessGain(credit);
             boolean hadDistrustedVillagerNearby = credit.player() instanceof ServerPlayer serverPlayer
                     && VillagerReputationAdvancements.hasDistrustedVillagerNearby(level, deceased.blockPosition(), serverPlayer);
-            applyWitnessed(level, deceased, credit.player(), gain);
-            spreadWitnessGossip(level, deceased, credit.player(), gain);
+            List<AbstractVillager> witnesses = applyWitnessed(level, deceased, credit.player(), gain);
+            spreadWitnessGossip(witnesses, credit.player(), gain);
             if (gain > 0 && hadDistrustedVillagerNearby && credit.player() instanceof ServerPlayer serverPlayer) {
                 VillagerReputationAdvancements.onHeroicDefenseReputationGain(serverPlayer);
             }
@@ -241,9 +241,11 @@ public final class VillagerReputationEvents {
     }
 
     public static void onServerTickPost(ServerTickEvent.Post event) {
-        VillagerReputationManager.flushTierChangeMessages(event.getServer());
-
         long gameTime = event.getServer().overworld().getGameTime();
+        VillagerReputationManager.flushTierChangeMessages(event.getServer());
+        VillagerGossipHooks.processPending(gameTime);
+        VillagerReputationManager.pruneSyncState(gameTime);
+
         if (gameTime % VillagerRetaliationConfig.REPUTATION_DECAY_INTERVAL.get() == 0L) {
             VillagerReputationManager.pruneOldEntries(event.getServer().overworld());
             pruneHostileContributions(gameTime);
@@ -371,8 +373,15 @@ public final class VillagerReputationEvents {
         HOSTILE_PLAYER_CONTRIBUTIONS.entrySet().removeIf(entry -> gameTime - entry.getValue().gameTime() > HOSTILE_CONTRIBUTION_TTL_TICKS);
     }
 
-    private static void applyWitnessed(ServerLevel level, Entity source, Player player, int amount) {
+    private static List<AbstractVillager> applyWitnessed(ServerLevel level, Entity source, Player player, int amount) {
+        List<AbstractVillager> witnesses = witnessesNear(level, source);
+        applyWitnessed(level, witnesses, source, player, amount);
+        return witnesses;
+    }
+
+    private static List<AbstractVillager> witnessesNear(ServerLevel level, Entity source) {
         AABB area = source.getBoundingBox().inflate(VillagerRetaliationConfig.WITNESS_RADIUS.get());
+        List<AbstractVillager> witnesses = new ArrayList<>();
         for (AbstractVillager witness : level.getEntitiesOfClass(AbstractVillager.class, area)) {
             if (witness == source || !witness.isAlive()) {
                 continue;
@@ -380,6 +389,13 @@ public final class VillagerReputationEvents {
             if (VillagerRetaliationConfig.VANILLA_GOSSIP_REQUIRES_LINE_OF_SIGHT.get() && !witness.hasLineOfSight(source)) {
                 continue;
             }
+            witnesses.add(witness);
+        }
+        return witnesses;
+    }
+
+    private static void applyWitnessed(ServerLevel level, List<AbstractVillager> witnesses, Entity source, Player player, int amount) {
+        for (AbstractVillager witness : witnesses) {
             if (!VillagerAggressionPolicy.shouldNearbyVillagerAssist(witness, player, ReputationEventType.WITNESSED_HIT)) {
                 continue;
             }
@@ -387,16 +403,11 @@ public final class VillagerReputationEvents {
         }
     }
 
-    private static void spreadWitnessGossip(ServerLevel level, Entity source, Player player, int amount) {
-        AABB area = source.getBoundingBox().inflate(VillagerRetaliationConfig.WITNESS_RADIUS.get());
-        for (Villager witness : level.getEntitiesOfClass(Villager.class, area)) {
-            if (!witness.isAlive()) {
-                continue;
+    private static void spreadWitnessGossip(List<AbstractVillager> witnesses, Player player, int amount) {
+        for (AbstractVillager witness : witnesses) {
+            if (witness instanceof Villager villager && villager.level() instanceof ServerLevel level) {
+                VillagerGossipHooks.spreadReputation(level, villager, player.getUUID(), amount);
             }
-            if (VillagerRetaliationConfig.VANILLA_GOSSIP_REQUIRES_LINE_OF_SIGHT.get() && !witness.hasLineOfSight(source)) {
-                continue;
-            }
-            VillagerGossipHooks.spreadReputation(level, witness, player.getUUID(), amount);
         }
     }
 

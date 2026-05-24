@@ -20,6 +20,7 @@ import com.jvn.villagerretaliation.loot.WanderingTraderLootHandler;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
+import com.jvn.villagerretaliation.reputation.VillagerGossipHooks;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.toucanlib.util.ToucanHazardAttribution;
@@ -77,6 +78,8 @@ public final class VillagerRetaliationEvents {
     public static void onServerStopping(ServerStoppingEvent event) {
         VillagerDataWarmup.clearCaches();
         VillagerRetaliationVillagerRules.clearCachedChecks();
+        VillagerGossipHooks.clear();
+        VillagerReputationManager.clearSyncState();
     }
 
     public static void onAddReloadListeners(AddReloadListenerEvent event) {

@@ -23,7 +23,11 @@ import net.minecraft.world.entity.player.Player;
 
 public final class VillagerReputationManager {
     private static final long DAY_TICKS = 24000L;
+    private static final long SYNC_CACHE_TTL_TICKS = 20L * 60L * 5L;
+    private static final long SYNC_CACHE_PRUNE_INTERVAL_TICKS = 20L * 10L;
     private static final Map<UUID, Map<ResolvedVillagerNotification, Integer>> PENDING_TIER_MESSAGES = new LinkedHashMap<>();
+    private static final Map<SyncKey, SyncedReputation> LAST_SYNCED_REPUTATION = new LinkedHashMap<>();
+    private static long nextSyncCachePruneGameTime;
 
     private VillagerReputationManager() {
     }
@@ -358,10 +362,41 @@ public final class VillagerReputationManager {
         if (level.getPlayerByUUID(playerId) instanceof ServerPlayer serverPlayer
                 && serverPlayer.distanceToSqr(villager) <= witnessRadius * witnessRadius) {
             int reputation = getReputation(level, villager, playerId);
+            SyncKey key = new SyncKey(playerId, villager.getUUID());
+            SyncedReputation previousSync = LAST_SYNCED_REPUTATION.get(key);
+            if (previousSync != null
+                    && previousSync.reputation() == reputation
+                    && previousSync.entityId() == villager.getId()) {
+                LAST_SYNCED_REPUTATION.put(key, previousSync.withGameTime(level.getGameTime()));
+                return;
+            }
+            LAST_SYNCED_REPUTATION.put(key, new SyncedReputation(reputation, villager.getId(), level.getGameTime()));
             VillagerReputationNetworking.sendReputation(serverPlayer, villager, reputation);
         }
     }
 
+    public static void pruneSyncState(long gameTime) {
+        if (gameTime < nextSyncCachePruneGameTime) {
+            return;
+        }
+        nextSyncCachePruneGameTime = gameTime + SYNC_CACHE_PRUNE_INTERVAL_TICKS;
+        LAST_SYNCED_REPUTATION.entrySet().removeIf(entry -> gameTime - entry.getValue().gameTime() > SYNC_CACHE_TTL_TICKS);
+    }
+
+    public static void clearSyncState() {
+        LAST_SYNCED_REPUTATION.clear();
+        nextSyncCachePruneGameTime = 0L;
+    }
+
     public record ReputationSnapshot(int value, VillagerReputationLevel level) {
+    }
+
+    private record SyncKey(UUID playerId, UUID villagerId) {
+    }
+
+    private record SyncedReputation(int reputation, int entityId, long gameTime) {
+        SyncedReputation withGameTime(long gameTime) {
+            return new SyncedReputation(this.reputation, this.entityId, gameTime);
+        }
     }
 }
