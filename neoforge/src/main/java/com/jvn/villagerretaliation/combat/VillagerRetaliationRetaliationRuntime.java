@@ -124,6 +124,7 @@ final class VillagerRetaliationRetaliationRuntime<T extends AbstractVillager> {
         this.nextGroundWeaponScanTicks.remove(villagerId);
         this.pursuedGroundWeaponIds.remove(villagerId);
         this.temporaryWeapons.remove(villagerId);
+        VillagerRetaliationRetaliationUtil.clearPathingState(villager);
     }
 
     private ItemEntity currentPursuedGroundWeapon(T villager) {

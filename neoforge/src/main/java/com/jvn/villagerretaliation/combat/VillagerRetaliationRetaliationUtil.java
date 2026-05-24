@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -27,6 +28,7 @@ import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.level.pathfinder.Node;
 import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -36,6 +38,10 @@ public final class VillagerRetaliationRetaliationUtil {
     private static final String PERSISTENT_TARGET_UUID = "Target";
     private static final String PERSISTENT_LAST_SEEN_TICK = "LastSeenTick";
     private static final double MAX_RETALIATION_PURSUIT_DISTANCE_SQR = 1024.0D;
+    private static final int MIN_PATH_RECALCULATION_TICKS = 4;
+    private static final int RANDOM_PATH_RECALCULATION_TICKS = 7;
+    private static final double PATHED_TARGET_MOVED_DISTANCE_SQR = 1.0D;
+    private static final Map<UUID, RetaliationPathState> PATH_STATES = new HashMap<>();
     private static final ResourceLocation COMBAT_MOVEMENT_SPEED_MODIFIER_ID =
             VillagerRetaliation.id("combat_movement_speed");
     private static final AttributeModifier COMBAT_MOVEMENT_SPEED_MODIFIER =
@@ -286,16 +292,67 @@ public final class VillagerRetaliationRetaliationUtil {
     public static boolean moveTowardReachableRetaliationTarget(AbstractVillager villager, LivingEntity target, double movementSpeed) {
         if (!isWithinRetaliationPursuitRange(villager, target)) {
             villager.getNavigation().stop();
+            clearPathingState(villager);
             return false;
         }
 
-        Path path = villager.getNavigation().createPath(target, 0);
-        if (path == null || !path.canReach()) {
-            villager.getNavigation().stop();
-            return false;
+        UUID villagerId = villager.getUUID();
+        UUID targetId = target.getUUID();
+        RetaliationPathState state = PATH_STATES.get(villagerId);
+        boolean targetChanged = state == null || !state.targetId().equals(targetId);
+        int ticksUntilNextPathRecalculation = targetChanged
+                ? 0
+                : Math.max(state.ticksUntilNextPathRecalculation() - 1, 0);
+        boolean targetMoved = targetChanged
+                || target.distanceToSqr(state.pathedTargetX(), state.pathedTargetY(), state.pathedTargetZ()) >= PATHED_TARGET_MOVED_DISTANCE_SQR;
+        boolean shouldRecalculatePath = ticksUntilNextPathRecalculation <= 0
+                && (targetMoved || villager.getNavigation().isDone() || villager.getRandom().nextFloat() < 0.05F);
+
+        if (!shouldRecalculatePath) {
+            PATH_STATES.put(villagerId, state.withTicksUntilNextPathRecalculation(ticksUntilNextPathRecalculation));
+            return !villager.getNavigation().isDone();
         }
 
-        return villager.getNavigation().moveTo(path, movementSpeed);
+        int failedPathFindingPenalty = targetChanged ? 0 : state.failedPathFindingPenalty();
+        Path currentPath = villager.getNavigation().getPath();
+        if (currentPath != null) {
+            Node endNode = currentPath.getEndNode();
+            if (endNode != null && target.distanceToSqr(endNode.x, endNode.y, endNode.z) < PATHED_TARGET_MOVED_DISTANCE_SQR) {
+                failedPathFindingPenalty = 0;
+            } else {
+                failedPathFindingPenalty += 10;
+            }
+        } else if (!targetChanged) {
+            failedPathFindingPenalty += 10;
+        }
+
+        ticksUntilNextPathRecalculation = MIN_PATH_RECALCULATION_TICKS + villager.getRandom().nextInt(RANDOM_PATH_RECALCULATION_TICKS);
+        ticksUntilNextPathRecalculation += failedPathFindingPenalty;
+        double distanceSqr = villager.distanceToSqr(target);
+        if (distanceSqr > 1024.0D) {
+            ticksUntilNextPathRecalculation += 10;
+        } else if (distanceSqr > 256.0D) {
+            ticksUntilNextPathRecalculation += 5;
+        }
+
+        boolean moved = villager.getNavigation().moveTo(target, movementSpeed);
+        if (!moved) {
+            ticksUntilNextPathRecalculation += 15;
+        }
+
+        PATH_STATES.put(villagerId, new RetaliationPathState(
+                targetId,
+                target.getX(),
+                target.getY(),
+                target.getZ(),
+                ticksUntilNextPathRecalculation,
+                failedPathFindingPenalty
+        ));
+        return moved || !villager.getNavigation().isDone();
+    }
+
+    public static void clearPathingState(AbstractVillager villager) {
+        PATH_STATES.remove(villager.getUUID());
     }
 
     private static boolean hasClearMeleeLine(AbstractVillager villager, LivingEntity target) {
@@ -426,5 +483,25 @@ public final class VillagerRetaliationRetaliationUtil {
     }
 
     public record ActiveRetaliationTarget(ServerLevel level, LivingEntity target, long gameTime, boolean targetCurrentlyHostile) {
+    }
+
+    private record RetaliationPathState(
+            UUID targetId,
+            double pathedTargetX,
+            double pathedTargetY,
+            double pathedTargetZ,
+            int ticksUntilNextPathRecalculation,
+            int failedPathFindingPenalty
+    ) {
+        RetaliationPathState withTicksUntilNextPathRecalculation(int ticksUntilNextPathRecalculation) {
+            return new RetaliationPathState(
+                    this.targetId,
+                    this.pathedTargetX,
+                    this.pathedTargetY,
+                    this.pathedTargetZ,
+                    ticksUntilNextPathRecalculation,
+                    this.failedPathFindingPenalty
+            );
+        }
     }
 }
