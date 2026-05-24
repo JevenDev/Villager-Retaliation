@@ -1,8 +1,10 @@
 package com.jvn.villagerretaliation.villager;
 
+import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.raid.Raid;
 import net.minecraft.world.entity.schedule.Activity;
@@ -25,12 +27,19 @@ public final class VillagerFleeBehaviorHandler {
     public static void onEntityTickPost(EntityTickEvent.Post event) {
         if (!(event.getEntity() instanceof Villager villager)
                 || villager.level().isClientSide
-                || !(villager.level() instanceof ServerLevel level)
-                || !VillagerRetaliationVillagerRules.shouldSuppressFleeingBehavior(villager)) {
+                || !(villager.level() instanceof ServerLevel level)) {
             return;
         }
 
         Brain<Villager> brain = villager.getBrain();
+        if (VillagerRetaliationVillagerRules.shouldKeepFleeingBehavior(villager)) {
+            maybeAnnounceFlee(level, villager, brain);
+            return;
+        }
+        if (!VillagerRetaliationVillagerRules.shouldSuppressFleeingBehavior(villager)) {
+            return;
+        }
+
         boolean shouldResetFleeState = brain.isActive(Activity.PANIC)
                 || brain.isActive(Activity.HIDE)
                 || shouldSuppressActiveRaidHide(level, villager, brain)
@@ -59,6 +68,15 @@ public final class VillagerFleeBehaviorHandler {
         return VillagerRetaliationVillagerBrainUtil.hasThreatMemories(brain)
                 || brain.hasMemoryValue(MemoryModuleType.HEARD_BELL_TIME)
                 || brain.hasMemoryValue(MemoryModuleType.HIDING_PLACE);
+    }
+
+    private static void maybeAnnounceFlee(ServerLevel level, Villager villager, Brain<Villager> brain) {
+        if (!brain.isActive(Activity.PANIC) && !hasFleeMemory(brain)) {
+            return;
+        }
+        brain.getMemory(MemoryModuleType.NEAREST_HOSTILE)
+                .filter(LivingEntity::isAlive)
+                .ifPresent(hostile -> VillagerAmbientIndicatorService.onFleeStarted(level, villager, hostile));
     }
 
     private static boolean shouldSuppressActiveRaidHide(ServerLevel level, Villager villager, Brain<Villager> brain) {

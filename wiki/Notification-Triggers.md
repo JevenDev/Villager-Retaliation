@@ -1865,6 +1865,48 @@ Expanded:
 </details>
 
 <details>
+<summary><strong>combat.flee_started</strong></summary>
+
+Fires as world text when a villager keeps fleeing from a remembered hostile instead of standing ground. Supports `{target}`, `{target_name}`, `{target_kind}`, `{target_type}`, `{player}`, `{villager}`, `{villager_name}`, `{villager_kind}`, and `{profession}`.
+
+Simple:
+
+```json
+{
+  "notifications": [
+    {
+      "id": "my_pack.trigger.combat_flee_started.simple",
+      "trigger": "combat.flee_started",
+      "text": "Help! {target} is here!",
+      "world_text_kind": "alert",
+      "requires_villager_unarmed": true
+    }
+  ]
+}
+```
+
+Expanded:
+
+```json
+{
+  "notifications": [
+    {
+      "id": "my_pack.trigger.combat_flee_started.raiders_only",
+      "trigger": "combat.flee_started",
+      "text": "Bell! {target_kind} at the edge!",
+      "world_text_kind": "alert",
+      "target_entity_types": ["minecraft:pillager", "minecraft:vindicator", "minecraft:evoker"],
+      "requires_villager_unarmed": true,
+      "chance": 0.35,
+      "weight": 18
+    }
+  ]
+}
+```
+
+</details>
+
+<details>
 <summary><strong>combat.attack_landed</strong></summary>
 
 Fires as world text when a villager or wandering trader lands a damaging hit on a living target. Supports `{target}`, `{target_name}`, `{target_kind}`, `{target_type}`, `{player}`, `{villager}`, `{villager_name}`, `{villager_kind}`, and `{profession}`.

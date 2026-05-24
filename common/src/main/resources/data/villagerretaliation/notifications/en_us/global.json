@@ -488,6 +488,36 @@
       "weight": 10
     },
     {
+      "trigger": "combat.flee_started",
+      "text": "Help! {target} is here!",
+      "world_text_kind": "alert",
+      "color": "#FFD166",
+      "requires_villager_unarmed": true,
+      "target_entity_types": ["minecraft:pillager", "minecraft:vindicator", "minecraft:evoker", "minecraft:ravager", "minecraft:witch", "minecraft:zombie", "minecraft:zombie_villager", "minecraft:husk", "minecraft:drowned", "minecraft:skeleton", "minecraft:stray", "minecraft:wither_skeleton", "minecraft:bogged", "minecraft:phantom", "minecraft:creeper", "minecraft:spider", "minecraft:cave_spider", "minecraft:slime", "minecraft:magma_cube", "minecraft:enderman"],
+      "chance": 0.35,
+      "weight": 20
+    },
+    {
+      "trigger": "combat.flee_started",
+      "text": "I need help!",
+      "world_text_kind": "alert",
+      "color": "#FFD166",
+      "requires_villager_unarmed": true,
+      "target_entity_types": ["minecraft:pillager", "minecraft:vindicator", "minecraft:evoker", "minecraft:ravager", "minecraft:witch", "minecraft:zombie", "minecraft:zombie_villager", "minecraft:husk", "minecraft:drowned", "minecraft:skeleton", "minecraft:stray", "minecraft:wither_skeleton", "minecraft:bogged", "minecraft:phantom", "minecraft:creeper", "minecraft:spider", "minecraft:cave_spider", "minecraft:slime", "minecraft:magma_cube", "minecraft:enderman"],
+      "chance": 0.35,
+      "weight": 16
+    },
+    {
+      "trigger": "combat.flee_started",
+      "text": "Bell! Ring the bell!",
+      "world_text_kind": "alert",
+      "color": "#FFD166",
+      "requires_villager_unarmed": true,
+      "target_entity_types": ["minecraft:pillager", "minecraft:vindicator", "minecraft:evoker", "minecraft:ravager", "minecraft:witch", "minecraft:zombie", "minecraft:zombie_villager", "minecraft:husk", "minecraft:drowned", "minecraft:skeleton", "minecraft:stray", "minecraft:wither_skeleton", "minecraft:bogged", "minecraft:phantom", "minecraft:creeper", "minecraft:spider", "minecraft:cave_spider", "minecraft:slime", "minecraft:magma_cube", "minecraft:enderman"],
+      "chance": 0.35,
+      "weight": 12
+    },
+    {
       "trigger": "combat.attack_landed",
       "text": "Take that!",
       "world_text_kind": "alert",

@@ -8,6 +8,7 @@
 - Added witnessed container forced-dialogue triggers: `container_theft` and `container_opened`.
 - Added chat-only forced-dialogue triggers: `container_theft_chat`, `container_opened_chat`, and `retaliation_started_chat`.
 - Added `retaliation_started_chat` support for non-player retaliation targets, broadcasting the villager line to nearby players.
+- Added `combat.flee_started` notification trigger for villagers that keep fleeing hostile mobs.
 - Added forced-dialogue chat `chance` support for occasional event callouts.
 - Added forced dialogue witness equipment filters for armed and unarmed villagers.
 - Added armed and unarmed villager filters across villager-backed pack rules, including dialogue options, lines, messages, openings, closings, pacify lines, notifications, gifts, pacification payments, and profession loot.

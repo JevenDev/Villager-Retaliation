@@ -66,6 +66,7 @@ const CONSTANTS = {
     "ambient.sleep_breathing",
     "ambient.sleep_murmur",
     "combat.retaliation_started",
+    "combat.flee_started",
     "combat.attack_landed",
     "combat.player_killed",
     "trade.completed",

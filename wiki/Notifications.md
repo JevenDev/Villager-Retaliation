@@ -106,7 +106,7 @@ The built-in notification file uses these trigger families:
 | Recruitment | `recruitment.follow_start`, `recruitment.follow_stop`, `recruitment.hired`, `recruitment.fired`, `recruitment.follower_death`, `recruitment.hired_death`, `recruitment.betrayed_follower_death` |
 | Reputation tiers | `reputation.tier.<level>.improved`, `reputation.tier.<level>.worsened` |
 | Ambient | `ambient.murmur`, `ambient.player_item`, `ambient.sleep_breathing`, `ambient.sleep_murmur` |
-| Combat | `combat.retaliation_started`, `combat.attack_landed`, `combat.player_killed` |
+| Combat | `combat.retaliation_started`, `combat.flee_started`, `combat.attack_landed`, `combat.player_killed` |
 | Trade | `trade.completed`, `trade.refused` |
 | Alerts | `alert.player_attacked_villager`, `alert.villager_damaged`, `alert.witness_attack.player`, `alert.witness_attack`, `alert.witness_death.player`, `alert.witness_death` |
 
@@ -146,6 +146,8 @@ Equipment-filtered notifications can use `requires_villager_armed` or `requires_
 Alert world text supports `{player}`, `{attacker}`, `{villager}`, `{villager_name}`, `{villager_kind}`, and `{profession}`. Use `alert.player_attacked_villager` for an immediate response from the damaged villager when the attacker is a player. If no entry matches, it falls back to `alert.villager_damaged`.
 
 `combat.retaliation_started` is emitted as world text when a villager or wandering trader acquires a new retaliation target. It supports `{target}`, `{target_name}`, `{target_kind}`, `{target_type}`, `{player}`, `{villager}`, `{villager_name}`, `{villager_kind}`, and `{profession}`. Use `target_entity_types` to target specific mobs or players.
+
+`combat.flee_started` is emitted as world text when a villager keeps fleeing from a remembered hostile instead of standing ground. It supports the same placeholders and `target_entity_types` filter as `combat.retaliation_started`. This is useful for unarmed villager help lines.
 
 `combat.attack_landed` is emitted as world text when a villager or wandering trader lands a damaging hit on a living target. It supports `{target}`, `{target_name}`, `{target_kind}`, `{target_type}`, `{player}`, `{villager}`, `{villager_name}`, `{villager_kind}`, and `{profession}`. Use `target_entity_types` to target specific mobs or players.
 

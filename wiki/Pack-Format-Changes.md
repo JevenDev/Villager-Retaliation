@@ -45,6 +45,7 @@ Pack-facing beta.11 changes focus on making data-driven behavior easier to exten
 - Added built-in `container_opened` forced dialogue trigger for configs that confront players when they open watched containers.
 - Added chat-only forced-dialogue triggers `container_theft_chat`, `container_opened_chat`, and `retaliation_started_chat` for villager-styled event lines that do not open the locked interaction screen.
 - Added non-player target support for `retaliation_started_chat`. When the retaliation target is not a player, the line is broadcast to nearby players instead of opening a player-facing conversation.
+- Added notification trigger `combat.flee_started` for villagers that keep fleeing a hostile instead of standing ground.
 - Added forced dialogue entry `chance` for `_chat` triggers so event callouts can be occasional instead of firing every time.
 - Added forced dialogue witness equipment filters `requires_witness_unarmed` / `witness_unarmed` and `requires_witness_armed` / `witness_armed`.
 - Added villager equipment filters `requires_villager_unarmed` / `villager_unarmed` and `requires_villager_armed` / `villager_armed` anywhere a pack rule is evaluated against a villager: dialogue options, lines, messages, openings, closings, pacify lines, notifications, gift preferences, gift rewards, pacification payments, and profession loot rules.
