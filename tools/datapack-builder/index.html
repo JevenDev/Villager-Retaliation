@@ -13,7 +13,7 @@
           <img src="./assets/villager_retaliation_logo.png" alt="Villager Retaliation logo">
           <div>
             <p class="eyebrow">Villager Retaliation</p>
-            <h1>Datapack Builder</h1>
+            <h1>Datapack Creator</h1>
           </div>
         </div>
         <div class="toolbar" aria-label="Datapack actions">
@@ -37,52 +37,129 @@
       </header>
 
       <main class="workspace">
-        <aside class="sidebar" aria-label="Project files and validation">
-          <section class="panel">
+        <aside class="left-rail" aria-label="Creator navigation">
+          <div class="rail-chrome">
+            <button class="rail-toggle rail-toggle-left is-on" id="left-panel-toggle-button" type="button" aria-pressed="true" aria-label="Hide left panel">
+              &lt;
+            </button>
+          </div>
+          <section class="panel workflow-panel">
             <div class="panel-title">
-              <h2>Files</h2>
+              <div>
+                <p class="eyebrow">Workflow</p>
+                <h2>Build Steps</h2>
+              </div>
+            </div>
+            <nav class="section-tabs" id="section-tabs" aria-label="Builder sections">
+              <button class="tab is-active has-tooltip" type="button" data-section="overview" data-tooltip="Set the datapack metadata, namespace, file slug, and locale.">
+                <span class="step-index" aria-hidden="true">01</span>
+                <span class="tab-copy">
+                  <span class="tab-label">Pack</span>
+                  <span class="tab-detail">Metadata and paths</span>
+                </span>
+                <span class="tab-count" aria-label="Pack status">Setup</span>
+              </button>
+              <button class="tab has-tooltip" type="button" data-section="dialogue" data-tooltip="Create talk options, villager lines, keyed messages, openings, closings, and pacify responses.">
+                <span class="step-index" aria-hidden="true">02</span>
+                <span class="tab-copy">
+                  <span class="tab-label">Dialogue</span>
+                  <span class="tab-detail">Talk options and lines</span>
+                </span>
+                <span class="tab-count" aria-label="Dialogue entry count">0</span>
+              </button>
+              <button class="tab has-tooltip" type="button" data-section="notifications" data-tooltip="Create HUD notifications and ambient world text entries.">
+                <span class="step-index" aria-hidden="true">03</span>
+                <span class="tab-copy">
+                  <span class="tab-label">Notifications</span>
+                  <span class="tab-detail">HUD and world text</span>
+                </span>
+                <span class="tab-count" aria-label="Notification entry count">0</span>
+              </button>
+              <button class="tab has-tooltip" type="button" data-section="gifts" data-tooltip="Define gift reactions, custom response keys, and high-reputation reward items.">
+                <span class="step-index" aria-hidden="true">04</span>
+                <span class="tab-copy">
+                  <span class="tab-label">Gifts</span>
+                  <span class="tab-detail">Reactions and rewards</span>
+                </span>
+                <span class="tab-count" aria-label="Gift entry count">0</span>
+              </button>
+              <button class="tab has-tooltip" type="button" data-section="pacification" data-tooltip="Define held-item payments that can calm hostile villagers or wandering traders.">
+                <span class="step-index" aria-hidden="true">05</span>
+                <span class="tab-copy">
+                  <span class="tab-label">Pacification</span>
+                  <span class="tab-detail">Peace payments</span>
+                </span>
+                <span class="tab-count" aria-label="Pacification entry count">0</span>
+              </button>
+              <button class="tab has-tooltip" type="button" data-section="stories" data-tooltip="Define structures and biomes that unlock share-story dialogue.">
+                <span class="step-index" aria-hidden="true">06</span>
+                <span class="tab-copy">
+                  <span class="tab-label">Stories</span>
+                  <span class="tab-detail">Structures and biomes</span>
+                </span>
+                <span class="tab-count" aria-label="Story entry count">0</span>
+              </button>
+              <button class="tab has-tooltip" type="button" data-section="names" data-tooltip="Replace or extend preset villager name pools.">
+                <span class="step-index" aria-hidden="true">07</span>
+                <span class="tab-copy">
+                  <span class="tab-label">Names</span>
+                  <span class="tab-detail">Preset name pools</span>
+                </span>
+                <span class="tab-count" aria-label="Name count">0</span>
+              </button>
+            </nav>
+          </section>
+
+          <section class="panel files-panel">
+            <div class="panel-title">
+              <div>
+                <p class="eyebrow">Output</p>
+                <h2>Generated Files</h2>
+              </div>
               <span id="file-count">0</span>
             </div>
             <div id="file-tree" class="file-tree"></div>
           </section>
-          <section class="panel">
+        </aside>
+
+        <section class="builder" aria-label="Datapack builder">
+          <div id="builder-panel" class="builder-panel"></div>
+        </section>
+
+        <aside class="right-rail" aria-label="Validation and preview">
+          <div class="rail-chrome">
+            <button class="rail-toggle rail-toggle-right is-on" id="right-panel-toggle-button" type="button" aria-pressed="true" aria-label="Hide right panel">
+              &gt;
+            </button>
+          </div>
+          <section class="panel checks-panel">
             <div class="panel-title">
-              <h2>Checks</h2>
+              <div>
+                <p class="eyebrow">Status</p>
+                <h2>Checks</h2>
+              </div>
               <span id="check-count">0</span>
             </div>
             <div id="checks" class="checks"></div>
           </section>
-        </aside>
 
-        <section class="builder" aria-label="Datapack builder">
-          <nav class="section-tabs" id="section-tabs" aria-label="Builder sections">
-            <button class="tab is-active has-tooltip" type="button" data-section="overview" data-tooltip="Set the datapack metadata, namespace, file slug, and locale." title="Set the datapack metadata, namespace, file slug, and locale.">Pack</button>
-            <button class="tab has-tooltip" type="button" data-section="dialogue" data-tooltip="Create talk options, villager lines, keyed messages, openings, closings, and pacify responses." title="Create talk options, villager lines, keyed messages, openings, closings, and pacify responses.">Dialogue</button>
-            <button class="tab has-tooltip" type="button" data-section="notifications" data-tooltip="Create HUD notifications and ambient world text entries." title="Create HUD notifications and ambient world text entries.">Notifications</button>
-            <button class="tab has-tooltip" type="button" data-section="gifts" data-tooltip="Define gift reactions, custom response keys, and high-reputation reward items." title="Define gift reactions, custom response keys, and high-reputation reward items.">Gifts</button>
-            <button class="tab has-tooltip" type="button" data-section="pacification" data-tooltip="Define held-item payments that can calm hostile villagers or wandering traders." title="Define held-item payments that can calm hostile villagers or wandering traders.">Pacification</button>
-            <button class="tab has-tooltip" type="button" data-section="stories" data-tooltip="Define structures and biomes that unlock share-story dialogue." title="Define structures and biomes that unlock share-story dialogue.">Stories</button>
-            <button class="tab has-tooltip" type="button" data-section="names" data-tooltip="Replace or extend preset villager name pools." title="Replace or extend preset villager name pools.">Names</button>
-          </nav>
-          <div id="builder-panel" class="builder-panel"></div>
-        </section>
-
-        <aside class="preview" aria-label="Generated JSON preview">
-          <div class="preview-header">
-            <div>
-              <p class="eyebrow">Output</p>
-              <h2 id="selected-path">pack.mcmeta</h2>
+          <section class="preview" aria-label="Generated JSON preview">
+            <div class="preview-header">
+              <div>
+                <p class="eyebrow">Preview</p>
+                <h2 id="selected-path">pack.mcmeta</h2>
+              </div>
+              <div class="preview-actions">
+                <button class="icon-button" id="copy-file-button" type="button" title="Copy current file">
+                  <span class="button-icon copy-icon" aria-hidden="true"></span>
+                </button>
+                <button class="icon-button" id="download-file-button" type="button" title="Download current file">
+                  <span class="button-icon download-icon" aria-hidden="true"></span>
+                </button>
+              </div>
             </div>
-            <div class="preview-actions">
-              <button class="icon-button" id="copy-file-button" type="button" title="Copy current file">
-                <span class="button-icon copy-icon" aria-hidden="true"></span>
-              </button>
-              <button class="icon-button" id="download-file-button" type="button" title="Download current file">
-                <span class="button-icon download-icon" aria-hidden="true"></span>
-              </button>
-            </div>
-          </div>
-          <pre class="code-preview"><code id="json-preview"></code></pre>
+            <pre class="code-preview"><code id="json-preview"></code></pre>
+          </section>
         </aside>
       </main>
     </div>

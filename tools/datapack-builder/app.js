@@ -450,8 +450,11 @@ let activeStoryKind = "structures";
 let editing = null;
 let selectedPath = "pack.mcmeta";
 let toastTimer = null;
+let showLeftPanel = true;
+let showRightPanel = true;
 
 const els = {
+  workspace: document.querySelector(".workspace"),
   tabs: document.querySelector("#section-tabs"),
   panel: document.querySelector("#builder-panel"),
   fileTree: document.querySelector("#file-tree"),
@@ -464,6 +467,8 @@ const els = {
   directoryInput: document.querySelector("#directory-input"),
   exportButton: document.querySelector("#export-button"),
   starterButton: document.querySelector("#starter-button"),
+  leftPanelToggleButton: document.querySelector("#left-panel-toggle-button"),
+  rightPanelToggleButton: document.querySelector("#right-panel-toggle-button"),
   copyButton: document.querySelector("#copy-file-button"),
   downloadButton: document.querySelector("#download-file-button"),
   toast: document.querySelector("#toast")
@@ -528,7 +533,7 @@ function escapeHtml(value) {
 function tooltipAttrs(text, className = "tooltip-label") {
   if (!text) return "";
   const tooltip = escapeHtml(text);
-  return ` class="${className}" data-tooltip="${tooltip}" title="${tooltip}" tabindex="0"`;
+  return ` class="${className}" data-tooltip="${tooltip}" tabindex="0"`;
 }
 
 function tooltipForField(id, help = "") {
@@ -804,6 +809,7 @@ function validate() {
 }
 
 function render() {
+  renderWorkspaceChrome();
   renderTabs();
   renderPanel();
   renderFiles();
@@ -811,9 +817,58 @@ function render() {
   renderPreview();
 }
 
+function renderWorkspaceChrome() {
+  els.workspace.classList.toggle("is-left-hidden", !showLeftPanel);
+  els.workspace.classList.toggle("is-right-hidden", !showRightPanel);
+  els.leftPanelToggleButton.classList.toggle("is-on", showLeftPanel);
+  els.leftPanelToggleButton.setAttribute("aria-pressed", String(showLeftPanel));
+  els.leftPanelToggleButton.setAttribute("aria-label", showLeftPanel ? "Hide left panel" : "Show left panel");
+  els.leftPanelToggleButton.textContent = showLeftPanel ? "<" : ">";
+  els.rightPanelToggleButton.classList.toggle("is-on", showRightPanel);
+  els.rightPanelToggleButton.setAttribute("aria-pressed", String(showRightPanel));
+  els.rightPanelToggleButton.setAttribute("aria-label", showRightPanel ? "Hide right panel" : "Show right panel");
+  els.rightPanelToggleButton.textContent = showRightPanel ? ">" : "<";
+}
+
+function totalEntries(...collections) {
+  return collections.reduce((sum, collection) => sum + (Array.isArray(collection) ? collection.length : 0), 0);
+}
+
+function sectionCounts() {
+  return {
+    overview: state.meta.packName && state.meta.namespace && state.meta.slug ? "Ready" : "Setup",
+    dialogue: totalEntries(
+      state.dialogue.options,
+      state.dialogue.lines,
+      state.dialogue.messages,
+      state.dialogue.openings,
+      state.dialogue.closings,
+      state.dialogue.pacify
+    ),
+    notifications: totalEntries(state.notifications.notifications),
+    gifts: totalEntries(state.gifts.preferences, state.gifts.rewards),
+    pacification: totalEntries(state.pacification.payments),
+    stories: totalEntries(state.stories.structures, state.stories.biomes),
+    names: totalEntries(state.names.male_names, state.names.female_names)
+  };
+}
+
 function renderTabs() {
+  const counts = sectionCounts();
   for (const tab of els.tabs.querySelectorAll(".tab")) {
-    tab.classList.toggle("is-active", tab.dataset.section === activeSection);
+    const active = tab.dataset.section === activeSection;
+    const value = counts[tab.dataset.section] ?? "";
+    const counter = tab.querySelector(".tab-count");
+    tab.classList.toggle("is-active", active);
+    if (active) {
+      tab.setAttribute("aria-current", "step");
+    } else {
+      tab.removeAttribute("aria-current");
+    }
+    if (counter) {
+      counter.textContent = String(value);
+      counter.classList.toggle("is-empty", value === 0 || value === "Setup");
+    }
   }
 }
 
@@ -932,7 +987,7 @@ function renderValueTags(fieldId, tags) {
       ${tags.map((tag) => {
         const tooltip = tooltipForTag(fieldId, tag);
         return `
-          <button class="value-tag has-tooltip" type="button" data-action="insert-tag" data-target="${escapeHtml(fieldId)}" data-value="${escapeHtml(tag)}" data-tooltip="${escapeHtml(tooltip)}" title="${escapeHtml(tooltip)}">
+          <button class="value-tag has-tooltip" type="button" data-action="insert-tag" data-target="${escapeHtml(fieldId)}" data-value="${escapeHtml(tag)}" data-tooltip="${escapeHtml(tooltip)}">
             ${escapeHtml(tag)}
           </button>
         `;
@@ -944,9 +999,11 @@ function renderValueTags(fieldId, tags) {
 function toggle({ id, label, checked = false, tooltip = "" }) {
   const tip = tooltip || tooltipForField(id, "") || tooltipForFlag(id.replace(/^[^-]+-/, ""));
   return `
-    <label class="toggle has-tooltip" for="${id}" data-tooltip="${escapeHtml(tip)}" title="${escapeHtml(tip)}">
+    <label class="toggle has-tooltip" for="${id}" data-tooltip="${escapeHtml(tip)}">
       <input id="${id}" name="${id}" type="checkbox" ${checked ? "checked" : ""}>
-      <span>${escapeHtml(label)}</span>
+      <span class="toggle-name">${escapeHtml(label)}</span>
+      <span class="toggle-choice toggle-false" aria-hidden="true">False</span>
+      <span class="toggle-choice toggle-true" aria-hidden="true">True</span>
     </label>
   `;
 }
@@ -974,13 +1031,13 @@ function renderOverview() {
         </div>
         <span class="pill">Minecraft 1.21.1 docs</span>
       </div>
-      <div class="form-grid">
-        ${field({ id: "meta-packName", label: "Pack name", value: state.meta.packName })}
-        ${field({ id: "meta-packFormat", label: "Pack format", value: state.meta.packFormat, type: "number", help: "The wiki example uses 34 for this mod target." })}
-        ${field({ id: "meta-namespace", label: "Story namespace", value: state.meta.namespace, help: "Story discovery can use your namespace." })}
-        ${field({ id: "meta-slug", label: "File slug", value: state.meta.slug, help: "Used in generated file names." })}
-        ${field({ id: "meta-locale", label: "Locale", value: state.meta.locale, help: "Dialogue and notifications load en_us first, then player locale." })}
-        ${textareaField({ id: "meta-description", label: "Description", value: state.meta.description, className: "full", rows: 2 })}
+      <div class="form-grid overview-grid">
+        ${field({ id: "meta-packName", label: "Pack name", value: state.meta.packName, className: "span-7" })}
+        ${field({ id: "meta-packFormat", label: "Pack format", value: state.meta.packFormat, type: "number", help: "Use 34 for this Minecraft target.", className: "span-5" })}
+        ${field({ id: "meta-namespace", label: "Story namespace", value: state.meta.namespace, help: "Story discovery can use your namespace.", className: "span-6" })}
+        ${field({ id: "meta-slug", label: "File slug", value: state.meta.slug, help: "Used in generated file names.", className: "span-6" })}
+        ${field({ id: "meta-locale", label: "Locale", value: state.meta.locale, help: "Dialogue and notifications load en_us first.", className: "span-5" })}
+        ${textareaField({ id: "meta-description", label: "Description", value: state.meta.description, className: "span-12", rows: 2 })}
       </div>
     </div>
   `;
@@ -990,7 +1047,7 @@ function renderEntryTabs(kinds, activeKey, scope) {
   return `
     <div class="entry-tabs" data-scope="${scope}">
       ${kinds.map((kind) => `
-        <button class="entry-tab has-tooltip ${kind.key === activeKey ? "is-active" : ""}" type="button" data-kind="${kind.key}" data-tooltip="${escapeHtml(KIND_TOOLTIPS[`${scope}.${kind.key}`] || "")}" title="${escapeHtml(KIND_TOOLTIPS[`${scope}.${kind.key}`] || "")}">
+        <button class="entry-tab has-tooltip ${kind.key === activeKey ? "is-active" : ""}" type="button" data-kind="${kind.key}" data-tooltip="${escapeHtml(KIND_TOOLTIPS[`${scope}.${kind.key}`] || "")}">
           ${escapeHtml(kind.label)}
         </button>
       `).join("")}
@@ -1009,12 +1066,15 @@ function renderEntryList(collection, kind, section) {
       const active = editing && editing.section === section && editing.kind === kind && editing.index === index;
       return `
         <article class="entry-card ${active ? "is-active" : ""}">
-          <strong>${escapeHtml(title)}</strong>
-          ${detail ? `<small>${escapeHtml(detail)}</small>` : ""}
-          <div class="entry-actions">
-            <button type="button" data-action="edit-entry" data-section="${section}" data-kind="${kind}" data-index="${index}">Edit</button>
-            <button class="danger" type="button" data-action="delete-entry" data-section="${section}" data-kind="${kind}" data-index="${index}">Delete</button>
+          <div class="entry-object-header">
+            <button class="entry-object-title" type="button" data-action="edit-entry" data-section="${section}" data-kind="${kind}" data-index="${index}">
+              ${escapeHtml(title)}
+            </button>
+            <button class="entry-delete danger" type="button" data-action="delete-entry" data-section="${section}" data-kind="${kind}" data-index="${index}" aria-label="Delete ${escapeHtml(title)}">
+              <span class="trash-icon" aria-hidden="true"></span>
+            </button>
           </div>
+          ${detail ? `<small>${escapeHtml(detail)}</small>` : ""}
         </article>
       `;
     })
@@ -1882,6 +1942,17 @@ function isTextPath(path) {
   return /\.(json|mcmeta|mcfunction|txt|md|lang)$/i.test(path);
 }
 
+function importedKnownKind(path) {
+  if (/^data\/villagerretaliation\/dialogue\/[^/]+\/.+\.json$/.test(path)) return "dialogue";
+  if (/^data\/villagerretaliation\/notifications\/[^/]+\/.+\.json$/.test(path)) return "notifications";
+  if (/^data\/villagerretaliation\/gifts\/.+\.json$/.test(path)) return "gifts";
+  if (/^data\/villagerretaliation\/pacification\/.+\.json$/.test(path)) return "pacification";
+  if (/^data\/[^/]+\/story_structures\/.+\.json$/.test(path)) return "story_structures";
+  if (/^data\/[^/]+\/story_biomes\/.+\.json$/.test(path)) return "story_biomes";
+  if (path === namesPath()) return "names";
+  return "";
+}
+
 async function handleImport(files, replaceProject = false) {
   if (!files.length) return;
   if (replaceProject) {
@@ -1907,6 +1978,14 @@ async function handleImport(files, replaceProject = false) {
 
 function ingestFiles(files) {
   const extra = {};
+  const knownCounts = {};
+  for (const path of Object.keys(files)) {
+    const normalizedPath = path.replace(/^\/+/, "");
+    const kind = importedKnownKind(normalizedPath);
+    if (kind) {
+      knownCounts[kind] = (knownCounts[kind] || 0) + 1;
+    }
+  }
   for (const [path, value] of Object.entries(files)) {
     const normalizedPath = path.replace(/^\/+/, "");
     if (normalizedPath.endsWith("/")) continue;
@@ -1918,6 +1997,11 @@ function ingestFiles(files) {
       } catch {
         extra[normalizedPath] = value;
       }
+      continue;
+    }
+    const knownKind = importedKnownKind(normalizedPath);
+    if (knownKind && knownCounts[knownKind] > 1) {
+      extra[normalizedPath] = value;
       continue;
     }
     if (typeof value === "string" && ingestKnownJson(normalizedPath, value)) {
@@ -2332,6 +2416,14 @@ els.directoryInput.addEventListener("change", async () => {
 
 els.exportButton.addEventListener("click", exportZip);
 els.starterButton.addEventListener("click", loadStarterPack);
+els.leftPanelToggleButton.addEventListener("click", () => {
+  showLeftPanel = !showLeftPanel;
+  renderWorkspaceChrome();
+});
+els.rightPanelToggleButton.addEventListener("click", () => {
+  showRightPanel = !showRightPanel;
+  renderWorkspaceChrome();
+});
 els.copyButton.addEventListener("click", copyCurrentFile);
 els.downloadButton.addEventListener("click", downloadCurrentFile);
 
