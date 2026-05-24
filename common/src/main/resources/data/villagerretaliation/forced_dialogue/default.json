@@ -39,6 +39,46 @@
           "order": 2
         }
       ]
+    },
+    {
+      "id": "witnessed_container_opened",
+      "trigger": "container_opened",
+      "priority": 0,
+      "witness_radius": 12.0,
+      "requires_line_of_sight": true,
+      "initiate_dialogue": true,
+      "aggro_immediately": false,
+      "reputation": -4,
+      "line": "Careful. That {container} is not yours to rummage through.",
+      "options": [
+        {
+          "id": "apologize",
+          "label": "Apologize",
+          "response": "Then close it and leave it as you found it.",
+          "reputation": 1,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 0
+        },
+        {
+          "id": "deny",
+          "label": "Deny it",
+          "response": "I saw the lid open. Do not test my patience.",
+          "reputation": -2,
+          "aggro": true,
+          "end_conversation": true,
+          "order": 1
+        },
+        {
+          "id": "threaten",
+          "label": "Threaten them",
+          "response": "Then we are past talking.",
+          "reputation": -6,
+          "aggro": true,
+          "end_conversation": true,
+          "order": 2
+        }
+      ]
     }
   ]
 }

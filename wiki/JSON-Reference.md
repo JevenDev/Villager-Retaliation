@@ -148,7 +148,7 @@ Forced dialogue files live under:
 data/villagerretaliation/forced_dialogue/*.json
 ```
 
-They define event-driven dialogue moments that can interrupt the player with a locked option list. The first built-in trigger is `container_theft`, fired when a player removes items from a chest, barrel, or shulker box after a villager witnesses the theft with line of sight.
+They define event-driven dialogue moments that can interrupt the player with a locked option list. Built-in triggers include `container_theft`, fired when a player removes items from a chest, barrel, or shulker box after a villager witnesses the theft with line of sight, and `container_opened`, fired when the server config watches container opening instead of theft.
 
 ```json
 {
@@ -181,7 +181,7 @@ They define event-driven dialogue moments that can interrupt the player with a l
 }
 ```
 
-Forced dialogue supports either one root object or an `entries` array. `priority` chooses between multiple matching definitions, with lower numbers winning. Template tokens currently include `{villager}`, `{player}`, `{container}`, `{count}`, `{item}`, `{x}`, `{y}`, and `{z}`.
+Forced dialogue supports either one root object or an `entries` array. `priority` chooses between multiple matching definitions, with lower numbers winning. Entries can optionally use `loot_table` or `loot_tables` to match specific generated container loot tables. Template tokens currently include `{villager}`, `{player}`, `{container}`, `{count}`, `{item}`, `{loot_table}`, `{x}`, `{y}`, and `{z}`.
 
 ## Village Event Tags
 

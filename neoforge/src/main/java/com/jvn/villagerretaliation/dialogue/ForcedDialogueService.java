@@ -1,7 +1,9 @@
 package com.jvn.villagerretaliation.dialogue;
 
 import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
+import com.jvn.villagerretaliation.config.ContainerForcedDialogueTrigger;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.config.WatchedContainerScope;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources.ForcedDialogueContext;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources.ForcedDialogueDefinition;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources.ForcedDialogueOption;
@@ -18,18 +20,23 @@ import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.RandomizableContainer;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.AbstractChestBlock;
 import net.minecraft.world.level.block.BarrelBlock;
 import net.minecraft.world.level.block.ShulkerBoxBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -55,14 +62,16 @@ public final class ForcedDialogueService {
             return;
         }
 
-        BlockState state = level.getBlockState(event.getPos());
-        if (!isWatchedContainer(state)) {
+        BlockPos pos = event.getPos();
+        BlockState state = level.getBlockState(pos);
+        ResourceLocation lootTable = containerLootTable(level, pos);
+        if (!isEligibleWatchedContainer(state, lootTable)) {
             return;
         }
 
         RECENT_CONTAINER_CLICKS.put(
                 player.getUUID(),
-                new RecentContainerClick(level.dimension(), event.getPos().immutable(), level.getGameTime(), state.getBlock().getName())
+                new RecentContainerClick(level.dimension(), pos.immutable(), level.getGameTime(), state.getBlock().getName(), lootTable)
         );
     }
 
@@ -79,10 +88,28 @@ public final class ForcedDialogueService {
             return;
         }
 
+        BlockState state = level.getBlockState(click.pos());
+        if (!isEligibleWatchedContainer(state, click.lootTable())) {
+            return;
+        }
+
         int itemCount = countContainerItems(event.getContainer());
+        ContainerSnapshot snapshot = new ContainerSnapshot(
+                click.dimension(),
+                click.pos(),
+                click.containerName(),
+                click.lootTable(),
+                itemCount,
+                level.getGameTime()
+        );
+        if (VillagerRetaliationConfig.CONTAINER_FORCED_DIALOGUE_TRIGGER.get() == ContainerForcedDialogueTrigger.OPENING) {
+            triggerContainerOpened(level, player, snapshot);
+            return;
+        }
+
         OPEN_CONTAINER_SNAPSHOTS.put(
                 player.getUUID(),
-                new ContainerSnapshot(click.dimension(), click.pos(), click.containerName(), itemCount, level.getGameTime())
+                snapshot
         );
     }
 
@@ -155,8 +182,17 @@ public final class ForcedDialogueService {
             ContainerSnapshot snapshot,
             int removedCount) {
         ForcedDialogueResources
-                .select(level.getServer(), ForcedDialogueTrigger.CONTAINER_THEFT)
+                .select(level.getServer(), ForcedDialogueTrigger.CONTAINER_THEFT, snapshot.lootTable())
                 .ifPresent(definition -> trigger(level, player, snapshot, removedCount, definition));
+    }
+
+    private static void triggerContainerOpened(
+            ServerLevel level,
+            ServerPlayer player,
+            ContainerSnapshot snapshot) {
+        ForcedDialogueResources
+                .select(level.getServer(), ForcedDialogueTrigger.CONTAINER_OPENED, snapshot.lootTable())
+                .ifPresent(definition -> trigger(level, player, snapshot, 0, definition));
     }
 
     private static void trigger(
@@ -176,6 +212,7 @@ public final class ForcedDialogueService {
                 "items",
                 removedCount,
                 snapshot.containerName().getString(),
+                snapshot.lootTable() == null ? "" : snapshot.lootTable().toString(),
                 snapshot.pos().getX(),
                 snapshot.pos().getY(),
                 snapshot.pos().getZ()
@@ -250,6 +287,23 @@ public final class ForcedDialogueService {
                 || state.getBlock() instanceof ShulkerBoxBlock;
     }
 
+    private static boolean isEligibleWatchedContainer(BlockState state, ResourceLocation lootTable) {
+        if (!isWatchedContainer(state) && lootTable == null) {
+            return false;
+        }
+        return VillagerRetaliationConfig.WATCHED_CONTAINER_SCOPE.get() != WatchedContainerScope.WORLD_GENERATED_ONLY
+                || lootTable != null;
+    }
+
+    private static ResourceLocation containerLootTable(ServerLevel level, BlockPos pos) {
+        BlockEntity blockEntity = level.getBlockEntity(pos);
+        if (blockEntity instanceof RandomizableContainer container) {
+            ResourceKey<LootTable> lootTable = container.getLootTable();
+            return lootTable == null ? null : lootTable.location();
+        }
+        return null;
+    }
+
     private static int countContainerItems(AbstractContainerMenu menu) {
         int count = 0;
         for (Slot slot : menu.slots) {
@@ -268,13 +322,15 @@ public final class ForcedDialogueService {
             net.minecraft.resources.ResourceKey<Level> dimension,
             BlockPos pos,
             long gameTime,
-            Component containerName) {
+            Component containerName,
+            ResourceLocation lootTable) {
     }
 
     private record ContainerSnapshot(
             net.minecraft.resources.ResourceKey<Level> dimension,
             BlockPos pos,
             Component containerName,
+            ResourceLocation lootTable,
             int itemCount,
             long gameTime) {
     }

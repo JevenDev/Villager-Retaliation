@@ -55,7 +55,11 @@ or an `entries` array:
 | `initiate_dialogue` | boolean | `true` | Opens the locked interaction screen when true; otherwise only says `line`. |
 | `aggro_immediately` | boolean | `false` | Makes the witness attack immediately after the event line. |
 | `reputation` | integer | `0` | Reputation change applied to the witnessing villager when the event is caught. |
+| `loot_table` | string | none | Optional single loot table id this entry can match. |
+| `loot_tables` | array | none | Optional loot table ids this entry can match. If omitted, the entry can match any watched container. |
 | `options` | array | generated Leave option | Choices shown in the forced dialogue screen. |
+
+When multiple entries match, lower `priority` wins. If priority is tied, an entry with matching `loot_table` or `loot_tables` wins over a generic entry.
 
 ## Option Fields
 
@@ -75,6 +79,10 @@ or an `entries` array:
 
 Fires when a player opens a watched container and closes it with fewer items than it had when opened.
 
+### `container_opened`
+
+Fires when a player opens a watched container. This trigger is used when the server config's container forced-dialogue trigger is set to `OPENING`.
+
 Watched containers:
 
 ```text
@@ -83,7 +91,20 @@ barrels
 shulker boxes
 ```
 
-The built-in event requires a villager witness with line of sight to the player and the container block. If no adult villager can witness the theft, no forced dialogue starts.
+The built-in events require a villager witness with line of sight to the player and the container block. If no adult villager can witness the event, no forced dialogue starts.
+
+Server config controls whether watched containers trigger on actual theft or on opening. It also controls whether watched containers include all watched containers or only containers that have an unresolved loot table when clicked. Loot-table detection uses Minecraft's `RandomizableContainer` interface, so modded generated containers can participate when they expose loot tables the same way vanilla generated containers do.
+
+Forced dialogue entries can optionally filter by generated container loot table:
+
+```json
+{
+  "id": "examplepack.armorer_chest_opened",
+  "trigger": "container_opened",
+  "loot_tables": ["minecraft:chests/village/village_armorer"],
+  "line": "That chest belongs to the armorer."
+}
+```
 
 ## Placeholders
 
@@ -95,12 +116,13 @@ Forced dialogue `line` and option `response` text can use:
 {container}
 {count}
 {item}
+{loot_table}
 {x}
 {y}
 {z}
 ```
 
-`{container}` is the block display name, `{count}` is the number of removed items, and `{x}`, `{y}`, `{z}` are the container position.
+`{container}` is the block display name, `{count}` is the number of removed items for `container_theft`, `{loot_table}` is the matched generated loot table id when one exists, and `{x}`, `{y}`, `{z}` are the container position.
 
 ## Example
 

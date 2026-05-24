@@ -75,7 +75,7 @@ const CONSTANTS = {
     "alert.witness_death.player",
     "alert.witness_death"
   ],
-  forcedDialogueTriggers: ["container_theft"],
+  forcedDialogueTriggers: ["container_theft", "container_opened"],
   reputationLevels: ["royalty", "revered", "respected", "trusted", "neutral", "suspicious", "hostile", "despised", "feared"],
   hudKinds: [
     "default",
@@ -276,7 +276,7 @@ const FIELD_TOOLTIPS = {
   "dialogue-outcomes": "Pacification result filter, such as success, not_enough_emeralds, blocked_by_reputation, or not_applicable.",
   "forcedDialogue-fileName": "Creates data/villagerretaliation/forced_dialogue/<file>.json. Use default only when replacing the built-in theft confrontation.",
   "forced-id": "Stable id for this forced dialogue rule. Duplicate ids can override or collide depending on load order.",
-  "forced-trigger": "Event trigger for the forced conversation. container_theft fires when a villager sees the player take from a container.",
+  "forced-trigger": "Event trigger for the forced conversation. container_theft fires after items are removed; container_opened fires when config watches container opening.",
   "forced-line": "Villager line shown when the forced conversation opens.",
   "forced-priority": "Higher priority wins when multiple forced dialogue rules match the same event.",
   "forced-witness_radius": "Maximum block distance for witnesses to detect the event.",
@@ -1404,6 +1404,10 @@ function validate() {
   if (badForcedNumber) {
     addCheck(checks, "error", "Forced dialogue number", `${humanize(badForcedNumber)} has an invalid number.`);
   }
+  const blankForcedList = firstBlankListValue(state.forcedDialogue.entries, ["loot_tables"]);
+  if (blankForcedList) {
+    addCheck(checks, "warning", "Forced dialogue list", `${humanize(blankForcedList)} contains a blank value.`);
+  }
   for (const entry of state.forcedDialogue.entries) {
     const options = Array.isArray(entry.options) ? entry.options : [];
     for (const option of options) {
@@ -2107,6 +2111,7 @@ function renderForcedDialogue() {
             ${field({ id: "forced-priority", label: "Priority", value: entry.priority ?? "", type: "number" })}
             ${field({ id: "forced-witness_radius", label: "Witness radius", value: entry.witness_radius ?? "", type: "number", attrs: 'min="1" step="1"' })}
             ${field({ id: "forced-reputation", label: "Reputation change", value: entry.reputation ?? "", type: "number" })}
+            ${listField({ id: "forced-loot_tables", label: "Loot tables", value: entry.loot_tables ?? entry.loot_table, help: "Optional. Match generated containers from loot tables like minecraft:chests/village/village_armorer." })}
             <div class="field full">
               <label>Event Behavior</label>
               <div class="toggle-grid">
@@ -2469,6 +2474,7 @@ function saveForcedDialogue(event) {
     initiate_dialogue: readValue("forced-initiate_dialogue"),
     aggro_immediately: readValue("forced-aggro_immediately"),
     reputation: parseInteger(readValue("forced-reputation")),
+    loot_tables: readList("forced-loot_tables"),
     options
   };
   upsertEntry("forcedDialogue", "entries", cleanObject(entry));

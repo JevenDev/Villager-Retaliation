@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.packs.resources.Resource;
@@ -35,10 +36,12 @@ public final class ForcedDialogueResources {
         cachedDialogues = CachedForcedDialogues.empty();
     }
 
-    public static Optional<ForcedDialogueDefinition> select(MinecraftServer server, ForcedDialogueTrigger trigger) {
+    public static Optional<ForcedDialogueDefinition> select(MinecraftServer server, ForcedDialogueTrigger trigger, ResourceLocation lootTable) {
         return load(server).stream()
                 .filter(definition -> definition.trigger() == trigger)
-                .min(Comparator.comparingInt(ForcedDialogueDefinition::priority));
+                .filter(definition -> definition.matchesLootTable(lootTable))
+                .min(Comparator.comparingInt(ForcedDialogueDefinition::priority)
+                        .thenComparing(definition -> definition.lootTables().isEmpty() ? 1 : 0));
     }
 
     private static List<ForcedDialogueDefinition> load(MinecraftServer server) {
@@ -133,8 +136,23 @@ public final class ForcedDialogueResources {
                 Math.max(1.0D, readDouble(entry, "witness_radius", 12.0D)),
                 readInt(entry, "reputation", 0),
                 readInt(entry, "priority", 0),
+                readLootTables(entry),
                 options
         ));
+    }
+
+    private static Set<ResourceLocation> readLootTables(JsonObject entry) {
+        java.util.LinkedHashSet<ResourceLocation> lootTables = new java.util.LinkedHashSet<>();
+        readResourceLocation(entry, "loot_table").ifPresent(lootTables::add);
+        JsonArray entries = entry.getAsJsonArray("loot_tables");
+        if (entries != null) {
+            for (JsonElement element : entries) {
+                if (element.isJsonPrimitive()) {
+                    parseResourceLocation(element.getAsString()).ifPresent(lootTables::add);
+                }
+            }
+        }
+        return Set.copyOf(lootTables);
     }
 
     private static List<ForcedDialogueOption> readOptions(JsonObject entry) {
@@ -178,6 +196,7 @@ public final class ForcedDialogueResources {
         replacements.put("item", context.itemName());
         replacements.put("count", Integer.toString(context.itemCount()));
         replacements.put("container", context.containerName());
+        replacements.put("loot_table", context.lootTable());
         replacements.put("x", Integer.toString(context.x()));
         replacements.put("y", Integer.toString(context.y()));
         replacements.put("z", Integer.toString(context.z()));
@@ -199,6 +218,17 @@ public final class ForcedDialogueResources {
     private static String readString(JsonObject entry, String key) {
         JsonElement element = entry.get(key);
         return element == null || !element.isJsonPrimitive() ? "" : element.getAsString().trim();
+    }
+
+    private static Optional<ResourceLocation> readResourceLocation(JsonObject entry, String key) {
+        return parseResourceLocation(readString(entry, key));
+    }
+
+    private static Optional<ResourceLocation> parseResourceLocation(String value) {
+        if (value == null || value.isBlank()) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(ResourceLocation.tryParse(value.trim()));
     }
 
     private static int readInt(JsonObject entry, String key, int fallback) {
@@ -246,7 +276,8 @@ public final class ForcedDialogueResources {
     }
 
     public enum ForcedDialogueTrigger {
-        CONTAINER_THEFT
+        CONTAINER_THEFT,
+        CONTAINER_OPENED
     }
 
     public record ForcedDialogueDefinition(
@@ -259,7 +290,11 @@ public final class ForcedDialogueResources {
             double witnessRadius,
             int reputationDelta,
             int priority,
+            Set<ResourceLocation> lootTables,
             List<ForcedDialogueOption> options) {
+        private boolean matchesLootTable(ResourceLocation lootTable) {
+            return this.lootTables.isEmpty() || (lootTable != null && this.lootTables.contains(lootTable));
+        }
     }
 
     public record ForcedDialogueOption(
@@ -278,6 +313,7 @@ public final class ForcedDialogueResources {
             String itemName,
             int itemCount,
             String containerName,
+            String lootTable,
             int x,
             int y,
             int z) {

@@ -42,9 +42,10 @@ Pack-facing beta.11 changes focus on making data-driven behavior easier to exten
 
 - Added [Forced Dialogue JSON](Forced-Dialogue.md) under `data/villagerretaliation/forced_dialogue/` for event-driven locked dialogue moments.
 - Added built-in `container_theft` forced dialogue trigger for witnessed chest, barrel, and shulker theft.
-- Added forced dialogue entry fields: `trigger`, `event`, `line`, `priority`, `witness_radius`, `requires_line_of_sight`, `initiate_dialogue`, `aggro_immediately`, `reputation`, and `options`.
+- Added built-in `container_opened` forced dialogue trigger for configs that confront players when they open watched containers.
+- Added forced dialogue entry fields: `trigger`, `event`, `line`, `priority`, `witness_radius`, `requires_line_of_sight`, `initiate_dialogue`, `aggro_immediately`, `reputation`, `loot_table`, `loot_tables`, and `options`.
 - Added forced dialogue option fields: `id`, `label`, `response`, `reputation`, `aggro`, `end_conversation`, and `order`.
-- Added forced dialogue placeholders: `{villager}`, `{player}`, `{container}`, `{count}`, `{item}`, `{x}`, `{y}`, and `{z}`.
+- Added forced dialogue placeholders: `{villager}`, `{player}`, `{container}`, `{count}`, `{item}`, `{loot_table}`, `{x}`, `{y}`, and `{z}`.
 - Added forced dialogue editing, import, preview, validation, starter data, and export support to the [Datapack Generator](Datapack-Generator.md).
 - Added documentation for resource-pack language keys used by the interaction GUI, generated family and relationship rows, reputation overlays, villager chat labels, gender labels, mood labels, and fallback profession labels.
 - Added [Localization Guide](Localization.md) to explain how datapack locale folders and resource-pack language files work together.
