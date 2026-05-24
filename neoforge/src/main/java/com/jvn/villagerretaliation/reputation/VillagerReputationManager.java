@@ -3,11 +3,14 @@ package com.jvn.villagerretaliation.reputation;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
+import com.jvn.villagerretaliation.network.VillagerWorldTextIndicatorKind;
 import com.jvn.villagerretaliation.notification.ResolvedVillagerNotification;
 import com.jvn.villagerretaliation.notification.VillagerNotifications;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
@@ -25,7 +28,7 @@ public final class VillagerReputationManager {
     private static final long DAY_TICKS = 24000L;
     private static final long SYNC_CACHE_TTL_TICKS = 20L * 60L * 5L;
     private static final long SYNC_CACHE_PRUNE_INTERVAL_TICKS = 20L * 10L;
-    private static final Map<UUID, Map<ResolvedVillagerNotification, Integer>> PENDING_TIER_MESSAGES = new LinkedHashMap<>();
+    private static final Map<UUID, List<PendingTierMessage>> PENDING_TIER_MESSAGES = new LinkedHashMap<>();
     private static final Map<SyncKey, SyncedReputation> LAST_SYNCED_REPUTATION = new LinkedHashMap<>();
     private static long nextSyncCachePruneGameTime;
 
@@ -244,16 +247,20 @@ public final class VillagerReputationManager {
             return;
         }
 
-        notifyTierChange(player, resolveTierChangeNotification(level, villager, player, previousLevel, newLevel));
+        notifyTierChange(player, new PendingTierMessage(
+                resolveTierChangeNotification(level, villager, player, previousLevel, newLevel),
+                previousLevel,
+                newLevel
+        ));
         spawnTierChangeParticles(level, villager, previousLevel, newLevel);
         if (player instanceof ServerPlayer serverPlayer) {
             VillagerReputationAdvancements.onReputationTierChanged(level, villager, serverPlayer, previousLevel, newLevel);
         }
     }
 
-    private static void notifyTierChange(Player player, ResolvedVillagerNotification notification) {
-        PENDING_TIER_MESSAGES.computeIfAbsent(player.getUUID(), ignored -> new LinkedHashMap<>())
-                .merge(notification, 1, Integer::sum);
+    private static void notifyTierChange(Player player, PendingTierMessage message) {
+        PENDING_TIER_MESSAGES.computeIfAbsent(player.getUUID(), ignored -> new ArrayList<>())
+                .add(message);
     }
 
     private static ResolvedVillagerNotification resolveTierChangeNotification(
@@ -314,27 +321,67 @@ public final class VillagerReputationManager {
             return;
         }
 
-        Map<UUID, Map<ResolvedVillagerNotification, Integer>> pendingMessages = new LinkedHashMap<>(PENDING_TIER_MESSAGES);
+        Map<UUID, List<PendingTierMessage>> pendingMessages = new LinkedHashMap<>(PENDING_TIER_MESSAGES);
         PENDING_TIER_MESSAGES.clear();
-        for (Map.Entry<UUID, Map<ResolvedVillagerNotification, Integer>> playerEntry : pendingMessages.entrySet()) {
+        for (Map.Entry<UUID, List<PendingTierMessage>> playerEntry : pendingMessages.entrySet()) {
             ServerPlayer player = server.getPlayerList().getPlayer(playerEntry.getKey());
             if (player == null) {
                 continue;
             }
-            for (Map.Entry<ResolvedVillagerNotification, Integer> messageEntry : playerEntry.getValue().entrySet()) {
-                ResolvedVillagerNotification notification = messageEntry.getKey();
-                if (messageEntry.getValue() > 1) {
-                    notification = new ResolvedVillagerNotification(
-                            notification.text() + " x" + messageEntry.getValue(),
-                            notification.textColor(),
-                            notification.chatColor(),
-                            notification.noticeKind(),
-                            notification.worldTextKind()
-                    );
-                }
-                VillagerReputationNetworking.sendNotice(player, notification);
+            if (VillagerRetaliationConfig.COLLAPSE_REPUTATION_CHANGE_NOTIFICATIONS.get()) {
+                sendCollapsedTierChangeMessages(player, playerEntry.getValue());
+            } else {
+                sendUncollapsedTierChangeMessages(player, playerEntry.getValue());
             }
         }
+    }
+
+    private static void sendUncollapsedTierChangeMessages(ServerPlayer player, List<PendingTierMessage> messages) {
+        for (PendingTierMessage message : messages) {
+            VillagerReputationNetworking.sendNotice(player, message.notification());
+        }
+    }
+
+    private static void sendCollapsedTierChangeMessages(ServerPlayer player, List<PendingTierMessage> messages) {
+        Map<TierMessageGroupKey, CollapsedTierMessage> collapsedMessages = new LinkedHashMap<>();
+        for (PendingTierMessage message : messages) {
+            collapsedMessages.computeIfAbsent(message.groupKey(), ignored -> new CollapsedTierMessage(message))
+                    .increment();
+        }
+        for (CollapsedTierMessage message : collapsedMessages.values()) {
+            VillagerReputationNetworking.sendNotice(player, message.notification());
+        }
+    }
+
+    private static String collapsedTierChangeMessage(VillagerReputationLevel previousLevel, VillagerReputationLevel newLevel, int count) {
+        boolean improved = newLevel.isMoreTrustedThan(previousLevel);
+        return count + "x " + (switch (newLevel) {
+            case ROYALTY -> improved
+                    ? "Villagers now treat you like royalty."
+                    : "Villagers no longer see you as royalty.";
+            case REVERED -> improved
+                    ? "Villagers now revere you."
+                    : "Villagers' reverence for you has faded.";
+            case RESPECTED -> improved
+                    ? "Villagers deeply respect you."
+                    : "Villagers' deep respect for you is slipping away.";
+            case TRUSTED -> improved
+                    ? "Villagers now trust you."
+                    : "Villagers' trust in you has weakened.";
+            case NEUTRAL -> "Villagers seem to feel neutral toward you again.";
+            case SUSPICIOUS -> improved
+                    ? "Villagers seem less suspicious of you."
+                    : "Villagers are becoming suspicious of you.";
+            case HOSTILE -> improved
+                    ? "Villagers no longer see you as completely unforgivable."
+                    : "Villagers are becoming hostile toward you.";
+            case DESPISED -> improved
+                    ? "Villagers' hatred for you has softened."
+                    : "Villagers come to despise you.";
+            case FEARED -> improved
+                    ? "Villagers no longer fear you completely."
+                    : "Villagers now fear you.";
+        });
     }
 
     private static void spawnTierChangeParticles(ServerLevel level, AbstractVillager villager, VillagerReputationLevel previousLevel, VillagerReputationLevel newLevel) {
@@ -397,6 +444,61 @@ public final class VillagerReputationManager {
     private record SyncedReputation(int reputation, int entityId, long gameTime) {
         SyncedReputation withGameTime(long gameTime) {
             return new SyncedReputation(this.reputation, this.entityId, gameTime);
+        }
+    }
+
+    private record PendingTierMessage(
+            ResolvedVillagerNotification notification,
+            VillagerReputationLevel previousLevel,
+            VillagerReputationLevel newLevel) {
+        private TierMessageGroupKey groupKey() {
+            return new TierMessageGroupKey(
+                    this.newLevel,
+                    this.newLevel.isMoreTrustedThan(this.previousLevel),
+                    this.notification.textColor(),
+                    this.notification.chatColor(),
+                    this.notification.noticeKind(),
+                    this.notification.worldTextKind()
+            );
+        }
+
+        private ResolvedVillagerNotification collapsedNotification(int count) {
+            if (count <= 1) {
+                return this.notification;
+            }
+            return new ResolvedVillagerNotification(
+                    collapsedTierChangeMessage(this.previousLevel, this.newLevel, count),
+                    this.notification.textColor(),
+                    this.notification.chatColor(),
+                    this.notification.noticeKind(),
+                    this.notification.worldTextKind()
+            );
+        }
+    }
+
+    private record TierMessageGroupKey(
+            VillagerReputationLevel newLevel,
+            boolean improved,
+            int textColor,
+            int chatColor,
+            VillagerReputationNoticeKind noticeKind,
+            VillagerWorldTextIndicatorKind worldTextKind) {
+    }
+
+    private static final class CollapsedTierMessage {
+        private final PendingTierMessage representative;
+        private int count;
+
+        private CollapsedTierMessage(PendingTierMessage representative) {
+            this.representative = representative;
+        }
+
+        private void increment() {
+            this.count++;
+        }
+
+        private ResolvedVillagerNotification notification() {
+            return this.representative.collapsedNotification(this.count);
         }
     }
 }

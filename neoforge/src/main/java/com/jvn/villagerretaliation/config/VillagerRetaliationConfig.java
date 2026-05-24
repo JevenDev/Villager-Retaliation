@@ -22,6 +22,7 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.IntValue DIALOGUE_CAMERA_TRANSITION_TICKS;
     public static final ModConfigSpec.EnumValue<ReputationChangeDisplayMode> REPUTATION_CHANGE_DISPLAY_MODE;
     public static final ModConfigSpec.EnumValue<ReputationChangeHudPosition> REPUTATION_CHANGE_HUD_POSITION;
+    public static final ModConfigSpec.BooleanValue COLLAPSE_REPUTATION_CHANGE_NOTIFICATIONS;
     public static final ModConfigSpec.BooleanValue FREEZE_VILLAGER_DURING_DIALOGUE;
     public static final ModConfigSpec.DoubleValue MAX_DIALOGUE_DISTANCE;
     public static final ModConfigSpec.BooleanValue VILLAGER_REPUTATION_HOVER_TOOLTIP_REQUIRES_EMERALD;
@@ -168,6 +169,10 @@ public final class VillagerRetaliationConfig {
                 .comment("Where the HUD reputation change feed is anchored on screen.")
                 .translation("villagerretaliation.configuration.general.reputationChangeHudPosition")
                 .defineEnum("reputationChangeHudPosition", ReputationChangeHudPosition.TOP_LEFT);
+        COLLAPSE_REPUTATION_CHANGE_NOTIFICATIONS = BUILDER
+                .comment("Combines same-type villager reputation tier notifications into one counted line.")
+                .translation("villagerretaliation.configuration.general.collapseReputationChangeNotifications")
+                .define("collapseReputationChangeNotifications", true);
         VILLAGER_REPUTATION_HOVER_TOOLTIP_REQUIRES_EMERALD = BUILDER
                 .comment("Requires the player to hold an emerald before the villager reputation hover tooltip appears.")
                 .translation("villagerretaliation.configuration.general.villagerReputationHoverTooltipRequiresEmerald")

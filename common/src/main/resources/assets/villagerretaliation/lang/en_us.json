@@ -21,6 +21,7 @@
   "villagerretaliation.configuration.general.enableDespisedKillOnSight": "Enable Despised Kill On Sight",
   "villagerretaliation.configuration.general.reputationChangeDisplayMode": "Reputation Change Display Mode",
   "villagerretaliation.configuration.general.reputationChangeHudPosition": "Reputation Change HUD Position",
+  "villagerretaliation.configuration.general.collapseReputationChangeNotifications": "Collapse Reputation Change Notifications",
   "villagerretaliation.configuration.general.villagerReputationHoverTooltipRequiresEmerald": "Villager Reputation Hover Tooltip Requires Emerald",
   "villagerretaliation.configuration.dialogue.enableInteractionScreen": "Enable Interaction Screen",
   "villagerretaliation.configuration.dialogue.shiftRightClickBypassesInteractionScreen": "Shift Right Click Bypasses Interaction Screen",
