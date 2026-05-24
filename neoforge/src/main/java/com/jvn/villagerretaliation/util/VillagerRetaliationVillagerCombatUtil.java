@@ -16,6 +16,7 @@ import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.targeting.TargetingConditions;
 import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.monster.Enemy;
+import net.minecraft.world.entity.monster.Slime;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
@@ -190,6 +191,7 @@ public final class VillagerRetaliationVillagerCombatUtil {
                 && target instanceof Enemy
                 && !(target instanceof NeutralMob)
                 && !(target instanceof Creeper)
+                && !(target instanceof Slime)
                 && !target.isAlliedTo(villager)
                 && !VillagerRetaliationVillagerCombatUtil.shouldIgnoreAttacker(target);
     }
