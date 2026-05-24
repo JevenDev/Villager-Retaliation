@@ -13,6 +13,7 @@ import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources.ForcedDialog
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
+import com.jvn.villagerretaliation.network.GeneratedContainerTooltipPayload;
 import com.jvn.villagerretaliation.reputation.VillagerGossipHooks;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
@@ -53,6 +54,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.ClipContext;
+import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.event.entity.player.PlayerContainerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 
@@ -104,6 +106,7 @@ public final class ForcedDialogueService {
         if (!isEligibleWatchedContainer(state, click.lootTable())) {
             return;
         }
+        PacketDistributor.sendToPlayer(player, new GeneratedContainerTooltipPayload(event.getContainer().containerId, true));
 
         int itemCount = countContainerItems(event.getContainer());
         ContainerSnapshot snapshot = new ContainerSnapshot(

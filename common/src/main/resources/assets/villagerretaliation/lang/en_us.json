@@ -219,6 +219,7 @@
   "villagerretaliation.reputation.level.hostile": "Hostile",
   "villagerretaliation.reputation.level.despised": "Despised",
   "villagerretaliation.reputation.level.feared": "Feared",
+  "villagerretaliation.tooltip.world_generated": "village property",
   "villagerretaliation.gui.title": "Villager Interaction",
   "villagerretaliation.gui.back": "Back",
   "villagerretaliation.gui.hint.back": "Esc: back",

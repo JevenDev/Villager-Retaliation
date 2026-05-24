@@ -12,7 +12,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 public final class VillagerReputationNetworking {
-    private static final String PROTOCOL_VERSION = "7";
+    private static final String PROTOCOL_VERSION = "8";
 
     private VillagerReputationNetworking() {
     }
@@ -71,6 +71,12 @@ public final class VillagerReputationNetworking {
                 VillagerWorldTextIndicatorPayload.TYPE,
                 VillagerWorldTextIndicatorPayload.STREAM_CODEC,
                 "com.jvn.villagerretaliation.client.reputation.VillagerWorldTextIndicatorClient",
+                "accept"
+        );
+        network.safePlayToClientThreaded(
+                GeneratedContainerTooltipPayload.TYPE,
+                GeneratedContainerTooltipPayload.STREAM_CODEC,
+                "com.jvn.villagerretaliation.client.inventory.GeneratedContainerTooltipClient",
                 "accept"
         );
         network.playToServer(
