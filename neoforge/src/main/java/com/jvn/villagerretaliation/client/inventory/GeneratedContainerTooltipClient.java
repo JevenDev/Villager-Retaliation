@@ -9,6 +9,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.ScreenEvent;
 import net.neoforged.neoforge.event.entity.player.ItemTooltipEvent;
 
 public final class GeneratedContainerTooltipClient {
@@ -38,6 +39,14 @@ public final class GeneratedContainerTooltipClient {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null || minecraft.player.containerMenu.containerId != generatedContainerId) {
             generatedContainerId = -1;
+        }
+    }
+
+    public static void onKeyPressed(ScreenEvent.KeyPressed.Pre event) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.options.keyDrop.matches(event.getKeyCode(), event.getScanCode())
+                && isHoveringGeneratedContainerSlot()) {
+            event.setCanceled(true);
         }
     }
 

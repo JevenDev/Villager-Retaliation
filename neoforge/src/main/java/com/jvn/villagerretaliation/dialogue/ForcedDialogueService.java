@@ -54,6 +54,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.ClipContext;
+import net.neoforged.neoforge.event.entity.item.ItemTossEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.event.entity.player.PlayerContainerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
@@ -118,15 +119,39 @@ public final class ForcedDialogueService {
                 snapshotContainerItems(event.getContainer()),
                 level.getGameTime()
         );
-        if (VillagerRetaliationConfig.CONTAINER_FORCED_DIALOGUE_TRIGGER.get() == ContainerForcedDialogueTrigger.OPENING) {
-            triggerContainerOpened(level, player, snapshot);
-            return;
-        }
-
         OPEN_CONTAINER_SNAPSHOTS.put(
                 player.getUUID(),
                 snapshot
         );
+        if (VillagerRetaliationConfig.CONTAINER_FORCED_DIALOGUE_TRIGGER.get() == ContainerForcedDialogueTrigger.OPENING) {
+            triggerContainerOpened(level, player, snapshot);
+            return;
+        }
+    }
+
+    public static void onItemToss(ItemTossEvent event) {
+        if (!(event.getPlayer() instanceof ServerPlayer player)
+                || !(player.level() instanceof ServerLevel level)
+                || event.getEntity().getItem().isEmpty()) {
+            return;
+        }
+
+        ContainerSnapshot snapshot = OPEN_CONTAINER_SNAPSHOTS.get(player.getUUID());
+        if (snapshot == null || snapshot.dimension() != level.dimension()) {
+            return;
+        }
+
+        ItemStack tossedStack = event.getEntity().getItem();
+        boolean removedFromContainer = removedContainerStacks(snapshot.itemStacks(), player.containerMenu).stream()
+                .anyMatch(removedStack -> ItemStack.isSameItemSameComponents(removedStack, tossedStack)
+                        && removedStack.getCount() >= tossedStack.getCount());
+        if (!removedFromContainer) {
+            return;
+        }
+
+        if (restoreToOpenContainer(player.containerMenu, tossedStack.copy()).isEmpty()) {
+            event.setCanceled(true);
+        }
     }
 
     public static void onContainerClose(PlayerContainerEvent.Close event) {
@@ -1086,6 +1111,47 @@ public final class ForcedDialogueService {
             }
         }
         return List.copyOf(stacks);
+    }
+
+    private static ItemStack restoreToOpenContainer(AbstractContainerMenu menu, ItemStack stack) {
+        ItemStack remainder = stack.copy();
+        for (Slot slot : menu.slots) {
+            if (remainder.isEmpty()) {
+                return ItemStack.EMPTY;
+            }
+            if (slot.container instanceof Inventory) {
+                continue;
+            }
+            ItemStack existing = slot.getItem();
+            if (existing.isEmpty()
+                    || !ItemStack.isSameItemSameComponents(existing, remainder)
+                    || !slot.mayPlace(remainder)) {
+                continue;
+            }
+
+            int maxStackSize = Math.min(existing.getMaxStackSize(), slot.getMaxStackSize(remainder));
+            int moveCount = Math.min(remainder.getCount(), maxStackSize - existing.getCount());
+            if (moveCount > 0) {
+                existing.grow(moveCount);
+                remainder.shrink(moveCount);
+                slot.setChanged();
+            }
+        }
+
+        for (Slot slot : menu.slots) {
+            if (remainder.isEmpty()) {
+                return ItemStack.EMPTY;
+            }
+            if (slot.container instanceof Inventory || !slot.getItem().isEmpty() || !slot.mayPlace(remainder)) {
+                continue;
+            }
+
+            int moveCount = Math.min(remainder.getCount(), Math.min(remainder.getMaxStackSize(), slot.getMaxStackSize(remainder)));
+            slot.set(remainder.copyWithCount(moveCount));
+            slot.setChanged();
+            remainder.shrink(moveCount);
+        }
+        return remainder;
     }
 
     private static List<ItemStack> removedContainerStacks(List<ItemStack> beforeStacks, AbstractContainerMenu menu) {
