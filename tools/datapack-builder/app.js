@@ -557,6 +557,9 @@ let previewEditError = null;
 let fileTreeSignature = "";
 let entryDragState = null;
 let suppressEntryClickUntil = 0;
+let entryFormDirty = false;
+let unsavedShakeTimer = null;
+let exportIssueDialogResolve = null;
 
 const els = {
   workspace: document.querySelector(".workspace"),
@@ -581,6 +584,10 @@ const els = {
   copyButton: document.querySelector("#copy-file-button"),
   downloadButton: document.querySelector("#download-file-button"),
   toast: document.querySelector("#toast"),
+  exportIssueDialog: document.querySelector("#export-issue-dialog"),
+  exportIssueList: document.querySelector("#export-issue-list"),
+  exportIssueCancel: document.querySelector("#export-issue-cancel"),
+  exportIssueConfirm: document.querySelector("#export-issue-confirm"),
   wikiButton: document.querySelector("#wiki-button"),
   wikiOverlay: document.querySelector("#wiki-overlay"),
   wikiWindow: document.querySelector(".wiki-window"),
@@ -1875,6 +1882,47 @@ function generatedFiles() {
   return files;
 }
 
+function currentViewFiles() {
+  return withDraftState(() => generatedFiles());
+}
+
+function currentViewChecks() {
+  return withDraftState(() => validate());
+}
+
+function withDraftState(callback) {
+  const draft = buildDraftState();
+  if (!draft) return callback();
+  const committedState = state;
+  state = draft;
+  try {
+    return callback();
+  } finally {
+    state = committedState;
+  }
+}
+
+function buildDraftState() {
+  if (!entryFormDirty) return null;
+  const draft = readCurrentDraftEntry({ quiet: true });
+  if (!draft || !draft.entry) return null;
+  const draftState = structuredClone(state);
+  applyDraftEntry(draftState, draft);
+  return draftState;
+}
+
+function applyDraftEntry(targetState, draft) {
+  const collection = targetState[draft.section]?.[draft.kind];
+  if (!Array.isArray(collection)) return;
+  if (editing && editing.section === draft.section && editing.kind === draft.kind) {
+    const existing = collection[editing.index];
+    if (existing?.__sourcePath && !draft.entry.__sourcePath) draft.entry.__sourcePath = existing.__sourcePath;
+    collection[editing.index] = draft.entry;
+    return;
+  }
+  collection.push(draft.entry);
+}
+
 function generatedDialogueFiles() {
   const grouped = new Map();
   for (const kind of ["options", "lines", "messages", "openings", "closings", "pacify"]) {
@@ -1928,7 +1976,6 @@ function primaryGeneratedPaths() {
 }
 
 function pathsForCheck(check) {
-  if (check.type !== "error") return [];
   if (check.title === "Preview JSON") return previewEditError?.path ? [previewEditError.path] : [];
   if (check.title === "Pack format" || check.title === "VR version") return ["pack.mcmeta"];
   if (check.title === "File slug") return primaryGeneratedPaths();
@@ -1948,7 +1995,11 @@ function pathsForCheck(check) {
 }
 
 function errorPathsForChecks(checks) {
-  return new Set(checks.flatMap(pathsForCheck));
+  return new Set(checks.filter((check) => check.type === "error").flatMap(pathsForCheck));
+}
+
+function warningPathsForChecks(checks) {
+  return new Set(checks.filter((check) => check.type === "warning").flatMap(pathsForCheck));
 }
 
 function strongestSeverity(current, next) {
@@ -2010,7 +2061,7 @@ function entryIssueSeverity(section, kind, entry) {
     const stolenReturns = actionableOptions.map((option) => option.take_stolen_items || option.return_stolen_items).filter((stolenReturn) => stolenReturn && typeof stolenReturn === "object" && !Array.isArray(stolenReturn));
     const tests = [
       { severity: "error", predicate: (item) => !item.trigger || !hasForcedDialogueLine(item) },
-      { severity: "warning", predicate: (item) => item.trigger && !CONSTANTS.forcedDialogueTriggers.includes(item.trigger) },
+      { severity: "error", predicate: (item) => item.trigger && !CONSTANTS.forcedDialogueTriggers.includes(item.trigger) },
       { severity: "warning", predicate: (item) => entryValues(item, ["witness_profession", "witness_professions", "professions"]).some((value) => !isValidProfession(value)) },
       { severity: "error", predicate: (item) => entryValues(item, ["loot_table", "loot_tables"]).some((value) => !isValidResourceLocation(value)) },
       { severity: "error", predicate: (item) => entryValues(item, ["target_entity_type", "target_entity_types", "target_entities"]).some((value) => !isValidResourceLocation(value)) },
@@ -2043,8 +2094,9 @@ function entryIssueSeverity(section, kind, entry) {
   if (section === "notifications") {
     const tests = [
       { severity: "error", predicate: (item) => !item.trigger || !item.text },
-      { severity: "warning", predicate: (item) => item.kind && !CONSTANTS.hudKinds.includes(item.kind) },
-      { severity: "warning", predicate: (item) => entryValues(item, ["world_text_kind", "style"]).some((value) => !CONSTANTS.worldTextKinds.includes(value)) },
+      { severity: "error", predicate: (item) => item.trigger && !CONSTANTS.notificationTriggers.includes(item.trigger) },
+      { severity: "error", predicate: (item) => item.kind && !CONSTANTS.hudKinds.includes(item.kind) },
+      { severity: "error", predicate: (item) => entryValues(item, ["world_text_kind", "style"]).some((value) => !CONSTANTS.worldTextKinds.includes(value)) },
       { severity: "warning", predicate: (item) => entryValues(item, ["color", "text_color", "chat_color"]).some((value) => !isValidColor(value)) },
       { severity: "warning", predicate: (item) => entryValues(item, ["professions"]).some((value) => !isValidProfession(value)) },
       { severity: "warning", predicate: (item) => entryValues(item, ["reputation_levels"]).some((value) => !CONSTANTS.reputationLevels.includes(value)) },
@@ -2217,7 +2269,7 @@ function entryIssueDetail(section, kind, entry) {
   if (section === "forcedDialogue") {
     if (!entry.trigger) return issueDetail("Trigger", `one of ${CONSTANTS.forcedDialogueTriggers.join(", ")}`, entry.trigger, "forced-trigger");
     if (!hasForcedDialogueLine(entry)) return issueDetail("Opening line(s)", "at least one non-empty line", forcedDialogueLineValue(entry), "forced-line");
-    if (!CONSTANTS.forcedDialogueTriggers.includes(entry.trigger)) return issueDetail("Trigger", `one of ${CONSTANTS.forcedDialogueTriggers.join(", ")}`, entry.trigger, "forced-trigger", "warning");
+    if (!CONSTANTS.forcedDialogueTriggers.includes(entry.trigger)) return issueDetail("Trigger", `one of ${CONSTANTS.forcedDialogueTriggers.join(", ")}`, entry.trigger, "forced-trigger");
     const forcedListChecks = [
       { keys: ["witness_profession", "witness_professions", "professions"], label: "Witness professions", expected: "a valid profession id such as armorer or minecraft:weaponsmith", fieldId: "forced-witness_professions", valid: isValidProfession, severity: "warning" },
       { keys: ["loot_table", "loot_tables"], label: "Loot tables", expected: "a valid loot table id such as minecraft:chests/village/village_armorer", fieldId: "forced-loot_tables", valid: isValidResourceLocation },
@@ -2261,9 +2313,10 @@ function entryIssueDetail(section, kind, entry) {
   if (section === "notifications") {
     if (!entry.trigger) return issueDetail("Trigger", "a non-empty notification trigger", entry.trigger, "notification-trigger");
     if (!entry.text) return issueDetail("Text", "non-empty notification text", entry.text, "notification-text");
+    if (!CONSTANTS.notificationTriggers.includes(entry.trigger)) return issueDetail("Trigger", `one of ${CONSTANTS.notificationTriggers.join(", ")}`, entry.trigger, "notification-trigger");
     const checks = [
-      { keys: ["kind"], label: "HUD kind", expected: CONSTANTS.hudKinds.join(", "), fieldId: "notification-kind", valid: (value) => CONSTANTS.hudKinds.includes(value), severity: "warning" },
-      { keys: ["world_text_kind", "style"], label: "World text kind", expected: CONSTANTS.worldTextKinds.join(", "), fieldId: "notification-world_text_kind", valid: (value) => CONSTANTS.worldTextKinds.includes(value), severity: "warning" },
+      { keys: ["kind"], label: "HUD kind", expected: CONSTANTS.hudKinds.join(", "), fieldId: "notification-kind", valid: (value) => CONSTANTS.hudKinds.includes(value) },
+      { keys: ["world_text_kind", "style"], label: "World text kind", expected: CONSTANTS.worldTextKinds.join(", "), fieldId: "notification-world_text_kind", valid: (value) => CONSTANTS.worldTextKinds.includes(value) },
       { keys: ["color"], label: "Color", expected: "a Minecraft color name, #RRGGBB, or #AARRGGBB", fieldId: "notification-color", valid: isValidColor, severity: "warning" },
       { keys: ["text_color"], label: "Text color", expected: "a Minecraft color name, #RRGGBB, or #AARRGGBB", fieldId: "notification-text_color", valid: isValidColor, severity: "warning" },
       { keys: ["chat_color"], label: "Chat color", expected: "a Minecraft color name, #RRGGBB, or #AARRGGBB", fieldId: "notification-chat_color", valid: isValidColor, severity: "warning" },
@@ -2646,7 +2699,7 @@ function validate() {
   }
   const badForcedTrigger = firstInvalidValue(state.forcedDialogue.entries, ["trigger"], (value) => CONSTANTS.forcedDialogueTriggers.includes(value));
   if (badForcedTrigger) {
-    addCheck(checks, "warning", "Forced dialogue trigger", `Unknown forced dialogue trigger: ${badForcedTrigger}.`);
+    addCheck(checks, "error", "Forced dialogue trigger", `Unknown forced dialogue trigger: ${badForcedTrigger}.`);
   }
   const badForcedProfession = firstInvalidValue(state.forcedDialogue.entries, ["witness_profession", "witness_professions", "professions"], isValidProfession);
   if (badForcedProfession) {
@@ -2772,13 +2825,17 @@ function validate() {
   if (duplicateNotification) {
     addCheck(checks, "warning", "Notification ids", `Duplicate notification id: ${duplicateNotification}.`);
   }
+  const badNotificationTrigger = firstInvalidValue(state.notifications.notifications, ["trigger"], (value) => CONSTANTS.notificationTriggers.includes(value));
+  if (badNotificationTrigger) {
+    addCheck(checks, "error", "Notification trigger", `Unknown notification trigger: ${badNotificationTrigger}.`);
+  }
   const badHudKind = firstInvalidValue(state.notifications.notifications, ["kind"], (value) => CONSTANTS.hudKinds.includes(value));
   if (badHudKind) {
-    addCheck(checks, "warning", "Notification HUD kind", `Unknown HUD kind: ${badHudKind}.`);
+    addCheck(checks, "error", "Notification HUD kind", `Unknown HUD kind: ${badHudKind}.`);
   }
   const badWorldKind = firstInvalidValue(state.notifications.notifications, ["world_text_kind", "style"], (value) => CONSTANTS.worldTextKinds.includes(value));
   if (badWorldKind) {
-    addCheck(checks, "warning", "Notification world text", `Unknown world text kind: ${badWorldKind}.`);
+    addCheck(checks, "error", "Notification world text", `Unknown world text kind: ${badWorldKind}.`);
   }
   const badNotificationColor = firstInvalidValue(state.notifications.notifications, ["color", "text_color", "chat_color"], isValidColor);
   if (badNotificationColor) {
@@ -3042,14 +3099,16 @@ function renderTabs() {
 }
 
 function renderFiles() {
-  const files = generatedFiles();
+  const files = currentViewFiles();
   const paths = Object.keys(files).sort();
-  const errorPaths = errorPathsForChecks(validate());
+  const checks = currentViewChecks();
+  const errorPaths = errorPathsForChecks(checks);
+  const warningPaths = warningPathsForChecks(checks);
   if (!paths.includes(selectedPath)) {
     selectedPath = paths[0] || "pack.mcmeta";
   }
   els.fileCount.textContent = String(paths.length);
-  const signature = JSON.stringify({ paths, selectedPath, errorPaths: [...errorPaths].sort() });
+  const signature = JSON.stringify({ paths, selectedPath, errorPaths: [...errorPaths].sort(), warningPaths: [...warningPaths].sort(), entryFormDirty });
   if (signature === fileTreeSignature) {
     return;
   }
@@ -3059,8 +3118,9 @@ function renderFiles() {
       const label = path.split("/").pop();
       const folder = path.includes("/") ? path.slice(0, path.lastIndexOf("/")) : "root";
       const hasError = errorPaths.has(path);
+      const hasWarning = !hasError && warningPaths.has(path);
       return `
-        <button class="file-button has-tooltip ${path === selectedPath ? "is-active" : ""} ${hasError ? "has-error" : ""}" type="button" data-path="${escapeHtml(path)}" data-tooltip="${escapeHtml(path)}">
+        <button class="file-button has-tooltip ${path === selectedPath ? "is-active" : ""} ${hasError ? "has-error" : ""} ${hasWarning ? "has-warning" : ""}" type="button" data-path="${escapeHtml(path)}" data-tooltip="${escapeHtml(path)}">
           ${icon(label.endsWith(".mcmeta") ? "file-cog" : "file-json", "inline-icon")}
           <span class="file-button-text">
             <span class="file-name">${escapeHtml(label)}</span>
@@ -3076,7 +3136,7 @@ function renderFiles() {
 }
 
 function renderChecks() {
-  const checks = validate();
+  const checks = currentViewChecks();
   const issueCount = checks.filter((check) => check.type !== "ok").length;
   const hasError = checks.some((check) => check.type === "error");
   const hasWarning = checks.some((check) => check.type === "warning");
@@ -3096,23 +3156,202 @@ function renderChecks() {
 }
 
 function renderPreview() {
-  const files = generatedFiles();
+  const files = currentViewFiles();
   const value = files[selectedPath];
-  const hasError = errorPathsForChecks(validate()).has(selectedPath);
-  els.selectedPath.textContent = selectedPath;
+  const hasValidationIssue = errorPathsForChecks(currentViewChecks()).has(selectedPath);
+  const hasInvalidJson = previewEditError?.path === selectedPath;
+  els.selectedPath.textContent = entryFormDirty ? `${selectedPath} (unsaved)` : selectedPath;
   els.codePreview.classList.toggle("is-wrapped", wrapPreviewLines);
-  els.codePreview.classList.toggle("is-invalid", hasError);
-  els.preview.closest(".preview")?.classList.toggle("has-error", hasError);
+  els.codePreview.classList.toggle("is-invalid", hasInvalidJson);
+  els.preview.closest(".preview")?.classList.toggle("has-error", hasValidationIssue || hasInvalidJson);
   els.wrapPreviewButton.classList.toggle("is-on", wrapPreviewLines);
   els.wrapPreviewButton.setAttribute("aria-pressed", String(wrapPreviewLines));
   els.wrapPreviewButton.setAttribute("data-tooltip", wrapPreviewLines ? "Keep preview lines unwrapped." : "Wrap preview lines.");
   if (value instanceof Uint8Array) {
     els.preview.value = `Binary file preserved (${value.byteLength} bytes).`;
     els.preview.readOnly = true;
+    applyPreviewLineHighlights([]);
   } else {
     els.preview.readOnly = false;
     els.preview.value = value || "";
+    const ranges = hasInvalidJson ? [] : withDraftState(() => previewIssueLineRanges(selectedPath, els.preview.value));
+    applyPreviewLineHighlights(ranges);
   }
+}
+
+function applyPreviewLineHighlights(ranges) {
+  const lineHeight = parseFloat(getComputedStyle(els.preview).lineHeight) || 21.7;
+  const paddingTop = parseFloat(getComputedStyle(els.preview).paddingTop) || 0;
+  const color = "rgba(209, 106, 92, 0.18)";
+  const backgrounds = ranges.slice(0, 12).map((range) => {
+    const start = Math.max(1, range.start);
+    const end = Math.max(start, range.end || start);
+    const top = paddingTop + (start - 1) * lineHeight;
+    const bottom = paddingTop + end * lineHeight;
+    return `linear-gradient(to bottom, transparent 0, transparent ${top}px, ${color} ${top}px, ${color} ${bottom}px, transparent ${bottom}px)`;
+  });
+  els.codePreview.classList.toggle("has-line-highlights", backgrounds.length > 0);
+  els.codePreview.style.backgroundImage = backgrounds.join(", ");
+}
+
+function previewIssueLineRanges(path, source) {
+  const ranges = [];
+  for (const { section, kind, entry } of previewIssueEntries(path)) {
+    const detail = entryIssueDetail(section, kind, entry);
+    if (!detail) continue;
+    ranges.push(...findIssueLineRanges(source, entry, detail, section, kind));
+  }
+  return mergeLineRanges(ranges);
+}
+
+function previewIssueEntries(path) {
+  if (/^data\/villagerretaliation\/dialogue\/[^/]+\/.+\.json$/.test(path)) {
+    return ["options", "lines", "messages", "openings", "closings", "pacify"].flatMap((kind) => (
+      state.dialogue[kind]
+        .filter((entry) => (entry.__sourcePath || dialoguePath()) === path)
+        .map((entry) => ({ section: "dialogue", kind, entry }))
+    ));
+  }
+  if (/^data\/villagerretaliation\/forced_dialogue\/.+\.json$/.test(path)) {
+    return state.forcedDialogue.entries
+      .filter((entry) => (entry.__sourcePath || forcedDialoguePath()) === path)
+      .map((entry) => ({ section: "forcedDialogue", kind: "entries", entry }));
+  }
+  if (path === notificationsPath()) {
+    return state.notifications.notifications.map((entry) => ({ section: "notifications", kind: "notifications", entry }));
+  }
+  if (path === giftsPath()) {
+    return [
+      ...state.gifts.preferences.map((entry) => ({ section: "gifts", kind: "preferences", entry })),
+      ...state.gifts.rewards.map((entry) => ({ section: "gifts", kind: "rewards", entry }))
+    ];
+  }
+  if (path === pacificationPath()) {
+    return state.pacification.payments.map((entry) => ({ section: "pacification", kind: "payments", entry }));
+  }
+  if (path === structurePath()) {
+    return state.stories.structures.map((entry) => ({ section: "stories", kind: "structures", entry }));
+  }
+  if (path === biomePath()) {
+    return state.stories.biomes.map((entry) => ({ section: "stories", kind: "biomes", entry }));
+  }
+  return [];
+}
+
+function findIssueLineRanges(source, entry, detail, section, kind) {
+  const entryRange = findEntryLineRange(source, entry);
+  if (!entryRange) return [];
+  const keys = unique(detail.fieldIds.flatMap((fieldId) => jsonKeysForFieldId(fieldId, section, kind)));
+  const ranges = keys.flatMap((key) => findPropertyLineRanges(source, entryRange, key));
+  return ranges.length > 0 ? ranges : [{ start: entryRange.start, end: entryRange.start }];
+}
+
+function findEntryLineRange(source, entry) {
+  const sourceLines = source.split(/\r?\n/);
+  const entryLines = JSON.stringify(cleanObject(entry), null, 2).split(/\r?\n/);
+  const normalize = (line) => line.trim().replace(/,$/, "");
+  for (let index = 0; index <= sourceLines.length - entryLines.length; index++) {
+    const matches = entryLines.every((line, offset) => normalize(sourceLines[index + offset]) === normalize(line));
+    if (matches) {
+      return { start: index + 1, end: index + entryLines.length };
+    }
+  }
+  return null;
+}
+
+function findPropertyLineRanges(source, entryRange, key) {
+  const sourceLines = source.split(/\r?\n/);
+  const ranges = [];
+  const propertyPattern = new RegExp(`^\\s*"${escapeRegExp(key)}"\\s*:`);
+  for (let index = entryRange.start - 1; index < entryRange.end; index++) {
+    if (!propertyPattern.test(sourceLines[index] || "")) continue;
+    ranges.push({ start: index + 1, end: propertyEndLine(sourceLines, index, entryRange.end - 1) + 1 });
+  }
+  return ranges;
+}
+
+function propertyEndLine(lines, startIndex, maxIndex) {
+  const line = lines[startIndex] || "";
+  const valueStart = line.indexOf(":") + 1;
+  const tail = line.slice(valueStart).trim();
+  if (!tail.startsWith("[") && !tail.startsWith("{")) return startIndex;
+  const opener = tail[0];
+  const closer = opener === "[" ? "]" : "}";
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  for (let index = startIndex; index <= maxIndex; index++) {
+    const scan = index === startIndex ? lines[index].slice(valueStart) : lines[index];
+    for (const char of scan) {
+      if (escaped) {
+        escaped = false;
+        continue;
+      }
+      if (char === "\\") {
+        escaped = inString;
+        continue;
+      }
+      if (char === '"') {
+        inString = !inString;
+        continue;
+      }
+      if (inString) continue;
+      if (char === opener) depth++;
+      if (char === closer) depth--;
+      if (depth === 0) return index;
+    }
+  }
+  return startIndex;
+}
+
+function jsonKeysForFieldId(fieldId, section, kind) {
+  const exact = {
+    "dialogue-option": ["option", "option_ids"],
+    "dialogue-story_structure": ["story_structure", "story_structures"],
+    "dialogue-story_biome": ["story_biome", "story_biomes"],
+    "forced-line": ["line", "lines"],
+    "forced-options_json": ["options"],
+    "forced-leave_option_json": ["leave_option", "leave_options"],
+    "gift-items": ["items", "item"],
+    "gift-tags": ["tags", "tag"],
+    "pacification-items": ["items", "item"],
+    "pacification-tags": ["tags", "tag"],
+    "story-structures": ["structures", "structure"],
+    "story-biomes": ["biomes", "biome"]
+  };
+  if (exact[fieldId]) return exact[fieldId];
+  const prefix = `${fieldPrefixForSection(section, kind)}-`;
+  return fieldId.startsWith(prefix) ? [fieldId.slice(prefix.length)] : [];
+}
+
+function fieldPrefixForSection(section, kind) {
+  if (section === "forcedDialogue") return "forced";
+  if (section === "notifications") return "notification";
+  if (section === "pacification") return "pacification";
+  if (section === "stories") return "story";
+  if (section === "gifts") return "gift";
+  if (section === "dialogue") return "dialogue";
+  return kind || section;
+}
+
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function mergeLineRanges(ranges) {
+  const sorted = ranges
+    .filter(Boolean)
+    .sort((a, b) => a.start - b.start || a.end - b.end);
+  const merged = [];
+  for (const range of sorted) {
+    const last = merged[merged.length - 1];
+    if (last && range.start <= last.end + 1) {
+      last.end = Math.max(last.end, range.end);
+    } else {
+      merged.push({ ...range });
+    }
+  }
+  return merged;
 }
 
 function renderPanel() {
@@ -3818,8 +4057,36 @@ function readBooleans(prefix, flags, base = {}) {
   return entry;
 }
 
-function saveDialogueEntry(event) {
-  event.preventDefault();
+function readCurrentDraftEntry(options = {}) {
+  const form = els.panel.querySelector(".entry-form");
+  if (!form) return null;
+  try {
+    if (form.dataset.form === "dialogue") {
+      return { section: "dialogue", kind: activeDialogueKind, entry: cleanObject(readDialogueEntry()) };
+    }
+    if (form.dataset.form === "forcedDialogue") {
+      const entry = readForcedDialogueEntry(options);
+      return entry ? { section: "forcedDialogue", kind: "entries", entry: cleanObject(entry) } : null;
+    }
+    if (form.dataset.form === "notifications") {
+      return { section: "notifications", kind: "notifications", entry: cleanObject(readNotificationEntry()) };
+    }
+    if (form.dataset.form === "gifts") {
+      return { section: "gifts", kind: activeGiftKind, entry: cleanObject(readGiftEntry()) };
+    }
+    if (form.dataset.form === "pacification") {
+      return { section: "pacification", kind: "payments", entry: cleanObject(readPacificationEntry()) };
+    }
+    if (form.dataset.form === "stories") {
+      return { section: "stories", kind: activeStoryKind, entry: cleanObject(readStoryEntry()) };
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+function readDialogueEntry() {
   const kind = activeDialogueKind;
   let entry = {};
   if (kind === "options") {
@@ -3897,10 +4164,15 @@ function saveDialogueEntry(event) {
       weight: parseInteger(readValue("dialogue-weight"))
     });
   }
-  upsertEntry("dialogue", kind, cleanObject(entry));
+  return entry;
 }
 
-function parseJsonArrayField(id, label) {
+function saveDialogueEntry(event) {
+  event.preventDefault();
+  upsertEntry("dialogue", activeDialogueKind, cleanObject(readDialogueEntry()));
+}
+
+function parseJsonArrayField(id, label, options = {}) {
   const source = readValue(id).trim();
   if (!source) return [];
   try {
@@ -3909,11 +4181,11 @@ function parseJsonArrayField(id, label) {
   } catch {
     // Toast below gives the user one clear correction.
   }
-  showToast(`${label} must be a JSON array.`);
+  if (!options.quiet) showToast(`${label} must be a JSON array.`);
   return null;
 }
 
-function parseJsonObjectOrArrayField(id, label) {
+function parseJsonObjectOrArrayField(id, label, options = {}) {
   const source = readValue(id).trim();
   if (!source) return {};
   try {
@@ -3922,16 +4194,15 @@ function parseJsonObjectOrArrayField(id, label) {
   } catch {
     // Toast below gives the user one clear correction.
   }
-  showToast(`${label} must be a JSON object or array.`);
+  if (!options.quiet) showToast(`${label} must be a JSON object or array.`);
   return null;
 }
 
-function saveForcedDialogue(event) {
-  event.preventDefault();
-  const options = parseJsonArrayField("forced-options_json", "Options JSON");
-  if (options === null) return;
-  const leaveOption = parseJsonObjectOrArrayField("forced-leave_option_json", "Leave option JSON");
-  if (leaveOption === null) return;
+function readForcedDialogueEntry(options = {}) {
+  const dialogueOptions = parseJsonArrayField("forced-options_json", "Options JSON", options);
+  if (dialogueOptions === null) return null;
+  const leaveOption = parseJsonObjectOrArrayField("forced-leave_option_json", "Leave option JSON", options);
+  if (leaveOption === null) return null;
   const entry = {
     id: readValue("forced-id").trim(),
     trigger: readValue("forced-trigger"),
@@ -3949,7 +4220,7 @@ function saveForcedDialogue(event) {
     target_entity_types: readList("forced-target_entity_types"),
     min_recent_retaliations: parseInteger(readValue("forced-min_recent_retaliations")),
     max_recent_retaliations: parseInteger(readValue("forced-max_recent_retaliations")),
-    options
+    options: dialogueOptions
   };
   if (Array.isArray(leaveOption)) {
     entry.leave_options = leaveOption;
@@ -3962,12 +4233,18 @@ function saveForcedDialogue(event) {
   } else if (lines.length > 1) {
     entry.lines = lines;
   }
+  return entry;
+}
+
+function saveForcedDialogue(event) {
+  event.preventDefault();
+  const entry = readForcedDialogueEntry();
+  if (!entry) return;
   upsertEntry("forcedDialogue", "entries", cleanObject(entry));
 }
 
-function saveNotification(event) {
-  event.preventDefault();
-  const entry = readBooleans("notification", [], {
+function readNotificationEntry() {
+  return readBooleans("notification", [], {
     id: readValue("notification-id").trim(),
     trigger: readValue("notification-trigger").trim(),
     text: readValue("notification-text").trim(),
@@ -3987,13 +4264,16 @@ function saveNotification(event) {
     weight: parseInteger(readValue("notification-weight")),
     chance: parseNumber(readValue("notification-chance"))
   });
-  upsertEntry("notifications", "notifications", cleanObject(entry));
 }
 
-function saveGiftEntry(event) {
+function saveNotification(event) {
   event.preventDefault();
+  upsertEntry("notifications", "notifications", cleanObject(readNotificationEntry()));
+}
+
+function readGiftEntry() {
   const kind = activeGiftKind;
-  const entry = kind === "preferences"
+  return kind === "preferences"
     ? {
         reaction: readValue("gift-reaction"),
         items: readList("gift-items"),
@@ -4013,12 +4293,15 @@ function saveGiftEntry(event) {
         max_count: parseInteger(readValue("gift-max_count")),
         weight: parseInteger(readValue("gift-weight"))
       };
-  upsertEntry("gifts", kind, cleanObject(entry));
 }
 
-function savePacification(event) {
+function saveGiftEntry(event) {
   event.preventDefault();
-  const entry = {
+  upsertEntry("gifts", activeGiftKind, cleanObject(readGiftEntry()));
+}
+
+function readPacificationEntry() {
+  return {
     items: readList("pacification-items"),
     tags: readList("pacification-tags"),
     professions: readList("pacification-professions"),
@@ -4030,14 +4313,17 @@ function savePacification(event) {
     plural_name: readValue("pacification-plural_name").trim(),
     priority: parseInteger(readValue("pacification-priority"))
   };
-  upsertEntry("pacification", "payments", cleanObject(entry));
 }
 
-function saveStoryEntry(event) {
+function savePacification(event) {
   event.preventDefault();
+  upsertEntry("pacification", "payments", cleanObject(readPacificationEntry()));
+}
+
+function readStoryEntry() {
   const kind = activeStoryKind;
   const ids = kind === "structures" ? readList("story-structures") : readList("story-biomes");
-  const entry = kind === "structures"
+  return kind === "structures"
     ? {
         structures: ids,
         name: readValue("story-name").trim(),
@@ -4047,7 +4333,51 @@ function saveStoryEntry(event) {
         biomes: ids,
         name: readValue("story-name").trim()
       };
-  upsertEntry("stories", kind, cleanObject(entry));
+}
+
+function saveStoryEntry(event) {
+  event.preventDefault();
+  upsertEntry("stories", activeStoryKind, cleanObject(readStoryEntry()));
+}
+
+function markEntryFormDirty() {
+  if (!els.panel.querySelector(".entry-form")) return;
+  const wasDirty = entryFormDirty;
+  entryFormDirty = true;
+  if (!wasDirty) {
+    selectedPath = currentEntryPath();
+  }
+  els.panel.querySelector(".entry-form")?.classList.add("has-unsaved-changes");
+}
+
+function currentEntryPath() {
+  if (editing) {
+    const existing = state[editing.section]?.[editing.kind]?.[editing.index];
+    if (existing?.__sourcePath) return existing.__sourcePath;
+  }
+  return inferSelectedPath(activeSection);
+}
+
+function clearEntryFormDirty() {
+  entryFormDirty = false;
+  document.body.classList.remove("is-unsaved-shaking");
+}
+
+function warnUnsavedEntry() {
+  window.clearTimeout(unsavedShakeTimer);
+  document.body.classList.remove("is-unsaved-shaking");
+  void document.body.offsetWidth;
+  document.body.classList.add("is-unsaved-shaking");
+  unsavedShakeTimer = window.setTimeout(() => {
+    document.body.classList.remove("is-unsaved-shaking");
+  }, 260);
+  showToast("Save or clear the current entry before leaving it.");
+}
+
+function canLeaveEntryForm() {
+  if (!entryFormDirty) return true;
+  warnUnsavedEntry();
+  return false;
 }
 
 function upsertEntry(section, kind, entry) {
@@ -4066,6 +4396,7 @@ function upsertEntry(section, kind, entry) {
     showToast("Entry added.");
   }
   editing = null;
+  clearEntryFormDirty();
   selectedPath = selectedPathAfterEntrySave(section, previousSelectedPath, sourcePath);
   render();
 }
@@ -4090,6 +4421,7 @@ function inferSelectedPath(section) {
 
 function clearEditing() {
   editing = null;
+  clearEntryFormDirty();
   render();
 }
 
@@ -4106,8 +4438,10 @@ function insertTag(targetId, value) {
 }
 
 function deleteEntry(section, kind, index) {
+  if (!canLeaveEntryForm()) return;
   state[section][kind].splice(index, 1);
   editing = null;
+  clearEntryFormDirty();
   showToast("Entry deleted.");
   render();
 }
@@ -4513,6 +4847,7 @@ function loadStarterPack() {
   });
   selectedPath = dialoguePath();
   editing = null;
+  clearEntryFormDirty();
   render();
   showToast("Starter pack loaded.");
 }
@@ -4589,7 +4924,7 @@ function downloadBlob(blob, name) {
 }
 
 async function copyCurrentFile() {
-  const files = generatedFiles();
+  const files = currentViewFiles();
   const value = files[selectedPath];
   if (value instanceof Uint8Array) {
     showToast("Binary files cannot be copied as text.");
@@ -4600,7 +4935,7 @@ async function copyCurrentFile() {
 }
 
 function downloadCurrentFile() {
-  const files = generatedFiles();
+  const files = currentViewFiles();
   const generated = files[selectedPath] || "";
   const value = generated instanceof Uint8Array ? generated : els.preview.value;
   const blob = value instanceof Uint8Array
@@ -4610,6 +4945,11 @@ function downloadCurrentFile() {
 }
 
 function applyPreviewEdit() {
+  if (entryFormDirty) {
+    renderPreview();
+    warnUnsavedEntry();
+    return;
+  }
   const source = els.preview.value;
   if (generatedFiles()[selectedPath] instanceof Uint8Array) return;
   const applied = applyEditedFile(selectedPath, source);
@@ -4755,11 +5095,52 @@ function replaceForcedDialogueFile(path, json) {
 }
 
 async function exportZip() {
+  const checks = validate().filter((check) => check.type !== "ok");
+  if (checks.length > 0 && !(await showExportIssueDialog(checks))) {
+    showToast("Export canceled.");
+    return;
+  }
   const files = generatedFiles();
   const zip = createZip(files);
   const name = `${slugify(state.meta.packName || state.meta.slug, "villager_retaliation_pack")}.zip`;
   downloadBlob(new Blob([zip], { type: "application/zip" }), name);
-  showToast("Datapack zip exported.");
+  showToast(checks.length > 0 ? "Datapack zip exported with checks." : "Datapack zip exported.");
+}
+
+function showExportIssueDialog(checks) {
+  if (!els.exportIssueDialog || !els.exportIssueList) return Promise.resolve(true);
+  els.exportIssueList.innerHTML = checks
+    .slice(0, 8)
+    .map((check) => `
+      <div class="modal-issue ${escapeHtml(check.type)}">
+        ${icon(check.type === "error" ? "circle-alert" : "triangle-alert", "inline-icon")}
+        <div>
+          <strong>${escapeHtml(check.title)}</strong>
+          <span>${escapeHtml(check.text)}</span>
+        </div>
+      </div>
+    `)
+    .join("");
+  if (checks.length > 8) {
+    els.exportIssueList.insertAdjacentHTML("beforeend", `<div class="modal-more">${checks.length - 8} more issue${checks.length - 8 === 1 ? "" : "s"}</div>`);
+  }
+  els.exportIssueDialog.classList.add("is-open");
+  els.exportIssueDialog.setAttribute("aria-hidden", "false");
+  renderIcons();
+  els.exportIssueConfirm?.focus();
+  return new Promise((resolve) => {
+    exportIssueDialogResolve = resolve;
+  });
+}
+
+function closeExportIssueDialog(confirmed) {
+  if (!els.exportIssueDialog) return;
+  els.exportIssueDialog.classList.remove("is-open");
+  els.exportIssueDialog.setAttribute("aria-hidden", "true");
+  if (exportIssueDialogResolve) {
+    exportIssueDialogResolve(confirmed);
+    exportIssueDialogResolve = null;
+  }
 }
 
 function normalizeImportedPaths(fileMap) {
@@ -4814,6 +5195,7 @@ async function handleImport(files, replaceProject = false) {
   }
   selectedPath = Object.keys(generatedFiles()).sort()[0] || "pack.mcmeta";
   editing = null;
+  clearEntryFormDirty();
   render();
   showToast(importedVersion ? `Import complete. Target set to ${packVersionInfo(importedVersion).label}.` : "Import complete.");
 }
@@ -5205,8 +5587,10 @@ function crc32(data) {
 els.tabs.addEventListener("click", (event) => {
   const button = event.target.closest(".tab");
   if (!button) return;
+  if (button.dataset.section !== activeSection && !canLeaveEntryForm()) return;
   activeSection = button.dataset.section;
   editing = null;
+  clearEntryFormDirty();
   render();
 });
 
@@ -5215,11 +5599,13 @@ els.panel.addEventListener("click", (event) => {
 
   const entryTab = event.target.closest(".entry-tab");
   if (entryTab) {
+    if (!canLeaveEntryForm()) return;
     const scope = entryTab.closest(".entry-tabs").dataset.scope;
     if (scope === "dialogue") activeDialogueKind = entryTab.dataset.kind;
     if (scope === "gifts") activeGiftKind = entryTab.dataset.kind;
     if (scope === "stories") activeStoryKind = entryTab.dataset.kind;
     editing = null;
+    clearEntryFormDirty();
     render();
     return;
   }
@@ -5241,11 +5627,17 @@ els.panel.addEventListener("click", (event) => {
   if (!actionButton) {
     const entryCard = event.target.closest(".entry-card");
     if (entryCard) {
+      const isSameEntry = editing
+        && editing.section === entryCard.dataset.section
+        && editing.kind === entryCard.dataset.kind
+        && editing.index === Number(entryCard.dataset.index);
+      if (!isSameEntry && !canLeaveEntryForm()) return;
       editing = {
         section: entryCard.dataset.section,
         kind: entryCard.dataset.kind,
         index: Number(entryCard.dataset.index)
       };
+      clearEntryFormDirty();
       render();
     }
     return;
@@ -5256,11 +5648,17 @@ els.panel.addEventListener("click", (event) => {
     return;
   }
   if (action === "edit-entry") {
+    const isSameEntry = editing
+      && editing.section === actionButton.dataset.section
+      && editing.kind === actionButton.dataset.kind
+      && editing.index === Number(actionButton.dataset.index);
+    if (!isSameEntry && !canLeaveEntryForm()) return;
     editing = {
       section: actionButton.dataset.section,
       kind: actionButton.dataset.kind,
       index: Number(actionButton.dataset.index)
     };
+    clearEntryFormDirty();
     render();
   }
   if (action === "delete-entry") {
@@ -5270,13 +5668,13 @@ els.panel.addEventListener("click", (event) => {
   if (action === "clear-dialogue-form" || action === "clear-forced-dialogue-form" || action === "clear-notification-form" || action === "clear-gift-form" || action === "clear-pacification-form" || action === "clear-story-form") {
     clearEditing();
   }
-  if (action === "add-dialogue-example") addDialogueExample();
-  if (action === "add-forced-dialogue-example") addForcedDialogueExample();
-  if (action === "add-notification-example") addNotificationExample();
-  if (action === "add-gift-example") addGiftExample();
-  if (action === "add-pacification-example") addPacificationExample();
-  if (action === "add-story-example") addStoryExample();
-  if (action === "add-name-example") addNameExample();
+  if (action === "add-dialogue-example" && canLeaveEntryForm()) addDialogueExample();
+  if (action === "add-forced-dialogue-example" && canLeaveEntryForm()) addForcedDialogueExample();
+  if (action === "add-notification-example" && canLeaveEntryForm()) addNotificationExample();
+  if (action === "add-gift-example" && canLeaveEntryForm()) addGiftExample();
+  if (action === "add-pacification-example" && canLeaveEntryForm()) addPacificationExample();
+  if (action === "add-story-example" && canLeaveEntryForm()) addStoryExample();
+  if (action === "add-name-example" && canLeaveEntryForm()) addNameExample();
 });
 
 els.panel.addEventListener("dragstart", (event) => {
@@ -5333,12 +5731,18 @@ els.panel.addEventListener("keydown", (event) => {
   if (event.key !== "Enter" && event.key !== " ") return;
   const entryCard = event.target.closest(".entry-card");
   if (!entryCard || event.target.closest("button")) return;
+  const isSameEntry = editing
+    && editing.section === entryCard.dataset.section
+    && editing.kind === entryCard.dataset.kind
+    && editing.index === Number(entryCard.dataset.index);
+  if (!isSameEntry && !canLeaveEntryForm()) return;
   event.preventDefault();
   editing = {
     section: entryCard.dataset.section,
     kind: entryCard.dataset.kind,
     index: Number(entryCard.dataset.index)
   };
+  clearEntryFormDirty();
   render();
 });
 
@@ -5354,6 +5758,9 @@ els.panel.addEventListener("submit", (event) => {
 });
 
 els.panel.addEventListener("input", (event) => {
+  if (event.target.closest(".entry-form")) {
+    markEntryFormDirty();
+  }
   if (event.target.matches(".entry-form textarea")) {
     resizeTextareas(event.target.closest(".entry-form"));
   }
@@ -5368,6 +5775,9 @@ els.panel.addEventListener("input", (event) => {
 });
 
 els.panel.addEventListener("change", (event) => {
+  if (event.target.closest(".entry-form")) {
+    markEntryFormDirty();
+  }
   if (activeSection === "overview") updateOverviewFromInput(event.target);
   updateSectionSettings(event.target);
   if (event.target.matches("textarea")) {
@@ -5381,6 +5791,7 @@ els.panel.addEventListener("change", (event) => {
 els.fileTree.addEventListener("click", (event) => {
   const button = event.target.closest(".file-button");
   if (!button) return;
+  if (button.dataset.path !== selectedPath && !canLeaveEntryForm()) return;
   selectedPath = button.dataset.path;
   if (previewEditError?.path !== selectedPath) previewEditError = null;
   renderFiles();
@@ -5389,6 +5800,10 @@ els.fileTree.addEventListener("click", (event) => {
 });
 
 els.importInput.addEventListener("change", async () => {
+  if (!canLeaveEntryForm()) {
+    els.importInput.value = "";
+    return;
+  }
   try {
     await handleImport([...els.importInput.files], [...els.importInput.files].some((file) => /\.zip$/i.test(file.name)));
   } catch (error) {
@@ -5399,6 +5814,10 @@ els.importInput.addEventListener("change", async () => {
 });
 
 els.directoryInput.addEventListener("change", async () => {
+  if (!canLeaveEntryForm()) {
+    els.directoryInput.value = "";
+    return;
+  }
   try {
     await handleImport([...els.directoryInput.files], true);
   } catch (error) {
@@ -5408,8 +5827,12 @@ els.directoryInput.addEventListener("change", async () => {
   }
 });
 
-els.exportButton.addEventListener("click", exportZip);
-els.starterButton.addEventListener("click", loadStarterPack);
+els.exportButton.addEventListener("click", () => {
+  if (canLeaveEntryForm()) exportZip();
+});
+els.starterButton.addEventListener("click", () => {
+  if (canLeaveEntryForm()) loadStarterPack();
+});
 els.leftPanelToggleButton.addEventListener("click", (event) => {
   event.stopPropagation();
   showLeftPanel = !showLeftPanel;
@@ -5460,6 +5883,11 @@ els.wrapPreviewButton.addEventListener("click", () => {
   renderIcons();
 });
 els.wikiButton.addEventListener("click", openWiki);
+els.exportIssueCancel.addEventListener("click", () => closeExportIssueDialog(false));
+els.exportIssueConfirm.addEventListener("click", () => closeExportIssueDialog(true));
+els.exportIssueDialog.addEventListener("click", (event) => {
+  if (event.target === els.exportIssueDialog) closeExportIssueDialog(false);
+});
 els.wikiCloseButton.addEventListener("click", closeWiki);
 els.wikiVersion.addEventListener("change", () => {
   wikiState.version = els.wikiVersion.value;
@@ -5548,6 +5976,7 @@ document.addEventListener("keydown", (event) => {
   }
   if (event.key === "Escape") {
     hideTooltip();
+    if (els.exportIssueDialog?.classList.contains("is-open")) closeExportIssueDialog(false);
     if (wikiState.isOpen) closeWiki();
   }
 });
@@ -5556,6 +5985,11 @@ window.addEventListener("resize", () => {
   keepPanelSizesInRange();
   if (wikiState.isOpen) applyWikiLayout();
   positionTooltip();
+});
+window.addEventListener("beforeunload", (event) => {
+  if (!entryFormDirty) return;
+  event.preventDefault();
+  event.returnValue = "";
 });
 els.copyButton.addEventListener("click", copyCurrentFile);
 els.downloadButton.addEventListener("click", downloadCurrentFile);
