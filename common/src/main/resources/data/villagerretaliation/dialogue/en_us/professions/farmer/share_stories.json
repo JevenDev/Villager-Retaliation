@@ -2,7 +2,7 @@
   "lines": [
     {
       "id": "farmer_share_story_ancient_city_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ancient_city",
       "text": "{target}? Sound itself can wake trouble. I would save bread for the road home.",
@@ -10,7 +10,7 @@
     },
     {
       "id": "farmer_share_story_ancient_city_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ancient_city",
       "text": "If anyone heads for Ancient City, tell them: Step softly and leave the shiny things alone. I will be at the fields.",
@@ -18,7 +18,7 @@
     },
     {
       "id": "farmer_share_story_ancient_city_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ancient_city",
       "text": "Sculk does not need eyes to notice you. I will remember that when I put bread aside.",
@@ -26,7 +26,7 @@
     },
     {
       "id": "farmer_share_story_ancient_city_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ancient_city",
       "text": "Ancient City is no small story. A full belly is not the same as safety.",
@@ -34,7 +34,7 @@
     },
     {
       "id": "farmer_share_story_ancient_city_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ancient_city",
       "text": "I will remember Ancient City as a city where silence matters more than armor. I will keep bread aside for the road.",
@@ -42,7 +42,7 @@
     },
     {
       "id": "farmer_share_story_bastion_remnant_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:bastion_remnant",
       "text": "{target}? Old gold still has guards. I would save bread for the road home.",
@@ -50,7 +50,7 @@
     },
     {
       "id": "farmer_share_story_bastion_remnant_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:bastion_remnant",
       "text": "If anyone heads for Bastion Remnant, tell them: Do not touch gold unless you are ready for angry piglins. I will be at the fields.",
@@ -58,7 +58,7 @@
     },
     {
       "id": "farmer_share_story_bastion_remnant_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:bastion_remnant",
       "text": "Blackstone halls do not forgive greed. I will remember that when I put bread aside.",
@@ -66,7 +66,7 @@
     },
     {
       "id": "farmer_share_story_bastion_remnant_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:bastion_remnant",
       "text": "Bastion Remnant is no small story. A full belly is not the same as safety.",
@@ -74,7 +74,7 @@
     },
     {
       "id": "farmer_share_story_bastion_remnant_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:bastion_remnant",
       "text": "I will remember Bastion Remnant as a broken stronghold where greed still has teeth. I will keep bread aside for the road.",
@@ -82,7 +82,7 @@
     },
     {
       "id": "farmer_share_story_buried_treasure_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:buried_treasure",
       "text": "{target}? Treasure makes people dig past good sense. I would save bread for the road home.",
@@ -90,7 +90,7 @@
     },
     {
       "id": "farmer_share_story_buried_treasure_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:buried_treasure",
       "text": "If anyone heads for Buried Treasure, tell them: Watch the tide and the shovel both. I will be at the fields.",
@@ -98,7 +98,7 @@
     },
     {
       "id": "farmer_share_story_buried_treasure_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:buried_treasure",
       "text": "Sand hides holes as well as chests. I will remember that when I put bread aside.",
@@ -106,7 +106,7 @@
     },
     {
       "id": "farmer_share_story_buried_treasure_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:buried_treasure",
       "text": "Buried Treasure is no small story. A full belly is not the same as safety.",
@@ -114,7 +114,7 @@
     },
     {
       "id": "farmer_share_story_buried_treasure_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:buried_treasure",
       "text": "I will remember Buried Treasure as a chest under sand that can make friends argue. I will keep bread aside for the road.",
@@ -122,7 +122,7 @@
     },
     {
       "id": "farmer_share_story_desert_pyramid_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:desert_pyramid",
       "text": "{target}? Sandstone can hide a trap under your feet. I would save bread for the road home.",
@@ -130,7 +130,7 @@
     },
     {
       "id": "farmer_share_story_desert_pyramid_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:desert_pyramid",
       "text": "If anyone heads for Desert Pyramid, tell them: Break floors carefully and listen before stepping down. I will be at the fields.",
@@ -138,7 +138,7 @@
     },
     {
       "id": "farmer_share_story_desert_pyramid_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:desert_pyramid",
       "text": "Old pressure plates wait patiently. I will remember that when I put bread aside.",
@@ -146,7 +146,7 @@
     },
     {
       "id": "farmer_share_story_desert_pyramid_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:desert_pyramid",
       "text": "Desert Pyramid is no small story. A full belly is not the same as safety.",
@@ -154,7 +154,7 @@
     },
     {
       "id": "farmer_share_story_desert_pyramid_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:desert_pyramid",
       "text": "I will remember Desert Pyramid as a quiet pyramid with a loud mistake under it. I will keep bread aside for the road.",
@@ -162,7 +162,7 @@
     },
     {
       "id": "farmer_share_story_end_city_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:end_city",
       "text": "{target}? The sky is open and the ground is not always there. I would save bread for the road home.",
@@ -170,7 +170,7 @@
     },
     {
       "id": "farmer_share_story_end_city_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:end_city",
       "text": "If anyone heads for End City, tell them: Watch every bridge and every shulker box. I will be at the fields.",
@@ -178,7 +178,7 @@
     },
     {
       "id": "farmer_share_story_end_city_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:end_city",
       "text": "Purple towers make falling feel too easy. I will remember that when I put bread aside.",
@@ -186,7 +186,7 @@
     },
     {
       "id": "farmer_share_story_end_city_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:end_city",
       "text": "End City is no small story. A full belly is not the same as safety.",
@@ -194,7 +194,7 @@
     },
     {
       "id": "farmer_share_story_end_city_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:end_city",
       "text": "I will remember End City as a tall city built where home feels very far away. I will keep bread aside for the road.",
@@ -202,7 +202,7 @@
     },
     {
       "id": "farmer_share_story_fortress_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:fortress",
       "text": "{target}? Bridges hang over lava and worse things patrol them. I would save bread for the road home.",
@@ -210,7 +210,7 @@
     },
     {
       "id": "farmer_share_story_fortress_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:fortress",
       "text": "If anyone heads for Nether Fortress, tell them: Keep fire protection close and pride far away. I will be at the fields.",
@@ -218,7 +218,7 @@
     },
     {
       "id": "farmer_share_story_fortress_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:fortress",
       "text": "Blazes turn hallways into ovens. I will remember that when I put bread aside.",
@@ -226,7 +226,7 @@
     },
     {
       "id": "farmer_share_story_fortress_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:fortress",
       "text": "Nether Fortress is no small story. A full belly is not the same as safety.",
@@ -234,7 +234,7 @@
     },
     {
       "id": "farmer_share_story_fortress_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:fortress",
       "text": "I will remember Nether Fortress as a black bridge where the air itself wants a fight. I will keep bread aside for the road.",
@@ -242,7 +242,7 @@
     },
     {
       "id": "farmer_share_story_igloo_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:igloo",
       "text": "{target}? A little shelter can keep a strange secret below. I would save bread for the road home.",
@@ -250,7 +250,7 @@
     },
     {
       "id": "farmer_share_story_igloo_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:igloo",
       "text": "If anyone heads for Igloo, tell them: Check the trapdoor before trusting the bed. I will be at the fields.",
@@ -258,7 +258,7 @@
     },
     {
       "id": "farmer_share_story_igloo_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:igloo",
       "text": "Snow can cover kindness and trouble both. I will remember that when I put bread aside.",
@@ -266,7 +266,7 @@
     },
     {
       "id": "farmer_share_story_igloo_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:igloo",
       "text": "Igloo is no small story. A full belly is not the same as safety.",
@@ -274,7 +274,7 @@
     },
     {
       "id": "farmer_share_story_igloo_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:igloo",
       "text": "I will remember Igloo as a small white house with more beneath it than above it. I will keep bread aside for the road.",
@@ -282,7 +282,7 @@
     },
     {
       "id": "farmer_share_story_jungle_pyramid_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:jungle_pyramid",
       "text": "{target}? Vines and stone hide tripwires well. I would save bread for the road home.",
@@ -290,7 +290,7 @@
     },
     {
       "id": "farmer_share_story_jungle_pyramid_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:jungle_pyramid",
       "text": "If anyone heads for Jungle Pyramid, tell them: Move slow and keep hands off strange levers. I will be at the fields.",
@@ -298,7 +298,7 @@
     },
     {
       "id": "farmer_share_story_jungle_pyramid_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:jungle_pyramid",
       "text": "Mossy stone is good at pretending nothing happened. I will remember that when I put bread aside.",
@@ -306,7 +306,7 @@
     },
     {
       "id": "farmer_share_story_jungle_pyramid_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:jungle_pyramid",
       "text": "Jungle Pyramid is no small story. A full belly is not the same as safety.",
@@ -314,7 +314,7 @@
     },
     {
       "id": "farmer_share_story_jungle_pyramid_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:jungle_pyramid",
       "text": "I will remember Jungle Pyramid as a jungle ruin that waits with string pulled tight. I will keep bread aside for the road.",
@@ -322,7 +322,7 @@
     },
     {
       "id": "farmer_share_story_mineshaft_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:mineshaft",
       "text": "{target}? Old supports and cave spiders both like the dark. I would save bread for the road home.",
@@ -330,7 +330,7 @@
     },
     {
       "id": "farmer_share_story_mineshaft_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:mineshaft",
       "text": "If anyone heads for Mineshaft, tell them: Mind the webs and never trust quiet rails. I will be at the fields.",
@@ -338,7 +338,7 @@
     },
     {
       "id": "farmer_share_story_mineshaft_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:mineshaft",
       "text": "Wood below ground means someone left in a hurry. I will remember that when I put bread aside.",
@@ -346,7 +346,7 @@
     },
     {
       "id": "farmer_share_story_mineshaft_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:mineshaft",
       "text": "Mineshaft is no small story. A full belly is not the same as safety.",
@@ -354,7 +354,7 @@
     },
     {
       "id": "farmer_share_story_mineshaft_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:mineshaft",
       "text": "I will remember Mineshaft as a tunnel where every beam sounds tired. I will keep bread aside for the road.",
@@ -362,7 +362,7 @@
     },
     {
       "id": "farmer_share_story_mineshaft_mesa_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:mineshaft_mesa",
       "text": "{target}? Gold country draws danger underground. I would save bread for the road home.",
@@ -370,7 +370,7 @@
     },
     {
       "id": "farmer_share_story_mineshaft_mesa_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:mineshaft_mesa",
       "text": "If anyone heads for Mesa Mineshaft, tell them: Watch the rails and the drops between red stone walls. I will be at the fields.",
@@ -378,7 +378,7 @@
     },
     {
       "id": "farmer_share_story_mineshaft_mesa_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:mineshaft_mesa",
       "text": "Badlands dust follows you into every tunnel. I will remember that when I put bread aside.",
@@ -386,7 +386,7 @@
     },
     {
       "id": "farmer_share_story_mineshaft_mesa_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:mineshaft_mesa",
       "text": "Mesa Mineshaft is no small story. A full belly is not the same as safety.",
@@ -394,7 +394,7 @@
     },
     {
       "id": "farmer_share_story_mineshaft_mesa_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:mineshaft_mesa",
       "text": "I will remember Mesa Mineshaft as a red-earth mine where greed dug too deep. I will keep bread aside for the road.",
@@ -402,7 +402,7 @@
     },
     {
       "id": "farmer_share_story_monument_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:monument",
       "text": "{target}? Guardians watch the water from every side. I would save bread for the road home.",
@@ -410,7 +410,7 @@
     },
     {
       "id": "farmer_share_story_monument_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:monument",
       "text": "If anyone heads for Ocean Monument, tell them: Bring milk, doors, and enough air to regret nothing. I will be at the fields.",
@@ -418,7 +418,7 @@
     },
     {
       "id": "farmer_share_story_monument_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:monument",
       "text": "Prismarine looks pretty until the beams start. I will remember that when I put bread aside.",
@@ -426,7 +426,7 @@
     },
     {
       "id": "farmer_share_story_monument_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:monument",
       "text": "Ocean Monument is no small story. A full belly is not the same as safety.",
@@ -434,7 +434,7 @@
     },
     {
       "id": "farmer_share_story_monument_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:monument",
       "text": "I will remember Ocean Monument as a drowned temple with eyes in the walls. I will keep bread aside for the road.",
@@ -442,7 +442,7 @@
     },
     {
       "id": "farmer_share_story_nether_fossil_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:nether_fossil",
       "text": "{target}? Even old bones can sit in bad air. I would save bread for the road home.",
@@ -450,7 +450,7 @@
     },
     {
       "id": "farmer_share_story_nether_fossil_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:nether_fossil",
       "text": "If anyone heads for Nether Fossil, tell them: Mind the soul sand and anything burning nearby. I will be at the fields.",
@@ -458,7 +458,7 @@
     },
     {
       "id": "farmer_share_story_nether_fossil_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:nether_fossil",
       "text": "White bone in the Nether never feels peaceful. I will remember that when I put bread aside.",
@@ -466,7 +466,7 @@
     },
     {
       "id": "farmer_share_story_nether_fossil_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:nether_fossil",
       "text": "Nether Fossil is no small story. A full belly is not the same as safety.",
@@ -474,7 +474,7 @@
     },
     {
       "id": "farmer_share_story_nether_fossil_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:nether_fossil",
       "text": "I will remember Nether Fossil as a dead thing the Nether refused to bury kindly. I will keep bread aside for the road.",
@@ -482,7 +482,7 @@
     },
     {
       "id": "farmer_share_story_ocean_ruin_cold_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ocean_ruin_cold",
       "text": "{target}? Cold water steals strength fast. I would save bread for the road home.",
@@ -490,7 +490,7 @@
     },
     {
       "id": "farmer_share_story_ocean_ruin_cold_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ocean_ruin_cold",
       "text": "If anyone heads for Cold Ocean Ruin, tell them: Watch for drowned hands below the stone. I will be at the fields.",
@@ -498,7 +498,7 @@
     },
     {
       "id": "farmer_share_story_ocean_ruin_cold_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ocean_ruin_cold",
       "text": "Ruined blocks under ice do not mean empty blocks. I will remember that when I put bread aside.",
@@ -506,7 +506,7 @@
     },
     {
       "id": "farmer_share_story_ocean_ruin_cold_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ocean_ruin_cold",
       "text": "Cold Ocean Ruin is no small story. A full belly is not the same as safety.",
@@ -514,7 +514,7 @@
     },
     {
       "id": "farmer_share_story_ocean_ruin_cold_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ocean_ruin_cold",
       "text": "I will remember Cold Ocean Ruin as a sunken ruin where the water bites first. I will keep bread aside for the road.",
@@ -522,7 +522,7 @@
     },
     {
       "id": "farmer_share_story_ocean_ruin_warm_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ocean_ruin_warm",
       "text": "{target}? Warm water can still hide drowned trouble. I would save bread for the road home.",
@@ -530,7 +530,7 @@
     },
     {
       "id": "farmer_share_story_ocean_ruin_warm_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ocean_ruin_warm",
       "text": "If anyone heads for Warm Ocean Ruin, tell them: Do not mistake coral colors for safety. I will be at the fields.",
@@ -538,7 +538,7 @@
     },
     {
       "id": "farmer_share_story_ocean_ruin_warm_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ocean_ruin_warm",
       "text": "Bright water makes danger look inviting. I will remember that when I put bread aside.",
@@ -546,7 +546,7 @@
     },
     {
       "id": "farmer_share_story_ocean_ruin_warm_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ocean_ruin_warm",
       "text": "Warm Ocean Ruin is no small story. A full belly is not the same as safety.",
@@ -554,7 +554,7 @@
     },
     {
       "id": "farmer_share_story_ocean_ruin_warm_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ocean_ruin_warm",
       "text": "I will remember Warm Ocean Ruin as a pretty ruin with lungs full of warning. I will keep bread aside for the road.",
@@ -562,7 +562,7 @@
     },
     {
       "id": "farmer_share_story_pillager_outpost_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:pillager_outpost",
       "text": "{target}? Banners mean crossbows are near. I would save bread for the road home.",
@@ -570,7 +570,7 @@
     },
     {
       "id": "farmer_share_story_pillager_outpost_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:pillager_outpost",
       "text": "If anyone heads for Pillager Outpost, tell them: Stay low and do not let patrols follow you home. I will be at the fields.",
@@ -578,7 +578,7 @@
     },
     {
       "id": "farmer_share_story_pillager_outpost_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:pillager_outpost",
       "text": "A tower sees farther than a villager wants. I will remember that when I put bread aside.",
@@ -586,7 +586,7 @@
     },
     {
       "id": "farmer_share_story_pillager_outpost_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:pillager_outpost",
       "text": "Pillager Outpost is no small story. A full belly is not the same as safety.",
@@ -594,7 +594,7 @@
     },
     {
       "id": "farmer_share_story_pillager_outpost_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:pillager_outpost",
       "text": "I will remember Pillager Outpost as a wooden tower that points trouble at villages. I will keep bread aside for the road.",
@@ -602,7 +602,7 @@
     },
     {
       "id": "farmer_share_story_ruined_portal_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ruined_portal",
       "text": "{target}? Broken obsidian still remembers the Nether. I would save bread for the road home.",
@@ -610,7 +610,7 @@
     },
     {
       "id": "farmer_share_story_ruined_portal_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ruined_portal",
       "text": "If anyone heads for Ruined Portal, tell them: Keep clear of lava and do not rebuild it casually. I will be at the fields.",
@@ -618,7 +618,7 @@
     },
     {
       "id": "farmer_share_story_ruined_portal_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ruined_portal",
       "text": "Even cold portal stones make the air feel warmer. I will remember that when I put bread aside.",
@@ -626,7 +626,7 @@
     },
     {
       "id": "farmer_share_story_ruined_portal_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ruined_portal",
       "text": "Ruined Portal is no small story. A full belly is not the same as safety.",
@@ -634,7 +634,7 @@
     },
     {
       "id": "farmer_share_story_ruined_portal_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ruined_portal",
       "text": "I will remember Ruined Portal as a broken doorway that still points somewhere bad. I will keep bread aside for the road.",
@@ -642,7 +642,7 @@
     },
     {
       "id": "farmer_share_story_ruined_portal_desert_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ruined_portal_desert",
       "text": "{target}? Nether heat and desert heat make poor company. I would save bread for the road home.",
@@ -650,7 +650,7 @@
     },
     {
       "id": "farmer_share_story_ruined_portal_desert_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ruined_portal_desert",
       "text": "If anyone heads for Desert Ruined Portal, tell them: Watch lava pockets and broken obsidian. I will be at the fields.",
@@ -658,7 +658,7 @@
     },
     {
       "id": "farmer_share_story_ruined_portal_desert_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ruined_portal_desert",
       "text": "Sand around a portal never feels innocent. I will remember that when I put bread aside.",
@@ -666,7 +666,7 @@
     },
     {
       "id": "farmer_share_story_ruined_portal_desert_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ruined_portal_desert",
       "text": "Desert Ruined Portal is no small story. A full belly is not the same as safety.",
@@ -674,7 +674,7 @@
     },
     {
       "id": "farmer_share_story_ruined_portal_desert_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ruined_portal_desert",
       "text": "I will remember Desert Ruined Portal as a hot ruin with one foot in a worse world. I will keep bread aside for the road.",
@@ -682,7 +682,7 @@
     },
     {
       "id": "farmer_share_story_ruined_portal_jungle_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ruined_portal_jungle",
       "text": "{target}? Vines can hide lava as well as stone. I would save bread for the road home.",
@@ -690,7 +690,7 @@
     },
     {
       "id": "farmer_share_story_ruined_portal_jungle_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ruined_portal_jungle",
       "text": "If anyone heads for Jungle Ruined Portal, tell them: Clear the leaves before stepping close. I will be at the fields.",
@@ -698,7 +698,7 @@
     },
     {
       "id": "farmer_share_story_ruined_portal_jungle_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ruined_portal_jungle",
       "text": "The jungle grows over Nether scars, but not kindly. I will remember that when I put bread aside.",
@@ -706,7 +706,7 @@
     },
     {
       "id": "farmer_share_story_ruined_portal_jungle_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ruined_portal_jungle",
       "text": "Jungle Ruined Portal is no small story. A full belly is not the same as safety.",
@@ -714,7 +714,7 @@
     },
     {
       "id": "farmer_share_story_ruined_portal_jungle_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ruined_portal_jungle",
       "text": "I will remember Jungle Ruined Portal as a green ruin with a red memory underneath. I will keep bread aside for the road.",
@@ -722,7 +722,7 @@
     },
     {
       "id": "farmer_share_story_ruined_portal_mountain_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ruined_portal_mountain",
       "text": "{target}? Broken obsidian near cliffs makes bad footing worse. I would save bread for the road home.",
@@ -730,7 +730,7 @@
     },
     {
       "id": "farmer_share_story_ruined_portal_mountain_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ruined_portal_mountain",
       "text": "If anyone heads for Mountain Ruined Portal, tell them: Mind the edge before minding the chest. I will be at the fields.",
@@ -738,7 +738,7 @@
     },
     {
       "id": "farmer_share_story_ruined_portal_mountain_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ruined_portal_mountain",
       "text": "Thin air and Nether stone both make folk careless. I will remember that when I put bread aside.",
@@ -746,7 +746,7 @@
     },
     {
       "id": "farmer_share_story_ruined_portal_mountain_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ruined_portal_mountain",
       "text": "Mountain Ruined Portal is no small story. A full belly is not the same as safety.",
@@ -754,7 +754,7 @@
     },
     {
       "id": "farmer_share_story_ruined_portal_mountain_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ruined_portal_mountain",
       "text": "I will remember Mountain Ruined Portal as a high ruin where one bad step travels far. I will keep bread aside for the road.",
@@ -762,7 +762,7 @@
     },
     {
       "id": "farmer_share_story_ruined_portal_nether_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ruined_portal_nether",
       "text": "{target}? A broken portal in the Nether still feels too awake. I would save bread for the road home.",
@@ -770,7 +770,7 @@
     },
     {
       "id": "farmer_share_story_ruined_portal_nether_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ruined_portal_nether",
       "text": "If anyone heads for Nether Ruined Portal, tell them: Keep fire behind you and a way out ahead. I will be at the fields.",
@@ -778,7 +778,7 @@
     },
     {
       "id": "farmer_share_story_ruined_portal_nether_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ruined_portal_nether",
       "text": "Obsidian there looks less broken than hungry. I will remember that when I put bread aside.",
@@ -786,7 +786,7 @@
     },
     {
       "id": "farmer_share_story_ruined_portal_nether_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ruined_portal_nether",
       "text": "Nether Ruined Portal is no small story. A full belly is not the same as safety.",
@@ -794,7 +794,7 @@
     },
     {
       "id": "farmer_share_story_ruined_portal_nether_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ruined_portal_nether",
       "text": "I will remember Nether Ruined Portal as a ruin inside the place ruins come from. I will keep bread aside for the road.",
@@ -802,7 +802,7 @@
     },
     {
       "id": "farmer_share_story_ruined_portal_ocean_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ruined_portal_ocean",
       "text": "{target}? Lava stone under water makes no honest sense. I would save bread for the road home.",
@@ -810,7 +810,7 @@
     },
     {
       "id": "farmer_share_story_ruined_portal_ocean_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ruined_portal_ocean",
       "text": "If anyone heads for Ocean Ruined Portal, tell them: Watch your air and anything glowing below. I will be at the fields.",
@@ -818,7 +818,7 @@
     },
     {
       "id": "farmer_share_story_ruined_portal_ocean_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ruined_portal_ocean",
       "text": "The sea should not know that much heat. I will remember that when I put bread aside.",
@@ -826,7 +826,7 @@
     },
     {
       "id": "farmer_share_story_ruined_portal_ocean_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ruined_portal_ocean",
       "text": "Ocean Ruined Portal is no small story. A full belly is not the same as safety.",
@@ -834,7 +834,7 @@
     },
     {
       "id": "farmer_share_story_ruined_portal_ocean_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ruined_portal_ocean",
       "text": "I will remember Ocean Ruined Portal as a drowned portal still remembering fire. I will keep bread aside for the road.",
@@ -842,7 +842,7 @@
     },
     {
       "id": "farmer_share_story_ruined_portal_swamp_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ruined_portal_swamp",
       "text": "{target}? Mud, vines, and Nether stone all grab at your feet. I would save bread for the road home.",
@@ -850,7 +850,7 @@
     },
     {
       "id": "farmer_share_story_ruined_portal_swamp_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ruined_portal_swamp",
       "text": "If anyone heads for Swamp Ruined Portal, tell them: Bring blocks and leave before the fog thickens. I will be at the fields.",
@@ -858,7 +858,7 @@
     },
     {
       "id": "farmer_share_story_ruined_portal_swamp_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ruined_portal_swamp",
       "text": "Swamp water makes broken obsidian look sicker. I will remember that when I put bread aside.",
@@ -866,7 +866,7 @@
     },
     {
       "id": "farmer_share_story_ruined_portal_swamp_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ruined_portal_swamp",
       "text": "Swamp Ruined Portal is no small story. A full belly is not the same as safety.",
@@ -874,7 +874,7 @@
     },
     {
       "id": "farmer_share_story_ruined_portal_swamp_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:ruined_portal_swamp",
       "text": "I will remember Swamp Ruined Portal as a wet ruin with a fever under it. I will keep bread aside for the road.",
@@ -882,7 +882,7 @@
     },
     {
       "id": "farmer_share_story_shipwreck_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:shipwreck",
       "text": "{target}? Broken planks underwater snag the careless. I would save bread for the road home.",
@@ -890,7 +890,7 @@
     },
     {
       "id": "farmer_share_story_shipwreck_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:shipwreck",
       "text": "If anyone heads for Shipwreck, tell them: Count your air before counting loot. I will be at the fields.",
@@ -898,7 +898,7 @@
     },
     {
       "id": "farmer_share_story_shipwreck_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:shipwreck",
       "text": "The sea keeps what sinks unless you bargain well. I will remember that when I put bread aside.",
@@ -906,7 +906,7 @@
     },
     {
       "id": "farmer_share_story_shipwreck_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:shipwreck",
       "text": "Shipwreck is no small story. A full belly is not the same as safety.",
@@ -914,7 +914,7 @@
     },
     {
       "id": "farmer_share_story_shipwreck_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:shipwreck",
       "text": "I will remember Shipwreck as a drowned hull that still knows how to trap feet. I will keep bread aside for the road.",
@@ -922,7 +922,7 @@
     },
     {
       "id": "farmer_share_story_shipwreck_beached_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:shipwreck_beached",
       "text": "{target}? A ship on land already lost one argument. I would save bread for the road home.",
@@ -930,7 +930,7 @@
     },
     {
       "id": "farmer_share_story_shipwreck_beached_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:shipwreck_beached",
       "text": "If anyone heads for Beached Shipwreck, tell them: Watch rotten planks and the sand under them. I will be at the fields.",
@@ -938,7 +938,7 @@
     },
     {
       "id": "farmer_share_story_shipwreck_beached_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:shipwreck_beached",
       "text": "Wood that survived the sea can still give way. I will remember that when I put bread aside.",
@@ -946,7 +946,7 @@
     },
     {
       "id": "farmer_share_story_shipwreck_beached_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:shipwreck_beached",
       "text": "Beached Shipwreck is no small story. A full belly is not the same as safety.",
@@ -954,7 +954,7 @@
     },
     {
       "id": "farmer_share_story_shipwreck_beached_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:shipwreck_beached",
       "text": "I will remember Beached Shipwreck as a stranded hull with old trouble in its ribs. I will keep bread aside for the road.",
@@ -962,7 +962,7 @@
     },
     {
       "id": "farmer_share_story_stronghold_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:stronghold",
       "text": "{target}? Deep stone can lead farther than anyone planned. I would save bread for the road home.",
@@ -970,7 +970,7 @@
     },
     {
       "id": "farmer_share_story_stronghold_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:stronghold",
       "text": "If anyone heads for Stronghold, tell them: Mark every stair and do not stare too long at the portal room. I will be at the fields.",
@@ -978,7 +978,7 @@
     },
     {
       "id": "farmer_share_story_stronghold_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:stronghold",
       "text": "Silverfish turn old blocks into bad surprises. I will remember that when I put bread aside.",
@@ -986,7 +986,7 @@
     },
     {
       "id": "farmer_share_story_stronghold_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:stronghold",
       "text": "Stronghold is no small story. A full belly is not the same as safety.",
@@ -994,7 +994,7 @@
     },
     {
       "id": "farmer_share_story_stronghold_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:stronghold",
       "text": "I will remember Stronghold as a buried place asking questions in stone. I will keep bread aside for the road.",
@@ -1002,7 +1002,7 @@
     },
     {
       "id": "farmer_share_story_swamp_hut_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:swamp_hut",
       "text": "{target}? Witches do not need much room to make trouble. I would save bread for the road home.",
@@ -1010,7 +1010,7 @@
     },
     {
       "id": "farmer_share_story_swamp_hut_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:swamp_hut",
       "text": "If anyone heads for Swamp Hut, tell them: Keep milk ready and do not breathe the potions. I will be at the fields.",
@@ -1018,7 +1018,7 @@
     },
     {
       "id": "farmer_share_story_swamp_hut_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:swamp_hut",
       "text": "A little hut can smell like a warning. I will remember that when I put bread aside.",
@@ -1026,7 +1026,7 @@
     },
     {
       "id": "farmer_share_story_swamp_hut_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:swamp_hut",
       "text": "Swamp Hut is no small story. A full belly is not the same as safety.",
@@ -1034,7 +1034,7 @@
     },
     {
       "id": "farmer_share_story_swamp_hut_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:swamp_hut",
       "text": "I will remember Swamp Hut as a crooked house where bottles mean danger. I will keep bread aside for the road.",
@@ -1042,7 +1042,7 @@
     },
     {
       "id": "farmer_share_story_trail_ruins_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:trail_ruins",
       "text": "{target}? Old roads leave sharp bits behind. I would save bread for the road home.",
@@ -1050,7 +1050,7 @@
     },
     {
       "id": "farmer_share_story_trail_ruins_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:trail_ruins",
       "text": "If anyone heads for Trail Ruins, tell them: Brush carefully and do not dig like a fool. I will be at the fields.",
@@ -1058,7 +1058,7 @@
     },
     {
       "id": "farmer_share_story_trail_ruins_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:trail_ruins",
       "text": "The past breaks easily when rushed. I will remember that when I put bread aside.",
@@ -1066,7 +1066,7 @@
     },
     {
       "id": "farmer_share_story_trail_ruins_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:trail_ruins",
       "text": "Trail Ruins is no small story. A full belly is not the same as safety.",
@@ -1074,7 +1074,7 @@
     },
     {
       "id": "farmer_share_story_trail_ruins_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:trail_ruins",
       "text": "I will remember Trail Ruins as buried paths with history under the dirt. I will keep bread aside for the road.",
@@ -1082,7 +1082,7 @@
     },
     {
       "id": "farmer_share_story_trial_chambers_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:trial_chambers",
       "text": "{target}? Rooms built for tests rarely grade kindly. I would save bread for the road home.",
@@ -1090,7 +1090,7 @@
     },
     {
       "id": "farmer_share_story_trial_chambers_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:trial_chambers",
       "text": "If anyone heads for Trial Chambers, tell them: Save strength for the next door, not the first cheer. I will be at the fields.",
@@ -1098,7 +1098,7 @@
     },
     {
       "id": "farmer_share_story_trial_chambers_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:trial_chambers",
       "text": "Copper halls can turn brave feet around. I will remember that when I put bread aside.",
@@ -1106,7 +1106,7 @@
     },
     {
       "id": "farmer_share_story_trial_chambers_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:trial_chambers",
       "text": "Trial Chambers is no small story. A full belly is not the same as safety.",
@@ -1114,7 +1114,7 @@
     },
     {
       "id": "farmer_share_story_trial_chambers_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:trial_chambers",
       "text": "I will remember Trial Chambers as a place that measures courage by bruises. I will keep bread aside for the road.",
@@ -1122,7 +1122,7 @@
     },
     {
       "id": "farmer_share_story_village_desert_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:village_desert",
       "text": "{target}? Neighbors there fight heat before anything else. I would save bread for the road home.",
@@ -1130,7 +1130,7 @@
     },
     {
       "id": "farmer_share_story_village_desert_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:village_desert",
       "text": "If anyone heads for Desert Village, tell them: Bring water and news, not trouble. I will be at the fields.",
@@ -1138,7 +1138,7 @@
     },
     {
       "id": "farmer_share_story_village_desert_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:village_desert",
       "text": "Sand gets into doors, beds, and tempers. I will remember that when I put bread aside.",
@@ -1146,7 +1146,7 @@
     },
     {
       "id": "farmer_share_story_village_desert_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:village_desert",
       "text": "Desert Village is no small story. A full belly is not the same as safety.",
@@ -1154,7 +1154,7 @@
     },
     {
       "id": "farmer_share_story_village_desert_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:village_desert",
       "text": "I will remember Desert Village as another village trying to keep shade and hope. I will keep bread aside for the road.",
@@ -1162,7 +1162,7 @@
     },
     {
       "id": "farmer_share_story_village_plains_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:village_plains",
       "text": "{target}? Open fields give little warning before danger arrives. I would save bread for the road home.",
@@ -1170,7 +1170,7 @@
     },
     {
       "id": "farmer_share_story_village_plains_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:village_plains",
       "text": "If anyone heads for Plains Village, tell them: Greet the bell and trade kindly. I will be at the fields.",
@@ -1178,7 +1178,7 @@
     },
     {
       "id": "farmer_share_story_village_plains_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:village_plains",
       "text": "Flat roads make visitors easy to see. I will remember that when I put bread aside.",
@@ -1186,7 +1186,7 @@
     },
     {
       "id": "farmer_share_story_village_plains_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:village_plains",
       "text": "Plains Village is no small story. A full belly is not the same as safety.",
@@ -1194,7 +1194,7 @@
     },
     {
       "id": "farmer_share_story_village_plains_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:village_plains",
       "text": "I will remember Plains Village as neighbors with fields like ours. I will keep bread aside for the road.",
@@ -1202,7 +1202,7 @@
     },
     {
       "id": "farmer_share_story_village_savanna_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:village_savanna",
       "text": "{target}? Dry grass carries sound and fire quickly. I would save bread for the road home.",
@@ -1210,7 +1210,7 @@
     },
     {
       "id": "farmer_share_story_village_savanna_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:village_savanna",
       "text": "If anyone heads for Savanna Village, tell them: Bring respect and watch the wind. I will be at the fields.",
@@ -1218,7 +1218,7 @@
     },
     {
       "id": "farmer_share_story_village_savanna_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:village_savanna",
       "text": "Acacia roofs know hard sun well. I will remember that when I put bread aside.",
@@ -1226,7 +1226,7 @@
     },
     {
       "id": "farmer_share_story_village_savanna_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:village_savanna",
       "text": "Savanna Village is no small story. A full belly is not the same as safety.",
@@ -1234,7 +1234,7 @@
     },
     {
       "id": "farmer_share_story_village_savanna_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:village_savanna",
       "text": "I will remember Savanna Village as neighbors standing under a sharper sky. I will keep bread aside for the road.",
@@ -1242,7 +1242,7 @@
     },
     {
       "id": "farmer_share_story_village_snowy_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:village_snowy",
       "text": "{target}? Cold makes every chore heavier. I would save bread for the road home.",
@@ -1250,7 +1250,7 @@
     },
     {
       "id": "farmer_share_story_village_snowy_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:village_snowy",
       "text": "If anyone heads for Snowy Village, tell them: Shut doors fast and bring something warm. I will be at the fields.",
@@ -1258,7 +1258,7 @@
     },
     {
       "id": "farmer_share_story_village_snowy_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:village_snowy",
       "text": "Snow hides paths faster than gossip finds them. I will remember that when I put bread aside.",
@@ -1266,7 +1266,7 @@
     },
     {
       "id": "farmer_share_story_village_snowy_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:village_snowy",
       "text": "Snowy Village is no small story. A full belly is not the same as safety.",
@@ -1274,7 +1274,7 @@
     },
     {
       "id": "farmer_share_story_village_snowy_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:village_snowy",
       "text": "I will remember Snowy Village as neighbors keeping hearths alive in white country. I will keep bread aside for the road.",
@@ -1282,7 +1282,7 @@
     },
     {
       "id": "farmer_share_story_village_taiga_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:village_taiga",
       "text": "{target}? Trees and snow make quiet approaches easy. I would save bread for the road home.",
@@ -1290,7 +1290,7 @@
     },
     {
       "id": "farmer_share_story_village_taiga_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:village_taiga",
       "text": "If anyone heads for Taiga Village, tell them: Follow torchlight and respect their stores. I will be at the fields.",
@@ -1298,7 +1298,7 @@
     },
     {
       "id": "farmer_share_story_village_taiga_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:village_taiga",
       "text": "Spruce shadows can hide a lot. I will remember that when I put bread aside.",
@@ -1306,7 +1306,7 @@
     },
     {
       "id": "farmer_share_story_village_taiga_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:village_taiga",
       "text": "Taiga Village is no small story. A full belly is not the same as safety.",
@@ -1314,7 +1314,7 @@
     },
     {
       "id": "farmer_share_story_village_taiga_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:village_taiga",
       "text": "I will remember Taiga Village as neighbors tucked among cold trees. I will keep bread aside for the road.",
@@ -1322,7 +1322,7 @@
     },
     {
       "id": "farmer_share_story_woodland_mansion_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:woodland_mansion",
       "text": "{target}? Illagers make a house feel like a threat. I would save bread for the road home.",
@@ -1330,7 +1330,7 @@
     },
     {
       "id": "farmer_share_story_woodland_mansion_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:woodland_mansion",
       "text": "If anyone heads for Woodland Mansion, tell them: Do not enter alone, and do not trust the quiet rooms. I will be at the fields.",
@@ -1338,7 +1338,7 @@
     },
     {
       "id": "farmer_share_story_woodland_mansion_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:woodland_mansion",
       "text": "Dark oak walls can hold too many axes. I will remember that when I put bread aside.",
@@ -1346,7 +1346,7 @@
     },
     {
       "id": "farmer_share_story_woodland_mansion_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:woodland_mansion",
       "text": "Woodland Mansion is no small story. A full belly is not the same as safety.",
@@ -1354,7 +1354,7 @@
     },
     {
       "id": "farmer_share_story_woodland_mansion_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "minecraft:woodland_mansion",
       "text": "I will remember Woodland Mansion as a huge house that forgot how to be a home. I will keep bread aside for the road.",
@@ -1362,7 +1362,7 @@
     },
     {
       "id": "farmer_share_story_badlands_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:badlands",
       "text": "{target}? Dry cliffs make every mistake echo. I would save bread for the road home.",
@@ -1370,7 +1370,7 @@
     },
     {
       "id": "farmer_share_story_badlands_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:badlands",
       "text": "If anyone heads for Badlands, tell them: Carry water and watch the ledges. I will be at the fields.",
@@ -1378,7 +1378,7 @@
     },
     {
       "id": "farmer_share_story_badlands_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:badlands",
       "text": "Red sand and terracotta do not soften a fall. I will remember that when I put bread aside.",
@@ -1386,7 +1386,7 @@
     },
     {
       "id": "farmer_share_story_badlands_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:badlands",
       "text": "Badlands is no small story. A full belly is not the same as safety.",
@@ -1394,7 +1394,7 @@
     },
     {
       "id": "farmer_share_story_badlands_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:badlands",
       "text": "I will remember Badlands as hard country with old color in its bones. I will keep bread aside for the road.",
@@ -1402,7 +1402,7 @@
     },
     {
       "id": "farmer_share_story_bamboo_jungle_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:bamboo_jungle",
       "text": "{target}? Green stalks can hide quick trouble. I would save bread for the road home.",
@@ -1410,7 +1410,7 @@
     },
     {
       "id": "farmer_share_story_bamboo_jungle_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:bamboo_jungle",
       "text": "If anyone heads for Bamboo Jungle, tell them: Keep a path cut behind you. I will be at the fields.",
@@ -1418,7 +1418,7 @@
     },
     {
       "id": "farmer_share_story_bamboo_jungle_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:bamboo_jungle",
       "text": "Bamboo crowds the eye and the feet. I will remember that when I put bread aside.",
@@ -1426,7 +1426,7 @@
     },
     {
       "id": "farmer_share_story_bamboo_jungle_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:bamboo_jungle",
       "text": "Bamboo Jungle is no small story. A full belly is not the same as safety.",
@@ -1434,7 +1434,7 @@
     },
     {
       "id": "farmer_share_story_bamboo_jungle_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:bamboo_jungle",
       "text": "I will remember Bamboo Jungle as a green wall that rustles like whispers. I will keep bread aside for the road.",
@@ -1442,7 +1442,7 @@
     },
     {
       "id": "farmer_share_story_basalt_deltas_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:basalt_deltas",
       "text": "{target}? Black stone and lava leave little mercy. I would save bread for the road home.",
@@ -1450,7 +1450,7 @@
     },
     {
       "id": "farmer_share_story_basalt_deltas_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:basalt_deltas",
       "text": "If anyone heads for Basalt Deltas, tell them: Step like every block wants an argument. I will be at the fields.",
@@ -1458,7 +1458,7 @@
     },
     {
       "id": "farmer_share_story_basalt_deltas_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:basalt_deltas",
       "text": "Ash and basalt make the Nether feel broken twice. I will remember that when I put bread aside.",
@@ -1466,7 +1466,7 @@
     },
     {
       "id": "farmer_share_story_basalt_deltas_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:basalt_deltas",
       "text": "Basalt Deltas is no small story. A full belly is not the same as safety.",
@@ -1474,7 +1474,7 @@
     },
     {
       "id": "farmer_share_story_basalt_deltas_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:basalt_deltas",
       "text": "I will remember Basalt Deltas as as jagged black country with heat in its cracks. I will keep bread aside for the road.",
@@ -1482,7 +1482,7 @@
     },
     {
       "id": "farmer_share_story_beach_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:beach",
       "text": "{target}? Shorelines change under your feet. I would save bread for the road home.",
@@ -1490,7 +1490,7 @@
     },
     {
       "id": "farmer_share_story_beach_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:beach",
       "text": "If anyone heads for Beach, tell them: Watch the tide, the turtles, and the drowned at dusk. I will be at the fields.",
@@ -1498,7 +1498,7 @@
     },
     {
       "id": "farmer_share_story_beach_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:beach",
       "text": "Sand looks peaceful until it shifts. I will remember that when I put bread aside.",
@@ -1506,7 +1506,7 @@
     },
     {
       "id": "farmer_share_story_beach_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:beach",
       "text": "Beach is no small story. A full belly is not the same as safety.",
@@ -1514,7 +1514,7 @@
     },
     {
       "id": "farmer_share_story_beach_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:beach",
       "text": "I will remember Beach as the place where land starts losing to water. I will keep bread aside for the road.",
@@ -1522,7 +1522,7 @@
     },
     {
       "id": "farmer_share_story_birch_forest_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:birch_forest",
       "text": "{target}? Bright trunks can make shadows easy to miss. I would save bread for the road home.",
@@ -1530,7 +1530,7 @@
     },
     {
       "id": "farmer_share_story_birch_forest_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:birch_forest",
       "text": "If anyone heads for Birch Forest, tell them: Do not let the pretty light lower your guard. I will be at the fields.",
@@ -1538,7 +1538,7 @@
     },
     {
       "id": "farmer_share_story_birch_forest_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:birch_forest",
       "text": "White bark shows marks, but not always danger. I will remember that when I put bread aside.",
@@ -1546,7 +1546,7 @@
     },
     {
       "id": "farmer_share_story_birch_forest_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:birch_forest",
       "text": "Birch Forest is no small story. A full belly is not the same as safety.",
@@ -1554,7 +1554,7 @@
     },
     {
       "id": "farmer_share_story_birch_forest_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:birch_forest",
       "text": "I will remember Birch Forest as a pale forest with quiet steps under it. I will keep bread aside for the road.",
@@ -1562,7 +1562,7 @@
     },
     {
       "id": "farmer_share_story_cherry_grove_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:cherry_grove",
       "text": "{target}? Pretty petals do not keep monsters away. I would save bread for the road home.",
@@ -1570,7 +1570,7 @@
     },
     {
       "id": "farmer_share_story_cherry_grove_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:cherry_grove",
       "text": "If anyone heads for Cherry Grove, tell them: Enjoy the flowers before dark, not after. I will be at the fields.",
@@ -1578,7 +1578,7 @@
     },
     {
       "id": "farmer_share_story_cherry_grove_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:cherry_grove",
       "text": "Pink leaves can make folk forget the sword at their side. I will remember that when I put bread aside.",
@@ -1586,7 +1586,7 @@
     },
     {
       "id": "farmer_share_story_cherry_grove_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:cherry_grove",
       "text": "Cherry Grove is no small story. A full belly is not the same as safety.",
@@ -1594,7 +1594,7 @@
     },
     {
       "id": "farmer_share_story_cherry_grove_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:cherry_grove",
       "text": "I will remember Cherry Grove as a beautiful hill that still needs torches. I will keep bread aside for the road.",
@@ -1602,7 +1602,7 @@
     },
     {
       "id": "farmer_share_story_cold_ocean_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:cold_ocean",
       "text": "{target}? Cold water steals strength quickly. I would save bread for the road home.",
@@ -1610,7 +1610,7 @@
     },
     {
       "id": "farmer_share_story_cold_ocean_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:cold_ocean",
       "text": "If anyone heads for Cold Ocean, tell them: Bring a boat and do not swim for pride. I will be at the fields.",
@@ -1618,7 +1618,7 @@
     },
     {
       "id": "farmer_share_story_cold_ocean_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:cold_ocean",
       "text": "Gray waves make distance feel heavier. I will remember that when I put bread aside.",
@@ -1626,7 +1626,7 @@
     },
     {
       "id": "farmer_share_story_cold_ocean_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:cold_ocean",
       "text": "Cold Ocean is no small story. A full belly is not the same as safety.",
@@ -1634,7 +1634,7 @@
     },
     {
       "id": "farmer_share_story_cold_ocean_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:cold_ocean",
       "text": "I will remember Cold Ocean as water that chills courage out of the bones. I will keep bread aside for the road.",
@@ -1642,7 +1642,7 @@
     },
     {
       "id": "farmer_share_story_crimson_forest_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:crimson_forest",
       "text": "{target}? Red Nether trees grow among hoglins and worse. I would save bread for the road home.",
@@ -1650,7 +1650,7 @@
     },
     {
       "id": "farmer_share_story_crimson_forest_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:crimson_forest",
       "text": "If anyone heads for Crimson Forest, tell them: Keep gold on and eyes open. I will be at the fields.",
@@ -1658,7 +1658,7 @@
     },
     {
       "id": "farmer_share_story_crimson_forest_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:crimson_forest",
       "text": "The whole forest looks like it has a pulse. I will remember that when I put bread aside.",
@@ -1666,7 +1666,7 @@
     },
     {
       "id": "farmer_share_story_crimson_forest_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:crimson_forest",
       "text": "Crimson Forest is no small story. A full belly is not the same as safety.",
@@ -1674,7 +1674,7 @@
     },
     {
       "id": "farmer_share_story_crimson_forest_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:crimson_forest",
       "text": "I will remember Crimson Forest as a red forest that feels too alive. I will keep bread aside for the road.",
@@ -1682,7 +1682,7 @@
     },
     {
       "id": "farmer_share_story_dark_forest_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:dark_forest",
       "text": "{target}? Thick leaves make noon feel late. I would save bread for the road home.",
@@ -1690,7 +1690,7 @@
     },
     {
       "id": "farmer_share_story_dark_forest_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:dark_forest",
       "text": "If anyone heads for Dark Forest, tell them: Place torches before you need them. I will be at the fields.",
@@ -1698,7 +1698,7 @@
     },
     {
       "id": "farmer_share_story_dark_forest_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:dark_forest",
       "text": "Mushrooms grow big where sunlight gives up. I will remember that when I put bread aside.",
@@ -1706,7 +1706,7 @@
     },
     {
       "id": "farmer_share_story_dark_forest_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:dark_forest",
       "text": "Dark Forest is no small story. A full belly is not the same as safety.",
@@ -1714,7 +1714,7 @@
     },
     {
       "id": "farmer_share_story_dark_forest_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:dark_forest",
       "text": "I will remember Dark Forest as a forest that keeps its own night. I will keep bread aside for the road.",
@@ -1722,7 +1722,7 @@
     },
     {
       "id": "farmer_share_story_deep_cold_ocean_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:deep_cold_ocean",
       "text": "{target}? Deep cold leaves little room for mistakes. I would save bread for the road home.",
@@ -1730,7 +1730,7 @@
     },
     {
       "id": "farmer_share_story_deep_cold_ocean_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:deep_cold_ocean",
       "text": "If anyone heads for Deep Cold Ocean, tell them: Use a boat and save your breath. I will be at the fields.",
@@ -1738,7 +1738,7 @@
     },
     {
       "id": "farmer_share_story_deep_cold_ocean_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:deep_cold_ocean",
       "text": "The bottom waits farther down than courage wants. I will remember that when I put bread aside.",
@@ -1746,7 +1746,7 @@
     },
     {
       "id": "farmer_share_story_deep_cold_ocean_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:deep_cold_ocean",
       "text": "Deep Cold Ocean is no small story. A full belly is not the same as safety.",
@@ -1754,7 +1754,7 @@
     },
     {
       "id": "farmer_share_story_deep_cold_ocean_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:deep_cold_ocean",
       "text": "I will remember Deep Cold Ocean as cold water with too much room beneath it. I will keep bread aside for the road.",
@@ -1762,7 +1762,7 @@
     },
     {
       "id": "farmer_share_story_deep_dark_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:deep_dark",
       "text": "{target}? Sound travels farther than sense. I would save bread for the road home.",
@@ -1770,7 +1770,7 @@
     },
     {
       "id": "farmer_share_story_deep_dark_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:deep_dark",
       "text": "If anyone heads for Deep Dark, tell them: Walk soft and do not open every chest. I will be at the fields.",
@@ -1778,7 +1778,7 @@
     },
     {
       "id": "farmer_share_story_deep_dark_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:deep_dark",
       "text": "Sculk hears what pride forgets. I will remember that when I put bread aside.",
@@ -1786,7 +1786,7 @@
     },
     {
       "id": "farmer_share_story_deep_dark_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:deep_dark",
       "text": "Deep Dark is no small story. A full belly is not the same as safety.",
@@ -1794,7 +1794,7 @@
     },
     {
       "id": "farmer_share_story_deep_dark_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:deep_dark",
       "text": "I will remember Deep Dark as darkness that listens back. I will keep bread aside for the road.",
@@ -1802,7 +1802,7 @@
     },
     {
       "id": "farmer_share_story_deep_frozen_ocean_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:deep_frozen_ocean",
       "text": "{target}? Ice above and depth below make a cruel pair. I would save bread for the road home.",
@@ -1810,7 +1810,7 @@
     },
     {
       "id": "farmer_share_story_deep_frozen_ocean_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:deep_frozen_ocean",
       "text": "If anyone heads for Deep Frozen Ocean, tell them: Mind cracks and keep a boat near. I will be at the fields.",
@@ -1818,7 +1818,7 @@
     },
     {
       "id": "farmer_share_story_deep_frozen_ocean_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:deep_frozen_ocean",
       "text": "Blue ice can make the sea look solid enough to trust. I will remember that when I put bread aside.",
@@ -1826,7 +1826,7 @@
     },
     {
       "id": "farmer_share_story_deep_frozen_ocean_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:deep_frozen_ocean",
       "text": "Deep Frozen Ocean is no small story. A full belly is not the same as safety.",
@@ -1834,7 +1834,7 @@
     },
     {
       "id": "farmer_share_story_deep_frozen_ocean_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:deep_frozen_ocean",
       "text": "I will remember Deep Frozen Ocean as a frozen roof over water that still wants you. I will keep bread aside for the road.",
@@ -1842,7 +1842,7 @@
     },
     {
       "id": "farmer_share_story_deep_lukewarm_ocean_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:deep_lukewarm_ocean",
       "text": "{target}? Calm water can still go bottomless. I would save bread for the road home.",
@@ -1850,7 +1850,7 @@
     },
     {
       "id": "farmer_share_story_deep_lukewarm_ocean_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:deep_lukewarm_ocean",
       "text": "If anyone heads for Deep Lukewarm Ocean, tell them: Do not mistake warm waves for safe waves. I will be at the fields.",
@@ -1858,7 +1858,7 @@
     },
     {
       "id": "farmer_share_story_deep_lukewarm_ocean_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:deep_lukewarm_ocean",
       "text": "The color is kind; the depth is not. I will remember that when I put bread aside.",
@@ -1866,7 +1866,7 @@
     },
     {
       "id": "farmer_share_story_deep_lukewarm_ocean_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:deep_lukewarm_ocean",
       "text": "Deep Lukewarm Ocean is no small story. A full belly is not the same as safety.",
@@ -1874,7 +1874,7 @@
     },
     {
       "id": "farmer_share_story_deep_lukewarm_ocean_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:deep_lukewarm_ocean",
       "text": "I will remember Deep Lukewarm Ocean as warm water with a long fall under it. I will keep bread aside for the road.",
@@ -1882,7 +1882,7 @@
     },
     {
       "id": "farmer_share_story_deep_ocean_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:deep_ocean",
       "text": "{target}? Deep water does not care who can swim. I would save bread for the road home.",
@@ -1890,7 +1890,7 @@
     },
     {
       "id": "farmer_share_story_deep_ocean_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:deep_ocean",
       "text": "If anyone heads for Deep Ocean, tell them: Take a boat and count your air honestly. I will be at the fields.",
@@ -1898,7 +1898,7 @@
     },
     {
       "id": "farmer_share_story_deep_ocean_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:deep_ocean",
       "text": "The horizon looks simple until you are far from land. I will remember that when I put bread aside.",
@@ -1906,7 +1906,7 @@
     },
     {
       "id": "farmer_share_story_deep_ocean_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:deep_ocean",
       "text": "Deep Ocean is no small story. A full belly is not the same as safety.",
@@ -1914,7 +1914,7 @@
     },
     {
       "id": "farmer_share_story_deep_ocean_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:deep_ocean",
       "text": "I will remember Deep Ocean as open water with no nearby door. I will keep bread aside for the road.",
@@ -1922,7 +1922,7 @@
     },
     {
       "id": "farmer_share_story_desert_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:desert",
       "text": "{target}? Heat makes thirst louder than judgment. I would save bread for the road home.",
@@ -1930,7 +1930,7 @@
     },
     {
       "id": "farmer_share_story_desert_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:desert",
       "text": "If anyone heads for Desert, tell them: Carry water and travel by shade when you can. I will be at the fields.",
@@ -1938,7 +1938,7 @@
     },
     {
       "id": "farmer_share_story_desert_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:desert",
       "text": "Sand hides holes, husks, and bad footing. I will remember that when I put bread aside.",
@@ -1946,7 +1946,7 @@
     },
     {
       "id": "farmer_share_story_desert_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:desert",
       "text": "Desert is no small story. A full belly is not the same as safety.",
@@ -1954,7 +1954,7 @@
     },
     {
       "id": "farmer_share_story_desert_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:desert",
       "text": "I will remember Desert as dry land that asks too much of the mouth. I will keep bread aside for the road.",
@@ -1962,7 +1962,7 @@
     },
     {
       "id": "farmer_share_story_dripstone_caves_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:dripstone_caves",
       "text": "{target}? Stone teeth hang above and wait below. I would save bread for the road home.",
@@ -1970,7 +1970,7 @@
     },
     {
       "id": "farmer_share_story_dripstone_caves_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:dripstone_caves",
       "text": "If anyone heads for Dripstone Caves, tell them: Look up as often as you look down. I will be at the fields.",
@@ -1978,7 +1978,7 @@
     },
     {
       "id": "farmer_share_story_dripstone_caves_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:dripstone_caves",
       "text": "Pointed stone makes every stumble serious. I will remember that when I put bread aside.",
@@ -1986,7 +1986,7 @@
     },
     {
       "id": "farmer_share_story_dripstone_caves_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:dripstone_caves",
       "text": "Dripstone Caves is no small story. A full belly is not the same as safety.",
@@ -1994,7 +1994,7 @@
     },
     {
       "id": "farmer_share_story_dripstone_caves_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:dripstone_caves",
       "text": "I will remember Dripstone Caves as a cave that bites from both directions. I will keep bread aside for the road.",
@@ -2002,7 +2002,7 @@
     },
     {
       "id": "farmer_share_story_end_barrens_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:end_barrens",
       "text": "{target}? Empty End stone gives no comfort. I would save bread for the road home.",
@@ -2010,7 +2010,7 @@
     },
     {
       "id": "farmer_share_story_end_barrens_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:end_barrens",
       "text": "If anyone heads for End Barrens, tell them: Keep away from edges and watch the sky. I will be at the fields.",
@@ -2018,7 +2018,7 @@
     },
     {
       "id": "farmer_share_story_end_barrens_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:end_barrens",
       "text": "The void makes silence feel heavier. I will remember that when I put bread aside.",
@@ -2026,7 +2026,7 @@
     },
     {
       "id": "farmer_share_story_end_barrens_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:end_barrens",
       "text": "End Barrens is no small story. A full belly is not the same as safety.",
@@ -2034,7 +2034,7 @@
     },
     {
       "id": "farmer_share_story_end_barrens_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:end_barrens",
       "text": "I will remember End Barrens as bare End land with nothing friendly in sight. I will keep bread aside for the road.",
@@ -2042,7 +2042,7 @@
     },
     {
       "id": "farmer_share_story_end_highlands_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:end_highlands",
       "text": "{target}? High End ground still ends in void. I would save bread for the road home.",
@@ -2050,7 +2050,7 @@
     },
     {
       "id": "farmer_share_story_end_highlands_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:end_highlands",
       "text": "If anyone heads for End Highlands, tell them: Mind bridges and do not chase anything floating. I will be at the fields.",
@@ -2058,7 +2058,7 @@
     },
     {
       "id": "farmer_share_story_end_highlands_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:end_highlands",
       "text": "Chorus fruit grows where falling is easy. I will remember that when I put bread aside.",
@@ -2066,7 +2066,7 @@
     },
     {
       "id": "farmer_share_story_end_highlands_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:end_highlands",
       "text": "End Highlands is no small story. A full belly is not the same as safety.",
@@ -2074,7 +2074,7 @@
     },
     {
       "id": "farmer_share_story_end_highlands_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:end_highlands",
       "text": "I will remember End Highlands as high ground that does not feel safe. I will keep bread aside for the road.",
@@ -2082,7 +2082,7 @@
     },
     {
       "id": "farmer_share_story_end_midlands_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:end_midlands",
       "text": "{target}? Even the middle of the End feels lost. I would save bread for the road home.",
@@ -2090,7 +2090,7 @@
     },
     {
       "id": "farmer_share_story_end_midlands_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:end_midlands",
       "text": "If anyone heads for End Midlands, tell them: Mark your way and distrust the horizon. I will be at the fields.",
@@ -2098,7 +2098,7 @@
     },
     {
       "id": "farmer_share_story_end_midlands_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:end_midlands",
       "text": "There is no village smell in that air. I will remember that when I put bread aside.",
@@ -2106,7 +2106,7 @@
     },
     {
       "id": "farmer_share_story_end_midlands_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:end_midlands",
       "text": "End Midlands is no small story. A full belly is not the same as safety.",
@@ -2114,7 +2114,7 @@
     },
     {
       "id": "farmer_share_story_end_midlands_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:end_midlands",
       "text": "I will remember End Midlands as End stone stretching where roads should be. I will keep bread aside for the road.",
@@ -2122,7 +2122,7 @@
     },
     {
       "id": "farmer_share_story_eroded_badlands_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:eroded_badlands",
       "text": "{target}? Wind has carved the land into bad footing. I would save bread for the road home.",
@@ -2130,7 +2130,7 @@
     },
     {
       "id": "farmer_share_story_eroded_badlands_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:eroded_badlands",
       "text": "If anyone heads for Eroded Badlands, tell them: Stay off narrow spires unless you can fly. I will be at the fields.",
@@ -2138,7 +2138,7 @@
     },
     {
       "id": "farmer_share_story_eroded_badlands_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:eroded_badlands",
       "text": "Red towers look sturdy until the path narrows. I will remember that when I put bread aside.",
@@ -2146,7 +2146,7 @@
     },
     {
       "id": "farmer_share_story_eroded_badlands_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:eroded_badlands",
       "text": "Eroded Badlands is no small story. A full belly is not the same as safety.",
@@ -2154,7 +2154,7 @@
     },
     {
       "id": "farmer_share_story_eroded_badlands_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:eroded_badlands",
       "text": "I will remember Eroded Badlands as badlands worn sharp by weather. I will keep bread aside for the road.",
@@ -2162,7 +2162,7 @@
     },
     {
       "id": "farmer_share_story_flower_forest_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:flower_forest",
       "text": "{target}? Flowers make poor armor. I would save bread for the road home.",
@@ -2170,7 +2170,7 @@
     },
     {
       "id": "farmer_share_story_flower_forest_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:flower_forest",
       "text": "If anyone heads for Flower Forest, tell them: Enjoy daylight and leave before monsters admire it too. I will be at the fields.",
@@ -2178,7 +2178,7 @@
     },
     {
       "id": "farmer_share_story_flower_forest_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:flower_forest",
       "text": "Bees and blossoms do not stop arrows. I will remember that when I put bread aside.",
@@ -2186,7 +2186,7 @@
     },
     {
       "id": "farmer_share_story_flower_forest_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:flower_forest",
       "text": "Flower Forest is no small story. A full belly is not the same as safety.",
@@ -2194,7 +2194,7 @@
     },
     {
       "id": "farmer_share_story_flower_forest_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:flower_forest",
       "text": "I will remember Flower Forest as a soft-looking forest that still needs caution. I will keep bread aside for the road.",
@@ -2202,7 +2202,7 @@
     },
     {
       "id": "farmer_share_story_forest_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:forest",
       "text": "{target}? Trees hide both roads and trouble. I would save bread for the road home.",
@@ -2210,7 +2210,7 @@
     },
     {
       "id": "farmer_share_story_forest_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:forest",
       "text": "If anyone heads for Forest, tell them: Keep the sun or a torch in mind. I will be at the fields.",
@@ -2218,7 +2218,7 @@
     },
     {
       "id": "farmer_share_story_forest_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:forest",
       "text": "Leaves make every sound arrive late. I will remember that when I put bread aside.",
@@ -2226,7 +2226,7 @@
     },
     {
       "id": "farmer_share_story_forest_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:forest",
       "text": "Forest is no small story. A full belly is not the same as safety.",
@@ -2234,7 +2234,7 @@
     },
     {
       "id": "farmer_share_story_forest_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:forest",
       "text": "I will remember Forest as ordinary woods, which is how they fool people. I will keep bread aside for the road.",
@@ -2242,7 +2242,7 @@
     },
     {
       "id": "farmer_share_story_frozen_ocean_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:frozen_ocean",
       "text": "{target}? Ice over water is a promise with cracks. I would save bread for the road home.",
@@ -2250,7 +2250,7 @@
     },
     {
       "id": "farmer_share_story_frozen_ocean_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:frozen_ocean",
       "text": "If anyone heads for Frozen Ocean, tell them: Test the way and keep a boat ready. I will be at the fields.",
@@ -2258,7 +2258,7 @@
     },
     {
       "id": "farmer_share_story_frozen_ocean_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:frozen_ocean",
       "text": "Frozen waves still have depth beneath them. I will remember that when I put bread aside.",
@@ -2266,7 +2266,7 @@
     },
     {
       "id": "farmer_share_story_frozen_ocean_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:frozen_ocean",
       "text": "Frozen Ocean is no small story. A full belly is not the same as safety.",
@@ -2274,7 +2274,7 @@
     },
     {
       "id": "farmer_share_story_frozen_ocean_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:frozen_ocean",
       "text": "I will remember Frozen Ocean as a white sea pretending to be ground. I will keep bread aside for the road.",
@@ -2282,7 +2282,7 @@
     },
     {
       "id": "farmer_share_story_frozen_peaks_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:frozen_peaks",
       "text": "{target}? Mountain cold sharpens every mistake. I would save bread for the road home.",
@@ -2290,7 +2290,7 @@
     },
     {
       "id": "farmer_share_story_frozen_peaks_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:frozen_peaks",
       "text": "If anyone heads for Frozen Peaks, tell them: Climb slowly and turn back before pride freezes. I will be at the fields.",
@@ -2298,7 +2298,7 @@
     },
     {
       "id": "farmer_share_story_frozen_peaks_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:frozen_peaks",
       "text": "Powder snow can swallow a sure step. I will remember that when I put bread aside.",
@@ -2306,7 +2306,7 @@
     },
     {
       "id": "farmer_share_story_frozen_peaks_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:frozen_peaks",
       "text": "Frozen Peaks is no small story. A full belly is not the same as safety.",
@@ -2314,7 +2314,7 @@
     },
     {
       "id": "farmer_share_story_frozen_peaks_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:frozen_peaks",
       "text": "I will remember Frozen Peaks as high white stone with thin air around it. I will keep bread aside for the road.",
@@ -2322,7 +2322,7 @@
     },
     {
       "id": "farmer_share_story_frozen_river_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:frozen_river",
       "text": "{target}? A frozen crossing can betray a heavy foot. I would save bread for the road home.",
@@ -2330,7 +2330,7 @@
     },
     {
       "id": "farmer_share_story_frozen_river_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:frozen_river",
       "text": "If anyone heads for Frozen River, tell them: Cross where the banks are kind. I will be at the fields.",
@@ -2338,7 +2338,7 @@
     },
     {
       "id": "farmer_share_story_frozen_river_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:frozen_river",
       "text": "Ice speaks in cracks before it opens. I will remember that when I put bread aside.",
@@ -2346,7 +2346,7 @@
     },
     {
       "id": "farmer_share_story_frozen_river_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:frozen_river",
       "text": "Frozen River is no small story. A full belly is not the same as safety.",
@@ -2354,7 +2354,7 @@
     },
     {
       "id": "farmer_share_story_frozen_river_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:frozen_river",
       "text": "I will remember Frozen River as a road of ice over moving water. I will keep bread aside for the road.",
@@ -2362,7 +2362,7 @@
     },
     {
       "id": "farmer_share_story_grove_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:grove",
       "text": "{target}? Snowy trees make quiet steps too easy. I would save bread for the road home.",
@@ -2370,7 +2370,7 @@
     },
     {
       "id": "farmer_share_story_grove_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:grove",
       "text": "If anyone heads for Grove, tell them: Watch for powder snow and things hiding behind trunks. I will be at the fields.",
@@ -2378,7 +2378,7 @@
     },
     {
       "id": "farmer_share_story_grove_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:grove",
       "text": "Spruce shade keeps winter close. I will remember that when I put bread aside.",
@@ -2386,7 +2386,7 @@
     },
     {
       "id": "farmer_share_story_grove_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:grove",
       "text": "Grove is no small story. A full belly is not the same as safety.",
@@ -2394,7 +2394,7 @@
     },
     {
       "id": "farmer_share_story_grove_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:grove",
       "text": "I will remember Grove as a white wood where sound gets swallowed. I will keep bread aside for the road.",
@@ -2402,7 +2402,7 @@
     },
     {
       "id": "farmer_share_story_ice_spikes_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:ice_spikes",
       "text": "{target}? Ice stands tall enough to turn wind mean. I would save bread for the road home.",
@@ -2410,7 +2410,7 @@
     },
     {
       "id": "farmer_share_story_ice_spikes_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:ice_spikes",
       "text": "If anyone heads for Ice Spikes, tell them: Keep low and do not trust smooth footing. I will be at the fields.",
@@ -2418,7 +2418,7 @@
     },
     {
       "id": "farmer_share_story_ice_spikes_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:ice_spikes",
       "text": "Packed ice shines like it wants you careless. I will remember that when I put bread aside.",
@@ -2426,7 +2426,7 @@
     },
     {
       "id": "farmer_share_story_ice_spikes_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:ice_spikes",
       "text": "Ice Spikes is no small story. A full belly is not the same as safety.",
@@ -2434,7 +2434,7 @@
     },
     {
       "id": "farmer_share_story_ice_spikes_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:ice_spikes",
       "text": "I will remember Ice Spikes as frozen spears under a hard sky. I will keep bread aside for the road.",
@@ -2442,7 +2442,7 @@
     },
     {
       "id": "farmer_share_story_jagged_peaks_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:jagged_peaks",
       "text": "{target}? Sharp mountains punish tired feet. I would save bread for the road home.",
@@ -2450,7 +2450,7 @@
     },
     {
       "id": "farmer_share_story_jagged_peaks_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:jagged_peaks",
       "text": "If anyone heads for Jagged Peaks, tell them: Climb with blocks ready and pride asleep. I will be at the fields.",
@@ -2458,7 +2458,7 @@
     },
     {
       "id": "farmer_share_story_jagged_peaks_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:jagged_peaks",
       "text": "One loose step can travel all the way down. I will remember that when I put bread aside.",
@@ -2466,7 +2466,7 @@
     },
     {
       "id": "farmer_share_story_jagged_peaks_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:jagged_peaks",
       "text": "Jagged Peaks is no small story. A full belly is not the same as safety.",
@@ -2474,7 +2474,7 @@
     },
     {
       "id": "farmer_share_story_jagged_peaks_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:jagged_peaks",
       "text": "I will remember Jagged Peaks as peaks that look cut by a giant axe. I will keep bread aside for the road.",
@@ -2482,7 +2482,7 @@
     },
     {
       "id": "farmer_share_story_jungle_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:jungle",
       "text": "{target}? Leaves crowd close enough to hide anything. I would save bread for the road home.",
@@ -2490,7 +2490,7 @@
     },
     {
       "id": "farmer_share_story_jungle_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:jungle",
       "text": "If anyone heads for Jungle, tell them: Cut a path and remember which vines you passed. I will be at the fields.",
@@ -2498,7 +2498,7 @@
     },
     {
       "id": "farmer_share_story_jungle_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:jungle",
       "text": "The green is loud even when nothing moves. I will remember that when I put bread aside.",
@@ -2506,7 +2506,7 @@
     },
     {
       "id": "farmer_share_story_jungle_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:jungle",
       "text": "Jungle is no small story. A full belly is not the same as safety.",
@@ -2514,7 +2514,7 @@
     },
     {
       "id": "farmer_share_story_jungle_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:jungle",
       "text": "I will remember Jungle as a hot forest that keeps secrets well. I will keep bread aside for the road.",
@@ -2522,7 +2522,7 @@
     },
     {
       "id": "farmer_share_story_lukewarm_ocean_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:lukewarm_ocean",
       "text": "{target}? Warm water can still carry teeth. I would save bread for the road home.",
@@ -2530,7 +2530,7 @@
     },
     {
       "id": "farmer_share_story_lukewarm_ocean_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:lukewarm_ocean",
       "text": "If anyone heads for Lukewarm Ocean, tell them: Sail smart and do not swim too far from wood. I will be at the fields.",
@@ -2538,7 +2538,7 @@
     },
     {
       "id": "farmer_share_story_lukewarm_ocean_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:lukewarm_ocean",
       "text": "The waves look friendly until night. I will remember that when I put bread aside.",
@@ -2546,7 +2546,7 @@
     },
     {
       "id": "farmer_share_story_lukewarm_ocean_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:lukewarm_ocean",
       "text": "Lukewarm Ocean is no small story. A full belly is not the same as safety.",
@@ -2554,7 +2554,7 @@
     },
     {
       "id": "farmer_share_story_lukewarm_ocean_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:lukewarm_ocean",
       "text": "I will remember Lukewarm Ocean as gentle water with danger below the color. I will keep bread aside for the road.",
@@ -2562,7 +2562,7 @@
     },
     {
       "id": "farmer_share_story_lush_caves_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:lush_caves",
       "text": "{target}? Pretty caves still have long drops. I would save bread for the road home.",
@@ -2570,7 +2570,7 @@
     },
     {
       "id": "farmer_share_story_lush_caves_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:lush_caves",
       "text": "If anyone heads for Lush Caves, tell them: Watch the vines and the holes between them. I will be at the fields.",
@@ -2578,7 +2578,7 @@
     },
     {
       "id": "farmer_share_story_lush_caves_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:lush_caves",
       "text": "Glow berries light paths that may not be safe. I will remember that when I put bread aside.",
@@ -2586,7 +2586,7 @@
     },
     {
       "id": "farmer_share_story_lush_caves_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:lush_caves",
       "text": "Lush Caves is no small story. A full belly is not the same as safety.",
@@ -2594,7 +2594,7 @@
     },
     {
       "id": "farmer_share_story_lush_caves_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:lush_caves",
       "text": "I will remember Lush Caves as a cave trying very hard to look harmless. I will keep bread aside for the road.",
@@ -2602,7 +2602,7 @@
     },
     {
       "id": "farmer_share_story_mangrove_swamp_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:mangrove_swamp",
       "text": "{target}? Mud holds boots longer than plans. I would save bread for the road home.",
@@ -2610,7 +2610,7 @@
     },
     {
       "id": "farmer_share_story_mangrove_swamp_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:mangrove_swamp",
       "text": "If anyone heads for Mangrove Swamp, tell them: Step on roots and keep slime in mind. I will be at the fields.",
@@ -2618,7 +2618,7 @@
     },
     {
       "id": "farmer_share_story_mangrove_swamp_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:mangrove_swamp",
       "text": "Thick roots make every hurry foolish. I will remember that when I put bread aside.",
@@ -2626,7 +2626,7 @@
     },
     {
       "id": "farmer_share_story_mangrove_swamp_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:mangrove_swamp",
       "text": "Mangrove Swamp is no small story. A full belly is not the same as safety.",
@@ -2634,7 +2634,7 @@
     },
     {
       "id": "farmer_share_story_mangrove_swamp_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:mangrove_swamp",
       "text": "I will remember Mangrove Swamp as muddy water with a grip on your ankles. I will keep bread aside for the road.",
@@ -2642,7 +2642,7 @@
     },
     {
       "id": "farmer_share_story_meadow_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:meadow",
       "text": "{target}? Gentle ground can make travelers careless. I would save bread for the road home.",
@@ -2650,7 +2650,7 @@
     },
     {
       "id": "farmer_share_story_meadow_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:meadow",
       "text": "If anyone heads for Meadow, tell them: Rest there, but do not forget night comes. I will be at the fields.",
@@ -2658,7 +2658,7 @@
     },
     {
       "id": "farmer_share_story_meadow_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:meadow",
       "text": "Flowers and bees do not bar the dark. I will remember that when I put bread aside.",
@@ -2666,7 +2666,7 @@
     },
     {
       "id": "farmer_share_story_meadow_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:meadow",
       "text": "Meadow is no small story. A full belly is not the same as safety.",
@@ -2674,7 +2674,7 @@
     },
     {
       "id": "farmer_share_story_meadow_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:meadow",
       "text": "I will remember Meadow as soft grass that still needs a lantern. I will keep bread aside for the road.",
@@ -2682,7 +2682,7 @@
     },
     {
       "id": "farmer_share_story_mushroom_fields_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:mushroom_fields",
       "text": "{target}? Strange quiet can make a place feel too safe. I would save bread for the road home.",
@@ -2690,7 +2690,7 @@
     },
     {
       "id": "farmer_share_story_mushroom_fields_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:mushroom_fields",
       "text": "If anyone heads for Mushroom Fields, tell them: Eat only what you know and keep your boat close. I will be at the fields.",
@@ -2698,7 +2698,7 @@
     },
     {
       "id": "farmer_share_story_mushroom_fields_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:mushroom_fields",
       "text": "Mycelium underfoot is not village dirt. I will remember that when I put bread aside.",
@@ -2706,7 +2706,7 @@
     },
     {
       "id": "farmer_share_story_mushroom_fields_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:mushroom_fields",
       "text": "Mushroom Fields is no small story. A full belly is not the same as safety.",
@@ -2714,7 +2714,7 @@
     },
     {
       "id": "farmer_share_story_mushroom_fields_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:mushroom_fields",
       "text": "I will remember Mushroom Fields as odd land where even the grass changed its mind. I will keep bread aside for the road.",
@@ -2722,7 +2722,7 @@
     },
     {
       "id": "farmer_share_story_nether_wastes_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:nether_wastes",
       "text": "{target}? The Nether wastes neither heat nor cruelty. I would save bread for the road home.",
@@ -2730,7 +2730,7 @@
     },
     {
       "id": "farmer_share_story_nether_wastes_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:nether_wastes",
       "text": "If anyone heads for Nether Wastes, tell them: Watch ghasts, cliffs, and every pool of lava. I will be at the fields.",
@@ -2738,7 +2738,7 @@
     },
     {
       "id": "farmer_share_story_nether_wastes_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:nether_wastes",
       "text": "Netherrack crumbles like it enjoys the fall. I will remember that when I put bread aside.",
@@ -2746,7 +2746,7 @@
     },
     {
       "id": "farmer_share_story_nether_wastes_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:nether_wastes",
       "text": "Nether Wastes is no small story. A full belly is not the same as safety.",
@@ -2754,7 +2754,7 @@
     },
     {
       "id": "farmer_share_story_nether_wastes_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:nether_wastes",
       "text": "I will remember Nether Wastes as red stone and fire with no decent sky. I will keep bread aside for the road.",
@@ -2762,7 +2762,7 @@
     },
     {
       "id": "farmer_share_story_ocean_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:ocean",
       "text": "{target}? Open water moves distance under your feet. I would save bread for the road home.",
@@ -2770,7 +2770,7 @@
     },
     {
       "id": "farmer_share_story_ocean_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:ocean",
       "text": "If anyone heads for Ocean, tell them: Keep land in mind and a boat under you. I will be at the fields.",
@@ -2778,7 +2778,7 @@
     },
     {
       "id": "farmer_share_story_ocean_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:ocean",
       "text": "Waves make every direction look the same. I will remember that when I put bread aside.",
@@ -2786,7 +2786,7 @@
     },
     {
       "id": "farmer_share_story_ocean_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:ocean",
       "text": "Ocean is no small story. A full belly is not the same as safety.",
@@ -2794,7 +2794,7 @@
     },
     {
       "id": "farmer_share_story_ocean_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:ocean",
       "text": "I will remember Ocean as water wide enough to make a bell useless. I will keep bread aside for the road.",
@@ -2802,7 +2802,7 @@
     },
     {
       "id": "farmer_share_story_old_growth_birch_forest_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:old_growth_birch_forest",
       "text": "{target}? Old bright trees hide long shadows. I would save bread for the road home.",
@@ -2810,7 +2810,7 @@
     },
     {
       "id": "farmer_share_story_old_growth_birch_forest_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:old_growth_birch_forest",
       "text": "If anyone heads for Old Growth Birch Forest, tell them: Mark trunks and do not wander by moonlight. I will be at the fields.",
@@ -2818,7 +2818,7 @@
     },
     {
       "id": "farmer_share_story_old_growth_birch_forest_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:old_growth_birch_forest",
       "text": "Big birches make folk feel smaller than they expect. I will remember that when I put bread aside.",
@@ -2826,7 +2826,7 @@
     },
     {
       "id": "farmer_share_story_old_growth_birch_forest_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:old_growth_birch_forest",
       "text": "Old Growth Birch Forest is no small story. A full belly is not the same as safety.",
@@ -2834,7 +2834,7 @@
     },
     {
       "id": "farmer_share_story_old_growth_birch_forest_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:old_growth_birch_forest",
       "text": "I will remember Old Growth Birch Forest as pale old trees standing too quietly. I will keep bread aside for the road.",
@@ -2842,7 +2842,7 @@
     },
     {
       "id": "farmer_share_story_old_growth_pine_taiga_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:old_growth_pine_taiga",
       "text": "{target}? Old pines make deep shadows. I would save bread for the road home.",
@@ -2850,7 +2850,7 @@
     },
     {
       "id": "farmer_share_story_old_growth_pine_taiga_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:old_growth_pine_taiga",
       "text": "If anyone heads for Old Growth Pine Taiga, tell them: Follow torchlight and watch for wolves. I will be at the fields.",
@@ -2858,7 +2858,7 @@
     },
     {
       "id": "farmer_share_story_old_growth_pine_taiga_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:old_growth_pine_taiga",
       "text": "The trunks rise like walls without doors. I will remember that when I put bread aside.",
@@ -2866,7 +2866,7 @@
     },
     {
       "id": "farmer_share_story_old_growth_pine_taiga_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:old_growth_pine_taiga",
       "text": "Old Growth Pine Taiga is no small story. A full belly is not the same as safety.",
@@ -2874,7 +2874,7 @@
     },
     {
       "id": "farmer_share_story_old_growth_pine_taiga_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:old_growth_pine_taiga",
       "text": "I will remember Old Growth Pine Taiga as cold old trees with a long memory. I will keep bread aside for the road.",
@@ -2882,7 +2882,7 @@
     },
     {
       "id": "farmer_share_story_old_growth_spruce_taiga_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:old_growth_spruce_taiga",
       "text": "{target}? Spruce shade keeps danger close. I would save bread for the road home.",
@@ -2890,7 +2890,7 @@
     },
     {
       "id": "farmer_share_story_old_growth_spruce_taiga_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:old_growth_spruce_taiga",
       "text": "If anyone heads for Old Growth Spruce Taiga, tell them: Move slow and keep the path marked. I will be at the fields.",
@@ -2898,7 +2898,7 @@
     },
     {
       "id": "farmer_share_story_old_growth_spruce_taiga_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:old_growth_spruce_taiga",
       "text": "Moss and roots make quiet footing treacherous. I will remember that when I put bread aside.",
@@ -2906,7 +2906,7 @@
     },
     {
       "id": "farmer_share_story_old_growth_spruce_taiga_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:old_growth_spruce_taiga",
       "text": "Old Growth Spruce Taiga is no small story. A full belly is not the same as safety.",
@@ -2914,7 +2914,7 @@
     },
     {
       "id": "farmer_share_story_old_growth_spruce_taiga_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:old_growth_spruce_taiga",
       "text": "I will remember Old Growth Spruce Taiga as old spruce country where paths vanish fast. I will keep bread aside for the road.",
@@ -2922,7 +2922,7 @@
     },
     {
       "id": "farmer_share_story_plains_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:plains",
       "text": "{target}? Open ground shows you to everything else. I would save bread for the road home.",
@@ -2930,7 +2930,7 @@
     },
     {
       "id": "farmer_share_story_plains_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:plains",
       "text": "If anyone heads for Plains, tell them: Keep moving and watch the horizon. I will be at the fields.",
@@ -2938,7 +2938,7 @@
     },
     {
       "id": "farmer_share_story_plains_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:plains",
       "text": "Grass bends before trouble arrives if you look. I will remember that when I put bread aside.",
@@ -2946,7 +2946,7 @@
     },
     {
       "id": "farmer_share_story_plains_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:plains",
       "text": "Plains is no small story. A full belly is not the same as safety.",
@@ -2954,7 +2954,7 @@
     },
     {
       "id": "farmer_share_story_plains_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:plains",
       "text": "I will remember Plains as wide land with nowhere to hide after dark. I will keep bread aside for the road.",
@@ -2962,7 +2962,7 @@
     },
     {
       "id": "farmer_share_story_river_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:river",
       "text": "{target}? A river can carry news or bodies. I would save bread for the road home.",
@@ -2970,7 +2970,7 @@
     },
     {
       "id": "farmer_share_story_river_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:river",
       "text": "If anyone heads for River, tell them: Cross where you can see the bottom. I will be at the fields.",
@@ -2978,7 +2978,7 @@
     },
     {
       "id": "farmer_share_story_river_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:river",
       "text": "Current makes even shallow water bossy. I will remember that when I put bread aside.",
@@ -2986,7 +2986,7 @@
     },
     {
       "id": "farmer_share_story_river_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:river",
       "text": "River is no small story. A full belly is not the same as safety.",
@@ -2994,7 +2994,7 @@
     },
     {
       "id": "farmer_share_story_river_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:river",
       "text": "I will remember River as moving water that does not wait for anyone. I will keep bread aside for the road.",
@@ -3002,7 +3002,7 @@
     },
     {
       "id": "farmer_share_story_savanna_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:savanna",
       "text": "{target}? Dry grass takes warning from the wind. I would save bread for the road home.",
@@ -3010,7 +3010,7 @@
     },
     {
       "id": "farmer_share_story_savanna_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:savanna",
       "text": "If anyone heads for Savanna, tell them: Mind fire and travel while the sun is kind. I will be at the fields.",
@@ -3018,7 +3018,7 @@
     },
     {
       "id": "farmer_share_story_savanna_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:savanna",
       "text": "Acacia trees lean like they heard bad news. I will remember that when I put bread aside.",
@@ -3026,7 +3026,7 @@
     },
     {
       "id": "farmer_share_story_savanna_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:savanna",
       "text": "Savanna is no small story. A full belly is not the same as safety.",
@@ -3034,7 +3034,7 @@
     },
     {
       "id": "farmer_share_story_savanna_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:savanna",
       "text": "I will remember Savanna as warm grassland where the wind talks first. I will keep bread aside for the road.",
@@ -3042,7 +3042,7 @@
     },
     {
       "id": "farmer_share_story_savanna_plateau_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:savanna_plateau",
       "text": "{target}? High dry ground lets trouble see far. I would save bread for the road home.",
@@ -3050,7 +3050,7 @@
     },
     {
       "id": "farmer_share_story_savanna_plateau_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:savanna_plateau",
       "text": "If anyone heads for Savanna Plateau, tell them: Watch cliffs and keep water close. I will be at the fields.",
@@ -3058,7 +3058,7 @@
     },
     {
       "id": "farmer_share_story_savanna_plateau_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:savanna_plateau",
       "text": "Acacia shade is thin comfort. I will remember that when I put bread aside.",
@@ -3066,7 +3066,7 @@
     },
     {
       "id": "farmer_share_story_savanna_plateau_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:savanna_plateau",
       "text": "Savanna Plateau is no small story. A full belly is not the same as safety.",
@@ -3074,7 +3074,7 @@
     },
     {
       "id": "farmer_share_story_savanna_plateau_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:savanna_plateau",
       "text": "I will remember Savanna Plateau as dry high land with a long view of danger. I will keep bread aside for the road.",
@@ -3082,7 +3082,7 @@
     },
     {
       "id": "farmer_share_story_small_end_islands_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:small_end_islands",
       "text": "{target}? Small islands feel smaller beside the void. I would save bread for the road home.",
@@ -3090,7 +3090,7 @@
     },
     {
       "id": "farmer_share_story_small_end_islands_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:small_end_islands",
       "text": "If anyone heads for Small End Islands, tell them: Bridge slowly and never look proud near an edge. I will be at the fields.",
@@ -3098,7 +3098,7 @@
     },
     {
       "id": "farmer_share_story_small_end_islands_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:small_end_islands",
       "text": "End stone gives no second chances below it. I will remember that when I put bread aside.",
@@ -3106,7 +3106,7 @@
     },
     {
       "id": "farmer_share_story_small_end_islands_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:small_end_islands",
       "text": "Small End Islands is no small story. A full belly is not the same as safety.",
@@ -3114,7 +3114,7 @@
     },
     {
       "id": "farmer_share_story_small_end_islands_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:small_end_islands",
       "text": "I will remember Small End Islands as little bits of ground with forever around them. I will keep bread aside for the road.",
@@ -3122,7 +3122,7 @@
     },
     {
       "id": "farmer_share_story_snowy_beach_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:snowy_beach",
       "text": "{target}? Snow and surf make cold from both sides. I would save bread for the road home.",
@@ -3130,7 +3130,7 @@
     },
     {
       "id": "farmer_share_story_snowy_beach_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:snowy_beach",
       "text": "If anyone heads for Snowy Beach, tell them: Keep dry and leave before the wind turns. I will be at the fields.",
@@ -3138,7 +3138,7 @@
     },
     {
       "id": "farmer_share_story_snowy_beach_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:snowy_beach",
       "text": "Sand under snow hides the shore badly. I will remember that when I put bread aside.",
@@ -3146,7 +3146,7 @@
     },
     {
       "id": "farmer_share_story_snowy_beach_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:snowy_beach",
       "text": "Snowy Beach is no small story. A full belly is not the same as safety.",
@@ -3154,7 +3154,7 @@
     },
     {
       "id": "farmer_share_story_snowy_beach_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:snowy_beach",
       "text": "I will remember Snowy Beach as a cold edge where land meets colder water. I will keep bread aside for the road.",
@@ -3162,7 +3162,7 @@
     },
     {
       "id": "farmer_share_story_snowy_plains_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:snowy_plains",
       "text": "{target}? White ground shows tracks and hides holes. I would save bread for the road home.",
@@ -3170,7 +3170,7 @@
     },
     {
       "id": "farmer_share_story_snowy_plains_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:snowy_plains",
       "text": "If anyone heads for Snowy Plains, tell them: Follow footprints only if you trust who made them. I will be at the fields.",
@@ -3178,7 +3178,7 @@
     },
     {
       "id": "farmer_share_story_snowy_plains_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:snowy_plains",
       "text": "Snow makes distance look shorter than it is. I will remember that when I put bread aside.",
@@ -3186,7 +3186,7 @@
     },
     {
       "id": "farmer_share_story_snowy_plains_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:snowy_plains",
       "text": "Snowy Plains is no small story. A full belly is not the same as safety.",
@@ -3194,7 +3194,7 @@
     },
     {
       "id": "farmer_share_story_snowy_plains_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:snowy_plains",
       "text": "I will remember Snowy Plains as flat winter with every sound laid bare. I will keep bread aside for the road.",
@@ -3202,7 +3202,7 @@
     },
     {
       "id": "farmer_share_story_snowy_slopes_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:snowy_slopes",
       "text": "{target}? Powder snow can swallow a careless step. I would save bread for the road home.",
@@ -3210,7 +3210,7 @@
     },
     {
       "id": "farmer_share_story_snowy_slopes_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:snowy_slopes",
       "text": "If anyone heads for Snowy Slopes, tell them: Wear leather boots and test the white ground. I will be at the fields.",
@@ -3218,7 +3218,7 @@
     },
     {
       "id": "farmer_share_story_snowy_slopes_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:snowy_slopes",
       "text": "The hill looks soft until it takes your knees. I will remember that when I put bread aside.",
@@ -3226,7 +3226,7 @@
     },
     {
       "id": "farmer_share_story_snowy_slopes_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:snowy_slopes",
       "text": "Snowy Slopes is no small story. A full belly is not the same as safety.",
@@ -3234,7 +3234,7 @@
     },
     {
       "id": "farmer_share_story_snowy_slopes_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:snowy_slopes",
       "text": "I will remember Snowy Slopes as a slope where snow pretends to be stone. I will keep bread aside for the road.",
@@ -3242,7 +3242,7 @@
     },
     {
       "id": "farmer_share_story_snowy_taiga_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:snowy_taiga",
       "text": "{target}? Cold trees make long watches longer. I would save bread for the road home.",
@@ -3250,7 +3250,7 @@
     },
     {
       "id": "farmer_share_story_snowy_taiga_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:snowy_taiga",
       "text": "If anyone heads for Snowy Taiga, tell them: Keep torches dry and listen for wolves. I will be at the fields.",
@@ -3258,7 +3258,7 @@
     },
     {
       "id": "farmer_share_story_snowy_taiga_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:snowy_taiga",
       "text": "Spruce and snow muffle bad sounds. I will remember that when I put bread aside.",
@@ -3266,7 +3266,7 @@
     },
     {
       "id": "farmer_share_story_snowy_taiga_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:snowy_taiga",
       "text": "Snowy Taiga is no small story. A full belly is not the same as safety.",
@@ -3274,7 +3274,7 @@
     },
     {
       "id": "farmer_share_story_snowy_taiga_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:snowy_taiga",
       "text": "I will remember Snowy Taiga as winter trees with shadows under every branch. I will keep bread aside for the road.",
@@ -3282,7 +3282,7 @@
     },
     {
       "id": "farmer_share_story_soul_sand_valley_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:soul_sand_valley",
       "text": "{target}? The ground pulls back when you try to leave. I would save bread for the road home.",
@@ -3290,7 +3290,7 @@
     },
     {
       "id": "farmer_share_story_soul_sand_valley_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:soul_sand_valley",
       "text": "If anyone heads for Soul Sand Valley, tell them: Wear good boots and keep ghasts in mind. I will be at the fields.",
@@ -3298,7 +3298,7 @@
     },
     {
       "id": "farmer_share_story_soul_sand_valley_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:soul_sand_valley",
       "text": "Soul sand makes every step feel watched. I will remember that when I put bread aside.",
@@ -3306,7 +3306,7 @@
     },
     {
       "id": "farmer_share_story_soul_sand_valley_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:soul_sand_valley",
       "text": "Soul Sand Valley is no small story. A full belly is not the same as safety.",
@@ -3314,7 +3314,7 @@
     },
     {
       "id": "farmer_share_story_soul_sand_valley_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:soul_sand_valley",
       "text": "I will remember Soul Sand Valley as a valley where the floor does not want guests. I will keep bread aside for the road.",
@@ -3322,7 +3322,7 @@
     },
     {
       "id": "farmer_share_story_sparse_jungle_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:sparse_jungle",
       "text": "{target}? Thin jungle still keeps thick surprises. I would save bread for the road home.",
@@ -3330,7 +3330,7 @@
     },
     {
       "id": "farmer_share_story_sparse_jungle_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:sparse_jungle",
       "text": "If anyone heads for Sparse Jungle, tell them: Do not trust open patches too quickly. I will be at the fields.",
@@ -3338,7 +3338,7 @@
     },
     {
       "id": "farmer_share_story_sparse_jungle_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:sparse_jungle",
       "text": "Vines and shadows take turns hiding things. I will remember that when I put bread aside.",
@@ -3346,7 +3346,7 @@
     },
     {
       "id": "farmer_share_story_sparse_jungle_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:sparse_jungle",
       "text": "Sparse Jungle is no small story. A full belly is not the same as safety.",
@@ -3354,7 +3354,7 @@
     },
     {
       "id": "farmer_share_story_sparse_jungle_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:sparse_jungle",
       "text": "I will remember Sparse Jungle as green country pretending to be easier than it is. I will keep bread aside for the road.",
@@ -3362,7 +3362,7 @@
     },
     {
       "id": "farmer_share_story_stony_peaks_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:stony_peaks",
       "text": "{target}? Stone peaks make every fall honest. I would save bread for the road home.",
@@ -3370,7 +3370,7 @@
     },
     {
       "id": "farmer_share_story_stony_peaks_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:stony_peaks",
       "text": "If anyone heads for Stony Peaks, tell them: Bring blocks and stop before your legs shake. I will be at the fields.",
@@ -3378,7 +3378,7 @@
     },
     {
       "id": "farmer_share_story_stony_peaks_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:stony_peaks",
       "text": "Bare rock gives little cover and no softness. I will remember that when I put bread aside.",
@@ -3386,7 +3386,7 @@
     },
     {
       "id": "farmer_share_story_stony_peaks_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:stony_peaks",
       "text": "Stony Peaks is no small story. A full belly is not the same as safety.",
@@ -3394,7 +3394,7 @@
     },
     {
       "id": "farmer_share_story_stony_peaks_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:stony_peaks",
       "text": "I will remember Stony Peaks as high stone with hard answers. I will keep bread aside for the road.",
@@ -3402,7 +3402,7 @@
     },
     {
       "id": "farmer_share_story_stony_shore_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:stony_shore",
       "text": "{target}? Wet stone is a poor friend to ankles. I would save bread for the road home.",
@@ -3410,7 +3410,7 @@
     },
     {
       "id": "farmer_share_story_stony_shore_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:stony_shore",
       "text": "If anyone heads for Stony Shore, tell them: Step carefully where waves touch rock. I will be at the fields.",
@@ -3418,7 +3418,7 @@
     },
     {
       "id": "farmer_share_story_stony_shore_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:stony_shore",
       "text": "Shore rocks make boats complain. I will remember that when I put bread aside.",
@@ -3426,7 +3426,7 @@
     },
     {
       "id": "farmer_share_story_stony_shore_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:stony_shore",
       "text": "Stony Shore is no small story. A full belly is not the same as safety.",
@@ -3434,7 +3434,7 @@
     },
     {
       "id": "farmer_share_story_stony_shore_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:stony_shore",
       "text": "I will remember Stony Shore as hard coastline where water sharpens stone. I will keep bread aside for the road.",
@@ -3442,7 +3442,7 @@
     },
     {
       "id": "farmer_share_story_sunflower_plains_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:sunflower_plains",
       "text": "{target}? Sunny fields can still point toward trouble. I would save bread for the road home.",
@@ -3450,7 +3450,7 @@
     },
     {
       "id": "farmer_share_story_sunflower_plains_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:sunflower_plains",
       "text": "If anyone heads for Sunflower Plains, tell them: Enjoy the flowers with a torch ready. I will be at the fields.",
@@ -3458,7 +3458,7 @@
     },
     {
       "id": "farmer_share_story_sunflower_plains_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:sunflower_plains",
       "text": "Sunflowers face light, not safety. I will remember that when I put bread aside.",
@@ -3466,7 +3466,7 @@
     },
     {
       "id": "farmer_share_story_sunflower_plains_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:sunflower_plains",
       "text": "Sunflower Plains is no small story. A full belly is not the same as safety.",
@@ -3474,7 +3474,7 @@
     },
     {
       "id": "farmer_share_story_sunflower_plains_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:sunflower_plains",
       "text": "I will remember Sunflower Plains as bright fields that still grow dark at night. I will keep bread aside for the road.",
@@ -3482,7 +3482,7 @@
     },
     {
       "id": "farmer_share_story_swamp_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:swamp",
       "text": "{target}? Mud and water both remember footsteps. I would save bread for the road home.",
@@ -3490,7 +3490,7 @@
     },
     {
       "id": "farmer_share_story_swamp_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:swamp",
       "text": "If anyone heads for Swamp, tell them: Watch slimes, witches, and the slow ground. I will be at the fields.",
@@ -3498,7 +3498,7 @@
     },
     {
       "id": "farmer_share_story_swamp_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:swamp",
       "text": "Fog makes close things feel far. I will remember that when I put bread aside.",
@@ -3506,7 +3506,7 @@
     },
     {
       "id": "farmer_share_story_swamp_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:swamp",
       "text": "Swamp is no small story. A full belly is not the same as safety.",
@@ -3514,7 +3514,7 @@
     },
     {
       "id": "farmer_share_story_swamp_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:swamp",
       "text": "I will remember Swamp as wet land that grabs at ankles and plans. I will keep bread aside for the road.",
@@ -3522,7 +3522,7 @@
     },
     {
       "id": "farmer_share_story_taiga_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:taiga",
       "text": "{target}? Cold trees make every path look alike. I would save bread for the road home.",
@@ -3530,7 +3530,7 @@
     },
     {
       "id": "farmer_share_story_taiga_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:taiga",
       "text": "If anyone heads for Taiga, tell them: Mark the way and listen for wolves. I will be at the fields.",
@@ -3538,7 +3538,7 @@
     },
     {
       "id": "farmer_share_story_taiga_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:taiga",
       "text": "Spruce needles keep secrets on the ground. I will remember that when I put bread aside.",
@@ -3546,7 +3546,7 @@
     },
     {
       "id": "farmer_share_story_taiga_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:taiga",
       "text": "Taiga is no small story. A full belly is not the same as safety.",
@@ -3554,7 +3554,7 @@
     },
     {
       "id": "farmer_share_story_taiga_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:taiga",
       "text": "I will remember Taiga as cold woods where a bell would sound small. I will keep bread aside for the road.",
@@ -3562,7 +3562,7 @@
     },
     {
       "id": "farmer_share_story_the_end_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:the_end",
       "text": "{target}? Victory there still feels far from home. I would save bread for the road home.",
@@ -3570,7 +3570,7 @@
     },
     {
       "id": "farmer_share_story_the_end_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:the_end",
       "text": "If anyone heads for The End, tell them: Do not anger the tall ones and keep away from the void. I will be at the fields.",
@@ -3578,7 +3578,7 @@
     },
     {
       "id": "farmer_share_story_the_end_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:the_end",
       "text": "End stone does not smell like any living place. I will remember that when I put bread aside.",
@@ -3586,7 +3586,7 @@
     },
     {
       "id": "farmer_share_story_the_end_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:the_end",
       "text": "The End is no small story. A full belly is not the same as safety.",
@@ -3594,7 +3594,7 @@
     },
     {
       "id": "farmer_share_story_the_end_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:the_end",
       "text": "I will remember The End as a pale world with no proper village sound. I will keep bread aside for the road.",
@@ -3602,7 +3602,7 @@
     },
     {
       "id": "farmer_share_story_the_void_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:the_void",
       "text": "{target}? Nothing below is not the same as safety. I would save bread for the road home.",
@@ -3610,7 +3610,7 @@
     },
     {
       "id": "farmer_share_story_the_void_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:the_void",
       "text": "If anyone heads for The Void, tell them: Stay away from edges like they owe you emeralds. I will be at the fields.",
@@ -3618,7 +3618,7 @@
     },
     {
       "id": "farmer_share_story_the_void_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:the_void",
       "text": "There is no road back from falling forever. I will remember that when I put bread aside.",
@@ -3626,7 +3626,7 @@
     },
     {
       "id": "farmer_share_story_the_void_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:the_void",
       "text": "The Void is no small story. A full belly is not the same as safety.",
@@ -3634,7 +3634,7 @@
     },
     {
       "id": "farmer_share_story_the_void_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:the_void",
       "text": "I will remember The Void as empty dark where even warnings feel small. I will keep bread aside for the road.",
@@ -3642,7 +3642,7 @@
     },
     {
       "id": "farmer_share_story_warm_ocean_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:warm_ocean",
       "text": "{target}? Bright water can tempt careless swimmers. I would save bread for the road home.",
@@ -3650,7 +3650,7 @@
     },
     {
       "id": "farmer_share_story_warm_ocean_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:warm_ocean",
       "text": "If anyone heads for Warm Ocean, tell them: Take a boat and respect the reef. I will be at the fields.",
@@ -3658,7 +3658,7 @@
     },
     {
       "id": "farmer_share_story_warm_ocean_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:warm_ocean",
       "text": "Coral color does not promise air. I will remember that when I put bread aside.",
@@ -3666,7 +3666,7 @@
     },
     {
       "id": "farmer_share_story_warm_ocean_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:warm_ocean",
       "text": "Warm Ocean is no small story. A full belly is not the same as safety.",
@@ -3674,7 +3674,7 @@
     },
     {
       "id": "farmer_share_story_warm_ocean_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:warm_ocean",
       "text": "I will remember Warm Ocean as warm waves with danger under the shine. I will keep bread aside for the road.",
@@ -3682,7 +3682,7 @@
     },
     {
       "id": "farmer_share_story_warped_forest_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:warped_forest",
       "text": "{target}? Blue Nether trees make sense feel optional. I would save bread for the road home.",
@@ -3690,7 +3690,7 @@
     },
     {
       "id": "farmer_share_story_warped_forest_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:warped_forest",
       "text": "If anyone heads for Warped Forest, tell them: Keep gold on and eyes off trouble. I will be at the fields.",
@@ -3698,7 +3698,7 @@
     },
     {
       "id": "farmer_share_story_warped_forest_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:warped_forest",
       "text": "Warped wood looks wrong even before it moves. I will remember that when I put bread aside.",
@@ -3706,7 +3706,7 @@
     },
     {
       "id": "farmer_share_story_warped_forest_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:warped_forest",
       "text": "Warped Forest is no small story. A full belly is not the same as safety.",
@@ -3714,7 +3714,7 @@
     },
     {
       "id": "farmer_share_story_warped_forest_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:warped_forest",
       "text": "I will remember Warped Forest as a blue forest that forgot what forests are for. I will keep bread aside for the road.",
@@ -3722,7 +3722,7 @@
     },
     {
       "id": "farmer_share_story_windswept_forest_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:windswept_forest",
       "text": "{target}? Hard wind makes trees and cliffs argue. I would save bread for the road home.",
@@ -3730,7 +3730,7 @@
     },
     {
       "id": "farmer_share_story_windswept_forest_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:windswept_forest",
       "text": "If anyone heads for Windswept Forest, tell them: Watch branches, slopes, and sudden drops. I will be at the fields.",
@@ -3738,7 +3738,7 @@
     },
     {
       "id": "farmer_share_story_windswept_forest_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:windswept_forest",
       "text": "The forest leans like it is bracing itself. I will remember that when I put bread aside.",
@@ -3746,7 +3746,7 @@
     },
     {
       "id": "farmer_share_story_windswept_forest_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:windswept_forest",
       "text": "Windswept Forest is no small story. A full belly is not the same as safety.",
@@ -3754,7 +3754,7 @@
     },
     {
       "id": "farmer_share_story_windswept_forest_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:windswept_forest",
       "text": "I will remember Windswept Forest as trees holding on to rough ground. I will keep bread aside for the road.",
@@ -3762,7 +3762,7 @@
     },
     {
       "id": "farmer_share_story_windswept_gravelly_hills_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:windswept_gravelly_hills",
       "text": "{target}? Gravel moves when you most need it still. I would save bread for the road home.",
@@ -3770,7 +3770,7 @@
     },
     {
       "id": "farmer_share_story_windswept_gravelly_hills_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:windswept_gravelly_hills",
       "text": "If anyone heads for Windswept Gravelly Hills, tell them: Test every slope before trusting it. I will be at the fields.",
@@ -3778,7 +3778,7 @@
     },
     {
       "id": "farmer_share_story_windswept_gravelly_hills_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:windswept_gravelly_hills",
       "text": "Loose stone tells lies under boots. I will remember that when I put bread aside.",
@@ -3786,7 +3786,7 @@
     },
     {
       "id": "farmer_share_story_windswept_gravelly_hills_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:windswept_gravelly_hills",
       "text": "Windswept Gravelly Hills is no small story. A full belly is not the same as safety.",
@@ -3794,7 +3794,7 @@
     },
     {
       "id": "farmer_share_story_windswept_gravelly_hills_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:windswept_gravelly_hills",
       "text": "I will remember Windswept Gravelly Hills as windy hills that slide under pressure. I will keep bread aside for the road.",
@@ -3802,7 +3802,7 @@
     },
     {
       "id": "farmer_share_story_windswept_hills_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:windswept_hills",
       "text": "{target}? Hard wind turns every edge into advice. I would save bread for the road home.",
@@ -3810,7 +3810,7 @@
     },
     {
       "id": "farmer_share_story_windswept_hills_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:windswept_hills",
       "text": "If anyone heads for Windswept Hills, tell them: Keep low and do not race the mountain. I will be at the fields.",
@@ -3818,7 +3818,7 @@
     },
     {
       "id": "farmer_share_story_windswept_hills_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:windswept_hills",
       "text": "Clouds move fast up there and so can mistakes. I will remember that when I put bread aside.",
@@ -3826,7 +3826,7 @@
     },
     {
       "id": "farmer_share_story_windswept_hills_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:windswept_hills",
       "text": "Windswept Hills is no small story. A full belly is not the same as safety.",
@@ -3834,7 +3834,7 @@
     },
     {
       "id": "farmer_share_story_windswept_hills_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:windswept_hills",
       "text": "I will remember Windswept Hills as high rough land that talks in gusts. I will keep bread aside for the road.",
@@ -3842,7 +3842,7 @@
     },
     {
       "id": "farmer_share_story_windswept_savanna_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:windswept_savanna",
       "text": "{target}? Dry grass and hard wind share the same warning. I would save bread for the road home.",
@@ -3850,7 +3850,7 @@
     },
     {
       "id": "farmer_share_story_windswept_savanna_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:windswept_savanna",
       "text": "If anyone heads for Windswept Savanna, tell them: Mind fire, cliffs, and the road back. I will be at the fields.",
@@ -3858,7 +3858,7 @@
     },
     {
       "id": "farmer_share_story_windswept_savanna_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:windswept_savanna",
       "text": "Acacia trees look like they are leaning away from trouble. I will remember that when I put bread aside.",
@@ -3866,7 +3866,7 @@
     },
     {
       "id": "farmer_share_story_windswept_savanna_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:windswept_savanna",
       "text": "Windswept Savanna is no small story. A full belly is not the same as safety.",
@@ -3874,7 +3874,7 @@
     },
     {
       "id": "farmer_share_story_windswept_savanna_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:windswept_savanna",
       "text": "I will remember Windswept Savanna as savanna country pulled sharp by wind. I will keep bread aside for the road.",
@@ -3882,7 +3882,7 @@
     },
     {
       "id": "farmer_share_story_wooded_badlands_1",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:wooded_badlands",
       "text": "{target}? Trees on badlands still grow in hard country. I would save bread for the road home.",
@@ -3890,7 +3890,7 @@
     },
     {
       "id": "farmer_share_story_wooded_badlands_2",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:wooded_badlands",
       "text": "If anyone heads for Wooded Badlands, tell them: Watch the drops between trunks. I will be at the fields.",
@@ -3898,7 +3898,7 @@
     },
     {
       "id": "farmer_share_story_wooded_badlands_3",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:wooded_badlands",
       "text": "Wood and red stone make strange neighbors. I will remember that when I put bread aside.",
@@ -3906,7 +3906,7 @@
     },
     {
       "id": "farmer_share_story_wooded_badlands_4",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:wooded_badlands",
       "text": "Wooded Badlands is no small story. A full belly is not the same as safety.",
@@ -3914,7 +3914,7 @@
     },
     {
       "id": "farmer_share_story_wooded_badlands_5",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "minecraft:wooded_badlands",
       "text": "I will remember Wooded Badlands as badlands with enough trees to hide the edge. I will keep bread aside for the road.",

@@ -66,79 +66,79 @@
   "lines": [
     {
       "id": "farmer_chat_rows",
-      "type": "small_talk",
+      "request": "question",
       "text": "Dry rows and trampled crops teach a farmer to watch every footstep.",
       "weight": 30
     },
     {
       "id": "farmer_question_soil",
-      "type": "question",
+      "request": "question",
       "text": "The soil's been kind lately. That's more than I can say for some visitors.",
       "weight": 30
     },
     {
       "id": "farmer_story_harvest",
-      "type": "story",
+      "request": "story",
       "text": "A good harvest keeps a village standing.",
       "weight": 26
     },
     {
       "id": "farmer_new_greeting_rows",
-      "type": "greeting",
+      "request": "greeting",
       "text": "Stay off the rows if you can. The crops remember boots.",
       "weight": 26
     },
     {
       "id": "farmer_new_chat_seed",
-      "type": "small_talk",
+      "request": "question",
       "text": "Seeds are small, but they know how to make a person wait.",
       "weight": 28
     },
     {
       "id": "farmer_new_question_rain",
-      "type": "question",
+      "request": "question",
       "text": "Good rain is a blessing. Too much rain is work wearing a blessing mask.",
       "weight": 28
     },
     {
       "id": "farmer_new_story_scarecrow",
-      "type": "story",
+      "request": "story",
       "text": "I once fixed a scarecrow so well it scared me at dusk.",
       "weight": 24
     },
     {
       "id": "farmer_new_joke_carrot",
-      "type": "joke",
+      "request": "joke",
       "text": "A carrot joke takes root slowly, if anyone lets it.",
       "weight": 18
     },
     {
       "id": "farmer_new_insult_mud",
-      "type": "insult",
+      "request": "insult",
       "text": "That thought came in muddy and left tracks.",
       "weight": 18
     },
     {
       "id": "farmer_new_chat_harvest",
-      "type": "small_talk",
+      "request": "question",
       "text": "A harvest is just a hundred small chores deciding to agree.",
       "weight": 28
     },
     {
       "id": "farmer_new_question_bread",
-      "type": "question",
+      "request": "question",
       "text": "Bread starts long before the oven. Most good things do.",
       "weight": 28
     },
     {
       "id": "farmer_new_story_frost",
-      "type": "story",
+      "request": "story",
       "text": "One frost took half the field and taught the whole village humility.",
       "weight": 24
     },
     {
       "id": "farmer_new_rude_field",
-      "type": "insult",
+      "request": "insult",
       "text": "I would not plant that opinion in poor soil.",
       "dispositions": [
         "rude",
@@ -148,7 +148,7 @@
     },
     {
       "id": "farmer_cured_recognition_warm_1",
-      "type": "cured_recognition",
+      "request": "cured_recognition",
       "text": "I remember waking like a field after frost. You gave the roots a chance.",
       "weight": 30,
       "dispositions": [
@@ -158,7 +158,7 @@
     },
     {
       "id": "farmer_cured_recognition_warm_2",
-      "type": "cured_recognition",
+      "request": "cured_recognition",
       "text": "You pulled me back from spoiled soil. I will not forget that harvest.",
       "weight": 30,
       "dispositions": [
@@ -168,7 +168,7 @@
     },
     {
       "id": "farmer_cured_recognition_confused_1",
-      "type": "cured_recognition",
+      "request": "cured_recognition",
       "text": "Your face is familiar, like a seed found in last year's coat.",
       "weight": 30,
       "dispositions": [
@@ -178,7 +178,7 @@
     },
     {
       "id": "farmer_cured_recognition_confused_2",
-      "type": "cured_recognition",
+      "request": "cured_recognition",
       "text": "I remember mud, hunger, and sunlight arriving too bright. Were you the sunlight?",
       "weight": 30,
       "dispositions": [
@@ -188,7 +188,7 @@
     },
     {
       "id": "farmer_cured_recognition_uneasy_1",
-      "type": "cured_recognition",
+      "request": "cured_recognition",
       "text": "I remember you, but the memory still has grave dirt under its nails.",
       "weight": 30,
       "dispositions": [
@@ -199,7 +199,7 @@
     },
     {
       "id": "farmer_village_event_thunderstorm_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "thunderstorm"
       ],
@@ -209,7 +209,7 @@
     },
     {
       "id": "farmer_village_event_thunderstorm_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "thunderstorm"
       ],
@@ -219,7 +219,7 @@
     },
     {
       "id": "farmer_village_event_thunderstorm_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "thunderstorm"
       ],
@@ -229,7 +229,7 @@
     },
     {
       "id": "farmer_village_event_thunderstorm_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "thunderstorm"
       ],
@@ -239,7 +239,7 @@
     },
     {
       "id": "farmer_village_event_thunderstorm_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "thunderstorm"
       ],
@@ -249,7 +249,7 @@
     },
     {
       "id": "farmer_village_event_fire_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "village_fire"
       ],
@@ -259,7 +259,7 @@
     },
     {
       "id": "farmer_village_event_fire_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "village_fire"
       ],
@@ -269,7 +269,7 @@
     },
     {
       "id": "farmer_village_event_fire_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "village_fire"
       ],
@@ -279,7 +279,7 @@
     },
     {
       "id": "farmer_village_event_fire_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "village_fire"
       ],
@@ -289,7 +289,7 @@
     },
     {
       "id": "farmer_village_event_fire_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "village_fire"
       ],
@@ -299,7 +299,7 @@
     },
     {
       "id": "farmer_village_event_raid_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "raid",
         "player_defended_raid"
@@ -310,7 +310,7 @@
     },
     {
       "id": "farmer_village_event_raid_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "raid",
         "player_defended_raid"
@@ -321,7 +321,7 @@
     },
     {
       "id": "farmer_village_event_raid_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "raid",
         "player_defended_raid"
@@ -332,7 +332,7 @@
     },
     {
       "id": "farmer_village_event_raid_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "raid",
         "player_defended_raid"
@@ -343,7 +343,7 @@
     },
     {
       "id": "farmer_village_event_raid_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "raid",
         "player_defended_raid"
@@ -354,7 +354,7 @@
     },
     {
       "id": "farmer_village_event_night_attack_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "night_attack"
       ],
@@ -364,7 +364,7 @@
     },
     {
       "id": "farmer_village_event_night_attack_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "night_attack"
       ],
@@ -374,7 +374,7 @@
     },
     {
       "id": "farmer_village_event_night_attack_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "night_attack"
       ],
@@ -384,7 +384,7 @@
     },
     {
       "id": "farmer_village_event_night_attack_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "night_attack"
       ],
@@ -394,7 +394,7 @@
     },
     {
       "id": "farmer_village_event_night_attack_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "night_attack"
       ],
@@ -404,7 +404,7 @@
     },
     {
       "id": "farmer_village_event_sandstorm_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "sandstorm"
       ],
@@ -414,7 +414,7 @@
     },
     {
       "id": "farmer_village_event_sandstorm_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "sandstorm"
       ],
@@ -424,7 +424,7 @@
     },
     {
       "id": "farmer_village_event_sandstorm_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "sandstorm"
       ],
@@ -434,7 +434,7 @@
     },
     {
       "id": "farmer_village_event_sandstorm_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "sandstorm"
       ],
@@ -444,7 +444,7 @@
     },
     {
       "id": "farmer_village_event_sandstorm_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "sandstorm"
       ],
@@ -454,7 +454,7 @@
     },
     {
       "id": "farmer_village_event_snowstorm_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "snowstorm"
       ],
@@ -464,7 +464,7 @@
     },
     {
       "id": "farmer_village_event_snowstorm_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "snowstorm"
       ],
@@ -474,7 +474,7 @@
     },
     {
       "id": "farmer_village_event_snowstorm_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "snowstorm"
       ],
@@ -484,7 +484,7 @@
     },
     {
       "id": "farmer_village_event_snowstorm_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "snowstorm"
       ],
@@ -494,7 +494,7 @@
     },
     {
       "id": "farmer_village_event_snowstorm_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "snowstorm"
       ],

@@ -260,7 +260,7 @@ This is disabled by default and is mainly intended for testing and balancing.
 
 Villager Retaliation! has built-in datapack and resource-pack support for creators who want to tune the experience without writing Java.
 
-Datapacks can add or replace villager dialogue, forced dialogue events, chat-only event lines, notification text, ambient world text, gift preferences, pacification payments, profession loot, story discoveries, and preset villager names. These systems are data-driven so addon packs and modpacks can make villages feel warmer, harsher, funnier, stranger, or more tied to their own worldbuilding.
+Datapacks can add or replace villager dialogue, forced dialogue events, chat event lines, notification text, ambient world text, gift preferences, pacification payments, profession loot, story discoveries, and preset villager names. These systems are data-driven so addon packs and modpacks can make villages feel warmer, harsher, funnier, stranger, or more tied to their own worldbuilding.
 
 Resource packs can translate the interaction GUI and reputation UI, replace normal and combat villager textures, customize wandering trader textures, and override the combat-capable villager model used when villagers need independent arms for weapons, shields, bows, potions, and throwing animations.
 

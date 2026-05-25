@@ -1,8 +1,8 @@
 {
   "entries": [
     {
-      "id": "retaliation_started_chat_unarmed_player",
-      "trigger": "retaliation_started_chat",
+      "id": "retaliation_started_callout_unarmed_player",
+      "trigger": "retaliation_started",
       "chance": 0.35,
       "priority": -35,
       "requires_witness_unarmed": true,
@@ -20,11 +20,15 @@
         "I have nothing in my hands and a whole village behind me.",
         "Come closer, {target}. I have enough anger for both hands.",
         "No weapon. Still not afraid."
-      ]
+      ],
+      "output": {
+        "mode": "chat",
+        "radius": 24
+      }
     },
     {
-      "id": "retaliation_started_chat_unarmed_mob",
-      "trigger": "retaliation_started_chat",
+      "id": "retaliation_started_callout_unarmed_mob",
+      "trigger": "retaliation_started",
       "chance": 0.35,
       "priority": -34,
       "requires_witness_unarmed": true,
@@ -61,11 +65,15 @@
         "Get inside! I cannot hold {target} back!",
         "Help me drive it away!",
         "I have no weapon! Help!"
-      ]
+      ],
+      "output": {
+        "mode": "chat",
+        "radius": 24
+      }
     },
     {
-      "id": "retaliation_started_chat_player",
-      "trigger": "retaliation_started_chat",
+      "id": "retaliation_started_callout_player",
+      "trigger": "retaliation_started",
       "chance": 0.35,
       "priority": -30,
       "target_entity_types": [
@@ -80,11 +88,15 @@
         "No more warnings, {target}.",
         "Back from my people, {target}!",
         "You should have left while words still mattered."
-      ]
+      ],
+      "output": {
+        "mode": "chat",
+        "radius": 24
+      }
     },
     {
-      "id": "retaliation_started_chat_raider",
-      "trigger": "retaliation_started_chat",
+      "id": "retaliation_started_callout_raider",
+      "trigger": "retaliation_started",
       "chance": 0.35,
       "priority": -25,
       "target_entity_types": [
@@ -103,11 +115,15 @@
         "Not one step farther.",
         "The village stands, {target}!",
         "You will not take another home."
-      ]
+      ],
+      "output": {
+        "mode": "chat",
+        "radius": 24
+      }
     },
     {
-      "id": "retaliation_started_chat_evoker",
-      "trigger": "retaliation_started_chat",
+      "id": "retaliation_started_callout_evoker",
+      "trigger": "retaliation_started",
       "chance": 0.35,
       "priority": -28,
       "target_entity_types": [
@@ -122,11 +138,15 @@
         "The village has heard enough magic for one day.",
         "Summon all you want. We still stand.",
         "You will not curse this place."
-      ]
+      ],
+      "output": {
+        "mode": "chat",
+        "radius": 24
+      }
     },
     {
-      "id": "retaliation_started_chat_pillager",
-      "trigger": "retaliation_started_chat",
+      "id": "retaliation_started_callout_pillager",
+      "trigger": "retaliation_started",
       "chance": 0.35,
       "priority": -28,
       "target_entity_types": [
@@ -141,11 +161,15 @@
         "Raiders leave empty-handed today.",
         "Aim at me, not the children.",
         "Your banner means nothing here."
-      ]
+      ],
+      "output": {
+        "mode": "chat",
+        "radius": 24
+      }
     },
     {
-      "id": "retaliation_started_chat_vindicator",
-      "trigger": "retaliation_started_chat",
+      "id": "retaliation_started_callout_vindicator",
+      "trigger": "retaliation_started",
       "chance": 0.35,
       "priority": -28,
       "target_entity_types": [
@@ -160,11 +184,15 @@
         "Come closer and learn what farmers carry.",
         "No more doors for you to break.",
         "Swing once more and answer for it."
-      ]
+      ],
+      "output": {
+        "mode": "chat",
+        "radius": 24
+      }
     },
     {
-      "id": "retaliation_started_chat_undead",
-      "trigger": "retaliation_started_chat",
+      "id": "retaliation_started_callout_undead",
+      "trigger": "retaliation_started",
       "chance": 0.35,
       "priority": -20,
       "target_entity_types": [
@@ -187,11 +215,15 @@
         "I hear your bones. I am not afraid.",
         "The dead can learn to run.",
         "Stay away from the living."
-      ]
+      ],
+      "output": {
+        "mode": "chat",
+        "radius": 24
+      }
     },
     {
-      "id": "retaliation_started_chat_monster",
-      "trigger": "retaliation_started_chat",
+      "id": "retaliation_started_callout_monster",
+      "trigger": "retaliation_started",
       "chance": 0.35,
       "priority": -15,
       "target_entity_types": [
@@ -211,11 +243,15 @@
         "Not near the children.",
         "This path is ours.",
         "Try the fields. See what happens."
-      ]
+      ],
+      "output": {
+        "mode": "chat",
+        "radius": 24
+      }
     },
     {
-      "id": "retaliation_started_chat_generic",
-      "trigger": "retaliation_started_chat",
+      "id": "retaliation_started_callout_generic",
+      "trigger": "retaliation_started",
       "chance": 0.35,
       "priority": 0,
       "witness_radius": 24,
@@ -229,7 +265,11 @@
         "Come on then.",
         "You are done here.",
         "For the village!"
-      ]
+      ],
+      "output": {
+        "mode": "chat",
+        "radius": 24
+      }
     },
     {
       "id": "repeated_village_container_theft_final_warning",
@@ -246,7 +286,10 @@
         "No. I already caught you in our belongings twice. This ends now.",
         "Again? You were warned. The village is done asking.",
         "Three times with your hands in village stores. No more words."
-      ]
+      ],
+      "output": {
+        "mode": "forced_dialogue"
+      }
     },
     {
       "id": "repeated_village_container_theft_second_warning",
@@ -359,6 +402,9 @@
           "failure_aggro": true,
           "failure_end_conversation": true
         }
+      },
+      "output": {
+        "mode": "forced_dialogue"
       }
     },
     {
@@ -598,7 +644,10 @@
             "failure_end_conversation": true
           }
         }
-      ]
+      ],
+      "output": {
+        "mode": "forced_dialogue"
+      }
     },
     {
       "id": "witnessed_village_temple_container_theft",
@@ -791,7 +840,10 @@
             "failure_end_conversation": true
           }
         }
-      ]
+      ],
+      "output": {
+        "mode": "forced_dialogue"
+      }
     },
     {
       "id": "witnessed_village_cartographer_container_opened",
@@ -863,7 +915,10 @@
         "Careful with that {container}. Maps look like paper until someone depends on the route.",
         "Close that cartography chest. A wrong hand can lose a whole road.",
         "Those records are not for browsing with both hands in the chest."
-      ]
+      ],
+      "output": {
+        "mode": "forced_dialogue"
+      }
     },
     {
       "id": "witnessed_village_armorer_container_opened",
@@ -965,7 +1020,10 @@
         "That {container} is not a display case. It is what stands between villagers and danger.",
         "Close the armory chest. Protection only works when we know where it is.",
         "That armor stock is counted for the village. Step back."
-      ]
+      ],
+      "output": {
+        "mode": "forced_dialogue"
+      }
     },
     {
       "id": "witnessed_village_armorer_container_theft",
@@ -1177,7 +1235,10 @@
             "failure_end_conversation": true
           }
         }
-      ]
+      ],
+      "output": {
+        "mode": "forced_dialogue"
+      }
     },
     {
       "id": "witnessed_village_butcher_container_theft",
@@ -1389,7 +1450,10 @@
             "failure_end_conversation": true
           }
         }
-      ]
+      ],
+      "output": {
+        "mode": "forced_dialogue"
+      }
     },
     {
       "id": "witnessed_village_cartographer_container_theft",
@@ -1601,7 +1665,10 @@
             "failure_end_conversation": true
           }
         }
-      ]
+      ],
+      "output": {
+        "mode": "forced_dialogue"
+      }
     },
     {
       "id": "witnessed_village_fisher_container_theft",
@@ -1813,7 +1880,10 @@
             "failure_end_conversation": true
           }
         }
-      ]
+      ],
+      "output": {
+        "mode": "forced_dialogue"
+      }
     },
     {
       "id": "witnessed_village_fletcher_container_theft",
@@ -2025,7 +2095,10 @@
             "failure_end_conversation": true
           }
         }
-      ]
+      ],
+      "output": {
+        "mode": "forced_dialogue"
+      }
     },
     {
       "id": "witnessed_village_mason_container_theft",
@@ -2237,7 +2310,10 @@
             "failure_end_conversation": true
           }
         }
-      ]
+      ],
+      "output": {
+        "mode": "forced_dialogue"
+      }
     },
     {
       "id": "witnessed_village_shepherd_container_theft",
@@ -2449,7 +2525,10 @@
             "failure_end_conversation": true
           }
         }
-      ]
+      ],
+      "output": {
+        "mode": "forced_dialogue"
+      }
     },
     {
       "id": "witnessed_village_leatherworker_container_theft",
@@ -2661,7 +2740,10 @@
             "failure_end_conversation": true
           }
         }
-      ]
+      ],
+      "output": {
+        "mode": "forced_dialogue"
+      }
     },
     {
       "id": "witnessed_village_toolsmith_container_theft",
@@ -2873,7 +2955,10 @@
             "failure_end_conversation": true
           }
         }
-      ]
+      ],
+      "output": {
+        "mode": "forced_dialogue"
+      }
     },
     {
       "id": "witnessed_village_container_theft",
@@ -3186,7 +3271,10 @@
             "failure_end_conversation": true
           }
         }
-      ]
+      ],
+      "output": {
+        "mode": "forced_dialogue"
+      }
     },
     {
       "id": "witnessed_container_theft",
@@ -3357,7 +3445,10 @@
             "failure_end_conversation": true
           }
         }
-      ]
+      ],
+      "output": {
+        "mode": "forced_dialogue"
+      }
     },
     {
       "id": "witnessed_village_weaponsmith_container_opened",
@@ -3466,7 +3557,10 @@
         "That {container} holds village steel. Ask before your hands find the hilt.",
         "Close the forge chest. Every missing piece makes the village weaker.",
         "Those supplies are not a public rack. Step back and ask."
-      ]
+      ],
+      "output": {
+        "mode": "forced_dialogue"
+      }
     },
     {
       "id": "witnessed_village_temple_container_opened",
@@ -3575,7 +3669,10 @@
         "That {container} holds remedies and offerings. The sick should not have to compete with your pockets.",
         "Close the temple stores. Those supplies are for need, not curiosity.",
         "Offerings and remedies stay accounted for. Step back from the chest."
-      ]
+      ],
+      "output": {
+        "mode": "forced_dialogue"
+      }
     },
     {
       "id": "witnessed_village_butcher_container_opened",
@@ -3684,7 +3781,10 @@
         "That {container} feeds more than one table. Close it before supper becomes suspicion.",
         "Close the butcher chest. Village food is counted before it is shared.",
         "If you are hungry, ask. Do not start with the latch."
-      ]
+      ],
+      "output": {
+        "mode": "forced_dialogue"
+      }
     },
     {
       "id": "witnessed_village_fisher_container_opened",
@@ -3793,7 +3893,10 @@
         "Those supplies keep nets mended and bellies full. Do not fish from my chest.",
         "Close the fisher chest. The catch is counted before it is shared.",
         "Ask before reaching into stores pulled from cold water."
-      ]
+      ],
+      "output": {
+        "mode": "forced_dialogue"
+      }
     },
     {
       "id": "witnessed_village_fletcher_container_opened",
@@ -3902,7 +4005,10 @@
         "That {container} keeps arrows ready for trouble. Step back from it.",
         "Close the fletcher chest. Defense starts with knowing what is stocked.",
         "Those supplies have a target, and it is not your pocket."
-      ]
+      ],
+      "output": {
+        "mode": "forced_dialogue"
+      }
     },
     {
       "id": "witnessed_village_mason_container_opened",
@@ -4011,7 +4117,10 @@
         "Those materials hold walls together. Do not chip away at the village from a chest.",
         "Close the mason chest. Every missing piece shows up somewhere.",
         "Stone, clay, tools, all of it is counted. Step back."
-      ]
+      ],
+      "output": {
+        "mode": "forced_dialogue"
+      }
     },
     {
       "id": "witnessed_village_shepherd_container_opened",
@@ -4120,7 +4229,10 @@
         "That wool and work belong to this village. Keep your hands where I can see them.",
         "Close the shepherd chest. Warmth is shared better by asking.",
         "Those stores took work to gather. Step back from the chest."
-      ]
+      ],
+      "output": {
+        "mode": "forced_dialogue"
+      }
     },
     {
       "id": "witnessed_village_leatherworker_container_opened",
@@ -4229,7 +4341,10 @@
         "That {container} holds leatherwork for people who earned it. Close it.",
         "Close the tannery chest. Prepared stock is not spare just because it is stored.",
         "Ask before reaching into work that took this long to finish."
-      ]
+      ],
+      "output": {
+        "mode": "forced_dialogue"
+      }
     },
     {
       "id": "witnessed_village_toolsmith_container_opened",
@@ -4338,7 +4453,10 @@
         "Those tools keep this village working. Do not help yourself to another day of labor.",
         "Close the toolsmith chest. Work stops when tools wander.",
         "Every tool in there has a job. Step back and ask."
-      ]
+      ],
+      "output": {
+        "mode": "forced_dialogue"
+      }
     },
     {
       "id": "witnessed_village_container_opened_hostile",
@@ -4456,7 +4574,10 @@
         "No. Not you. Step back from that {container} before this becomes a fight.",
         "You do not get to put your hands on village stores. Close it now.",
         "After what the village knows of you, an open chest is a threat. Step back."
-      ]
+      ],
+      "output": {
+        "mode": "forced_dialogue"
+      }
     },
     {
       "id": "witnessed_village_weaponsmith_container_broken",
@@ -4544,7 +4665,10 @@
         "You broke into the forge chest. That stock protects the village.",
         "Smashing a weaponsmith chest is not borrowing. Explain yourself.",
         "That chest held steel for village work, not a reward for your pickaxe."
-      ]
+      ],
+      "output": {
+        "mode": "forced_dialogue"
+      }
     },
     {
       "id": "witnessed_village_armorer_container_broken",
@@ -4632,7 +4756,10 @@
         "That armorer chest was stocked for village defense. Why is it broken?",
         "You broke a chest full of work meant to keep people alive.",
         "I saw the armor stores break under your hand. Speak carefully."
-      ]
+      ],
+      "output": {
+        "mode": "forced_dialogue"
+      }
     },
     {
       "id": "witnessed_village_toolsmith_container_broken",
@@ -4720,7 +4847,10 @@
         "Every tool in that chest had a job. Breaking the chest was not one of them.",
         "You smashed the tool stores. The village works with those.",
         "I saw you break the toolsmith chest. Explain the damage."
-      ]
+      ],
+      "output": {
+        "mode": "forced_dialogue"
+      }
     },
     {
       "id": "witnessed_village_container_broken",
@@ -4840,7 +4970,10 @@
         "You broke that {container}. Village stores are not yours to smash.",
         "That {container} was stocked for the village. You do not get to break it apart.",
         "I saw you break the {container}. Explain yourself."
-      ]
+      ],
+      "output": {
+        "mode": "forced_dialogue"
+      }
     },
     {
       "id": "witnessed_village_container_opened",
@@ -5011,7 +5144,10 @@
         "Careful. That {container} was stocked for the village, not passing hands.",
         "Close that {container}. Village stores are shared by asking first.",
         "That chest belongs to the village. Step back and speak plainly."
-      ]
+      ],
+      "output": {
+        "mode": "forced_dialogue"
+      }
     }
   ]
 }

@@ -66,79 +66,79 @@
   "lines": [
     {
       "id": "unemployed_chat_work",
-      "type": "small_talk",
+      "request": "question",
       "text": "Finding the right work is harder when everyone asks if you found it yet.",
       "weight": 30
     },
     {
       "id": "unemployed_question_general",
-      "type": "question",
+      "request": "question",
       "text": "Work is work. Finding the right work is the tricky part.",
       "weight": 30
     },
     {
       "id": "unemployed_story_chance",
-      "type": "story",
+      "request": "story",
       "text": "A fair chance can look a lot like standing around until the right bell rings.",
       "weight": 26
     },
     {
       "id": "unemployed_new_greeting_site",
-      "type": "greeting",
+      "request": "greeting",
       "text": "If you see a spare job site, do mention it kindly.",
       "weight": 26
     },
     {
       "id": "unemployed_new_chat_waiting",
-      "type": "small_talk",
+      "request": "question",
       "text": "Waiting for work is still work if you look worried enough.",
       "weight": 28
     },
     {
       "id": "unemployed_new_question_place",
-      "type": "question",
+      "request": "question",
       "text": "Where do I fit? Somewhere useful, I hope, preferably before supper.",
       "weight": 28
     },
     {
       "id": "unemployed_new_story_bell",
-      "type": "story",
+      "request": "story",
       "text": "I once followed the bell hoping it meant opportunity. It meant hurry.",
       "weight": 24
     },
     {
       "id": "unemployed_new_joke_flexible",
-      "type": "joke",
+      "request": "joke",
       "text": "Unemployed jokes are flexible. That is what I keep telling myself.",
       "weight": 18
     },
     {
       "id": "unemployed_new_insult_idle",
-      "type": "insult",
+      "request": "insult",
       "text": "That was idle talk, and I would know.",
       "weight": 18
     },
     {
       "id": "unemployed_new_chat_errands",
-      "type": "small_talk",
+      "request": "question",
       "text": "People with trades get tasks. People without trades get errands.",
       "weight": 28
     },
     {
       "id": "unemployed_new_question_chance",
-      "type": "question",
+      "request": "question",
       "text": "A fair chance is easier to ask for than to recognize.",
       "weight": 28
     },
     {
       "id": "unemployed_new_story_barrel",
-      "type": "story",
+      "request": "story",
       "text": "I organized a barrel once. For a moment, everyone thought I had a calling.",
       "weight": 24
     },
     {
       "id": "unemployed_new_cautious_useful",
-      "type": "small_talk",
+      "request": "question",
       "text": "I am trying to look useful, not involved.",
       "dispositions": [
         "cautious",
@@ -148,7 +148,7 @@
     },
     {
       "id": "unemployed_cured_recognition_warm_1",
-      "type": "cured_recognition",
+      "request": "cured_recognition",
       "text": "I remember having no trade, no thoughts, almost no self. You helped with the important one.",
       "weight": 30,
       "dispositions": [
@@ -158,7 +158,7 @@
     },
     {
       "id": "unemployed_cured_recognition_warm_2",
-      "type": "cured_recognition",
+      "request": "cured_recognition",
       "text": "I did not know what I would become, but you made sure I could become anything.",
       "weight": 30,
       "dispositions": [
@@ -168,7 +168,7 @@
     },
     {
       "id": "unemployed_cured_recognition_confused_1",
-      "type": "cured_recognition",
+      "request": "cured_recognition",
       "text": "Your face is familiar. So is being confused, but this feels different.",
       "weight": 30,
       "dispositions": [
@@ -178,7 +178,7 @@
     },
     {
       "id": "unemployed_cured_recognition_confused_2",
-      "type": "cured_recognition",
+      "request": "cured_recognition",
       "text": "I remember waking with empty hands and a head full of broken bells.",
       "weight": 30,
       "dispositions": [
@@ -188,7 +188,7 @@
     },
     {
       "id": "unemployed_cured_recognition_uneasy_1",
-      "type": "cured_recognition",
+      "request": "cured_recognition",
       "text": "I remember you, though I still do not know what to do with the memory.",
       "weight": 30,
       "dispositions": [
@@ -199,7 +199,7 @@
     },
     {
       "id": "unemployed_village_event_thunderstorm_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "thunderstorm"
       ],
@@ -209,7 +209,7 @@
     },
     {
       "id": "unemployed_village_event_thunderstorm_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "thunderstorm"
       ],
@@ -219,7 +219,7 @@
     },
     {
       "id": "unemployed_village_event_thunderstorm_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "thunderstorm"
       ],
@@ -229,7 +229,7 @@
     },
     {
       "id": "unemployed_village_event_thunderstorm_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "thunderstorm"
       ],
@@ -239,7 +239,7 @@
     },
     {
       "id": "unemployed_village_event_thunderstorm_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "thunderstorm"
       ],
@@ -249,7 +249,7 @@
     },
     {
       "id": "unemployed_village_event_fire_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "village_fire"
       ],
@@ -259,7 +259,7 @@
     },
     {
       "id": "unemployed_village_event_fire_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "village_fire"
       ],
@@ -269,7 +269,7 @@
     },
     {
       "id": "unemployed_village_event_fire_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "village_fire"
       ],
@@ -279,7 +279,7 @@
     },
     {
       "id": "unemployed_village_event_fire_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "village_fire"
       ],
@@ -289,7 +289,7 @@
     },
     {
       "id": "unemployed_village_event_fire_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "village_fire"
       ],
@@ -299,7 +299,7 @@
     },
     {
       "id": "unemployed_village_event_raid_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "raid",
         "player_defended_raid"
@@ -310,7 +310,7 @@
     },
     {
       "id": "unemployed_village_event_raid_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "raid",
         "player_defended_raid"
@@ -321,7 +321,7 @@
     },
     {
       "id": "unemployed_village_event_raid_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "raid",
         "player_defended_raid"
@@ -332,7 +332,7 @@
     },
     {
       "id": "unemployed_village_event_raid_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "raid",
         "player_defended_raid"
@@ -343,7 +343,7 @@
     },
     {
       "id": "unemployed_village_event_raid_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "raid",
         "player_defended_raid"
@@ -354,7 +354,7 @@
     },
     {
       "id": "unemployed_village_event_night_attack_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "night_attack"
       ],
@@ -364,7 +364,7 @@
     },
     {
       "id": "unemployed_village_event_night_attack_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "night_attack"
       ],
@@ -374,7 +374,7 @@
     },
     {
       "id": "unemployed_village_event_night_attack_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "night_attack"
       ],
@@ -384,7 +384,7 @@
     },
     {
       "id": "unemployed_village_event_night_attack_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "night_attack"
       ],
@@ -394,7 +394,7 @@
     },
     {
       "id": "unemployed_village_event_night_attack_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "night_attack"
       ],
@@ -404,7 +404,7 @@
     },
     {
       "id": "unemployed_village_event_sandstorm_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "sandstorm"
       ],
@@ -414,7 +414,7 @@
     },
     {
       "id": "unemployed_village_event_sandstorm_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "sandstorm"
       ],
@@ -424,7 +424,7 @@
     },
     {
       "id": "unemployed_village_event_sandstorm_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "sandstorm"
       ],
@@ -434,7 +434,7 @@
     },
     {
       "id": "unemployed_village_event_sandstorm_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "sandstorm"
       ],
@@ -444,7 +444,7 @@
     },
     {
       "id": "unemployed_village_event_sandstorm_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "sandstorm"
       ],
@@ -454,7 +454,7 @@
     },
     {
       "id": "unemployed_village_event_snowstorm_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "snowstorm"
       ],
@@ -464,7 +464,7 @@
     },
     {
       "id": "unemployed_village_event_snowstorm_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "snowstorm"
       ],
@@ -474,7 +474,7 @@
     },
     {
       "id": "unemployed_village_event_snowstorm_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "snowstorm"
       ],
@@ -484,7 +484,7 @@
     },
     {
       "id": "unemployed_village_event_snowstorm_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "snowstorm"
       ],
@@ -494,7 +494,7 @@
     },
     {
       "id": "unemployed_village_event_snowstorm_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "snowstorm"
       ],

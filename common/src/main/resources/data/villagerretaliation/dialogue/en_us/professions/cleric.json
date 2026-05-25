@@ -67,79 +67,79 @@
   "lines": [
     {
       "id": "cleric_chat_remedies",
-      "type": "small_talk",
+      "request": "question",
       "text": "Some remedies need glass bottles. Some need time and a quieter voice.",
       "weight": 30
     },
     {
       "id": "cleric_question_wounds",
-      "type": "question",
+      "request": "question",
       "text": "There are wounds that potions cannot mend.",
       "weight": 30
     },
     {
       "id": "cleric_story_omens",
-      "type": "story",
+      "request": "story",
       "text": "Bad omens linger longer than most people think.",
       "weight": 26
     },
     {
       "id": "cleric_new_greeting_bottles",
-      "type": "greeting",
+      "request": "greeting",
       "text": "Mind the bottles. Some are medicine, some are mistakes I have not named yet.",
       "weight": 26
     },
     {
       "id": "cleric_new_chat_brew",
-      "type": "small_talk",
+      "request": "question",
       "text": "A good brew needs time, heat, and someone willing to wait quietly.",
       "weight": 28
     },
     {
       "id": "cleric_new_question_omens",
-      "type": "question",
+      "request": "question",
       "text": "An omen is only useless if nobody changes course after seeing it.",
       "weight": 28
     },
     {
       "id": "cleric_new_story_remedy",
-      "type": "story",
+      "request": "story",
       "text": "I once made a remedy so bitter the patient got better out of spite.",
       "weight": 24
     },
     {
       "id": "cleric_new_joke_bitter",
-      "type": "joke",
+      "request": "joke",
       "text": "A cleric joke is like medicine: if it tastes pleasant, check it twice.",
       "weight": 18
     },
     {
       "id": "cleric_new_insult_empty",
-      "type": "insult",
+      "request": "insult",
       "text": "That was an empty bottle of a thought.",
       "weight": 18
     },
     {
       "id": "cleric_new_chat_wounds",
-      "type": "small_talk",
+      "request": "question",
       "text": "Some hurts close cleanly. Some wait for a quieter day.",
       "weight": 28
     },
     {
       "id": "cleric_new_question_prayer",
-      "type": "question",
+      "request": "question",
       "text": "Prayer is not a trade. You do not put in words and pull out certainty.",
       "weight": 28
     },
     {
       "id": "cleric_new_story_night",
-      "type": "story",
+      "request": "story",
       "text": "After a hard night, even the brewing stand sounds tired in the morning.",
       "weight": 24
     },
     {
       "id": "cleric_new_fearful_calm",
-      "type": "small_talk",
+      "request": "question",
       "text": "Speak gently. I have already heard enough harsh things today.",
       "dispositions": [
         "fearful",
@@ -149,7 +149,7 @@
     },
     {
       "id": "cleric_cured_recognition_warm_1",
-      "type": "cured_recognition",
+      "request": "cured_recognition",
       "text": "I remember the cure like a bell under water. You were there when it rang clear.",
       "weight": 30,
       "dispositions": [
@@ -159,7 +159,7 @@
     },
     {
       "id": "cleric_cured_recognition_warm_2",
-      "type": "cured_recognition",
+      "request": "cured_recognition",
       "text": "Whatever mercy found me, it came through your hands.",
       "weight": 30,
       "dispositions": [
@@ -169,7 +169,7 @@
     },
     {
       "id": "cleric_cured_recognition_confused_1",
-      "type": "cured_recognition",
+      "request": "cured_recognition",
       "text": "My memory kneels and trembles. I know you, but not cleanly.",
       "weight": 30,
       "dispositions": [
@@ -179,7 +179,7 @@
     },
     {
       "id": "cleric_cured_recognition_confused_2",
-      "type": "cured_recognition",
+      "request": "cured_recognition",
       "text": "I remember weakness, bitterness, gold, and then breath. The rest is prayer smoke.",
       "weight": 30,
       "dispositions": [
@@ -189,7 +189,7 @@
     },
     {
       "id": "cleric_cured_recognition_uneasy_1",
-      "type": "cured_recognition",
+      "request": "cured_recognition",
       "text": "I remember you from the edge of a curse. Forgive me if my thanks sounds afraid.",
       "weight": 30,
       "dispositions": [
@@ -200,7 +200,7 @@
     },
     {
       "id": "cleric_village_event_thunderstorm_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "thunderstorm"
       ],
@@ -210,7 +210,7 @@
     },
     {
       "id": "cleric_village_event_thunderstorm_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "thunderstorm"
       ],
@@ -220,7 +220,7 @@
     },
     {
       "id": "cleric_village_event_thunderstorm_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "thunderstorm"
       ],
@@ -230,7 +230,7 @@
     },
     {
       "id": "cleric_village_event_thunderstorm_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "thunderstorm"
       ],
@@ -240,7 +240,7 @@
     },
     {
       "id": "cleric_village_event_thunderstorm_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "thunderstorm"
       ],
@@ -250,7 +250,7 @@
     },
     {
       "id": "cleric_village_event_fire_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "village_fire"
       ],
@@ -260,7 +260,7 @@
     },
     {
       "id": "cleric_village_event_fire_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "village_fire"
       ],
@@ -270,7 +270,7 @@
     },
     {
       "id": "cleric_village_event_fire_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "village_fire"
       ],
@@ -280,7 +280,7 @@
     },
     {
       "id": "cleric_village_event_fire_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "village_fire"
       ],
@@ -290,7 +290,7 @@
     },
     {
       "id": "cleric_village_event_fire_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "village_fire"
       ],
@@ -300,7 +300,7 @@
     },
     {
       "id": "cleric_village_event_raid_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "raid",
         "player_defended_raid"
@@ -311,7 +311,7 @@
     },
     {
       "id": "cleric_village_event_raid_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "raid",
         "player_defended_raid"
@@ -322,7 +322,7 @@
     },
     {
       "id": "cleric_village_event_raid_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "raid",
         "player_defended_raid"
@@ -333,7 +333,7 @@
     },
     {
       "id": "cleric_village_event_raid_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "raid",
         "player_defended_raid"
@@ -344,7 +344,7 @@
     },
     {
       "id": "cleric_village_event_raid_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "raid",
         "player_defended_raid"
@@ -355,7 +355,7 @@
     },
     {
       "id": "cleric_village_event_night_attack_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "night_attack"
       ],
@@ -365,7 +365,7 @@
     },
     {
       "id": "cleric_village_event_night_attack_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "night_attack"
       ],
@@ -375,7 +375,7 @@
     },
     {
       "id": "cleric_village_event_night_attack_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "night_attack"
       ],
@@ -385,7 +385,7 @@
     },
     {
       "id": "cleric_village_event_night_attack_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "night_attack"
       ],
@@ -395,7 +395,7 @@
     },
     {
       "id": "cleric_village_event_night_attack_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "night_attack"
       ],
@@ -405,7 +405,7 @@
     },
     {
       "id": "cleric_village_event_sandstorm_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "sandstorm"
       ],
@@ -415,7 +415,7 @@
     },
     {
       "id": "cleric_village_event_sandstorm_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "sandstorm"
       ],
@@ -425,7 +425,7 @@
     },
     {
       "id": "cleric_village_event_sandstorm_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "sandstorm"
       ],
@@ -435,7 +435,7 @@
     },
     {
       "id": "cleric_village_event_sandstorm_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "sandstorm"
       ],
@@ -445,7 +445,7 @@
     },
     {
       "id": "cleric_village_event_sandstorm_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "sandstorm"
       ],
@@ -455,7 +455,7 @@
     },
     {
       "id": "cleric_village_event_snowstorm_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "snowstorm"
       ],
@@ -465,7 +465,7 @@
     },
     {
       "id": "cleric_village_event_snowstorm_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "snowstorm"
       ],
@@ -475,7 +475,7 @@
     },
     {
       "id": "cleric_village_event_snowstorm_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "snowstorm"
       ],
@@ -485,7 +485,7 @@
     },
     {
       "id": "cleric_village_event_snowstorm_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "snowstorm"
       ],
@@ -495,7 +495,7 @@
     },
     {
       "id": "cleric_village_event_snowstorm_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "snowstorm"
       ],

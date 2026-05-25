@@ -66,79 +66,79 @@
   "lines": [
     {
       "id": "toolsmith_chat_handles",
-      "type": "small_talk",
+      "request": "question",
       "text": "Cracked handles are small warnings with expensive timing.",
       "weight": 30
     },
     {
       "id": "toolsmith_question_edges",
-      "type": "question",
+      "request": "question",
       "text": "A dull edge makes every simple job into a bad plan.",
       "weight": 30
     },
     {
       "id": "toolsmith_story_tool",
-      "type": "story",
+      "request": "story",
       "text": "A good tool is quiet proof that someone cared before trouble started.",
       "weight": 26
     },
     {
       "id": "toolsmith_new_greeting_table",
-      "type": "greeting",
+      "request": "greeting",
       "text": "Mind the table. Good tools begin with nobody bumping my elbow.",
       "weight": 26
     },
     {
       "id": "toolsmith_new_chat_handle",
-      "type": "small_talk",
+      "request": "question",
       "text": "A handle should fit the hand, not argue with it.",
       "weight": 28
     },
     {
       "id": "toolsmith_new_question_edge",
-      "type": "question",
+      "request": "question",
       "text": "A sharp edge is useful. A careless one is just trouble with shine.",
       "weight": 28
     },
     {
       "id": "toolsmith_new_story_pick",
-      "type": "story",
+      "request": "story",
       "text": "I once fixed a pick that had seen more stone than sense.",
       "weight": 24
     },
     {
       "id": "toolsmith_new_joke_point",
-      "type": "joke",
+      "request": "joke",
       "text": "Tool jokes work better when they have a point. Mine sometimes have two.",
       "weight": 18
     },
     {
       "id": "toolsmith_new_insult_bent",
-      "type": "insult",
+      "request": "insult",
       "text": "That idea is bent past repair.",
       "weight": 18
     },
     {
       "id": "toolsmith_new_chat_workbench",
-      "type": "small_talk",
+      "request": "question",
       "text": "The bench hears every complaint before the finished tool gets praised.",
       "weight": 28
     },
     {
       "id": "toolsmith_new_question_crack",
-      "type": "question",
+      "request": "question",
       "text": "Cracked handles are warnings. Ignore them and they become stories.",
       "weight": 28
     },
     {
       "id": "toolsmith_new_story_shovel",
-      "type": "story",
+      "request": "story",
       "text": "A shovel broke on me once because I asked it to do axe work.",
       "weight": 24
     },
     {
       "id": "toolsmith_new_hostile_tool",
-      "type": "insult",
+      "request": "insult",
       "text": "You are using your manners like the wrong tool for the job.",
       "dispositions": [
         "rude",
@@ -148,7 +148,7 @@
     },
     {
       "id": "toolsmith_cured_recognition_warm_1",
-      "type": "cured_recognition",
+      "request": "cured_recognition",
       "text": "I remember my mind working again, like a tool freed from rust.",
       "weight": 30,
       "dispositions": [
@@ -158,7 +158,7 @@
     },
     {
       "id": "toolsmith_cured_recognition_warm_2",
-      "type": "cured_recognition",
+      "request": "cured_recognition",
       "text": "You put a handle back on my life when I could not grip it myself.",
       "weight": 30,
       "dispositions": [
@@ -168,7 +168,7 @@
     },
     {
       "id": "toolsmith_cured_recognition_confused_1",
-      "type": "cured_recognition",
+      "request": "cured_recognition",
       "text": "Your face fits the memory, though the memory is still badly forged.",
       "weight": 30,
       "dispositions": [
@@ -178,7 +178,7 @@
     },
     {
       "id": "toolsmith_cured_recognition_confused_2",
-      "type": "cured_recognition",
+      "request": "cured_recognition",
       "text": "I remember a cure biting harder than a dull saw, then sense returning.",
       "weight": 30,
       "dispositions": [
@@ -188,7 +188,7 @@
     },
     {
       "id": "toolsmith_cured_recognition_uneasy_1",
-      "type": "cured_recognition",
+      "request": "cured_recognition",
       "text": "I remember you. The old fear still catches like a nicked blade.",
       "weight": 30,
       "dispositions": [
@@ -199,7 +199,7 @@
     },
     {
       "id": "toolsmith_village_event_thunderstorm_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "thunderstorm"
       ],
@@ -209,7 +209,7 @@
     },
     {
       "id": "toolsmith_village_event_thunderstorm_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "thunderstorm"
       ],
@@ -219,7 +219,7 @@
     },
     {
       "id": "toolsmith_village_event_thunderstorm_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "thunderstorm"
       ],
@@ -229,7 +229,7 @@
     },
     {
       "id": "toolsmith_village_event_thunderstorm_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "thunderstorm"
       ],
@@ -239,7 +239,7 @@
     },
     {
       "id": "toolsmith_village_event_thunderstorm_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "thunderstorm"
       ],
@@ -249,7 +249,7 @@
     },
     {
       "id": "toolsmith_village_event_fire_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "village_fire"
       ],
@@ -259,7 +259,7 @@
     },
     {
       "id": "toolsmith_village_event_fire_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "village_fire"
       ],
@@ -269,7 +269,7 @@
     },
     {
       "id": "toolsmith_village_event_fire_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "village_fire"
       ],
@@ -279,7 +279,7 @@
     },
     {
       "id": "toolsmith_village_event_fire_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "village_fire"
       ],
@@ -289,7 +289,7 @@
     },
     {
       "id": "toolsmith_village_event_fire_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "village_fire"
       ],
@@ -299,7 +299,7 @@
     },
     {
       "id": "toolsmith_village_event_raid_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "raid",
         "player_defended_raid"
@@ -310,7 +310,7 @@
     },
     {
       "id": "toolsmith_village_event_raid_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "raid",
         "player_defended_raid"
@@ -321,7 +321,7 @@
     },
     {
       "id": "toolsmith_village_event_raid_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "raid",
         "player_defended_raid"
@@ -332,7 +332,7 @@
     },
     {
       "id": "toolsmith_village_event_raid_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "raid",
         "player_defended_raid"
@@ -343,7 +343,7 @@
     },
     {
       "id": "toolsmith_village_event_raid_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "raid",
         "player_defended_raid"
@@ -354,7 +354,7 @@
     },
     {
       "id": "toolsmith_village_event_night_attack_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "night_attack"
       ],
@@ -364,7 +364,7 @@
     },
     {
       "id": "toolsmith_village_event_night_attack_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "night_attack"
       ],
@@ -374,7 +374,7 @@
     },
     {
       "id": "toolsmith_village_event_night_attack_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "night_attack"
       ],
@@ -384,7 +384,7 @@
     },
     {
       "id": "toolsmith_village_event_night_attack_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "night_attack"
       ],
@@ -394,7 +394,7 @@
     },
     {
       "id": "toolsmith_village_event_night_attack_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "night_attack"
       ],
@@ -404,7 +404,7 @@
     },
     {
       "id": "toolsmith_village_event_sandstorm_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "sandstorm"
       ],
@@ -414,7 +414,7 @@
     },
     {
       "id": "toolsmith_village_event_sandstorm_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "sandstorm"
       ],
@@ -424,7 +424,7 @@
     },
     {
       "id": "toolsmith_village_event_sandstorm_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "sandstorm"
       ],
@@ -434,7 +434,7 @@
     },
     {
       "id": "toolsmith_village_event_sandstorm_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "sandstorm"
       ],
@@ -444,7 +444,7 @@
     },
     {
       "id": "toolsmith_village_event_sandstorm_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "sandstorm"
       ],
@@ -454,7 +454,7 @@
     },
     {
       "id": "toolsmith_village_event_snowstorm_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "snowstorm"
       ],
@@ -464,7 +464,7 @@
     },
     {
       "id": "toolsmith_village_event_snowstorm_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "snowstorm"
       ],
@@ -474,7 +474,7 @@
     },
     {
       "id": "toolsmith_village_event_snowstorm_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "snowstorm"
       ],
@@ -484,7 +484,7 @@
     },
     {
       "id": "toolsmith_village_event_snowstorm_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "snowstorm"
       ],
@@ -494,7 +494,7 @@
     },
     {
       "id": "toolsmith_village_event_snowstorm_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "snowstorm"
       ],

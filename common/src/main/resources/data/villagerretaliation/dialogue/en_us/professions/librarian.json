@@ -66,79 +66,79 @@
   "lines": [
     {
       "id": "librarian_chat_pages",
-      "type": "small_talk",
+      "request": "question",
       "text": "Missing pages worry me less than people who never read warnings.",
       "weight": 30
     },
     {
       "id": "librarian_question_memory",
-      "type": "question",
+      "request": "question",
       "text": "Villages remember more than people expect.",
       "weight": 30
     },
     {
       "id": "librarian_story_records",
-      "type": "story",
+      "request": "story",
       "text": "Every trade, every kindness, every cruelty. Someone writes it down.",
       "weight": 26
     },
     {
       "id": "librarian_new_greeting_lectern",
-      "type": "greeting",
+      "request": "greeting",
       "text": "Mind the lectern. It has heard better questions than most people ask.",
       "weight": 26
     },
     {
       "id": "librarian_new_chat_ink",
-      "type": "small_talk",
+      "request": "question",
       "text": "Ink is quiet until someone needs proof.",
       "weight": 28
     },
     {
       "id": "librarian_new_question_record",
-      "type": "question",
+      "request": "question",
       "text": "Records do not care who feels embarrassed by them.",
       "weight": 28
     },
     {
       "id": "librarian_new_story_margin",
-      "type": "story",
+      "request": "story",
       "text": "The best clue I ever found was written in a margin by someone annoyed.",
       "weight": 24
     },
     {
       "id": "librarian_new_joke_footnote",
-      "type": "joke",
+      "request": "joke",
       "text": "I had a footnote for this joke, but mercy won.",
       "weight": 18
     },
     {
       "id": "librarian_new_insult_blank",
-      "type": "insult",
+      "request": "insult",
       "text": "That thought had too many blank pages.",
       "weight": 18
     },
     {
       "id": "librarian_new_chat_shelf",
-      "type": "small_talk",
+      "request": "question",
       "text": "A tidy shelf is proof that peace can be arranged, briefly.",
       "weight": 28
     },
     {
       "id": "librarian_new_question_warning",
-      "type": "question",
+      "request": "question",
       "text": "Forgotten warnings do not become kinder. They become surprises.",
       "weight": 28
     },
     {
       "id": "librarian_new_story_borrowed",
-      "type": "story",
+      "request": "story",
       "text": "Someone once returned a book cleaner than they borrowed it. We still discuss it.",
       "weight": 24
     },
     {
       "id": "librarian_new_hostile_memory",
-      "type": "small_talk",
+      "request": "question",
       "text": "You may prefer I forget. I have chosen a profession that argues otherwise.",
       "dispositions": [
         "rude",
@@ -148,7 +148,7 @@
     },
     {
       "id": "librarian_cured_recognition_warm_1",
-      "type": "cured_recognition",
+      "request": "cured_recognition",
       "text": "I remember the page turning back from a very bad ending.",
       "weight": 30,
       "dispositions": [
@@ -158,7 +158,7 @@
     },
     {
       "id": "librarian_cured_recognition_warm_2",
-      "type": "cured_recognition",
+      "request": "cured_recognition",
       "text": "Your face is one of the first words I could read again.",
       "weight": 30,
       "dispositions": [
@@ -168,7 +168,7 @@
     },
     {
       "id": "librarian_cured_recognition_confused_1",
-      "type": "cured_recognition",
+      "request": "cured_recognition",
       "text": "The chapter is damaged, but your name survived in the margin.",
       "weight": 30,
       "dispositions": [
@@ -178,7 +178,7 @@
     },
     {
       "id": "librarian_cured_recognition_confused_2",
-      "type": "cured_recognition",
+      "request": "cured_recognition",
       "text": "I remember fragments: weakness, gold, a bitter draught, and you waiting.",
       "weight": 30,
       "dispositions": [
@@ -188,7 +188,7 @@
     },
     {
       "id": "librarian_cured_recognition_uneasy_1",
-      "type": "cured_recognition",
+      "request": "cured_recognition",
       "text": "I remember you. Some books should be opened slowly after a curse.",
       "weight": 30,
       "dispositions": [
@@ -199,7 +199,7 @@
     },
     {
       "id": "librarian_village_event_thunderstorm_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "thunderstorm"
       ],
@@ -209,7 +209,7 @@
     },
     {
       "id": "librarian_village_event_thunderstorm_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "thunderstorm"
       ],
@@ -219,7 +219,7 @@
     },
     {
       "id": "librarian_village_event_thunderstorm_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "thunderstorm"
       ],
@@ -229,7 +229,7 @@
     },
     {
       "id": "librarian_village_event_thunderstorm_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "thunderstorm"
       ],
@@ -239,7 +239,7 @@
     },
     {
       "id": "librarian_village_event_thunderstorm_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "thunderstorm"
       ],
@@ -249,7 +249,7 @@
     },
     {
       "id": "librarian_village_event_fire_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "village_fire"
       ],
@@ -259,7 +259,7 @@
     },
     {
       "id": "librarian_village_event_fire_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "village_fire"
       ],
@@ -269,7 +269,7 @@
     },
     {
       "id": "librarian_village_event_fire_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "village_fire"
       ],
@@ -279,7 +279,7 @@
     },
     {
       "id": "librarian_village_event_fire_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "village_fire"
       ],
@@ -289,7 +289,7 @@
     },
     {
       "id": "librarian_village_event_fire_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "village_fire"
       ],
@@ -299,7 +299,7 @@
     },
     {
       "id": "librarian_village_event_raid_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "raid",
         "player_defended_raid"
@@ -310,7 +310,7 @@
     },
     {
       "id": "librarian_village_event_raid_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "raid",
         "player_defended_raid"
@@ -321,7 +321,7 @@
     },
     {
       "id": "librarian_village_event_raid_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "raid",
         "player_defended_raid"
@@ -332,7 +332,7 @@
     },
     {
       "id": "librarian_village_event_raid_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "raid",
         "player_defended_raid"
@@ -343,7 +343,7 @@
     },
     {
       "id": "librarian_village_event_raid_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "raid",
         "player_defended_raid"
@@ -354,7 +354,7 @@
     },
     {
       "id": "librarian_village_event_night_attack_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "night_attack"
       ],
@@ -364,7 +364,7 @@
     },
     {
       "id": "librarian_village_event_night_attack_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "night_attack"
       ],
@@ -374,7 +374,7 @@
     },
     {
       "id": "librarian_village_event_night_attack_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "night_attack"
       ],
@@ -384,7 +384,7 @@
     },
     {
       "id": "librarian_village_event_night_attack_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "night_attack"
       ],
@@ -394,7 +394,7 @@
     },
     {
       "id": "librarian_village_event_night_attack_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "night_attack"
       ],
@@ -404,7 +404,7 @@
     },
     {
       "id": "librarian_village_event_sandstorm_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "sandstorm"
       ],
@@ -414,7 +414,7 @@
     },
     {
       "id": "librarian_village_event_sandstorm_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "sandstorm"
       ],
@@ -424,7 +424,7 @@
     },
     {
       "id": "librarian_village_event_sandstorm_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "sandstorm"
       ],
@@ -434,7 +434,7 @@
     },
     {
       "id": "librarian_village_event_sandstorm_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "sandstorm"
       ],
@@ -444,7 +444,7 @@
     },
     {
       "id": "librarian_village_event_sandstorm_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "sandstorm"
       ],
@@ -454,7 +454,7 @@
     },
     {
       "id": "librarian_village_event_snowstorm_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "snowstorm"
       ],
@@ -464,7 +464,7 @@
     },
     {
       "id": "librarian_village_event_snowstorm_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "snowstorm"
       ],
@@ -474,7 +474,7 @@
     },
     {
       "id": "librarian_village_event_snowstorm_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "snowstorm"
       ],
@@ -484,7 +484,7 @@
     },
     {
       "id": "librarian_village_event_snowstorm_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "snowstorm"
       ],
@@ -494,7 +494,7 @@
     },
     {
       "id": "librarian_village_event_snowstorm_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "snowstorm"
       ],

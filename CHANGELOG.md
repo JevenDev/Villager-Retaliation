@@ -6,9 +6,10 @@
 
 - Added forced dialogue datapacks under `data/villagerretaliation/forced_dialogue/`.
 - Added witnessed container forced-dialogue triggers: `container_theft`, `container_opened`, and `container_broken`.
-- Added chat-only forced-dialogue triggers: `container_theft_chat`, `container_opened_chat`, `container_broken_chat`, and `retaliation_started_chat`.
+- Added forced-dialogue output modes through `output.mode`, including `forced_dialogue` and `chat`.
+- Added per-entry chat broadcast radius through `output.radius`.
 - Added configurable watched-container break reputation loss, including an additional penalty per generated item dropped.
-- Added `retaliation_started_chat` support for non-player retaliation targets, broadcasting the villager line to nearby players.
+- Added `retaliation_started` chat-output support for non-player retaliation targets, broadcasting the villager line to nearby players.
 - Added `combat.flee_started` notification trigger for villagers that keep fleeing hostile mobs.
 - Added forced-dialogue chat `chance` support for occasional event callouts.
 - Added forced dialogue witness equipment filters for armed and unarmed villagers.
@@ -23,10 +24,10 @@
 - Added village container theft memories and gossip through `player_container_theft`, `requires_container_theft_to_self`, and `requires_container_theft_from_other`.
 - Added theft-memory placeholders for dialogue, including `{stolen_item}`, `{stolen_count}`, `{stolen_stack}`, `{stolen_container}`, `{stolen_loot_table}`, `{theft_witness}`, and `{theft_witness_possessive}`.
 - Added datapack-builder support for forced dialogue, item payments, generated-container loot table filters, reputation-gated dialogue, armed/unarmed villager filters, and theft-memory event tags.
-- Added datapack-builder support for the `small_talk` dialogue type and `_chat` forced-dialogue triggers.
+- Added datapack-builder support for `dialogue_option` entries with separate `request` fields and forced-dialogue chat output.
 - Added a larger built-in dialogue/event library covering reputation tiers, retaliation aftermath, apologies, village defense, raids, golem loss, fire, gifts, gear reports, recruitment memories, and container-theft gossip.
-- Added built-in `retaliation_started_chat` combat barks for player targets, raiders, undead, monsters, and generic retaliation targets.
-- Added built-in unarmed-villager `retaliation_started_chat` combat barks.
+- Added built-in `retaliation_started` chat-output combat barks for player targets, raiders, undead, monsters, and generic retaliation targets.
+- Added built-in unarmed-villager `retaliation_started` chat-output combat barks.
 - Added loot-table-specific forced dialogue scenes for weaponsmith, temple, cartographer, and armorer village chests.
 - Added default-on baby villager fleeing when they witness a villager death, configurable with `retaliation.babyVillagersFleeWitnessedDeaths`.
 - Added baby-specific witnessed-death alert lines.
@@ -37,7 +38,9 @@
 - Village generated chest confrontations now use forced dialogue by default when container opening is watched.
 - Built-in village chest opening forced dialogue now varies by reputation: neutral and suspicious players get the standard warning, hostile/despised/feared players get harsher warnings, and trusted or better players are only interrupted if they take items.
 - Built-in dialogue now leans harder into the mod's core identity: villagers remember personal harm, share gossip, reward defense cautiously, and respond differently to the same player based on current reputation.
-- Dialogue request type `chat` is now `small_talk` in built-in data, docs, and pack validation. Packs must update `chat` types to `small_talk`.
+- Dialogue options now use `type: "dialogue_option"` with a separate `request` value, and dialogue lines now use `request`.
+- General player-selected conversation now uses `question`; `small_talk` is no longer a separate request.
+- Forced-dialogue chat now uses normal triggers with `output.mode: "chat"` instead of separate `_chat` trigger names.
 - Forced-dialogue reputation changes now spread through the gossip hook when a villager witnesses the event.
 - Forced dialogue speaker labels now preserve custom villager names in villager chat instead of falling back to profession-only labels.
 - Wiki pages now document forced dialogue, theft memories, reputation-gated dialogue, and the updated datapack builder workflow.

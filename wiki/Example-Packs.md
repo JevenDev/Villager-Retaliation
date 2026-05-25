@@ -53,7 +53,8 @@ data/villagerretaliation/dialogue/en_us/examplepack_dialogue.json
     {
       "id": "examplepack.ask_local_rumors",
       "label": "Ask Local Rumors",
-      "type": "story",
+      "type": "dialogue_option",
+      "request": "story",
       "order": 30,
       "show_for_babies": false
     }
@@ -62,20 +63,24 @@ data/villagerretaliation/dialogue/en_us/examplepack_dialogue.json
     {
       "id": "examplepack.rumor.generic",
       "option": "examplepack.ask_local_rumors",
-      "type": "story",
+      "request": "story",
       "text": "Roads keep secrets. Villages keep better ones.",
       "weight": 10
     },
     {
       "id": "examplepack.low_rep_chat",
-      "type": "small_talk",
-      "reputation_levels": ["hostile", "despised", "feared"],
+      "request": "question",
+      "reputation_levels": [
+        "hostile",
+        "despised",
+        "feared"
+      ],
       "text": "You will find fewer open doors here than you remember.",
       "weight": 20
     },
     {
       "id": "examplepack.share_story.haunted_keep",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "examplemod:haunted_keep",
       "text": "{target_article}. If you found it, walk home before dark.",
@@ -107,15 +112,19 @@ Use event tags when a line should only appear after a recent village memory. The
   "lines": [
     {
       "id": "examplepack.raid.aftermath",
-      "type": "village_event_report",
-      "event_tags": ["raid"],
+      "request": "village_event_report",
+      "event_tags": [
+        "raid"
+      ],
       "text": "The banners are gone, but the village still hears them.",
       "weight": 20
     },
     {
       "id": "examplepack.raid.thanked_player",
-      "type": "village_defense_report",
-      "player_event_tags": ["player_defended_raid"],
+      "request": "village_defense_report",
+      "player_event_tags": [
+        "player_defended_raid"
+      ],
       "requires_unreported_village_defense": true,
       "text": "You stood with us when it mattered.",
       "weight": 30
@@ -136,7 +145,7 @@ data/villagerretaliation/forced_dialogue/examplepack_events.json
     {
       "id": "examplepack.strict_theft_warning",
       "trigger": "container_theft",
-      "witness_radius": 10.0,
+      "witness_radius": 10,
       "requires_line_of_sight": true,
       "initiate_dialogue": true,
       "reputation": -6,
@@ -154,7 +163,12 @@ data/villagerretaliation/forced_dialogue/examplepack_events.json
           "id": "trusted_warning",
           "label": "Accept warning",
           "response": "You have helped us before, so I will treat this as a mistake. Close it.",
-          "reputation_levels": ["trusted", "respected", "revered", "royalty"],
+          "reputation_levels": [
+            "trusted",
+            "respected",
+            "revered",
+            "royalty"
+          ],
           "reputation": 1,
           "order": 1
         },
@@ -162,9 +176,14 @@ data/villagerretaliation/forced_dialogue/examplepack_events.json
           "id": "offer_payment",
           "label": "Offer payment",
           "response": "Payment does not make it yours, but it can make things right.",
-          "reputation_levels": ["neutral", "suspicious"],
+          "reputation_levels": [
+            "neutral",
+            "suspicious"
+          ],
           "take_items": {
-            "items": ["minecraft:emerald"],
+            "items": [
+              "minecraft:emerald"
+            ],
             "count": 8,
             "destination": "villager_inventory",
             "overflow_destination": "drop_at_villager",
@@ -179,7 +198,11 @@ data/villagerretaliation/forced_dialogue/examplepack_events.json
           "id": "talk_back",
           "label": "Talk back",
           "response": "Wrong answer.",
-          "reputation_levels": ["hostile", "despised", "feared"],
+          "reputation_levels": [
+            "hostile",
+            "despised",
+            "feared"
+          ],
           "reputation": -6,
           "aggro": true,
           "order": 3
@@ -204,8 +227,15 @@ data/villagerretaliation/notifications/en_us/examplepack_notifications.json
       "trigger": "ambient.murmur",
       "text": "Good harvest follows good neighbors",
       "world_text_kind": "murmur",
-      "professions": ["farmer"],
-      "reputation_levels": ["trusted", "respected", "revered", "royalty"],
+      "professions": [
+        "farmer"
+      ],
+      "reputation_levels": [
+        "trusted",
+        "respected",
+        "revered",
+        "royalty"
+      ],
       "color": "#DCEBA6",
       "weight": 20
     },
@@ -214,7 +244,11 @@ data/villagerretaliation/notifications/en_us/examplepack_notifications.json
       "trigger": "trade.refused",
       "text": "Not today",
       "world_text_kind": "negative",
-      "reputation_levels": ["hostile", "despised", "feared"],
+      "reputation_levels": [
+        "hostile",
+        "despised",
+        "feared"
+      ],
       "color": "red"
     },
     {
@@ -222,7 +256,11 @@ data/villagerretaliation/notifications/en_us/examplepack_notifications.json
       "trigger": "combat.player_killed",
       "text": "{player} should have listened",
       "world_text_kind": "alert",
-      "reputation_levels": ["hostile", "despised", "feared"],
+      "reputation_levels": [
+        "hostile",
+        "despised",
+        "feared"
+      ],
       "color": "#FFD166",
       "weight": 20
     }
@@ -240,22 +278,34 @@ data/villagerretaliation/gifts/example_gifts.json
 {
   "preferences": [
     {
-      "professions": ["librarian"],
+      "professions": [
+        "librarian"
+      ],
       "reaction": "loved",
-      "items": ["minecraft:enchanted_book", "minecraft:name_tag"],
+      "items": [
+        "minecraft:enchanted_book",
+        "minecraft:name_tag"
+      ],
       "response_key": "examplepack.gift.librarian.rare_book",
       "priority": 20
     },
     {
       "reaction": "disliked",
-      "items": ["minecraft:cobweb"],
+      "items": [
+        "minecraft:cobweb"
+      ],
       "reputation_per_item": -1
     }
   ],
   "rewards": [
     {
-      "professions": ["librarian"],
-      "reputation_levels": ["revered", "royalty"],
+      "professions": [
+        "librarian"
+      ],
+      "reputation_levels": [
+        "revered",
+        "royalty"
+      ],
       "item": "minecraft:book",
       "min_count": 2,
       "max_count": 5,
@@ -276,7 +326,9 @@ data/villagerretaliation/profession_loot/example_loot.json
   "tables": [
     {
       "id": "examplepack.alchemist.common",
-      "professions": ["examplemod:alchemist"],
+      "professions": [
+        "examplemod:alchemist"
+      ],
       "loot_table": "examplepack:villager/profession/alchemist/common",
       "chance": "always"
     }
@@ -293,8 +345,8 @@ data/examplepack/loot_table/villager/profession/alchemist/common.json
   "type": "minecraft:entity",
   "pools": [
     {
-      "rolls": 1.0,
-      "bonus_rolls": 0.0,
+      "rolls": 1,
+      "bonus_rolls": 0,
       "entries": [
         {
           "type": "minecraft:item",
@@ -302,7 +354,11 @@ data/examplepack/loot_table/villager/profession/alchemist/common.json
           "functions": [
             {
               "function": "minecraft:set_count",
-              "count": { "type": "minecraft:uniform", "min": 1.0, "max": 3.0 }
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 1,
+                "max": 3
+              }
             }
           ]
         }

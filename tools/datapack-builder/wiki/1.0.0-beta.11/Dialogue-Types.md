@@ -1,15 +1,16 @@
-# Dialogue Types
+# Dialogue Requests
 
-Dialogue `type` values connect menu options to the kind of response the villager should give. The same value is used in two places:
+Dialogue options and response lines use separate fields so author intent stays clear:
 
-- `options[].type` decides what request is sent when the player clicks that option.
-- `lines[].type` decides which pool a response belongs to.
+- `options[].type` must be `dialogue_option`, which means the entry appears as a selectable talk-menu choice.
+- `options[].request` chooses the response pool or built-in system request sent when the player clicks that option.
+- `lines[].request` chooses which response pool a line belongs to.
 
 For a custom option, the option `id` and the line `option` / `option_ids` should usually be paired. Built-in options such as `adult_share_story` can be targeted directly by addon lines.
 
 Examples use `text` for compactness. Any dialogue line example can use `lines` instead when several variations share the same filters and weight.
 
-Enum values are case-insensitive in code, but lowercase snake case is recommended.
+Request values are case-insensitive in code, but lowercase snake case is recommended.
 
 ```json
 {
@@ -17,14 +18,15 @@ Enum values are case-insensitive in code, but lowercase snake case is recommende
     {
       "id": "my_pack.ask_weather",
       "label": "Ask About Weather",
-      "type": "question"
+      "type": "dialogue_option",
+      "request": "question"
     }
   ],
   "lines": [
     {
       "id": "my_pack.weather.clear",
       "option": "my_pack.ask_weather",
-      "type": "question",
+      "request": "question",
       "text": "Clear skies make honest roads."
     }
   ]
@@ -33,9 +35,8 @@ Enum values are case-insensitive in code, but lowercase snake case is recommende
 
 ## Quick Reference
 
-| Type | Common use |
+| Request | Common use |
 | --- | --- |
-| `small_talk` | General conversation. Replaces the older `chat` value, which is no longer accepted. |
 | `greeting` | Greeting-style replies. |
 | `question` | Answers to player questions. |
 | `gift_preferences` | Gift preference hints and advice. |
@@ -58,53 +59,6 @@ Enum values are case-insensitive in code, but lowercase snake case is recommende
 
 Each dropdown starts with a minimal implementation, then an expanded version that shows realistic filters, placeholders, or companion fields.
 
-<details>
-<summary><strong>small_talk</strong></summary>
-
-Use `small_talk` for general conversation that does not need a special system report.
-
-Simple:
-
-```json
-{
-  "lines": [
-    {
-      "id": "my_pack.chat.simple",
-      "type": "small_talk",
-      "text": "Some days are quieter than others."
-    }
-  ]
-}
-```
-
-Expanded:
-
-```json
-{
-  "options": [
-    {
-      "id": "my_pack.ask_small_talk",
-      "label": "Make Small Talk",
-      "type": "small_talk",
-      "order": 12
-    }
-  ],
-  "lines": [
-    {
-      "id": "my_pack.chat.farmer_morning",
-      "type": "small_talk",
-      "option": "my_pack.ask_small_talk",
-      "professions": ["farmer"],
-      "times": ["morning"],
-      "dispositions": ["friendly", "respectful", "neutral"],
-      "text": "Morning is when the fields tell the truth.",
-      "weight": 20
-    }
-  ]
-}
-```
-
-</details>
 
 <details>
 <summary><strong>greeting</strong></summary>
@@ -118,7 +72,7 @@ Simple:
   "lines": [
     {
       "id": "my_pack.greeting.simple",
-      "type": "greeting",
+      "request": "greeting",
       "text": "Good to see you."
     }
   ]
@@ -132,9 +86,14 @@ Expanded:
   "lines": [
     {
       "id": "my_pack.greeting.trusted_librarian",
-      "type": "greeting",
-      "professions": ["librarian"],
-      "dispositions": ["friendly", "respectful"],
+      "request": "greeting",
+      "professions": [
+        "librarian"
+      ],
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ],
       "first_conversation_only": true,
       "text": "Ah, a familiar face. That is better than a quiet shelf.",
       "weight": 18
@@ -158,13 +117,14 @@ Simple:
     {
       "id": "my_pack.ask_work",
       "label": "Ask About Work",
-      "type": "question"
+      "type": "dialogue_option",
+      "request": "question"
     }
   ],
   "lines": [
     {
       "id": "my_pack.question.work",
-      "type": "question",
+      "request": "question",
       "option": "my_pack.ask_work",
       "text": "Work goes better when nobody tramples the floor."
     }
@@ -180,7 +140,8 @@ Expanded:
     {
       "id": "my_pack.ask_family",
       "label": "Ask About Family",
-      "type": "question",
+      "type": "dialogue_option",
+      "request": "question",
       "requires_known_family": true,
       "show_for_babies": false,
       "order": 18
@@ -189,10 +150,14 @@ Expanded:
   "lines": [
     {
       "id": "my_pack.question.family_child",
-      "type": "question",
+      "request": "question",
       "option": "my_pack.ask_family",
       "requires_known_child": true,
-      "dispositions": ["friendly", "respectful", "neutral"],
+      "dispositions": [
+        "friendly",
+        "respectful",
+        "neutral"
+      ],
       "text": "{child} has started copying the way I walk. I am trying to deserve that.",
       "weight": 25
     }
@@ -214,7 +179,7 @@ Simple:
   "lines": [
     {
       "id": "my_pack.gift_preferences.simple",
-      "type": "gift_preferences",
+      "request": "gift_preferences",
       "text": "Useful gifts tend to last longer than fancy ones."
     }
   ]
@@ -228,9 +193,11 @@ Expanded:
   "lines": [
     {
       "id": "my_pack.gift_preferences.profession_liked",
-      "type": "gift_preferences",
+      "request": "gift_preferences",
       "gift_advice": "profession_liked",
-      "professions": ["fletcher"],
+      "professions": [
+        "fletcher"
+      ],
       "text": "For a fletcher, {gift_item} is not just a gift. It is a better workday.",
       "weight": 24
     }
@@ -252,7 +219,7 @@ Simple:
   "lines": [
     {
       "id": "my_pack.gift_advice_followup.simple",
-      "type": "gift_advice_followup",
+      "request": "gift_advice_followup",
       "text": "So, how did that gift advice turn out?"
     }
   ]
@@ -267,7 +234,8 @@ Expanded:
     {
       "id": "my_pack.report_gift_advice",
       "label": "Talk About Gift Advice",
-      "type": "gift_advice_followup",
+      "type": "dialogue_option",
+      "request": "gift_advice_followup",
       "requires_unreported_gift_advice_result": true,
       "order": 24
     }
@@ -275,7 +243,7 @@ Expanded:
   "lines": [
     {
       "id": "my_pack.gift_advice_followup.failed",
-      "type": "gift_advice_followup",
+      "request": "gift_advice_followup",
       "option": "my_pack.report_gift_advice",
       "text": "If {gift_item} missed the mark, try {alternative_gift} for {gift_subject} next time.",
       "weight": 25
@@ -298,7 +266,7 @@ Simple:
   "lines": [
     {
       "id": "my_pack.map_report.simple",
-      "type": "map_report",
+      "request": "map_report",
       "text": "So the map was honest after all."
     }
   ]
@@ -313,7 +281,8 @@ Expanded:
     {
       "id": "my_pack.report_map",
       "label": "Report Map Discovery",
-      "type": "map_report",
+      "type": "dialogue_option",
+      "request": "map_report",
       "requires_unreported_cartographer_map_discovery": true,
       "order": 20
     }
@@ -321,9 +290,11 @@ Expanded:
   "lines": [
     {
       "id": "my_pack.map_report.cartographer",
-      "type": "map_report",
+      "request": "map_report",
       "option": "my_pack.report_map",
-      "professions": ["cartographer"],
+      "professions": [
+        "cartographer"
+      ],
       "text": "Good. A map earns its ink when someone comes back from the place it promised.",
       "weight": 25
     }
@@ -345,7 +316,7 @@ Simple:
   "lines": [
     {
       "id": "my_pack.story_hint_report.simple",
-      "type": "story_hint_report",
+      "request": "story_hint_report",
       "text": "So the rumor had a road under it."
     }
   ]
@@ -360,14 +331,15 @@ Expanded:
     {
       "id": "my_pack.report_story_hint",
       "label": "Report Rumor Discovery",
-      "type": "story_hint_report",
+      "type": "dialogue_option",
+      "request": "story_hint_report",
       "requires_unreported_story_hint_discovery": true
     }
   ],
   "lines": [
     {
       "id": "my_pack.story_hint_report.ancient_city",
-      "type": "story_hint_report",
+      "request": "story_hint_report",
       "option": "my_pack.report_story_hint",
       "text": "You found {target_article}. I will remember that name carefully.",
       "weight": 25
@@ -390,7 +362,7 @@ Simple:
   "lines": [
     {
       "id": "my_pack.combat_survival.simple",
-      "type": "combat_survival_report",
+      "request": "combat_survival_report",
       "text": "Still standing. That counts for something."
     }
   ]
@@ -405,17 +377,23 @@ Expanded:
     {
       "id": "my_pack.ask_survival",
       "label": "Ask If They Are Alright",
-      "type": "combat_survival_report",
+      "type": "dialogue_option",
+      "request": "combat_survival_report",
       "requires_unreported_combat_survival_report": true
     }
   ],
   "lines": [
     {
       "id": "my_pack.combat_survival.cleric",
-      "type": "combat_survival_report",
+      "request": "combat_survival_report",
       "option": "my_pack.ask_survival",
-      "professions": ["cleric"],
-      "event_tags": ["night_attack", "raid"],
+      "professions": [
+        "cleric"
+      ],
+      "event_tags": [
+        "night_attack",
+        "raid"
+      ],
       "text": "A little pain is easier to treat than a village full of grief.",
       "weight": 24
     }
@@ -437,7 +415,7 @@ Simple:
   "lines": [
     {
       "id": "my_pack.gear_report.simple",
-      "type": "gear_report",
+      "request": "gear_report",
       "text": "The gear helps."
     }
   ]
@@ -452,14 +430,15 @@ Expanded:
     {
       "id": "my_pack.ask_gear",
       "label": "Ask About Gear",
-      "type": "gear_report",
+      "type": "dialogue_option",
+      "request": "gear_report",
       "requires_unreported_gear_report": true
     }
   ],
   "lines": [
     {
       "id": "my_pack.gear_report.used",
-      "type": "gear_report",
+      "request": "gear_report",
       "option": "my_pack.ask_gear",
       "requires_gear_report_used_in_combat": true,
       "text": "You were right to hand it over. It has already done honest work.",
@@ -483,7 +462,7 @@ Simple:
   "lines": [
     {
       "id": "my_pack.recruitment_followup.simple",
-      "type": "recruitment_followup",
+      "request": "recruitment_followup",
       "text": "I made it back. That matters."
     }
   ]
@@ -498,14 +477,15 @@ Expanded:
     {
       "id": "my_pack.ask_followup",
       "label": "Ask About The Trip",
-      "type": "recruitment_followup",
+      "type": "dialogue_option",
+      "request": "recruitment_followup",
       "requires_unreported_recruitment_followup": true
     }
   ],
   "lines": [
     {
       "id": "my_pack.recruitment_followup.ocean",
-      "type": "recruitment_followup",
+      "request": "recruitment_followup",
       "option": "my_pack.ask_followup",
       "requires_recruitment_memory": true,
       "requires_recruitment_ocean_crossing": true,
@@ -531,7 +511,7 @@ Simple:
   "lines": [
     {
       "id": "my_pack.cured_recognition.simple",
-      "type": "cured_recognition",
+      "request": "cured_recognition",
       "text": "{cured_villager} remembers daylight because of you."
     }
   ]
@@ -546,17 +526,24 @@ Expanded:
     {
       "id": "my_pack.ask_cured",
       "label": "Ask About The Cure",
-      "type": "cured_recognition",
+      "type": "dialogue_option",
+      "request": "cured_recognition",
       "requires_unreported_cured_recognition": true
     }
   ],
   "lines": [
     {
       "id": "my_pack.cured_recognition.grateful",
-      "type": "cured_recognition",
+      "request": "cured_recognition",
       "option": "my_pack.ask_cured",
-      "player_event_tags": ["player_cured_villager"],
-      "dispositions": ["friendly", "respectful", "neutral"],
+      "player_event_tags": [
+        "player_cured_villager"
+      ],
+      "dispositions": [
+        "friendly",
+        "respectful",
+        "neutral"
+      ],
       "text": "{cured_villager_possessive} second chance belongs partly to you.",
       "weight": 30
     }
@@ -578,8 +565,10 @@ Simple:
   "lines": [
     {
       "id": "my_pack.village_event.simple",
-      "type": "village_event_report",
-      "event_tags": ["night_attack"],
+      "request": "village_event_report",
+      "event_tags": [
+        "night_attack"
+      ],
       "text": "Last night came too close."
     }
   ]
@@ -594,17 +583,22 @@ Expanded:
     {
       "id": "my_pack.ask_recent_event",
       "label": "Ask What Happened",
-      "type": "village_event_report",
+      "type": "dialogue_option",
+      "request": "village_event_report",
       "requires_recent_village_event": true
     }
   ],
   "lines": [
     {
       "id": "my_pack.village_event.raid_mason",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "option": "my_pack.ask_recent_event",
-      "professions": ["mason"],
-      "event_tags": ["raid"],
+      "professions": [
+        "mason"
+      ],
+      "event_tags": [
+        "raid"
+      ],
       "text": "Walls are easier to rebuild than nerves.",
       "weight": 25
     }
@@ -626,7 +620,7 @@ Simple:
   "lines": [
     {
       "id": "my_pack.apology.simple",
-      "type": "apology",
+      "request": "apology",
       "text": "An apology is a start."
     }
   ]
@@ -641,17 +635,22 @@ Expanded:
     {
       "id": "my_pack.apologize",
       "label": "Apologize",
-      "type": "apology",
+      "type": "dialogue_option",
+      "request": "apology",
       "requires_unapologized_remembered_harm": true
     }
   ],
   "lines": [
     {
       "id": "my_pack.apology.bed",
-      "type": "apology",
+      "request": "apology",
       "option": "my_pack.apologize",
       "requires_recent_broken_bed_memory": true,
-      "dispositions": ["cautious", "rude", "hostile"],
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile"
+      ],
       "text": "That was my bed. I can accept sorry, but I will not pretend it was nothing.",
       "weight": 30
     }
@@ -673,8 +672,10 @@ Simple:
   "lines": [
     {
       "id": "my_pack.village_defense.simple",
-      "type": "village_defense_report",
-      "player_event_tags": ["player_defended_village"],
+      "request": "village_defense_report",
+      "player_event_tags": [
+        "player_defended_village"
+      ],
       "text": "You helped us today."
     }
   ]
@@ -689,17 +690,22 @@ Expanded:
     {
       "id": "my_pack.report_defense",
       "label": "Talk About The Defense",
-      "type": "village_defense_report",
+      "type": "dialogue_option",
+      "request": "village_defense_report",
       "requires_unreported_village_defense": true
     }
   ],
   "lines": [
     {
       "id": "my_pack.village_defense.raid",
-      "type": "village_defense_report",
+      "request": "village_defense_report",
       "option": "my_pack.report_defense",
-      "player_event_tags": ["player_defended_raid"],
-      "event_tags": ["raid"],
+      "player_event_tags": [
+        "player_defended_raid"
+      ],
+      "event_tags": [
+        "raid"
+      ],
       "text": "You stood between us and the banners. That is not forgotten quickly.",
       "weight": 35
     }
@@ -721,7 +727,7 @@ Simple:
   "lines": [
     {
       "id": "my_pack.story.simple",
-      "type": "story",
+      "request": "story",
       "text": "Every village has a story it tells too often."
     }
   ]
@@ -736,7 +742,8 @@ Expanded:
     {
       "id": "my_pack.ask_old_story",
       "label": "Ask For A Story",
-      "type": "story",
+      "type": "dialogue_option",
+      "request": "story",
       "show_for_babies": false,
       "order": 30
     }
@@ -744,10 +751,16 @@ Expanded:
   "lines": [
     {
       "id": "my_pack.story.night_raid",
-      "type": "story",
+      "request": "story",
       "option": "my_pack.ask_old_story",
-      "event_tags": ["raid", "night_attack"],
-      "times": ["evening", "night"],
+      "event_tags": [
+        "raid",
+        "night_attack"
+      ],
+      "times": [
+        "evening",
+        "night"
+      ],
       "text": "Some stories wait until dark because they know the listener will believe them then.",
       "weight": 24
     }
@@ -769,7 +782,7 @@ Simple:
   "lines": [
     {
       "id": "my_pack.share_story.simple",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "text": "{target_article}. That place has a name for a reason."
     }
@@ -784,11 +797,17 @@ Expanded:
   "lines": [
     {
       "id": "my_pack.share_story.ancient_city_librarian",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
-      "professions": ["librarian"],
+      "professions": [
+        "librarian"
+      ],
       "story_structure": "minecraft:ancient_city",
-      "dispositions": ["friendly", "respectful", "neutral"],
+      "dispositions": [
+        "friendly",
+        "respectful",
+        "neutral"
+      ],
       "text": "{target_article}. Some places are not ruins. They are warnings that learned architecture.",
       "weight": 30
     }
@@ -810,7 +829,7 @@ Simple:
   "lines": [
     {
       "id": "my_pack.joke.simple",
-      "type": "joke",
+      "request": "joke",
       "text": "I would tell you a trade secret, but then I would have to discount it."
     }
   ]
@@ -825,18 +844,27 @@ Expanded:
     {
       "id": "my_pack.tell_joke",
       "label": "Tell A Joke",
-      "type": "joke",
-      "dispositions": ["friendly", "respectful", "neutral"],
+      "type": "dialogue_option",
+      "request": "joke",
+      "dispositions": [
+        "friendly",
+        "respectful",
+        "neutral"
+      ],
       "order": 45
     }
   ],
   "lines": [
     {
       "id": "my_pack.joke.fisherman_rain",
-      "type": "joke",
+      "request": "joke",
       "option": "my_pack.tell_joke",
-      "professions": ["fisherman"],
-      "weather": ["rain"],
+      "professions": [
+        "fisherman"
+      ],
+      "weather": [
+        "rain"
+      ],
       "text": "Rain is just the sky trying to join my profession.",
       "weight": 20
     }
@@ -858,7 +886,7 @@ Simple:
   "lines": [
     {
       "id": "my_pack.insult.simple",
-      "type": "insult",
+      "request": "insult",
       "text": "I have heard better arguments from a broken door."
     }
   ]
@@ -873,7 +901,8 @@ Expanded:
     {
       "id": "my_pack.provoke",
       "label": "Provoke",
-      "type": "insult",
+      "type": "dialogue_option",
+      "request": "insult",
       "show_for_babies": false,
       "order": 80
     }
@@ -881,11 +910,20 @@ Expanded:
   "lines": [
     {
       "id": "my_pack.insult.hostile_weapon",
-      "type": "insult",
+      "request": "insult",
       "option": "my_pack.provoke",
-      "dispositions": ["rude", "hostile", "fearful"],
-      "player_items": ["#minecraft:swords", "#minecraft:axes"],
-      "player_item_slots": ["main_hand"],
+      "dispositions": [
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "player_items": [
+        "#minecraft:swords",
+        "#minecraft:axes"
+      ],
+      "player_item_slots": [
+        "main_hand"
+      ],
       "text": "Holding {held_item} does not make you brave. It makes you obvious.",
       "weight": 25
     }

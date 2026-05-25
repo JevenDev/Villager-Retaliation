@@ -262,10 +262,10 @@ public final class VillagerDialogueService {
             DialogueContext context,
             DialogueRequestType requestType,
             List<String> recentDialogueIds) {
-        if (requestType != DialogueRequestType.SMALL_TALK && requestType != DialogueRequestType.GREETING) {
+        if (requestType != DialogueRequestType.QUESTION && requestType != DialogueRequestType.GREETING) {
             return Optional.empty();
         }
-        int chance = requestType == DialogueRequestType.SMALL_TALK ? 45 : 35;
+        int chance = requestType == DialogueRequestType.QUESTION ? 45 : 35;
         if (context.random().nextInt(100) >= chance) {
             return Optional.empty();
         }
@@ -304,10 +304,10 @@ public final class VillagerDialogueService {
             DialogueContext context,
             DialogueRequestType requestType,
             List<String> recentDialogueIds) {
-        if (requestType != DialogueRequestType.SMALL_TALK && requestType != DialogueRequestType.GREETING) {
+        if (requestType != DialogueRequestType.QUESTION && requestType != DialogueRequestType.GREETING) {
             return Optional.empty();
         }
-        int chance = requestType == DialogueRequestType.SMALL_TALK ? 40 : 25;
+        int chance = requestType == DialogueRequestType.QUESTION ? 40 : 25;
         if (context.random().nextInt(100) >= chance) {
             return Optional.empty();
         }
@@ -401,7 +401,6 @@ public final class VillagerDialogueService {
 
         return switch (requestType) {
             case GREETING, QUESTION, INSULT -> directHitCandidates;
-            case SMALL_TALK -> context.random().nextInt(100) < 45 ? directHitCandidates : candidates;
             case MAP_REPORT, STORY_HINT_REPORT, SHARE_STORY, COMBAT_SURVIVAL_REPORT, GEAR_REPORT, RECRUITMENT_FOLLOWUP, GIFT_ADVICE_FOLLOWUP, APOLOGY, VILLAGE_DEFENSE_REPORT -> candidates;
             default -> candidates;
         };
@@ -418,7 +417,7 @@ public final class VillagerDialogueService {
         );
 
         return switch (requestType) {
-            case GREETING, QUESTION, SMALL_TALK, INSULT -> brokenBedCandidates;
+            case GREETING, QUESTION, INSULT -> brokenBedCandidates;
             case MAP_REPORT, STORY_HINT_REPORT, SHARE_STORY, COMBAT_SURVIVAL_REPORT, GEAR_REPORT, RECRUITMENT_FOLLOWUP, GIFT_ADVICE_FOLLOWUP, APOLOGY, VILLAGE_DEFENSE_REPORT -> candidates;
             default -> candidates;
         };

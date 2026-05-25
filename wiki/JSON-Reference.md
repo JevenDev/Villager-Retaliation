@@ -167,11 +167,11 @@ Leave `dispositions` empty or omit it when a line should work in any mood.
 
 Dialogue options, lines, and forced-dialogue entries can also check the player's current reputation with the specific villager using `reputation_level`, `reputation_levels`, `min_reputation`, and `max_reputation`. These fields let packs show different choices, lines, or whole event responses for trusted, neutral, suspicious, hostile, or exact numeric reputation ranges without writing a new event system.
 
-## Dialogue Types And Notification Triggers
+## Dialogue Requests And Notification Triggers
 
-Dialogue `type` values and notification `trigger` values have their own expandable example catalogs:
+Dialogue `request` values and notification `trigger` values have their own expandable example catalogs:
 
-- [Dialogue Types](Dialogue-Types.md) covers every current `options[].type` and `lines[].type` value.
+- [Dialogue Requests](Dialogue-Types.md) covers every current `options[].request` and `lines[].request` value.
 - [Notification Triggers](Notification-Triggers.md) covers every built-in notification `trigger` value from the current data files.
 
 ## Forced Dialogue Events

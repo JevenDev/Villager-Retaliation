@@ -43,7 +43,10 @@ Or multiple entries:
       "radius": 128
     },
     {
-      "structures": ["examplemod:haunted_keep", "examplemod:ruined_watchtower"],
+      "structures": [
+        "examplemod:haunted_keep",
+        "examplemod:ruined_watchtower"
+      ],
       "name": "Haunted Ruins"
     }
   ]
@@ -80,7 +83,10 @@ Example:
       "name": "Deep Dark"
     },
     {
-      "biomes": ["examplemod:crystal_marsh", "examplemod:glimmering_fen"],
+      "biomes": [
+        "examplemod:crystal_marsh",
+        "examplemod:glimmering_fen"
+      ],
       "name": "Crystal Marsh"
     }
   ]
@@ -105,7 +111,7 @@ Story entries unlock dialogue lines with `type: "share_story"`.
   "lines": [
     {
       "id": "my_pack.share_story.haunted_keep",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_structure": "examplemod:haunted_keep",
       "text": "{target_article}. We do not say its name after sundown.",
@@ -113,7 +119,7 @@ Story entries unlock dialogue lines with `type: "share_story"`.
     },
     {
       "id": "my_pack.share_story.crystal_marsh",
-      "type": "share_story",
+      "request": "share_story",
       "option": "adult_share_story",
       "story_biome": "examplemod:crystal_marsh",
       "text": "{target_article}? Pretty places still drown boots.",

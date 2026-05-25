@@ -19,7 +19,6 @@ const CONSTANTS = {
   ],
   dispositions: ["friendly", "respectful", "neutral", "cautious", "rude", "hostile", "fearful"],
   dialogueTypes: [
-    "small_talk",
     "greeting",
     "question",
     "gift_preferences",
@@ -82,12 +81,9 @@ const CONSTANTS = {
     "container_theft",
     "container_opened",
     "container_broken",
-    "retaliation_started",
-    "container_theft_chat",
-    "container_opened_chat",
-    "container_broken_chat",
-    "retaliation_started_chat"
+    "retaliation_started"
   ],
+  forcedOutputModes: ["forced_dialogue", "chat"],
   reputationLevels: ["royalty", "revered", "respected", "trusted", "neutral", "suspicious", "hostile", "despised", "feared"],
   hudKinds: [
     "default",
@@ -309,7 +305,7 @@ const FIELD_TOOLTIPS = {
   "dialogue-locale": "Locale folder for this dialogue file, such as en_us or fr_fr. Matching ids can override the en_us fallback.",
   "dialogue-id": "Stable id for generated, translated, overridden, or removed entries. Explicit ids survive array reordering.",
   "dialogue-label": "Text shown on the talk-menu button for this option.",
-  "dialogue-type": "Request type sent by an option and matched by lines. Option and line types must match.",
+  "dialogue-type": "Request sent by a dialogue option and matched by response lines.",
   "dialogue-order": "Lower values appear earlier in the talk menu. If omitted, array order is used.",
   "dialogue-professions": "Profession filter. Vanilla ids can omit minecraft:, custom professions need their full registered id, and blank means any profession.",
   "dialogue-dispositions": "Mood filter derived from reputation and context: friendly, respectful, neutral, cautious, rude, hostile, or fearful.",
@@ -338,7 +334,9 @@ const FIELD_TOOLTIPS = {
   "dialogue-outcomes": "Pacification result filter, such as success, not_enough_emeralds, blocked_by_reputation, or not_applicable.",
   "forcedDialogue-fileName": "Creates data/villagerretaliation/forced_dialogue/<file>.json. Use default only when replacing the built-in theft confrontation.",
   "forced-id": "Stable id for this forced dialogue rule. Duplicate ids can override or collide depending on load order.",
-  "forced-trigger": "Event trigger for the forced conversation or chat line. Use *_chat triggers for villager-styled chat without opening the interaction menu.",
+  "forced-trigger": "Event trigger for this forced dialogue entry. Use Output mode to choose how the line is delivered.",
+  "forced-output_mode": "Delivery channel for the event line. forced_dialogue opens the locked interaction screen; chat sends villager-styled chat.",
+  "forced-output_radius": "Radius for chat output. Leave blank to use the configured forced-dialogue chat distance.",
   "forced-line": "Villager line shown when the event fires. If Initiates dialogue is off, this is sent as villager-styled chat only. Put each variation on its own line.",
   "forced-priority": "Lower priority wins when multiple forced dialogue rules match the same event.",
   "forced-witness_radius": "Maximum block distance for witnesses to detect the event.",
@@ -346,11 +344,11 @@ const FIELD_TOOLTIPS = {
   "forced-witness_professions": "Optional profession ids for the witnessing villager, such as armorer or minecraft:weaponsmith.",
   "forced-requires_witness_unarmed": "Requires the witnessing villager to have no usable weapon in either hand.",
   "forced-requires_witness_armed": "Requires the witnessing villager to have a usable weapon in either hand.",
-  "forced-chance": "Random chance from 0.0 to 1.0 before a matching chat-event line is shown. Locked forced-dialogue scenes ignore this field.",
+  "forced-chance": "Random chance from 0.0 to 1.0 before a matching event line is shown.",
   "forced-target_entity_types": "Optional retaliation target entity ids such as minecraft:player. Useful for retaliation_started entries.",
   "forced-min_recent_retaliations": "Optional minimum earlier villager_retaliation_started memories for this player near the villager's village.",
   "forced-max_recent_retaliations": "Optional maximum earlier villager_retaliation_started memories for this player near the villager's village.",
-  "forced-initiate_dialogue": "Opens the locked interaction menu when enabled. Turn it off to send only the villager line as chat.",
+  "forced-initiate_dialogue": "Opens the locked interaction menu when enabled for forced_dialogue output.",
   "forced-force_camera_towards_villager": "Smoothly turns the player's camera toward the witnessing villager while this forced dialogue is active.",
   "forced-options_json": "JSON array of player response options. Each option can set label, response, reputation, aggro, aggro_chance, end_conversation, order, take_items, take_stolen_items, reputation_levels, min_reputation, and max_reputation.",
   "forced-leave_option_json": "Optional JSON object or array for forced Leave/Escape outcomes. Uses option fields such as label, response, reputation, aggro_chance, take_stolen_items, and reputation_levels.",
@@ -528,6 +526,7 @@ const TAG_SUGGESTIONS = {
   "dialogue-retaliation_target_entity_types": ["minecraft:player", "minecraft:zombie", "minecraft:skeleton", "minecraft:creeper", "minecraft:raider"],
   "dialogue-outcomes": CONSTANTS.pacifyOutcomes,
   "forced-trigger": CONSTANTS.forcedDialogueTriggers,
+  "forced-output_mode": CONSTANTS.forcedOutputModes,
   "forced-witness_professions": CONSTANTS.professions,
   "forced-target_entity_types": ["minecraft:player", "minecraft:zombie", "minecraft:skeleton", "minecraft:creeper", "minecraft:raider"],
   "notification-professions": CONSTANTS.professions,
@@ -2028,11 +2027,11 @@ function entryIssueSeverity(section, kind, entry) {
   if (!entry) return "";
   if (section === "dialogue") {
     const tests = [
-      { severity: "error", predicate: (item) => kind === "options" && (!item.id || !item.label || !item.type) },
-      { severity: "error", predicate: (item) => kind === "lines" && (!item.type || !item.text) },
+      { severity: "error", predicate: (item) => kind === "options" && (!item.id || !item.label || item.type !== "dialogue_option" || !item.request) },
+      { severity: "error", predicate: (item) => kind === "lines" && (!item.request || !item.text) },
       { severity: "error", predicate: (item) => kind === "messages" && (!item.key || !item.text) },
       { severity: "error", predicate: (item) => ["openings", "closings", "pacify"].includes(kind) && !item.text },
-      { severity: "warning", predicate: (item) => ["options", "lines"].includes(kind) && item.type && !CONSTANTS.dialogueTypes.includes(item.type) },
+      { severity: "warning", predicate: (item) => ["options", "lines"].includes(kind) && item.request && !CONSTANTS.dialogueTypes.includes(item.request) },
       { severity: "warning", predicate: (item) => entryValues(item, ["dispositions"]).some((value) => !CONSTANTS.dispositions.includes(value)) },
       { severity: "warning", predicate: (item) => entryValues(item, ["professions"]).some((value) => !isValidProfession(value)) },
       { severity: "error", predicate: (item) => ["options", "lines"].includes(kind) && entryValues(item, ["player_items"]).some((value) => !isValidResourceLocation(value, { allowTag: true })) },
@@ -2062,6 +2061,7 @@ function entryIssueSeverity(section, kind, entry) {
     const tests = [
       { severity: "error", predicate: (item) => !item.trigger || !hasForcedDialogueLine(item) },
       { severity: "error", predicate: (item) => item.trigger && !CONSTANTS.forcedDialogueTriggers.includes(item.trigger) },
+      { severity: "error", predicate: (item) => item.output?.mode && !CONSTANTS.forcedOutputModes.includes(item.output.mode) },
       { severity: "warning", predicate: (item) => entryValues(item, ["witness_profession", "witness_professions", "professions"]).some((value) => !isValidProfession(value)) },
       { severity: "error", predicate: (item) => entryValues(item, ["loot_table", "loot_tables"]).some((value) => !isValidResourceLocation(value)) },
       { severity: "error", predicate: (item) => entryValues(item, ["target_entity_type", "target_entity_types", "target_entities"]).some((value) => !isValidResourceLocation(value)) },
@@ -2070,6 +2070,7 @@ function entryIssueSeverity(section, kind, entry) {
         if (key === "witness_radius") return value >= 1;
         return Number.isFinite(value) && value >= 0;
       }) !== "" },
+      { severity: "error", predicate: (item) => firstBadNumber([item.output || {}], ["radius"], (value) => value >= 1) !== "" },
       { severity: "warning", predicate: (item) => firstBlankListValue([item], ["lines", "loot_tables", "witness_profession", "witness_professions", "professions", "target_entity_types", "target_entities"]) !== "" },
       { severity: "error", predicate: (item) => Number.isFinite(item.min_recent_retaliations) && Number.isFinite(item.max_recent_retaliations) && item.min_recent_retaliations > item.max_recent_retaliations },
       { severity: "error", predicate: () => options.some((option) => !option.id || !option.label) },
@@ -2220,10 +2221,11 @@ function entryIssueDetail(section, kind, entry) {
     if (kind === "options") {
       if (!entry.id) return issueDetail("Option id", "a non-empty stable id", entry.id, "dialogue-id");
       if (!entry.label) return issueDetail("Button label", "non-empty button text", entry.label, "dialogue-label");
-      if (!entry.type) return issueDetail("Dialogue type", `one of ${CONSTANTS.dialogueTypes.join(", ")}`, entry.type, "dialogue-type");
+      if (entry.type !== "dialogue_option") return issueDetail("Entry type", "dialogue_option", entry.type, "dialogue-type");
+      if (!entry.request) return issueDetail("Request", `one of ${CONSTANTS.dialogueTypes.join(", ")}`, entry.request, "dialogue-type");
     }
     if (kind === "lines") {
-      if (!entry.type) return issueDetail("Dialogue type", `one of ${CONSTANTS.dialogueTypes.join(", ")}`, entry.type, "dialogue-type");
+      if (!entry.request) return issueDetail("Request", `one of ${CONSTANTS.dialogueTypes.join(", ")}`, entry.request, "dialogue-type");
       if (!entry.text) return issueDetail("Line text", "non-empty villager text", entry.text, "dialogue-text");
     }
     if (kind === "messages") {
@@ -2233,8 +2235,8 @@ function entryIssueDetail(section, kind, entry) {
     if (["openings", "closings", "pacify"].includes(kind) && !entry.text) {
       return issueDetail("Text", "non-empty dialogue text", entry.text, "dialogue-text");
     }
-    if (["options", "lines"].includes(kind) && entry.type && !CONSTANTS.dialogueTypes.includes(entry.type)) {
-      return issueDetail("Dialogue type", `one of ${CONSTANTS.dialogueTypes.join(", ")}`, entry.type, "dialogue-type", "warning");
+    if (["options", "lines"].includes(kind) && entry.request && !CONSTANTS.dialogueTypes.includes(entry.request)) {
+      return issueDetail("Request", `one of ${CONSTANTS.dialogueTypes.join(", ")}`, entry.request, "dialogue-type", "warning");
     }
     const dialogueListChecks = [
       { keys: ["dispositions"], label: "Dispositions", expected: CONSTANTS.dispositions.join(", "), fieldId: "dialogue-dispositions", valid: (value) => CONSTANTS.dispositions.includes(value), severity: "warning" },
@@ -2270,6 +2272,7 @@ function entryIssueDetail(section, kind, entry) {
     if (!entry.trigger) return issueDetail("Trigger", `one of ${CONSTANTS.forcedDialogueTriggers.join(", ")}`, entry.trigger, "forced-trigger");
     if (!hasForcedDialogueLine(entry)) return issueDetail("Opening line(s)", "at least one non-empty line", forcedDialogueLineValue(entry), "forced-line");
     if (!CONSTANTS.forcedDialogueTriggers.includes(entry.trigger)) return issueDetail("Trigger", `one of ${CONSTANTS.forcedDialogueTriggers.join(", ")}`, entry.trigger, "forced-trigger");
+    if (entry.output?.mode && !CONSTANTS.forcedOutputModes.includes(entry.output.mode)) return issueDetail("Output mode", `one of ${CONSTANTS.forcedOutputModes.join(", ")}`, entry.output.mode, "forced-output_mode");
     const forcedListChecks = [
       { keys: ["witness_profession", "witness_professions", "professions"], label: "Witness professions", expected: "a valid profession id such as armorer or minecraft:weaponsmith", fieldId: "forced-witness_professions", valid: isValidProfession, severity: "warning" },
       { keys: ["loot_table", "loot_tables"], label: "Loot tables", expected: "a valid loot table id such as minecraft:chests/village/village_armorer", fieldId: "forced-loot_tables", valid: isValidResourceLocation },
@@ -2287,6 +2290,10 @@ function entryIssueDetail(section, kind, entry) {
       { key: "max_recent_retaliations", label: "Max prior retaliations", expected: "a number greater than or equal to 0", fieldId: "forced-max_recent_retaliations", valid: (value) => Number.isFinite(value) && value >= 0 }
     ]);
     if (badNumber) return issueDetail(badNumber.label, badNumber.expected, badNumber.value, badNumber.fieldId);
+    const badOutputNumber = firstBadNumberDetail([entry.output || {}], [
+      { key: "radius", label: "Output radius", expected: "a number greater than or equal to 1", fieldId: "forced-output_radius", valid: (value) => value >= 1 }
+    ]);
+    if (badOutputNumber) return issueDetail(badOutputNumber.label, badOutputNumber.expected, badOutputNumber.value, badOutputNumber.fieldId);
     if (Number.isFinite(entry.min_recent_retaliations) && Number.isFinite(entry.max_recent_retaliations) && entry.min_recent_retaliations > entry.max_recent_retaliations) {
       return issueDetail("Prior retaliation range", "minimum less than or equal to maximum", `${entry.min_recent_retaliations} > ${entry.max_recent_retaliations}`, ["forced-min_recent_retaliations", "forced-max_recent_retaliations"]);
     }
@@ -2586,14 +2593,14 @@ function validate() {
   }
 
   for (const entry of state.dialogue.options) {
-    if (!entry.id || !entry.label || !entry.type) {
-      addCheck(checks, "error", "Dialogue option", "Every option needs an id, label, and type.");
+    if (!entry.id || !entry.label || entry.type !== "dialogue_option" || !entry.request) {
+      addCheck(checks, "error", "Dialogue option", "Every option needs an id, label, type: dialogue_option, and request.");
       break;
     }
   }
   for (const entry of state.dialogue.lines) {
-    if (!entry.type || !entry.text) {
-      addCheck(checks, "error", "Dialogue line", "Every line needs a type and text.");
+    if (!entry.request || !entry.text) {
+      addCheck(checks, "error", "Dialogue line", "Every line needs a request and text.");
       break;
     }
   }
@@ -2621,9 +2628,9 @@ function validate() {
     addCheck(checks, "warning", "Dialogue message keys", `Duplicate message key: ${duplicateMessage}.`);
   }
   const allDialogueEntries = ["options", "lines", "messages", "openings", "closings", "pacify"].flatMap((kind) => state.dialogue[kind]);
-  const badDialogueType = firstInvalidValue([...state.dialogue.options, ...state.dialogue.lines], ["type"], (value) => CONSTANTS.dialogueTypes.includes(value));
+  const badDialogueType = firstInvalidValue([...state.dialogue.options, ...state.dialogue.lines], ["request"], (value) => CONSTANTS.dialogueTypes.includes(value));
   if (badDialogueType) {
-    addCheck(checks, "warning", "Dialogue type", `Unknown dialogue type: ${badDialogueType}.`);
+    addCheck(checks, "warning", "Dialogue request", `Unknown dialogue request: ${badDialogueType}.`);
   }
   const badDisposition = firstInvalidValue(allDialogueEntries, ["dispositions"], (value) => CONSTANTS.dispositions.includes(value));
   if (badDisposition) {
@@ -2701,6 +2708,10 @@ function validate() {
   if (badForcedTrigger) {
     addCheck(checks, "error", "Forced dialogue trigger", `Unknown forced dialogue trigger: ${badForcedTrigger}.`);
   }
+  const badForcedOutputMode = firstInvalidValue(state.forcedDialogue.entries.map((entry) => entry.output || {}), ["mode"], (value) => CONSTANTS.forcedOutputModes.includes(value));
+  if (badForcedOutputMode) {
+    addCheck(checks, "error", "Forced dialogue output", `Unknown output mode: ${badForcedOutputMode}.`);
+  }
   const badForcedProfession = firstInvalidValue(state.forcedDialogue.entries, ["witness_profession", "witness_professions", "professions"], isValidProfession);
   if (badForcedProfession) {
     addCheck(checks, "warning", "Forced dialogue witness", `Invalid witness profession id: ${badForcedProfession}.`);
@@ -2720,6 +2731,10 @@ function validate() {
   });
   if (badForcedNumber) {
     addCheck(checks, "error", "Forced dialogue number", `${humanize(badForcedNumber)} has an invalid number.`);
+  }
+  const badForcedOutputRadius = firstBadNumber(state.forcedDialogue.entries.map((entry) => entry.output || {}), ["radius"], (value) => value >= 1);
+  if (badForcedOutputRadius) {
+    addCheck(checks, "error", "Forced dialogue output", "Output radius must be a positive number.");
   }
   const blankForcedList = firstBlankListValue(state.forcedDialogue.entries, ["lines", "loot_tables", "witness_profession", "witness_professions", "professions", "target_entity_types", "target_entities"]);
   if (blankForcedList) {
@@ -3586,7 +3601,9 @@ function renderEntryList(collection, kind, section) {
   return collection
     .map((entry, index) => {
       const title = entry.id || entry.key || entry.trigger || entry.label || entry.text || entry.item || entry.name || `${humanize(kind)} ${index + 1}`;
-      const detail = entry.type || entry.reaction || entry.world_text_kind || entry.structure || entry.biome || entry.items?.join(", ") || "";
+      const detail = section === "dialogue" && (kind === "options" || kind === "lines")
+        ? entry.request || ""
+        : entry.request || entry.type || entry.reaction || entry.world_text_kind || entry.structure || entry.biome || entry.items?.join(", ") || "";
       const active = editing && editing.section === section && editing.kind === kind && editing.index === index;
       const severity = entryIssueSeverity(section, kind, entry);
       const issueMessage = entryIssueMessage(section, kind, entry);
@@ -3659,7 +3676,7 @@ function renderDialogueForm(kind, entry) {
       <div class="form-grid">
         ${field({ id: "dialogue-id", label: "Option id", value: entry.id })}
         ${field({ id: "dialogue-label", label: "Button label", value: entry.label })}
-        ${selectField({ id: "dialogue-type", label: "Dialogue type", value: entry.type, options: CONSTANTS.dialogueTypes, allowBlank: false })}
+        ${selectField({ id: "dialogue-type", label: "Request", value: entry.request ?? "", options: CONSTANTS.dialogueTypes })}
         ${field({ id: "dialogue-order", label: "Order", value: entry.order ?? "", type: "number" })}
         ${commonFilters}
         ${reputationFilters}
@@ -3675,7 +3692,7 @@ function renderDialogueForm(kind, entry) {
     return `
       <div class="form-grid">
         ${field({ id: "dialogue-id", label: "Line id", value: entry.id })}
-        ${selectField({ id: "dialogue-type", label: "Dialogue type", value: entry.type, options: CONSTANTS.dialogueTypes, allowBlank: false })}
+        ${selectField({ id: "dialogue-type", label: "Request", value: entry.request ?? "", options: CONSTANTS.dialogueTypes })}
         ${textareaField({ id: "dialogue-text", label: "Line text", value: entry.text, className: "full", rows: 3 })}
         ${listField({ id: "dialogue-option", label: "Option id(s)", value: entry.option ?? entry.option_ids, help: "Link to a custom or built-in talk option." })}
         ${commonFilters}
@@ -3753,6 +3770,8 @@ function renderForcedDialogue() {
   const collection = state.forcedDialogue.entries;
   const entry = editing?.section === "forcedDialogue" ? collection[editing.index] : {};
   const optionsJson = Array.isArray(entry.options) ? JSON.stringify(entry.options, null, 2) : "";
+  const outputMode = entry.output?.mode ?? "forced_dialogue";
+  const outputRadius = entry.output?.radius ?? "";
   els.panel.innerHTML = `
     <div class="builder-content">
       <div class="builder-header">
@@ -3774,6 +3793,8 @@ function renderForcedDialogue() {
           <div class="form-grid">
             ${field({ id: "forced-id", label: "Entry id", value: entry.id })}
             ${selectField({ id: "forced-trigger", label: "Trigger", value: entry.trigger, options: CONSTANTS.forcedDialogueTriggers, allowBlank: false })}
+            ${selectField({ id: "forced-output_mode", label: "Output mode", value: outputMode, options: CONSTANTS.forcedOutputModes, allowBlank: false })}
+            ${field({ id: "forced-output_radius", label: "Output radius", value: outputRadius, type: "number", attrs: 'min="1" step="1"' })}
             ${textareaField({ id: "forced-line", label: "Opening line(s)", value: forcedDialogueLineValue(entry), className: "full", rows: 3 })}
             ${field({ id: "forced-priority", label: "Priority", value: entry.priority ?? "", type: "number" })}
             ${field({ id: "forced-chance", label: "Chat chance", value: entry.chance ?? "", type: "number", attrs: 'min="0" max="1" step="0.01"' })}
@@ -4093,7 +4114,8 @@ function readDialogueEntry() {
     entry = readBooleans("option", CONSTANTS.optionFlags, {
       id: readValue("dialogue-id").trim(),
       label: readValue("dialogue-label").trim(),
-      type: readValue("dialogue-type"),
+      type: "dialogue_option",
+      request: readValue("dialogue-type"),
       order: parseInteger(readValue("dialogue-order")),
       professions: readList("dialogue-professions"),
       dispositions: readList("dialogue-dispositions"),
@@ -4110,7 +4132,7 @@ function readDialogueEntry() {
     const storyBiomes = readList("dialogue-story_biome");
     entry = readBooleans("line", CONSTANTS.lineFlags, {
       id: readValue("dialogue-id").trim(),
-      type: readValue("dialogue-type"),
+      request: readValue("dialogue-type"),
       text: readValue("dialogue-text").trim(),
       option: optionIds.length <= 1 ? optionIds[0] : optionIds,
       professions: readList("dialogue-professions"),
@@ -4213,6 +4235,10 @@ function readForcedDialogueEntry(options = {}) {
     initiate_dialogue: readValue("forced-initiate_dialogue"),
     aggro_immediately: readValue("forced-aggro_immediately"),
     force_camera_towards_villager: readValue("forced-force_camera_towards_villager"),
+    output: {
+      mode: readValue("forced-output_mode"),
+      radius: parseNumber(readValue("forced-output_radius"))
+    },
     reputation: parseInteger(readValue("forced-reputation")),
     witness_professions: readList("forced-witness_professions"),
     ...readVillagerEquipment("forced", "witness"),
@@ -4492,7 +4518,8 @@ function addDialogueExample() {
     state.dialogue.options.push({
       id: `${slug}.ask_local_rumors`,
       label: "Ask Local Rumors",
-      type: "story",
+      type: "dialogue_option",
+      request: "story",
       order: 30,
       show_for_babies: false
     });
@@ -4500,7 +4527,7 @@ function addDialogueExample() {
     state.dialogue.lines.push({
       id: `${slug}.rumor.generic`,
       option: `${slug}.ask_local_rumors`,
-      type: "story",
+      request: "story",
       text: "Roads keep secrets. Villages keep better ones.",
       weight: 10
     });
@@ -4534,6 +4561,9 @@ function addForcedDialogueExample() {
   state.forcedDialogue.entries.push({
     id: `${slug}.container_theft.warning`,
     trigger: "container_theft",
+    output: {
+      mode: "forced_dialogue"
+    },
     lines: [
       "Stop right there. I saw you take {stolen_stack}.",
       "That {container} is not yours to empty. Put {stolen_stack} back.",

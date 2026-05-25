@@ -23,6 +23,9 @@ A forced dialogue file can be a single entry:
 {
   "id": "my_pack.theft_warning",
   "trigger": "container_theft",
+  "output": {
+    "mode": "forced_dialogue"
+  },
   "lines": [
     "Stop right there.",
     "I saw what you took."
@@ -38,6 +41,9 @@ or an `entries` array:
     {
       "id": "my_pack.theft_warning",
       "trigger": "container_theft",
+      "output": {
+        "mode": "forced_dialogue"
+      },
       "lines": [
         "Stop right there.",
         "I saw what you took."
@@ -57,14 +63,15 @@ or an `entries` array:
 | `line` | string | required unless `lines` is set | Villager line shown when the event fires. |
 | `lines` | array | required unless `line` is set | Alternate villager lines. One is selected at random when the event fires. |
 | `priority` | integer | `0` | Lower values win when multiple entries match the same trigger. |
-| `chance` | number | `1.0` | Random chance from `0.0` to `1.0` before a matching `_chat` trigger sends its line. Locked forced-dialogue scenes ignore this field. |
+| `chance` | number | `1.0` | Random chance from `0.0` to `1.0` before a matching event entry runs. |
 | `witness_radius` | number | `12.0` | Search radius for a witnessing villager. |
 | `witness_profession` | string | any | Restricts this entry to a witnessing villager profession. |
 | `witness_professions` | array | any | Restricts this entry to one of several witnessing villager professions. `professions` is also accepted as an alias. |
 | `requires_witness_unarmed` | boolean | `false` | Requires the witnessing villager to have no usable weapon in either hand. `witness_unarmed` is also accepted as an alias. |
 | `requires_witness_armed` | boolean | `false` | Requires the witnessing villager to have a usable weapon in either hand. `witness_armed` is also accepted as an alias. |
 | `requires_line_of_sight` | boolean | `true` | Requires the witness to see the player and event block. |
-| `initiate_dialogue` | boolean | `true` | Opens the locked interaction screen when true; otherwise only says `line`. For clearer chat-only entries, prefer the `_chat` triggers below. |
+| `output` | object | `{ "mode": "forced_dialogue" }` | Delivery channel for the event line. See Output Fields below. |
+| `initiate_dialogue` | boolean | `true` | Opens the locked interaction screen when `output.mode` is `forced_dialogue`. If false, only the line is sent. |
 | `aggro_immediately` | boolean | `false` | Makes the witness attack immediately after the event line. |
 | `force_camera_towards_villager` | boolean | `false` | Smoothly turns the player's camera toward the witnessing villager while this forced dialogue is active. |
 | `reputation` | integer | `0` | Reputation change applied to the witnessing villager when the event is caught. |
@@ -88,34 +95,36 @@ When multiple entries match, lower `priority` wins. If priority is tied, an entr
 
 Use `lines` when an event can happen often. The selected line is resolved through the same placeholders as `line`, so variations can reference `{stolen_stack}`, `{container}`, `{villager}`, and the other forced-dialogue tokens.
 
-Use `chance` on `_chat` triggers when a callout should be occasional. If the chance roll fails, the event stays silent and does not fall through to lower-priority chat entries.
+Use `chance` when a callout should be occasional. If the chance roll fails, the event stays silent and does not fall through to lower-priority entries.
 
-## Chat Event Triggers
+## Output Modes
 
-Use a `_chat` trigger when an event should send the villager line to chat without opening the interaction menu. These triggers are separate from forced-conversation triggers, so pack authors can keep event callouts apart from locked dialogue scenes:
+Use `output.mode` to choose how the event line is delivered. This keeps the event trigger focused on what happened and the output focused on how players see it.
 
-```text
-container_theft_chat
-container_opened_chat
-container_broken_chat
-retaliation_started_chat
-```
+| Mode | Behavior |
+| --- | --- |
+| `forced_dialogue` | Opens the locked interaction screen when `initiate_dialogue` is true. This is the default. |
+| `chat` | Sends the line as villager-styled chat without opening the interaction screen. |
 
-The line uses the mod's normal villager chat styling and speaker grouping. `retaliation_started_chat` can respond to player or non-player retaliation targets; non-player target lines are broadcast to nearby players. For example, a villager can speak when retaliation starts:
+`output.radius` controls how far chat output is broadcast from the speaking villager. If omitted, the configured forced-dialogue chat distance is used. `retaliation_started` chat output can respond to player or non-player retaliation targets. For example, a villager can speak when retaliation starts:
 
 ```json
 {
   "id": "my_pack.retaliation_warning",
-  "trigger": "retaliation_started_chat",
+  "trigger": "retaliation_started",
   "lines": [
     "You should have stayed away, {player}.",
     "The village remembers what you did.",
     "No more warnings."
-  ]
+  ],
+  "output": {
+    "mode": "chat",
+    "radius": 24
+  }
 }
 ```
 
-Use the non-`_chat` triggers, such as `retaliation_started`, when the event should open a locked response menu or apply forced-dialogue outcomes. If both a `_chat` entry and a normal forced dialogue entry match the same event, the chat line can play first and the forced dialogue can still run.
+Use the same trigger with different `output.mode` values when an event should both emit a chat callout and open a locked forced-dialogue scene. Chat entries can play first, then a separate `forced_dialogue` entry for the same trigger can still run.
 
 If a `container_theft` entry does not define `leave_option` or `leave_options`, the generated default Leave outcome takes the stolen stacks back with `villager_inventory_then_source_container`, applies a reputation penalty, and rolls an aggro chance based on reputation: trusted or better is low risk, neutral/suspicious is moderate risk, and hostile/despised/feared is high risk.
 
@@ -153,7 +162,9 @@ Forced dialogue options can take items from the player before applying the optio
   "label": "Offer payment",
   "response": "That will help replace what you disturbed.",
   "take_items": {
-    "items": ["minecraft:emerald"],
+    "items": [
+      "minecraft:emerald"
+    ],
     "count": 8,
     "destination": "villager_inventory",
     "overflow_destination": "drop_at_villager",
@@ -246,7 +257,7 @@ Fires when a villager acquires a new retaliation target and that target is the c
 
 `retaliation_started` uses the retaliating villager as the witness, so `witness_profession`, `requires_witness_unarmed`, `requires_witness_armed`, `requires_line_of_sight`, `witness_radius`, `target_entity_type`, `target_entity_types`, `min_recent_retaliations`, and `max_recent_retaliations` are the most relevant filters. Because forced dialogue is player-facing, this trigger currently only starts a forced conversation when the retaliation target is a player.
 
-Use `retaliation_started_chat` for a separate chat-only line on the same event. Unlike the forced-conversation `retaliation_started` trigger, the chat trigger can also fire for non-player targets and broadcasts that line to nearby players.
+Use `trigger: "retaliation_started"` with `output.mode: "chat"` for a separate chat line on the same event. Chat output can also fire for non-player targets and broadcasts that line to nearby players.
 
 Forced dialogue entries can optionally filter by generated container loot table:
 
@@ -254,8 +265,12 @@ Forced dialogue entries can optionally filter by generated container loot table:
 {
   "id": "examplepack.armorer_chest_opened",
   "trigger": "container_opened",
-  "witness_professions": ["armorer"],
-  "loot_tables": ["minecraft:chests/village/village_armorer"],
+  "witness_professions": [
+    "armorer"
+  ],
+  "loot_tables": [
+    "minecraft:chests/village/village_armorer"
+  ],
   "lines": [
     "That chest belongs to the armorer.",
     "Close the armory chest. Those supplies are counted."
@@ -311,7 +326,7 @@ Forced dialogue `line`, `lines`, option `response` / `responses`, `leave_option.
       "id": "examplepack.witnessed_chest_theft",
       "trigger": "container_theft",
       "priority": 0,
-      "witness_radius": 12.0,
+      "witness_radius": 12,
       "requires_line_of_sight": true,
       "initiate_dialogue": true,
       "force_camera_towards_villager": true,
@@ -369,7 +384,10 @@ Forced dialogue `line`, `lines`, option `response` / `responses`, `leave_option.
         {
           "label": "Leave",
           "response": "I will take {stolen_items} back. Walking away does not make this settled.",
-          "reputation_levels": ["neutral", "suspicious"],
+          "reputation_levels": [
+            "neutral",
+            "suspicious"
+          ],
           "reputation": -4,
           "aggro_chance": 0.25,
           "end_conversation": true,
@@ -392,4 +410,4 @@ Forced dialogue `line`, `lines`, option `response` / `responses`, `leave_option.
 
 Forced dialogue opens the normal Villager Retaliation interaction screen in a locked mode. The player cannot navigate to Talk, Trade, Gift, Inventory, Recruit, Family, or Relationships from that moment; only the forced event options are available.
 
-If `aggro_immediately` is true, the villager says the event line and attacks without opening the dialogue screen. If `initiate_dialogue` is false and `aggro_immediately` is false, the villager only says the event line. For new chat-only event callouts, prefer the dedicated `_chat` triggers so forced scenes and chat callouts stay separate.
+If `aggro_immediately` is true, the villager says the event line and attacks without opening the dialogue screen. If `initiate_dialogue` is false and `aggro_immediately` is false, the villager only says the event line. For event callouts that should never open the interaction screen, use `output.mode: "chat"`.

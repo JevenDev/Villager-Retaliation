@@ -141,7 +141,8 @@
     {
       "id": "cartographer_map_report",
       "label": "Report Discovery",
-      "type": "map_report",
+      "type": "dialogue_option",
+      "request": "map_report",
       "show_for_babies": false,
       "requires_unreported_cartographer_map_discovery": true,
       "order": 4
@@ -150,79 +151,79 @@
   "lines": [
     {
       "id": "cartographer_chat_edges",
-      "type": "small_talk",
+      "request": "question",
       "text": "Blank edges on a map make people braver than they should be.",
       "weight": 30
     },
     {
       "id": "cartographer_question_roads",
-      "type": "question",
+      "request": "question",
       "text": "Every road looks safer when someone else drew it.",
       "weight": 30
     },
     {
       "id": "cartographer_story_path",
-      "type": "story",
+      "request": "story",
       "text": "A lost path can become a warning if enough people survive telling it.",
       "weight": 26
     },
     {
       "id": "cartographer_new_greeting_table",
-      "type": "greeting",
+      "request": "greeting",
       "text": "Keep your hands off the map table unless you know where they are going.",
       "weight": 26
     },
     {
       "id": "cartographer_new_chat_edges",
-      "type": "small_talk",
+      "request": "question",
       "text": "The edge of a map is not the edge of the world. It is the edge of our nerve.",
       "weight": 28
     },
     {
       "id": "cartographer_new_question_roads",
-      "type": "question",
+      "request": "question",
       "text": "Roads look straight until you have to walk them tired.",
       "weight": 28
     },
     {
       "id": "cartographer_new_story_wrong_turn",
-      "type": "story",
+      "request": "story",
       "text": "A wrong turn once taught me more than three careful maps.",
       "weight": 24
     },
     {
       "id": "cartographer_new_joke_fold",
-      "type": "joke",
+      "request": "joke",
       "text": "Map jokes are easy to fold badly.",
       "weight": 18
     },
     {
       "id": "cartographer_new_insult_lost",
-      "type": "insult",
+      "request": "insult",
       "text": "You could get lost standing still.",
       "weight": 18
     },
     {
       "id": "cartographer_new_chat_border",
-      "type": "small_talk",
+      "request": "question",
       "text": "Borders are lines people draw so fear has somewhere neat to stand.",
       "weight": 28
     },
     {
       "id": "cartographer_new_question_compass",
-      "type": "question",
+      "request": "question",
       "text": "A compass helps with north. It says nothing about wisdom.",
       "weight": 28
     },
     {
       "id": "cartographer_new_story_blank_space",
-      "type": "story",
+      "request": "story",
       "text": "Blank space on parchment has a way of daring people to be foolish.",
       "weight": 24
     },
     {
       "id": "cartographer_new_cautious_path",
-      "type": "small_talk",
+      "request": "question",
       "text": "I do not mark every path for every traveler. Some maps are earned.",
       "dispositions": [
         "cautious",
@@ -233,7 +234,7 @@
     },
     {
       "id": "cartographer_cured_recognition_warm_1",
-      "type": "cured_recognition",
+      "request": "cured_recognition",
       "text": "I lost every road for a while. You marked the way back.",
       "weight": 30,
       "dispositions": [
@@ -243,7 +244,7 @@
     },
     {
       "id": "cartographer_cured_recognition_warm_2",
-      "type": "cured_recognition",
+      "request": "cured_recognition",
       "text": "I remember your face like a landmark after a long, wrong journey.",
       "weight": 30,
       "dispositions": [
@@ -253,7 +254,7 @@
     },
     {
       "id": "cartographer_cured_recognition_confused_1",
-      "type": "cured_recognition",
+      "request": "cured_recognition",
       "text": "The map of that memory is torn, but your name sits near the center.",
       "weight": 30,
       "dispositions": [
@@ -263,7 +264,7 @@
     },
     {
       "id": "cartographer_cured_recognition_confused_2",
-      "type": "cured_recognition",
+      "request": "cured_recognition",
       "text": "I remember wandering inside myself. Then a path opened, and you were beside it.",
       "weight": 30,
       "dispositions": [
@@ -273,7 +274,7 @@
     },
     {
       "id": "cartographer_cured_recognition_uneasy_1",
-      "type": "cured_recognition",
+      "request": "cured_recognition",
       "text": "I remember you, yes. Some routes back home still pass through frightening country.",
       "weight": 30,
       "dispositions": [
@@ -284,7 +285,7 @@
     },
     {
       "id": "cartographer_village_event_thunderstorm_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "thunderstorm"
       ],
@@ -294,7 +295,7 @@
     },
     {
       "id": "cartographer_village_event_thunderstorm_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "thunderstorm"
       ],
@@ -304,7 +305,7 @@
     },
     {
       "id": "cartographer_village_event_thunderstorm_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "thunderstorm"
       ],
@@ -314,7 +315,7 @@
     },
     {
       "id": "cartographer_village_event_thunderstorm_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "thunderstorm"
       ],
@@ -324,7 +325,7 @@
     },
     {
       "id": "cartographer_village_event_thunderstorm_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "thunderstorm"
       ],
@@ -334,7 +335,7 @@
     },
     {
       "id": "cartographer_village_event_fire_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "village_fire"
       ],
@@ -344,7 +345,7 @@
     },
     {
       "id": "cartographer_village_event_fire_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "village_fire"
       ],
@@ -354,7 +355,7 @@
     },
     {
       "id": "cartographer_village_event_fire_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "village_fire"
       ],
@@ -364,7 +365,7 @@
     },
     {
       "id": "cartographer_village_event_fire_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "village_fire"
       ],
@@ -374,7 +375,7 @@
     },
     {
       "id": "cartographer_village_event_fire_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "village_fire"
       ],
@@ -384,7 +385,7 @@
     },
     {
       "id": "cartographer_village_event_raid_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "raid",
         "player_defended_raid"
@@ -395,7 +396,7 @@
     },
     {
       "id": "cartographer_village_event_raid_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "raid",
         "player_defended_raid"
@@ -406,7 +407,7 @@
     },
     {
       "id": "cartographer_village_event_raid_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "raid",
         "player_defended_raid"
@@ -417,7 +418,7 @@
     },
     {
       "id": "cartographer_village_event_raid_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "raid",
         "player_defended_raid"
@@ -428,7 +429,7 @@
     },
     {
       "id": "cartographer_village_event_raid_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "raid",
         "player_defended_raid"
@@ -439,7 +440,7 @@
     },
     {
       "id": "cartographer_village_event_night_attack_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "night_attack"
       ],
@@ -449,7 +450,7 @@
     },
     {
       "id": "cartographer_village_event_night_attack_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "night_attack"
       ],
@@ -459,7 +460,7 @@
     },
     {
       "id": "cartographer_village_event_night_attack_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "night_attack"
       ],
@@ -469,7 +470,7 @@
     },
     {
       "id": "cartographer_village_event_night_attack_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "night_attack"
       ],
@@ -479,7 +480,7 @@
     },
     {
       "id": "cartographer_village_event_night_attack_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "night_attack"
       ],
@@ -489,7 +490,7 @@
     },
     {
       "id": "cartographer_village_event_sandstorm_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "sandstorm"
       ],
@@ -499,7 +500,7 @@
     },
     {
       "id": "cartographer_village_event_sandstorm_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "sandstorm"
       ],
@@ -509,7 +510,7 @@
     },
     {
       "id": "cartographer_village_event_sandstorm_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "sandstorm"
       ],
@@ -519,7 +520,7 @@
     },
     {
       "id": "cartographer_village_event_sandstorm_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "sandstorm"
       ],
@@ -529,7 +530,7 @@
     },
     {
       "id": "cartographer_village_event_sandstorm_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "sandstorm"
       ],
@@ -539,7 +540,7 @@
     },
     {
       "id": "cartographer_village_event_snowstorm_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "snowstorm"
       ],
@@ -549,7 +550,7 @@
     },
     {
       "id": "cartographer_village_event_snowstorm_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "snowstorm"
       ],
@@ -559,7 +560,7 @@
     },
     {
       "id": "cartographer_village_event_snowstorm_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "snowstorm"
       ],
@@ -569,7 +570,7 @@
     },
     {
       "id": "cartographer_village_event_snowstorm_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "snowstorm"
       ],
@@ -579,7 +580,7 @@
     },
     {
       "id": "cartographer_village_event_snowstorm_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "snowstorm"
       ],

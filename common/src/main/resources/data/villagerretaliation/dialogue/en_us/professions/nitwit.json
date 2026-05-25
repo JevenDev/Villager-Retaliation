@@ -66,79 +66,79 @@
   "lines": [
     {
       "id": "nitwit_chat_thought",
-      "type": "small_talk",
+      "request": "question",
       "text": "I had a thought once. Left it somewhere safe, probably.",
       "weight": 30
     },
     {
       "id": "nitwit_question_thinking",
-      "type": "question",
+      "request": "question",
       "text": "If you find my thought, tell it I was looking useful.",
       "weight": 30
     },
     {
       "id": "nitwit_story_stick",
-      "type": "story",
+      "request": "story",
       "text": "A nice stick can be many things if nobody important is watching.",
       "weight": 26
     },
     {
       "id": "nitwit_new_greeting_corner",
-      "type": "greeting",
+      "request": "greeting",
       "text": "Hello. I was keeping this corner company.",
       "weight": 26
     },
     {
       "id": "nitwit_new_chat_button",
-      "type": "small_talk",
+      "request": "question",
       "text": "I found a button once. No wall, just ambition.",
       "weight": 28
     },
     {
       "id": "nitwit_new_question_where",
-      "type": "question",
+      "request": "question",
       "text": "Where am I going? Usually somewhere nearby, once I remember why.",
       "weight": 28
     },
     {
       "id": "nitwit_new_story_bucket",
-      "type": "story",
+      "request": "story",
       "text": "I carried an empty bucket all morning. Very light work. Very confusing.",
       "weight": 24
     },
     {
       "id": "nitwit_new_joke_thought",
-      "type": "joke",
+      "request": "joke",
       "text": "My joke wandered off, but it promised to be funny if it returns.",
       "weight": 18
     },
     {
       "id": "nitwit_new_insult_hat",
-      "type": "insult",
+      "request": "insult",
       "text": "Your hat looks like it is thinking harder than you.",
       "weight": 18
     },
     {
       "id": "nitwit_new_chat_shadow",
-      "type": "small_talk",
+      "request": "question",
       "text": "I tried following my shadow, but it got behind me somehow.",
       "weight": 28
     },
     {
       "id": "nitwit_new_question_job",
-      "type": "question",
+      "request": "question",
       "text": "A job sounds useful. I am saving usefulness for the right moment.",
       "weight": 28
     },
     {
       "id": "nitwit_new_story_bread",
-      "type": "story",
+      "request": "story",
       "text": "I once put bread in a chest and called it planning. Nobody argued.",
       "weight": 24
     },
     {
       "id": "nitwit_new_cautious_simple",
-      "type": "small_talk",
+      "request": "question",
       "text": "I can be silly from over here. Over here feels better.",
       "dispositions": [
         "cautious",
@@ -148,7 +148,7 @@
     },
     {
       "id": "nitwit_cured_recognition_warm_1",
-      "type": "cured_recognition",
+      "request": "cured_recognition",
       "text": "I remember you! Mostly. You were the not-scary part of the scary bit.",
       "weight": 30,
       "dispositions": [
@@ -158,7 +158,7 @@
     },
     {
       "id": "nitwit_cured_recognition_warm_2",
-      "type": "cured_recognition",
+      "request": "cured_recognition",
       "text": "You helped me be me again. I am very attached to being me.",
       "weight": 30,
       "dispositions": [
@@ -168,7 +168,7 @@
     },
     {
       "id": "nitwit_cured_recognition_confused_1",
-      "type": "cured_recognition",
+      "request": "cured_recognition",
       "text": "I know your face. Did we meet before or after I stopped groaning?",
       "weight": 30,
       "dispositions": [
@@ -178,7 +178,7 @@
     },
     {
       "id": "nitwit_cured_recognition_confused_2",
-      "type": "cured_recognition",
+      "request": "cured_recognition",
       "text": "There was an apple, but not the normal apple kind of day.",
       "weight": 30,
       "dispositions": [
@@ -188,7 +188,7 @@
     },
     {
       "id": "nitwit_cured_recognition_uneasy_1",
-      "type": "cured_recognition",
+      "request": "cured_recognition",
       "text": "I remember some of it, and I would like to remember less of it.",
       "weight": 30,
       "dispositions": [
@@ -199,7 +199,7 @@
     },
     {
       "id": "nitwit_village_event_thunderstorm_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "thunderstorm"
       ],
@@ -209,7 +209,7 @@
     },
     {
       "id": "nitwit_village_event_thunderstorm_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "thunderstorm"
       ],
@@ -219,7 +219,7 @@
     },
     {
       "id": "nitwit_village_event_thunderstorm_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "thunderstorm"
       ],
@@ -229,7 +229,7 @@
     },
     {
       "id": "nitwit_village_event_thunderstorm_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "thunderstorm"
       ],
@@ -239,7 +239,7 @@
     },
     {
       "id": "nitwit_village_event_thunderstorm_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "thunderstorm"
       ],
@@ -249,7 +249,7 @@
     },
     {
       "id": "nitwit_village_event_fire_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "village_fire"
       ],
@@ -259,7 +259,7 @@
     },
     {
       "id": "nitwit_village_event_fire_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "village_fire"
       ],
@@ -269,7 +269,7 @@
     },
     {
       "id": "nitwit_village_event_fire_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "village_fire"
       ],
@@ -279,7 +279,7 @@
     },
     {
       "id": "nitwit_village_event_fire_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "village_fire"
       ],
@@ -289,7 +289,7 @@
     },
     {
       "id": "nitwit_village_event_fire_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "village_fire"
       ],
@@ -299,7 +299,7 @@
     },
     {
       "id": "nitwit_village_event_raid_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "raid",
         "player_defended_raid"
@@ -310,7 +310,7 @@
     },
     {
       "id": "nitwit_village_event_raid_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "raid",
         "player_defended_raid"
@@ -321,7 +321,7 @@
     },
     {
       "id": "nitwit_village_event_raid_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "raid",
         "player_defended_raid"
@@ -332,7 +332,7 @@
     },
     {
       "id": "nitwit_village_event_raid_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "raid",
         "player_defended_raid"
@@ -343,7 +343,7 @@
     },
     {
       "id": "nitwit_village_event_raid_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "raid",
         "player_defended_raid"
@@ -354,7 +354,7 @@
     },
     {
       "id": "nitwit_village_event_night_attack_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "night_attack"
       ],
@@ -364,7 +364,7 @@
     },
     {
       "id": "nitwit_village_event_night_attack_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "night_attack"
       ],
@@ -374,7 +374,7 @@
     },
     {
       "id": "nitwit_village_event_night_attack_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "night_attack"
       ],
@@ -384,7 +384,7 @@
     },
     {
       "id": "nitwit_village_event_night_attack_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "night_attack"
       ],
@@ -394,7 +394,7 @@
     },
     {
       "id": "nitwit_village_event_night_attack_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "night_attack"
       ],
@@ -404,7 +404,7 @@
     },
     {
       "id": "nitwit_village_event_sandstorm_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "sandstorm"
       ],
@@ -414,7 +414,7 @@
     },
     {
       "id": "nitwit_village_event_sandstorm_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "sandstorm"
       ],
@@ -424,7 +424,7 @@
     },
     {
       "id": "nitwit_village_event_sandstorm_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "sandstorm"
       ],
@@ -434,7 +434,7 @@
     },
     {
       "id": "nitwit_village_event_sandstorm_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "sandstorm"
       ],
@@ -444,7 +444,7 @@
     },
     {
       "id": "nitwit_village_event_sandstorm_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "sandstorm"
       ],
@@ -454,7 +454,7 @@
     },
     {
       "id": "nitwit_village_event_snowstorm_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "snowstorm"
       ],
@@ -464,7 +464,7 @@
     },
     {
       "id": "nitwit_village_event_snowstorm_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "snowstorm"
       ],
@@ -474,7 +474,7 @@
     },
     {
       "id": "nitwit_village_event_snowstorm_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "snowstorm"
       ],
@@ -484,7 +484,7 @@
     },
     {
       "id": "nitwit_village_event_snowstorm_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "snowstorm"
       ],
@@ -494,7 +494,7 @@
     },
     {
       "id": "nitwit_village_event_snowstorm_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "snowstorm"
       ],

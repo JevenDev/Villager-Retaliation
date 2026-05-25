@@ -1017,6 +1017,10 @@ public final class VillagerInteractionService {
         broadcastVillagerChat(level, villager, text, speakerLabel, VillagerRetaliationConfig.MAX_FORCED_DIALOGUE_DISTANCE.get());
     }
 
+    public static void broadcastForcedVillagerChat(ServerLevel level, Villager villager, String text, String speakerLabel, double radius) {
+        broadcastVillagerChat(level, villager, text, speakerLabel, radius);
+    }
+
     private static void broadcastVillagerChat(ServerLevel level, Villager villager, String text, String speakerLabel, double radius) {
         if (text == null || text.isBlank()) {
             return;

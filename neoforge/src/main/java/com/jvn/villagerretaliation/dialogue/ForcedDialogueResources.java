@@ -156,6 +156,7 @@ public final class ForcedDialogueResources {
         return Optional.of(new ForcedDialogueDefinition(
                 id,
                 trigger.get(),
+                readOutput(entry),
                 lines,
                 readBoolean(entry, "initiate_dialogue", true),
                 readBoolean(entry, "aggro_immediately"),
@@ -178,6 +179,21 @@ public final class ForcedDialogueResources {
                 leaveOption,
                 leaveOptions
         ));
+    }
+
+    private static ForcedDialogueOutput readOutput(JsonObject entry) {
+        JsonElement element = entry.get("output");
+        if (element == null || !element.isJsonObject()) {
+            return ForcedDialogueOutput.forcedDialogue();
+        }
+        JsonObject output = element.getAsJsonObject();
+        ForcedDialogueOutputMode mode = readEnum(output, "mode", ForcedDialogueOutputMode.class)
+                .orElse(ForcedDialogueOutputMode.FORCED_DIALOGUE);
+        double radius = readDouble(output, "radius", 0.0D);
+        return new ForcedDialogueOutput(
+                mode,
+                radius > 0.0D ? radius : 0.0D
+        );
     }
 
     private static Set<VillagerProfession> readProfessions(JsonObject entry) {
@@ -586,11 +602,12 @@ public final class ForcedDialogueResources {
         CONTAINER_THEFT,
         CONTAINER_OPENED,
         CONTAINER_BROKEN,
-        RETALIATION_STARTED,
-        CONTAINER_THEFT_CHAT,
-        CONTAINER_OPENED_CHAT,
-        CONTAINER_BROKEN_CHAT,
-        RETALIATION_STARTED_CHAT
+        RETALIATION_STARTED
+    }
+
+    public enum ForcedDialogueOutputMode {
+        FORCED_DIALOGUE,
+        CHAT
     }
 
     public enum ForcedDialogueItemDestination {
@@ -605,6 +622,7 @@ public final class ForcedDialogueResources {
     public record ForcedDialogueDefinition(
             String id,
             ForcedDialogueTrigger trigger,
+            ForcedDialogueOutput output,
             List<String> lines,
             boolean initiateDialogue,
             boolean aggroImmediately,
@@ -658,6 +676,14 @@ public final class ForcedDialogueResources {
 
         public boolean matchesReputation(int reputation, VillagerReputationLevel level) {
             return this.reputationCondition.matches(reputation, level);
+        }
+    }
+
+    public record ForcedDialogueOutput(
+            ForcedDialogueOutputMode mode,
+            double radius) {
+        private static ForcedDialogueOutput forcedDialogue() {
+            return new ForcedDialogueOutput(ForcedDialogueOutputMode.FORCED_DIALOGUE, 0.0D);
         }
     }
 

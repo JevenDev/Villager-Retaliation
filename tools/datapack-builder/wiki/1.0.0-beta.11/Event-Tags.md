@@ -8,8 +8,12 @@ Enum values are case-insensitive in code, but lowercase snake case is the recomm
 
 ```json
 {
-  "event_tags": ["raid"],
-  "player_event_tags": ["player_defended_raid"]
+  "event_tags": [
+    "raid"
+  ],
+  "player_event_tags": [
+    "player_defended_raid"
+  ]
 }
 ```
 
@@ -60,8 +64,10 @@ Simple:
   "lines": [
     {
       "id": "my_pack.event.baby_born.simple",
-      "type": "small_talk",
-      "event_tags": ["baby_born"],
+      "request": "question",
+      "event_tags": [
+        "baby_born"
+      ],
       "text": "There is a new little voice in the village today."
     }
   ]
@@ -75,11 +81,18 @@ Expanded:
   "lines": [
     {
       "id": "my_pack.event.baby_born.family_farmer",
-      "type": "question",
+      "request": "question",
       "option": "ask_about_family",
-      "professions": ["farmer"],
-      "dispositions": ["friendly", "respectful"],
-      "player_event_tags": ["baby_born"],
+      "professions": [
+        "farmer"
+      ],
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ],
+      "player_event_tags": [
+        "baby_born"
+      ],
       "requires_known_child": true,
       "text": "You helped bring {child} into this village. The fields will know that kindness.",
       "weight": 30
@@ -102,8 +115,10 @@ Simple:
   "lines": [
     {
       "id": "my_pack.event.baby_villager_attacked.simple",
-      "type": "village_event_report",
-      "event_tags": ["baby_villager_attacked"],
+      "request": "village_event_report",
+      "event_tags": [
+        "baby_villager_attacked"
+      ],
       "text": "Someone small got hurt. That sound stays in a village."
     }
   ]
@@ -117,11 +132,19 @@ Expanded:
   "lines": [
     {
       "id": "my_pack.event.baby_villager_attacked.player",
-      "type": "apology",
-      "player_event_tags": ["player_attacked_villager"],
-      "event_tags": ["baby_villager_attacked"],
+      "request": "apology",
+      "player_event_tags": [
+        "player_attacked_villager"
+      ],
+      "event_tags": [
+        "baby_villager_attacked"
+      ],
       "show_for_babies": false,
-      "dispositions": ["cautious", "rude", "hostile"],
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile"
+      ],
       "lines": [
         "You made a child cry. There is no brave version of that story.",
         "Everyone heard the little one yell. Start explaining there."
@@ -146,8 +169,10 @@ Simple:
   "lines": [
     {
       "id": "my_pack.event.container_theft.simple",
-      "type": "small_talk",
-      "player_event_tags": ["player_container_theft"],
+      "request": "question",
+      "player_event_tags": [
+        "player_container_theft"
+      ],
       "text": "I heard about the {stolen_stack}. Village stores are not souvenirs."
     }
   ]
@@ -161,19 +186,31 @@ Expanded:
   "lines": [
     {
       "id": "my_pack.event.container_theft.gossip",
-      "type": "greeting",
-      "player_event_tags": ["player_container_theft"],
+      "request": "greeting",
+      "player_event_tags": [
+        "player_container_theft"
+      ],
       "requires_container_theft_from_other": true,
-      "dispositions": ["cautious", "rude", "hostile"],
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile"
+      ],
       "text": "{theft_witness} told me about you stealing {stolen_stack}. Not cool.",
       "weight": 35
     },
     {
       "id": "my_pack.event.container_theft.direct",
-      "type": "small_talk",
-      "player_event_tags": ["player_container_theft"],
+      "request": "question",
+      "player_event_tags": [
+        "player_container_theft"
+      ],
       "requires_container_theft_to_self": true,
-      "dispositions": ["cautious", "rude", "hostile"],
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile"
+      ],
       "text": "I still remember you trying to take my {stolen_item}.",
       "weight": 35
     }
@@ -195,8 +232,10 @@ Simple:
   "lines": [
     {
       "id": "my_pack.event.retaliation_started.simple",
-      "type": "small_talk",
-      "event_tags": ["villager_retaliation_started"],
+      "request": "question",
+      "event_tags": [
+        "villager_retaliation_started"
+      ],
       "text": "{retaliation_witness} still looks ready to finish {retaliation_target}."
     }
   ]
@@ -210,18 +249,28 @@ Expanded:
   "lines": [
     {
       "id": "my_pack.event.retaliation_started.self_zombie",
-      "type": "greeting",
-      "event_tags": ["villager_retaliation_started"],
+      "request": "greeting",
+      "event_tags": [
+        "villager_retaliation_started"
+      ],
       "requires_retaliation_to_self": true,
-      "retaliation_target_entity_types": ["minecraft:zombie", "minecraft:husk"],
+      "retaliation_target_entity_types": [
+        "minecraft:zombie",
+        "minecraft:husk"
+      ],
       "text": "I almost buried my axe in that {retaliation_target_kind}.",
       "weight": 30
     },
     {
       "id": "my_pack.event.retaliation_started.player_target",
-      "type": "small_talk",
-      "player_event_tags": ["villager_retaliation_started"],
-      "dispositions": ["hostile", "fearful"],
+      "request": "question",
+      "player_event_tags": [
+        "villager_retaliation_started"
+      ],
+      "dispositions": [
+        "hostile",
+        "fearful"
+      ],
       "text": "{retaliation_witness} has not forgotten choosing you as the threat.",
       "weight": 30
     }
@@ -243,8 +292,10 @@ Simple:
   "lines": [
     {
       "id": "my_pack.event.golem_defense.simple",
-      "type": "story",
-      "event_tags": ["iron_golem_defeated_mob"],
+      "request": "story",
+      "event_tags": [
+        "iron_golem_defeated_mob"
+      ],
       "text": "The golem handled trouble before it reached the doors."
     }
   ]
@@ -258,10 +309,18 @@ Expanded:
   "lines": [
     {
       "id": "my_pack.event.golem_defense.armorer",
-      "type": "village_event_report",
-      "professions": ["armorer"],
-      "event_tags": ["iron_golem_defeated_mob"],
-      "dispositions": ["neutral", "cautious", "friendly"],
+      "request": "village_event_report",
+      "professions": [
+        "armorer"
+      ],
+      "event_tags": [
+        "iron_golem_defeated_mob"
+      ],
+      "dispositions": [
+        "neutral",
+        "cautious",
+        "friendly"
+      ],
       "text": "That iron frame bought us time. I should check its plates before nightfall.",
       "weight": 25
     }
@@ -283,8 +342,10 @@ Simple:
   "lines": [
     {
       "id": "my_pack.event.thunderstorm.simple",
-      "type": "small_talk",
-      "event_tags": ["thunderstorm"],
+      "request": "question",
+      "event_tags": [
+        "thunderstorm"
+      ],
       "text": "Thunder makes every roof sound thinner."
     }
   ]
@@ -298,11 +359,19 @@ Expanded:
   "lines": [
     {
       "id": "my_pack.event.thunderstorm.librarian_night",
-      "type": "village_event_report",
-      "professions": ["librarian"],
-      "times": ["night"],
-      "weather": ["thunder"],
-      "event_tags": ["thunderstorm"],
+      "request": "village_event_report",
+      "professions": [
+        "librarian"
+      ],
+      "times": [
+        "night"
+      ],
+      "weather": [
+        "thunder"
+      ],
+      "event_tags": [
+        "thunderstorm"
+      ],
       "text": "Storms at night make old stories feel less old.",
       "weight": 20
     }
@@ -324,8 +393,10 @@ Simple:
   "lines": [
     {
       "id": "my_pack.event.sandstorm.simple",
-      "type": "small_talk",
-      "event_tags": ["sandstorm"],
+      "request": "question",
+      "event_tags": [
+        "sandstorm"
+      ],
       "text": "The wind has teeth today."
     }
   ]
@@ -339,10 +410,17 @@ Expanded:
   "lines": [
     {
       "id": "my_pack.event.sandstorm.cartographer",
-      "type": "village_event_report",
-      "professions": ["cartographer"],
-      "event_tags": ["sandstorm"],
-      "times": ["afternoon", "evening"],
+      "request": "village_event_report",
+      "professions": [
+        "cartographer"
+      ],
+      "event_tags": [
+        "sandstorm"
+      ],
+      "times": [
+        "afternoon",
+        "evening"
+      ],
       "text": "Sand moved over the road marks. I would not trust yesterday's path.",
       "weight": 25
     }
@@ -364,8 +442,10 @@ Simple:
   "lines": [
     {
       "id": "my_pack.event.snowstorm.simple",
-      "type": "small_talk",
-      "event_tags": ["snowstorm"],
+      "request": "question",
+      "event_tags": [
+        "snowstorm"
+      ],
       "text": "Snow can hide a lot of bad footsteps."
     }
   ]
@@ -379,10 +459,16 @@ Expanded:
   "lines": [
     {
       "id": "my_pack.event.snowstorm.fisherman",
-      "type": "village_event_report",
-      "professions": ["fisherman"],
-      "event_tags": ["snowstorm"],
-      "weather": ["thunder"],
+      "request": "village_event_report",
+      "professions": [
+        "fisherman"
+      ],
+      "event_tags": [
+        "snowstorm"
+      ],
+      "weather": [
+        "thunder"
+      ],
       "show_for_babies": false,
       "text": "Cold like this turns water into a promise it may not keep.",
       "weight": 20
@@ -405,8 +491,10 @@ Simple:
   "lines": [
     {
       "id": "my_pack.event.village_fire.simple",
-      "type": "small_talk",
-      "event_tags": ["village_fire"],
+      "request": "question",
+      "event_tags": [
+        "village_fire"
+      ],
       "text": "Smoke near a village is never just smoke."
     }
   ]
@@ -420,9 +508,15 @@ Expanded:
   "lines": [
     {
       "id": "my_pack.event.village_fire.player_warning",
-      "type": "apology",
-      "player_event_tags": ["village_fire"],
-      "dispositions": ["rude", "hostile", "fearful"],
+      "request": "apology",
+      "player_event_tags": [
+        "village_fire"
+      ],
+      "dispositions": [
+        "rude",
+        "hostile",
+        "fearful"
+      ],
       "requires_unapologized_remembered_harm": true,
       "text": "Fire follows choices. Do not pretend it wandered here alone.",
       "weight": 35
@@ -445,8 +539,10 @@ Simple:
   "lines": [
     {
       "id": "my_pack.event.night_attack.simple",
-      "type": "story",
-      "event_tags": ["night_attack"],
+      "request": "story",
+      "event_tags": [
+        "night_attack"
+      ],
       "text": "Night brought trouble close again."
     }
   ]
@@ -460,10 +556,17 @@ Expanded:
   "lines": [
     {
       "id": "my_pack.event.night_attack.cleric",
-      "type": "village_event_report",
-      "professions": ["cleric"],
-      "times": ["night", "morning"],
-      "event_tags": ["night_attack"],
+      "request": "village_event_report",
+      "professions": [
+        "cleric"
+      ],
+      "times": [
+        "night",
+        "morning"
+      ],
+      "event_tags": [
+        "night_attack"
+      ],
       "text": "I counted breaths after the attack. More than I feared, fewer than I wanted.",
       "weight": 25
     }
@@ -485,8 +588,10 @@ Simple:
   "lines": [
     {
       "id": "my_pack.event.raid.simple",
-      "type": "story",
-      "event_tags": ["raid"],
+      "request": "story",
+      "event_tags": [
+        "raid"
+      ],
       "text": "When banners come over the hill, every door learns fear."
     }
   ]
@@ -500,10 +605,16 @@ Expanded:
   "lines": [
     {
       "id": "my_pack.event.raid.weaponsmith_defense",
-      "type": "village_defense_report",
-      "professions": ["weaponsmith"],
-      "event_tags": ["raid"],
-      "player_event_tags": ["player_defended_raid"],
+      "request": "village_defense_report",
+      "professions": [
+        "weaponsmith"
+      ],
+      "event_tags": [
+        "raid"
+      ],
+      "player_event_tags": [
+        "player_defended_raid"
+      ],
       "requires_unreported_village_defense": true,
       "text": "You stood when the banners came. That is the sort of edge I respect.",
       "weight": 35
@@ -526,8 +637,10 @@ Simple:
   "lines": [
     {
       "id": "my_pack.event.villager_death.simple",
-      "type": "small_talk",
-      "event_tags": ["villager_death"],
+      "request": "question",
+      "event_tags": [
+        "villager_death"
+      ],
       "text": "A quiet house feels louder than it should."
     }
   ]
@@ -541,11 +654,17 @@ Expanded:
   "lines": [
     {
       "id": "my_pack.event.villager_death.family",
-      "type": "question",
+      "request": "question",
       "option": "ask_about_family",
-      "event_tags": ["villager_death"],
+      "event_tags": [
+        "villager_death"
+      ],
       "requires_known_deceased_family": true,
-      "dispositions": ["cautious", "rude", "hostile"],
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile"
+      ],
       "text": "Do not make me say {deceased_family} like a lesson.",
       "weight": 30
     }
@@ -567,8 +686,10 @@ Simple:
   "lines": [
     {
       "id": "my_pack.event.villager_attacked.simple",
-      "type": "small_talk",
-      "event_tags": ["villager_attacked"],
+      "request": "question",
+      "event_tags": [
+        "villager_attacked"
+      ],
       "text": "Someone was hurt. That changes the air."
     }
   ]
@@ -582,10 +703,16 @@ Expanded:
   "lines": [
     {
       "id": "my_pack.event.villager_attacked.player_item",
-      "type": "apology",
-      "player_event_tags": ["villager_attacked"],
-      "player_items": ["#minecraft:swords"],
-      "player_item_slots": ["main_hand"],
+      "request": "apology",
+      "player_event_tags": [
+        "villager_attacked"
+      ],
+      "player_items": [
+        "#minecraft:swords"
+      ],
+      "player_item_slots": [
+        "main_hand"
+      ],
       "text": "Put {held_item} away before asking me to believe this is peace.",
       "weight": 25
     }
@@ -607,8 +734,10 @@ Simple:
   "lines": [
     {
       "id": "my_pack.event.player_attacked_villager.simple",
-      "type": "apology",
-      "player_event_tags": ["player_attacked_villager"],
+      "request": "apology",
+      "player_event_tags": [
+        "player_attacked_villager"
+      ],
       "text": "I remember your hand in this."
     }
   ]
@@ -622,10 +751,16 @@ Expanded:
   "lines": [
     {
       "id": "my_pack.event.player_attacked_villager.direct_hit",
-      "type": "apology",
-      "player_event_tags": ["player_attacked_villager"],
+      "request": "apology",
+      "player_event_tags": [
+        "player_attacked_villager"
+      ],
       "requires_recent_direct_hit_memory": true,
-      "dispositions": ["rude", "hostile", "fearful"],
+      "dispositions": [
+        "rude",
+        "hostile",
+        "fearful"
+      ],
       "text": "You struck me, then came back with words. Words are lighter than bruises.",
       "weight": 40
     }
@@ -647,8 +782,10 @@ Simple:
   "lines": [
     {
       "id": "my_pack.event.player_defended_village.simple",
-      "type": "small_talk",
-      "player_event_tags": ["player_defended_village"],
+      "request": "question",
+      "player_event_tags": [
+        "player_defended_village"
+      ],
       "text": "You kept trouble from our doors."
     }
   ]
@@ -662,9 +799,14 @@ Expanded:
   "lines": [
     {
       "id": "my_pack.event.player_defended_village.trusted",
-      "type": "village_defense_report",
-      "player_event_tags": ["player_defended_village"],
-      "dispositions": ["friendly", "respectful"],
+      "request": "village_defense_report",
+      "player_event_tags": [
+        "player_defended_village"
+      ],
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ],
       "requires_unreported_village_defense": true,
       "text": "I saw what you did out there. Trust grows faster when it has proof.",
       "weight": 30
@@ -687,8 +829,10 @@ Simple:
   "lines": [
     {
       "id": "my_pack.event.player_defended_raid.simple",
-      "type": "village_defense_report",
-      "player_event_tags": ["player_defended_raid"],
+      "request": "village_defense_report",
+      "player_event_tags": [
+        "player_defended_raid"
+      ],
       "text": "You stood against the raid. We saw."
     }
   ]
@@ -702,10 +846,18 @@ Expanded:
   "lines": [
     {
       "id": "my_pack.event.player_defended_raid.hostile",
-      "type": "village_defense_report",
-      "player_event_tags": ["player_defended_raid"],
-      "event_tags": ["raid"],
-      "dispositions": ["cautious", "rude", "hostile"],
+      "request": "village_defense_report",
+      "player_event_tags": [
+        "player_defended_raid"
+      ],
+      "event_tags": [
+        "raid"
+      ],
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile"
+      ],
       "requires_unreported_village_defense": true,
       "text": "You helped us today. That does not erase everything, but it does matter.",
       "weight": 35
@@ -728,8 +880,10 @@ Simple:
   "lines": [
     {
       "id": "my_pack.event.player_cured_villager.simple",
-      "type": "cured_recognition",
-      "player_event_tags": ["player_cured_villager"],
+      "request": "cured_recognition",
+      "player_event_tags": [
+        "player_cured_villager"
+      ],
       "text": "{cured_villager} walks in daylight because of you."
     }
   ]
@@ -743,11 +897,19 @@ Expanded:
   "lines": [
     {
       "id": "my_pack.event.player_cured_villager.cleric",
-      "type": "cured_recognition",
-      "professions": ["cleric"],
-      "player_event_tags": ["player_cured_villager"],
+      "request": "cured_recognition",
+      "professions": [
+        "cleric"
+      ],
+      "player_event_tags": [
+        "player_cured_villager"
+      ],
       "requires_unreported_cured_recognition": true,
-      "dispositions": ["friendly", "respectful", "neutral"],
+      "dispositions": [
+        "friendly",
+        "respectful",
+        "neutral"
+      ],
       "text": "{cured_villager_possessive} second chance will be remembered here.",
       "weight": 35
     }
@@ -769,8 +931,10 @@ Simple:
   "lines": [
     {
       "id": "my_pack.event.golem_created.simple",
-      "type": "story",
-      "event_tags": ["golem_created"],
+      "request": "story",
+      "event_tags": [
+        "golem_created"
+      ],
       "text": "A new iron watcher changes how a village sleeps."
     }
   ]
@@ -784,10 +948,17 @@ Expanded:
   "lines": [
     {
       "id": "my_pack.event.golem_created.armorer",
-      "type": "village_event_report",
-      "professions": ["armorer"],
-      "event_tags": ["golem_created"],
-      "dispositions": ["friendly", "respectful"],
+      "request": "village_event_report",
+      "professions": [
+        "armorer"
+      ],
+      "event_tags": [
+        "golem_created"
+      ],
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ],
       "text": "Fresh iron, fresh duty. I hope whoever made it understands both.",
       "weight": 20
     }
@@ -809,8 +980,10 @@ Simple:
   "lines": [
     {
       "id": "my_pack.event.golem_killed.simple",
-      "type": "small_talk",
-      "event_tags": ["golem_killed"],
+      "request": "question",
+      "event_tags": [
+        "golem_killed"
+      ],
       "text": "The village feels smaller without that iron step."
     }
   ]
@@ -824,10 +997,18 @@ Expanded:
   "lines": [
     {
       "id": "my_pack.event.golem_killed.mason",
-      "type": "village_event_report",
-      "professions": ["mason"],
-      "event_tags": ["golem_killed"],
-      "dispositions": ["cautious", "rude", "hostile"],
+      "request": "village_event_report",
+      "professions": [
+        "mason"
+      ],
+      "event_tags": [
+        "golem_killed"
+      ],
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile"
+      ],
       "text": "When iron falls, stone walls start feeling thin.",
       "weight": 25
     }
@@ -849,8 +1030,10 @@ Simple:
   "lines": [
     {
       "id": "my_pack.event.nearby_hostile_mob.simple",
-      "type": "story",
-      "event_tags": ["nearby_hostile_mob"],
+      "request": "story",
+      "event_tags": [
+        "nearby_hostile_mob"
+      ],
       "text": "Something unfriendly came close enough to count."
     }
   ]
@@ -864,11 +1047,21 @@ Expanded:
   "lines": [
     {
       "id": "my_pack.event.nearby_hostile_mob.fletcher",
-      "type": "village_event_report",
-      "professions": ["fletcher"],
-      "event_tags": ["nearby_hostile_mob"],
-      "player_items": ["#minecraft:arrows", "minecraft:bow"],
-      "player_item_slots": ["inventory", "hotbar"],
+      "request": "village_event_report",
+      "professions": [
+        "fletcher"
+      ],
+      "event_tags": [
+        "nearby_hostile_mob"
+      ],
+      "player_items": [
+        "#minecraft:arrows",
+        "minecraft:bow"
+      ],
+      "player_item_slots": [
+        "inventory",
+        "hotbar"
+      ],
       "text": "Keep {player_item} close. Trouble already knows the way here.",
       "weight": 20
     }
@@ -890,8 +1083,10 @@ Simple:
   "lines": [
     {
       "id": "my_pack.event.reputation_changed.simple",
-      "type": "small_talk",
-      "player_event_tags": ["reputation_changed"],
+      "request": "question",
+      "player_event_tags": [
+        "reputation_changed"
+      ],
       "text": "People notice patterns."
     }
   ]
@@ -905,10 +1100,15 @@ Expanded:
   "lines": [
     {
       "id": "my_pack.event.reputation_changed.friendly",
-      "type": "question",
+      "request": "question",
       "option": "ask_about_reputation",
-      "player_event_tags": ["reputation_changed"],
-      "dispositions": ["friendly", "respectful"],
+      "player_event_tags": [
+        "reputation_changed"
+      ],
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ],
       "text": "You have been better to this place than most passing names.",
       "weight": 25
     }
@@ -930,8 +1130,10 @@ Simple:
   "lines": [
     {
       "id": "my_pack.event.gift_loved.simple",
-      "type": "small_talk",
-      "player_event_tags": ["player_gave_loved_gift"],
+      "request": "question",
+      "player_event_tags": [
+        "player_gave_loved_gift"
+      ],
       "text": "That gift will be talked about for a while."
     }
   ]
@@ -945,9 +1147,14 @@ Expanded:
   "lines": [
     {
       "id": "my_pack.event.gift_loved.friend",
-      "type": "gift_preferences",
-      "player_event_tags": ["player_gave_loved_gift"],
-      "dispositions": ["friendly", "respectful"],
+      "request": "gift_preferences",
+      "player_event_tags": [
+        "player_gave_loved_gift"
+      ],
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ],
       "text": "A gift like that says you listened before you reached into your pack.",
       "weight": 30
     }
@@ -969,8 +1176,10 @@ Simple:
   "lines": [
     {
       "id": "my_pack.event.gift_liked.simple",
-      "type": "small_talk",
-      "player_event_tags": ["player_gave_liked_gift"],
+      "request": "question",
+      "player_event_tags": [
+        "player_gave_liked_gift"
+      ],
       "text": "That was a decent gift."
     }
   ]
@@ -984,9 +1193,14 @@ Expanded:
   "lines": [
     {
       "id": "my_pack.event.gift_liked.profession",
-      "type": "gift_preferences",
-      "professions": ["farmer", "fisherman"],
-      "player_event_tags": ["player_gave_liked_gift"],
+      "request": "gift_preferences",
+      "professions": [
+        "farmer",
+        "fisherman"
+      ],
+      "player_event_tags": [
+        "player_gave_liked_gift"
+      ],
       "text": "Useful things are often kinder than shiny ones.",
       "weight": 24
     }
@@ -1008,8 +1222,10 @@ Simple:
   "lines": [
     {
       "id": "my_pack.event.gift_neutral.simple",
-      "type": "small_talk",
-      "player_event_tags": ["player_gave_neutral_gift"],
+      "request": "question",
+      "player_event_tags": [
+        "player_gave_neutral_gift"
+      ],
       "text": "A gift is still a choice, even when it misses."
     }
   ]
@@ -1023,8 +1239,10 @@ Expanded:
   "lines": [
     {
       "id": "my_pack.event.gift_neutral.advice",
-      "type": "gift_preferences",
-      "player_event_tags": ["player_gave_neutral_gift"],
+      "request": "gift_preferences",
+      "player_event_tags": [
+        "player_gave_neutral_gift"
+      ],
       "gift_advice": "already_known",
       "text": "You already know that one lands softly, not warmly.",
       "weight": 22
@@ -1047,8 +1265,10 @@ Simple:
   "lines": [
     {
       "id": "my_pack.event.gift_disliked.simple",
-      "type": "small_talk",
-      "player_event_tags": ["player_gave_disliked_gift"],
+      "request": "question",
+      "player_event_tags": [
+        "player_gave_disliked_gift"
+      ],
       "text": "Some gifts make silence work harder."
     }
   ]
@@ -1062,9 +1282,15 @@ Expanded:
   "lines": [
     {
       "id": "my_pack.event.gift_disliked.cautious",
-      "type": "gift_preferences",
-      "player_event_tags": ["player_gave_disliked_gift"],
-      "dispositions": ["cautious", "rude", "hostile"],
+      "request": "gift_preferences",
+      "player_event_tags": [
+        "player_gave_disliked_gift"
+      ],
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile"
+      ],
       "text": "If that was meant kindly, kindness needs better aim.",
       "weight": 28
     }
@@ -1086,8 +1312,10 @@ Simple:
   "lines": [
     {
       "id": "my_pack.event.gift_hated.simple",
-      "type": "small_talk",
-      "player_event_tags": ["player_gave_hated_gift"],
+      "request": "question",
+      "player_event_tags": [
+        "player_gave_hated_gift"
+      ],
       "text": "That gift did damage without a blade."
     }
   ]
@@ -1101,9 +1329,15 @@ Expanded:
   "lines": [
     {
       "id": "my_pack.event.gift_hated.apology",
-      "type": "apology",
-      "player_event_tags": ["player_gave_hated_gift"],
-      "dispositions": ["rude", "hostile", "fearful"],
+      "request": "apology",
+      "player_event_tags": [
+        "player_gave_hated_gift"
+      ],
+      "dispositions": [
+        "rude",
+        "hostile",
+        "fearful"
+      ],
       "requires_unapologized_remembered_harm": true,
       "text": "You cannot hand someone rot and then call the apology generous.",
       "weight": 35

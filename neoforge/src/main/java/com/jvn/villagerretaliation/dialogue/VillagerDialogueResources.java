@@ -353,8 +353,12 @@ public final class VillagerDialogueResources {
             JsonObject entry = element.getAsJsonObject();
             String id = readString(entry, "id");
             String label = readString(entry, "label");
-            Optional<DialogueRequestType> requestType = readEnum(entry, "type", DialogueRequestType.class);
-            if (id.isBlank() || label.isBlank() || requestType.isEmpty()) {
+            String entryType = readString(entry, "type");
+            Optional<DialogueRequestType> requestType = readEnum(entry, "request", DialogueRequestType.class);
+            if (id.isBlank()
+                    || label.isBlank()
+                    || !"dialogue_option".equals(entryType)
+                    || requestType.isEmpty()) {
                 index++;
                 continue;
             }
@@ -470,7 +474,7 @@ public final class VillagerDialogueResources {
             }
 
             JsonObject entry = element.getAsJsonObject();
-            Optional<DialogueRequestType> requestType = readEnum(entry, "type", DialogueRequestType.class);
+            Optional<DialogueRequestType> requestType = readEnum(entry, "request", DialogueRequestType.class);
             List<String> entryLines = readLines(entry);
             if (requestType.isEmpty() || entryLines.isEmpty()) {
                 index++;

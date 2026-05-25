@@ -37,7 +37,7 @@ public final class VillagerInteractionTracker {
                 entry.lastNegativeDialogueReputationGameTime(),
                 entry.lastJokeReputationGameTime(),
                 entry.badFirstImpression(),
-                entry.requestUseCount(DialogueRequestType.SMALL_TALK, gameTime, day, optionResetTicks),
+                0,
                 entry.requestUseCount(DialogueRequestType.GREETING, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.QUESTION, gameTime, day, optionResetTicks),
                 entry.requestUseCount(DialogueRequestType.GIFT_PREFERENCES, gameTime, day, optionResetTicks),
@@ -608,7 +608,6 @@ public final class VillagerInteractionTracker {
     ) {
         public int requestUseCount(DialogueRequestType requestType) {
             return switch (requestType) {
-                case SMALL_TALK -> this.chatUseCount;
                 case GREETING -> this.greetingUseCount;
                 case QUESTION -> this.questionUseCount;
                 case GIFT_PREFERENCES -> this.giftPreferenceUseCount;

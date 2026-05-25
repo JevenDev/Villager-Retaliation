@@ -43,7 +43,8 @@ A dialogue file can contain any mix of these arrays:
     {
       "id": "my_pack.ask_weather",
       "label": "Ask About Weather",
-      "type": "question",
+      "type": "dialogue_option",
+      "request": "question",
       "order": 40
     }
   ],
@@ -51,8 +52,10 @@ A dialogue file can contain any mix of these arrays:
     {
       "id": "my_pack.weather_rain_farmer",
       "option": "my_pack.ask_weather",
-      "type": "question",
-      "weather": ["rain"],
+      "request": "question",
+      "weather": [
+        "rain"
+      ],
       "text": "Good for wheat, bad for boots.",
       "weight": 20
     }
@@ -74,8 +77,10 @@ Use `lines` when several entries would otherwise have the same filters and weigh
     {
       "id": "my_pack.weather_rain_farmer",
       "option": "my_pack.ask_weather",
-      "type": "question",
-      "weather": ["rain"],
+      "request": "question",
+      "weather": [
+        "rain"
+      ],
       "lines": [
         "Good for wheat, bad for boots.",
         "Rain keeps the fields honest.",
@@ -89,12 +94,11 @@ Use `lines` when several entries would otherwise have the same filters and weigh
 
 Older `text` entries still work and are still clearer for single-line entries.
 
-## Dialogue Request Types
+## Dialogue Requests
 
-Use these values in `type`:
+Use these values in `options[].request` and `lines[].request`:
 
 ```text
-small_talk
 greeting
 question
 gift_preferences
@@ -114,9 +118,9 @@ joke
 insult
 ```
 
-Packs must use `small_talk` for this dialogue request type. Older `chat` values are no longer accepted, so update existing dialogue options and lines before targeting beta.11+.
+`small_talk` has been removed as a separate request. Use `question` for general player-selected conversation.
 
-See [Dialogue Types](Dialogue-Types.md) for simple and expanded dropdown examples for every current `type` value.
+See [Dialogue Requests](Dialogue-Types.md) for simple and expanded dropdown examples for every current request value.
 
 ## Option Fields
 
@@ -124,7 +128,8 @@ See [Dialogue Types](Dialogue-Types.md) for simple and expanded dropdown example
 | --- | --- | --- | --- |
 | `id` | string | required | Stable option id. |
 | `label` | string | required | Text shown in the talk menu. |
-| `type` | enum | required | Dialogue request sent when selected. |
+| `type` | string | required | Must be `dialogue_option`. |
+| `request` | enum | required | Dialogue request sent when selected. |
 | `order` | integer | array index | Lower values appear earlier. |
 | `professions` | string or array | any | Filters by villager profession. |
 | `dispositions` | string or array | any | Filters by mood/disposition. |
@@ -178,7 +183,7 @@ See [Dialogue Types](Dialogue-Types.md) for simple and expanded dropdown example
 | Field | Type | Default | Notes |
 | --- | --- | --- | --- |
 | `id` | string | generated | Stable line id. |
-| `type` | enum | required | Must match the requested dialogue type. |
+| `request` | enum | required | Must match the requested dialogue request. |
 | `text` | string | required unless `lines` is set | The response text. |
 | `lines` | array | required unless `text` is set | Alternate response texts. One is selected at random after this entry wins weighted selection. |
 | `option` | string or array | none | Restricts the line to option id(s). |
@@ -268,19 +273,28 @@ Example option and line for a player holding a sword:
     {
       "id": "ask_about_weapon",
       "label": "About my weapon",
-      "type": "question",
-      "player_items": ["#minecraft:swords"],
-      "player_item_slots": ["main_hand"],
+      "type": "dialogue_option",
+      "request": "question",
+      "player_items": [
+        "#minecraft:swords"
+      ],
+      "player_item_slots": [
+        "main_hand"
+      ],
       "order": 8
     }
   ],
   "lines": [
     {
       "id": "weapon_warning_1",
-      "type": "question",
+      "request": "question",
       "option": "ask_about_weapon",
-      "player_items": ["#minecraft:swords"],
-      "player_item_slots": ["main_hand"],
+      "player_items": [
+        "#minecraft:swords"
+      ],
+      "player_item_slots": [
+        "main_hand"
+      ],
       "text": "Careful where you point {held_item}.",
       "weight": 20
     }
@@ -347,8 +361,12 @@ Example reputation-gated line:
   "lines": [
     {
       "id": "my_pack.low_rep_warning",
-      "type": "small_talk",
-      "reputation_levels": ["hostile", "despised", "feared"],
+      "request": "question",
+      "reputation_levels": [
+        "hostile",
+        "despised",
+        "feared"
+      ],
       "text": "People here still remember what you cost us.",
       "weight": 20
     }
@@ -376,7 +394,9 @@ Messages are keyed text looked up by code:
       "id": "my_pack.bed_warning_farmer",
       "key": "sleep.broken_bed",
       "text": "That was my bed. The field remembers every footprint.",
-      "professions": ["farmer"],
+      "professions": [
+        "farmer"
+      ],
       "weight": 20
     }
   ]
@@ -409,15 +429,22 @@ Gift preference rules can set `response_key` to point at any message key. Those 
     {
       "id": "my_pack.opening_farmer_trusted",
       "text": "Good to see a steady face.",
-      "professions": ["farmer"],
-      "dispositions": ["friendly", "respectful"]
+      "professions": [
+        "farmer"
+      ],
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ]
     }
   ],
   "closings": [
     {
       "id": "my_pack.closing_farmer",
       "text": "Mind the rows on your way out.",
-      "professions": ["farmer"]
+      "professions": [
+        "farmer"
+      ]
     }
   ]
 }
@@ -438,7 +465,9 @@ For `messages`, `openings`, and `closings`, entries with a profession filter def
         "Fine. {payment_cost} {payment_items}, and we try peace again.",
         "That pays for peace today. Do not make me price it twice."
       ],
-      "outcomes": ["success"],
+      "outcomes": [
+        "success"
+      ],
       "weight": 10
     }
   ]
@@ -490,7 +519,7 @@ data/villagerretaliation/dialogue/en_us/my_pack_dialogue.json
   "lines": [
     {
       "id": "my_pack.question.weather.clear",
-      "type": "question",
+      "request": "question",
       "text": "Clear skies make honest roads."
     }
   ]
@@ -508,7 +537,7 @@ data/villagerretaliation/dialogue/fr_fr/my_pack_dialogue.json
   "lines": [
     {
       "id": "my_pack.question.weather.clear",
-      "type": "question",
+      "request": "question",
       "text": "Un ciel clair rend les routes honnetes."
     }
   ]

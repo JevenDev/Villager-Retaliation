@@ -66,79 +66,79 @@
   "lines": [
     {
       "id": "fletcher_chat_feathers",
-      "type": "small_talk",
+      "request": "question",
       "text": "Clean feathers and straight shafts make trouble keep its distance.",
       "weight": 30
     },
     {
       "id": "fletcher_question_patrols",
-      "type": "question",
+      "request": "question",
       "text": "A good bow hears trouble before the bell does.",
       "weight": 30
     },
     {
       "id": "fletcher_story_missed",
-      "type": "story",
+      "request": "story",
       "text": "Missed shots teach loudly, especially when everyone heard you brag first.",
       "weight": 26
     },
     {
       "id": "fletcher_new_greeting_table",
-      "type": "greeting",
+      "request": "greeting",
       "text": "Mind the fletching table. Straight arrows do not happen by accident.",
       "weight": 26
     },
     {
       "id": "fletcher_new_chat_feather",
-      "type": "small_talk",
+      "request": "question",
       "text": "A crooked feather makes a promise the arrow cannot keep.",
       "weight": 28
     },
     {
       "id": "fletcher_new_question_distance",
-      "type": "question",
+      "request": "question",
       "text": "Distance changes everything. Trouble looks smaller until it arrives.",
       "weight": 28
     },
     {
       "id": "fletcher_new_story_shaft",
-      "type": "story",
+      "request": "story",
       "text": "I once threw away a whole bundle because one shaft taught me suspicion.",
       "weight": 24
     },
     {
       "id": "fletcher_new_joke_flight",
-      "type": "joke",
+      "request": "joke",
       "text": "A fletcher joke should fly straight. Mine wobble honestly.",
       "weight": 18
     },
     {
       "id": "fletcher_new_insult_blunt",
-      "type": "insult",
+      "request": "insult",
       "text": "That was blunt enough to disappoint an arrow.",
       "weight": 18
     },
     {
       "id": "fletcher_new_chat_patrol",
-      "type": "small_talk",
+      "request": "question",
       "text": "The best warning is the one that reaches trouble before trouble reaches us.",
       "weight": 28
     },
     {
       "id": "fletcher_new_question_aim",
-      "type": "question",
+      "request": "question",
       "text": "Aim is not just the hand. It is patience deciding not to flinch.",
       "weight": 28
     },
     {
       "id": "fletcher_new_story_bell",
-      "type": "story",
+      "request": "story",
       "text": "There are nights when the bell rings and every arrow feels too few.",
       "weight": 24
     },
     {
       "id": "fletcher_new_hostile_warning",
-      "type": "insult",
+      "request": "insult",
       "text": "Keep testing patience and you will learn how warnings travel.",
       "dispositions": [
         "hostile",
@@ -148,7 +148,7 @@
     },
     {
       "id": "fletcher_cured_recognition_warm_1",
-      "type": "cured_recognition",
+      "request": "cured_recognition",
       "text": "I remember the cure flying true when everything else had gone crooked.",
       "weight": 30,
       "dispositions": [
@@ -158,7 +158,7 @@
     },
     {
       "id": "fletcher_cured_recognition_warm_2",
-      "type": "cured_recognition",
+      "request": "cured_recognition",
       "text": "You set me back on the string and did not let me snap.",
       "weight": 30,
       "dispositions": [
@@ -168,7 +168,7 @@
     },
     {
       "id": "fletcher_cured_recognition_confused_1",
-      "type": "cured_recognition",
+      "request": "cured_recognition",
       "text": "Your face lands near the target, but the rest of the memory wobbles.",
       "weight": 30,
       "dispositions": [
@@ -178,7 +178,7 @@
     },
     {
       "id": "fletcher_cured_recognition_confused_2",
-      "type": "cured_recognition",
+      "request": "cured_recognition",
       "text": "There was a hiss, a bite of gold, and then my thoughts found their fletching.",
       "weight": 30,
       "dispositions": [
@@ -188,7 +188,7 @@
     },
     {
       "id": "fletcher_cured_recognition_uneasy_1",
-      "type": "cured_recognition",
+      "request": "cured_recognition",
       "text": "I remember you. The arrow of it still shakes in the target.",
       "weight": 30,
       "dispositions": [
@@ -199,7 +199,7 @@
     },
     {
       "id": "fletcher_village_event_thunderstorm_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "thunderstorm"
       ],
@@ -209,7 +209,7 @@
     },
     {
       "id": "fletcher_village_event_thunderstorm_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "thunderstorm"
       ],
@@ -219,7 +219,7 @@
     },
     {
       "id": "fletcher_village_event_thunderstorm_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "thunderstorm"
       ],
@@ -229,7 +229,7 @@
     },
     {
       "id": "fletcher_village_event_thunderstorm_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "thunderstorm"
       ],
@@ -239,7 +239,7 @@
     },
     {
       "id": "fletcher_village_event_thunderstorm_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "thunderstorm"
       ],
@@ -249,7 +249,7 @@
     },
     {
       "id": "fletcher_village_event_fire_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "village_fire"
       ],
@@ -259,7 +259,7 @@
     },
     {
       "id": "fletcher_village_event_fire_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "village_fire"
       ],
@@ -269,7 +269,7 @@
     },
     {
       "id": "fletcher_village_event_fire_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "village_fire"
       ],
@@ -279,7 +279,7 @@
     },
     {
       "id": "fletcher_village_event_fire_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "village_fire"
       ],
@@ -289,7 +289,7 @@
     },
     {
       "id": "fletcher_village_event_fire_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "village_fire"
       ],
@@ -299,7 +299,7 @@
     },
     {
       "id": "fletcher_village_event_raid_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "raid",
         "player_defended_raid"
@@ -310,7 +310,7 @@
     },
     {
       "id": "fletcher_village_event_raid_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "raid",
         "player_defended_raid"
@@ -321,7 +321,7 @@
     },
     {
       "id": "fletcher_village_event_raid_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "raid",
         "player_defended_raid"
@@ -332,7 +332,7 @@
     },
     {
       "id": "fletcher_village_event_raid_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "raid",
         "player_defended_raid"
@@ -343,7 +343,7 @@
     },
     {
       "id": "fletcher_village_event_raid_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "raid",
         "player_defended_raid"
@@ -354,7 +354,7 @@
     },
     {
       "id": "fletcher_village_event_night_attack_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "night_attack"
       ],
@@ -364,7 +364,7 @@
     },
     {
       "id": "fletcher_village_event_night_attack_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "night_attack"
       ],
@@ -374,7 +374,7 @@
     },
     {
       "id": "fletcher_village_event_night_attack_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "night_attack"
       ],
@@ -384,7 +384,7 @@
     },
     {
       "id": "fletcher_village_event_night_attack_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "night_attack"
       ],
@@ -394,7 +394,7 @@
     },
     {
       "id": "fletcher_village_event_night_attack_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "night_attack"
       ],
@@ -404,7 +404,7 @@
     },
     {
       "id": "fletcher_village_event_sandstorm_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "sandstorm"
       ],
@@ -414,7 +414,7 @@
     },
     {
       "id": "fletcher_village_event_sandstorm_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "sandstorm"
       ],
@@ -424,7 +424,7 @@
     },
     {
       "id": "fletcher_village_event_sandstorm_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "sandstorm"
       ],
@@ -434,7 +434,7 @@
     },
     {
       "id": "fletcher_village_event_sandstorm_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "sandstorm"
       ],
@@ -444,7 +444,7 @@
     },
     {
       "id": "fletcher_village_event_sandstorm_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "sandstorm"
       ],
@@ -454,7 +454,7 @@
     },
     {
       "id": "fletcher_village_event_snowstorm_1",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "snowstorm"
       ],
@@ -464,7 +464,7 @@
     },
     {
       "id": "fletcher_village_event_snowstorm_2",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "snowstorm"
       ],
@@ -474,7 +474,7 @@
     },
     {
       "id": "fletcher_village_event_snowstorm_3",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "snowstorm"
       ],
@@ -484,7 +484,7 @@
     },
     {
       "id": "fletcher_village_event_snowstorm_4",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "snowstorm"
       ],
@@ -494,7 +494,7 @@
     },
     {
       "id": "fletcher_village_event_snowstorm_5",
-      "type": "village_event_report",
+      "request": "village_event_report",
       "event_tags": [
         "snowstorm"
       ],
