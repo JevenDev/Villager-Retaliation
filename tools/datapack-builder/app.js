@@ -262,6 +262,27 @@ const CURRENT_PACK_VERSION = PACK_VERSIONS[PACK_VERSIONS.length - 1].id;
 const PACK_VERSION_IDS = PACK_VERSIONS.map((version) => version.id);
 const PACK_VERSION_STORAGE_KEY = "pack_version";
 const PACK_VERSION_NAMESPACE = "villagerretaliation";
+const WIKI_PAGE_FILES = [
+  "Home.md",
+  "Pack-Development.md",
+  "Datapack-Generator.md",
+  "Pack-Format-Changes.md",
+  "JSON-Reference.md",
+  "Dialogue.md",
+  "Forced-Dialogue.md",
+  "Dialogue-Types.md",
+  "Event-Tags.md",
+  "Notifications.md",
+  "Notification-Triggers.md",
+  "Localization.md",
+  "Gifts.md",
+  "Pacification.md",
+  "Profession-Loot.md",
+  "Story-Discovery.md",
+  "Villager-Names.md",
+  "Resource-Pack-Models.md",
+  "Example-Packs.md"
+];
 
 const KIND_TOOLTIPS = {
   "dialogue.options": "Dialogue options add player choices to the villager talk menu. The option id is what matching lines use through option or option_ids.",
@@ -557,7 +578,16 @@ const els = {
   codePreview: document.querySelector(".code-preview"),
   copyButton: document.querySelector("#copy-file-button"),
   downloadButton: document.querySelector("#download-file-button"),
-  toast: document.querySelector("#toast")
+  toast: document.querySelector("#toast"),
+  wikiButton: document.querySelector("#wiki-button"),
+  wikiOverlay: document.querySelector("#wiki-overlay"),
+  wikiWindow: document.querySelector(".wiki-window"),
+  wikiTitlebar: document.querySelector("#wiki-titlebar"),
+  wikiVersion: document.querySelector("#wiki-version"),
+  wikiSearch: document.querySelector("#wiki-search"),
+  wikiCloseButton: document.querySelector("#wiki-close-button"),
+  wikiResults: document.querySelector("#wiki-results"),
+  wikiContent: document.querySelector("#wiki-content")
 };
 
 const PANEL_SIZE_STORAGE_KEY = "vr-datapack-builder-panel-sizes";
@@ -570,14 +600,33 @@ const PANEL_SIZE_VARS = {
 const PANEL_SIZE_LIMITS = {
   left: { min: 72, max: 430 },
   right: { min: 320, max: 820 },
-  checks: { min: 78, max: 360 },
-  files: { min: 120, max: 560 }
+  checks: { min: 48, max: 360 },
+  files: { min: 48, max: 560 }
 };
 const LEFT_PANEL_COMPACT_WIDTH = 230;
 const LEFT_PANEL_EXPANDED_SNAP_WIDTH = 286;
+const RIGHT_PANEL_TITLE_ONLY_HEIGHT = 48;
+const RIGHT_PANEL_EXPANDED_SNAP_HEIGHT = 120;
 const MIN_BUILDER_WIDTH = 360;
 const MIN_PREVIEW_HEIGHT = 180;
 let panelResizeState = null;
+const WIKI_STORAGE_KEY = "vr-datapack-builder-wiki";
+const WIKI_MIN_WIDTH = 300;
+const WIKI_MIN_HEIGHT = 310;
+const WIKI_DEFAULT_LAYOUT = { left: 104, top: 88, width: 760, height: 560 };
+let wikiPointerState = null;
+let wikiState = {
+  isOpen: false,
+  version: CURRENT_PACK_VERSION,
+  loadedVersion: "",
+  docs: [],
+  query: "",
+  selectedFile: "Home.md",
+  selectedSectionId: "",
+  results: [],
+  resultMode: "pages",
+  status: ""
+};
 
 function createInitialState() {
   return {
@@ -681,9 +730,12 @@ function applyStoredPanelSizes() {
     if (PANEL_SIZE_VARS[target] && Number.isFinite(number)) {
       const clamped = clampPanelSize(target, number);
       document.documentElement.style.setProperty(PANEL_SIZE_VARS[target], `${Math.round(clamped)}px`);
+      updatePanelSnapMode(target, clamped);
     }
   }
   updateLeftPanelMode(Number(sizes.left));
+  updatePanelSnapMode("checks", Number(sizes.checks));
+  updatePanelSnapMode("files", Number(sizes.files));
 }
 
 function savePanelSize(target, value) {
@@ -693,6 +745,7 @@ function savePanelSize(target, value) {
   sizes[target] = Math.round(clamped);
   writePanelSizes(sizes);
   if (target === "left") updateLeftPanelMode(clamped);
+  updatePanelSnapMode(target, clamped);
 }
 
 function resetPanelSize(target) {
@@ -705,9 +758,456 @@ function resetPanelSize(target) {
   delete sizes[target];
   writePanelSizes(sizes);
   if (target === "left") updateLeftPanelMode();
+  updatePanelSnapMode(target);
   if (hadInlineSize || hadStoredSize) {
     showToast("Panel size reset.");
   }
+}
+
+function readWikiLayout() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(WIKI_STORAGE_KEY) || "{}") || {};
+    return {
+      left: Number.isFinite(Number(stored.left)) ? Number(stored.left) : WIKI_DEFAULT_LAYOUT.left,
+      top: Number.isFinite(Number(stored.top)) ? Number(stored.top) : WIKI_DEFAULT_LAYOUT.top,
+      width: Number.isFinite(Number(stored.width)) ? Number(stored.width) : WIKI_DEFAULT_LAYOUT.width,
+      height: Number.isFinite(Number(stored.height)) ? Number(stored.height) : WIKI_DEFAULT_LAYOUT.height
+    };
+  } catch {
+    return { ...WIKI_DEFAULT_LAYOUT };
+  }
+}
+
+function writeWikiLayout(layout) {
+  try {
+    localStorage.setItem(WIKI_STORAGE_KEY, JSON.stringify(layout));
+  } catch {
+    // The wiki remains movable and resizable for this session if storage is unavailable.
+  }
+}
+
+function clampWikiLayout(layout) {
+  const margin = 10;
+  const maxWidth = Math.max(WIKI_MIN_WIDTH, window.innerWidth - margin * 2);
+  const maxHeight = Math.max(WIKI_MIN_HEIGHT, window.innerHeight - margin * 2);
+  const width = clamp(Math.round(layout.width), WIKI_MIN_WIDTH, maxWidth);
+  const height = clamp(Math.round(layout.height), WIKI_MIN_HEIGHT, maxHeight);
+  const left = clamp(Math.round(layout.left), margin, Math.max(margin, window.innerWidth - width - margin));
+  const top = clamp(Math.round(layout.top), margin, Math.max(margin, window.innerHeight - height - margin));
+  return { left, top, width, height };
+}
+
+function applyWikiLayout(layout = readWikiLayout()) {
+  if (!els.wikiWindow) return;
+  const clamped = clampWikiLayout(layout);
+  els.wikiWindow.style.left = `${clamped.left}px`;
+  els.wikiWindow.style.top = `${clamped.top}px`;
+  els.wikiWindow.style.width = `${clamped.width}px`;
+  els.wikiWindow.style.height = `${clamped.height}px`;
+  writeWikiLayout(clamped);
+}
+
+function setupWikiChrome() {
+  if (!els.wikiVersion) return;
+  els.wikiVersion.innerHTML = PACK_VERSIONS
+    .map((version) => `<option value="${escapeHtml(version.id)}">${escapeHtml(version.label)}</option>`)
+    .join("");
+  const stored = readWikiLayout();
+  wikiState.version = PACK_VERSION_IDS.includes(state.meta.packVersion) ? state.meta.packVersion : CURRENT_PACK_VERSION;
+  els.wikiVersion.value = wikiState.version;
+  applyWikiLayout(stored);
+}
+
+function openWiki() {
+  wikiState.isOpen = true;
+  wikiState.version = PACK_VERSION_IDS.includes(els.wikiVersion?.value) ? els.wikiVersion.value : state.meta.packVersion;
+  if (!PACK_VERSION_IDS.includes(wikiState.version)) wikiState.version = CURRENT_PACK_VERSION;
+  els.wikiVersion.value = wikiState.version;
+  els.wikiOverlay.classList.add("is-open");
+  els.wikiOverlay.setAttribute("aria-hidden", "false");
+  applyWikiLayout();
+  renderWiki();
+  ensureWikiLoaded(wikiState.version);
+  window.setTimeout(() => els.wikiSearch?.focus(), 0);
+}
+
+function closeWiki() {
+  wikiState.isOpen = false;
+  els.wikiOverlay.classList.remove("is-open");
+  els.wikiOverlay.setAttribute("aria-hidden", "true");
+}
+
+function toggleWiki() {
+  if (wikiState.isOpen) {
+    closeWiki();
+  } else {
+    openWiki();
+  }
+}
+
+async function ensureWikiLoaded(version) {
+  if (wikiState.loadedVersion === version && wikiState.docs.length > 0) return;
+  wikiState.status = "Loading wiki...";
+  wikiState.docs = [];
+  wikiState.loadedVersion = "";
+  renderWiki();
+  try {
+    const snapshot = window.VR_WIKI_SNAPSHOT?.[version];
+    const docs = snapshot
+      ? WIKI_PAGE_FILES.map((file) => {
+        if (!Object.hasOwn(snapshot, file)) throw new Error(`Missing ${file}`);
+        return buildWikiDoc(file, snapshot[file]);
+      })
+      : await Promise.all(WIKI_PAGE_FILES.map(async (file) => {
+        const response = await fetch(`./wiki/${encodeURIComponent(version)}/${file}`);
+        if (!response.ok) throw new Error(`Missing ${file}`);
+        const markdown = await response.text();
+        return buildWikiDoc(file, markdown);
+      }));
+    wikiState.docs = docs;
+    wikiState.loadedVersion = version;
+    wikiState.status = "";
+    if (!docs.some((doc) => doc.file === wikiState.selectedFile)) {
+      wikiState.selectedFile = docs[0]?.file || "Home.md";
+      wikiState.selectedSectionId = "";
+    }
+  } catch (error) {
+    wikiState.status = `Wiki docs for ${version} could not be loaded.`;
+    wikiState.docs = [];
+    wikiState.loadedVersion = "";
+  }
+  renderWiki();
+}
+
+function buildWikiDoc(file, markdown) {
+  const titleMatch = markdown.match(/^#\s+(.+)$/m);
+  const title = titleMatch ? titleMatch[1].trim() : file.replace(/\.md$/i, "").replace(/-/g, " ");
+  return {
+    file,
+    title,
+    markdown,
+    text: markdownToPlainText(markdown),
+    sections: wikiSections(file, markdown, title)
+  };
+}
+
+function wikiSections(file, markdown, pageTitle) {
+  const lines = markdown.split(/\r?\n/);
+  const sections = [];
+  let current = {
+    title: pageTitle,
+    level: 1,
+    lines: [],
+    id: `${wikiFileSlug(file)}-0`,
+    file
+  };
+  let index = 0;
+  for (const line of lines) {
+    const heading = line.match(/^(#{1,3})\s+(.+)$/);
+    if (heading) {
+      if (current.lines.some((entry) => entry.trim())) {
+        current.text = markdownToPlainText(current.lines.join("\n"));
+        sections.push(current);
+      }
+      index += 1;
+      current = {
+        title: heading[2].trim(),
+        level: heading[1].length,
+        lines: [line],
+        id: `${wikiFileSlug(file)}-${index}`,
+        file
+      };
+      continue;
+    }
+    current.lines.push(line);
+  }
+  if (current.lines.some((entry) => entry.trim())) {
+    current.text = markdownToPlainText(current.lines.join("\n"));
+    sections.push(current);
+  }
+  return sections;
+}
+
+function wikiFileSlug(file) {
+  return file.toLowerCase().replace(/\.md$/i, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+function markdownToPlainText(markdown) {
+  return String(markdown || "")
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1 $2")
+    .replace(/[#>*_|-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function normalizeSearchText(value) {
+  return String(value || "").toLowerCase().replace(/[_-]+/g, " ").replace(/[^a-z0-9.:#/\s]+/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function searchWiki() {
+  const query = normalizeSearchText(wikiState.query);
+  if (!query) {
+    wikiState.resultMode = "pages";
+    wikiState.results = wikiState.docs.map((doc) => ({
+      type: "page",
+      file: doc.file,
+      title: doc.title,
+      text: `${doc.sections.length} sections`
+    }));
+    return;
+  }
+
+  const phraseMatches = [];
+  for (const doc of wikiState.docs) {
+    for (const section of doc.sections) {
+      const haystack = normalizeSearchText(`${doc.title} ${section.title} ${section.text}`);
+      if (haystack.includes(query)) {
+        phraseMatches.push({ type: "section", file: doc.file, sectionId: section.id, title: section.title, pageTitle: doc.title, text: sectionSnippet(section.text, query), score: 3 });
+      }
+    }
+  }
+
+  if (phraseMatches.length > 0) {
+    wikiState.resultMode = "sections";
+    wikiState.results = phraseMatches.slice(0, 80);
+    return;
+  }
+
+  const tokens = query.split(" ").filter((token) => token.length > 1);
+  const keywordMatches = [];
+  for (const doc of wikiState.docs) {
+    for (const section of doc.sections) {
+      const haystack = normalizeSearchText(`${doc.title} ${section.title} ${section.text}`);
+      const score = tokens.reduce((sum, token) => sum + (haystack.includes(token) ? 1 : 0), 0);
+      if (score > 0) {
+        keywordMatches.push({ type: "keyword", file: doc.file, sectionId: section.id, title: section.title, pageTitle: doc.title, text: sectionSnippet(section.text, tokens.find((token) => haystack.includes(token)) || query), score });
+      }
+    }
+  }
+  wikiState.resultMode = "keywords";
+  wikiState.results = keywordMatches.sort((a, b) => b.score - a.score || a.pageTitle.localeCompare(b.pageTitle)).slice(0, 80);
+}
+
+function sectionSnippet(text, query) {
+  const source = String(text || "").replace(/\s+/g, " ").trim();
+  if (!source) return "";
+  const lower = source.toLowerCase();
+  const needle = String(query || "").toLowerCase().split(" ")[0];
+  const index = needle ? lower.indexOf(needle) : -1;
+  const start = index >= 0 ? Math.max(0, index - 58) : 0;
+  const snippet = source.slice(start, start + 150);
+  return `${start > 0 ? "... " : ""}${snippet}${start + 150 < source.length ? " ..." : ""}`;
+}
+
+function renderWiki() {
+  if (!els.wikiResults || !els.wikiContent) return;
+  searchWiki();
+  renderWikiResults();
+  renderWikiContent();
+  renderIcons();
+}
+
+function renderWikiResults() {
+  if (wikiState.status) {
+    els.wikiResults.innerHTML = `<div class="wiki-status">${escapeHtml(wikiState.status)}</div>`;
+    return;
+  }
+  const label = wikiState.resultMode === "sections"
+    ? "Section matches"
+    : wikiState.resultMode === "keywords"
+      ? "Keyword matches"
+      : "Pages";
+  els.wikiResults.innerHTML = `
+    <div class="wiki-result-label">${escapeHtml(label)}</div>
+    ${wikiState.results.length === 0 ? `<div class="wiki-status">No matching wiki entries.</div>` : wikiState.results.map((result) => {
+      const isActive = result.file === wikiState.selectedFile && (!result.sectionId || result.sectionId === wikiState.selectedSectionId);
+      const sectionLabel = result.pageTitle && result.pageTitle !== result.title ? `${result.pageTitle} / ${result.title}` : result.title;
+      return `
+        <button class="wiki-result ${isActive ? "is-active" : ""} ${result.type !== "page" ? "is-section-match" : ""}" type="button" data-file="${escapeHtml(result.file)}" data-section="${escapeHtml(result.sectionId || "")}">
+          <span>${renderWikiInline(sectionLabel, wikiState.query)}</span>
+          <small>${renderWikiInline(result.text || result.file, wikiState.query)}</small>
+        </button>
+      `;
+    }).join("")}
+  `;
+}
+
+function renderWikiContent() {
+  const doc = wikiState.docs.find((candidate) => candidate.file === wikiState.selectedFile) || wikiState.docs[0];
+  if (!doc) {
+    els.wikiContent.innerHTML = wikiState.status ? "" : `<div class="empty-state">Open a version to load the wiki.</div>`;
+    return;
+  }
+  els.wikiContent.innerHTML = markdownToWikiHtml(doc.markdown, doc.file, wikiState.query, new Set(wikiState.results.map((result) => result.sectionId).filter(Boolean)));
+  if (wikiState.selectedSectionId) {
+    window.requestAnimationFrame(() => {
+      els.wikiContent.querySelector(`#${CSS.escape(wikiState.selectedSectionId)}`)?.scrollIntoView({ block: "start" });
+    });
+  }
+}
+
+function markdownToWikiHtml(markdown, file, query, highlightedSectionIds) {
+  const lines = String(markdown || "").split(/\r?\n/);
+  let html = "";
+  let inCode = false;
+  let codeLines = [];
+  let inList = false;
+  let listTag = "ul";
+  let inTable = false;
+  let tableRows = [];
+  let sectionIndex = 0;
+  const closeList = () => {
+    if (inList) {
+      html += `</${listTag}>`;
+      inList = false;
+      listTag = "ul";
+    }
+  };
+  const closeTable = () => {
+    if (!inTable) return;
+    html += renderWikiTable(tableRows, query);
+    tableRows = [];
+    inTable = false;
+  };
+
+  for (const line of lines) {
+    if (line.startsWith("```")) {
+      closeList();
+      closeTable();
+      if (inCode) {
+        html += `<pre><code>${escapeHtml(codeLines.join("\n"))}</code></pre>`;
+        codeLines = [];
+        inCode = false;
+      } else {
+        inCode = true;
+      }
+      continue;
+    }
+    if (inCode) {
+      codeLines.push(line);
+      continue;
+    }
+
+    const heading = line.match(/^(#{1,4})\s+(.+)$/);
+    if (heading) {
+      closeList();
+      closeTable();
+      sectionIndex += 1;
+      const level = Math.min(4, heading[1].length);
+      const id = `${wikiFileSlug(file)}-${sectionIndex}`;
+      const className = highlightedSectionIds.has(id) ? " class=\"wiki-hit-section\"" : "";
+      html += `<h${level} id="${escapeHtml(id)}"${className}>${renderWikiInline(heading[2].trim(), query)}</h${level}>`;
+      continue;
+    }
+
+    const detailsLine = line.trim();
+    if (detailsLine === "<details>" || detailsLine === "</details>") {
+      closeList();
+      closeTable();
+      html += detailsLine;
+      continue;
+    }
+
+    const summary = detailsLine.match(/^<summary><strong>(.+)<\/strong><\/summary>$/);
+    if (summary) {
+      closeList();
+      closeTable();
+      html += `<summary><strong>${renderWikiInline(summary[1], query)}</strong></summary>`;
+      continue;
+    }
+
+    if (/^\|.+\|$/.test(line.trim())) {
+      closeList();
+      inTable = true;
+      tableRows.push(line);
+      continue;
+    }
+    closeTable();
+
+    const listItem = line.match(/^\s*-\s+(.+)$/);
+    if (listItem) {
+      if (!inList || listTag !== "ul") {
+        closeList();
+        html += "<ul>";
+        listTag = "ul";
+        inList = true;
+      }
+      html += `<li>${renderWikiInline(listItem[1], query)}</li>`;
+      continue;
+    }
+
+    const orderedListItem = line.match(/^\s*\d+\.\s+(.+)$/);
+    if (orderedListItem) {
+      if (!inList || listTag !== "ol") {
+        closeList();
+        html += "<ol>";
+        listTag = "ol";
+        inList = true;
+      }
+      html += `<li>${renderWikiInline(orderedListItem[1], query)}</li>`;
+      continue;
+    }
+
+    if (!line.trim()) {
+      closeList();
+      html += "";
+      continue;
+    }
+
+    closeList();
+    html += `<p>${renderWikiInline(line, query)}</p>`;
+  }
+  closeList();
+  closeTable();
+  if (inCode) {
+    html += `<pre><code>${escapeHtml(codeLines.join("\n"))}</code></pre>`;
+  }
+  return html;
+}
+
+function renderWikiTable(rows, query) {
+  const filteredRows = rows.filter((row) => !/^\|\s*-+/.test(row));
+  if (filteredRows.length === 0) return "";
+  return `<table>${filteredRows.map((row, index) => {
+    const cells = row.trim().replace(/^\||\|$/g, "").split("|").map((cell) => cell.trim());
+    const tag = index === 0 ? "th" : "td";
+    return `<tr>${cells.map((cell) => `<${tag}>${renderWikiInline(cell, query)}</${tag}>`).join("")}</tr>`;
+  }).join("")}</table>`;
+}
+
+function renderWikiInline(text, query) {
+  const placeholders = [];
+  const hold = (value) => {
+    const key = `@@WIKI_PLACEHOLDER_${placeholders.length}@@`;
+    placeholders.push(value);
+    return key;
+  };
+  let output = escapeHtml(text);
+  output = output.replace(/`([^`]+)`/g, (_, code) => hold(`<code>${code}</code>`));
+  output = output.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label, href) => {
+    const safeHref = String(href || "");
+    if (/\.md(?:#.*)?$/i.test(safeHref)) {
+      const file = safeHref.split("#")[0].split("/").pop();
+      return hold(`<a href="#" data-wiki-link="${escapeHtml(file)}">${label}</a>`);
+    }
+    return hold(`<a href="${escapeHtml(safeHref)}" target="_blank" rel="noopener noreferrer">${label}</a>`);
+  });
+  output = highlightWikiText(output, query);
+  output = output.replace(/@@WIKI_PLACEHOLDER_(\d+)@@/g, (_, index) => placeholders[Number(index)] || "");
+  return output;
+}
+
+function highlightWikiText(value, query) {
+  const terms = normalizeSearchText(query).split(" ").filter((term) => term.length > 1).slice(0, 6);
+  if (terms.length === 0) return value;
+  let output = value;
+  for (const term of terms) {
+    const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    output = output.replace(new RegExp(`(${escapedTerm})`, "gi"), "<mark>$1</mark>");
+  }
+  return output;
 }
 
 function updateLeftPanelMode(width = undefined) {
@@ -715,6 +1215,31 @@ function updateLeftPanelMode(width = undefined) {
     ? width
     : els.leftRail.getBoundingClientRect().width;
   els.leftRail.classList.toggle("is-compact", showLeftPanel && measuredWidth > 0 && measuredWidth <= LEFT_PANEL_COMPACT_WIDTH);
+}
+
+function updatePanelSnapMode(target, size = undefined) {
+  const panel = {
+    checks: els.checks?.closest(".checks-panel"),
+    files: els.fileTree?.closest(".files-panel")
+  }[target];
+  if (!panel) return;
+  const measuredSize = Number.isFinite(size)
+    ? size
+    : panel.getBoundingClientRect().height;
+  panel.classList.toggle("is-title-only", measuredSize > 0 && measuredSize <= RIGHT_PANEL_TITLE_ONLY_HEIGHT);
+}
+
+function toggleRightPanelSnap(target) {
+  const panel = {
+    checks: els.checks?.closest(".checks-panel"),
+    files: els.fileTree?.closest(".files-panel")
+  }[target];
+  if (!panel) return;
+  if (panel.classList.contains("is-title-only")) {
+    resetPanelSize(target);
+  } else {
+    savePanelSize(target, RIGHT_PANEL_TITLE_ONLY_HEIGHT);
+  }
 }
 
 function clamp(value, min, max) {
@@ -792,6 +1317,14 @@ function panelResizeMove(event) {
       next = Math.max(next, LEFT_PANEL_EXPANDED_SNAP_WIDTH);
     }
   }
+  if (target === "checks" || target === "files") {
+    const startedTitleOnly = panelResizeState[target] <= RIGHT_PANEL_TITLE_ONLY_HEIGHT;
+    if (next <= RIGHT_PANEL_EXPANDED_SNAP_HEIGHT) {
+      next = RIGHT_PANEL_TITLE_ONLY_HEIGHT;
+    } else if (startedTitleOnly) {
+      next = Math.max(next, RIGHT_PANEL_EXPANDED_SNAP_HEIGHT);
+    }
+  }
   savePanelSize(target, next);
 }
 
@@ -830,6 +1363,9 @@ function panelResizeKeydown(event) {
   } else if (target === "left" && current <= LEFT_PANEL_COMPACT_WIDTH && direction > 0) {
     next = LEFT_PANEL_EXPANDED_SNAP_WIDTH;
   }
+  if ((target === "checks" || target === "files") && next <= RIGHT_PANEL_EXPANDED_SNAP_HEIGHT) {
+    next = direction < 0 ? RIGHT_PANEL_TITLE_ONLY_HEIGHT : RIGHT_PANEL_EXPANDED_SNAP_HEIGHT;
+  }
   savePanelSize(target, next);
 }
 
@@ -848,6 +1384,57 @@ function keepPanelSizesInRange() {
       savePanelSize(target, Number(sizes[target]));
     }
   }
+}
+
+function wikiPointerStart(event) {
+  if (!wikiState.isOpen || event.button !== 0) return;
+  const resizeHandle = event.target.closest("[data-wiki-resize]");
+  const canDrag = event.target.closest("#wiki-titlebar") && !event.target.closest("button, select, input, a");
+  if (!resizeHandle && !canDrag) return;
+  event.preventDefault();
+  const rect = els.wikiWindow.getBoundingClientRect();
+  wikiPointerState = {
+    mode: resizeHandle ? "resize" : "move",
+    edge: resizeHandle?.dataset.wikiResize || "",
+    startX: event.clientX,
+    startY: event.clientY,
+    left: rect.left,
+    top: rect.top,
+    width: rect.width,
+    height: rect.height
+  };
+  els.wikiWindow.classList.add("is-moving");
+  document.body.classList.add("is-wiki-moving");
+  document.addEventListener("pointermove", wikiPointerMove);
+  document.addEventListener("pointerup", wikiPointerEnd, { once: true });
+}
+
+function wikiPointerMove(event) {
+  if (!wikiPointerState) return;
+  const dx = event.clientX - wikiPointerState.startX;
+  const dy = event.clientY - wikiPointerState.startY;
+  let next = {
+    left: wikiPointerState.left,
+    top: wikiPointerState.top,
+    width: wikiPointerState.width,
+    height: wikiPointerState.height
+  };
+
+  if (wikiPointerState.mode === "move") {
+    next.left += dx;
+    next.top += dy;
+  } else {
+    if (wikiPointerState.edge === "right" || wikiPointerState.edge === "corner") next.width += dx;
+    if (wikiPointerState.edge === "bottom" || wikiPointerState.edge === "corner") next.height += dy;
+  }
+  applyWikiLayout(next);
+}
+
+function wikiPointerEnd() {
+  wikiPointerState = null;
+  els.wikiWindow.classList.remove("is-moving");
+  document.body.classList.remove("is-wiki-moving");
+  document.removeEventListener("pointermove", wikiPointerMove);
 }
 
 const MINECRAFT_COLORS = {
@@ -3443,10 +4030,13 @@ function saveStoryEntry(event) {
 }
 
 function upsertEntry(section, kind, entry) {
+  const previousSelectedPath = selectedPath;
+  let sourcePath = "";
   if (editing && editing.section === section && editing.kind === kind) {
     const existing = state[section][kind][editing.index];
     if (existing?.__sourcePath) {
       entry.__sourcePath = existing.__sourcePath;
+      sourcePath = existing.__sourcePath;
     }
     state[section][kind][editing.index] = entry;
     showToast("Entry updated.");
@@ -3455,8 +4045,15 @@ function upsertEntry(section, kind, entry) {
     showToast("Entry added.");
   }
   editing = null;
-  selectedPath = inferSelectedPath(section);
+  selectedPath = selectedPathAfterEntrySave(section, previousSelectedPath, sourcePath);
   render();
+}
+
+function selectedPathAfterEntrySave(section, previousSelectedPath, sourcePath = "") {
+  const files = generatedFiles();
+  if (previousSelectedPath && Object.hasOwn(files, previousSelectedPath)) return previousSelectedPath;
+  if (sourcePath && Object.hasOwn(files, sourcePath)) return sourcePath;
+  return inferSelectedPath(section);
 }
 
 function inferSelectedPath(section) {
@@ -4732,6 +5329,12 @@ els.leftRail.addEventListener("keydown", (event) => {
   renderIcons();
 });
 els.rightRail.addEventListener("keydown", (event) => {
+  const title = event.target.closest("[data-panel-snap-target]");
+  if (title && (event.key === "Enter" || event.key === " ")) {
+    event.preventDefault();
+    toggleRightPanelSnap(title.dataset.panelSnapTarget);
+    return;
+  }
   if (showRightPanel || (event.key !== "Enter" && event.key !== " ")) return;
   event.preventDefault();
   showRightPanel = true;
@@ -4743,7 +5346,43 @@ els.wrapPreviewButton.addEventListener("click", () => {
   renderPreview();
   renderIcons();
 });
+els.wikiButton.addEventListener("click", openWiki);
+els.wikiCloseButton.addEventListener("click", closeWiki);
+els.wikiVersion.addEventListener("change", () => {
+  wikiState.version = els.wikiVersion.value;
+  wikiState.selectedFile = "Home.md";
+  wikiState.selectedSectionId = "";
+  ensureWikiLoaded(wikiState.version);
+});
+els.wikiSearch.addEventListener("input", () => {
+  wikiState.query = els.wikiSearch.value;
+  wikiState.selectedSectionId = "";
+  renderWiki();
+});
+els.wikiResults.addEventListener("click", (event) => {
+  const result = event.target.closest(".wiki-result");
+  if (!result) return;
+  wikiState.selectedFile = result.dataset.file || "Home.md";
+  wikiState.selectedSectionId = result.dataset.section || "";
+  renderWiki();
+});
+els.wikiContent.addEventListener("click", (event) => {
+  const link = event.target.closest("[data-wiki-link]");
+  if (!link) return;
+  event.preventDefault();
+  const file = link.dataset.wikiLink;
+  if (!wikiState.docs.some((doc) => doc.file === file)) return;
+  wikiState.selectedFile = file;
+  wikiState.selectedSectionId = "";
+  renderWiki();
+});
+els.rightRail.addEventListener("click", (event) => {
+  const title = event.target.closest("[data-panel-snap-target]");
+  if (!title) return;
+  toggleRightPanelSnap(title.dataset.panelSnapTarget);
+});
 document.addEventListener("pointerdown", panelResizeStart);
+document.addEventListener("pointerdown", wikiPointerStart);
 document.addEventListener("auxclick", panelResizeAuxClick);
 document.addEventListener("keydown", panelResizeKeydown);
 els.preview.addEventListener("input", () => {
@@ -4789,15 +5428,25 @@ document.addEventListener("focusout", (event) => {
   if (target) hideTooltip(target);
 });
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape") hideTooltip();
+  if (event.altKey && !event.ctrlKey && !event.metaKey && event.key.toLowerCase() === "q") {
+    event.preventDefault();
+    toggleWiki();
+    return;
+  }
+  if (event.key === "Escape") {
+    hideTooltip();
+    if (wikiState.isOpen) closeWiki();
+  }
 });
 document.addEventListener("scroll", positionTooltip, true);
 window.addEventListener("resize", () => {
   keepPanelSizesInRange();
+  if (wikiState.isOpen) applyWikiLayout();
   positionTooltip();
 });
 els.copyButton.addEventListener("click", copyCurrentFile);
 els.downloadButton.addEventListener("click", downloadCurrentFile);
 
+setupWikiChrome();
 applyStoredPanelSizes();
 render();

@@ -15,10 +15,10 @@
         </div>
 
         <div class="toolbar" aria-label="Datapack actions">
-          <a class="button button-secondary" href="https://github.com/JevenDev/Villager-Retaliation/blob/1.21.1/wiki/Home.md" target="_blank" rel="noopener noreferrer" title="Open the Villager Retaliation wiki on GitHub">
+          <button class="button button-secondary" id="wiki-button" type="button" title="Search the versioned builder wiki (Alt+Q)">
             <i data-lucide="book-open" class="button-icon" aria-hidden="true"></i>
             Wiki
-          </a>
+          </button>
           <a class="button button-secondary" href="https://github.com/JevenDev/Villager-Retaliation" target="_blank" rel="noopener noreferrer" title="Open the Villager Retaliation repository on GitHub">
             <i data-lucide="git-branch" class="button-icon" aria-hidden="true"></i>
             Repo
@@ -130,7 +130,7 @@
           </button>
 
           <section class="panel checks-panel">
-            <div class="panel-title">
+            <div class="panel-title panel-title-snap" data-panel-snap-target="checks" role="button" tabindex="0" title="Collapse or restore checks panel">
               <div class="panel-title-main">
                 <i data-lucide="shield-check" class="section-icon" aria-hidden="true"></i>
                 <h2>Checks</h2>
@@ -143,7 +143,7 @@
           <div class="panel-resizer panel-resizer-row" data-resize-target="checks" role="separator" tabindex="0" aria-orientation="horizontal" aria-label="Resize checks panel" title="Drag to resize. Middle-click to reset."></div>
 
           <section class="panel files-panel">
-            <div class="panel-title">
+            <div class="panel-title panel-title-snap" data-panel-snap-target="files" role="button" tabindex="0" title="Collapse or restore files panel">
               <div class="panel-title-main">
                 <i data-lucide="files" class="section-icon" aria-hidden="true"></i>
                 <h2>Files</h2>
@@ -181,7 +181,34 @@
 
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
+    <div id="wiki-overlay" class="wiki-overlay" aria-hidden="true">
+      <section class="wiki-window" role="dialog" aria-label="Versioned wiki search">
+        <div class="wiki-titlebar" id="wiki-titlebar">
+          <div class="wiki-title">
+            <i data-lucide="book-open" class="button-icon" aria-hidden="true"></i>
+            <span>Wiki</span>
+          </div>
+          <select id="wiki-version" aria-label="Wiki version"></select>
+          <button class="icon-button" id="wiki-close-button" type="button" title="Close wiki">
+            <i data-lucide="x" class="button-icon" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div class="wiki-search-row">
+          <i data-lucide="search" class="inline-icon" aria-hidden="true"></i>
+          <input id="wiki-search" type="search" autocomplete="off" spellcheck="false" placeholder="Search wiki sections" aria-label="Search wiki">
+        </div>
+        <div class="wiki-body">
+          <nav class="wiki-results" id="wiki-results" aria-label="Wiki search results"></nav>
+          <article class="wiki-content" id="wiki-content" tabindex="0"></article>
+        </div>
+        <div class="wiki-resize wiki-resize-right" data-wiki-resize="right" aria-hidden="true"></div>
+        <div class="wiki-resize wiki-resize-bottom" data-wiki-resize="bottom" aria-hidden="true"></div>
+        <div class="wiki-resize wiki-resize-corner" data-wiki-resize="corner" aria-hidden="true"></div>
+      </section>
+    </div>
+
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script src="./wiki-snapshot.js"></script>
     <script src="./app.js"></script>
   </body>
 </html>
