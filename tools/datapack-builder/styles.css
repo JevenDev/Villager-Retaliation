@@ -1049,6 +1049,36 @@ button:focus-visible,
   overflow: auto;
 }
 
+.entry-list-controls {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 7px;
+  padding: 7px;
+  border: 1px solid var(--line-soft);
+  border-radius: 4px;
+  background: var(--panel-2);
+}
+
+.entry-list-controls:last-child {
+  position: sticky;
+  top: auto;
+  bottom: 0;
+}
+
+.entry-list-controls span {
+  min-width: 0;
+  color: var(--muted);
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .entry-card {
   position: relative;
   padding: 10px;

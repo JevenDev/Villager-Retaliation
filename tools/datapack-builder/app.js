@@ -277,6 +277,7 @@ const PACK_VERSION_IDS = PACK_VERSIONS.map((version) => version.id);
 const PACK_VERSION_STORAGE_KEY = "pack_version";
 const PACK_VERSION_NAMESPACE = "villagerretaliation";
 const COLLAPSIBLE_TOGGLE_MIN_COUNT = 8;
+const ENTRY_PAGE_SIZE = 250;
 const WIKI_PAGE_FILES = [
   "Home.md",
   "Pack-Development.md",
@@ -567,6 +568,7 @@ let activeStoryKind = "structures";
 let editing = null;
 let selectedPath = "pack.mcmeta";
 let toastTimer = null;
+let outputRenderTimer = null;
 let showLeftPanel = true;
 let showRightPanel = true;
 let wrapPreviewLines = false;
@@ -578,6 +580,8 @@ let previewBeforeInputSnapshot = null;
 let previewHistoryPath = "";
 let isApplyingPreviewHistory = false;
 let fileTreeSignature = "";
+let currentViewSnapshotCache = null;
+let entryListPages = {};
 let entryDragState = null;
 let suppressEntryClickUntil = 0;
 let importDragDepth = 0;
@@ -2463,44 +2467,56 @@ function generatedFiles() {
 }
 
 function currentViewFiles() {
-  return withDraftState(() => generatedFiles());
+  return currentViewSnapshot().files;
 }
 
 function currentViewChecks() {
-  return withDraftState(() => validate());
+  return currentViewSnapshot().checks;
+}
+
+function invalidateCurrentViewSnapshot() {
+  currentViewSnapshotCache = null;
+}
+
+function currentViewSnapshot() {
+  if (!currentViewSnapshotCache) {
+    currentViewSnapshotCache = withDraftState(() => ({
+      files: generatedFiles(),
+      checks: validate()
+    }));
+  }
+  return currentViewSnapshotCache;
 }
 
 function withDraftState(callback) {
-  const draft = buildDraftState();
-  if (!draft) return callback();
-  const committedState = state;
-  state = draft;
+  const restoreDraft = applyTemporaryDraftEntry();
   try {
     return callback();
   } finally {
-    state = committedState;
+    restoreDraft();
   }
 }
 
-function buildDraftState() {
-  if (!entryFormDirty) return null;
+function applyTemporaryDraftEntry() {
+  const noop = () => {};
+  if (!entryFormDirty) return noop;
   const draft = readCurrentDraftEntry({ quiet: true });
-  if (!draft || !draft.entry) return null;
-  const draftState = structuredClone(state);
-  applyDraftEntry(draftState, draft);
-  return draftState;
-}
-
-function applyDraftEntry(targetState, draft) {
-  const collection = targetState[draft.section]?.[draft.kind];
-  if (!Array.isArray(collection)) return;
+  if (!draft || !draft.entry) return noop;
+  const collection = state[draft.section]?.[draft.kind];
+  if (!Array.isArray(collection)) return noop;
   if (editing && editing.section === draft.section && editing.kind === draft.kind) {
     const existing = collection[editing.index];
     if (existing?.__sourcePath && !draft.entry.__sourcePath) draft.entry.__sourcePath = existing.__sourcePath;
+    const previous = collection[editing.index];
     collection[editing.index] = draft.entry;
-    return;
+    return () => {
+      collection[editing.index] = previous;
+    };
   }
   collection.push(draft.entry);
+  return () => {
+    collection.pop();
+  };
 }
 
 function generatedDialogueFiles() {
@@ -3645,6 +3661,8 @@ function validate() {
 
 function render() {
   hideTooltip();
+  window.clearTimeout(outputRenderTimer);
+  invalidateCurrentViewSnapshot();
   renderWorkspaceChrome();
   renderTabs();
   renderPanel();
@@ -3657,6 +3675,21 @@ function render() {
   renderPreview();
   updateShortcutTooltips();
   renderIcons();
+}
+
+function renderOutputPanels() {
+  window.clearTimeout(outputRenderTimer);
+  renderFiles();
+  renderChecks();
+  renderPreview();
+}
+
+function scheduleOutputRender(delay = 140) {
+  window.clearTimeout(outputRenderTimer);
+  outputRenderTimer = window.setTimeout(() => {
+    invalidateCurrentViewSnapshot();
+    renderOutputPanels();
+  }, delay);
 }
 
 function renderWorkspaceChrome() {
@@ -4470,6 +4503,38 @@ function renderEntryTabs(kinds, activeKey, scope) {
   `;
 }
 
+function entryListPageKey(section, kind) {
+  return `${section}.${kind}`;
+}
+
+function pageForEntryList(section, kind, collection) {
+  const pageCount = Math.max(1, Math.ceil(collection.length / ENTRY_PAGE_SIZE));
+  const key = entryListPageKey(section, kind);
+  let page = Math.min(Math.max(entryListPages[key] || 0, 0), pageCount - 1);
+  if (editing?.section === section && editing.kind === kind) {
+    page = Math.min(Math.max(Math.floor(editing.index / ENTRY_PAGE_SIZE), 0), pageCount - 1);
+    entryListPages[key] = page;
+  }
+  return { key, page, pageCount };
+}
+
+function renderEntryListControls(section, kind, page, pageCount, collectionLength) {
+  if (pageCount <= 1) return "";
+  const first = page * ENTRY_PAGE_SIZE + 1;
+  const last = Math.min(collectionLength, (page + 1) * ENTRY_PAGE_SIZE);
+  return `
+    <div class="entry-list-controls">
+      <span>${first}-${last} of ${collectionLength}</span>
+      <button class="icon-button has-tooltip" type="button" data-action="entry-page" data-section="${section}" data-kind="${kind}" data-page="${page - 1}" ${page <= 0 ? "disabled" : ""} data-tooltip="Previous entries">
+        ${icon("chevron-left", "button-icon")}
+      </button>
+      <button class="icon-button has-tooltip" type="button" data-action="entry-page" data-section="${section}" data-kind="${kind}" data-page="${page + 1}" ${page >= pageCount - 1 ? "disabled" : ""} data-tooltip="Next entries">
+        ${icon("chevron-right", "button-icon")}
+      </button>
+    </div>
+  `;
+}
+
 function entrySaveAction(section) {
   return {
     dialogue: "save-dialogue-entry",
@@ -4485,19 +4550,24 @@ function renderEntryList(collection, kind, section) {
   if (collection.length === 0) {
     return `<div class="empty-state">No ${escapeHtml(humanize(kind).toLowerCase())} yet.</div>`;
   }
+  const { page, pageCount } = pageForEntryList(section, kind, collection);
+  const start = page * ENTRY_PAGE_SIZE;
+  const visibleEntries = collection.slice(start, start + ENTRY_PAGE_SIZE);
+  const controls = renderEntryListControls(section, kind, page, pageCount, collection.length);
   const sortable = collection.length > 1;
-  return collection
+  const entries = visibleEntries
     .map((entry, index) => {
-      const title = entry.id || entry.key || entry.trigger || entry.label || entry.text || entry.item || entry.name || `${humanize(kind)} ${index + 1}`;
+      const absoluteIndex = start + index;
+      const title = entry.id || entry.key || entry.trigger || entry.label || entry.text || entry.item || entry.name || `${humanize(kind)} ${absoluteIndex + 1}`;
       const detail = section === "dialogue" && (kind === "options" || kind === "lines")
         ? entry.request || ""
         : entry.request || entry.type || entry.reaction || entry.world_text_kind || entry.structure || entry.biome || entry.items?.join(", ") || "";
-      const active = editing && editing.section === section && editing.kind === kind && editing.index === index;
+      const active = editing && editing.section === section && editing.kind === kind && editing.index === absoluteIndex;
       const severity = entryIssueSeverity(section, kind, entry);
       const issueMessage = entryIssueMessage(section, kind, entry);
       const saveAction = active ? entrySaveAction(section) : "";
       return `
-        <article class="entry-card ${active ? "is-active" : ""} ${sortable ? "is-sortable" : ""} ${issueSeverityClass(severity)}" data-section="${section}" data-kind="${kind}" data-index="${index}" tabindex="0" role="button" aria-label="Edit ${escapeHtml(title)}" ${sortable ? `draggable="true"` : ""}>
+        <article class="entry-card ${active ? "is-active" : ""} ${sortable ? "is-sortable" : ""} ${issueSeverityClass(severity)}" data-section="${section}" data-kind="${kind}" data-index="${absoluteIndex}" tabindex="0" role="button" aria-label="Edit ${escapeHtml(title)}" ${sortable ? `draggable="true"` : ""}>
           <div class="entry-object-header">
             <span class="entry-object-title">
               ${icon("square-pen", "inline-icon")}
@@ -4520,6 +4590,7 @@ function renderEntryList(collection, kind, section) {
       `;
     })
     .join("");
+  return `${controls}${entries}${controls}`;
 }
 
 function renderDialogue() {
@@ -5973,6 +6044,7 @@ function downloadCurrentFile() {
 
 function applyPreviewEdit() {
   if (entryFormDirty) {
+    invalidateCurrentViewSnapshot();
     renderPreview();
     warnUnsavedEntry();
     return;
@@ -5982,6 +6054,7 @@ function applyPreviewEdit() {
   const applied = applyEditedFile(selectedPath, source);
   if (!applied) {
     previewEditError = { path: selectedPath };
+    invalidateCurrentViewSnapshot();
     els.codePreview.classList.add("is-invalid");
     els.preview.closest(".preview")?.classList.add("has-error");
     renderFiles();
@@ -5990,6 +6063,7 @@ function applyPreviewEdit() {
     return;
   }
   previewEditError = null;
+  invalidateCurrentViewSnapshot();
   els.codePreview.classList.remove("is-invalid");
   els.preview.closest(".preview")?.classList.remove("has-error");
   renderTabs();
@@ -6772,6 +6846,12 @@ els.panel.addEventListener("click", (event) => {
     return;
   }
   const action = actionButton.dataset.action;
+  if (action === "entry-page") {
+    const key = entryListPageKey(actionButton.dataset.section, actionButton.dataset.kind);
+    entryListPages[key] = Math.max(0, Number(actionButton.dataset.page) || 0);
+    renderPreservingEntryListScroll();
+    return;
+  }
   if (action === "insert-tag") {
     insertTag(actionButton.dataset.target, actionButton.dataset.value);
     return;
@@ -6891,6 +6971,7 @@ els.panel.addEventListener("submit", (event) => {
 });
 
 els.panel.addEventListener("input", (event) => {
+  invalidateCurrentViewSnapshot();
   if (event.target.closest(".entry-form")) {
     markEntryFormDirty();
   }
@@ -6902,12 +6983,11 @@ els.panel.addEventListener("input", (event) => {
   }
   if (activeSection === "overview") updateOverviewFromInput(event.target);
   updateSectionSettings(event.target);
-  renderFiles();
-  renderChecks();
-  renderPreview();
+  scheduleOutputRender();
 });
 
 els.panel.addEventListener("change", (event) => {
+  invalidateCurrentViewSnapshot();
   if (event.target.closest(".entry-form")) {
     markEntryFormDirty();
   }
@@ -6920,9 +7000,7 @@ els.panel.addEventListener("change", (event) => {
   if (event.target.matches("textarea")) {
     syncValueTags(event.target.closest(".field") || els.panel);
   }
-  renderFiles();
-  renderChecks();
-  renderPreview();
+  renderOutputPanels();
 });
 
 els.fileTree.addEventListener("click", (event) => {
@@ -6930,7 +7008,10 @@ els.fileTree.addEventListener("click", (event) => {
   if (!button) return;
   if (button.dataset.path !== selectedPath && !canLeaveEntryForm()) return;
   selectedPath = button.dataset.path;
-  if (previewEditError?.path !== selectedPath) previewEditError = null;
+  if (previewEditError?.path !== selectedPath) {
+    previewEditError = null;
+    invalidateCurrentViewSnapshot();
+  }
   renderFiles();
   renderChecks();
   renderPreview();
