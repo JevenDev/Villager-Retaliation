@@ -2054,8 +2054,8 @@ function entryIssueSeverity(section, kind, entry) {
     return issueSeverityFromEntries([entry], tests);
   }
   if (section === "forcedDialogue") {
-    const options = Array.isArray(entry.options) ? entry.options : [];
-    const actionableOptions = [...options, ...forcedLeaveOptions(entry)];
+    const options = isForcedDialogueOutput(entry) && Array.isArray(entry.options) ? entry.options : [];
+    const actionableOptions = isForcedDialogueOutput(entry) ? [...options, ...forcedLeaveOptions(entry)] : [];
     const payments = actionableOptions.map((option) => option.take_items || option.payment).filter((payment) => payment && typeof payment === "object" && !Array.isArray(payment));
     const stolenReturns = actionableOptions.map((option) => option.take_stolen_items || option.return_stolen_items).filter((stolenReturn) => stolenReturn && typeof stolenReturn === "object" && !Array.isArray(stolenReturn));
     const tests = [
@@ -2066,11 +2066,12 @@ function entryIssueSeverity(section, kind, entry) {
       { severity: "error", predicate: (item) => entryValues(item, ["loot_table", "loot_tables"]).some((value) => !isValidResourceLocation(value)) },
       { severity: "error", predicate: (item) => entryValues(item, ["target_entity_type", "target_entity_types", "target_entities"]).some((value) => !isValidResourceLocation(value)) },
       { severity: "error", predicate: (item) => firstBadNumber([item], ["priority", "reputation", "witness_radius", "min_recent_retaliations", "max_recent_retaliations"], (value, itemEntry, key) => {
-        if (key === "reputation") return Number.isFinite(value);
+        if (key === "reputation") return isForcedDialogueOutput(itemEntry) ? Number.isFinite(value) : true;
         if (key === "witness_radius") return value >= 1;
         return Number.isFinite(value) && value >= 0;
       }) !== "" },
-      { severity: "error", predicate: (item) => firstBadNumber([item.output || {}], ["radius"], (value) => value >= 1) !== "" },
+      { severity: "error", predicate: (item) => isChatOutputEntry(item) && firstBadNumber([item.output || {}], ["radius"], (value) => value >= 1) !== "" },
+      { severity: "warning", predicate: hasIgnoredForcedDialogueFields },
       { severity: "warning", predicate: (item) => firstBlankListValue([item], ["lines", "loot_tables", "witness_profession", "witness_professions", "professions", "target_entity_types", "target_entities"]) !== "" },
       { severity: "error", predicate: (item) => Number.isFinite(item.min_recent_retaliations) && Number.isFinite(item.max_recent_retaliations) && item.min_recent_retaliations > item.max_recent_retaliations },
       { severity: "error", predicate: () => options.some((option) => !option.id || !option.label) },
@@ -2282,21 +2283,28 @@ function entryIssueDetail(section, kind, entry) {
       const bad = firstInvalidListValue(entry, check.keys, check.valid);
       if (bad) return issueDetail(check.label, check.expected, bad.value, check.fieldId, check.severity || "error");
     }
-    const badNumber = firstBadNumberDetail([entry], [
+    const forcedNumberSpecs = [
       { key: "priority", label: "Priority", expected: "a number greater than or equal to 0", fieldId: "forced-priority", valid: (value) => Number.isFinite(value) && value >= 0 },
-      { key: "reputation", label: "Reputation change", expected: "a valid number, positive or negative", fieldId: "forced-reputation", valid: Number.isFinite },
       { key: "witness_radius", label: "Witness radius", expected: "a number greater than or equal to 1", fieldId: "forced-witness_radius", valid: (value) => value >= 1 },
       { key: "min_recent_retaliations", label: "Min prior retaliations", expected: "a number greater than or equal to 0", fieldId: "forced-min_recent_retaliations", valid: (value) => Number.isFinite(value) && value >= 0 },
       { key: "max_recent_retaliations", label: "Max prior retaliations", expected: "a number greater than or equal to 0", fieldId: "forced-max_recent_retaliations", valid: (value) => Number.isFinite(value) && value >= 0 }
-    ]);
+    ];
+    if (isForcedDialogueOutput(entry)) {
+      forcedNumberSpecs.splice(1, 0, { key: "reputation", label: "Reputation change", expected: "a valid number, positive or negative", fieldId: "forced-reputation", valid: Number.isFinite });
+    }
+    const badNumber = firstBadNumberDetail([entry], forcedNumberSpecs);
     if (badNumber) return issueDetail(badNumber.label, badNumber.expected, badNumber.value, badNumber.fieldId);
-    const badOutputNumber = firstBadNumberDetail([entry.output || {}], [
+    const badOutputNumber = isChatOutputEntry(entry) ? firstBadNumberDetail([entry.output || {}], [
       { key: "radius", label: "Output radius", expected: "a number greater than or equal to 1", fieldId: "forced-output_radius", valid: (value) => value >= 1 }
-    ]);
+    ]) : null;
     if (badOutputNumber) return issueDetail(badOutputNumber.label, badOutputNumber.expected, badOutputNumber.value, badOutputNumber.fieldId);
     if (Number.isFinite(entry.min_recent_retaliations) && Number.isFinite(entry.max_recent_retaliations) && entry.min_recent_retaliations > entry.max_recent_retaliations) {
       return issueDetail("Prior retaliation range", "minimum less than or equal to maximum", `${entry.min_recent_retaliations} > ${entry.max_recent_retaliations}`, ["forced-min_recent_retaliations", "forced-max_recent_retaliations"]);
     }
+    if (hasIgnoredForcedDialogueFields(entry)) {
+      return issueDetail("Output mode", "chat entries use trigger, filters, line, chance, line-of-sight, and output radius", "forced-dialogue-only fields are present but ignored", "forced-output_mode", "warning");
+    }
+    if (!isForcedDialogueOutput(entry)) return null;
     const options = Array.isArray(entry.options) ? entry.options : [];
     const actionableOptions = [...options, ...forcedLeaveOptions(entry)];
     if (options.some((option) => !option.id || !option.label)) return issueDetail("Options JSON", "every option has id and label", "an option is missing one", "forced-options_json");
@@ -2725,16 +2733,19 @@ function validate() {
     addCheck(checks, "error", "Forced dialogue target", `Invalid target entity id: ${badForcedTargetEntity}.`);
   }
   const badForcedNumber = firstBadNumber(state.forcedDialogue.entries, ["priority", "reputation", "witness_radius", "min_recent_retaliations", "max_recent_retaliations"], (value, entry, key) => {
-    if (key === "reputation") return Number.isFinite(value);
+    if (key === "reputation") return isForcedDialogueOutput(entry) ? Number.isFinite(value) : true;
     if (key === "witness_radius") return value >= 1;
     return Number.isFinite(value) && value >= 0;
   });
   if (badForcedNumber) {
     addCheck(checks, "error", "Forced dialogue number", `${humanize(badForcedNumber)} has an invalid number.`);
   }
-  const badForcedOutputRadius = firstBadNumber(state.forcedDialogue.entries.map((entry) => entry.output || {}), ["radius"], (value) => value >= 1);
+  const badForcedOutputRadius = firstBadNumber(state.forcedDialogue.entries.filter(isChatOutputEntry).map((entry) => entry.output || {}), ["radius"], (value) => value >= 1);
   if (badForcedOutputRadius) {
     addCheck(checks, "error", "Forced dialogue output", "Output radius must be a positive number.");
+  }
+  if (state.forcedDialogue.entries.some(hasIgnoredForcedDialogueFields)) {
+    addCheck(checks, "warning", "Forced dialogue output", "Chat output ignores forced-dialogue options, leave outcomes, reputation changes, aggro, and camera controls.");
   }
   const blankForcedList = firstBlankListValue(state.forcedDialogue.entries, ["lines", "loot_tables", "witness_profession", "witness_professions", "professions", "target_entity_types", "target_entities"]);
   if (blankForcedList) {
@@ -2749,6 +2760,7 @@ function validate() {
     addCheck(checks, "error", "Forced dialogue retaliation range", "Min recent retaliations must be less than or equal to max recent retaliations.");
   }
   for (const entry of state.forcedDialogue.entries) {
+    if (!isForcedDialogueOutput(entry)) continue;
     const options = Array.isArray(entry.options) ? entry.options : [];
     const leaveOptions = forcedLeaveOptions(entry);
     const actionableOptions = [...options, ...leaveOptions];
@@ -3025,6 +3037,7 @@ function render() {
   renderWorkspaceChrome();
   renderTabs();
   renderPanel();
+  updateForcedOutputModeFields(els.panel);
   resizeTextareas(els.panel);
   syncValueTags(els.panel);
   applyEntryIssueHighlights();
@@ -3766,12 +3779,19 @@ function formActions(actionLabel, saveAction, clearAction) {
   `;
 }
 
+function forcedOutputClass(currentMode, visibleMode) {
+  const hiddenClass = currentMode === visibleMode ? "" : " is-hidden";
+  return `forced-output-field forced-output-${visibleMode}${hiddenClass}`;
+}
+
 function renderForcedDialogue() {
   const collection = state.forcedDialogue.entries;
   const entry = editing?.section === "forcedDialogue" ? collection[editing.index] : {};
   const optionsJson = Array.isArray(entry.options) ? JSON.stringify(entry.options, null, 2) : "";
   const outputMode = entry.output?.mode ?? "forced_dialogue";
   const outputRadius = entry.output?.radius ?? "";
+  const forcedOnlyClass = forcedOutputClass(outputMode, "forced_dialogue");
+  const chatOnlyClass = forcedOutputClass(outputMode, "chat");
   els.panel.innerHTML = `
     <div class="builder-content">
       <div class="builder-header">
@@ -3794,12 +3814,12 @@ function renderForcedDialogue() {
             ${field({ id: "forced-id", label: "Entry id", value: entry.id })}
             ${selectField({ id: "forced-trigger", label: "Trigger", value: entry.trigger, options: CONSTANTS.forcedDialogueTriggers, allowBlank: false })}
             ${selectField({ id: "forced-output_mode", label: "Output mode", value: outputMode, options: CONSTANTS.forcedOutputModes, allowBlank: false })}
-            ${field({ id: "forced-output_radius", label: "Output radius", value: outputRadius, type: "number", attrs: 'min="1" step="1"' })}
+            ${field({ id: "forced-output_radius", label: "Output radius", value: outputRadius, type: "number", attrs: 'min="1" step="1"', className: chatOnlyClass })}
             ${textareaField({ id: "forced-line", label: "Opening line(s)", value: forcedDialogueLineValue(entry), className: "full", rows: 3 })}
             ${field({ id: "forced-priority", label: "Priority", value: entry.priority ?? "", type: "number" })}
-            ${field({ id: "forced-chance", label: "Chat chance", value: entry.chance ?? "", type: "number", attrs: 'min="0" max="1" step="0.01"' })}
+            ${field({ id: "forced-chance", label: "Chance", value: entry.chance ?? "", type: "number", attrs: 'min="0" max="1" step="0.01"' })}
             ${field({ id: "forced-witness_radius", label: "Witness radius", value: entry.witness_radius ?? "", type: "number", attrs: 'min="1" step="1"' })}
-            ${field({ id: "forced-reputation", label: "Reputation change", value: entry.reputation ?? "", type: "number" })}
+            ${field({ id: "forced-reputation", label: "Reputation change", value: entry.reputation ?? "", type: "number", className: forcedOnlyClass })}
             ${listField({ id: "forced-witness_professions", label: "Witness professions", value: entry.witness_professions ?? entry.witness_profession ?? entry.professions, help: "Optional. Restrict to a witnessing profession such as armorer, cleric, or weaponsmith." })}
             ${villagerEquipmentToggles("forced", entry, "witness")}
             ${listField({ id: "forced-loot_tables", label: "Loot tables", value: entry.loot_tables ?? entry.loot_table, help: "Optional. Match generated containers from loot tables like minecraft:chests/village/village_armorer." })}
@@ -3810,19 +3830,36 @@ function renderForcedDialogue() {
               <label>Event Behavior</label>
               <div class="toggle-grid">
                 ${toggle({ id: "forced-requires_line_of_sight", label: "Requires line of sight", checked: entry.requires_line_of_sight !== false })}
+              </div>
+            </div>
+            <div class="field full ${forcedOnlyClass}">
+              <label>Forced Dialogue Behavior</label>
+              <div class="toggle-grid">
                 ${toggle({ id: "forced-initiate_dialogue", label: "Initiates dialogue", checked: entry.initiate_dialogue !== false })}
                 ${toggle({ id: "forced-aggro_immediately", label: "Aggro immediately", checked: entry.aggro_immediately === true })}
                 ${toggle({ id: "forced-force_camera_towards_villager", label: "Force camera to villager", checked: entry.force_camera_towards_villager === true })}
               </div>
             </div>
-            ${textareaField({ id: "forced-options_json", label: "Options JSON", value: optionsJson, help: "Use an array of player choices with id, label, response, reputation, aggro, aggro_chance, end_conversation, order, and optional take_items or take_stolen_items.", className: "full", rows: 7 })}
-            ${textareaField({ id: "forced-leave_option_json", label: "Leave option(s) JSON", value: prettyJson(entry.leave_options ?? entry.leave_option), help: "Optional. Object for one Leave outcome, or array for reputation-gated outcomes.", className: "full", rows: 4 })}
+            ${textareaField({ id: "forced-options_json", label: "Options JSON", value: optionsJson, help: "Use an array of player choices with id, label, response, reputation, aggro, aggro_chance, end_conversation, order, and optional take_items or take_stolen_items.", className: `full ${forcedOnlyClass}`, rows: 7 })}
+            ${textareaField({ id: "forced-leave_option_json", label: "Leave option(s) JSON", value: prettyJson(entry.leave_options ?? entry.leave_option), help: "Optional. Object for one Leave outcome, or array for reputation-gated outcomes.", className: `full ${forcedOnlyClass}`, rows: 4 })}
           </div>
           ${formActions(editing?.section === "forcedDialogue" ? "Update" : "Add", "save-forced-dialogue", "clear-forced-dialogue-form")}
         </form>
       </div>
     </div>
   `;
+}
+
+function updateForcedOutputModeFields(root = document) {
+  const form = root.querySelector?.('form[data-form="forcedDialogue"]');
+  if (!form) return;
+  const mode = form.querySelector("#forced-output_mode")?.value || "forced_dialogue";
+  for (const field of form.querySelectorAll(".forced-output-chat")) {
+    field.classList.toggle("is-hidden", mode !== "chat");
+  }
+  for (const field of form.querySelectorAll(".forced-output-forced_dialogue")) {
+    field.classList.toggle("is-hidden", mode !== "forced_dialogue");
+  }
 }
 
 function renderNotifications() {
@@ -4221,10 +4258,17 @@ function parseJsonObjectOrArrayField(id, label, options = {}) {
 }
 
 function readForcedDialogueEntry(options = {}) {
-  const dialogueOptions = parseJsonArrayField("forced-options_json", "Options JSON", options);
+  const outputMode = readValue("forced-output_mode") || "forced_dialogue";
+  const isForcedOutput = outputMode === "forced_dialogue";
+  const dialogueOptions = isForcedOutput ? parseJsonArrayField("forced-options_json", "Options JSON", options) : [];
   if (dialogueOptions === null) return null;
-  const leaveOption = parseJsonObjectOrArrayField("forced-leave_option_json", "Leave option JSON", options);
+  const leaveOption = isForcedOutput ? parseJsonObjectOrArrayField("forced-leave_option_json", "Leave option JSON", options) : {};
   if (leaveOption === null) return null;
+  const output = { mode: outputMode };
+  const outputRadius = parseNumber(readValue("forced-output_radius"));
+  if (outputMode === "chat" && Number.isFinite(outputRadius)) {
+    output.radius = outputRadius;
+  }
   const entry = {
     id: readValue("forced-id").trim(),
     trigger: readValue("forced-trigger"),
@@ -4232,26 +4276,25 @@ function readForcedDialogueEntry(options = {}) {
     chance: parseNumber(readValue("forced-chance")),
     witness_radius: parseInteger(readValue("forced-witness_radius")),
     requires_line_of_sight: readValue("forced-requires_line_of_sight"),
-    initiate_dialogue: readValue("forced-initiate_dialogue"),
-    aggro_immediately: readValue("forced-aggro_immediately"),
-    force_camera_towards_villager: readValue("forced-force_camera_towards_villager"),
-    output: {
-      mode: readValue("forced-output_mode"),
-      radius: parseNumber(readValue("forced-output_radius"))
-    },
-    reputation: parseInteger(readValue("forced-reputation")),
+    output,
     witness_professions: readList("forced-witness_professions"),
     ...readVillagerEquipment("forced", "witness"),
     loot_tables: readList("forced-loot_tables"),
     target_entity_types: readList("forced-target_entity_types"),
     min_recent_retaliations: parseInteger(readValue("forced-min_recent_retaliations")),
-    max_recent_retaliations: parseInteger(readValue("forced-max_recent_retaliations")),
-    options: dialogueOptions
+    max_recent_retaliations: parseInteger(readValue("forced-max_recent_retaliations"))
   };
-  if (Array.isArray(leaveOption)) {
-    entry.leave_options = leaveOption;
-  } else {
-    entry.leave_option = leaveOption;
+  if (isForcedOutput) {
+    entry.initiate_dialogue = readValue("forced-initiate_dialogue");
+    entry.aggro_immediately = readValue("forced-aggro_immediately");
+    entry.force_camera_towards_villager = readValue("forced-force_camera_towards_villager");
+    entry.reputation = parseInteger(readValue("forced-reputation"));
+    entry.options = dialogueOptions;
+    if (Array.isArray(leaveOption)) {
+      entry.leave_options = leaveOption;
+    } else {
+      entry.leave_option = leaveOption;
+    }
   }
   const lines = readForcedDialogueLines();
   if (lines.length === 1) {
@@ -4775,7 +4818,8 @@ function loadStarterPack() {
   state.dialogue.options.push({
     id: "village_rumors.ask_local_rumors",
     label: "Ask Local Rumors",
-    type: "story",
+    type: "dialogue_option",
+    request: "story",
     order: 30,
     show_for_babies: false
   });
@@ -4783,13 +4827,13 @@ function loadStarterPack() {
     {
       id: "village_rumors.rumor.generic",
       option: "village_rumors.ask_local_rumors",
-      type: "story",
+      request: "story",
       text: "Roads keep secrets. Villages keep better ones.",
       weight: 10
     },
     {
       id: "village_rumors.share_story.haunted_keep",
-      type: "share_story",
+      request: "share_story",
       option: "adult_share_story",
       story_structure: "examplemod:haunted_keep",
       text: "{target_article}. If you found it, walk home before dark.",
@@ -4804,6 +4848,9 @@ function loadStarterPack() {
   state.forcedDialogue.entries.push({
     id: "village_rumors.container_theft.warning",
     trigger: "container_theft",
+    output: {
+      mode: "forced_dialogue"
+    },
     line: "Stop right there. That chest is not yours.",
     priority: 20,
     witness_radius: 12,
@@ -4840,6 +4887,23 @@ function loadStarterPack() {
         order: 5
       }
     ]
+  }, {
+    id: "village_rumors.retaliation_started.callout",
+    trigger: "retaliation_started",
+    output: {
+      mode: "chat",
+      radius: 24
+    },
+    lines: [
+      "You picked the wrong village to threaten.",
+      "Stand back. This one has made enemies here.",
+      "Weapons ready. Trouble found us."
+    ],
+    priority: 30,
+    chance: 0.75,
+    witness_radius: 24,
+    requires_line_of_sight: false,
+    target_entity_types: ["minecraft:player"]
   });
   state.notifications.notifications.push({
     id: "village_rumors.ambient.trusted_farmer",
@@ -4997,6 +5061,7 @@ function applyPreviewEdit() {
   els.preview.closest(".preview")?.classList.remove("has-error");
   renderTabs();
   renderPanel();
+  updateForcedOutputModeFields(els.panel);
   resizeTextareas(els.panel);
   syncValueTags(els.panel);
   applyEntryIssueHighlights();
@@ -5394,6 +5459,31 @@ function isForcedDialogueEntry(entry) {
 
 function hasForcedDialogueLine(entry) {
   return Boolean(entry?.line || (Array.isArray(entry?.lines) && entry.lines.some((line) => String(line ?? "").trim())));
+}
+
+function forcedOutputMode(entry) {
+  return entry?.output?.mode || "forced_dialogue";
+}
+
+function isForcedDialogueOutput(entry) {
+  return forcedOutputMode(entry) === "forced_dialogue";
+}
+
+function isChatOutputEntry(entry) {
+  return forcedOutputMode(entry) === "chat";
+}
+
+function hasIgnoredForcedDialogueFields(entry) {
+  if (!isChatOutputEntry(entry)) return false;
+  return (
+    entry.reputation !== undefined
+    || entry.initiate_dialogue !== undefined
+    || entry.aggro_immediately !== undefined
+    || entry.force_camera_towards_villager !== undefined
+    || (Array.isArray(entry.options) && entry.options.length > 0)
+    || entry.leave_option !== undefined
+    || (Array.isArray(entry.leave_options) && entry.leave_options.length > 0)
+  );
 }
 
 function forcedLeaveOptions(entry) {
@@ -5807,6 +5897,10 @@ els.panel.addEventListener("input", (event) => {
 els.panel.addEventListener("change", (event) => {
   if (event.target.closest(".entry-form")) {
     markEntryFormDirty();
+  }
+  if (event.target.id === "forced-output_mode") {
+    updateForcedOutputModeFields(els.panel);
+    resizeTextareas(event.target.closest(".entry-form"));
   }
   if (activeSection === "overview") updateOverviewFromInput(event.target);
   updateSectionSettings(event.target);

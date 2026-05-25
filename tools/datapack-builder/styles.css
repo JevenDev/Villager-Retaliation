@@ -886,6 +886,10 @@ body.is-resizing-row {
   gap: 7px;
 }
 
+.field.is-hidden {
+  display: none;
+}
+
 .field label,
 .toggle label,
 .toggle span {
