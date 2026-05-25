@@ -554,6 +554,11 @@ let showRightPanel = true;
 let wrapPreviewLines = false;
 let previewEditTimer = null;
 let previewEditError = null;
+let previewUndoStack = [];
+let previewRedoStack = [];
+let previewBeforeInputSnapshot = null;
+let previewHistoryPath = "";
+let isApplyingPreviewHistory = false;
 let fileTreeSignature = "";
 let entryDragState = null;
 let suppressEntryClickUntil = 0;
@@ -3754,13 +3759,214 @@ function renderPreview() {
   if (value instanceof Uint8Array) {
     els.preview.value = `Binary file preserved (${value.byteLength} bytes).`;
     els.preview.readOnly = true;
+    resetPreviewHistory(selectedPath);
     applyPreviewLineHighlights([]);
   } else {
     els.preview.readOnly = false;
     els.preview.value = value || "";
+    resetPreviewHistory(selectedPath);
     const ranges = hasInvalidJson ? [] : withDraftState(() => previewIssueLineRanges(selectedPath, els.preview.value));
     applyPreviewLineHighlights(ranges);
   }
+}
+
+function handlePreviewEditorKeydown(event) {
+  if (els.preview.readOnly || event.defaultPrevented) return;
+  const key = event.key.toLowerCase();
+  const modifier = event.ctrlKey || event.metaKey;
+  if (modifier && !event.altKey && key === "z") {
+    event.preventDefault();
+    if (event.shiftKey) {
+      redoPreviewEdit();
+    } else {
+      undoPreviewEdit();
+    }
+    return;
+  }
+  if (modifier && !event.altKey && key === "y") {
+    event.preventDefault();
+    redoPreviewEdit();
+    return;
+  }
+  if (event.key === "Tab") {
+    event.preventDefault();
+    if (event.shiftKey) {
+      unindentPreviewSelection();
+    } else {
+      indentPreviewSelection();
+    }
+    return;
+  }
+  if (event.key === "Enter") {
+    event.preventDefault();
+    insertPreviewNewline();
+    return;
+  }
+  if (!event.ctrlKey && !event.altKey && !event.metaKey) {
+    handlePreviewPairKey(event);
+  }
+}
+
+function indentPreviewSelection() {
+  const textarea = els.preview;
+  const value = textarea.value;
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  if (start === end) {
+    replacePreviewSelection("  ", start + 2, start + 2);
+    return;
+  }
+  const lineStart = value.lastIndexOf("\n", start - 1) + 1;
+  const selectionEnd = end > start && value[end - 1] === "\n" ? end - 1 : end;
+  const lineEnd = value.indexOf("\n", selectionEnd);
+  const blockEnd = lineEnd === -1 ? value.length : lineEnd;
+  const block = value.slice(lineStart, blockEnd);
+  const indented = block.split("\n").map((line) => `  ${line}`).join("\n");
+  replacePreviewRange(lineStart, blockEnd, indented, start + 2, end + (indented.length - block.length));
+}
+
+function unindentPreviewSelection() {
+  const textarea = els.preview;
+  const value = textarea.value;
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  const lineStart = value.lastIndexOf("\n", start - 1) + 1;
+  const selectionEnd = end > start && value[end - 1] === "\n" ? end - 1 : end;
+  const lineEnd = value.indexOf("\n", selectionEnd);
+  const blockEnd = lineEnd === -1 ? value.length : lineEnd;
+  const block = value.slice(lineStart, blockEnd);
+  let firstLineRemoved = 0;
+  let removedBeforeEnd = 0;
+  let offset = lineStart;
+  const unindented = block.split("\n").map((line, index) => {
+    const removed = line.startsWith("  ") ? 2 : line.startsWith("\t") || line.startsWith(" ") ? 1 : 0;
+    if (index === 0) firstLineRemoved = removed;
+    if (offset < end) removedBeforeEnd += removed;
+    offset += line.length + 1;
+    return line.slice(removed);
+  }).join("\n");
+  replacePreviewRange(lineStart, blockEnd, unindented, Math.max(lineStart, start - firstLineRemoved), Math.max(lineStart, end - removedBeforeEnd));
+}
+
+function insertPreviewNewline() {
+  const textarea = els.preview;
+  const value = textarea.value;
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  const lineStart = value.lastIndexOf("\n", start - 1) + 1;
+  const linePrefix = value.slice(lineStart, start);
+  const indent = linePrefix.match(/^\s*/)?.[0] || "";
+  const before = value.slice(lineStart, start).trimEnd();
+  const after = value.slice(end).trimStart();
+  const opensBlock = /[\[{]$/.test(before);
+  const closesBlock = /^[\]}]/.test(after);
+  if (opensBlock && closesBlock) {
+    const innerIndent = `${indent}  `;
+    const inserted = `\n${innerIndent}\n${indent}`;
+    replacePreviewSelection(inserted, start + 1 + innerIndent.length, start + 1 + innerIndent.length);
+    return;
+  }
+  const nextIndent = opensBlock ? `${indent}  ` : indent;
+  const inserted = `\n${nextIndent}`;
+  replacePreviewSelection(inserted, start + inserted.length, start + inserted.length);
+}
+
+function handlePreviewPairKey(event) {
+  const pairs = {
+    "{": "}",
+    "[": "]",
+    "\"": "\""
+  };
+  const closers = new Set(Object.values(pairs));
+  const opener = event.key;
+  const closer = pairs[opener];
+  const textarea = els.preview;
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  if (closers.has(event.key) && start === end && textarea.value[start] === event.key) {
+    event.preventDefault();
+    textarea.setSelectionRange(start + 1, start + 1);
+    return;
+  }
+  if (!closer) return;
+  event.preventDefault();
+  const selected = textarea.value.slice(start, end);
+  const inserted = `${opener}${selected}${closer}`;
+  const nextStart = selected ? start + 1 : start + 1;
+  const nextEnd = selected ? end + 1 : start + 1;
+  replacePreviewSelection(inserted, nextStart, nextEnd);
+}
+
+function replacePreviewSelection(text, selectionStart, selectionEnd) {
+  replacePreviewRange(els.preview.selectionStart, els.preview.selectionEnd, text, selectionStart, selectionEnd);
+}
+
+function replacePreviewRange(start, end, text, selectionStart, selectionEnd) {
+  const textarea = els.preview;
+  const before = previewSnapshot();
+  textarea.setRangeText(text, start, end, "preserve");
+  textarea.setSelectionRange(selectionStart, selectionEnd);
+  pushPreviewUndoSnapshot(before);
+  textarea.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+function resetPreviewHistory(path = selectedPath) {
+  if (previewHistoryPath === path) return;
+  previewHistoryPath = path;
+  previewUndoStack = [];
+  previewRedoStack = [];
+  previewBeforeInputSnapshot = null;
+}
+
+function previewSnapshot() {
+  return {
+    value: els.preview.value,
+    start: els.preview.selectionStart,
+    end: els.preview.selectionEnd
+  };
+}
+
+function pushPreviewUndoSnapshot(snapshot) {
+  if (isApplyingPreviewHistory || !snapshot || snapshot.value === els.preview.value) return;
+  previewUndoStack.push(snapshot);
+  if (previewUndoStack.length > 100) previewUndoStack.shift();
+  previewRedoStack = [];
+}
+
+function restorePreviewSnapshot(snapshot) {
+  if (!snapshot) return;
+  isApplyingPreviewHistory = true;
+  els.preview.value = snapshot.value;
+  els.preview.setSelectionRange(snapshot.start, snapshot.end);
+  els.preview.dispatchEvent(new Event("input", { bubbles: true }));
+  isApplyingPreviewHistory = false;
+}
+
+function undoPreviewEdit() {
+  const snapshot = previewUndoStack.pop();
+  if (!snapshot) return;
+  previewRedoStack.push(previewSnapshot());
+  restorePreviewSnapshot(snapshot);
+}
+
+function redoPreviewEdit() {
+  const snapshot = previewRedoStack.pop();
+  if (!snapshot) return;
+  previewUndoStack.push(previewSnapshot());
+  restorePreviewSnapshot(snapshot);
+}
+
+function recordPreviewBeforeInput(event) {
+  if (els.preview.readOnly || isApplyingPreviewHistory) return;
+  if (event.inputType === "historyUndo" || event.inputType === "historyRedo") return;
+  previewBeforeInputSnapshot = previewSnapshot();
+}
+
+function recordPreviewInputHistory() {
+  if (isApplyingPreviewHistory) return;
+  if (!previewBeforeInputSnapshot) return;
+  pushPreviewUndoSnapshot(previewBeforeInputSnapshot);
+  previewBeforeInputSnapshot = null;
 }
 
 function applyPreviewLineHighlights(ranges) {
@@ -6798,7 +7004,10 @@ document.addEventListener("pointerdown", panelResizeStart);
 document.addEventListener("pointerdown", wikiPointerStart);
 document.addEventListener("auxclick", panelResizeAuxClick);
 document.addEventListener("keydown", panelResizeKeydown);
+els.preview.addEventListener("keydown", handlePreviewEditorKeydown);
+els.preview.addEventListener("beforeinput", recordPreviewBeforeInput);
 els.preview.addEventListener("input", () => {
+  recordPreviewInputHistory();
   window.clearTimeout(previewEditTimer);
   previewEditTimer = window.setTimeout(applyPreviewEdit, 180);
 });
