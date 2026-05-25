@@ -258,6 +258,7 @@ const CURRENT_PACK_VERSION = PACK_VERSIONS[PACK_VERSIONS.length - 1].id;
 const PACK_VERSION_IDS = PACK_VERSIONS.map((version) => version.id);
 const PACK_VERSION_STORAGE_KEY = "pack_version";
 const PACK_VERSION_NAMESPACE = "villagerretaliation";
+const COLLAPSIBLE_TOGGLE_MIN_COUNT = 8;
 const WIKI_PAGE_FILES = [
   "Home.md",
   "Pack-Development.md",
@@ -3685,13 +3686,33 @@ function toggle({ id, label, checked = false, tooltip = "" }) {
 }
 
 function toggleGrid(flags, entry, prefix) {
+  const label = prefix === "option" ? "Visibility and Requirements" : "Extra Filters";
+  const toggles = `
+    ${toggle({ id: `${prefix}-show_for_adults`, label: "Show for adults", checked: entry.show_for_adults !== false, tooltip: tooltipForFlag("show_for_adults") })}
+    ${toggle({ id: `${prefix}-show_for_babies`, label: "Show for babies", checked: entry.show_for_babies !== false, tooltip: tooltipForFlag("show_for_babies") })}
+    ${flags.map((flag) => toggle({ id: `${prefix}-${flag}`, label: humanize(flag), checked: entry[flag] === true, tooltip: tooltipForFlag(flag) })).join("")}
+  `;
+  const toggleCount = flags.length + 2;
+  if (toggleCount >= COLLAPSIBLE_TOGGLE_MIN_COUNT) {
+    return `
+      <details class="toggle-details full">
+        <summary class="toggle-details-summary">
+          <span>${label}</span>
+          <span class="toggle-details-meta">${toggleCount} settings</span>
+          ${icon("chevron-right", "inline-icon toggle-details-icon")}
+        </summary>
+        <div class="toggle-grid">
+          ${toggles}
+        </div>
+      </details>
+    `;
+  }
+
   return `
     <div class="field full">
-      <label>${prefix === "option" ? "Visibility and Requirements" : "Extra Filters"}</label>
+      <label>${label}</label>
       <div class="toggle-grid">
-        ${toggle({ id: `${prefix}-show_for_adults`, label: "Show for adults", checked: entry.show_for_adults !== false, tooltip: tooltipForFlag("show_for_adults") })}
-        ${toggle({ id: `${prefix}-show_for_babies`, label: "Show for babies", checked: entry.show_for_babies !== false, tooltip: tooltipForFlag("show_for_babies") })}
-        ${flags.map((flag) => toggle({ id: `${prefix}-${flag}`, label: humanize(flag), checked: entry[flag] === true, tooltip: tooltipForFlag(flag) })).join("")}
+        ${toggles}
       </div>
     </div>
   `;

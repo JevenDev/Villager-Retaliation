@@ -307,8 +307,8 @@ h3 {
 
 .builder-panel {
   height: 100%;
-  overflow: auto;
-  padding: 20px 20px 176px;
+  overflow: hidden;
+  padding: 20px;
 }
 
 .right-rail {
@@ -560,7 +560,10 @@ body.is-resizing-row {
 }
 
 .builder-content {
-  display: grid;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   gap: 0;
 }
 
@@ -871,7 +874,8 @@ body.is-resizing-row {
 }
 
 .span-12,
-.field.full {
+.field.full,
+.toggle-details.full {
   grid-column: 1 / -1;
 }
 
@@ -1015,17 +1019,21 @@ button:focus-visible,
 }
 
 .entry-layout {
+  flex: 1 1 auto;
   min-height: 0;
   display: grid;
   grid-template-columns: minmax(200px, 0.68fr) minmax(315px, 1fr);
   gap: 15px;
+  overflow: hidden;
 }
 
 .entry-list {
   min-width: 0;
+  min-height: 0;
   display: grid;
   align-content: start;
   gap: 7px;
+  overflow: auto;
 }
 
 .entry-card {
@@ -1167,8 +1175,10 @@ button:focus-visible,
 
 .entry-form {
   min-width: 0;
+  min-height: 0;
   border: 1px solid var(--line-soft);
   border-radius: 4px;
+  overflow: auto;
   padding: 13px;
 }
 
@@ -1184,6 +1194,53 @@ button:focus-visible,
 .toggle-grid {
   display: grid;
   gap: 7px;
+}
+
+.toggle-details {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 7px;
+}
+
+.toggle-details-summary {
+  min-height: 42px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--input);
+  color: var(--text);
+  cursor: pointer;
+  list-style: none;
+  padding: 8px 10px;
+}
+
+.toggle-details-summary::-webkit-details-marker {
+  display: none;
+}
+
+.toggle-details-summary:hover {
+  background: #2c2c2c;
+}
+
+.toggle-details-meta {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.toggle-details-icon {
+  color: var(--muted);
+}
+
+.toggle-details[open] .toggle-details-icon {
+  transform: rotate(90deg);
+}
+
+.toggle-details .toggle-grid {
+  margin-top: 7px;
 }
 
 .toggle {
@@ -1822,6 +1879,7 @@ body.is-wiki-moving {
 
   .entry-layout {
     grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 0.42fr) minmax(0, 1fr);
   }
 }
 
