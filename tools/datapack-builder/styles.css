@@ -651,10 +651,7 @@ body.is-resizing-row {
   border-bottom: 1px solid var(--line-soft);
 }
 
-.checks-panel {
-  max-height: 220px;
-}
-
+.checks-panel,
 .files-panel {
   display: flex;
   flex-direction: column;
@@ -662,6 +659,7 @@ body.is-resizing-row {
 
 .checks,
 .file-tree {
+  flex: 1 1 auto;
   display: grid;
   gap: 4px;
   min-height: 0;
