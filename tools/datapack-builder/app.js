@@ -3787,6 +3787,17 @@ function renderEntryTabs(kinds, activeKey, scope) {
   `;
 }
 
+function entrySaveAction(section) {
+  return {
+    dialogue: "save-dialogue-entry",
+    forcedDialogue: "save-forced-dialogue",
+    notifications: "save-notification",
+    gifts: "save-gift-entry",
+    pacification: "save-pacification",
+    stories: "save-story-entry"
+  }[section] || "";
+}
+
 function renderEntryList(collection, kind, section) {
   if (collection.length === 0) {
     return `<div class="empty-state">No ${escapeHtml(humanize(kind).toLowerCase())} yet.</div>`;
@@ -3801,6 +3812,7 @@ function renderEntryList(collection, kind, section) {
       const active = editing && editing.section === section && editing.kind === kind && editing.index === index;
       const severity = entryIssueSeverity(section, kind, entry);
       const issueMessage = entryIssueMessage(section, kind, entry);
+      const saveAction = active ? entrySaveAction(section) : "";
       return `
         <article class="entry-card ${active ? "is-active" : ""} ${sortable ? "is-sortable" : ""} ${issueSeverityClass(severity)}" data-section="${section}" data-kind="${kind}" data-index="${index}" tabindex="0" role="button" aria-label="Edit ${escapeHtml(title)}" ${sortable ? `draggable="true"` : ""}>
           <div class="entry-object-header">
@@ -3808,12 +3820,19 @@ function renderEntryList(collection, kind, section) {
               ${icon("square-pen", "inline-icon")}
               ${escapeHtml(title)}
             </span>
-            <button class="entry-delete danger" type="button" data-action="delete-entry" data-section="${section}" data-kind="${kind}" data-index="${index}" aria-label="Delete ${escapeHtml(title)}">
+            <button class="entry-delete danger has-tooltip" type="button" data-action="delete-entry" data-section="${section}" data-kind="${kind}" data-index="${index}" aria-label="Delete ${escapeHtml(title)}" data-tooltip="Delete entry">
               ${icon("trash-2", "button-icon")}
             </button>
           </div>
           ${issueMessage ? `<small class="entry-issue">${escapeHtml(issueMessage)}</small>` : ""}
           ${detail ? `<small>${escapeHtml(detail)}</small>` : ""}
+          ${saveAction ? `
+            <div class="entry-card-actions">
+              <button class="entry-save has-tooltip" type="button" data-action="save-entry-form" aria-label="Save ${escapeHtml(title)}" data-tooltip="Save changes. Alt+S">
+                ${icon("save", "button-icon")}
+              </button>
+            </div>
+          ` : ""}
         </article>
       `;
     })
@@ -3952,9 +3971,12 @@ function renderDialogueForm(kind, entry) {
 }
 
 function formActions(actionLabel, saveAction, clearAction) {
+  const saveButton = actionLabel === "Update"
+    ? ""
+    : `<button class="button button-primary" type="submit" data-action="${saveAction}">${icon("plus", "button-icon")}${actionLabel}</button>`;
   return `
     <div class="form-actions">
-      <button class="button button-primary" type="submit" data-action="${saveAction}">${icon(actionLabel === "Update" ? "save" : "plus", "button-icon")}${actionLabel}</button>
+      ${saveButton}
       <button class="button button-secondary" type="button" data-action="${clearAction}">${icon("rotate-ccw", "button-icon")}Clear</button>
     </div>
   `;
@@ -4590,6 +4612,13 @@ function saveStoryEntry(event) {
   upsertEntry("stories", activeStoryKind, cleanObject(readStoryEntry()));
 }
 
+function saveActiveEntryForm() {
+  const form = els.panel.querySelector(".entry-form");
+  if (!form) return false;
+  form.requestSubmit();
+  return true;
+}
+
 function markEntryFormDirty() {
   if (!els.panel.querySelector(".entry-form")) return;
   const wasDirty = entryFormDirty;
@@ -4675,6 +4704,28 @@ function clearEditing() {
   render();
 }
 
+function focusWithoutScroll(element) {
+  const scrollParents = [];
+  let parent = element.parentElement;
+  while (parent) {
+    if (parent.scrollHeight > parent.clientHeight || parent.scrollWidth > parent.clientWidth) {
+      scrollParents.push({ node: parent, top: parent.scrollTop, left: parent.scrollLeft });
+    }
+    parent = parent.parentElement;
+  }
+  const windowScroll = { x: window.scrollX, y: window.scrollY };
+  try {
+    element.focus({ preventScroll: true });
+  } catch {
+    element.focus();
+  }
+  for (const scrollParent of scrollParents) {
+    scrollParent.node.scrollTop = scrollParent.top;
+    scrollParent.node.scrollLeft = scrollParent.left;
+  }
+  window.scrollTo(windowScroll.x, windowScroll.y);
+}
+
 function insertTag(targetId, value) {
   const input = document.querySelector(`#${CSS.escape(targetId)}`);
   if (!input) return;
@@ -4684,7 +4735,7 @@ function insertTag(targetId, value) {
     input.value = values.join(", ");
     input.dispatchEvent(new Event("input", { bubbles: true }));
   }
-  input.focus();
+  focusWithoutScroll(input);
 }
 
 function deleteEntry(section, kind, index) {
@@ -5948,6 +5999,10 @@ els.panel.addEventListener("click", (event) => {
     insertTag(actionButton.dataset.target, actionButton.dataset.value);
     return;
   }
+  if (action === "save-entry-form") {
+    saveActiveEntryForm();
+    return;
+  }
   if (action === "edit-entry") {
     const isSameEntry = editing
       && editing.section === actionButton.dataset.section
@@ -6277,6 +6332,12 @@ document.addEventListener("keydown", (event) => {
   if (event.altKey && !event.ctrlKey && !event.metaKey && event.key.toLowerCase() === "q") {
     event.preventDefault();
     toggleWiki();
+    return;
+  }
+  if (event.altKey && !event.ctrlKey && !event.metaKey && event.key.toLowerCase() === "s") {
+    if (saveActiveEntryForm()) {
+      event.preventDefault();
+    }
     return;
   }
   if (event.key === "Escape") {
