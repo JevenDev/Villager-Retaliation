@@ -3099,7 +3099,11 @@ function addCheck(checks, type, title, text) {
 
 function firstDuplicate(values) {
   const seen = new Set();
-  for (const value of values.map(String).map((item) => item.trim()).filter(Boolean)) {
+  for (const value of values
+    .filter((item) => item !== undefined && item !== null)
+    .map(String)
+    .map((item) => item.trim())
+    .filter(Boolean)) {
     if (seen.has(value)) return value;
     seen.add(value);
   }
@@ -3252,10 +3256,6 @@ function validate() {
   const duplicateOption = firstDuplicate(state.dialogue.options.map((entry) => entry.id));
   if (duplicateOption) {
     addCheck(checks, "warning", "Dialogue option ids", `Duplicate option id: ${duplicateOption}.`);
-  }
-  const duplicateMessage = firstDuplicate(state.dialogue.messages.map((entry) => entry.key));
-  if (duplicateMessage) {
-    addCheck(checks, "warning", "Dialogue message keys", `Duplicate message key: ${duplicateMessage}.`);
   }
   const allDialogueEntries = ["options", "lines", "messages", "openings", "closings", "pacify"].flatMap((kind) => state.dialogue[kind]);
   const badDialogueType = firstInvalidValue([...state.dialogue.options, ...state.dialogue.lines], ["request"], (value) => CONSTANTS.dialogueTypes.includes(value));

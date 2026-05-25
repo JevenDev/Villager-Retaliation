@@ -272,12 +272,32 @@ h3 {
   width: 20px;
   height: 20px;
   flex: 0 0 auto;
+  display: block;
   stroke-width: 1.8;
 }
 
 .icon-button {
   width: 37px;
+  height: 37px;
   padding: 8px;
+  line-height: 0;
+}
+
+.icon-button .button-icon {
+  margin: 0;
+}
+
+.entry-list-controls .icon-button {
+  display: grid;
+  place-items: center;
+}
+
+.entry-list-controls .icon-button [data-lucide="chevron-left"] {
+  transform: translateX(-1px);
+}
+
+.entry-list-controls .icon-button [data-lucide="chevron-right"] {
+  transform: translateX(1px);
 }
 
 .icon-button.is-on {
@@ -595,10 +615,21 @@ body.is-resizing-row {
 }
 
 .builder-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-height: 62px;
   margin: 0 0 20px;
   padding: 9px 20px;
   border: 1px solid var(--line-soft);
   border-radius: 4px;
+  overflow: hidden;
+}
+
+.builder-header > .button {
+  width: max-content;
+  max-width: 100%;
+  justify-self: end;
+  margin-left: 0;
 }
 
 .builder-header p {
