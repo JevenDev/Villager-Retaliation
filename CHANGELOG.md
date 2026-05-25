@@ -7,6 +7,7 @@
 - Added forced dialogue datapacks under `data/villagerretaliation/forced_dialogue/`.
 - Added witnessed container forced-dialogue triggers: `container_theft`, `container_opened`, and `container_broken`.
 - Added chat-only forced-dialogue triggers: `container_theft_chat`, `container_opened_chat`, `container_broken_chat`, and `retaliation_started_chat`.
+- Added configurable watched-container break reputation loss, including an additional penalty per generated item dropped.
 - Added `retaliation_started_chat` support for non-player retaliation targets, broadcasting the villager line to nearby players.
 - Added `combat.flee_started` notification trigger for villagers that keep fleeing hostile mobs.
 - Added forced-dialogue chat `chance` support for occasional event callouts.
@@ -15,9 +16,10 @@
 - Added config support for choosing theft-only container confrontations or opening-based confrontations, and for limiting watched containers to world-generated loot-table containers or allowing all watched containers.
 - Added loot-table filters for forced dialogue entries through `loot_table` and `loot_tables`, so packs can target vanilla or modded generated containers.
 - Added forced dialogue options with responses, reputation changes, aggro behavior, ordering, and conversation-ending behavior.
+- Added forced-dialogue response variations for option responses, payment outcomes, and stolen-item return outcomes.
 - Added `take_items` forced-dialogue payments that can remove a total item count from the player, including counts larger than one stack.
 - Added payment destinations for removed items: discard, witness villager inventory, source container, drop at villager, and drop at container.
-- Added shared reputation condition fields for dialogue options, dialogue lines, and forced-dialogue options: `reputation_level`, `reputation_levels`, `min_reputation`, and `max_reputation`.
+- Added shared reputation condition fields for dialogue options, dialogue lines, forced-dialogue entries, and forced-dialogue options: `reputation_level`, `reputation_levels`, `min_reputation`, and `max_reputation`.
 - Added village container theft memories and gossip through `player_container_theft`, `requires_container_theft_to_self`, and `requires_container_theft_from_other`.
 - Added theft-memory placeholders for dialogue, including `{stolen_item}`, `{stolen_count}`, `{stolen_stack}`, `{stolen_container}`, `{stolen_loot_table}`, `{theft_witness}`, and `{theft_witness_possessive}`.
 - Added datapack-builder support for forced dialogue, item payments, generated-container loot table filters, reputation-gated dialogue, armed/unarmed villager filters, and theft-memory event tags.
@@ -33,7 +35,7 @@
 ### Changed
 
 - Village generated chest confrontations now use forced dialogue by default when container opening is watched.
-- Built-in village chest forced dialogue now varies by reputation: trusted players can be warned, neutral or suspicious players can offer normal payment, and low-reputation players can face more expensive or harsher options.
+- Built-in village chest opening forced dialogue now varies by reputation: neutral and suspicious players get the standard warning, hostile/despised/feared players get harsher warnings, and trusted or better players are only interrupted if they take items.
 - Built-in dialogue now leans harder into the mod's core identity: villagers remember personal harm, share gossip, reward defense cautiously, and respond differently to the same player based on current reputation.
 - Dialogue request type `chat` is now `small_talk` in built-in data, docs, and pack validation. Packs must update `chat` types to `small_talk`.
 - Forced-dialogue reputation changes now spread through the gossip hook when a villager witnesses the event.

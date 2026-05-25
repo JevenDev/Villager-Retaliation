@@ -74,6 +74,11 @@ public final class VillagerConversationService {
         return true;
     }
 
+    public static boolean isForced(ServerPlayer player, Villager villager) {
+        VillagerConversationSession session = SESSIONS_BY_PLAYER.get(player.getUUID());
+        return session != null && session.active() && session.forced() && session.villagerId().equals(villager.getUUID());
+    }
+
     public static void endForPlayer(ServerPlayer player, boolean notifyClient) {
         VillagerConversationSession session = SESSIONS_BY_PLAYER.get(player.getUUID());
         if (session != null) {

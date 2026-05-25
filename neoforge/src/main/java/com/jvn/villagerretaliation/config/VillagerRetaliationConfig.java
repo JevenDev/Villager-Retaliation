@@ -67,6 +67,8 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.IntValue WITNESSED_KILL_PENALTY;
     public static final ModConfigSpec.IntValue WITNESSED_BABY_KILL_PENALTY;
     public static final ModConfigSpec.IntValue WITNESSED_IRON_GOLEM_KILL_PENALTY;
+    public static final ModConfigSpec.IntValue CONTAINER_BREAK_REPUTATION_LOSS;
+    public static final ModConfigSpec.IntValue GENERATED_CONTAINER_BREAK_ITEM_REPUTATION_LOSS;
     public static final ModConfigSpec.IntValue TRADE_REPUTATION_GAIN;
     public static final ModConfigSpec.IntValue MAX_TRADE_REPUTATION_GAIN_PER_VILLAGER_PER_DAY;
     public static final ModConfigSpec.IntValue DIALOGUE_POSITIVE_REPUTATION_COOLDOWN_DAYS;
@@ -441,6 +443,12 @@ public final class VillagerRetaliationConfig {
         WITNESSED_IRON_GOLEM_KILL_PENALTY = BUILDER.comment("Reputation change applied to nearby villagers witnessing an iron golem kill.")
                 .translation("villagerretaliation.configuration.reputation.witnessedIronGolemKillPenalty")
                 .defineInRange("witnessedIronGolemKillPenalty", -60, -1000, 1000);
+        CONTAINER_BREAK_REPUTATION_LOSS = BUILDER.comment("Base reputation change applied to a villager witnessing a player break a watched container.")
+                .translation("villagerretaliation.configuration.reputation.containerBreakReputationLoss")
+                .defineInRange("containerBreakReputationLoss", -30, -1000, 0);
+        GENERATED_CONTAINER_BREAK_ITEM_REPUTATION_LOSS = BUILDER.comment("Additional reputation change per item stack count dropped from a generated watched container when broken.")
+                .translation("villagerretaliation.configuration.reputation.generatedContainerBreakItemReputationLoss")
+                .defineInRange("generatedContainerBreakItemReputationLoss", -1, -1000, 0);
         TRADE_REPUTATION_GAIN = BUILDER.comment("Reputation gained by trading with a specific villager.")
                 .translation("villagerretaliation.configuration.reputation.tradeReputationGain")
                 .defineInRange("tradeReputationGain", 2, -1000, 1000);

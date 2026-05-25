@@ -264,6 +264,9 @@
           "id": "return_repeat_theft",
           "label": "Give it back",
           "response": "You already had your warning. Returning it is the smallest part of making this right.",
+          "responses": [
+            "Put it back now. Returned goods are easier to forgive than hidden ones."
+          ],
           "reputation": 2,
           "aggro": false,
           "end_conversation": true,
@@ -271,7 +274,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "You already had your warning. Returning it is the smallest part of making this right.",
+            "success_responses": [
+              "That settles this moment. Let your next choice make it easier to trust you."
+            ],
             "failure_response": "You do not have {stolen_stack} to return. Then this was never about a mistake.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -8,
             "failure_aggro": true,
             "failure_end_conversation": true
@@ -281,6 +290,9 @@
           "id": "pay_repeat_theft",
           "label": "Pay restitution",
           "response": "That pays for the goods. It does not buy back the warning you wasted.",
+          "responses": [
+            "Payment helps settle the moment. Permission still comes before the latch."
+          ],
           "reputation": -2,
           "aggro": false,
           "end_conversation": true,
@@ -293,7 +305,13 @@
             "destination": "villager_inventory",
             "overflow_destination": "drop_at_villager",
             "success_response": "Twenty-five emeralds. That pays for the goods. It does not buy back the warning you wasted.",
+            "success_responses": [
+              "That payment covers the damage for now. The village will be watching what you do next."
+            ],
             "failure_response": "You cannot pay the restitution either. Then you are out of excuses.",
+            "failure_responses": [
+              "That is not enough to settle this. The village will remember the failure."
+            ],
             "failure_reputation": -8,
             "failure_aggro": true,
             "failure_end_conversation": true
@@ -303,6 +321,9 @@
           "id": "threaten_repeat_witness",
           "label": "Threaten them",
           "response": "I already let you walk once. I will not do it again.",
+          "responses": [
+            "Then we are past warnings. Choose your next move carefully."
+          ],
           "reputation": -14,
           "aggro": true,
           "end_conversation": true,
@@ -318,13 +339,22 @@
       "leave_option": {
         "label": "Leave",
         "response": "Walking away after a second theft is not a warning. It is a choice.",
+        "responses": [
+          "Leaving now is wiser than making this worse."
+        ],
         "reputation": -10,
         "aggro_chance": 0.75,
         "end_conversation": true,
         "take_stolen_items": {
           "destination": "villager_inventory_then_source_container",
           "success_response": "Walking away after a second theft is not a warning. It is a choice.",
+          "success_responses": [
+            "That settles this moment. Let your next choice make it easier to trust you."
+          ],
           "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+          "failure_responses": [
+            "Then you cannot settle this with payment or returns. Choose your next words carefully."
+          ],
           "failure_reputation": -8,
           "failure_aggro": true,
           "failure_end_conversation": true
@@ -346,6 +376,9 @@
           "id": "return_blade",
           "label": "Return it",
           "response": "Good. A blade taken in secret cuts trust first.",
+          "responses": [
+            "Put it back now. Returned goods are easier to forgive than hidden ones."
+          ],
           "reputation": 5,
           "aggro": false,
           "end_conversation": true,
@@ -353,7 +386,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "Good. A blade taken in secret cuts trust first.",
+            "success_responses": [
+              "That settles this moment. Let your next choice make it easier to trust you."
+            ],
             "failure_response": "You do not have {stolen_stack} to return. Do not make the theft harder to forgive.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -2,
             "failure_end_conversation": false
           }
@@ -362,6 +401,9 @@
           "id": "accept_warning",
           "label": "Accept warning",
           "response": "You have earned enough respect that I will call this foolish, not hostile. Do not test that twice.",
+          "responses": [
+            "I hear you. Make sure your next action proves it."
+          ],
           "reputation": 1,
           "aggro": false,
           "end_conversation": true,
@@ -377,6 +419,9 @@
           "id": "pay_for_steel",
           "label": "Pay for the steel",
           "response": "Steel is easy to price. Trust is not.",
+          "responses": [
+            "Payment helps settle the moment. Permission still comes before the latch."
+          ],
           "reputation_levels": [
             "neutral",
             "suspicious"
@@ -389,7 +434,13 @@
             "destination": "villager_inventory",
             "overflow_destination": "drop_at_villager",
             "success_response": "Ten emeralds covers the stock. It does not make the taking clean.",
+            "success_responses": [
+              "That payment covers the damage for now. The village will be watching what you do next."
+            ],
             "failure_response": "You cannot pay ten emeralds. Then you cannot buy your way out of this.",
+            "failure_responses": [
+              "That is not enough to settle this. The village will remember the failure."
+            ],
             "failure_reputation": -2,
             "failure_end_conversation": false
           },
@@ -402,6 +453,9 @@
           "id": "low_reputation_price",
           "label": "Make restitution",
           "response": "With your history, I price the risk higher than the metal.",
+          "responses": [
+            "I hear you. Make sure your next action proves it."
+          ],
           "reputation_levels": [
             "hostile",
             "despised",
@@ -415,7 +469,13 @@
             "destination": "villager_inventory",
             "overflow_destination": "drop_at_villager",
             "success_response": "Twenty emeralds. Now leave the steel where villagers can find it.",
+            "success_responses": [
+              "That payment covers the damage for now. The village will be watching what you do next."
+            ],
             "failure_response": "No payment, no patience.",
+            "failure_responses": [
+              "That is not enough to settle this. The village will remember the failure."
+            ],
             "failure_reputation": -5,
             "failure_aggro": true,
             "failure_end_conversation": false
@@ -429,6 +489,9 @@
           "id": "threaten",
           "label": "Threaten them",
           "response": "Then draw your answer.",
+          "responses": [
+            "Then we are past warnings. Choose your next move carefully."
+          ],
           "reputation": -10,
           "aggro": true,
           "end_conversation": true,
@@ -448,6 +511,9 @@
         {
           "label": "Leave",
           "response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+          "responses": [
+            "Leaving now is wiser than making this worse."
+          ],
           "reputation_levels": [
             "trusted",
             "respected",
@@ -461,7 +527,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+            "success_responses": [
+              "Those goods are accounted for again. Make sure they stay that way."
+            ],
             "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -5,
             "failure_aggro": true,
             "failure_end_conversation": true
@@ -470,6 +542,9 @@
         {
           "label": "Leave",
           "response": "I will take {stolen_items} back. Walking away does not make this settled.",
+          "responses": [
+            "Leaving now is wiser than making this worse."
+          ],
           "reputation_levels": [
             "neutral",
             "suspicious"
@@ -481,7 +556,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "I will take {stolen_items} back. Walking away does not make this settled.",
+            "success_responses": [
+              "Those goods are accounted for again. Make sure they stay that way."
+            ],
             "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -5,
             "failure_aggro": true,
             "failure_end_conversation": true
@@ -490,6 +571,9 @@
         {
           "label": "Leave",
           "response": "No. I will take {stolen_items} back, and you are done running from this.",
+          "responses": [
+            "Leaving now is wiser than making this worse."
+          ],
           "reputation_levels": [
             "hostile",
             "despised",
@@ -502,7 +586,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "No. I will take {stolen_items} back, and you are done running from this.",
+            "success_responses": [
+              "Those goods are accounted for again. Make sure they stay that way."
+            ],
             "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -5,
             "failure_aggro": true,
             "failure_end_conversation": true
@@ -525,6 +615,9 @@
           "id": "return_offering",
           "label": "Return it",
           "response": "Return it, then let your next kindness arrive before your next mistake.",
+          "responses": [
+            "Put it back now. Returned goods are easier to forgive than hidden ones."
+          ],
           "reputation": 5,
           "aggro": false,
           "end_conversation": true,
@@ -532,7 +625,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "Return it, then let your next kindness arrive before your next mistake.",
+            "success_responses": [
+              "That settles this moment. Let your next choice make it easier to trust you."
+            ],
             "failure_response": "You do not have {stolen_stack} to return. Do not make the theft harder to forgive.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -2,
             "failure_end_conversation": false
           }
@@ -541,6 +640,9 @@
           "id": "ask_forgiveness",
           "label": "Ask forgiveness",
           "response": "Forgiveness is not a lid you close. It is a habit you rebuild.",
+          "responses": [
+            "Ask first next time. A spoken request carries farther than an opened lid."
+          ],
           "reputation": 2,
           "aggro": false,
           "end_conversation": true,
@@ -550,6 +652,9 @@
           "id": "temple_restitution",
           "label": "Offer restitution",
           "response": "Restitution should help the village heal.",
+          "responses": [
+            "I hear you. Make sure your next action proves it."
+          ],
           "take_items": {
             "items": [
               "minecraft:emerald"
@@ -558,7 +663,13 @@
             "destination": "villager_inventory",
             "overflow_destination": "drop_at_villager",
             "success_response": "Twelve emeralds will refill what fear empties. Do not touch the temple stores again.",
+            "success_responses": [
+              "That payment covers the damage for now. The village will be watching what you do next."
+            ],
             "failure_response": "You cannot offer what you do not carry.",
+            "failure_responses": [
+              "That is not enough to settle this. The village will remember the failure."
+            ],
             "failure_reputation": -3,
             "failure_end_conversation": false
           },
@@ -571,6 +682,9 @@
           "id": "dismiss_temple",
           "label": "Dismiss them",
           "response": "Then you do not understand what you took.",
+          "responses": [
+            "I hear you. Make sure your next action proves it."
+          ],
           "reputation": -6,
           "aggro": true,
           "end_conversation": true,
@@ -590,6 +704,9 @@
         {
           "label": "Leave",
           "response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+          "responses": [
+            "Leaving now is wiser than making this worse."
+          ],
           "reputation_levels": [
             "trusted",
             "respected",
@@ -603,7 +720,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+            "success_responses": [
+              "Those goods are accounted for again. Make sure they stay that way."
+            ],
             "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -5,
             "failure_aggro": true,
             "failure_end_conversation": true
@@ -612,6 +735,9 @@
         {
           "label": "Leave",
           "response": "I will take {stolen_items} back. Walking away does not make this settled.",
+          "responses": [
+            "Leaving now is wiser than making this worse."
+          ],
           "reputation_levels": [
             "neutral",
             "suspicious"
@@ -623,7 +749,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "I will take {stolen_items} back. Walking away does not make this settled.",
+            "success_responses": [
+              "Those goods are accounted for again. Make sure they stay that way."
+            ],
             "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -5,
             "failure_aggro": true,
             "failure_end_conversation": true
@@ -632,6 +764,9 @@
         {
           "label": "Leave",
           "response": "No. I will take {stolen_items} back, and you are done running from this.",
+          "responses": [
+            "Leaving now is wiser than making this worse."
+          ],
           "reputation_levels": [
             "hostile",
             "despised",
@@ -644,7 +779,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "No. I will take {stolen_items} back, and you are done running from this.",
+            "success_responses": [
+              "Those goods are accounted for again. Make sure they stay that way."
+            ],
             "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -5,
             "failure_aggro": true,
             "failure_end_conversation": true
@@ -659,6 +800,10 @@
       "loot_table": "minecraft:chests/village/village_cartographer",
       "witness_radius": 12,
       "requires_line_of_sight": true,
+      "reputation_levels": [
+        "neutral",
+        "suspicious"
+      ],
       "initiate_dialogue": true,
       "aggro_immediately": false,
       "reputation": -4,
@@ -667,6 +812,9 @@
           "id": "close_it",
           "label": "Close it",
           "response": "Good. Some paths should be offered, not taken.",
+          "responses": [
+            "Good. Keep your hands clear of village stores."
+          ],
           "reputation": 2,
           "aggro": false,
           "end_conversation": true,
@@ -676,34 +824,25 @@
           "id": "ask_for_map",
           "label": "Ask for a map",
           "response": "Ask properly later. A good direction starts with permission.",
+          "responses": [
+            "Ask first next time. A spoken request carries farther than an opened lid."
+          ],
           "reputation": 1,
           "aggro": false,
           "end_conversation": true,
           "order": 1
         },
         {
-          "id": "trusted_warning",
-          "label": "Accept warning",
-          "response": "You have followed our directions before. I will trust you to step back now.",
-          "reputation": 1,
-          "aggro": false,
-          "end_conversation": true,
-          "reputation_levels": [
-            "trusted",
-            "respected",
-            "revered",
-            "royalty"
-          ],
-          "order": 2
-        },
-        {
           "id": "deny",
           "label": "Deny it",
           "response": "I know what an opened chest sounds like. I map more than roads.",
+          "responses": [
+            "Do not dress an open lid up as innocence. I saw enough."
+          ],
           "reputation": -4,
           "aggro": true,
           "end_conversation": true,
-          "order": 3
+          "order": 2
         }
       ],
       "force_camera_towards_villager": true,
@@ -713,6 +852,9 @@
       "leave_option": {
         "label": "Leave",
         "response": "Leaving does not make this disappear.",
+        "responses": [
+          "Leaving now is wiser than making this worse."
+        ],
         "reputation": -1,
         "end_conversation": true,
         "order": 1000
@@ -730,6 +872,10 @@
       "loot_table": "minecraft:chests/village/village_armorer",
       "witness_radius": 12,
       "requires_line_of_sight": true,
+      "reputation_levels": [
+        "neutral",
+        "suspicious"
+      ],
       "initiate_dialogue": true,
       "aggro_immediately": false,
       "reputation": -4,
@@ -738,6 +884,9 @@
           "id": "close_it",
           "label": "Close it",
           "response": "Good. Armor kept in place protects more than armor carried off.",
+          "responses": [
+            "Good. Keep your hands clear of village stores."
+          ],
           "reputation": 2,
           "aggro": false,
           "end_conversation": true,
@@ -747,6 +896,9 @@
           "id": "offer_payment",
           "label": "Offer payment",
           "response": "Payment is not permission, but it proves you understand there was a cost.",
+          "responses": [
+            "Payment helps settle the moment. Permission still comes before the latch."
+          ],
           "take_items": {
             "items": [
               "minecraft:emerald"
@@ -755,7 +907,13 @@
             "destination": "villager_inventory",
             "overflow_destination": "drop_at_villager",
             "success_response": "Four emeralds, and the chest stays closed.",
+            "success_responses": [
+              "That payment covers the damage for now. The village will be watching what you do next."
+            ],
             "failure_response": "You do not have four emeralds. Then close the chest with an empty hand.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -1,
             "failure_end_conversation": false
           },
@@ -768,6 +926,9 @@
           "id": "explain_need",
           "label": "Explain the danger",
           "response": "If danger is coming, say that first. A village can arm itself faster than it can forgive theft.",
+          "responses": [
+            "Then ask plainly before reaching. Need does not make village stores yours."
+          ],
           "reputation": 0,
           "aggro": false,
           "end_conversation": true,
@@ -777,6 +938,9 @@
           "id": "threaten",
           "label": "Threaten them",
           "response": "Then you are the danger.",
+          "responses": [
+            "Then we are past warnings. Choose your next move carefully."
+          ],
           "reputation": -7,
           "aggro": true,
           "end_conversation": true,
@@ -790,6 +954,9 @@
       "leave_option": {
         "label": "Leave",
         "response": "Leaving does not make this disappear.",
+        "responses": [
+          "Leaving now is wiser than making this worse."
+        ],
         "reputation": -1,
         "end_conversation": true,
         "order": 1000
@@ -819,6 +986,9 @@
           "id": "return_armor",
           "label": "Return it",
           "response": "Good. Armor belongs where the village can reach it.",
+          "responses": [
+            "Put it back now. Returned goods are easier to forgive than hidden ones."
+          ],
           "reputation": 5,
           "aggro": false,
           "end_conversation": true,
@@ -826,7 +996,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "Good. Armor belongs where the village can reach it.",
+            "success_responses": [
+              "That settles this moment. Let your next choice make it easier to trust you."
+            ],
             "failure_response": "You do not have {stolen_stack} to return. Do not make the theft harder to forgive.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -2,
             "failure_end_conversation": false
           }
@@ -835,6 +1011,9 @@
           "id": "apologize",
           "label": "Apologize",
           "response": "You understand the danger, then. Keep your hands away from our protection.",
+          "responses": [
+            "Apology heard. Better choices will matter more than better words."
+          ],
           "reputation": 2,
           "aggro": false,
           "end_conversation": true,
@@ -844,6 +1023,9 @@
           "id": "offer_payment",
           "label": "Offer payment",
           "response": "Payment after taking is not permission. It is only the start of making it right.",
+          "responses": [
+            "Payment helps settle the moment. Permission still comes before the latch."
+          ],
           "reputation_levels": [
             "neutral",
             "suspicious",
@@ -859,7 +1041,13 @@
             "destination": "villager_inventory",
             "overflow_destination": "drop_at_villager",
             "success_response": "Ten emeralds will cover the missing protection. The warning stays.",
+            "success_responses": [
+              "That payment covers the damage for now. The village will be watching what you do next."
+            ],
             "failure_response": "You cannot pay 10 emeralds. Empty pockets do not answer for full hands.",
+            "failure_responses": [
+              "That is not enough to settle this. The village will remember the failure."
+            ],
             "failure_reputation": -2,
             "failure_end_conversation": false
           },
@@ -872,6 +1060,9 @@
           "id": "deny",
           "label": "Deny it",
           "response": "Armor has weight. So does a lie.",
+          "responses": [
+            "Do not dress an open lid up as innocence. I saw enough."
+          ],
           "reputation": -5,
           "aggro": true,
           "end_conversation": true,
@@ -881,6 +1072,9 @@
           "id": "threaten",
           "label": "Threaten them",
           "response": "Then you are the danger I was preparing for.",
+          "responses": [
+            "Then we are past warnings. Choose your next move carefully."
+          ],
           "reputation": -9,
           "aggro": true,
           "end_conversation": true,
@@ -896,6 +1090,9 @@
         {
           "label": "Leave",
           "response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+          "responses": [
+            "Leaving now is wiser than making this worse."
+          ],
           "reputation_levels": [
             "trusted",
             "respected",
@@ -909,7 +1106,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+            "success_responses": [
+              "Those goods are accounted for again. Make sure they stay that way."
+            ],
             "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -5,
             "failure_aggro": true,
             "failure_end_conversation": true
@@ -918,6 +1121,9 @@
         {
           "label": "Leave",
           "response": "I will take {stolen_items} back. Walking away does not make this settled.",
+          "responses": [
+            "Leaving now is wiser than making this worse."
+          ],
           "reputation_levels": [
             "neutral",
             "suspicious"
@@ -929,7 +1135,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "I will take {stolen_items} back. Walking away does not make this settled.",
+            "success_responses": [
+              "Those goods are accounted for again. Make sure they stay that way."
+            ],
             "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -5,
             "failure_aggro": true,
             "failure_end_conversation": true
@@ -938,6 +1150,9 @@
         {
           "label": "Leave",
           "response": "No. I will take {stolen_items} back, and you are done running from this.",
+          "responses": [
+            "Leaving now is wiser than making this worse."
+          ],
           "reputation_levels": [
             "hostile",
             "despised",
@@ -950,7 +1165,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "No. I will take {stolen_items} back, and you are done running from this.",
+            "success_responses": [
+              "Those goods are accounted for again. Make sure they stay that way."
+            ],
             "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -5,
             "failure_aggro": true,
             "failure_end_conversation": true
@@ -977,6 +1198,9 @@
           "id": "return_food",
           "label": "Return it",
           "response": "Good. Food returned quickly still feeds the right mouths.",
+          "responses": [
+            "Put it back now. Returned goods are easier to forgive than hidden ones."
+          ],
           "reputation": 5,
           "aggro": false,
           "end_conversation": true,
@@ -984,7 +1208,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "Good. Food returned quickly still feeds the right mouths.",
+            "success_responses": [
+              "That settles this moment. Let your next choice make it easier to trust you."
+            ],
             "failure_response": "You do not have {stolen_stack} to return. Do not make the theft harder to forgive.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -2,
             "failure_end_conversation": false
           }
@@ -993,6 +1223,9 @@
           "id": "apologize",
           "label": "Apologize",
           "response": "Hungry people ask. Thieves make everyone hungrier.",
+          "responses": [
+            "Apology heard. Better choices will matter more than better words."
+          ],
           "reputation": 2,
           "aggro": false,
           "end_conversation": true,
@@ -1002,6 +1235,9 @@
           "id": "offer_payment",
           "label": "Offer payment",
           "response": "Payment after taking is not permission. It is only the start of making it right.",
+          "responses": [
+            "Payment helps settle the moment. Permission still comes before the latch."
+          ],
           "reputation_levels": [
             "neutral",
             "suspicious",
@@ -1017,7 +1253,13 @@
             "destination": "villager_inventory",
             "overflow_destination": "drop_at_villager",
             "success_response": "Six emeralds replaces the food. Next time, speak before taking.",
+            "success_responses": [
+              "That payment covers the damage for now. The village will be watching what you do next."
+            ],
             "failure_response": "You cannot pay 6 emeralds. Empty pockets do not answer for full hands.",
+            "failure_responses": [
+              "That is not enough to settle this. The village will remember the failure."
+            ],
             "failure_reputation": -2,
             "failure_end_conversation": false
           },
@@ -1030,6 +1272,9 @@
           "id": "deny",
           "label": "Deny it",
           "response": "I know the sound of my stores leaving.",
+          "responses": [
+            "Do not dress an open lid up as innocence. I saw enough."
+          ],
           "reputation": -5,
           "aggro": true,
           "end_conversation": true,
@@ -1039,6 +1284,9 @@
           "id": "threaten",
           "label": "Threaten them",
           "response": "Threats do not season theft into something better.",
+          "responses": [
+            "Then we are past warnings. Choose your next move carefully."
+          ],
           "reputation": -9,
           "aggro": true,
           "end_conversation": true,
@@ -1054,6 +1302,9 @@
         {
           "label": "Leave",
           "response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+          "responses": [
+            "Leaving now is wiser than making this worse."
+          ],
           "reputation_levels": [
             "trusted",
             "respected",
@@ -1067,7 +1318,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+            "success_responses": [
+              "Those goods are accounted for again. Make sure they stay that way."
+            ],
             "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -5,
             "failure_aggro": true,
             "failure_end_conversation": true
@@ -1076,6 +1333,9 @@
         {
           "label": "Leave",
           "response": "I will take {stolen_items} back. Walking away does not make this settled.",
+          "responses": [
+            "Leaving now is wiser than making this worse."
+          ],
           "reputation_levels": [
             "neutral",
             "suspicious"
@@ -1087,7 +1347,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "I will take {stolen_items} back. Walking away does not make this settled.",
+            "success_responses": [
+              "Those goods are accounted for again. Make sure they stay that way."
+            ],
             "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -5,
             "failure_aggro": true,
             "failure_end_conversation": true
@@ -1096,6 +1362,9 @@
         {
           "label": "Leave",
           "response": "No. I will take {stolen_items} back, and you are done running from this.",
+          "responses": [
+            "Leaving now is wiser than making this worse."
+          ],
           "reputation_levels": [
             "hostile",
             "despised",
@@ -1108,7 +1377,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "No. I will take {stolen_items} back, and you are done running from this.",
+            "success_responses": [
+              "Those goods are accounted for again. Make sure they stay that way."
+            ],
             "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -5,
             "failure_aggro": true,
             "failure_end_conversation": true
@@ -1135,6 +1410,9 @@
           "id": "return_maps",
           "label": "Return it",
           "response": "Good. A returned map still points in the right direction.",
+          "responses": [
+            "Put it back now. Returned goods are easier to forgive than hidden ones."
+          ],
           "reputation": 5,
           "aggro": false,
           "end_conversation": true,
@@ -1142,7 +1420,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "Good. A returned map still points in the right direction.",
+            "success_responses": [
+              "That settles this moment. Let your next choice make it easier to trust you."
+            ],
             "failure_response": "You do not have {stolen_stack} to return. Do not make the theft harder to forgive.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -2,
             "failure_end_conversation": false
           }
@@ -1151,6 +1435,9 @@
           "id": "apologize",
           "label": "Apologize",
           "response": "An apology is a start. Permission is the route you skipped.",
+          "responses": [
+            "Apology heard. Better choices will matter more than better words."
+          ],
           "reputation": 2,
           "aggro": false,
           "end_conversation": true,
@@ -1160,6 +1447,9 @@
           "id": "offer_payment",
           "label": "Offer payment",
           "response": "Payment after taking is not permission. It is only the start of making it right.",
+          "responses": [
+            "Payment helps settle the moment. Permission still comes before the latch."
+          ],
           "reputation_levels": [
             "neutral",
             "suspicious",
@@ -1175,7 +1465,13 @@
             "destination": "villager_inventory",
             "overflow_destination": "drop_at_villager",
             "success_response": "Eight emeralds will replace the supplies. Do not chart another path through my chest.",
+            "success_responses": [
+              "That payment covers the damage for now. The village will be watching what you do next."
+            ],
             "failure_response": "You cannot pay 8 emeralds. Empty pockets do not answer for full hands.",
+            "failure_responses": [
+              "That is not enough to settle this. The village will remember the failure."
+            ],
             "failure_reputation": -2,
             "failure_end_conversation": false
           },
@@ -1188,6 +1484,9 @@
           "id": "deny",
           "label": "Deny it",
           "response": "I notice missing marks. I notice missing goods too.",
+          "responses": [
+            "Do not dress an open lid up as innocence. I saw enough."
+          ],
           "reputation": -5,
           "aggro": true,
           "end_conversation": true,
@@ -1197,6 +1496,9 @@
           "id": "threaten",
           "label": "Threaten them",
           "response": "Threats are a poor compass.",
+          "responses": [
+            "Then we are past warnings. Choose your next move carefully."
+          ],
           "reputation": -9,
           "aggro": true,
           "end_conversation": true,
@@ -1212,6 +1514,9 @@
         {
           "label": "Leave",
           "response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+          "responses": [
+            "Leaving now is wiser than making this worse."
+          ],
           "reputation_levels": [
             "trusted",
             "respected",
@@ -1225,7 +1530,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+            "success_responses": [
+              "Those goods are accounted for again. Make sure they stay that way."
+            ],
             "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -5,
             "failure_aggro": true,
             "failure_end_conversation": true
@@ -1234,6 +1545,9 @@
         {
           "label": "Leave",
           "response": "I will take {stolen_items} back. Walking away does not make this settled.",
+          "responses": [
+            "Leaving now is wiser than making this worse."
+          ],
           "reputation_levels": [
             "neutral",
             "suspicious"
@@ -1245,7 +1559,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "I will take {stolen_items} back. Walking away does not make this settled.",
+            "success_responses": [
+              "Those goods are accounted for again. Make sure they stay that way."
+            ],
             "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -5,
             "failure_aggro": true,
             "failure_end_conversation": true
@@ -1254,6 +1574,9 @@
         {
           "label": "Leave",
           "response": "No. I will take {stolen_items} back, and you are done running from this.",
+          "responses": [
+            "Leaving now is wiser than making this worse."
+          ],
           "reputation_levels": [
             "hostile",
             "despised",
@@ -1266,7 +1589,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "No. I will take {stolen_items} back, and you are done running from this.",
+            "success_responses": [
+              "Those goods are accounted for again. Make sure they stay that way."
+            ],
             "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -5,
             "failure_aggro": true,
             "failure_end_conversation": true
@@ -1293,6 +1622,9 @@
           "id": "return_catch",
           "label": "Return it",
           "response": "Good. The catch returns before trust sinks any deeper.",
+          "responses": [
+            "Put it back now. Returned goods are easier to forgive than hidden ones."
+          ],
           "reputation": 5,
           "aggro": false,
           "end_conversation": true,
@@ -1300,7 +1632,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "Good. The catch returns before trust sinks any deeper.",
+            "success_responses": [
+              "That settles this moment. Let your next choice make it easier to trust you."
+            ],
             "failure_response": "You do not have {stolen_stack} to return. Do not make the theft harder to forgive.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -2,
             "failure_end_conversation": false
           }
@@ -1309,6 +1647,9 @@
           "id": "apologize",
           "label": "Apologize",
           "response": "Then remember patience before hunger next time.",
+          "responses": [
+            "Apology heard. Better choices will matter more than better words."
+          ],
           "reputation": 2,
           "aggro": false,
           "end_conversation": true,
@@ -1318,6 +1659,9 @@
           "id": "offer_payment",
           "label": "Offer payment",
           "response": "Payment after taking is not permission. It is only the start of making it right.",
+          "responses": [
+            "Payment helps settle the moment. Permission still comes before the latch."
+          ],
           "reputation_levels": [
             "neutral",
             "suspicious",
@@ -1333,7 +1677,13 @@
             "destination": "villager_inventory",
             "overflow_destination": "drop_at_villager",
             "success_response": "Six emeralds will refill the stores. Keep your hands off the nets.",
+            "success_responses": [
+              "That payment covers the damage for now. The village will be watching what you do next."
+            ],
             "failure_response": "You cannot pay 6 emeralds. Empty pockets do not answer for full hands.",
+            "failure_responses": [
+              "That is not enough to settle this. The village will remember the failure."
+            ],
             "failure_reputation": -2,
             "failure_end_conversation": false
           },
@@ -1346,6 +1696,9 @@
           "id": "deny",
           "label": "Deny it",
           "response": "I know what I hauled in, and I know what you hauled out.",
+          "responses": [
+            "Do not dress an open lid up as innocence. I saw enough."
+          ],
           "reputation": -5,
           "aggro": true,
           "end_conversation": true,
@@ -1355,6 +1708,9 @@
           "id": "threaten",
           "label": "Threaten them",
           "response": "Then you have mistaken a fisherman for easy prey.",
+          "responses": [
+            "Then we are past warnings. Choose your next move carefully."
+          ],
           "reputation": -9,
           "aggro": true,
           "end_conversation": true,
@@ -1370,6 +1726,9 @@
         {
           "label": "Leave",
           "response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+          "responses": [
+            "Leaving now is wiser than making this worse."
+          ],
           "reputation_levels": [
             "trusted",
             "respected",
@@ -1383,7 +1742,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+            "success_responses": [
+              "Those goods are accounted for again. Make sure they stay that way."
+            ],
             "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -5,
             "failure_aggro": true,
             "failure_end_conversation": true
@@ -1392,6 +1757,9 @@
         {
           "label": "Leave",
           "response": "I will take {stolen_items} back. Walking away does not make this settled.",
+          "responses": [
+            "Leaving now is wiser than making this worse."
+          ],
           "reputation_levels": [
             "neutral",
             "suspicious"
@@ -1403,7 +1771,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "I will take {stolen_items} back. Walking away does not make this settled.",
+            "success_responses": [
+              "Those goods are accounted for again. Make sure they stay that way."
+            ],
             "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -5,
             "failure_aggro": true,
             "failure_end_conversation": true
@@ -1412,6 +1786,9 @@
         {
           "label": "Leave",
           "response": "No. I will take {stolen_items} back, and you are done running from this.",
+          "responses": [
+            "Leaving now is wiser than making this worse."
+          ],
           "reputation_levels": [
             "hostile",
             "despised",
@@ -1424,7 +1801,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "No. I will take {stolen_items} back, and you are done running from this.",
+            "success_responses": [
+              "Those goods are accounted for again. Make sure they stay that way."
+            ],
             "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -5,
             "failure_aggro": true,
             "failure_end_conversation": true
@@ -1451,6 +1834,9 @@
           "id": "return_arrows",
           "label": "Return it",
           "response": "Good. Arrows should leave the village only with purpose.",
+          "responses": [
+            "Put it back now. Returned goods are easier to forgive than hidden ones."
+          ],
           "reputation": 5,
           "aggro": false,
           "end_conversation": true,
@@ -1458,7 +1844,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "Good. Arrows should leave the village only with purpose.",
+            "success_responses": [
+              "That settles this moment. Let your next choice make it easier to trust you."
+            ],
             "failure_response": "You do not have {stolen_stack} to return. Do not make the theft harder to forgive.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -2,
             "failure_end_conversation": false
           }
@@ -1467,6 +1859,9 @@
           "id": "apologize",
           "label": "Apologize",
           "response": "Then aim that apology at better choices.",
+          "responses": [
+            "Apology heard. Better choices will matter more than better words."
+          ],
           "reputation": 2,
           "aggro": false,
           "end_conversation": true,
@@ -1476,6 +1871,9 @@
           "id": "offer_payment",
           "label": "Offer payment",
           "response": "Payment after taking is not permission. It is only the start of making it right.",
+          "responses": [
+            "Payment helps settle the moment. Permission still comes before the latch."
+          ],
           "reputation_levels": [
             "neutral",
             "suspicious",
@@ -1491,7 +1889,13 @@
             "destination": "villager_inventory",
             "overflow_destination": "drop_at_villager",
             "success_response": "Seven emeralds covers the stock. Do not reach for the fletching chest again.",
+            "success_responses": [
+              "That payment covers the damage for now. The village will be watching what you do next."
+            ],
             "failure_response": "You cannot pay 7 emeralds. Empty pockets do not answer for full hands.",
+            "failure_responses": [
+              "That is not enough to settle this. The village will remember the failure."
+            ],
             "failure_reputation": -2,
             "failure_end_conversation": false
           },
@@ -1504,6 +1908,9 @@
           "id": "deny",
           "label": "Deny it",
           "response": "I can spot a bent arrow. I can spot a crooked answer.",
+          "responses": [
+            "Do not dress an open lid up as innocence. I saw enough."
+          ],
           "reputation": -5,
           "aggro": true,
           "end_conversation": true,
@@ -1513,6 +1920,9 @@
           "id": "threaten",
           "label": "Threaten them",
           "response": "Then every arrow in this village has a clearer target.",
+          "responses": [
+            "Then we are past warnings. Choose your next move carefully."
+          ],
           "reputation": -9,
           "aggro": true,
           "end_conversation": true,
@@ -1528,6 +1938,9 @@
         {
           "label": "Leave",
           "response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+          "responses": [
+            "Leaving now is wiser than making this worse."
+          ],
           "reputation_levels": [
             "trusted",
             "respected",
@@ -1541,7 +1954,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+            "success_responses": [
+              "Those goods are accounted for again. Make sure they stay that way."
+            ],
             "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -5,
             "failure_aggro": true,
             "failure_end_conversation": true
@@ -1550,6 +1969,9 @@
         {
           "label": "Leave",
           "response": "I will take {stolen_items} back. Walking away does not make this settled.",
+          "responses": [
+            "Leaving now is wiser than making this worse."
+          ],
           "reputation_levels": [
             "neutral",
             "suspicious"
@@ -1561,7 +1983,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "I will take {stolen_items} back. Walking away does not make this settled.",
+            "success_responses": [
+              "Those goods are accounted for again. Make sure they stay that way."
+            ],
             "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -5,
             "failure_aggro": true,
             "failure_end_conversation": true
@@ -1570,6 +1998,9 @@
         {
           "label": "Leave",
           "response": "No. I will take {stolen_items} back, and you are done running from this.",
+          "responses": [
+            "Leaving now is wiser than making this worse."
+          ],
           "reputation_levels": [
             "hostile",
             "despised",
@@ -1582,7 +2013,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "No. I will take {stolen_items} back, and you are done running from this.",
+            "success_responses": [
+              "Those goods are accounted for again. Make sure they stay that way."
+            ],
             "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -5,
             "failure_aggro": true,
             "failure_end_conversation": true
@@ -1609,6 +2046,9 @@
           "id": "return_stone",
           "label": "Return it",
           "response": "Good. A returned block keeps its place in the wall.",
+          "responses": [
+            "Put it back now. Returned goods are easier to forgive than hidden ones."
+          ],
           "reputation": 5,
           "aggro": false,
           "end_conversation": true,
@@ -1616,7 +2056,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "Good. A returned block keeps its place in the wall.",
+            "success_responses": [
+              "That settles this moment. Let your next choice make it easier to trust you."
+            ],
             "failure_response": "You do not have {stolen_stack} to return. Do not make the theft harder to forgive.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -2,
             "failure_end_conversation": false
           }
@@ -1625,6 +2071,9 @@
           "id": "apologize",
           "label": "Apologize",
           "response": "Words are softer than stone. Build better habits.",
+          "responses": [
+            "Apology heard. Better choices will matter more than better words."
+          ],
           "reputation": 2,
           "aggro": false,
           "end_conversation": true,
@@ -1634,6 +2083,9 @@
           "id": "offer_payment",
           "label": "Offer payment",
           "response": "Payment after taking is not permission. It is only the start of making it right.",
+          "responses": [
+            "Payment helps settle the moment. Permission still comes before the latch."
+          ],
           "reputation_levels": [
             "neutral",
             "suspicious",
@@ -1649,7 +2101,13 @@
             "destination": "villager_inventory",
             "overflow_destination": "drop_at_villager",
             "success_response": "Seven emeralds will replace the stock. Keep your hands off the work chest.",
+            "success_responses": [
+              "That payment covers the damage for now. The village will be watching what you do next."
+            ],
             "failure_response": "You cannot pay 7 emeralds. Empty pockets do not answer for full hands.",
+            "failure_responses": [
+              "That is not enough to settle this. The village will remember the failure."
+            ],
             "failure_reputation": -2,
             "failure_end_conversation": false
           },
@@ -1662,6 +2120,9 @@
           "id": "deny",
           "label": "Deny it",
           "response": "Stone leaves dust. Theft leaves a mark too.",
+          "responses": [
+            "Do not dress an open lid up as innocence. I saw enough."
+          ],
           "reputation": -5,
           "aggro": true,
           "end_conversation": true,
@@ -1671,6 +2132,9 @@
           "id": "threaten",
           "label": "Threaten them",
           "response": "Threaten a mason and you learn what a wall is for.",
+          "responses": [
+            "Then we are past warnings. Choose your next move carefully."
+          ],
           "reputation": -9,
           "aggro": true,
           "end_conversation": true,
@@ -1686,6 +2150,9 @@
         {
           "label": "Leave",
           "response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+          "responses": [
+            "Leaving now is wiser than making this worse."
+          ],
           "reputation_levels": [
             "trusted",
             "respected",
@@ -1699,7 +2166,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+            "success_responses": [
+              "Those goods are accounted for again. Make sure they stay that way."
+            ],
             "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -5,
             "failure_aggro": true,
             "failure_end_conversation": true
@@ -1708,6 +2181,9 @@
         {
           "label": "Leave",
           "response": "I will take {stolen_items} back. Walking away does not make this settled.",
+          "responses": [
+            "Leaving now is wiser than making this worse."
+          ],
           "reputation_levels": [
             "neutral",
             "suspicious"
@@ -1719,7 +2195,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "I will take {stolen_items} back. Walking away does not make this settled.",
+            "success_responses": [
+              "Those goods are accounted for again. Make sure they stay that way."
+            ],
             "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -5,
             "failure_aggro": true,
             "failure_end_conversation": true
@@ -1728,6 +2210,9 @@
         {
           "label": "Leave",
           "response": "No. I will take {stolen_items} back, and you are done running from this.",
+          "responses": [
+            "Leaving now is wiser than making this worse."
+          ],
           "reputation_levels": [
             "hostile",
             "despised",
@@ -1740,7 +2225,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "No. I will take {stolen_items} back, and you are done running from this.",
+            "success_responses": [
+              "Those goods are accounted for again. Make sure they stay that way."
+            ],
             "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -5,
             "failure_aggro": true,
             "failure_end_conversation": true
@@ -1767,6 +2258,9 @@
           "id": "return_wool",
           "label": "Return it",
           "response": "Good. Returned work can still warm someone.",
+          "responses": [
+            "Put it back now. Returned goods are easier to forgive than hidden ones."
+          ],
           "reputation": 5,
           "aggro": false,
           "end_conversation": true,
@@ -1774,7 +2268,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "Good. Returned work can still warm someone.",
+            "success_responses": [
+              "That settles this moment. Let your next choice make it easier to trust you."
+            ],
             "failure_response": "You do not have {stolen_stack} to return. Do not make the theft harder to forgive.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -2,
             "failure_end_conversation": false
           }
@@ -1783,6 +2283,9 @@
           "id": "apologize",
           "label": "Apologize",
           "response": "Then mind the fence next time, and the boundary too.",
+          "responses": [
+            "Apology heard. Better choices will matter more than better words."
+          ],
           "reputation": 2,
           "aggro": false,
           "end_conversation": true,
@@ -1792,6 +2295,9 @@
           "id": "offer_payment",
           "label": "Offer payment",
           "response": "Payment after taking is not permission. It is only the start of making it right.",
+          "responses": [
+            "Payment helps settle the moment. Permission still comes before the latch."
+          ],
           "reputation_levels": [
             "neutral",
             "suspicious",
@@ -1807,7 +2313,13 @@
             "destination": "villager_inventory",
             "overflow_destination": "drop_at_villager",
             "success_response": "Five emeralds covers the stock. Do not shear from our chest again.",
+            "success_responses": [
+              "That payment covers the damage for now. The village will be watching what you do next."
+            ],
             "failure_response": "You cannot pay 5 emeralds. Empty pockets do not answer for full hands.",
+            "failure_responses": [
+              "That is not enough to settle this. The village will remember the failure."
+            ],
             "failure_reputation": -2,
             "failure_end_conversation": false
           },
@@ -1820,6 +2332,9 @@
           "id": "deny",
           "label": "Deny it",
           "response": "I count my flock and my stores. You are short on truth.",
+          "responses": [
+            "Do not dress an open lid up as innocence. I saw enough."
+          ],
           "reputation": -5,
           "aggro": true,
           "end_conversation": true,
@@ -1829,6 +2344,9 @@
           "id": "threaten",
           "label": "Threaten them",
           "response": "Threats are a thin blanket.",
+          "responses": [
+            "Then we are past warnings. Choose your next move carefully."
+          ],
           "reputation": -9,
           "aggro": true,
           "end_conversation": true,
@@ -1844,6 +2362,9 @@
         {
           "label": "Leave",
           "response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+          "responses": [
+            "Leaving now is wiser than making this worse."
+          ],
           "reputation_levels": [
             "trusted",
             "respected",
@@ -1857,7 +2378,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+            "success_responses": [
+              "Those goods are accounted for again. Make sure they stay that way."
+            ],
             "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -5,
             "failure_aggro": true,
             "failure_end_conversation": true
@@ -1866,6 +2393,9 @@
         {
           "label": "Leave",
           "response": "I will take {stolen_items} back. Walking away does not make this settled.",
+          "responses": [
+            "Leaving now is wiser than making this worse."
+          ],
           "reputation_levels": [
             "neutral",
             "suspicious"
@@ -1877,7 +2407,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "I will take {stolen_items} back. Walking away does not make this settled.",
+            "success_responses": [
+              "Those goods are accounted for again. Make sure they stay that way."
+            ],
             "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -5,
             "failure_aggro": true,
             "failure_end_conversation": true
@@ -1886,6 +2422,9 @@
         {
           "label": "Leave",
           "response": "No. I will take {stolen_items} back, and you are done running from this.",
+          "responses": [
+            "Leaving now is wiser than making this worse."
+          ],
           "reputation_levels": [
             "hostile",
             "despised",
@@ -1898,7 +2437,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "No. I will take {stolen_items} back, and you are done running from this.",
+            "success_responses": [
+              "Those goods are accounted for again. Make sure they stay that way."
+            ],
             "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -5,
             "failure_aggro": true,
             "failure_end_conversation": true
@@ -1925,6 +2470,9 @@
           "id": "return_leather",
           "label": "Return it",
           "response": "Good. Returned work still carries fewer stains than stolen work.",
+          "responses": [
+            "Put it back now. Returned goods are easier to forgive than hidden ones."
+          ],
           "reputation": 5,
           "aggro": false,
           "end_conversation": true,
@@ -1932,7 +2480,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "Good. Returned work still carries fewer stains than stolen work.",
+            "success_responses": [
+              "That settles this moment. Let your next choice make it easier to trust you."
+            ],
             "failure_response": "You do not have {stolen_stack} to return. Do not make the theft harder to forgive.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -2,
             "failure_end_conversation": false
           }
@@ -1941,6 +2495,9 @@
           "id": "apologize",
           "label": "Apologize",
           "response": "Then wear the lesson better than you wore the excuse.",
+          "responses": [
+            "Apology heard. Better choices will matter more than better words."
+          ],
           "reputation": 2,
           "aggro": false,
           "end_conversation": true,
@@ -1950,6 +2507,9 @@
           "id": "offer_payment",
           "label": "Offer payment",
           "response": "Payment after taking is not permission. It is only the start of making it right.",
+          "responses": [
+            "Payment helps settle the moment. Permission still comes before the latch."
+          ],
           "reputation_levels": [
             "neutral",
             "suspicious",
@@ -1965,7 +2525,13 @@
             "destination": "villager_inventory",
             "overflow_destination": "drop_at_villager",
             "success_response": "Seven emeralds replaces the leatherwork. Ask before touching my stores.",
+            "success_responses": [
+              "That payment covers the damage for now. The village will be watching what you do next."
+            ],
             "failure_response": "You cannot pay 7 emeralds. Empty pockets do not answer for full hands.",
+            "failure_responses": [
+              "That is not enough to settle this. The village will remember the failure."
+            ],
             "failure_reputation": -2,
             "failure_end_conversation": false
           },
@@ -1978,6 +2544,9 @@
           "id": "deny",
           "label": "Deny it",
           "response": "Leather keeps marks. So does a village.",
+          "responses": [
+            "Do not dress an open lid up as innocence. I saw enough."
+          ],
           "reputation": -5,
           "aggro": true,
           "end_conversation": true,
@@ -1987,6 +2556,9 @@
           "id": "threaten",
           "label": "Threaten them",
           "response": "Threats will not tan this into honesty.",
+          "responses": [
+            "Then we are past warnings. Choose your next move carefully."
+          ],
           "reputation": -9,
           "aggro": true,
           "end_conversation": true,
@@ -2002,6 +2574,9 @@
         {
           "label": "Leave",
           "response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+          "responses": [
+            "Leaving now is wiser than making this worse."
+          ],
           "reputation_levels": [
             "trusted",
             "respected",
@@ -2015,7 +2590,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+            "success_responses": [
+              "Those goods are accounted for again. Make sure they stay that way."
+            ],
             "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -5,
             "failure_aggro": true,
             "failure_end_conversation": true
@@ -2024,6 +2605,9 @@
         {
           "label": "Leave",
           "response": "I will take {stolen_items} back. Walking away does not make this settled.",
+          "responses": [
+            "Leaving now is wiser than making this worse."
+          ],
           "reputation_levels": [
             "neutral",
             "suspicious"
@@ -2035,7 +2619,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "I will take {stolen_items} back. Walking away does not make this settled.",
+            "success_responses": [
+              "Those goods are accounted for again. Make sure they stay that way."
+            ],
             "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -5,
             "failure_aggro": true,
             "failure_end_conversation": true
@@ -2044,6 +2634,9 @@
         {
           "label": "Leave",
           "response": "No. I will take {stolen_items} back, and you are done running from this.",
+          "responses": [
+            "Leaving now is wiser than making this worse."
+          ],
           "reputation_levels": [
             "hostile",
             "despised",
@@ -2056,7 +2649,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "No. I will take {stolen_items} back, and you are done running from this.",
+            "success_responses": [
+              "Those goods are accounted for again. Make sure they stay that way."
+            ],
             "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -5,
             "failure_aggro": true,
             "failure_end_conversation": true
@@ -2083,6 +2682,9 @@
           "id": "return_tools",
           "label": "Return it",
           "response": "Good. Work can continue when tools return.",
+          "responses": [
+            "Put it back now. Returned goods are easier to forgive than hidden ones."
+          ],
           "reputation": 5,
           "aggro": false,
           "end_conversation": true,
@@ -2090,7 +2692,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "Good. Work can continue when tools return.",
+            "success_responses": [
+              "That settles this moment. Let your next choice make it easier to trust you."
+            ],
             "failure_response": "You do not have {stolen_stack} to return. Do not make the theft harder to forgive.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -2,
             "failure_end_conversation": false
           }
@@ -2099,6 +2707,9 @@
           "id": "apologize",
           "label": "Apologize",
           "response": "An apology is useful only if your hands learn from it.",
+          "responses": [
+            "Apology heard. Better choices will matter more than better words."
+          ],
           "reputation": 2,
           "aggro": false,
           "end_conversation": true,
@@ -2108,6 +2719,9 @@
           "id": "offer_payment",
           "label": "Offer payment",
           "response": "Payment after taking is not permission. It is only the start of making it right.",
+          "responses": [
+            "Payment helps settle the moment. Permission still comes before the latch."
+          ],
           "reputation_levels": [
             "neutral",
             "suspicious",
@@ -2123,7 +2737,13 @@
             "destination": "villager_inventory",
             "overflow_destination": "drop_at_villager",
             "success_response": "Nine emeralds covers the stock. Touch the chest again and the price will not be coins.",
+            "success_responses": [
+              "That payment covers the damage for now. The village will be watching what you do next."
+            ],
             "failure_response": "You cannot pay 9 emeralds. Empty pockets do not answer for full hands.",
+            "failure_responses": [
+              "That is not enough to settle this. The village will remember the failure."
+            ],
             "failure_reputation": -2,
             "failure_end_conversation": false
           },
@@ -2136,6 +2756,9 @@
           "id": "deny",
           "label": "Deny it",
           "response": "I know every tool by handle and wear. I know when one is missing.",
+          "responses": [
+            "Do not dress an open lid up as innocence. I saw enough."
+          ],
           "reputation": -5,
           "aggro": true,
           "end_conversation": true,
@@ -2145,6 +2768,9 @@
           "id": "threaten",
           "label": "Threaten them",
           "response": "Threaten the hand that makes tools and you may meet what they are for.",
+          "responses": [
+            "Then we are past warnings. Choose your next move carefully."
+          ],
           "reputation": -9,
           "aggro": true,
           "end_conversation": true,
@@ -2160,6 +2786,9 @@
         {
           "label": "Leave",
           "response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+          "responses": [
+            "Leaving now is wiser than making this worse."
+          ],
           "reputation_levels": [
             "trusted",
             "respected",
@@ -2173,7 +2802,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+            "success_responses": [
+              "Those goods are accounted for again. Make sure they stay that way."
+            ],
             "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -5,
             "failure_aggro": true,
             "failure_end_conversation": true
@@ -2182,6 +2817,9 @@
         {
           "label": "Leave",
           "response": "I will take {stolen_items} back. Walking away does not make this settled.",
+          "responses": [
+            "Leaving now is wiser than making this worse."
+          ],
           "reputation_levels": [
             "neutral",
             "suspicious"
@@ -2193,7 +2831,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "I will take {stolen_items} back. Walking away does not make this settled.",
+            "success_responses": [
+              "Those goods are accounted for again. Make sure they stay that way."
+            ],
             "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -5,
             "failure_aggro": true,
             "failure_end_conversation": true
@@ -2202,6 +2846,9 @@
         {
           "label": "Leave",
           "response": "No. I will take {stolen_items} back, and you are done running from this.",
+          "responses": [
+            "Leaving now is wiser than making this worse."
+          ],
           "reputation_levels": [
             "hostile",
             "despised",
@@ -2214,7 +2861,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "No. I will take {stolen_items} back, and you are done running from this.",
+            "success_responses": [
+              "Those goods are accounted for again. Make sure they stay that way."
+            ],
             "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -5,
             "failure_aggro": true,
             "failure_end_conversation": true
@@ -2254,6 +2907,9 @@
           "id": "return_items",
           "label": "I will put it back",
           "response": "Then do it now. A village remembers the hand that returns what it took.",
+          "responses": [
+            "Put it back now. Returned goods are easier to forgive than hidden ones."
+          ],
           "reputation": 4,
           "aggro": false,
           "end_conversation": true,
@@ -2261,7 +2917,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "Then do it now. A village remembers the hand that returns what it took.",
+            "success_responses": [
+              "That settles this moment. Let your next choice make it easier to trust you."
+            ],
             "failure_response": "You do not have {stolen_stack} to return. Do not make the theft harder to forgive.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -2,
             "failure_end_conversation": false
           }
@@ -2270,6 +2932,9 @@
           "id": "apologize",
           "label": "Apologize",
           "response": "An apology is a start. Closed lids and empty hands are better.",
+          "responses": [
+            "Apology heard. Better choices will matter more than better words."
+          ],
           "reputation": 2,
           "aggro": false,
           "end_conversation": true,
@@ -2279,6 +2944,9 @@
           "id": "accept_warning",
           "label": "Accept warning",
           "response": "Your name still carries weight here, so I will treat this as a mistake. Do not make me regret it.",
+          "responses": [
+            "I hear you. Make sure your next action proves it."
+          ],
           "reputation": 1,
           "aggro": false,
           "end_conversation": true,
@@ -2294,6 +2962,9 @@
           "id": "offer_payment",
           "label": "Offer payment",
           "response": "Payment after taking is not permission. Still, making it right matters.",
+          "responses": [
+            "Payment helps settle the moment. Permission still comes before the latch."
+          ],
           "reputation_levels": [
             "neutral",
             "suspicious"
@@ -2306,7 +2977,13 @@
             "destination": "villager_inventory",
             "overflow_destination": "drop_at_villager",
             "success_response": "Eight emeralds will help replace what you took. Consider this a warning, not a purchase.",
+            "success_responses": [
+              "That payment covers the damage for now. The village will be watching what you do next."
+            ],
             "failure_response": "You do not have eight emeralds to offer. Do not promise payment with empty pockets.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -2,
             "failure_end_conversation": false
           },
@@ -2319,6 +2996,9 @@
           "id": "offer_costly_payment",
           "label": "Offer costly payment",
           "response": "With your reputation, replacing trust costs more than replacing goods.",
+          "responses": [
+            "Payment helps settle the moment. Permission still comes before the latch."
+          ],
           "reputation_levels": [
             "hostile",
             "despised",
@@ -2332,7 +3012,13 @@
             "destination": "villager_inventory",
             "overflow_destination": "drop_at_villager",
             "success_response": "Sixteen emeralds pays for the risk you keep bringing to our doors. Do better, or there will not be another price.",
+            "success_responses": [
+              "That payment covers the damage for now. The village will be watching what you do next."
+            ],
             "failure_response": "You do not have sixteen emeralds. Even your apology comes up short.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -4,
             "failure_aggro": true,
             "failure_end_conversation": false
@@ -2346,6 +3032,9 @@
           "id": "needed_supplies",
           "label": "I needed supplies",
           "response": "Need asks before it takes. If you are hungry, speak to us like a neighbor.",
+          "responses": [
+            "Then ask plainly before reaching. Need does not make village stores yours."
+          ],
           "reputation": -1,
           "aggro": false,
           "end_conversation": true,
@@ -2355,6 +3044,9 @@
           "id": "thought_abandoned",
           "label": "I thought it was abandoned",
           "response": "A quiet chest is not an abandoned one. These stores keep roofs standing.",
+          "responses": [
+            "Standing village stores are not abandoned."
+          ],
           "reputation": -2,
           "aggro": false,
           "end_conversation": true,
@@ -2364,6 +3056,9 @@
           "id": "only_borrowing",
           "label": "I was only borrowing it",
           "response": "Borrowing has a witness before and a return after. You skipped the first half.",
+          "responses": [
+            "I hear you. Make sure your next action proves it."
+          ],
           "reputation": -3,
           "aggro": false,
           "end_conversation": true,
@@ -2373,6 +3068,9 @@
           "id": "deny",
           "label": "Deny it",
           "response": "I watched your hands. Do not make the lie worse than the theft.",
+          "responses": [
+            "Do not dress an open lid up as innocence. I saw enough."
+          ],
           "reputation": -5,
           "aggro": true,
           "end_conversation": true,
@@ -2382,6 +3080,9 @@
           "id": "threaten",
           "label": "Threaten them",
           "response": "Then we are past words.",
+          "responses": [
+            "Then we are past warnings. Choose your next move carefully."
+          ],
           "reputation": -9,
           "aggro": true,
           "end_conversation": true,
@@ -2398,6 +3099,9 @@
         {
           "label": "Leave",
           "response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+          "responses": [
+            "Leaving now is wiser than making this worse."
+          ],
           "reputation_levels": [
             "trusted",
             "respected",
@@ -2411,7 +3115,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+            "success_responses": [
+              "Those goods are accounted for again. Make sure they stay that way."
+            ],
             "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -5,
             "failure_aggro": true,
             "failure_end_conversation": true
@@ -2420,6 +3130,9 @@
         {
           "label": "Leave",
           "response": "I will take {stolen_items} back. Walking away does not make this settled.",
+          "responses": [
+            "Leaving now is wiser than making this worse."
+          ],
           "reputation_levels": [
             "neutral",
             "suspicious"
@@ -2431,7 +3144,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "I will take {stolen_items} back. Walking away does not make this settled.",
+            "success_responses": [
+              "Those goods are accounted for again. Make sure they stay that way."
+            ],
             "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -5,
             "failure_aggro": true,
             "failure_end_conversation": true
@@ -2440,6 +3159,9 @@
         {
           "label": "Leave",
           "response": "No. I will take {stolen_items} back, and you are done running from this.",
+          "responses": [
+            "Leaving now is wiser than making this worse."
+          ],
           "reputation_levels": [
             "hostile",
             "despised",
@@ -2452,7 +3174,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "No. I will take {stolen_items} back, and you are done running from this.",
+            "success_responses": [
+              "Those goods are accounted for again. Make sure they stay that way."
+            ],
             "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -5,
             "failure_aggro": true,
             "failure_end_conversation": true
@@ -2474,6 +3202,9 @@
           "id": "apologize",
           "label": "Apologize",
           "response": "Words are easy after the lid closes. Put your hands to better use.",
+          "responses": [
+            "Apology heard. Better choices will matter more than better words."
+          ],
           "reputation": 2,
           "aggro": false,
           "end_conversation": true,
@@ -2483,6 +3214,9 @@
           "id": "return_items",
           "label": "I will put it back",
           "response": "Good. Let your next choice be quieter and kinder.",
+          "responses": [
+            "Put it back now. Returned goods are easier to forgive than hidden ones."
+          ],
           "reputation": 3,
           "aggro": false,
           "end_conversation": true,
@@ -2490,7 +3224,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "Good. Let your next choice be quieter and kinder.",
+            "success_responses": [
+              "That settles this moment. Let your next choice make it easier to trust you."
+            ],
             "failure_response": "You do not have {stolen_stack} to return. Do not make the theft harder to forgive.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -2,
             "failure_end_conversation": false
           }
@@ -2499,6 +3239,9 @@
           "id": "deny",
           "label": "Deny it",
           "response": "I watched you take from it. Do not make me repeat myself.",
+          "responses": [
+            "Do not dress an open lid up as innocence. I saw enough."
+          ],
           "reputation": -4,
           "aggro": true,
           "end_conversation": true,
@@ -2508,6 +3251,9 @@
           "id": "threaten",
           "label": "Threaten them",
           "response": "Then we are past talking.",
+          "responses": [
+            "Then we are past warnings. Choose your next move carefully."
+          ],
           "reputation": -8,
           "aggro": true,
           "end_conversation": true,
@@ -2524,6 +3270,9 @@
         {
           "label": "Leave",
           "response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+          "responses": [
+            "Leaving now is wiser than making this worse."
+          ],
           "reputation_levels": [
             "trusted",
             "respected",
@@ -2537,7 +3286,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+            "success_responses": [
+              "Those goods are accounted for again. Make sure they stay that way."
+            ],
             "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -5,
             "failure_aggro": true,
             "failure_end_conversation": true
@@ -2546,6 +3301,9 @@
         {
           "label": "Leave",
           "response": "I will take {stolen_items} back. Walking away does not make this settled.",
+          "responses": [
+            "Leaving now is wiser than making this worse."
+          ],
           "reputation_levels": [
             "neutral",
             "suspicious"
@@ -2557,7 +3315,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "I will take {stolen_items} back. Walking away does not make this settled.",
+            "success_responses": [
+              "Those goods are accounted for again. Make sure they stay that way."
+            ],
             "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -5,
             "failure_aggro": true,
             "failure_end_conversation": true
@@ -2566,6 +3330,9 @@
         {
           "label": "Leave",
           "response": "No. I will take {stolen_items} back, and you are done running from this.",
+          "responses": [
+            "Leaving now is wiser than making this worse."
+          ],
           "reputation_levels": [
             "hostile",
             "despised",
@@ -2578,7 +3345,13 @@
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
             "success_response": "No. I will take {stolen_items} back, and you are done running from this.",
+            "success_responses": [
+              "Those goods are accounted for again. Make sure they stay that way."
+            ],
             "failure_response": "You no longer have {stolen_items}. Then we are past excuses.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -5,
             "failure_aggro": true,
             "failure_end_conversation": true
@@ -2596,6 +3369,10 @@
       ],
       "witness_radius": 12,
       "requires_line_of_sight": true,
+      "reputation_levels": [
+        "neutral",
+        "suspicious"
+      ],
       "initiate_dialogue": true,
       "aggro_immediately": false,
       "force_camera_towards_villager": true,
@@ -2605,6 +3382,9 @@
           "id": "close_it",
           "label": "Close it",
           "response": "Good. Blades stay useful when trust stays sharper than curiosity.",
+          "responses": [
+            "Good. Keep your hands clear of village stores."
+          ],
           "reputation": 2,
           "aggro": false,
           "end_conversation": true,
@@ -2614,6 +3394,9 @@
           "id": "ask_permission",
           "label": "Ask permission",
           "response": "Ask first next time. A village can share with people who speak before the lid opens.",
+          "responses": [
+            "Ask first next time. A spoken request carries farther than an opened lid."
+          ],
           "reputation": 1,
           "aggro": false,
           "end_conversation": true,
@@ -2623,6 +3406,9 @@
           "id": "offer_payment",
           "label": "Offer payment",
           "response": "Payment is not permission, but it proves you understand there was a cost.",
+          "responses": [
+            "Payment helps settle the moment. Permission still comes before the latch."
+          ],
           "reputation_levels": [
             "neutral",
             "suspicious",
@@ -2638,7 +3424,13 @@
             "destination": "villager_inventory",
             "overflow_destination": "drop_at_villager",
             "success_response": "Three emeralds is enough for me to believe you meant no harm. Ask before touching village stores again.",
+            "success_responses": [
+              "That payment covers the damage for now. The village will be watching what you do next."
+            ],
             "failure_response": "You do not have three emeralds to offer. Close the chest and choose your next words carefully.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -1,
             "failure_end_conversation": false
           },
@@ -2651,6 +3443,9 @@
           "id": "deny",
           "label": "Deny it",
           "response": "I saw the lid move under your hand. Do not make me doubt my own eyes.",
+          "responses": [
+            "Do not dress an open lid up as innocence. I saw enough."
+          ],
           "reputation": -4,
           "aggro": true,
           "end_conversation": true,
@@ -2660,6 +3455,9 @@
       "leave_option": {
         "label": "Step away",
         "response": "That is right. Back from the chest.",
+        "responses": [
+          "I hear you. Make sure your next action proves it."
+        ],
         "reputation": 0,
         "end_conversation": true,
         "order": 1000
@@ -2680,6 +3478,10 @@
       ],
       "witness_radius": 12,
       "requires_line_of_sight": true,
+      "reputation_levels": [
+        "neutral",
+        "suspicious"
+      ],
       "initiate_dialogue": true,
       "aggro_immediately": false,
       "force_camera_towards_villager": true,
@@ -2689,6 +3491,9 @@
           "id": "close_it",
           "label": "Close it",
           "response": "Good. Leave healing stores where frightened hands can find them.",
+          "responses": [
+            "Good. Keep your hands clear of village stores."
+          ],
           "reputation": 2,
           "aggro": false,
           "end_conversation": true,
@@ -2698,6 +3503,9 @@
           "id": "ask_permission",
           "label": "Ask permission",
           "response": "Ask first next time. A village can share with people who speak before the lid opens.",
+          "responses": [
+            "Ask first next time. A spoken request carries farther than an opened lid."
+          ],
           "reputation": 1,
           "aggro": false,
           "end_conversation": true,
@@ -2707,6 +3515,9 @@
           "id": "offer_payment",
           "label": "Offer payment",
           "response": "Payment is not permission, but it proves you understand there was a cost.",
+          "responses": [
+            "Payment helps settle the moment. Permission still comes before the latch."
+          ],
           "reputation_levels": [
             "neutral",
             "suspicious",
@@ -2722,7 +3533,13 @@
             "destination": "villager_inventory",
             "overflow_destination": "drop_at_villager",
             "success_response": "Three emeralds is enough for me to believe you meant no harm. Ask before touching village stores again.",
+            "success_responses": [
+              "That payment covers the damage for now. The village will be watching what you do next."
+            ],
             "failure_response": "You do not have three emeralds to offer. Close the chest and choose your next words carefully.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -1,
             "failure_end_conversation": false
           },
@@ -2735,6 +3552,9 @@
           "id": "deny",
           "label": "Deny it",
           "response": "I saw the lid move under your hand. Do not make me doubt my own eyes.",
+          "responses": [
+            "Do not dress an open lid up as innocence. I saw enough."
+          ],
           "reputation": -4,
           "aggro": true,
           "end_conversation": true,
@@ -2744,6 +3564,9 @@
       "leave_option": {
         "label": "Step away",
         "response": "That is right. Back from the chest.",
+        "responses": [
+          "I hear you. Make sure your next action proves it."
+        ],
         "reputation": 0,
         "end_conversation": true,
         "order": 1000
@@ -2764,6 +3587,10 @@
       ],
       "witness_radius": 12,
       "requires_line_of_sight": true,
+      "reputation_levels": [
+        "neutral",
+        "suspicious"
+      ],
       "initiate_dialogue": true,
       "aggro_immediately": false,
       "force_camera_towards_villager": true,
@@ -2773,6 +3600,9 @@
           "id": "close_it",
           "label": "Close it",
           "response": "Good. Food shared honestly tastes better.",
+          "responses": [
+            "Good. Keep your hands clear of village stores."
+          ],
           "reputation": 2,
           "aggro": false,
           "end_conversation": true,
@@ -2782,6 +3612,9 @@
           "id": "ask_permission",
           "label": "Ask permission",
           "response": "Ask first next time. A village can share with people who speak before the lid opens.",
+          "responses": [
+            "Ask first next time. A spoken request carries farther than an opened lid."
+          ],
           "reputation": 1,
           "aggro": false,
           "end_conversation": true,
@@ -2791,6 +3624,9 @@
           "id": "offer_payment",
           "label": "Offer payment",
           "response": "Payment is not permission, but it proves you understand there was a cost.",
+          "responses": [
+            "Payment helps settle the moment. Permission still comes before the latch."
+          ],
           "reputation_levels": [
             "neutral",
             "suspicious",
@@ -2806,7 +3642,13 @@
             "destination": "villager_inventory",
             "overflow_destination": "drop_at_villager",
             "success_response": "Three emeralds is enough for me to believe you meant no harm. Ask before touching village stores again.",
+            "success_responses": [
+              "That payment covers the damage for now. The village will be watching what you do next."
+            ],
             "failure_response": "You do not have three emeralds to offer. Close the chest and choose your next words carefully.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -1,
             "failure_end_conversation": false
           },
@@ -2819,6 +3661,9 @@
           "id": "deny",
           "label": "Deny it",
           "response": "I saw the lid move under your hand. Do not make me doubt my own eyes.",
+          "responses": [
+            "Do not dress an open lid up as innocence. I saw enough."
+          ],
           "reputation": -4,
           "aggro": true,
           "end_conversation": true,
@@ -2828,6 +3673,9 @@
       "leave_option": {
         "label": "Step away",
         "response": "That is right. Back from the chest.",
+        "responses": [
+          "I hear you. Make sure your next action proves it."
+        ],
         "reputation": 0,
         "end_conversation": true,
         "order": 1000
@@ -2848,6 +3696,10 @@
       ],
       "witness_radius": 12,
       "requires_line_of_sight": true,
+      "reputation_levels": [
+        "neutral",
+        "suspicious"
+      ],
       "initiate_dialogue": true,
       "aggro_immediately": false,
       "force_camera_towards_villager": true,
@@ -2857,6 +3709,9 @@
           "id": "close_it",
           "label": "Close it",
           "response": "Good. The river gives enough trouble without neighbors taking more.",
+          "responses": [
+            "Good. Keep your hands clear of village stores."
+          ],
           "reputation": 2,
           "aggro": false,
           "end_conversation": true,
@@ -2866,6 +3721,9 @@
           "id": "ask_permission",
           "label": "Ask permission",
           "response": "Ask first next time. A village can share with people who speak before the lid opens.",
+          "responses": [
+            "Ask first next time. A spoken request carries farther than an opened lid."
+          ],
           "reputation": 1,
           "aggro": false,
           "end_conversation": true,
@@ -2875,6 +3733,9 @@
           "id": "offer_payment",
           "label": "Offer payment",
           "response": "Payment is not permission, but it proves you understand there was a cost.",
+          "responses": [
+            "Payment helps settle the moment. Permission still comes before the latch."
+          ],
           "reputation_levels": [
             "neutral",
             "suspicious",
@@ -2890,7 +3751,13 @@
             "destination": "villager_inventory",
             "overflow_destination": "drop_at_villager",
             "success_response": "Three emeralds is enough for me to believe you meant no harm. Ask before touching village stores again.",
+            "success_responses": [
+              "That payment covers the damage for now. The village will be watching what you do next."
+            ],
             "failure_response": "You do not have three emeralds to offer. Close the chest and choose your next words carefully.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -1,
             "failure_end_conversation": false
           },
@@ -2903,6 +3770,9 @@
           "id": "deny",
           "label": "Deny it",
           "response": "I saw the lid move under your hand. Do not make me doubt my own eyes.",
+          "responses": [
+            "Do not dress an open lid up as innocence. I saw enough."
+          ],
           "reputation": -4,
           "aggro": true,
           "end_conversation": true,
@@ -2912,6 +3782,9 @@
       "leave_option": {
         "label": "Step away",
         "response": "That is right. Back from the chest.",
+        "responses": [
+          "I hear you. Make sure your next action proves it."
+        ],
         "reputation": 0,
         "end_conversation": true,
         "order": 1000
@@ -2932,6 +3805,10 @@
       ],
       "witness_radius": 12,
       "requires_line_of_sight": true,
+      "reputation_levels": [
+        "neutral",
+        "suspicious"
+      ],
       "initiate_dialogue": true,
       "aggro_immediately": false,
       "force_camera_towards_villager": true,
@@ -2941,6 +3818,9 @@
           "id": "close_it",
           "label": "Close it",
           "response": "Good. Arrows should fly at threats, not vanish into pockets.",
+          "responses": [
+            "Good. Keep your hands clear of village stores."
+          ],
           "reputation": 2,
           "aggro": false,
           "end_conversation": true,
@@ -2950,6 +3830,9 @@
           "id": "ask_permission",
           "label": "Ask permission",
           "response": "Ask first next time. A village can share with people who speak before the lid opens.",
+          "responses": [
+            "Ask first next time. A spoken request carries farther than an opened lid."
+          ],
           "reputation": 1,
           "aggro": false,
           "end_conversation": true,
@@ -2959,6 +3842,9 @@
           "id": "offer_payment",
           "label": "Offer payment",
           "response": "Payment is not permission, but it proves you understand there was a cost.",
+          "responses": [
+            "Payment helps settle the moment. Permission still comes before the latch."
+          ],
           "reputation_levels": [
             "neutral",
             "suspicious",
@@ -2974,7 +3860,13 @@
             "destination": "villager_inventory",
             "overflow_destination": "drop_at_villager",
             "success_response": "Three emeralds is enough for me to believe you meant no harm. Ask before touching village stores again.",
+            "success_responses": [
+              "That payment covers the damage for now. The village will be watching what you do next."
+            ],
             "failure_response": "You do not have three emeralds to offer. Close the chest and choose your next words carefully.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -1,
             "failure_end_conversation": false
           },
@@ -2987,6 +3879,9 @@
           "id": "deny",
           "label": "Deny it",
           "response": "I saw the lid move under your hand. Do not make me doubt my own eyes.",
+          "responses": [
+            "Do not dress an open lid up as innocence. I saw enough."
+          ],
           "reputation": -4,
           "aggro": true,
           "end_conversation": true,
@@ -2996,6 +3891,9 @@
       "leave_option": {
         "label": "Step away",
         "response": "That is right. Back from the chest.",
+        "responses": [
+          "I hear you. Make sure your next action proves it."
+        ],
         "reputation": 0,
         "end_conversation": true,
         "order": 1000
@@ -3016,6 +3914,10 @@
       ],
       "witness_radius": 12,
       "requires_line_of_sight": true,
+      "reputation_levels": [
+        "neutral",
+        "suspicious"
+      ],
       "initiate_dialogue": true,
       "aggro_immediately": false,
       "force_camera_towards_villager": true,
@@ -3025,6 +3927,9 @@
           "id": "close_it",
           "label": "Close it",
           "response": "Good. Stone stays useful when it stays accounted for.",
+          "responses": [
+            "Good. Keep your hands clear of village stores."
+          ],
           "reputation": 2,
           "aggro": false,
           "end_conversation": true,
@@ -3034,6 +3939,9 @@
           "id": "ask_permission",
           "label": "Ask permission",
           "response": "Ask first next time. A village can share with people who speak before the lid opens.",
+          "responses": [
+            "Ask first next time. A spoken request carries farther than an opened lid."
+          ],
           "reputation": 1,
           "aggro": false,
           "end_conversation": true,
@@ -3043,6 +3951,9 @@
           "id": "offer_payment",
           "label": "Offer payment",
           "response": "Payment is not permission, but it proves you understand there was a cost.",
+          "responses": [
+            "Payment helps settle the moment. Permission still comes before the latch."
+          ],
           "reputation_levels": [
             "neutral",
             "suspicious",
@@ -3058,7 +3969,13 @@
             "destination": "villager_inventory",
             "overflow_destination": "drop_at_villager",
             "success_response": "Three emeralds is enough for me to believe you meant no harm. Ask before touching village stores again.",
+            "success_responses": [
+              "That payment covers the damage for now. The village will be watching what you do next."
+            ],
             "failure_response": "You do not have three emeralds to offer. Close the chest and choose your next words carefully.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -1,
             "failure_end_conversation": false
           },
@@ -3071,6 +3988,9 @@
           "id": "deny",
           "label": "Deny it",
           "response": "I saw the lid move under your hand. Do not make me doubt my own eyes.",
+          "responses": [
+            "Do not dress an open lid up as innocence. I saw enough."
+          ],
           "reputation": -4,
           "aggro": true,
           "end_conversation": true,
@@ -3080,6 +4000,9 @@
       "leave_option": {
         "label": "Step away",
         "response": "That is right. Back from the chest.",
+        "responses": [
+          "I hear you. Make sure your next action proves it."
+        ],
         "reputation": 0,
         "end_conversation": true,
         "order": 1000
@@ -3100,6 +4023,10 @@
       ],
       "witness_radius": 12,
       "requires_line_of_sight": true,
+      "reputation_levels": [
+        "neutral",
+        "suspicious"
+      ],
       "initiate_dialogue": true,
       "aggro_immediately": false,
       "force_camera_towards_villager": true,
@@ -3109,6 +4036,9 @@
           "id": "close_it",
           "label": "Close it",
           "response": "Good. Fences are easier to mend than trust.",
+          "responses": [
+            "Good. Keep your hands clear of village stores."
+          ],
           "reputation": 2,
           "aggro": false,
           "end_conversation": true,
@@ -3118,6 +4048,9 @@
           "id": "ask_permission",
           "label": "Ask permission",
           "response": "Ask first next time. A village can share with people who speak before the lid opens.",
+          "responses": [
+            "Ask first next time. A spoken request carries farther than an opened lid."
+          ],
           "reputation": 1,
           "aggro": false,
           "end_conversation": true,
@@ -3127,6 +4060,9 @@
           "id": "offer_payment",
           "label": "Offer payment",
           "response": "Payment is not permission, but it proves you understand there was a cost.",
+          "responses": [
+            "Payment helps settle the moment. Permission still comes before the latch."
+          ],
           "reputation_levels": [
             "neutral",
             "suspicious",
@@ -3142,7 +4078,13 @@
             "destination": "villager_inventory",
             "overflow_destination": "drop_at_villager",
             "success_response": "Three emeralds is enough for me to believe you meant no harm. Ask before touching village stores again.",
+            "success_responses": [
+              "That payment covers the damage for now. The village will be watching what you do next."
+            ],
             "failure_response": "You do not have three emeralds to offer. Close the chest and choose your next words carefully.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -1,
             "failure_end_conversation": false
           },
@@ -3155,6 +4097,9 @@
           "id": "deny",
           "label": "Deny it",
           "response": "I saw the lid move under your hand. Do not make me doubt my own eyes.",
+          "responses": [
+            "Do not dress an open lid up as innocence. I saw enough."
+          ],
           "reputation": -4,
           "aggro": true,
           "end_conversation": true,
@@ -3164,6 +4109,9 @@
       "leave_option": {
         "label": "Step away",
         "response": "That is right. Back from the chest.",
+        "responses": [
+          "I hear you. Make sure your next action proves it."
+        ],
         "reputation": 0,
         "end_conversation": true,
         "order": 1000
@@ -3184,6 +4132,10 @@
       ],
       "witness_radius": 12,
       "requires_line_of_sight": true,
+      "reputation_levels": [
+        "neutral",
+        "suspicious"
+      ],
       "initiate_dialogue": true,
       "aggro_immediately": false,
       "force_camera_towards_villager": true,
@@ -3193,6 +4145,9 @@
           "id": "close_it",
           "label": "Close it",
           "response": "Good. Take your needs to a trade, not a latch.",
+          "responses": [
+            "Good. Keep your hands clear of village stores."
+          ],
           "reputation": 2,
           "aggro": false,
           "end_conversation": true,
@@ -3202,6 +4157,9 @@
           "id": "ask_permission",
           "label": "Ask permission",
           "response": "Ask first next time. A village can share with people who speak before the lid opens.",
+          "responses": [
+            "Ask first next time. A spoken request carries farther than an opened lid."
+          ],
           "reputation": 1,
           "aggro": false,
           "end_conversation": true,
@@ -3211,6 +4169,9 @@
           "id": "offer_payment",
           "label": "Offer payment",
           "response": "Payment is not permission, but it proves you understand there was a cost.",
+          "responses": [
+            "Payment helps settle the moment. Permission still comes before the latch."
+          ],
           "reputation_levels": [
             "neutral",
             "suspicious",
@@ -3226,7 +4187,13 @@
             "destination": "villager_inventory",
             "overflow_destination": "drop_at_villager",
             "success_response": "Three emeralds is enough for me to believe you meant no harm. Ask before touching village stores again.",
+            "success_responses": [
+              "That payment covers the damage for now. The village will be watching what you do next."
+            ],
             "failure_response": "You do not have three emeralds to offer. Close the chest and choose your next words carefully.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -1,
             "failure_end_conversation": false
           },
@@ -3239,6 +4206,9 @@
           "id": "deny",
           "label": "Deny it",
           "response": "I saw the lid move under your hand. Do not make me doubt my own eyes.",
+          "responses": [
+            "Do not dress an open lid up as innocence. I saw enough."
+          ],
           "reputation": -4,
           "aggro": true,
           "end_conversation": true,
@@ -3248,6 +4218,9 @@
       "leave_option": {
         "label": "Step away",
         "response": "That is right. Back from the chest.",
+        "responses": [
+          "I hear you. Make sure your next action proves it."
+        ],
         "reputation": 0,
         "end_conversation": true,
         "order": 1000
@@ -3268,6 +4241,10 @@
       ],
       "witness_radius": 12,
       "requires_line_of_sight": true,
+      "reputation_levels": [
+        "neutral",
+        "suspicious"
+      ],
       "initiate_dialogue": true,
       "aggro_immediately": false,
       "force_camera_towards_villager": true,
@@ -3277,6 +4254,9 @@
           "id": "close_it",
           "label": "Close it",
           "response": "Good. Work goes better when tools stay where they belong.",
+          "responses": [
+            "Good. Keep your hands clear of village stores."
+          ],
           "reputation": 2,
           "aggro": false,
           "end_conversation": true,
@@ -3286,6 +4266,9 @@
           "id": "ask_permission",
           "label": "Ask permission",
           "response": "Ask first next time. A village can share with people who speak before the lid opens.",
+          "responses": [
+            "Ask first next time. A spoken request carries farther than an opened lid."
+          ],
           "reputation": 1,
           "aggro": false,
           "end_conversation": true,
@@ -3295,6 +4278,9 @@
           "id": "offer_payment",
           "label": "Offer payment",
           "response": "Payment is not permission, but it proves you understand there was a cost.",
+          "responses": [
+            "Payment helps settle the moment. Permission still comes before the latch."
+          ],
           "reputation_levels": [
             "neutral",
             "suspicious",
@@ -3310,7 +4296,13 @@
             "destination": "villager_inventory",
             "overflow_destination": "drop_at_villager",
             "success_response": "Three emeralds is enough for me to believe you meant no harm. Ask before touching village stores again.",
+            "success_responses": [
+              "That payment covers the damage for now. The village will be watching what you do next."
+            ],
             "failure_response": "You do not have three emeralds to offer. Close the chest and choose your next words carefully.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -1,
             "failure_end_conversation": false
           },
@@ -3323,6 +4315,9 @@
           "id": "deny",
           "label": "Deny it",
           "response": "I saw the lid move under your hand. Do not make me doubt my own eyes.",
+          "responses": [
+            "Do not dress an open lid up as innocence. I saw enough."
+          ],
           "reputation": -4,
           "aggro": true,
           "end_conversation": true,
@@ -3332,6 +4327,9 @@
       "leave_option": {
         "label": "Step away",
         "response": "That is right. Back from the chest.",
+        "responses": [
+          "I hear you. Make sure your next action proves it."
+        ],
         "reputation": 0,
         "end_conversation": true,
         "order": 1000
@@ -3340,6 +4338,124 @@
         "Those tools keep this village working. Do not help yourself to another day of labor.",
         "Close the toolsmith chest. Work stops when tools wander.",
         "Every tool in there has a job. Step back and ask."
+      ]
+    },
+    {
+      "id": "witnessed_village_container_opened_hostile",
+      "trigger": "container_opened",
+      "priority": -20,
+      "loot_tables": [
+        "minecraft:chests/village/village_armorer",
+        "minecraft:chests/village/village_butcher",
+        "minecraft:chests/village/village_cartographer",
+        "minecraft:chests/village/village_desert_house",
+        "minecraft:chests/village/village_fisher",
+        "minecraft:chests/village/village_fletcher",
+        "minecraft:chests/village/village_mason",
+        "minecraft:chests/village/village_plains_house",
+        "minecraft:chests/village/village_savanna_house",
+        "minecraft:chests/village/village_shepherd",
+        "minecraft:chests/village/village_snowy_house",
+        "minecraft:chests/village/village_taiga_house",
+        "minecraft:chests/village/village_tannery",
+        "minecraft:chests/village/village_temple",
+        "minecraft:chests/village/village_toolsmith",
+        "minecraft:chests/village/village_weaponsmith"
+      ],
+      "witness_radius": 12,
+      "requires_line_of_sight": true,
+      "reputation_levels": [
+        "hostile",
+        "despised",
+        "feared"
+      ],
+      "initiate_dialogue": true,
+      "aggro_immediately": false,
+      "force_camera_towards_villager": true,
+      "reputation": -8,
+      "options": [
+        {
+          "id": "step_back_from_container",
+          "label": "Step back",
+          "response": "Good. Stay where I can see you and keep your hands away from village stores.",
+          "responses": [
+            "Good. Keep your hands clear of village stores."
+          ],
+          "reputation": 0,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 0
+        },
+        {
+          "id": "pay_container_trespass_fine",
+          "label": "Pay fine",
+          "response": "That pays for the fear you keep putting in this village. It does not make you welcome at our stores.",
+          "responses": [
+            "Payment helps settle the moment. Permission still comes before the latch."
+          ],
+          "take_items": {
+            "items": [
+              "minecraft:emerald"
+            ],
+            "count": 8,
+            "destination": "villager_inventory",
+            "overflow_destination": "drop_at_villager",
+            "success_response": "Eight emeralds settles this warning. Touch nothing else.",
+            "success_responses": [
+              "That payment covers the damage for now. The village will be watching what you do next."
+            ],
+            "failure_response": "You cannot pay even that much. Then close the chest before this becomes worse.",
+            "failure_responses": [
+              "That is not enough to settle this. The village will remember the failure."
+            ],
+            "failure_reputation": -3,
+            "failure_end_conversation": false
+          },
+          "reputation": 1,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 1
+        },
+        {
+          "id": "claim_need",
+          "label": "I need help",
+          "response": "Need starts with asking from the road, not opening our stores after what you have done.",
+          "responses": [
+            "Then ask plainly before reaching. Need does not make village stores yours."
+          ],
+          "reputation": -2,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 2
+        },
+        {
+          "id": "deny_hostile_container_open",
+          "label": "Deny it",
+          "response": "The lid moved under your hand. Do not lie while standing over our stores.",
+          "responses": [
+            "Do not dress an open lid up as innocence. I saw enough."
+          ],
+          "reputation": -6,
+          "aggro": true,
+          "end_conversation": true,
+          "order": 3
+        }
+      ],
+      "leave_option": {
+        "label": "Leave",
+        "response": "Walk away from the chest. The village will remember that you reached for it.",
+        "responses": [
+          "Leaving now is wiser than making this worse."
+        ],
+        "reputation": -4,
+        "aggro_chance": 0.35,
+        "end_conversation": true,
+        "order": 1000
+      },
+      "lines": [
+        "No. Not you. Step back from that {container} before this becomes a fight.",
+        "You do not get to put your hands on village stores. Close it now.",
+        "After what the village knows of you, an open chest is a threat. Step back."
       ]
     },
     {
@@ -3355,21 +4471,30 @@
       "initiate_dialogue": true,
       "aggro_immediately": false,
       "force_camera_towards_villager": true,
-      "reputation": -14,
+      "reputation": 0,
       "options": [
         {
-          "id": "pay_for_damage",
-          "label": "Pay for damage",
+          "id": "pay_weaponsmith_break_damage",
+          "label": "Pay restitution",
           "response": "The chest can be replaced. The trust you broke is harder work.",
+          "responses": [
+            "Payment helps settle the moment. Permission still comes before the latch."
+          ],
           "take_items": {
             "items": [
               "minecraft:emerald"
             ],
-            "count": 12,
+            "count": 64,
             "destination": "villager_inventory",
             "overflow_destination": "drop_at_villager",
-            "success_response": "Twelve emeralds pays for the damage. Do not break into forge stock again.",
-            "failure_response": "No payment, no patience.",
+            "success_response": "A full stack of emeralds pays for the broken forge stock. It does not buy back trust.",
+            "success_responses": [
+              "That payment covers the damage for now. The village will be watching what you do next."
+            ],
+            "failure_response": "You cannot repay a smashed forge stockpile. Then words will not settle this.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -5,
             "failure_aggro": true,
             "failure_end_conversation": false
@@ -3380,18 +4505,24 @@
           "order": 0
         },
         {
-          "id": "apologize",
+          "id": "apologize_weaponsmith_break",
           "label": "Apologize",
           "response": "Apology heard. Warning given.",
+          "responses": [
+            "Apology heard. Better choices will matter more than better words."
+          ],
           "reputation": 0,
           "aggro": false,
           "end_conversation": true,
           "order": 1
         },
         {
-          "id": "threaten",
+          "id": "threaten_weaponsmith_break",
           "label": "Threaten them",
           "response": "Then draw your answer.",
+          "responses": [
+            "Then we are past warnings. Choose your next move carefully."
+          ],
           "reputation": -10,
           "aggro": true,
           "end_conversation": true,
@@ -3401,6 +4532,9 @@
       "leave_option": {
         "label": "Leave",
         "response": "Break forge stores and walk away? No. I remember that.",
+        "responses": [
+          "Leaving now is wiser than making this worse."
+        ],
         "reputation": -7,
         "aggro_chance": 0.5,
         "end_conversation": true,
@@ -3425,21 +4559,30 @@
       "initiate_dialogue": true,
       "aggro_immediately": false,
       "force_camera_towards_villager": true,
-      "reputation": -14,
+      "reputation": 0,
       "options": [
         {
-          "id": "pay_for_damage",
-          "label": "Pay for damage",
+          "id": "pay_armorer_break_damage",
+          "label": "Pay restitution",
           "response": "Armor takes dents so villagers do not. Village stores deserve better than that.",
+          "responses": [
+            "Payment helps settle the moment. Permission still comes before the latch."
+          ],
           "take_items": {
             "items": [
               "minecraft:emerald"
             ],
-            "count": 12,
+            "count": 64,
             "destination": "villager_inventory",
             "overflow_destination": "drop_at_villager",
-            "success_response": "Twelve emeralds pays for the damage. Next time, ask before you swing.",
-            "failure_response": "You cannot pay for the damage. Then you cannot call this settled.",
+            "success_response": "A full stack of emeralds pays for the broken armor stores. Next time, ask before you swing.",
+            "success_responses": [
+              "That payment covers the damage for now. The village will be watching what you do next."
+            ],
+            "failure_response": "You cannot repay what you broke. Then you cannot call this settled.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -5,
             "failure_aggro": true,
             "failure_end_conversation": false
@@ -3450,18 +4593,24 @@
           "order": 0
         },
         {
-          "id": "claim_accident",
+          "id": "claim_armorer_break_accident",
           "label": "It was an accident",
           "response": "One crack is an accident. A broken chest is a choice you kept making.",
+          "responses": [
+            "Then learn from the accident before it becomes a habit."
+          ],
           "reputation": -2,
           "aggro": false,
           "end_conversation": true,
           "order": 1
         },
         {
-          "id": "threaten",
+          "id": "threaten_armorer_break",
           "label": "Threaten them",
           "response": "Then we skip the warning.",
+          "responses": [
+            "Then we are past warnings. Choose your next move carefully."
+          ],
           "reputation": -10,
           "aggro": true,
           "end_conversation": true,
@@ -3471,6 +4620,9 @@
       "leave_option": {
         "label": "Leave",
         "response": "Walking away from broken armor stores is not harmless.",
+        "responses": [
+          "Leaving now is wiser than making this worse."
+        ],
         "reputation": -7,
         "aggro_chance": 0.5,
         "end_conversation": true,
@@ -3495,21 +4647,30 @@
       "initiate_dialogue": true,
       "aggro_immediately": false,
       "force_camera_towards_villager": true,
-      "reputation": -12,
+      "reputation": 0,
       "options": [
         {
-          "id": "pay_for_damage",
-          "label": "Pay for damage",
+          "id": "pay_toolsmith_break_damage",
+          "label": "Pay restitution",
           "response": "Tools can fix the chest. Trust needs better hands than yours showed today.",
+          "responses": [
+            "Payment helps settle the moment. Permission still comes before the latch."
+          ],
           "take_items": {
             "items": [
               "minecraft:emerald"
             ],
-            "count": 10,
+            "count": 48,
             "destination": "villager_inventory",
             "overflow_destination": "drop_at_villager",
-            "success_response": "Ten emeralds pays for the damage. Leave the rest of the tools where they belong.",
-            "failure_response": "You broke it and cannot pay for it. That leaves anger.",
+            "success_response": "Forty-eight emeralds pays for the broken tool stores. Leave the rest where it belongs.",
+            "success_responses": [
+              "That payment covers the damage for now. The village will be watching what you do next."
+            ],
+            "failure_response": "You broke the tool stores and cannot repay them. That leaves anger.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -4,
             "failure_aggro": true,
             "failure_end_conversation": false
@@ -3520,18 +4681,24 @@
           "order": 0
         },
         {
-          "id": "apologize",
+          "id": "apologize_toolsmith_break",
           "label": "Apologize",
           "response": "Then make your apology useful: stop breaking village tools.",
+          "responses": [
+            "Apology heard. Better choices will matter more than better words."
+          ],
           "reputation": 0,
           "aggro": false,
           "end_conversation": true,
           "order": 1
         },
         {
-          "id": "threaten",
+          "id": "threaten_toolsmith_break",
           "label": "Threaten them",
           "response": "Tools are good at answering threats.",
+          "responses": [
+            "Then we are past warnings. Choose your next move carefully."
+          ],
           "reputation": -9,
           "aggro": true,
           "end_conversation": true,
@@ -3541,6 +4708,9 @@
       "leave_option": {
         "label": "Leave",
         "response": "Leaving the broken tool chest behind does not leave the blame behind.",
+        "responses": [
+          "Leaving now is wiser than making this worse."
+        ],
         "reputation": -6,
         "aggro_chance": 0.4,
         "end_conversation": true,
@@ -3578,21 +4748,27 @@
       "requires_line_of_sight": true,
       "initiate_dialogue": true,
       "aggro_immediately": false,
-      "reputation": -10,
+      "reputation": 0,
       "options": [
         {
-          "id": "apologize",
+          "id": "apologize_container_break",
           "label": "Apologize",
           "response": "Words do not rebuild a chest, but they are a better start than silence.",
+          "responses": [
+            "Apology heard. Better choices will matter more than better words."
+          ],
           "reputation": 1,
           "aggro": false,
           "end_conversation": true,
           "order": 0
         },
         {
-          "id": "pay_for_damage",
-          "label": "Pay for damage",
+          "id": "pay_container_break_damage",
+          "label": "Pay restitution",
           "response": "That pays for the damage. It does not make smashing village stores acceptable.",
+          "responses": [
+            "Payment helps settle the moment. Permission still comes before the latch."
+          ],
           "reputation_levels": [
             "neutral",
             "suspicious",
@@ -3604,11 +4780,17 @@
             "items": [
               "minecraft:emerald"
             ],
-            "count": 8,
+            "count": 32,
             "destination": "villager_inventory",
             "overflow_destination": "drop_at_villager",
-            "success_response": "Eight emeralds pays for the damage. Next time, ask before breaking what keeps the village stocked.",
-            "failure_response": "You cannot pay for what you broke. That makes this worse.",
+            "success_response": "Thirty-two emeralds pays for the broken village stores. Ask before breaking what keeps the village stocked.",
+            "success_responses": [
+              "That payment covers the damage for now. The village will be watching what you do next."
+            ],
+            "failure_response": "You cannot repay what you broke. That makes this worse.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -4,
             "failure_end_conversation": false
           },
@@ -3618,18 +4800,24 @@
           "order": 1
         },
         {
-          "id": "claim_accident",
+          "id": "claim_container_break_accident",
           "label": "It was an accident",
           "response": "Accidents stop after the first crack. Remember that.",
+          "responses": [
+            "Then learn from the accident before it becomes a habit."
+          ],
           "reputation": -1,
           "aggro": false,
           "end_conversation": true,
           "order": 2
         },
         {
-          "id": "threaten",
+          "id": "threaten_container_break",
           "label": "Threaten them",
           "response": "Then we are done talking.",
+          "responses": [
+            "Then we are past warnings. Choose your next move carefully."
+          ],
           "reputation": -8,
           "aggro": true,
           "end_conversation": true,
@@ -3640,6 +4828,9 @@
       "leave_option": {
         "label": "Leave",
         "response": "Breaking village stores and walking away will be remembered.",
+        "responses": [
+          "Leaving now is wiser than making this worse."
+        ],
         "reputation": -5,
         "aggro_chance": 0.25,
         "end_conversation": true,
@@ -3675,6 +4866,10 @@
       ],
       "witness_radius": 12,
       "requires_line_of_sight": true,
+      "reputation_levels": [
+        "neutral",
+        "suspicious"
+      ],
       "initiate_dialogue": true,
       "aggro_immediately": false,
       "reputation": -4,
@@ -3683,6 +4878,9 @@
           "id": "close_it",
           "label": "Close it",
           "response": "Good. Leave village stores for village needs.",
+          "responses": [
+            "Good. Keep your hands clear of village stores."
+          ],
           "reputation": 2,
           "aggro": false,
           "end_conversation": true,
@@ -3692,6 +4890,9 @@
           "id": "ask_permission",
           "label": "Ask permission",
           "response": "Ask before the lid opens next time. We share better with people who speak first.",
+          "responses": [
+            "Ask first next time. A spoken request carries farther than an opened lid."
+          ],
           "reputation": 1,
           "aggro": false,
           "end_conversation": true,
@@ -3701,6 +4902,9 @@
           "id": "offer_payment",
           "label": "Offer payment",
           "response": "Coins help less than respect, but I hear the effort in it.",
+          "responses": [
+            "Payment helps settle the moment. Permission still comes before the latch."
+          ],
           "reputation_levels": [
             "neutral",
             "suspicious",
@@ -3716,7 +4920,13 @@
             "destination": "villager_inventory",
             "overflow_destination": "drop_at_villager",
             "success_response": "Three emeralds is enough for me to believe you meant no harm. Ask before touching village stores again.",
+            "success_responses": [
+              "That payment covers the damage for now. The village will be watching what you do next."
+            ],
             "failure_response": "You do not have three emeralds to offer. Close the chest and choose your next words carefully.",
+            "failure_responses": [
+              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+            ],
             "failure_reputation": -1,
             "failure_end_conversation": false
           },
@@ -3726,70 +4936,73 @@
           "order": 2
         },
         {
-          "id": "accept_warning",
-          "label": "Accept warning",
-          "response": "You have helped this village before, so I will believe this was carelessness. Close it, and ask next time.",
-          "reputation": 1,
-          "aggro": false,
-          "end_conversation": true,
-          "reputation_levels": [
-            "trusted",
-            "respected",
-            "revered",
-            "royalty"
-          ],
-          "order": 3
-        },
-        {
           "id": "checking_supplies",
           "label": "I was checking supplies",
           "response": "Then check with a villager beside you. Alone, it looks like hunger with pockets.",
+          "responses": [
+            "Next time, check with someone watching beside you."
+          ],
           "reputation": -1,
           "aggro": false,
           "end_conversation": true,
-          "order": 4
+          "order": 3
         },
         {
           "id": "need_help",
           "label": "I need help",
           "response": "Need is not shameful. Taking without asking is. Speak plainly next time.",
+          "responses": [
+            "Then ask plainly before reaching. Need does not make village stores yours."
+          ],
           "reputation": 0,
           "aggro": false,
           "end_conversation": true,
-          "order": 5
+          "order": 4
         },
         {
           "id": "thought_abandoned",
           "label": "I thought it was abandoned",
           "response": "If the village still stands, its stores still belong to someone.",
+          "responses": [
+            "Standing village stores are not abandoned."
+          ],
           "reputation": -2,
           "aggro": false,
           "end_conversation": true,
-          "order": 6
+          "order": 5
         },
         {
           "id": "deny",
           "label": "Deny it",
           "response": "The lid opened under your hand. Do not ask me to mistrust my own eyes.",
+          "responses": [
+            "Do not dress an open lid up as innocence. I saw enough."
+          ],
           "reputation": -4,
           "aggro": true,
           "end_conversation": true,
-          "order": 7
+          "order": 6
         },
         {
           "id": "threaten",
           "label": "Threaten them",
           "response": "Then we are past words.",
+          "responses": [
+            "Then we are past warnings. Choose your next move carefully."
+          ],
           "reputation": -7,
           "aggro": true,
           "end_conversation": true,
-          "order": 8
+          "order": 7
         }
       ],
       "force_camera_towards_villager": true,
       "leave_option": {
         "label": "Leave",
         "response": "Leaving does not make this disappear.",
+        "responses": [
+          "Leaving now is wiser than making this worse."
+        ],
         "reputation": -1,
         "end_conversation": true,
         "order": 1000

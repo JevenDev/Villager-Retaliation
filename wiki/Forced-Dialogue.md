@@ -68,6 +68,10 @@ or an `entries` array:
 | `aggro_immediately` | boolean | `false` | Makes the witness attack immediately after the event line. |
 | `force_camera_towards_villager` | boolean | `false` | Smoothly turns the player's camera toward the witnessing villager while this forced dialogue is active. |
 | `reputation` | integer | `0` | Reputation change applied to the witnessing villager when the event is caught. |
+| `reputation_level` | string or array | any | Alias for `reputation_levels`. |
+| `reputation_levels` | string or array | any | Allows this entry only for the player's current reputation tier with the witnessing villager. |
+| `min_reputation` | integer | none | Minimum exact reputation value with the witnessing villager. |
+| `max_reputation` | integer | none | Maximum exact reputation value with the witnessing villager. |
 | `loot_table` | string | none | Optional single loot table id this entry can match. |
 | `loot_tables` | array | none | Optional loot table ids this entry can match. If omitted, the entry can match any watched container. |
 | `target_entity_type` | string | none | Optional single retaliation target entity id such as `minecraft:player`. |
@@ -121,7 +125,8 @@ If a `container_theft` entry does not define `leave_option` or `leave_options`, 
 | --- | --- | --- | --- |
 | `id` | string | required | Choice id. Must be unique within the entry. |
 | `label` | string | required | Button text shown to the player. |
-| `response` | string | none | Villager response after the player chooses this option. |
+| `response` | string | none | Villager response after the player chooses this option. When `responses` is also set, this is included as the first possible variation. |
+| `responses` | array | none | Additional villager response variations for this option. One response is selected at random. |
 | `reputation` | integer | `0` | Reputation change applied after this option. |
 | `aggro` | boolean | `false` | Makes the villager attack after this option. |
 | `aggro_chance` | number | `0.0` | Chance from `0.0` to `1.0` that the villager attacks after this option. |
@@ -134,7 +139,7 @@ If a `container_theft` entry does not define `leave_option` or `leave_options`, 
 | `take_items` | object | none | Removes a configured payment from the player's inventory before the option succeeds. |
 | `take_stolen_items` | boolean or object | none | For `container_theft`, removes the specific item stacks stolen from the source container before the option succeeds. |
 
-Use reputation filters to change the choices available for the same event. For example, a trusted player can receive an `accept_warning` option while a hostile player only sees a higher-cost `take_items` payment or an aggro response.
+Use reputation filters on entries to swap the whole event by rank, or on options to change the choices available inside one event. For example, the built-in container opening prompts only catch neutral and suspicious players on opening, hostile/despised/feared players get harsher opening responses, and trusted or better players can open watched containers until they actually remove items.
 
 Escape does not bypass forced dialogue. Pressing Escape activates the entry's matching `leave_option` / `leave_options` outcome, so pack makers can attach response text, reputation changes, stolen-item returns, aggro chance, or other outcomes to leaving.
 
@@ -179,7 +184,9 @@ When the destination is an inventory or container, `require_space` defaults to `
 
 `villager_inventory_then_source_container` first tries to put returned items into the witnessing villager's inventory, then puts any remainder back into the source container. This is useful for stolen-item return choices.
 
-If the player does not have enough matching items, the normal option response and reputation do not apply. Instead, `failure_response`, `failure_reputation`, `failure_end_conversation`, and `failure_aggro` control what happens. Leaving `failure_end_conversation` false keeps the forced dialogue open so the player can choose another response.
+Payment outcomes can use `success_response` / `success_responses` and `failure_response` / `failure_responses`. When both the singular and array forms are present, the singular response is included as the first possible variation.
+
+If the player does not have enough matching items, the normal option response and reputation do not apply. Instead, `failure_response`, `failure_responses`, `failure_reputation`, `failure_end_conversation`, and `failure_aggro` control what happens. Leaving `failure_end_conversation` false keeps the forced dialogue open so the player can choose another response.
 
 ### `take_stolen_items`
 
@@ -190,8 +197,10 @@ If the player does not have enough matching items, the normal option response an
 | `destination` | enum | `villager_inventory_then_source_container` | Where the returned stolen items go. |
 | `overflow_destination` | enum | none | Optional fallback if the destination leaves a remainder. |
 | `require_space` | boolean | `true` | Fails unless the destination can accept the items. |
-| `success_response` | string | option `response` | Response after the stolen items are successfully removed. |
-| `failure_response` | string | none | Response if the player no longer has the stolen items. |
+| `success_response` | string | option `response` | Response after the stolen items are successfully removed. When `success_responses` is also set, this is included as the first possible variation. |
+| `success_responses` | array | none | Additional successful-return response variations. |
+| `failure_response` | string | none | Response if the player no longer has the stolen items. When `failure_responses` is also set, this is included as the first possible variation. |
+| `failure_responses` | array | none | Additional failed-return response variations. |
 | `success_reputation` | integer | `0` | Extra reputation change after a successful return. |
 | `failure_reputation` | integer | `0` | Reputation change after a failed return. |
 | `failure_end_conversation` | boolean | `false` | Closes the forced dialogue after a failed return. |
@@ -207,9 +216,13 @@ Fires when a player opens a watched container and closes it with fewer items tha
 
 Fires when a player opens a watched container. This trigger is used when the server config's container forced-dialogue trigger is set to `OPENING`.
 
+The built-in default pack gates opening prompts by reputation: neutral and suspicious players are stopped with the standard warning before they can continue browsing, hostile/despised/feared players get more severe warnings, and trusted or better players can open watched village containers without an opening prompt. Taking items still triggers `container_theft` for every rank.
+
 ### `container_broken`
 
 Fires when a player breaks a watched container, using the same watched-container eligibility as opening/theft checks. Like piglin guarded-container anger, the block break itself can provoke a response; unlike piglins, matching entries still use Villager Retaliation's witness filters and `requires_line_of_sight` rules.
+
+When a `container_broken` entry matches, the mod applies the configured `containerBreakReputationLoss` to the witnessing villager. If the container has a generated loot table, the mod unpacks it before the break snapshot and also applies `generatedContainerBreakItemReputationLoss` once per dropped item count. Any `reputation` value on the forced-dialogue entry is added on top of that built-in penalty.
 
 Watched containers:
 
@@ -225,7 +238,7 @@ Server config controls whether generated watched containers trigger on actual th
 
 Generated-container detection initially checks for an unresolved loot table through Minecraft's `RandomizableContainer` interface, so modded generated containers can participate when they expose loot tables the same way vanilla generated containers do.
 
-The built-in `default.json` includes village-specific entries for vanilla village chest loot tables, plus a lower-priority generic theft fallback for packs or configs that still want broad theft detection.
+The built-in `default.json` includes village-specific entries for vanilla village chest loot tables, plus lower-priority generic theft and break fallbacks for packs or configs that still want broad detection.
 
 ### `retaliation_started`
 
@@ -253,7 +266,7 @@ Forced dialogue entries can optionally filter by generated container loot table:
 
 ## Placeholders
 
-Forced dialogue `line`, `lines`, option `response`, and `leave_option.response` text can use:
+Forced dialogue `line`, `lines`, option `response` / `responses`, `leave_option.response` / `leave_option.responses`, and payment or return outcome response text can use:
 
 ```text
 {villager}

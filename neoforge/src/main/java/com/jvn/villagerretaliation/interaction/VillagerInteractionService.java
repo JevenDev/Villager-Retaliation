@@ -239,10 +239,15 @@ public final class VillagerInteractionService {
             return;
         }
         if (!VillagerConversationService.validate(player, villager)) {
+            PacketDistributor.sendToPlayer(player, new VillagerConversationEndedPayload(entityId, ""));
             sendVillagerNotice(player, villager, "interaction.conversation_ended");
             return;
         }
         if (ForcedDialogueService.handleDialogueRequest(player, villager, optionId)) {
+            return;
+        }
+        if (VillagerConversationService.isForced(player, villager) && !ForcedDialogueService.hasSession(player, villager)) {
+            VillagerConversationService.endForPlayer(player, true);
             return;
         }
         if (shouldRefuseDespisedConversation(villager, player)) {

@@ -43,6 +43,10 @@ public final class VillagerReputationManager {
         addReputation(level, witness, playerId, amount, ReputationEventType.WITNESSED_HIT, eventPos);
     }
 
+    public static void addContainerBreakReputation(ServerLevel level, AbstractVillager witness, UUID playerId, int amount, BlockPos eventPos) {
+        addReputation(level, witness, playerId, amount, ReputationEventType.CONTAINER_BREAK, eventPos);
+    }
+
     public static void addGossipReputation(ServerLevel level, Villager receiver, UUID playerId, int amount, UUID sourceVillagerId) {
         if (sourceVillagerId.equals(receiver.getUUID())) {
             return;

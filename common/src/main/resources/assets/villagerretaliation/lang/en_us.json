@@ -93,6 +93,8 @@
   "villagerretaliation.configuration.reputation.witnessedKillPenalty": "Witnessed Kill Penalty",
   "villagerretaliation.configuration.reputation.witnessedBabyKillPenalty": "Witnessed Baby Kill Penalty",
   "villagerretaliation.configuration.reputation.witnessedIronGolemKillPenalty": "Witnessed Iron Golem Kill Penalty",
+  "villagerretaliation.configuration.reputation.containerBreakReputationLoss": "Container Break Reputation Loss",
+  "villagerretaliation.configuration.reputation.generatedContainerBreakItemReputationLoss": "Generated Container Break Item Reputation Loss",
   "villagerretaliation.configuration.reputation.tradeReputationGain": "Trade Reputation Gain",
   "villagerretaliation.configuration.reputation.maxTradeReputationGainPerVillagerPerDay": "Max Trade Reputation Gain Per Villager Per Day",
   "villagerretaliation.configuration.reputation.sleepingVillagerBotherReputationLoss": "Sleeping Villager Bother Reputation Loss",

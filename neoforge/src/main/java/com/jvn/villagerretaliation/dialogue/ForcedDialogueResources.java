@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.VillagerRetaliation;
+import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
 import com.jvn.villagerretaliation.util.VillagerInventoryItemRemoval;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
@@ -172,6 +173,7 @@ public final class ForcedDialogueResources {
                 readTargetEntityTypes(entry),
                 readProfessions(entry),
                 VillagerEquipmentCondition.read(entry, "witness"),
+                VillagerReputationCondition.read(entry),
                 options,
                 leaveOption,
                 leaveOptions
@@ -225,6 +227,22 @@ public final class ForcedDialogueResources {
             lines.add(0, line);
         }
         return lines.stream()
+                .filter(value -> !value.isBlank())
+                .distinct()
+                .toList();
+    }
+
+    private static List<String> readResponses(JsonObject entry) {
+        return readResponseVariants(entry, "response", "responses");
+    }
+
+    private static List<String> readResponseVariants(JsonObject entry, String singleKey, String listKey) {
+        List<String> responses = new ArrayList<>(readStringList(entry, listKey));
+        String response = readString(entry, singleKey);
+        if (!response.isBlank()) {
+            responses.add(0, response);
+        }
+        return responses.stream()
                 .filter(value -> !value.isBlank())
                 .distinct()
                 .toList();
@@ -349,7 +367,7 @@ public final class ForcedDialogueResources {
         return new ForcedDialogueOption(
                 id,
                 label,
-                readString(option, "response"),
+                readResponses(option),
                 readInt(option, "reputation", 0),
                 readBoolean(option, "aggro"),
                 clampChance(readDouble(option, "aggro_chance", 0.0D)),
@@ -365,8 +383,8 @@ public final class ForcedDialogueResources {
         return readStolenItemReturnJson(option, "take_stolen_items")
                 .or(() -> readStolenItemReturnJson(option, "return_stolen_items"))
                 .map(entry -> new ForcedDialogueStolenItemReturn(
-                        readString(entry, "success_response"),
-                        readString(entry, "failure_response"),
+                        readResponseVariants(entry, "success_response", "success_responses"),
+                        readResponseVariants(entry, "failure_response", "failure_responses"),
                         readInt(entry, "success_reputation", 0),
                         readInt(entry, "failure_reputation", 0),
                         readBoolean(entry, "failure_aggro"),
@@ -395,8 +413,8 @@ public final class ForcedDialogueResources {
                 .or(() -> readPaymentJson(option, "payment"))
                 .map(payment -> new ForcedDialogueItemPayment(
                         payment.removal(),
-                        readString(payment.entry(), "success_response"),
-                        readString(payment.entry(), "failure_response"),
+                        readResponseVariants(payment.entry(), "success_response", "success_responses"),
+                        readResponseVariants(payment.entry(), "failure_response", "failure_responses"),
                         readInt(payment.entry(), "success_reputation", 0),
                         readInt(payment.entry(), "failure_reputation", 0),
                         readBoolean(payment.entry(), "failure_aggro"),
@@ -604,6 +622,7 @@ public final class ForcedDialogueResources {
             Set<ResourceLocation> targetEntityTypes,
             Set<VillagerProfession> witnessProfessions,
             VillagerEquipmentCondition witnessEquipmentCondition,
+            VillagerReputationCondition reputationCondition,
             List<ForcedDialogueOption> options,
             ForcedDialogueOption leaveOption,
             List<ForcedDialogueOption> leaveOptions) {
@@ -636,12 +655,16 @@ public final class ForcedDialogueResources {
         public boolean matchesRecentRetaliations(int count) {
             return count >= this.minRecentRetaliations && count <= this.maxRecentRetaliations;
         }
+
+        public boolean matchesReputation(int reputation, VillagerReputationLevel level) {
+            return this.reputationCondition.matches(reputation, level);
+        }
     }
 
     public record ForcedDialogueOption(
             String id,
             String label,
-            String response,
+            List<String> responses,
             int reputationDelta,
             boolean aggro,
             double aggroChance,
@@ -650,11 +673,17 @@ public final class ForcedDialogueResources {
             ForcedDialogueStolenItemReturn stolenItemReturn,
             ForcedDialogueItemPayment itemPayment,
             VillagerReputationCondition reputationCondition) {
+        public String selectResponse(RandomSource random) {
+            if (this.responses.isEmpty()) {
+                return "";
+            }
+            return this.responses.get(random.nextInt(this.responses.size()));
+        }
     }
 
     public record ForcedDialogueStolenItemReturn(
-            String successResponse,
-            String failureResponse,
+            List<String> successResponses,
+            List<String> failureResponses,
             int successReputationDelta,
             int failureReputationDelta,
             boolean failureAggro,
@@ -663,8 +692,8 @@ public final class ForcedDialogueResources {
             ForcedDialogueItemDestination overflowDestination,
             boolean requireSpace) {
         private static final ForcedDialogueStolenItemReturn EMPTY = new ForcedDialogueStolenItemReturn(
-                "",
-                "",
+                List.of(),
+                List.of(),
                 0,
                 0,
                 false,
@@ -680,12 +709,20 @@ public final class ForcedDialogueResources {
         public boolean isEmpty() {
             return this == EMPTY;
         }
+
+        public String selectSuccessResponse(RandomSource random) {
+            return selectResponse(this.successResponses, random);
+        }
+
+        public String selectFailureResponse(RandomSource random) {
+            return selectResponse(this.failureResponses, random);
+        }
     }
 
     public record ForcedDialogueItemPayment(
             VillagerInventoryItemRemoval removal,
-            String successResponse,
-            String failureResponse,
+            List<String> successResponses,
+            List<String> failureResponses,
             int successReputationDelta,
             int failureReputationDelta,
             boolean failureAggro,
@@ -695,8 +732,8 @@ public final class ForcedDialogueResources {
             boolean requireSpace) {
         private static final ForcedDialogueItemPayment EMPTY = new ForcedDialogueItemPayment(
                 VillagerInventoryItemRemoval.empty(),
-                "",
-                "",
+                List.of(),
+                List.of(),
                 0,
                 0,
                 false,
@@ -712,6 +749,21 @@ public final class ForcedDialogueResources {
         public boolean isEmpty() {
             return this.removal.isEmpty();
         }
+
+        public String selectSuccessResponse(RandomSource random) {
+            return selectResponse(this.successResponses, random);
+        }
+
+        public String selectFailureResponse(RandomSource random) {
+            return selectResponse(this.failureResponses, random);
+        }
+    }
+
+    private static String selectResponse(List<String> responses, RandomSource random) {
+        if (responses.isEmpty()) {
+            return "";
+        }
+        return responses.get(random.nextInt(responses.size()));
     }
 
     public record ForcedDialogueContext(

@@ -104,6 +104,7 @@ public class VillagerInteractionScreen extends Screen {
     private int selectedOption;
     private boolean closingFromServer;
     private boolean openingChat;
+    private boolean awaitingForcedDialogueResponse;
     private boolean draggingScrollbar;
     private float scrollbarDragOffset;
     private float optionScroll;
@@ -193,6 +194,7 @@ public class VillagerInteractionScreen extends Screen {
         this.knownLikedGiftNames.addAll(knownLikedGiftNames);
         this.knownDislikedGiftNames.clear();
         this.knownDislikedGiftNames.addAll(knownDislikedGiftNames);
+        this.awaitingForcedDialogueResponse = false;
         if (this.page == DialoguePage.TALK) {
             rebuildOptionsKeepingListPosition();
         }
@@ -575,6 +577,12 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     private void requestDialogue(String optionId) {
+        if (this.forcedDialogue) {
+            if (this.awaitingForcedDialogueResponse) {
+                return;
+            }
+            this.awaitingForcedDialogueResponse = true;
+        }
         PacketDistributor.sendToServer(new VillagerDialogueRequestPayload(this.villagerEntityId, optionId));
     }
 

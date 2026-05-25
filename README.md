@@ -68,7 +68,7 @@ Default tiers:
 | Despised | -250 |
 | Feared | -750 |
 
-Reputation changes are configurable. By default, direct villager hits are punished more than witnessed hits, villager kills are punished heavily, and player-attributed lava/fire damage counts for half the normal reputation penalty.
+Reputation changes are configurable. By default, direct villager hits are punished more than witnessed hits, villager kills are punished heavily, breaking watched containers causes a large witnessed penalty with extra loss per generated item dropped, watched container opening prompts scale by reputation, and player-attributed lava/fire damage counts for half the normal reputation penalty.
 
 ![villagers retaliating against a player that killed another villager](https://i.imgur.com/6c3vdac.gif)
 
@@ -82,7 +82,7 @@ Trusted villagers may greet you warmly, suspicious villagers may be cold, and ho
 
 Villagers can also share stories about discovered structures and biomes, give unreliable or reputation-aware gift advice, remember family and romantic relationships, and be recruited to follow or help the player when conditions allow.
 
-Villagers can confront players for opening, breaking, or stealing from watched containers, including generated village chests. Data packs can customize the event dialogue, target specific loot tables, require item payments, and show different responses based on the player's current reputation with the witnessing villager.
+Villagers can confront players for opening, breaking, or stealing from watched containers, including generated village chests. Breaking generated containers unpacks and counts the dropped loot before applying reputation loss, so smashing fuller village stores is worse than cracking an empty box. Data packs can customize the event dialogue, target specific loot tables, require item payments, and show different responses based on the player's current reputation with the witnessing villager.
 
 ### Profession Combat
 
