@@ -1684,6 +1684,7 @@ body.is-unsaved-shaking .app-shell {
 }
 
 .wiki-tab {
+  position: relative;
   min-width: 0;
   max-width: 220px;
   height: 31px;
@@ -1695,6 +1696,29 @@ body.is-unsaved-shaking .app-shell {
   border-radius: 4px 4px 0 0;
   background: #202020;
   color: var(--muted);
+}
+
+.wiki-tab.is-dragging {
+  opacity: 0.6;
+}
+
+.wiki-tab.is-drop-before::before,
+.wiki-tab.is-drop-after::after {
+  content: "";
+  position: absolute;
+  top: 5px;
+  bottom: 4px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--accent-strong);
+}
+
+.wiki-tab.is-drop-before::before {
+  left: -4px;
+}
+
+.wiki-tab.is-drop-after::after {
+  right: -4px;
 }
 
 .wiki-tab.is-active {

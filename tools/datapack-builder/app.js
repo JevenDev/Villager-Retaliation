@@ -643,6 +643,8 @@ const KEYBIND_ACTIONS = [
 ];
 let nextWikiTabId = 2;
 let wikiPointerState = null;
+let wikiTabDragState = null;
+let suppressWikiTabClickUntil = 0;
 let lastWikiMiddleOpen = { signature: "", time: 0 };
 let keybinds = readKeybinds();
 let recordingKeybindAction = "";
@@ -1092,6 +1094,29 @@ function closeWikiTab(tabId) {
   renderWiki();
 }
 
+function reorderWikiTab(fromId, toId, placement) {
+  if (!fromId || !toId || fromId === toId) return;
+  const fromIndex = wikiState.tabs.findIndex((tab) => tab.id === fromId);
+  let toIndex = wikiState.tabs.findIndex((tab) => tab.id === toId);
+  if (fromIndex < 0 || toIndex < 0) return;
+  if (placement === "after") toIndex += 1;
+  const [tab] = wikiState.tabs.splice(fromIndex, 1);
+  if (fromIndex < toIndex) toIndex -= 1;
+  wikiState.tabs.splice(Math.max(0, Math.min(toIndex, wikiState.tabs.length)), 0, tab);
+  renderWiki();
+}
+
+function wikiTabDropPlacement(event, tabElement) {
+  const rect = tabElement.getBoundingClientRect();
+  return event.clientX > rect.left + rect.width / 2 ? "after" : "before";
+}
+
+function clearWikiTabDropIndicators() {
+  els.wikiTabs?.querySelectorAll(".wiki-tab.is-drop-before, .wiki-tab.is-drop-after").forEach((tab) => {
+    tab.classList.remove("is-drop-before", "is-drop-after");
+  });
+}
+
 function validateWikiTabs() {
   if (wikiState.docs.length === 0) {
     if (wikiState.tabs.length === 0) resetWikiTabs();
@@ -1497,7 +1522,7 @@ function renderWikiTabs() {
     const label = doc?.title || tab.file.replace(/\.md$/i, "").replace(/-/g, " ");
     const active = tab.id === wikiState.activeTabId;
     return `
-      <div class="wiki-tab ${active ? "is-active" : ""}">
+      <div class="wiki-tab ${active ? "is-active" : ""}" data-wiki-tab-id="${escapeHtml(tab.id)}" draggable="true">
         <button class="wiki-tab-button" type="button" data-wiki-tab="${escapeHtml(tab.id)}" aria-current="${active ? "page" : "false"}">
           ${escapeHtml(label)}
         </button>
@@ -3922,6 +3947,22 @@ function renderPanel() {
   if (activeSection === "pacification") renderPacification();
   if (activeSection === "stories") renderStories();
   if (activeSection === "names") renderNames();
+}
+
+function renderPreservingEntryListScroll() {
+  const list = els.panel.querySelector(".entry-list");
+  const scrollState = list ? { top: list.scrollTop, left: list.scrollLeft } : null;
+  render();
+  restoreEntryListScroll(scrollState);
+  window.requestAnimationFrame(() => restoreEntryListScroll(scrollState));
+}
+
+function restoreEntryListScroll(scrollState) {
+  if (!scrollState) return;
+  const list = els.panel.querySelector(".entry-list");
+  if (!list) return;
+  list.scrollTop = Math.min(scrollState.top, Math.max(0, list.scrollHeight - list.clientHeight));
+  list.scrollLeft = Math.min(scrollState.left, Math.max(0, list.scrollWidth - list.clientWidth));
 }
 
 function resizeTextareas(root = document) {
@@ -6360,7 +6401,7 @@ els.panel.addEventListener("click", (event) => {
         index: Number(entryCard.dataset.index)
       };
       clearEntryFormDirty();
-      render();
+      renderPreservingEntryListScroll();
     }
     return;
   }
@@ -6385,7 +6426,7 @@ els.panel.addEventListener("click", (event) => {
       index: Number(actionButton.dataset.index)
     };
     clearEntryFormDirty();
-    render();
+    renderPreservingEntryListScroll();
   }
   if (action === "delete-entry") {
     deleteEntry(actionButton.dataset.section, actionButton.dataset.kind, Number(actionButton.dataset.index));
@@ -6469,7 +6510,7 @@ els.panel.addEventListener("keydown", (event) => {
     index: Number(entryCard.dataset.index)
   };
   clearEntryFormDirty();
-  render();
+  renderPreservingEntryListScroll();
 });
 
 els.panel.addEventListener("submit", (event) => {
@@ -6661,6 +6702,7 @@ els.wikiResults.addEventListener("auxclick", (event) => {
   setWikiLocationInNewTabFromMiddleClick(result.dataset.file || "Home.md", result.dataset.section || "");
 });
 els.wikiTabs.addEventListener("click", (event) => {
+  if (Date.now() < suppressWikiTabClickUntil) return;
   const closeButton = event.target.closest("[data-close-wiki-tab]");
   if (closeButton) {
     closeWikiTab(closeButton.dataset.closeWikiTab);
@@ -6671,6 +6713,46 @@ els.wikiTabs.addEventListener("click", (event) => {
   wikiState.activeTabId = tabButton.dataset.wikiTab;
   syncWikiSelectionFromActiveTab();
   renderWiki();
+});
+els.wikiTabs.addEventListener("dragstart", (event) => {
+  if (event.target.closest("[data-close-wiki-tab]")) {
+    event.preventDefault();
+    return;
+  }
+  const tab = event.target.closest(".wiki-tab");
+  if (!tab) return;
+  wikiTabDragState = { id: tab.dataset.wikiTabId };
+  tab.classList.add("is-dragging");
+  event.dataTransfer.effectAllowed = "move";
+  event.dataTransfer.setData("text/plain", wikiTabDragState.id);
+});
+els.wikiTabs.addEventListener("dragover", (event) => {
+  const tab = event.target.closest(".wiki-tab");
+  if (!wikiTabDragState || !tab) return;
+  event.preventDefault();
+  clearWikiTabDropIndicators();
+  if (tab.dataset.wikiTabId !== wikiTabDragState.id) {
+    tab.classList.add(wikiTabDropPlacement(event, tab) === "after" ? "is-drop-after" : "is-drop-before");
+  }
+  event.dataTransfer.dropEffect = "move";
+});
+els.wikiTabs.addEventListener("drop", (event) => {
+  const tab = event.target.closest(".wiki-tab");
+  if (!wikiTabDragState || !tab) return;
+  event.preventDefault();
+  const placement = wikiTabDropPlacement(event, tab);
+  const fromId = wikiTabDragState.id;
+  const toId = tab.dataset.wikiTabId;
+  wikiTabDragState = null;
+  suppressWikiTabClickUntil = Date.now() + 120;
+  clearWikiTabDropIndicators();
+  reorderWikiTab(fromId, toId, placement);
+});
+els.wikiTabs.addEventListener("dragend", () => {
+  wikiTabDragState = null;
+  suppressWikiTabClickUntil = Date.now() + 120;
+  els.wikiTabs.querySelectorAll(".wiki-tab.is-dragging").forEach((tab) => tab.classList.remove("is-dragging"));
+  clearWikiTabDropIndicators();
 });
 els.wikiTabs.addEventListener("mousedown", (event) => {
   const tabButton = event.target.closest("[data-wiki-tab]");
