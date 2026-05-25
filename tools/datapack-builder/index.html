@@ -185,7 +185,12 @@
                 </button>
               </div>
             </div>
-            <textarea class="code-preview" id="json-preview" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" aria-label="Edit selected generated file"></textarea>
+            <div class="code-preview">
+              <div class="code-preview-gutter" aria-hidden="true">
+                <div class="code-preview-lines" id="json-preview-lines"></div>
+              </div>
+              <textarea class="code-preview-input" id="json-preview" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" aria-label="Edit selected generated file"></textarea>
+            </div>
           </section>
         </aside>
       </main>

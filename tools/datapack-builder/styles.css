@@ -848,14 +848,62 @@ body.is-resizing-row {
 
 .code-preview {
   flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  --code-preview-padding-y: 14px;
+  --code-preview-padding-x: 15px;
+  --preview-line-height: 21.7px;
+  --preview-gutter-digits: 2;
+  border: 0;
+  border-radius: 0;
+  overflow: hidden;
+  background: var(--code);
+}
+
+.code-preview-gutter {
+  min-width: calc((var(--preview-gutter-digits) * 1ch) + 26px);
+  display: flex;
+  justify-content: flex-end;
+  overflow: hidden;
+  padding: var(--code-preview-padding-y) 10px var(--code-preview-padding-y) 12px;
+  border-right: 1px solid #2b2b2b;
+  background: #1b1b1b;
+  color: #6d6d6d;
+  font-family: var(--font-code);
+  font-size: 13px;
+  line-height: var(--preview-line-height);
+  user-select: none;
+}
+
+.code-preview-lines {
+  min-width: 100%;
+}
+
+.code-preview-line-number {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  min-height: var(--preview-line-height);
+  line-height: var(--preview-line-height);
+  white-space: nowrap;
+}
+
+.code-preview-line-number.is-highlighted {
+  color: #f0b2aa;
+}
+
+.code-preview-input {
   width: 100%;
   min-height: 0;
   height: auto;
   border: 0;
   border-radius: 0;
   overflow: auto;
-  padding: 14px 15px;
-  background: var(--code);
+  padding: var(--code-preview-padding-y) var(--code-preview-padding-x);
+  background: transparent;
   background-attachment: local;
   background-repeat: no-repeat;
   color: #d8d8d8;
@@ -867,12 +915,12 @@ body.is-resizing-row {
   white-space: pre;
 }
 
-.code-preview:focus {
+.code-preview:focus-within {
   outline: 1px solid #686868;
   outline-offset: -1px;
 }
 
-.code-preview.is-wrapped {
+.code-preview.is-wrapped .code-preview-input {
   overflow-x: hidden;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -881,6 +929,12 @@ body.is-resizing-row {
 .code-preview.is-invalid {
   box-shadow: inset 3px 0 0 var(--danger);
   background: #251b1a;
+}
+
+.code-preview.is-invalid .code-preview-gutter,
+.code-preview.has-line-highlights .code-preview-gutter {
+  border-right-color: #50302c;
+  background: #201918;
 }
 
 .code-preview.has-line-highlights {

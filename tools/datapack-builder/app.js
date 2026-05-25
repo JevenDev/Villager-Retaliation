@@ -574,6 +574,7 @@ let showRightPanel = true;
 let wrapPreviewLines = false;
 let previewEditTimer = null;
 let previewEditError = null;
+let previewLineHighlightRanges = [];
 let previewUndoStack = [];
 let previewRedoStack = [];
 let previewBeforeInputSnapshot = null;
@@ -601,6 +602,7 @@ const els = {
   checkCount: document.querySelector("#check-count"),
   selectedPath: document.querySelector("#selected-path"),
   preview: document.querySelector("#json-preview"),
+  previewLines: document.querySelector("#json-preview-lines"),
   importInput: document.querySelector("#import-input"),
   directoryInput: document.querySelector("#directory-input"),
   exportButton: document.querySelector("#export-button"),
@@ -3662,6 +3664,7 @@ function validate() {
 function render() {
   hideTooltip();
   window.clearTimeout(outputRenderTimer);
+  migrateMisroutedDialogueNotifications();
   invalidateCurrentViewSnapshot();
   renderWorkspaceChrome();
   renderTabs();
@@ -3675,6 +3678,39 @@ function render() {
   renderPreview();
   updateShortcutTooltips();
   renderIcons();
+}
+
+function migrateMisroutedDialogueNotifications() {
+  const moved = [];
+  for (const kind of ["options", "lines", "messages", "openings", "closings", "pacify"]) {
+    const kept = [];
+    for (const entry of state.dialogue[kind]) {
+      if (isNotificationEntry(entry)) {
+        moved.push(entry);
+      } else {
+        kept.push(entry);
+      }
+    }
+    state.dialogue[kind] = kept;
+  }
+  if (moved.length === 0) return;
+  const existingKeys = new Set(state.notifications.notifications.map(notificationEntryKey));
+  for (const entry of moved) {
+    const cleaned = cleanObject(entry);
+    const key = notificationEntryKey(cleaned);
+    if (existingKeys.has(key)) continue;
+    state.notifications.notifications.push(cleaned);
+    existingKeys.add(key);
+  }
+  if (editing?.section === "dialogue") {
+    editing = null;
+    clearEntryFormDirty();
+  }
+}
+
+function notificationEntryKey(entry) {
+  if (entry?.id) return `id:${entry.id}`;
+  return JSON.stringify(cleanObject(entry));
 }
 
 function renderOutputPanels() {
@@ -3844,13 +3880,17 @@ function renderPreview() {
     els.preview.value = `Binary file preserved (${value.byteLength} bytes).`;
     els.preview.readOnly = true;
     resetPreviewHistory(selectedPath);
+    previewLineHighlightRanges = [];
     applyPreviewLineHighlights([]);
+    renderPreviewLineNumbers(els.preview.value, []);
   } else {
     els.preview.readOnly = false;
     els.preview.value = value || "";
     resetPreviewHistory(selectedPath);
     const ranges = hasInvalidJson ? [] : withDraftState(() => previewIssueLineRanges(selectedPath, els.preview.value));
+    previewLineHighlightRanges = ranges;
     applyPreviewLineHighlights(ranges);
+    renderPreviewLineNumbers(els.preview.value, ranges);
   }
   updatePreviewHistoryButtons();
 }
@@ -4068,6 +4108,73 @@ function recordPreviewInputHistory() {
   previewBeforeInputSnapshot = null;
 }
 
+function renderPreviewLineNumbers(source, ranges = []) {
+  const style = getComputedStyle(els.preview);
+  const lineHeight = parseFloat(style.lineHeight) || 21.7;
+  const lines = String(source || "").split("\n");
+  const wrappedRows = previewWrappedRowCounts(lines, style);
+  const highlighted = previewHighlightedLines(ranges);
+  const fragment = document.createDocumentFragment();
+  lines.forEach((_, index) => {
+    const lineNumber = index + 1;
+    const node = document.createElement("div");
+    node.className = "code-preview-line-number";
+    if (highlighted.has(lineNumber)) node.classList.add("is-highlighted");
+    node.textContent = String(lineNumber);
+    node.style.height = `${wrappedRows[index] * lineHeight}px`;
+    fragment.append(node);
+  });
+  els.codePreview.style.setProperty("--preview-line-height", `${lineHeight}px`);
+  els.codePreview.style.setProperty("--preview-gutter-digits", String(Math.max(2, String(lines.length).length)));
+  els.previewLines.replaceChildren(fragment);
+  syncPreviewLineNumberScroll();
+}
+
+function previewWrappedRowCounts(lines, style) {
+  if (!wrapPreviewLines) return lines.map(() => 1);
+  const previewWidth = els.preview.clientWidth;
+  if (!previewWidth) return lines.map(() => 1);
+  const paddingLeft = parseFloat(style.paddingLeft) || 0;
+  const paddingRight = parseFloat(style.paddingRight) || 0;
+  const availableWidth = previewWidth - paddingLeft - paddingRight;
+  if (availableWidth <= 0) return lines.map(() => 1);
+  const context = document.createElement("canvas").getContext("2d");
+  if (!context) return lines.map(() => 1);
+  context.font = style.font || `${style.fontSize} ${style.fontFamily}`;
+  const characterWidth = context.measureText("0").width || (parseFloat(style.fontSize) || 14) * 0.6;
+  const columns = Math.max(1, Math.floor(availableWidth / characterWidth));
+  const tabSize = Math.max(1, Number.parseInt(style.tabSize, 10) || 2);
+  return lines.map((line) => {
+    if (!line.length) return 1;
+    let columnsUsed = 0;
+    for (const character of line) {
+      if (character === "\t") {
+        const remainder = columnsUsed % tabSize;
+        columnsUsed += remainder === 0 ? tabSize : tabSize - remainder;
+      } else {
+        columnsUsed += 1;
+      }
+    }
+    return Math.max(1, Math.ceil(columnsUsed / columns));
+  });
+}
+
+function previewHighlightedLines(ranges) {
+  const lines = new Set();
+  for (const range of ranges) {
+    const start = Math.max(1, range.start || 1);
+    const end = Math.max(start, range.end || start);
+    for (let line = start; line <= end; line += 1) {
+      lines.add(line);
+    }
+  }
+  return lines;
+}
+
+function syncPreviewLineNumberScroll() {
+  els.previewLines.style.transform = `translateY(${-els.preview.scrollTop}px)`;
+}
+
 function applyPreviewLineHighlights(ranges) {
   const lineHeight = parseFloat(getComputedStyle(els.preview).lineHeight) || 21.7;
   const paddingTop = parseFloat(getComputedStyle(els.preview).paddingTop) || 0;
@@ -4080,7 +4187,7 @@ function applyPreviewLineHighlights(ranges) {
     return `linear-gradient(to bottom, transparent 0, transparent ${top}px, ${color} ${top}px, ${color} ${bottom}px, transparent ${bottom}px)`;
   });
   els.codePreview.classList.toggle("has-line-highlights", backgrounds.length > 0);
-  els.codePreview.style.backgroundImage = backgrounds.join(", ");
+  els.preview.style.backgroundImage = backgrounds.join(", ");
 }
 
 function previewIssueLineRanges(path, source) {
@@ -6054,9 +6161,12 @@ function applyPreviewEdit() {
   const applied = applyEditedFile(selectedPath, source);
   if (!applied) {
     previewEditError = { path: selectedPath };
+    previewLineHighlightRanges = [];
     invalidateCurrentViewSnapshot();
     els.codePreview.classList.add("is-invalid");
     els.preview.closest(".preview")?.classList.add("has-error");
+    applyPreviewLineHighlights([]);
+    renderPreviewLineNumbers(source, []);
     renderFiles();
     renderChecks();
     renderIcons();
@@ -6066,6 +6176,9 @@ function applyPreviewEdit() {
   invalidateCurrentViewSnapshot();
   els.codePreview.classList.remove("is-invalid");
   els.preview.closest(".preview")?.classList.remove("has-error");
+  previewLineHighlightRanges = withDraftState(() => previewIssueLineRanges(selectedPath, source));
+  applyPreviewLineHighlights(previewLineHighlightRanges);
+  renderPreviewLineNumbers(source, previewLineHighlightRanges);
   renderTabs();
   renderPanel();
   updateForcedOutputModeFields(els.panel);
@@ -6111,7 +6224,7 @@ function applyEditedFile(path, source) {
     if (!json) return false;
     state.meta.locale = notificationMatch[1];
     state.notifications.fileName = normalizeFileName(notificationMatch[2].split("/").pop(), state.notifications.fileName);
-    state.notifications.notifications = cleanArray(json.notifications);
+    state.notifications.notifications = cleanArray(normalizeNotificationEntries(json));
     return true;
   }
 
@@ -6191,9 +6304,23 @@ function replaceDialogueFile(path, json) {
   const dialogueMatch = path.match(/^data\/villagerretaliation\/dialogue\/([^/]+)\/(.+)\.json$/);
   state.meta.locale = dialogueMatch[1];
   state.dialogue.fileName = normalizeFileName(dialogueMatch[2].split("/").pop(), state.dialogue.fileName);
+  state.notifications.notifications = state.notifications.notifications.filter((entry) => entry.__sourcePath !== path);
+  const routedNotifications = isNotificationEntry(json) ? [json] : [];
   for (const kind of ["options", "lines", "messages", "openings", "closings", "pacify"]) {
     state.dialogue[kind] = state.dialogue[kind].filter((entry) => (entry.__sourcePath || dialoguePath()) !== path);
-    state.dialogue[kind].push(...cleanArray(json[kind]).map((entry) => ({ ...entry, __sourcePath: path })));
+    const entries = cleanArray(json[kind]);
+    const dialogueEntries = [];
+    for (const entry of entries) {
+      if (isNotificationEntry(entry)) {
+        routedNotifications.push(entry);
+      } else {
+        dialogueEntries.push(entry);
+      }
+    }
+    state.dialogue[kind].push(...dialogueEntries.map((entry) => ({ ...entry, __sourcePath: path })));
+  }
+  if (routedNotifications.length > 0) {
+    mergeArray("notifications", "notifications", routedNotifications, path);
   }
 }
 
@@ -6415,12 +6542,16 @@ function ingestKnownJson(path, source) {
     state.meta.locale = dialogueMatch[1];
     state.dialogue.fileName = normalizeFileName(dialogueMatch[2].split("/").pop(), state.dialogue.fileName);
     const profession = dialogueMatch[2].match(/^professions\/([^/]+)/)?.[1];
-    mergeArray("dialogue", "options", withDefaultProfession(json.options, profession), path);
-    mergeArray("dialogue", "lines", withDefaultProfession(json.lines, profession), path);
-    mergeArray("dialogue", "messages", withDefaultProfession(json.messages, profession), path);
-    mergeArray("dialogue", "openings", withDefaultProfession(json.openings, profession), path);
-    mergeArray("dialogue", "closings", withDefaultProfession(json.closings, profession), path);
-    mergeArray("dialogue", "pacify", withDefaultProfession(json.pacify, profession), path);
+    if (isNotificationEntry(json)) {
+      mergeArray("notifications", "notifications", [json], path);
+      return true;
+    }
+    for (const kind of ["options", "lines", "messages", "openings", "closings", "pacify"]) {
+      const entries = withDefaultProfession(json[kind], profession);
+      if (!Array.isArray(entries)) continue;
+      mergeArray("notifications", "notifications", entries.filter(isNotificationEntry), path);
+      mergeArray("dialogue", kind, entries.filter((entry) => !isNotificationEntry(entry)), path);
+    }
     return true;
   }
 
@@ -6428,7 +6559,7 @@ function ingestKnownJson(path, source) {
   if (notificationMatch) {
     state.meta.locale = notificationMatch[1];
     state.notifications.fileName = normalizeFileName(notificationMatch[2].split("/").pop(), state.notifications.fileName);
-    mergeArray("notifications", "notifications", json.notifications);
+    mergeArray("notifications", "notifications", normalizeNotificationEntries(json), path);
     return true;
   }
 
@@ -6477,6 +6608,18 @@ function ingestKnownJson(path, source) {
     return true;
   }
 
+  const forcedEntries = normalizeForcedDialogueEntries(json);
+  if (forcedEntries.length > 0) {
+    mergeArray("forcedDialogue", "entries", forcedEntries);
+    return true;
+  }
+
+  const notificationEntries = normalizeNotificationEntries(json);
+  if (notificationEntries.length > 0) {
+    mergeArray("notifications", "notifications", notificationEntries);
+    return true;
+  }
+
   if (Array.isArray(json.options) || Array.isArray(json.lines) || Array.isArray(json.messages) || Array.isArray(json.openings) || Array.isArray(json.closings) || Array.isArray(json.pacify)) {
     mergeArray("dialogue", "options", json.options);
     mergeArray("dialogue", "lines", json.lines);
@@ -6493,15 +6636,9 @@ function ingestKnownJson(path, source) {
     return true;
   }
 
-  const forcedEntries = normalizeForcedDialogueEntries(json);
-  if (forcedEntries.length > 0) {
-    mergeArray("forcedDialogue", "entries", forcedEntries);
-    return true;
-  }
-
   let matchedTopLevelPackJson = false;
   if (Array.isArray(json.notifications)) {
-    mergeArray("notifications", "notifications", json.notifications);
+    mergeArray("notifications", "notifications", normalizeNotificationEntries(json));
     matchedTopLevelPackJson = true;
   }
   if (Array.isArray(json.preferences)) {
@@ -6537,6 +6674,7 @@ function detectJsonKind(json) {
 }
 
 function isForcedDialogueEntry(entry) {
+  if (isNotificationEntry(entry)) return false;
   return Boolean(entry && typeof entry === "object" && forcedTriggerValue(entry) && (hasForcedDialogueLine(entry) || Array.isArray(entry.options)));
 }
 
@@ -6591,6 +6729,46 @@ function readForcedDialogueLines() {
 function normalizeForcedDialogueEntries(json) {
   if (Array.isArray(json.entries) && json.entries.some(isForcedDialogueEntry)) return json.entries;
   if (isForcedDialogueEntry(json)) return [json];
+  return [];
+}
+
+function isNotificationEntry(entry) {
+  if (!entry || typeof entry !== "object" || Array.isArray(entry)) return false;
+  if (!entry.trigger || !hasNotificationText(entry)) return false;
+  const notificationKeys = [
+    "id",
+    "kind",
+    "world_text_kind",
+    "style",
+    "weight",
+    "professions",
+    "player_item",
+    "player_items",
+    "player_item_tag",
+    "player_item_tags",
+    "player_item_slot",
+    "player_item_slots",
+    "target_entity_type",
+    "target_entity",
+    "target_entity_types",
+    "target_entities",
+    "reputation_level",
+    "reputation_levels",
+    "min_reputation",
+    "max_reputation",
+    "color",
+    "text_color",
+    "chat_color"
+  ];
+  return notificationKeys.some((key) => Object.hasOwn(entry, key));
+}
+
+function normalizeNotificationEntries(json) {
+  if (Array.isArray(json?.notifications)) return json.notifications;
+  if (Array.isArray(json?.entries) && json.entries.some(isNotificationEntry)) return json.entries;
+  if (Array.isArray(json?.lines) && json.lines.some(isNotificationEntry)) return json.lines;
+  if (Array.isArray(json) && json.some(isNotificationEntry)) return json;
+  if (isNotificationEntry(json)) return [json];
   return [];
 }
 
@@ -7285,8 +7463,10 @@ document.addEventListener("auxclick", panelResizeAuxClick);
 document.addEventListener("keydown", panelResizeKeydown);
 els.preview.addEventListener("keydown", handlePreviewEditorKeydown);
 els.preview.addEventListener("beforeinput", recordPreviewBeforeInput);
+els.preview.addEventListener("scroll", syncPreviewLineNumberScroll);
 els.preview.addEventListener("input", () => {
   recordPreviewInputHistory();
+  renderPreviewLineNumbers(els.preview.value, previewEditError?.path === selectedPath ? [] : previewLineHighlightRanges);
   window.clearTimeout(previewEditTimer);
   previewEditTimer = window.setTimeout(applyPreviewEdit, 180);
 });
@@ -7357,6 +7537,7 @@ document.addEventListener("scroll", positionTooltip, true);
 window.addEventListener("resize", () => {
   keepPanelSizesInRange();
   if (wikiState.isOpen) applyWikiLayout();
+  renderPreviewLineNumbers(els.preview.value, previewLineHighlightRanges);
   positionTooltip();
 });
 window.addEventListener("beforeunload", (event) => {
