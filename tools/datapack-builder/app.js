@@ -599,6 +599,7 @@ const els = {
   wikiTitlebar: document.querySelector("#wiki-titlebar"),
   wikiVersion: document.querySelector("#wiki-version"),
   wikiSearch: document.querySelector("#wiki-search"),
+  wikiTabs: document.querySelector("#wiki-tabs"),
   wikiCloseButton: document.querySelector("#wiki-close-button"),
   wikiResults: document.querySelector("#wiki-results"),
   wikiContent: document.querySelector("#wiki-content"),
@@ -640,7 +641,9 @@ const KEYBIND_ACTIONS = [
   { id: "saveEntry", label: "Save active entry", detail: "Save the form currently being edited." },
   { id: "openSettings", label: "Open settings", detail: "Open this keybind menu." }
 ];
+let nextWikiTabId = 2;
 let wikiPointerState = null;
+let lastWikiMiddleOpen = { signature: "", time: 0 };
 let keybinds = readKeybinds();
 let recordingKeybindAction = "";
 let wikiState = {
@@ -651,6 +654,8 @@ let wikiState = {
   query: "",
   selectedFile: "Home.md",
   selectedSectionId: "",
+  activeTabId: "wiki-tab-1",
+  tabs: [{ id: "wiki-tab-1", file: "Home.md", sectionId: "" }],
   results: [],
   resultMode: "pages",
   status: ""
@@ -1013,6 +1018,97 @@ function toggleWiki() {
   }
 }
 
+function createWikiTab(file = "Home.md", sectionId = "") {
+  return {
+    id: `wiki-tab-${nextWikiTabId++}`,
+    file,
+    sectionId
+  };
+}
+
+function activeWikiTab() {
+  let tab = wikiState.tabs.find((candidate) => candidate.id === wikiState.activeTabId);
+  if (!tab) {
+    tab = wikiState.tabs[0] || createWikiTab();
+    if (wikiState.tabs.length === 0) wikiState.tabs.push(tab);
+    wikiState.activeTabId = tab.id;
+  }
+  return tab;
+}
+
+function syncWikiSelectionFromActiveTab() {
+  const tab = activeWikiTab();
+  wikiState.selectedFile = tab.file || "Home.md";
+  wikiState.selectedSectionId = tab.sectionId || "";
+}
+
+function syncActiveWikiTabToSelection() {
+  const tab = activeWikiTab();
+  tab.file = wikiState.selectedFile || "Home.md";
+  tab.sectionId = wikiState.selectedSectionId || "";
+}
+
+function resetWikiTabs(file = "Home.md", sectionId = "") {
+  const tab = createWikiTab(file, sectionId);
+  wikiState.tabs = [tab];
+  wikiState.activeTabId = tab.id;
+  syncWikiSelectionFromActiveTab();
+}
+
+function setWikiLocation(file, sectionId = "", options = {}) {
+  if (!file || (wikiState.docs.length > 0 && !wikiState.docs.some((doc) => doc.file === file))) return false;
+  if (options.newTab) {
+    const tab = createWikiTab(file, sectionId);
+    wikiState.tabs.push(tab);
+    wikiState.activeTabId = tab.id;
+  } else {
+    const tab = activeWikiTab();
+    tab.file = file;
+    tab.sectionId = sectionId || "";
+  }
+  syncWikiSelectionFromActiveTab();
+  renderWiki();
+  return true;
+}
+
+function setWikiLocationInNewTabFromMiddleClick(file, sectionId = "") {
+  const signature = `${file}#${sectionId || ""}`;
+  const now = Date.now();
+  if (lastWikiMiddleOpen.signature === signature && now - lastWikiMiddleOpen.time < 350) return false;
+  lastWikiMiddleOpen = { signature, time: now };
+  return setWikiLocation(file, sectionId, { newTab: true });
+}
+
+function closeWikiTab(tabId) {
+  if (wikiState.tabs.length <= 1) return;
+  const index = wikiState.tabs.findIndex((tab) => tab.id === tabId);
+  if (index < 0) return;
+  wikiState.tabs.splice(index, 1);
+  if (wikiState.activeTabId === tabId) {
+    const nextTab = wikiState.tabs[Math.min(index, wikiState.tabs.length - 1)] || wikiState.tabs[0];
+    wikiState.activeTabId = nextTab.id;
+    syncWikiSelectionFromActiveTab();
+  }
+  renderWiki();
+}
+
+function validateWikiTabs() {
+  if (wikiState.docs.length === 0) {
+    if (wikiState.tabs.length === 0) resetWikiTabs();
+    syncWikiSelectionFromActiveTab();
+    return;
+  }
+  wikiState.tabs = wikiState.tabs.filter((tab) => wikiState.docs.some((doc) => doc.file === tab.file));
+  if (wikiState.tabs.length === 0) {
+    resetWikiTabs(wikiState.docs[0]?.file || "Home.md");
+    return;
+  }
+  if (!wikiState.tabs.some((tab) => tab.id === wikiState.activeTabId)) {
+    wikiState.activeTabId = wikiState.tabs[0].id;
+  }
+  syncWikiSelectionFromActiveTab();
+}
+
 function openSettings() {
   recordingKeybindAction = "";
   renderSettingsKeybinds();
@@ -1122,10 +1218,7 @@ async function ensureWikiLoaded(version) {
     wikiState.docs = docs;
     wikiState.loadedVersion = version;
     wikiState.status = "";
-    if (!docs.some((doc) => doc.file === wikiState.selectedFile)) {
-      wikiState.selectedFile = docs[0]?.file || "Home.md";
-      wikiState.selectedSectionId = "";
-    }
+    validateWikiTabs();
   } catch (error) {
     wikiState.status = `Wiki docs for ${version} could not be loaded.`;
     wikiState.docs = [];
@@ -1207,6 +1300,29 @@ function wikiSections(file, markdown, pageTitle) {
 
 function wikiFileSlug(file) {
   return file.toLowerCase().replace(/\.md$/i, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+function wikiAnchorSlug(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/<[^>]+>/g, "")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+function sectionIdForWikiAnchor(file, anchor) {
+  const cleanAnchor = String(anchor || "").replace(/^#/, "");
+  if (!cleanAnchor) return "";
+  const decodedAnchor = decodeURIComponent(cleanAnchor);
+  const doc = wikiState.docs.find((candidate) => candidate.file === file);
+  if (!doc) return "";
+  const anchorSlug = wikiAnchorSlug(decodedAnchor);
+  const section = doc.sections.find((candidate) => (
+    candidate.id === decodedAnchor
+    || wikiAnchorSlug(candidate.title) === anchorSlug
+  ));
+  return section?.id || "";
 }
 
 function markdownToPlainText(markdown) {
@@ -1353,8 +1469,10 @@ function sectionSnippet(text, query) {
 
 function renderWiki() {
   if (!els.wikiResults || !els.wikiContent) return;
+  validateWikiTabs();
   searchWiki();
   syncWikiSelectionToResults();
+  renderWikiTabs();
   renderWikiResults();
   renderWikiContent();
   renderIcons();
@@ -1369,6 +1487,28 @@ function syncWikiSelectionToResults() {
   if (hasSelectedResult) return;
   wikiState.selectedFile = wikiState.results[0].file;
   wikiState.selectedSectionId = wikiState.results[0].sectionId || "";
+  syncActiveWikiTabToSelection();
+}
+
+function renderWikiTabs() {
+  if (!els.wikiTabs) return;
+  els.wikiTabs.innerHTML = wikiState.tabs.map((tab) => {
+    const doc = wikiState.docs.find((candidate) => candidate.file === tab.file);
+    const label = doc?.title || tab.file.replace(/\.md$/i, "").replace(/-/g, " ");
+    const active = tab.id === wikiState.activeTabId;
+    return `
+      <div class="wiki-tab ${active ? "is-active" : ""}">
+        <button class="wiki-tab-button" type="button" data-wiki-tab="${escapeHtml(tab.id)}" aria-current="${active ? "page" : "false"}">
+          ${escapeHtml(label)}
+        </button>
+        ${wikiState.tabs.length > 1 ? `
+          <button class="wiki-tab-close has-tooltip" type="button" data-close-wiki-tab="${escapeHtml(tab.id)}" aria-label="Close ${escapeHtml(label)}" data-tooltip="Close tab.">
+            ${icon("x", "button-icon")}
+          </button>
+        ` : ""}
+      </div>
+    `;
+  }).join("");
 }
 
 function renderWikiResults() {
@@ -1592,8 +1732,9 @@ function renderWikiInline(text, query) {
   output = output.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label, href) => {
     const safeHref = String(href || "");
     if (/\.md(?:#.*)?$/i.test(safeHref)) {
-      const file = safeHref.split("#")[0].split("/").pop();
-      return hold(`<a href="#" data-wiki-link="${escapeHtml(file)}">${label}</a>`);
+      const [path, anchor = ""] = safeHref.split("#");
+      const file = path.split("/").pop();
+      return hold(`<a href="#" data-wiki-link="${escapeHtml(file)}" data-wiki-anchor="${escapeHtml(anchor)}">${label}</a>`);
     }
     return hold(`<a href="${escapeHtml(safeHref)}" target="_blank" rel="noopener noreferrer">${label}</a>`);
   });
@@ -6493,21 +6634,54 @@ els.exportIssueDialog.addEventListener("click", (event) => {
 els.wikiCloseButton.addEventListener("click", closeWiki);
 els.wikiVersion.addEventListener("change", () => {
   wikiState.version = els.wikiVersion.value;
-  wikiState.selectedFile = "Home.md";
-  wikiState.selectedSectionId = "";
+  resetWikiTabs("Home.md");
   ensureWikiLoaded(wikiState.version);
 });
 els.wikiSearch.addEventListener("input", () => {
   wikiState.query = els.wikiSearch.value;
   wikiState.selectedSectionId = "";
+  syncActiveWikiTabToSelection();
   renderWiki();
 });
 els.wikiResults.addEventListener("click", (event) => {
   const result = event.target.closest(".wiki-result");
   if (!result) return;
-  wikiState.selectedFile = result.dataset.file || "Home.md";
-  wikiState.selectedSectionId = result.dataset.section || "";
+  setWikiLocation(result.dataset.file || "Home.md", result.dataset.section || "");
+});
+els.wikiResults.addEventListener("mousedown", (event) => {
+  const result = event.target.closest(".wiki-result");
+  if (!result || event.button !== 1) return;
+  event.preventDefault();
+  setWikiLocationInNewTabFromMiddleClick(result.dataset.file || "Home.md", result.dataset.section || "");
+});
+els.wikiResults.addEventListener("auxclick", (event) => {
+  const result = event.target.closest(".wiki-result");
+  if (!result || event.button !== 1) return;
+  event.preventDefault();
+  setWikiLocationInNewTabFromMiddleClick(result.dataset.file || "Home.md", result.dataset.section || "");
+});
+els.wikiTabs.addEventListener("click", (event) => {
+  const closeButton = event.target.closest("[data-close-wiki-tab]");
+  if (closeButton) {
+    closeWikiTab(closeButton.dataset.closeWikiTab);
+    return;
+  }
+  const tabButton = event.target.closest("[data-wiki-tab]");
+  if (!tabButton) return;
+  wikiState.activeTabId = tabButton.dataset.wikiTab;
+  syncWikiSelectionFromActiveTab();
   renderWiki();
+});
+els.wikiTabs.addEventListener("mousedown", (event) => {
+  const tabButton = event.target.closest("[data-wiki-tab]");
+  if (!tabButton || event.button !== 1) return;
+  event.preventDefault();
+  closeWikiTab(tabButton.dataset.wikiTab);
+});
+els.wikiTabs.addEventListener("auxclick", (event) => {
+  const tabButton = event.target.closest("[data-wiki-tab]");
+  if (!tabButton || event.button !== 1) return;
+  event.preventDefault();
 });
 els.wikiContent.addEventListener("click", (event) => {
   const link = event.target.closest("[data-wiki-link]");
@@ -6515,9 +6689,23 @@ els.wikiContent.addEventListener("click", (event) => {
   event.preventDefault();
   const file = link.dataset.wikiLink;
   if (!wikiState.docs.some((doc) => doc.file === file)) return;
-  wikiState.selectedFile = file;
-  wikiState.selectedSectionId = "";
-  renderWiki();
+  setWikiLocation(file, sectionIdForWikiAnchor(file, link.dataset.wikiAnchor || ""));
+});
+els.wikiContent.addEventListener("mousedown", (event) => {
+  const link = event.target.closest("[data-wiki-link]");
+  if (!link || event.button !== 1) return;
+  event.preventDefault();
+  const file = link.dataset.wikiLink;
+  if (!wikiState.docs.some((doc) => doc.file === file)) return;
+  setWikiLocationInNewTabFromMiddleClick(file, sectionIdForWikiAnchor(file, link.dataset.wikiAnchor || ""));
+});
+els.wikiContent.addEventListener("auxclick", (event) => {
+  const link = event.target.closest("[data-wiki-link]");
+  if (!link || event.button !== 1) return;
+  event.preventDefault();
+  const file = link.dataset.wikiLink;
+  if (!wikiState.docs.some((doc) => doc.file === file)) return;
+  setWikiLocationInNewTabFromMiddleClick(file, sectionIdForWikiAnchor(file, link.dataset.wikiAnchor || ""));
 });
 els.rightRail.addEventListener("click", (event) => {
   const title = event.target.closest("[data-panel-snap-target]");

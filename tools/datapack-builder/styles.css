@@ -1448,6 +1448,10 @@ button:focus-visible,
   display: flex;
 }
 
+#settings-dialog {
+  z-index: 80;
+}
+
 .modal-window {
   width: min(520px, 100%);
   max-height: min(640px, calc(100vh - 36px));
@@ -1611,7 +1615,7 @@ body.is-unsaved-shaking .app-shell {
   min-width: 300px;
   min-height: 310px;
   display: grid;
-  grid-template-rows: 48px 50px minmax(0, 1fr);
+  grid-template-rows: 48px 50px 38px minmax(0, 1fr);
   border: 1px solid var(--line);
   border-radius: 4px;
   background: var(--panel);
@@ -1665,6 +1669,72 @@ body.is-unsaved-shaking .app-shell {
 
 .wiki-search-row .inline-icon {
   color: var(--muted);
+}
+
+.wiki-tabs {
+  min-width: 0;
+  display: flex;
+  align-items: end;
+  gap: 4px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0 8px;
+  border-bottom: 1px solid var(--line-soft);
+  background: var(--panel);
+}
+
+.wiki-tab {
+  min-width: 0;
+  max-width: 220px;
+  height: 31px;
+  display: inline-grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  border: 1px solid var(--line-soft);
+  border-bottom: 0;
+  border-radius: 4px 4px 0 0;
+  background: #202020;
+  color: var(--muted);
+}
+
+.wiki-tab.is-active {
+  background: var(--panel-2);
+  color: var(--text);
+}
+
+.wiki-tab-button,
+.wiki-tab-close {
+  height: 30px;
+  min-height: 30px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+}
+
+.wiki-tab-button {
+  min-width: 0;
+  overflow: hidden;
+  padding: 6px 9px;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wiki-tab-close {
+  width: 30px;
+  padding: 5px;
+}
+
+.wiki-tab-button:hover,
+.wiki-tab-close:hover {
+  background: #343434;
+  color: #ffffff;
+}
+
+.wiki-tab-close .button-icon {
+  width: 16px;
+  height: 16px;
 }
 
 .wiki-body {
@@ -1892,7 +1962,7 @@ body.is-unsaved-shaking .app-shell {
   top: 48px;
   right: 0;
   bottom: 12px;
-  width: 8px;
+  width: 3px;
   cursor: col-resize;
 }
 
@@ -1907,8 +1977,8 @@ body.is-unsaved-shaking .app-shell {
 .wiki-resize-corner {
   right: 0;
   bottom: 0;
-  width: 16px;
-  height: 16px;
+  width: 12px;
+  height: 12px;
   cursor: nwse-resize;
 }
 
