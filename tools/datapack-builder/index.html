@@ -40,6 +40,10 @@
             <i data-lucide="package-plus" class="button-icon" aria-hidden="true"></i>
             Preset
           </button>
+          <button class="button button-secondary has-tooltip" id="settings-button" type="button" data-tooltip="Configure builder keybinds.">
+            <i data-lucide="settings" class="button-icon" aria-hidden="true"></i>
+            Settings
+          </button>
           <button class="button button-primary has-tooltip" id="export-button" type="button" data-tooltip="Export a datapack zip.">
             <i data-lucide="download" class="button-icon" aria-hidden="true"></i>
             Export
@@ -185,6 +189,20 @@
     <input id="directory-input" class="visually-hidden" type="file" webkitdirectory directory multiple>
 
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <div id="settings-dialog" class="modal-overlay" aria-hidden="true">
+      <section class="modal-window settings-window" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+        <div class="modal-title">
+          <i data-lucide="settings" class="section-icon" aria-hidden="true"></i>
+          <h2 id="settings-title">Settings</h2>
+        </div>
+        <div class="settings-keybinds" id="settings-keybinds" aria-label="Keybind settings"></div>
+        <div class="modal-actions">
+          <button class="button button-secondary" id="settings-reset-button" type="button">Reset Keybinds</button>
+          <button class="button button-primary" id="settings-close-button" type="button">Done</button>
+        </div>
+      </section>
+    </div>
 
     <div id="export-issue-dialog" class="modal-overlay" aria-hidden="true">
       <section class="modal-window" role="dialog" aria-modal="true" aria-labelledby="export-issue-title">

@@ -577,6 +577,7 @@ const els = {
   directoryInput: document.querySelector("#directory-input"),
   exportButton: document.querySelector("#export-button"),
   starterButton: document.querySelector("#starter-button"),
+  settingsButton: document.querySelector("#settings-button"),
   leftPanelToggleButton: document.querySelector("#left-panel-toggle-button"),
   rightPanelToggleButton: document.querySelector("#right-panel-toggle-button"),
   wrapPreviewButton: document.querySelector("#wrap-preview-button"),
@@ -584,6 +585,10 @@ const els = {
   copyButton: document.querySelector("#copy-file-button"),
   downloadButton: document.querySelector("#download-file-button"),
   toast: document.querySelector("#toast"),
+  settingsDialog: document.querySelector("#settings-dialog"),
+  settingsKeybinds: document.querySelector("#settings-keybinds"),
+  settingsResetButton: document.querySelector("#settings-reset-button"),
+  settingsCloseButton: document.querySelector("#settings-close-button"),
   exportIssueDialog: document.querySelector("#export-issue-dialog"),
   exportIssueList: document.querySelector("#export-issue-list"),
   exportIssueCancel: document.querySelector("#export-issue-cancel"),
@@ -621,10 +626,23 @@ const MIN_BUILDER_WIDTH = 360;
 const MIN_PREVIEW_HEIGHT = 180;
 let panelResizeState = null;
 const WIKI_STORAGE_KEY = "vr-datapack-builder-wiki";
+const KEYBIND_STORAGE_KEY = "vr-datapack-builder-keybinds";
 const WIKI_MIN_WIDTH = 300;
 const WIKI_MIN_HEIGHT = 310;
 const WIKI_DEFAULT_LAYOUT = { left: 104, top: 88, width: 760, height: 560 };
+const DEFAULT_KEYBINDS = {
+  openWiki: { alt: true, ctrl: false, shift: false, meta: false, key: "q" },
+  saveEntry: { alt: true, ctrl: false, shift: false, meta: false, key: "s" },
+  openSettings: { alt: true, ctrl: false, shift: false, meta: false, key: "," }
+};
+const KEYBIND_ACTIONS = [
+  { id: "openWiki", label: "Open wiki", detail: "Toggle the versioned wiki search." },
+  { id: "saveEntry", label: "Save active entry", detail: "Save the form currently being edited." },
+  { id: "openSettings", label: "Open settings", detail: "Open this keybind menu." }
+];
 let wikiPointerState = null;
+let keybinds = readKeybinds();
+let recordingKeybindAction = "";
 let wikiState = {
   isOpen: false,
   version: CURRENT_PACK_VERSION,
@@ -638,11 +656,12 @@ let wikiState = {
   status: ""
 };
 const TOOLBAR_HINTS = [
-  "Alt+Q opens the wiki.",
-  "Drag panel dividers to resize sections.",
-  "Middle-click a divider to reset it.",
-  "Click a Checks item to jump to its field.",
-  "Drag entry cards to reorder output."
+  () => `${formatKeybind(getKeybind("openWiki"))} opens the wiki.`,
+  () => `${formatKeybind(getKeybind("openSettings"))} opens settings.`,
+  () => "Drag panel dividers to resize sections.",
+  () => "Middle-click a divider to reset it.",
+  () => "Click a Checks item to jump to its field.",
+  () => "Drag entry cards to reorder output."
 ];
 let toolbarHintIndex = 0;
 
@@ -725,13 +744,135 @@ function renderIcons() {
   }
 }
 
+function readKeybinds() {
+  let stored = {};
+  try {
+    stored = JSON.parse(localStorage.getItem(KEYBIND_STORAGE_KEY) || "{}") || {};
+  } catch {
+    stored = {};
+  }
+  return KEYBIND_ACTIONS.reduce((result, action) => {
+    result[action.id] = normalizeStoredKeybind(stored[action.id]) || { ...DEFAULT_KEYBINDS[action.id] };
+    return result;
+  }, {});
+}
+
+function writeKeybinds() {
+  try {
+    localStorage.setItem(KEYBIND_STORAGE_KEY, JSON.stringify(keybinds));
+  } catch {
+    // Keybinds still apply for the current session if storage is unavailable.
+  }
+}
+
+function getKeybind(actionId) {
+  return keybinds[actionId] || DEFAULT_KEYBINDS[actionId];
+}
+
+function normalizeStoredKeybind(bind) {
+  if (!bind || typeof bind !== "object" || typeof bind.key !== "string") return null;
+  const key = normalizeKeyName(bind.key);
+  if (!key) return null;
+  return {
+    alt: Boolean(bind.alt),
+    ctrl: Boolean(bind.ctrl),
+    shift: Boolean(bind.shift),
+    meta: Boolean(bind.meta),
+    key
+  };
+}
+
+function normalizeKeyName(key) {
+  const value = String(key || "").trim();
+  if (!value) return "";
+  const lower = value.toLowerCase();
+  if (lower === " ") return "space";
+  if (lower === "esc") return "escape";
+  return lower;
+}
+
+function formatKeybind(bind) {
+  if (!bind) return "Unassigned";
+  const parts = [];
+  if (bind.ctrl) parts.push("Ctrl");
+  if (bind.alt) parts.push("Alt");
+  if (bind.shift) parts.push("Shift");
+  if (bind.meta) parts.push(navigator.platform.toLowerCase().includes("mac") ? "Cmd" : "Meta");
+  parts.push(formatKey(bind.key));
+  return parts.join("+");
+}
+
+function formatKey(key) {
+  const aliases = {
+    " ": "Space",
+    space: "Space",
+    escape: "Esc",
+    arrowup: "Arrow Up",
+    arrowright: "Arrow Right",
+    arrowdown: "Arrow Down",
+    arrowleft: "Arrow Left",
+    ",": ",",
+    ".": ".",
+    "/": "/",
+    "\\": "\\",
+    ";": ";",
+    "'": "'",
+    "[": "[",
+    "]": "]",
+    "-": "-",
+    "=": "="
+  };
+  if (aliases[key]) return aliases[key];
+  if (/^f\d{1,2}$/.test(key)) return key.toUpperCase();
+  return key.length === 1 ? key.toUpperCase() : key.replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function keybindFromEvent(event) {
+  const key = normalizeKeyName(event.key);
+  if (!key || ["alt", "control", "ctrl", "shift", "meta"].includes(key)) return null;
+  if (!event.altKey && !event.ctrlKey && !event.shiftKey && !event.metaKey && !/^f\d{1,2}$/.test(key)) {
+    return null;
+  }
+  return {
+    alt: event.altKey,
+    ctrl: event.ctrlKey,
+    shift: event.shiftKey,
+    meta: event.metaKey,
+    key
+  };
+}
+
+function keybindMatches(event, bind) {
+  if (!bind) return false;
+  return event.altKey === Boolean(bind.alt)
+    && event.ctrlKey === Boolean(bind.ctrl)
+    && event.shiftKey === Boolean(bind.shift)
+    && event.metaKey === Boolean(bind.meta)
+    && normalizeKeyName(event.key) === bind.key;
+}
+
+function keybindSignature(bind) {
+  return [bind.ctrl, bind.alt, bind.shift, bind.meta, bind.key].join(":");
+}
+
+function keybindConflict(actionId, bind) {
+  const signature = keybindSignature(bind);
+  return KEYBIND_ACTIONS.find((action) => action.id !== actionId && keybindSignature(getKeybind(action.id)) === signature);
+}
+
 function setupToolbarHints() {
   if (!els.toolbarHintText || TOOLBAR_HINTS.length === 0) return;
-  els.toolbarHintText.textContent = TOOLBAR_HINTS[toolbarHintIndex];
+  updateToolbarHint();
   window.setInterval(() => {
     toolbarHintIndex = (toolbarHintIndex + 1) % TOOLBAR_HINTS.length;
-    els.toolbarHintText.textContent = TOOLBAR_HINTS[toolbarHintIndex];
+    updateToolbarHint();
   }, 5200);
+}
+
+function updateToolbarHint() {
+  if (!els.toolbarHintText) return;
+  const hint = TOOLBAR_HINTS[toolbarHintIndex];
+  els.toolbarHintText.textContent = typeof hint === "function" ? hint() : hint;
 }
 
 function readPanelSizes() {
@@ -870,6 +1011,93 @@ function toggleWiki() {
   } else {
     openWiki();
   }
+}
+
+function openSettings() {
+  recordingKeybindAction = "";
+  renderSettingsKeybinds();
+  els.settingsDialog.classList.add("is-open");
+  els.settingsDialog.setAttribute("aria-hidden", "false");
+  window.setTimeout(() => els.settingsCloseButton?.focus(), 0);
+}
+
+function closeSettings() {
+  recordingKeybindAction = "";
+  els.settingsDialog.classList.remove("is-open");
+  els.settingsDialog.setAttribute("aria-hidden", "true");
+  renderSettingsKeybinds();
+}
+
+function renderSettingsKeybinds() {
+  if (!els.settingsKeybinds) return;
+  els.settingsKeybinds.innerHTML = KEYBIND_ACTIONS.map((action) => {
+    const isRecording = recordingKeybindAction === action.id;
+    return `
+      <div class="keybind-row">
+        <div class="keybind-row-main">
+          <strong>${escapeHtml(action.label)}</strong>
+          <span>${escapeHtml(action.detail)}</span>
+        </div>
+        <button class="button button-secondary keybind-button ${isRecording ? "is-recording" : ""}" type="button" data-keybind-action="${escapeHtml(action.id)}" aria-label="Set keybind for ${escapeHtml(action.label)}">
+          ${isRecording ? "Press keys..." : escapeHtml(formatKeybind(getKeybind(action.id)))}
+        </button>
+      </div>
+    `;
+  }).join("");
+}
+
+function resetKeybinds() {
+  keybinds = readDefaultKeybinds();
+  recordingKeybindAction = "";
+  writeKeybinds();
+  renderSettingsKeybinds();
+  updateShortcutTooltips();
+  updateToolbarHint();
+  showToast("Keybinds reset.");
+}
+
+function readDefaultKeybinds() {
+  return KEYBIND_ACTIONS.reduce((result, action) => {
+    result[action.id] = { ...DEFAULT_KEYBINDS[action.id] };
+    return result;
+  }, {});
+}
+
+function updateShortcutTooltips() {
+  els.wikiButton?.setAttribute("data-tooltip", `Search the versioned builder wiki. ${formatKeybind(getKeybind("openWiki"))} toggles it.`);
+  els.settingsButton?.setAttribute("data-tooltip", `Configure builder keybinds. ${formatKeybind(getKeybind("openSettings"))} opens settings.`);
+  els.panel
+    ?.querySelectorAll('[data-action="save-entry-form"]')
+    .forEach((button) => button.setAttribute("data-tooltip", `Save changes. ${formatKeybind(getKeybind("saveEntry"))}`));
+}
+
+function applyRecordedKeybind(event) {
+  if (!recordingKeybindAction) return false;
+  event.preventDefault();
+  event.stopPropagation();
+  if (event.key === "Escape") {
+    recordingKeybindAction = "";
+    renderSettingsKeybinds();
+    return true;
+  }
+  const bind = keybindFromEvent(event);
+  if (!bind) {
+    showToast("Press a key with optional modifiers.");
+    return true;
+  }
+  const conflict = keybindConflict(recordingKeybindAction, bind);
+  if (conflict) {
+    showToast(`${formatKeybind(bind)} is already used for ${conflict.label}.`);
+    return true;
+  }
+  keybinds[recordingKeybindAction] = bind;
+  recordingKeybindAction = "";
+  writeKeybinds();
+  renderSettingsKeybinds();
+  updateShortcutTooltips();
+  updateToolbarHint();
+  showToast("Keybind updated.");
+  return true;
 }
 
 async function ensureWikiLoaded(version) {
@@ -3205,6 +3433,7 @@ function render() {
   renderFiles();
   renderChecks();
   renderPreview();
+  updateShortcutTooltips();
   renderIcons();
 }
 
@@ -3828,7 +4057,7 @@ function renderEntryList(collection, kind, section) {
           ${detail ? `<small>${escapeHtml(detail)}</small>` : ""}
           ${saveAction ? `
             <div class="entry-card-actions">
-              <button class="entry-save has-tooltip" type="button" data-action="save-entry-form" aria-label="Save ${escapeHtml(title)}" data-tooltip="Save changes. Alt+S">
+              <button class="entry-save has-tooltip" type="button" data-action="save-entry-form" aria-label="Save ${escapeHtml(title)}" data-tooltip="Save changes. ${escapeHtml(formatKeybind(getKeybind("saveEntry")))}">
                 ${icon("save", "button-icon")}
               </button>
             </div>
@@ -6243,6 +6472,19 @@ els.wrapPreviewButton.addEventListener("click", () => {
   renderIcons();
 });
 els.wikiButton.addEventListener("click", openWiki);
+els.settingsButton.addEventListener("click", openSettings);
+els.settingsCloseButton.addEventListener("click", closeSettings);
+els.settingsResetButton.addEventListener("click", resetKeybinds);
+els.settingsDialog.addEventListener("click", (event) => {
+  if (event.target === els.settingsDialog) closeSettings();
+});
+els.settingsKeybinds.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-keybind-action]");
+  if (!button) return;
+  recordingKeybindAction = button.dataset.keybindAction;
+  renderSettingsKeybinds();
+  els.settingsKeybinds.querySelector(`[data-keybind-action="${CSS.escape(recordingKeybindAction)}"]`)?.focus();
+});
 els.exportIssueCancel.addEventListener("click", () => closeExportIssueDialog(false));
 els.exportIssueConfirm.addEventListener("click", () => closeExportIssueDialog(true));
 els.exportIssueDialog.addEventListener("click", (event) => {
@@ -6329,19 +6571,26 @@ document.addEventListener("focusout", (event) => {
   if (target) hideTooltip(target);
 });
 document.addEventListener("keydown", (event) => {
-  if (event.altKey && !event.ctrlKey && !event.metaKey && event.key.toLowerCase() === "q") {
+  if (applyRecordedKeybind(event)) return;
+  if (keybindMatches(event, getKeybind("openWiki"))) {
     event.preventDefault();
     toggleWiki();
     return;
   }
-  if (event.altKey && !event.ctrlKey && !event.metaKey && event.key.toLowerCase() === "s") {
+  if (keybindMatches(event, getKeybind("saveEntry"))) {
     if (saveActiveEntryForm()) {
       event.preventDefault();
     }
     return;
   }
+  if (keybindMatches(event, getKeybind("openSettings"))) {
+    event.preventDefault();
+    openSettings();
+    return;
+  }
   if (event.key === "Escape") {
     hideTooltip();
+    if (els.settingsDialog?.classList.contains("is-open")) closeSettings();
     if (els.exportIssueDialog?.classList.contains("is-open")) closeExportIssueDialog(false);
     if (wikiState.isOpen) closeWiki();
   }
@@ -6362,5 +6611,6 @@ els.downloadButton.addEventListener("click", downloadCurrentFile);
 
 setupWikiChrome();
 setupToolbarHints();
+updateShortcutTooltips();
 applyStoredPanelSizes();
 render();

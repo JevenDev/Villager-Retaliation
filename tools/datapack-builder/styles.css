@@ -1520,6 +1520,51 @@ button:focus-visible,
   gap: 9px;
 }
 
+.settings-window {
+  width: min(620px, 100%);
+}
+
+.settings-keybinds {
+  display: grid;
+  gap: 8px;
+}
+
+.keybind-row {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border: 1px solid var(--line-soft);
+  border-radius: 4px;
+  background: var(--panel-2);
+}
+
+.keybind-row-main {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.keybind-row-main span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.keybind-button {
+  min-width: 122px;
+  justify-content: center;
+  font-family: var(--font-code);
+  font-size: 14px;
+}
+
+.keybind-button.is-recording {
+  border-color: var(--warn);
+  background: var(--warn-bg);
+  color: #f0d397;
+}
+
 body.is-unsaved-shaking .app-shell {
   animation: unsaved-shake 180ms ease-in-out;
 }
@@ -1927,6 +1972,14 @@ body.is-wiki-moving {
   }
 
   .toolbar {
+    width: 100%;
+  }
+
+  .keybind-row {
+    grid-template-columns: 1fr;
+  }
+
+  .keybind-button {
     width: 100%;
   }
 
