@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.reputation;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
+import com.jvn.villagerretaliation.inventory.VillagerTradePaymentTracker;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.toucanlib.util.ToucanHazardAttribution;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
@@ -33,6 +34,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.inventory.MerchantMenu;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.entity.ai.village.poi.PoiManager;
 import net.minecraft.world.entity.ai.village.poi.PoiTypes;
@@ -197,10 +199,28 @@ public final class VillagerReputationEvents {
         AbstractVillager villager = event.getAbstractVillager();
         if (villager.level() instanceof ServerLevel level) {
             VillagerReputationManager.addTradeReputation(level, villager, event.getEntity());
+            if (villager instanceof Villager villageResident && event.getEntity() instanceof ServerPlayer serverPlayer) {
+                storeTradePayments(level, villageResident, serverPlayer, event.getMerchantOffer());
+            }
             VillagerAmbientIndicatorService.onTradeCompleted(level, villager, event.getEntity());
             if (event.getEntity() instanceof ServerPlayer serverPlayer) {
                 VillagerReputationAdvancements.onTradeCompleted(level, serverPlayer, villager);
             }
+        }
+    }
+
+    private static void storeTradePayments(ServerLevel level, Villager villager, ServerPlayer player, MerchantOffer offer) {
+        if (offer == null) {
+            return;
+        }
+
+        ItemStack costA = offer.getCostA();
+        if (!costA.isEmpty()) {
+            VillagerTradePaymentTracker.storeTradePayment(level, villager, player, costA);
+        }
+        ItemStack costB = offer.getCostB();
+        if (!costB.isEmpty()) {
+            VillagerTradePaymentTracker.storeTradePayment(level, villager, player, costB);
         }
     }
 

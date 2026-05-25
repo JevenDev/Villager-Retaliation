@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.client.inventory;
 import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
 import com.jvn.villagerretaliation.inventory.VillagerGiftReturnTracker;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryMenu;
+import com.jvn.villagerretaliation.inventory.VillagerTradePaymentTracker;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.Minecraft;
@@ -40,6 +41,17 @@ public class VillagerInventoryScreen extends AbstractContainerScreen<VillagerInv
 
     public static boolean isRenderingInventoryPreview(AbstractVillager villager) {
         return villager.getId() == renderingInventoryPreviewVillagerId;
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.options.keyDrop.matches(keyCode, scanCode)
+                && this.hoveredSlot != null
+                && this.menu.isVillagerSlot(this.hoveredSlot)) {
+            return true;
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
     @Override
@@ -85,6 +97,9 @@ public class VillagerInventoryScreen extends AbstractContainerScreen<VillagerInv
         if (this.hoveredSlot != null && this.menu.isVillagerSlot(this.hoveredSlot)) {
             VillagerGiftReturnTracker.giftedBy(stack)
                     .map(name -> Component.literal("gifted by " + name).withStyle(ChatFormatting.GRAY))
+                    .ifPresent(tooltip::add);
+            VillagerTradePaymentTracker.tradedBy(stack)
+                    .map(name -> Component.literal("traded by " + name).withStyle(ChatFormatting.GRAY))
                     .ifPresent(tooltip::add);
         }
         return tooltip;

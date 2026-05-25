@@ -546,6 +546,24 @@
       "weight": 50
     },
     {
+      "key": "trade_payment_taken_back.returned",
+      "lines": [
+        "That {trade_item} was payment, not a pouch you left with me.",
+        "You traded {trade_item} fair and square. Taking it back makes the square crooked.",
+        "A trade is finished when both hands let go. Yours just reached back."
+      ],
+      "weight": 50
+    },
+    {
+      "key": "trade_payment_taken_back.stolen",
+      "lines": [
+        "That {trade_item} was paid to me. It was not yours to collect.",
+        "You are taking someone else's trade payment from my keeping.",
+        "I know my accounts. That {trade_item} was not owed to you."
+      ],
+      "weight": 50
+    },
+    {
       "key": "story_hint.biome.vague",
       "text": "I caught wind of different land {vague_direction}. Could be worth a walk."
     },

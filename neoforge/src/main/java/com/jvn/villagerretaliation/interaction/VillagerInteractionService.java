@@ -973,6 +973,25 @@ public final class VillagerInteractionService {
         broadcastVillagerChat(level, villager, responseText);
     }
 
+    public static void sendTradePaymentTakenBackDialogue(ServerPlayer player, Villager villager, ItemStack stack, int count, boolean stolen) {
+        if (stack.isEmpty() || !(villager.level() instanceof ServerLevel level)) {
+            return;
+        }
+
+        ItemStack displayedStack = stack.copyWithCount(Math.max(1, count));
+        DialogueContext context = createDialogueContext(level, player, villager);
+        String responseText = VillagerDialogueResources
+                .message(
+                        context,
+                        stolen ? "trade_payment_taken_back.stolen" : "trade_payment_taken_back.returned",
+                        Map.of("trade_item", itemName(displayedStack))
+                )
+                .orElse("");
+        focusVillagerOnPlayer(villager, player);
+        playGiftFeedback(level, villager, -1);
+        broadcastVillagerChat(level, villager, responseText);
+    }
+
     public static void broadcastVillagerChat(ServerLevel level, Villager villager, String text) {
         broadcastVillagerChat(level, villager, text, "");
     }

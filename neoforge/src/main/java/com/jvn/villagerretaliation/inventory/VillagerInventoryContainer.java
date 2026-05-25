@@ -364,6 +364,27 @@ final class VillagerInventoryContainer implements Container {
         return count;
     }
 
+    static int countStoredTradePayment(Villager villager, UUID playerId, ItemStack target) {
+        if (target.isEmpty()) {
+            return 0;
+        }
+
+        int count = 0;
+        for (EquipmentSlot slot : ARMOR_SLOTS) {
+            count += matchingTradePaymentCount(villager.getItemBySlot(slot), playerId, target);
+        }
+        if (canAccessMainHand(villager)) {
+            count += matchingTradePaymentCount(villager.getMainHandItem(), playerId, target);
+        }
+        count += matchingTradePaymentCount(villager.getOffhandItem(), playerId, target);
+
+        NonNullList<ItemStack> inventory = loadFullInventory(villager);
+        for (ItemStack stack : inventory) {
+            count += matchingTradePaymentCount(stack, playerId, target);
+        }
+        return count;
+    }
+
     static void dropAllInventoryAndEquipment(Villager villager, LivingDropsEvent event) {
         BorrowedCombatWeapon borrowedWeapon = borrowedCombatWeapon(villager);
         boolean borrowedWeaponInMainHand = borrowedWeapon != null
@@ -407,22 +428,41 @@ final class VillagerInventoryContainer implements Container {
     }
 
     private void loadInventory() {
+        boolean cleanedInvalidTradePayments = false;
         int vanillaSlots = vanillaInventorySlots();
         for (int slot = 0; slot < vanillaSlots; slot++) {
-            this.inventory.set(slot, this.villager.getInventory().getItem(slot).copy());
+            ItemStack stack = this.villager.getInventory().getItem(slot).copy();
+            if (VillagerTradePaymentTracker.isInvalidStoredTradePayment(stack)) {
+                stack = ItemStack.EMPTY;
+                this.villager.getInventory().setItem(slot, ItemStack.EMPTY);
+                cleanedInvalidTradePayments = true;
+            }
+            this.inventory.set(slot, stack);
         }
 
         int currentExtraSlots = Math.max(0, INVENTORY_SLOT_COUNT - vanillaSlots);
         int legacyExtraSlots = Math.max(currentExtraSlots, LEGACY_INVENTORY_SLOT_COUNT - vanillaSlots);
         NonNullList<ItemStack> loaded = loadExtraInventory(this.villager, legacyExtraSlots);
         for (int slot = 0; slot < Math.min(loaded.size(), currentExtraSlots); slot++) {
-            this.inventory.set(vanillaSlots + slot, loaded.get(slot));
+            ItemStack stack = loaded.get(slot);
+            if (VillagerTradePaymentTracker.isInvalidStoredTradePayment(stack)) {
+                stack = ItemStack.EMPTY;
+                cleanedInvalidTradePayments = true;
+            }
+            this.inventory.set(vanillaSlots + slot, stack);
         }
         for (int slot = currentExtraSlots; slot < loaded.size(); slot++) {
             ItemStack overflow = loaded.get(slot);
+            if (VillagerTradePaymentTracker.isInvalidStoredTradePayment(overflow)) {
+                cleanedInvalidTradePayments = true;
+                continue;
+            }
             if (!overflow.isEmpty()) {
                 this.villager.spawnAtLocation(overflow.copy());
             }
+        }
+        if (cleanedInvalidTradePayments) {
+            setChanged();
         }
     }
 
@@ -444,7 +484,8 @@ final class VillagerInventoryContainer implements Container {
 
         NonNullList<ItemStack> extraInventory = loadExtraInventory(villager, Math.max(0, INVENTORY_SLOT_COUNT - vanillaSlots));
         for (int slot = 0; slot < extraInventory.size(); slot++) {
-            inventory.set(vanillaSlots + slot, extraInventory.get(slot).copy());
+            ItemStack stack = extraInventory.get(slot).copy();
+            inventory.set(vanillaSlots + slot, VillagerTradePaymentTracker.isInvalidStoredTradePayment(stack) ? ItemStack.EMPTY : stack);
         }
         return inventory;
     }
@@ -636,6 +677,13 @@ final class VillagerInventoryContainer implements Container {
     private static int matchingGiftItemCount(ItemStack stack, UUID playerId, ItemStack target) {
         return VillagerGiftReturnTracker.isStoredGiftFrom(stack, playerId)
                 && VillagerGiftReturnTracker.isSameTrackedGiftItem(stack, target)
+                ? stack.getCount()
+                : 0;
+    }
+
+    private static int matchingTradePaymentCount(ItemStack stack, UUID playerId, ItemStack target) {
+        return VillagerTradePaymentTracker.isStoredTradePaymentFrom(stack, playerId)
+                && VillagerTradePaymentTracker.isSameTrackedTradePayment(stack, target)
                 ? stack.getCount()
                 : 0;
     }

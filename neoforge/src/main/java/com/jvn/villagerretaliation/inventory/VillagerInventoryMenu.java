@@ -16,6 +16,7 @@ import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ArmorItem;
@@ -47,8 +48,10 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
     private final int villagerEntityId;
     private final Player player;
     private final VillagerGiftReturnTracker.GiftSnapshot giftSnapshot;
+    private final VillagerTradePaymentTracker.TradePaymentSnapshot tradePaymentSnapshot;
     private final int initialGearStackCount;
     private boolean giftReturnsProcessed;
+    private boolean tradePaymentReturnsProcessed;
 
     public VillagerInventoryMenu(int containerId, Inventory playerInventory, RegistryFriendlyByteBuf data) {
         this(containerId, playerInventory, new SimpleContainer(VILLAGER_SLOT_COUNT), null, data == null ? -1 : data.readVarInt());
@@ -67,6 +70,9 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
         this.player = playerInventory.player;
         this.giftSnapshot = villager != null && playerInventory.player instanceof ServerPlayer serverPlayer
                 ? VillagerGiftReturnTracker.capture(serverPlayer, villager)
+                : null;
+        this.tradePaymentSnapshot = villager != null && playerInventory.player instanceof ServerPlayer serverPlayer
+                ? VillagerTradePaymentTracker.capture(serverPlayer, villager)
                 : null;
         this.initialGearStackCount = villager == null ? 0 : gearStackCount(villagerInventory);
         villagerInventory.startOpen(playerInventory.player);
@@ -108,13 +114,21 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
         } else {
             sourceSlot.setChanged();
         }
+        stripPlayerSideTradePaymentTracking(player);
         return originalStack;
+    }
+
+    @Override
+    public void clicked(int slotId, int button, ClickType clickType, Player player) {
+        super.clicked(slotId, button, clickType, player);
+        stripPlayerSideTradePaymentTracking(player);
     }
 
     @Override
     public void removed(Player player) {
         super.removed(player);
         processTakenGifts(player);
+        processTakenTradePayments(player);
         rememberAddedGear(player);
         this.villagerInventory.stopOpen(player);
     }
@@ -227,6 +241,20 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
         }
         this.giftReturnsProcessed = true;
         VillagerGiftReturnTracker.applyTakenGiftPenalties(serverPlayer, this.villager, this.giftSnapshot);
+    }
+
+    private void processTakenTradePayments(Player player) {
+        if (this.tradePaymentReturnsProcessed || this.villager == null || !(player instanceof ServerPlayer serverPlayer)) {
+            return;
+        }
+        this.tradePaymentReturnsProcessed = true;
+        VillagerTradePaymentTracker.applyTakenTradePaymentPenalties(serverPlayer, this.villager, this.tradePaymentSnapshot);
+    }
+
+    private static void stripPlayerSideTradePaymentTracking(Player player) {
+        if (player instanceof ServerPlayer serverPlayer) {
+            VillagerTradePaymentTracker.stripTradePaymentTrackingFromPlayerInventory(serverPlayer);
+        }
     }
 
     private void rememberAddedGear(Player player) {
