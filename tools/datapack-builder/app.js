@@ -75,7 +75,25 @@ const CONSTANTS = {
     "alert.witness_attack.player",
     "alert.witness_attack",
     "alert.witness_death.player",
-    "alert.witness_death"
+    "alert.witness_death",
+    "reputation.tier.royalty.improved",
+    "reputation.tier.royalty.worsened",
+    "reputation.tier.revered.improved",
+    "reputation.tier.revered.worsened",
+    "reputation.tier.respected.improved",
+    "reputation.tier.respected.worsened",
+    "reputation.tier.trusted.improved",
+    "reputation.tier.trusted.worsened",
+    "reputation.tier.neutral.improved",
+    "reputation.tier.neutral.worsened",
+    "reputation.tier.suspicious.improved",
+    "reputation.tier.suspicious.worsened",
+    "reputation.tier.hostile.improved",
+    "reputation.tier.hostile.worsened",
+    "reputation.tier.despised.improved",
+    "reputation.tier.despised.worsened",
+    "reputation.tier.feared.improved",
+    "reputation.tier.feared.worsened"
   ],
   forcedDialogueTriggers: [
     "container_theft",
@@ -2591,27 +2609,28 @@ function entryIssueSeverity(section, kind, entry) {
   if (section === "dialogue") {
     const tests = [
       { severity: "error", predicate: (item) => kind === "options" && (!item.id || !item.label || item.type !== "dialogue_option" || !item.request) },
-      { severity: "error", predicate: (item) => kind === "lines" && (!item.request || !item.text) },
-      { severity: "error", predicate: (item) => kind === "messages" && (!item.key || !item.text) },
-      { severity: "error", predicate: (item) => ["openings", "closings", "pacify"].includes(kind) && !item.text },
+      { severity: "error", predicate: (item) => kind === "lines" && (!item.request || !hasDialogueText(item)) },
+      { severity: "error", predicate: (item) => kind === "messages" && (!item.key || !hasDialogueText(item)) },
+      { severity: "error", predicate: (item) => ["openings", "closings", "pacify"].includes(kind) && !hasDialogueText(item) },
       { severity: "warning", predicate: (item) => ["options", "lines"].includes(kind) && item.request && !CONSTANTS.dialogueTypes.includes(item.request) },
       { severity: "warning", predicate: (item) => entryValues(item, ["dispositions"]).some((value) => !CONSTANTS.dispositions.includes(value)) },
       { severity: "warning", predicate: (item) => entryValues(item, ["professions"]).some((value) => !isValidProfession(value)) },
-      { severity: "error", predicate: (item) => ["options", "lines"].includes(kind) && entryValues(item, ["player_items"]).some((value) => !isValidResourceLocation(value, { allowTag: true })) },
-      { severity: "warning", predicate: (item) => ["options", "lines"].includes(kind) && entryValues(item, ["player_item_slots"]).some((value) => !CONSTANTS.itemSlots.includes(value)) },
+      { severity: "error", predicate: (item) => ["options", "lines"].includes(kind) && entryValues(item, ["player_item", "player_items", "player_item_tag", "player_item_tags"]).some((value) => !isValidResourceLocation(value, { allowTag: true })) },
+      { severity: "warning", predicate: (item) => ["options", "lines"].includes(kind) && entryValues(item, ["player_item_slot", "player_item_slots"]).some((value) => !CONSTANTS.itemSlots.includes(value)) },
       { severity: "warning", predicate: (item) => ["options", "lines"].includes(kind) && entryValues(item, ["reputation_level", "reputation_levels"]).some((value) => !CONSTANTS.reputationLevels.includes(value)) },
       { severity: "warning", predicate: (item) => kind === "lines" && entryValues(item, ["weather"]).some((value) => !CONSTANTS.weather.includes(value)) },
       { severity: "warning", predicate: (item) => kind === "lines" && entryValues(item, ["times"]).some((value) => !CONSTANTS.times.includes(value)) },
       { severity: "warning", predicate: (item) => kind === "lines" && entryValues(item, ["gift_advice"]).some((value) => !CONSTANTS.giftAdvice.includes(value)) },
       { severity: "warning", predicate: (item) => kind === "pacify" && entryValues(item, ["outcomes"]).some((value) => !CONSTANTS.pacifyOutcomes.includes(value)) },
-      { severity: "error", predicate: (item) => firstBadNumber([item], ["order", "weight", "min_recruitment_follow_distance"], (value) => value >= 0) !== "" },
+      { severity: "error", predicate: (item) => firstBadNumber([item], ["order"], Number.isFinite) !== "" },
+      { severity: "error", predicate: (item) => firstBadNumber([item], ["weight", "min_recruitment_follow_distance"], (value) => value >= 0) !== "" },
       { severity: "error", predicate: (item) => firstBadNumber([item], ["min_reputation", "max_reputation"], Number.isFinite) !== "" },
       { severity: "error", predicate: (item) => {
         const min = numberValue(item.min_reputation);
         const max = numberValue(item.max_reputation);
         return min !== undefined && max !== undefined && min > max;
       } },
-      { severity: "warning", predicate: (item) => firstBlankListValue([item], ["professions", "dispositions", "reputation_level", "reputation_levels", "player_items", "player_item_slots", "weather", "times", "event_tags", "player_event_tags", "retaliation_target_entity_types", "story_structures", "story_biomes", "outcomes"]) !== "" },
+      { severity: "warning", predicate: (item) => firstBlankListValue([item], ["professions", "dispositions", "reputation_level", "reputation_levels", "player_item", "player_items", "player_item_tag", "player_item_tags", "player_item_slot", "player_item_slots", "weather", "times", "event_tags", "player_event_tags", "retaliation_target_entity_types", "story_structures", "story_biomes", "outcomes"]) !== "" },
       { severity: "error", predicate: (item) => entryValues(item, ["retaliation_target_entity_types", "retaliation_target_entities"]).some((value) => !isValidResourceLocation(value)) }
     ];
     return issueSeverityFromEntries([entry], tests);
@@ -2622,14 +2641,15 @@ function entryIssueSeverity(section, kind, entry) {
     const payments = actionableOptions.map((option) => option.take_items || option.payment).filter((payment) => payment && typeof payment === "object" && !Array.isArray(payment));
     const stolenReturns = actionableOptions.map((option) => option.take_stolen_items || option.return_stolen_items).filter((stolenReturn) => stolenReturn && typeof stolenReturn === "object" && !Array.isArray(stolenReturn));
     const tests = [
-      { severity: "error", predicate: (item) => !item.trigger || !hasForcedDialogueLine(item) },
-      { severity: "error", predicate: (item) => item.trigger && !CONSTANTS.forcedDialogueTriggers.includes(item.trigger) },
+      { severity: "error", predicate: (item) => !forcedTriggerValue(item) || !hasForcedDialogueLine(item) },
+      { severity: "error", predicate: (item) => forcedTriggerValue(item) && !CONSTANTS.forcedDialogueTriggers.includes(forcedTriggerValue(item)) },
       { severity: "error", predicate: (item) => item.output?.mode && !CONSTANTS.forcedOutputModes.includes(item.output.mode) },
       { severity: "warning", predicate: (item) => entryValues(item, ["witness_profession", "witness_professions", "professions"]).some((value) => !isValidProfession(value)) },
       { severity: "error", predicate: (item) => entryValues(item, ["loot_table", "loot_tables"]).some((value) => !isValidResourceLocation(value)) },
       { severity: "error", predicate: (item) => entryValues(item, ["target_entity_type", "target_entity_types", "target_entities"]).some((value) => !isValidResourceLocation(value)) },
       { severity: "error", predicate: (item) => firstBadNumber([item], ["priority", "reputation", "witness_radius", "min_recent_retaliations", "max_recent_retaliations"], (value, itemEntry, key) => {
         if (key === "reputation") return isForcedDialogueOutput(itemEntry) ? Number.isFinite(value) : true;
+        if (key === "priority") return Number.isFinite(value);
         if (key === "witness_radius") return value >= 1;
         return Number.isFinite(value) && value >= 0;
       }) !== "" },
@@ -2658,16 +2678,16 @@ function entryIssueSeverity(section, kind, entry) {
   }
   if (section === "notifications") {
     const tests = [
-      { severity: "error", predicate: (item) => !item.trigger || !item.text },
-      { severity: "error", predicate: (item) => item.trigger && !CONSTANTS.notificationTriggers.includes(item.trigger) },
+      { severity: "error", predicate: (item) => !item.trigger || !hasNotificationText(item) },
+      { severity: "warning", predicate: (item) => item.trigger && !CONSTANTS.notificationTriggers.includes(item.trigger) },
       { severity: "error", predicate: (item) => item.kind && !CONSTANTS.hudKinds.includes(item.kind) },
       { severity: "error", predicate: (item) => entryValues(item, ["world_text_kind", "style"]).some((value) => !CONSTANTS.worldTextKinds.includes(value)) },
       { severity: "warning", predicate: (item) => entryValues(item, ["color", "text_color", "chat_color"]).some((value) => !isValidColor(value)) },
       { severity: "warning", predicate: (item) => entryValues(item, ["professions"]).some((value) => !isValidProfession(value)) },
       { severity: "warning", predicate: (item) => entryValues(item, ["reputation_levels"]).some((value) => !CONSTANTS.reputationLevels.includes(value)) },
-      { severity: "error", predicate: (item) => entryValues(item, ["target_entity_types", "target_entities"]).some((value) => !isValidResourceLocation(value)) },
-      { severity: "error", predicate: (item) => entryValues(item, ["player_items"]).some((value) => !isValidResourceLocation(value, { allowTag: true })) },
-      { severity: "warning", predicate: (item) => entryValues(item, ["player_item_slots"]).some((value) => !CONSTANTS.itemSlots.includes(value)) },
+      { severity: "error", predicate: (item) => entryValues(item, ["target_entity_type", "target_entity", "target_entity_types", "target_entities"]).some((value) => !isValidResourceLocation(value)) },
+      { severity: "error", predicate: (item) => entryValues(item, ["player_item", "player_items", "player_item_tag", "player_item_tags"]).some((value) => !isValidResourceLocation(value, { allowTag: true })) },
+      { severity: "warning", predicate: (item) => entryValues(item, ["player_item_slot", "player_item_slots"]).some((value) => !CONSTANTS.itemSlots.includes(value)) },
       { severity: "error", predicate: (item) => firstBadNumber([item], ["min_reputation", "max_reputation", "weight"], (value, notification, key) => key === "weight" ? value >= 0 : Number.isFinite(value)) !== "" },
       { severity: "error", predicate: (item) => {
         const min = numberValue(item.min_reputation);
@@ -2779,6 +2799,28 @@ function firstBadNumberDetail(entries, specs) {
   return null;
 }
 
+function dialogueTextValue(entry) {
+  if (Array.isArray(entry?.lines) && entry.lines.length > 0) return entry.lines.join("\n");
+  return entry?.text ?? "";
+}
+
+function hasDialogueText(entry) {
+  return parseList(dialogueTextValue(entry)).length > 0;
+}
+
+function notificationTextValue(entry) {
+  if (Array.isArray(entry?.lines) && entry.lines.length > 0) return entry.lines.join("\n");
+  return entry?.text ?? "";
+}
+
+function hasNotificationText(entry) {
+  return parseList(notificationTextValue(entry)).length > 0;
+}
+
+function forcedTriggerValue(entry) {
+  return entry?.trigger ?? entry?.event ?? "";
+}
+
 function entryIssueDetail(section, kind, entry) {
   if (!entry) return null;
   if (section === "dialogue") {
@@ -2790,14 +2832,14 @@ function entryIssueDetail(section, kind, entry) {
     }
     if (kind === "lines") {
       if (!entry.request) return issueDetail("Request", `one of ${CONSTANTS.dialogueTypes.join(", ")}`, entry.request, "dialogue-type");
-      if (!entry.text) return issueDetail("Line text", "non-empty villager text", entry.text, "dialogue-text");
+      if (!hasDialogueText(entry)) return issueDetail("Line text", "non-empty villager text", dialogueTextValue(entry), "dialogue-text");
     }
     if (kind === "messages") {
       if (!entry.key) return issueDetail("Message key", "a non-empty lookup key", entry.key, "dialogue-key");
-      if (!entry.text) return issueDetail("Message text", "non-empty message text", entry.text, "dialogue-text");
+      if (!hasDialogueText(entry)) return issueDetail("Message text", "non-empty message text", dialogueTextValue(entry), "dialogue-text");
     }
-    if (["openings", "closings", "pacify"].includes(kind) && !entry.text) {
-      return issueDetail("Text", "non-empty dialogue text", entry.text, "dialogue-text");
+    if (["openings", "closings", "pacify"].includes(kind) && !hasDialogueText(entry)) {
+      return issueDetail("Text", "non-empty dialogue text", dialogueTextValue(entry), "dialogue-text");
     }
     if (["options", "lines"].includes(kind) && entry.request && !CONSTANTS.dialogueTypes.includes(entry.request)) {
       return issueDetail("Request", `one of ${CONSTANTS.dialogueTypes.join(", ")}`, entry.request, "dialogue-type", "warning");
@@ -2805,8 +2847,8 @@ function entryIssueDetail(section, kind, entry) {
     const dialogueListChecks = [
       { keys: ["dispositions"], label: "Dispositions", expected: CONSTANTS.dispositions.join(", "), fieldId: "dialogue-dispositions", valid: (value) => CONSTANTS.dispositions.includes(value), severity: "warning" },
       { keys: ["professions"], label: "Professions", expected: "a valid profession id such as farmer or minecraft:farmer", fieldId: "dialogue-professions", valid: isValidProfession, severity: "warning" },
-      { keys: ["player_items"], label: "Required player items or tags", expected: "a valid item id or #tag id", fieldId: "dialogue-player_items", valid: (value) => isValidResourceLocation(value, { allowTag: true }) },
-      { keys: ["player_item_slots"], label: "Item slots", expected: CONSTANTS.itemSlots.join(", "), fieldId: "dialogue-player_item_slots", valid: (value) => CONSTANTS.itemSlots.includes(value), severity: "warning" },
+      { keys: ["player_item", "player_items", "player_item_tag", "player_item_tags"], label: "Required player items or tags", expected: "a valid item id or #tag id", fieldId: "dialogue-player_items", valid: (value) => isValidResourceLocation(value, { allowTag: true }) },
+      { keys: ["player_item_slot", "player_item_slots"], label: "Item slots", expected: CONSTANTS.itemSlots.join(", "), fieldId: "dialogue-player_item_slots", valid: (value) => CONSTANTS.itemSlots.includes(value), severity: "warning" },
       { keys: ["reputation_level", "reputation_levels"], label: "Reputation levels", expected: CONSTANTS.reputationLevels.join(", "), fieldId: "dialogue-reputation_levels", valid: (value) => CONSTANTS.reputationLevels.includes(value), severity: "warning" },
       { keys: ["weather"], label: "Weather", expected: CONSTANTS.weather.join(", "), fieldId: "dialogue-weather", valid: (value) => CONSTANTS.weather.includes(value), severity: "warning" },
       { keys: ["times"], label: "Times", expected: CONSTANTS.times.join(", "), fieldId: "dialogue-times", valid: (value) => CONSTANTS.times.includes(value), severity: "warning" },
@@ -2819,7 +2861,7 @@ function entryIssueDetail(section, kind, entry) {
       if (bad) return issueDetail(check.label, check.expected, bad.value, check.fieldId, check.severity || "error");
     }
     const badNumber = firstBadNumberDetail([entry], [
-      { key: "order", label: "Order", expected: "a number greater than or equal to 0", fieldId: "dialogue-order", valid: (value) => value >= 0 },
+      { key: "order", label: "Order", expected: "a valid order number, positive or negative", fieldId: "dialogue-order", valid: Number.isFinite },
       { key: "weight", label: "Weight", expected: "a number greater than or equal to 0", fieldId: "dialogue-weight", valid: (value) => value >= 0 },
       { key: "min_recruitment_follow_distance", label: "Minimum follow distance", expected: "a number greater than or equal to 0", fieldId: "dialogue-min_recruitment_follow_distance", valid: (value) => value >= 0 },
       { key: "min_reputation", label: "Minimum reputation", expected: "a valid number", fieldId: "dialogue-min_reputation", valid: Number.isFinite },
@@ -2833,9 +2875,10 @@ function entryIssueDetail(section, kind, entry) {
     }
   }
   if (section === "forcedDialogue") {
-    if (!entry.trigger) return issueDetail("Trigger", `one of ${CONSTANTS.forcedDialogueTriggers.join(", ")}`, entry.trigger, "forced-trigger");
+    const trigger = forcedTriggerValue(entry);
+    if (!trigger) return issueDetail("Trigger", `one of ${CONSTANTS.forcedDialogueTriggers.join(", ")}`, trigger, "forced-trigger");
     if (!hasForcedDialogueLine(entry)) return issueDetail("Opening line(s)", "at least one non-empty line", forcedDialogueLineValue(entry), "forced-line");
-    if (!CONSTANTS.forcedDialogueTriggers.includes(entry.trigger)) return issueDetail("Trigger", `one of ${CONSTANTS.forcedDialogueTriggers.join(", ")}`, entry.trigger, "forced-trigger");
+    if (!CONSTANTS.forcedDialogueTriggers.includes(trigger)) return issueDetail("Trigger", `one of ${CONSTANTS.forcedDialogueTriggers.join(", ")}`, trigger, "forced-trigger");
     if (entry.output?.mode && !CONSTANTS.forcedOutputModes.includes(entry.output.mode)) return issueDetail("Output mode", `one of ${CONSTANTS.forcedOutputModes.join(", ")}`, entry.output.mode, "forced-output_mode");
     const forcedListChecks = [
       { keys: ["witness_profession", "witness_professions", "professions"], label: "Witness professions", expected: "a valid profession id such as armorer or minecraft:weaponsmith", fieldId: "forced-witness_professions", valid: isValidProfession, severity: "warning" },
@@ -2847,7 +2890,7 @@ function entryIssueDetail(section, kind, entry) {
       if (bad) return issueDetail(check.label, check.expected, bad.value, check.fieldId, check.severity || "error");
     }
     const forcedNumberSpecs = [
-      { key: "priority", label: "Priority", expected: "a number greater than or equal to 0", fieldId: "forced-priority", valid: (value) => Number.isFinite(value) && value >= 0 },
+      { key: "priority", label: "Priority", expected: "a valid priority number, positive or negative", fieldId: "forced-priority", valid: Number.isFinite },
       { key: "witness_radius", label: "Witness radius", expected: "a number greater than or equal to 1", fieldId: "forced-witness_radius", valid: (value) => value >= 1 },
       { key: "min_recent_retaliations", label: "Min prior retaliations", expected: "a number greater than or equal to 0", fieldId: "forced-min_recent_retaliations", valid: (value) => Number.isFinite(value) && value >= 0 },
       { key: "max_recent_retaliations", label: "Max prior retaliations", expected: "a number greater than or equal to 0", fieldId: "forced-max_recent_retaliations", valid: (value) => Number.isFinite(value) && value >= 0 }
@@ -2890,8 +2933,8 @@ function entryIssueDetail(section, kind, entry) {
   }
   if (section === "notifications") {
     if (!entry.trigger) return issueDetail("Trigger", "a non-empty notification trigger", entry.trigger, "notification-trigger");
-    if (!entry.text) return issueDetail("Text", "non-empty notification text", entry.text, "notification-text");
-    if (!CONSTANTS.notificationTriggers.includes(entry.trigger)) return issueDetail("Trigger", `one of ${CONSTANTS.notificationTriggers.join(", ")}`, entry.trigger, "notification-trigger");
+    if (!hasNotificationText(entry)) return issueDetail("Text", "non-empty notification text", notificationTextValue(entry), "notification-text");
+    if (!CONSTANTS.notificationTriggers.includes(entry.trigger)) return issueDetail("Trigger", "a built-in trigger or custom trigger emitted by code", entry.trigger, "notification-trigger", "warning");
     const checks = [
       { keys: ["kind"], label: "HUD kind", expected: CONSTANTS.hudKinds.join(", "), fieldId: "notification-kind", valid: (value) => CONSTANTS.hudKinds.includes(value) },
       { keys: ["world_text_kind", "style"], label: "World text kind", expected: CONSTANTS.worldTextKinds.join(", "), fieldId: "notification-world_text_kind", valid: (value) => CONSTANTS.worldTextKinds.includes(value) },
@@ -2900,9 +2943,9 @@ function entryIssueDetail(section, kind, entry) {
       { keys: ["chat_color"], label: "Chat color", expected: "a Minecraft color name, #RRGGBB, or #AARRGGBB", fieldId: "notification-chat_color", valid: isValidColor, severity: "warning" },
       { keys: ["professions"], label: "Professions", expected: "a valid profession id such as farmer or minecraft:farmer", fieldId: "notification-professions", valid: isValidProfession, severity: "warning" },
       { keys: ["reputation_levels"], label: "Reputation levels", expected: CONSTANTS.reputationLevels.join(", "), fieldId: "notification-reputation_levels", valid: (value) => CONSTANTS.reputationLevels.includes(value), severity: "warning" },
-      { keys: ["target_entity_types", "target_entities"], label: "Target entity types", expected: "a valid entity id such as minecraft:player", fieldId: "notification-target_entity_types", valid: isValidResourceLocation },
-      { keys: ["player_items"], label: "Required player items or tags", expected: "a valid item id or #tag id", fieldId: "notification-player_items", valid: (value) => isValidResourceLocation(value, { allowTag: true }) },
-      { keys: ["player_item_slots"], label: "Item slots", expected: CONSTANTS.itemSlots.join(", "), fieldId: "notification-player_item_slots", valid: (value) => CONSTANTS.itemSlots.includes(value), severity: "warning" }
+      { keys: ["target_entity_type", "target_entity", "target_entity_types", "target_entities"], label: "Target entity types", expected: "a valid entity id such as minecraft:player", fieldId: "notification-target_entity_types", valid: isValidResourceLocation },
+      { keys: ["player_item", "player_items", "player_item_tag", "player_item_tags"], label: "Required player items or tags", expected: "a valid item id or #tag id", fieldId: "notification-player_items", valid: (value) => isValidResourceLocation(value, { allowTag: true }) },
+      { keys: ["player_item_slot", "player_item_slots"], label: "Item slots", expected: CONSTANTS.itemSlots.join(", "), fieldId: "notification-player_item_slots", valid: (value) => CONSTANTS.itemSlots.includes(value), severity: "warning" }
     ];
     for (const check of checks) {
       const bad = firstInvalidListValue(entry, check.keys, check.valid);
@@ -3170,20 +3213,20 @@ function validate() {
     }
   }
   for (const entry of state.dialogue.lines) {
-    if (!entry.request || !entry.text) {
+    if (!entry.request || !hasDialogueText(entry)) {
       addCheck(checks, "error", "Dialogue line", "Every line needs a request and text.");
       break;
     }
   }
   for (const entry of state.dialogue.messages) {
-    if (!entry.key || !entry.text) {
+    if (!entry.key || !hasDialogueText(entry)) {
       addCheck(checks, "error", "Dialogue message", "Every message needs a key and text.");
       break;
     }
   }
   for (const kind of ["openings", "closings", "pacify"]) {
     for (const entry of state.dialogue[kind]) {
-      if (!entry.text) {
+      if (!hasDialogueText(entry)) {
         const label = kind === "pacify" ? "pacify line" : kind.slice(0, -1);
         addCheck(checks, "error", `Dialogue ${kind}`, `Every ${label} entry needs text.`);
         break;
@@ -3211,11 +3254,11 @@ function validate() {
   if (badDialogueProfession) {
     addCheck(checks, "warning", "Dialogue profession", `Invalid profession id: ${badDialogueProfession}.`);
   }
-  const badDialogueItem = firstInvalidValue([...state.dialogue.options, ...state.dialogue.lines], ["player_items"], (value) => isValidResourceLocation(value, { allowTag: true }));
+  const badDialogueItem = firstInvalidValue([...state.dialogue.options, ...state.dialogue.lines], ["player_item", "player_items", "player_item_tag", "player_item_tags"], (value) => isValidResourceLocation(value, { allowTag: true }));
   if (badDialogueItem) {
     addCheck(checks, "error", "Dialogue item filter", `Invalid item or tag selector: ${badDialogueItem}.`);
   }
-  const badDialogueSlot = firstInvalidValue([...state.dialogue.options, ...state.dialogue.lines], ["player_item_slots"], (value) => CONSTANTS.itemSlots.includes(value));
+  const badDialogueSlot = firstInvalidValue([...state.dialogue.options, ...state.dialogue.lines], ["player_item_slot", "player_item_slots"], (value) => CONSTANTS.itemSlots.includes(value));
   if (badDialogueSlot) {
     addCheck(checks, "warning", "Dialogue item slot", `Unknown item slot: ${badDialogueSlot}.`);
   }
@@ -3240,7 +3283,11 @@ function validate() {
   if (badPacifyOutcome) {
     addCheck(checks, "warning", "Pacify outcome", `Unknown pacify outcome: ${badPacifyOutcome}.`);
   }
-  const badDialogueNumber = firstBadNumber(allDialogueEntries, ["order", "weight", "min_recruitment_follow_distance"], (value) => value >= 0);
+  const badDialogueOrderNumber = firstBadNumber(allDialogueEntries, ["order"], Number.isFinite);
+  if (badDialogueOrderNumber) {
+    addCheck(checks, "error", "Dialogue number", `${humanize(badDialogueOrderNumber)} has an invalid number.`);
+  }
+  const badDialogueNumber = firstBadNumber(allDialogueEntries, ["weight", "min_recruitment_follow_distance"], (value) => value >= 0);
   if (badDialogueNumber) {
     addCheck(checks, "error", "Dialogue number", `${humanize(badDialogueNumber)} must be a non-negative number.`);
   }
@@ -3266,7 +3313,7 @@ function validate() {
   }
 
   for (const entry of state.forcedDialogue.entries) {
-    if (!entry.trigger || !hasForcedDialogueLine(entry)) {
+    if (!forcedTriggerValue(entry) || !hasForcedDialogueLine(entry)) {
       addCheck(checks, "error", "Forced dialogue", "Every forced dialogue entry needs a trigger and opening line.");
       break;
     }
@@ -3275,7 +3322,7 @@ function validate() {
   if (duplicateForcedDialogue) {
     addCheck(checks, "warning", "Forced dialogue ids", `Duplicate forced dialogue id: ${duplicateForcedDialogue}.`);
   }
-  const badForcedTrigger = firstInvalidValue(state.forcedDialogue.entries, ["trigger"], (value) => CONSTANTS.forcedDialogueTriggers.includes(value));
+  const badForcedTrigger = firstInvalidValue(state.forcedDialogue.entries, ["trigger", "event"], (value) => CONSTANTS.forcedDialogueTriggers.includes(value));
   if (badForcedTrigger) {
     addCheck(checks, "error", "Forced dialogue trigger", `Unknown forced dialogue trigger: ${badForcedTrigger}.`);
   }
@@ -3297,6 +3344,7 @@ function validate() {
   }
   const badForcedNumber = firstBadNumber(state.forcedDialogue.entries, ["priority", "reputation", "witness_radius", "min_recent_retaliations", "max_recent_retaliations"], (value, entry, key) => {
     if (key === "reputation") return isForcedDialogueOutput(entry) ? Number.isFinite(value) : true;
+    if (key === "priority") return Number.isFinite(value);
     if (key === "witness_radius") return value >= 1;
     return Number.isFinite(value) && value >= 0;
   });
@@ -3406,7 +3454,7 @@ function validate() {
   }
 
   for (const entry of state.notifications.notifications) {
-    if (!entry.trigger || !entry.text) {
+    if (!entry.trigger || !hasNotificationText(entry)) {
       addCheck(checks, "error", "Notification", "Every notification needs a trigger and text.");
       break;
     }
@@ -3417,7 +3465,7 @@ function validate() {
   }
   const badNotificationTrigger = firstInvalidValue(state.notifications.notifications, ["trigger"], (value) => CONSTANTS.notificationTriggers.includes(value));
   if (badNotificationTrigger) {
-    addCheck(checks, "error", "Notification trigger", `Unknown notification trigger: ${badNotificationTrigger}.`);
+    addCheck(checks, "warning", "Notification trigger", `Custom notification trigger: ${badNotificationTrigger}.`);
   }
   const badHudKind = firstInvalidValue(state.notifications.notifications, ["kind"], (value) => CONSTANTS.hudKinds.includes(value));
   if (badHudKind) {
@@ -3439,15 +3487,15 @@ function validate() {
   if (badReputationLevel) {
     addCheck(checks, "warning", "Notification reputation", `Unknown reputation level: ${badReputationLevel}.`);
   }
-  const badNotificationTargetEntity = firstInvalidValue(state.notifications.notifications, ["target_entity_types", "target_entities"], isValidResourceLocation);
+  const badNotificationTargetEntity = firstInvalidValue(state.notifications.notifications, ["target_entity_type", "target_entity", "target_entity_types", "target_entities"], isValidResourceLocation);
   if (badNotificationTargetEntity) {
     addCheck(checks, "error", "Notification target filter", `Invalid target entity id: ${badNotificationTargetEntity}.`);
   }
-  const badNotificationItem = firstInvalidValue(state.notifications.notifications, ["player_items"], (value) => isValidResourceLocation(value, { allowTag: true }));
+  const badNotificationItem = firstInvalidValue(state.notifications.notifications, ["player_item", "player_items", "player_item_tag", "player_item_tags"], (value) => isValidResourceLocation(value, { allowTag: true }));
   if (badNotificationItem) {
     addCheck(checks, "error", "Notification item filter", `Invalid item or tag selector: ${badNotificationItem}.`);
   }
-  const badNotificationSlot = firstInvalidValue(state.notifications.notifications, ["player_item_slots"], (value) => CONSTANTS.itemSlots.includes(value));
+  const badNotificationSlot = firstInvalidValue(state.notifications.notifications, ["player_item_slot", "player_item_slots"], (value) => CONSTANTS.itemSlots.includes(value));
   if (badNotificationSlot) {
     addCheck(checks, "warning", "Notification item slot", `Unknown item slot: ${badNotificationSlot}.`);
   }
@@ -4541,7 +4589,7 @@ function renderDialogueForm(kind, entry) {
       <div class="form-grid">
         ${field({ id: "dialogue-id", label: "Line id", value: entry.id })}
         ${selectField({ id: "dialogue-type", label: "Request", value: entry.request ?? "", options: CONSTANTS.dialogueTypes })}
-        ${textareaField({ id: "dialogue-text", label: "Line text", value: entry.text, className: "full", rows: 3 })}
+        ${textareaField({ id: "dialogue-text", label: "Line text", value: dialogueTextValue(entry), className: "full", rows: 3 })}
         ${listField({ id: "dialogue-option", label: "Option id(s)", value: entry.option ?? entry.option_ids, help: "Link to a custom or built-in talk option." })}
         ${commonFilters}
         ${reputationFilters}
@@ -4570,7 +4618,7 @@ function renderDialogueForm(kind, entry) {
       <div class="form-grid">
         ${field({ id: "dialogue-id", label: "Message id", value: entry.id })}
         ${field({ id: "dialogue-key", label: "Message key", value: entry.key, help: "Gift rules can point response_key at custom message keys." })}
-        ${textareaField({ id: "dialogue-text", label: "Message text", value: entry.text, className: "full", rows: 3 })}
+        ${textareaField({ id: "dialogue-text", label: "Message text", value: dialogueTextValue(entry), className: "full", rows: 3 })}
         ${commonFilters}
         ${field({ id: "dialogue-weight", label: "Weight", value: entry.weight ?? "", type: "number" })}
         ${toggleGrid([], entry, "message")}
@@ -4583,7 +4631,7 @@ function renderDialogueForm(kind, entry) {
     return `
       <div class="form-grid">
         ${field({ id: "dialogue-id", label: "Pacify line id", value: entry.id })}
-        ${textareaField({ id: "dialogue-text", label: "Pacify text", value: entry.text, className: "full", rows: 3 })}
+        ${textareaField({ id: "dialogue-text", label: "Pacify text", value: dialogueTextValue(entry), className: "full", rows: 3 })}
         ${listField({ id: "dialogue-outcomes", label: "Outcomes", value: entry.outcomes, help: CONSTANTS.pacifyOutcomes.join(", ") })}
         ${commonFilters}
         ${field({ id: "dialogue-weight", label: "Weight", value: entry.weight ?? "", type: "number" })}
@@ -4596,7 +4644,7 @@ function renderDialogueForm(kind, entry) {
   return `
     <div class="form-grid">
       ${field({ id: "dialogue-id", label: `${capitalize(kind.slice(0, -1))} id`, value: entry.id })}
-      ${textareaField({ id: "dialogue-text", label: "Text", value: entry.text, className: "full", rows: 3 })}
+      ${textareaField({ id: "dialogue-text", label: "Text", value: dialogueTextValue(entry), className: "full", rows: 3 })}
       ${commonFilters}
       ${field({ id: "dialogue-weight", label: "Weight", value: entry.weight ?? "", type: "number" })}
       ${toggleGrid(["first_conversation_only", "first_village_interaction_only"], entry, "opening")}
@@ -4650,7 +4698,7 @@ function renderForcedDialogue() {
         <form class="entry-form" data-form="forcedDialogue">
           <div class="form-grid">
             ${field({ id: "forced-id", label: "Entry id", value: entry.id })}
-            ${selectField({ id: "forced-trigger", label: "Trigger", value: entry.trigger, options: CONSTANTS.forcedDialogueTriggers, allowBlank: false })}
+            ${selectField({ id: "forced-trigger", label: "Trigger", value: forcedTriggerValue(entry), options: CONSTANTS.forcedDialogueTriggers, allowBlank: false })}
             ${selectField({ id: "forced-output_mode", label: "Output mode", value: outputMode, options: CONSTANTS.forcedOutputModes, allowBlank: false })}
             ${field({ id: "forced-output_radius", label: "Output radius", value: outputRadius, type: "number", attrs: 'min="1" step="1"', className: chatOnlyClass })}
             ${textareaField({ id: "forced-line", label: "Opening line(s)", value: forcedDialogueLineValue(entry), className: "full", rows: 3 })}
@@ -4725,7 +4773,7 @@ function renderNotifications() {
           <div class="form-grid">
             ${field({ id: "notification-id", label: "Notification id", value: entry.id })}
             ${field({ id: "notification-trigger", label: "Trigger", value: entry.trigger, attrs: 'list="notification-triggers"', help: "Use a built-in trigger or a custom trigger emitted by code." })}
-            ${textareaField({ id: "notification-text", label: "Text", value: entry.text, className: "full", rows: 3 })}
+            ${textareaField({ id: "notification-text", label: "Text", value: notificationTextValue(entry), className: "full", rows: 3 })}
             ${selectField({ id: "notification-kind", label: "HUD kind", value: entry.kind, options: CONSTANTS.hudKinds })}
             ${selectField({ id: "notification-world_text_kind", label: "World text kind", value: entry.world_text_kind ?? entry.style, options: CONSTANTS.worldTextKinds })}
             ${field({ id: "notification-color", label: "Color", value: entry.color, attrs: 'list="color-values"', help: "Named color, #RRGGBB, or #AARRGGBB." })}
@@ -4939,6 +4987,24 @@ function readList(id) {
   return parseList(readValue(id));
 }
 
+function readDialogueTextFields() {
+  const lines = readValue("dialogue-text")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  if (lines.length > 1) return { lines };
+  return { text: lines[0] || "" };
+}
+
+function readNotificationTextFields() {
+  const lines = readValue("notification-text")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  if (lines.length > 1) return { lines };
+  return { text: lines[0] || "" };
+}
+
 function readBooleans(prefix, flags, base = {}) {
   const entry = { ...base };
   const adult = readValue(`${prefix}-show_for_adults`);
@@ -5008,7 +5074,7 @@ function readDialogueEntry() {
     entry = readBooleans("line", CONSTANTS.lineFlags, {
       id: readValue("dialogue-id").trim(),
       request: readValue("dialogue-type"),
-      text: readValue("dialogue-text").trim(),
+      ...readDialogueTextFields(),
       option: optionIds.length <= 1 ? optionIds[0] : optionIds,
       professions: readList("dialogue-professions"),
       dispositions: readList("dialogue-dispositions"),
@@ -5035,7 +5101,7 @@ function readDialogueEntry() {
     entry = readBooleans("message", [], {
       id: readValue("dialogue-id").trim(),
       key: readValue("dialogue-key").trim(),
-      text: readValue("dialogue-text").trim(),
+      ...readDialogueTextFields(),
       professions: readList("dialogue-professions"),
       dispositions: readList("dialogue-dispositions"),
       ...readVillagerEquipment("dialogue"),
@@ -5044,7 +5110,7 @@ function readDialogueEntry() {
   } else if (kind === "pacify") {
     entry = readBooleans("pacify", [], {
       id: readValue("dialogue-id").trim(),
-      text: readValue("dialogue-text").trim(),
+      ...readDialogueTextFields(),
       outcomes: readList("dialogue-outcomes"),
       professions: readList("dialogue-professions"),
       dispositions: readList("dialogue-dispositions"),
@@ -5054,7 +5120,7 @@ function readDialogueEntry() {
   } else {
     entry = readBooleans("opening", ["first_conversation_only", "first_village_interaction_only"], {
       id: readValue("dialogue-id").trim(),
-      text: readValue("dialogue-text").trim(),
+      ...readDialogueTextFields(),
       professions: readList("dialogue-professions"),
       dispositions: readList("dialogue-dispositions"),
       ...readVillagerEquipment("dialogue"),
@@ -5073,7 +5139,7 @@ function parseJsonArrayField(id, label, options = {}) {
   const source = readValue(id).trim();
   if (!source) return [];
   try {
-    const value = JSON.parse(source);
+    const value = JSON.parse(stripTextBom(source));
     if (Array.isArray(value)) return value;
   } catch {
     // Toast below gives the user one clear correction.
@@ -5086,7 +5152,7 @@ function parseJsonObjectOrArrayField(id, label, options = {}) {
   const source = readValue(id).trim();
   if (!source) return {};
   try {
-    const value = JSON.parse(source);
+    const value = JSON.parse(stripTextBom(source));
     if (value && typeof value === "object") return value;
   } catch {
     // Toast below gives the user one clear correction.
@@ -5154,7 +5220,7 @@ function readNotificationEntry() {
   return readBooleans("notification", [], {
     id: readValue("notification-id").trim(),
     trigger: readValue("notification-trigger").trim(),
-    text: readValue("notification-text").trim(),
+    ...readNotificationTextFields(),
     kind: readValue("notification-kind"),
     world_text_kind: readValue("notification-world_text_kind"),
     color: readValue("notification-color").trim(),
@@ -6029,10 +6095,18 @@ function applyEditedFile(path, source) {
 
 function parseEditedJson(source) {
   try {
-    return JSON.parse(source);
+    return JSON.parse(stripTextBom(source));
   } catch {
     return null;
   }
+}
+
+function stripTextBom(source) {
+  return String(source ?? "").replace(/^\uFEFF/, "");
+}
+
+function decodeTextFile(bytes) {
+  return stripTextBom(decoder.decode(bytes));
 }
 
 function cleanArray(entries) {
@@ -6146,7 +6220,7 @@ async function handleImport(files, replaceProject = false) {
       Object.assign(imported, normalizeImportedPaths(zipFiles));
     } else {
       const bytes = new Uint8Array(await file.arrayBuffer());
-      imported[path] = isTextPath(path) ? decoder.decode(bytes) : bytes;
+      imported[path] = isTextPath(path) ? decodeTextFile(bytes) : bytes;
     }
   }
   const normalized = normalizeImportedPaths(imported);
@@ -6237,7 +6311,7 @@ function ingestFiles(files) {
     if (normalizedPath.endsWith("/")) continue;
     if (normalizedPath === "pack.mcmeta" && typeof value === "string") {
       try {
-        const json = JSON.parse(value);
+        const json = JSON.parse(stripTextBom(value));
         state.meta.description = json.pack?.description || state.meta.description;
         state.meta.packFormat = Number(json.pack?.pack_format) || state.meta.packFormat;
         state.meta.packVersion = readPackVersion(json) || state.meta.packVersion;
@@ -6257,7 +6331,7 @@ function ingestFiles(files) {
 function ingestKnownJson(path, source) {
   let json;
   try {
-    json = JSON.parse(source);
+    json = JSON.parse(stripTextBom(source));
   } catch {
     return false;
   }
@@ -6389,7 +6463,7 @@ function detectJsonKind(json) {
 }
 
 function isForcedDialogueEntry(entry) {
-  return Boolean(entry && typeof entry === "object" && entry.trigger && (hasForcedDialogueLine(entry) || Array.isArray(entry.options)));
+  return Boolean(entry && typeof entry === "object" && forcedTriggerValue(entry) && (hasForcedDialogueLine(entry) || Array.isArray(entry.options)));
 }
 
 function hasForcedDialogueLine(entry) {
@@ -6508,7 +6582,7 @@ async function readZip(bytes) {
     const dataStart = localOffset + 30 + localNameLength + localExtraLength;
     const compressed = bytes.slice(dataStart, dataStart + compressedSize);
     const data = await decompressZipEntry(compressed, method);
-    result[name] = isTextPath(name) ? decoder.decode(data) : data;
+    result[name] = isTextPath(name) ? decodeTextFile(data) : data;
   }
   return result;
 }
