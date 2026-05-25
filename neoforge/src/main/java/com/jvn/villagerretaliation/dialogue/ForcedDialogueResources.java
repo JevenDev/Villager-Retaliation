@@ -567,9 +567,11 @@ public final class ForcedDialogueResources {
     public enum ForcedDialogueTrigger {
         CONTAINER_THEFT,
         CONTAINER_OPENED,
+        CONTAINER_BROKEN,
         RETALIATION_STARTED,
         CONTAINER_THEFT_CHAT,
         CONTAINER_OPENED_CHAT,
+        CONTAINER_BROKEN_CHAT,
         RETALIATION_STARTED_CHAT
     }
 

@@ -184,7 +184,7 @@ Forced dialogue files live under:
 data/villagerretaliation/forced_dialogue/*.json
 ```
 
-They define event-driven dialogue moments that can interrupt the player with a locked option list. Built-in triggers include `container_theft`, fired when a player removes items from a chest, barrel, or shulker box after a villager witnesses the theft with line of sight, `container_opened`, fired when the server config watches container opening instead of theft, and `retaliation_started`, fired when a villager acquires the current player as a retaliation target. The default config watches opening of generated containers, and the built-in default pack targets vanilla village chest loot tables.
+They define event-driven dialogue moments that can interrupt the player with a locked option list. Built-in triggers include `container_theft`, fired when a player removes items from a chest, barrel, or shulker box after a villager witnesses the theft with line of sight, `container_opened`, fired when the server config watches container opening instead of theft, `container_broken`, fired when a player breaks a watched container, and `retaliation_started`, fired when a villager acquires the current player as a retaliation target. The default config watches opening and breaking of generated containers, and the built-in default pack targets vanilla village chest loot tables.
 
 ```json
 {

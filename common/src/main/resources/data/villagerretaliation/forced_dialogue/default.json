@@ -3343,6 +3343,315 @@
       ]
     },
     {
+      "id": "witnessed_village_weaponsmith_container_broken",
+      "trigger": "container_broken",
+      "priority": -10,
+      "loot_table": "minecraft:chests/village/village_weaponsmith",
+      "witness_professions": [
+        "weaponsmith"
+      ],
+      "witness_radius": 12,
+      "requires_line_of_sight": true,
+      "initiate_dialogue": true,
+      "aggro_immediately": false,
+      "force_camera_towards_villager": true,
+      "reputation": -14,
+      "options": [
+        {
+          "id": "pay_for_damage",
+          "label": "Pay for damage",
+          "response": "The chest can be replaced. The trust you broke is harder work.",
+          "take_items": {
+            "items": [
+              "minecraft:emerald"
+            ],
+            "count": 12,
+            "destination": "villager_inventory",
+            "overflow_destination": "drop_at_villager",
+            "success_response": "Twelve emeralds pays for the damage. Do not break into forge stock again.",
+            "failure_response": "No payment, no patience.",
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": false
+          },
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 0
+        },
+        {
+          "id": "apologize",
+          "label": "Apologize",
+          "response": "Apology heard. Warning given.",
+          "reputation": 0,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 1
+        },
+        {
+          "id": "threaten",
+          "label": "Threaten them",
+          "response": "Then draw your answer.",
+          "reputation": -10,
+          "aggro": true,
+          "end_conversation": true,
+          "order": 2
+        }
+      ],
+      "leave_option": {
+        "label": "Leave",
+        "response": "Break forge stores and walk away? No. I remember that.",
+        "reputation": -7,
+        "aggro_chance": 0.5,
+        "end_conversation": true,
+        "order": 1000
+      },
+      "lines": [
+        "You broke into the forge chest. That stock protects the village.",
+        "Smashing a weaponsmith chest is not borrowing. Explain yourself.",
+        "That chest held steel for village work, not a reward for your pickaxe."
+      ]
+    },
+    {
+      "id": "witnessed_village_armorer_container_broken",
+      "trigger": "container_broken",
+      "priority": -10,
+      "loot_table": "minecraft:chests/village/village_armorer",
+      "witness_professions": [
+        "armorer"
+      ],
+      "witness_radius": 12,
+      "requires_line_of_sight": true,
+      "initiate_dialogue": true,
+      "aggro_immediately": false,
+      "force_camera_towards_villager": true,
+      "reputation": -14,
+      "options": [
+        {
+          "id": "pay_for_damage",
+          "label": "Pay for damage",
+          "response": "Armor takes dents so villagers do not. Village stores deserve better than that.",
+          "take_items": {
+            "items": [
+              "minecraft:emerald"
+            ],
+            "count": 12,
+            "destination": "villager_inventory",
+            "overflow_destination": "drop_at_villager",
+            "success_response": "Twelve emeralds pays for the damage. Next time, ask before you swing.",
+            "failure_response": "You cannot pay for the damage. Then you cannot call this settled.",
+            "failure_reputation": -5,
+            "failure_aggro": true,
+            "failure_end_conversation": false
+          },
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 0
+        },
+        {
+          "id": "claim_accident",
+          "label": "It was an accident",
+          "response": "One crack is an accident. A broken chest is a choice you kept making.",
+          "reputation": -2,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 1
+        },
+        {
+          "id": "threaten",
+          "label": "Threaten them",
+          "response": "Then we skip the warning.",
+          "reputation": -10,
+          "aggro": true,
+          "end_conversation": true,
+          "order": 2
+        }
+      ],
+      "leave_option": {
+        "label": "Leave",
+        "response": "Walking away from broken armor stores is not harmless.",
+        "reputation": -7,
+        "aggro_chance": 0.5,
+        "end_conversation": true,
+        "order": 1000
+      },
+      "lines": [
+        "That armorer chest was stocked for village defense. Why is it broken?",
+        "You broke a chest full of work meant to keep people alive.",
+        "I saw the armor stores break under your hand. Speak carefully."
+      ]
+    },
+    {
+      "id": "witnessed_village_toolsmith_container_broken",
+      "trigger": "container_broken",
+      "priority": -10,
+      "loot_table": "minecraft:chests/village/village_toolsmith",
+      "witness_professions": [
+        "toolsmith"
+      ],
+      "witness_radius": 12,
+      "requires_line_of_sight": true,
+      "initiate_dialogue": true,
+      "aggro_immediately": false,
+      "force_camera_towards_villager": true,
+      "reputation": -12,
+      "options": [
+        {
+          "id": "pay_for_damage",
+          "label": "Pay for damage",
+          "response": "Tools can fix the chest. Trust needs better hands than yours showed today.",
+          "take_items": {
+            "items": [
+              "minecraft:emerald"
+            ],
+            "count": 10,
+            "destination": "villager_inventory",
+            "overflow_destination": "drop_at_villager",
+            "success_response": "Ten emeralds pays for the damage. Leave the rest of the tools where they belong.",
+            "failure_response": "You broke it and cannot pay for it. That leaves anger.",
+            "failure_reputation": -4,
+            "failure_aggro": true,
+            "failure_end_conversation": false
+          },
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 0
+        },
+        {
+          "id": "apologize",
+          "label": "Apologize",
+          "response": "Then make your apology useful: stop breaking village tools.",
+          "reputation": 0,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 1
+        },
+        {
+          "id": "threaten",
+          "label": "Threaten them",
+          "response": "Tools are good at answering threats.",
+          "reputation": -9,
+          "aggro": true,
+          "end_conversation": true,
+          "order": 2
+        }
+      ],
+      "leave_option": {
+        "label": "Leave",
+        "response": "Leaving the broken tool chest behind does not leave the blame behind.",
+        "reputation": -6,
+        "aggro_chance": 0.4,
+        "end_conversation": true,
+        "order": 1000
+      },
+      "lines": [
+        "Every tool in that chest had a job. Breaking the chest was not one of them.",
+        "You smashed the tool stores. The village works with those.",
+        "I saw you break the toolsmith chest. Explain the damage."
+      ]
+    },
+    {
+      "id": "witnessed_village_container_broken",
+      "trigger": "container_broken",
+      "priority": -5,
+      "loot_tables": [
+        "minecraft:chests/village/village_armorer",
+        "minecraft:chests/village/village_butcher",
+        "minecraft:chests/village/village_cartographer",
+        "minecraft:chests/village/village_desert_house",
+        "minecraft:chests/village/village_fisher",
+        "minecraft:chests/village/village_fletcher",
+        "minecraft:chests/village/village_mason",
+        "minecraft:chests/village/village_plains_house",
+        "minecraft:chests/village/village_savanna_house",
+        "minecraft:chests/village/village_shepherd",
+        "minecraft:chests/village/village_snowy_house",
+        "minecraft:chests/village/village_taiga_house",
+        "minecraft:chests/village/village_tannery",
+        "minecraft:chests/village/village_temple",
+        "minecraft:chests/village/village_toolsmith",
+        "minecraft:chests/village/village_weaponsmith"
+      ],
+      "witness_radius": 12,
+      "requires_line_of_sight": true,
+      "initiate_dialogue": true,
+      "aggro_immediately": false,
+      "reputation": -10,
+      "options": [
+        {
+          "id": "apologize",
+          "label": "Apologize",
+          "response": "Words do not rebuild a chest, but they are a better start than silence.",
+          "reputation": 1,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 0
+        },
+        {
+          "id": "pay_for_damage",
+          "label": "Pay for damage",
+          "response": "That pays for the damage. It does not make smashing village stores acceptable.",
+          "reputation_levels": [
+            "neutral",
+            "suspicious",
+            "hostile",
+            "despised",
+            "feared"
+          ],
+          "take_items": {
+            "items": [
+              "minecraft:emerald"
+            ],
+            "count": 8,
+            "destination": "villager_inventory",
+            "overflow_destination": "drop_at_villager",
+            "success_response": "Eight emeralds pays for the damage. Next time, ask before breaking what keeps the village stocked.",
+            "failure_response": "You cannot pay for what you broke. That makes this worse.",
+            "failure_reputation": -4,
+            "failure_end_conversation": false
+          },
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 1
+        },
+        {
+          "id": "claim_accident",
+          "label": "It was an accident",
+          "response": "Accidents stop after the first crack. Remember that.",
+          "reputation": -1,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 2
+        },
+        {
+          "id": "threaten",
+          "label": "Threaten them",
+          "response": "Then we are done talking.",
+          "reputation": -8,
+          "aggro": true,
+          "end_conversation": true,
+          "order": 3
+        }
+      ],
+      "force_camera_towards_villager": true,
+      "leave_option": {
+        "label": "Leave",
+        "response": "Breaking village stores and walking away will be remembered.",
+        "reputation": -5,
+        "aggro_chance": 0.25,
+        "end_conversation": true,
+        "order": 1000
+      },
+      "lines": [
+        "You broke that {container}. Village stores are not yours to smash.",
+        "That {container} was stocked for the village. You do not get to break it apart.",
+        "I saw you break the {container}. Explain yourself."
+      ]
+    },
+    {
       "id": "witnessed_village_container_opened",
       "trigger": "container_opened",
       "priority": -5,

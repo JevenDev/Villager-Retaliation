@@ -81,9 +81,11 @@ const CONSTANTS = {
   forcedDialogueTriggers: [
     "container_theft",
     "container_opened",
+    "container_broken",
     "retaliation_started",
     "container_theft_chat",
     "container_opened_chat",
+    "container_broken_chat",
     "retaliation_started_chat"
   ],
   reputationLevels: ["royalty", "revered", "respected", "trusted", "neutral", "suspicious", "hostile", "despised", "feared"],

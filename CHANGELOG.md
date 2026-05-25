@@ -5,8 +5,8 @@
 ### Added
 
 - Added forced dialogue datapacks under `data/villagerretaliation/forced_dialogue/`.
-- Added witnessed container forced-dialogue triggers: `container_theft` and `container_opened`.
-- Added chat-only forced-dialogue triggers: `container_theft_chat`, `container_opened_chat`, and `retaliation_started_chat`.
+- Added witnessed container forced-dialogue triggers: `container_theft`, `container_opened`, and `container_broken`.
+- Added chat-only forced-dialogue triggers: `container_theft_chat`, `container_opened_chat`, `container_broken_chat`, and `retaliation_started_chat`.
 - Added `retaliation_started_chat` support for non-player retaliation targets, broadcasting the villager line to nearby players.
 - Added `combat.flee_started` notification trigger for villagers that keep fleeing hostile mobs.
 - Added forced-dialogue chat `chance` support for occasional event callouts.

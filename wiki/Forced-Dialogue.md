@@ -93,6 +93,7 @@ Use a `_chat` trigger when an event should send the villager line to chat withou
 ```text
 container_theft_chat
 container_opened_chat
+container_broken_chat
 retaliation_started_chat
 ```
 
@@ -205,6 +206,10 @@ Fires when a player opens a watched container and closes it with fewer items tha
 ### `container_opened`
 
 Fires when a player opens a watched container. This trigger is used when the server config's container forced-dialogue trigger is set to `OPENING`.
+
+### `container_broken`
+
+Fires when a player breaks a watched container, using the same watched-container eligibility as opening/theft checks. Like piglin guarded-container anger, the block break itself can provoke a response; unlike piglins, matching entries still use Villager Retaliation's witness filters and `requires_line_of_sight` rules.
 
 Watched containers:
 

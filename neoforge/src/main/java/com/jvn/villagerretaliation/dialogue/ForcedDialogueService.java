@@ -59,6 +59,7 @@ import net.neoforged.neoforge.event.entity.item.ItemTossEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.event.entity.player.PlayerContainerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.neoforge.event.level.BlockEvent;
 
 public final class ForcedDialogueService {
     private static final String LEAVE_OPTION_ID = "leave";
@@ -177,6 +178,33 @@ public final class ForcedDialogueService {
         }
 
         triggerContainerTheft(level, player, snapshot, removedCount, removedStacks);
+    }
+
+    public static void onContainerBreak(BlockEvent.BreakEvent event) {
+        if (!(event.getPlayer() instanceof ServerPlayer player)
+                || !(event.getLevel() instanceof ServerLevel level)
+                || !containerForcedDialogueEnabled()) {
+            return;
+        }
+
+        BlockPos pos = event.getPos();
+        BlockState state = event.getState();
+        ResourceLocation lootTable = generatedContainerLootTable(level, pos);
+        if (!isEligibleWatchedContainer(state, lootTable)) {
+            return;
+        }
+
+        ContainerSnapshot snapshot = new ContainerSnapshot(
+                level.dimension(),
+                pos.immutable(),
+                state.getBlock().getName(),
+                lootTable,
+                countContainerItems(level, pos),
+                snapshotContainerItems(level, pos),
+                level.getGameTime()
+        );
+        OPEN_CONTAINER_SNAPSHOTS.remove(player.getUUID());
+        triggerContainerBroken(level, player, snapshot);
     }
 
     public static boolean handleDialogueRequest(ServerPlayer player, Villager villager, String optionId) {
@@ -754,6 +782,17 @@ public final class ForcedDialogueService {
                 .anyMatch(definition -> trigger(level, player, snapshot, 0, List.of(), definition));
     }
 
+    private static void triggerContainerBroken(
+            ServerLevel level,
+            ServerPlayer player,
+            ContainerSnapshot snapshot) {
+        triggerContainerChat(level, player, snapshot, snapshot.itemCount(), snapshot.itemStacks(), ForcedDialogueTrigger.CONTAINER_BROKEN_CHAT);
+        ForcedDialogueResources
+                .selectCandidates(level.getServer(), ForcedDialogueTrigger.CONTAINER_BROKEN, snapshot.lootTable())
+                .stream()
+                .anyMatch(definition -> trigger(level, player, snapshot, snapshot.itemCount(), snapshot.itemStacks(), definition));
+    }
+
     private static void triggerContainerChat(
             ServerLevel level,
             ServerPlayer player,
@@ -1129,6 +1168,34 @@ public final class ForcedDialogueService {
                 continue;
             }
             ItemStack stack = slot.getItem();
+            if (!stack.isEmpty()) {
+                stacks.add(stack.copy());
+            }
+        }
+        return List.copyOf(stacks);
+    }
+
+    private static int countContainerItems(ServerLevel level, BlockPos pos) {
+        if (!(level.getBlockEntity(pos) instanceof Container container)) {
+            return 0;
+        }
+        int count = 0;
+        for (int slot = 0; slot < container.getContainerSize(); slot++) {
+            ItemStack stack = container.getItem(slot);
+            if (!stack.isEmpty()) {
+                count += stack.getCount();
+            }
+        }
+        return count;
+    }
+
+    private static List<ItemStack> snapshotContainerItems(ServerLevel level, BlockPos pos) {
+        if (!(level.getBlockEntity(pos) instanceof Container container)) {
+            return List.of();
+        }
+        List<ItemStack> stacks = new ArrayList<>();
+        for (int slot = 0; slot < container.getContainerSize(); slot++) {
+            ItemStack stack = container.getItem(slot);
             if (!stack.isEmpty()) {
                 stacks.add(stack.copy());
             }

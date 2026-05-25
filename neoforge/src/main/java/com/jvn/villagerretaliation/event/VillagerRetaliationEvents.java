@@ -339,6 +339,7 @@ public final class VillagerRetaliationEvents {
                 && event.getState().is(BlockTags.BEDS)) {
             VillagerInteractionService.handleSleepingVillagerBedBroken(level, serverPlayer, event.getPos());
         }
+        ForcedDialogueService.onContainerBreak(event);
     }
 
     private static void tryGiveHighReputationGift(Villager villager, Player player, InteractionHand hand) {
