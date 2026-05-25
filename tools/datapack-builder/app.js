@@ -562,6 +562,7 @@ let isApplyingPreviewHistory = false;
 let fileTreeSignature = "";
 let entryDragState = null;
 let suppressEntryClickUntil = 0;
+let importDragDepth = 0;
 let entryFormDirty = false;
 let unsavedShakeTimer = null;
 let exportIssueDialogResolve = null;
@@ -585,6 +586,8 @@ const els = {
   settingsButton: document.querySelector("#settings-button"),
   leftPanelToggleButton: document.querySelector("#left-panel-toggle-button"),
   rightPanelToggleButton: document.querySelector("#right-panel-toggle-button"),
+  undoPreviewButton: document.querySelector("#undo-preview-button"),
+  redoPreviewButton: document.querySelector("#redo-preview-button"),
   wrapPreviewButton: document.querySelector("#wrap-preview-button"),
   codePreview: document.querySelector(".code-preview"),
   copyButton: document.querySelector("#copy-file-button"),
@@ -3768,6 +3771,7 @@ function renderPreview() {
     const ranges = hasInvalidJson ? [] : withDraftState(() => previewIssueLineRanges(selectedPath, els.preview.value));
     applyPreviewLineHighlights(ranges);
   }
+  updatePreviewHistoryButtons();
 }
 
 function handlePreviewEditorKeydown(event) {
@@ -3916,6 +3920,7 @@ function resetPreviewHistory(path = selectedPath) {
   previewUndoStack = [];
   previewRedoStack = [];
   previewBeforeInputSnapshot = null;
+  updatePreviewHistoryButtons();
 }
 
 function previewSnapshot() {
@@ -3931,6 +3936,7 @@ function pushPreviewUndoSnapshot(snapshot) {
   previewUndoStack.push(snapshot);
   if (previewUndoStack.length > 100) previewUndoStack.shift();
   previewRedoStack = [];
+  updatePreviewHistoryButtons();
 }
 
 function restorePreviewSnapshot(snapshot) {
@@ -3940,6 +3946,7 @@ function restorePreviewSnapshot(snapshot) {
   els.preview.setSelectionRange(snapshot.start, snapshot.end);
   els.preview.dispatchEvent(new Event("input", { bubbles: true }));
   isApplyingPreviewHistory = false;
+  updatePreviewHistoryButtons();
 }
 
 function undoPreviewEdit() {
@@ -3954,6 +3961,17 @@ function redoPreviewEdit() {
   if (!snapshot) return;
   previewUndoStack.push(previewSnapshot());
   restorePreviewSnapshot(snapshot);
+}
+
+function updatePreviewHistoryButtons() {
+  const canUndo = !els.preview.readOnly && previewUndoStack.length > 0;
+  const canRedo = !els.preview.readOnly && previewRedoStack.length > 0;
+  els.undoPreviewButton.disabled = !canUndo;
+  els.redoPreviewButton.disabled = !canRedo;
+  els.undoPreviewButton.setAttribute("aria-disabled", String(!canUndo));
+  els.redoPreviewButton.setAttribute("aria-disabled", String(!canRedo));
+  els.undoPreviewButton.setAttribute("data-tooltip", canUndo ? "Undo preview edit." : "Nothing to undo.");
+  els.redoPreviewButton.setAttribute("data-tooltip", canRedo ? "Redo preview edit." : "Nothing to redo.");
 }
 
 function recordPreviewBeforeInput(event) {
@@ -6144,6 +6162,74 @@ async function handleImport(files, replaceProject = false) {
   showToast(importedVersion ? `Import complete. Target set to ${packVersionInfo(importedVersion).label}.` : "Import complete.");
 }
 
+function hasDroppedFiles(dataTransfer) {
+  return Array.from(dataTransfer?.types || []).includes("Files");
+}
+
+function setImportDragActive(active) {
+  document.body.classList.toggle("is-file-dragging", active);
+}
+
+async function collectDroppedFiles(dataTransfer) {
+  const items = Array.from(dataTransfer?.items || []);
+  if (items.length > 0) {
+    const files = [];
+    for (const item of items) {
+      if (item.kind !== "file") continue;
+      const entry = item.webkitGetAsEntry?.();
+      if (entry) {
+        files.push(...await filesFromDroppedEntry(entry));
+      } else {
+        const file = item.getAsFile?.();
+        if (file) files.push(file);
+      }
+    }
+    return files;
+  }
+  return Array.from(dataTransfer?.files || []);
+}
+
+async function filesFromDroppedEntry(entry, parentPath = "") {
+  if (entry.isFile) {
+    const file = await new Promise((resolve, reject) => entry.file(resolve, reject));
+    const relativePath = `${parentPath}${file.name}`;
+    return [fileWithRelativePath(file, relativePath)];
+  }
+  if (!entry.isDirectory) return [];
+  const reader = entry.createReader();
+  const children = [];
+  let batch = [];
+  do {
+    batch = await new Promise((resolve, reject) => reader.readEntries(resolve, reject));
+    children.push(...batch);
+  } while (batch.length > 0);
+  const directoryPath = `${parentPath}${entry.name}/`;
+  const nested = await Promise.all(children.map((child) => filesFromDroppedEntry(child, directoryPath)));
+  return nested.flat();
+}
+
+function fileWithRelativePath(file, relativePath) {
+  if (!relativePath || relativePath === file.name) return file;
+  return {
+    name: file.name,
+    type: file.type,
+    size: file.size,
+    lastModified: file.lastModified,
+    webkitRelativePath: relativePath,
+    arrayBuffer: () => file.arrayBuffer()
+  };
+}
+
+async function importDroppedFiles(dataTransfer) {
+  if (!canLeaveEntryForm()) return;
+  const files = await collectDroppedFiles(dataTransfer);
+  if (files.length === 0) {
+    showToast("No importable files found.");
+    return;
+  }
+  await handleImport(files, false);
+}
+
 function ingestFiles(files) {
   const extra = {};
   for (const [path, value] of Object.entries(files)) {
@@ -6804,6 +6890,36 @@ els.directoryInput.addEventListener("change", async () => {
   }
 });
 
+document.addEventListener("dragenter", (event) => {
+  if (!hasDroppedFiles(event.dataTransfer)) return;
+  event.preventDefault();
+  importDragDepth += 1;
+  setImportDragActive(true);
+});
+document.addEventListener("dragover", (event) => {
+  if (!hasDroppedFiles(event.dataTransfer)) return;
+  event.preventDefault();
+  event.dataTransfer.dropEffect = "copy";
+  setImportDragActive(true);
+});
+document.addEventListener("dragleave", (event) => {
+  if (!hasDroppedFiles(event.dataTransfer)) return;
+  event.preventDefault();
+  importDragDepth = Math.max(0, importDragDepth - 1);
+  if (importDragDepth === 0) setImportDragActive(false);
+});
+document.addEventListener("drop", async (event) => {
+  if (!hasDroppedFiles(event.dataTransfer)) return;
+  event.preventDefault();
+  importDragDepth = 0;
+  setImportDragActive(false);
+  try {
+    await importDroppedFiles(event.dataTransfer);
+  } catch (error) {
+    showToast(error.message || "Drop import failed.");
+  }
+});
+
 els.exportButton.addEventListener("click", () => {
   if (canLeaveEntryForm()) exportZip();
 });
@@ -6858,6 +6974,14 @@ els.wrapPreviewButton.addEventListener("click", () => {
   wrapPreviewLines = !wrapPreviewLines;
   renderPreview();
   renderIcons();
+});
+els.undoPreviewButton.addEventListener("click", () => {
+  undoPreviewEdit();
+  els.preview.focus();
+});
+els.redoPreviewButton.addEventListener("click", () => {
+  redoPreviewEdit();
+  els.preview.focus();
 });
 els.wikiButton.addEventListener("click", openWiki);
 els.settingsButton.addEventListener("click", openSettings);
