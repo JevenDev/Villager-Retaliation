@@ -1566,6 +1566,10 @@ body.is-unsaved-shaking .app-shell {
   font-size: 13px;
 }
 
+.wiki-result + .wiki-result-label {
+  margin-top: 8px;
+}
+
 .wiki-result {
   width: 100%;
   min-width: 0;
@@ -1587,6 +1591,10 @@ body.is-unsaved-shaking .app-shell {
 
 .wiki-result.is-section-match {
   box-shadow: inset 3px 0 0 var(--accent-strong);
+}
+
+.wiki-result.is-tag-match {
+  box-shadow: inset 3px 0 0 #8fcfff;
 }
 
 .wiki-result span,
@@ -1618,8 +1626,15 @@ body.is-unsaved-shaking .app-shell {
 .wiki-content h1,
 .wiki-content h2,
 .wiki-content h3,
-.wiki-content h4 {
+.wiki-content h4,
+.wiki-content summary {
   scroll-margin-top: 12px;
+}
+
+.wiki-content h1,
+.wiki-content h2,
+.wiki-content h3,
+.wiki-content h4 {
   margin: 20px 0 8px;
 }
 
@@ -1726,10 +1741,20 @@ body.is-unsaved-shaking .app-shell {
   padding: 0 2px;
 }
 
+.wiki-content mark.wiki-key-mark,
+.wiki-result mark.wiki-key-mark {
+  background: #16384a;
+  color: #bceaff;
+}
+
 .wiki-hit-section {
   padding: 6px 8px;
   border-left: 3px solid var(--accent-strong);
   background: #24301e;
+}
+
+.wiki-content summary.wiki-hit-section {
+  padding: 9px 11px;
 }
 
 .wiki-resize {

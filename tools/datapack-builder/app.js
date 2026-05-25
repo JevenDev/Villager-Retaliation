@@ -920,37 +920,59 @@ function buildWikiDoc(file, markdown) {
 function wikiSections(file, markdown, pageTitle) {
   const lines = markdown.split(/\r?\n/);
   const sections = [];
+  const fileSlug = wikiFileSlug(file);
   let current = {
     title: pageTitle,
     level: 1,
     lines: [],
-    id: `${wikiFileSlug(file)}-0`,
+    id: `${fileSlug}-0`,
     file
   };
+  let parentHeading = {
+    title: pageTitle,
+    level: 1
+  };
   let index = 0;
+  const pushCurrent = () => {
+    if (!current.lines.some((entry) => entry.trim())) return;
+    current.text = markdownToPlainText(current.lines.join("\n"));
+    sections.push(current);
+  };
   for (const line of lines) {
     const heading = line.match(/^(#{1,3})\s+(.+)$/);
     if (heading) {
-      if (current.lines.some((entry) => entry.trim())) {
-        current.text = markdownToPlainText(current.lines.join("\n"));
-        sections.push(current);
-      }
+      pushCurrent();
+      index += 1;
+      parentHeading = {
+        title: heading[2].trim(),
+        level: heading[1].length
+      };
+      current = {
+        title: parentHeading.title,
+        level: parentHeading.level,
+        lines: [line],
+        id: `${fileSlug}-${index}`,
+        file
+      };
+      continue;
+    }
+    const summary = line.trim().match(/^<summary><strong>(.+)<\/strong><\/summary>$/);
+    if (summary) {
+      pushCurrent();
       index += 1;
       current = {
-        title: heading[2].trim(),
-        level: heading[1].length,
+        title: cleanWikiSummaryTitle(summary[1]),
+        level: Math.min(parentHeading.level + 1, 3),
         lines: [line],
-        id: `${wikiFileSlug(file)}-${index}`,
-        file
+        id: `${fileSlug}-${index}`,
+        file,
+        parentTitle: parentHeading.title
       };
       continue;
     }
     current.lines.push(line);
   }
-  if (current.lines.some((entry) => entry.trim())) {
-    current.text = markdownToPlainText(current.lines.join("\n"));
-    sections.push(current);
-  }
+  pushCurrent();
   return sections;
 }
 
@@ -961,15 +983,43 @@ function wikiFileSlug(file) {
 function markdownToPlainText(markdown) {
   return String(markdown || "")
     .replace(/```[\s\S]*?```/g, " ")
+    .replace(/<[^>]+>/g, " ")
     .replace(/`([^`]+)`/g, "$1")
     .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1 $2")
-    .replace(/[#>*_|-]/g, " ")
+    .replace(/[#>*|-]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
 
+function cleanWikiSummaryTitle(value) {
+  return String(value || "").replace(/<[^>]+>/g, "").trim();
+}
+
 function normalizeSearchText(value) {
   return String(value || "").toLowerCase().replace(/[_-]+/g, " ").replace(/[^a-z0-9.:#/\s]+/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function compactSearchText(value) {
+  return normalizeSearchText(value).replace(/[^a-z0-9]+/g, "");
+}
+
+function searchTokens(value) {
+  return normalizeSearchText(value).split(" ").filter((token) => token.length > 1);
+}
+
+function wikiKeyIds(value) {
+  return [...new Set(String(value || "").toLowerCase().match(/#?[a-z0-9]+(?:[_.:-][a-z0-9]+)+/g) || [])];
+}
+
+function wikiKeyMatchScore(value, query, compactQuery, tokens) {
+  const normalized = normalizeSearchText(value);
+  const compact = compactSearchText(value);
+  if (!normalized || !compact) return 0;
+  if (normalized === query || (compactQuery && compact === compactQuery)) return 180;
+  if (normalized.startsWith(query) || (compactQuery && compact.startsWith(compactQuery))) return 120;
+  if (normalized.includes(query) || (compactQuery && compact.includes(compactQuery))) return 90;
+  if (tokens.length > 0 && tokens.every((token) => normalized.includes(token))) return 65;
+  return 0;
 }
 
 function searchWiki() {
@@ -985,35 +1035,80 @@ function searchWiki() {
     return;
   }
 
-  const phraseMatches = [];
+  const tokens = searchTokens(query);
+  const compactQuery = compactSearchText(query);
+  const matches = [];
   for (const doc of wikiState.docs) {
     for (const section of doc.sections) {
-      const haystack = normalizeSearchText(`${doc.title} ${section.title} ${section.text}`);
-      if (haystack.includes(query)) {
-        phraseMatches.push({ type: "section", file: doc.file, sectionId: section.id, title: section.title, pageTitle: doc.title, text: sectionSnippet(section.text, query), score: 3 });
-      }
-    }
-  }
-
-  if (phraseMatches.length > 0) {
-    wikiState.resultMode = "sections";
-    wikiState.results = phraseMatches.slice(0, 80);
-    return;
-  }
-
-  const tokens = query.split(" ").filter((token) => token.length > 1);
-  const keywordMatches = [];
-  for (const doc of wikiState.docs) {
-    for (const section of doc.sections) {
-      const haystack = normalizeSearchText(`${doc.title} ${section.title} ${section.text}`);
-      const score = tokens.reduce((sum, token) => sum + (haystack.includes(token) ? 1 : 0), 0);
+      const title = normalizeSearchText(section.title);
+      const titleCompact = compactSearchText(section.title);
+      const parent = normalizeSearchText(section.parentTitle || "");
+      const haystack = normalizeSearchText(`${doc.title} ${section.parentTitle || ""} ${section.title} ${section.text}`);
+      const haystackCompact = compactSearchText(`${section.title} ${section.text}`);
+      const titleWords = new Set(title.split(" ").filter(Boolean));
+      const parentWords = new Set(parent.split(" ").filter(Boolean));
+      const haystackWords = new Set(haystack.split(" ").filter(Boolean));
+      const keyMatches = wikiKeyIds(`${section.title} ${section.text}`)
+        .map((id) => ({
+          id,
+          score: wikiKeyMatchScore(id, query, compactQuery, tokens)
+        }))
+        .filter((match) => match.score > 0)
+        .sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
+      const keyScore = keyMatches[0]?.score || 0;
+      let exactTokenMatches = 0;
+      const tokenScore = tokens.reduce((sum, token) => {
+        if (titleWords.has(token)) {
+          exactTokenMatches += 1;
+          return sum + 8;
+        }
+        if (title.includes(token)) return sum + 5;
+        if (parentWords.has(token)) {
+          exactTokenMatches += 1;
+          return sum + 3;
+        }
+        if (parent.includes(token)) return sum + 2;
+        if (haystackWords.has(token)) {
+          exactTokenMatches += 1;
+          return sum + 2;
+        }
+        return sum + (haystack.includes(token) ? 0.5 : 0);
+      }, 0);
+      let score = tokenScore;
+      const exactTitleMatch = title === query || (compactQuery && titleCompact === compactQuery);
+      const titlePrefixMatch = title.startsWith(query) || (compactQuery && titleCompact.startsWith(compactQuery));
+      const titlePhraseMatch = title.includes(query) || (compactQuery && titleCompact.includes(compactQuery));
+      const bodyPhraseMatch = haystack.includes(query) || (compactQuery && haystackCompact.includes(compactQuery));
+      if (exactTitleMatch) score += 120;
+      else if (titlePrefixMatch) score += 70;
+      else if (titlePhraseMatch) score += 45;
+      if (haystack.includes(query)) score += 18;
+      if (compactQuery && haystackCompact.includes(compactQuery)) score += 18;
+      if (tokens.length > 0 && tokens.every((token) => haystackWords.has(token) || title.includes(token))) score += 10;
+      score += keyScore;
+      if (tokens.length > 1 && exactTokenMatches < 2 && !titlePhraseMatch && !bodyPhraseMatch) continue;
       if (score > 0) {
-        keywordMatches.push({ type: "keyword", file: doc.file, sectionId: section.id, title: section.title, pageTitle: doc.title, text: sectionSnippet(section.text, tokens.find((token) => haystack.includes(token)) || query), score });
+        matches.push({
+          type: keyScore > 0 ? "tag" : "section",
+          matchKind: keyScore > 0 ? "tag" : "keyword",
+          file: doc.file,
+          sectionId: section.id,
+          title: section.title,
+          pageTitle: doc.title,
+          parentTitle: section.parentTitle || "",
+          text: sectionSnippet(section.text, keyMatches[0]?.id || tokens.find((token) => haystack.includes(token)) || query),
+          score
+        });
       }
     }
   }
-  wikiState.resultMode = "keywords";
-  wikiState.results = keywordMatches.sort((a, b) => b.score - a.score || a.pageTitle.localeCompare(b.pageTitle)).slice(0, 80);
+  wikiState.resultMode = "matches";
+  wikiState.results = matches.sort((a, b) => (
+    (a.matchKind === "tag" ? -1 : 1) - (b.matchKind === "tag" ? -1 : 1)
+    || b.score - a.score
+    || a.pageTitle.localeCompare(b.pageTitle)
+    || a.title.localeCompare(b.title)
+  )).slice(0, 80);
 }
 
 function sectionSnippet(text, query) {
@@ -1030,9 +1125,21 @@ function sectionSnippet(text, query) {
 function renderWiki() {
   if (!els.wikiResults || !els.wikiContent) return;
   searchWiki();
+  syncWikiSelectionToResults();
   renderWikiResults();
   renderWikiContent();
   renderIcons();
+}
+
+function syncWikiSelectionToResults() {
+  if (!normalizeSearchText(wikiState.query) || wikiState.results.length === 0) return;
+  const hasSelectedResult = wikiState.results.some((result) => (
+    result.file === wikiState.selectedFile
+    && (result.sectionId || "") === (wikiState.selectedSectionId || "")
+  ));
+  if (hasSelectedResult) return;
+  wikiState.selectedFile = wikiState.results[0].file;
+  wikiState.selectedSectionId = wikiState.results[0].sectionId || "";
 }
 
 function renderWikiResults() {
@@ -1040,23 +1147,37 @@ function renderWikiResults() {
     els.wikiResults.innerHTML = `<div class="wiki-status">${escapeHtml(wikiState.status)}</div>`;
     return;
   }
-  const label = wikiState.resultMode === "sections"
-    ? "Section matches"
-    : wikiState.resultMode === "keywords"
-      ? "Keyword matches"
-      : "Pages";
-  els.wikiResults.innerHTML = `
-    <div class="wiki-result-label">${escapeHtml(label)}</div>
-    ${wikiState.results.length === 0 ? `<div class="wiki-status">No matching wiki entries.</div>` : wikiState.results.map((result) => {
-      const isActive = result.file === wikiState.selectedFile && (!result.sectionId || result.sectionId === wikiState.selectedSectionId);
-      const sectionLabel = result.pageTitle && result.pageTitle !== result.title ? `${result.pageTitle} / ${result.title}` : result.title;
-      return `
-        <button class="wiki-result ${isActive ? "is-active" : ""} ${result.type !== "page" ? "is-section-match" : ""}" type="button" data-file="${escapeHtml(result.file)}" data-section="${escapeHtml(result.sectionId || "")}">
-          <span>${renderWikiInline(sectionLabel, wikiState.query)}</span>
-          <small>${renderWikiInline(result.text || result.file, wikiState.query)}</small>
-        </button>
-      `;
-    }).join("")}
+  if (wikiState.results.length === 0) {
+    els.wikiResults.innerHTML = `
+      <div class="wiki-result-label">${wikiState.resultMode === "pages" ? "Pages" : "Keyword matches"}</div>
+      <div class="wiki-status">No matching wiki entries.</div>
+    `;
+    return;
+  }
+  if (wikiState.resultMode === "pages") {
+    els.wikiResults.innerHTML = `
+      <div class="wiki-result-label">Pages</div>
+      ${wikiState.results.map(renderWikiResultButton).join("")}
+    `;
+    return;
+  }
+  const tagMatches = wikiState.results.filter((result) => result.matchKind === "tag");
+  const keywordMatches = wikiState.results.filter((result) => result.matchKind !== "tag");
+  els.wikiResults.innerHTML = [
+    tagMatches.length > 0 ? `<div class="wiki-result-label">Tag matches</div>${tagMatches.map(renderWikiResultButton).join("")}` : "",
+    keywordMatches.length > 0 ? `<div class="wiki-result-label">Keyword matches</div>${keywordMatches.map(renderWikiResultButton).join("")}` : ""
+  ].filter(Boolean).join("");
+}
+
+function renderWikiResultButton(result) {
+  const isActive = result.file === wikiState.selectedFile && (!result.sectionId || result.sectionId === wikiState.selectedSectionId);
+  const titleParts = [result.pageTitle, result.parentTitle, result.title].filter((part, index, parts) => part && parts.indexOf(part) === index);
+  const sectionLabel = titleParts.length > 1 ? titleParts.join(" / ") : result.title;
+  return `
+    <button class="wiki-result ${isActive ? "is-active" : ""} ${result.type !== "page" ? "is-section-match" : ""} ${result.matchKind === "tag" ? "is-tag-match" : ""}" type="button" data-file="${escapeHtml(result.file)}" data-section="${escapeHtml(result.sectionId || "")}">
+      <span>${renderWikiInline(sectionLabel, wikiState.query)}</span>
+      <small>${renderWikiInline(result.text || result.file, wikiState.query)}</small>
+    </button>
   `;
 }
 
@@ -1066,7 +1187,7 @@ function renderWikiContent() {
     els.wikiContent.innerHTML = wikiState.status ? "" : `<div class="empty-state">Open a version to load the wiki.</div>`;
     return;
   }
-  els.wikiContent.innerHTML = markdownToWikiHtml(doc.markdown, doc.file, wikiState.query, new Set(wikiState.results.map((result) => result.sectionId).filter(Boolean)));
+  els.wikiContent.innerHTML = markdownToWikiHtml(doc.markdown, doc.file, wikiState.query, new Set(wikiState.results.map((result) => result.sectionId).filter(Boolean)), wikiState.selectedSectionId);
   if (wikiState.selectedSectionId) {
     window.requestAnimationFrame(() => {
       els.wikiContent.querySelector(`#${CSS.escape(wikiState.selectedSectionId)}`)?.scrollIntoView({ block: "start" });
@@ -1074,7 +1195,7 @@ function renderWikiContent() {
   }
 }
 
-function markdownToWikiHtml(markdown, file, query, highlightedSectionIds) {
+function markdownToWikiHtml(markdown, file, query, highlightedSectionIds, selectedSectionId = "") {
   const lines = String(markdown || "").split(/\r?\n/);
   let html = "";
   let inCode = false;
@@ -1084,6 +1205,12 @@ function markdownToWikiHtml(markdown, file, query, highlightedSectionIds) {
   let inTable = false;
   let tableRows = [];
   let sectionIndex = 0;
+  let pendingDetails = false;
+  const flushPendingDetails = () => {
+    if (!pendingDetails) return;
+    html += "<details>";
+    pendingDetails = false;
+  };
   const closeList = () => {
     if (inList) {
       html += `</${listTag}>`;
@@ -1103,7 +1230,7 @@ function markdownToWikiHtml(markdown, file, query, highlightedSectionIds) {
       closeList();
       closeTable();
       if (inCode) {
-        html += `<pre><code>${escapeHtml(codeLines.join("\n"))}</code></pre>`;
+        html += `<pre><code>${highlightWikiText(escapeHtml(codeLines.join("\n")), query)}</code></pre>`;
         codeLines = [];
         inCode = false;
       } else {
@@ -1120,6 +1247,7 @@ function markdownToWikiHtml(markdown, file, query, highlightedSectionIds) {
     if (heading) {
       closeList();
       closeTable();
+      flushPendingDetails();
       sectionIndex += 1;
       const level = Math.min(4, heading[1].length);
       const id = `${wikiFileSlug(file)}-${sectionIndex}`;
@@ -1129,9 +1257,17 @@ function markdownToWikiHtml(markdown, file, query, highlightedSectionIds) {
     }
 
     const detailsLine = line.trim();
-    if (detailsLine === "<details>" || detailsLine === "</details>") {
+    if (detailsLine === "<details>") {
       closeList();
       closeTable();
+      pendingDetails = true;
+      continue;
+    }
+
+    if (detailsLine === "</details>") {
+      closeList();
+      closeTable();
+      flushPendingDetails();
       html += detailsLine;
       continue;
     }
@@ -1140,12 +1276,20 @@ function markdownToWikiHtml(markdown, file, query, highlightedSectionIds) {
     if (summary) {
       closeList();
       closeTable();
-      html += `<summary><strong>${renderWikiInline(summary[1], query)}</strong></summary>`;
+      sectionIndex += 1;
+      const id = `${wikiFileSlug(file)}-${sectionIndex}`;
+      const className = highlightedSectionIds.has(id) ? " class=\"wiki-hit-section\"" : "";
+      if (pendingDetails) {
+        html += `<details${selectedSectionId === id ? " open" : ""}>`;
+        pendingDetails = false;
+      }
+      html += `<summary id="${escapeHtml(id)}"${className}><strong>${renderWikiInline(summary[1], query)}</strong></summary>`;
       continue;
     }
 
     if (/^\|.+\|$/.test(line.trim())) {
       closeList();
+      flushPendingDetails();
       inTable = true;
       tableRows.push(line);
       continue;
@@ -1156,6 +1300,7 @@ function markdownToWikiHtml(markdown, file, query, highlightedSectionIds) {
     if (listItem) {
       if (!inList || listTag !== "ul") {
         closeList();
+        flushPendingDetails();
         html += "<ul>";
         listTag = "ul";
         inList = true;
@@ -1168,6 +1313,7 @@ function markdownToWikiHtml(markdown, file, query, highlightedSectionIds) {
     if (orderedListItem) {
       if (!inList || listTag !== "ol") {
         closeList();
+        flushPendingDetails();
         html += "<ol>";
         listTag = "ol";
         inList = true;
@@ -1183,12 +1329,14 @@ function markdownToWikiHtml(markdown, file, query, highlightedSectionIds) {
     }
 
     closeList();
+    flushPendingDetails();
     html += `<p>${renderWikiInline(line, query)}</p>`;
   }
   closeList();
   closeTable();
+  flushPendingDetails();
   if (inCode) {
-    html += `<pre><code>${escapeHtml(codeLines.join("\n"))}</code></pre>`;
+    html += `<pre><code>${highlightWikiText(escapeHtml(codeLines.join("\n")), query)}</code></pre>`;
   }
   return html;
 }
@@ -1206,12 +1354,12 @@ function renderWikiTable(rows, query) {
 function renderWikiInline(text, query) {
   const placeholders = [];
   const hold = (value) => {
-    const key = `@@WIKI_PLACEHOLDER_${placeholders.length}@@`;
+    const key = `@@$P${placeholders.length}$@@`;
     placeholders.push(value);
     return key;
   };
   let output = escapeHtml(text);
-  output = output.replace(/`([^`]+)`/g, (_, code) => hold(`<code>${code}</code>`));
+  output = output.replace(/`([^`]+)`/g, (_, code) => hold(`<code>${highlightWikiText(code, query)}</code>`));
   output = output.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label, href) => {
     const safeHref = String(href || "");
     if (/\.md(?:#.*)?$/i.test(safeHref)) {
@@ -1221,19 +1369,31 @@ function renderWikiInline(text, query) {
     return hold(`<a href="${escapeHtml(safeHref)}" target="_blank" rel="noopener noreferrer">${label}</a>`);
   });
   output = highlightWikiText(output, query);
-  output = output.replace(/@@WIKI_PLACEHOLDER_(\d+)@@/g, (_, index) => placeholders[Number(index)] || "");
+  output = output.replace(/@@\$P(\d+)\$@@/g, (_, index) => placeholders[Number(index)] || "");
   return output;
 }
 
 function highlightWikiText(value, query) {
-  const terms = normalizeSearchText(query).split(" ").filter((term) => term.length > 1).slice(0, 6);
+  const normalizedQuery = normalizeSearchText(query);
+  const terms = normalizedQuery.split(" ").filter((term) => term.length > 1).slice(0, 6);
   if (terms.length === 0) return value;
+  const compactQuery = compactSearchText(query);
+  const placeholders = [];
+  const hold = (value) => {
+    const key = `@@$M${placeholders.length}$@@`;
+    placeholders.push(value);
+    return key;
+  };
   let output = value;
+  output = output.replace(/#?[a-z0-9]+(?:[_.:-][a-z0-9]+)+/gi, (match) => {
+    if (wikiKeyMatchScore(match, normalizedQuery, compactQuery, terms) <= 0) return match;
+    return hold(`<mark class="wiki-key-mark">${match}</mark>`);
+  });
   for (const term of terms) {
     const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     output = output.replace(new RegExp(`(${escapedTerm})`, "gi"), "<mark>$1</mark>");
   }
-  return output;
+  return output.replace(/@@\$M(\d+)\$@@/g, (_, index) => placeholders[Number(index)] || "");
 }
 
 function updateLeftPanelMode(width = undefined) {
