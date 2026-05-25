@@ -135,9 +135,9 @@ h3 {
 }
 
 .app-header {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(280px, max-content) minmax(220px, 1fr) max-content;
   align-items: center;
-  justify-content: space-between;
   gap: 18px;
   padding: 0 16px;
   background: var(--bar);
@@ -179,6 +179,30 @@ h3 {
 .preview-actions {
   flex: 0 0 auto;
   flex-wrap: nowrap;
+}
+
+.toolbar-hint {
+  min-height: 37px;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.hint-icon {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  color: var(--muted);
+}
+
+#toolbar-hint-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .button,
@@ -975,8 +999,40 @@ button:focus-visible,
 }
 
 .entry-card {
+  position: relative;
   padding: 10px;
   cursor: pointer;
+}
+
+.entry-card.is-sortable {
+  cursor: grab;
+}
+
+.entry-card.is-sortable:active {
+  cursor: grabbing;
+}
+
+.entry-card.is-dragging {
+  opacity: 0.6;
+}
+
+.entry-card.is-drop-before::before,
+.entry-card.is-drop-after::after {
+  content: "";
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--accent-strong);
+}
+
+.entry-card.is-drop-before::before {
+  top: -5px;
+}
+
+.entry-card.is-drop-after::after {
+  bottom: -5px;
 }
 
 .entry-card.is-active {
@@ -1608,12 +1664,17 @@ body.is-wiki-moving {
 
   .app-header {
     align-items: flex-start;
-    flex-direction: column;
+    grid-template-columns: 1fr;
     padding: 12px;
   }
 
   .toolbar {
     width: 100%;
+  }
+
+  .toolbar-hint {
+    width: 100%;
+    justify-content: flex-start;
   }
 
   .workspace,

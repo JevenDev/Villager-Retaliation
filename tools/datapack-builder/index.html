@@ -14,28 +14,33 @@
           <h1>Villager Retaliation Datapack Generator</h1>
         </div>
 
+        <div class="toolbar-hint" aria-label="Builder hint">
+          <i data-lucide="info" class="hint-icon" aria-hidden="true"></i>
+          <span id="toolbar-hint-text">Alt+Q opens the wiki.</span>
+        </div>
+
         <div class="toolbar" aria-label="Datapack actions">
-          <button class="button button-secondary" id="wiki-button" type="button" title="Search the versioned builder wiki (Alt+Q)">
+          <button class="button button-secondary has-tooltip" id="wiki-button" type="button" data-tooltip="Search the versioned builder wiki. Alt+Q toggles it.">
             <i data-lucide="book-open" class="button-icon" aria-hidden="true"></i>
             Wiki
           </button>
-          <a class="button button-secondary" href="https://github.com/JevenDev/Villager-Retaliation" target="_blank" rel="noopener noreferrer" title="Open the Villager Retaliation repository on GitHub">
+          <a class="button button-secondary has-tooltip" href="https://github.com/JevenDev/Villager-Retaliation" target="_blank" rel="noopener noreferrer" data-tooltip="Open the Villager Retaliation repository on GitHub.">
             <i data-lucide="git-branch" class="button-icon" aria-hidden="true"></i>
             Repo
           </a>
-          <label class="button button-secondary" for="import-input" title="Import a datapack zip or JSON files">
+          <label class="button button-secondary has-tooltip" for="import-input" data-tooltip="Import a datapack zip or JSON files.">
             <i data-lucide="upload" class="button-icon" aria-hidden="true"></i>
             Import
           </label>
-          <label class="button button-secondary" for="directory-input" title="Import an unpacked datapack folder">
+          <label class="button button-secondary has-tooltip" for="directory-input" data-tooltip="Import an unpacked datapack folder.">
             <i data-lucide="folder-open" class="button-icon" aria-hidden="true"></i>
             Folder
           </label>
-          <button class="button button-secondary" id="starter-button" type="button" title="Load a small working example">
+          <button class="button button-secondary has-tooltip" id="starter-button" type="button" data-tooltip="Load a small working example.">
             <i data-lucide="package-plus" class="button-icon" aria-hidden="true"></i>
             Preset
           </button>
-          <button class="button button-primary" id="export-button" type="button" title="Export a datapack zip">
+          <button class="button button-primary has-tooltip" id="export-button" type="button" data-tooltip="Export a datapack zip.">
             <i data-lucide="download" class="button-icon" aria-hidden="true"></i>
             Export
           </button>
@@ -116,13 +121,13 @@
           </nav>
         </aside>
 
-        <div class="panel-resizer panel-resizer-column" data-resize-target="left" role="separator" tabindex="0" aria-orientation="vertical" aria-label="Resize sections panel" title="Drag to resize. Middle-click to reset."></div>
+        <div class="panel-resizer panel-resizer-column has-tooltip" data-resize-target="left" role="separator" tabindex="0" aria-orientation="vertical" aria-label="Resize sections panel" data-tooltip="Drag to resize the sections panel. Middle-click to reset."></div>
 
         <section class="builder" aria-label="Datapack builder">
           <div id="builder-panel" class="builder-panel"></div>
         </section>
 
-        <div class="panel-resizer panel-resizer-column" data-resize-target="right" role="separator" tabindex="0" aria-orientation="vertical" aria-label="Resize output panel" title="Drag to resize. Middle-click to reset."></div>
+        <div class="panel-resizer panel-resizer-column has-tooltip" data-resize-target="right" role="separator" tabindex="0" aria-orientation="vertical" aria-label="Resize output panel" data-tooltip="Drag to resize the output panel. Middle-click to reset."></div>
 
         <aside class="right-rail" aria-label="Output">
           <button class="rail-toggle rail-toggle-right is-on" id="right-panel-toggle-button" type="button" aria-pressed="true" aria-label="Hide output">
@@ -130,7 +135,7 @@
           </button>
 
           <section class="panel checks-panel">
-            <div class="panel-title panel-title-snap" data-panel-snap-target="checks" role="button" tabindex="0" title="Collapse or restore checks panel">
+            <div class="panel-title panel-title-snap has-tooltip" data-panel-snap-target="checks" role="button" tabindex="0" data-tooltip="Collapse or restore the checks panel.">
               <div class="panel-title-main">
                 <i data-lucide="shield-check" class="section-icon" aria-hidden="true"></i>
                 <h2>Checks</h2>
@@ -140,10 +145,10 @@
             <div id="checks" class="checks"></div>
           </section>
 
-          <div class="panel-resizer panel-resizer-row" data-resize-target="checks" role="separator" tabindex="0" aria-orientation="horizontal" aria-label="Resize checks panel" title="Drag to resize. Middle-click to reset."></div>
+          <div class="panel-resizer panel-resizer-row has-tooltip" data-resize-target="checks" role="separator" tabindex="0" aria-orientation="horizontal" aria-label="Resize checks panel" data-tooltip="Drag to resize the checks panel. Middle-click to reset."></div>
 
           <section class="panel files-panel">
-            <div class="panel-title panel-title-snap" data-panel-snap-target="files" role="button" tabindex="0" title="Collapse or restore files panel">
+            <div class="panel-title panel-title-snap has-tooltip" data-panel-snap-target="files" role="button" tabindex="0" data-tooltip="Collapse or restore the files panel.">
               <div class="panel-title-main">
                 <i data-lucide="files" class="section-icon" aria-hidden="true"></i>
                 <h2>Files</h2>
@@ -153,19 +158,19 @@
             <div id="file-tree" class="file-tree"></div>
           </section>
 
-          <div class="panel-resizer panel-resizer-row" data-resize-target="files" role="separator" tabindex="0" aria-orientation="horizontal" aria-label="Resize files panel" title="Drag to resize. Middle-click to reset."></div>
+          <div class="panel-resizer panel-resizer-row has-tooltip" data-resize-target="files" role="separator" tabindex="0" aria-orientation="horizontal" aria-label="Resize files panel" data-tooltip="Drag to resize the files panel. Middle-click to reset."></div>
 
           <section class="preview" aria-label="Generated JSON preview">
             <div class="preview-header">
               <h2 id="selected-path">pack.mcmeta</h2>
               <div class="preview-actions">
-                <button class="icon-button" id="wrap-preview-button" type="button" aria-pressed="false" title="Wrap preview lines">
+                <button class="icon-button has-tooltip" id="wrap-preview-button" type="button" aria-pressed="false" data-tooltip="Wrap preview lines.">
                   <i data-lucide="wrap-text" class="button-icon" aria-hidden="true"></i>
                 </button>
-                <button class="icon-button" id="copy-file-button" type="button" title="Copy current file">
+                <button class="icon-button has-tooltip" id="copy-file-button" type="button" data-tooltip="Copy current file.">
                   <i data-lucide="copy" class="button-icon" aria-hidden="true"></i>
                 </button>
-                <button class="icon-button" id="download-file-button" type="button" title="Download current file">
+                <button class="icon-button has-tooltip" id="download-file-button" type="button" data-tooltip="Download current file.">
                   <i data-lucide="file-down" class="button-icon" aria-hidden="true"></i>
                 </button>
               </div>
@@ -189,7 +194,7 @@
             <span>Wiki</span>
           </div>
           <select id="wiki-version" aria-label="Wiki version"></select>
-          <button class="icon-button" id="wiki-close-button" type="button" title="Close wiki">
+          <button class="icon-button has-tooltip" id="wiki-close-button" type="button" data-tooltip="Close wiki.">
             <i data-lucide="x" class="button-icon" aria-hidden="true"></i>
           </button>
         </div>
