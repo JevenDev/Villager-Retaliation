@@ -1299,6 +1299,502 @@ function generatedForcedDialogueFiles() {
   return Object.fromEntries([...grouped.entries()].map(([path, value]) => [path, safeJson(value)]));
 }
 
+function pathsFromGeneratedFiles(fileMap, fallbackPath) {
+  const paths = Object.keys(fileMap);
+  return paths.length > 0 ? paths : [fallbackPath];
+}
+
+function storyPaths() {
+  return [structurePath(), biomePath()];
+}
+
+function primaryGeneratedPaths() {
+  return [
+    dialoguePath(),
+    forcedDialoguePath(),
+    notificationsPath(),
+    giftsPath(),
+    pacificationPath(),
+    ...storyPaths(),
+    namesPath()
+  ];
+}
+
+function pathsForCheck(check) {
+  if (check.type !== "error") return [];
+  if (check.title === "Preview JSON") return previewEditError?.path ? [previewEditError.path] : [];
+  if (check.title === "Pack format" || check.title === "VR version") return ["pack.mcmeta"];
+  if (check.title === "File slug") return primaryGeneratedPaths();
+  if (check.title.startsWith("Dialogue") || check.title === "Pacify outcome") {
+    return pathsFromGeneratedFiles(generatedDialogueFiles(), dialoguePath());
+  }
+  if (check.title.startsWith("Forced")) {
+    return pathsFromGeneratedFiles(generatedForcedDialogueFiles(), forcedDialoguePath());
+  }
+  if (check.title.startsWith("Notification")) return [notificationsPath()];
+  if (check.title.startsWith("Gift")) return [giftsPath()];
+  if (check.title.startsWith("Pacification")) return [pacificationPath()];
+  if (check.title === "Story namespace" || check.title === "Story file" || check.title === "Story radius") return storyPaths();
+  if (check.title.startsWith("Story structure")) return [structurePath()];
+  if (check.title.startsWith("Story biome")) return [biomePath()];
+  return [];
+}
+
+function errorPathsForChecks(checks) {
+  return new Set(checks.flatMap(pathsForCheck));
+}
+
+function strongestSeverity(current, next) {
+  if (current === "error" || next === "error") return "error";
+  if (current === "warning" || next === "warning") return "warning";
+  return "";
+}
+
+function issueSeverityClass(severity) {
+  if (severity === "error") return "has-error";
+  if (severity === "warning") return "has-warning";
+  return "";
+}
+
+function issueSeverityFromEntries(entries, tests) {
+  let severity = "";
+  for (const entry of entries) {
+    for (const test of tests) {
+      if (test.predicate(entry)) severity = strongestSeverity(severity, test.severity);
+    }
+  }
+  return severity;
+}
+
+function entryIssueSeverity(section, kind, entry) {
+  if (!entry) return "";
+  if (section === "dialogue") {
+    const tests = [
+      { severity: "error", predicate: (item) => kind === "options" && (!item.id || !item.label || !item.type) },
+      { severity: "error", predicate: (item) => kind === "lines" && (!item.type || !item.text) },
+      { severity: "error", predicate: (item) => kind === "messages" && (!item.key || !item.text) },
+      { severity: "error", predicate: (item) => ["openings", "closings", "pacify"].includes(kind) && !item.text },
+      { severity: "warning", predicate: (item) => ["options", "lines"].includes(kind) && item.type && !CONSTANTS.dialogueTypes.includes(item.type) },
+      { severity: "warning", predicate: (item) => entryValues(item, ["dispositions"]).some((value) => !CONSTANTS.dispositions.includes(value)) },
+      { severity: "warning", predicate: (item) => entryValues(item, ["professions"]).some((value) => !isValidProfession(value)) },
+      { severity: "error", predicate: (item) => ["options", "lines"].includes(kind) && entryValues(item, ["player_items"]).some((value) => !isValidResourceLocation(value, { allowTag: true })) },
+      { severity: "warning", predicate: (item) => ["options", "lines"].includes(kind) && entryValues(item, ["player_item_slots"]).some((value) => !CONSTANTS.itemSlots.includes(value)) },
+      { severity: "warning", predicate: (item) => ["options", "lines"].includes(kind) && entryValues(item, ["reputation_level", "reputation_levels"]).some((value) => !CONSTANTS.reputationLevels.includes(value)) },
+      { severity: "warning", predicate: (item) => kind === "lines" && entryValues(item, ["weather"]).some((value) => !CONSTANTS.weather.includes(value)) },
+      { severity: "warning", predicate: (item) => kind === "lines" && entryValues(item, ["times"]).some((value) => !CONSTANTS.times.includes(value)) },
+      { severity: "warning", predicate: (item) => kind === "lines" && entryValues(item, ["gift_advice"]).some((value) => !CONSTANTS.giftAdvice.includes(value)) },
+      { severity: "warning", predicate: (item) => kind === "pacify" && entryValues(item, ["outcomes"]).some((value) => !CONSTANTS.pacifyOutcomes.includes(value)) },
+      { severity: "error", predicate: (item) => firstBadNumber([item], ["order", "weight", "min_recruitment_follow_distance"], (value) => value >= 0) !== "" },
+      { severity: "error", predicate: (item) => firstBadNumber([item], ["min_reputation", "max_reputation"], Number.isFinite) !== "" },
+      { severity: "error", predicate: (item) => {
+        const min = numberValue(item.min_reputation);
+        const max = numberValue(item.max_reputation);
+        return min !== undefined && max !== undefined && min > max;
+      } },
+      { severity: "warning", predicate: (item) => firstBlankListValue([item], ["professions", "dispositions", "reputation_level", "reputation_levels", "player_items", "player_item_slots", "weather", "times", "event_tags", "player_event_tags", "retaliation_target_entity_types", "story_structures", "story_biomes", "outcomes"]) !== "" },
+      { severity: "error", predicate: (item) => entryValues(item, ["retaliation_target_entity_types", "retaliation_target_entities"]).some((value) => !isValidResourceLocation(value)) }
+    ];
+    return issueSeverityFromEntries([entry], tests);
+  }
+  if (section === "forcedDialogue") {
+    const options = Array.isArray(entry.options) ? entry.options : [];
+    const actionableOptions = [...options, ...forcedLeaveOptions(entry)];
+    const payments = actionableOptions.map((option) => option.take_items || option.payment).filter((payment) => payment && typeof payment === "object" && !Array.isArray(payment));
+    const stolenReturns = actionableOptions.map((option) => option.take_stolen_items || option.return_stolen_items).filter((stolenReturn) => stolenReturn && typeof stolenReturn === "object" && !Array.isArray(stolenReturn));
+    const tests = [
+      { severity: "error", predicate: (item) => !item.trigger || !hasForcedDialogueLine(item) },
+      { severity: "warning", predicate: (item) => item.trigger && !CONSTANTS.forcedDialogueTriggers.includes(item.trigger) },
+      { severity: "warning", predicate: (item) => entryValues(item, ["witness_profession", "witness_professions", "professions"]).some((value) => !isValidProfession(value)) },
+      { severity: "error", predicate: (item) => entryValues(item, ["loot_table", "loot_tables"]).some((value) => !isValidResourceLocation(value)) },
+      { severity: "error", predicate: (item) => entryValues(item, ["target_entity_type", "target_entity_types", "target_entities"]).some((value) => !isValidResourceLocation(value)) },
+      { severity: "error", predicate: (item) => firstBadNumber([item], ["priority", "reputation", "witness_radius", "min_recent_retaliations", "max_recent_retaliations"], (value, itemEntry, key) => {
+        if (key === "reputation") return Number.isFinite(value);
+        if (key === "witness_radius") return value >= 1;
+        return Number.isFinite(value) && value >= 0;
+      }) !== "" },
+      { severity: "warning", predicate: (item) => firstBlankListValue([item], ["lines", "loot_tables", "witness_profession", "witness_professions", "professions", "target_entity_types", "target_entities"]) !== "" },
+      { severity: "error", predicate: (item) => Number.isFinite(item.min_recent_retaliations) && Number.isFinite(item.max_recent_retaliations) && item.min_recent_retaliations > item.max_recent_retaliations },
+      { severity: "error", predicate: () => options.some((option) => !option.id || !option.label) },
+      { severity: "warning", predicate: () => Boolean(firstDuplicate(options.map((option) => option.id))) },
+      { severity: "error", predicate: () => firstBadNumber(actionableOptions, ["order", "reputation", "aggro_chance"], (value, option, key) => key === "aggro_chance" ? value >= 0 && value <= 1 : Number.isFinite(value)) !== "" },
+      { severity: "warning", predicate: () => firstInvalidValue(actionableOptions, ["reputation_level", "reputation_levels"], (value) => CONSTANTS.reputationLevels.includes(value)) !== "" },
+      { severity: "error", predicate: () => firstBadNumber(actionableOptions, ["min_reputation", "max_reputation"], Number.isFinite) !== "" },
+      { severity: "error", predicate: () => actionableOptions.some((option) => {
+        const min = numberValue(option.min_reputation);
+        const max = numberValue(option.max_reputation);
+        return min !== undefined && max !== undefined && min > max;
+      }) },
+      { severity: "error", predicate: () => payments.some((payment) => !hasAnySelector(payment, ["items", "item", "tags", "tag"]) || (payment.count === undefined && payment.amount === undefined)) },
+      { severity: "error", predicate: () => firstInvalidValue(payments, ["items", "item", "tags", "tag"], (value) => isValidResourceLocation(value, { allowTag: true })) !== "" },
+      { severity: "warning", predicate: () => firstInvalidValue(payments, ["destination", "overflow_destination"], (value) => CONSTANTS.forcedItemDestinations.includes(value)) !== "" },
+      { severity: "error", predicate: () => firstBadNumber(payments, ["count", "amount", "success_reputation", "failure_reputation"], (value, payment, key) => key === "count" || key === "amount" ? value >= 1 : Number.isFinite(value)) !== "" },
+      { severity: "warning", predicate: () => firstInvalidValue(stolenReturns, ["destination", "overflow_destination"], (value) => CONSTANTS.forcedItemDestinations.includes(value)) !== "" },
+      { severity: "error", predicate: () => firstBadNumber(stolenReturns, ["success_reputation", "failure_reputation"], Number.isFinite) !== "" }
+    ];
+    return issueSeverityFromEntries([entry], tests);
+  }
+  if (section === "notifications") {
+    const tests = [
+      { severity: "error", predicate: (item) => !item.trigger || !item.text },
+      { severity: "warning", predicate: (item) => item.kind && !CONSTANTS.hudKinds.includes(item.kind) },
+      { severity: "warning", predicate: (item) => entryValues(item, ["world_text_kind", "style"]).some((value) => !CONSTANTS.worldTextKinds.includes(value)) },
+      { severity: "warning", predicate: (item) => entryValues(item, ["color", "text_color", "chat_color"]).some((value) => !isValidColor(value)) },
+      { severity: "warning", predicate: (item) => entryValues(item, ["professions"]).some((value) => !isValidProfession(value)) },
+      { severity: "warning", predicate: (item) => entryValues(item, ["reputation_levels"]).some((value) => !CONSTANTS.reputationLevels.includes(value)) },
+      { severity: "error", predicate: (item) => entryValues(item, ["target_entity_types", "target_entities"]).some((value) => !isValidResourceLocation(value)) },
+      { severity: "error", predicate: (item) => entryValues(item, ["player_items"]).some((value) => !isValidResourceLocation(value, { allowTag: true })) },
+      { severity: "warning", predicate: (item) => entryValues(item, ["player_item_slots"]).some((value) => !CONSTANTS.itemSlots.includes(value)) },
+      { severity: "error", predicate: (item) => firstBadNumber([item], ["min_reputation", "max_reputation", "weight"], (value, notification, key) => key === "weight" ? value >= 0 : Number.isFinite(value)) !== "" },
+      { severity: "error", predicate: (item) => {
+        const min = numberValue(item.min_reputation);
+        const max = numberValue(item.max_reputation);
+        const chance = numberValue(item.chance);
+        return (min !== undefined && max !== undefined && min > max) || (chance !== undefined && (chance < 0 || chance > 1));
+      } }
+    ];
+    return issueSeverityFromEntries([entry], tests);
+  }
+  if (section === "gifts") {
+    const tests = [
+      { severity: "error", predicate: (item) => kind === "preferences" && (!item.reaction || !hasAnySelector(item, ["items", "tags", "item", "tag"])) },
+      { severity: "error", predicate: (item) => kind === "rewards" && !item.item },
+      { severity: "error", predicate: (item) => kind === "preferences" && item.reaction && !CONSTANTS.reactions.includes(item.reaction) },
+      { severity: "error", predicate: (item) => kind === "preferences" && entryValues(item, ["items", "item", "tags", "tag"]).some((value) => !isValidResourceLocation(value, { allowTag: true })) },
+      { severity: "error", predicate: (item) => kind === "rewards" && item.item && !isValidResourceLocation(item.item) },
+      { severity: "warning", predicate: (item) => entryValues(item, ["professions"]).some((value) => !isValidProfession(value)) },
+      { severity: "warning", predicate: (item) => kind === "rewards" && entryValues(item, ["reputation_levels"]).some((value) => !CONSTANTS.reputationLevels.includes(value)) },
+      { severity: "error", predicate: (item) => firstBadNumber([item], ["priority", "reputation_per_item", "min_count", "max_count", "weight"], (value, gift, key) => {
+        if (key === "min_count" || key === "max_count") return value >= 1 && value <= 64;
+        if (key === "weight") return value > 0;
+        return Number.isFinite(value);
+      }) !== "" },
+      { severity: "error", predicate: (item) => {
+        const min = numberValue(item.min_count);
+        const max = numberValue(item.max_count);
+        return min !== undefined && max !== undefined && min > max;
+      } }
+    ];
+    return issueSeverityFromEntries([entry], tests);
+  }
+  if (section === "pacification") {
+    const tests = [
+      { severity: "error", predicate: (item) => !hasAnySelector(item, ["items", "tags", "item", "tag"]) },
+      { severity: "error", predicate: (item) => entryValues(item, ["items", "item", "tags", "tag"]).some((value) => !isValidResourceLocation(value, { allowTag: true })) },
+      { severity: "warning", predicate: (item) => entryValues(item, ["professions"]).some((value) => !isValidProfession(value)) },
+      { severity: "error", predicate: (item) => firstBadNumber([item], ["count", "min_count", "max_count"], (value) => value >= 1 && value <= 64) !== "" },
+      { severity: "error", predicate: (item) => {
+        const min = numberValue(item.min_count);
+        const max = numberValue(item.max_count);
+        return min !== undefined && max !== undefined && min > max;
+      } }
+    ];
+    return issueSeverityFromEntries([entry], tests);
+  }
+  if (section === "stories") {
+    const tests = [
+      { severity: "error", predicate: (item) => kind === "structures" && !hasAnySelector(item, ["structure", "structures"]) },
+      { severity: "error", predicate: (item) => kind === "biomes" && !hasAnySelector(item, ["biome", "biomes"]) },
+      { severity: "warning", predicate: (item) => kind === "structures" && entryValues(item, ["structure", "structures"]).some((value) => !isValidResourceLocation(value, { requireNamespace: true })) },
+      { severity: "warning", predicate: (item) => kind === "biomes" && entryValues(item, ["biome", "biomes"]).some((value) => !isValidResourceLocation(value, { requireNamespace: true })) },
+      { severity: "error", predicate: (item) => kind === "structures" && firstBadNumber([item], ["radius"], (value) => value >= 1) !== "" }
+    ];
+    return issueSeverityFromEntries([entry], tests);
+  }
+  if (section === "names") {
+    return String(entry).trim() === "" ? "warning" : "";
+  }
+  return "";
+}
+
+function entryIssueMessage(section, kind, entry) {
+  const detail = entryIssueDetail(section, kind, entry);
+  return detail ? detail.message : "";
+}
+
+function valueLabel(value) {
+  if (Array.isArray(value)) {
+    const values = value.map((item) => String(item)).filter((item) => item !== "");
+    return values.length ? values.join(", ") : "blank";
+  }
+  if (value === undefined || value === null || value === "") return "blank";
+  if (typeof value === "object") return JSON.stringify(value);
+  return String(value);
+}
+
+function issueDetail(field, expected, received, fieldIds, severity = "error") {
+  return {
+    field,
+    expected,
+    received: valueLabel(received),
+    fieldIds: Array.isArray(fieldIds) ? fieldIds : [fieldIds].filter(Boolean),
+    message: `${field}: expected ${expected}; received ${valueLabel(received)}.`,
+    severity
+  };
+}
+
+function firstInvalidListValue(entry, keys, predicate) {
+  for (const key of keys) {
+    for (const value of entryValues(entry, [key])) {
+      if (!predicate(value)) return { key, value };
+    }
+  }
+  return null;
+}
+
+function firstBadNumberDetail(entries, specs) {
+  for (const entry of entries) {
+    for (const spec of specs) {
+      const value = entry[spec.key];
+      if (value === undefined || value === null || value === "") continue;
+      const number = numberValue(value);
+      if (number === undefined || !spec.valid(number, entry)) {
+        return { ...spec, value };
+      }
+    }
+  }
+  return null;
+}
+
+function entryIssueDetail(section, kind, entry) {
+  if (!entry) return null;
+  if (section === "dialogue") {
+    if (kind === "options") {
+      if (!entry.id) return issueDetail("Option id", "a non-empty stable id", entry.id, "dialogue-id");
+      if (!entry.label) return issueDetail("Button label", "non-empty button text", entry.label, "dialogue-label");
+      if (!entry.type) return issueDetail("Dialogue type", `one of ${CONSTANTS.dialogueTypes.join(", ")}`, entry.type, "dialogue-type");
+    }
+    if (kind === "lines") {
+      if (!entry.type) return issueDetail("Dialogue type", `one of ${CONSTANTS.dialogueTypes.join(", ")}`, entry.type, "dialogue-type");
+      if (!entry.text) return issueDetail("Line text", "non-empty villager text", entry.text, "dialogue-text");
+    }
+    if (kind === "messages") {
+      if (!entry.key) return issueDetail("Message key", "a non-empty lookup key", entry.key, "dialogue-key");
+      if (!entry.text) return issueDetail("Message text", "non-empty message text", entry.text, "dialogue-text");
+    }
+    if (["openings", "closings", "pacify"].includes(kind) && !entry.text) {
+      return issueDetail("Text", "non-empty dialogue text", entry.text, "dialogue-text");
+    }
+    if (["options", "lines"].includes(kind) && entry.type && !CONSTANTS.dialogueTypes.includes(entry.type)) {
+      return issueDetail("Dialogue type", `one of ${CONSTANTS.dialogueTypes.join(", ")}`, entry.type, "dialogue-type", "warning");
+    }
+    const dialogueListChecks = [
+      { keys: ["dispositions"], label: "Dispositions", expected: CONSTANTS.dispositions.join(", "), fieldId: "dialogue-dispositions", valid: (value) => CONSTANTS.dispositions.includes(value), severity: "warning" },
+      { keys: ["professions"], label: "Professions", expected: "a valid profession id such as farmer or minecraft:farmer", fieldId: "dialogue-professions", valid: isValidProfession, severity: "warning" },
+      { keys: ["player_items"], label: "Required player items or tags", expected: "a valid item id or #tag id", fieldId: "dialogue-player_items", valid: (value) => isValidResourceLocation(value, { allowTag: true }) },
+      { keys: ["player_item_slots"], label: "Item slots", expected: CONSTANTS.itemSlots.join(", "), fieldId: "dialogue-player_item_slots", valid: (value) => CONSTANTS.itemSlots.includes(value), severity: "warning" },
+      { keys: ["reputation_level", "reputation_levels"], label: "Reputation levels", expected: CONSTANTS.reputationLevels.join(", "), fieldId: "dialogue-reputation_levels", valid: (value) => CONSTANTS.reputationLevels.includes(value), severity: "warning" },
+      { keys: ["weather"], label: "Weather", expected: CONSTANTS.weather.join(", "), fieldId: "dialogue-weather", valid: (value) => CONSTANTS.weather.includes(value), severity: "warning" },
+      { keys: ["times"], label: "Times", expected: CONSTANTS.times.join(", "), fieldId: "dialogue-times", valid: (value) => CONSTANTS.times.includes(value), severity: "warning" },
+      { keys: ["gift_advice"], label: "Gift advice filter", expected: CONSTANTS.giftAdvice.join(", "), fieldId: "dialogue-gift_advice", valid: (value) => CONSTANTS.giftAdvice.includes(value), severity: "warning" },
+      { keys: ["outcomes"], label: "Outcomes", expected: CONSTANTS.pacifyOutcomes.join(", "), fieldId: "dialogue-outcomes", valid: (value) => CONSTANTS.pacifyOutcomes.includes(value), severity: "warning" },
+      { keys: ["retaliation_target_entity_types", "retaliation_target_entities"], label: "Retaliation target entity types", expected: "a valid entity id such as minecraft:player", fieldId: "dialogue-retaliation_target_entity_types", valid: isValidResourceLocation }
+    ];
+    for (const check of dialogueListChecks) {
+      const bad = firstInvalidListValue(entry, check.keys, check.valid);
+      if (bad) return issueDetail(check.label, check.expected, bad.value, check.fieldId, check.severity || "error");
+    }
+    const badNumber = firstBadNumberDetail([entry], [
+      { key: "order", label: "Order", expected: "a number greater than or equal to 0", fieldId: "dialogue-order", valid: (value) => value >= 0 },
+      { key: "weight", label: "Weight", expected: "a number greater than or equal to 0", fieldId: "dialogue-weight", valid: (value) => value >= 0 },
+      { key: "min_recruitment_follow_distance", label: "Minimum follow distance", expected: "a number greater than or equal to 0", fieldId: "dialogue-min_recruitment_follow_distance", valid: (value) => value >= 0 },
+      { key: "min_reputation", label: "Minimum reputation", expected: "a valid number", fieldId: "dialogue-min_reputation", valid: Number.isFinite },
+      { key: "max_reputation", label: "Maximum reputation", expected: "a valid number", fieldId: "dialogue-max_reputation", valid: Number.isFinite }
+    ]);
+    if (badNumber) return issueDetail(badNumber.label, badNumber.expected, badNumber.value, badNumber.fieldId);
+    const min = numberValue(entry.min_reputation);
+    const max = numberValue(entry.max_reputation);
+    if (min !== undefined && max !== undefined && min > max) {
+      return issueDetail("Reputation range", "minimum reputation less than or equal to maximum reputation", `${min} > ${max}`, ["dialogue-min_reputation", "dialogue-max_reputation"]);
+    }
+  }
+  if (section === "forcedDialogue") {
+    if (!entry.trigger) return issueDetail("Trigger", `one of ${CONSTANTS.forcedDialogueTriggers.join(", ")}`, entry.trigger, "forced-trigger");
+    if (!hasForcedDialogueLine(entry)) return issueDetail("Opening line(s)", "at least one non-empty line", forcedDialogueLineValue(entry), "forced-line");
+    if (!CONSTANTS.forcedDialogueTriggers.includes(entry.trigger)) return issueDetail("Trigger", `one of ${CONSTANTS.forcedDialogueTriggers.join(", ")}`, entry.trigger, "forced-trigger", "warning");
+    const forcedListChecks = [
+      { keys: ["witness_profession", "witness_professions", "professions"], label: "Witness professions", expected: "a valid profession id such as armorer or minecraft:weaponsmith", fieldId: "forced-witness_professions", valid: isValidProfession, severity: "warning" },
+      { keys: ["loot_table", "loot_tables"], label: "Loot tables", expected: "a valid loot table id such as minecraft:chests/village/village_armorer", fieldId: "forced-loot_tables", valid: isValidResourceLocation },
+      { keys: ["target_entity_type", "target_entity_types", "target_entities"], label: "Target entity types", expected: "a valid entity id such as minecraft:player", fieldId: "forced-target_entity_types", valid: isValidResourceLocation }
+    ];
+    for (const check of forcedListChecks) {
+      const bad = firstInvalidListValue(entry, check.keys, check.valid);
+      if (bad) return issueDetail(check.label, check.expected, bad.value, check.fieldId, check.severity || "error");
+    }
+    const badNumber = firstBadNumberDetail([entry], [
+      { key: "priority", label: "Priority", expected: "a number greater than or equal to 0", fieldId: "forced-priority", valid: (value) => Number.isFinite(value) && value >= 0 },
+      { key: "reputation", label: "Reputation change", expected: "a valid number, positive or negative", fieldId: "forced-reputation", valid: Number.isFinite },
+      { key: "witness_radius", label: "Witness radius", expected: "a number greater than or equal to 1", fieldId: "forced-witness_radius", valid: (value) => value >= 1 },
+      { key: "min_recent_retaliations", label: "Min prior retaliations", expected: "a number greater than or equal to 0", fieldId: "forced-min_recent_retaliations", valid: (value) => Number.isFinite(value) && value >= 0 },
+      { key: "max_recent_retaliations", label: "Max prior retaliations", expected: "a number greater than or equal to 0", fieldId: "forced-max_recent_retaliations", valid: (value) => Number.isFinite(value) && value >= 0 }
+    ]);
+    if (badNumber) return issueDetail(badNumber.label, badNumber.expected, badNumber.value, badNumber.fieldId);
+    if (Number.isFinite(entry.min_recent_retaliations) && Number.isFinite(entry.max_recent_retaliations) && entry.min_recent_retaliations > entry.max_recent_retaliations) {
+      return issueDetail("Prior retaliation range", "minimum less than or equal to maximum", `${entry.min_recent_retaliations} > ${entry.max_recent_retaliations}`, ["forced-min_recent_retaliations", "forced-max_recent_retaliations"]);
+    }
+    const options = Array.isArray(entry.options) ? entry.options : [];
+    const actionableOptions = [...options, ...forcedLeaveOptions(entry)];
+    if (options.some((option) => !option.id || !option.label)) return issueDetail("Options JSON", "every option has id and label", "an option is missing one", "forced-options_json");
+    const duplicateOption = firstDuplicate(options.map((option) => option.id));
+    if (duplicateOption) return issueDetail("Options JSON", "unique option ids", duplicateOption, "forced-options_json", "warning");
+    const badOptionNumber = firstBadNumberDetail(actionableOptions, [
+      { key: "order", label: "Options JSON order", expected: "a valid number", fieldId: "forced-options_json", valid: Number.isFinite },
+      { key: "reputation", label: "Options JSON reputation", expected: "a valid number", fieldId: "forced-options_json", valid: Number.isFinite },
+      { key: "aggro_chance", label: "Options JSON aggro_chance", expected: "a number from 0 to 1", fieldId: "forced-options_json", valid: (value) => value >= 0 && value <= 1 }
+    ]);
+    if (badOptionNumber) return issueDetail(badOptionNumber.label, badOptionNumber.expected, badOptionNumber.value, badOptionNumber.fieldId);
+    const payments = actionableOptions.map((option) => option.take_items || option.payment).filter((payment) => payment && typeof payment === "object" && !Array.isArray(payment));
+    const badPaymentNumber = firstBadNumberDetail(payments, [
+      { key: "count", label: "Options JSON payment count", expected: "a number greater than or equal to 1", fieldId: "forced-options_json", valid: (value) => value >= 1 },
+      { key: "amount", label: "Options JSON payment amount", expected: "a number greater than or equal to 1", fieldId: "forced-options_json", valid: (value) => value >= 1 },
+      { key: "success_reputation", label: "Options JSON payment success_reputation", expected: "a valid number", fieldId: "forced-options_json", valid: Number.isFinite },
+      { key: "failure_reputation", label: "Options JSON payment failure_reputation", expected: "a valid number", fieldId: "forced-options_json", valid: Number.isFinite }
+    ]);
+    if (badPaymentNumber) return issueDetail(badPaymentNumber.label, badPaymentNumber.expected, badPaymentNumber.value, badPaymentNumber.fieldId);
+  }
+  if (section === "notifications") {
+    if (!entry.trigger) return issueDetail("Trigger", "a non-empty notification trigger", entry.trigger, "notification-trigger");
+    if (!entry.text) return issueDetail("Text", "non-empty notification text", entry.text, "notification-text");
+    const checks = [
+      { keys: ["kind"], label: "HUD kind", expected: CONSTANTS.hudKinds.join(", "), fieldId: "notification-kind", valid: (value) => CONSTANTS.hudKinds.includes(value), severity: "warning" },
+      { keys: ["world_text_kind", "style"], label: "World text kind", expected: CONSTANTS.worldTextKinds.join(", "), fieldId: "notification-world_text_kind", valid: (value) => CONSTANTS.worldTextKinds.includes(value), severity: "warning" },
+      { keys: ["color"], label: "Color", expected: "a Minecraft color name, #RRGGBB, or #AARRGGBB", fieldId: "notification-color", valid: isValidColor, severity: "warning" },
+      { keys: ["text_color"], label: "Text color", expected: "a Minecraft color name, #RRGGBB, or #AARRGGBB", fieldId: "notification-text_color", valid: isValidColor, severity: "warning" },
+      { keys: ["chat_color"], label: "Chat color", expected: "a Minecraft color name, #RRGGBB, or #AARRGGBB", fieldId: "notification-chat_color", valid: isValidColor, severity: "warning" },
+      { keys: ["professions"], label: "Professions", expected: "a valid profession id such as farmer or minecraft:farmer", fieldId: "notification-professions", valid: isValidProfession, severity: "warning" },
+      { keys: ["reputation_levels"], label: "Reputation levels", expected: CONSTANTS.reputationLevels.join(", "), fieldId: "notification-reputation_levels", valid: (value) => CONSTANTS.reputationLevels.includes(value), severity: "warning" },
+      { keys: ["target_entity_types", "target_entities"], label: "Target entity types", expected: "a valid entity id such as minecraft:player", fieldId: "notification-target_entity_types", valid: isValidResourceLocation },
+      { keys: ["player_items"], label: "Required player items or tags", expected: "a valid item id or #tag id", fieldId: "notification-player_items", valid: (value) => isValidResourceLocation(value, { allowTag: true }) },
+      { keys: ["player_item_slots"], label: "Item slots", expected: CONSTANTS.itemSlots.join(", "), fieldId: "notification-player_item_slots", valid: (value) => CONSTANTS.itemSlots.includes(value), severity: "warning" }
+    ];
+    for (const check of checks) {
+      const bad = firstInvalidListValue(entry, check.keys, check.valid);
+      if (bad) return issueDetail(check.label, check.expected, bad.value, check.fieldId, check.severity || "error");
+    }
+    const badNumber = firstBadNumberDetail([entry], [
+      { key: "min_reputation", label: "Minimum reputation", expected: "a valid number", fieldId: "notification-min_reputation", valid: Number.isFinite },
+      { key: "max_reputation", label: "Maximum reputation", expected: "a valid number", fieldId: "notification-max_reputation", valid: Number.isFinite },
+      { key: "weight", label: "Weight", expected: "a number greater than or equal to 0", fieldId: "notification-weight", valid: (value) => value >= 0 },
+      { key: "chance", label: "Chance", expected: "a number from 0 to 1", fieldId: "notification-chance", valid: (value) => value >= 0 && value <= 1 }
+    ]);
+    if (badNumber) return issueDetail(badNumber.label, badNumber.expected, badNumber.value, badNumber.fieldId);
+    const min = numberValue(entry.min_reputation);
+    const max = numberValue(entry.max_reputation);
+    if (min !== undefined && max !== undefined && min > max) {
+      return issueDetail("Reputation range", "minimum reputation less than or equal to maximum reputation", `${min} > ${max}`, ["notification-min_reputation", "notification-max_reputation"]);
+    }
+  }
+  if (section === "gifts") {
+    if (kind === "preferences") {
+      if (!entry.reaction) return issueDetail("Reaction", CONSTANTS.reactions.join(", "), entry.reaction, "gift-reaction");
+      if (!CONSTANTS.reactions.includes(entry.reaction)) return issueDetail("Reaction", CONSTANTS.reactions.join(", "), entry.reaction, "gift-reaction");
+      if (!hasAnySelector(entry, ["items", "tags", "item", "tag"])) return issueDetail("Items or tags", "at least one valid item or tag selector", "blank", ["gift-items", "gift-tags"]);
+      const badGiftItem = firstInvalidListValue(entry, ["items", "item"], (value) => isValidResourceLocation(value, { allowTag: true }));
+      if (badGiftItem) return issueDetail("Items", "a valid item id or #tag id", badGiftItem.value, "gift-items");
+      const badGiftTag = firstInvalidListValue(entry, ["tags", "tag"], (value) => isValidResourceLocation(value, { allowTag: true }));
+      if (badGiftTag) return issueDetail("Tags", "a valid tag id such as minecraft:villager_plantable_seeds", badGiftTag.value, "gift-tags");
+    }
+    if (kind === "rewards") {
+      if (!entry.item) return issueDetail("Reward item", "a valid item id", entry.item, "gift-item");
+      if (!isValidResourceLocation(entry.item)) return issueDetail("Reward item", "a valid item id such as minecraft:emerald", entry.item, "gift-item");
+      const badRewardReputation = firstInvalidListValue(entry, ["reputation_levels"], (value) => CONSTANTS.reputationLevels.includes(value));
+      if (badRewardReputation) return issueDetail("Reputation levels", CONSTANTS.reputationLevels.join(", "), badRewardReputation.value, "gift-reputation_levels", "warning");
+    }
+    const badGiftProfession = firstInvalidListValue(entry, ["professions"], isValidProfession);
+    if (badGiftProfession) return issueDetail("Professions", "a valid profession id such as farmer or minecraft:farmer", badGiftProfession.value, "gift-professions", "warning");
+    const badNumber = firstBadNumberDetail([entry], [
+      { key: "priority", label: "Priority", expected: "a valid number", fieldId: "gift-priority", valid: Number.isFinite },
+      { key: "reputation_per_item", label: "Reputation per item", expected: "a valid number", fieldId: "gift-reputation_per_item", valid: Number.isFinite },
+      { key: "min_count", label: "Minimum count", expected: "a number from 1 to 64", fieldId: "gift-min_count", valid: (value) => value >= 1 && value <= 64 },
+      { key: "max_count", label: "Maximum count", expected: "a number from 1 to 64", fieldId: "gift-max_count", valid: (value) => value >= 1 && value <= 64 },
+      { key: "weight", label: "Weight", expected: "a number greater than 0", fieldId: "gift-weight", valid: (value) => value > 0 }
+    ]);
+    if (badNumber) return issueDetail(badNumber.label, badNumber.expected, badNumber.value, badNumber.fieldId);
+    const min = numberValue(entry.min_count);
+    const max = numberValue(entry.max_count);
+    if (min !== undefined && max !== undefined && min > max) {
+      return issueDetail("Reward count range", "minimum count less than or equal to maximum count", `${min} > ${max}`, ["gift-min_count", "gift-max_count"]);
+    }
+  }
+  if (section === "pacification") {
+    if (!hasAnySelector(entry, ["items", "tags", "item", "tag"])) return issueDetail("Items or tags", "at least one valid item or tag selector", "blank", ["pacification-items", "pacification-tags"]);
+    const badPacificationItem = firstInvalidListValue(entry, ["items", "item"], (value) => isValidResourceLocation(value, { allowTag: true }));
+    if (badPacificationItem) return issueDetail("Items", "a valid item id or #tag id", badPacificationItem.value, "pacification-items");
+    const badPacificationTag = firstInvalidListValue(entry, ["tags", "tag"], (value) => isValidResourceLocation(value, { allowTag: true }));
+    if (badPacificationTag) return issueDetail("Tags", "a valid tag id such as c:coins", badPacificationTag.value, "pacification-tags");
+    const badPacificationProfession = firstInvalidListValue(entry, ["professions"], isValidProfession);
+    if (badPacificationProfession) return issueDetail("Professions", "a valid profession id such as farmer or minecraft:farmer", badPacificationProfession.value, "pacification-professions", "warning");
+    const badNumber = firstBadNumberDetail([entry], [
+      { key: "count", label: "Exact count", expected: "a number from 1 to 64", fieldId: "pacification-count", valid: (value) => value >= 1 && value <= 64 },
+      { key: "min_count", label: "Minimum count", expected: "a number from 1 to 64", fieldId: "pacification-min_count", valid: (value) => value >= 1 && value <= 64 },
+      { key: "max_count", label: "Maximum count", expected: "a number from 1 to 64", fieldId: "pacification-max_count", valid: (value) => value >= 1 && value <= 64 }
+    ]);
+    if (badNumber) return issueDetail(badNumber.label, badNumber.expected, badNumber.value, badNumber.fieldId);
+    const min = numberValue(entry.min_count);
+    const max = numberValue(entry.max_count);
+    if (min !== undefined && max !== undefined && min > max) {
+      return issueDetail("Payment count range", "minimum count less than or equal to maximum count", `${min} > ${max}`, ["pacification-min_count", "pacification-max_count"]);
+    }
+  }
+  if (section === "stories") {
+    if (kind === "structures" && !hasAnySelector(entry, ["structure", "structures"])) return issueDetail("Structure id(s)", "at least one full structure id like minecraft:village/plains", entry.structure ?? entry.structures, "story-structures");
+    if (kind === "biomes" && !hasAnySelector(entry, ["biome", "biomes"])) return issueDetail("Biome id(s)", "at least one full biome id like minecraft:plains", entry.biome ?? entry.biomes, "story-biomes");
+    const badStructure = kind === "structures" ? firstInvalidListValue(entry, ["structure", "structures"], (value) => isValidResourceLocation(value, { requireNamespace: true })) : null;
+    if (badStructure) return issueDetail("Structure id(s)", "full resource location namespace:path", badStructure.value, "story-structures", "warning");
+    const badBiome = kind === "biomes" ? firstInvalidListValue(entry, ["biome", "biomes"], (value) => isValidResourceLocation(value, { requireNamespace: true })) : null;
+    if (badBiome) return issueDetail("Biome id(s)", "full resource location namespace:path", badBiome.value, "story-biomes", "warning");
+    const badRadius = kind === "structures" ? firstBadNumberDetail([entry], [{ key: "radius", label: "Radius", expected: "a number greater than or equal to 1", fieldId: "story-radius", valid: (value) => value >= 1 }]) : null;
+    if (badRadius) return issueDetail(badRadius.label, badRadius.expected, badRadius.value, badRadius.fieldId);
+  }
+  if (section === "names" && String(entry).trim() === "") return issueDetail("Name", "a non-empty name", entry, []);
+  return null;
+}
+
+function entryCollectionIssueSeverity(section, kind) {
+  const collection = state[section]?.[kind] || [];
+  return collection.reduce((severity, entry) => strongestSeverity(severity, entryIssueSeverity(section, kind, entry)), "");
+}
+
+function sectionIssueSeverity(section) {
+  if (section === "overview") {
+    let severity = "";
+    const namespacePattern = /^[a-z0-9_.-]+$/;
+    const localePattern = /^[a-z]{2}_[a-z]{2}$/;
+    if (!namespacePattern.test(state.meta.namespace) || !Number.isInteger(state.meta.packFormat) || state.meta.packFormat < 1 || !PACK_VERSION_IDS.includes(state.meta.packVersion) || !isValidFileName(state.meta.slug)) {
+      severity = "error";
+    }
+    if (!localePattern.test(state.meta.locale)) severity = strongestSeverity(severity, "warning");
+    return severity;
+  }
+  if (section === "dialogue") {
+    return ["options", "lines", "messages", "openings", "closings", "pacify"].reduce((severity, kind) => strongestSeverity(severity, entryCollectionIssueSeverity(section, kind)), !isValidFileName(state.dialogue.fileName) ? "error" : "");
+  }
+  if (section === "forcedDialogue") {
+    return entryCollectionIssueSeverity(section, "entries") || (!isValidFileName(state.forcedDialogue.fileName) ? "error" : "");
+  }
+  if (section === "notifications") {
+    return entryCollectionIssueSeverity(section, "notifications") || (!isValidFileName(state.notifications.fileName) ? "error" : "");
+  }
+  if (section === "gifts") {
+    return ["preferences", "rewards"].reduce((severity, kind) => strongestSeverity(severity, entryCollectionIssueSeverity(section, kind)), !isValidFileName(state.gifts.fileName) ? "error" : "");
+  }
+  if (section === "pacification") {
+    return entryCollectionIssueSeverity(section, "payments") || (!isValidFileName(state.pacification.fileName) ? "error" : "");
+  }
+  if (section === "stories") {
+    let severity = ["structures", "biomes"].reduce((value, kind) => strongestSeverity(value, entryCollectionIssueSeverity(section, kind)), "");
+    const storyRadius = numberValue(state.stories.radius);
+    if (!/^[a-z0-9_.-]+$/.test(state.stories.namespace) || !isValidFileName(state.stories.structureFileName) || !isValidFileName(state.stories.biomeFileName) || (storyRadius !== undefined && storyRadius < 1)) {
+      severity = strongestSeverity(severity, "error");
+    }
+    return severity;
+  }
+  if (section === "names") {
+    const names = [...state.names.male_names, ...state.names.female_names];
+    return names.some((name) => String(name).trim() === "") || Boolean(firstDuplicate(names)) ? "warning" : "";
+  }
+  return "";
+}
+
 function addCheck(checks, type, title, text) {
   if (checks.some((check) => check.title === title && check.type === type)) return;
   checks.push({ type, title, text });
@@ -1557,7 +2053,11 @@ function validate() {
   if (badForcedTargetEntity) {
     addCheck(checks, "error", "Forced dialogue target", `Invalid target entity id: ${badForcedTargetEntity}.`);
   }
-  const badForcedNumber = firstBadNumber(state.forcedDialogue.entries, ["priority", "reputation", "witness_radius", "min_recent_retaliations", "max_recent_retaliations"], (value, entry, key) => key === "witness_radius" ? value >= 1 : Number.isFinite(value) && value >= 0);
+  const badForcedNumber = firstBadNumber(state.forcedDialogue.entries, ["priority", "reputation", "witness_radius", "min_recent_retaliations", "max_recent_retaliations"], (value, entry, key) => {
+    if (key === "reputation") return Number.isFinite(value);
+    if (key === "witness_radius") return value >= 1;
+    return Number.isFinite(value) && value >= 0;
+  });
   if (badForcedNumber) {
     addCheck(checks, "error", "Forced dialogue number", `${humanize(badForcedNumber)} has an invalid number.`);
   }
@@ -1848,6 +2348,7 @@ function render() {
   renderPanel();
   resizeTextareas(els.panel);
   syncValueTags(els.panel);
+  applyEntryIssueHighlights();
   renderFiles();
   renderChecks();
   renderPreview();
@@ -1916,8 +2417,11 @@ function renderTabs() {
   for (const tab of els.tabs.querySelectorAll(".tab")) {
     const active = tab.dataset.section === activeSection;
     const value = counts[tab.dataset.section] ?? "";
+    const severity = sectionIssueSeverity(tab.dataset.section);
     const counter = tab.querySelector(".tab-count");
     tab.classList.toggle("is-active", active);
+    tab.classList.toggle("has-error", severity === "error");
+    tab.classList.toggle("has-warning", severity === "warning");
     if (active) {
       tab.setAttribute("aria-current", "step");
     } else {
@@ -1933,11 +2437,12 @@ function renderTabs() {
 function renderFiles() {
   const files = generatedFiles();
   const paths = Object.keys(files).sort();
+  const errorPaths = errorPathsForChecks(validate());
   if (!paths.includes(selectedPath)) {
     selectedPath = paths[0] || "pack.mcmeta";
   }
   els.fileCount.textContent = String(paths.length);
-  const signature = JSON.stringify({ paths, selectedPath });
+  const signature = JSON.stringify({ paths, selectedPath, errorPaths: [...errorPaths].sort() });
   if (signature === fileTreeSignature) {
     return;
   }
@@ -1946,8 +2451,9 @@ function renderFiles() {
     .map((path) => {
       const label = path.split("/").pop();
       const folder = path.includes("/") ? path.slice(0, path.lastIndexOf("/")) : "root";
+      const hasError = errorPaths.has(path);
       return `
-        <button class="file-button ${path === selectedPath ? "is-active" : ""}" type="button" data-path="${escapeHtml(path)}" title="${escapeHtml(path)}">
+        <button class="file-button ${path === selectedPath ? "is-active" : ""} ${hasError ? "has-error" : ""}" type="button" data-path="${escapeHtml(path)}" title="${escapeHtml(path)}">
           ${icon(label.endsWith(".mcmeta") ? "file-cog" : "file-json", "inline-icon")}
           <span class="file-button-text">
             <span class="file-name">${escapeHtml(label)}</span>
@@ -1964,7 +2470,13 @@ function renderFiles() {
 
 function renderChecks() {
   const checks = validate();
-  els.checkCount.textContent = String(checks.filter((check) => check.type !== "ok").length);
+  const issueCount = checks.filter((check) => check.type !== "ok").length;
+  const hasError = checks.some((check) => check.type === "error");
+  const hasWarning = checks.some((check) => check.type === "warning");
+  els.checkCount.textContent = String(issueCount);
+  els.checkCount.classList.toggle("has-error", hasError);
+  els.checkCount.classList.toggle("has-warning", !hasError && hasWarning);
+  els.checkCount.classList.toggle("is-ok", !hasError && !hasWarning);
   els.checks.innerHTML = checks
     .map((check) => `
       <div class="check ${escapeHtml(check.type)}">
@@ -1979,9 +2491,11 @@ function renderChecks() {
 function renderPreview() {
   const files = generatedFiles();
   const value = files[selectedPath];
+  const hasError = errorPathsForChecks(validate()).has(selectedPath);
   els.selectedPath.textContent = selectedPath;
   els.codePreview.classList.toggle("is-wrapped", wrapPreviewLines);
-  els.codePreview.classList.toggle("is-invalid", previewEditError?.path === selectedPath);
+  els.codePreview.classList.toggle("is-invalid", hasError);
+  els.preview.closest(".preview")?.classList.toggle("has-error", hasError);
   els.wrapPreviewButton.classList.toggle("is-on", wrapPreviewLines);
   els.wrapPreviewButton.setAttribute("aria-pressed", String(wrapPreviewLines));
   els.wrapPreviewButton.setAttribute("title", wrapPreviewLines ? "Keep preview lines unwrapped" : "Wrap preview lines");
@@ -2019,6 +2533,36 @@ function syncValueTags(root = document) {
     button.classList.toggle("is-added", isAdded);
     button.disabled = isAdded;
     button.setAttribute("aria-disabled", String(isAdded));
+  }
+}
+
+function currentEditingEntry() {
+  if (!editing) return null;
+  const collection = state[editing.section]?.[editing.kind];
+  return Array.isArray(collection) ? collection[editing.index] : null;
+}
+
+function applyEntryIssueHighlights() {
+  els.panel.querySelectorAll(".field.has-error, .field.has-warning").forEach((fieldNode) => {
+    fieldNode.classList.remove("has-error", "has-warning");
+    fieldNode.querySelector(".field-issue")?.remove();
+  });
+  els.panel.querySelectorAll(".toggle.has-error, .toggle.has-warning").forEach((toggleNode) => {
+    toggleNode.classList.remove("has-error", "has-warning");
+  });
+  const entry = currentEditingEntry();
+  if (!entry || !editing) return;
+  const issue = entryIssueDetail(editing.section, editing.kind, entry);
+  if (!issue || issue.fieldIds.length === 0) return;
+  const className = issue.severity === "warning" ? "has-warning" : "has-error";
+  for (const fieldId of issue.fieldIds) {
+    const control = els.panel.querySelector(`#${CSS.escape(fieldId)}`);
+    const target = control?.closest(".field") || control?.closest(".toggle");
+    if (!target) continue;
+    target.classList.add(className);
+    if (target.classList.contains("field") && !target.querySelector(".field-issue")) {
+      target.insertAdjacentHTML("beforeend", `<small class="field-issue">${escapeHtml(issue.message)}</small>`);
+    }
   }
 }
 
@@ -2175,12 +2719,15 @@ function renderOverview() {
 function renderEntryTabs(kinds, activeKey, scope) {
   return `
     <div class="entry-tabs" data-scope="${scope}">
-      ${kinds.map((kind) => `
-        <button class="entry-tab has-tooltip ${kind.key === activeKey ? "is-active" : ""}" type="button" data-kind="${kind.key}" data-tooltip="${escapeHtml(KIND_TOOLTIPS[`${scope}.${kind.key}`] || "")}">
+      ${kinds.map((kind) => {
+        const severity = entryCollectionIssueSeverity(scope, kind.key);
+        return `
+        <button class="entry-tab has-tooltip ${kind.key === activeKey ? "is-active" : ""} ${issueSeverityClass(severity)}" type="button" data-kind="${kind.key}" data-tooltip="${escapeHtml(KIND_TOOLTIPS[`${scope}.${kind.key}`] || "")}">
           ${icon(kind.icon || "circle", "inline-icon")}
           ${escapeHtml(kind.label)}
         </button>
-      `).join("")}
+      `;
+      }).join("")}
     </div>
   `;
 }
@@ -2194,8 +2741,10 @@ function renderEntryList(collection, kind, section) {
       const title = entry.id || entry.key || entry.trigger || entry.label || entry.text || entry.item || entry.name || `${humanize(kind)} ${index + 1}`;
       const detail = entry.type || entry.reaction || entry.world_text_kind || entry.structure || entry.biome || entry.items?.join(", ") || "";
       const active = editing && editing.section === section && editing.kind === kind && editing.index === index;
+      const severity = entryIssueSeverity(section, kind, entry);
+      const issueMessage = entryIssueMessage(section, kind, entry);
       return `
-        <article class="entry-card ${active ? "is-active" : ""}" data-section="${section}" data-kind="${kind}" data-index="${index}" tabindex="0" role="button" aria-label="Edit ${escapeHtml(title)}">
+        <article class="entry-card ${active ? "is-active" : ""} ${issueSeverityClass(severity)}" data-section="${section}" data-kind="${kind}" data-index="${index}" tabindex="0" role="button" aria-label="Edit ${escapeHtml(title)}">
           <div class="entry-object-header">
             <span class="entry-object-title">
               ${icon("square-pen", "inline-icon")}
@@ -2205,6 +2754,7 @@ function renderEntryList(collection, kind, section) {
               ${icon("trash-2", "button-icon")}
             </button>
           </div>
+          ${issueMessage ? `<small class="entry-issue">${escapeHtml(issueMessage)}</small>` : ""}
           ${detail ? `<small>${escapeHtml(detail)}</small>` : ""}
         </article>
       `;
@@ -3408,15 +3958,20 @@ function applyPreviewEdit() {
   if (!applied) {
     previewEditError = { path: selectedPath };
     els.codePreview.classList.add("is-invalid");
+    els.preview.closest(".preview")?.classList.add("has-error");
+    renderFiles();
     renderChecks();
+    renderIcons();
     return;
   }
   previewEditError = null;
   els.codePreview.classList.remove("is-invalid");
+  els.preview.closest(".preview")?.classList.remove("has-error");
   renderTabs();
   renderPanel();
   resizeTextareas(els.panel);
   syncValueTags(els.panel);
+  applyEntryIssueHighlights();
   renderFiles();
   renderChecks();
   renderIcons();
