@@ -65,7 +65,7 @@
   ],
   "lines": [
     {
-      "id": "leatherworker_chat_stitching",
+      "id": "leatherworker_question_stitching",
       "request": "question",
       "text": "Bad stitching in the rain tells on itself quickly.",
       "weight": 30
@@ -89,7 +89,7 @@
       "weight": 26
     },
     {
-      "id": "leatherworker_new_chat_stitch",
+      "id": "leatherworker_new_question_stitch",
       "request": "question",
       "text": "A stitch done poorly waits for the worst time to confess.",
       "weight": 28
@@ -119,7 +119,7 @@
       "weight": 18
     },
     {
-      "id": "leatherworker_new_chat_rain",
+      "id": "leatherworker_new_question_rain",
       "request": "question",
       "text": "Rain tells the truth about gear faster than any seller will.",
       "weight": 28

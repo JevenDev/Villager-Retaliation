@@ -1,7 +1,7 @@
 {
   "options": [
     {
-      "id": "adult_chat",
+      "id": "adult_general_question",
       "label": "Small Talk",
       "type": "dialogue_option",
       "request": "question",
@@ -171,7 +171,7 @@
       "order": 0
     },
     {
-      "id": "baby_chat",
+      "id": "baby_today_question",
       "label": "Ask About Today",
       "type": "dialogue_option",
       "request": "question",
@@ -2146,9 +2146,9 @@
       "weight": 42
     },
     {
-      "id": "chat_follow_memory_biome",
+      "id": "question_follow_memory_biome",
       "request": "question",
-      "option": "adult_chat",
+      "option": "adult_general_question",
       "text": "Remember when you made me follow you across {follow_biome}? I still know that road by ache alone.",
       "requires_recruitment_memory": true,
       "excludes_recruitment_ocean_crossing": true,
@@ -2156,9 +2156,9 @@
       "weight": 4
     },
     {
-      "id": "chat_follow_memory_long_walk",
+      "id": "question_follow_memory_long_walk",
       "request": "question",
-      "option": "adult_chat",
+      "option": "adult_general_question",
       "text": "Remember when you made me follow you over {follow_distance} blocks? My legs complained for days.",
       "requires_recruitment_memory": true,
       "min_recruitment_follow_distance": 500,
@@ -2167,9 +2167,9 @@
       "weight": 5
     },
     {
-      "id": "chat_follow_memory_boat",
+      "id": "question_follow_memory_boat",
       "request": "question",
-      "option": "adult_chat",
+      "option": "adult_general_question",
       "text": "Remember when you took me along in a boat? I was not sure whether to thank you or ask where the oars had gone.",
       "requires_recruitment_memory": true,
       "requires_recruitment_boat_trip": true,
@@ -2177,9 +2177,9 @@
       "weight": 4
     },
     {
-      "id": "chat_follow_memory_ocean_swim",
+      "id": "question_follow_memory_ocean_swim",
       "request": "question",
-      "option": "adult_chat",
+      "option": "adult_general_question",
       "text": "Remember when you took me across ocean water without a boat? I remember every splash.",
       "requires_recruitment_memory": true,
       "requires_recruitment_swim_trip": true,
@@ -2187,9 +2187,9 @@
       "weight": 5
     },
     {
-      "id": "chat_follow_memory_boat_long",
+      "id": "question_follow_memory_boat_long",
       "request": "question",
-      "option": "adult_chat",
+      "option": "adult_general_question",
       "text": "That boat trip was part of a {follow_distance} block outing. Water did some of the work, but not enough.",
       "requires_recruitment_memory": true,
       "requires_recruitment_boat_trip": true,
@@ -2198,9 +2198,9 @@
       "weight": 4
     },
     {
-      "id": "chat_follow_memory_betrayed",
+      "id": "question_follow_memory_betrayed",
       "request": "question",
-      "option": "adult_chat",
+      "option": "adult_general_question",
       "text": "Remember when I followed you and you hit me? I do. Still hurts.",
       "requires_recruitment_memory": true,
       "recruitment_memory_scenarios": [
@@ -2210,9 +2210,9 @@
       "weight": 5
     },
     {
-      "id": "chat_follow_memory_injured",
+      "id": "question_follow_memory_injured",
       "request": "question",
-      "option": "adult_chat",
+      "option": "adult_general_question",
       "text": "I remember following you home hurt. I was grateful, but not exactly comfortable.",
       "requires_recruitment_memory": true,
       "recruitment_memory_scenarios": [
@@ -2222,9 +2222,9 @@
       "weight": 4
     },
     {
-      "id": "chat_follow_memory_armorer",
+      "id": "question_follow_memory_armorer",
       "request": "question",
-      "option": "adult_chat",
+      "option": "adult_general_question",
       "professions": [
         "armorer"
       ],
@@ -2234,9 +2234,9 @@
       "weight": 3
     },
     {
-      "id": "chat_follow_memory_armorer_boat",
+      "id": "question_follow_memory_armorer_boat",
       "request": "question",
-      "option": "adult_chat",
+      "option": "adult_general_question",
       "professions": [
         "armorer"
       ],
@@ -2247,9 +2247,9 @@
       "weight": 3
     },
     {
-      "id": "chat_follow_memory_butcher",
+      "id": "question_follow_memory_butcher",
       "request": "question",
-      "option": "adult_chat",
+      "option": "adult_general_question",
       "professions": [
         "butcher"
       ],
@@ -2260,9 +2260,9 @@
       "weight": 3
     },
     {
-      "id": "chat_follow_memory_cartographer_boat",
+      "id": "question_follow_memory_cartographer_boat",
       "request": "question",
-      "option": "adult_chat",
+      "option": "adult_general_question",
       "professions": [
         "cartographer"
       ],
@@ -2273,9 +2273,9 @@
       "weight": 3
     },
     {
-      "id": "chat_follow_memory_cartographer",
+      "id": "question_follow_memory_cartographer",
       "request": "question",
-      "option": "adult_chat",
+      "option": "adult_general_question",
       "professions": [
         "cartographer"
       ],
@@ -2285,9 +2285,9 @@
       "weight": 3
     },
     {
-      "id": "chat_follow_memory_cleric_betrayed",
+      "id": "question_follow_memory_cleric_betrayed",
       "request": "question",
-      "option": "adult_chat",
+      "option": "adult_general_question",
       "professions": [
         "cleric"
       ],
@@ -2300,9 +2300,9 @@
       "weight": 4
     },
     {
-      "id": "chat_follow_memory_fisherman_boat",
+      "id": "question_follow_memory_fisherman_boat",
       "request": "question",
-      "option": "adult_chat",
+      "option": "adult_general_question",
       "professions": [
         "fisherman"
       ],
@@ -2313,9 +2313,9 @@
       "weight": 4
     },
     {
-      "id": "chat_follow_memory_farmer",
+      "id": "question_follow_memory_farmer",
       "request": "question",
-      "option": "adult_chat",
+      "option": "adult_general_question",
       "professions": [
         "farmer"
       ],
@@ -2326,9 +2326,9 @@
       "weight": 3
     },
     {
-      "id": "chat_follow_memory_leatherworker_boat",
+      "id": "question_follow_memory_leatherworker_boat",
       "request": "question",
-      "option": "adult_chat",
+      "option": "adult_general_question",
       "professions": [
         "leatherworker"
       ],
@@ -2339,9 +2339,9 @@
       "weight": 3
     },
     {
-      "id": "chat_follow_memory_fisherman",
+      "id": "question_follow_memory_fisherman",
       "request": "question",
-      "option": "adult_chat",
+      "option": "adult_general_question",
       "professions": [
         "fisherman"
       ],
@@ -2352,9 +2352,9 @@
       "weight": 4
     },
     {
-      "id": "chat_follow_memory_fletcher",
+      "id": "question_follow_memory_fletcher",
       "request": "question",
-      "option": "adult_chat",
+      "option": "adult_general_question",
       "professions": [
         "fletcher"
       ],
@@ -2364,9 +2364,9 @@
       "weight": 3
     },
     {
-      "id": "chat_follow_memory_shepherd_boat",
+      "id": "question_follow_memory_shepherd_boat",
       "request": "question",
-      "option": "adult_chat",
+      "option": "adult_general_question",
       "professions": [
         "shepherd"
       ],
@@ -2377,9 +2377,9 @@
       "weight": 3
     },
     {
-      "id": "chat_follow_memory_leatherworker",
+      "id": "question_follow_memory_leatherworker",
       "request": "question",
-      "option": "adult_chat",
+      "option": "adult_general_question",
       "professions": [
         "leatherworker"
       ],
@@ -2390,9 +2390,9 @@
       "weight": 3
     },
     {
-      "id": "chat_follow_memory_librarian",
+      "id": "question_follow_memory_librarian",
       "request": "question",
-      "option": "adult_chat",
+      "option": "adult_general_question",
       "professions": [
         "librarian"
       ],
@@ -2402,9 +2402,9 @@
       "weight": 3
     },
     {
-      "id": "chat_follow_memory_mason",
+      "id": "question_follow_memory_mason",
       "request": "question",
-      "option": "adult_chat",
+      "option": "adult_general_question",
       "professions": [
         "mason"
       ],
@@ -2416,9 +2416,9 @@
       "weight": 4
     },
     {
-      "id": "chat_follow_memory_shepherd",
+      "id": "question_follow_memory_shepherd",
       "request": "question",
-      "option": "adult_chat",
+      "option": "adult_general_question",
       "professions": [
         "shepherd"
       ],
@@ -2429,9 +2429,9 @@
       "weight": 3
     },
     {
-      "id": "chat_follow_memory_toolsmith",
+      "id": "question_follow_memory_toolsmith",
       "request": "question",
-      "option": "adult_chat",
+      "option": "adult_general_question",
       "professions": [
         "toolsmith"
       ],
@@ -2441,9 +2441,9 @@
       "weight": 3
     },
     {
-      "id": "chat_follow_memory_weaponsmith_betrayed",
+      "id": "question_follow_memory_weaponsmith_betrayed",
       "request": "question",
-      "option": "adult_chat",
+      "option": "adult_general_question",
       "professions": [
         "weaponsmith"
       ],
@@ -2456,9 +2456,9 @@
       "weight": 4
     },
     {
-      "id": "chat_follow_memory_unemployed",
+      "id": "question_follow_memory_unemployed",
       "request": "question",
-      "option": "adult_chat",
+      "option": "adult_general_question",
       "professions": [
         "unemployed"
       ],
@@ -2469,9 +2469,9 @@
       "weight": 3
     },
     {
-      "id": "chat_follow_memory_nitwit",
+      "id": "question_follow_memory_nitwit",
       "request": "question",
-      "option": "adult_chat",
+      "option": "adult_general_question",
       "professions": [
         "nitwit"
       ],
@@ -2481,9 +2481,9 @@
       "weight": 3
     },
     {
-      "id": "chat_follow_memory_nitwit_boat",
+      "id": "question_follow_memory_nitwit_boat",
       "request": "question",
-      "option": "adult_chat",
+      "option": "adult_general_question",
       "professions": [
         "nitwit"
       ],
@@ -2494,9 +2494,9 @@
       "weight": 3
     },
     {
-      "id": "chat_follow_memory_butcher_boat",
+      "id": "question_follow_memory_butcher_boat",
       "request": "question",
-      "option": "adult_chat",
+      "option": "adult_general_question",
       "professions": [
         "butcher"
       ],
@@ -2507,9 +2507,9 @@
       "weight": 3
     },
     {
-      "id": "chat_follow_memory_cleric_boat",
+      "id": "question_follow_memory_cleric_boat",
       "request": "question",
-      "option": "adult_chat",
+      "option": "adult_general_question",
       "professions": [
         "cleric"
       ],
@@ -2520,9 +2520,9 @@
       "weight": 3
     },
     {
-      "id": "chat_follow_memory_farmer_boat",
+      "id": "question_follow_memory_farmer_boat",
       "request": "question",
-      "option": "adult_chat",
+      "option": "adult_general_question",
       "professions": [
         "farmer"
       ],
@@ -2533,9 +2533,9 @@
       "weight": 3
     },
     {
-      "id": "chat_follow_memory_fletcher_boat",
+      "id": "question_follow_memory_fletcher_boat",
       "request": "question",
-      "option": "adult_chat",
+      "option": "adult_general_question",
       "professions": [
         "fletcher"
       ],
@@ -2546,9 +2546,9 @@
       "weight": 3
     },
     {
-      "id": "chat_follow_memory_librarian_boat",
+      "id": "question_follow_memory_librarian_boat",
       "request": "question",
-      "option": "adult_chat",
+      "option": "adult_general_question",
       "professions": [
         "librarian"
       ],
@@ -2559,9 +2559,9 @@
       "weight": 3
     },
     {
-      "id": "chat_follow_memory_mason_boat",
+      "id": "question_follow_memory_mason_boat",
       "request": "question",
-      "option": "adult_chat",
+      "option": "adult_general_question",
       "professions": [
         "mason"
       ],
@@ -2572,9 +2572,9 @@
       "weight": 3
     },
     {
-      "id": "chat_follow_memory_toolsmith_boat",
+      "id": "question_follow_memory_toolsmith_boat",
       "request": "question",
-      "option": "adult_chat",
+      "option": "adult_general_question",
       "professions": [
         "toolsmith"
       ],
@@ -2585,9 +2585,9 @@
       "weight": 3
     },
     {
-      "id": "chat_follow_memory_weaponsmith_boat",
+      "id": "question_follow_memory_weaponsmith_boat",
       "request": "question",
-      "option": "adult_chat",
+      "option": "adult_general_question",
       "professions": [
         "weaponsmith"
       ],
@@ -2598,9 +2598,9 @@
       "weight": 3
     },
     {
-      "id": "chat_follow_memory_unemployed_boat",
+      "id": "question_follow_memory_unemployed_boat",
       "request": "question",
-      "option": "adult_chat",
+      "option": "adult_general_question",
       "professions": [
         "unemployed"
       ],
@@ -2611,9 +2611,9 @@
       "weight": 3
     },
     {
-      "id": "chat_follow_memory_cartographer_ocean_boat",
+      "id": "question_follow_memory_cartographer_ocean_boat",
       "request": "question",
-      "option": "adult_chat",
+      "option": "adult_general_question",
       "professions": [
         "cartographer"
       ],
@@ -2625,9 +2625,9 @@
       "weight": 4
     },
     {
-      "id": "chat_follow_memory_fisherman_ocean_boat",
+      "id": "question_follow_memory_fisherman_ocean_boat",
       "request": "question",
-      "option": "adult_chat",
+      "option": "adult_general_question",
       "professions": [
         "fisherman"
       ],
@@ -2639,9 +2639,9 @@
       "weight": 5
     },
     {
-      "id": "chat_follow_memory_fisherman_ocean_swim",
+      "id": "question_follow_memory_fisherman_ocean_swim",
       "request": "question",
-      "option": "adult_chat",
+      "option": "adult_general_question",
       "professions": [
         "fisherman"
       ],
@@ -2652,9 +2652,9 @@
       "weight": 5
     },
     {
-      "id": "chat_follow_memory_leatherworker_ocean_swim",
+      "id": "question_follow_memory_leatherworker_ocean_swim",
       "request": "question",
-      "option": "adult_chat",
+      "option": "adult_general_question",
       "professions": [
         "leatherworker"
       ],
@@ -4035,13 +4035,13 @@
       "weight": 234
     },
     {
-      "id": "baby_chat_hiding_place",
+      "id": "baby_today_question_hiding_place",
       "lines": [
         "I found a really good hiding place, but I cannot tell you or it stops being good.",
         "The bell is loud up close. I learned that by mistake."
       ],
       "request": "question",
-      "option": "baby_chat",
+      "option": "baby_today_question",
       "show_for_adults": false,
       "weight": 47
     },
@@ -4121,7 +4121,7 @@
       "weight": 24
     },
     {
-      "id": "global_chat_paths",
+      "id": "global_question_paths",
       "lines": [
         "The paths tell you plenty if you watch who hurries and who lingers.",
         "The square tells you who is busy, who is worried, and who is pretending not to be either.",
@@ -4628,7 +4628,7 @@
       "weight": 160
     },
     {
-      "id": "container_theft_memory_direct_chat_1",
+      "id": "container_theft_memory_direct_question_1",
       "request": "question",
       "player_event_tags": [
         "player_container_theft"
@@ -4645,7 +4645,7 @@
       ]
     },
     {
-      "id": "container_theft_memory_direct_question_1",
+      "id": "container_theft_memory_direct_question_2",
       "request": "question",
       "player_event_tags": [
         "player_container_theft"
@@ -4662,7 +4662,7 @@
       ]
     },
     {
-      "id": "container_theft_memory_village_chat_1",
+      "id": "container_theft_memory_village_question_1",
       "request": "question",
       "player_event_tags": [
         "player_container_theft"
@@ -4706,7 +4706,7 @@
       ]
     },
     {
-      "id": "reputation_revered_chat_1",
+      "id": "reputation_revered_question_1",
       "request": "question",
       "text": "Some players pass through villages like weather. You left roots.",
       "weight": 26,
@@ -4742,7 +4742,7 @@
       ]
     },
     {
-      "id": "reputation_neutral_chat_1",
+      "id": "reputation_neutral_question_1",
       "request": "question",
       "text": "We do not know what kind of neighbor you are yet. Villages learn quickly.",
       "weight": 22,
@@ -4762,7 +4762,7 @@
       ]
     },
     {
-      "id": "reputation_hostile_chat_1",
+      "id": "reputation_hostile_question_1",
       "request": "question",
       "text": "You have a talent for making people check where the exits are.",
       "weight": 28,
@@ -4792,7 +4792,7 @@
       ]
     },
     {
-      "id": "baby_reputation_low_chat_1",
+      "id": "baby_reputation_low_question_1",
       "request": "question",
       "text": "The adults get quiet when you come near.",
       "weight": 24,

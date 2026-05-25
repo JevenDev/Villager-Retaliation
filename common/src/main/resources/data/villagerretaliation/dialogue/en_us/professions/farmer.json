@@ -65,7 +65,7 @@
   ],
   "lines": [
     {
-      "id": "farmer_chat_rows",
+      "id": "farmer_question_rows",
       "request": "question",
       "text": "Dry rows and trampled crops teach a farmer to watch every footstep.",
       "weight": 30
@@ -89,7 +89,7 @@
       "weight": 26
     },
     {
-      "id": "farmer_new_chat_seed",
+      "id": "farmer_new_question_seed",
       "request": "question",
       "text": "Seeds are small, but they know how to make a person wait.",
       "weight": 28
@@ -119,7 +119,7 @@
       "weight": 18
     },
     {
-      "id": "farmer_new_chat_harvest",
+      "id": "farmer_new_question_harvest",
       "request": "question",
       "text": "A harvest is just a hundred small chores deciding to agree.",
       "weight": 28

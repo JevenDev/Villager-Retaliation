@@ -65,7 +65,7 @@
   ],
   "lines": [
     {
-      "id": "armorer_chat_work",
+      "id": "armorer_question_work",
       "request": "question",
       "text": "Most of my day is fitting mail and shields. It sounds simple until everything depends on it.",
       "weight": 30
@@ -89,7 +89,7 @@
       "weight": 26
     },
     {
-      "id": "armorer_new_chat_straps",
+      "id": "armorer_new_question_straps",
       "request": "question",
       "text": "A loose strap looks harmless until someone trusts it in a fight.",
       "weight": 28
@@ -119,7 +119,7 @@
       "weight": 18
     },
     {
-      "id": "armorer_new_chat_plate",
+      "id": "armorer_new_question_plate",
       "request": "question",
       "text": "Every plate I fit is a small promise that someone gets another chance.",
       "weight": 28

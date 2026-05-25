@@ -150,7 +150,7 @@
   ],
   "lines": [
     {
-      "id": "cartographer_chat_edges",
+      "id": "cartographer_question_edges",
       "request": "question",
       "text": "Blank edges on a map make people braver than they should be.",
       "weight": 30
@@ -174,7 +174,7 @@
       "weight": 26
     },
     {
-      "id": "cartographer_new_chat_edges",
+      "id": "cartographer_new_question_edges",
       "request": "question",
       "text": "The edge of a map is not the edge of the world. It is the edge of our nerve.",
       "weight": 28
@@ -204,7 +204,7 @@
       "weight": 18
     },
     {
-      "id": "cartographer_new_chat_border",
+      "id": "cartographer_new_question_border",
       "request": "question",
       "text": "Borders are lines people draw so fear has somewhere neat to stand.",
       "weight": 28

@@ -23,7 +23,7 @@ These pages describe the current supported format:
 - [JSON Reference](JSON-Reference.md)
 - [Dialogue JSON](Dialogue.md)
 - [Forced Dialogue JSON](Forced-Dialogue.md)
-- [Dialogue Requests](Dialogue-Types.md)
+- [Dialogue Requests](Dialogue-Requests.md)
 - [Event Tags](Event-Tags.md)
 - [Notifications JSON](Notifications.md)
 - [Notification Triggers](Notification-Triggers.md)

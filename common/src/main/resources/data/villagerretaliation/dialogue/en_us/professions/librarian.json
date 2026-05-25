@@ -65,7 +65,7 @@
   ],
   "lines": [
     {
-      "id": "librarian_chat_pages",
+      "id": "librarian_question_pages",
       "request": "question",
       "text": "Missing pages worry me less than people who never read warnings.",
       "weight": 30
@@ -89,7 +89,7 @@
       "weight": 26
     },
     {
-      "id": "librarian_new_chat_ink",
+      "id": "librarian_new_question_ink",
       "request": "question",
       "text": "Ink is quiet until someone needs proof.",
       "weight": 28
@@ -119,7 +119,7 @@
       "weight": 18
     },
     {
-      "id": "librarian_new_chat_shelf",
+      "id": "librarian_new_question_shelf",
       "request": "question",
       "text": "A tidy shelf is proof that peace can be arranged, briefly.",
       "weight": 28

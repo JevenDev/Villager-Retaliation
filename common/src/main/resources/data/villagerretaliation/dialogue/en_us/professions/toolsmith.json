@@ -65,7 +65,7 @@
   ],
   "lines": [
     {
-      "id": "toolsmith_chat_handles",
+      "id": "toolsmith_question_handles",
       "request": "question",
       "text": "Cracked handles are small warnings with expensive timing.",
       "weight": 30
@@ -89,7 +89,7 @@
       "weight": 26
     },
     {
-      "id": "toolsmith_new_chat_handle",
+      "id": "toolsmith_new_question_handle",
       "request": "question",
       "text": "A handle should fit the hand, not argue with it.",
       "weight": 28
@@ -119,7 +119,7 @@
       "weight": 18
     },
     {
-      "id": "toolsmith_new_chat_workbench",
+      "id": "toolsmith_new_question_workbench",
       "request": "question",
       "text": "The bench hears every complaint before the finished tool gets praised.",
       "weight": 28

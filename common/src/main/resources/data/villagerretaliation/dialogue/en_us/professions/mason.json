@@ -65,7 +65,7 @@
   ],
   "lines": [
     {
-      "id": "mason_chat_corners",
+      "id": "mason_question_corners",
       "request": "question",
       "text": "Walls with weak corners teach humility before they teach repair.",
       "weight": 30
@@ -89,7 +89,7 @@
       "weight": 26
     },
     {
-      "id": "mason_new_chat_wall",
+      "id": "mason_new_question_wall",
       "request": "question",
       "text": "A wall is only as honest as its weakest corner.",
       "weight": 28
@@ -119,7 +119,7 @@
       "weight": 18
     },
     {
-      "id": "mason_new_chat_steps",
+      "id": "mason_new_question_steps",
       "request": "question",
       "text": "Good steps are noticed only by people who have climbed bad ones.",
       "weight": 28

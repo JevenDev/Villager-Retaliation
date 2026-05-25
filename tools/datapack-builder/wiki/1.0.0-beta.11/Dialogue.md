@@ -120,7 +120,7 @@ insult
 
 `small_talk` has been removed as a separate request. Use `question` for general player-selected conversation.
 
-See [Dialogue Requests](Dialogue-Types.md) for simple and expanded dropdown examples for every current request value.
+See [Dialogue Requests](Dialogue-Requests.md) for simple and expanded dropdown examples for every current request value.
 
 ## Option Fields
 

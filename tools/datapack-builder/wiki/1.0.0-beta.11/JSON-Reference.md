@@ -171,7 +171,7 @@ Dialogue options, lines, and forced-dialogue entries can also check the player's
 
 Dialogue `request` values and notification `trigger` values have their own expandable example catalogs:
 
-- [Dialogue Requests](Dialogue-Types.md) covers every current `options[].request` and `lines[].request` value.
+- [Dialogue Requests](Dialogue-Requests.md) covers every current `options[].request` and `lines[].request` value.
 - [Notification Triggers](Notification-Triggers.md) covers every built-in notification `trigger` value from the current data files.
 
 ## Forced Dialogue Events

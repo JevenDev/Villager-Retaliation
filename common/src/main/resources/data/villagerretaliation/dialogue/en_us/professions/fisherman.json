@@ -65,7 +65,7 @@
   ],
   "lines": [
     {
-      "id": "fisherman_chat_nets",
+      "id": "fisherman_question_nets",
       "request": "question",
       "text": "Empty nets at dusk make every rumor sound heavier.",
       "weight": 30
@@ -89,7 +89,7 @@
       "weight": 26
     },
     {
-      "id": "fisherman_new_chat_water",
+      "id": "fisherman_new_question_water",
       "request": "question",
       "text": "Water looks calm right up until it proves it was thinking.",
       "weight": 28
@@ -119,7 +119,7 @@
       "weight": 18
     },
     {
-      "id": "fisherman_new_chat_weather",
+      "id": "fisherman_new_question_weather",
       "request": "question",
       "text": "Weather has more moods than any trader I have met.",
       "weight": 28

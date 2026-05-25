@@ -68,7 +68,7 @@ data/villagerretaliation/dialogue/en_us/examplepack_dialogue.json
       "weight": 10
     },
     {
-      "id": "examplepack.low_rep_chat",
+      "id": "examplepack.low_rep_question",
       "request": "question",
       "reputation_levels": [
         "hostile",

@@ -266,7 +266,7 @@ const WIKI_PAGE_FILES = [
   "JSON-Reference.md",
   "Dialogue.md",
   "Forced-Dialogue.md",
-  "Dialogue-Types.md",
+  "Dialogue-Requests.md",
   "Event-Tags.md",
   "Notifications.md",
   "Notification-Triggers.md",

@@ -65,7 +65,7 @@
   ],
   "lines": [
     {
-      "id": "shepherd_chat_flock",
+      "id": "shepherd_question_flock",
       "request": "question",
       "text": "Scattered sheep make the whole day longer than it needs to be.",
       "weight": 30
@@ -89,7 +89,7 @@
       "weight": 26
     },
     {
-      "id": "shepherd_new_chat_wool",
+      "id": "shepherd_new_question_wool",
       "request": "question",
       "text": "Clean wool is quiet proof that somebody did the dull work well.",
       "weight": 28
@@ -119,7 +119,7 @@
       "weight": 18
     },
     {
-      "id": "shepherd_new_chat_blanket",
+      "id": "shepherd_new_question_blanket",
       "request": "question",
       "text": "A good blanket is village peace you can fold.",
       "weight": 28

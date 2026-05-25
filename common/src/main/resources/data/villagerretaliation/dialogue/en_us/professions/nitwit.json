@@ -65,7 +65,7 @@
   ],
   "lines": [
     {
-      "id": "nitwit_chat_thought",
+      "id": "nitwit_question_thought",
       "request": "question",
       "text": "I had a thought once. Left it somewhere safe, probably.",
       "weight": 30
@@ -89,7 +89,7 @@
       "weight": 26
     },
     {
-      "id": "nitwit_new_chat_button",
+      "id": "nitwit_new_question_button",
       "request": "question",
       "text": "I found a button once. No wall, just ambition.",
       "weight": 28
@@ -119,7 +119,7 @@
       "weight": 18
     },
     {
-      "id": "nitwit_new_chat_shadow",
+      "id": "nitwit_new_question_shadow",
       "request": "question",
       "text": "I tried following my shadow, but it got behind me somehow.",
       "weight": 28

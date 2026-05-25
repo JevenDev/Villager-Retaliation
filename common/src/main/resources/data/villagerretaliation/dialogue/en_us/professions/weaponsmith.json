@@ -65,7 +65,7 @@
   ],
   "lines": [
     {
-      "id": "weaponsmith_chat_blades",
+      "id": "weaponsmith_question_blades",
       "request": "question",
       "text": "Rust on a sword is just neglect learning to speak.",
       "weight": 30
@@ -89,7 +89,7 @@
       "weight": 26
     },
     {
-      "id": "weaponsmith_new_chat_blade",
+      "id": "weaponsmith_new_question_blade",
       "request": "question",
       "text": "A blade tells the truth about its owner sooner or later.",
       "weight": 28
@@ -119,7 +119,7 @@
       "weight": 18
     },
     {
-      "id": "weaponsmith_new_chat_edge",
+      "id": "weaponsmith_new_question_edge",
       "request": "question",
       "text": "Keeping an edge honest is mostly knowing when to stop grinding.",
       "weight": 28

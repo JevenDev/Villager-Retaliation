@@ -65,7 +65,7 @@
   ],
   "lines": [
     {
-      "id": "fletcher_chat_feathers",
+      "id": "fletcher_question_feathers",
       "request": "question",
       "text": "Clean feathers and straight shafts make trouble keep its distance.",
       "weight": 30
@@ -89,7 +89,7 @@
       "weight": 26
     },
     {
-      "id": "fletcher_new_chat_feather",
+      "id": "fletcher_new_question_feather",
       "request": "question",
       "text": "A crooked feather makes a promise the arrow cannot keep.",
       "weight": 28
@@ -119,7 +119,7 @@
       "weight": 18
     },
     {
-      "id": "fletcher_new_chat_patrol",
+      "id": "fletcher_new_question_patrol",
       "request": "question",
       "text": "The best warning is the one that reaches trouble before trouble reaches us.",
       "weight": 28

@@ -66,7 +66,7 @@
   ],
   "lines": [
     {
-      "id": "cleric_chat_remedies",
+      "id": "cleric_question_remedies",
       "request": "question",
       "text": "Some remedies need glass bottles. Some need time and a quieter voice.",
       "weight": 30
@@ -90,7 +90,7 @@
       "weight": 26
     },
     {
-      "id": "cleric_new_chat_brew",
+      "id": "cleric_new_question_brew",
       "request": "question",
       "text": "A good brew needs time, heat, and someone willing to wait quietly.",
       "weight": 28
@@ -120,7 +120,7 @@
       "weight": 18
     },
     {
-      "id": "cleric_new_chat_wounds",
+      "id": "cleric_new_question_wounds",
       "request": "question",
       "text": "Some hurts close cleanly. Some wait for a quieter day.",
       "weight": 28

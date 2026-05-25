@@ -65,7 +65,7 @@
   ],
   "lines": [
     {
-      "id": "unemployed_chat_work",
+      "id": "unemployed_question_work",
       "request": "question",
       "text": "Finding the right work is harder when everyone asks if you found it yet.",
       "weight": 30
@@ -89,7 +89,7 @@
       "weight": 26
     },
     {
-      "id": "unemployed_new_chat_waiting",
+      "id": "unemployed_new_question_waiting",
       "request": "question",
       "text": "Waiting for work is still work if you look worried enough.",
       "weight": 28
@@ -119,7 +119,7 @@
       "weight": 18
     },
     {
-      "id": "unemployed_new_chat_errands",
+      "id": "unemployed_new_question_errands",
       "request": "question",
       "text": "People with trades get tasks. People without trades get errands.",
       "weight": 28
