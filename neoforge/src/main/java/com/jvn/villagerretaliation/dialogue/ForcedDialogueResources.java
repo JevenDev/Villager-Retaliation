@@ -9,6 +9,7 @@ import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
 import com.jvn.villagerretaliation.util.VillagerInventoryItemRemoval;
+import com.jvn.villagerretaliation.util.VillagerPlayerItemCondition;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import com.jvn.villagerretaliation.util.VillagerReputationCondition;
 import java.io.IOException;
@@ -174,6 +175,7 @@ public final class ForcedDialogueResources {
                 readTargetEntityTypes(entry),
                 readProfessions(entry),
                 VillagerEquipmentCondition.read(entry, "witness"),
+                VillagerPlayerItemCondition.read(entry),
                 VillagerReputationCondition.read(entry),
                 options,
                 leaveOption,
@@ -602,7 +604,8 @@ public final class ForcedDialogueResources {
         CONTAINER_THEFT,
         CONTAINER_OPENED,
         CONTAINER_BROKEN,
-        RETALIATION_STARTED
+        RETALIATION_STARTED,
+        PLAYER_ITEM_PROXIMITY
     }
 
     public enum ForcedDialogueOutputMode {
@@ -640,6 +643,7 @@ public final class ForcedDialogueResources {
             Set<ResourceLocation> targetEntityTypes,
             Set<VillagerProfession> witnessProfessions,
             VillagerEquipmentCondition witnessEquipmentCondition,
+            VillagerPlayerItemCondition playerItemCondition,
             VillagerReputationCondition reputationCondition,
             List<ForcedDialogueOption> options,
             ForcedDialogueOption leaveOption,
@@ -672,6 +676,18 @@ public final class ForcedDialogueResources {
 
         public boolean matchesRecentRetaliations(int count) {
             return count >= this.minRecentRetaliations && count <= this.maxRecentRetaliations;
+        }
+
+        public boolean hasPlayerItemCondition() {
+            return !this.playerItemCondition.isEmpty();
+        }
+
+        public boolean matchesPlayerItem(net.minecraft.world.entity.player.Player player) {
+            return this.playerItemCondition.matches(player);
+        }
+
+        public Map<String, String> playerItemReplacements(net.minecraft.world.entity.player.Player player) {
+            return this.playerItemCondition.replacements(player);
         }
 
         public boolean matchesReputation(int reputation, VillagerReputationLevel level) {

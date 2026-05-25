@@ -34,6 +34,7 @@
   "villagerretaliation.configuration.dialogue.enableForcedDialogue": "Enable Forced Dialogue",
   "villagerretaliation.configuration.dialogue.enableContainerForcedDialogue": "Enable Container Forced Dialogue",
   "villagerretaliation.configuration.dialogue.enableRetaliationForcedDialogue": "Enable Retaliation Forced Dialogue",
+  "villagerretaliation.configuration.dialogue.enablePlayerItemProximityForcedDialogue": "Enable Player Item Proximity Forced Dialogue",
   "villagerretaliation.configuration.dialogue.separateVillagerChatMessages": "Separate Villager Chat Messages",
   "villagerretaliation.configuration.dialogue.separateVillagerChatSpeakers": "Separate Villager Chat Speakers",
   "villagerretaliation.configuration.dialogue.interactionChatPosition": "Interaction Chat Position",

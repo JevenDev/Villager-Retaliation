@@ -67,9 +67,12 @@ public final class ForcedDialogueService {
     private static final String LEAVE_OPTION_ID = "leave";
     private static final long RECENT_CONTAINER_CLICK_TICKS = 8L;
     private static final long FORCED_SESSION_TIMEOUT_TICKS = 20L * 60L;
+    private static final long PLAYER_ITEM_PROXIMITY_SCAN_INTERVAL_TICKS = 80L;
+    private static final long PLAYER_ITEM_PROXIMITY_COOLDOWN_TICKS = 20L * 30L;
     private static final Map<UUID, RecentContainerClick> RECENT_CONTAINER_CLICKS = new HashMap<>();
     private static final Map<UUID, ContainerSnapshot> OPEN_CONTAINER_SNAPSHOTS = new HashMap<>();
     private static final Map<UUID, ForcedDialogueSession> FORCED_SESSIONS = new HashMap<>();
+    private static final Map<PlayerItemProximityKey, Long> NEXT_PLAYER_ITEM_PROXIMITY_TICK = new HashMap<>();
 
     private ForcedDialogueService() {
     }
@@ -680,6 +683,78 @@ public final class ForcedDialogueService {
         FORCED_SESSIONS.remove(player.getUUID());
     }
 
+    public static void maybeTriggerPlayerItemProximity(ServerLevel level, Villager villager) {
+        if (!playerItemProximityForcedDialogueEnabled()
+                || !villager.isAlive()
+                || villager.isBaby()
+                || villager.isTrading()) {
+            return;
+        }
+
+        long gameTime = level.getGameTime();
+        if (gameTime % PLAYER_ITEM_PROXIMITY_SCAN_INTERVAL_TICKS
+                != Math.floorMod(villager.getUUID().getLeastSignificantBits(), PLAYER_ITEM_PROXIMITY_SCAN_INTERVAL_TICKS)) {
+            return;
+        }
+
+        List<ForcedDialogueDefinition> definitions = ForcedDialogueResources
+                .selectCandidates(level.getServer(), ForcedDialogueTrigger.PLAYER_ITEM_PROXIMITY, null)
+                .stream()
+                .filter(ForcedDialogueDefinition::hasPlayerItemCondition)
+                .filter(definition -> definition.matchesWitness(villager))
+                .toList();
+        if (definitions.isEmpty()) {
+            return;
+        }
+
+        double maxRadius = definitions.stream()
+                .mapToDouble(ForcedDialogueDefinition::witnessRadius)
+                .max()
+                .orElse(0.0D);
+        if (maxRadius <= 0.0D) {
+            return;
+        }
+
+        AABB area = villager.getBoundingBox().inflate(maxRadius);
+        List<ServerPlayer> players = level.getEntitiesOfClass(ServerPlayer.class, area).stream()
+                .filter(player -> player.isAlive() && !player.isSpectator() && !player.isCreative())
+                .filter(player -> !FORCED_SESSIONS.containsKey(player.getUUID()))
+                .sorted(Comparator.comparingDouble(player -> villager.distanceToSqr(player)))
+                .toList();
+        for (ServerPlayer player : players) {
+            List<ForcedDialogueDefinition> matchingDefinitions = definitions.stream()
+                    .filter(definition -> definition.matchesPlayerItem(player))
+                    .filter(definition -> definitionMatchesReputation(level, villager, player, definition))
+                    .filter(definition -> villager.distanceToSqr(player) <= definition.witnessRadius() * definition.witnessRadius())
+                    .filter(definition -> !definition.requiresLineOfSight() || villager.hasLineOfSight(player))
+                    .filter(definition -> playerItemProximityReady(gameTime, villager, player, definition))
+                    .toList();
+            if (matchingDefinitions.isEmpty()) {
+                continue;
+            }
+
+            boolean handled = false;
+            for (ForcedDialogueDefinition definition : matchingDefinitions) {
+                if (isChatOutput(definition) && triggerPlayerItemProximityChat(level, villager, player, definition)) {
+                    markPlayerItemProximityUsed(gameTime, villager, player, definition);
+                    handled = true;
+                    break;
+                }
+            }
+            for (ForcedDialogueDefinition definition : matchingDefinitions) {
+                if (!isChatOutput(definition) && triggerPlayerItemProximity(level, villager, player, definition)) {
+                    markPlayerItemProximityUsed(gameTime, villager, player, definition);
+                    handled = true;
+                    break;
+                }
+            }
+            if (handled) {
+                prunePlayerItemProximityCooldowns(gameTime);
+                return;
+            }
+        }
+    }
+
     public static boolean triggerRetaliationStarted(ServerLevel level, Villager villager, ServerPlayer player) {
         if (!retaliationForcedDialogueEnabled()) {
             return false;
@@ -981,6 +1056,139 @@ public final class ForcedDialogueService {
         return true;
     }
 
+    private static boolean triggerPlayerItemProximityChat(
+            ServerLevel level,
+            Villager villager,
+            ServerPlayer player,
+            ForcedDialogueDefinition definition) {
+        if (!rollChance(level, definition.chance())) {
+            return true;
+        }
+        ForcedDialogueContext context = playerItemProximityContext(villager, player, definition);
+        String line = ForcedDialogueResources.resolveTemplate(
+                definition.selectLine(level.getRandom()),
+                context,
+                definition.playerItemReplacements(player));
+        if (!line.isBlank()) {
+            VillagerInteractionService.broadcastForcedVillagerChat(
+                    level,
+                    villager,
+                    line,
+                    VillagerInteractionService.villagerSpeakerLabel(villager),
+                    outputRadius(definition)
+            );
+        }
+        return true;
+    }
+
+    private static boolean triggerPlayerItemProximity(
+            ServerLevel level,
+            Villager villager,
+            ServerPlayer player,
+            ForcedDialogueDefinition definition) {
+        if (!rollChance(level, definition.chance())) {
+            return true;
+        }
+        ForcedDialogueContext context = playerItemProximityContext(villager, player, definition);
+        if (definition.reputationDelta() != 0 && VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()) {
+            VillagerReputationManager.addWitnessedReputation(level, villager, player.getUUID(), definition.reputationDelta(), villager.blockPosition());
+            VillagerGossipHooks.spreadReputation(level, villager, player.getUUID(), definition.reputationDelta());
+        }
+
+        String line = ForcedDialogueResources.resolveTemplate(
+                definition.selectLine(level.getRandom()),
+                context,
+                definition.playerItemReplacements(player));
+        if (definition.aggroImmediately()) {
+            if (!line.isBlank()) {
+                VillagerInteractionService.sendVillagerNotice(player, villager, line);
+            }
+            VillagerRetaliationHandler.forceAnger(villager, player);
+            return true;
+        }
+
+        if (!definition.initiateDialogue()) {
+            if (!line.isBlank()) {
+                VillagerInteractionService.sendVillagerNotice(player, villager, line);
+            }
+            return true;
+        }
+
+        if (VillagerInteractionService.openForcedDialogue(
+                player,
+                villager,
+                line,
+                forcedOptions(definition, level, villager, player),
+                definition.forceCameraTowardsVillager())) {
+            FORCED_SESSIONS.put(player.getUUID(), new ForcedDialogueSession(
+                    villager.getUUID(),
+                    definition,
+                    context,
+                    level.dimension(),
+                    villager.blockPosition().immutable(),
+                    List.of(),
+                    level.getGameTime()
+            ));
+        } else if (!line.isBlank()) {
+            VillagerInteractionService.sendVillagerNotice(player, villager, line);
+        }
+        return true;
+    }
+
+    private static ForcedDialogueContext playerItemProximityContext(
+            Villager villager,
+            ServerPlayer player,
+            ForcedDialogueDefinition definition) {
+        ResourceLocation targetTypeId = BuiltInRegistries.ENTITY_TYPE.getKey(player.getType());
+        Map<String, String> itemReplacements = definition.playerItemReplacements(player);
+        String itemName = itemReplacements.getOrDefault("player_item", "");
+        String itemId = itemReplacements.getOrDefault("player_item_id", "");
+        String playerName = player.getDisplayName().getString();
+        return new ForcedDialogueContext(
+                VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
+                playerName,
+                playerName,
+                "player",
+                targetTypeId == null ? "" : targetTypeId.toString(),
+                itemName,
+                itemId,
+                1,
+                itemName,
+                itemName,
+                "",
+                "",
+                0,
+                0,
+                villager.blockPosition().getX(),
+                villager.blockPosition().getY(),
+                villager.blockPosition().getZ()
+        );
+    }
+
+    private static boolean playerItemProximityReady(
+            long gameTime,
+            Villager villager,
+            ServerPlayer player,
+            ForcedDialogueDefinition definition) {
+        return gameTime >= NEXT_PLAYER_ITEM_PROXIMITY_TICK.getOrDefault(
+                new PlayerItemProximityKey(villager.getUUID(), player.getUUID(), definition.id()),
+                0L);
+    }
+
+    private static void markPlayerItemProximityUsed(
+            long gameTime,
+            Villager villager,
+            ServerPlayer player,
+            ForcedDialogueDefinition definition) {
+        NEXT_PLAYER_ITEM_PROXIMITY_TICK.put(
+                new PlayerItemProximityKey(villager.getUUID(), player.getUUID(), definition.id()),
+                gameTime + PLAYER_ITEM_PROXIMITY_COOLDOWN_TICKS);
+    }
+
+    private static void prunePlayerItemProximityCooldowns(long gameTime) {
+        NEXT_PLAYER_ITEM_PROXIMITY_TICK.entrySet().removeIf(entry -> entry.getValue() + PLAYER_ITEM_PROXIMITY_COOLDOWN_TICKS < gameTime);
+    }
+
     private static boolean definitionMatchesReputation(
             ServerLevel level,
             Villager witness,
@@ -1202,6 +1410,11 @@ public final class ForcedDialogueService {
     private static boolean retaliationForcedDialogueEnabled() {
         return VillagerRetaliationConfig.ENABLE_FORCED_DIALOGUE.get()
                 && VillagerRetaliationConfig.ENABLE_RETALIATION_FORCED_DIALOGUE.get();
+    }
+
+    private static boolean playerItemProximityForcedDialogueEnabled() {
+        return VillagerRetaliationConfig.ENABLE_FORCED_DIALOGUE.get()
+                && VillagerRetaliationConfig.ENABLE_PLAYER_ITEM_PROXIMITY_FORCED_DIALOGUE.get();
     }
 
     private static ResourceLocation generatedContainerLootTable(ServerLevel level, BlockPos pos) {
@@ -1529,6 +1742,12 @@ public final class ForcedDialogueService {
             BlockPos sourceContainerPos,
             List<ItemStack> removedStacks,
             long startedGameTime) {
+    }
+
+    private record PlayerItemProximityKey(
+            UUID villagerId,
+            UUID playerId,
+            String definitionId) {
     }
 
     private interface ItemTransferTarget {

@@ -18,6 +18,7 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.BooleanValue ENABLE_FORCED_DIALOGUE;
     public static final ModConfigSpec.BooleanValue ENABLE_CONTAINER_FORCED_DIALOGUE;
     public static final ModConfigSpec.BooleanValue ENABLE_RETALIATION_FORCED_DIALOGUE;
+    public static final ModConfigSpec.BooleanValue ENABLE_PLAYER_ITEM_PROXIMITY_FORCED_DIALOGUE;
     public static final ModConfigSpec.BooleanValue SEPARATE_VILLAGER_CHAT_MESSAGES;
     public static final ModConfigSpec.BooleanValue SEPARATE_VILLAGER_CHAT_SPEAKERS;
     public static final ModConfigSpec.EnumValue<InteractionChatPosition> INTERACTION_CHAT_POSITION;
@@ -234,6 +235,10 @@ public final class VillagerRetaliationConfig {
                 .comment("Enables forced dialogue and combat barks when villagers begin retaliation.")
                 .translation("villagerretaliation.configuration.dialogue.enableRetaliationForcedDialogue")
                 .define("enableRetaliationForcedDialogue", true);
+        ENABLE_PLAYER_ITEM_PROXIMITY_FORCED_DIALOGUE = BUILDER
+                .comment("Enables forced dialogue and chat callouts when nearby players carry matching held or worn items.")
+                .translation("villagerretaliation.configuration.dialogue.enablePlayerItemProximityForcedDialogue")
+                .define("enablePlayerItemProximityForcedDialogue", true);
         SEPARATE_VILLAGER_CHAT_MESSAGES = BUILDER
                 .comment("Adds a blank chat line between consecutive villager dialogue messages for readability.")
                 .translation("villagerretaliation.configuration.dialogue.separateVillagerChatMessages")

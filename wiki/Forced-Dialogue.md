@@ -69,7 +69,9 @@ or an `entries` array:
 | `witness_professions` | array | any | Restricts this entry to one of several witnessing villager professions. `professions` is also accepted as an alias. |
 | `requires_witness_unarmed` | boolean | `false` | Requires the witnessing villager to have no usable weapon in either hand. `witness_unarmed` is also accepted as an alias. |
 | `requires_witness_armed` | boolean | `false` | Requires the witnessing villager to have a usable weapon in either hand. `witness_armed` is also accepted as an alias. |
-| `requires_line_of_sight` | boolean | `true` | Requires the witness to see the player and event block. |
+| `player_items` | string or array | none | For `player_item_proximity`, requires the nearby player to carry one matching item or item tag. Prefix tags with `#`. Aliases: `player_item`, `player_item_tag`, `player_item_tags`. |
+| `player_item_slots` | string or array | `hands` when `player_items` is set | Slots to check for player item filters: `main_hand`, `off_hand`, `hands`, `armor`, `hotbar`, `inventory`, `equipment`, or `any`. Alias: `player_item_slot`. |
+| `requires_line_of_sight` | boolean | `true` | Requires the witness to see the player. Container triggers also require sight to the event block. |
 | `output` | object | `{ "mode": "forced_dialogue" }` | Delivery channel for the event line. See Output Fields below. |
 | `initiate_dialogue` | boolean | `true` | Opens the locked interaction screen when `output.mode` is `forced_dialogue`. If false, only the line is sent. |
 | `aggro_immediately` | boolean | `false` | Makes the witness attack immediately after the event line. |
@@ -125,6 +127,27 @@ Use `output.mode` to choose how the event line is delivered. This keeps the even
 ```
 
 Use the same trigger with different `output.mode` values when an event should both emit a chat callout and open a locked forced-dialogue scene. Chat entries can play first, then a separate `forced_dialogue` entry for the same trigger can still run.
+
+Use `trigger: "player_item_proximity"` for held or worn item reactions when a player walks near a villager. The trigger requires a `player_items` or `player_item_tags` filter so it does not fire for every nearby player:
+
+```json
+{
+  "id": "my_pack.diamond_sword_warning",
+  "trigger": "player_item_proximity",
+  "player_items": ["minecraft:diamond_sword"],
+  "player_item_slots": ["main_hand"],
+  "witness_radius": 8,
+  "requires_line_of_sight": true,
+  "lines": [
+    "Easy with {held_item}, {player}.",
+    "That blade is hard to miss."
+  ],
+  "output": {
+    "mode": "chat",
+    "radius": 16
+  }
+}
+```
 
 If a `container_theft` entry does not define `leave_option` or `leave_options`, the generated default Leave outcome takes the stolen stacks back with `villager_inventory_then_source_container`, applies a reputation penalty, and rolls an aggro chance based on reputation: trusted or better is low risk, neutral/suspicious is moderate risk, and hostile/despised/feared is high risk.
 
@@ -315,7 +338,7 @@ Forced dialogue `line`, `lines`, option `response` / `responses`, `leave_option.
 {z}
 ```
 
-`{target}` / `{target_name}` is the retaliation target display name, `{target_kind}` is a lowercased entity description such as `player`, `{target_type}` is the entity id, `{container}` is the block display name, `{item}` / `{stolen_item}` is the representative removed item name, `{item_stack}` / `{stolen_stack}` includes the representative item count, `{items}` / `{stolen_items}` lists all removed stacks, `{count}` / `{stolen_count}` is the representative removed stack count for `container_theft`, `{loot_table}` is the matched generated loot table id when one exists, `{prior_container_thefts}` is the number of remembered earlier container thefts by this player near the witness's village, `{container_theft_offense}` is that count plus the current theft, `{prior_retaliations}` is the number of earlier remembered retaliation starts for the same player near this village, `{retaliation_offense}` is that count plus the current retaliation, `{payment_count}` and `{payment_items}` describe a `take_items` option, and `{x}`, `{y}`, `{z}` are the container or villager position.
+`{target}` / `{target_name}` is the retaliation target display name, `{target_kind}` is a lowercased entity description such as `player`, `{target_type}` is the entity id, `{container}` is the block display name, `{item}` / `{stolen_item}` is the representative removed item name or matched player item for `player_item_proximity`, `{item_stack}` / `{stolen_stack}` includes the representative item count, `{items}` / `{stolen_items}` lists all removed stacks, `{count}` / `{stolen_count}` is the representative removed stack count for `container_theft`, `{loot_table}` is the matched generated loot table id when one exists, `{player_item}` / `{held_item}` is the matched player item name for item-filtered entries, `{player_item_id}` / `{held_item_id}` is the matched item id, `{player_item_slot}` / `{held_item_slot}` is the matched slot, `{prior_container_thefts}` is the number of remembered earlier container thefts by this player near the witness's village, `{container_theft_offense}` is that count plus the current theft, `{prior_retaliations}` is the number of earlier remembered retaliation starts for the same player near this village, `{retaliation_offense}` is that count plus the current retaliation, `{payment_count}` and `{payment_items}` describe a `take_items` option, and `{x}`, `{y}`, `{z}` are the container or villager position.
 
 ## Example
 

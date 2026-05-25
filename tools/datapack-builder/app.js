@@ -99,7 +99,8 @@ const CONSTANTS = {
     "container_theft",
     "container_opened",
     "container_broken",
-    "retaliation_started"
+    "retaliation_started",
+    "player_item_proximity"
   ],
   forcedOutputModes: ["forced_dialogue", "chat"],
   reputationLevels: ["royalty", "revered", "respected", "trusted", "neutral", "suspicious", "hostile", "despised", "feared"],
@@ -364,6 +365,8 @@ const FIELD_TOOLTIPS = {
   "forced-witness_professions": "Optional profession ids for the witnessing villager, such as armorer or minecraft:weaponsmith.",
   "forced-requires_witness_unarmed": "Requires the witnessing villager to have no usable weapon in either hand.",
   "forced-requires_witness_armed": "Requires the witnessing villager to have a usable weapon in either hand.",
+  "forced-player_items": "For player_item_proximity, requires the nearby player to carry one matching item or item tag. Prefix tags with #.",
+  "forced-player_item_slots": "Where to check player items. Defaults to hands when player_items is set.",
   "forced-chance": "Random chance from 0.0 to 1.0 before a matching event line is shown.",
   "forced-target_entity_types": "Optional retaliation target entity ids such as minecraft:player. Useful for retaliation_started entries.",
   "forced-min_recent_retaliations": "Optional minimum earlier villager_retaliation_started memories for this player near the villager's village.",
@@ -548,6 +551,7 @@ const TAG_SUGGESTIONS = {
   "forced-trigger": CONSTANTS.forcedDialogueTriggers,
   "forced-output_mode": CONSTANTS.forcedOutputModes,
   "forced-witness_professions": CONSTANTS.professions,
+  "forced-player_item_slots": CONSTANTS.itemSlots,
   "forced-target_entity_types": ["minecraft:player", "minecraft:zombie", "minecraft:skeleton", "minecraft:creeper", "minecraft:raider"],
   "notification-professions": CONSTANTS.professions,
   "notification-reputation_levels": CONSTANTS.reputationLevels,
@@ -3408,9 +3412,14 @@ function entryIssueDetail(section, kind, entry) {
     if (!trigger) return issueDetail("Trigger", `one of ${CONSTANTS.forcedDialogueTriggers.join(", ")}`, trigger, "forced-trigger");
     if (!hasForcedDialogueLine(entry)) return issueDetail("Opening line(s)", "at least one non-empty line", forcedDialogueLineValue(entry), "forced-line");
     if (!CONSTANTS.forcedDialogueTriggers.includes(trigger)) return issueDetail("Trigger", `one of ${CONSTANTS.forcedDialogueTriggers.join(", ")}`, trigger, "forced-trigger");
+    if (trigger === "player_item_proximity" && entryValues(entry, ["player_item", "player_items", "player_item_tag", "player_item_tags"]).length === 0) {
+      return issueDetail("Player items or tags", "at least one matching item filter for player_item_proximity", "none set", "forced-player_items");
+    }
     if (entry.output?.mode && !CONSTANTS.forcedOutputModes.includes(entry.output.mode)) return issueDetail("Output mode", `one of ${CONSTANTS.forcedOutputModes.join(", ")}`, entry.output.mode, "forced-output_mode");
     const forcedListChecks = [
       { keys: ["witness_profession", "witness_professions", "professions"], label: "Witness professions", expected: "a valid profession id such as armorer or minecraft:weaponsmith", fieldId: "forced-witness_professions", valid: isValidProfession, severity: "warning" },
+      { keys: ["player_item", "player_items", "player_item_tag", "player_item_tags"], label: "Player items or tags", expected: "a valid item id or #tag id", fieldId: "forced-player_items", valid: (value) => isValidResourceLocation(value, { allowTag: true }) },
+      { keys: ["player_item_slot", "player_item_slots"], label: "Player item slots", expected: CONSTANTS.itemSlots.join(", "), fieldId: "forced-player_item_slots", valid: (value) => CONSTANTS.itemSlots.includes(value), severity: "warning" },
       { keys: ["loot_table", "loot_tables"], label: "Loot tables", expected: "a valid loot table id such as minecraft:chests/village/village_armorer", fieldId: "forced-loot_tables", valid: isValidResourceLocation },
       { keys: ["target_entity_type", "target_entity_types", "target_entities"], label: "Target entity types", expected: "a valid entity id such as minecraft:player", fieldId: "forced-target_entity_types", valid: isValidResourceLocation }
     ];
@@ -3855,6 +3864,9 @@ function validate() {
   if (badForcedTrigger) {
     addCheck(checks, "error", "Forced dialogue trigger", `Unknown forced dialogue trigger: ${badForcedTrigger}.`);
   }
+  if (state.forcedDialogue.entries.some((entry) => forcedTriggerValue(entry) === "player_item_proximity" && entryValues(entry, ["player_item", "player_items", "player_item_tag", "player_item_tags"]).length === 0)) {
+    addCheck(checks, "error", "Forced dialogue player item", "player_item_proximity entries need at least one player item or tag filter.");
+  }
   const badForcedOutputMode = firstInvalidValue(state.forcedDialogue.entries.map((entry) => entry.output || {}), ["mode"], (value) => CONSTANTS.forcedOutputModes.includes(value));
   if (badForcedOutputMode) {
     addCheck(checks, "error", "Forced dialogue output", `Unknown output mode: ${badForcedOutputMode}.`);
@@ -3862,6 +3874,14 @@ function validate() {
   const badForcedProfession = firstInvalidValue(state.forcedDialogue.entries, ["witness_profession", "witness_professions", "professions"], isValidProfession);
   if (badForcedProfession) {
     addCheck(checks, "warning", "Forced dialogue witness", `Invalid witness profession id: ${badForcedProfession}.`);
+  }
+  const badForcedPlayerItem = firstInvalidValue(state.forcedDialogue.entries, ["player_item", "player_items", "player_item_tag", "player_item_tags"], (value) => isValidResourceLocation(value, { allowTag: true }));
+  if (badForcedPlayerItem) {
+    addCheck(checks, "error", "Forced dialogue player item", `Invalid player item or tag id: ${badForcedPlayerItem}.`);
+  }
+  const badForcedPlayerItemSlot = firstInvalidValue(state.forcedDialogue.entries, ["player_item_slot", "player_item_slots"], (value) => CONSTANTS.itemSlots.includes(value));
+  if (badForcedPlayerItemSlot) {
+    addCheck(checks, "warning", "Forced dialogue player item slot", `Unknown item slot: ${badForcedPlayerItemSlot}.`);
   }
   const badForcedLootTable = firstInvalidValue(state.forcedDialogue.entries, ["loot_table", "loot_tables"], isValidResourceLocation);
   if (badForcedLootTable) {
@@ -3887,7 +3907,7 @@ function validate() {
   if (state.forcedDialogue.entries.some(hasIgnoredForcedDialogueFields)) {
     addCheck(checks, "warning", "Forced dialogue output", "Chat output ignores forced-dialogue options, leave outcomes, reputation changes, aggro, and camera controls.");
   }
-  const blankForcedList = firstBlankListValue(state.forcedDialogue.entries, ["lines", "loot_tables", "witness_profession", "witness_professions", "professions", "target_entity_types", "target_entities"]);
+  const blankForcedList = firstBlankListValue(state.forcedDialogue.entries, ["lines", "loot_tables", "witness_profession", "witness_professions", "professions", "player_items", "player_item_slots", "target_entity_types", "target_entities"]);
   if (blankForcedList) {
     addCheck(checks, "warning", "Forced dialogue list", `${humanize(blankForcedList)} contains a blank value.`);
   }
@@ -5397,6 +5417,8 @@ function renderForcedDialogue() {
             ${field({ id: "forced-reputation", label: "Reputation change", value: entry.reputation ?? "", type: "number", className: forcedOnlyClass })}
             ${listField({ id: "forced-witness_professions", label: "Witness professions", value: entry.witness_professions ?? entry.witness_profession ?? entry.professions, help: "Optional. Restrict to a witnessing profession such as armorer, cleric, or weaponsmith." })}
             ${villagerEquipmentToggles("forced", entry, "witness")}
+            ${listField({ id: "forced-player_items", label: "Player items or tags", value: entry.player_items ?? entry.player_item ?? entry.player_item_tags ?? entry.player_item_tag, help: "Required for player_item_proximity. Use minecraft:diamond_sword or #minecraft:swords." })}
+            ${listField({ id: "forced-player_item_slots", label: "Player item slots", value: entry.player_item_slots ?? entry.player_item_slot, help: CONSTANTS.itemSlots.join(", ") })}
             ${listField({ id: "forced-loot_tables", label: "Loot tables", value: entry.loot_tables ?? entry.loot_table, help: "Optional. Match generated containers from loot tables like minecraft:chests/village/village_armorer." })}
             ${listField({ id: "forced-target_entity_types", label: "Target entity types", value: entry.target_entity_types ?? entry.target_entity_type ?? entry.target_entities, help: "Optional. Useful for retaliation_started, for example minecraft:player." })}
             ${field({ id: "forced-min_recent_retaliations", label: "Min prior retaliations", value: entry.min_recent_retaliations ?? "", type: "number", attrs: 'min="0" step="1"' })}
@@ -5872,6 +5894,8 @@ function readForcedDialogueEntry(options = {}) {
     output,
     witness_professions: readList("forced-witness_professions"),
     ...readVillagerEquipment("forced", "witness"),
+    player_items: readList("forced-player_items"),
+    player_item_slots: readList("forced-player_item_slots"),
     loot_tables: readList("forced-loot_tables"),
     target_entity_types: readList("forced-target_entity_types"),
     min_recent_retaliations: parseInteger(readValue("forced-min_recent_retaliations")),
@@ -7246,6 +7270,7 @@ function normalizeForcedDialogueEntries(json) {
 function isNotificationEntry(entry) {
   if (!entry || typeof entry !== "object" || Array.isArray(entry)) return false;
   if (!entry.trigger || !hasNotificationText(entry)) return false;
+  if (CONSTANTS.forcedDialogueTriggers.includes(forcedTriggerValue(entry))) return false;
   const notificationKeys = [
     "id",
     "kind",

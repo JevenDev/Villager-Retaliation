@@ -174,6 +174,9 @@ public final class VillagerRetaliationEvents {
             VillagerConversationService.tickVillager(villager);
             VillagerRecruitmentService.onVillagerTickPost(villager);
             rememberWeatherEventNearVillager(villager);
+            if (villager.level() instanceof ServerLevel level) {
+                ForcedDialogueService.maybeTriggerPlayerItemProximity(level, villager);
+            }
         }
         clearIronGolemTargetingVillagers(event.getEntity());
         VillagerRetaliationHandler.onEntityTickPost(event);
