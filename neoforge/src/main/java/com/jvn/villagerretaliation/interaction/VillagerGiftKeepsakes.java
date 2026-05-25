@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.interaction;
 
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.inventory.VillagerGiftReturnTracker;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
@@ -25,7 +26,8 @@ public final class VillagerGiftKeepsakes {
         if (giftedStack.isEmpty()) {
             return;
         }
-        if (maybeKeepGift(level, villager, player, giftedStack, giftPreference)) {
+        if (VillagerRetaliationConfig.ENABLE_GIFT_KEEPSAKES.get()
+                && maybeKeepGift(level, villager, player, giftedStack, giftPreference)) {
             VillagerGiftReturnTracker.recordStoredGift(level, villager, player, giftedStack, giftPreference.reputationValue());
             return;
         }

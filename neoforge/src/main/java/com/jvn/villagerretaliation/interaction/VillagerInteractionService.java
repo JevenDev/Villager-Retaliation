@@ -328,6 +328,10 @@ public final class VillagerInteractionService {
     }
 
     public static void handleGiftRequest(ServerPlayer player, int entityId, int inventorySlot) {
+        if (!VillagerRetaliationConfig.ENABLE_VILLAGER_GIFTS.get()) {
+            sendNotice(player, entityId, "interaction.gift_unavailable");
+            return;
+        }
         Villager villager = resolveVillager(player, entityId);
         if (villager == null) {
             sendNotice(player, entityId, "interaction.gift_unavailable");

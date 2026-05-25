@@ -187,6 +187,7 @@ public final class VillagerReputationManager {
 
     public static boolean inheritReputationFromParents(ServerLevel level, Villager child, Villager parentA, Villager parentB) {
         if (!VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()
+                || !VillagerRetaliationConfig.ENABLE_PARENT_REPUTATION_INHERITANCE.get()
                 || child == null
                 || parentA == null
                 || parentB == null) {

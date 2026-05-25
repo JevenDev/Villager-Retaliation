@@ -7,6 +7,7 @@ import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil;
 import com.jvn.villagerretaliation.combat.VillagerPacificationResult;
 import com.jvn.villagerretaliation.combat.VillagerPacifyPaymentResources;
 import com.jvn.villagerretaliation.combat.WanderingTraderRetaliationHandler;
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.debug.VillagerRetaliationDebugItems;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueService;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueService;
@@ -343,6 +344,7 @@ public final class VillagerRetaliationEvents {
     private static void tryGiveHighReputationGift(Villager villager, Player player, InteractionHand hand) {
         if (hand != InteractionHand.MAIN_HAND
                 || !(villager.level() instanceof ServerLevel level)
+                || !VillagerRetaliationConfig.ENABLE_HIGH_REPUTATION_GIFTS.get()
                 || !villager.isAlive()
                 || villager.isBaby()
                 || !VillagerReputationManager.canGiveHighReputationGift(level, villager, player)) {
@@ -488,6 +490,7 @@ public final class VillagerRetaliationEvents {
 
     private static void broadcastVillagerDeathMessage(Villager villager, DamageSource source) {
         if (!(villager.level() instanceof ServerLevel level)
+                || !VillagerRetaliationConfig.ENABLE_VILLAGER_DEATH_MESSAGES.get()
                 || !level.getGameRules().getBoolean(GameRules.RULE_SHOWDEATHMESSAGES)) {
             return;
         }

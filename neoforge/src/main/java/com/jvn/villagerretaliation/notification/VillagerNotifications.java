@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.notification;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.network.VillagerWorldTextIndicatorKind;
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.util.VillagerLocale;
@@ -120,6 +121,9 @@ public final class VillagerNotifications {
             Map<String, String> replacements,
             VillagerWorldTextIndicatorKind fallbackKind,
             String fallbackText) {
+        if (!VillagerRetaliationConfig.ENABLE_WORLD_TEXT_NOTIFICATIONS.get()) {
+            return false;
+        }
         VillagerNotificationContext context = context(level, villager, player, target);
         ResolvedVillagerNotification notification = VillagerNotificationResources
                 .select(context, trigger, replacements)

@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.social;
 
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -24,6 +25,9 @@ public final class VillagerSocialGraphService {
     }
 
     public static void onEntityJoinLevel(EntityJoinLevelEvent event) {
+        if (!VillagerRetaliationConfig.ENABLE_VILLAGER_SOCIAL_GRAPH.get()) {
+            return;
+        }
         if (event.getLevel() instanceof ServerLevel level && event.getEntity() instanceof Villager villager) {
             VillagerSocialGraphSavedData.get(level).ensureProfile(level, villager);
         }
@@ -32,6 +36,7 @@ public final class VillagerSocialGraphService {
     public static void onEntityTickPost(EntityTickEvent.Post event) {
         if (!(event.getEntity() instanceof Villager villager)
                 || !(villager.level() instanceof ServerLevel level)
+                || !VillagerRetaliationConfig.ENABLE_VILLAGER_SOCIAL_GRAPH.get()
                 || level.getGameTime() % PROFILE_REFRESH_INTERVAL_TICKS
                 != Math.floorMod(villager.getUUID().getLeastSignificantBits(), PROFILE_REFRESH_INTERVAL_TICKS)) {
             return;
@@ -44,18 +49,21 @@ public final class VillagerSocialGraphService {
         Mob parentB = event.getParentB();
         if (!(parentA instanceof Villager parentVillagerA)
                 || !(parentB instanceof Villager parentVillagerB)
-                || !(parentA.level() instanceof ServerLevel level)) {
+                || !(parentA.level() instanceof ServerLevel level)
+                || !VillagerRetaliationConfig.ENABLE_VILLAGER_SOCIAL_GRAPH.get()) {
             return;
         }
 
         VillagerSocialGraphSavedData socialGraph = VillagerSocialGraphSavedData.get(level);
-        VillagerSocialGraphSavedData.BreedingValidation validation = socialGraph.validateBreedingPair(level, parentVillagerA, parentVillagerB);
-        if (!validation.allowed()) {
-            event.setCanceled(true);
-            if (event.getCausedByPlayer() instanceof ServerPlayer player) {
-                player.displayClientMessage(net.minecraft.network.chat.Component.literal(validation.reason()), true);
+        if (VillagerRetaliationConfig.ENABLE_FAMILY_BREEDING_RULES.get()) {
+            VillagerSocialGraphSavedData.BreedingValidation validation = socialGraph.validateBreedingPair(level, parentVillagerA, parentVillagerB);
+            if (!validation.allowed()) {
+                event.setCanceled(true);
+                if (event.getCausedByPlayer() instanceof ServerPlayer player) {
+                    player.displayClientMessage(net.minecraft.network.chat.Component.literal(validation.reason()), true);
+                }
+                return;
             }
-            return;
         }
 
         AgeableMob child = event.getChild();
@@ -69,13 +77,18 @@ public final class VillagerSocialGraphService {
     }
 
     public static void onLivingDeath(LivingDeathEvent event) {
-        if (event.getEntity() instanceof Villager villager && villager.level() instanceof ServerLevel level) {
+        if (VillagerRetaliationConfig.ENABLE_VILLAGER_SOCIAL_GRAPH.get()
+                && event.getEntity() instanceof Villager villager
+                && villager.level() instanceof ServerLevel level) {
             VillagerSocialGraphSavedData.get(level).markDead(level, villager, deathCause(event.getSource()));
         }
     }
 
     public static void onLivingConversionPost(LivingConversionEvent.Post event) {
         if (!(event.getEntity().level() instanceof ServerLevel level)) {
+            return;
+        }
+        if (!VillagerRetaliationConfig.ENABLE_VILLAGER_SOCIAL_GRAPH.get()) {
             return;
         }
 
@@ -93,10 +106,16 @@ public final class VillagerSocialGraphService {
     }
 
     public static VillagerFamilyTreeSnapshot familySnapshot(ServerLevel level, Villager villager) {
+        if (!VillagerRetaliationConfig.ENABLE_VILLAGER_SOCIAL_GRAPH.get()) {
+            return VillagerFamilyTreeSnapshot.EMPTY;
+        }
         return VillagerSocialGraphSavedData.get(level).familySnapshot(level, villager);
     }
 
     public static VillagerRelationshipSnapshot relationshipSnapshot(ServerLevel level, Villager villager) {
+        if (!VillagerRetaliationConfig.ENABLE_VILLAGER_SOCIAL_GRAPH.get()) {
+            return VillagerRelationshipSnapshot.EMPTY;
+        }
         return VillagerSocialGraphSavedData.get(level).relationshipSnapshot(level, villager);
     }
 

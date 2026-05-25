@@ -15,6 +15,9 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.BooleanValue SHIFT_RIGHT_CLICK_BYPASSES_INTERACTION_SCREEN;
     public static final ModConfigSpec.BooleanValue ENABLE_DIALOGUE_REPUTATION_EFFECTS;
     public static final ModConfigSpec.BooleanValue ENABLE_DIALOGUE_CAMERA_FOCUS;
+    public static final ModConfigSpec.BooleanValue ENABLE_FORCED_DIALOGUE;
+    public static final ModConfigSpec.BooleanValue ENABLE_CONTAINER_FORCED_DIALOGUE;
+    public static final ModConfigSpec.BooleanValue ENABLE_RETALIATION_FORCED_DIALOGUE;
     public static final ModConfigSpec.BooleanValue SEPARATE_VILLAGER_CHAT_MESSAGES;
     public static final ModConfigSpec.BooleanValue SEPARATE_VILLAGER_CHAT_SPEAKERS;
     public static final ModConfigSpec.EnumValue<InteractionChatPosition> INTERACTION_CHAT_POSITION;
@@ -27,7 +30,21 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.DoubleValue MAX_DIALOGUE_DISTANCE;
     public static final ModConfigSpec.DoubleValue MAX_FORCED_DIALOGUE_DISTANCE;
     public static final ModConfigSpec.EnumValue<ContainerForcedDialogueTrigger> CONTAINER_FORCED_DIALOGUE_TRIGGER;
+    public static final ModConfigSpec.EnumValue<ContainerWatchMode> CONTAINER_WATCH_MODE;
     public static final ModConfigSpec.BooleanValue VILLAGER_REPUTATION_HOVER_TOOLTIP_REQUIRES_EMERALD;
+    public static final ModConfigSpec.BooleanValue ENABLE_VILLAGER_DEATH_MESSAGES;
+    public static final ModConfigSpec.BooleanValue ENABLE_WORLD_TEXT_NOTIFICATIONS;
+    public static final ModConfigSpec.BooleanValue ENABLE_AMBIENT_MURMURS;
+    public static final ModConfigSpec.BooleanValue ENABLE_SLEEP_INDICATORS;
+    public static final ModConfigSpec.BooleanValue ENABLE_DAMAGE_ALERTS;
+    public static final ModConfigSpec.BooleanValue ENABLE_COMBAT_ALERTS;
+    public static final ModConfigSpec.BooleanValue ENABLE_TRADE_AND_GIFT_WORLD_TEXT;
+    public static final ModConfigSpec.BooleanValue ENABLE_VILLAGER_GIFTS;
+    public static final ModConfigSpec.BooleanValue ENABLE_HIGH_REPUTATION_GIFTS;
+    public static final ModConfigSpec.BooleanValue ENABLE_GIFT_KEEPSAKES;
+    public static final ModConfigSpec.BooleanValue ENABLE_VILLAGER_SOCIAL_GRAPH;
+    public static final ModConfigSpec.BooleanValue ENABLE_FAMILY_BREEDING_RULES;
+    public static final ModConfigSpec.BooleanValue ENABLE_PARENT_REPUTATION_INHERITANCE;
 
     public static final ModConfigSpec.BooleanValue BABY_VILLAGERS_DROP_LOOT;
     public static final ModConfigSpec.BooleanValue REQUIRE_PLAYER_KILL_FOR_PROFESSION_LOOT;
@@ -180,6 +197,10 @@ public final class VillagerRetaliationConfig {
                 .comment("Requires the player to hold an emerald before the villager reputation hover tooltip appears.")
                 .translation("villagerretaliation.configuration.general.villagerReputationHoverTooltipRequiresEmerald")
                 .define("villagerReputationHoverTooltipRequiresEmerald", true);
+        ENABLE_VILLAGER_DEATH_MESSAGES = BUILDER
+                .comment("Allows named villager death messages to be broadcast when vanilla death messages are enabled.")
+                .translation("villagerretaliation.configuration.general.enableVillagerDeathMessages")
+                .define("enableVillagerDeathMessages", true);
         BUILDER.pop();
 
         BUILDER.push("dialogue");
@@ -199,6 +220,18 @@ public final class VillagerRetaliationConfig {
                 .comment("Enables a subtle client-side FOV zoom while the Villager Retaliation dialogue screen is open.")
                 .translation("villagerretaliation.configuration.dialogue.enableDialogueCameraFocus")
                 .define("enableDialogueCameraFocus", true);
+        ENABLE_FORCED_DIALOGUE = BUILDER
+                .comment("Enables event-driven forced dialogue such as witnessed retaliation and watched-container confrontations.")
+                .translation("villagerretaliation.configuration.dialogue.enableForcedDialogue")
+                .define("enableForcedDialogue", true);
+        ENABLE_CONTAINER_FORCED_DIALOGUE = BUILDER
+                .comment("Enables watched-container forced dialogue and theft/opening chat.")
+                .translation("villagerretaliation.configuration.dialogue.enableContainerForcedDialogue")
+                .define("enableContainerForcedDialogue", true);
+        ENABLE_RETALIATION_FORCED_DIALOGUE = BUILDER
+                .comment("Enables forced dialogue and combat barks when villagers begin retaliation.")
+                .translation("villagerretaliation.configuration.dialogue.enableRetaliationForcedDialogue")
+                .define("enableRetaliationForcedDialogue", true);
         SEPARATE_VILLAGER_CHAT_MESSAGES = BUILDER
                 .comment("Adds a blank chat line between consecutive villager dialogue messages for readability.")
                 .translation("villagerretaliation.configuration.dialogue.separateVillagerChatMessages")
@@ -235,6 +268,10 @@ public final class VillagerRetaliationConfig {
                 .comment("When watched containers should trigger forced dialogue: THEFT_ONLY waits until items are removed, OPENING triggers as soon as the container is opened.")
                 .translation("villagerretaliation.configuration.dialogue.containerForcedDialogueTrigger")
                 .defineEnum("containerForcedDialogueTrigger", ContainerForcedDialogueTrigger.OPENING);
+        CONTAINER_WATCH_MODE = BUILDER
+                .comment("Which containers can trigger watched-container dialogue: GENERATED_LOOT_ONLY only watches containers with remembered loot tables, ALL_WATCHED_CONTAINERS also watches chests, barrels, and shulker boxes without loot tables.")
+                .translation("villagerretaliation.configuration.dialogue.containerWatchMode")
+                .defineEnum("containerWatchMode", ContainerWatchMode.GENERATED_LOOT_ONLY);
         DIALOGUE_POSITIVE_REPUTATION_COOLDOWN_DAYS = BUILDER.comment("Minimum Minecraft day changes between positive dialogue reputation gains for the same player and villager.")
                 .translation("villagerretaliation.configuration.dialogue.dialoguePositiveReputationCooldownDays")
                 .defineInRange("dialoguePositiveReputationCooldownDays", 1, 0, 30);
@@ -289,6 +326,51 @@ public final class VillagerRetaliationConfig {
         FIRST_INSULT_REPUTATION_LOSS = BUILDER.comment("Reputation lost when the first conversation starts with an insult.")
                 .translation("villagerretaliation.configuration.dialogue.firstInsultReputationLoss")
                 .defineInRange("firstInsultReputationLoss", -5, -1000, 0);
+        BUILDER.pop();
+
+        BUILDER.push("notifications");
+        ENABLE_WORLD_TEXT_NOTIFICATIONS = BUILDER.comment("Enables villager world-text indicators from notifications, dialogue, gifts, trade, and combat.")
+                .translation("villagerretaliation.configuration.notifications.enableWorldTextNotifications")
+                .define("enableWorldTextNotifications", true);
+        ENABLE_AMBIENT_MURMURS = BUILDER.comment("Enables idle villager murmurs near players.")
+                .translation("villagerretaliation.configuration.notifications.enableAmbientMurmurs")
+                .define("enableAmbientMurmurs", true);
+        ENABLE_SLEEP_INDICATORS = BUILDER.comment("Enables sleeping villager world-text indicators.")
+                .translation("villagerretaliation.configuration.notifications.enableSleepIndicators")
+                .define("enableSleepIndicators", true);
+        ENABLE_DAMAGE_ALERTS = BUILDER.comment("Enables villager damage and death alert world-text indicators.")
+                .translation("villagerretaliation.configuration.notifications.enableDamageAlerts")
+                .define("enableDamageAlerts", true);
+        ENABLE_COMBAT_ALERTS = BUILDER.comment("Enables retaliation, flee, attack-landed, and player-killed combat world-text indicators.")
+                .translation("villagerretaliation.configuration.notifications.enableCombatAlerts")
+                .define("enableCombatAlerts", true);
+        ENABLE_TRADE_AND_GIFT_WORLD_TEXT = BUILDER.comment("Enables trade, gift, and trade-refusal world-text indicators.")
+                .translation("villagerretaliation.configuration.notifications.enableTradeAndGiftWorldText")
+                .define("enableTradeAndGiftWorldText", true);
+        BUILDER.pop();
+
+        BUILDER.push("gifts");
+        ENABLE_VILLAGER_GIFTS = BUILDER.comment("Enables the gift flow in the Villager Retaliation interaction screen.")
+                .translation("villagerretaliation.configuration.gifts.enableVillagerGifts")
+                .define("enableVillagerGifts", true);
+        ENABLE_HIGH_REPUTATION_GIFTS = BUILDER.comment("Allows revered and royalty-tier villagers to occasionally give the player reward gifts.")
+                .translation("villagerretaliation.configuration.gifts.enableHighReputationGifts")
+                .define("enableHighReputationGifts", true);
+        ENABLE_GIFT_KEEPSAKES = BUILDER.comment("Allows trusted-or-better villagers to equip liked or loved gifts as keepsakes when possible.")
+                .translation("villagerretaliation.configuration.gifts.enableGiftKeepsakes")
+                .define("enableGiftKeepsakes", true);
+        BUILDER.pop();
+
+        BUILDER.push("social");
+        ENABLE_VILLAGER_SOCIAL_GRAPH = BUILDER.comment("Tracks villager family and relationship profiles used by the interaction screen and dialogue conditions.")
+                .translation("villagerretaliation.configuration.social.enableVillagerSocialGraph")
+                .define("enableVillagerSocialGraph", true);
+        ENABLE_FAMILY_BREEDING_RULES = BUILDER.comment("Prevents villager breeding pairs that violate tracked family relationship rules.")
+                .translation("villagerretaliation.configuration.social.enableFamilyBreedingRules")
+                .define("enableFamilyBreedingRules", true);
+        ENABLE_PARENT_REPUTATION_INHERITANCE = BUILDER.comment("Allows baby villagers to inherit parent reputation entries when born or adopted.")
+                .translation("villagerretaliation.configuration.social.enableParentReputationInheritance")
+                .define("enableParentReputationInheritance", true);
         BUILDER.pop();
 
         BUILDER.push("balance");

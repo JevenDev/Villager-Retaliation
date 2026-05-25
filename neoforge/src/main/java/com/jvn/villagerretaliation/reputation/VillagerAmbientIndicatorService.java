@@ -52,6 +52,7 @@ public final class VillagerAmbientIndicatorService {
 
     public static void maybeMurmurNearPlayers(ServerLevel level, AbstractVillager villager) {
         if (!VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()
+                || !VillagerRetaliationConfig.ENABLE_AMBIENT_MURMURS.get()
                 || !villager.isAlive()
                 || villager.isTrading()) {
             return;
@@ -95,6 +96,10 @@ public final class VillagerAmbientIndicatorService {
     }
 
     public static void maybeEmitSleepIndicator(ServerLevel level, Villager villager) {
+        if (!VillagerRetaliationConfig.ENABLE_SLEEP_INDICATORS.get()) {
+            NEXT_SLEEP_TICK.remove(villager.getUUID());
+            return;
+        }
         if (!villager.isAlive() || !villager.isSleeping()) {
             NEXT_SLEEP_TICK.remove(villager.getUUID());
             return;
@@ -116,7 +121,7 @@ public final class VillagerAmbientIndicatorService {
     }
 
     public static void onVillagerDamaged(ServerLevel level, AbstractVillager damaged, Entity attacker) {
-        if (!damaged.isAlive()) {
+        if (!VillagerRetaliationConfig.ENABLE_DAMAGE_ALERTS.get() || !damaged.isAlive()) {
             return;
         }
 
@@ -159,6 +164,9 @@ public final class VillagerAmbientIndicatorService {
     }
 
     public static void onVillagerKilled(ServerLevel level, AbstractVillager killed, Entity attacker) {
+        if (!VillagerRetaliationConfig.ENABLE_DAMAGE_ALERTS.get()) {
+            return;
+        }
         AABB area = killed.getBoundingBox().inflate(ALERT_WITNESS_RADIUS);
         int alerted = 0;
         for (AbstractVillager witness : level.getEntitiesOfClass(AbstractVillager.class, area)) {
@@ -190,7 +198,7 @@ public final class VillagerAmbientIndicatorService {
     }
 
     public static void onPlayerKilled(ServerLevel level, AbstractVillager killer, ServerPlayer player) {
-        if (!killer.isAlive()) {
+        if (!VillagerRetaliationConfig.ENABLE_COMBAT_ALERTS.get() || !killer.isAlive()) {
             return;
         }
 
@@ -233,21 +241,26 @@ public final class VillagerAmbientIndicatorService {
         if (villager instanceof Villager resident) {
             ForcedDialogueService.triggerRetaliationChat(level, resident, target);
         }
-        VillagerNotifications.sendWorldText(
-                level,
-                villager,
-                target instanceof Player player ? player : null,
-                target,
-                "combat.retaliation_started",
-                retaliationReplacements(villager, target),
-                VillagerWorldTextIndicatorKind.ALERT,
-                ""
-        );
+        if (VillagerRetaliationConfig.ENABLE_COMBAT_ALERTS.get()) {
+            VillagerNotifications.sendWorldText(
+                    level,
+                    villager,
+                    target instanceof Player player ? player : null,
+                    target,
+                    "combat.retaliation_started",
+                    retaliationReplacements(villager, target),
+                    VillagerWorldTextIndicatorKind.ALERT,
+                    ""
+            );
+        }
         pruneCooldowns(gameTime);
     }
 
     public static void onFleeStarted(ServerLevel level, AbstractVillager villager, LivingEntity target) {
-        if (!villager.isAlive() || target == null || !target.isAlive()) {
+        if (!VillagerRetaliationConfig.ENABLE_COMBAT_ALERTS.get()
+                || !villager.isAlive()
+                || target == null
+                || !target.isAlive()) {
             return;
         }
 
@@ -277,7 +290,7 @@ public final class VillagerAmbientIndicatorService {
     }
 
     public static void onAttackLanded(ServerLevel level, AbstractVillager villager, LivingEntity target) {
-        if (!villager.isAlive() || !target.isAlive()) {
+        if (!VillagerRetaliationConfig.ENABLE_COMBAT_ALERTS.get() || !villager.isAlive() || !target.isAlive()) {
             return;
         }
 
@@ -307,6 +320,9 @@ public final class VillagerAmbientIndicatorService {
     }
 
     public static void onTradeCompleted(ServerLevel level, AbstractVillager villager, Player player) {
+        if (!VillagerRetaliationConfig.ENABLE_TRADE_AND_GIFT_WORLD_TEXT.get()) {
+            return;
+        }
         VillagerReputationLevel reputationLevel = VillagerReputationManager.getReputationLevel(level, villager, player.getUUID());
         String text = switch (reputationLevel) {
             case ROYALTY, REVERED -> random(villager.getRandom(), "A pleasure", "For you", "Any time");
@@ -405,6 +421,9 @@ public final class VillagerAmbientIndicatorService {
     }
 
     public static void onHighReputationGift(AbstractVillager villager) {
+        if (!VillagerRetaliationConfig.ENABLE_TRADE_AND_GIFT_WORLD_TEXT.get()) {
+            return;
+        }
         if (villager.level() instanceof ServerLevel level) {
             emit(level, villager, null, "gift.high_reputation", VillagerWorldTextIndicatorKind.POSITIVE,
                     random(villager.getRandom(), "For you", "Take this", "You've earned it"));
@@ -412,6 +431,9 @@ public final class VillagerAmbientIndicatorService {
     }
 
     public static void onGiftReceived(AbstractVillager villager, int reputationValue) {
+        if (!VillagerRetaliationConfig.ENABLE_TRADE_AND_GIFT_WORLD_TEXT.get()) {
+            return;
+        }
         if (!(villager.level() instanceof ServerLevel level)) {
             return;
         }
@@ -428,6 +450,9 @@ public final class VillagerAmbientIndicatorService {
     }
 
     public static void onTradeRefused(AbstractVillager villager) {
+        if (!VillagerRetaliationConfig.ENABLE_TRADE_AND_GIFT_WORLD_TEXT.get()) {
+            return;
+        }
         if (villager.level() instanceof ServerLevel level) {
             emit(level, villager, null, "trade.refused", VillagerWorldTextIndicatorKind.NEGATIVE,
                     random(villager.getRandom(), "No trades", "Not you", "Leave"));

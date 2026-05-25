@@ -398,7 +398,9 @@ public class VillagerInteractionScreen extends Screen {
         this.options.add(DialogueOption.enabled(translate("root.talk"), this::openTalkPage));
         if (!this.baby) {
             this.options.add(DialogueOption.enabled(translate("root.trade"), this::requestTrade));
-            this.options.add(DialogueOption.enabled(translate("root.gift"), this::openGiftPage));
+            if (VillagerRetaliationConfig.ENABLE_VILLAGER_GIFTS.get()) {
+                this.options.add(DialogueOption.enabled(translate("root.gift"), this::openGiftPage));
+            }
             if (canRequestVillagerInventory()) {
                 this.options.add(DialogueOption.enabled(translate("root.inventory"), this::requestInventory));
             }

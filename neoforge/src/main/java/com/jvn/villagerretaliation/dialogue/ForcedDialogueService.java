@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.dialogue;
 
 import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
 import com.jvn.villagerretaliation.config.ContainerForcedDialogueTrigger;
+import com.jvn.villagerretaliation.config.ContainerWatchMode;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources.ForcedDialogueContext;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources.ForcedDialogueDefinition;
@@ -73,7 +74,8 @@ public final class ForcedDialogueService {
     public static void rememberPotentialContainerOpen(PlayerInteractEvent.RightClickBlock event) {
         if (!(event.getEntity() instanceof ServerPlayer player)
                 || !(event.getLevel() instanceof ServerLevel level)
-                || event.getHand() != net.minecraft.world.InteractionHand.MAIN_HAND) {
+                || event.getHand() != net.minecraft.world.InteractionHand.MAIN_HAND
+                || !containerForcedDialogueEnabled()) {
             return;
         }
 
@@ -92,7 +94,8 @@ public final class ForcedDialogueService {
 
     public static void onContainerOpen(PlayerContainerEvent.Open event) {
         if (!(event.getEntity() instanceof ServerPlayer player)
-                || !(player.level() instanceof ServerLevel level)) {
+                || !(player.level() instanceof ServerLevel level)
+                || !containerForcedDialogueEnabled()) {
             return;
         }
 
@@ -132,7 +135,8 @@ public final class ForcedDialogueService {
     public static void onItemToss(ItemTossEvent event) {
         if (!(event.getPlayer() instanceof ServerPlayer player)
                 || !(player.level() instanceof ServerLevel level)
-                || event.getEntity().getItem().isEmpty()) {
+                || event.getEntity().getItem().isEmpty()
+                || !containerForcedDialogueEnabled()) {
             return;
         }
 
@@ -156,7 +160,8 @@ public final class ForcedDialogueService {
 
     public static void onContainerClose(PlayerContainerEvent.Close event) {
         if (!(event.getEntity() instanceof ServerPlayer player)
-                || !(player.level() instanceof ServerLevel level)) {
+                || !(player.level() instanceof ServerLevel level)
+                || !containerForcedDialogueEnabled()) {
             return;
         }
 
@@ -176,7 +181,9 @@ public final class ForcedDialogueService {
 
     public static boolean handleDialogueRequest(ServerPlayer player, Villager villager, String optionId) {
         ForcedDialogueSession session = FORCED_SESSIONS.get(player.getUUID());
-        if (session == null || !session.villagerId().equals(villager.getUUID())) {
+        if (!VillagerRetaliationConfig.ENABLE_FORCED_DIALOGUE.get()
+                || session == null
+                || !session.villagerId().equals(villager.getUUID())) {
             return false;
         }
         if (player.serverLevel().getGameTime() - session.startedGameTime() > FORCED_SESSION_TIMEOUT_TICKS) {
@@ -200,7 +207,9 @@ public final class ForcedDialogueService {
 
     public static boolean handleLeaveRequest(ServerPlayer player, Villager villager, boolean forceEndConversation) {
         ForcedDialogueSession session = FORCED_SESSIONS.get(player.getUUID());
-        if (session == null || !session.villagerId().equals(villager.getUUID())) {
+        if (!VillagerRetaliationConfig.ENABLE_FORCED_DIALOGUE.get()
+                || session == null
+                || !session.villagerId().equals(villager.getUUID())) {
             return false;
         }
         Optional<ForcedDialogueOption> selected = selectLeaveOption(player, villager, session);
@@ -630,6 +639,9 @@ public final class ForcedDialogueService {
     }
 
     public static boolean triggerRetaliationStarted(ServerLevel level, Villager villager, ServerPlayer player) {
+        if (!retaliationForcedDialogueEnabled()) {
+            return false;
+        }
         ResourceLocation targetTypeId = BuiltInRegistries.ENTITY_TYPE.getKey(player.getType());
         int priorRetaliations = VillageEventMemory.countForPlayer(
                 VillageEventMemory.recentForVillage(level, villager),
@@ -661,7 +673,7 @@ public final class ForcedDialogueService {
     }
 
     public static void triggerRetaliationChat(ServerLevel level, Villager villager, LivingEntity target) {
-        if (target instanceof ServerPlayer) {
+        if (target instanceof ServerPlayer || !retaliationForcedDialogueEnabled()) {
             return;
         }
         ResourceLocation targetTypeId = BuiltInRegistries.ENTITY_TYPE.getKey(target.getType());
@@ -1062,7 +1074,18 @@ public final class ForcedDialogueService {
         if (!isWatchedContainer(state) && lootTable == null) {
             return false;
         }
-        return lootTable != null;
+        return lootTable != null
+                || VillagerRetaliationConfig.CONTAINER_WATCH_MODE.get() == ContainerWatchMode.ALL_WATCHED_CONTAINERS;
+    }
+
+    private static boolean containerForcedDialogueEnabled() {
+        return VillagerRetaliationConfig.ENABLE_FORCED_DIALOGUE.get()
+                && VillagerRetaliationConfig.ENABLE_CONTAINER_FORCED_DIALOGUE.get();
+    }
+
+    private static boolean retaliationForcedDialogueEnabled() {
+        return VillagerRetaliationConfig.ENABLE_FORCED_DIALOGUE.get()
+                && VillagerRetaliationConfig.ENABLE_RETALIATION_FORCED_DIALOGUE.get();
     }
 
     private static ResourceLocation generatedContainerLootTable(ServerLevel level, BlockPos pos) {
