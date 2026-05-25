@@ -631,6 +631,7 @@ const els = {
   wikiTitlebar: document.querySelector("#wiki-titlebar"),
   wikiVersion: document.querySelector("#wiki-version"),
   wikiSearch: document.querySelector("#wiki-search"),
+  wikiHighlightButton: document.querySelector("#wiki-highlight-button"),
   wikiTabs: document.querySelector("#wiki-tabs"),
   wikiCloseButton: document.querySelector("#wiki-close-button"),
   wikiResults: document.querySelector("#wiki-results"),
@@ -659,6 +660,7 @@ const MIN_BUILDER_WIDTH = 360;
 const MIN_PREVIEW_HEIGHT = 180;
 let panelResizeState = null;
 const WIKI_STORAGE_KEY = "vr-datapack-builder-wiki";
+const WIKI_HIGHLIGHTS_FILE = "__wiki_highlights__";
 const KEYBIND_STORAGE_KEY = "vr-datapack-builder-keybinds";
 const WIKI_MIN_WIDTH = 300;
 const WIKI_MIN_HEIGHT = 310;
@@ -678,8 +680,10 @@ let wikiPointerState = null;
 let wikiTabDragState = null;
 let suppressWikiTabClickUntil = 0;
 let lastWikiMiddleOpen = { signature: "", time: 0 };
+let lastWikiHighlightSelection = null;
 let keybinds = readKeybinds();
 let recordingKeybindAction = "";
+let wikiHighlightDragState = null;
 let wikiState = {
   isOpen: false,
   version: CURRENT_PACK_VERSION,
@@ -690,6 +694,7 @@ let wikiState = {
   selectedSectionId: "",
   activeTabId: "wiki-tab-1",
   tabs: [{ id: "wiki-tab-1", file: "Home.md", sectionId: "" }],
+  highlights: [],
   results: [],
   resultMode: "pages",
   status: ""
@@ -972,25 +977,162 @@ function resetPanelSize(target) {
 }
 
 function readWikiLayout() {
+  const stored = readWikiStorage();
+  return {
+    left: Number.isFinite(Number(stored.left)) ? Number(stored.left) : WIKI_DEFAULT_LAYOUT.left,
+    top: Number.isFinite(Number(stored.top)) ? Number(stored.top) : WIKI_DEFAULT_LAYOUT.top,
+    width: Number.isFinite(Number(stored.width)) ? Number(stored.width) : WIKI_DEFAULT_LAYOUT.width,
+    height: Number.isFinite(Number(stored.height)) ? Number(stored.height) : WIKI_DEFAULT_LAYOUT.height
+  };
+}
+
+function readWikiStorage() {
   try {
-    const stored = JSON.parse(localStorage.getItem(WIKI_STORAGE_KEY) || "{}") || {};
-    return {
-      left: Number.isFinite(Number(stored.left)) ? Number(stored.left) : WIKI_DEFAULT_LAYOUT.left,
-      top: Number.isFinite(Number(stored.top)) ? Number(stored.top) : WIKI_DEFAULT_LAYOUT.top,
-      width: Number.isFinite(Number(stored.width)) ? Number(stored.width) : WIKI_DEFAULT_LAYOUT.width,
-      height: Number.isFinite(Number(stored.height)) ? Number(stored.height) : WIKI_DEFAULT_LAYOUT.height
-    };
+    return JSON.parse(localStorage.getItem(WIKI_STORAGE_KEY) || "{}") || {};
   } catch {
-    return { ...WIKI_DEFAULT_LAYOUT };
+    return {};
   }
 }
 
 function writeWikiLayout(layout) {
+  const stored = readWikiStorage();
+  writeWikiStorage({
+    ...stored,
+    left: layout.left,
+    top: layout.top,
+    width: layout.width,
+    height: layout.height
+  });
+}
+
+function writeWikiStorage(value) {
   try {
-    localStorage.setItem(WIKI_STORAGE_KEY, JSON.stringify(layout));
+    localStorage.setItem(WIKI_STORAGE_KEY, JSON.stringify(value));
   } catch {
-    // The wiki remains movable and resizable for this session if storage is unavailable.
+    // The wiki remains usable for the current session if storage is unavailable.
   }
+}
+
+function readWikiHighlights() {
+  const stored = readWikiStorage();
+  return normalizeWikiHighlights(stored.highlights);
+}
+
+function writeWikiHighlights(highlights) {
+  const stored = readWikiStorage();
+  writeWikiStorage({
+    ...stored,
+    highlights: normalizeWikiHighlights(highlights)
+  });
+}
+
+function normalizeWikiHighlightTerm(value) {
+  return String(value || "").replace(/\s+/g, " ").trim();
+}
+
+function normalizeWikiHighlightKey(value) {
+  return normalizeWikiHighlightTerm(value).toLowerCase();
+}
+
+function normalizeWikiHighlights(values) {
+  if (!Array.isArray(values)) return [];
+  const seen = new Set();
+  const highlights = [];
+  for (const value of values) {
+    const entry = typeof value === "string" ? { text: value, html: escapeHtml(value) } : value;
+    const text = normalizeWikiHighlightTerm(entry?.text);
+    if (!text) continue;
+    const occurrenceIndex = Number.isFinite(Number(entry?.occurrenceIndex)) ? Number(entry.occurrenceIndex) : -1;
+    const startOffset = Number.isFinite(Number(entry?.startOffset)) ? Number(entry.startOffset) : -1;
+    const endOffset = Number.isFinite(Number(entry?.endOffset)) ? Number(entry.endOffset) : -1;
+    const key = [entry?.file || "", entry?.sectionId || "", startOffset, endOffset, occurrenceIndex, normalizeWikiHighlightKey(text)].join("|");
+    if (seen.has(key)) continue;
+    seen.add(key);
+    highlights.push({
+      id: String(entry?.id || `highlight-${Date.now()}-${highlights.length}`),
+      text,
+      html: sanitizeWikiHighlightHtml(entry?.html || escapeHtml(text)),
+      file: String(entry?.file || ""),
+      title: String(entry?.title || ""),
+      sectionId: String(entry?.sectionId || ""),
+      occurrenceIndex,
+      startOffset,
+      endOffset
+    });
+  }
+  return highlights.slice(0, 80);
+}
+
+function wikiSavedHighlightEntries() {
+  return normalizeWikiHighlights(wikiState.highlights)
+    .filter((entry) => !entry.file || entry.file === wikiState.selectedFile);
+}
+
+function sanitizeWikiHighlightHtml(value) {
+  const template = document.createElement("template");
+  template.innerHTML = String(value || "");
+  template.content.querySelectorAll("script, style, iframe, object, embed").forEach((node) => node.remove());
+  template.content.querySelectorAll("*").forEach((node) => {
+    [...node.attributes].forEach((attribute) => {
+      if (/^on/i.test(attribute.name)) node.removeAttribute(attribute.name);
+    });
+  });
+  return template.innerHTML;
+}
+
+function normalizeWikiHighlightFragment(html) {
+  const template = document.createElement("template");
+  template.innerHTML = sanitizeWikiHighlightHtml(html);
+  const normalized = document.createDocumentFragment();
+  let list = null;
+  let table = null;
+  let tableRow = null;
+  const closeList = () => {
+    if (!list) return;
+    normalized.append(list);
+    list = null;
+  };
+  const closeTableRow = () => {
+    if (!tableRow) return;
+    if (!table) table = document.createElement("table");
+    table.append(tableRow);
+    tableRow = null;
+  };
+  const closeTable = () => {
+    closeTableRow();
+    if (!table) return;
+    normalized.append(table);
+    table = null;
+  };
+
+  [...template.content.childNodes].forEach((node) => {
+    if (node.nodeType === Node.ELEMENT_NODE && node.tagName.toLowerCase() === "li") {
+      closeTable();
+      if (!list) list = document.createElement("ul");
+      list.append(node);
+      return;
+    }
+    if (node.nodeType === Node.ELEMENT_NODE && node.tagName.toLowerCase() === "tr") {
+      closeList();
+      closeTableRow();
+      if (!table) table = document.createElement("table");
+      table.append(node);
+      return;
+    }
+    if (node.nodeType === Node.ELEMENT_NODE && ["td", "th"].includes(node.tagName.toLowerCase())) {
+      closeList();
+      if (!tableRow) tableRow = document.createElement("tr");
+      tableRow.append(node);
+      return;
+    }
+    closeList();
+    closeTable();
+    normalized.append(node);
+  });
+  closeList();
+  closeTable();
+  template.content.append(normalized);
+  return template.innerHTML;
 }
 
 function clampWikiLayout(layout) {
@@ -1021,6 +1163,7 @@ function setupWikiChrome() {
     .join("");
   const stored = readWikiLayout();
   wikiState.version = PACK_VERSION_IDS.includes(state.meta.packVersion) ? state.meta.packVersion : CURRENT_PACK_VERSION;
+  wikiState.highlights = readWikiHighlights();
   els.wikiVersion.value = wikiState.version;
   applyWikiLayout(stored);
 }
@@ -1056,8 +1199,13 @@ function createWikiTab(file = "Home.md", sectionId = "") {
   return {
     id: `wiki-tab-${nextWikiTabId++}`,
     file,
-    sectionId
+    sectionId,
+    pinned: false
   };
+}
+
+function isWikiHighlightsFile(file) {
+  return file === WIKI_HIGHLIGHTS_FILE;
 }
 
 function activeWikiTab() {
@@ -1071,12 +1219,18 @@ function activeWikiTab() {
 }
 
 function syncWikiSelectionFromActiveTab() {
+  if (isWikiHighlightsFile(wikiState.activeTabId)) {
+    wikiState.selectedFile = WIKI_HIGHLIGHTS_FILE;
+    wikiState.selectedSectionId = "";
+    return;
+  }
   const tab = activeWikiTab();
   wikiState.selectedFile = tab.file || "Home.md";
   wikiState.selectedSectionId = tab.sectionId || "";
 }
 
 function syncActiveWikiTabToSelection() {
+  if (isWikiHighlightsFile(wikiState.selectedFile)) return;
   const tab = activeWikiTab();
   tab.file = wikiState.selectedFile || "Home.md";
   tab.sectionId = wikiState.selectedSectionId || "";
@@ -1090,15 +1244,29 @@ function resetWikiTabs(file = "Home.md", sectionId = "") {
 }
 
 function setWikiLocation(file, sectionId = "", options = {}) {
-  if (!file || (wikiState.docs.length > 0 && !wikiState.docs.some((doc) => doc.file === file))) return false;
+  if (!file || (!isWikiHighlightsFile(file) && wikiState.docs.length > 0 && !wikiState.docs.some((doc) => doc.file === file))) return false;
+  if (isWikiHighlightsFile(file)) {
+    ensureHighlightsTab();
+    renderWiki();
+    return true;
+  }
+  const targetSectionId = sectionId || "";
   if (options.newTab) {
     const tab = createWikiTab(file, sectionId);
     wikiState.tabs.push(tab);
     wikiState.activeTabId = tab.id;
   } else {
     const tab = activeWikiTab();
-    tab.file = file;
-    tab.sectionId = sectionId || "";
+    const targetSignature = `${file}#${targetSectionId}`;
+    const currentSignature = `${tab.file || "Home.md"}#${tab.sectionId || ""}`;
+    if (tab.pinned && targetSignature !== currentSignature) {
+      const newTab = createWikiTab(file, sectionId);
+      wikiState.tabs.push(newTab);
+      wikiState.activeTabId = newTab.id;
+    } else {
+      tab.file = file;
+      tab.sectionId = targetSectionId;
+    }
   }
   syncWikiSelectionFromActiveTab();
   renderWiki();
@@ -1123,6 +1291,13 @@ function closeWikiTab(tabId) {
     wikiState.activeTabId = nextTab.id;
     syncWikiSelectionFromActiveTab();
   }
+  renderWiki();
+}
+
+function toggleWikiTabPinned(tabId) {
+  const tab = wikiState.tabs.find((candidate) => candidate.id === tabId);
+  if (!tab) return;
+  tab.pinned = !tab.pinned;
   renderWiki();
 }
 
@@ -1155,12 +1330,12 @@ function validateWikiTabs() {
     syncWikiSelectionFromActiveTab();
     return;
   }
-  wikiState.tabs = wikiState.tabs.filter((tab) => wikiState.docs.some((doc) => doc.file === tab.file));
+  wikiState.tabs = wikiState.tabs.filter((tab) => !isWikiHighlightsFile(tab.file) && wikiState.docs.some((doc) => doc.file === tab.file));
   if (wikiState.tabs.length === 0) {
     resetWikiTabs(wikiState.docs[0]?.file || "Home.md");
     return;
   }
-  if (!wikiState.tabs.some((tab) => tab.id === wikiState.activeTabId)) {
+  if (!isWikiHighlightsFile(wikiState.activeTabId) && !wikiState.tabs.some((tab) => tab.id === wikiState.activeTabId)) {
     wikiState.activeTabId = wikiState.tabs[0].id;
   }
   syncWikiSelectionFromActiveTab();
@@ -1529,13 +1704,255 @@ function renderWiki() {
   validateWikiTabs();
   searchWiki();
   syncWikiSelectionToResults();
+  renderWikiHighlightControls();
   renderWikiTabs();
   renderWikiResults();
   renderWikiContent();
   renderIcons();
 }
 
+function renderWikiHighlightControls() {
+  if (isWikiHighlightsFile(wikiState.selectedFile)) {
+    lastWikiHighlightSelection = null;
+    if (els.wikiHighlightButton) {
+      els.wikiHighlightButton.disabled = true;
+      els.wikiHighlightButton.classList.remove("is-on");
+      els.wikiHighlightButton.setAttribute("aria-pressed", "false");
+      els.wikiHighlightButton.setAttribute("data-tooltip", "Highlights cannot be created from the Highlights tab.");
+    }
+    return;
+  }
+  const current = selectedWikiHighlightText();
+  const selection = lastWikiHighlightSelection;
+  const isSaved = selection && wikiState.highlights.some((entry) => wikiHighlightMatchesSelection(entry, selection));
+  if (els.wikiHighlightButton) {
+    els.wikiHighlightButton.disabled = !current;
+    els.wikiHighlightButton.classList.toggle("is-on", Boolean(isSaved));
+    els.wikiHighlightButton.setAttribute("aria-pressed", isSaved ? "true" : "false");
+    els.wikiHighlightButton.setAttribute("data-tooltip", !current
+      ? "Select wiki text to highlight it."
+      : isSaved
+        ? `Remove "${current}" from saved highlights.`
+        : `Highlight "${current}".`);
+  }
+}
+
+function toggleCurrentWikiHighlight() {
+  if (isWikiHighlightsFile(wikiState.selectedFile)) return;
+  const selection = currentWikiSelection() || lastWikiHighlightSelection;
+  if (!selection) return;
+  const contentScrollTop = els.wikiContent.scrollTop;
+  const contentScrollLeft = els.wikiContent.scrollLeft;
+  const existing = wikiState.highlights.find((entry) => wikiHighlightMatchesSelection(entry, selection));
+  if (existing) {
+    wikiState.highlights = wikiState.highlights.filter((entry) => entry.id !== existing.id);
+    writeWikiHighlights(wikiState.highlights);
+    lastWikiHighlightSelection = null;
+    renderWiki();
+    restoreWikiContentScroll(contentScrollTop, contentScrollLeft);
+    return;
+  }
+  wikiState.highlights = normalizeWikiHighlights([...wikiState.highlights, selection]);
+  writeWikiHighlights(wikiState.highlights);
+  lastWikiHighlightSelection = null;
+  renderWiki();
+  restoreWikiContentScroll(contentScrollTop, contentScrollLeft);
+}
+
+function restoreWikiContentScroll(top, left) {
+  window.requestAnimationFrame(() => {
+    els.wikiContent.scrollTop = top;
+    els.wikiContent.scrollLeft = left;
+  });
+}
+
+function wikiHighlightIdentity(entry) {
+  return [
+    entry?.file || "",
+    entry?.sectionId || "",
+    Number.isFinite(Number(entry?.startOffset)) ? Number(entry.startOffset) : -1,
+    Number.isFinite(Number(entry?.endOffset)) ? Number(entry.endOffset) : -1,
+    Number.isFinite(Number(entry?.occurrenceIndex)) ? Number(entry.occurrenceIndex) : -1,
+    normalizeWikiHighlightKey(entry?.text)
+  ].join("|");
+}
+
+function wikiHighlightFallbackIdentity(entry) {
+  return [
+    entry?.file || "",
+    entry?.sectionId || "",
+    Number.isFinite(Number(entry?.occurrenceIndex)) ? Number(entry.occurrenceIndex) : -1,
+    normalizeWikiHighlightKey(entry?.text)
+  ].join("|");
+}
+
+function wikiHighlightMatchesSelection(entry, selection) {
+  return wikiHighlightIdentity(entry) === wikiHighlightIdentity(selection)
+    || wikiHighlightFallbackIdentity(entry) === wikiHighlightFallbackIdentity(selection);
+}
+
+function selectedWikiHighlightText() {
+  if (isWikiHighlightsFile(wikiState.selectedFile)) return "";
+  const selection = currentWikiSelection();
+  if (selection) {
+    lastWikiHighlightSelection = selection;
+    return selection.text;
+  }
+  return lastWikiHighlightSelection?.text || "";
+}
+
+function currentWikiTableSelection(range) {
+  const table = (range.commonAncestorContainer.nodeType === Node.ELEMENT_NODE
+    ? range.commonAncestorContainer
+    : range.commonAncestorContainer.parentElement)?.closest?.("table");
+  const fallbackTable = table || [...els.wikiContent.querySelectorAll("table")].find((candidate) => {
+    try {
+      return range.intersectsNode(candidate);
+    } catch {
+      return false;
+    }
+  });
+  if (!fallbackTable) return null;
+  const selectedRows = [];
+  fallbackTable.querySelectorAll("tr").forEach((row) => {
+    const cells = [...row.children].filter((cell) => ["TH", "TD"].includes(cell.tagName));
+    const selectedCells = cells.filter((cell) => {
+      try {
+        return range.intersectsNode(cell);
+      } catch {
+        return false;
+      }
+    });
+    if (selectedCells.length > 0) selectedRows.push(selectedCells);
+  });
+  if (selectedRows.length === 0) return null;
+  const html = `<table>${selectedRows.map((cells) => (
+    `<tr>${cells.map((cell) => `<${cell.tagName.toLowerCase()}>${sanitizeWikiHighlightHtml(cell.innerHTML)}</${cell.tagName.toLowerCase()}>`).join("")}</tr>`
+  )).join("")}</table>`;
+  const text = normalizeWikiHighlightTerm(selectedRows.map((cells) => (
+    cells.map((cell) => cell.textContent.trim()).filter(Boolean).join(" ")
+  )).filter(Boolean).join(" "));
+  return text ? { html, text } : null;
+}
+
+function wikiHighlightOccurrenceIndex(range, text) {
+  const before = document.createRange();
+  before.selectNodeContents(els.wikiContent);
+  before.setEnd(range.startContainer, range.startOffset);
+  const haystack = normalizeWikiHighlightKey(before.toString());
+  const needle = normalizeWikiHighlightKey(text);
+  if (!needle) return -1;
+  let count = 0;
+  let index = haystack.indexOf(needle);
+  while (index >= 0) {
+    count += 1;
+    index = haystack.indexOf(needle, index + needle.length);
+  }
+  return count;
+}
+
+function wikiContentTextIndex(root) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      if (!node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+      if (node.parentElement?.closest("script, style")) return NodeFilter.FILTER_REJECT;
+      return NodeFilter.FILTER_ACCEPT;
+    }
+  });
+  const textNodes = [];
+  while (walker.nextNode()) textNodes.push(walker.currentNode);
+  let text = "";
+  const map = [];
+  let previousWasSpace = true;
+  textNodes.forEach((node) => {
+    const firstVisible = node.nodeValue.search(/\S/);
+    if (firstVisible >= 0 && text && !previousWasSpace) {
+      text += " ";
+      map.push(null);
+      previousWasSpace = true;
+    }
+    [...node.nodeValue].forEach((character, offset) => {
+      if (/\s/.test(character)) {
+        if (!previousWasSpace) {
+          text += " ";
+          map.push({ node, offset });
+          previousWasSpace = true;
+        }
+        return;
+      }
+      text += character.toLowerCase();
+      map.push({ node, offset });
+      previousWasSpace = false;
+    });
+  });
+  return { text, map };
+}
+
+function wikiHighlightRangeOffsets(range) {
+  const index = wikiContentTextIndex(els.wikiContent);
+  let start = -1;
+  let end = -1;
+  index.map.forEach((position, offset) => {
+    if (!position?.node) return;
+    try {
+      if (range.comparePoint(position.node, position.offset) !== 0) return;
+    } catch {
+      return;
+    }
+    if (start < 0) start = offset;
+    end = offset + 1;
+  });
+  return start >= 0 && end > start ? { startOffset: start, endOffset: end } : { startOffset: -1, endOffset: -1 };
+}
+
+function currentWikiSelection() {
+  if (isWikiHighlightsFile(wikiState.selectedFile)) return null;
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return null;
+  const range = selection.getRangeAt(0);
+  if (!els.wikiContent.contains(range.commonAncestorContainer)) return null;
+  const tableSelection = currentWikiTableSelection(range);
+  const text = tableSelection?.text || normalizeWikiHighlightTerm(selection.toString());
+  if (!text) return null;
+  const fragment = range.cloneContents();
+  const wrapper = document.createElement("div");
+  wrapper.append(fragment);
+  const doc = wikiState.docs.find((candidate) => candidate.file === wikiState.selectedFile);
+  const offsets = wikiHighlightRangeOffsets(range);
+  return {
+    id: `highlight-${Date.now()}`,
+    text,
+    html: tableSelection?.html || sanitizeWikiHighlightHtml(wrapper.innerHTML || escapeHtml(text)),
+    file: wikiState.selectedFile,
+    title: doc?.title || "",
+    sectionId: nearestWikiSectionId(range.commonAncestorContainer),
+    occurrenceIndex: wikiHighlightOccurrenceIndex(range, text),
+    ...offsets
+  };
+}
+
+function nearestWikiSectionId(node) {
+  let current = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
+  while (current && current !== els.wikiContent) {
+    if (current.id) return current.id;
+    current = current.previousElementSibling || current.parentElement;
+  }
+  return "";
+}
+
+function ensureHighlightsTab() {
+  wikiState.activeTabId = WIKI_HIGHLIGHTS_FILE;
+  syncWikiSelectionFromActiveTab();
+}
+
+function updateWikiHighlightSelection() {
+  const selection = currentWikiSelection();
+  lastWikiHighlightSelection = selection;
+  renderWikiHighlightControls();
+}
+
 function syncWikiSelectionToResults() {
+  if (isWikiHighlightsFile(wikiState.selectedFile)) return;
   if (!normalizeSearchText(wikiState.query) || wikiState.results.length === 0) return;
   const hasSelectedResult = wikiState.results.some((result) => (
     result.file === wikiState.selectedFile
@@ -1549,14 +1966,24 @@ function syncWikiSelectionToResults() {
 
 function renderWikiTabs() {
   if (!els.wikiTabs) return;
-  els.wikiTabs.innerHTML = wikiState.tabs.map((tab) => {
+  const highlightsActive = isWikiHighlightsFile(wikiState.selectedFile);
+  const highlightsButton = `
+    <button class="wiki-bookmark-tab has-tooltip ${highlightsActive ? "is-active" : ""}" type="button" data-wiki-bookmark-tab="${WIKI_HIGHLIGHTS_FILE}" aria-current="${highlightsActive ? "page" : "false"}" data-tooltip="Highlights">
+      ${icon("bookmark", "button-icon")}
+    </button>
+  `;
+  const pageTabs = wikiState.tabs.map((tab) => {
     const doc = wikiState.docs.find((candidate) => candidate.file === tab.file);
     const label = doc?.title || tab.file.replace(/\.md$/i, "").replace(/-/g, " ");
     const active = tab.id === wikiState.activeTabId;
+    const pinTooltip = tab.pinned ? "Unpin page." : "Pin page.";
     return `
-      <div class="wiki-tab ${active ? "is-active" : ""}" data-wiki-tab-id="${escapeHtml(tab.id)}" draggable="true">
-        <button class="wiki-tab-button" type="button" data-wiki-tab="${escapeHtml(tab.id)}" aria-current="${active ? "page" : "false"}">
+      <div class="wiki-tab ${active ? "is-active" : ""} ${tab.pinned ? "is-pinned" : ""}" data-wiki-tab-id="${escapeHtml(tab.id)}" draggable="true">
+        <button class="wiki-tab-button has-tooltip" type="button" data-wiki-tab="${escapeHtml(tab.id)}" aria-current="${active ? "page" : "false"}" data-tooltip="${escapeHtml(label)}">
           ${escapeHtml(label)}
+        </button>
+        <button class="wiki-tab-pin has-tooltip ${tab.pinned ? "is-on" : ""}" type="button" data-toggle-wiki-pin="${escapeHtml(tab.id)}" aria-pressed="${tab.pinned ? "true" : "false"}" aria-label="${escapeHtml(tab.pinned ? `Unpin ${label}` : `Pin ${label}`)}" data-tooltip="${pinTooltip}">
+          ${icon("pin", "button-icon")}
         </button>
         ${wikiState.tabs.length > 1 ? `
           <button class="wiki-tab-close has-tooltip" type="button" data-close-wiki-tab="${escapeHtml(tab.id)}" aria-label="Close ${escapeHtml(label)}" data-tooltip="Close tab.">
@@ -1566,9 +1993,29 @@ function renderWikiTabs() {
       </div>
     `;
   }).join("");
+  els.wikiTabs.innerHTML = `${highlightsButton}${pageTabs}`;
 }
 
 function renderWikiResults() {
+  if (isWikiHighlightsFile(wikiState.selectedFile)) {
+    els.wikiResults.innerHTML = `
+      <div class="wiki-result-label">Highlights</div>
+      ${wikiState.highlights.length === 0
+        ? `<div class="wiki-status">No highlighted wiki text yet.</div>`
+        : wikiState.highlights.map((entry) => `
+          <div class="wiki-result wiki-highlight-result" draggable="true" data-highlight-source="${escapeHtml(entry.id)}">
+            <button class="wiki-highlight-result-main" type="button" data-highlight-source-jump="${escapeHtml(entry.id)}">
+              <span>${escapeHtml(entry.title || entry.file || "Wiki")}</span>
+              <small>${escapeHtml(entry.text)}</small>
+            </button>
+            <button class="wiki-highlight-delete has-tooltip" type="button" data-delete-wiki-highlight="${escapeHtml(entry.id)}" aria-label="Delete highlight" data-tooltip="Delete highlight.">
+              ${icon("trash-2", "button-icon")}
+            </button>
+          </div>
+        `).join("")}
+    `;
+    return;
+  }
   if (wikiState.status) {
     els.wikiResults.innerHTML = `<div class="wiki-status">${escapeHtml(wikiState.status)}</div>`;
     return;
@@ -1599,8 +2046,9 @@ function renderWikiResultButton(result) {
   const isActive = result.file === wikiState.selectedFile && (!result.sectionId || result.sectionId === wikiState.selectedSectionId);
   const titleParts = [result.pageTitle, result.parentTitle, result.title].filter((part, index, parts) => part && parts.indexOf(part) === index);
   const sectionLabel = titleParts.length > 1 ? titleParts.join(" / ") : result.title;
+  const tooltip = `${sectionLabel} Middle-click to open in a new tab.`;
   return `
-    <button class="wiki-result ${isActive ? "is-active" : ""} ${result.type !== "page" ? "is-section-match" : ""} ${result.matchKind === "tag" ? "is-tag-match" : ""}" type="button" data-file="${escapeHtml(result.file)}" data-section="${escapeHtml(result.sectionId || "")}">
+    <button class="wiki-result has-tooltip ${isActive ? "is-active" : ""} ${result.type !== "page" ? "is-section-match" : ""} ${result.matchKind === "tag" ? "is-tag-match" : ""}" type="button" data-file="${escapeHtml(result.file)}" data-section="${escapeHtml(result.sectionId || "")}" data-tooltip="${escapeHtml(tooltip)}">
       <span>${renderWikiInline(sectionLabel, wikiState.query)}</span>
       <small>${renderWikiInline(result.text || result.file, wikiState.query)}</small>
     </button>
@@ -1608,6 +2056,10 @@ function renderWikiResultButton(result) {
 }
 
 function renderWikiContent() {
+  if (isWikiHighlightsFile(wikiState.selectedFile)) {
+    renderWikiHighlightsContent();
+    return;
+  }
   const doc = wikiState.docs.find((candidate) => candidate.file === wikiState.selectedFile) || wikiState.docs[0];
   if (!doc) {
     els.wikiContent.innerHTML = wikiState.status ? "" : `<div class="empty-state">Open a version to load the wiki.</div>`;
@@ -1619,6 +2071,64 @@ function renderWikiContent() {
       els.wikiContent.querySelector(`#${CSS.escape(wikiState.selectedSectionId)}`)?.scrollIntoView({ block: "start" });
     });
   }
+}
+
+function renderWikiHighlightsContent() {
+  if (wikiState.highlights.length === 0) {
+    els.wikiContent.innerHTML = `<div class="empty-state">Select wiki text and press Highlight to save it here.</div>`;
+    return;
+  }
+  els.wikiContent.innerHTML = `
+    <h1>Highlights</h1>
+    <div class="wiki-highlight-list">
+      ${wikiState.highlights.map((entry) => `
+        <article class="wiki-highlight-card" id="${escapeHtml(entry.id)}" draggable="true" data-highlight-id="${escapeHtml(entry.id)}">
+          <div class="wiki-highlight-card-source">${escapeHtml(entry.title || entry.file || "Wiki")}</div>
+          <div class="wiki-highlight-card-body">${renderSavedWikiHighlightHtml(entry.html, entry.text)}</div>
+        </article>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderSavedWikiHighlightHtml(html, text) {
+  const source = normalizeWikiHighlightFragment(html || escapeHtml(text));
+  const template = document.createElement("template");
+  template.innerHTML = source;
+  template.content.querySelectorAll("mark.wiki-user-mark").forEach((mark) => mark.replaceWith(...mark.childNodes));
+  return template.innerHTML || escapeHtml(text);
+}
+
+function reorderWikiHighlight(fromId, toId, placement) {
+  if (!fromId || !toId || fromId === toId) return;
+  const fromIndex = wikiState.highlights.findIndex((entry) => entry.id === fromId);
+  let toIndex = wikiState.highlights.findIndex((entry) => entry.id === toId);
+  if (fromIndex < 0 || toIndex < 0) return;
+  if (placement === "after") toIndex += 1;
+  const [entry] = wikiState.highlights.splice(fromIndex, 1);
+  if (fromIndex < toIndex) toIndex -= 1;
+  wikiState.highlights.splice(Math.max(0, Math.min(toIndex, wikiState.highlights.length)), 0, entry);
+  writeWikiHighlights(wikiState.highlights);
+  renderWiki();
+}
+
+function deleteWikiHighlight(id) {
+  const nextHighlights = wikiState.highlights.filter((entry) => entry.id !== id);
+  if (nextHighlights.length === wikiState.highlights.length) return;
+  wikiState.highlights = nextHighlights;
+  writeWikiHighlights(wikiState.highlights);
+  renderWiki();
+}
+
+function wikiHighlightDropPlacement(event, element) {
+  const rect = element.getBoundingClientRect();
+  return event.clientY > rect.top + rect.height / 2 ? "after" : "before";
+}
+
+function clearWikiHighlightDropIndicators() {
+  document.querySelectorAll(".wiki-highlight-card.is-drop-before, .wiki-highlight-card.is-drop-after, .wiki-highlight-result.is-drop-before, .wiki-highlight-result.is-drop-after").forEach((element) => {
+    element.classList.remove("is-drop-before", "is-drop-after");
+  });
 }
 
 function markdownToWikiHtml(markdown, file, query, highlightedSectionIds, selectedSectionId = "") {
@@ -1791,7 +2301,8 @@ function renderWikiInline(text, query) {
     if (/\.md(?:#.*)?$/i.test(safeHref)) {
       const [path, anchor = ""] = safeHref.split("#");
       const file = path.split("/").pop();
-      return hold(`<a href="#" data-wiki-link="${escapeHtml(file)}" data-wiki-anchor="${escapeHtml(anchor)}">${label}</a>`);
+      const tooltip = `${label} Middle-click to open in a new tab.`;
+      return hold(`<a href="#" class="has-tooltip" data-wiki-link="${escapeHtml(file)}" data-wiki-anchor="${escapeHtml(anchor)}" data-tooltip="${escapeHtml(tooltip)}">${label}</a>`);
     }
     return hold(`<a href="${escapeHtml(safeHref)}" target="_blank" rel="noopener noreferrer">${label}</a>`);
   });
@@ -7347,25 +7858,87 @@ els.wikiSearch.addEventListener("input", () => {
   syncActiveWikiTabToSelection();
   renderWiki();
 });
+els.wikiHighlightButton.addEventListener("click", toggleCurrentWikiHighlight);
+els.wikiHighlightButton.addEventListener("mousedown", (event) => {
+  event.preventDefault();
+});
 els.wikiResults.addEventListener("click", (event) => {
+  const deleteHighlight = event.target.closest("[data-delete-wiki-highlight]");
+  if (deleteHighlight) {
+    deleteWikiHighlight(deleteHighlight.dataset.deleteWikiHighlight);
+    return;
+  }
+  const highlightSourceJump = event.target.closest("[data-highlight-source-jump]");
+  if (highlightSourceJump) {
+    els.wikiContent.querySelector(`#${CSS.escape(highlightSourceJump.dataset.highlightSourceJump)}`)?.scrollIntoView({ block: "start" });
+    return;
+  }
   const result = event.target.closest(".wiki-result");
   if (!result) return;
   setWikiLocation(result.dataset.file || "Home.md", result.dataset.section || "");
 });
 els.wikiResults.addEventListener("mousedown", (event) => {
   const result = event.target.closest(".wiki-result");
-  if (!result || event.button !== 1) return;
+  if (!result || result.matches("[data-highlight-source]") || event.button !== 1) return;
   event.preventDefault();
   setWikiLocationInNewTabFromMiddleClick(result.dataset.file || "Home.md", result.dataset.section || "");
 });
 els.wikiResults.addEventListener("auxclick", (event) => {
   const result = event.target.closest(".wiki-result");
-  if (!result || event.button !== 1) return;
+  if (!result || result.matches("[data-highlight-source]") || event.button !== 1) return;
   event.preventDefault();
   setWikiLocationInNewTabFromMiddleClick(result.dataset.file || "Home.md", result.dataset.section || "");
 });
+els.wikiResults.addEventListener("dragstart", (event) => {
+  if (event.target.closest("[data-delete-wiki-highlight]")) {
+    event.preventDefault();
+    return;
+  }
+  const result = event.target.closest("[data-highlight-source]");
+  if (!result || !isWikiHighlightsFile(wikiState.selectedFile)) return;
+  wikiHighlightDragState = { id: result.dataset.highlightSource };
+  result.classList.add("is-dragging");
+  event.dataTransfer.effectAllowed = "move";
+  event.dataTransfer.setData("text/plain", wikiHighlightDragState.id);
+});
+els.wikiResults.addEventListener("dragover", (event) => {
+  const result = event.target.closest("[data-highlight-source]");
+  if (!wikiHighlightDragState || !result) return;
+  event.preventDefault();
+  clearWikiHighlightDropIndicators();
+  if (result.dataset.highlightSource !== wikiHighlightDragState.id) {
+    result.classList.add(wikiHighlightDropPlacement(event, result) === "after" ? "is-drop-after" : "is-drop-before");
+  }
+  event.dataTransfer.dropEffect = "move";
+});
+els.wikiResults.addEventListener("drop", (event) => {
+  const result = event.target.closest("[data-highlight-source]");
+  if (!wikiHighlightDragState || !result) return;
+  event.preventDefault();
+  const placement = wikiHighlightDropPlacement(event, result);
+  const fromId = wikiHighlightDragState.id;
+  const toId = result.dataset.highlightSource;
+  wikiHighlightDragState = null;
+  clearWikiHighlightDropIndicators();
+  reorderWikiHighlight(fromId, toId, placement);
+});
+els.wikiResults.addEventListener("dragend", () => {
+  wikiHighlightDragState = null;
+  els.wikiResults.querySelectorAll(".wiki-highlight-result.is-dragging").forEach((result) => result.classList.remove("is-dragging"));
+  clearWikiHighlightDropIndicators();
+});
 els.wikiTabs.addEventListener("click", (event) => {
   if (Date.now() < suppressWikiTabClickUntil) return;
+  const bookmarkTab = event.target.closest("[data-wiki-bookmark-tab]");
+  if (bookmarkTab) {
+    setWikiLocation(bookmarkTab.dataset.wikiBookmarkTab || WIKI_HIGHLIGHTS_FILE);
+    return;
+  }
+  const pinButton = event.target.closest("[data-toggle-wiki-pin]");
+  if (pinButton) {
+    toggleWikiTabPinned(pinButton.dataset.toggleWikiPin);
+    return;
+  }
   const closeButton = event.target.closest("[data-close-wiki-tab]");
   if (closeButton) {
     closeWikiTab(closeButton.dataset.closeWikiTab);
@@ -7378,7 +7951,7 @@ els.wikiTabs.addEventListener("click", (event) => {
   renderWiki();
 });
 els.wikiTabs.addEventListener("dragstart", (event) => {
-  if (event.target.closest("[data-close-wiki-tab]")) {
+  if (event.target.closest("[data-close-wiki-tab]") || event.target.closest("[data-toggle-wiki-pin]") || event.target.closest("[data-wiki-bookmark-tab]")) {
     event.preventDefault();
     return;
   }
@@ -7451,6 +8024,40 @@ els.wikiContent.addEventListener("auxclick", (event) => {
   const file = link.dataset.wikiLink;
   if (!wikiState.docs.some((doc) => doc.file === file)) return;
   setWikiLocationInNewTabFromMiddleClick(file, sectionIdForWikiAnchor(file, link.dataset.wikiAnchor || ""));
+});
+els.wikiContent.addEventListener("dragstart", (event) => {
+  const card = event.target.closest("[data-highlight-id]");
+  if (!card || !isWikiHighlightsFile(wikiState.selectedFile)) return;
+  wikiHighlightDragState = { id: card.dataset.highlightId };
+  card.classList.add("is-dragging");
+  event.dataTransfer.effectAllowed = "move";
+  event.dataTransfer.setData("text/plain", wikiHighlightDragState.id);
+});
+els.wikiContent.addEventListener("dragover", (event) => {
+  const card = event.target.closest("[data-highlight-id]");
+  if (!wikiHighlightDragState || !card) return;
+  event.preventDefault();
+  clearWikiHighlightDropIndicators();
+  if (card.dataset.highlightId !== wikiHighlightDragState.id) {
+    card.classList.add(wikiHighlightDropPlacement(event, card) === "after" ? "is-drop-after" : "is-drop-before");
+  }
+  event.dataTransfer.dropEffect = "move";
+});
+els.wikiContent.addEventListener("drop", (event) => {
+  const card = event.target.closest("[data-highlight-id]");
+  if (!wikiHighlightDragState || !card) return;
+  event.preventDefault();
+  const placement = wikiHighlightDropPlacement(event, card);
+  const fromId = wikiHighlightDragState.id;
+  const toId = card.dataset.highlightId;
+  wikiHighlightDragState = null;
+  clearWikiHighlightDropIndicators();
+  reorderWikiHighlight(fromId, toId, placement);
+});
+els.wikiContent.addEventListener("dragend", () => {
+  wikiHighlightDragState = null;
+  els.wikiContent.querySelectorAll(".wiki-highlight-card.is-dragging").forEach((card) => card.classList.remove("is-dragging"));
+  clearWikiHighlightDropIndicators();
 });
 els.rightRail.addEventListener("click", (event) => {
   const title = event.target.closest("[data-panel-snap-target]");
@@ -7532,6 +8139,10 @@ document.addEventListener("keydown", (event) => {
     if (els.exportIssueDialog?.classList.contains("is-open")) closeExportIssueDialog(false);
     if (wikiState.isOpen) closeWiki();
   }
+});
+document.addEventListener("selectionchange", () => {
+  if (!wikiState.isOpen) return;
+  updateWikiHighlightSelection();
 });
 document.addEventListener("scroll", positionTooltip, true);
 window.addEventListener("resize", () => {

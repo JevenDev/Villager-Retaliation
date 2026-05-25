@@ -1755,7 +1755,7 @@ body.is-unsaved-shaking .app-shell {
   min-width: 300px;
   min-height: 310px;
   display: grid;
-  grid-template-rows: 48px 50px 38px minmax(0, 1fr);
+  grid-template-rows: 48px auto 38px minmax(0, 1fr);
   border: 1px solid var(--line);
   border-radius: 4px;
   background: var(--panel);
@@ -1799,7 +1799,7 @@ body.is-unsaved-shaking .app-shell {
 .wiki-search-row {
   min-width: 0;
   display: grid;
-  grid-template-columns: 22px minmax(0, 1fr);
+  grid-template-columns: 22px minmax(0, 1fr) 37px;
   align-items: center;
   gap: 8px;
   padding: 7px 10px;
@@ -1809,6 +1809,11 @@ body.is-unsaved-shaking .app-shell {
 
 .wiki-search-row .inline-icon {
   color: var(--muted);
+}
+
+.wiki-search-row .icon-button {
+  width: 37px;
+  height: 37px;
 }
 
 .wiki-tabs {
@@ -1829,7 +1834,7 @@ body.is-unsaved-shaking .app-shell {
   max-width: 220px;
   height: 31px;
   display: inline-grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
   border: 1px solid var(--line-soft);
   border-bottom: 0;
@@ -1866,7 +1871,35 @@ body.is-unsaved-shaking .app-shell {
   color: var(--text);
 }
 
+.wiki-bookmark-tab {
+  width: 34px;
+  height: 31px;
+  min-height: 31px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--line-soft);
+  border-bottom: 0;
+  border-radius: 4px 4px 0 0;
+  background: #1c1c1c;
+  color: #9d83c7;
+  padding: 5px;
+  flex: 0 0 auto;
+}
+
+.wiki-bookmark-tab:hover,
+.wiki-bookmark-tab.is-active {
+  border-color: #5d4385;
+  background: #2d2140;
+  color: #eadcff;
+}
+
+.wiki-bookmark-tab .button-icon {
+  width: 16px;
+  height: 16px;
+}
+
 .wiki-tab-button,
+.wiki-tab-pin,
 .wiki-tab-close {
   height: 30px;
   min-height: 30px;
@@ -1885,15 +1918,35 @@ body.is-unsaved-shaking .app-shell {
   white-space: nowrap;
 }
 
+.wiki-tab-pin,
 .wiki-tab-close {
   width: 30px;
   padding: 5px;
 }
 
+.wiki-tab-pin {
+  color: #888888;
+}
+
+.wiki-tab.is-pinned {
+  color: #d3d3d3;
+}
+
+.wiki-tab.is-pinned .wiki-tab-pin,
+.wiki-tab-pin.is-on {
+  color: #d2a84e;
+}
+
 .wiki-tab-button:hover,
+.wiki-tab-pin:hover,
 .wiki-tab-close:hover {
   background: #343434;
   color: #ffffff;
+}
+
+.wiki-tab-pin .button-icon {
+  width: 15px;
+  height: 15px;
 }
 
 .wiki-tab-close .button-icon {
@@ -1931,6 +1984,7 @@ body.is-unsaved-shaking .app-shell {
 }
 
 .wiki-result {
+  position: relative;
   width: 100%;
   min-width: 0;
   display: grid;
@@ -1941,6 +1995,93 @@ body.is-unsaved-shaking .app-shell {
   background: var(--panel);
   color: var(--text);
   text-align: left;
+}
+
+.wiki-highlight-result {
+  grid-template-columns: minmax(0, 1fr) 30px;
+  align-items: stretch;
+  gap: 6px;
+  padding: 0;
+}
+
+.wiki-highlight-result-main {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 9px 0 9px 9px;
+  text-align: left;
+}
+
+.wiki-highlight-delete {
+  width: 30px;
+  min-height: 30px;
+  align-self: stretch;
+  display: inline-grid;
+  place-items: center;
+  border: 0;
+  border-left: 1px solid var(--line-soft);
+  border-radius: 0;
+  background: transparent;
+  color: #b9857f;
+  padding: 7px;
+}
+
+.wiki-highlight-delete:hover {
+  background: #45231f;
+  color: #ffbbb5;
+}
+
+.wiki-highlight-delete .button-icon {
+  width: 15px;
+  height: 15px;
+}
+
+.wiki-highlight-result,
+.wiki-highlight-card {
+  cursor: grab;
+}
+
+.wiki-highlight-delete,
+.wiki-highlight-delete:active,
+.wiki-highlight-result-main,
+.wiki-highlight-result-main:active {
+  cursor: pointer;
+}
+
+.wiki-highlight-result:active,
+.wiki-highlight-card:active {
+  cursor: grabbing;
+}
+
+.wiki-highlight-result.is-dragging,
+.wiki-highlight-card.is-dragging {
+  opacity: 0.6;
+}
+
+.wiki-highlight-result.is-drop-before::before,
+.wiki-highlight-result.is-drop-after::after,
+.wiki-highlight-card.is-drop-before::before,
+.wiki-highlight-card.is-drop-after::after {
+  content: "";
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  height: 2px;
+  border-radius: 2px;
+  background: #8f6fd1;
+}
+
+.wiki-highlight-result.is-drop-before::before,
+.wiki-highlight-card.is-drop-before::before {
+  top: -5px;
+}
+
+.wiki-highlight-result.is-drop-after::after,
+.wiki-highlight-card.is-drop-after::after {
+  bottom: -5px;
 }
 
 .wiki-result:hover,
@@ -2105,6 +2246,51 @@ body.is-unsaved-shaking .app-shell {
 .wiki-result mark.wiki-key-mark {
   background: #16384a;
   color: #bceaff;
+}
+
+.wiki-highlight-list {
+  display: grid;
+  gap: 12px;
+}
+
+.wiki-highlight-card {
+  position: relative;
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--line-soft);
+  border-radius: 4px;
+  background: #202020;
+}
+
+.wiki-highlight-card-source {
+  color: var(--muted);
+  font-family: var(--font-code);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wiki-highlight-card-body {
+  min-width: 0;
+  color: #d8d8d8;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.wiki-highlight-card-body ul,
+.wiki-highlight-card-body ol {
+  margin: 0 0 12px;
+  padding-left: 20px;
+}
+
+.wiki-highlight-card-body li {
+  padding-left: 2px;
+}
+
+.wiki-highlight-card-body > *:last-child {
+  margin-bottom: 0;
 }
 
 .wiki-hit-section {
