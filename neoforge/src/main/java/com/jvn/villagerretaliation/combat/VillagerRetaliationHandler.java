@@ -7,6 +7,7 @@ import com.jvn.villagerretaliation.dialogue.ForcedDialogueService;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.mood.VillagerMoodService;
+import com.jvn.villagerretaliation.profile.VillagerSocialAttributeBehavior;
 import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
 import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
@@ -356,7 +357,8 @@ public final class VillagerRetaliationHandler {
         long gameTime = retaliationTarget.gameTime();
         double distanceSqr = villager.distanceToSqr(target);
         if (isNaturalHostileTarget(villager, target)
-                && !VillagerRetaliationVillagerRules.canStandGroundAgainstHostileMobs(villager)) {
+                && !VillagerRetaliationVillagerRules.canStandGroundAgainstHostileMobs(villager)
+                && !canBravelyStandGroundAgainst(level, villager, target)) {
             clearAnger(villager, true, false);
             enterFleeState(villager, target, gameTime);
             handlePassivePotionState(villager);
@@ -443,7 +445,14 @@ public final class VillagerRetaliationHandler {
             villager.swing(attackHand, true);
             syncMeleeAttackAttributes(villager);
             villager.doHurtTarget(target);
-            RETALIATION.setNextAttackTick(villager, gameTime + VillagerCombatRoles.attackCooldown(villager));
+            RETALIATION.setNextAttackTick(
+                    villager,
+                    gameTime + VillagerSocialAttributeBehavior.adjustCombatCooldownTicks(
+                            level,
+                            villager,
+                            VillagerCombatRoles.attackCooldown(villager)
+                    )
+            );
             onArmorerMeleeAttackCommitted(villager);
         }
     }
@@ -605,6 +614,12 @@ public final class VillagerRetaliationHandler {
         return VillagerRetaliationConfig.VILLAGERS_FLEE_VISIBLE_CREEPERS.get()
                 && target instanceof Creeper
                 && villager.hasLineOfSight(target);
+    }
+
+    private static boolean canBravelyStandGroundAgainst(ServerLevel level, Villager villager, LivingEntity target) {
+        return !(target instanceof Creeper)
+                && VillagerCombatRoles.canFightBack(villager)
+                && VillagerSocialAttributeBehavior.canBravelyStandGround(level, villager);
     }
 
     private static boolean tryFleeVisibleCreeper(Villager villager) {

@@ -128,4 +128,44 @@ public final class VillagerSocialAttributeBehavior {
         int basisPoints = Math.clamp(10_000 + basisPointOffset, 2_500, 15_000);
         return Math.max(1L, Math.round(baseDecayTicks * (basisPoints / 10_000.0D)));
     }
+
+    public static int adjustCombatCooldownTicks(ServerLevel level, AbstractVillager villager, int baseCooldownTicks) {
+        if (!enabled(VillagerRetaliationConfig.ENABLE_SOCIAL_ATTRIBUTE_RETALIATION_EFFECTS)) {
+            return baseCooldownTicks;
+        }
+
+        int reduction = positiveBonus(
+                level,
+                villager,
+                VillagerSocialAttribute.PROFICIENCY,
+                4,
+                VillagerRetaliationConfig.ENABLE_SOCIAL_ATTRIBUTE_RETALIATION_EFFECTS
+        );
+        return Math.max(5, baseCooldownTicks - reduction);
+    }
+
+    public static float adjustRangedInaccuracy(ServerLevel level, AbstractVillager villager, float baseInaccuracy) {
+        if (!enabled(VillagerRetaliationConfig.ENABLE_SOCIAL_ATTRIBUTE_RETALIATION_EFFECTS)) {
+            return baseInaccuracy;
+        }
+
+        int proficiencyOffset = scaledOffset(
+                level,
+                villager,
+                VillagerSocialAttribute.PROFICIENCY,
+                20,
+                VillagerRetaliationConfig.ENABLE_SOCIAL_ATTRIBUTE_RETALIATION_EFFECTS
+        );
+        float multiplier = Math.clamp(1.0F - proficiencyOffset / 100.0F, 0.8F, 1.2F);
+        return Math.max(0.0F, baseInaccuracy * multiplier);
+    }
+
+    public static boolean canBravelyStandGround(ServerLevel level, AbstractVillager villager) {
+        if (!enabled(VillagerRetaliationConfig.ENABLE_SOCIAL_ATTRIBUTE_RETALIATION_EFFECTS)) {
+            return false;
+        }
+        return value(level, villager, VillagerSocialAttribute.GUTS) >= 72
+                && value(level, villager, VillagerSocialAttribute.PROFICIENCY) >= 45
+                && villager.getHealth() >= villager.getMaxHealth() * 0.6F;
+    }
 }

@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.combat;
 
+import com.jvn.villagerretaliation.profile.VillagerSocialAttributeBehavior;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import java.util.HashMap;
 import java.util.List;
@@ -142,7 +143,13 @@ final class VillagerRangedCombatHelper {
         double dy = target.getY(0.3333333333333333D) - thrownTrident.getY();
         double dz = target.getZ() - villager.getZ();
         double horizontal = Math.sqrt(dx * dx + dz * dz);
-        thrownTrident.shoot(dx, dy + horizontal * 0.2D, dz, 1.6F, (float) (14 - level.getDifficulty().getId() * 4));
+        thrownTrident.shoot(
+                dx,
+                dy + horizontal * 0.2D,
+                dz,
+                1.6F,
+                VillagerSocialAttributeBehavior.adjustRangedInaccuracy(level, villager, (float) (14 - level.getDifficulty().getId() * 4))
+        );
         level.addFreshEntity(thrownTrident);
 
         heldTrident.hurtAndBreak(1, villager, LivingEntity.getSlotForHand(hand));
@@ -224,7 +231,13 @@ final class VillagerRangedCombatHelper {
         double dy = target.getY(0.3333333333333333D) - arrow.getY();
         double dz = target.getZ() - villager.getZ();
         double horizontal = Math.sqrt(dx * dx + dz * dz);
-        arrow.shoot(dx, dy + horizontal * 0.2D, dz, 1.6F, (float) (14 - level.getDifficulty().getId() * 4));
+        arrow.shoot(
+                dx,
+                dy + horizontal * 0.2D,
+                dz,
+                1.6F,
+                VillagerSocialAttributeBehavior.adjustRangedInaccuracy(level, villager, (float) (14 - level.getDifficulty().getId() * 4))
+        );
         villager.playSound(SoundEvents.SKELETON_SHOOT, 1.0F, 1.0F / (villager.getRandom().nextFloat() * 0.4F + 0.8F));
         level.addFreshEntity(arrow);
     }
@@ -315,7 +328,15 @@ final class VillagerRangedCombatHelper {
         }
         clampToSingleChargedProjectile(weapon);
 
-        crossbowItem.performShooting(level, villager, hand, weapon, 1.6F, (float) (14 - level.getDifficulty().getId() * 4), target);
+        crossbowItem.performShooting(
+                level,
+                villager,
+                hand,
+                weapon,
+                1.6F,
+                VillagerSocialAttributeBehavior.adjustRangedInaccuracy(level, villager, (float) (14 - level.getDifficulty().getId() * 4)),
+                target
+        );
         weapon.set(DataComponents.CHARGED_PROJECTILES, ChargedProjectiles.EMPTY);
         villager.setItemInHand(hand, weapon.copy());
         return true;
