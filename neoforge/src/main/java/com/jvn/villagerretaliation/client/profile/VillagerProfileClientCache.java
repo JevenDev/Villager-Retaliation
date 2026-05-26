@@ -4,8 +4,13 @@ import com.jvn.villagerretaliation.network.VillagerProfileSyncPayload;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttributeRank;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttributes;
+import com.jvn.villagerretaliation.skill.VillagerSkill;
+import com.jvn.villagerretaliation.skill.VillagerSkillRank;
+import com.jvn.villagerretaliation.skill.VillagerSkillSet;
+import com.jvn.villagerretaliation.skill.VillagerSkillValue;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -30,6 +35,8 @@ public final class VillagerProfileClientCache {
                 payload.professionKey(),
                 payload.generatedVersion(),
                 payload.attributes(),
+                payload.skillGeneratedVersion(),
+                payload.skills(),
                 gameTime
         );
         BY_VILLAGER_UUID.put(payload.villagerId(), entry);
@@ -92,6 +99,8 @@ public final class VillagerProfileClientCache {
             String professionKey,
             int generatedVersion,
             VillagerSocialAttributes attributes,
+            int skillGeneratedVersion,
+            VillagerSkillSet skills,
             long lastUpdateGameTime) {
         public int value(VillagerSocialAttribute attribute) {
             return this.attributes.get(attribute);
@@ -99,6 +108,18 @@ public final class VillagerProfileClientCache {
 
         public VillagerSocialAttributeRank rank(VillagerSocialAttribute attribute) {
             return this.attributes.rank(attribute);
+        }
+
+        public int skillValue(VillagerSkill skill) {
+            return this.skills.get(skill);
+        }
+
+        public VillagerSkillRank skillRank(VillagerSkill skill) {
+            return this.skills.rank(skill);
+        }
+
+        public List<VillagerSkillValue> bestSkills(int limit) {
+            return this.skills.best(limit);
         }
     }
 }

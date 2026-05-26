@@ -4,7 +4,6 @@ import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.notification.ResolvedVillagerNotification;
 import com.jvn.villagerretaliation.profile.VillagerProfile;
-import com.jvn.villagerretaliation.profile.VillagerSocialAttributes;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import com.jvn.toucanlib.neoforge.network.ToucanNetwork;
@@ -222,17 +221,14 @@ public final class VillagerReputationNetworking {
     }
 
     public static void sendProfile(ServerPlayer player, AbstractVillager villager, VillagerProfile profile) {
-        VillagerSocialAttributes attributes = profile.socialAttributes();
-        PacketDistributor.sendToPlayer(player, new VillagerProfileSyncPayload(
+        PacketDistributor.sendToPlayer(player, VillagerProfileSyncPayload.create(
                 villager.getId(),
                 profile.villagerUuid(),
                 profile.lastKnownProfession(),
                 profile.generatedVersion(),
-                attributes.knowledge(),
-                attributes.guts(),
-                attributes.proficiency(),
-                attributes.kindness(),
-                attributes.charm()
+                profile.socialAttributes(),
+                profile.skillGeneratedVersion(),
+                profile.skills()
         ));
     }
 
