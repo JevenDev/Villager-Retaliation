@@ -121,6 +121,8 @@ Player item filters accept item ids and item tags. Prefix a tag with `#` inside 
 
 If `player_items` is set and no slot filter is supplied, the current default is `hands`.
 
+`player_item_slots` narrows an item condition; it does not create one by itself. Pair slot filters with `player_items`, an item tag, a durability range, or an enchantment filter.
+
 Player item filters can also check remaining durability. Use `min_player_item_durability` / `max_player_item_durability` for exact remaining durability, or `min_player_item_durability_percent` / `max_player_item_durability_percent` for ranges that work across different tool tiers. The `held_item` aliases are accepted for the same fields.
 
 ```json
@@ -363,7 +365,9 @@ They also accept `#RRGGBB`, `0xRRGGBB`, `#AARRGGBB`, or `0xAARRGGBB`.
 
 - JSON comments are not valid.
 - Trailing commas are not valid.
-- A misspelled enum value is silently ignored by many loaders.
-- A misspelled or unloaded custom profession id is ignored by profession filters.
+- The datapack path decides the system loader. Dialogue, forced dialogue, and notifications must be in their documented folders; top-level keys are not rerouted between systems.
+- A misspelled enum value is ignored by many loaders. Current dialogue, forced-dialogue, and notification files log warnings for several common wrong-family trigger and unsupported-field mistakes.
+- A misspelled or unloaded custom profession id is ignored by profession filters and logs a warning in current dialogue, forced-dialogue, and notification loaders.
+- A `player_item_slots` field without an item, tag, durability, or enchantment selector cannot match anything by itself and logs a warning in current dialogue, forced-dialogue, and notification loaders.
 - A missing required field usually causes only that entry to be skipped.
 - A broken model JSON falls back to the built-in model, and logs a warning.

@@ -56,6 +56,8 @@ Use Import to load an existing datapack zip or one or more JSON files. Use Impor
 
 The generator recognizes Villager Retaliation dialogue, forced dialogue, notifications, gifts, pacification, story discovery, preset names, and `pack.mcmeta`. Unknown files are preserved as extra files when possible, so imported datapacks can usually be exported again without losing unrelated datapack content.
 
+For files under known Villager Retaliation roots, import follows the same folder rules as the game. A file in `dialogue/<locale>/` is imported only as dialogue, a file in `notifications/<locale>/` is imported only as notifications, and a file in `forced_dialogue/` is imported only as forced dialogue. If an old hand-written pack mixed notification or forced-dialogue sections into a dialogue file, move those sections to the documented folders before importing or exporting.
+
 When importing dialogue, the generator can merge files from normal locale folders and profession subfolders. Check the preview paths after import, especially if the original pack used several files for the same system.
 
 ## Working With The Preview

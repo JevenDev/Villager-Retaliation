@@ -272,6 +272,8 @@ tools/datapack-builder/index.html
 
 Open it in a browser to create, import, preview, validate, and export Villager Retaliation datapacks. It can generate the current datapack paths for dialogue, forced dialogue, notifications, gifts, pacification, story discovery, preset names, and `pack.mcmeta`. Dialogue, forced-opening, and notification text fields accept one variation per line where the runtime supports `lines`.
 
+The generator and runtime both use strict system folders: dialogue, forced dialogue, and notifications are loaded from their documented roots, and recent versions log warnings for common misplaced sections or ignored fields.
+
 For full pack-author documentation, examples, JSON references, and model notes, use the [GitHub pack docs](https://github.com/JevenDev/Villager-Retaliation/tree/1.21.1/wiki) rather than this Modrinth page.
 
 ## Documentation

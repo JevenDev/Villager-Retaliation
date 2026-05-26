@@ -65,6 +65,7 @@ Pack-facing beta.11 changes focus on making data-driven behavior easier to exten
 - Added forced dialogue editing, import, preview, validation, starter data, and export support to the [Datapack Generator](Datapack-Generator.md), including line variations, witness professions, custom leave options, `take_items`, `take_stolen_items`, item destinations, and reputation-gated option validation.
 - Added `dialogue_option` as the required `options[].type` value and moved the dialogue request into `options[].request` and `lines[].request`.
 - Added a VR version selector to the Datapack Generator. Exported beta.11+ packs write `villagerretaliation.pack_version` in `pack.mcmeta`, and import uses it to restore the matching generator target.
+- Added reload warnings for common dialogue, forced-dialogue, and notification authoring mistakes: content in the wrong system folder, unsupported fields, wrong trigger families, inert player item slot filters, and unknown profession ids.
 - Added more built-in dialogue lines for reputation tiers, retaliation aftermath, apologies, village defense, raids, golem loss, fire, gifts, gear reports, recruitment memories, and container-theft gossip.
 - Added built-in `retaliation_started` chat-output combat barks for player targets, raiders, undead, monsters, generic retaliation targets, and unarmed villagers.
 - Added built-in baby-only alert text for baby villagers being hit and for baby villagers witnessing a villager death.
@@ -92,6 +93,8 @@ Pack-facing beta.11 changes focus on making data-driven behavior easier to exten
 - Built-in profession loot is now declared through datapack rule files and Minecraft loot tables instead of hardcoded Java pools.
 - Gift files can replace or remove individual rules by stable `id`; same-id later entries replace earlier rules.
 - Villager name files are additive by default instead of requiring packs to copy `preset_names.json` just to append names.
+- The Datapack Generator now imports known Villager Retaliation roots using the same strict folder rules as the game. Files under `dialogue/<locale>/`, `notifications/<locale>/`, and `forced_dialogue/` are imported as that system only.
+- Datapack Generator zip and folder imports now normalize backslash paths and read zip central-directory entries by directory size for more reliable imports across zip tools and folder pickers.
 
 ### Deprecated
 
@@ -112,6 +115,9 @@ Pack-facing beta.11 changes focus on making data-driven behavior easier to exten
 - Packs that copied `villager_names/preset_names.json` only to add names can now add a separate file under `villager_names/`.
 - Packs that want to change profession drops should add or remove `profession_loot` rules and point them at normal Minecraft loot tables.
 - Packs that want to change the built-in theft confrontation can add an entry under `forced_dialogue/`, or intentionally override `data/villagerretaliation/forced_dialogue/default.json`.
+- Packs that mixed `notifications` or forced-dialogue `entries` into dialogue files should split those sections into `data/villagerretaliation/notifications/<locale>/...json` or `data/villagerretaliation/forced_dialogue/...json`.
+- Forced-dialogue theft confrontations should use `trigger: "container_theft"`. Notification-style trigger names such as `alert.player_container_theft` are not forced-dialogue triggers.
+- Slot-only player item filters should add an actual selector, such as `player_items`, `player_item_tag`, durability bounds, or enchantment filters.
 - Packs that use dialogue option `type` for a request must move that value to `request` and set `type` to `dialogue_option`.
 - Packs that use dialogue line `type` for a request must rename it to `request`.
 - Packs that use `small_talk` must migrate those entries to `question`.
