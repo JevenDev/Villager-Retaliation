@@ -807,7 +807,7 @@ public class VillagerInteractionScreen extends Screen {
         int top = Mth.floor(optionTextTop(conversationInfoTop()));
         int width = OPTION_WIDTH - 12;
         graphics.drawString(this.font, translate("profile.skills.info.title"), left, top, INFO_VALUE_COLOR, false);
-        int y = top + this.font.lineHeight + 8;
+        int y = top + optionStride();
         y = renderWrappedInfoLine(graphics, Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.trade"), left, y, width);
         y = renderWrappedInfoLine(graphics, Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.specialty"), left, y + 4, width);
         renderWrappedInfoLine(graphics, Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.recruit"), left, y + 4, width);
