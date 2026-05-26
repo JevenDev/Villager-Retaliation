@@ -1,91 +1,4 @@
 {
-  "messages": [
-    {
-      "id": "fisherman_gift_given_variants",
-      "key": "gift_given",
-      "lines": [
-        "Take {gift_item}. A useful catch should not sit in one pair of hands.",
-        "Here, {gift_item}. The water was generous, so I can be too."
-      ],
-      "weight": 48
-    },
-    {
-      "id": "fisherman_gift_advice_followup_liked_variants",
-      "key": "gift_advice_followup.liked",
-      "lines": [
-        "Good. {tested_villager} took {gift_item}; that advice had a clean hook.",
-        "Then {gift_item} was the right bait for {tested_villager}. Glad it landed."
-      ],
-      "weight": 44
-    },
-    {
-      "id": "fisherman_gift_advice_followup_disliked_variants",
-      "key": "gift_advice_followup.disliked",
-      "lines": [
-        "That line came back empty. For {gift_subject}, cast {alternative_gift} instead.",
-        "Some fish spit the hook. Leave {gift_item} and try {alternative_gift} next time."
-      ],
-      "weight": 44
-    },
-    {
-      "key": "gift_advice_followup.disliked",
-      "dispositions": [
-        "cautious",
-        "rude",
-        "hostile",
-        "fearful"
-      ],
-      "text": "Bad bait. It happens. Cast {alternative_gift} if you want a better chance.",
-      "weight": 20
-    },
-    {
-      "key": "gift_advice_followup.disliked",
-      "dispositions": [
-        "rude",
-        "hostile"
-      ],
-      "text": "You took the line, not me. Still, {alternative_gift} should catch better.",
-      "weight": 20
-    }
-  ],
-  "openings": [
-    {
-      "id": "fisherman_opening",
-      "text": "Mind the dock. What do you need?"
-    }
-  ],
-  "closings": [
-    {
-      "id": "fisherman_closing",
-      "text": "Back to reading water and weather, then."
-    }
-  ],
-  "pacify": [
-    {
-      "id": "fisherman_pacify_success",
-      "outcomes": [
-        "success"
-      ],
-      "text": "Fine. The line goes slack, for now.",
-      "weight": 26
-    },
-    {
-      "id": "fisherman_pacify_short",
-      "outcomes": [
-        "not_enough_emeralds"
-      ],
-      "text": "That offer will not hold. I need {emerald_cost} {emeralds}.",
-      "weight": 26
-    },
-    {
-      "id": "fisherman_pacify_blocked",
-      "outcomes": [
-        "blocked_by_reputation"
-      ],
-      "text": "No. I know when to cut a bad line.",
-      "weight": 26
-    }
-  ],
   "lines": [
     {
       "id": "fisherman_question_nets_variants",
@@ -113,20 +26,32 @@
     {
       "id": "fisherman_new_greeting_dock",
       "request": "greeting",
-      "text": "Step lightly on the dock. Loose boards like to announce strangers.",
-      "weight": 26
+      "weight": 26,
+      "lines": [
+        "Step lightly on the dock. Loose boards like to announce strangers.",
+        "Step lightly on the dock. Loose boards like to announce strangers.",
+        "Step lightly on the dock. Loose boards like to announce strangers."
+      ]
     },
     {
       "id": "fisherman_new_joke_line",
       "request": "joke",
-      "text": "A fishing joke needs a good line and someone patient enough to hear it.",
-      "weight": 18
+      "weight": 18,
+      "lines": [
+        "A fishing joke needs a good line and someone patient enough to hear it.",
+        "A fishing joke needs a good line and someone patient enough to hear it.",
+        "A fishing joke needs a good line and someone patient enough to hear it."
+      ]
     },
     {
       "id": "fisherman_new_insult_soggy",
       "request": "insult",
-      "text": "That insult was damp before it reached me.",
-      "weight": 18
+      "weight": 18,
+      "lines": [
+        "That insult was damp before it reached me.",
+        "That insult was damp before it reached me.",
+        "That insult was damp before it reached me."
+      ]
     },
     {
       "id": "fisherman_new_cautious_distance",
@@ -135,8 +60,12 @@
         "cautious",
         "rude"
       ],
-      "text": "I keep space between myself and uncertain weather. People are no different.",
-      "weight": 30
+      "weight": 30,
+      "lines": [
+        "I keep space between myself and uncertain weather. People are no different.",
+        "I keep space between myself and uncertain weather. People are no different.",
+        "I keep space between myself and uncertain weather. People are no different."
+      ]
     },
     {
       "id": "fisherman_cured_recognition_warm",
@@ -147,7 +76,8 @@
       ],
       "lines": [
         "I remember sinking far below myself. You hauled the line in.",
-        "The dark had me hooked. You cut the line clean."
+        "The dark had me hooked. You cut the line clean.",
+        "I remember sinking far below myself. You hauled the line in."
       ],
       "weight": 60
     },
@@ -160,7 +90,8 @@
       ],
       "lines": [
         "Your face breaks the surface of that memory, then slips under again.",
-        "I remember a taste like bad river water, then breathing like it was new."
+        "I remember a taste like bad river water, then breathing like it was new.",
+        "Your face breaks the surface of that memory, then slips under again."
       ],
       "weight": 60
     },
@@ -172,8 +103,12 @@
         "hostile",
         "fearful"
       ],
-      "text": "I remember you through deep water and panic. Do not crowd the bank.",
-      "weight": 30
+      "weight": 30,
+      "lines": [
+        "I remember you through deep water and panic. Do not crowd the bank.",
+        "I remember you through deep water and panic. Do not crowd the bank.",
+        "I remember you through deep water and panic. Do not crowd the bank."
+      ]
     },
     {
       "id": "fisherman_village_event_thunderstorm",
@@ -271,6 +206,327 @@
         "We are alright for now near the barrel. Keep the fires fed and the paths open."
       ],
       "weight": 170
+    },
+    {
+      "id": "recruitment_followup_fisherman_safe",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
+      "weight": 38,
+      "lines": [
+        "A clean return, no snags. I like a trip that ends like a well-tied line.",
+        "A clean return, no snags. I like a trip that ends like a well-tied line.",
+        "A clean return, no snags. I like a trip that ends like a well-tied line."
+      ]
+    },
+    {
+      "id": "recruitment_followup_fisherman_injured",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "injured"
+      ],
+      "weight": 38,
+      "lines": [
+        "Something got its hook in me out there. Next time, we cut the line sooner.",
+        "Something got its hook in me out there. Next time, we cut the line sooner.",
+        "Something got its hook in me out there. Next time, we cut the line sooner."
+      ]
+    },
+    {
+      "id": "recruitment_followup_fisherman_betrayed",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "betrayed"
+      ],
+      "weight": 42,
+      "lines": [
+        "I know bait when I see it now. Do not ask me to bite twice.",
+        "I know bait when I see it now. Do not ask me to bite twice.",
+        "I know bait when I see it now. Do not ask me to bite twice."
+      ]
+    },
+    {
+      "id": "recruitment_followup_fisherman_boat",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "requires_recruitment_boat_trip": true,
+      "weight": 44,
+      "lines": [
+        "A boat is honest enough. It goes where it is pointed, unlike some plans.",
+        "A boat is honest enough. It goes where it is pointed, unlike some plans.",
+        "A boat is honest enough. It goes where it is pointed, unlike some plans."
+      ]
+    },
+    {
+      "id": "question_follow_memory_fisherman_boat",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "requires_recruitment_memory": true,
+      "requires_recruitment_boat_trip": true,
+      "weight": 4,
+      "lines": [
+        "You taking me by boat was almost sensible. Almost.",
+        "You taking me by boat was almost sensible. Almost.",
+        "You taking me by boat was almost sensible. Almost."
+      ]
+    },
+    {
+      "id": "question_follow_memory_fisherman",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "requires_recruitment_memory": true,
+      "min_recruitment_follow_distance": 500,
+      "weight": 4,
+      "lines": [
+        "Following you over {follow_distance} blocks felt like reeling in a boot with opinions.",
+        "Following you over {follow_distance} blocks felt like reeling in a boot with opinions.",
+        "Following you over {follow_distance} blocks felt like reeling in a boot with opinions."
+      ]
+    },
+    {
+      "id": "question_follow_memory_fisherman_ocean_boat",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "requires_recruitment_memory": true,
+      "requires_recruitment_boat_trip": true,
+      "requires_recruitment_ocean_crossing": true,
+      "weight": 5,
+      "lines": [
+        "If we had to cross ocean, at least you used a boat. That is the first sensible part of the story.",
+        "If we had to cross ocean, at least you used a boat. That is the first sensible part of the story.",
+        "If we had to cross ocean, at least you used a boat. That is the first sensible part of the story."
+      ]
+    },
+    {
+      "id": "question_follow_memory_fisherman_ocean_swim",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "requires_recruitment_memory": true,
+      "requires_recruitment_swim_trip": true,
+      "weight": 5,
+      "lines": [
+        "Swimming across ocean with you was not fishing. It was being the catch.",
+        "Swimming across ocean with you was not fishing. It was being the catch.",
+        "Swimming across ocean with you was not fishing. It was being the catch."
+      ]
+    },
+    {
+      "id": "gear_report_fisherman_used",
+      "request": "gear_report",
+      "option": "gear_report",
+      "show_for_babies": false,
+      "requires_gear_report_used_in_combat": true,
+      "weight": 32,
+      "lines": [
+        "It held steady. Better than most nets, and those are meant to catch trouble.",
+        "It held steady. Better than most nets, and those are meant to catch trouble.",
+        "It held steady. Better than most nets, and those are meant to catch trouble."
+      ]
+    },
+    {
+      "id": "gear_report_fisherman_unused",
+      "request": "gear_report",
+      "option": "gear_report",
+      "show_for_babies": false,
+      "requires_gear_report_unused_in_combat": true,
+      "weight": 32,
+      "lines": [
+        "Dry, unused, and welcome. Some things should stay out of the water and out of danger.",
+        "Dry, unused, and welcome. Some things should stay out of the water and out of danger.",
+        "Dry, unused, and welcome. Some things should stay out of the water and out of danger."
+      ]
+    },
+    {
+      "id": "village_defense_fisherman_nets",
+      "request": "village_defense_report",
+      "option": "village_defense_report",
+      "show_for_babies": false,
+      "lines": [
+        "When trouble came in like a bad tide, you helped drag it back out.",
+        "A village is a harbor in its own way. You kept ours from burning.",
+        "The raid came in rough, and you helped break the current.",
+        "You kept the danger from dragging more of us under.",
+        "I saw you stand where the tide was meanest.",
+        "A safe harbor takes work. Yesterday, you did some.",
+        "The village rode out the storm because people held fast.",
+        "You helped haul the worst of that night away from our doors."
+      ],
+      "weight": 246
+    },
+    {
+      "id": "apology_fisherman_line",
+      "request": "apology",
+      "option": "apologize_for_harm",
+      "show_for_babies": false,
+      "lines": [
+        "You cast trouble into the water. Fine. Now reel back something better.",
+        "Bad tides pass. I will see whether you bring the same storm again.",
+        "You tangled the line. Fine. Untangle it slowly and do not cut it again.",
+        "An apology floats. Trust sinks or holds by what follows.",
+        "I will hear you out. I have waited longer for worse catches.",
+        "Bad waters calm if the wind changes. Let us see whether yours does.",
+        "You hooked harm and brought it here. Now bring something decent.",
+        "Fine. I will not throw the words back, but I will inspect them."
+      ],
+      "weight": 234
+    },
+    {
+      "id": "combat_survival_fisherman",
+      "request": "combat_survival_report",
+      "option": "combat_survival_report",
+      "show_for_babies": false,
+      "lines": [
+        "I have pulled mean things from dark water. Tonight was louder, that is all.",
+        "I followed the safest current I could find. Tonight, that current was back here.",
+        "I followed the sound of home like a line pulled tight.",
+        "Dark water is honest compared to a dark road with raiders near it.",
+        "I came back cold, winded, and happy to complain about both.",
+        "The night tried to pull me under. I kept my head up.",
+        "I have lost catches before. I am glad I was not the catch this time.",
+        "The door felt like a dock after bad weather."
+      ],
+      "weight": 234
+    },
+    {
+      "id": "default_profession_fisherman_water_warning",
+      "request": "question",
+      "show_for_babies": false,
+      "lines": [
+        "Water tells the truth slowly. Trouble splashes faster.",
+        "A net catches fish, weeds, secrets, and the occasional reason to stay near shore.",
+        "The river is generous if you respect what lives under the shine."
+      ],
+      "weight": 18
+    }
+  ],
+  "messages": [
+    {
+      "id": "fisherman_gift_given_variants",
+      "key": "gift_given",
+      "lines": [
+        "Take {gift_item}. A useful catch should not sit in one pair of hands.",
+        "Here, {gift_item}. The water was generous, so I can be too.",
+        "Take {gift_item}. A useful catch should not sit in one pair of hands."
+      ],
+      "weight": 48
+    },
+    {
+      "id": "fisherman_gift_advice_followup_liked_variants",
+      "key": "gift_advice_followup.liked",
+      "lines": [
+        "Good. {tested_villager} took {gift_item}; that advice had a clean hook.",
+        "Then {gift_item} was the right bait for {tested_villager}. Glad it landed.",
+        "Good. {tested_villager} took {gift_item}; that advice had a clean hook."
+      ],
+      "weight": 44
+    },
+    {
+      "id": "fisherman_gift_advice_followup_disliked_variants",
+      "key": "gift_advice_followup.disliked",
+      "lines": [
+        "That line came back empty. For {gift_subject}, cast {alternative_gift} instead.",
+        "Some fish spit the hook. Leave {gift_item} and try {alternative_gift} next time.",
+        "That line came back empty. For {gift_subject}, cast {alternative_gift} instead."
+      ],
+      "weight": 44
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 20,
+      "lines": [
+        "Bad bait. It happens. Cast {alternative_gift} if you want a better chance.",
+        "Bad bait. It happens. Cast {alternative_gift} if you want a better chance.",
+        "Bad bait. It happens. Cast {alternative_gift} if you want a better chance."
+      ]
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
+      "weight": 20,
+      "lines": [
+        "You took the line, not me. Still, {alternative_gift} should catch better.",
+        "You took the line, not me. Still, {alternative_gift} should catch better.",
+        "You took the line, not me. Still, {alternative_gift} should catch better."
+      ]
+    }
+  ],
+  "openings": [
+    {
+      "id": "fisherman_opening",
+      "lines": [
+        "Mind the dock. What do you need?",
+        "Mind the dock. What do you need?",
+        "Mind the dock. What do you need?"
+      ]
+    }
+  ],
+  "closings": [
+    {
+      "id": "fisherman_closing",
+      "lines": [
+        "Back to reading water and weather, then.",
+        "Back to reading water and weather, then.",
+        "Back to reading water and weather, then."
+      ]
+    }
+  ],
+  "pacify": [
+    {
+      "id": "fisherman_pacify_success",
+      "outcomes": [
+        "success"
+      ],
+      "weight": 26,
+      "lines": [
+        "Fine. The line goes slack, for now.",
+        "Fine. The line goes slack, for now.",
+        "Fine. The line goes slack, for now."
+      ]
+    },
+    {
+      "id": "fisherman_pacify_short",
+      "outcomes": [
+        "not_enough_emeralds"
+      ],
+      "weight": 26,
+      "lines": [
+        "That offer will not hold. I need {emerald_cost} {emeralds}.",
+        "That offer will not hold. I need {emerald_cost} {emeralds}.",
+        "That offer will not hold. I need {emerald_cost} {emeralds}."
+      ]
+    },
+    {
+      "id": "fisherman_pacify_blocked",
+      "outcomes": [
+        "blocked_by_reputation"
+      ],
+      "weight": 26,
+      "lines": [
+        "No. I know when to cut a bad line.",
+        "No. I know when to cut a bad line.",
+        "No. I know when to cut a bad line."
+      ]
     }
   ]
 }

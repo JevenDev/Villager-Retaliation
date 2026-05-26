@@ -456,7 +456,7 @@
       ],
       "chance": 0.725375,
       "lines": [
-        "Help! {target} is here!",
+        "Help! {target_article} is here!",
         "I need help!",
         "Bell! Ring the bell!"
       ],
@@ -506,7 +506,7 @@
       ],
       "chance": 0.725375,
       "lines": [
-        "Help! {target} is here!",
+        "Help! {target_article} is here!",
         "I need help!",
         "Bell! Ring the bell!"
       ],

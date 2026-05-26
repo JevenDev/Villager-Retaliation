@@ -1,91 +1,4 @@
 {
-  "messages": [
-    {
-      "id": "mason_gift_given_variants",
-      "key": "gift_given",
-      "lines": [
-        "Here, {gift_item}. Strong villages are built one fair exchange at a time.",
-        "Take {gift_item}. A steady hand deserves steady thanks."
-      ],
-      "weight": 48
-    },
-    {
-      "id": "mason_gift_advice_followup_liked_variants",
-      "key": "gift_advice_followup.liked",
-      "lines": [
-        "Good. {gift_item} sat square with {tested_villager}.",
-        "Then the advice was level. {tested_villager} liked {gift_item}."
-      ],
-      "weight": 44
-    },
-    {
-      "id": "mason_gift_advice_followup_disliked_variants",
-      "key": "gift_advice_followup.disliked",
-      "lines": [
-        "That foundation cracked. For {gift_subject}, set {alternative_gift} instead.",
-        "{gift_item} did not bear weight there? Try {alternative_gift}; sturdier choice."
-      ],
-      "weight": 44
-    },
-    {
-      "key": "gift_advice_followup.disliked",
-      "dispositions": [
-        "cautious",
-        "rude",
-        "hostile",
-        "fearful"
-      ],
-      "text": "That advice cracked under pressure. Set {alternative_gift} in its place.",
-      "weight": 20
-    },
-    {
-      "key": "gift_advice_followup.disliked",
-      "dispositions": [
-        "rude",
-        "hostile"
-      ],
-      "text": "You built on weak stone. Use {alternative_gift} if you want it to stand.",
-      "weight": 20
-    }
-  ],
-  "openings": [
-    {
-      "id": "mason_opening",
-      "text": "Mind the stonecutter. What do you need?"
-    }
-  ],
-  "closings": [
-    {
-      "id": "mason_closing",
-      "text": "Back to setting stone that stays set, then."
-    }
-  ],
-  "pacify": [
-    {
-      "id": "mason_pacify_success",
-      "outcomes": [
-        "success"
-      ],
-      "text": "Fine. I will set this stone down carefully.",
-      "weight": 26
-    },
-    {
-      "id": "mason_pacify_short",
-      "outcomes": [
-        "not_enough_emeralds"
-      ],
-      "text": "That foundation will not hold. Bring {emerald_cost} {emeralds}.",
-      "weight": 26
-    },
-    {
-      "id": "mason_pacify_blocked",
-      "outcomes": [
-        "blocked_by_reputation"
-      ],
-      "text": "No. Some cracks keep spreading after the offer is made.",
-      "weight": 26
-    }
-  ],
   "lines": [
     {
       "id": "mason_question_corners_variants",
@@ -113,20 +26,32 @@
     {
       "id": "mason_new_greeting_stonecutter",
       "request": "greeting",
-      "text": "Keep clear of the stonecutter. It does not care who started the conversation.",
-      "weight": 26
+      "weight": 26,
+      "lines": [
+        "Keep clear of the stonecutter. It does not care who started the conversation.",
+        "Keep clear of the stonecutter. It does not care who started the conversation.",
+        "Keep clear of the stonecutter. It does not care who started the conversation."
+      ]
     },
     {
       "id": "mason_new_joke_dense",
       "request": "joke",
-      "text": "Mason jokes are solid. Sometimes too solid to move.",
-      "weight": 18
+      "weight": 18,
+      "lines": [
+        "Mason jokes are solid. Sometimes too solid to move.",
+        "Mason jokes are solid. Sometimes too solid to move.",
+        "Mason jokes are solid. Sometimes too solid to move."
+      ]
     },
     {
       "id": "mason_new_insult_gravel",
       "request": "insult",
-      "text": "That remark had all the strength of loose gravel.",
-      "weight": 18
+      "weight": 18,
+      "lines": [
+        "That remark had all the strength of loose gravel.",
+        "That remark had all the strength of loose gravel.",
+        "That remark had all the strength of loose gravel."
+      ]
     },
     {
       "id": "mason_new_rude_weight",
@@ -135,8 +60,12 @@
         "rude",
         "hostile"
       ],
-      "text": "Your words carry weight, but not the useful kind.",
-      "weight": 30
+      "weight": 30,
+      "lines": [
+        "Your words carry weight, but not the useful kind.",
+        "Your words carry weight, but not the useful kind.",
+        "Your words carry weight, but not the useful kind."
+      ]
     },
     {
       "id": "mason_cured_recognition_warm",
@@ -147,7 +76,8 @@
       ],
       "lines": [
         "I remember being rubble. You helped set the first stone back in place.",
-        "The cure cracked the old dark apart. You were there when the wall held."
+        "The cure cracked the old dark apart. You were there when the wall held.",
+        "I remember being rubble. You helped set the first stone back in place."
       ],
       "weight": 60
     },
@@ -160,7 +90,8 @@
       ],
       "lines": [
         "Your face is carved into that memory, but weather has worn it strange.",
-        "I remember stone-cold hands, a golden taste, and standing upright again."
+        "I remember stone-cold hands, a golden taste, and standing upright again.",
+        "Your face is carved into that memory, but weather has worn it strange."
       ],
       "weight": 60
     },
@@ -172,8 +103,12 @@
         "hostile",
         "fearful"
       ],
-      "text": "I remember you from beneath a collapsed roof of thoughts. Speak gently.",
-      "weight": 30
+      "weight": 30,
+      "lines": [
+        "I remember you from beneath a collapsed roof of thoughts. Speak gently.",
+        "I remember you from beneath a collapsed roof of thoughts. Speak gently.",
+        "I remember you from beneath a collapsed roof of thoughts. Speak gently."
+      ]
     },
     {
       "id": "mason_village_event_thunderstorm",
@@ -271,6 +206,299 @@
         "We are alright for now near the stonecutter. Keep the fires fed and the paths open."
       ],
       "weight": 170
+    },
+    {
+      "id": "recruitment_followup_mason_safe",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
+      "weight": 38,
+      "lines": [
+        "Solid trip, solid return. Foundations matter.",
+        "Solid trip, solid return. Foundations matter.",
+        "Solid trip, solid return. Foundations matter."
+      ]
+    },
+    {
+      "id": "recruitment_followup_mason_injured",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "injured"
+      ],
+      "weight": 38,
+      "lines": [
+        "I came back chipped. A wall can take that. A person should not have to.",
+        "I came back chipped. A wall can take that. A person should not have to.",
+        "I came back chipped. A wall can take that. A person should not have to."
+      ]
+    },
+    {
+      "id": "recruitment_followup_mason_betrayed",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "betrayed"
+      ],
+      "weight": 42,
+      "lines": [
+        "You cracked something load-bearing between us.",
+        "You cracked something load-bearing between us.",
+        "You cracked something load-bearing between us."
+      ]
+    },
+    {
+      "id": "recruitment_followup_mason_boat",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "requires_recruitment_boat_trip": true,
+      "weight": 42,
+      "lines": [
+        "No foundation under a boat, yet somehow it held. I respect the craft.",
+        "No foundation under a boat, yet somehow it held. I respect the craft.",
+        "No foundation under a boat, yet somehow it held. I respect the craft."
+      ]
+    },
+    {
+      "id": "question_follow_memory_mason",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "requires_recruitment_memory": true,
+      "min_recruitment_follow_distance": 500,
+      "excludes_recruitment_ocean_crossing": true,
+      "weight": 4,
+      "lines": [
+        "After following you that far, I understood why roads need better foundations.",
+        "After following you that far, I understood why roads need better foundations.",
+        "After following you that far, I understood why roads need better foundations."
+      ]
+    },
+    {
+      "id": "question_follow_memory_mason_boat",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "requires_recruitment_memory": true,
+      "requires_recruitment_boat_trip": true,
+      "weight": 3,
+      "lines": [
+        "I do not trust anything with no foundation, but that boat held better than I expected.",
+        "I do not trust anything with no foundation, but that boat held better than I expected.",
+        "I do not trust anything with no foundation, but that boat held better than I expected."
+      ]
+    },
+    {
+      "id": "gear_report_mason_used",
+      "request": "gear_report",
+      "option": "gear_report",
+      "show_for_babies": false,
+      "requires_gear_report_used_in_combat": true,
+      "weight": 32,
+      "lines": [
+        "Solid work. It took the pressure like good stone in the right wall.",
+        "Solid work. It took the pressure like good stone in the right wall.",
+        "Solid work. It took the pressure like good stone in the right wall."
+      ]
+    },
+    {
+      "id": "gear_report_mason_unused",
+      "request": "gear_report",
+      "option": "gear_report",
+      "show_for_babies": false,
+      "requires_gear_report_unused_in_combat": true,
+      "weight": 32,
+      "lines": [
+        "Still unmarked. Strong things do not need to boast before the load comes.",
+        "Still unmarked. Strong things do not need to boast before the load comes.",
+        "Still unmarked. Strong things do not need to boast before the load comes."
+      ]
+    },
+    {
+      "id": "village_defense_mason_wall",
+      "request": "village_defense_report",
+      "option": "village_defense_report",
+      "show_for_babies": false,
+      "lines": [
+        "Walls help, but walls do not swing back. You did.",
+        "A village stands on more than stone. Yesterday, it stood on nerve.",
+        "The wall held better because someone stood beyond it.",
+        "You gave the village another layer of stone when it needed one.",
+        "I saw raiders hit our edge and fail to break through.",
+        "Good work under pressure keeps structures standing. So does courage.",
+        "The village is still square on its foundation because people held firm.",
+        "You helped keep the center from cracking."
+      ],
+      "weight": 246
+    },
+    {
+      "id": "apology_mason_crack",
+      "request": "apology",
+      "option": "apologize_for_harm",
+      "show_for_babies": false,
+      "lines": [
+        "Cracks spread if ignored. You noticed this one. Now prove you can patch it.",
+        "Mortar takes time to set. So does forgiveness.",
+        "You made a crack. You named it. That is the first proper repair.",
+        "Do not plaster over this and call it fixed.",
+        "Fine. A foundation can be reset, but it takes honest work.",
+        "I hear the apology. Now bring mortar, not dust.",
+        "Damage hidden inside stone still spreads. Keep this in the open.",
+        "Trust can stand again if the base is not shaken twice."
+      ],
+      "weight": 234
+    },
+    {
+      "id": "combat_survival_mason",
+      "request": "combat_survival_report",
+      "option": "combat_survival_report",
+      "show_for_babies": false,
+      "lines": [
+        "Stone chips, tools chip, people chip too. Important thing is not breaking.",
+        "My hands shook too much to hold a chisel after. Still, they held long enough.",
+        "I made it back chipped around the edges, but not broken.",
+        "Stone dust in my sleeves, fear in my teeth, home under my feet.",
+        "A wall looks different after you have wished for one.",
+        "I kept moving one step at a time. That is how anything solid gets built.",
+        "The road tried to crack me. It failed.",
+        "I will trust walls more tomorrow. Tonight I trust doors."
+      ],
+      "weight": 234
+    },
+    {
+      "id": "default_profession_mason_foundations",
+      "request": "question",
+      "show_for_babies": false,
+      "lines": [
+        "Stone is patient. That is why careless builders should fear it.",
+        "A wall is not just blocks. It is everyone sleeping behind it.",
+        "Foundations tell me whether a place expects to last."
+      ],
+      "weight": 18
+    }
+  ],
+  "messages": [
+    {
+      "id": "mason_gift_given_variants",
+      "key": "gift_given",
+      "lines": [
+        "Here, {gift_item}. Strong villages are built one fair exchange at a time.",
+        "Take {gift_item}. A steady hand deserves steady thanks.",
+        "Here, {gift_item}. Strong villages are built one fair exchange at a time."
+      ],
+      "weight": 48
+    },
+    {
+      "id": "mason_gift_advice_followup_liked_variants",
+      "key": "gift_advice_followup.liked",
+      "lines": [
+        "Good. {gift_item} sat square with {tested_villager}.",
+        "Then the advice was level. {tested_villager} liked {gift_item}.",
+        "Good. {gift_item} sat square with {tested_villager}."
+      ],
+      "weight": 44
+    },
+    {
+      "id": "mason_gift_advice_followup_disliked_variants",
+      "key": "gift_advice_followup.disliked",
+      "lines": [
+        "That foundation cracked. For {gift_subject}, set {alternative_gift} instead.",
+        "{gift_item} did not bear weight there? Try {alternative_gift}; sturdier choice.",
+        "That foundation cracked. For {gift_subject}, set {alternative_gift} instead."
+      ],
+      "weight": 44
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 20,
+      "lines": [
+        "That advice cracked under pressure. Set {alternative_gift} in its place.",
+        "That advice cracked under pressure. Set {alternative_gift} in its place.",
+        "That advice cracked under pressure. Set {alternative_gift} in its place."
+      ]
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
+      "weight": 20,
+      "lines": [
+        "You built on weak stone. Use {alternative_gift} if you want it to stand.",
+        "You built on weak stone. Use {alternative_gift} if you want it to stand.",
+        "You built on weak stone. Use {alternative_gift} if you want it to stand."
+      ]
+    }
+  ],
+  "openings": [
+    {
+      "id": "mason_opening",
+      "lines": [
+        "Mind the stonecutter. What do you need?",
+        "Mind the stonecutter. What do you need?",
+        "Mind the stonecutter. What do you need?"
+      ]
+    }
+  ],
+  "closings": [
+    {
+      "id": "mason_closing",
+      "lines": [
+        "Back to setting stone that stays set, then.",
+        "Back to setting stone that stays set, then.",
+        "Back to setting stone that stays set, then."
+      ]
+    }
+  ],
+  "pacify": [
+    {
+      "id": "mason_pacify_success",
+      "outcomes": [
+        "success"
+      ],
+      "weight": 26,
+      "lines": [
+        "Fine. I will set this stone down carefully.",
+        "Fine. I will set this stone down carefully.",
+        "Fine. I will set this stone down carefully."
+      ]
+    },
+    {
+      "id": "mason_pacify_short",
+      "outcomes": [
+        "not_enough_emeralds"
+      ],
+      "weight": 26,
+      "lines": [
+        "That foundation will not hold. Bring {emerald_cost} {emeralds}.",
+        "That foundation will not hold. Bring {emerald_cost} {emeralds}.",
+        "That foundation will not hold. Bring {emerald_cost} {emeralds}."
+      ]
+    },
+    {
+      "id": "mason_pacify_blocked",
+      "outcomes": [
+        "blocked_by_reputation"
+      ],
+      "weight": 26,
+      "lines": [
+        "No. Some cracks keep spreading after the offer is made.",
+        "No. Some cracks keep spreading after the offer is made.",
+        "No. Some cracks keep spreading after the offer is made."
+      ]
     }
   ]
 }

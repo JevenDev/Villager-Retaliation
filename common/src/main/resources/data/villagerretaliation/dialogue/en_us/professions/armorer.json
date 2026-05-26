@@ -1,91 +1,4 @@
 {
-  "messages": [
-    {
-      "id": "armorer_gift_given_variants",
-      "key": "gift_given",
-      "lines": [
-        "Here, {gift_item}. Well-kept armor is not the only thing that protects a friend.",
-        "Take {gift_item}. I would rather see you prepared than patched up later."
-      ],
-      "weight": 48
-    },
-    {
-      "id": "armorer_gift_advice_followup_liked_variants",
-      "key": "gift_advice_followup.liked",
-      "lines": [
-        "Good. {gift_item} held like proper mail for {tested_villager}. Advice should take a dent and stay useful.",
-        "I thought {gift_item} would fit. Glad {tested_villager} wore the gesture well."
-      ],
-      "weight": 44
-    },
-    {
-      "id": "armorer_gift_advice_followup_disliked_variants",
-      "key": "gift_advice_followup.disliked",
-      "lines": [
-        "Then that fit was off. For {gift_subject}, try {alternative_gift}; better plate, fewer gaps.",
-        "A poor fitting, then. Bring {alternative_gift} next time and the trade should sit easier."
-      ],
-      "weight": 44
-    },
-    {
-      "key": "gift_advice_followup.disliked",
-      "dispositions": [
-        "cautious",
-        "rude",
-        "hostile",
-        "fearful"
-      ],
-      "text": "You trusted a cracked plate. That is on both of us. Try {alternative_gift}.",
-      "weight": 20
-    },
-    {
-      "key": "gift_advice_followup.disliked",
-      "dispositions": [
-        "rude",
-        "hostile"
-      ],
-      "text": "{gift_item} buckled? Fine. {alternative_gift} should hold better.",
-      "weight": 20
-    }
-  ],
-  "openings": [
-    {
-      "id": "armorer_opening",
-      "text": "Mind the forge. What do you need?"
-    }
-  ],
-  "closings": [
-    {
-      "id": "armorer_closing",
-      "text": "Back to fitting mail and shields, then."
-    }
-  ],
-  "pacify": [
-    {
-      "id": "armorer_pacify_success",
-      "outcomes": [
-        "success"
-      ],
-      "text": "Fine. I will lower my guard, but I am keeping the straps tight.",
-      "weight": 26
-    },
-    {
-      "id": "armorer_pacify_short",
-      "outcomes": [
-        "not_enough_emeralds"
-      ],
-      "text": "That will not cover the dent you put in my patience. It takes {emerald_cost} {emeralds}.",
-      "weight": 26
-    },
-    {
-      "id": "armorer_pacify_blocked",
-      "outcomes": [
-        "blocked_by_reputation"
-      ],
-      "text": "No. Armor is for people I mean to protect, and that is not you right now.",
-      "weight": 26
-    }
-  ],
   "lines": [
     {
       "id": "armorer_question_work_variants",
@@ -113,20 +26,32 @@
     {
       "id": "armorer_new_greeting_heat",
       "request": "greeting",
-      "text": "Stand clear of the heat. A forge forgives less than I do.",
-      "weight": 26
+      "weight": 26,
+      "lines": [
+        "Stand clear of the heat. A forge forgives less than I do.",
+        "Stand clear of the heat. A forge forgives less than I do.",
+        "Stand clear of the heat. A forge forgives less than I do."
+      ]
     },
     {
       "id": "armorer_new_joke_padding",
       "request": "joke",
-      "text": "Armor jokes need padding. Otherwise everyone feels the point too soon.",
-      "weight": 18
+      "weight": 18,
+      "lines": [
+        "Armor jokes need padding. Otherwise everyone feels the point too soon.",
+        "Armor jokes need padding. Otherwise everyone feels the point too soon.",
+        "Armor jokes need padding. Otherwise everyone feels the point too soon."
+      ]
     },
     {
       "id": "armorer_new_insult_rust",
       "request": "insult",
-      "text": "That remark had the polish of wet rust.",
-      "weight": 18
+      "weight": 18,
+      "lines": [
+        "That remark had the polish of wet rust.",
+        "That remark had the polish of wet rust.",
+        "That remark had the polish of wet rust."
+      ]
     },
     {
       "id": "armorer_new_hostile_tools",
@@ -135,8 +60,12 @@
         "rude",
         "hostile"
       ],
-      "text": "Do not sneer at my tools. They protect better people than you.",
-      "weight": 30
+      "weight": 30,
+      "lines": [
+        "Do not sneer at my tools. They protect better people than you.",
+        "Do not sneer at my tools. They protect better people than you.",
+        "Do not sneer at my tools. They protect better people than you."
+      ]
     },
     {
       "id": "armorer_cured_recognition_warm",
@@ -147,7 +76,8 @@
       ],
       "lines": [
         "I remember your hands at the edge of the dark. Stronger than any plate I have hammered.",
-        "A cure is armor for the soul. You helped fit mine back on."
+        "A cure is armor for the soul. You helped fit mine back on.",
+        "I remember your hands at the edge of the dark. Stronger than any plate I have hammered."
       ],
       "weight": 60
     },
@@ -160,7 +90,8 @@
       ],
       "lines": [
         "I know your face, but the memory rings like a dented helm.",
-        "There was iron in my mouth, or fear, or both. Then you were there."
+        "There was iron in my mouth, or fear, or both. Then you were there.",
+        "I know your face, but the memory rings like a dented helm."
       ],
       "weight": 60
     },
@@ -172,8 +103,12 @@
         "hostile",
         "fearful"
       ],
-      "text": "I remember you through cracked mail and bad dreams. Stand where I can see your hands.",
-      "weight": 30
+      "weight": 30,
+      "lines": [
+        "I remember you through cracked mail and bad dreams. Stand where I can see your hands.",
+        "I remember you through cracked mail and bad dreams. Stand where I can see your hands.",
+        "I remember you through cracked mail and bad dreams. Stand where I can see your hands."
+      ]
     },
     {
       "id": "armorer_village_event_thunderstorm",
@@ -271,6 +206,311 @@
         "We are alright for now near the forge. Keep the fires fed and the paths open."
       ],
       "weight": 170
+    },
+    {
+      "id": "recruitment_followup_armorer_safe",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
+      "weight": 38,
+      "lines": [
+        "Back without a dent worth naming. I will call that a good fit.",
+        "Back without a dent worth naming. I will call that a good fit.",
+        "Back without a dent worth naming. I will call that a good fit."
+      ]
+    },
+    {
+      "id": "recruitment_followup_armorer_injured",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "injured"
+      ],
+      "weight": 38,
+      "lines": [
+        "There are marks on me I would rather see on a breastplate. Next time, let the metal take it.",
+        "There are marks on me I would rather see on a breastplate. Next time, let the metal take it.",
+        "There are marks on me I would rather see on a breastplate. Next time, let the metal take it."
+      ]
+    },
+    {
+      "id": "recruitment_followup_armorer_betrayed",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "betrayed"
+      ],
+      "weight": 42,
+      "lines": [
+        "I know the sound of a bad strike. Yours was worse because I trusted the hand behind it.",
+        "I know the sound of a bad strike. Yours was worse because I trusted the hand behind it.",
+        "I know the sound of a bad strike. Yours was worse because I trusted the hand behind it."
+      ]
+    },
+    {
+      "id": "recruitment_followup_armorer_boat",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "requires_recruitment_boat_trip": true,
+      "weight": 42,
+      "lines": [
+        "A boat carries armor poorly, but it carried me well enough.",
+        "A boat carries armor poorly, but it carried me well enough.",
+        "A boat carries armor poorly, but it carried me well enough."
+      ]
+    },
+    {
+      "id": "question_follow_memory_armorer",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "requires_recruitment_memory": true,
+      "weight": 3,
+      "lines": [
+        "That trip through {follow_biome} tested my buckles more than most customers do.",
+        "That trip through {follow_biome} tested my buckles more than most customers do.",
+        "That trip through {follow_biome} tested my buckles more than most customers do."
+      ]
+    },
+    {
+      "id": "question_follow_memory_armorer_boat",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "requires_recruitment_memory": true,
+      "requires_recruitment_boat_trip": true,
+      "weight": 3,
+      "lines": [
+        "Armor is not made for sitting in a boat. I learned that while following you.",
+        "Armor is not made for sitting in a boat. I learned that while following you.",
+        "Armor is not made for sitting in a boat. I learned that while following you."
+      ]
+    },
+    {
+      "id": "gear_report_armorer_used",
+      "request": "gear_report",
+      "option": "gear_report",
+      "show_for_babies": false,
+      "requires_gear_report_used_in_combat": true,
+      "weight": 34,
+      "lines": [
+        "It took the moment cleanly. Good gear is quiet until the blow lands.",
+        "It took the moment cleanly. Good gear is quiet until the blow lands.",
+        "It took the moment cleanly. Good gear is quiet until the blow lands."
+      ]
+    },
+    {
+      "id": "gear_report_armorer_unused",
+      "request": "gear_report",
+      "option": "gear_report",
+      "show_for_babies": false,
+      "requires_gear_report_unused_in_combat": true,
+      "weight": 34,
+      "lines": [
+        "No dents yet. I can live with careful work staying untested.",
+        "No dents yet. I can live with careful work staying untested.",
+        "No dents yet. I can live with careful work staying untested."
+      ]
+    },
+    {
+      "id": "village_defense_armorer_respect",
+      "request": "village_defense_report",
+      "option": "village_defense_report",
+      "show_for_babies": false,
+      "lines": [
+        "You stood where armor matters most. I respect that more than clean talk.",
+        "You held when the gate needed holding. Armor is easier to trust after seeing that.",
+        "You fought like someone who understands what a door is worth.",
+        "I saw you stand between iron and panic. That stays with me.",
+        "The village needed a shield before the walls did. You were one.",
+        "Good armor is not only worn. Sometimes it arrives carrying a weapon.",
+        "When the shouting started, you did not fold. I respect that.",
+        "You gave the village time to breathe. Every guard knows the value of time."
+      ],
+      "weight": 250
+    },
+    {
+      "id": "apology_armorer",
+      "request": "apology",
+      "option": "apologize_for_harm",
+      "show_for_babies": false,
+      "lines": [
+        "Fine. I know what can be repaired. I also know what keeps the dent.",
+        "I will loosen the straps a little. Earn the rest with what you do next.",
+        "I can repair damage when someone brings it to the anvil. You have brought yours.",
+        "Do not mistake acceptance for softness. I heard you, and I will be watching.",
+        "A dent tells me where the strike landed. Your apology tells me you know it landed.",
+        "Words are light. Better choices have weight. Bring those next.",
+        "I will set this aside for now, not throw it away.",
+        "Fine. Let the next thing you make be trust, not trouble."
+      ],
+      "weight": 234
+    },
+    {
+      "id": "combat_survival_armorer",
+      "request": "combat_survival_report",
+      "option": "combat_survival_report",
+      "show_for_babies": false,
+      "lines": [
+        "A few new dents, no missing plates. That is a victory I can repair.",
+        "Every buckle held except the one in my knees. I will forgive that one.",
+        "My hands still keep checking straps that are already there. I made it back, though.",
+        "The plates held, the straps held, and somehow I held too.",
+        "I will hammer out the dents tomorrow. Tonight I am grateful there is a tomorrow.",
+        "Armor can turn a blow, but it cannot quiet the heart after. I am home, at least.",
+        "I counted every buckle at the door. All present. That felt like a blessing.",
+        "A few marks on the metal, a few in my memory. Nothing missing."
+      ],
+      "weight": 234
+    },
+    {
+      "id": "event_golem_killed_armorer_1",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "golem_killed"
+      ],
+      "weight": 32,
+      "lines": [
+        "I know what failed on that frame. I do not yet know whether we have enough iron to forgive the failure.",
+        "I know what failed on that frame. I do not yet know whether we have enough iron to forgive the failure.",
+        "I know what failed on that frame. I do not yet know whether we have enough iron to forgive the failure."
+      ]
+    },
+    {
+      "id": "default_profession_armorer_workbench_pressure",
+      "request": "question",
+      "show_for_babies": false,
+      "lines": [
+        "Armor is promises hammered into shape. Mine had better hold when the bell starts shouting.",
+        "A quiet forge is not always peace. Sometimes it is me listening for the next dent.",
+        "Good armor should feel boring until the hour it saves your ribs."
+      ],
+      "weight": 18
+    }
+  ],
+  "messages": [
+    {
+      "id": "armorer_gift_given_variants",
+      "key": "gift_given",
+      "lines": [
+        "Here, {gift_item}. Well-kept armor is not the only thing that protects a friend.",
+        "Take {gift_item}. I would rather see you prepared than patched up later.",
+        "Here, {gift_item}. Well-kept armor is not the only thing that protects a friend."
+      ],
+      "weight": 48
+    },
+    {
+      "id": "armorer_gift_advice_followup_liked_variants",
+      "key": "gift_advice_followup.liked",
+      "lines": [
+        "Good. {gift_item} held like proper mail for {tested_villager}. Advice should take a dent and stay useful.",
+        "I thought {gift_item} would fit. Glad {tested_villager} wore the gesture well.",
+        "Good. {gift_item} held like proper mail for {tested_villager}. Advice should take a dent and stay useful."
+      ],
+      "weight": 44
+    },
+    {
+      "id": "armorer_gift_advice_followup_disliked_variants",
+      "key": "gift_advice_followup.disliked",
+      "lines": [
+        "Then that fit was off. For {gift_subject}, try {alternative_gift}; better plate, fewer gaps.",
+        "A poor fitting, then. Bring {alternative_gift} next time and the trade should sit easier.",
+        "Then that fit was off. For {gift_subject}, try {alternative_gift}; better plate, fewer gaps."
+      ],
+      "weight": 44
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 20,
+      "lines": [
+        "You trusted a cracked plate. That is on both of us. Try {alternative_gift}.",
+        "You trusted a cracked plate. That is on both of us. Try {alternative_gift}.",
+        "You trusted a cracked plate. That is on both of us. Try {alternative_gift}."
+      ]
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
+      "weight": 20,
+      "lines": [
+        "{gift_item} buckled? Fine. {alternative_gift} should hold better.",
+        "{gift_item} buckled? Fine. {alternative_gift} should hold better.",
+        "{gift_item} buckled? Fine. {alternative_gift} should hold better."
+      ]
+    }
+  ],
+  "openings": [
+    {
+      "id": "armorer_opening",
+      "lines": [
+        "Mind the forge. What do you need?",
+        "Mind the forge. What do you need?",
+        "Mind the forge. What do you need?"
+      ]
+    }
+  ],
+  "closings": [
+    {
+      "id": "armorer_closing",
+      "lines": [
+        "Back to fitting mail and shields, then.",
+        "Back to fitting mail and shields, then.",
+        "Back to fitting mail and shields, then."
+      ]
+    }
+  ],
+  "pacify": [
+    {
+      "id": "armorer_pacify_success",
+      "outcomes": [
+        "success"
+      ],
+      "weight": 26,
+      "lines": [
+        "Fine. I will lower my guard, but I am keeping the straps tight.",
+        "Fine. I will lower my guard, but I am keeping the straps tight.",
+        "Fine. I will lower my guard, but I am keeping the straps tight."
+      ]
+    },
+    {
+      "id": "armorer_pacify_short",
+      "outcomes": [
+        "not_enough_emeralds"
+      ],
+      "weight": 26,
+      "lines": [
+        "That will not cover the dent you put in my patience. It takes {emerald_cost} {emeralds}.",
+        "That will not cover the dent you put in my patience. It takes {emerald_cost} {emeralds}.",
+        "That will not cover the dent you put in my patience. It takes {emerald_cost} {emeralds}."
+      ]
+    },
+    {
+      "id": "armorer_pacify_blocked",
+      "outcomes": [
+        "blocked_by_reputation"
+      ],
+      "weight": 26,
+      "lines": [
+        "No. Armor is for people I mean to protect, and that is not you right now.",
+        "No. Armor is for people I mean to protect, and that is not you right now.",
+        "No. Armor is for people I mean to protect, and that is not you right now."
+      ]
     }
   ]
 }

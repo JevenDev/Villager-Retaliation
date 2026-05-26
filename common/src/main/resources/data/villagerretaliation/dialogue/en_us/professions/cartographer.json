@@ -1,130 +1,4 @@
 {
-  "messages": [
-    {
-      "key": "cartographer_map_report.missing",
-      "text": "Bring me news from the mark first. A map is not a story until someone walks it."
-    },
-    {
-      "id": "cartographer_cartographer_map_report_structure_village_variants",
-      "key": "cartographer_map_report.structure.village",
-      "lines": [
-        "You found {target_article}? Good. A village that can be reached can also be warned.",
-        "{target_article}, then. I will mark the road in softer ink. People live at the end of that line."
-      ],
-      "weight": 46
-    },
-    {
-      "id": "cartographer_cartographer_map_report_structure_temple_variants",
-      "key": "cartographer_map_report.structure.temple",
-      "lines": [
-        "So {target_article} still stands. Old stone keeps old trouble, but now the way there is honest.",
-        "{target_article}. Hm. I will note the hazards twice and the treasure not at all."
-      ],
-      "weight": 46
-    },
-    {
-      "id": "cartographer_cartographer_map_report_structure_mansion_variants",
-      "key": "cartographer_map_report.structure.mansion",
-      "lines": [
-        "You reached {target_article} and came back speaking. That is worth a darker border.",
-        "{target_article}, confirmed. Some roofs are warnings. I will draw that one like it bites."
-      ],
-      "weight": 46
-    },
-    {
-      "id": "cartographer_cartographer_map_report_structure_monument_variants",
-      "key": "cartographer_map_report.structure.monument",
-      "lines": [
-        "{target_article} under open water. Good work. The sea hides landmarks better than any fog.",
-        "You found {target_article}? Then the waves were telling the truth for once."
-      ],
-      "weight": 46
-    },
-    {
-      "id": "cartographer_cartographer_map_report_structure_mineshaft_variants",
-      "key": "cartographer_map_report.structure.mineshaft",
-      "lines": [
-        "{target_article}. Timber below ground means somebody trusted the dark too much.",
-        "You found {target_article}. I will mark the descent and leave room for cave-ins."
-      ],
-      "weight": 46
-    },
-    {
-      "id": "cartographer_cartographer_map_report_structure_ancient_city_variants",
-      "key": "cartographer_map_report.structure.ancient_city",
-      "lines": [
-        "{target_article}. Keep your voice low even in the telling. Some places listen after you leave.",
-        "You came back from {target_article}. I will mark it, but not invite anyone there lightly."
-      ],
-      "weight": 46
-    },
-    {
-      "id": "cartographer_cartographer_map_report_structure_stronghold_variants",
-      "key": "cartographer_map_report.structure.stronghold",
-      "lines": [
-        "{target_article}, found at last. That is not a road; it is a question carved into stone.",
-        "You found {target_article}. Some maps point outward. That one points beneath everything."
-      ],
-      "weight": 46
-    },
-    {
-      "id": "cartographer_cartographer_map_report_structure_nether_variants",
-      "key": "cartographer_map_report.structure.nether",
-      "lines": [
-        "{target_article}. Even the name makes the parchment feel warmer.",
-        "You found {target_article} and returned. I will not ask what followed you in memory."
-      ],
-      "weight": 46
-    },
-    {
-      "id": "cartographer_cartographer_map_report_structure_outpost_variants",
-      "key": "cartographer_map_report.structure.outpost",
-      "lines": [
-        "{target_article}. I will mark patrol risk on every road that brushes near it.",
-        "You found {target_article}. Good. A tower seen on a map is a tower avoided in time."
-      ],
-      "weight": 46
-    },
-    {
-      "id": "cartographer_cartographer_map_report_structure_ruins_variants",
-      "key": "cartographer_map_report.structure.ruins",
-      "lines": [
-        "{target_article}. Ruins are never as empty as hopeful travelers claim.",
-        "You found {target_article}. I will draw it lightly. The past dislikes being pinned down."
-      ],
-      "weight": 46
-    },
-    {
-      "id": "cartographer_cartographer_map_report_structure_trial_chambers_variants",
-      "key": "cartographer_map_report.structure.trial_chambers",
-      "lines": [
-        "{target_article}. A place built to test feet, nerve, and poor judgment.",
-        "You found {target_article}. I will mark it as useful, dangerous, and not for the overconfident."
-      ],
-      "weight": 46
-    },
-    {
-      "id": "cartographer_cartographer_map_report_structure_generic_variants",
-      "key": "cartographer_map_report.structure.generic",
-      "lines": [
-        "You found {target_article}. Good. The map was a promise; now it is a record.",
-        "{target_article}, confirmed. I will clean up the linework and pretend I was certain all along."
-      ],
-      "weight": 46
-    }
-  ],
-  "openings": [
-    {
-      "id": "cartographer_opening",
-      "text": "Mind the map table. What do you need?"
-    }
-  ],
-  "closings": [
-    {
-      "id": "cartographer_closing",
-      "text": "Back to reading roads and borders, then."
-    }
-  ],
   "options": [
     {
       "id": "cartographer_map_report",
@@ -134,32 +8,6 @@
       "order": 4,
       "show_for_babies": false,
       "requires_unreported_cartographer_map_discovery": true
-    }
-  ],
-  "pacify": [
-    {
-      "id": "cartographer_pacify_success",
-      "outcomes": [
-        "success"
-      ],
-      "text": "Fine. I will mark this as settled, lightly, in pencil.",
-      "weight": 26
-    },
-    {
-      "id": "cartographer_pacify_short",
-      "outcomes": [
-        "not_enough_emeralds"
-      ],
-      "text": "Your count is off. The route to peace is {emerald_cost} {emeralds}.",
-      "weight": 26
-    },
-    {
-      "id": "cartographer_pacify_blocked",
-      "outcomes": [
-        "blocked_by_reputation"
-      ],
-      "text": "No. Every path back to trust is closed for now.",
-      "weight": 26
     }
   ],
   "lines": [
@@ -189,20 +37,32 @@
     {
       "id": "cartographer_new_greeting_table",
       "request": "greeting",
-      "text": "Keep your hands off the map table unless you know where they are going.",
-      "weight": 26
+      "weight": 26,
+      "lines": [
+        "Keep your hands off the map table unless you know where they are going.",
+        "Keep your hands off the map table unless you know where they are going.",
+        "Keep your hands off the map table unless you know where they are going."
+      ]
     },
     {
       "id": "cartographer_new_joke_fold",
       "request": "joke",
-      "text": "Map jokes are easy to fold badly.",
-      "weight": 18
+      "weight": 18,
+      "lines": [
+        "Map jokes are easy to fold badly.",
+        "Map jokes are easy to fold badly.",
+        "Map jokes are easy to fold badly."
+      ]
     },
     {
       "id": "cartographer_new_insult_lost",
       "request": "insult",
-      "text": "You could get lost standing still.",
-      "weight": 18
+      "weight": 18,
+      "lines": [
+        "You could get lost standing still.",
+        "You could get lost standing still.",
+        "You could get lost standing still."
+      ]
     },
     {
       "id": "cartographer_new_cautious_path",
@@ -212,8 +72,12 @@
         "rude",
         "hostile"
       ],
-      "text": "I do not mark every path for every traveler. Some maps are earned.",
-      "weight": 30
+      "weight": 30,
+      "lines": [
+        "I do not mark every path for every traveler. Some maps are earned.",
+        "I do not mark every path for every traveler. Some maps are earned.",
+        "I do not mark every path for every traveler. Some maps are earned."
+      ]
     },
     {
       "id": "cartographer_cured_recognition_warm",
@@ -224,7 +88,8 @@
       ],
       "lines": [
         "I lost every road for a while. You marked the way back.",
-        "I remember your face like a landmark after a long, wrong journey."
+        "I remember your face like a landmark after a long, wrong journey.",
+        "I lost every road for a while. You marked the way back."
       ],
       "weight": 60
     },
@@ -237,7 +102,8 @@
       ],
       "lines": [
         "The map of that memory is torn, but your name sits near the center.",
-        "I remember wandering inside myself. Then a path opened, and you were beside it."
+        "I remember wandering inside myself. Then a path opened, and you were beside it.",
+        "The map of that memory is torn, but your name sits near the center."
       ],
       "weight": 60
     },
@@ -249,8 +115,12 @@
         "hostile",
         "fearful"
       ],
-      "text": "I remember you, yes. Some routes back home still pass through frightening country.",
-      "weight": 30
+      "weight": 30,
+      "lines": [
+        "I remember you, yes. Some routes back home still pass through frightening country.",
+        "I remember you, yes. Some routes back home still pass through frightening country.",
+        "I remember you, yes. Some routes back home still pass through frightening country."
+      ]
     },
     {
       "id": "cartographer_village_event_thunderstorm",
@@ -348,6 +218,382 @@
         "We are alright for now near the map table. Keep the fires fed and the paths open."
       ],
       "weight": 170
+    },
+    {
+      "id": "recruitment_followup_cartographer_safe",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
+      "weight": 38,
+      "lines": [
+        "A clean route out and a clean route back. I could ink that with a steady hand.",
+        "A clean route out and a clean route back. I could ink that with a steady hand.",
+        "A clean route out and a clean route back. I could ink that with a steady hand."
+      ]
+    },
+    {
+      "id": "recruitment_followup_cartographer_injured",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "injured"
+      ],
+      "weight": 38,
+      "lines": [
+        "That path needs a red mark on the map. I would rather not limp through it twice.",
+        "That path needs a red mark on the map. I would rather not limp through it twice.",
+        "That path needs a red mark on the map. I would rather not limp through it twice."
+      ]
+    },
+    {
+      "id": "recruitment_followup_cartographer_betrayed",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "betrayed"
+      ],
+      "weight": 42,
+      "lines": [
+        "I can redraw a bad map. Redrawing trust is harder.",
+        "I can redraw a bad map. Redrawing trust is harder.",
+        "I can redraw a bad map. Redrawing trust is harder."
+      ]
+    },
+    {
+      "id": "recruitment_followup_cartographer_boat",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "requires_recruitment_boat_trip": true,
+      "weight": 42,
+      "lines": [
+        "I could chart that boat route. I might add a warning mark beside it.",
+        "I could chart that boat route. I might add a warning mark beside it.",
+        "I could chart that boat route. I might add a warning mark beside it."
+      ]
+    },
+    {
+      "id": "question_follow_memory_cartographer_boat",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "requires_recruitment_memory": true,
+      "requires_recruitment_boat_trip": true,
+      "weight": 3,
+      "lines": [
+        "That boat route would look peaceful on a map. The lived version was wetter.",
+        "That boat route would look peaceful on a map. The lived version was wetter.",
+        "That boat route would look peaceful on a map. The lived version was wetter."
+      ]
+    },
+    {
+      "id": "question_follow_memory_cartographer",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "requires_recruitment_memory": true,
+      "weight": 3,
+      "lines": [
+        "I could map the route you dragged me along, but I would mark several parts as questionable.",
+        "I could map the route you dragged me along, but I would mark several parts as questionable.",
+        "I could map the route you dragged me along, but I would mark several parts as questionable."
+      ]
+    },
+    {
+      "id": "question_follow_memory_cartographer_ocean_boat",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "requires_recruitment_memory": true,
+      "requires_recruitment_boat_trip": true,
+      "requires_recruitment_ocean_crossing": true,
+      "weight": 4,
+      "lines": [
+        "The ocean crossing by boat would make a fine blue line on a map. I would label it 'questionable judgment.'",
+        "The ocean crossing by boat would make a fine blue line on a map. I would label it 'questionable judgment.'",
+        "The ocean crossing by boat would make a fine blue line on a map. I would label it 'questionable judgment.'"
+      ]
+    },
+    {
+      "id": "gear_report_cartographer_used",
+      "request": "gear_report",
+      "option": "gear_report",
+      "show_for_babies": false,
+      "requires_gear_report_used_in_combat": true,
+      "weight": 32,
+      "lines": [
+        "It helped me keep my bearings when the road stopped feeling safe.",
+        "It helped me keep my bearings when the road stopped feeling safe.",
+        "It helped me keep my bearings when the road stopped feeling safe."
+      ]
+    },
+    {
+      "id": "gear_report_cartographer_unused",
+      "request": "gear_report",
+      "option": "gear_report",
+      "show_for_babies": false,
+      "requires_gear_report_unused_in_combat": true,
+      "weight": 32,
+      "lines": [
+        "Unused so far. A good map and good gear both matter most before trouble starts.",
+        "Unused so far. A good map and good gear both matter most before trouble starts.",
+        "Unused so far. A good map and good gear both matter most before trouble starts."
+      ]
+    },
+    {
+      "id": "village_defense_cartographer_marked",
+      "request": "village_defense_report",
+      "option": "village_defense_report",
+      "show_for_babies": false,
+      "lines": [
+        "I marked where the raiders came through. I also marked where you turned them back.",
+        "Maps make borders look calm. You reminded me borders have to be defended.",
+        "I can point to where you met them. That spot feels different now.",
+        "A village border is not ink. Yesterday, you made that clear.",
+        "You changed the shape of the danger before it reached the center.",
+        "I marked the raid path. I also marked where it stopped.",
+        "The map of this place has one more reason to keep its name.",
+        "You made the distance between raiders and homes matter."
+      ],
+      "weight": 246
+    },
+    {
+      "id": "apology_cartographer_mark",
+      "request": "apology",
+      "option": "apologize_for_harm",
+      "show_for_babies": false,
+      "lines": [
+        "I can mark the apology. Whether the route changes is up to you.",
+        "Some paths can be corrected after a bad turn. Do not make me redraw this one twice.",
+        "You are asking to redraw a line you crossed. That can be done carefully.",
+        "A bad route is not shameful if you correct it before others follow.",
+        "I will mark this apology, but not as the destination.",
+        "Do not make a habit of needing a way back from harm.",
+        "Fine. Let us see whether your next steps match your words.",
+        "Some mistakes become warnings on maps. Try not to become one."
+      ],
+      "weight": 234
+    },
+    {
+      "id": "combat_survival_cartographer",
+      "request": "combat_survival_report",
+      "option": "combat_survival_report",
+      "show_for_babies": false,
+      "lines": [
+        "I could draw the route back with my eyes closed. I would rather not walk it again tonight.",
+        "For a moment, every direction looked wrong. Then home looked possible again.",
+        "I know the way home on paper. Knowing it while scared is different.",
+        "Every landmark looked strange in the dark. Then the village lights found me.",
+        "I would mark that route in red if I ever had to draw it.",
+        "The map says the road is short. My feet disagree.",
+        "I came back with no new map, only a better respect for old paths.",
+        "For once, I was glad the village was exactly where I left it."
+      ],
+      "weight": 234
+    },
+    {
+      "id": "default_profession_cartographer_edge_notes",
+      "request": "question",
+      "show_for_babies": false,
+      "lines": [
+        "Maps have edges because paper gives up. The world rarely does.",
+        "I mark roads, ruins, and the little places where people decided not to be lost.",
+        "A good map tells you where to go. A better one tells you when to turn back."
+      ],
+      "weight": 18
+    }
+  ],
+  "messages": [
+    {
+      "key": "cartographer_map_report.missing",
+      "lines": [
+        "Bring me news from the mark first. A map is not a story until someone walks it.",
+        "Bring me news from the mark first. A map is not a story until someone walks it.",
+        "Bring me news from the mark first. A map is not a story until someone walks it."
+      ]
+    },
+    {
+      "id": "cartographer_cartographer_map_report_structure_village_variants",
+      "key": "cartographer_map_report.structure.village",
+      "lines": [
+        "You found {target_article}? Good. A village that can be reached can also be warned.",
+        "{target_article}, then. I will mark the road in softer ink. People live at the end of that line.",
+        "You found {target_article}? Good. A village that can be reached can also be warned."
+      ],
+      "weight": 46
+    },
+    {
+      "id": "cartographer_cartographer_map_report_structure_temple_variants",
+      "key": "cartographer_map_report.structure.temple",
+      "lines": [
+        "So {target_article} still stands. Old stone keeps old trouble, but now the way there is honest.",
+        "{target_article}. Hm. I will note the hazards twice and the treasure not at all.",
+        "So {target_article} still stands. Old stone keeps old trouble, but now the way there is honest."
+      ],
+      "weight": 46
+    },
+    {
+      "id": "cartographer_cartographer_map_report_structure_mansion_variants",
+      "key": "cartographer_map_report.structure.mansion",
+      "lines": [
+        "You reached {target_article} and came back speaking. That is worth a darker border.",
+        "{target_article}, confirmed. Some roofs are warnings. I will draw that one like it bites.",
+        "You reached {target_article} and came back speaking. That is worth a darker border."
+      ],
+      "weight": 46
+    },
+    {
+      "id": "cartographer_cartographer_map_report_structure_monument_variants",
+      "key": "cartographer_map_report.structure.monument",
+      "lines": [
+        "{target_article} under open water. Good work. The sea hides landmarks better than any fog.",
+        "You found {target_article}? Then the waves were telling the truth for once.",
+        "{target_article} under open water. Good work. The sea hides landmarks better than any fog."
+      ],
+      "weight": 46
+    },
+    {
+      "id": "cartographer_cartographer_map_report_structure_mineshaft_variants",
+      "key": "cartographer_map_report.structure.mineshaft",
+      "lines": [
+        "{target_article}. Timber below ground means somebody trusted the dark too much.",
+        "You found {target_article}. I will mark the descent and leave room for cave-ins.",
+        "{target_article}. Timber below ground means somebody trusted the dark too much."
+      ],
+      "weight": 46
+    },
+    {
+      "id": "cartographer_cartographer_map_report_structure_ancient_city_variants",
+      "key": "cartographer_map_report.structure.ancient_city",
+      "lines": [
+        "{target_article}. Keep your voice low even in the telling. Some places listen after you leave.",
+        "You came back from {target_article}. I will mark it, but not invite anyone there lightly.",
+        "{target_article}. Keep your voice low even in the telling. Some places listen after you leave."
+      ],
+      "weight": 46
+    },
+    {
+      "id": "cartographer_cartographer_map_report_structure_stronghold_variants",
+      "key": "cartographer_map_report.structure.stronghold",
+      "lines": [
+        "{target_article}, found at last. That is not a road; it is a question carved into stone.",
+        "You found {target_article}. Some maps point outward. That one points beneath everything.",
+        "{target_article}, found at last. That is not a road; it is a question carved into stone."
+      ],
+      "weight": 46
+    },
+    {
+      "id": "cartographer_cartographer_map_report_structure_nether_variants",
+      "key": "cartographer_map_report.structure.nether",
+      "lines": [
+        "{target_article}. Even the name makes the parchment feel warmer.",
+        "You found {target_article} and returned. I will not ask what followed you in memory.",
+        "{target_article}. Even the name makes the parchment feel warmer."
+      ],
+      "weight": 46
+    },
+    {
+      "id": "cartographer_cartographer_map_report_structure_outpost_variants",
+      "key": "cartographer_map_report.structure.outpost",
+      "lines": [
+        "{target_article}. I will mark patrol risk on every road that brushes near it.",
+        "You found {target_article}. Good. A tower seen on a map is a tower avoided in time.",
+        "{target_article}. I will mark patrol risk on every road that brushes near it."
+      ],
+      "weight": 46
+    },
+    {
+      "id": "cartographer_cartographer_map_report_structure_ruins_variants",
+      "key": "cartographer_map_report.structure.ruins",
+      "lines": [
+        "{target_article}. Ruins are never as empty as hopeful travelers claim.",
+        "You found {target_article}. I will draw it lightly. The past dislikes being pinned down.",
+        "{target_article}. Ruins are never as empty as hopeful travelers claim."
+      ],
+      "weight": 46
+    },
+    {
+      "id": "cartographer_cartographer_map_report_structure_trial_chambers_variants",
+      "key": "cartographer_map_report.structure.trial_chambers",
+      "lines": [
+        "{target_article}. A place built to test feet, nerve, and poor judgment.",
+        "You found {target_article}. I will mark it as useful, dangerous, and not for the overconfident.",
+        "{target_article}. A place built to test feet, nerve, and poor judgment."
+      ],
+      "weight": 46
+    },
+    {
+      "id": "cartographer_cartographer_map_report_structure_generic_variants",
+      "key": "cartographer_map_report.structure.generic",
+      "lines": [
+        "You found {target_article}. Good. The map was a promise; now it is a record.",
+        "{target_article}, confirmed. I will clean up the linework and pretend I was certain all along.",
+        "You found {target_article}. Good. The map was a promise; now it is a record."
+      ],
+      "weight": 46
+    }
+  ],
+  "openings": [
+    {
+      "id": "cartographer_opening",
+      "lines": [
+        "Mind the map table. What do you need?",
+        "Mind the map table. What do you need?",
+        "Mind the map table. What do you need?"
+      ]
+    }
+  ],
+  "closings": [
+    {
+      "id": "cartographer_closing",
+      "lines": [
+        "Back to reading roads and borders, then.",
+        "Back to reading roads and borders, then.",
+        "Back to reading roads and borders, then."
+      ]
+    }
+  ],
+  "pacify": [
+    {
+      "id": "cartographer_pacify_success",
+      "outcomes": [
+        "success"
+      ],
+      "weight": 26,
+      "lines": [
+        "Fine. I will mark this as settled, lightly, in pencil.",
+        "Fine. I will mark this as settled, lightly, in pencil.",
+        "Fine. I will mark this as settled, lightly, in pencil."
+      ]
+    },
+    {
+      "id": "cartographer_pacify_short",
+      "outcomes": [
+        "not_enough_emeralds"
+      ],
+      "weight": 26,
+      "lines": [
+        "Your count is off. The route to peace is {emerald_cost} {emeralds}.",
+        "Your count is off. The route to peace is {emerald_cost} {emeralds}.",
+        "Your count is off. The route to peace is {emerald_cost} {emeralds}."
+      ]
+    },
+    {
+      "id": "cartographer_pacify_blocked",
+      "outcomes": [
+        "blocked_by_reputation"
+      ],
+      "weight": 26,
+      "lines": [
+        "No. Every path back to trust is closed for now.",
+        "No. Every path back to trust is closed for now.",
+        "No. Every path back to trust is closed for now."
+      ]
     }
   ]
 }

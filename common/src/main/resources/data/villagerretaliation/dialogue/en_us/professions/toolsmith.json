@@ -1,91 +1,4 @@
 {
-  "messages": [
-    {
-      "id": "toolsmith_gift_given_variants",
-      "key": "gift_given",
-      "lines": [
-        "Here, {gift_item}. The right tool in the right hand saves a lot of trouble.",
-        "Take {gift_item}. Keep it useful and it will repay you twice."
-      ],
-      "weight": 48
-    },
-    {
-      "id": "toolsmith_gift_advice_followup_liked_variants",
-      "key": "gift_advice_followup.liked",
-      "lines": [
-        "Good. {gift_item} did the job for {tested_villager}.",
-        "Then the advice had a good edge. {tested_villager} liked {gift_item}."
-      ],
-      "weight": 44
-    },
-    {
-      "id": "toolsmith_gift_advice_followup_disliked_variants",
-      "key": "gift_advice_followup.disliked",
-      "lines": [
-        "Wrong tool for the work. For {gift_subject}, use {alternative_gift} instead.",
-        "{gift_item} slipped in the hand? Try {alternative_gift}; cleaner work."
-      ],
-      "weight": 44
-    },
-    {
-      "key": "gift_advice_followup.disliked",
-      "dispositions": [
-        "cautious",
-        "rude",
-        "hostile",
-        "fearful"
-      ],
-      "text": "Wrong tool, wrong job. Pick up {alternative_gift} next time.",
-      "weight": 20
-    },
-    {
-      "key": "gift_advice_followup.disliked",
-      "dispositions": [
-        "rude",
-        "hostile"
-      ],
-      "text": "You used the advice as-is? Hm. Sharpen your judgment and bring {alternative_gift}.",
-      "weight": 20
-    }
-  ],
-  "openings": [
-    {
-      "id": "toolsmith_opening",
-      "text": "Mind the smithing table. What do you need?"
-    }
-  ],
-  "closings": [
-    {
-      "id": "toolsmith_closing",
-      "text": "Back to making tools that do not fail, then."
-    }
-  ],
-  "pacify": [
-    {
-      "id": "toolsmith_pacify_success",
-      "outcomes": [
-        "success"
-      ],
-      "text": "Fine. I will put the edge away, for now.",
-      "weight": 26
-    },
-    {
-      "id": "toolsmith_pacify_short",
-      "outcomes": [
-        "not_enough_emeralds"
-      ],
-      "text": "Wrong measure. It takes {emerald_cost} {emeralds} to set this right.",
-      "weight": 26
-    },
-    {
-      "id": "toolsmith_pacify_blocked",
-      "outcomes": [
-        "blocked_by_reputation"
-      ],
-      "text": "No. You are using {payment_items} like the wrong tool.",
-      "weight": 26
-    }
-  ],
   "lines": [
     {
       "id": "toolsmith_question_handles_variants",
@@ -113,20 +26,32 @@
     {
       "id": "toolsmith_new_greeting_table",
       "request": "greeting",
-      "text": "Mind the table. Good tools begin with nobody bumping my elbow.",
-      "weight": 26
+      "weight": 26,
+      "lines": [
+        "Mind the table. Good tools begin with nobody bumping my elbow.",
+        "Mind the table. Good tools begin with nobody bumping my elbow.",
+        "Mind the table. Good tools begin with nobody bumping my elbow."
+      ]
     },
     {
       "id": "toolsmith_new_joke_point",
       "request": "joke",
-      "text": "Tool jokes work better when they have a point. Mine sometimes have two.",
-      "weight": 18
+      "weight": 18,
+      "lines": [
+        "Tool jokes work better when they have a point. Mine sometimes have two.",
+        "Tool jokes work better when they have a point. Mine sometimes have two.",
+        "Tool jokes work better when they have a point. Mine sometimes have two."
+      ]
     },
     {
       "id": "toolsmith_new_insult_bent",
       "request": "insult",
-      "text": "That idea is bent past repair.",
-      "weight": 18
+      "weight": 18,
+      "lines": [
+        "That idea is bent past repair.",
+        "That idea is bent past repair.",
+        "That idea is bent past repair."
+      ]
     },
     {
       "id": "toolsmith_new_hostile_tool",
@@ -135,8 +60,12 @@
         "rude",
         "hostile"
       ],
-      "text": "You are using your manners like the wrong tool for the job.",
-      "weight": 30
+      "weight": 30,
+      "lines": [
+        "You are using your manners like the wrong tool for the job.",
+        "You are using your manners like the wrong tool for the job.",
+        "You are using your manners like the wrong tool for the job."
+      ]
     },
     {
       "id": "toolsmith_cured_recognition_warm",
@@ -147,7 +76,8 @@
       ],
       "lines": [
         "I remember my mind working again, like a tool freed from rust.",
-        "You put a handle back on my life when I could not grip it myself."
+        "You put a handle back on my life when I could not grip it myself.",
+        "I remember my mind working again, like a tool freed from rust."
       ],
       "weight": 60
     },
@@ -160,7 +90,8 @@
       ],
       "lines": [
         "Your face fits the memory, though the memory is still badly forged.",
-        "I remember a cure biting harder than a dull saw, then sense returning."
+        "I remember a cure biting harder than a dull saw, then sense returning.",
+        "Your face fits the memory, though the memory is still badly forged."
       ],
       "weight": 60
     },
@@ -172,8 +103,12 @@
         "hostile",
         "fearful"
       ],
-      "text": "I remember you. The old fear still catches like a nicked blade.",
-      "weight": 30
+      "weight": 30,
+      "lines": [
+        "I remember you. The old fear still catches like a nicked blade.",
+        "I remember you. The old fear still catches like a nicked blade.",
+        "I remember you. The old fear still catches like a nicked blade."
+      ]
     },
     {
       "id": "toolsmith_village_event_thunderstorm",
@@ -271,6 +206,297 @@
         "We are alright for now near the smithing table. Keep the fires fed and the paths open."
       ],
       "weight": 170
+    },
+    {
+      "id": "recruitment_followup_toolsmith_safe",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
+      "weight": 38,
+      "lines": [
+        "Good work has a clean finish. Getting me home counts.",
+        "Good work has a clean finish. Getting me home counts.",
+        "Good work has a clean finish. Getting me home counts."
+      ]
+    },
+    {
+      "id": "recruitment_followup_toolsmith_injured",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "injured"
+      ],
+      "weight": 38,
+      "lines": [
+        "That trip handled poorly. I felt every bad grip on the way back.",
+        "That trip handled poorly. I felt every bad grip on the way back.",
+        "That trip handled poorly. I felt every bad grip on the way back."
+      ]
+    },
+    {
+      "id": "recruitment_followup_toolsmith_betrayed",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "betrayed"
+      ],
+      "weight": 42,
+      "lines": [
+        "A tool used wrong can still be repaired. Trust is less forgiving.",
+        "A tool used wrong can still be repaired. Trust is less forgiving.",
+        "A tool used wrong can still be repaired. Trust is less forgiving."
+      ]
+    },
+    {
+      "id": "recruitment_followup_toolsmith_boat",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "requires_recruitment_boat_trip": true,
+      "weight": 42,
+      "lines": [
+        "That boat was the right tool for the crossing. I will give you that.",
+        "That boat was the right tool for the crossing. I will give you that.",
+        "That boat was the right tool for the crossing. I will give you that."
+      ]
+    },
+    {
+      "id": "question_follow_memory_toolsmith",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "requires_recruitment_memory": true,
+      "weight": 3,
+      "lines": [
+        "That time I followed you, the whole plan could have used a better handle.",
+        "That time I followed you, the whole plan could have used a better handle.",
+        "That time I followed you, the whole plan could have used a better handle."
+      ]
+    },
+    {
+      "id": "question_follow_memory_toolsmith_boat",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "requires_recruitment_memory": true,
+      "requires_recruitment_boat_trip": true,
+      "weight": 3,
+      "lines": [
+        "A boat is just a tool with a nervous floor. Yours worked, mostly.",
+        "A boat is just a tool with a nervous floor. Yours worked, mostly.",
+        "A boat is just a tool with a nervous floor. Yours worked, mostly."
+      ]
+    },
+    {
+      "id": "gear_report_toolsmith_used",
+      "request": "gear_report",
+      "option": "gear_report",
+      "show_for_babies": false,
+      "requires_gear_report_used_in_combat": true,
+      "weight": 32,
+      "lines": [
+        "It did its job without complaint. That is the highest compliment a tool gets.",
+        "It did its job without complaint. That is the highest compliment a tool gets.",
+        "It did its job without complaint. That is the highest compliment a tool gets."
+      ]
+    },
+    {
+      "id": "gear_report_toolsmith_unused",
+      "request": "gear_report",
+      "option": "gear_report",
+      "show_for_babies": false,
+      "requires_gear_report_unused_in_combat": true,
+      "weight": 32,
+      "lines": [
+        "Still ready. A tool can be useful before it ever bites into work.",
+        "Still ready. A tool can be useful before it ever bites into work.",
+        "Still ready. A tool can be useful before it ever bites into work."
+      ]
+    },
+    {
+      "id": "village_defense_toolsmith_respect",
+      "request": "village_defense_report",
+      "option": "village_defense_report",
+      "show_for_babies": false,
+      "lines": [
+        "Good hands under pressure are rare. Yours were useful when the village needed them.",
+        "A tool proves itself under strain. So did you.",
+        "You were the right tool in a terrible moment.",
+        "When pressure came down, you did not warp.",
+        "The village needed more than sharp edges. It needed steady hands.",
+        "You made yourself useful where usefulness mattered most.",
+        "I saw the kind of work no bench can teach.",
+        "Good work leaves marks. Yours left people alive to notice."
+      ],
+      "weight": 250
+    },
+    {
+      "id": "apology_toolsmith_rework",
+      "request": "apology",
+      "option": "apologize_for_harm",
+      "show_for_babies": false,
+      "lines": [
+        "A bent tool can be reworked, if the metal is worth saving. Show me yours is.",
+        "Words are the handle. Actions are the head. I need both before I trust the tool.",
+        "A poor strike can ruin good work. Learn control before you swing again.",
+        "Fine. Rework the habit, not just the sentence.",
+        "I accept the apology as raw material. Make something better from it.",
+        "Do not bring me another broken trust and ask why it failed.",
+        "Words set the handle. Actions drive the head tight.",
+        "If you mean it, the next repair starts now."
+      ],
+      "weight": 234
+    },
+    {
+      "id": "combat_survival_toolsmith",
+      "request": "combat_survival_report",
+      "option": "combat_survival_report",
+      "show_for_babies": false,
+      "lines": [
+        "Good tools held. So did I. I will inspect both before sleeping.",
+        "My grip held when it had to. I will think about that for a while.",
+        "The handle held, the edge held, and I held on behind them.",
+        "I will inspect every tool I carried. I may inspect my knees too.",
+        "A good grip saved me more than once tonight.",
+        "I made it back with work to do and hands still able to do it.",
+        "Nothing tests a tool like fear. Nothing tests a person faster.",
+        "I know what stress does to metal now. I know what it does to me too."
+      ],
+      "weight": 234
+    },
+    {
+      "id": "default_profession_toolsmith_repair_logic",
+      "request": "question",
+      "show_for_babies": false,
+      "lines": [
+        "A tool breaks loudly only after whispering for days.",
+        "Good tools make hard work honest. Bad tools make honest work dangerous.",
+        "I can fix a cracked handle. A cracked habit takes longer."
+      ],
+      "weight": 18
+    }
+  ],
+  "messages": [
+    {
+      "id": "toolsmith_gift_given_variants",
+      "key": "gift_given",
+      "lines": [
+        "Here, {gift_item}. The right tool in the right hand saves a lot of trouble.",
+        "Take {gift_item}. Keep it useful and it will repay you twice.",
+        "Here, {gift_item}. The right tool in the right hand saves a lot of trouble."
+      ],
+      "weight": 48
+    },
+    {
+      "id": "toolsmith_gift_advice_followup_liked_variants",
+      "key": "gift_advice_followup.liked",
+      "lines": [
+        "Good. {gift_item} did the job for {tested_villager}.",
+        "Then the advice had a good edge. {tested_villager} liked {gift_item}.",
+        "Good. {gift_item} did the job for {tested_villager}."
+      ],
+      "weight": 44
+    },
+    {
+      "id": "toolsmith_gift_advice_followup_disliked_variants",
+      "key": "gift_advice_followup.disliked",
+      "lines": [
+        "Wrong tool for the work. For {gift_subject}, use {alternative_gift} instead.",
+        "{gift_item} slipped in the hand? Try {alternative_gift}; cleaner work.",
+        "Wrong tool for the work. For {gift_subject}, use {alternative_gift} instead."
+      ],
+      "weight": 44
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 20,
+      "lines": [
+        "Wrong tool, wrong job. Pick up {alternative_gift} next time.",
+        "Wrong tool, wrong job. Pick up {alternative_gift} next time.",
+        "Wrong tool, wrong job. Pick up {alternative_gift} next time."
+      ]
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
+      "weight": 20,
+      "lines": [
+        "You used the advice as-is? Hm. Sharpen your judgment and bring {alternative_gift}.",
+        "You used the advice as-is? Hm. Sharpen your judgment and bring {alternative_gift}.",
+        "You used the advice as-is? Hm. Sharpen your judgment and bring {alternative_gift}."
+      ]
+    }
+  ],
+  "openings": [
+    {
+      "id": "toolsmith_opening",
+      "lines": [
+        "Mind the smithing table. What do you need?",
+        "Mind the smithing table. What do you need?",
+        "Mind the smithing table. What do you need?"
+      ]
+    }
+  ],
+  "closings": [
+    {
+      "id": "toolsmith_closing",
+      "lines": [
+        "Back to making tools that do not fail, then.",
+        "Back to making tools that do not fail, then.",
+        "Back to making tools that do not fail, then."
+      ]
+    }
+  ],
+  "pacify": [
+    {
+      "id": "toolsmith_pacify_success",
+      "outcomes": [
+        "success"
+      ],
+      "weight": 26,
+      "lines": [
+        "Fine. I will put the edge away, for now.",
+        "Fine. I will put the edge away, for now.",
+        "Fine. I will put the edge away, for now."
+      ]
+    },
+    {
+      "id": "toolsmith_pacify_short",
+      "outcomes": [
+        "not_enough_emeralds"
+      ],
+      "weight": 26,
+      "lines": [
+        "Wrong measure. It takes {emerald_cost} {emeralds} to set this right.",
+        "Wrong measure. It takes {emerald_cost} {emeralds} to set this right.",
+        "Wrong measure. It takes {emerald_cost} {emeralds} to set this right."
+      ]
+    },
+    {
+      "id": "toolsmith_pacify_blocked",
+      "outcomes": [
+        "blocked_by_reputation"
+      ],
+      "weight": 26,
+      "lines": [
+        "No. You are using {payment_items} like the wrong tool.",
+        "No. You are using {payment_items} like the wrong tool.",
+        "No. You are using {payment_items} like the wrong tool."
+      ]
     }
   ]
 }

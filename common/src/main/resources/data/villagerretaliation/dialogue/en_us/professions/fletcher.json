@@ -1,91 +1,4 @@
 {
-  "messages": [
-    {
-      "id": "fletcher_gift_given_variants",
-      "key": "gift_given",
-      "lines": [
-        "Here, {gift_item}. Straight aim starts before the bow is drawn.",
-        "Take {gift_item}. If trouble comes, I would like you ready for it."
-      ],
-      "weight": 48
-    },
-    {
-      "id": "fletcher_gift_advice_followup_liked_variants",
-      "key": "gift_advice_followup.liked",
-      "lines": [
-        "Good. {gift_item} flew true with {tested_villager}.",
-        "Then that advice hit center. Sounds like {gift_item} flew true."
-      ],
-      "weight": 44
-    },
-    {
-      "id": "fletcher_gift_advice_followup_disliked_variants",
-      "key": "gift_advice_followup.disliked",
-      "lines": [
-        "That shot drifted. For {gift_subject}, nock {alternative_gift} instead.",
-        "{gift_item} missed the mark? Try {alternative_gift}; straighter flight."
-      ],
-      "weight": 44
-    },
-    {
-      "key": "gift_advice_followup.disliked",
-      "dispositions": [
-        "cautious",
-        "rude",
-        "hostile",
-        "fearful"
-      ],
-      "text": "That advice flew crooked. Nock {alternative_gift} next time.",
-      "weight": 20
-    },
-    {
-      "key": "gift_advice_followup.disliked",
-      "dispositions": [
-        "rude",
-        "hostile"
-      ],
-      "text": "You let loose before checking the fletching. Try {alternative_gift}.",
-      "weight": 20
-    }
-  ],
-  "openings": [
-    {
-      "id": "fletcher_opening",
-      "text": "Mind the fletching table. What do you need?"
-    }
-  ],
-  "closings": [
-    {
-      "id": "fletcher_closing",
-      "text": "Back to balancing arrows true, then."
-    }
-  ],
-  "pacify": [
-    {
-      "id": "fletcher_pacify_success",
-      "outcomes": [
-        "success"
-      ],
-      "text": "Fine. I will unstring the anger, but only this once.",
-      "weight": 26
-    },
-    {
-      "id": "fletcher_pacify_short",
-      "outcomes": [
-        "not_enough_emeralds"
-      ],
-      "text": "That does not fly far enough. Bring {emerald_cost} {emeralds}.",
-      "weight": 26
-    },
-    {
-      "id": "fletcher_pacify_blocked",
-      "outcomes": [
-        "blocked_by_reputation"
-      ],
-      "text": "No. Some targets stay marked until trust returns.",
-      "weight": 26
-    }
-  ],
   "lines": [
     {
       "id": "fletcher_question_feathers_variants",
@@ -113,20 +26,32 @@
     {
       "id": "fletcher_new_greeting_table",
       "request": "greeting",
-      "text": "Mind the fletching table. Straight arrows do not happen by accident.",
-      "weight": 26
+      "weight": 26,
+      "lines": [
+        "Mind the fletching table. Straight arrows do not happen by accident.",
+        "Mind the fletching table. Straight arrows do not happen by accident.",
+        "Mind the fletching table. Straight arrows do not happen by accident."
+      ]
     },
     {
       "id": "fletcher_new_joke_flight",
       "request": "joke",
-      "text": "A fletcher joke should fly straight. Mine wobble honestly.",
-      "weight": 18
+      "weight": 18,
+      "lines": [
+        "A fletcher joke should fly straight. Mine wobble honestly.",
+        "A fletcher joke should fly straight. Mine wobble honestly.",
+        "A fletcher joke should fly straight. Mine wobble honestly."
+      ]
     },
     {
       "id": "fletcher_new_insult_blunt",
       "request": "insult",
-      "text": "That was blunt enough to disappoint an arrow.",
-      "weight": 18
+      "weight": 18,
+      "lines": [
+        "That was blunt enough to disappoint an arrow.",
+        "That was blunt enough to disappoint an arrow.",
+        "That was blunt enough to disappoint an arrow."
+      ]
     },
     {
       "id": "fletcher_new_hostile_warning",
@@ -135,8 +60,12 @@
         "hostile",
         "rude"
       ],
-      "text": "Keep testing patience and you will learn how warnings travel.",
-      "weight": 30
+      "weight": 30,
+      "lines": [
+        "Keep testing patience and you will learn how warnings travel.",
+        "Keep testing patience and you will learn how warnings travel.",
+        "Keep testing patience and you will learn how warnings travel."
+      ]
     },
     {
       "id": "fletcher_cured_recognition_warm",
@@ -147,7 +76,8 @@
       ],
       "lines": [
         "I remember the cure flying true when everything else had gone crooked.",
-        "You set me back on the string and did not let me snap."
+        "You set me back on the string and did not let me snap.",
+        "I remember the cure flying true when everything else had gone crooked."
       ],
       "weight": 60
     },
@@ -160,7 +90,8 @@
       ],
       "lines": [
         "Your face lands near the target, but the rest of the memory wobbles.",
-        "There was a hiss, a bite of gold, and then my thoughts found their fletching."
+        "There was a hiss, a bite of gold, and then my thoughts found their fletching.",
+        "Your face lands near the target, but the rest of the memory wobbles."
       ],
       "weight": 60
     },
@@ -172,8 +103,12 @@
         "hostile",
         "fearful"
       ],
-      "text": "I remember you. The arrow of it still shakes in the target.",
-      "weight": 30
+      "weight": 30,
+      "lines": [
+        "I remember you. The arrow of it still shakes in the target.",
+        "I remember you. The arrow of it still shakes in the target.",
+        "I remember you. The arrow of it still shakes in the target."
+      ]
     },
     {
       "id": "fletcher_village_event_thunderstorm",
@@ -271,6 +206,297 @@
         "We are alright for now near the fletching table. Keep the fires fed and the paths open."
       ],
       "weight": 170
+    },
+    {
+      "id": "recruitment_followup_fletcher_safe",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
+      "weight": 38,
+      "lines": [
+        "Straight out, straight back. A good route flies true.",
+        "Straight out, straight back. A good route flies true.",
+        "Straight out, straight back. A good route flies true."
+      ]
+    },
+    {
+      "id": "recruitment_followup_fletcher_injured",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "injured"
+      ],
+      "weight": 38,
+      "lines": [
+        "That trip feathered wrong. I came home, but not without a bend in the shaft.",
+        "That trip feathered wrong. I came home, but not without a bend in the shaft.",
+        "That trip feathered wrong. I came home, but not without a bend in the shaft."
+      ]
+    },
+    {
+      "id": "recruitment_followup_fletcher_betrayed",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "betrayed"
+      ],
+      "weight": 42,
+      "lines": [
+        "You loosed that hurt at close range. I will remember the aim.",
+        "You loosed that hurt at close range. I will remember the aim.",
+        "You loosed that hurt at close range. I will remember the aim."
+      ]
+    },
+    {
+      "id": "recruitment_followup_fletcher_boat",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "requires_recruitment_boat_trip": true,
+      "weight": 42,
+      "lines": [
+        "The boat drifted, but it did not miss the mark entirely.",
+        "The boat drifted, but it did not miss the mark entirely.",
+        "The boat drifted, but it did not miss the mark entirely."
+      ]
+    },
+    {
+      "id": "question_follow_memory_fletcher",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "requires_recruitment_memory": true,
+      "weight": 3,
+      "lines": [
+        "That route you took me on flew about as straight as a warped arrow.",
+        "That route you took me on flew about as straight as a warped arrow.",
+        "That route you took me on flew about as straight as a warped arrow."
+      ]
+    },
+    {
+      "id": "question_follow_memory_fletcher_boat",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "requires_recruitment_memory": true,
+      "requires_recruitment_boat_trip": true,
+      "weight": 3,
+      "lines": [
+        "That boat did not fly straight, but at least it floated straight enough.",
+        "That boat did not fly straight, but at least it floated straight enough.",
+        "That boat did not fly straight, but at least it floated straight enough."
+      ]
+    },
+    {
+      "id": "gear_report_fletcher_used",
+      "request": "gear_report",
+      "option": "gear_report",
+      "show_for_babies": false,
+      "requires_gear_report_used_in_combat": true,
+      "weight": 32,
+      "lines": [
+        "It kept its line under pressure. A steady hand is easier with proper tools.",
+        "It kept its line under pressure. A steady hand is easier with proper tools.",
+        "It kept its line under pressure. A steady hand is easier with proper tools."
+      ]
+    },
+    {
+      "id": "gear_report_fletcher_unused",
+      "request": "gear_report",
+      "option": "gear_report",
+      "show_for_babies": false,
+      "requires_gear_report_unused_in_combat": true,
+      "weight": 32,
+      "lines": [
+        "Still unused. A ready shot is not wasted just because it stays in the quiver.",
+        "Still unused. A ready shot is not wasted just because it stays in the quiver.",
+        "Still unused. A ready shot is not wasted just because it stays in the quiver."
+      ]
+    },
+    {
+      "id": "village_defense_fletcher_arrows",
+      "request": "village_defense_report",
+      "option": "village_defense_report",
+      "show_for_babies": false,
+      "lines": [
+        "I heard arrows, axes, shouting. Then I saw you still standing for us.",
+        "Good aim is choosing what matters under pressure. You chose the village.",
+        "You picked the right target when the raid pressed in.",
+        "I saw you move where the arrows were pointing. That takes nerve.",
+        "The village needed steady aim, and you gave it more than words.",
+        "Every raider stopped early is a home spared late.",
+        "You helped turn the fight before it reached the center.",
+        "I respect anyone who can choose clearly while the air is full of panic."
+      ],
+      "weight": 246
+    },
+    {
+      "id": "apology_fletcher_straight",
+      "request": "apology",
+      "option": "apologize_for_harm",
+      "show_for_babies": false,
+      "lines": [
+        "Straight words are worth more than crooked excuses. Keep them straight.",
+        "You missed the mark badly. The apology lands closer. Do not waste it.",
+        "The apology flies straighter than the harm did. That is something.",
+        "Do not notch the same mistake twice.",
+        "I hear the words. Now keep your aim away from us.",
+        "A bent shaft can be corrected if it has not split. Prove you have not split.",
+        "Fine. Let this be the shot you meant to take.",
+        "Trust is easy to miss and hard to hit again. Try carefully."
+      ],
+      "weight": 234
+    },
+    {
+      "id": "combat_survival_fletcher",
+      "request": "combat_survival_report",
+      "option": "combat_survival_report",
+      "show_for_babies": false,
+      "lines": [
+        "Lost two arrows, kept my nerve. I will call that a fair trade.",
+        "My quiver is lighter, but so is my heart now that I am inside the village again.",
+        "I counted arrows until counting steps mattered more.",
+        "My hands remembered what to do before my head caught up.",
+        "I made it back with an empty quiver and a full respect for walls.",
+        "The road home felt like a target I could barely see.",
+        "A steady breath is harder when the dark is shouting.",
+        "I lost my aim for a moment. I did not lose the way home."
+      ],
+      "weight": 234
+    },
+    {
+      "id": "default_profession_fletcher_string_sense",
+      "request": "question",
+      "show_for_babies": false,
+      "lines": [
+        "A bowstring complains before it betrays you. Most people do the opposite.",
+        "Straight arrows are made from crooked material and stubborn hands.",
+        "When the bell rings, I learn which arrows were practice and which were promises."
+      ],
+      "weight": 18
+    }
+  ],
+  "messages": [
+    {
+      "id": "fletcher_gift_given_variants",
+      "key": "gift_given",
+      "lines": [
+        "Here, {gift_item}. Straight aim starts before the bow is drawn.",
+        "Take {gift_item}. If trouble comes, I would like you ready for it.",
+        "Here, {gift_item}. Straight aim starts before the bow is drawn."
+      ],
+      "weight": 48
+    },
+    {
+      "id": "fletcher_gift_advice_followup_liked_variants",
+      "key": "gift_advice_followup.liked",
+      "lines": [
+        "Good. {gift_item} flew true with {tested_villager}.",
+        "Then that advice hit center. Sounds like {gift_item} flew true.",
+        "Good. {gift_item} flew true with {tested_villager}."
+      ],
+      "weight": 44
+    },
+    {
+      "id": "fletcher_gift_advice_followup_disliked_variants",
+      "key": "gift_advice_followup.disliked",
+      "lines": [
+        "That shot drifted. For {gift_subject}, nock {alternative_gift} instead.",
+        "{gift_item} missed the mark? Try {alternative_gift}; straighter flight.",
+        "That shot drifted. For {gift_subject}, nock {alternative_gift} instead."
+      ],
+      "weight": 44
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 20,
+      "lines": [
+        "That advice flew crooked. Nock {alternative_gift} next time.",
+        "That advice flew crooked. Nock {alternative_gift} next time.",
+        "That advice flew crooked. Nock {alternative_gift} next time."
+      ]
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
+      "weight": 20,
+      "lines": [
+        "You let loose before checking the fletching. Try {alternative_gift}.",
+        "You let loose before checking the fletching. Try {alternative_gift}.",
+        "You let loose before checking the fletching. Try {alternative_gift}."
+      ]
+    }
+  ],
+  "openings": [
+    {
+      "id": "fletcher_opening",
+      "lines": [
+        "Mind the fletching table. What do you need?",
+        "Mind the fletching table. What do you need?",
+        "Mind the fletching table. What do you need?"
+      ]
+    }
+  ],
+  "closings": [
+    {
+      "id": "fletcher_closing",
+      "lines": [
+        "Back to balancing arrows true, then.",
+        "Back to balancing arrows true, then.",
+        "Back to balancing arrows true, then."
+      ]
+    }
+  ],
+  "pacify": [
+    {
+      "id": "fletcher_pacify_success",
+      "outcomes": [
+        "success"
+      ],
+      "weight": 26,
+      "lines": [
+        "Fine. I will unstring the anger, but only this once.",
+        "Fine. I will unstring the anger, but only this once.",
+        "Fine. I will unstring the anger, but only this once."
+      ]
+    },
+    {
+      "id": "fletcher_pacify_short",
+      "outcomes": [
+        "not_enough_emeralds"
+      ],
+      "weight": 26,
+      "lines": [
+        "That does not fly far enough. Bring {emerald_cost} {emeralds}.",
+        "That does not fly far enough. Bring {emerald_cost} {emeralds}.",
+        "That does not fly far enough. Bring {emerald_cost} {emeralds}."
+      ]
+    },
+    {
+      "id": "fletcher_pacify_blocked",
+      "outcomes": [
+        "blocked_by_reputation"
+      ],
+      "weight": 26,
+      "lines": [
+        "No. Some targets stay marked until trust returns.",
+        "No. Some targets stay marked until trust returns.",
+        "No. Some targets stay marked until trust returns."
+      ]
     }
   ]
 }

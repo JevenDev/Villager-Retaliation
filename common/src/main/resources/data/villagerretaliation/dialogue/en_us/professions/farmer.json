@@ -1,91 +1,4 @@
 {
-  "messages": [
-    {
-      "id": "farmer_gift_given_variants",
-      "key": "gift_given",
-      "lines": [
-        "Here, {gift_item}. Good things grow better when they are shared.",
-        "Take {gift_item}. Consider it a small harvest for the kindness you planted."
-      ],
-      "weight": 48
-    },
-    {
-      "id": "farmer_gift_advice_followup_liked_variants",
-      "key": "gift_advice_followup.liked",
-      "lines": [
-        "Good. {gift_item} took root with {tested_villager}. That is a healthy sign.",
-        "Then the advice sprouted. If {tested_villager} liked {gift_item}, that is a fair harvest."
-      ],
-      "weight": 44
-    },
-    {
-      "id": "farmer_gift_advice_followup_disliked_variants",
-      "key": "gift_advice_followup.disliked",
-      "lines": [
-        "Wrong soil for that seed. For {gift_subject}, plant {alternative_gift} instead.",
-        "{gift_item} did not grow there? Try {alternative_gift}. Some rows need different seed."
-      ],
-      "weight": 44
-    },
-    {
-      "key": "gift_advice_followup.disliked",
-      "dispositions": [
-        "cautious",
-        "rude",
-        "hostile",
-        "fearful"
-      ],
-      "text": "Bad seed, bad soil, or bad advice. Hard to say. Plant {alternative_gift} next.",
-      "weight": 20
-    },
-    {
-      "key": "gift_advice_followup.disliked",
-      "dispositions": [
-        "rude",
-        "hostile"
-      ],
-      "text": "You harvested a frown from {gift_item}? Then sow {alternative_gift} and move on.",
-      "weight": 20
-    }
-  ],
-  "openings": [
-    {
-      "id": "farmer_opening",
-      "text": "Mind the fields. What do you need?"
-    }
-  ],
-  "closings": [
-    {
-      "id": "farmer_closing",
-      "text": "Back to coaxing food from stubborn soil, then."
-    }
-  ],
-  "pacify": [
-    {
-      "id": "farmer_pacify_success",
-      "outcomes": [
-        "success"
-      ],
-      "text": "Fine. I will let the field lie quiet for now.",
-      "weight": 26
-    },
-    {
-      "id": "farmer_pacify_short",
-      "outcomes": [
-        "not_enough_emeralds"
-      ],
-      "text": "That is not enough seed for this row. Bring {emerald_cost} {emeralds}.",
-      "weight": 26
-    },
-    {
-      "id": "farmer_pacify_blocked",
-      "outcomes": [
-        "blocked_by_reputation"
-      ],
-      "text": "No. You trampled too much for a handful of green to fix it.",
-      "weight": 26
-    }
-  ],
   "lines": [
     {
       "id": "farmer_question_rows_variants",
@@ -113,20 +26,32 @@
     {
       "id": "farmer_new_greeting_rows",
       "request": "greeting",
-      "text": "Stay off the rows if you can. The crops remember boots.",
-      "weight": 26
+      "weight": 26,
+      "lines": [
+        "Stay off the rows if you can. The crops remember boots.",
+        "Stay off the rows if you can. The crops remember boots.",
+        "Stay off the rows if you can. The crops remember boots."
+      ]
     },
     {
       "id": "farmer_new_joke_carrot",
       "request": "joke",
-      "text": "A carrot joke takes root slowly, if anyone lets it.",
-      "weight": 18
+      "weight": 18,
+      "lines": [
+        "A carrot joke takes root slowly, if anyone lets it.",
+        "A carrot joke takes root slowly, if anyone lets it.",
+        "A carrot joke takes root slowly, if anyone lets it."
+      ]
     },
     {
       "id": "farmer_new_insult_mud",
       "request": "insult",
-      "text": "That thought came in muddy and left tracks.",
-      "weight": 18
+      "weight": 18,
+      "lines": [
+        "That thought came in muddy and left tracks.",
+        "That thought came in muddy and left tracks.",
+        "That thought came in muddy and left tracks."
+      ]
     },
     {
       "id": "farmer_new_rude_field",
@@ -135,8 +60,12 @@
         "rude",
         "hostile"
       ],
-      "text": "I would not plant that opinion in poor soil.",
-      "weight": 30
+      "weight": 30,
+      "lines": [
+        "I would not plant that opinion in poor soil.",
+        "I would not plant that opinion in poor soil.",
+        "I would not plant that opinion in poor soil."
+      ]
     },
     {
       "id": "farmer_cured_recognition_warm",
@@ -147,7 +76,8 @@
       ],
       "lines": [
         "I remember waking like a field after frost. You gave the roots a chance.",
-        "You pulled me back from spoiled soil. I will not forget that harvest."
+        "You pulled me back from spoiled soil. I will not forget that harvest.",
+        "I remember waking like a field after frost. You gave the roots a chance."
       ],
       "weight": 60
     },
@@ -160,7 +90,8 @@
       ],
       "lines": [
         "Your face is familiar, like a seed found in last year's coat.",
-        "I remember mud, hunger, and sunlight arriving too bright. Were you the sunlight?"
+        "I remember mud, hunger, and sunlight arriving too bright. Were you the sunlight?",
+        "Your face is familiar, like a seed found in last year's coat."
       ],
       "weight": 60
     },
@@ -172,8 +103,12 @@
         "hostile",
         "fearful"
       ],
-      "text": "I remember you, but the memory still has grave dirt under its nails.",
-      "weight": 30
+      "weight": 30,
+      "lines": [
+        "I remember you, but the memory still has grave dirt under its nails.",
+        "I remember you, but the memory still has grave dirt under its nails.",
+        "I remember you, but the memory still has grave dirt under its nails."
+      ]
     },
     {
       "id": "farmer_village_event_thunderstorm",
@@ -271,6 +206,312 @@
         "We are alright for now near the composter. Keep the fires fed and the paths open."
       ],
       "weight": 170
+    },
+    {
+      "id": "recruitment_followup_farmer_safe",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
+      "weight": 38,
+      "lines": [
+        "Home before the rows missed me. Thank you for seeing me back to the village.",
+        "Home before the rows missed me. Thank you for seeing me back to the village.",
+        "Home before the rows missed me. Thank you for seeing me back to the village."
+      ]
+    },
+    {
+      "id": "recruitment_followup_farmer_injured",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "injured"
+      ],
+      "weight": 38,
+      "lines": [
+        "I have worked through worse aches, but I should not need a harvest of bruises from one trip.",
+        "I have worked through worse aches, but I should not need a harvest of bruises from one trip.",
+        "I have worked through worse aches, but I should not need a harvest of bruises from one trip."
+      ]
+    },
+    {
+      "id": "recruitment_followup_farmer_betrayed",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "betrayed"
+      ],
+      "weight": 42,
+      "lines": [
+        "Trust grows slowly. You cut yours down fast.",
+        "Trust grows slowly. You cut yours down fast.",
+        "Trust grows slowly. You cut yours down fast."
+      ]
+    },
+    {
+      "id": "recruitment_followup_farmer_boat",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "requires_recruitment_boat_trip": true,
+      "weight": 42,
+      "lines": [
+        "I know soil better than water. The boat was appreciated.",
+        "I know soil better than water. The boat was appreciated.",
+        "I know soil better than water. The boat was appreciated."
+      ]
+    },
+    {
+      "id": "question_follow_memory_farmer",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "requires_recruitment_memory": true,
+      "excludes_recruitment_ocean_crossing": true,
+      "weight": 3,
+      "lines": [
+        "You remember that walk through {follow_biome}? I have tilled softer ground than that road.",
+        "You remember that walk through {follow_biome}? I have tilled softer ground than that road.",
+        "You remember that walk through {follow_biome}? I have tilled softer ground than that road."
+      ]
+    },
+    {
+      "id": "question_follow_memory_farmer_boat",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "requires_recruitment_memory": true,
+      "requires_recruitment_boat_trip": true,
+      "weight": 3,
+      "lines": [
+        "Boats are not much like fields. No furrows, no rows, just water deciding if it likes you.",
+        "Boats are not much like fields. No furrows, no rows, just water deciding if it likes you.",
+        "Boats are not much like fields. No furrows, no rows, just water deciding if it likes you."
+      ]
+    },
+    {
+      "id": "gear_report_farmer_used",
+      "request": "gear_report",
+      "option": "gear_report",
+      "show_for_babies": false,
+      "requires_gear_report_used_in_combat": true,
+      "weight": 32,
+      "lines": [
+        "It kept me standing. Crops recover faster when the farmer does too.",
+        "It kept me standing. Crops recover faster when the farmer does too.",
+        "It kept me standing. Crops recover faster when the farmer does too."
+      ]
+    },
+    {
+      "id": "gear_report_farmer_unused",
+      "request": "gear_report",
+      "option": "gear_report",
+      "show_for_babies": false,
+      "requires_gear_report_unused_in_combat": true,
+      "weight": 32,
+      "lines": [
+        "Unused, thankfully. I would rather wear out a hoe than this.",
+        "Unused, thankfully. I would rather wear out a hoe than this.",
+        "Unused, thankfully. I would rather wear out a hoe than this."
+      ]
+    },
+    {
+      "id": "village_defense_farmer_rows",
+      "request": "village_defense_report",
+      "option": "village_defense_report",
+      "show_for_babies": false,
+      "lines": [
+        "They trampled the rows, but not the village. You had a hand in that.",
+        "We will still have a harvest because there are still hands to gather it.",
+        "The fields can be replanted. The people had to be kept alive first.",
+        "You helped make sure we still have hands for the harvest.",
+        "Raiders came for more than crops. You stopped them short.",
+        "I saw you fighting near the rows. That is not forgotten.",
+        "You kept the village standing long enough for morning chores to matter.",
+        "The ground remembers heavy boots. I will remember who drove them off."
+      ],
+      "weight": 246
+    },
+    {
+      "id": "apology_farmer_seed",
+      "request": "apology",
+      "option": "apologize_for_harm",
+      "show_for_babies": false,
+      "lines": [
+        "An apology is a seed. It still needs watering, and I will be watching the crop.",
+        "Break a fence and you mend it before night. Trust works much the same.",
+        "You stepped on trust like young shoots. It can grow back if you stop trampling it.",
+        "Fine. Plant better behavior where that harm was.",
+        "I will not pull up the apology before it sprouts. Do not let it wither.",
+        "A fence mended poorly breaks again. Mend this properly.",
+        "Words are rain. Useful, but not enough by themselves.",
+        "I have seen hard ground soften. Maybe you can too."
+      ],
+      "weight": 234
+    },
+    {
+      "id": "combat_survival_farmer",
+      "request": "combat_survival_report",
+      "option": "combat_survival_report",
+      "show_for_babies": false,
+      "lines": [
+        "Fields teach patience. Fights teach exactly when patience has run out.",
+        "Mud on my boots, fear in my throat, and home still ahead. I made it.",
+        "I made it back with mud on my knees and luck in both pockets.",
+        "The field path never felt so long. The village never looked so good.",
+        "I kept thinking about sunrise. That helped me keep moving.",
+        "I have weathered storms, but storms do not usually carry axes.",
+        "Home was the only crop I cared about reaching.",
+        "My boots are ruined. I am not. Good trade."
+      ],
+      "weight": 234
+    },
+    {
+      "id": "event_night_attack_farmer_1",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "night_attack"
+      ],
+      "weight": 30,
+      "lines": [
+        "I can replant crops. I cannot replant a night's sleep.",
+        "I can replant crops. I cannot replant a night's sleep.",
+        "I can replant crops. I cannot replant a night's sleep."
+      ]
+    },
+    {
+      "id": "default_profession_farmer_weather_memory",
+      "request": "question",
+      "show_for_babies": false,
+      "lines": [
+        "Soil remembers boots, rain, and kindness. It is not as quiet as people think.",
+        "Good fields are made of patience, fences, and someone awake before the sun.",
+        "A harvest is just a village keeping its promise to tomorrow."
+      ],
+      "weight": 18
+    }
+  ],
+  "messages": [
+    {
+      "id": "farmer_gift_given_variants",
+      "key": "gift_given",
+      "lines": [
+        "Here, {gift_item}. Good things grow better when they are shared.",
+        "Take {gift_item}. Consider it a small harvest for the kindness you planted.",
+        "Here, {gift_item}. Good things grow better when they are shared."
+      ],
+      "weight": 48
+    },
+    {
+      "id": "farmer_gift_advice_followup_liked_variants",
+      "key": "gift_advice_followup.liked",
+      "lines": [
+        "Good. {gift_item} took root with {tested_villager}. That is a healthy sign.",
+        "Then the advice sprouted. If {tested_villager} liked {gift_item}, that is a fair harvest.",
+        "Good. {gift_item} took root with {tested_villager}. That is a healthy sign."
+      ],
+      "weight": 44
+    },
+    {
+      "id": "farmer_gift_advice_followup_disliked_variants",
+      "key": "gift_advice_followup.disliked",
+      "lines": [
+        "Wrong soil for that seed. For {gift_subject}, plant {alternative_gift} instead.",
+        "{gift_item} did not grow there? Try {alternative_gift}. Some rows need different seed.",
+        "Wrong soil for that seed. For {gift_subject}, plant {alternative_gift} instead."
+      ],
+      "weight": 44
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 20,
+      "lines": [
+        "Bad seed, bad soil, or bad advice. Hard to say. Plant {alternative_gift} next.",
+        "Bad seed, bad soil, or bad advice. Hard to say. Plant {alternative_gift} next.",
+        "Bad seed, bad soil, or bad advice. Hard to say. Plant {alternative_gift} next."
+      ]
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
+      "weight": 20,
+      "lines": [
+        "You harvested a frown from {gift_item}? Then sow {alternative_gift} and move on.",
+        "You harvested a frown from {gift_item}? Then sow {alternative_gift} and move on.",
+        "You harvested a frown from {gift_item}? Then sow {alternative_gift} and move on."
+      ]
+    }
+  ],
+  "openings": [
+    {
+      "id": "farmer_opening",
+      "lines": [
+        "Mind the fields. What do you need?",
+        "Mind the fields. What do you need?",
+        "Mind the fields. What do you need?"
+      ]
+    }
+  ],
+  "closings": [
+    {
+      "id": "farmer_closing",
+      "lines": [
+        "Back to coaxing food from stubborn soil, then.",
+        "Back to coaxing food from stubborn soil, then.",
+        "Back to coaxing food from stubborn soil, then."
+      ]
+    }
+  ],
+  "pacify": [
+    {
+      "id": "farmer_pacify_success",
+      "outcomes": [
+        "success"
+      ],
+      "weight": 26,
+      "lines": [
+        "Fine. I will let the field lie quiet for now.",
+        "Fine. I will let the field lie quiet for now.",
+        "Fine. I will let the field lie quiet for now."
+      ]
+    },
+    {
+      "id": "farmer_pacify_short",
+      "outcomes": [
+        "not_enough_emeralds"
+      ],
+      "weight": 26,
+      "lines": [
+        "That is not enough seed for this row. Bring {emerald_cost} {emeralds}.",
+        "That is not enough seed for this row. Bring {emerald_cost} {emeralds}.",
+        "That is not enough seed for this row. Bring {emerald_cost} {emeralds}."
+      ]
+    },
+    {
+      "id": "farmer_pacify_blocked",
+      "outcomes": [
+        "blocked_by_reputation"
+      ],
+      "weight": 26,
+      "lines": [
+        "No. You trampled too much for a handful of green to fix it.",
+        "No. You trampled too much for a handful of green to fix it.",
+        "No. You trampled too much for a handful of green to fix it."
+      ]
     }
   ]
 }

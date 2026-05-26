@@ -1,0 +1,111 @@
+{
+  "lines": [
+    {
+      "id": "default_cured_recognition_scholars",
+      "request": "cured_recognition",
+      "professions": [
+        "cleric",
+        "librarian",
+        "cartographer"
+      ],
+      "show_for_babies": false,
+      "lines": [
+        "I remember pieces. Your face is one of the pieces that does not hurt.",
+        "There was hunger, then noise, then a hand pulling me back toward my name.",
+        "I was far from myself. You left a trail I could follow home."
+      ],
+      "weight": 34
+    },
+    {
+      "id": "default_event_baby_born_recordkeepers",
+      "request": "village_event_report",
+      "professions": [
+        "librarian",
+        "cartographer"
+      ],
+      "event_tags": [
+        "baby_born"
+      ],
+      "lines": [
+        "I wrote the birth down. A village should know when its future arrives.",
+        "A new name belongs on our records and our maps, even if their feet cannot reach the road yet.",
+        "The village grew by one heartbeat. That changes every calculation."
+      ],
+      "weight": 30
+    },
+    {
+      "id": "default_event_player_cured_villager_witnesses",
+      "request": "village_event_report",
+      "professions": [
+        "cleric",
+        "librarian",
+        "cartographer"
+      ],
+      "event_tags": [
+        "player_cured_villager"
+      ],
+      "player_event_tags": [
+        "player_cured_villager"
+      ],
+      "lines": [
+        "You brought someone back from the hunger. The village will speak of that softly.",
+        "Curing is not just medicine. It is refusing to let a name be erased.",
+        "I saw hope do practical work today."
+      ],
+      "weight": 38
+    },
+    {
+      "id": "default_event_retaliation_started_civic_trades",
+      "request": "village_event_report",
+      "professions": [
+        "cleric",
+        "librarian",
+        "cartographer",
+        "farmer"
+      ],
+      "event_tags": [
+        "villager_retaliation_started"
+      ],
+      "lines": [
+        "A peaceful place can still reach its limit.",
+        "The village remembers harm before it remembers courage.",
+        "Nobody likes when anger becomes necessary. Necessary things rarely ask to be liked."
+      ],
+      "weight": 34
+    },
+    {
+      "id": "default_event_reputation_changed_librarian_notes",
+      "request": "village_event_report",
+      "professions": [
+        "librarian",
+        "cartographer",
+        "cleric"
+      ],
+      "event_tags": [
+        "reputation_changed"
+      ],
+      "lines": [
+        "Reputation is not a number to us. It is how quickly the room relaxes when you enter.",
+        "The village has adjusted its memory of you. Try to deserve the better version.",
+        "People think trust changes loudly. Usually it moves one quiet inch at a time."
+      ],
+      "weight": 28
+    },
+    {
+      "id": "default_joke_profession_scholars",
+      "request": "joke",
+      "professions": [
+        "librarian",
+        "cartographer",
+        "cleric"
+      ],
+      "show_for_babies": false,
+      "lines": [
+        "I will record that under humor, with a cautious footnote.",
+        "The setup had a road. The ending wandered into a swamp.",
+        "I laughed internally. Very internally."
+      ],
+      "weight": 22
+    }
+  ]
+}

@@ -1,91 +1,4 @@
 {
-  "messages": [
-    {
-      "id": "butcher_gift_given_variants",
-      "key": "gift_given",
-      "lines": [
-        "Take {gift_item}. A good village keeps its friends fed and standing.",
-        "Here, {gift_item}. It is honest work to send someone off with provisions."
-      ],
-      "weight": 48
-    },
-    {
-      "id": "butcher_gift_advice_followup_liked_variants",
-      "key": "gift_advice_followup.liked",
-      "lines": [
-        "Good. {tested_villager} has a sound nose for {gift_item}. Fresh advice, clean cut.",
-        "If {tested_villager} liked {gift_item}, then the cut was right."
-      ],
-      "weight": 44
-    },
-    {
-      "id": "butcher_gift_advice_followup_disliked_variants",
-      "key": "gift_advice_followup.disliked",
-      "lines": [
-        "Bad cut, then. For {gift_subject}, I would set down {gift_item} and bring {alternative_gift}.",
-        "Some gifts spoil in the telling. Try {alternative_gift}; that should suit {gift_subject} better."
-      ],
-      "weight": 44
-    },
-    {
-      "key": "gift_advice_followup.disliked",
-      "dispositions": [
-        "cautious",
-        "rude",
-        "hostile",
-        "fearful"
-      ],
-      "text": "You got a tough cut of advice. Next time, bring {alternative_gift}.",
-      "weight": 20
-    },
-    {
-      "key": "gift_advice_followup.disliked",
-      "dispositions": [
-        "rude",
-        "hostile"
-      ],
-      "text": "{gift_item} went over badly? Then trim your losses and try {alternative_gift}.",
-      "weight": 20
-    }
-  ],
-  "openings": [
-    {
-      "id": "butcher_opening",
-      "text": "Mind the smokehouse. What do you need?"
-    }
-  ],
-  "closings": [
-    {
-      "id": "butcher_closing",
-      "text": "Back to keeping meat salted and safe, then."
-    }
-  ],
-  "pacify": [
-    {
-      "id": "butcher_pacify_success",
-      "outcomes": [
-        "success"
-      ],
-      "text": "Fine. I have work to get back to, and anger spoils the day.",
-      "weight": 26
-    },
-    {
-      "id": "butcher_pacify_short",
-      "outcomes": [
-        "not_enough_emeralds"
-      ],
-      "text": "Too lean an offer. Bring {emerald_cost} {emeralds} if you want this cut clean.",
-      "weight": 26
-    },
-    {
-      "id": "butcher_pacify_blocked",
-      "outcomes": [
-        "blocked_by_reputation"
-      ],
-      "text": "No. I know bad meat, and I know bad apologies.",
-      "weight": 26
-    }
-  ],
   "lines": [
     {
       "id": "butcher_question_work_variants",
@@ -113,20 +26,32 @@
     {
       "id": "butcher_new_greeting_smoke",
       "request": "greeting",
-      "text": "If you smell smoke, that is supper being planned properly.",
-      "weight": 26
+      "weight": 26,
+      "lines": [
+        "If you smell smoke, that is supper being planned properly.",
+        "If you smell smoke, that is supper being planned properly.",
+        "If you smell smoke, that is supper being planned properly."
+      ]
     },
     {
       "id": "butcher_new_joke_cuts",
       "request": "joke",
-      "text": "My jokes are like my cuts: better when nobody rushes me.",
-      "weight": 18
+      "weight": 18,
+      "lines": [
+        "My jokes are like my cuts: better when nobody rushes me.",
+        "My jokes are like my cuts: better when nobody rushes me.",
+        "My jokes are like my cuts: better when nobody rushes me."
+      ]
     },
     {
       "id": "butcher_new_insult_stale",
       "request": "insult",
-      "text": "That was stale enough to leave on the shelf.",
-      "weight": 18
+      "weight": 18,
+      "lines": [
+        "That was stale enough to leave on the shelf.",
+        "That was stale enough to leave on the shelf.",
+        "That was stale enough to leave on the shelf."
+      ]
     },
     {
       "id": "butcher_new_rude_manners",
@@ -135,8 +60,12 @@
         "rude",
         "hostile"
       ],
-      "text": "I have carved gristle with more grace than you brought here.",
-      "weight": 30
+      "weight": 30,
+      "lines": [
+        "I have carved gristle with more grace than you brought here.",
+        "I have carved gristle with more grace than you brought here.",
+        "I have carved gristle with more grace than you brought here."
+      ]
     },
     {
       "id": "butcher_cured_recognition_warm",
@@ -147,7 +76,8 @@
       ],
       "lines": [
         "I remember hunger without a name. You brought me back before it swallowed everything.",
-        "The cure left me shaking, but alive. That counts for more than a full smokehouse."
+        "The cure left me shaking, but alive. That counts for more than a full smokehouse.",
+        "I remember hunger without a name. You brought me back before it swallowed everything."
       ],
       "weight": 60
     },
@@ -160,7 +90,8 @@
       ],
       "lines": [
         "Your face stirs something. Not appetite. Memory, I hope.",
-        "I remember a sour potion, an apple, and trying not to bite the hand near me."
+        "I remember a sour potion, an apple, and trying not to bite the hand near me.",
+        "Your face stirs something. Not appetite. Memory, I hope."
       ],
       "weight": 60
     },
@@ -172,8 +103,12 @@
         "hostile",
         "fearful"
       ],
-      "text": "I remember enough to be grateful, and enough to be ashamed. Give me room.",
-      "weight": 30
+      "weight": 30,
+      "lines": [
+        "I remember enough to be grateful, and enough to be ashamed. Give me room.",
+        "I remember enough to be grateful, and enough to be ashamed. Give me room.",
+        "I remember enough to be grateful, and enough to be ashamed. Give me room."
+      ]
     },
     {
       "id": "butcher_village_event_thunderstorm",
@@ -271,6 +206,298 @@
         "We are alright for now near the smoker. Keep the fires fed and the paths open."
       ],
       "weight": 170
+    },
+    {
+      "id": "recruitment_followup_butcher_safe",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
+      "weight": 38,
+      "lines": [
+        "We came back with all our pieces where they belong. Good enough for my ledger.",
+        "We came back with all our pieces where they belong. Good enough for my ledger.",
+        "We came back with all our pieces where they belong. Good enough for my ledger."
+      ]
+    },
+    {
+      "id": "recruitment_followup_butcher_injured",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "injured"
+      ],
+      "weight": 38,
+      "lines": [
+        "I know a shallow cut from a deep mistake. That trip had a little of both.",
+        "I know a shallow cut from a deep mistake. That trip had a little of both.",
+        "I know a shallow cut from a deep mistake. That trip had a little of both."
+      ]
+    },
+    {
+      "id": "recruitment_followup_butcher_betrayed",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "betrayed"
+      ],
+      "weight": 42,
+      "lines": [
+        "I expect sharp things at work. I did not expect one from the person I followed.",
+        "I expect sharp things at work. I did not expect one from the person I followed.",
+        "I expect sharp things at work. I did not expect one from the person I followed."
+      ]
+    },
+    {
+      "id": "recruitment_followup_butcher_boat",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "requires_recruitment_boat_trip": true,
+      "weight": 42,
+      "lines": [
+        "I prefer a steady block beneath me, but the boat got us back without carving a new problem.",
+        "I prefer a steady block beneath me, but the boat got us back without carving a new problem.",
+        "I prefer a steady block beneath me, but the boat got us back without carving a new problem."
+      ]
+    },
+    {
+      "id": "question_follow_memory_butcher",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "requires_recruitment_memory": true,
+      "excludes_recruitment_ocean_crossing": true,
+      "weight": 3,
+      "lines": [
+        "When you had me follow you, I kept thinking the whole walk needed a sharper plan.",
+        "When you had me follow you, I kept thinking the whole walk needed a sharper plan.",
+        "When you had me follow you, I kept thinking the whole walk needed a sharper plan."
+      ]
+    },
+    {
+      "id": "question_follow_memory_butcher_boat",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "requires_recruitment_memory": true,
+      "requires_recruitment_boat_trip": true,
+      "weight": 3,
+      "lines": [
+        "A boat ride is better than being dragged over rough ground. Still, I prefer cutting across town, not water.",
+        "A boat ride is better than being dragged over rough ground. Still, I prefer cutting across town, not water.",
+        "A boat ride is better than being dragged over rough ground. Still, I prefer cutting across town, not water."
+      ]
+    },
+    {
+      "id": "gear_report_butcher_used",
+      "request": "gear_report",
+      "option": "gear_report",
+      "show_for_babies": false,
+      "requires_gear_report_used_in_combat": true,
+      "weight": 32,
+      "lines": [
+        "It handled ugly work without making a mess of me. I count that as fine quality.",
+        "It handled ugly work without making a mess of me. I count that as fine quality.",
+        "It handled ugly work without making a mess of me. I count that as fine quality."
+      ]
+    },
+    {
+      "id": "gear_report_butcher_unused",
+      "request": "gear_report",
+      "option": "gear_report",
+      "show_for_babies": false,
+      "requires_gear_report_unused_in_combat": true,
+      "weight": 32,
+      "lines": [
+        "Still clean. That is how I prefer tools before the hard work starts.",
+        "Still clean. That is how I prefer tools before the hard work starts.",
+        "Still clean. That is how I prefer tools before the hard work starts."
+      ]
+    },
+    {
+      "id": "village_defense_butcher_smoke",
+      "request": "village_defense_report",
+      "option": "village_defense_report",
+      "show_for_babies": false,
+      "lines": [
+        "I know the smell of fear and smoke. You pushed both back from our doors.",
+        "There are clean cuts and ugly fights. That was ugly, but you helped finish it.",
+        "You kept the raid from reaching more kitchens than mine. I noticed.",
+        "The village smelled of smoke and fear. Then it smelled like survival.",
+        "You did hard work when hard work was needed. That matters.",
+        "I saw raiders turn from our doors because you were there.",
+        "No one wants that kind of fight, but someone had to answer it.",
+        "You helped keep families at their tables. That is worth saying aloud."
+      ],
+      "weight": 246
+    },
+    {
+      "id": "apology_butcher_blunt",
+      "request": "apology",
+      "option": "apologize_for_harm",
+      "show_for_babies": false,
+      "lines": [
+        "That was bluntly said. Good. Blunt is better than pretending nothing happened.",
+        "I clean up messes for a living. This one is yours to clean properly.",
+        "I prefer clean cuts to messy words. That was clean enough to hear.",
+        "You made a mess. Start by not making another one.",
+        "An apology does not put things back on the hook, but it is a beginning.",
+        "I will take the words. I will judge the hands.",
+        "Fine. Say it once, then prove it every time after.",
+        "I know when something has gone bad. This does not have to."
+      ],
+      "weight": 234
+    },
+    {
+      "id": "combat_survival_butcher",
+      "request": "combat_survival_report",
+      "option": "combat_survival_report",
+      "show_for_babies": false,
+      "lines": [
+        "I have handled sharp nights before. This one nearly handled me back.",
+        "Still here, still got all my fingers, still not eager to repeat it.",
+        "I came back with a shaking hand and an empty stomach. Better than not coming back.",
+        "There was too much noise and not enough door between me and it. I found the door.",
+        "I have had hard mornings, but that night was something else entirely.",
+        "My apron has seen worse stains. My nerves have not.",
+        "I made it home, and I am counting that before I count anything else.",
+        "The cleaver stayed in my grip. So did my sense, barely."
+      ],
+      "weight": 234
+    },
+    {
+      "id": "default_profession_butcher_careful_work",
+      "request": "question",
+      "show_for_babies": false,
+      "lines": [
+        "Sharp knives are not angry knives. That is the first lesson.",
+        "A village eats better when nobody mistakes haste for skill.",
+        "I know every sound a clean cut should make. I also know when the street sounds wrong."
+      ],
+      "weight": 18
+    }
+  ],
+  "messages": [
+    {
+      "id": "butcher_gift_given_variants",
+      "key": "gift_given",
+      "lines": [
+        "Take {gift_item}. A good village keeps its friends fed and standing.",
+        "Here, {gift_item}. It is honest work to send someone off with provisions.",
+        "Take {gift_item}. A good village keeps its friends fed and standing."
+      ],
+      "weight": 48
+    },
+    {
+      "id": "butcher_gift_advice_followup_liked_variants",
+      "key": "gift_advice_followup.liked",
+      "lines": [
+        "Good. {tested_villager} has a sound nose for {gift_item}. Fresh advice, clean cut.",
+        "If {tested_villager} liked {gift_item}, then the cut was right.",
+        "Good. {tested_villager} has a sound nose for {gift_item}. Fresh advice, clean cut."
+      ],
+      "weight": 44
+    },
+    {
+      "id": "butcher_gift_advice_followup_disliked_variants",
+      "key": "gift_advice_followup.disliked",
+      "lines": [
+        "Bad cut, then. For {gift_subject}, I would set down {gift_item} and bring {alternative_gift}.",
+        "Some gifts spoil in the telling. Try {alternative_gift}; that should suit {gift_subject} better.",
+        "Bad cut, then. For {gift_subject}, I would set down {gift_item} and bring {alternative_gift}."
+      ],
+      "weight": 44
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 20,
+      "lines": [
+        "You got a tough cut of advice. Next time, bring {alternative_gift}.",
+        "You got a tough cut of advice. Next time, bring {alternative_gift}.",
+        "You got a tough cut of advice. Next time, bring {alternative_gift}."
+      ]
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
+      "weight": 20,
+      "lines": [
+        "{gift_item} went over badly? Then trim your losses and try {alternative_gift}.",
+        "{gift_item} went over badly? Then trim your losses and try {alternative_gift}.",
+        "{gift_item} went over badly? Then trim your losses and try {alternative_gift}."
+      ]
+    }
+  ],
+  "openings": [
+    {
+      "id": "butcher_opening",
+      "lines": [
+        "Mind the smokehouse. What do you need?",
+        "Mind the smokehouse. What do you need?",
+        "Mind the smokehouse. What do you need?"
+      ]
+    }
+  ],
+  "closings": [
+    {
+      "id": "butcher_closing",
+      "lines": [
+        "Back to keeping meat salted and safe, then.",
+        "Back to keeping meat salted and safe, then.",
+        "Back to keeping meat salted and safe, then."
+      ]
+    }
+  ],
+  "pacify": [
+    {
+      "id": "butcher_pacify_success",
+      "outcomes": [
+        "success"
+      ],
+      "weight": 26,
+      "lines": [
+        "Fine. I have work to get back to, and anger spoils the day.",
+        "Fine. I have work to get back to, and anger spoils the day.",
+        "Fine. I have work to get back to, and anger spoils the day."
+      ]
+    },
+    {
+      "id": "butcher_pacify_short",
+      "outcomes": [
+        "not_enough_emeralds"
+      ],
+      "weight": 26,
+      "lines": [
+        "Too lean an offer. Bring {emerald_cost} {emeralds} if you want this cut clean.",
+        "Too lean an offer. Bring {emerald_cost} {emeralds} if you want this cut clean.",
+        "Too lean an offer. Bring {emerald_cost} {emeralds} if you want this cut clean."
+      ]
+    },
+    {
+      "id": "butcher_pacify_blocked",
+      "outcomes": [
+        "blocked_by_reputation"
+      ],
+      "weight": 26,
+      "lines": [
+        "No. I know bad meat, and I know bad apologies.",
+        "No. I know bad meat, and I know bad apologies.",
+        "No. I know bad meat, and I know bad apologies."
+      ]
     }
   ]
 }

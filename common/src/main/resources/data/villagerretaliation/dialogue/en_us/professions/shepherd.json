@@ -1,91 +1,4 @@
 {
-  "messages": [
-    {
-      "id": "shepherd_gift_given_variants",
-      "key": "gift_given",
-      "lines": [
-        "Take {gift_item}. A little comfort on the road never hurts.",
-        "Here, {gift_item}. Keep it close when the night gets cold."
-      ],
-      "weight": 48
-    },
-    {
-      "id": "shepherd_gift_advice_followup_liked_variants",
-      "key": "gift_advice_followup.liked",
-      "lines": [
-        "Good. {gift_item} suited {tested_villager} like the right dye on clean wool.",
-        "Then the pattern held. {tested_villager} liked {gift_item}."
-      ],
-      "weight": 44
-    },
-    {
-      "id": "shepherd_gift_advice_followup_disliked_variants",
-      "key": "gift_advice_followup.disliked",
-      "lines": [
-        "Wrong color for that cloth. For {gift_subject}, try {alternative_gift}.",
-        "{gift_item} clashed? Bring {alternative_gift}; softer on the eyes and temper."
-      ],
-      "weight": 44
-    },
-    {
-      "key": "gift_advice_followup.disliked",
-      "dispositions": [
-        "cautious",
-        "rude",
-        "hostile",
-        "fearful"
-      ],
-      "text": "Wrong pattern. Pick up {alternative_gift} and leave {gift_item} out of it.",
-      "weight": 20
-    },
-    {
-      "key": "gift_advice_followup.disliked",
-      "dispositions": [
-        "rude",
-        "hostile"
-      ],
-      "text": "You followed the thread into a knot. Use {alternative_gift} next.",
-      "weight": 20
-    }
-  ],
-  "openings": [
-    {
-      "id": "shepherd_opening",
-      "text": "Mind the loom. What do you need?"
-    }
-  ],
-  "closings": [
-    {
-      "id": "shepherd_closing",
-      "text": "Back to turning wool into warmth, then."
-    }
-  ],
-  "pacify": [
-    {
-      "id": "shepherd_pacify_success",
-      "outcomes": [
-        "success"
-      ],
-      "text": "Fine. I will smooth this wool down for now.",
-      "weight": 26
-    },
-    {
-      "id": "shepherd_pacify_short",
-      "outcomes": [
-        "not_enough_emeralds"
-      ],
-      "text": "That does not cover the tear. Bring {emerald_cost} {emeralds}.",
-      "weight": 26
-    },
-    {
-      "id": "shepherd_pacify_blocked",
-      "outcomes": [
-        "blocked_by_reputation"
-      ],
-      "text": "No. The flock still startles when you come near.",
-      "weight": 26
-    }
-  ],
   "lines": [
     {
       "id": "shepherd_question_flock_variants",
@@ -113,20 +26,32 @@
     {
       "id": "shepherd_new_greeting_loom",
       "request": "greeting",
-      "text": "Mind the loom. Threads tangle faster when people crowd them.",
-      "weight": 26
+      "weight": 26,
+      "lines": [
+        "Mind the loom. Threads tangle faster when people crowd them.",
+        "Mind the loom. Threads tangle faster when people crowd them.",
+        "Mind the loom. Threads tangle faster when people crowd them."
+      ]
     },
     {
       "id": "shepherd_new_joke_thread",
       "request": "joke",
-      "text": "My jokes have loose threads. Pull gently.",
-      "weight": 18
+      "weight": 18,
+      "lines": [
+        "My jokes have loose threads. Pull gently.",
+        "My jokes have loose threads. Pull gently.",
+        "My jokes have loose threads. Pull gently."
+      ]
     },
     {
       "id": "shepherd_new_insult_tangle",
       "request": "insult",
-      "text": "That thought tangled itself before it reached the loom.",
-      "weight": 18
+      "weight": 18,
+      "lines": [
+        "That thought tangled itself before it reached the loom.",
+        "That thought tangled itself before it reached the loom.",
+        "That thought tangled itself before it reached the loom."
+      ]
     },
     {
       "id": "shepherd_new_rude_work",
@@ -135,8 +60,12 @@
         "rude",
         "hostile"
       ],
-      "text": "Do not pull at work you do not understand.",
-      "weight": 30
+      "weight": 30,
+      "lines": [
+        "Do not pull at work you do not understand.",
+        "Do not pull at work you do not understand.",
+        "Do not pull at work you do not understand."
+      ]
     },
     {
       "id": "shepherd_cured_recognition_warm",
@@ -147,7 +76,8 @@
       ],
       "lines": [
         "I remember being lost from the flock. You brought me back to the fold.",
-        "My thoughts were all tangled wool. You helped card them straight."
+        "My thoughts were all tangled wool. You helped card them straight.",
+        "I remember being lost from the flock. You brought me back to the fold."
       ],
       "weight": 60
     },
@@ -160,7 +90,8 @@
       ],
       "lines": [
         "Your face feels familiar, soft in one place and snagged in another.",
-        "I remember shivering, then warmth returning one thread at a time."
+        "I remember shivering, then warmth returning one thread at a time.",
+        "Your face feels familiar, soft in one place and snagged in another."
       ],
       "weight": 60
     },
@@ -172,8 +103,12 @@
         "hostile",
         "fearful"
       ],
-      "text": "I remember you through panic and wool-dark dreams. Keep your voice low.",
-      "weight": 30
+      "weight": 30,
+      "lines": [
+        "I remember you through panic and wool-dark dreams. Keep your voice low.",
+        "I remember you through panic and wool-dark dreams. Keep your voice low.",
+        "I remember you through panic and wool-dark dreams. Keep your voice low."
+      ]
     },
     {
       "id": "shepherd_village_event_thunderstorm",
@@ -271,6 +206,298 @@
         "We are alright for now near the loom. Keep the fires fed and the paths open."
       ],
       "weight": 170
+    },
+    {
+      "id": "recruitment_followup_shepherd_safe",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
+      "weight": 38,
+      "lines": [
+        "Home with no one missing. That is the whole job, really.",
+        "Home with no one missing. That is the whole job, really.",
+        "Home with no one missing. That is the whole job, really."
+      ]
+    },
+    {
+      "id": "recruitment_followup_shepherd_injured",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "injured"
+      ],
+      "weight": 38,
+      "lines": [
+        "I am back in the fold, but I was not guarded as carefully as I hoped.",
+        "I am back in the fold, but I was not guarded as carefully as I hoped.",
+        "I am back in the fold, but I was not guarded as carefully as I hoped."
+      ]
+    },
+    {
+      "id": "recruitment_followup_shepherd_betrayed",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "betrayed"
+      ],
+      "weight": 42,
+      "lines": [
+        "A shepherd who strikes the flock earns no easy trust.",
+        "A shepherd who strikes the flock earns no easy trust.",
+        "A shepherd who strikes the flock earns no easy trust."
+      ]
+    },
+    {
+      "id": "recruitment_followup_shepherd_boat",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "requires_recruitment_boat_trip": true,
+      "weight": 42,
+      "lines": [
+        "Keeping me in the boat was the hard part. I have chased calmer sheep.",
+        "Keeping me in the boat was the hard part. I have chased calmer sheep.",
+        "Keeping me in the boat was the hard part. I have chased calmer sheep."
+      ]
+    },
+    {
+      "id": "question_follow_memory_shepherd_boat",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "requires_recruitment_memory": true,
+      "requires_recruitment_boat_trip": true,
+      "weight": 3,
+      "lines": [
+        "That boat ride was calm enough, until I remembered I was trusting you with the shore.",
+        "That boat ride was calm enough, until I remembered I was trusting you with the shore.",
+        "That boat ride was calm enough, until I remembered I was trusting you with the shore."
+      ]
+    },
+    {
+      "id": "question_follow_memory_shepherd",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "requires_recruitment_memory": true,
+      "excludes_recruitment_ocean_crossing": true,
+      "weight": 3,
+      "lines": [
+        "When I followed you through {follow_biome}, I finally understood why sheep wander off quietly.",
+        "When I followed you through {follow_biome}, I finally understood why sheep wander off quietly.",
+        "When I followed you through {follow_biome}, I finally understood why sheep wander off quietly."
+      ]
+    },
+    {
+      "id": "gear_report_shepherd_used",
+      "request": "gear_report",
+      "option": "gear_report",
+      "show_for_babies": false,
+      "requires_gear_report_used_in_combat": true,
+      "weight": 32,
+      "lines": [
+        "It helped keep the wolves from making a story of me. That is enough praise.",
+        "It helped keep the wolves from making a story of me. That is enough praise.",
+        "It helped keep the wolves from making a story of me. That is enough praise."
+      ]
+    },
+    {
+      "id": "gear_report_shepherd_unused",
+      "request": "gear_report",
+      "option": "gear_report",
+      "show_for_babies": false,
+      "requires_gear_report_unused_in_combat": true,
+      "weight": 32,
+      "lines": [
+        "Unused so far. I prefer watching over nervous sheep to testing nervous steel.",
+        "Unused so far. I prefer watching over nervous sheep to testing nervous steel.",
+        "Unused so far. I prefer watching over nervous sheep to testing nervous steel."
+      ]
+    },
+    {
+      "id": "village_defense_shepherd_flock",
+      "request": "village_defense_report",
+      "option": "village_defense_report",
+      "show_for_babies": false,
+      "lines": [
+        "A frightened flock scatters. A frightened village nearly does too. You helped gather us.",
+        "I can mend torn wool. Mending a village takes people who show up.",
+        "You helped keep panic from scattering everyone beyond reach.",
+        "The village needed gathering, and your courage gave us a center.",
+        "I saw people find their doors because the raiders were forced back.",
+        "A safe fold matters most when the night is loud.",
+        "You helped bring the village through frightened but together.",
+        "Some courage is quiet afterward. I see it anyway."
+      ],
+      "weight": 246
+    },
+    {
+      "id": "apology_shepherd_count",
+      "request": "apology",
+      "option": "apologize_for_harm",
+      "show_for_babies": false,
+      "lines": [
+        "I count losses carefully. I can count an apology too, if it is real.",
+        "Rough hands ruin good wool. Gentle choices from here, yes?",
+        "A frightened heart remembers rough handling. Be gentler from here.",
+        "Fine. I will count the apology, but I will also count what follows.",
+        "Trust scatters quickly. Gather it patiently.",
+        "Do not chase forgiveness. Walk steady and let it come closer.",
+        "I hear you. Keep your hands calm around this village.",
+        "Words can be soft. Make your choices soft too."
+      ],
+      "weight": 234
+    },
+    {
+      "id": "combat_survival_shepherd",
+      "request": "combat_survival_report",
+      "option": "combat_survival_report",
+      "show_for_babies": false,
+      "lines": [
+        "I have chased enough trouble from the flock to know when trouble has teeth.",
+        "I know the sound of everyone trying to get through one gate at once. I made it through.",
+        "I counted my steps back like I count heads at dusk.",
+        "A scattered mind is hard to gather. I managed it enough to get home.",
+        "The village gate felt like a pen after a long, bad storm.",
+        "I made it back with my heart running ahead of me.",
+        "Keeping calm is easier when no one is shouting. I did my best anyway.",
+        "I reached home and only then remembered to breathe properly."
+      ],
+      "weight": 234
+    },
+    {
+      "id": "default_profession_shepherd_flock_mood",
+      "request": "question",
+      "show_for_babies": false,
+      "lines": [
+        "A flock knows danger before pride admits it. I listen to the woolly experts.",
+        "Dye work teaches patience. So does convincing sheep that the gate is not a puzzle.",
+        "Warm beds start as quiet animals and careful hands."
+      ],
+      "weight": 18
+    }
+  ],
+  "messages": [
+    {
+      "id": "shepherd_gift_given_variants",
+      "key": "gift_given",
+      "lines": [
+        "Take {gift_item}. A little comfort on the road never hurts.",
+        "Here, {gift_item}. Keep it close when the night gets cold.",
+        "Take {gift_item}. A little comfort on the road never hurts."
+      ],
+      "weight": 48
+    },
+    {
+      "id": "shepherd_gift_advice_followup_liked_variants",
+      "key": "gift_advice_followup.liked",
+      "lines": [
+        "Good. {gift_item} suited {tested_villager} like the right dye on clean wool.",
+        "Then the pattern held. {tested_villager} liked {gift_item}.",
+        "Good. {gift_item} suited {tested_villager} like the right dye on clean wool."
+      ],
+      "weight": 44
+    },
+    {
+      "id": "shepherd_gift_advice_followup_disliked_variants",
+      "key": "gift_advice_followup.disliked",
+      "lines": [
+        "Wrong color for that cloth. For {gift_subject}, try {alternative_gift}.",
+        "{gift_item} clashed? Bring {alternative_gift}; softer on the eyes and temper.",
+        "Wrong color for that cloth. For {gift_subject}, try {alternative_gift}."
+      ],
+      "weight": 44
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 20,
+      "lines": [
+        "Wrong pattern. Pick up {alternative_gift} and leave {gift_item} out of it.",
+        "Wrong pattern. Pick up {alternative_gift} and leave {gift_item} out of it.",
+        "Wrong pattern. Pick up {alternative_gift} and leave {gift_item} out of it."
+      ]
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
+      "weight": 20,
+      "lines": [
+        "You followed the thread into a knot. Use {alternative_gift} next.",
+        "You followed the thread into a knot. Use {alternative_gift} next.",
+        "You followed the thread into a knot. Use {alternative_gift} next."
+      ]
+    }
+  ],
+  "openings": [
+    {
+      "id": "shepherd_opening",
+      "lines": [
+        "Mind the loom. What do you need?",
+        "Mind the loom. What do you need?",
+        "Mind the loom. What do you need?"
+      ]
+    }
+  ],
+  "closings": [
+    {
+      "id": "shepherd_closing",
+      "lines": [
+        "Back to turning wool into warmth, then.",
+        "Back to turning wool into warmth, then.",
+        "Back to turning wool into warmth, then."
+      ]
+    }
+  ],
+  "pacify": [
+    {
+      "id": "shepherd_pacify_success",
+      "outcomes": [
+        "success"
+      ],
+      "weight": 26,
+      "lines": [
+        "Fine. I will smooth this wool down for now.",
+        "Fine. I will smooth this wool down for now.",
+        "Fine. I will smooth this wool down for now."
+      ]
+    },
+    {
+      "id": "shepherd_pacify_short",
+      "outcomes": [
+        "not_enough_emeralds"
+      ],
+      "weight": 26,
+      "lines": [
+        "That does not cover the tear. Bring {emerald_cost} {emeralds}.",
+        "That does not cover the tear. Bring {emerald_cost} {emeralds}.",
+        "That does not cover the tear. Bring {emerald_cost} {emeralds}."
+      ]
+    },
+    {
+      "id": "shepherd_pacify_blocked",
+      "outcomes": [
+        "blocked_by_reputation"
+      ],
+      "weight": 26,
+      "lines": [
+        "No. The flock still startles when you come near.",
+        "No. The flock still startles when you come near.",
+        "No. The flock still startles when you come near."
+      ]
     }
   ]
 }

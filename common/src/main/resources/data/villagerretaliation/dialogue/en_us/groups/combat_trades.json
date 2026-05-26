@@ -1,0 +1,171 @@
+{
+  "lines": [
+    {
+      "id": "default_combat_survival_armorers_count_dents",
+      "request": "combat_survival_report",
+      "professions": [
+        "armorer",
+        "weaponsmith",
+        "toolsmith"
+      ],
+      "show_for_babies": false,
+      "lines": [
+        "I made it back. Count the dents if you want the full story.",
+        "The gear held, mostly. I will pretend that was confidence and not luck.",
+        "I am alive, the metal is angry, and both of us need work."
+      ],
+      "weight": 30
+    },
+    {
+      "id": "default_gear_report_smiths_feedback",
+      "request": "gear_report",
+      "professions": [
+        "armorer",
+        "weaponsmith",
+        "toolsmith",
+        "fletcher"
+      ],
+      "show_for_babies": false,
+      "lines": [
+        "The gear changed how I stood. That matters more than it sounds.",
+        "I used it. It did not make me brave, but it gave bravery somewhere to put its hands.",
+        "Tell whoever made this that the village noticed."
+      ],
+      "weight": 32
+    },
+    {
+      "id": "default_village_defense_smith_respect",
+      "request": "village_defense_report",
+      "professions": [
+        "armorer",
+        "weaponsmith",
+        "toolsmith",
+        "fletcher"
+      ],
+      "show_for_babies": false,
+      "player_event_tags": [
+        "player_defended_village",
+        "player_defended_raid"
+      ],
+      "lines": [
+        "I saw what you did when danger came close. That is the part of a weapon no forge can make.",
+        "You stood where fear wanted a gap. I will remember that.",
+        "A village knows the difference between someone carrying steel and someone carrying responsibility."
+      ],
+      "weight": 36
+    },
+    {
+      "id": "default_event_baby_hurt_guarded",
+      "request": "village_event_report",
+      "professions": [
+        "armorer",
+        "weaponsmith",
+        "fletcher",
+        "cleric"
+      ],
+      "event_tags": [
+        "baby_villager_attacked"
+      ],
+      "lines": [
+        "A child was hurt. I have no gentle way to store that memory.",
+        "The little one cried and every adult in earshot became sharper.",
+        "There are lines a village draws without needing a meeting. Hurting children is one of them."
+      ],
+      "weight": 40
+    },
+    {
+      "id": "default_event_golem_defeated_mob_relief",
+      "request": "village_event_report",
+      "professions": [
+        "armorer",
+        "weaponsmith",
+        "toolsmith",
+        "mason"
+      ],
+      "event_tags": [
+        "iron_golem_defeated_mob"
+      ],
+      "lines": [
+        "The golem did its work. I heard iron move like a closing gate.",
+        "One less monster near our doors. Remind me to check the golem for cracks.",
+        "Iron stood between us and teeth. That sound stays with you."
+      ],
+      "weight": 34
+    },
+    {
+      "id": "default_event_golem_killed_alarm",
+      "request": "village_event_report",
+      "professions": [
+        "armorer",
+        "weaponsmith",
+        "toolsmith",
+        "mason",
+        "librarian"
+      ],
+      "event_tags": [
+        "golem_killed"
+      ],
+      "lines": [
+        "The golem fell. Every door in the village feels thinner now.",
+        "When iron stops moving, everyone hears what silence costs.",
+        "We lost more than a guard. We lost the confidence that stood in the square."
+      ],
+      "weight": 42
+    },
+    {
+      "id": "default_event_raid_trade_memory",
+      "request": "village_event_report",
+      "professions": [
+        "cartographer",
+        "fletcher",
+        "weaponsmith",
+        "armorer",
+        "librarian"
+      ],
+      "event_tags": [
+        "raid"
+      ],
+      "lines": [
+        "Raiders came with banners and left us with repairs.",
+        "A raid turns every profession into lookout work.",
+        "The bell did not sound like metal. It sounded like every name in the village at once."
+      ],
+      "weight": 40
+    },
+    {
+      "id": "default_event_retaliation_started_combat_trades",
+      "request": "village_event_report",
+      "professions": [
+        "armorer",
+        "weaponsmith",
+        "fletcher",
+        "toolsmith"
+      ],
+      "event_tags": [
+        "villager_retaliation_started"
+      ],
+      "lines": [
+        "When a villager decides to fight back, the whole square feels it.",
+        "Retaliation is not clean. It is what happens after warnings run out.",
+        "Someone pushed too far, and now the village is answering in a harder language."
+      ],
+      "weight": 36
+    },
+    {
+      "id": "default_joke_profession_smiths",
+      "request": "joke",
+      "professions": [
+        "armorer",
+        "toolsmith",
+        "weaponsmith"
+      ],
+      "show_for_babies": false,
+      "lines": [
+        "That joke needs tempering. Right now it would bend in a light breeze.",
+        "I have heard sharper things from a spoon.",
+        "Not bad. Needs a better edge and fewer dents."
+      ],
+      "weight": 22
+    }
+  ]
+}

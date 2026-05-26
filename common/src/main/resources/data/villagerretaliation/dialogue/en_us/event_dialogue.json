@@ -1,0 +1,148 @@
+{
+  "lines": [
+    {
+      "id": "default_event_player_attacked_villager_direct",
+      "request": "village_event_report",
+      "event_tags": [
+        "player_attacked_villager"
+      ],
+      "player_event_tags": [
+        "player_attacked_villager"
+      ],
+      "lines": [
+        "You hurt one of ours. The village does not file that under misunderstanding.",
+        "People talk after harm. Doors talk too, in their own way.",
+        "If you want this to become past tense, start acting like it."
+      ],
+      "weight": 44
+    },
+    {
+      "id": "default_event_gift_loved_profession_warmth",
+      "request": "village_event_report",
+      "event_tags": [
+        "player_gave_loved_gift"
+      ],
+      "player_event_tags": [
+        "player_gave_loved_gift"
+      ],
+      "lines": [
+        "That gift was not random. People can tell when kindness pays attention.",
+        "You gave something that fit. Around here, fitting matters.",
+        "A good gift says, I noticed. That is why it lands so well."
+      ],
+      "weight": 32
+    },
+    {
+      "id": "default_event_gift_liked_profession_warmth",
+      "request": "village_event_report",
+      "event_tags": [
+        "player_gave_liked_gift"
+      ],
+      "player_event_tags": [
+        "player_gave_liked_gift"
+      ],
+      "lines": [
+        "That was a kind gift. The village has room for gestures like that.",
+        "A useful present travels farther than the hand that gives it.",
+        "You chose well enough to be remembered kindly."
+      ],
+      "weight": 28
+    },
+    {
+      "id": "default_event_gift_disliked_awkwardness",
+      "request": "village_event_report",
+      "event_tags": [
+        "player_gave_disliked_gift"
+      ],
+      "player_event_tags": [
+        "player_gave_disliked_gift"
+      ],
+      "lines": [
+        "That gift missed its mark. It happens. Better to notice before repeating it.",
+        "The thought may count, but the choice still made a face.",
+        "Next time, ask first. Pride is a poor wrapping paper."
+      ],
+      "weight": 26
+    },
+    {
+      "id": "default_event_gift_hated_warning",
+      "request": "village_event_report",
+      "event_tags": [
+        "player_gave_hated_gift"
+      ],
+      "player_event_tags": [
+        "player_gave_hated_gift"
+      ],
+      "lines": [
+        "That was the sort of gift people remember for the wrong reason.",
+        "A bad gift can feel like an insult with ribbon on it.",
+        "You found a nerve and pressed it. Do not make that a habit."
+      ],
+      "weight": 34
+    },
+    {
+      "id": "default_opening_profession_recent_danger",
+      "request": "greeting",
+      "event_tags": [
+        "raid",
+        "night_attack",
+        "villager_attacked",
+        "golem_killed"
+      ],
+      "show_for_babies": false,
+      "lines": [
+        "Hello. Keep your voice easy; the village has had enough sharp sounds.",
+        "Good to see someone walking calmly. We have had our fill of running.",
+        "If you are here to help, start by closing gates behind you."
+      ],
+      "weight": 30
+    },
+    {
+      "id": "default_baby_event_after_danger",
+      "request": "question",
+      "show_for_adults": false,
+      "event_tags": [
+        "raid",
+        "night_attack",
+        "villager_attacked",
+        "baby_villager_attacked"
+      ],
+      "lines": [
+        "Everyone got loud, then quiet, then loud again. I stayed near the safest grown-up.",
+        "I do not like when the bell sounds scared.",
+        "The adults keep checking doors. I keep checking the adults."
+      ],
+      "weight": 36
+    },
+    {
+      "id": "default_baby_born_child_view",
+      "request": "question",
+      "show_for_adults": false,
+      "event_tags": [
+        "baby_born"
+      ],
+      "lines": [
+        "There is a smaller kid now. I am very big suddenly.",
+        "The baby makes tiny noises and everyone acts like it is important music.",
+        "I am helping by being quiet near the baby. It is harder than it sounds."
+      ],
+      "weight": 34
+    },
+    {
+      "id": "default_insult_low_reputation_profession_reply",
+      "request": "insult",
+      "show_for_babies": false,
+      "reputation_levels": [
+        "hostile",
+        "despised",
+        "feared"
+      ],
+      "lines": [
+        "You are spending your reputation faster than emeralds.",
+        "Careful. The village already knows how this version of you sounds.",
+        "That would hurt more from someone we trusted."
+      ],
+      "weight": 34
+    }
+  ]
+}

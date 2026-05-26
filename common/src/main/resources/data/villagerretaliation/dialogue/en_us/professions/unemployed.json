@@ -1,91 +1,4 @@
 {
-  "messages": [
-    {
-      "id": "unemployed_gift_given_variants",
-      "key": "gift_given",
-      "lines": [
-        "Take {gift_item}. I may not have a trade, but I know how to say thanks.",
-        "Here, {gift_item}. Maybe one of us will find the perfect use for it."
-      ],
-      "weight": 48
-    },
-    {
-      "id": "unemployed_gift_advice_followup_liked_variants",
-      "key": "gift_advice_followup.liked",
-      "lines": [
-        "Good, {gift_item} worked. See? I can be useful without a workstation.",
-        "{tested_villager} liked it? Excellent. I am putting that under possible talents."
-      ],
-      "weight": 44
-    },
-    {
-      "id": "unemployed_gift_advice_followup_disliked_variants",
-      "key": "gift_advice_followup.disliked",
-      "lines": [
-        "Ah. Then my career in advice pauses here. Try {alternative_gift} for {gift_subject}.",
-        "{gift_item} was wrong? Let us call it research. {alternative_gift} should work better."
-      ],
-      "weight": 44
-    },
-    {
-      "key": "gift_advice_followup.disliked",
-      "dispositions": [
-        "cautious",
-        "rude",
-        "hostile",
-        "fearful"
-      ],
-      "text": "This is why nobody pays me for advice. Try {alternative_gift}.",
-      "weight": 20
-    },
-    {
-      "key": "gift_advice_followup.disliked",
-      "dispositions": [
-        "rude",
-        "hostile"
-      ],
-      "text": "You came back? Fair. My next guess is {alternative_gift}.",
-      "weight": 20
-    }
-  ],
-  "openings": [
-    {
-      "id": "unemployed_opening",
-      "text": "Mind the job site I have not found yet. What do you need?"
-    }
-  ],
-  "closings": [
-    {
-      "id": "unemployed_closing",
-      "text": "Back to looking useful before anyone notices, then."
-    }
-  ],
-  "pacify": [
-    {
-      "id": "unemployed_pacify_success",
-      "outcomes": [
-        "success"
-      ],
-      "text": "Fine. I have enough problems without carrying this one too.",
-      "weight": 26
-    },
-    {
-      "id": "unemployed_pacify_short",
-      "outcomes": [
-        "not_enough_emeralds"
-      ],
-      "text": "Even without a trade, I know that should be {emerald_cost} {emeralds}.",
-      "weight": 26
-    },
-    {
-      "id": "unemployed_pacify_blocked",
-      "outcomes": [
-        "blocked_by_reputation"
-      ],
-      "text": "No. I may not have work, but I still have sense.",
-      "weight": 26
-    }
-  ],
   "lines": [
     {
       "id": "unemployed_question_work_variants",
@@ -113,20 +26,32 @@
     {
       "id": "unemployed_new_greeting_site",
       "request": "greeting",
-      "text": "If you see a spare job site, do mention it kindly.",
-      "weight": 26
+      "weight": 26,
+      "lines": [
+        "If you see a spare job site, do mention it kindly.",
+        "If you see a spare job site, do mention it kindly.",
+        "If you see a spare job site, do mention it kindly."
+      ]
     },
     {
       "id": "unemployed_new_joke_flexible",
       "request": "joke",
-      "text": "Unemployed jokes are flexible. That is what I keep telling myself.",
-      "weight": 18
+      "weight": 18,
+      "lines": [
+        "Unemployed jokes are flexible. That is what I keep telling myself.",
+        "Unemployed jokes are flexible. That is what I keep telling myself.",
+        "Unemployed jokes are flexible. That is what I keep telling myself."
+      ]
     },
     {
       "id": "unemployed_new_insult_idle",
       "request": "insult",
-      "text": "That was idle talk, and I would know.",
-      "weight": 18
+      "weight": 18,
+      "lines": [
+        "That was idle talk, and I would know.",
+        "That was idle talk, and I would know.",
+        "That was idle talk, and I would know."
+      ]
     },
     {
       "id": "unemployed_new_cautious_useful",
@@ -135,8 +60,12 @@
         "cautious",
         "fearful"
       ],
-      "text": "I am trying to look useful, not involved.",
-      "weight": 30
+      "weight": 30,
+      "lines": [
+        "I am trying to look useful, not involved.",
+        "I am trying to look useful, not involved.",
+        "I am trying to look useful, not involved."
+      ]
     },
     {
       "id": "unemployed_cured_recognition_warm",
@@ -147,7 +76,8 @@
       ],
       "lines": [
         "I remember having no trade, no thoughts, almost no self. You helped with the important one.",
-        "I did not know what I would become, but you made sure I could become anything."
+        "I did not know what I would become, but you made sure I could become anything.",
+        "I remember having no trade, no thoughts, almost no self. You helped with the important one."
       ],
       "weight": 60
     },
@@ -160,7 +90,8 @@
       ],
       "lines": [
         "Your face is familiar. So is being confused, but this feels different.",
-        "I remember waking with empty hands and a head full of broken bells."
+        "I remember waking with empty hands and a head full of broken bells.",
+        "Your face is familiar. So is being confused, but this feels different."
       ],
       "weight": 60
     },
@@ -172,8 +103,12 @@
         "hostile",
         "fearful"
       ],
-      "text": "I remember you, though I still do not know what to do with the memory.",
-      "weight": 30
+      "weight": 30,
+      "lines": [
+        "I remember you, though I still do not know what to do with the memory.",
+        "I remember you, though I still do not know what to do with the memory.",
+        "I remember you, though I still do not know what to do with the memory."
+      ]
     },
     {
       "id": "unemployed_village_event_thunderstorm",
@@ -271,6 +206,288 @@
         "We are alright for now near the village square. Keep the fires fed and the paths open."
       ],
       "weight": 170
+    },
+    {
+      "id": "recruitment_followup_unemployed_safe",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
+      "weight": 38,
+      "lines": [
+        "I do not have a trade for it yet, but coming home safely feels like honest work.",
+        "I do not have a trade for it yet, but coming home safely feels like honest work.",
+        "I do not have a trade for it yet, but coming home safely feels like honest work."
+      ]
+    },
+    {
+      "id": "recruitment_followup_unemployed_injured",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "injured"
+      ],
+      "weight": 38,
+      "lines": [
+        "I was looking for direction, not bruises. Still, I made it back.",
+        "I was looking for direction, not bruises. Still, I made it back.",
+        "I was looking for direction, not bruises. Still, I made it back."
+      ]
+    },
+    {
+      "id": "recruitment_followup_unemployed_betrayed",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "betrayed"
+      ],
+      "excludes_recruitment_ocean_crossing": true,
+      "weight": 42,
+      "lines": [
+        "I followed because I thought you knew where we were going. I was wrong about more than the road.",
+        "I followed because I thought you knew where we were going. I was wrong about more than the road.",
+        "I followed because I thought you knew where we were going. I was wrong about more than the road."
+      ]
+    },
+    {
+      "id": "recruitment_followup_unemployed_boat",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "requires_recruitment_boat_trip": true,
+      "weight": 42,
+      "lines": [
+        "I learned I am not ready for a career in boating. But I survived the lesson.",
+        "I learned I am not ready for a career in boating. But I survived the lesson.",
+        "I learned I am not ready for a career in boating. But I survived the lesson."
+      ]
+    },
+    {
+      "id": "question_follow_memory_unemployed",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "requires_recruitment_memory": true,
+      "excludes_recruitment_ocean_crossing": true,
+      "weight": 3,
+      "lines": [
+        "I followed you once and learned something: I need better shoes before I choose a trade.",
+        "I followed you once and learned something: I need better shoes before I choose a trade.",
+        "I followed you once and learned something: I need better shoes before I choose a trade."
+      ]
+    },
+    {
+      "id": "question_follow_memory_unemployed_boat",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "requires_recruitment_memory": true,
+      "requires_recruitment_boat_trip": true,
+      "weight": 3,
+      "lines": [
+        "I followed you into a boat once. Not a trade, apparently, but it felt like training.",
+        "I followed you into a boat once. Not a trade, apparently, but it felt like training.",
+        "I followed you into a boat once. Not a trade, apparently, but it felt like training."
+      ]
+    },
+    {
+      "id": "gear_report_unemployed_used",
+      "request": "gear_report",
+      "option": "gear_report",
+      "show_for_babies": false,
+      "requires_gear_report_used_in_combat": true,
+      "weight": 32,
+      "lines": [
+        "It helped. Maybe being ready is a profession of its own for now.",
+        "It helped. Maybe being ready is a profession of its own for now.",
+        "It helped. Maybe being ready is a profession of its own for now."
+      ]
+    },
+    {
+      "id": "gear_report_unemployed_unused",
+      "request": "gear_report",
+      "option": "gear_report",
+      "show_for_babies": false,
+      "requires_gear_report_unused_in_combat": true,
+      "weight": 32,
+      "lines": [
+        "Unused so far. I may not have a trade, but I know preparation when I see it.",
+        "Unused so far. I may not have a trade, but I know preparation when I see it.",
+        "Unused so far. I may not have a trade, but I know preparation when I see it."
+      ]
+    },
+    {
+      "id": "village_defense_unemployed_place",
+      "request": "village_defense_report",
+      "option": "village_defense_report",
+      "show_for_babies": false,
+      "lines": [
+        "I am still finding my place here. You made sure there was a here to find it in.",
+        "I had no station, no trade, just a door to hide behind. You kept that door standing.",
+        "I do not have much here yet, but you helped keep what I might become part of.",
+        "The village still has room for me because people like you fought for it.",
+        "I had nowhere important to stand, so I watched. You stood somewhere important.",
+        "You protected more than houses. You protected chances.",
+        "I saw a future here look less certain, then you pushed back.",
+        "Maybe I will find work tomorrow because there is still a village tomorrow."
+      ],
+      "weight": 246
+    },
+    {
+      "id": "apology_unemployed_room",
+      "request": "apology",
+      "option": "apologize_for_harm",
+      "show_for_babies": false,
+      "lines": [
+        "I am trying to belong here. Please do not make that harder.",
+        "Fine. We can start again from here, but not from before.",
+        "I am still figuring out where I fit. Please do not make me fit around fear.",
+        "Fine. I accept, but I need room to believe it.",
+        "That helps. Not everything, but it helps.",
+        "I do not have a profession for judging apologies. This one sounds real enough to start.",
+        "Let us call this a beginning, not a finish.",
+        "I will give the apology a place. Give me a reason to keep it there."
+      ],
+      "weight": 234
+    },
+    {
+      "id": "combat_survival_unemployed",
+      "request": "combat_survival_report",
+      "option": "combat_survival_report",
+      "show_for_babies": false,
+      "lines": [
+        "I do not have a trade for that sort of night. I survived it anyway.",
+        "I found a corner, then a path, then home. That is more plan than I started with.",
+        "I made it back without a trade, a plan, or much dignity. Still counts.",
+        "I learned that I am very motivated by closed doors and warm lights.",
+        "Home looked like the best job I could possibly have.",
+        "I survived by following people who seemed less confused than I was.",
+        "I reached the village and decided that was enough achievement for the day.",
+        "I have no title for what I did. I lived through it."
+      ],
+      "weight": 234
+    }
+  ],
+  "messages": [
+    {
+      "id": "unemployed_gift_given_variants",
+      "key": "gift_given",
+      "lines": [
+        "Take {gift_item}. I may not have a trade, but I know how to say thanks.",
+        "Here, {gift_item}. Maybe one of us will find the perfect use for it.",
+        "Take {gift_item}. I may not have a trade, but I know how to say thanks."
+      ],
+      "weight": 48
+    },
+    {
+      "id": "unemployed_gift_advice_followup_liked_variants",
+      "key": "gift_advice_followup.liked",
+      "lines": [
+        "Good, {gift_item} worked. See? I can be useful without a workstation.",
+        "{tested_villager} liked it? Excellent. I am putting that under possible talents.",
+        "Good, {gift_item} worked. See? I can be useful without a workstation."
+      ],
+      "weight": 44
+    },
+    {
+      "id": "unemployed_gift_advice_followup_disliked_variants",
+      "key": "gift_advice_followup.disliked",
+      "lines": [
+        "Ah. Then my career in advice pauses here. Try {alternative_gift} for {gift_subject}.",
+        "{gift_item} was wrong? Let us call it research. {alternative_gift} should work better.",
+        "Ah. Then my career in advice pauses here. Try {alternative_gift} for {gift_subject}."
+      ],
+      "weight": 44
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 20,
+      "lines": [
+        "This is why nobody pays me for advice. Try {alternative_gift}.",
+        "This is why nobody pays me for advice. Try {alternative_gift}.",
+        "This is why nobody pays me for advice. Try {alternative_gift}."
+      ]
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
+      "weight": 20,
+      "lines": [
+        "You came back? Fair. My next guess is {alternative_gift}.",
+        "You came back? Fair. My next guess is {alternative_gift}.",
+        "You came back? Fair. My next guess is {alternative_gift}."
+      ]
+    }
+  ],
+  "openings": [
+    {
+      "id": "unemployed_opening",
+      "lines": [
+        "Mind the job site I have not found yet. What do you need?",
+        "Mind the job site I have not found yet. What do you need?",
+        "Mind the job site I have not found yet. What do you need?"
+      ]
+    }
+  ],
+  "closings": [
+    {
+      "id": "unemployed_closing",
+      "lines": [
+        "Back to looking useful before anyone notices, then.",
+        "Back to looking useful before anyone notices, then.",
+        "Back to looking useful before anyone notices, then."
+      ]
+    }
+  ],
+  "pacify": [
+    {
+      "id": "unemployed_pacify_success",
+      "outcomes": [
+        "success"
+      ],
+      "weight": 26,
+      "lines": [
+        "Fine. I have enough problems without carrying this one too.",
+        "Fine. I have enough problems without carrying this one too.",
+        "Fine. I have enough problems without carrying this one too."
+      ]
+    },
+    {
+      "id": "unemployed_pacify_short",
+      "outcomes": [
+        "not_enough_emeralds"
+      ],
+      "weight": 26,
+      "lines": [
+        "Even without a trade, I know that should be {emerald_cost} {emeralds}.",
+        "Even without a trade, I know that should be {emerald_cost} {emeralds}.",
+        "Even without a trade, I know that should be {emerald_cost} {emeralds}."
+      ]
+    },
+    {
+      "id": "unemployed_pacify_blocked",
+      "outcomes": [
+        "blocked_by_reputation"
+      ],
+      "weight": 26,
+      "lines": [
+        "No. I may not have work, but I still have sense.",
+        "No. I may not have work, but I still have sense.",
+        "No. I may not have work, but I still have sense."
+      ]
     }
   ]
 }

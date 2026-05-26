@@ -1,0 +1,36 @@
+{
+  "lines": [
+    {
+      "id": "default_profession_unemployed_between_jobs",
+      "request": "question",
+      "professions": [
+        "unemployed",
+        "nitwit"
+      ],
+      "show_for_babies": false,
+      "lines": [
+        "No workstation means I notice things. People underestimate the unemployed at their own peril.",
+        "Some jobs use tools. Mine seems to be hearing every rumor before lunch.",
+        "I am between callings, which is a polite way to say the village has not decided what to blame me for yet."
+      ],
+      "weight": 18
+    },
+    {
+      "id": "default_event_reputation_changed_nitwit_plainspoken",
+      "request": "village_event_report",
+      "professions": [
+        "nitwit",
+        "unemployed"
+      ],
+      "event_tags": [
+        "reputation_changed"
+      ],
+      "lines": [
+        "People are talking about you differently. I am very good at hearing that sort of thing.",
+        "Something shifted. Same street, different looks.",
+        "You changed the village's mind a little. That is harder than moving a bed."
+      ],
+      "weight": 30
+    }
+  ]
+}

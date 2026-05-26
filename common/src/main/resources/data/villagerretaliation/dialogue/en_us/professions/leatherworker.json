@@ -1,91 +1,4 @@
 {
-  "messages": [
-    {
-      "id": "leatherworker_gift_given_variants",
-      "key": "gift_given",
-      "lines": [
-        "Take {gift_item}. Good gear should travel, not gather dust.",
-        "Here, {gift_item}. It has more use with you than sitting by my cauldron."
-      ],
-      "weight": 48
-    },
-    {
-      "id": "leatherworker_gift_advice_followup_liked_variants",
-      "key": "gift_advice_followup.liked",
-      "lines": [
-        "Good. {gift_item} sat well with {tested_villager}, like softened leather.",
-        "Then the fit was comfortable. {tested_villager} liked {gift_item}."
-      ],
-      "weight": 44
-    },
-    {
-      "id": "leatherworker_gift_advice_followup_disliked_variants",
-      "key": "gift_advice_followup.disliked",
-      "lines": [
-        "Too stiff for them, then. For {gift_subject}, try {alternative_gift}.",
-        "{gift_item} rubbed wrong? Bring {alternative_gift}; better fit, less complaint."
-      ],
-      "weight": 44
-    },
-    {
-      "key": "gift_advice_followup.disliked",
-      "dispositions": [
-        "cautious",
-        "rude",
-        "hostile",
-        "fearful"
-      ],
-      "text": "That advice chafed. {alternative_gift} should sit easier.",
-      "weight": 20
-    },
-    {
-      "key": "gift_advice_followup.disliked",
-      "dispositions": [
-        "rude",
-        "hostile"
-      ],
-      "text": "You wore bad advice too long. Trade it for {alternative_gift}.",
-      "weight": 20
-    }
-  ],
-  "openings": [
-    {
-      "id": "leatherworker_opening",
-      "text": "Mind the tannery. What do you need?"
-    }
-  ],
-  "closings": [
-    {
-      "id": "leatherworker_closing",
-      "text": "Back to curing leather without wasting hide, then."
-    }
-  ],
-  "pacify": [
-    {
-      "id": "leatherworker_pacify_success",
-      "outcomes": [
-        "success"
-      ],
-      "text": "Fine. I will stitch this shut for now.",
-      "weight": 26
-    },
-    {
-      "id": "leatherworker_pacify_short",
-      "outcomes": [
-        "not_enough_emeralds"
-      ],
-      "text": "That is not enough to mend it. Bring {emerald_cost} {emeralds}.",
-      "weight": 26
-    },
-    {
-      "id": "leatherworker_pacify_blocked",
-      "outcomes": [
-        "blocked_by_reputation"
-      ],
-      "text": "No. This split runs too deep for {payment_items}.",
-      "weight": 26
-    }
-  ],
   "lines": [
     {
       "id": "leatherworker_question_stitching_variants",
@@ -113,20 +26,32 @@
     {
       "id": "leatherworker_new_greeting_tannery",
       "request": "greeting",
-      "text": "Mind the tannery. The smell is honest, at least.",
-      "weight": 26
+      "weight": 26,
+      "lines": [
+        "Mind the tannery. The smell is honest, at least.",
+        "Mind the tannery. The smell is honest, at least.",
+        "Mind the tannery. The smell is honest, at least."
+      ]
     },
     {
       "id": "leatherworker_new_joke_skin",
       "request": "joke",
-      "text": "Leather jokes need a thick skin. I keep saying that until someone laughs.",
-      "weight": 18
+      "weight": 18,
+      "lines": [
+        "Leather jokes need a thick skin. I keep saying that until someone laughs.",
+        "Leather jokes need a thick skin. I keep saying that until someone laughs.",
+        "Leather jokes need a thick skin. I keep saying that until someone laughs."
+      ]
     },
     {
       "id": "leatherworker_new_insult_split",
       "request": "insult",
-      "text": "That sentence split like cheap stitching.",
-      "weight": 18
+      "weight": 18,
+      "lines": [
+        "That sentence split like cheap stitching.",
+        "That sentence split like cheap stitching.",
+        "That sentence split like cheap stitching."
+      ]
     },
     {
       "id": "leatherworker_new_rude_work",
@@ -135,8 +60,12 @@
         "rude",
         "hostile"
       ],
-      "text": "Do not mock work that lasts longer than your manners.",
-      "weight": 30
+      "weight": 30,
+      "lines": [
+        "Do not mock work that lasts longer than your manners.",
+        "Do not mock work that lasts longer than your manners.",
+        "Do not mock work that lasts longer than your manners."
+      ]
     },
     {
       "id": "leatherworker_cured_recognition_warm",
@@ -147,7 +76,8 @@
       ],
       "lines": [
         "I remember being stitched back into myself. Your hands held the thread.",
-        "The cure left scars, but good leather can carry scars. So can I."
+        "The cure left scars, but good leather can carry scars. So can I.",
+        "I remember being stitched back into myself. Your hands held the thread."
       ],
       "weight": 60
     },
@@ -160,7 +90,8 @@
       ],
       "lines": [
         "Your face is worn into the memory, but the edges are rough.",
-        "I remember straps, shaking, and a second chance pulled tight."
+        "I remember straps, shaking, and a second chance pulled tight.",
+        "Your face is worn into the memory, but the edges are rough."
       ],
       "weight": 60
     },
@@ -172,8 +103,12 @@
         "hostile",
         "fearful"
       ],
-      "text": "I remember you, and I remember the tearing. Both are true.",
-      "weight": 30
+      "weight": 30,
+      "lines": [
+        "I remember you, and I remember the tearing. Both are true.",
+        "I remember you, and I remember the tearing. Both are true.",
+        "I remember you, and I remember the tearing. Both are true."
+      ]
     },
     {
       "id": "leatherworker_village_event_thunderstorm",
@@ -271,6 +206,312 @@
         "We are alright for now near the cauldron. Keep the fires fed and the paths open."
       ],
       "weight": 170
+    },
+    {
+      "id": "recruitment_followup_leatherworker_safe",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
+      "weight": 38,
+      "lines": [
+        "Boots dusty, soles whole. That is how I like returning.",
+        "Boots dusty, soles whole. That is how I like returning.",
+        "Boots dusty, soles whole. That is how I like returning."
+      ]
+    },
+    {
+      "id": "recruitment_followup_leatherworker_injured",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "injured"
+      ],
+      "weight": 38,
+      "lines": [
+        "I can patch leather. Patching myself is worse work.",
+        "I can patch leather. Patching myself is worse work.",
+        "I can patch leather. Patching myself is worse work."
+      ]
+    },
+    {
+      "id": "recruitment_followup_leatherworker_betrayed",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "betrayed"
+      ],
+      "weight": 42,
+      "lines": [
+        "You split trust like old hide. It will not soften quickly.",
+        "You split trust like old hide. It will not soften quickly.",
+        "You split trust like old hide. It will not soften quickly."
+      ]
+    },
+    {
+      "id": "recruitment_followup_leatherworker_boat",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "requires_recruitment_boat_trip": true,
+      "weight": 42,
+      "lines": [
+        "Boat spray is poor treatment for leather. Better than swimming, though.",
+        "Boat spray is poor treatment for leather. Better than swimming, though.",
+        "Boat spray is poor treatment for leather. Better than swimming, though."
+      ]
+    },
+    {
+      "id": "question_follow_memory_leatherworker_boat",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "requires_recruitment_memory": true,
+      "requires_recruitment_boat_trip": true,
+      "weight": 3,
+      "lines": [
+        "I still remember that boat trip. Wet leather complains longer than villagers do.",
+        "I still remember that boat trip. Wet leather complains longer than villagers do.",
+        "I still remember that boat trip. Wet leather complains longer than villagers do."
+      ]
+    },
+    {
+      "id": "question_follow_memory_leatherworker",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "requires_recruitment_memory": true,
+      "excludes_recruitment_ocean_crossing": true,
+      "weight": 3,
+      "lines": [
+        "I still think about that walk. My boots forgave you before my feet did.",
+        "I still think about that walk. My boots forgave you before my feet did.",
+        "I still think about that walk. My boots forgave you before my feet did."
+      ]
+    },
+    {
+      "id": "question_follow_memory_leatherworker_ocean_swim",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "requires_recruitment_memory": true,
+      "requires_recruitment_swim_trip": true,
+      "weight": 4,
+      "lines": [
+        "Ocean swimming is terrible for leather and worse for my mood.",
+        "Ocean swimming is terrible for leather and worse for my mood.",
+        "Ocean swimming is terrible for leather and worse for my mood."
+      ]
+    },
+    {
+      "id": "gear_report_leatherworker_used",
+      "request": "gear_report",
+      "option": "gear_report",
+      "show_for_babies": false,
+      "requires_gear_report_used_in_combat": true,
+      "weight": 32,
+      "lines": [
+        "It flexed where it should and held where it had to. Good work saves skin.",
+        "It flexed where it should and held where it had to. Good work saves skin.",
+        "It flexed where it should and held where it had to. Good work saves skin."
+      ]
+    },
+    {
+      "id": "gear_report_leatherworker_unused",
+      "request": "gear_report",
+      "option": "gear_report",
+      "show_for_babies": false,
+      "requires_gear_report_unused_in_combat": true,
+      "weight": 32,
+      "lines": [
+        "No scuffs yet. I appreciate gear that does not rush to prove itself.",
+        "No scuffs yet. I appreciate gear that does not rush to prove itself.",
+        "No scuffs yet. I appreciate gear that does not rush to prove itself."
+      ]
+    },
+    {
+      "id": "village_defense_leatherworker_straps",
+      "request": "village_defense_report",
+      "option": "village_defense_report",
+      "show_for_babies": false,
+      "lines": [
+        "A few straps snapped and a few nerves did too, but the village held.",
+        "Leather remembers every cut. So do people. This one may be remembered kindly.",
+        "You helped keep more than roofs intact. People held together because of it.",
+        "The village came through worn, but not torn apart.",
+        "I saw courage stretched tight and not snapping. Yours included.",
+        "Raiders test every weak point. You became a strong one.",
+        "I can repair gear. You helped spare things that cannot be repaired as easily.",
+        "The doors, straps, and nerves all held better because you fought."
+      ],
+      "weight": 246
+    },
+    {
+      "id": "apology_leatherworker_stitch",
+      "request": "apology",
+      "option": "apologize_for_harm",
+      "show_for_babies": false,
+      "lines": [
+        "A clean stitch still leaves a seam. I accept the stitch. I remember the cut.",
+        "Hard things can soften with work. Start there.",
+        "Trust is not leather, but it still stretches thin when treated badly.",
+        "Fine. Let us see whether your next touch is gentler.",
+        "You made a tear. The apology is a needle, not the whole repair.",
+        "I will accept the first stitch. Keep sewing.",
+        "Rough handling leaves marks. I heard you admit that.",
+        "Do not pull at a mending place before it has strength."
+      ],
+      "weight": 234
+    },
+    {
+      "id": "combat_survival_leatherworker",
+      "request": "combat_survival_report",
+      "option": "combat_survival_report",
+      "show_for_babies": false,
+      "lines": [
+        "Scratches, scuffs, and one strap I do not trust anymore. Nothing I cannot mend.",
+        "Wore half the sole off one boot getting back. Worth it.",
+        "My boots earned every scuff getting back here.",
+        "I will be stitching straps until sunrise, but I am here to stitch them.",
+        "The night pulled hard. Good seams held.",
+        "I came home with scratches, not silence. I prefer scratches.",
+        "One sole nearly split and my courage nearly followed. Both held.",
+        "I can mend the gear. The shaking may take longer."
+      ],
+      "weight": 234
+    },
+    {
+      "id": "default_profession_leatherworker_weatherproof",
+      "request": "question",
+      "show_for_babies": false,
+      "lines": [
+        "Leather takes the shape of use. So do people, if the days are rough enough.",
+        "A good pair of boots is not glamorous. Neither is arriving alive.",
+        "Rain, snow, mud, fear. I make straps for all the things that try to loosen."
+      ],
+      "weight": 18
+    }
+  ],
+  "messages": [
+    {
+      "id": "leatherworker_gift_given_variants",
+      "key": "gift_given",
+      "lines": [
+        "Take {gift_item}. Good gear should travel, not gather dust.",
+        "Here, {gift_item}. It has more use with you than sitting by my cauldron.",
+        "Take {gift_item}. Good gear should travel, not gather dust."
+      ],
+      "weight": 48
+    },
+    {
+      "id": "leatherworker_gift_advice_followup_liked_variants",
+      "key": "gift_advice_followup.liked",
+      "lines": [
+        "Good. {gift_item} sat well with {tested_villager}, like softened leather.",
+        "Then the fit was comfortable. {tested_villager} liked {gift_item}.",
+        "Good. {gift_item} sat well with {tested_villager}, like softened leather."
+      ],
+      "weight": 44
+    },
+    {
+      "id": "leatherworker_gift_advice_followup_disliked_variants",
+      "key": "gift_advice_followup.disliked",
+      "lines": [
+        "Too stiff for them, then. For {gift_subject}, try {alternative_gift}.",
+        "{gift_item} rubbed wrong? Bring {alternative_gift}; better fit, less complaint.",
+        "Too stiff for them, then. For {gift_subject}, try {alternative_gift}."
+      ],
+      "weight": 44
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 20,
+      "lines": [
+        "That advice chafed. {alternative_gift} should sit easier.",
+        "That advice chafed. {alternative_gift} should sit easier.",
+        "That advice chafed. {alternative_gift} should sit easier."
+      ]
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
+      "weight": 20,
+      "lines": [
+        "You wore bad advice too long. Trade it for {alternative_gift}.",
+        "You wore bad advice too long. Trade it for {alternative_gift}.",
+        "You wore bad advice too long. Trade it for {alternative_gift}."
+      ]
+    }
+  ],
+  "openings": [
+    {
+      "id": "leatherworker_opening",
+      "lines": [
+        "Mind the tannery. What do you need?",
+        "Mind the tannery. What do you need?",
+        "Mind the tannery. What do you need?"
+      ]
+    }
+  ],
+  "closings": [
+    {
+      "id": "leatherworker_closing",
+      "lines": [
+        "Back to curing leather without wasting hide, then.",
+        "Back to curing leather without wasting hide, then.",
+        "Back to curing leather without wasting hide, then."
+      ]
+    }
+  ],
+  "pacify": [
+    {
+      "id": "leatherworker_pacify_success",
+      "outcomes": [
+        "success"
+      ],
+      "weight": 26,
+      "lines": [
+        "Fine. I will stitch this shut for now.",
+        "Fine. I will stitch this shut for now.",
+        "Fine. I will stitch this shut for now."
+      ]
+    },
+    {
+      "id": "leatherworker_pacify_short",
+      "outcomes": [
+        "not_enough_emeralds"
+      ],
+      "weight": 26,
+      "lines": [
+        "That is not enough to mend it. Bring {emerald_cost} {emeralds}.",
+        "That is not enough to mend it. Bring {emerald_cost} {emeralds}.",
+        "That is not enough to mend it. Bring {emerald_cost} {emeralds}."
+      ]
+    },
+    {
+      "id": "leatherworker_pacify_blocked",
+      "outcomes": [
+        "blocked_by_reputation"
+      ],
+      "weight": 26,
+      "lines": [
+        "No. This split runs too deep for {payment_items}.",
+        "No. This split runs too deep for {payment_items}.",
+        "No. This split runs too deep for {payment_items}."
+      ]
     }
   ]
 }

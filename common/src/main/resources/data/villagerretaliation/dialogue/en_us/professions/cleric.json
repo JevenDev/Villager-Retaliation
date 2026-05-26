@@ -1,92 +1,4 @@
 {
-  "messages": [
-    {
-      "id": "cleric_gift_given_variants",
-      "key": "gift_given",
-      "lines": [
-        "Take {gift_item}. May it keep trouble at a respectful distance.",
-        "Here, {gift_item}. Some blessings are practical enough to fit in a hand."
-      ],
-      "weight": 48
-    },
-    {
-      "id": "cleric_gift_advice_followup_liked_variants",
-      "key": "gift_advice_followup.liked",
-      "lines": [
-        "Good. {tested_villager} received {gift_item} with the right spirit.",
-        "Then the omen was clear. {gift_item} carried kindness where you took it."
-      ],
-      "weight": 44
-    },
-    {
-      "id": "cleric_gift_advice_followup_disliked_variants",
-      "key": "gift_advice_followup.disliked",
-      "lines": [
-        "Then I read the sign poorly. Bring {alternative_gift} to {gift_subject}; it should be received better.",
-        "Set {gift_item} aside for that soul. {alternative_gift} is the gentler offering."
-      ],
-      "weight": 44
-    },
-    {
-      "key": "gift_advice_followup.disliked",
-      "dispositions": [
-        "cautious",
-        "rude",
-        "hostile",
-        "fearful"
-      ],
-      "text": "Not every sign is kind. Offer {alternative_gift} next time.",
-      "weight": 20
-    },
-    {
-      "key": "gift_advice_followup.disliked",
-      "dispositions": [
-        "rude",
-        "hostile",
-        "fearful"
-      ],
-      "text": "If {gift_item} troubled them, perhaps that was the lesson. {alternative_gift} will be calmer.",
-      "weight": 20
-    }
-  ],
-  "openings": [
-    {
-      "id": "cleric_opening",
-      "text": "Mind the brewing stand. What do you need?"
-    }
-  ],
-  "closings": [
-    {
-      "id": "cleric_closing",
-      "text": "Back to mixing remedies and prayers, then."
-    }
-  ],
-  "pacify": [
-    {
-      "id": "cleric_pacify_success",
-      "outcomes": [
-        "success"
-      ],
-      "text": "Fine. I will breathe first and judge second.",
-      "weight": 26
-    },
-    {
-      "id": "cleric_pacify_short",
-      "outcomes": [
-        "not_enough_emeralds"
-      ],
-      "text": "A remedy needs the full dose. Bring {emerald_cost} {emeralds}.",
-      "weight": 26
-    },
-    {
-      "id": "cleric_pacify_blocked",
-      "outcomes": [
-        "blocked_by_reputation"
-      ],
-      "text": "No. This wound is not ready to close.",
-      "weight": 26
-    }
-  ],
   "lines": [
     {
       "id": "cleric_question_remedies_variants",
@@ -114,20 +26,32 @@
     {
       "id": "cleric_new_greeting_bottles",
       "request": "greeting",
-      "text": "Mind the bottles. Some are medicine, some are mistakes I have not named yet.",
-      "weight": 26
+      "weight": 26,
+      "lines": [
+        "Mind the bottles. Some are medicine, some are mistakes I have not named yet.",
+        "Mind the bottles. Some are medicine, some are mistakes I have not named yet.",
+        "Mind the bottles. Some are medicine, some are mistakes I have not named yet."
+      ]
     },
     {
       "id": "cleric_new_joke_bitter",
       "request": "joke",
-      "text": "A cleric joke is like medicine: if it tastes pleasant, check it twice.",
-      "weight": 18
+      "weight": 18,
+      "lines": [
+        "A cleric joke is like medicine: if it tastes pleasant, check it twice.",
+        "A cleric joke is like medicine: if it tastes pleasant, check it twice.",
+        "A cleric joke is like medicine: if it tastes pleasant, check it twice."
+      ]
     },
     {
       "id": "cleric_new_insult_empty",
       "request": "insult",
-      "text": "That was an empty bottle of a thought.",
-      "weight": 18
+      "weight": 18,
+      "lines": [
+        "That was an empty bottle of a thought.",
+        "That was an empty bottle of a thought.",
+        "That was an empty bottle of a thought."
+      ]
     },
     {
       "id": "cleric_new_fearful_calm",
@@ -136,8 +60,12 @@
         "fearful",
         "cautious"
       ],
-      "text": "Speak gently. I have already heard enough harsh things today.",
-      "weight": 30
+      "weight": 30,
+      "lines": [
+        "Speak gently. I have already heard enough harsh things today.",
+        "Speak gently. I have already heard enough harsh things today.",
+        "Speak gently. I have already heard enough harsh things today."
+      ]
     },
     {
       "id": "cleric_cured_recognition_warm",
@@ -148,7 +76,8 @@
       ],
       "lines": [
         "I remember the cure like a bell under water. You were there when it rang clear.",
-        "Whatever mercy found me, it came through your hands."
+        "Whatever mercy found me, it came through your hands.",
+        "I remember the cure like a bell under water. You were there when it rang clear."
       ],
       "weight": 60
     },
@@ -161,7 +90,8 @@
       ],
       "lines": [
         "My memory kneels and trembles. I know you, but not cleanly.",
-        "I remember weakness, bitterness, gold, and then breath. The rest is prayer smoke."
+        "I remember weakness, bitterness, gold, and then breath. The rest is prayer smoke.",
+        "My memory kneels and trembles. I know you, but not cleanly."
       ],
       "weight": 60
     },
@@ -173,8 +103,12 @@
         "hostile",
         "fearful"
       ],
-      "text": "I remember you from the edge of a curse. Forgive me if my thanks sounds afraid.",
-      "weight": 30
+      "weight": 30,
+      "lines": [
+        "I remember you from the edge of a curse. Forgive me if my thanks sounds afraid.",
+        "I remember you from the edge of a curse. Forgive me if my thanks sounds afraid.",
+        "I remember you from the edge of a curse. Forgive me if my thanks sounds afraid."
+      ]
     },
     {
       "id": "cleric_village_event_thunderstorm",
@@ -272,6 +206,316 @@
         "We are alright for now near the brewing stand. Keep the fires fed and the paths open."
       ],
       "weight": 170
+    },
+    {
+      "id": "recruitment_followup_cleric_safe",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
+      "weight": 38,
+      "lines": [
+        "I returned with breath steady and prayers unused. That is a blessing I will not waste.",
+        "I returned with breath steady and prayers unused. That is a blessing I will not waste.",
+        "I returned with breath steady and prayers unused. That is a blessing I will not waste."
+      ]
+    },
+    {
+      "id": "recruitment_followup_cleric_injured",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "injured"
+      ],
+      "weight": 38,
+      "lines": [
+        "I can tend the hurt, but I would rather not collect it on the way home.",
+        "I can tend the hurt, but I would rather not collect it on the way home.",
+        "I can tend the hurt, but I would rather not collect it on the way home."
+      ]
+    },
+    {
+      "id": "recruitment_followup_cleric_betrayed",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "betrayed"
+      ],
+      "weight": 42,
+      "lines": [
+        "A wound from an enemy is simple. A wound from a guide asks harder questions.",
+        "A wound from an enemy is simple. A wound from a guide asks harder questions.",
+        "A wound from an enemy is simple. A wound from a guide asks harder questions."
+      ]
+    },
+    {
+      "id": "recruitment_followup_cleric_boat",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "requires_recruitment_boat_trip": true,
+      "weight": 42,
+      "lines": [
+        "The boat floated. My nerves, less so. Still, I am home.",
+        "The boat floated. My nerves, less so. Still, I am home.",
+        "The boat floated. My nerves, less so. Still, I am home."
+      ]
+    },
+    {
+      "id": "question_follow_memory_cleric_betrayed",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "requires_recruitment_memory": true,
+      "recruitment_memory_scenarios": [
+        "betrayed"
+      ],
+      "weight": 4,
+      "lines": [
+        "I have prayed about that time I followed you and you struck me. The bruise answered first.",
+        "I have prayed about that time I followed you and you struck me. The bruise answered first.",
+        "I have prayed about that time I followed you and you struck me. The bruise answered first."
+      ]
+    },
+    {
+      "id": "question_follow_memory_cleric_boat",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "requires_recruitment_memory": true,
+      "requires_recruitment_boat_trip": true,
+      "weight": 3,
+      "lines": [
+        "I said a quiet prayer during that boat ride. Mostly for balance.",
+        "I said a quiet prayer during that boat ride. Mostly for balance.",
+        "I said a quiet prayer during that boat ride. Mostly for balance."
+      ]
+    },
+    {
+      "id": "gear_report_cleric_used",
+      "request": "gear_report",
+      "option": "gear_report",
+      "show_for_babies": false,
+      "requires_gear_report_used_in_combat": true,
+      "weight": 32,
+      "lines": [
+        "It bought me the breath I needed. Sometimes protection is its own blessing.",
+        "It bought me the breath I needed. Sometimes protection is its own blessing.",
+        "It bought me the breath I needed. Sometimes protection is its own blessing."
+      ]
+    },
+    {
+      "id": "gear_report_cleric_unused",
+      "request": "gear_report",
+      "option": "gear_report",
+      "show_for_babies": false,
+      "requires_gear_report_unused_in_combat": true,
+      "weight": 32,
+      "lines": [
+        "I have not needed it. I will still be grateful before I am desperate.",
+        "I have not needed it. I will still be grateful before I am desperate.",
+        "I have not needed it. I will still be grateful before I am desperate."
+      ]
+    },
+    {
+      "id": "village_defense_cleric_prayer",
+      "request": "village_defense_report",
+      "option": "village_defense_report",
+      "show_for_babies": false,
+      "lines": [
+        "I prayed for courage in the village. It seems some of it found you.",
+        "Every life still here is a quieter bell than the one that rang. Thank you.",
+        "I prayed for protection and saw someone answer with action.",
+        "You gave fear less room inside these walls.",
+        "The bell called for help, and you came before the echo faded.",
+        "There are blessings spoken and blessings done. Yours was done.",
+        "I will remember the courage, even while I tend the frightened.",
+        "The village is quieter because you helped end the noise."
+      ],
+      "weight": 246
+    },
+    {
+      "id": "apology_cleric",
+      "request": "apology",
+      "option": "apologize_for_harm",
+      "show_for_babies": false,
+      "lines": [
+        "Remorse is useful only if it changes the next choice. I hope yours does.",
+        "Repentance is not a speech. It is a repair repeated until trust returns.",
+        "Contrition is a door. Walk through it, do not stand in front of it.",
+        "I accept the words. Make the next act worthy of them.",
+        "Mercy is not forgetfulness. It is a chance to choose better.",
+        "A wounded trust heals slowly. Still, healing can begin here.",
+        "If remorse has roots, we will see fruit.",
+        "I will hold this apology with care. Do not make it lonely."
+      ],
+      "weight": 234
+    },
+    {
+      "id": "combat_survival_cleric",
+      "request": "combat_survival_report",
+      "option": "combat_survival_report",
+      "show_for_babies": false,
+      "lines": [
+        "A little faith, a little medicine, and a very fast prayer. Yes, I made it back.",
+        "I kept one candle burning and one foot moving. Somehow both worked.",
+        "I returned with a prayer half-finished and gratitude fully earned.",
+        "My hands shook too much for the bell afterward, but I was alive to hear it.",
+        "There are nights that make faith very practical. I survived one.",
+        "I kept repeating the same blessing until my feet reached home.",
+        "The altar looked brighter after that road back.",
+        "I made it, though my voice may need a quiet hour."
+      ],
+      "weight": 234
+    },
+    {
+      "id": "container_theft_memory_village_profession_cleric_1",
+      "request": "question",
+      "show_for_babies": false,
+      "player_event_tags": [
+        "player_container_theft"
+      ],
+      "requires_container_theft_from_other": true,
+      "weight": 34,
+      "lines": [
+        "{theft_witness} says you took {stolen_stack}. Confession is cleaner when it arrives before proof.",
+        "{theft_witness} says you took {stolen_stack}. Confession is cleaner when it arrives before proof.",
+        "{theft_witness} says you took {stolen_stack}. Confession is cleaner when it arrives before proof."
+      ]
+    },
+    {
+      "id": "default_profession_cleric_listening",
+      "request": "question",
+      "show_for_babies": false,
+      "lines": [
+        "People think brewing is the work. Mostly it is listening until the right bottle seems obvious.",
+        "Some wounds want a potion. Some want a witness.",
+        "The stand bubbles, the village mutters, and I try to tell one warning from the other."
+      ],
+      "weight": 18
+    }
+  ],
+  "messages": [
+    {
+      "id": "cleric_gift_given_variants",
+      "key": "gift_given",
+      "lines": [
+        "Take {gift_item}. May it keep trouble at a respectful distance.",
+        "Here, {gift_item}. Some blessings are practical enough to fit in a hand.",
+        "Take {gift_item}. May it keep trouble at a respectful distance."
+      ],
+      "weight": 48
+    },
+    {
+      "id": "cleric_gift_advice_followup_liked_variants",
+      "key": "gift_advice_followup.liked",
+      "lines": [
+        "Good. {tested_villager} received {gift_item} with the right spirit.",
+        "Then the omen was clear. {gift_item} carried kindness where you took it.",
+        "Good. {tested_villager} received {gift_item} with the right spirit."
+      ],
+      "weight": 44
+    },
+    {
+      "id": "cleric_gift_advice_followup_disliked_variants",
+      "key": "gift_advice_followup.disliked",
+      "lines": [
+        "Then I read the sign poorly. Bring {alternative_gift} to {gift_subject}; it should be received better.",
+        "Set {gift_item} aside for that soul. {alternative_gift} is the gentler offering.",
+        "Then I read the sign poorly. Bring {alternative_gift} to {gift_subject}; it should be received better."
+      ],
+      "weight": 44
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 20,
+      "lines": [
+        "Not every sign is kind. Offer {alternative_gift} next time.",
+        "Not every sign is kind. Offer {alternative_gift} next time.",
+        "Not every sign is kind. Offer {alternative_gift} next time."
+      ]
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "dispositions": [
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 20,
+      "lines": [
+        "If {gift_item} troubled them, perhaps that was the lesson. {alternative_gift} will be calmer.",
+        "If {gift_item} troubled them, perhaps that was the lesson. {alternative_gift} will be calmer.",
+        "If {gift_item} troubled them, perhaps that was the lesson. {alternative_gift} will be calmer."
+      ]
+    }
+  ],
+  "openings": [
+    {
+      "id": "cleric_opening",
+      "lines": [
+        "Mind the brewing stand. What do you need?",
+        "Mind the brewing stand. What do you need?",
+        "Mind the brewing stand. What do you need?"
+      ]
+    }
+  ],
+  "closings": [
+    {
+      "id": "cleric_closing",
+      "lines": [
+        "Back to mixing remedies and prayers, then.",
+        "Back to mixing remedies and prayers, then.",
+        "Back to mixing remedies and prayers, then."
+      ]
+    }
+  ],
+  "pacify": [
+    {
+      "id": "cleric_pacify_success",
+      "outcomes": [
+        "success"
+      ],
+      "weight": 26,
+      "lines": [
+        "Fine. I will breathe first and judge second.",
+        "Fine. I will breathe first and judge second.",
+        "Fine. I will breathe first and judge second."
+      ]
+    },
+    {
+      "id": "cleric_pacify_short",
+      "outcomes": [
+        "not_enough_emeralds"
+      ],
+      "weight": 26,
+      "lines": [
+        "A remedy needs the full dose. Bring {emerald_cost} {emeralds}.",
+        "A remedy needs the full dose. Bring {emerald_cost} {emeralds}.",
+        "A remedy needs the full dose. Bring {emerald_cost} {emeralds}."
+      ]
+    },
+    {
+      "id": "cleric_pacify_blocked",
+      "outcomes": [
+        "blocked_by_reputation"
+      ],
+      "weight": 26,
+      "lines": [
+        "No. This wound is not ready to close.",
+        "No. This wound is not ready to close.",
+        "No. This wound is not ready to close."
+      ]
     }
   ]
 }

@@ -1,0 +1,280 @@
+{
+  "lines": [
+    {
+      "id": "default_combat_survival_homekeepers_aftershock",
+      "request": "combat_survival_report",
+      "professions": [
+        "farmer",
+        "fisherman",
+        "shepherd",
+        "butcher"
+      ],
+      "show_for_babies": false,
+      "lines": [
+        "I came back to my work. That feels smaller than victory and better than a monument.",
+        "The village sounds normal again, which is how I know I am still shaking.",
+        "I survived. Now I get to do chores, which is a strange kind of mercy."
+      ],
+      "weight": 26
+    },
+    {
+      "id": "default_gear_report_practical_workers",
+      "request": "gear_report",
+      "professions": [
+        "farmer",
+        "fisherman",
+        "leatherworker",
+        "mason",
+        "shepherd"
+      ],
+      "show_for_babies": false,
+      "lines": [
+        "It fits into ordinary work better than I expected. That is a compliment.",
+        "Good gear does not feel heroic. It feels like one less thing waiting to go wrong.",
+        "I kept it close. Around here, useful gifts become habits."
+      ],
+      "weight": 28
+    },
+    {
+      "id": "default_village_defense_civic_gratitude",
+      "request": "village_defense_report",
+      "professions": [
+        "farmer",
+        "butcher",
+        "fisherman",
+        "shepherd",
+        "mason"
+      ],
+      "show_for_babies": false,
+      "player_event_tags": [
+        "player_defended_village",
+        "player_defended_raid"
+      ],
+      "lines": [
+        "You helped keep tomorrow ordinary. That is not a small thing.",
+        "The village still has chores because you helped it survive long enough to need them.",
+        "I heard the fighting. Then I heard doors opening again. Thank you."
+      ],
+      "weight": 34
+    },
+    {
+      "id": "default_cured_recognition_working_hands",
+      "request": "cured_recognition",
+      "professions": [
+        "farmer",
+        "fisherman",
+        "butcher",
+        "mason",
+        "leatherworker"
+      ],
+      "show_for_babies": false,
+      "lines": [
+        "I woke up wanting to work again. That is how I knew I was back.",
+        "My hands remembered their trade before my thoughts stopped trembling.",
+        "You gave me a morning I did not think I would see."
+      ],
+      "weight": 30
+    },
+    {
+      "id": "default_apology_craft_trades",
+      "request": "apology",
+      "professions": [
+        "armorer",
+        "toolsmith",
+        "weaponsmith",
+        "mason",
+        "leatherworker"
+      ],
+      "show_for_babies": false,
+      "lines": [
+        "An apology is a repair. Do not hand me a tool you will not use.",
+        "I can respect a crack that admits it is a crack. Now prove it will not spread.",
+        "Words are the first patch. Behavior is the stitching."
+      ],
+      "weight": 30
+    },
+    {
+      "id": "default_apology_household_trades",
+      "request": "apology",
+      "professions": [
+        "farmer",
+        "butcher",
+        "fisherman",
+        "shepherd",
+        "cleric",
+        "librarian"
+      ],
+      "show_for_babies": false,
+      "lines": [
+        "I hear you. The village will need more than hearing.",
+        "Apologies are seeds. We will see what grows.",
+        "I want to believe you. Help make that less foolish."
+      ],
+      "weight": 30
+    },
+    {
+      "id": "default_event_baby_born_tenders",
+      "request": "village_event_report",
+      "professions": [
+        "farmer",
+        "shepherd",
+        "cleric"
+      ],
+      "event_tags": [
+        "baby_born"
+      ],
+      "lines": [
+        "A new little voice joined us. Even the work sounded softer for a while.",
+        "There is a baby in the village now. Everyone pretends not to smile and fails.",
+        "New life makes the whole place count its blessings out loud."
+      ],
+      "weight": 34
+    },
+    {
+      "id": "default_event_night_attack_watchers",
+      "request": "village_event_report",
+      "professions": [
+        "farmer",
+        "fletcher",
+        "cleric",
+        "leatherworker"
+      ],
+      "event_tags": [
+        "night_attack"
+      ],
+      "lines": [
+        "Night came too close. We will be checking latches before sunset for a while.",
+        "The dark tested the village and found us awake enough.",
+        "I heard the thing outside before I saw it. That is the part sleep remembers."
+      ],
+      "weight": 36
+    },
+    {
+      "id": "default_event_player_defended_village_profession_gratitude",
+      "request": "village_event_report",
+      "professions": [
+        "butcher",
+        "fisherman",
+        "shepherd",
+        "farmer",
+        "mason"
+      ],
+      "event_tags": [
+        "player_defended_village"
+      ],
+      "player_event_tags": [
+        "player_defended_village"
+      ],
+      "lines": [
+        "You helped chase danger from our doors. Ordinary work feels possible again.",
+        "The village saw you stand with us. That sort of thing travels faster than gossip.",
+        "Because of you, today still has chores instead of funerals."
+      ],
+      "weight": 40
+    },
+    {
+      "id": "default_event_player_defended_raid_profession_gratitude",
+      "request": "village_event_report",
+      "professions": [
+        "armorer",
+        "weaponsmith",
+        "fletcher",
+        "cleric"
+      ],
+      "event_tags": [
+        "player_defended_raid"
+      ],
+      "player_event_tags": [
+        "player_defended_raid"
+      ],
+      "lines": [
+        "You fought during the raid. Some debts are too large for emeralds.",
+        "I saw you answer the bell. That matters here.",
+        "When raiders came, you did not treat us like someone else's problem."
+      ],
+      "weight": 42
+    },
+    {
+      "id": "default_event_village_fire_practical_response",
+      "request": "village_event_report",
+      "professions": [
+        "mason",
+        "leatherworker",
+        "farmer",
+        "fisherman"
+      ],
+      "event_tags": [
+        "village_fire"
+      ],
+      "lines": [
+        "Fire makes every bucket feel too small until the smoke thins.",
+        "We checked walls, roofs, hands, and tempers. Fire leaves marks on all of them.",
+        "A village learns the value of water very quickly when flame gets ideas."
+      ],
+      "weight": 36
+    },
+    {
+      "id": "default_event_storm_trade_responses",
+      "request": "village_event_report",
+      "professions": [
+        "farmer",
+        "fisherman",
+        "shepherd",
+        "cartographer"
+      ],
+      "event_tags": [
+        "thunderstorm",
+        "sandstorm",
+        "snowstorm"
+      ],
+      "lines": [
+        "The weather had teeth today. We kept close to doors and counted heads twice.",
+        "Storms make the village smaller for a while. Smaller can be safer.",
+        "I do not mind weather with manners. That was not weather with manners."
+      ],
+      "weight": 32
+    },
+    {
+      "id": "default_event_container_theft_working_trades",
+      "request": "village_event_report",
+      "professions": [
+        "farmer",
+        "butcher",
+        "toolsmith",
+        "librarian",
+        "mason"
+      ],
+      "event_tags": [
+        "player_container_theft"
+      ],
+      "player_event_tags": [
+        "player_container_theft"
+      ],
+      "lines": [
+        "Taking from a village chest is not clever. It is loud in a way locks cannot show.",
+        "We remember what was taken, and we remember who made us count.",
+        "Trust is stored in ordinary places too. Chests, mostly."
+      ],
+      "weight": 42
+    },
+    {
+      "id": "default_event_villager_attacked_shaken",
+      "request": "village_event_report",
+      "professions": [
+        "cleric",
+        "shepherd",
+        "mason",
+        "fletcher"
+      ],
+      "event_tags": [
+        "villager_attacked"
+      ],
+      "lines": [
+        "Someone was hurt. The village has been listening differently since.",
+        "After an attack, even familiar footsteps need a moment to become familiar again.",
+        "We are still here, but the day is not as soft as it was."
+      ],
+      "weight": 36
+    }
+  ]
+}

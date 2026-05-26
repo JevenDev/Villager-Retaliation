@@ -82,7 +82,7 @@
       "requires_line_of_sight": true,
       "lines": [
         "Help! {target} is at the village!",
-        "Bell! Ring the bell! {target} is here!",
+        "Bell! Ring the bell! {target_article} is here!",
         "I need help over here!",
         "Someone armed, to me!",
         "Guards! Anyone! {target} is too close!",

@@ -1,0 +1,38 @@
+{
+  "lines": [
+    {
+      "id": "default_recruitment_followup_travel_trades",
+      "request": "recruitment_followup",
+      "professions": [
+        "cartographer",
+        "fisherman",
+        "fletcher",
+        "leatherworker"
+      ],
+      "show_for_babies": false,
+      "lines": [
+        "The trip made the village feel larger and home feel more exact.",
+        "I learned which roads look safe from here and which ones only pretend.",
+        "Next time, I pack lighter, listen faster, and trust the quiet less."
+      ],
+      "weight": 30
+    },
+    {
+      "id": "default_recruitment_followup_home_trades",
+      "request": "recruitment_followup",
+      "professions": [
+        "farmer",
+        "librarian",
+        "mason",
+        "cleric"
+      ],
+      "show_for_babies": false,
+      "lines": [
+        "Going out there reminded me why doors matter.",
+        "I brought back more than sore feet. I brought back a sharper idea of home.",
+        "A village looks different after you have had to find your way back to it."
+      ],
+      "weight": 30
+    }
+  ]
+}

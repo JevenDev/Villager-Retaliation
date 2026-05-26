@@ -546,6 +546,7 @@ public final class VillagerAmbientIndicatorService {
         String targetKind = target.getType().getDescription().getString().toLowerCase(Locale.ROOT);
         return VillagerNotifications.replacements(
                 "target", targetName,
+                "target_article", VillagerInteractionTextUtil.withIndefiniteArticle(targetName),
                 "target_name", targetName,
                 "target_kind", targetKind,
                 "target_type", targetTypeId == null ? "" : targetTypeId.toString(),

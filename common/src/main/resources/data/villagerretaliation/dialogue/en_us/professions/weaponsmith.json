@@ -1,53 +1,4 @@
 {
-  "messages": [
-    {
-      "id": "weaponsmith_gift_given_variants",
-      "key": "gift_given",
-      "lines": [
-        "Take {gift_item}. Better to carry thanks before you need steel.",
-        "Here, {gift_item}. I trust you to use it with a cooler head than most."
-      ],
-      "weight": 48
-    },
-    {
-      "id": "weaponsmith_gift_advice_followup_liked_variants",
-      "key": "gift_advice_followup.liked",
-      "lines": [
-        "Good. {gift_item} struck true with {tested_villager}.",
-        "Then the advice kept its edge. {tested_villager} liked {gift_item}."
-      ],
-      "weight": 44
-    },
-    {
-      "id": "weaponsmith_gift_advice_followup_disliked_variants",
-      "key": "gift_advice_followup.disliked",
-      "lines": [
-        "That blade was poorly balanced. For {gift_subject}, try {alternative_gift}.",
-        "{gift_item} missed clean? Bring {alternative_gift}; better weight for the hand."
-      ],
-      "weight": 44
-    },
-    {
-      "key": "gift_advice_followup.disliked",
-      "dispositions": [
-        "cautious",
-        "rude",
-        "hostile",
-        "fearful"
-      ],
-      "text": "That advice had a dull edge. Try {alternative_gift}; it should bite better.",
-      "weight": 20
-    },
-    {
-      "key": "gift_advice_followup.disliked",
-      "dispositions": [
-        "rude",
-        "hostile"
-      ],
-      "text": "You swung with what I handed you. Next time, choose {alternative_gift}.",
-      "weight": 20
-    }
-  ],
   "options": [
     {
       "id": "weaponsmith_inspect_weapon",
@@ -62,44 +13,6 @@
         "main_hand"
       ],
       "order": 28
-    }
-  ],
-  "openings": [
-    {
-      "id": "weaponsmith_opening",
-      "text": "Mind the grindstone. What do you need?"
-    }
-  ],
-  "closings": [
-    {
-      "id": "weaponsmith_closing",
-      "text": "Back to keeping blades honest, then."
-    }
-  ],
-  "pacify": [
-    {
-      "id": "weaponsmith_pacify_success",
-      "outcomes": [
-        "success"
-      ],
-      "text": "Fine. I will let the blade rest, but do not test me again.",
-      "weight": 26
-    },
-    {
-      "id": "weaponsmith_pacify_short",
-      "outcomes": [
-        "not_enough_emeralds"
-      ],
-      "text": "That offer is dull. Bring {emerald_cost} {emeralds}.",
-      "weight": 26
-    },
-    {
-      "id": "weaponsmith_pacify_blocked",
-      "outcomes": [
-        "blocked_by_reputation"
-      ],
-      "text": "No. Some threats do not get to buy their way closer.",
-      "weight": 26
     }
   ],
   "lines": [
@@ -130,7 +43,8 @@
       "min_player_item_durability_percent": 60,
       "lines": [
         "{held_item} has {held_item_durability} durability left out of {held_item_max_durability}. Plenty of life in that edge.",
-        "{held_item} is sitting at {held_item_durability_percent}% durability. Keep it clean and it will answer when called."
+        "{held_item} is sitting at {held_item_durability_percent}% durability. Keep it clean and it will answer when called.",
+        "{held_item} has {held_item_durability} durability left out of {held_item_max_durability}. Plenty of life in that edge."
       ],
       "weight": 80
     },
@@ -149,7 +63,8 @@
       "max_player_item_durability_percent": 59,
       "lines": [
         "{held_item} has {held_item_durability} durability left. Serviceable, but do not mistake serviceable for ready.",
-        "{held_item} is down to {held_item_durability_percent}%. It will hold, but I would mend it before trusting it with trouble."
+        "{held_item} is down to {held_item_durability_percent}%. It will hold, but I would mend it before trusting it with trouble.",
+        "{held_item} has {held_item_durability} durability left. Serviceable, but do not mistake serviceable for ready."
       ],
       "weight": 80
     },
@@ -167,7 +82,8 @@
       "max_player_item_durability_percent": 24,
       "lines": [
         "{held_item} has only {held_item_durability} durability left. That is a warning, not a weapon.",
-        "{held_item} is at {held_item_durability_percent}%. Mend it before it chooses the worst possible moment to become scrap."
+        "{held_item} is at {held_item_durability_percent}%. Mend it before it chooses the worst possible moment to become scrap.",
+        "{held_item} has only {held_item_durability} durability left. That is a warning, not a weapon."
       ],
       "weight": 80
     },
@@ -184,20 +100,32 @@
     {
       "id": "weaponsmith_new_greeting_grindstone",
       "request": "greeting",
-      "text": "Mind the grindstone. It has no patience for wandering fingers.",
-      "weight": 26
+      "weight": 26,
+      "lines": [
+        "Mind the grindstone. It has no patience for wandering fingers.",
+        "Mind the grindstone. It has no patience for wandering fingers.",
+        "Mind the grindstone. It has no patience for wandering fingers."
+      ]
     },
     {
       "id": "weaponsmith_new_joke_sharp",
       "request": "joke",
-      "text": "Weapon jokes are sharp. I keep the dull ones for people who lean too close.",
-      "weight": 18
+      "weight": 18,
+      "lines": [
+        "Weapon jokes are sharp. I keep the dull ones for people who lean too close.",
+        "Weapon jokes are sharp. I keep the dull ones for people who lean too close.",
+        "Weapon jokes are sharp. I keep the dull ones for people who lean too close."
+      ]
     },
     {
       "id": "weaponsmith_new_insult_dull",
       "request": "insult",
-      "text": "That was dull enough to be safe, at least.",
-      "weight": 18
+      "weight": 18,
+      "lines": [
+        "That was dull enough to be safe, at least.",
+        "That was dull enough to be safe, at least.",
+        "That was dull enough to be safe, at least."
+      ]
     },
     {
       "id": "weaponsmith_new_hostile_distance",
@@ -206,8 +134,12 @@
         "rude",
         "hostile"
       ],
-      "text": "Stand back. I know the sound trouble makes when it wants to be casual.",
-      "weight": 30
+      "weight": 30,
+      "lines": [
+        "Stand back. I know the sound trouble makes when it wants to be casual.",
+        "Stand back. I know the sound trouble makes when it wants to be casual.",
+        "Stand back. I know the sound trouble makes when it wants to be casual."
+      ]
     },
     {
       "id": "weaponsmith_cured_recognition_warm",
@@ -218,7 +150,8 @@
       ],
       "lines": [
         "I remember fighting something inside me and losing. You gave me another weapon: morning.",
-        "The cure struck true. I remember you standing on the right side of it."
+        "The cure struck true. I remember you standing on the right side of it.",
+        "I remember fighting something inside me and losing. You gave me another weapon: morning."
       ],
       "weight": 60
     },
@@ -231,7 +164,8 @@
       ],
       "lines": [
         "Your face rings like steel, but the battle around it is smoke.",
-        "I remember wanting to bite, then wanting to breathe. You were there between them."
+        "I remember wanting to bite, then wanting to breathe. You were there between them.",
+        "Your face rings like steel, but the battle around it is smoke."
       ],
       "weight": 60
     },
@@ -243,8 +177,12 @@
         "hostile",
         "fearful"
       ],
-      "text": "I remember you, and I remember being dangerous. Do not make me relive either too quickly.",
-      "weight": 30
+      "weight": 30,
+      "lines": [
+        "I remember you, and I remember being dangerous. Do not make me relive either too quickly.",
+        "I remember you, and I remember being dangerous. Do not make me relive either too quickly.",
+        "I remember you, and I remember being dangerous. Do not make me relive either too quickly."
+      ]
     },
     {
       "id": "weaponsmith_village_event_thunderstorm",
@@ -342,6 +280,314 @@
         "We are alright for now near the grindstone. Keep the fires fed and the paths open."
       ],
       "weight": 170
+    },
+    {
+      "id": "recruitment_followup_weaponsmith_safe",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
+      "weight": 38,
+      "lines": [
+        "You brought me back without needing the worst of it. Restraint is a weapon too.",
+        "You brought me back without needing the worst of it. Restraint is a weapon too.",
+        "You brought me back without needing the worst of it. Restraint is a weapon too."
+      ]
+    },
+    {
+      "id": "recruitment_followup_weaponsmith_injured",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "injured"
+      ],
+      "weight": 38,
+      "lines": [
+        "I came back marked. Next time, keep the edge between us and danger.",
+        "I came back marked. Next time, keep the edge between us and danger.",
+        "I came back marked. Next time, keep the edge between us and danger."
+      ]
+    },
+    {
+      "id": "recruitment_followup_weaponsmith_betrayed",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "betrayed"
+      ],
+      "weight": 42,
+      "lines": [
+        "I respect sharp steel. I do not respect turning it on someone who followed you.",
+        "I respect sharp steel. I do not respect turning it on someone who followed you.",
+        "I respect sharp steel. I do not respect turning it on someone who followed you."
+      ]
+    },
+    {
+      "id": "recruitment_followup_weaponsmith_boat",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "requires_recruitment_boat_trip": true,
+      "weight": 42,
+      "lines": [
+        "A boat is not armor, but it kept danger at a decent distance.",
+        "A boat is not armor, but it kept danger at a decent distance.",
+        "A boat is not armor, but it kept danger at a decent distance."
+      ]
+    },
+    {
+      "id": "question_follow_memory_weaponsmith_betrayed",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "requires_recruitment_memory": true,
+      "recruitment_memory_scenarios": [
+        "betrayed"
+      ],
+      "weight": 4,
+      "lines": [
+        "Remember when I followed you and you hit me? Poor weapon discipline. Worse friendship.",
+        "Remember when I followed you and you hit me? Poor weapon discipline. Worse friendship.",
+        "Remember when I followed you and you hit me? Poor weapon discipline. Worse friendship."
+      ]
+    },
+    {
+      "id": "question_follow_memory_weaponsmith_boat",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "requires_recruitment_memory": true,
+      "requires_recruitment_boat_trip": true,
+      "weight": 3,
+      "lines": [
+        "That boat trip had one good quality: no one was swinging steel in it.",
+        "That boat trip had one good quality: no one was swinging steel in it.",
+        "That boat trip had one good quality: no one was swinging steel in it."
+      ]
+    },
+    {
+      "id": "gear_report_weaponsmith_used",
+      "request": "gear_report",
+      "option": "gear_report",
+      "show_for_babies": false,
+      "requires_gear_report_used_in_combat": true,
+      "weight": 34,
+      "lines": [
+        "It found its purpose. I prefer tools that know when to stop.",
+        "It found its purpose. I prefer tools that know when to stop.",
+        "It found its purpose. I prefer tools that know when to stop."
+      ]
+    },
+    {
+      "id": "gear_report_weaponsmith_unused",
+      "request": "gear_report",
+      "option": "gear_report",
+      "show_for_babies": false,
+      "requires_gear_report_unused_in_combat": true,
+      "weight": 34,
+      "lines": [
+        "Still sharp, still waiting. That is better than needing it twice.",
+        "Still sharp, still waiting. That is better than needing it twice.",
+        "Still sharp, still waiting. That is better than needing it twice."
+      ]
+    },
+    {
+      "id": "village_defense_weaponsmith_respect",
+      "request": "village_defense_report",
+      "option": "village_defense_report",
+      "show_for_babies": false,
+      "lines": [
+        "A weapon means little without the nerve to use it at the gate. You had that nerve.",
+        "You kept your edge when the village lost its breath. That deserves respect.",
+        "You used force for the village, not against it. That distinction matters.",
+        "I saw discipline in that fight. Not just fury.",
+        "Raiders understand strength. Yesterday, so did you.",
+        "You met danger at the edge and kept it from cutting deeper.",
+        "A blade is judged by what it protects. People are too.",
+        "You fought clean enough for me to respect the work."
+      ],
+      "weight": 252
+    },
+    {
+      "id": "apology_weaponsmith",
+      "request": "apology",
+      "option": "apologize_for_harm",
+      "show_for_babies": false,
+      "lines": [
+        "A weapon is honest about harm. People should try being that honest before causing it.",
+        "Good. Now keep your temper sheathed unless the village needs it drawn.",
+        "Harm is easy to make and hard to take back. At least you know which you did.",
+        "Fine. Keep the sharp parts of yourself pointed where they belong.",
+        "An apology is not a sheath, but it may keep the edge from cutting twice.",
+        "I respect honest remorse more than polished excuses.",
+        "If you cannot control your hand, no apology will be enough. Control it.",
+        "Good. Let this be the last time I hear that tone for this reason."
+      ],
+      "weight": 234
+    },
+    {
+      "id": "combat_survival_weaponsmith",
+      "request": "combat_survival_report",
+      "option": "combat_survival_report",
+      "show_for_babies": false,
+      "lines": [
+        "The blade did its work, and so did my feet when it was time to come home.",
+        "Heat, pressure, fear. Good steel survives that. So did I.",
+        "Steel sang, fear shouted, and I still heard the way home.",
+        "I kept my blade ready and my feet smarter than pride.",
+        "No weapon feels heavy until you carry it back after the fight.",
+        "I survived with the edge intact and the lesson sharper.",
+        "I trust good steel. Tonight I had to trust my own nerve too.",
+        "The fight ended before I did. That is the result I prefer."
+      ],
+      "weight": 234
+    },
+    {
+      "id": "event_raid_weaponsmith_1",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "raid"
+      ],
+      "weight": 32,
+      "lines": [
+        "After a raid, every blade in the village feels too dull and too late.",
+        "After a raid, every blade in the village feels too dull and too late.",
+        "After a raid, every blade in the village feels too dull and too late."
+      ]
+    },
+    {
+      "id": "default_profession_weaponsmith_weight",
+      "request": "question",
+      "show_for_babies": false,
+      "lines": [
+        "A weapon is not courage. It is just steel waiting to learn who holds it.",
+        "Blades should be sharp enough to end danger, not start arguments.",
+        "The best sword in the village is the one that never needs a story."
+      ],
+      "weight": 18
+    }
+  ],
+  "messages": [
+    {
+      "id": "weaponsmith_gift_given_variants",
+      "key": "gift_given",
+      "lines": [
+        "Take {gift_item}. Better to carry thanks before you need steel.",
+        "Here, {gift_item}. I trust you to use it with a cooler head than most.",
+        "Take {gift_item}. Better to carry thanks before you need steel."
+      ],
+      "weight": 48
+    },
+    {
+      "id": "weaponsmith_gift_advice_followup_liked_variants",
+      "key": "gift_advice_followup.liked",
+      "lines": [
+        "Good. {gift_item} struck true with {tested_villager}.",
+        "Then the advice kept its edge. {tested_villager} liked {gift_item}.",
+        "Good. {gift_item} struck true with {tested_villager}."
+      ],
+      "weight": 44
+    },
+    {
+      "id": "weaponsmith_gift_advice_followup_disliked_variants",
+      "key": "gift_advice_followup.disliked",
+      "lines": [
+        "That blade was poorly balanced. For {gift_subject}, try {alternative_gift}.",
+        "{gift_item} missed clean? Bring {alternative_gift}; better weight for the hand.",
+        "That blade was poorly balanced. For {gift_subject}, try {alternative_gift}."
+      ],
+      "weight": 44
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 20,
+      "lines": [
+        "That advice had a dull edge. Try {alternative_gift}; it should bite better.",
+        "That advice had a dull edge. Try {alternative_gift}; it should bite better.",
+        "That advice had a dull edge. Try {alternative_gift}; it should bite better."
+      ]
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
+      "weight": 20,
+      "lines": [
+        "You swung with what I handed you. Next time, choose {alternative_gift}.",
+        "You swung with what I handed you. Next time, choose {alternative_gift}.",
+        "You swung with what I handed you. Next time, choose {alternative_gift}."
+      ]
+    }
+  ],
+  "openings": [
+    {
+      "id": "weaponsmith_opening",
+      "lines": [
+        "Mind the grindstone. What do you need?",
+        "Mind the grindstone. What do you need?",
+        "Mind the grindstone. What do you need?"
+      ]
+    }
+  ],
+  "closings": [
+    {
+      "id": "weaponsmith_closing",
+      "lines": [
+        "Back to keeping blades honest, then.",
+        "Back to keeping blades honest, then.",
+        "Back to keeping blades honest, then."
+      ]
+    }
+  ],
+  "pacify": [
+    {
+      "id": "weaponsmith_pacify_success",
+      "outcomes": [
+        "success"
+      ],
+      "weight": 26,
+      "lines": [
+        "Fine. I will let the blade rest, but do not test me again.",
+        "Fine. I will let the blade rest, but do not test me again.",
+        "Fine. I will let the blade rest, but do not test me again."
+      ]
+    },
+    {
+      "id": "weaponsmith_pacify_short",
+      "outcomes": [
+        "not_enough_emeralds"
+      ],
+      "weight": 26,
+      "lines": [
+        "That offer is dull. Bring {emerald_cost} {emeralds}.",
+        "That offer is dull. Bring {emerald_cost} {emeralds}.",
+        "That offer is dull. Bring {emerald_cost} {emeralds}."
+      ]
+    },
+    {
+      "id": "weaponsmith_pacify_blocked",
+      "outcomes": [
+        "blocked_by_reputation"
+      ],
+      "weight": 26,
+      "lines": [
+        "No. Some threats do not get to buy their way closer.",
+        "No. Some threats do not get to buy their way closer.",
+        "No. Some threats do not get to buy their way closer."
+      ]
     }
   ]
 }

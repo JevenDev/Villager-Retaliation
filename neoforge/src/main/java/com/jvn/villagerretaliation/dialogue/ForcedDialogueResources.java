@@ -9,6 +9,7 @@ import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
+import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.util.VillagerInventoryItemRemoval;
 import com.jvn.villagerretaliation.util.VillagerPlayerItemCondition;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
@@ -512,6 +513,7 @@ public final class ForcedDialogueResources {
         replacements.put("villager", context.villagerName());
         replacements.put("player", context.playerName());
         replacements.put("target", context.targetName());
+        replacements.put("target_article", VillagerInteractionTextUtil.withIndefiniteArticle(context.targetName()));
         replacements.put("target_name", context.targetName());
         replacements.put("target_kind", context.targetKind());
         replacements.put("target_type", context.targetType());
