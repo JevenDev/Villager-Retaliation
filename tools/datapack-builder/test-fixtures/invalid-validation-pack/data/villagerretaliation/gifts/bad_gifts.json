@@ -1,0 +1,32 @@
+{
+  "preferences": [
+    {
+      "reaction": "",
+      "item": "Bad Item",
+      "professions": [
+        "minecraft:fake_job"
+      ],
+      "priority": "top",
+      "reputation_per_item": "lots",
+      "response_key": "missing_dialogue_message"
+    },
+    {
+      "reaction": "super_like",
+      "tag": "#Bad Tag"
+    }
+  ],
+  "rewards": [
+    {
+      "item": "",
+      "min_count": 20,
+      "max_count": 2,
+      "weight": 0,
+      "reputation_levels": [
+        "mythic"
+      ]
+    },
+    {
+      "item": "Bad Reward"
+    }
+  ]
+}

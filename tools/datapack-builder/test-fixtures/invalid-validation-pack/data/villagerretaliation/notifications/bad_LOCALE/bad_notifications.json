@@ -1,0 +1,36 @@
+{
+  "notifications": [
+    {
+      "id": "notify_duplicate",
+      "trigger": "",
+      "text": "",
+      "kind": "giant_banner",
+      "world_text_kind": "skywriting",
+      "color": "sparkle",
+      "professions": [
+        "minecraft:fake_job"
+      ],
+      "reputation_levels": [
+        "sort_of_trusted"
+      ],
+      "target_entity_types": [
+        "Bad Entity"
+      ],
+      "player_items": [
+        "Bad Item"
+      ],
+      "player_item_slots": [
+        "pocket_dimension"
+      ],
+      "min_reputation": 10,
+      "max_reputation": 1,
+      "chance": 2,
+      "weight": -1
+    },
+    {
+      "id": "notify_duplicate",
+      "trigger": "custom_not_builtin",
+      "text": "Duplicate notification id and custom trigger."
+    }
+  ]
+}

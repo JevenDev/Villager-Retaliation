@@ -1,0 +1,16 @@
+{
+  "payments": [
+    {
+      "item": "",
+      "count": 0,
+      "professions": [
+        "minecraft:fake_job"
+      ]
+    },
+    {
+      "tag": "#Bad Tag",
+      "min_count": 64,
+      "max_count": 1
+    }
+  ]
+}

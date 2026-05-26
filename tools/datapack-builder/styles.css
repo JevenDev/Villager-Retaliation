@@ -713,10 +713,17 @@ body.is-resizing-row {
 }
 
 .check {
+  width: 100%;
   display: grid;
   grid-template-columns: 18px minmax(0, 1fr);
   gap: 3px 8px;
   padding: 9px;
+  color: var(--text);
+  text-align: left;
+}
+
+button.check {
+  cursor: pointer;
 }
 
 .check.warning {
@@ -731,6 +738,11 @@ body.is-resizing-row {
 
 .check span {
   grid-column: 2;
+}
+
+.check small {
+  grid-column: 2;
+  color: var(--muted);
 }
 
 .file-button {

@@ -3117,6 +3117,7 @@ function primaryGeneratedPaths() {
 }
 
 function pathsForCheck(check) {
+  if (Array.isArray(check.paths) && check.paths.length > 0) return check.paths;
   if (check.title === "Preview JSON") return previewEditError?.path ? [previewEditError.path] : [];
   if (check.title === "Pack format" || check.title === "VR version") return ["pack.mcmeta"];
   if (check.title === "File slug") return primaryGeneratedPaths();
@@ -3688,9 +3689,9 @@ function sectionIssueSeverity(section) {
   return "";
 }
 
-function addCheck(checks, type, title, text) {
-  if (checks.some((check) => check.title === title && check.type === type)) return;
-  checks.push({ type, title, text });
+function addCheck(checks, type, title, text, details = {}) {
+  if (checks.some((check) => check.title === title && check.type === type && check.text === text)) return;
+  checks.push({ type, title, text, ...details });
 }
 
 function firstDuplicate(values) {
@@ -3704,6 +3705,59 @@ function firstDuplicate(values) {
     seen.add(value);
   }
   return "";
+}
+
+function firstDuplicateEntries(entries, valueForEntry = (entry) => entry?.id) {
+  const seen = new Map();
+  for (let index = 0; index < entries.length; index += 1) {
+    const value = String(valueForEntry(entries[index]) ?? "").trim();
+    if (!value) continue;
+    if (seen.has(value)) {
+      return {
+        value,
+        matches: [
+          { entry: entries[seen.get(value)], index: seen.get(value) },
+          { entry: entries[index], index }
+        ]
+      };
+    }
+    seen.set(value, index);
+  }
+  return null;
+}
+
+function fileNameFromPath(path) {
+  return String(path || "").split("/").pop() || path;
+}
+
+function entryPath(section, entry) {
+  if (entry?.__sourcePath) return entry.__sourcePath;
+  if (section === "dialogue") return dialoguePath();
+  if (section === "forcedDialogue") return forcedDialoguePath();
+  if (section === "notifications") return notificationsPath();
+  if (section === "gifts") return giftsPath();
+  if (section === "pacification") return pacificationPath();
+  if (section === "stories") return activeStoryKind === "structures" ? structurePath() : biomePath();
+  return selectedPath;
+}
+
+function entryLocations(section, kind, matches, fieldId) {
+  return matches.map((match) => ({
+    section,
+    kind,
+    index: match.index,
+    path: entryPath(section, match.entry),
+    fieldId
+  }));
+}
+
+function locationLabel(location) {
+  const kind = humanize(location.kind).toLowerCase();
+  return `${fileNameFromPath(location.path)} ${kind} #${location.index + 1}`;
+}
+
+function checkLocationDetails(locations) {
+  return locations.map(locationLabel).join(" and ");
 }
 
 function entryValues(entry, keys) {
@@ -3895,9 +3949,13 @@ function validate() {
       }
     }
   }
-  const duplicateOption = firstDuplicate(state.dialogue.options.map((entry) => entry.id));
+  const duplicateOption = firstDuplicateEntries(state.dialogue.options);
   if (duplicateOption) {
-    addCheck(checks, "warning", "Dialogue option ids", `Duplicate option id: ${duplicateOption}.`);
+    const locations = entryLocations("dialogue", "options", duplicateOption.matches, "dialogue-id");
+    addCheck(checks, "warning", "Dialogue option ids", `Duplicate option id: ${duplicateOption.value} in ${checkLocationDetails(locations)}.`, {
+      locations,
+      paths: locations.map((location) => location.path)
+    });
   }
   const allDialogueEntries = ["options", "lines", "messages", "openings", "closings", "pacify"].flatMap((kind) => state.dialogue[kind]);
   const badDialogueType = firstInvalidValue([...state.dialogue.options, ...state.dialogue.lines], ["request"], (value) => CONSTANTS.dialogueTypes.includes(value));
@@ -3999,9 +4057,13 @@ function validate() {
       break;
     }
   }
-  const duplicateForcedDialogue = firstDuplicate(state.forcedDialogue.entries.map((entry) => entry.id));
+  const duplicateForcedDialogue = firstDuplicateEntries(state.forcedDialogue.entries);
   if (duplicateForcedDialogue) {
-    addCheck(checks, "warning", "Forced dialogue ids", `Duplicate forced dialogue id: ${duplicateForcedDialogue}.`);
+    const locations = entryLocations("forcedDialogue", "entries", duplicateForcedDialogue.matches, "forced-id");
+    addCheck(checks, "warning", "Forced dialogue ids", `Duplicate forced dialogue id: ${duplicateForcedDialogue.value} in ${checkLocationDetails(locations)}.`, {
+      locations,
+      paths: locations.map((location) => location.path)
+    });
   }
   const badForcedTrigger = firstInvalidValue(state.forcedDialogue.entries, ["trigger", "event"], (value) => CONSTANTS.forcedDialogueTriggers.includes(value));
   if (badForcedTrigger) {
@@ -4073,9 +4135,19 @@ function validate() {
         break;
       }
     }
-    const duplicateForcedOption = firstDuplicate(options.map((option) => option.id));
+    const duplicateForcedOption = firstDuplicateEntries(options);
     if (duplicateForcedOption) {
-      addCheck(checks, "warning", "Forced option ids", `Duplicate forced option id: ${duplicateForcedOption}.`);
+      const location = {
+        section: "forcedDialogue",
+        kind: "entries",
+        index: state.forcedDialogue.entries.indexOf(entry),
+        path: entryPath("forcedDialogue", entry),
+        fieldId: "forced-options_json"
+      };
+      addCheck(checks, "warning", "Forced option ids", `Duplicate forced option id: ${duplicateForcedOption.value} in ${locationLabel(location)}.`, {
+        locations: [location],
+        paths: [location.path]
+      });
       break;
     }
     const badOptionNumber = firstBadNumber(actionableOptions, ["order", "reputation", "aggro_chance"], (value, entry, key) => key === "aggro_chance" ? value >= 0 && value <= 1 : Number.isFinite(value));
@@ -4151,9 +4223,13 @@ function validate() {
       break;
     }
   }
-  const duplicateNotification = firstDuplicate(state.notifications.notifications.map((entry) => entry.id));
+  const duplicateNotification = firstDuplicateEntries(state.notifications.notifications);
   if (duplicateNotification) {
-    addCheck(checks, "warning", "Notification ids", `Duplicate notification id: ${duplicateNotification}.`);
+    const locations = entryLocations("notifications", "notifications", duplicateNotification.matches, "notification-id");
+    addCheck(checks, "warning", "Notification ids", `Duplicate notification id: ${duplicateNotification.value} in ${checkLocationDetails(locations)}.`, {
+      locations,
+      paths: locations.map((location) => location.path)
+    });
   }
   const badNotificationTrigger = firstInvalidValue(state.notifications.notifications, ["trigger"], (value) => CONSTANTS.notificationTriggers.includes(value));
   if (badNotificationTrigger) {
@@ -4392,6 +4468,7 @@ function renderOutputPanels() {
   renderFiles();
   renderChecks();
   renderPreview();
+  renderIcons();
 }
 
 function scheduleOutputRender(delay = 140) {
@@ -4528,14 +4605,48 @@ function renderChecks() {
   els.checkCount.classList.toggle("has-warning", !hasError && hasWarning);
   els.checkCount.classList.toggle("is-ok", !hasError && !hasWarning);
   els.checks.innerHTML = checks
-    .map((check) => `
-      <div class="check ${escapeHtml(check.type)}">
+    .map((check, index) => {
+      const details = Array.isArray(check.locations) && check.locations.length > 0
+        ? `<small>${escapeHtml(check.locations.map(locationLabel).join(" | "))}</small>`
+        : "";
+      const tag = check.locations?.length ? "button" : "div";
+      const attrs = check.locations?.length ? ` type="button" data-check-index="${index}"` : "";
+      return `
+      <${tag} class="check ${escapeHtml(check.type)}"${attrs}>
         ${icon(check.type === "error" ? "circle-alert" : check.type === "warning" ? "triangle-alert" : "circle-check", "inline-icon")}
         <strong>${escapeHtml(check.title)}</strong>
         <span>${escapeHtml(check.text)}</span>
-      </div>
-    `)
+        ${details}
+      </${tag}>
+    `;
+    })
     .join("");
+}
+
+function setActiveKindForLocation(location) {
+  if (location.section === "dialogue") activeDialogueKind = location.kind;
+  if (location.section === "gifts") activeGiftKind = location.kind;
+  if (location.section === "stories") activeStoryKind = location.kind;
+}
+
+function jumpToCheck(check) {
+  const location = check?.locations?.[0];
+  if (!location || !canLeaveEntryForm()) return;
+  activeSection = location.section;
+  setActiveKindForLocation(location);
+  editing = {
+    section: location.section,
+    kind: location.kind,
+    index: location.index
+  };
+  selectedPath = location.path || selectedPath;
+  clearEntryFormDirty();
+  render();
+  window.requestAnimationFrame(() => {
+    const field = location.fieldId ? document.querySelector(`#${CSS.escape(location.fieldId)}`) : null;
+    field?.focus({ preventScroll: true });
+    field?.closest(".field")?.scrollIntoView({ block: "center" });
+  });
 }
 
 function renderPreview() {
@@ -6340,7 +6451,9 @@ function canLeaveEntryForm() {
 function upsertEntry(section, kind, entry) {
   const previousSelectedPath = selectedPath;
   let sourcePath = "";
+  let savedIndex = state[section][kind].length;
   if (editing && editing.section === section && editing.kind === kind) {
+    savedIndex = editing.index;
     const existing = state[section][kind][editing.index];
     if (existing?.__sourcePath) {
       entry.__sourcePath = existing.__sourcePath;
@@ -6352,10 +6465,10 @@ function upsertEntry(section, kind, entry) {
     state[section][kind].push(entry);
     showToast("Entry added.");
   }
-  editing = null;
+  editing = { section, kind, index: savedIndex };
   clearEntryFormDirty();
   selectedPath = selectedPathAfterEntrySave(section, previousSelectedPath, sourcePath);
-  render();
+  renderPreservingEntryListScroll();
 }
 
 function selectedPathAfterEntrySave(section, previousSelectedPath, sourcePath = "") {
@@ -8014,6 +8127,14 @@ els.fileTree.addEventListener("click", (event) => {
   renderFiles();
   renderChecks();
   renderPreview();
+  renderIcons();
+});
+
+els.checks.addEventListener("click", (event) => {
+  const checkButton = event.target.closest("[data-check-index]");
+  if (!checkButton) return;
+  const check = currentViewChecks()[Number(checkButton.dataset.checkIndex)];
+  jumpToCheck(check);
 });
 
 els.importInput.addEventListener("change", async () => {

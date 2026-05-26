@@ -1,0 +1,64 @@
+{
+  "entries": [
+    {
+      "id": "forced_duplicate",
+      "trigger": "not_a_trigger",
+      "line": "",
+      "output": {
+        "mode": "shout_into_void",
+        "radius": 0
+      },
+      "witness_professions": [
+        "minecraft:fake_job",
+        ""
+      ],
+      "player_items": [
+        "Bad Item"
+      ],
+      "player_item_slots": [
+        "helmet_but_wrong"
+      ],
+      "loot_tables": [
+        "Bad Loot"
+      ],
+      "target_entity_types": [
+        "Bad Entity"
+      ],
+      "priority": "urgent",
+      "witness_radius": 0,
+      "min_recent_retaliations": 8,
+      "max_recent_retaliations": 2,
+      "options": [
+        {
+          "id": "",
+          "label": "",
+          "order": "before zero",
+          "aggro_chance": 2,
+          "reputation_levels": [
+            "not_a_tier"
+          ],
+          "min_reputation": 5,
+          "max_reputation": -5,
+          "take_items": {
+            "item": "Bad Payment",
+            "count": 0,
+            "destination": "nowhere"
+          },
+          "take_stolen_items": {
+            "destination": "also_nowhere",
+            "success_reputation": "a lot"
+          }
+        },
+        {
+          "id": "",
+          "label": "Duplicate blank option id"
+        }
+      ]
+    },
+    {
+      "id": "forced_duplicate",
+      "trigger": "player_item_proximity",
+      "line": "This one lacks the required item filter."
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "pack": {
+    "pack_format": -1,
+    "description": "Deliberately invalid validation fixture"
+  },
+  "villager_retaliation": {
+    "pack_version": "999.0.0-not-real"
+  }
+}

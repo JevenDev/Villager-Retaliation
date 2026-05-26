@@ -1,0 +1,76 @@
+{
+  "options": [
+    {
+      "id": "duplicate_option",
+      "label": "",
+      "type": "not_dialogue_option",
+      "request": "not_a_real_request",
+      "player_item": "Bad Item Id",
+      "player_item_slot": "left_sock",
+      "give_items": {
+        "item": "Bad Reward Item",
+        "count": 0,
+        "destination": "under_the_bed"
+      },
+      "reputation_levels": [
+        "legendary-ish",
+        ""
+      ],
+      "min_reputation": 10,
+      "max_reputation": 1
+    },
+    {
+      "id": "duplicate_option",
+      "label": "Duplicate id",
+      "type": "dialogue_option",
+      "request": "gossip"
+    }
+  ],
+  "lines": [
+    {
+      "request": "",
+      "text": "",
+      "professions": [
+        "minecraft:not_a_profession"
+      ],
+      "dispositions": [
+        "sideways"
+      ],
+      "weather": [
+        "meteors"
+      ],
+      "times": [
+        "elevenses"
+      ],
+      "gift_advice": "bad_advice",
+      "weight": -5,
+      "order": "first",
+      "min_recruitment_follow_distance": -1,
+      "retaliation_target_entity_types": [
+        "Bad Entity"
+      ]
+    }
+  ],
+  "messages": [
+    {
+      "key": "",
+      "text": ""
+    }
+  ],
+  "openings": [
+    {
+      "text": ""
+    }
+  ],
+  "closings": [
+    {}
+  ],
+  "pacify": [
+    {
+      "text": "",
+      "outcomes": [
+        "almost_success"
+      ]
+    }
+  ]
+}
