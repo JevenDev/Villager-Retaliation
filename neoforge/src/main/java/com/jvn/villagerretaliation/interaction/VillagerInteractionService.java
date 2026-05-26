@@ -661,6 +661,7 @@ public final class VillagerInteractionService {
                 villager.getVillagerData().getProfession(),
                 reputation,
                 reputationLevel,
+                VillagerProfileManager.getOrCreateProfile(level, villager),
                 interactionState.firstConversation(),
                 interactionState.firstVillageInteraction(),
                 weatherState(level, villager),

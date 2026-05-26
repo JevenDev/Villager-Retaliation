@@ -1,6 +1,8 @@
 package com.jvn.villagerretaliation.dialogue;
 
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
+import com.jvn.villagerretaliation.profile.VillagerProfile;
+import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.social.VillagerFamilyTreeSnapshot;
 import com.jvn.villagerretaliation.social.VillagerRelationshipSnapshot;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
@@ -21,6 +23,7 @@ public record DialogueContext(
         VillagerProfession profession,
         int reputation,
         VillagerReputationLevel reputationLevel,
+        VillagerProfile profile,
         boolean firstConversation,
         boolean firstVillageInteraction,
         WeatherState weather,
@@ -52,9 +55,40 @@ public record DialogueContext(
     private static final long DIRECT_HIT_MEMORY_TICKS = 20L * 60L * 20L;
     private static final long BROKEN_BED_MEMORY_TICKS = 20L * 60L * 20L;
     private static final long DIALOGUE_MOOD_MEMORY_TICKS = 20L * 60L * 5L;
+    private static final int HIGH_SOCIAL_ATTRIBUTE_THRESHOLD = 60;
 
     public boolean hasRecentEvent(VillageEventMemory.EventTag... tags) {
         return VillageEventMemory.hasAny(this.recentEvents, tags);
+    }
+
+    public int socialAttributeValue(VillagerSocialAttribute attribute) {
+        return this.profile == null || this.profile.socialAttributes() == null
+                ? 0
+                : this.profile.socialAttributes().get(attribute);
+    }
+
+    public boolean hasSocialAttributeAtLeast(VillagerSocialAttribute attribute, int value) {
+        return socialAttributeValue(attribute) >= value;
+    }
+
+    public boolean hasHighKnowledge() {
+        return hasSocialAttributeAtLeast(VillagerSocialAttribute.KNOWLEDGE, HIGH_SOCIAL_ATTRIBUTE_THRESHOLD);
+    }
+
+    public boolean hasHighGuts() {
+        return hasSocialAttributeAtLeast(VillagerSocialAttribute.GUTS, HIGH_SOCIAL_ATTRIBUTE_THRESHOLD);
+    }
+
+    public boolean hasHighProficiency() {
+        return hasSocialAttributeAtLeast(VillagerSocialAttribute.PROFICIENCY, HIGH_SOCIAL_ATTRIBUTE_THRESHOLD);
+    }
+
+    public boolean hasHighKindness() {
+        return hasSocialAttributeAtLeast(VillagerSocialAttribute.KINDNESS, HIGH_SOCIAL_ATTRIBUTE_THRESHOLD);
+    }
+
+    public boolean hasHighCharm() {
+        return hasSocialAttributeAtLeast(VillagerSocialAttribute.CHARM, HIGH_SOCIAL_ATTRIBUTE_THRESHOLD);
     }
 
     public boolean hasKnownFamily() {
