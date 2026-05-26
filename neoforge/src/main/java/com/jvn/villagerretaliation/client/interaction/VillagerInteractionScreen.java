@@ -103,7 +103,6 @@ public class VillagerInteractionScreen extends Screen {
     private static final int PROFILE_CHART_POINT_COLOR = 0xFFFFF3B0;
     private static final int PROFILE_CHART_POINT_HOVER_COLOR = 0xFFFFFFFF;
     private static final int PROFILE_CHART_POINT_HIT_RADIUS = 6;
-    private static final int PROFILE_PANEL_HEIGHT = 226;
     private static final int PROFILE_SKILL_ROW_HEIGHT = 16;
     private static final int PROFILE_SKILL_BAR_HEIGHT = 4;
     private static final int PROFILE_SKILL_COLUMNS = 2;
@@ -751,7 +750,7 @@ public class VillagerInteractionScreen extends Screen {
 
     private void renderProfilePage(GuiGraphics graphics, int mouseX, int mouseY) {
         int left = optionsLeft() + 6;
-        int top = Math.max(24, focusCenterY() - PROFILE_PANEL_HEIGHT);
+        int top = conversationInfoTop() + 2;
         Optional<VillagerProfileClientCache.DisplayEntry> entry = VillagerProfileClientCache.get(this.villagerEntityId);
         if (entry.isEmpty()) {
             requestProfileRefresh();
