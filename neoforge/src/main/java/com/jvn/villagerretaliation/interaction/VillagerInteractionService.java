@@ -25,6 +25,7 @@ import com.jvn.villagerretaliation.network.VillagerRecruitRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.notification.VillagerNotifications;
+import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
 import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
@@ -127,6 +128,7 @@ public final class VillagerInteractionService {
 
     public static void openInteractionScreen(ServerPlayer player, Villager villager, boolean forceCameraTowardsVillager) {
         ServerLevel level = player.serverLevel();
+        VillagerProfileManager.getOrCreateProfile(level, villager);
         ReputationSnapshot reputation = reputationSnapshot(level, villager, player);
         VillagerInteractionTracker.InteractionState interactionState = VillagerInteractionTracker.getState(level, villager, player);
         DialogueContextSnapshots contextSnapshots = dialogueContextSnapshots(level, villager);
@@ -199,6 +201,7 @@ public final class VillagerInteractionService {
             List<DialogueOptionDefinition> dialogueOptions,
             boolean forceCameraTowardsVillager) {
         ServerLevel level = player.serverLevel();
+        VillagerProfileManager.getOrCreateProfile(level, villager);
         ReputationSnapshot reputation = reputationSnapshot(level, villager, player);
         DialogueContext context = createDialogueContext(level, player, villager);
         VillagerGiftKnowledgeService.GiftKnowledgeSnapshot giftKnowledge =
