@@ -34,7 +34,7 @@ These pages describe the current supported format:
 - [Story Discovery JSON](Story-Discovery.md)
 - [Resource Pack Models And Textures](Resource-Pack-Models.md)
 
-## 1.0.0-beta.11 - Unreleased
+## 1.0.0-beta.11 - 2026-05-26
 
 Pack-facing beta.11 changes focus on making data-driven behavior easier to extend without full-file copies.
 
@@ -67,6 +67,7 @@ Pack-facing beta.11 changes focus on making data-driven behavior easier to exten
 - Added a VR version selector to the Datapack Generator. Exported beta.11+ packs write `villagerretaliation.pack_version` in `pack.mcmeta`, and import uses it to restore the matching generator target.
 - Added reload warnings for common dialogue, forced-dialogue, and notification authoring mistakes: content in the wrong system folder, unsupported fields, wrong trigger families, inert player item slot filters, and unknown profession ids.
 - Added more built-in dialogue lines for reputation tiers, retaliation aftermath, apologies, village defense, raids, golem loss, fire, gifts, gear reports, recruitment memories, and container-theft gossip.
+- Added built-in profession-group dialogue files for shared multi-profession reactions, while single-profession dialogue lives in the matching `professions/<profession>.json` files.
 - Added built-in `retaliation_started` chat-output combat barks for player targets, raiders, undead, monsters, generic retaliation targets, and unarmed villagers.
 - Added built-in baby-only alert text for baby villagers being hit and for baby villagers witnessing a villager death.
 - Added loot-table-specific built-in forced dialogue scenes for vanilla village profession chests, with profession-specific robbery responses and lower-priority village/general fallbacks.
@@ -86,6 +87,7 @@ Pack-facing beta.11 changes focus on making data-driven behavior easier to exten
 - The built-in village chest forced-dialogue options now vary by reputation: high-reputation players can receive warnings, mid-reputation players can offer normal payment, and low-reputation players can face higher payment costs or harsher outcomes.
 - Built-in dialogue tone now emphasizes the mod's memory and consequence loop: villagers react to personal reputation, remember harm, gossip about theft, and treat defense as meaningful without instantly erasing past behavior.
 - Built-in dialogue data and wiki examples now use `question` for general Talk menu conversation, with event chat separated into forced-dialogue `output.mode`.
+- Built-in dialogue output entries now use `lines` arrays with at least three variants where possible, so default conversations repeat less often.
 - Profession-filtered keyed messages, openings, and closings now default to adult-only unless `show_for_babies: true` is supplied, so job-site and profession flavor does not appear on baby villagers by accident.
 - Baby villagers can now participate in witnessed-death flee alerts when `retaliation.babyVillagersFleeWitnessedDeaths` is enabled. The built-in data keeps adult and baby alert wording separate with age filters.
 - Hitting a baby villager now records both `player_attacked_villager` and `baby_villager_attacked`, and built-in immediate alert/chat wording uses child-specific lines.
@@ -111,6 +113,7 @@ Pack-facing beta.11 changes focus on making data-driven behavior easier to exten
 
 - Datapacks that already translate dialogue and notifications should keep using `data/villagerretaliation/dialogue/<locale>/` and `data/villagerretaliation/notifications/<locale>/`.
 - Packs that want to translate interaction buttons, generated relationship/family labels, reputation labels, or profession display names should add a resource pack with `assets/villagerretaliation/lang/<locale>.json`.
+- Pack authors can organize single-profession dialogue under `dialogue/<locale>/professions/<profession>.json` or subfolders. Shared multi-profession dialogue can live in any normal dialogue file, such as a `groups/` folder, as long as the entries keep their `professions` filters.
 - Existing unnamespaced vanilla profession filters continue to work. New custom-profession filters should use full ids such as `examplemod:alchemist`.
 - Packs that copied `gifts/default.json` only to remove or change one rule can now add a smaller file with matching `id` or `"remove": true`.
 - Packs that copied `villager_names/preset_names.json` only to add names can now add a separate file under `villager_names/`.

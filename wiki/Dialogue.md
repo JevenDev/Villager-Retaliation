@@ -10,6 +10,7 @@ Dialogue files must be in the `villagerretaliation` namespace:
 
 ```text
 data/villagerretaliation/dialogue/en_us/my_pack_dialogue.json
+data/villagerretaliation/dialogue/en_us/groups/smiths.json
 data/villagerretaliation/dialogue/en_us/professions/farmer.json
 data/villagerretaliation/dialogue/en_us/professions/farmer/share_stories.json
 data/villagerretaliation/dialogue/en_us/professions/examplemod/alchemist.json
@@ -17,6 +18,8 @@ data/villagerretaliation/dialogue/fr_fr/my_pack_dialogue.json
 ```
 
 Files under `professions/<profession>.json` and `professions/<profession>/...json` automatically default entries to that profession unless the entry supplies its own `professions` filter. For custom professions, use `professions/<namespace>/<path>.json`; for example, `professions/examplemod/alchemist.json` defaults to `examplemod:alchemist`.
+
+Shared group files, such as `groups/smiths.json`, are just normal dialogue files. Use them when one entry should apply to several professions, and keep the explicit `professions` filter on those entries.
 
 Use a unique file name for addon dialogue. A datapack file at `data/villagerretaliation/dialogue/en_us/global.json` replaces the mod's built-in `global.json`, which can hide default interaction-menu options, keyed messages, openings, closings, and other built-in dialogue data. Only use that exact path when you intentionally want a full-file override.
 
@@ -134,7 +137,7 @@ Quick choices:
 
 ## Text And Line Variations
 
-Dialogue entries that output speech can use either `text` for one line or `lines` for several equal line variations. This applies to `lines`, `messages`, `openings`, `closings`, and `pacify` entries. The entry is selected by its normal `weight` first; if it has `lines`, one variation is then selected at random.
+Dialogue entries that output speech can use either `text` for one line or `lines` for several equal line variations. This applies to `lines`, `messages`, `openings`, `closings`, and `pacify` entries. The entry is selected by its normal `weight` first; if it has `lines`, one variation is then selected at random. Built-in beta.11 dialogue uses `lines` with at least three variants for most spoken entries to keep repeated conversations fresher.
 
 Use `lines` when several entries would otherwise have the same filters and weight:
 

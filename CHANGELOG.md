@@ -1,9 +1,21 @@
 # Changelog
 
-## 1.0.0-beta.11 - Unreleased
+## 1.0.0-beta.11 - 2026-05-26
 
 ### Added
 
+- Added data-driven villager dialogue, notifications, gifts, pacification payments, profession loot, story discovery, and villager-name resources.
+- Added a richer villager interaction flow with localized UI text, chat-position controls, conversation state syncing, and updated interaction-screen assets.
+- Added villager inventory access and inventory UI support, including gift inventory visuals and inventory request networking.
+- Added villager recruitment support, follow-up dialogue, and recruitment-related reputation/event tracking.
+- Added social graph data for villager gender, family, relationships, relationship stages, family-tree snapshots, and relationship dialogue filters/placeholders.
+- Added story discovery systems for structure and biome rumors, story-hint reports, cartographer map reports, discovered-story dialogue, and story-related reputation advancements.
+- Added gift advice, gift result follow-ups, high-reputation gifts, gift keepsakes, gift-return tracking, and data-driven gift preferences.
+- Added data-driven notification triggers and notification text resources, including richer village-event, combat, reputation, and interaction notices.
+- Added data-driven pacification payment offers with configurable payment items and updated pacification result handling.
+- Added resource-pack hooks and documentation for combat/non-combat villager model overrides, combat textures, and EMF-compatible model loading.
+- Added debug commands/items for villager testing, including breeding and maturity debug items.
+- Added new reputation/story advancements such as trusted directions, changing course after betrayal, legendary trading, story keeping, and village chronicling.
 - Added forced dialogue datapacks under `data/villagerretaliation/forced_dialogue/`.
 - Added witnessed container forced-dialogue triggers: `container_theft`, `container_opened`, and `container_broken`.
 - Added forced-dialogue output modes through `output.mode`, including `forced_dialogue` and `chat`.
@@ -25,12 +37,20 @@
 - Added payment destinations for removed items: discard, witness villager inventory, source container, drop at villager, and drop at container.
 - Added shared reputation condition fields for dialogue options, dialogue lines, forced-dialogue entries, and forced-dialogue options: `reputation_level`, `reputation_levels`, `min_reputation`, and `max_reputation`.
 - Added top-level `replace` support for dialogue and notification datapack files.
+- Added forced-dialogue `leave_options`, max-distance handling, smooth camera turning, and distance-aware dialogue camera zoom.
+- Added id-based replacement/removal for gift rules and additive villager-name files, so small packs no longer need to copy full built-in files for small changes.
 - Added village container theft memories and gossip through `player_container_theft`, `requires_container_theft_to_self`, and `requires_container_theft_from_other`.
 - Added theft-memory placeholders for dialogue, including `{stolen_item}`, `{stolen_count}`, `{stolen_stack}`, `{stolen_container}`, `{stolen_loot_table}`, `{theft_witness}`, and `{theft_witness_possessive}`.
-- Added datapack-builder support for forced dialogue, item payments, generated-container loot table filters, `player_item_proximity` item callouts, item durability filters, reputation-gated dialogue, armed/unarmed villager filters, and theft-memory event tags.
+- Added data-driven profession loot resources, profession-specific villager loot tables, and resource-id-aware pack parsing.
+- Added generated-container item tooltips, generated-item safeguards, and villager trade-payment tracking with reputation penalties when tracked payment items are taken.
+- Added a browser-based Villager Retaliation datapack builder/generator with import/export, file-tree browsing, validation panels, JSON preview editing, panel toggles, resizable persistent panels, and GitHub Pages deployment.
+- Added VR pack-version support to the datapack builder; beta.11+ exports write `villagerretaliation.pack_version` in `pack.mcmeta`, and imports use it to restore the target generator version.
+- Added datapack-builder support for forced dialogue, item payments, profession loot, generated-container loot table filters, `player_item_proximity` item callouts, item durability filters, reputation-gated dialogue, armed/unarmed villager filters, and theft-memory event tags.
 - Added datapack-builder support for `dialogue_option` entries with separate `request` fields and forced-dialogue chat output.
-- Added datapack-builder suggestions for the `baby_villager_attacked` event tag.
+- Added datapack-builder quality-of-life tools: built-in versioned wiki tabs, multi-tab wiki navigation, wiki search/highlights, preview line numbers, drag-and-drop import and entry reordering, inline save, undo/redo, configurable keybinds, settings, migration UI, and suggestions for the `baby_villager_attacked` event tag.
+- Added datapack-builder warnings for duplicate dialogue text variants.
 - Added a larger built-in dialogue/event library covering reputation tiers, retaliation aftermath, apologies, village defense, raids, golem loss, fire, gifts, gear reports, recruitment memories, and container-theft gossip.
+- Added more profession-specific and profession-group dialogue for everyday conversation, event follow-ups, gear reports, recruitment follow-ups, combat survival, jokes, apologies, gifts, and reputation changes.
 - Added built-in `retaliation_started` chat-output combat barks for player targets, raiders, undead, monsters, and generic retaliation targets.
 - Added built-in unarmed-villager `retaliation_started` chat-output combat barks.
 - Added loot-table-specific forced dialogue scenes for weaponsmith, temple, cartographer, and armorer village chests.
@@ -43,13 +63,40 @@
 - Village generated chest confrontations now use forced dialogue by default when container opening is watched.
 - Built-in village chest opening forced dialogue now varies by reputation: neutral and suspicious players get the standard warning, hostile/despised/feared players get harsher warnings, and trusted or better players are only interrupted if they take items.
 - Built-in dialogue now leans harder into the mod's core identity: villagers remember personal harm, share gossip, reward defense cautiously, and respond differently to the same player based on current reputation.
+- Built-in dialogue, notification, gift, pacification, story, and villager-name data moved out of hardcoded paths and into datapack-loadable JSON resources.
+- Villager names are now loaded additively from datapacks instead of requiring one monolithic preset-name file.
+- Profession-filtered dialogue, keyed messages, openings, and closings now default more carefully around baby villagers, with explicit `show_for_babies` support where needed.
 - Dialogue options now use `type: "dialogue_option"` with a separate `request` value, and dialogue lines now use `request`.
 - General player-selected conversation now uses `question`; `small_talk` is no longer a separate request.
 - Built-in dialogue variants now use `lines` arrays instead of repeated near-identical entries, and recent-dialogue tracking now remembers individual line-array variants.
+- Built-in dialogue entries now provide at least three text variants where they output villager speech, reducing repeated one-line responses in common conversations.
+- Built-in profession dialogue is now split into profession files, with shared multi-profession reactions kept in grouped dialogue files.
+- Mason dialogue had repeated line variants replaced with distinct profession-flavored variants.
 - Forced-dialogue chat now uses normal triggers with `output.mode: "chat"` instead of separate `_chat` trigger names.
 - Forced-dialogue reputation changes now spread through the gossip hook when a villager witnesses the event.
 - Forced dialogue speaker labels now preserve custom villager names in villager chat instead of falling back to profession-only labels.
-- Wiki pages now document forced dialogue, player item proximity callouts, theft memories, reputation-gated dialogue, line variation fields, response variation fields, and the updated datapack builder workflow.
+- Reputation change notifications can now be collapsed to reduce repeated HUD spam.
+- The interaction GUI and reputation text now use localization keys.
+- Client/server interaction networking was refactored around dedicated payloads for dialogue, gifts, inventory, recruitment, reputation notices, name sync, world text, and conversation endings.
+- Villager model, renderer, reputation overlay, world-text, and interaction HUD behavior were adjusted for the expanded interaction systems.
+- Villager combat, follow, pathing, hostile-target lookup, cleric support, ground-weapon pursuit, bell search, weapon usability, gossip processing, story lookup, and reputation scans were refactored and optimized to reduce redundant work and stale data.
+- Slimes are no longer treated as villager retaliation targets.
+- Datapack diagnostics now report dialogue, forced-dialogue, and notification parsing problems more consistently, including stricter builder/import folder validation and clearer validation results.
+- Datapack-builder rendering, validation, and imports were tuned with paginated entry lists, render caching, flexible checks/file-tree panels, optimized line-number rendering, notification routing, duplicate detection fixes, invalid validation fixtures, safer unsaved-draft/export handling, strict known-root imports, normalized backslash paths, and more reliable zip entry handling.
+- Wiki pages and the built-in builder wiki snapshot now document forced dialogue, profession loot, profession-group dialogue files, player item proximity callouts, theft memories, reputation-gated dialogue, line variation fields, response variation fields, localization, event tags, notification triggers, pack format changes, resource-pack model overrides, and the updated datapack builder workflow.
+- Updated README/docs links for the Villager Retaliation Generator and added the GitHub Pages deploy workflow for publishing the builder.
+- Promoted the release version from `1.0.0-beta.11-dev4` to `1.0.0-beta.11`.
+
+### Deprecated
+
+- Full-file gift and villager-name overrides still work, but small packs should prefer id-based gift changes and additive name files.
+- Legacy pacification placeholders `{emerald_cost}` and `{emeralds}` still work, but new packs should prefer `{payment_cost}`, `{payment_item}`, and `{payment_items}`.
+
+### Removed
+
+- Removed `small_talk` as a separate dialogue request. Use `question` for general player-selected conversation.
+- Removed request values from dialogue option `type`; dialogue options now use `type: "dialogue_option"` plus `request`, and dialogue lines use `request`.
+- Removed `_chat` forced-dialogue triggers. Use the normal trigger with `output.mode: "chat"`.
 
 ### Notes For Pack Authors
 

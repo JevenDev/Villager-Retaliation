@@ -3615,6 +3615,11 @@ function dialogueTextValue(entry) {
   return entry?.text ?? "";
 }
 
+function duplicateTextVariant(entry) {
+  if (!Array.isArray(entry?.lines)) return "";
+  return firstDuplicate(entry.lines);
+}
+
 function dialogueItemPaymentText(entry) {
   const payment = entry?.give_items ?? entry?.take_items ?? entry?.payment;
   if (!payment || typeof payment !== "object" || Array.isArray(payment)) return "";
@@ -3658,6 +3663,10 @@ function entryIssueDetail(section, kind, entry) {
     }
     if (["openings", "closings", "pacify"].includes(kind) && !hasDialogueText(entry)) {
       return issueDetail("Text variation(s)", "non-empty dialogue text", dialogueTextValue(entry), "dialogue-text");
+    }
+    const duplicateVariant = duplicateTextVariant(entry);
+    if (duplicateVariant) {
+      return issueDetail("Text variations", "unique line variants", duplicateVariant, "dialogue-text", "warning");
     }
     if (["options", "lines"].includes(kind) && entry.request && !CONSTANTS.dialogueTypes.includes(entry.request)) {
       return issueDetail("Request", `one of ${CONSTANTS.dialogueTypes.join(", ")}`, entry.request, "dialogue-type", "warning");
@@ -3965,6 +3974,19 @@ function firstDuplicateEntries(entries, valueForEntry = (entry) => entry?.id) {
   return null;
 }
 
+function firstEntryWithDuplicateTextVariant(entries) {
+  for (let index = 0; index < entries.length; index += 1) {
+    const value = duplicateTextVariant(entries[index]);
+    if (value) {
+      return {
+        value,
+        matches: [{ entry: entries[index], index }]
+      };
+    }
+  }
+  return null;
+}
+
 function fileNameFromPath(path) {
   return String(path || "").split("/").pop() || path;
 }
@@ -4197,6 +4219,16 @@ function validate() {
     });
   }
   const allDialogueEntries = ["options", "lines", "messages", "openings", "closings", "pacify"].flatMap((kind) => state.dialogue[kind]);
+  const duplicateDialogueVariant = ["lines", "messages", "openings", "closings", "pacify"]
+    .map((kind) => ({ kind, duplicate: firstEntryWithDuplicateTextVariant(state.dialogue[kind]) }))
+    .find((result) => result.duplicate);
+  if (duplicateDialogueVariant) {
+    const locations = entryLocations("dialogue", duplicateDialogueVariant.kind, duplicateDialogueVariant.duplicate.matches, "dialogue-text");
+    addCheck(checks, "warning", "Dialogue text variants", `Duplicate text variation: ${duplicateDialogueVariant.duplicate.value} in ${checkLocationDetails(locations)}.`, {
+      locations,
+      paths: locations.map((location) => location.path)
+    });
+  }
   const badDialogueType = firstInvalidValue([...state.dialogue.options, ...state.dialogue.lines], ["request"], (value) => CONSTANTS.dialogueTypes.includes(value));
   if (badDialogueType) {
     addCheck(checks, "warning", "Dialogue request", `Unknown dialogue request: ${badDialogueType}.`);

@@ -28,7 +28,8 @@ A forced dialogue file can be a single entry:
   },
   "lines": [
     "Stop right there.",
-    "I saw what you took."
+    "I saw what you took.",
+    "That chest was not yours to empty."
   ]
 }
 ```
@@ -46,7 +47,8 @@ or an `entries` array:
       },
       "lines": [
         "Stop right there.",
-        "I saw what you took."
+        "I saw what you took.",
+        "That chest was not yours to empty."
       ]
     }
   ]
@@ -136,6 +138,8 @@ Use `output.mode` to choose how the event line is delivered. This keeps the even
 
 Use the same trigger with different `output.mode` values when an event should both emit a chat callout and open a locked forced-dialogue scene. Chat entries can play first, then a separate `forced_dialogue` entry for the same trigger can still run.
 
+For direct reactions that should require an actual witness, prefer a forced-dialogue entry with `output.mode: "chat"` over ambient notification text. That gives the reaction access to `witness_radius`, `requires_line_of_sight`, witness profession filters, chance, priority, and target filters while still delivering the result as normal villager chat instead of opening the interaction screen.
+
 Use `trigger: "player_item_proximity"` for held or worn item reactions when a player walks near a villager. The trigger requires a `player_items` or `player_item_tags` filter so it does not fire for every nearby player:
 
 ```json
@@ -148,7 +152,8 @@ Use `trigger: "player_item_proximity"` for held or worn item reactions when a pl
   "requires_line_of_sight": true,
   "lines": [
     "Easy with {held_item}, {player}.",
-    "That blade is hard to miss."
+    "That blade is hard to miss.",
+    "Keep {held_item} pointed away from the village."
   ],
   "output": {
     "mode": "chat",

@@ -29,8 +29,8 @@
       "weight": 26,
       "lines": [
         "Keep clear of the stonecutter. It does not care who started the conversation.",
-        "Keep clear of the stonecutter. It does not care who started the conversation.",
-        "Keep clear of the stonecutter. It does not care who started the conversation."
+        "Give the stonecutter room. It is sharper than this conversation needs to be.",
+        "Stand wide of the stonecutter. It never asks who leaned in first."
       ]
     },
     {
@@ -39,8 +39,8 @@
       "weight": 18,
       "lines": [
         "Mason jokes are solid. Sometimes too solid to move.",
-        "Mason jokes are solid. Sometimes too solid to move.",
-        "Mason jokes are solid. Sometimes too solid to move."
+        "I tried a lighter mason joke once. It still landed like a brick.",
+        "My best jokes have foundations. The punchline usually needs scaffolding."
       ]
     },
     {
@@ -49,8 +49,8 @@
       "weight": 18,
       "lines": [
         "That remark had all the strength of loose gravel.",
-        "That remark had all the strength of loose gravel.",
-        "That remark had all the strength of loose gravel."
+        "I have swept up gravel with firmer opinions than that.",
+        "If that thought were mortar, the wall would already be down."
       ]
     },
     {
@@ -63,8 +63,8 @@
       "weight": 30,
       "lines": [
         "Your words carry weight, but not the useful kind.",
-        "Your words carry weight, but not the useful kind.",
-        "Your words carry weight, but not the useful kind."
+        "You brought heavy talk and no foundation under it.",
+        "That kind of weight cracks floors, not arguments."
       ]
     },
     {
@@ -77,7 +77,7 @@
       "lines": [
         "I remember being rubble. You helped set the first stone back in place.",
         "The cure cracked the old dark apart. You were there when the wall held.",
-        "I remember being rubble. You helped set the first stone back in place."
+        "You set me back into myself one careful piece at a time."
       ],
       "weight": 60
     },
@@ -91,7 +91,7 @@
       "lines": [
         "Your face is carved into that memory, but weather has worn it strange.",
         "I remember stone-cold hands, a golden taste, and standing upright again.",
-        "Your face is carved into that memory, but weather has worn it strange."
+        "The memory is worn smooth in places, but your hands are still carved into it."
       ],
       "weight": 60
     },
@@ -106,8 +106,8 @@
       "weight": 30,
       "lines": [
         "I remember you from beneath a collapsed roof of thoughts. Speak gently.",
-        "I remember you from beneath a collapsed roof of thoughts. Speak gently.",
-        "I remember you from beneath a collapsed roof of thoughts. Speak gently."
+        "That cure left dust in the corners of my mind. Move carefully around it.",
+        "I know you helped, but the memory still sounds like falling stone."
       ]
     },
     {
@@ -218,8 +218,8 @@
       "weight": 38,
       "lines": [
         "Solid trip, solid return. Foundations matter.",
-        "Solid trip, solid return. Foundations matter.",
-        "Solid trip, solid return. Foundations matter."
+        "We left, returned, and nothing load-bearing failed. I will take that.",
+        "Home is still standing, and so am I. That is a proper finish."
       ]
     },
     {
@@ -233,8 +233,8 @@
       "weight": 38,
       "lines": [
         "I came back chipped. A wall can take that. A person should not have to.",
-        "I came back chipped. A wall can take that. A person should not have to.",
-        "I came back chipped. A wall can take that. A person should not have to."
+        "I made it home with damage that no chisel can smooth.",
+        "There are cracks in me that the road had no right to make."
       ]
     },
     {
@@ -248,8 +248,8 @@
       "weight": 42,
       "lines": [
         "You cracked something load-bearing between us.",
-        "You cracked something load-bearing between us.",
-        "You cracked something load-bearing between us."
+        "A careless blow can split more than stone.",
+        "Trust was holding weight. Then you struck it."
       ]
     },
     {
@@ -261,8 +261,8 @@
       "weight": 42,
       "lines": [
         "No foundation under a boat, yet somehow it held. I respect the craft.",
-        "No foundation under a boat, yet somehow it held. I respect the craft.",
-        "No foundation under a boat, yet somehow it held. I respect the craft."
+        "A boat has no proper base, but I cannot argue with arriving alive.",
+        "The water carried us better than I expected. I still prefer roads."
       ]
     },
     {
@@ -276,8 +276,8 @@
       "weight": 4,
       "lines": [
         "After following you that far, I understood why roads need better foundations.",
-        "After following you that far, I understood why roads need better foundations.",
-        "After following you that far, I understood why roads need better foundations."
+        "That road needed a mason, and so did my feet.",
+        "Long paths teach you where the ground gives up."
       ]
     },
     {
@@ -290,8 +290,8 @@
       "weight": 3,
       "lines": [
         "I do not trust anything with no foundation, but that boat held better than I expected.",
-        "I do not trust anything with no foundation, but that boat held better than I expected.",
-        "I do not trust anything with no foundation, but that boat held better than I expected."
+        "That boat had no foundation and too much confidence, but it crossed.",
+        "I still distrust floating floors. Yours happened to survive."
       ]
     },
     {
@@ -303,8 +303,8 @@
       "weight": 32,
       "lines": [
         "Solid work. It took the pressure like good stone in the right wall.",
-        "Solid work. It took the pressure like good stone in the right wall.",
-        "Solid work. It took the pressure like good stone in the right wall."
+        "It held under strain, which is the only praise that matters.",
+        "Good gear does not boast. It simply refuses to break."
       ]
     },
     {
@@ -316,8 +316,8 @@
       "weight": 32,
       "lines": [
         "Still unmarked. Strong things do not need to boast before the load comes.",
-        "Still unmarked. Strong things do not need to boast before the load comes.",
-        "Still unmarked. Strong things do not need to boast before the load comes."
+        "It has not met pressure yet. That can be a blessing.",
+        "Unscarred gear is not wasted if it keeps fear smaller."
       ]
     },
     {
@@ -390,7 +390,7 @@
       "lines": [
         "Here, {gift_item}. Strong villages are built one fair exchange at a time.",
         "Take {gift_item}. A steady hand deserves steady thanks.",
-        "Here, {gift_item}. Strong villages are built one fair exchange at a time."
+        "Take {gift_item}. A steady hand deserves more than words."
       ],
       "weight": 48
     },
@@ -400,7 +400,7 @@
       "lines": [
         "Good. {gift_item} sat square with {tested_villager}.",
         "Then the advice was level. {tested_villager} liked {gift_item}.",
-        "Good. {gift_item} sat square with {tested_villager}."
+        "That advice held plumb. {tested_villager} liked {gift_item}."
       ],
       "weight": 44
     },
@@ -410,7 +410,7 @@
       "lines": [
         "That foundation cracked. For {gift_subject}, set {alternative_gift} instead.",
         "{gift_item} did not bear weight there? Try {alternative_gift}; sturdier choice.",
-        "That foundation cracked. For {gift_subject}, set {alternative_gift} instead."
+        "That gift settled wrong. Set {alternative_gift} in its place for {gift_subject}."
       ],
       "weight": 44
     },
@@ -425,8 +425,8 @@
       "weight": 20,
       "lines": [
         "That advice cracked under pressure. Set {alternative_gift} in its place.",
-        "That advice cracked under pressure. Set {alternative_gift} in its place.",
-        "That advice cracked under pressure. Set {alternative_gift} in its place."
+        "The first plan crumbled. Use {alternative_gift} before it falls again.",
+        "Set {alternative_gift} instead. This wall needs better stone."
       ]
     },
     {
@@ -438,8 +438,8 @@
       "weight": 20,
       "lines": [
         "You built on weak stone. Use {alternative_gift} if you want it to stand.",
-        "You built on weak stone. Use {alternative_gift} if you want it to stand.",
-        "You built on weak stone. Use {alternative_gift} if you want it to stand."
+        "Try {alternative_gift}; even your mistakes need a better base.",
+        "If you want that gift to stand, stop stacking bad choices on it."
       ]
     }
   ],
@@ -448,8 +448,8 @@
       "id": "mason_opening",
       "lines": [
         "Mind the stonecutter. What do you need?",
-        "Mind the stonecutter. What do you need?",
-        "Mind the stonecutter. What do you need?"
+        "Step clear of the stonecutter. What do you need?",
+        "Keep your hands back from the blade. What do you need?"
       ]
     }
   ],
@@ -458,8 +458,8 @@
       "id": "mason_closing",
       "lines": [
         "Back to setting stone that stays set, then.",
-        "Back to setting stone that stays set, then.",
-        "Back to setting stone that stays set, then."
+        "I have stone to set and mistakes to chip away.",
+        "The wall will not square itself."
       ]
     }
   ],
@@ -472,8 +472,8 @@
       "weight": 26,
       "lines": [
         "Fine. I will set this stone down carefully.",
-        "Fine. I will set this stone down carefully.",
-        "Fine. I will set this stone down carefully."
+        "Fine. I will lower this like a heavy block.",
+        "Fine. I can set the anger down, but not forget where it was."
       ]
     },
     {
@@ -484,8 +484,8 @@
       "weight": 26,
       "lines": [
         "That foundation will not hold. Bring {emerald_cost} {emeralds}.",
-        "That foundation will not hold. Bring {emerald_cost} {emeralds}.",
-        "That foundation will not hold. Bring {emerald_cost} {emeralds}."
+        "That offer is short by enough to crack. Bring {emerald_cost} {emeralds}.",
+        "Not enough mortar for this repair. Bring {emerald_cost} {emeralds}."
       ]
     },
     {
@@ -496,8 +496,8 @@
       "weight": 26,
       "lines": [
         "No. Some cracks keep spreading after the offer is made.",
-        "No. Some cracks keep spreading after the offer is made.",
-        "No. Some cracks keep spreading after the offer is made."
+        "No. This crack is still moving, and I am not building on it.",
+        "No. Some damage has to stop spreading before payment matters."
       ]
     }
   ]
