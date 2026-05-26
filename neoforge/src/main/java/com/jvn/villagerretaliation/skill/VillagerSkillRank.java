@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.skill;
 
+import java.util.Locale;
+
 public enum VillagerSkillRank {
     NOVICE("novice", 1, 19),
     APPRENTICE("apprentice", 20, 39),
@@ -41,5 +43,20 @@ public enum VillagerSkillRank {
             }
         }
         return SKILLED;
+    }
+
+    public static VillagerSkillRank bySerializedName(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+
+        String normalized = value.trim().toLowerCase(Locale.ROOT);
+        for (VillagerSkillRank rank : values()) {
+            if (rank.serializedName.equals(normalized)
+                    || rank.name().equalsIgnoreCase(normalized)) {
+                return rank;
+            }
+        }
+        return null;
     }
 }
