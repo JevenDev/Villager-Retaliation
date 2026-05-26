@@ -145,14 +145,11 @@ public final class VillagerReputationAdvancements {
 
     public static void onPlayerTick(ServerPlayer player) {
         ServerLevel level = player.serverLevel();
-        ResourceLocation currentBiomeId = level.getBiome(player.blockPosition())
-                .unwrapKey()
-                .map(ResourceKey::location)
-                .orElse(null);
         long gameTime = level.getGameTime();
-        Long nextDiscoveryScan = NEXT_DISCOVERY_SCAN.get(player.getUUID());
-        if (nextDiscoveryScan == null || nextDiscoveryScan <= gameTime) {
-            NEXT_DISCOVERY_SCAN.put(player.getUUID(), gameTime + DISCOVERY_SCAN_INTERVAL_TICKS);
+        UUID playerId = player.getUUID();
+        ResourceLocation currentBiomeId = null;
+        if (consumePlayerScanSlot(playerId, NEXT_DISCOVERY_SCAN, gameTime, DISCOVERY_SCAN_INTERVAL_TICKS)) {
+            currentBiomeId = currentBiomeId(level, player.blockPosition());
             VillagerInteractionTracker.DiscoveryReports discoveries = VillagerInteractionTracker.markDiscoveriesNear(
                     level,
                     player,
@@ -169,20 +166,22 @@ public final class VillagerReputationAdvancements {
                 discoveries.storyHintReports().forEach(discovery -> sendStoryHintFoundNotice(player, discovery));
             }
         }
-        if (currentBiomeId != null) {
+
+        if (consumePlayerScanSlot(playerId, NEXT_BIOME_STORY_SCAN, gameTime, DANGEROUS_STORY_SCAN_INTERVAL_TICKS)) {
+            if (currentBiomeId == null) {
+                currentBiomeId = currentBiomeId(level, player.blockPosition());
+            }
             rememberBiomeStories(player, currentBiomeId);
         }
         rememberDangerousStructureStories(player);
     }
 
     private static void rememberBiomeStories(ServerPlayer player, ResourceLocation currentBiomeId) {
-        ServerLevel level = player.serverLevel();
-        long gameTime = level.getGameTime();
-        Long nextScan = NEXT_BIOME_STORY_SCAN.get(player.getUUID());
-        if (nextScan != null && nextScan > gameTime) {
+        if (currentBiomeId == null) {
             return;
         }
-        NEXT_BIOME_STORY_SCAN.put(player.getUUID(), gameTime + DANGEROUS_STORY_SCAN_INTERVAL_TICKS);
+        ServerLevel level = player.serverLevel();
+        long gameTime = level.getGameTime();
 
         BiomeStoryResources.Entry storyBiome = BiomeStoryResources.entriesByBiome(level.getServer()).get(currentBiomeId);
         if (storyBiome == null) {
@@ -362,6 +361,34 @@ public final class VillagerReputationAdvancements {
 
     private static int blockRadiusToChunkRadius(int blockRadius) {
         return Math.max(1, (blockRadius + STRUCTURE_SEARCH_BLOCKS_PER_CHUNK - 1) / STRUCTURE_SEARCH_BLOCKS_PER_CHUNK);
+    }
+
+    private static ResourceLocation currentBiomeId(ServerLevel level, BlockPos pos) {
+        return level.getBiome(pos)
+                .unwrapKey()
+                .map(ResourceKey::location)
+                .orElse(null);
+    }
+
+    private static boolean consumePlayerScanSlot(
+            UUID playerId,
+            Map<UUID, Long> nextScanTicks,
+            long gameTime,
+            long intervalTicks
+    ) {
+        Long nextScan = nextScanTicks.get(playerId);
+        if (nextScan == null) {
+            long firstScan = gameTime + scanStagger(playerId, intervalTicks);
+            if (firstScan > gameTime) {
+                nextScanTicks.put(playerId, firstScan);
+                return false;
+            }
+        } else if (gameTime < nextScan) {
+            return false;
+        }
+
+        nextScanTicks.put(playerId, gameTime + Math.max(1L, intervalTicks));
+        return true;
     }
 
     private static long scanStagger(UUID playerId, long intervalTicks) {

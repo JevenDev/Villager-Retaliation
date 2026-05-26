@@ -32,11 +32,12 @@ public final class VillagerFleeBehaviorHandler {
         }
 
         Brain<Villager> brain = villager.getBrain();
-        if (VillagerRetaliationVillagerRules.shouldKeepFleeingBehavior(villager)) {
+        boolean keepFleeingBehavior = VillagerRetaliationVillagerRules.shouldKeepFleeingBehavior(villager);
+        if (keepFleeingBehavior) {
             maybeAnnounceFlee(level, villager, brain);
             return;
         }
-        if (!VillagerRetaliationVillagerRules.shouldSuppressFleeingBehavior(villager)) {
+        if (!VillagerRetaliationVillagerRules.shouldSuppressFleeingBehavior(villager, keepFleeingBehavior)) {
             return;
         }
 

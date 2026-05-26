@@ -201,14 +201,8 @@ public final class VillagerStoryHintService {
             );
             ResourceLocation biomeId = keyLocation(biome).orElse(null);
             if (biomeId != null && !biome.is(currentBiome) && isNewTarget(targets, biomeId, x, z)) {
-                Pair<BlockPos, Holder<Biome>> nearest = level.findClosestBiome3d(
-                        candidate -> keyLocation(candidate).map(biomeId::equals).orElse(false),
-                        origin,
-                        maxRadius,
-                        32,
-                        64
-                );
-                BlockPos targetPos = nearest == null ? new BlockPos(x, origin.getY(), z) : nearest.getFirst();
+                // Avoid the locate-style biome search here; the sampled noise-biome position is enough for a rumor hint.
+                BlockPos targetPos = new BlockPos(x, origin.getY(), z);
                 if (isNewTarget(targets, biomeId, targetPos.getX(), targetPos.getZ())) {
                     targets.add(new CachedTarget(HintKind.BIOME, biomeId, targetPos));
                 }
@@ -276,7 +270,7 @@ public final class VillagerStoryHintService {
         }
         BlockPos origin = context.villager().blockPosition();
         Registry<Structure> registry = level.registryAccess().registryOrThrow(Registries.STRUCTURE);
-        List<Holder.Reference<Structure>> structures = new ArrayList<>(registry.holders().toList());
+        List<Holder.Reference<Structure>> structures = configuredStoryStructures(level, registry);
         if (structures.isEmpty()) {
             return List.of();
         }
@@ -309,6 +303,23 @@ public final class VillagerStoryHintService {
             remaining.removeIf(structure -> foundStructureId != null && keyLocation(structure).map(foundStructureId::equals).orElse(false));
         }
         return targets;
+    }
+
+    private static List<Holder.Reference<Structure>> configuredStoryStructures(
+            ServerLevel level,
+            Registry<Structure> registry
+    ) {
+        List<DangerousStructureStoryResources.Entry> entries = DangerousStructureStoryResources.entries(level.getServer());
+        if (entries.isEmpty()) {
+            return List.of();
+        }
+
+        List<Holder.Reference<Structure>> structures = new ArrayList<>(entries.size());
+        for (DangerousStructureStoryResources.Entry entry : entries) {
+            registry.getHolder(ResourceKey.create(Registries.STRUCTURE, entry.structureId()))
+                    .ifPresent(structures::add);
+        }
+        return structures;
     }
 
     private static void rememberStoryHint(DialogueContext context, CachedTarget target, String targetName) {

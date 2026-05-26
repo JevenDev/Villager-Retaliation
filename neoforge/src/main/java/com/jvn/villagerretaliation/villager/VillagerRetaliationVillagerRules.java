@@ -40,7 +40,11 @@ public final class VillagerRetaliationVillagerRules {
     }
 
     public static boolean shouldSuppressFleeingBehavior(Villager villager) {
-        if (shouldKeepFleeingBehavior(villager)) {
+        return shouldSuppressFleeingBehavior(villager, shouldKeepFleeingBehavior(villager));
+    }
+
+    public static boolean shouldSuppressFleeingBehavior(Villager villager, boolean keepFleeingBehavior) {
+        if (keepFleeingBehavior) {
             return false;
         }
         if (!canStandGroundAgainstHostileMobs(villager)) {
