@@ -25,6 +25,7 @@ import com.jvn.villagerretaliation.network.VillagerRecruitRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.notification.VillagerNotifications;
+import com.jvn.villagerretaliation.profile.VillagerProfile;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
 import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
@@ -55,6 +56,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Equipable;
@@ -128,7 +130,7 @@ public final class VillagerInteractionService {
 
     public static void openInteractionScreen(ServerPlayer player, Villager villager, boolean forceCameraTowardsVillager) {
         ServerLevel level = player.serverLevel();
-        VillagerProfileManager.getOrCreateProfile(level, villager);
+        VillagerProfile profile = VillagerProfileManager.getOrCreateProfile(level, villager);
         ReputationSnapshot reputation = reputationSnapshot(level, villager, player);
         VillagerInteractionTracker.InteractionState interactionState = VillagerInteractionTracker.getState(level, villager, player);
         DialogueContextSnapshots contextSnapshots = dialogueContextSnapshots(level, villager);
@@ -146,6 +148,7 @@ public final class VillagerInteractionService {
         List<DialogueOptionDefinition> dialogueOptions = VillagerDialogueResources.dialogueOptions(dialogueContext, mood);
         VillagerGiftKnowledgeService.GiftKnowledgeSnapshot giftKnowledge =
                 VillagerGiftKnowledgeService.knownGifts(level, player, villager.getVillagerData().getProfession());
+        VillagerReputationNetworking.sendProfile(player, villager, profile);
         PacketDistributor.sendToPlayer(player, new OpenVillagerInteractionPayload(
                 villager.getId(),
                 "",
@@ -201,11 +204,12 @@ public final class VillagerInteractionService {
             List<DialogueOptionDefinition> dialogueOptions,
             boolean forceCameraTowardsVillager) {
         ServerLevel level = player.serverLevel();
-        VillagerProfileManager.getOrCreateProfile(level, villager);
+        VillagerProfile profile = VillagerProfileManager.getOrCreateProfile(level, villager);
         ReputationSnapshot reputation = reputationSnapshot(level, villager, player);
         DialogueContext context = createDialogueContext(level, player, villager);
         VillagerGiftKnowledgeService.GiftKnowledgeSnapshot giftKnowledge =
                 VillagerGiftKnowledgeService.knownGifts(level, player, villager.getVillagerData().getProfession());
+        VillagerReputationNetworking.sendProfile(player, villager, profile);
         PacketDistributor.sendToPlayer(player, new OpenVillagerInteractionPayload(
                 villager.getId(),
                 "",
@@ -563,6 +567,24 @@ public final class VillagerInteractionService {
 
         int reputation = VillagerReputationManager.getReputation(player.serverLevel(), villager, player.getUUID());
         VillagerReputationNetworking.sendReputation(player, villager, reputation);
+    }
+
+    public static void handleProfileRequest(ServerPlayer player, int entityId) {
+        Entity entity = player.serverLevel().getEntity(entityId);
+        if (!(entity instanceof AbstractVillager villager) || !villager.isAlive()) {
+            return;
+        }
+
+        double maxDistance = Math.max(
+                VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get(),
+                VillagerRetaliationConfig.WITNESS_RADIUS.get()
+        );
+        if (player.distanceToSqr(villager) > maxDistance * maxDistance) {
+            return;
+        }
+
+        VillagerProfile profile = VillagerProfileManager.getOrCreateProfile(player.serverLevel(), villager);
+        VillagerReputationNetworking.sendProfile(player, villager, profile);
     }
 
     public static void handleConversationEndRequest(ServerPlayer player, int entityId) {

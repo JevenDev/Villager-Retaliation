@@ -3,6 +3,8 @@ package com.jvn.villagerretaliation.network;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.notification.ResolvedVillagerNotification;
+import com.jvn.villagerretaliation.profile.VillagerProfile;
+import com.jvn.villagerretaliation.profile.VillagerSocialAttributes;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import com.jvn.toucanlib.neoforge.network.ToucanNetwork;
@@ -12,7 +14,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 public final class VillagerReputationNetworking {
-    private static final String PROTOCOL_VERSION = "8";
+    private static final String PROTOCOL_VERSION = "9";
 
     private VillagerReputationNetworking() {
     }
@@ -79,11 +81,26 @@ public final class VillagerReputationNetworking {
                 "com.jvn.villagerretaliation.client.inventory.GeneratedContainerTooltipClient",
                 "accept"
         );
+        network.safePlayToClientThreaded(
+                VillagerProfileSyncPayload.TYPE,
+                VillagerProfileSyncPayload.STREAM_CODEC,
+                "com.jvn.villagerretaliation.client.profile.VillagerProfileClientCache",
+                "accept"
+        );
         network.playToServer(
                 VillagerReputationRequestPayload.TYPE,
                 VillagerReputationRequestPayload.STREAM_CODEC,
                 (payload, context) -> ToucanNetwork.enqueue(context, () ->
                         ToucanNetwork.withServerPlayer(context, player -> VillagerInteractionService.handleReputationRequest(
+                            player,
+                            payload.entityId()
+                    )))
+        );
+        network.playToServer(
+                VillagerProfileRequestPayload.TYPE,
+                VillagerProfileRequestPayload.STREAM_CODEC,
+                (payload, context) -> ToucanNetwork.enqueue(context, () ->
+                        ToucanNetwork.withServerPlayer(context, player -> VillagerInteractionService.handleProfileRequest(
                             player,
                             payload.entityId()
                     )))
@@ -201,6 +218,21 @@ public final class VillagerReputationNetworking {
                 notification.noticeKind(),
                 notification.textColor(),
                 notification.chatColor()
+        ));
+    }
+
+    public static void sendProfile(ServerPlayer player, AbstractVillager villager, VillagerProfile profile) {
+        VillagerSocialAttributes attributes = profile.socialAttributes();
+        PacketDistributor.sendToPlayer(player, new VillagerProfileSyncPayload(
+                villager.getId(),
+                profile.villagerUuid(),
+                profile.lastKnownProfession(),
+                profile.generatedVersion(),
+                attributes.knowledge(),
+                attributes.guts(),
+                attributes.proficiency(),
+                attributes.kindness(),
+                attributes.charm()
         ));
     }
 
