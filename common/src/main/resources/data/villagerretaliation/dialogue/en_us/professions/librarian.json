@@ -29,8 +29,8 @@
       "weight": 26,
       "lines": [
         "Mind the lectern. It has heard better questions than most people ask.",
-        "Mind the lectern. It has heard better questions than most people ask.",
-        "Mind the lectern. It has heard better questions than most people ask."
+        "Give the lectern room. Records works better without elbows in it.",
+        "Step carefully near the lectern. I would rather greet you than patch you up."
       ]
     },
     {
@@ -39,8 +39,8 @@
       "weight": 18,
       "lines": [
         "I had a footnote for this joke, but mercy won.",
-        "I had a footnote for this joke, but mercy won.",
-        "I had a footnote for this joke, but mercy won."
+        "Records jokes need timing. Mine usually arrive with ink on them.",
+        "I keep a spare joke near the lectern. It is not always ready for public use."
       ]
     },
     {
@@ -49,8 +49,8 @@
       "weight": 18,
       "lines": [
         "That thought had too many blank pages.",
-        "That thought had too many blank pages.",
-        "That thought had too many blank pages."
+        "I have seen bad sources with more sense than that.",
+        "Careful. Even ink looks softer than your manners right now."
       ]
     },
     {
@@ -63,8 +63,8 @@
       "weight": 30,
       "lines": [
         "You may prefer I forget. I have chosen a profession that argues otherwise.",
-        "You may prefer I forget. I have chosen a profession that argues otherwise.",
-        "You may prefer I forget. I have chosen a profession that argues otherwise."
+        "I have seen bad sources with more sense than that.",
+        "Careful. Even ink looks softer than your manners right now."
       ]
     },
     {
@@ -77,7 +77,7 @@
       "lines": [
         "I remember the page turning back from a very bad ending.",
         "Your face is one of the first words I could read again.",
-        "I remember the page turning back from a very bad ending."
+        "You helped pull me back when even my name felt far away."
       ],
       "weight": 60
     },
@@ -91,7 +91,7 @@
       "lines": [
         "The chapter is damaged, but your name survived in the margin.",
         "I remember fragments: weakness, gold, a bitter draught, and you waiting.",
-        "The chapter is damaged, but your name survived in the margin."
+        "The memory is rough around the edges, but your face stayed in it."
       ],
       "weight": 60
     },
@@ -106,8 +106,8 @@
       "weight": 30,
       "lines": [
         "I remember you. Some books should be opened slowly after a curse.",
-        "I remember you. Some books should be opened slowly after a curse.",
-        "I remember you. Some books should be opened slowly after a curse."
+        "I know you helped. I also remember why my hands still shake.",
+        "The cure left echoes behind. Stand where I can breathe around them."
       ]
     },
     {
@@ -218,8 +218,8 @@
       "weight": 38,
       "lines": [
         "A journey with a tidy ending. I appreciate a chapter that closes at home.",
-        "A journey with a tidy ending. I appreciate a chapter that closes at home.",
-        "A journey with a tidy ending. I appreciate a chapter that closes at home."
+        "Home again, whole enough to thank you properly. That matters.",
+        "We came back with the village still ahead of us. I will count that as good work."
       ]
     },
     {
@@ -233,8 +233,8 @@
       "weight": 38,
       "lines": [
         "That outing needs a margin note: return achieved, judgment questionable.",
-        "That outing needs a margin note: return achieved, judgment questionable.",
-        "That outing needs a margin note: return achieved, judgment questionable."
+        "I made it home, but the road took more from me than it should have.",
+        "Next time, let us return with fewer marks and better choices."
       ]
     },
     {
@@ -248,8 +248,8 @@
       "weight": 42,
       "lines": [
         "I have read warnings with kinder endings than the one you wrote for me.",
-        "I have read warnings with kinder endings than the one you wrote for me.",
-        "I have read warnings with kinder endings than the one you wrote for me."
+        "Following you was trust. What happened after was something else.",
+        "A guide who strikes from close by leaves the longest mark."
       ]
     },
     {
@@ -261,8 +261,8 @@
       "weight": 42,
       "lines": [
         "If I write that boat ride down, I will shelve it under anxious transportation.",
-        "If I write that boat ride down, I will shelve it under anxious transportation.",
-        "If I write that boat ride down, I will shelve it under anxious transportation."
+        "The boat did its part. I am still deciding whether the rest of the plan did.",
+        "Water carried us home, which is more than I expected from that journey."
       ]
     },
     {
@@ -274,8 +274,8 @@
       "weight": 3,
       "lines": [
         "The story of me following you needs editing. Mostly shorter chapters and fewer hazards.",
-        "The story of me following you needs editing. Mostly shorter chapters and fewer hazards.",
-        "The story of me following you needs editing. Mostly shorter chapters and fewer hazards."
+        "I remember following you through that road. My feet remember it even better.",
+        "That trip across that road taught me to ask more questions before walking."
       ]
     },
     {
@@ -288,8 +288,8 @@
       "weight": 3,
       "lines": [
         "The boat chapter of our journey was damp, brief, and badly footnoted.",
-        "The boat chapter of our journey was damp, brief, and badly footnoted.",
-        "The boat chapter of our journey was damp, brief, and badly footnoted."
+        "That boat trip still sits oddly in my memory, but at least it floated.",
+        "A boat can make a bad plan quieter. It cannot make me forget it."
       ]
     },
     {
@@ -301,8 +301,8 @@
       "weight": 32,
       "lines": [
         "It performed as promised. I may need to revise my opinion of practical gifts upward.",
-        "It performed as promised. I may need to revise my opinion of practical gifts upward.",
-        "It performed as promised. I may need to revise my opinion of practical gifts upward."
+        "It did the job when fear was loud. That is praise enough.",
+        "Good gear earns trust the moment trouble tests it."
       ]
     },
     {
@@ -314,8 +314,8 @@
       "weight": 32,
       "lines": [
         "Untested. I have filed it under things I hope remain theoretical.",
-        "Untested. I have filed it under things I hope remain theoretical.",
-        "Untested. I have filed it under things I hope remain theoretical."
+        "It did the job when fear was loud. That is praise enough.",
+        "Good gear earns trust the moment trouble tests it."
       ]
     },
     {
@@ -388,7 +388,7 @@
       "lines": [
         "Take {gift_item}. Knowledge is not the only thing worth lending carefully.",
         "Here, {gift_item}. Return with a story, and I will call it a fair trade.",
-        "Take {gift_item}. Knowledge is not the only thing worth lending carefully."
+        "Take {gift_item}. It is not much, but it is given with care."
       ],
       "weight": 48
     },
@@ -398,7 +398,7 @@
       "lines": [
         "Excellent. I will mark {gift_item} as a good recommendation, then.",
         "Then my reference was sound. {gift_item} belongs on that page.",
-        "Excellent. I will mark {gift_item} as a good recommendation, then."
+        "Good. {gift_item} suited {tested_villager}; I like advice that holds up."
       ],
       "weight": 44
     },
@@ -408,7 +408,7 @@
       "lines": [
         "An error in the margin, then. For {gift_subject}, revise the gift to {alternative_gift}.",
         "{gift_item} was the wrong citation. Try {alternative_gift}; much stronger source.",
-        "An error in the margin, then. For {gift_subject}, revise the gift to {alternative_gift}."
+        "{gift_item} missed the mark for {gift_subject}. Try {alternative_gift} instead."
       ],
       "weight": 44
     },
@@ -423,8 +423,8 @@
       "weight": 20,
       "lines": [
         "Then consider that note corrected. For {gift_subject}, write down {alternative_gift}.",
-        "Then consider that note corrected. For {gift_subject}, write down {alternative_gift}.",
-        "Then consider that note corrected. For {gift_subject}, write down {alternative_gift}."
+        "Set {gift_item} aside and try {alternative_gift}. This advice should land better. {gift_subject}",
+        "Then we correct the guess: {alternative_gift} next time. {gift_subject}"
       ]
     },
     {
@@ -436,8 +436,8 @@
       "weight": 20,
       "lines": [
         "You accepted a poor source without checking it. Next source: {alternative_gift}.",
-        "You accepted a poor source without checking it. Next source: {alternative_gift}.",
-        "You accepted a poor source without checking it. Next source: {alternative_gift}."
+        "Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
+        "Then we correct the guess: {alternative_gift} next time."
       ]
     }
   ],
@@ -446,8 +446,8 @@
       "id": "librarian_opening",
       "lines": [
         "Mind the lectern. What do you need?",
-        "Mind the lectern. What do you need?",
-        "Mind the lectern. What do you need?"
+        "Step clear of the lectern. What do you need?",
+        "Mind the lectern; I am listening."
       ]
     }
   ],
@@ -456,8 +456,8 @@
       "id": "librarian_closing",
       "lines": [
         "Back to keeping records and stories straight, then.",
-        "Back to keeping records and stories straight, then.",
-        "Back to keeping records and stories straight, then."
+        "Back to records before the work notices I stopped.",
+        "I have page to tend and daylight to spend."
       ]
     }
   ],
@@ -470,8 +470,8 @@
       "weight": 26,
       "lines": [
         "Fine. I will close this chapter, but I am not tearing out the page.",
-        "Fine. I will close this chapter, but I am not tearing out the page.",
-        "Fine. I will close this chapter, but I am not tearing out the page."
+        "Fine. I will set this down before it gets heavier.",
+        "Fine. I can step back, but do not make me regret it."
       ]
     },
     {
@@ -482,8 +482,8 @@
       "weight": 26,
       "lines": [
         "The account is incomplete. It requires {emerald_cost} {emeralds}.",
-        "The account is incomplete. It requires {emerald_cost} {emeralds}.",
-        "The account is incomplete. It requires {emerald_cost} {emeralds}."
+        "That is short of the full repair. Bring {emerald_cost} {emeralds}.",
+        "Not enough. It takes {emerald_cost} {emeralds} to settle this."
       ]
     },
     {
@@ -494,8 +494,8 @@
       "weight": 26,
       "lines": [
         "No. The record is too fresh, and not in your favor.",
-        "No. The record is too fresh, and not in your favor.",
-        "No. The record is too fresh, and not in your favor."
+        "No. Some damage has to cool before payment matters.",
+        "No. Keep {payment_items}; trust is not ready to trade."
       ]
     }
   ]

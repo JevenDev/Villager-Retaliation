@@ -29,8 +29,8 @@
       "weight": 26,
       "lines": [
         "Hello. I was keeping this corner company.",
-        "Hello. I was keeping this corner company.",
-        "Hello. I was keeping this corner company."
+        "Give the sunny corner room. Odd jobs works better without elbows in it.",
+        "Step carefully near the sunny corner. I would rather greet you than patch you up."
       ]
     },
     {
@@ -39,8 +39,8 @@
       "weight": 18,
       "lines": [
         "My joke wandered off, but it promised to be funny if it returns.",
-        "My joke wandered off, but it promised to be funny if it returns.",
-        "My joke wandered off, but it promised to be funny if it returns."
+        "Odd jobs jokes need timing. Mine usually arrive with muddle on them.",
+        "I keep a spare joke near the sunny corner. It is not always ready for public use."
       ]
     },
     {
@@ -49,8 +49,8 @@
       "weight": 18,
       "lines": [
         "Your hat looks like it is thinking harder than you.",
-        "Your hat looks like it is thinking harder than you.",
-        "Your hat looks like it is thinking harder than you."
+        "I have seen bad guesses with more sense than that.",
+        "Careful. Even muddle looks softer than your manners right now."
       ]
     },
     {
@@ -63,8 +63,8 @@
       "weight": 30,
       "lines": [
         "I can be silly from over here. Over here feels better.",
-        "I can be silly from over here. Over here feels better.",
-        "I can be silly from over here. Over here feels better."
+        "Keep your voice even. I am measuring more than your words.",
+        "Some questions are safer when they stand a little farther away."
       ]
     },
     {
@@ -77,7 +77,7 @@
       "lines": [
         "I remember you! Mostly. You were the not-scary part of the scary bit.",
         "You helped me be me again. I am very attached to being me.",
-        "I remember you! Mostly. You were the not-scary part of the scary bit."
+        "You helped pull me back when even my name felt far away."
       ],
       "weight": 60
     },
@@ -91,7 +91,7 @@
       "lines": [
         "I know your face. Did we meet before or after I stopped groaning?",
         "There was an apple, but not the normal apple kind of day.",
-        "I know your face. Did we meet before or after I stopped groaning?"
+        "The memory is rough around the edges, but your face stayed in it."
       ],
       "weight": 60
     },
@@ -106,8 +106,8 @@
       "weight": 30,
       "lines": [
         "I remember some of it, and I would like to remember less of it.",
-        "I remember some of it, and I would like to remember less of it.",
-        "I remember some of it, and I would like to remember less of it."
+        "I know you helped. I also remember why my hands still shake.",
+        "The cure left echoes behind. Stand where I can breathe around them."
       ]
     },
     {
@@ -218,8 +218,8 @@
       "weight": 38,
       "lines": [
         "We went there, then we came back here. I liked the back here part best.",
-        "We went there, then we came back here. I liked the back here part best.",
-        "We went there, then we came back here. I liked the back here part best."
+        "Home again, whole enough to thank you properly. That matters.",
+        "We came back with the village still ahead of us. I will count that as good work."
       ]
     },
     {
@@ -233,8 +233,8 @@
       "weight": 38,
       "lines": [
         "I got bonked on the trip. Home is better when fewer things bonk me.",
-        "I got bonked on the trip. Home is better when fewer things bonk me.",
-        "I got bonked on the trip. Home is better when fewer things bonk me."
+        "I made it home, but the road took more from me than it should have.",
+        "Next time, let us return with fewer marks and better choices."
       ]
     },
     {
@@ -248,8 +248,8 @@
       "weight": 42,
       "lines": [
         "I thought following meant you were on my side. That was the important bit.",
-        "I thought following meant you were on my side. That was the important bit.",
-        "I thought following meant you were on my side. That was the important bit."
+        "Following you was trust. What happened after was something else.",
+        "A guide who strikes from close by leaves the longest mark."
       ]
     },
     {
@@ -261,8 +261,8 @@
       "weight": 42,
       "lines": [
         "The boat moved and I did not have to. I liked that part.",
-        "The boat moved and I did not have to. I liked that part.",
-        "The boat moved and I did not have to. I liked that part."
+        "The boat did its part. I am still deciding whether the rest of the plan did.",
+        "Water carried us home, which is more than I expected from that journey."
       ]
     },
     {
@@ -274,8 +274,8 @@
       "weight": 3,
       "lines": [
         "Remember when I followed you? I thought we were going somewhere. We sure did.",
-        "Remember when I followed you? I thought we were going somewhere. We sure did.",
-        "Remember when I followed you? I thought we were going somewhere. We sure did."
+        "I remember following you through that road. My feet remember it even better.",
+        "That trip across that road taught me to ask more questions before walking."
       ]
     },
     {
@@ -288,8 +288,8 @@
       "weight": 3,
       "lines": [
         "Remember the boat? I sat down and the world moved. Very clever.",
-        "Remember the boat? I sat down and the world moved. Very clever.",
-        "Remember the boat? I sat down and the world moved. Very clever."
+        "That boat trip still sits oddly in my memory, but at least it floated.",
+        "A boat can make a bad plan quieter. It cannot make me forget it."
       ]
     },
     {
@@ -301,8 +301,8 @@
       "weight": 32,
       "lines": [
         "I used it and did not drop it. That is two victories, if you ask me.",
-        "I used it and did not drop it. That is two victories, if you ask me.",
-        "I used it and did not drop it. That is two victories, if you ask me."
+        "It did the job when fear was loud. That is praise enough.",
+        "Good gear earns trust the moment trouble tests it."
       ]
     },
     {
@@ -314,8 +314,8 @@
       "weight": 32,
       "lines": [
         "I have not used it. I have practiced looking brave with it, which is almost something.",
-        "I have not used it. I have practiced looking brave with it, which is almost something.",
-        "I have not used it. I have practiced looking brave with it, which is almost something."
+        "It did the job when fear was loud. That is praise enough.",
+        "Good gear earns trust the moment trouble tests it."
       ]
     },
     {
@@ -377,7 +377,7 @@
       "lines": [
         "Take {gift_item}. I was saving it for a very good reason I forgot.",
         "Here, {gift_item}. It feels like the sort of thing a friend should have.",
-        "Take {gift_item}. I was saving it for a very good reason I forgot."
+        "Take {gift_item}. It is not much, but it is given with care."
       ],
       "weight": 48
     },
@@ -387,7 +387,7 @@
       "lines": [
         "See? {tested_villager} liked {gift_item}. I am occasionally brilliant by accident.",
         "Ha! {gift_item} worked. I will be unbearable about this for at least a minute.",
-        "See? {tested_villager} liked {gift_item}. I am occasionally brilliant by accident."
+        "Good. {gift_item} suited {tested_villager}; I like advice that holds up."
       ],
       "weight": 44
     },
@@ -397,7 +397,7 @@
       "lines": [
         "Oh. Then pretend I said {alternative_gift}. For {gift_subject}, that sounds much wiser.",
         "{gift_item} failed? Strange. Try {alternative_gift}; my second guesses are famous to me.",
-        "Oh. Then pretend I said {alternative_gift}. For {gift_subject}, that sounds much wiser."
+        "{gift_item} missed the mark for {gift_subject}. Try {alternative_gift} instead."
       ],
       "weight": 44
     },
@@ -412,8 +412,8 @@
       "weight": 20,
       "lines": [
         "That was advice? I thought we were guessing. Guess {alternative_gift} next.",
-        "That was advice? I thought we were guessing. Guess {alternative_gift} next.",
-        "That was advice? I thought we were guessing. Guess {alternative_gift} next."
+        "Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
+        "Then we correct the guess: {alternative_gift} next time."
       ]
     },
     {
@@ -425,8 +425,8 @@
       "weight": 20,
       "lines": [
         "You tried it anyway? Bold. I respect that almost enough to suggest {alternative_gift}.",
-        "You tried it anyway? Bold. I respect that almost enough to suggest {alternative_gift}.",
-        "You tried it anyway? Bold. I respect that almost enough to suggest {alternative_gift}."
+        "Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
+        "Then we correct the guess: {alternative_gift} next time."
       ]
     }
   ],
@@ -435,8 +435,8 @@
       "id": "nitwit_opening",
       "lines": [
         "Mind the sunny corner. What do you need?",
-        "Mind the sunny corner. What do you need?",
-        "Mind the sunny corner. What do you need?"
+        "Step clear of the sunny corner. What do you need?",
+        "Mind the sunny corner; I am listening."
       ]
     }
   ],
@@ -445,8 +445,8 @@
       "id": "nitwit_closing",
       "lines": [
         "Back to finding odd jobs and stranger thoughts, then.",
-        "Back to finding odd jobs and stranger thoughts, then.",
-        "Back to finding odd jobs and stranger thoughts, then."
+        "Back to odd jobs before the work notices I stopped.",
+        "I have thought to tend and daylight to spend."
       ]
     }
   ],
@@ -459,8 +459,8 @@
       "weight": 26,
       "lines": [
         "Fine. I was getting tired of being angry anyway.",
-        "Fine. I was getting tired of being angry anyway.",
-        "Fine. I was getting tired of being angry anyway."
+        "Fine. I will set this down before it gets heavier.",
+        "Fine. I can step back, but do not make me regret it."
       ]
     },
     {
@@ -471,8 +471,8 @@
       "weight": 26,
       "lines": [
         "I counted, then forgot, then counted again. It should be {emerald_cost} {emeralds}.",
-        "I counted, then forgot, then counted again. It should be {emerald_cost} {emeralds}.",
-        "I counted, then forgot, then counted again. It should be {emerald_cost} {emeralds}."
+        "That is short of the full repair. Bring {emerald_cost} {emeralds}.",
+        "Not enough. It takes {emerald_cost} {emeralds} to settle this."
       ]
     },
     {
@@ -483,8 +483,8 @@
       "weight": 26,
       "lines": [
         "No. Even I know this is not fixed.",
-        "No. Even I know this is not fixed.",
-        "No. Even I know this is not fixed."
+        "No. Some damage has to cool before payment matters.",
+        "No. Keep {payment_items}; trust is not ready to trade."
       ]
     }
   ]

@@ -29,8 +29,8 @@
       "weight": 26,
       "lines": [
         "Stand clear of the heat. A forge forgives less than I do.",
-        "Stand clear of the heat. A forge forgives less than I do.",
-        "Stand clear of the heat. A forge forgives less than I do."
+        "Give the forge room. Armor works better without elbows in it.",
+        "Step carefully near the forge. I would rather greet you than patch you up."
       ]
     },
     {
@@ -39,8 +39,8 @@
       "weight": 18,
       "lines": [
         "Armor jokes need padding. Otherwise everyone feels the point too soon.",
-        "Armor jokes need padding. Otherwise everyone feels the point too soon.",
-        "Armor jokes need padding. Otherwise everyone feels the point too soon."
+        "Armor jokes need timing. Mine usually arrive with iron on them.",
+        "I keep a spare joke near the forge. It is not always ready for public use."
       ]
     },
     {
@@ -49,8 +49,8 @@
       "weight": 18,
       "lines": [
         "That remark had the polish of wet rust.",
-        "That remark had the polish of wet rust.",
-        "That remark had the polish of wet rust."
+        "I have seen loose straps with more sense than that.",
+        "Careful. Even iron looks softer than your manners right now."
       ]
     },
     {
@@ -63,8 +63,8 @@
       "weight": 30,
       "lines": [
         "Do not sneer at my tools. They protect better people than you.",
-        "Do not sneer at my tools. They protect better people than you.",
-        "Do not sneer at my tools. They protect better people than you."
+        "I have seen loose straps with more sense than that.",
+        "Careful. Even iron looks softer than your manners right now."
       ]
     },
     {
@@ -77,7 +77,7 @@
       "lines": [
         "I remember your hands at the edge of the dark. Stronger than any plate I have hammered.",
         "A cure is armor for the soul. You helped fit mine back on.",
-        "I remember your hands at the edge of the dark. Stronger than any plate I have hammered."
+        "You helped pull me back when even my name felt far away."
       ],
       "weight": 60
     },
@@ -91,7 +91,7 @@
       "lines": [
         "I know your face, but the memory rings like a dented helm.",
         "There was iron in my mouth, or fear, or both. Then you were there.",
-        "I know your face, but the memory rings like a dented helm."
+        "The memory is rough around the edges, but your face stayed in it."
       ],
       "weight": 60
     },
@@ -106,8 +106,8 @@
       "weight": 30,
       "lines": [
         "I remember you through cracked mail and bad dreams. Stand where I can see your hands.",
-        "I remember you through cracked mail and bad dreams. Stand where I can see your hands.",
-        "I remember you through cracked mail and bad dreams. Stand where I can see your hands."
+        "I know you helped. I also remember why my hands still shake.",
+        "The cure left echoes behind. Stand where I can breathe around them."
       ]
     },
     {
@@ -218,8 +218,8 @@
       "weight": 38,
       "lines": [
         "Back without a dent worth naming. I will call that a good fit.",
-        "Back without a dent worth naming. I will call that a good fit.",
-        "Back without a dent worth naming. I will call that a good fit."
+        "Home again, whole enough to thank you properly. That matters.",
+        "We came back with the village still ahead of us. I will count that as good work."
       ]
     },
     {
@@ -233,8 +233,8 @@
       "weight": 38,
       "lines": [
         "There are marks on me I would rather see on a breastplate. Next time, let the metal take it.",
-        "There are marks on me I would rather see on a breastplate. Next time, let the metal take it.",
-        "There are marks on me I would rather see on a breastplate. Next time, let the metal take it."
+        "I made it home, but the road took more from me than it should have.",
+        "Next time, let us return with fewer marks and better choices."
       ]
     },
     {
@@ -248,8 +248,8 @@
       "weight": 42,
       "lines": [
         "I know the sound of a bad strike. Yours was worse because I trusted the hand behind it.",
-        "I know the sound of a bad strike. Yours was worse because I trusted the hand behind it.",
-        "I know the sound of a bad strike. Yours was worse because I trusted the hand behind it."
+        "Following you was trust. What happened after was something else.",
+        "A guide who strikes from close by leaves the longest mark."
       ]
     },
     {
@@ -261,8 +261,8 @@
       "weight": 42,
       "lines": [
         "A boat carries armor poorly, but it carried me well enough.",
-        "A boat carries armor poorly, but it carried me well enough.",
-        "A boat carries armor poorly, but it carried me well enough."
+        "The boat did its part. I am still deciding whether the rest of the plan did.",
+        "Water carried us home, which is more than I expected from that journey."
       ]
     },
     {
@@ -274,8 +274,8 @@
       "weight": 3,
       "lines": [
         "That trip through {follow_biome} tested my buckles more than most customers do.",
-        "That trip through {follow_biome} tested my buckles more than most customers do.",
-        "That trip through {follow_biome} tested my buckles more than most customers do."
+        "I remember following you through {follow_biome}. My feet remember it even better.",
+        "That trip across {follow_biome} taught me to ask more questions before walking."
       ]
     },
     {
@@ -288,8 +288,8 @@
       "weight": 3,
       "lines": [
         "Armor is not made for sitting in a boat. I learned that while following you.",
-        "Armor is not made for sitting in a boat. I learned that while following you.",
-        "Armor is not made for sitting in a boat. I learned that while following you."
+        "That boat trip still sits oddly in my memory, but at least it floated.",
+        "A boat can make a bad plan quieter. It cannot make me forget it."
       ]
     },
     {
@@ -301,8 +301,8 @@
       "weight": 34,
       "lines": [
         "It took the moment cleanly. Good gear is quiet until the blow lands.",
-        "It took the moment cleanly. Good gear is quiet until the blow lands.",
-        "It took the moment cleanly. Good gear is quiet until the blow lands."
+        "It did the job when fear was loud. That is praise enough.",
+        "Good gear earns trust the moment trouble tests it."
       ]
     },
     {
@@ -314,8 +314,8 @@
       "weight": 34,
       "lines": [
         "No dents yet. I can live with careful work staying untested.",
-        "No dents yet. I can live with careful work staying untested.",
-        "No dents yet. I can live with careful work staying untested."
+        "It did the job when fear was loud. That is praise enough.",
+        "Good gear earns trust the moment trouble tests it."
       ]
     },
     {
@@ -379,8 +379,8 @@
       "weight": 32,
       "lines": [
         "I know what failed on that frame. I do not yet know whether we have enough iron to forgive the failure.",
-        "I know what failed on that frame. I do not yet know whether we have enough iron to forgive the failure.",
-        "I know what failed on that frame. I do not yet know whether we have enough iron to forgive the failure."
+        "I am still sorting what happened. The village feels different after it.",
+        "That event left marks. We are counting people before we count damage."
       ]
     },
     {
@@ -402,7 +402,7 @@
       "lines": [
         "Here, {gift_item}. Well-kept armor is not the only thing that protects a friend.",
         "Take {gift_item}. I would rather see you prepared than patched up later.",
-        "Here, {gift_item}. Well-kept armor is not the only thing that protects a friend."
+        "Take {gift_item}. It is not much, but it is given with care."
       ],
       "weight": 48
     },
@@ -412,7 +412,7 @@
       "lines": [
         "Good. {gift_item} held like proper mail for {tested_villager}. Advice should take a dent and stay useful.",
         "I thought {gift_item} would fit. Glad {tested_villager} wore the gesture well.",
-        "Good. {gift_item} held like proper mail for {tested_villager}. Advice should take a dent and stay useful."
+        "Good. {gift_item} suited {tested_villager}; I like advice that holds up."
       ],
       "weight": 44
     },
@@ -422,7 +422,7 @@
       "lines": [
         "Then that fit was off. For {gift_subject}, try {alternative_gift}; better plate, fewer gaps.",
         "A poor fitting, then. Bring {alternative_gift} next time and the trade should sit easier.",
-        "Then that fit was off. For {gift_subject}, try {alternative_gift}; better plate, fewer gaps."
+        "{gift_item} missed the mark for {gift_subject}. Try {alternative_gift} instead."
       ],
       "weight": 44
     },
@@ -437,8 +437,8 @@
       "weight": 20,
       "lines": [
         "You trusted a cracked plate. That is on both of us. Try {alternative_gift}.",
-        "You trusted a cracked plate. That is on both of us. Try {alternative_gift}.",
-        "You trusted a cracked plate. That is on both of us. Try {alternative_gift}."
+        "Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
+        "Then we correct the guess: {alternative_gift} next time."
       ]
     },
     {
@@ -450,8 +450,8 @@
       "weight": 20,
       "lines": [
         "{gift_item} buckled? Fine. {alternative_gift} should hold better.",
-        "{gift_item} buckled? Fine. {alternative_gift} should hold better.",
-        "{gift_item} buckled? Fine. {alternative_gift} should hold better."
+        "Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
+        "Then we correct the guess: {alternative_gift} next time. {gift_item}"
       ]
     }
   ],
@@ -460,8 +460,8 @@
       "id": "armorer_opening",
       "lines": [
         "Mind the forge. What do you need?",
-        "Mind the forge. What do you need?",
-        "Mind the forge. What do you need?"
+        "Step clear of the forge. What do you need?",
+        "Mind the forge; I am listening."
       ]
     }
   ],
@@ -470,8 +470,8 @@
       "id": "armorer_closing",
       "lines": [
         "Back to fitting mail and shields, then.",
-        "Back to fitting mail and shields, then.",
-        "Back to fitting mail and shields, then."
+        "Back to armor before the work notices I stopped.",
+        "I have plate to tend and daylight to spend."
       ]
     }
   ],
@@ -484,8 +484,8 @@
       "weight": 26,
       "lines": [
         "Fine. I will lower my guard, but I am keeping the straps tight.",
-        "Fine. I will lower my guard, but I am keeping the straps tight.",
-        "Fine. I will lower my guard, but I am keeping the straps tight."
+        "Fine. I will set this down before it gets heavier.",
+        "Fine. I can step back, but do not make me regret it."
       ]
     },
     {
@@ -496,8 +496,8 @@
       "weight": 26,
       "lines": [
         "That will not cover the dent you put in my patience. It takes {emerald_cost} {emeralds}.",
-        "That will not cover the dent you put in my patience. It takes {emerald_cost} {emeralds}.",
-        "That will not cover the dent you put in my patience. It takes {emerald_cost} {emeralds}."
+        "That is short of the full repair. Bring {emerald_cost} {emeralds}.",
+        "Not enough. It takes {emerald_cost} {emeralds} to settle this."
       ]
     },
     {
@@ -508,8 +508,8 @@
       "weight": 26,
       "lines": [
         "No. Armor is for people I mean to protect, and that is not you right now.",
-        "No. Armor is for people I mean to protect, and that is not you right now.",
-        "No. Armor is for people I mean to protect, and that is not you right now."
+        "No. Some damage has to cool before payment matters.",
+        "No. Keep {payment_items}; trust is not ready to trade."
       ]
     }
   ]

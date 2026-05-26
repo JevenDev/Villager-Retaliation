@@ -29,8 +29,8 @@
       "weight": 26,
       "lines": [
         "Mind the table. Good tools begin with nobody bumping my elbow.",
-        "Mind the table. Good tools begin with nobody bumping my elbow.",
-        "Mind the table. Good tools begin with nobody bumping my elbow."
+        "Give the smithing table room. Tools works better without elbows in it.",
+        "Step carefully near the smithing table. I would rather greet you than patch you up."
       ]
     },
     {
@@ -39,8 +39,8 @@
       "weight": 18,
       "lines": [
         "Tool jokes work better when they have a point. Mine sometimes have two.",
-        "Tool jokes work better when they have a point. Mine sometimes have two.",
-        "Tool jokes work better when they have a point. Mine sometimes have two."
+        "Tools jokes need timing. Mine usually arrive with steel on them.",
+        "I keep a spare joke near the smithing table. It is not always ready for public use."
       ]
     },
     {
@@ -49,8 +49,8 @@
       "weight": 18,
       "lines": [
         "That idea is bent past repair.",
-        "That idea is bent past repair.",
-        "That idea is bent past repair."
+        "I have seen bad grips with more sense than that.",
+        "Careful. Even steel looks softer than your manners right now."
       ]
     },
     {
@@ -63,8 +63,8 @@
       "weight": 30,
       "lines": [
         "You are using your manners like the wrong tool for the job.",
-        "You are using your manners like the wrong tool for the job.",
-        "You are using your manners like the wrong tool for the job."
+        "I have seen bad grips with more sense than that.",
+        "Careful. Even steel looks softer than your manners right now."
       ]
     },
     {
@@ -77,7 +77,7 @@
       "lines": [
         "I remember my mind working again, like a tool freed from rust.",
         "You put a handle back on my life when I could not grip it myself.",
-        "I remember my mind working again, like a tool freed from rust."
+        "You helped pull me back when even my name felt far away."
       ],
       "weight": 60
     },
@@ -91,7 +91,7 @@
       "lines": [
         "Your face fits the memory, though the memory is still badly forged.",
         "I remember a cure biting harder than a dull saw, then sense returning.",
-        "Your face fits the memory, though the memory is still badly forged."
+        "The memory is rough around the edges, but your face stayed in it."
       ],
       "weight": 60
     },
@@ -106,8 +106,8 @@
       "weight": 30,
       "lines": [
         "I remember you. The old fear still catches like a nicked blade.",
-        "I remember you. The old fear still catches like a nicked blade.",
-        "I remember you. The old fear still catches like a nicked blade."
+        "I know you helped. I also remember why my hands still shake.",
+        "The cure left echoes behind. Stand where I can breathe around them."
       ]
     },
     {
@@ -218,8 +218,8 @@
       "weight": 38,
       "lines": [
         "Good work has a clean finish. Getting me home counts.",
-        "Good work has a clean finish. Getting me home counts.",
-        "Good work has a clean finish. Getting me home counts."
+        "Home again, whole enough to thank you properly. That matters.",
+        "We came back with the village still ahead of us. I will count that as good work."
       ]
     },
     {
@@ -233,8 +233,8 @@
       "weight": 38,
       "lines": [
         "That trip handled poorly. I felt every bad grip on the way back.",
-        "That trip handled poorly. I felt every bad grip on the way back.",
-        "That trip handled poorly. I felt every bad grip on the way back."
+        "I made it home, but the road took more from me than it should have.",
+        "Next time, let us return with fewer marks and better choices."
       ]
     },
     {
@@ -248,8 +248,8 @@
       "weight": 42,
       "lines": [
         "A tool used wrong can still be repaired. Trust is less forgiving.",
-        "A tool used wrong can still be repaired. Trust is less forgiving.",
-        "A tool used wrong can still be repaired. Trust is less forgiving."
+        "Following you was trust. What happened after was something else.",
+        "A guide who strikes from close by leaves the longest mark."
       ]
     },
     {
@@ -261,8 +261,8 @@
       "weight": 42,
       "lines": [
         "That boat was the right tool for the crossing. I will give you that.",
-        "That boat was the right tool for the crossing. I will give you that.",
-        "That boat was the right tool for the crossing. I will give you that."
+        "The boat did its part. I am still deciding whether the rest of the plan did.",
+        "Water carried us home, which is more than I expected from that journey."
       ]
     },
     {
@@ -274,8 +274,8 @@
       "weight": 3,
       "lines": [
         "That time I followed you, the whole plan could have used a better handle.",
-        "That time I followed you, the whole plan could have used a better handle.",
-        "That time I followed you, the whole plan could have used a better handle."
+        "I remember following you through that road. My feet remember it even better.",
+        "That trip across that road taught me to ask more questions before walking."
       ]
     },
     {
@@ -288,8 +288,8 @@
       "weight": 3,
       "lines": [
         "A boat is just a tool with a nervous floor. Yours worked, mostly.",
-        "A boat is just a tool with a nervous floor. Yours worked, mostly.",
-        "A boat is just a tool with a nervous floor. Yours worked, mostly."
+        "That boat trip still sits oddly in my memory, but at least it floated.",
+        "A boat can make a bad plan quieter. It cannot make me forget it."
       ]
     },
     {
@@ -301,8 +301,8 @@
       "weight": 32,
       "lines": [
         "It did its job without complaint. That is the highest compliment a tool gets.",
-        "It did its job without complaint. That is the highest compliment a tool gets.",
-        "It did its job without complaint. That is the highest compliment a tool gets."
+        "It did the job when fear was loud. That is praise enough.",
+        "Good gear earns trust the moment trouble tests it."
       ]
     },
     {
@@ -314,8 +314,8 @@
       "weight": 32,
       "lines": [
         "Still ready. A tool can be useful before it ever bites into work.",
-        "Still ready. A tool can be useful before it ever bites into work.",
-        "Still ready. A tool can be useful before it ever bites into work."
+        "It did the job when fear was loud. That is praise enough.",
+        "Good gear earns trust the moment trouble tests it."
       ]
     },
     {
@@ -388,7 +388,7 @@
       "lines": [
         "Here, {gift_item}. The right tool in the right hand saves a lot of trouble.",
         "Take {gift_item}. Keep it useful and it will repay you twice.",
-        "Here, {gift_item}. The right tool in the right hand saves a lot of trouble."
+        "Take {gift_item}. It is not much, but it is given with care."
       ],
       "weight": 48
     },
@@ -398,7 +398,7 @@
       "lines": [
         "Good. {gift_item} did the job for {tested_villager}.",
         "Then the advice had a good edge. {tested_villager} liked {gift_item}.",
-        "Good. {gift_item} did the job for {tested_villager}."
+        "Good. {gift_item} suited {tested_villager}; I like advice that holds up."
       ],
       "weight": 44
     },
@@ -408,7 +408,7 @@
       "lines": [
         "Wrong tool for the work. For {gift_subject}, use {alternative_gift} instead.",
         "{gift_item} slipped in the hand? Try {alternative_gift}; cleaner work.",
-        "Wrong tool for the work. For {gift_subject}, use {alternative_gift} instead."
+        "{gift_item} missed the mark for {gift_subject}. Try {alternative_gift} instead."
       ],
       "weight": 44
     },
@@ -423,8 +423,8 @@
       "weight": 20,
       "lines": [
         "Wrong tool, wrong job. Pick up {alternative_gift} next time.",
-        "Wrong tool, wrong job. Pick up {alternative_gift} next time.",
-        "Wrong tool, wrong job. Pick up {alternative_gift} next time."
+        "Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
+        "Then we correct the guess: {alternative_gift} next time."
       ]
     },
     {
@@ -436,8 +436,8 @@
       "weight": 20,
       "lines": [
         "You used the advice as-is? Hm. Sharpen your judgment and bring {alternative_gift}.",
-        "You used the advice as-is? Hm. Sharpen your judgment and bring {alternative_gift}.",
-        "You used the advice as-is? Hm. Sharpen your judgment and bring {alternative_gift}."
+        "Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
+        "Then we correct the guess: {alternative_gift} next time."
       ]
     }
   ],
@@ -446,8 +446,8 @@
       "id": "toolsmith_opening",
       "lines": [
         "Mind the smithing table. What do you need?",
-        "Mind the smithing table. What do you need?",
-        "Mind the smithing table. What do you need?"
+        "Step clear of the smithing table. What do you need?",
+        "Mind the smithing table; I am listening."
       ]
     }
   ],
@@ -456,8 +456,8 @@
       "id": "toolsmith_closing",
       "lines": [
         "Back to making tools that do not fail, then.",
-        "Back to making tools that do not fail, then.",
-        "Back to making tools that do not fail, then."
+        "Back to tools before the work notices I stopped.",
+        "I have handle to tend and daylight to spend."
       ]
     }
   ],
@@ -470,8 +470,8 @@
       "weight": 26,
       "lines": [
         "Fine. I will put the edge away, for now.",
-        "Fine. I will put the edge away, for now.",
-        "Fine. I will put the edge away, for now."
+        "Fine. I will set this down before it gets heavier.",
+        "Fine. I can step back, but do not make me regret it."
       ]
     },
     {
@@ -482,8 +482,8 @@
       "weight": 26,
       "lines": [
         "Wrong measure. It takes {emerald_cost} {emeralds} to set this right.",
-        "Wrong measure. It takes {emerald_cost} {emeralds} to set this right.",
-        "Wrong measure. It takes {emerald_cost} {emeralds} to set this right."
+        "That is short of the full repair. Bring {emerald_cost} {emeralds}.",
+        "Not enough. It takes {emerald_cost} {emeralds} to settle this."
       ]
     },
     {
@@ -494,8 +494,8 @@
       "weight": 26,
       "lines": [
         "No. You are using {payment_items} like the wrong tool.",
-        "No. You are using {payment_items} like the wrong tool.",
-        "No. You are using {payment_items} like the wrong tool."
+        "No. Some damage has to cool before payment matters. {payment_items}",
+        "No. Keep {payment_items}; trust is not ready to trade."
       ]
     }
   ]

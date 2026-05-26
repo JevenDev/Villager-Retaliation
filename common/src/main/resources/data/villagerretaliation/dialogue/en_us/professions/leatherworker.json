@@ -29,8 +29,8 @@
       "weight": 26,
       "lines": [
         "Mind the tannery. The smell is honest, at least.",
-        "Mind the tannery. The smell is honest, at least.",
-        "Mind the tannery. The smell is honest, at least."
+        "Give the tannery room. Leatherwork works better without elbows in it.",
+        "Step carefully near the tannery. I would rather greet you than patch you up."
       ]
     },
     {
@@ -39,8 +39,8 @@
       "weight": 18,
       "lines": [
         "Leather jokes need a thick skin. I keep saying that until someone laughs.",
-        "Leather jokes need a thick skin. I keep saying that until someone laughs.",
-        "Leather jokes need a thick skin. I keep saying that until someone laughs."
+        "Leatherwork jokes need timing. Mine usually arrive with hide on them.",
+        "I keep a spare joke near the tannery. It is not always ready for public use."
       ]
     },
     {
@@ -49,8 +49,8 @@
       "weight": 18,
       "lines": [
         "That sentence split like cheap stitching.",
-        "That sentence split like cheap stitching.",
-        "That sentence split like cheap stitching."
+        "I have seen split stitching with more sense than that.",
+        "Careful. Even hide looks softer than your manners right now."
       ]
     },
     {
@@ -63,8 +63,8 @@
       "weight": 30,
       "lines": [
         "Do not mock work that lasts longer than your manners.",
-        "Do not mock work that lasts longer than your manners.",
-        "Do not mock work that lasts longer than your manners."
+        "I have seen split stitching with more sense than that.",
+        "Careful. Even hide looks softer than your manners right now."
       ]
     },
     {
@@ -77,7 +77,7 @@
       "lines": [
         "I remember being stitched back into myself. Your hands held the thread.",
         "The cure left scars, but good leather can carry scars. So can I.",
-        "I remember being stitched back into myself. Your hands held the thread."
+        "You helped pull me back when even my name felt far away."
       ],
       "weight": 60
     },
@@ -91,7 +91,7 @@
       "lines": [
         "Your face is worn into the memory, but the edges are rough.",
         "I remember straps, shaking, and a second chance pulled tight.",
-        "Your face is worn into the memory, but the edges are rough."
+        "The memory is rough around the edges, but your face stayed in it."
       ],
       "weight": 60
     },
@@ -106,8 +106,8 @@
       "weight": 30,
       "lines": [
         "I remember you, and I remember the tearing. Both are true.",
-        "I remember you, and I remember the tearing. Both are true.",
-        "I remember you, and I remember the tearing. Both are true."
+        "I know you helped. I also remember why my hands still shake.",
+        "The cure left echoes behind. Stand where I can breathe around them."
       ]
     },
     {
@@ -218,8 +218,8 @@
       "weight": 38,
       "lines": [
         "Boots dusty, soles whole. That is how I like returning.",
-        "Boots dusty, soles whole. That is how I like returning.",
-        "Boots dusty, soles whole. That is how I like returning."
+        "Home again, whole enough to thank you properly. That matters.",
+        "We came back with the village still ahead of us. I will count that as good work."
       ]
     },
     {
@@ -233,8 +233,8 @@
       "weight": 38,
       "lines": [
         "I can patch leather. Patching myself is worse work.",
-        "I can patch leather. Patching myself is worse work.",
-        "I can patch leather. Patching myself is worse work."
+        "I made it home, but the road took more from me than it should have.",
+        "Next time, let us return with fewer marks and better choices."
       ]
     },
     {
@@ -248,8 +248,8 @@
       "weight": 42,
       "lines": [
         "You split trust like old hide. It will not soften quickly.",
-        "You split trust like old hide. It will not soften quickly.",
-        "You split trust like old hide. It will not soften quickly."
+        "Following you was trust. What happened after was something else.",
+        "A guide who strikes from close by leaves the longest mark."
       ]
     },
     {
@@ -261,8 +261,8 @@
       "weight": 42,
       "lines": [
         "Boat spray is poor treatment for leather. Better than swimming, though.",
-        "Boat spray is poor treatment for leather. Better than swimming, though.",
-        "Boat spray is poor treatment for leather. Better than swimming, though."
+        "The boat did its part. I am still deciding whether the rest of the plan did.",
+        "Water carried us home, which is more than I expected from that journey."
       ]
     },
     {
@@ -275,8 +275,8 @@
       "weight": 3,
       "lines": [
         "I still remember that boat trip. Wet leather complains longer than villagers do.",
-        "I still remember that boat trip. Wet leather complains longer than villagers do.",
-        "I still remember that boat trip. Wet leather complains longer than villagers do."
+        "That boat trip still sits oddly in my memory, but at least it floated.",
+        "A boat can make a bad plan quieter. It cannot make me forget it."
       ]
     },
     {
@@ -289,8 +289,8 @@
       "weight": 3,
       "lines": [
         "I still think about that walk. My boots forgave you before my feet did.",
-        "I still think about that walk. My boots forgave you before my feet did.",
-        "I still think about that walk. My boots forgave you before my feet did."
+        "I remember following you through that road. My feet remember it even better.",
+        "That trip across that road taught me to ask more questions before walking."
       ]
     },
     {
@@ -303,8 +303,8 @@
       "weight": 4,
       "lines": [
         "Ocean swimming is terrible for leather and worse for my mood.",
-        "Ocean swimming is terrible for leather and worse for my mood.",
-        "Ocean swimming is terrible for leather and worse for my mood."
+        "Crossing ocean water without a boat is not a memory I recommend keeping.",
+        "I remember every wave from that crossing, and none of them kindly."
       ]
     },
     {
@@ -316,8 +316,8 @@
       "weight": 32,
       "lines": [
         "It flexed where it should and held where it had to. Good work saves skin.",
-        "It flexed where it should and held where it had to. Good work saves skin.",
-        "It flexed where it should and held where it had to. Good work saves skin."
+        "It did the job when fear was loud. That is praise enough.",
+        "Good gear earns trust the moment trouble tests it."
       ]
     },
     {
@@ -329,8 +329,8 @@
       "weight": 32,
       "lines": [
         "No scuffs yet. I appreciate gear that does not rush to prove itself.",
-        "No scuffs yet. I appreciate gear that does not rush to prove itself.",
-        "No scuffs yet. I appreciate gear that does not rush to prove itself."
+        "It did the job when fear was loud. That is praise enough.",
+        "Good gear earns trust the moment trouble tests it."
       ]
     },
     {
@@ -403,7 +403,7 @@
       "lines": [
         "Take {gift_item}. Good gear should travel, not gather dust.",
         "Here, {gift_item}. It has more use with you than sitting by my cauldron.",
-        "Take {gift_item}. Good gear should travel, not gather dust."
+        "Take {gift_item}. It is not much, but it is given with care."
       ],
       "weight": 48
     },
@@ -413,7 +413,7 @@
       "lines": [
         "Good. {gift_item} sat well with {tested_villager}, like softened leather.",
         "Then the fit was comfortable. {tested_villager} liked {gift_item}.",
-        "Good. {gift_item} sat well with {tested_villager}, like softened leather."
+        "Good. {gift_item} suited {tested_villager}; I like advice that holds up."
       ],
       "weight": 44
     },
@@ -423,7 +423,7 @@
       "lines": [
         "Too stiff for them, then. For {gift_subject}, try {alternative_gift}.",
         "{gift_item} rubbed wrong? Bring {alternative_gift}; better fit, less complaint.",
-        "Too stiff for them, then. For {gift_subject}, try {alternative_gift}."
+        "{gift_item} missed the mark for {gift_subject}. Try {alternative_gift} instead."
       ],
       "weight": 44
     },
@@ -438,8 +438,8 @@
       "weight": 20,
       "lines": [
         "That advice chafed. {alternative_gift} should sit easier.",
-        "That advice chafed. {alternative_gift} should sit easier.",
-        "That advice chafed. {alternative_gift} should sit easier."
+        "Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
+        "Then we correct the guess: {alternative_gift} next time."
       ]
     },
     {
@@ -451,8 +451,8 @@
       "weight": 20,
       "lines": [
         "You wore bad advice too long. Trade it for {alternative_gift}.",
-        "You wore bad advice too long. Trade it for {alternative_gift}.",
-        "You wore bad advice too long. Trade it for {alternative_gift}."
+        "Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
+        "Then we correct the guess: {alternative_gift} next time."
       ]
     }
   ],
@@ -461,8 +461,8 @@
       "id": "leatherworker_opening",
       "lines": [
         "Mind the tannery. What do you need?",
-        "Mind the tannery. What do you need?",
-        "Mind the tannery. What do you need?"
+        "Step clear of the tannery. What do you need?",
+        "Mind the tannery; I am listening."
       ]
     }
   ],
@@ -471,8 +471,8 @@
       "id": "leatherworker_closing",
       "lines": [
         "Back to curing leather without wasting hide, then.",
-        "Back to curing leather without wasting hide, then.",
-        "Back to curing leather without wasting hide, then."
+        "Back to leatherwork before the work notices I stopped.",
+        "I have stitch to tend and daylight to spend."
       ]
     }
   ],
@@ -485,8 +485,8 @@
       "weight": 26,
       "lines": [
         "Fine. I will stitch this shut for now.",
-        "Fine. I will stitch this shut for now.",
-        "Fine. I will stitch this shut for now."
+        "Fine. I will set this down before it gets heavier.",
+        "Fine. I can step back, but do not make me regret it."
       ]
     },
     {
@@ -497,8 +497,8 @@
       "weight": 26,
       "lines": [
         "That is not enough to mend it. Bring {emerald_cost} {emeralds}.",
-        "That is not enough to mend it. Bring {emerald_cost} {emeralds}.",
-        "That is not enough to mend it. Bring {emerald_cost} {emeralds}."
+        "That is short of the full repair. Bring {emerald_cost} {emeralds}.",
+        "Not enough. It takes {emerald_cost} {emeralds} to settle this."
       ]
     },
     {
@@ -509,8 +509,8 @@
       "weight": 26,
       "lines": [
         "No. This split runs too deep for {payment_items}.",
-        "No. This split runs too deep for {payment_items}.",
-        "No. This split runs too deep for {payment_items}."
+        "No. Some damage has to cool before payment matters. {payment_items}",
+        "No. Keep {payment_items}; trust is not ready to trade."
       ]
     }
   ]

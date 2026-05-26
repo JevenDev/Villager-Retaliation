@@ -29,8 +29,8 @@
       "weight": 26,
       "lines": [
         "If you see a spare job site, do mention it kindly.",
-        "If you see a spare job site, do mention it kindly.",
-        "If you see a spare job site, do mention it kindly."
+        "Give the job site I have not found yet room. Looking useful works better without elbows in it.",
+        "Step carefully near the job site I have not found yet. I would rather greet you than patch you up."
       ]
     },
     {
@@ -39,8 +39,8 @@
       "weight": 18,
       "lines": [
         "Unemployed jokes are flexible. That is what I keep telling myself.",
-        "Unemployed jokes are flexible. That is what I keep telling myself.",
-        "Unemployed jokes are flexible. That is what I keep telling myself."
+        "Looking useful jokes need timing. Mine usually arrive with time on them.",
+        "I keep a spare joke near the job site I have not found yet. It is not always ready for public use."
       ]
     },
     {
@@ -49,8 +49,8 @@
       "weight": 18,
       "lines": [
         "That was idle talk, and I would know.",
-        "That was idle talk, and I would know.",
-        "That was idle talk, and I would know."
+        "I have seen wrong turns with more sense than that.",
+        "Careful. Even time looks softer than your manners right now."
       ]
     },
     {
@@ -63,8 +63,8 @@
       "weight": 30,
       "lines": [
         "I am trying to look useful, not involved.",
-        "I am trying to look useful, not involved.",
-        "I am trying to look useful, not involved."
+        "Keep your voice even. I am measuring more than your words.",
+        "Some questions are safer when they stand a little farther away."
       ]
     },
     {
@@ -77,7 +77,7 @@
       "lines": [
         "I remember having no trade, no thoughts, almost no self. You helped with the important one.",
         "I did not know what I would become, but you made sure I could become anything.",
-        "I remember having no trade, no thoughts, almost no self. You helped with the important one."
+        "You helped pull me back when even my name felt far away."
       ],
       "weight": 60
     },
@@ -91,7 +91,7 @@
       "lines": [
         "Your face is familiar. So is being confused, but this feels different.",
         "I remember waking with empty hands and a head full of broken bells.",
-        "Your face is familiar. So is being confused, but this feels different."
+        "The memory is rough around the edges, but your face stayed in it."
       ],
       "weight": 60
     },
@@ -106,8 +106,8 @@
       "weight": 30,
       "lines": [
         "I remember you, though I still do not know what to do with the memory.",
-        "I remember you, though I still do not know what to do with the memory.",
-        "I remember you, though I still do not know what to do with the memory."
+        "I know you helped. I also remember why my hands still shake.",
+        "The cure left echoes behind. Stand where I can breathe around them."
       ]
     },
     {
@@ -218,8 +218,8 @@
       "weight": 38,
       "lines": [
         "I do not have a trade for it yet, but coming home safely feels like honest work.",
-        "I do not have a trade for it yet, but coming home safely feels like honest work.",
-        "I do not have a trade for it yet, but coming home safely feels like honest work."
+        "Home again, whole enough to thank you properly. That matters.",
+        "We came back with the village still ahead of us. I will count that as good work."
       ]
     },
     {
@@ -233,8 +233,8 @@
       "weight": 38,
       "lines": [
         "I was looking for direction, not bruises. Still, I made it back.",
-        "I was looking for direction, not bruises. Still, I made it back.",
-        "I was looking for direction, not bruises. Still, I made it back."
+        "I made it home, but the road took more from me than it should have.",
+        "Next time, let us return with fewer marks and better choices."
       ]
     },
     {
@@ -249,8 +249,8 @@
       "weight": 42,
       "lines": [
         "I followed because I thought you knew where we were going. I was wrong about more than the road.",
-        "I followed because I thought you knew where we were going. I was wrong about more than the road.",
-        "I followed because I thought you knew where we were going. I was wrong about more than the road."
+        "Following you was trust. What happened after was something else.",
+        "A guide who strikes from close by leaves the longest mark."
       ]
     },
     {
@@ -262,8 +262,8 @@
       "weight": 42,
       "lines": [
         "I learned I am not ready for a career in boating. But I survived the lesson.",
-        "I learned I am not ready for a career in boating. But I survived the lesson.",
-        "I learned I am not ready for a career in boating. But I survived the lesson."
+        "The boat did its part. I am still deciding whether the rest of the plan did.",
+        "Water carried us home, which is more than I expected from that journey."
       ]
     },
     {
@@ -276,8 +276,8 @@
       "weight": 3,
       "lines": [
         "I followed you once and learned something: I need better shoes before I choose a trade.",
-        "I followed you once and learned something: I need better shoes before I choose a trade.",
-        "I followed you once and learned something: I need better shoes before I choose a trade."
+        "I remember following you through that road. My feet remember it even better.",
+        "That trip across that road taught me to ask more questions before walking."
       ]
     },
     {
@@ -290,8 +290,8 @@
       "weight": 3,
       "lines": [
         "I followed you into a boat once. Not a trade, apparently, but it felt like training.",
-        "I followed you into a boat once. Not a trade, apparently, but it felt like training.",
-        "I followed you into a boat once. Not a trade, apparently, but it felt like training."
+        "That boat trip still sits oddly in my memory, but at least it floated.",
+        "A boat can make a bad plan quieter. It cannot make me forget it."
       ]
     },
     {
@@ -303,8 +303,8 @@
       "weight": 32,
       "lines": [
         "It helped. Maybe being ready is a profession of its own for now.",
-        "It helped. Maybe being ready is a profession of its own for now.",
-        "It helped. Maybe being ready is a profession of its own for now."
+        "It did the job when fear was loud. That is praise enough.",
+        "Good gear earns trust the moment trouble tests it."
       ]
     },
     {
@@ -316,8 +316,8 @@
       "weight": 32,
       "lines": [
         "Unused so far. I may not have a trade, but I know preparation when I see it.",
-        "Unused so far. I may not have a trade, but I know preparation when I see it.",
-        "Unused so far. I may not have a trade, but I know preparation when I see it."
+        "It did the job when fear was loud. That is praise enough.",
+        "Good gear earns trust the moment trouble tests it."
       ]
     },
     {
@@ -379,7 +379,7 @@
       "lines": [
         "Take {gift_item}. I may not have a trade, but I know how to say thanks.",
         "Here, {gift_item}. Maybe one of us will find the perfect use for it.",
-        "Take {gift_item}. I may not have a trade, but I know how to say thanks."
+        "Take {gift_item}. It is not much, but it is given with care."
       ],
       "weight": 48
     },
@@ -389,7 +389,7 @@
       "lines": [
         "Good, {gift_item} worked. See? I can be useful without a workstation.",
         "{tested_villager} liked it? Excellent. I am putting that under possible talents.",
-        "Good, {gift_item} worked. See? I can be useful without a workstation."
+        "Good. {gift_item} suited {tested_villager}; I like advice that holds up."
       ],
       "weight": 44
     },
@@ -399,7 +399,7 @@
       "lines": [
         "Ah. Then my career in advice pauses here. Try {alternative_gift} for {gift_subject}.",
         "{gift_item} was wrong? Let us call it research. {alternative_gift} should work better.",
-        "Ah. Then my career in advice pauses here. Try {alternative_gift} for {gift_subject}."
+        "{gift_item} missed the mark for {gift_subject}. Try {alternative_gift} instead."
       ],
       "weight": 44
     },
@@ -414,8 +414,8 @@
       "weight": 20,
       "lines": [
         "This is why nobody pays me for advice. Try {alternative_gift}.",
-        "This is why nobody pays me for advice. Try {alternative_gift}.",
-        "This is why nobody pays me for advice. Try {alternative_gift}."
+        "Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
+        "Then we correct the guess: {alternative_gift} next time."
       ]
     },
     {
@@ -427,8 +427,8 @@
       "weight": 20,
       "lines": [
         "You came back? Fair. My next guess is {alternative_gift}.",
-        "You came back? Fair. My next guess is {alternative_gift}.",
-        "You came back? Fair. My next guess is {alternative_gift}."
+        "Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
+        "Then we correct the guess: {alternative_gift} next time."
       ]
     }
   ],
@@ -437,8 +437,8 @@
       "id": "unemployed_opening",
       "lines": [
         "Mind the job site I have not found yet. What do you need?",
-        "Mind the job site I have not found yet. What do you need?",
-        "Mind the job site I have not found yet. What do you need?"
+        "Step clear of the job site I have not found yet. What do you need?",
+        "Mind the job site I have not found yet; I am listening."
       ]
     }
   ],
@@ -447,8 +447,8 @@
       "id": "unemployed_closing",
       "lines": [
         "Back to looking useful before anyone notices, then.",
-        "Back to looking useful before anyone notices, then.",
-        "Back to looking useful before anyone notices, then."
+        "Back to looking useful before the work notices I stopped.",
+        "I have chance to tend and daylight to spend."
       ]
     }
   ],
@@ -461,8 +461,8 @@
       "weight": 26,
       "lines": [
         "Fine. I have enough problems without carrying this one too.",
-        "Fine. I have enough problems without carrying this one too.",
-        "Fine. I have enough problems without carrying this one too."
+        "Fine. I will set this down before it gets heavier.",
+        "Fine. I can step back, but do not make me regret it."
       ]
     },
     {
@@ -473,8 +473,8 @@
       "weight": 26,
       "lines": [
         "Even without a trade, I know that should be {emerald_cost} {emeralds}.",
-        "Even without a trade, I know that should be {emerald_cost} {emeralds}.",
-        "Even without a trade, I know that should be {emerald_cost} {emeralds}."
+        "That is short of the full repair. Bring {emerald_cost} {emeralds}.",
+        "Not enough. It takes {emerald_cost} {emeralds} to settle this."
       ]
     },
     {
@@ -485,8 +485,8 @@
       "weight": 26,
       "lines": [
         "No. I may not have work, but I still have sense.",
-        "No. I may not have work, but I still have sense.",
-        "No. I may not have work, but I still have sense."
+        "No. Some damage has to cool before payment matters.",
+        "No. Keep {payment_items}; trust is not ready to trade."
       ]
     }
   ]

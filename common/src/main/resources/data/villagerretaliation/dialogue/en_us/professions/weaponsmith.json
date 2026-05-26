@@ -44,7 +44,7 @@
       "lines": [
         "{held_item} has {held_item_durability} durability left out of {held_item_max_durability}. Plenty of life in that edge.",
         "{held_item} is sitting at {held_item_durability_percent}% durability. Keep it clean and it will answer when called.",
-        "{held_item} has {held_item_durability} durability left out of {held_item_max_durability}. Plenty of life in that edge."
+        "{held_item} is sitting at {held_item_durability} of {held_item_max_durability}. That edge still has work left in it."
       ],
       "weight": 80
     },
@@ -64,7 +64,7 @@
       "lines": [
         "{held_item} has {held_item_durability} durability left. Serviceable, but do not mistake serviceable for ready.",
         "{held_item} is down to {held_item_durability_percent}%. It will hold, but I would mend it before trusting it with trouble.",
-        "{held_item} has {held_item_durability} durability left. Serviceable, but do not mistake serviceable for ready."
+        "{held_item} is down to {held_item_durability} durability. It will serve, but watch the edge."
       ],
       "weight": 80
     },
@@ -83,7 +83,7 @@
       "lines": [
         "{held_item} has only {held_item_durability} durability left. That is a warning, not a weapon.",
         "{held_item} is at {held_item_durability_percent}%. Mend it before it chooses the worst possible moment to become scrap.",
-        "{held_item} has only {held_item_durability} durability left. That is a warning, not a weapon."
+        "{held_item} is at {held_item_durability} durability. That is nearly a plea for repair."
       ],
       "weight": 80
     },
@@ -103,8 +103,8 @@
       "weight": 26,
       "lines": [
         "Mind the grindstone. It has no patience for wandering fingers.",
-        "Mind the grindstone. It has no patience for wandering fingers.",
-        "Mind the grindstone. It has no patience for wandering fingers."
+        "Give the grindstone room. Weapons works better without elbows in it.",
+        "Step carefully near the grindstone. I would rather greet you than patch you up."
       ]
     },
     {
@@ -113,8 +113,8 @@
       "weight": 18,
       "lines": [
         "Weapon jokes are sharp. I keep the dull ones for people who lean too close.",
-        "Weapon jokes are sharp. I keep the dull ones for people who lean too close.",
-        "Weapon jokes are sharp. I keep the dull ones for people who lean too close."
+        "Weapons jokes need timing. Mine usually arrive with steel on them.",
+        "I keep a spare joke near the grindstone. It is not always ready for public use."
       ]
     },
     {
@@ -123,8 +123,8 @@
       "weight": 18,
       "lines": [
         "That was dull enough to be safe, at least.",
-        "That was dull enough to be safe, at least.",
-        "That was dull enough to be safe, at least."
+        "I have seen careless steel with more sense than that.",
+        "Careful. Even steel looks softer than your manners right now."
       ]
     },
     {
@@ -137,8 +137,8 @@
       "weight": 30,
       "lines": [
         "Stand back. I know the sound trouble makes when it wants to be casual.",
-        "Stand back. I know the sound trouble makes when it wants to be casual.",
-        "Stand back. I know the sound trouble makes when it wants to be casual."
+        "I have seen careless steel with more sense than that.",
+        "Careful. Even steel looks softer than your manners right now."
       ]
     },
     {
@@ -151,7 +151,7 @@
       "lines": [
         "I remember fighting something inside me and losing. You gave me another weapon: morning.",
         "The cure struck true. I remember you standing on the right side of it.",
-        "I remember fighting something inside me and losing. You gave me another weapon: morning."
+        "You helped pull me back when even my name felt far away."
       ],
       "weight": 60
     },
@@ -165,7 +165,7 @@
       "lines": [
         "Your face rings like steel, but the battle around it is smoke.",
         "I remember wanting to bite, then wanting to breathe. You were there between them.",
-        "Your face rings like steel, but the battle around it is smoke."
+        "The memory is rough around the edges, but your face stayed in it."
       ],
       "weight": 60
     },
@@ -180,8 +180,8 @@
       "weight": 30,
       "lines": [
         "I remember you, and I remember being dangerous. Do not make me relive either too quickly.",
-        "I remember you, and I remember being dangerous. Do not make me relive either too quickly.",
-        "I remember you, and I remember being dangerous. Do not make me relive either too quickly."
+        "I know you helped. I also remember why my hands still shake.",
+        "The cure left echoes behind. Stand where I can breathe around them."
       ]
     },
     {
@@ -292,8 +292,8 @@
       "weight": 38,
       "lines": [
         "You brought me back without needing the worst of it. Restraint is a weapon too.",
-        "You brought me back without needing the worst of it. Restraint is a weapon too.",
-        "You brought me back without needing the worst of it. Restraint is a weapon too."
+        "Home again, whole enough to thank you properly. That matters.",
+        "We came back with the village still ahead of us. I will count that as good work."
       ]
     },
     {
@@ -307,8 +307,8 @@
       "weight": 38,
       "lines": [
         "I came back marked. Next time, keep the edge between us and danger.",
-        "I came back marked. Next time, keep the edge between us and danger.",
-        "I came back marked. Next time, keep the edge between us and danger."
+        "I made it home, but the road took more from me than it should have.",
+        "Next time, let us return with fewer marks and better choices."
       ]
     },
     {
@@ -322,8 +322,8 @@
       "weight": 42,
       "lines": [
         "I respect sharp steel. I do not respect turning it on someone who followed you.",
-        "I respect sharp steel. I do not respect turning it on someone who followed you.",
-        "I respect sharp steel. I do not respect turning it on someone who followed you."
+        "Following you was trust. What happened after was something else.",
+        "A guide who strikes from close by leaves the longest mark."
       ]
     },
     {
@@ -335,8 +335,8 @@
       "weight": 42,
       "lines": [
         "A boat is not armor, but it kept danger at a decent distance.",
-        "A boat is not armor, but it kept danger at a decent distance.",
-        "A boat is not armor, but it kept danger at a decent distance."
+        "The boat did its part. I am still deciding whether the rest of the plan did.",
+        "Water carried us home, which is more than I expected from that journey."
       ]
     },
     {
@@ -351,8 +351,8 @@
       "weight": 4,
       "lines": [
         "Remember when I followed you and you hit me? Poor weapon discipline. Worse friendship.",
-        "Remember when I followed you and you hit me? Poor weapon discipline. Worse friendship.",
-        "Remember when I followed you and you hit me? Poor weapon discipline. Worse friendship."
+        "I remember following you through that road. My feet remember it even better.",
+        "That trip across that road taught me to ask more questions before walking."
       ]
     },
     {
@@ -365,8 +365,8 @@
       "weight": 3,
       "lines": [
         "That boat trip had one good quality: no one was swinging steel in it.",
-        "That boat trip had one good quality: no one was swinging steel in it.",
-        "That boat trip had one good quality: no one was swinging steel in it."
+        "That boat trip still sits oddly in my memory, but at least it floated.",
+        "A boat can make a bad plan quieter. It cannot make me forget it."
       ]
     },
     {
@@ -378,8 +378,8 @@
       "weight": 34,
       "lines": [
         "It found its purpose. I prefer tools that know when to stop.",
-        "It found its purpose. I prefer tools that know when to stop.",
-        "It found its purpose. I prefer tools that know when to stop."
+        "It did the job when fear was loud. That is praise enough.",
+        "Good gear earns trust the moment trouble tests it."
       ]
     },
     {
@@ -391,8 +391,8 @@
       "weight": 34,
       "lines": [
         "Still sharp, still waiting. That is better than needing it twice.",
-        "Still sharp, still waiting. That is better than needing it twice.",
-        "Still sharp, still waiting. That is better than needing it twice."
+        "It did the job when fear was loud. That is praise enough.",
+        "Good gear earns trust the moment trouble tests it."
       ]
     },
     {
@@ -456,8 +456,8 @@
       "weight": 32,
       "lines": [
         "After a raid, every blade in the village feels too dull and too late.",
-        "After a raid, every blade in the village feels too dull and too late.",
-        "After a raid, every blade in the village feels too dull and too late."
+        "I am still sorting what happened. The village feels different after it.",
+        "That event left marks. We are counting people before we count damage."
       ]
     },
     {
@@ -479,7 +479,7 @@
       "lines": [
         "Take {gift_item}. Better to carry thanks before you need steel.",
         "Here, {gift_item}. I trust you to use it with a cooler head than most.",
-        "Take {gift_item}. Better to carry thanks before you need steel."
+        "Take {gift_item}. It is not much, but it is given with care."
       ],
       "weight": 48
     },
@@ -489,7 +489,7 @@
       "lines": [
         "Good. {gift_item} struck true with {tested_villager}.",
         "Then the advice kept its edge. {tested_villager} liked {gift_item}.",
-        "Good. {gift_item} struck true with {tested_villager}."
+        "Good. {gift_item} suited {tested_villager}; I like advice that holds up."
       ],
       "weight": 44
     },
@@ -499,7 +499,7 @@
       "lines": [
         "That blade was poorly balanced. For {gift_subject}, try {alternative_gift}.",
         "{gift_item} missed clean? Bring {alternative_gift}; better weight for the hand.",
-        "That blade was poorly balanced. For {gift_subject}, try {alternative_gift}."
+        "{gift_item} missed the mark for {gift_subject}. Try {alternative_gift} instead."
       ],
       "weight": 44
     },
@@ -514,8 +514,8 @@
       "weight": 20,
       "lines": [
         "That advice had a dull edge. Try {alternative_gift}; it should bite better.",
-        "That advice had a dull edge. Try {alternative_gift}; it should bite better.",
-        "That advice had a dull edge. Try {alternative_gift}; it should bite better."
+        "Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
+        "Then we correct the guess: {alternative_gift} next time."
       ]
     },
     {
@@ -527,8 +527,8 @@
       "weight": 20,
       "lines": [
         "You swung with what I handed you. Next time, choose {alternative_gift}.",
-        "You swung with what I handed you. Next time, choose {alternative_gift}.",
-        "You swung with what I handed you. Next time, choose {alternative_gift}."
+        "Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
+        "Then we correct the guess: {alternative_gift} next time."
       ]
     }
   ],
@@ -537,8 +537,8 @@
       "id": "weaponsmith_opening",
       "lines": [
         "Mind the grindstone. What do you need?",
-        "Mind the grindstone. What do you need?",
-        "Mind the grindstone. What do you need?"
+        "Step clear of the grindstone. What do you need?",
+        "Mind the grindstone; I am listening."
       ]
     }
   ],
@@ -547,8 +547,8 @@
       "id": "weaponsmith_closing",
       "lines": [
         "Back to keeping blades honest, then.",
-        "Back to keeping blades honest, then.",
-        "Back to keeping blades honest, then."
+        "Back to weapons before the work notices I stopped.",
+        "I have edge to tend and daylight to spend."
       ]
     }
   ],
@@ -561,8 +561,8 @@
       "weight": 26,
       "lines": [
         "Fine. I will let the blade rest, but do not test me again.",
-        "Fine. I will let the blade rest, but do not test me again.",
-        "Fine. I will let the blade rest, but do not test me again."
+        "Fine. I will set this down before it gets heavier.",
+        "Fine. I can step back, but do not make me regret it."
       ]
     },
     {
@@ -573,8 +573,8 @@
       "weight": 26,
       "lines": [
         "That offer is dull. Bring {emerald_cost} {emeralds}.",
-        "That offer is dull. Bring {emerald_cost} {emeralds}.",
-        "That offer is dull. Bring {emerald_cost} {emeralds}."
+        "That is short of the full repair. Bring {emerald_cost} {emeralds}.",
+        "Not enough. It takes {emerald_cost} {emeralds} to settle this."
       ]
     },
     {
@@ -585,8 +585,8 @@
       "weight": 26,
       "lines": [
         "No. Some threats do not get to buy their way closer.",
-        "No. Some threats do not get to buy their way closer.",
-        "No. Some threats do not get to buy their way closer."
+        "No. Some damage has to cool before payment matters.",
+        "No. Keep {payment_items}; trust is not ready to trade."
       ]
     }
   ]

@@ -40,8 +40,8 @@
       "weight": 26,
       "lines": [
         "Keep your hands off the map table unless you know where they are going.",
-        "Keep your hands off the map table unless you know where they are going.",
-        "Keep your hands off the map table unless you know where they are going."
+        "Give the map table room. Mapping works better without elbows in it.",
+        "Step carefully near the map table. I would rather greet you than patch you up."
       ]
     },
     {
@@ -50,8 +50,8 @@
       "weight": 18,
       "lines": [
         "Map jokes are easy to fold badly.",
-        "Map jokes are easy to fold badly.",
-        "Map jokes are easy to fold badly."
+        "Mapping jokes need timing. Mine usually arrive with parchment on them.",
+        "I keep a spare joke near the map table. It is not always ready for public use."
       ]
     },
     {
@@ -60,8 +60,8 @@
       "weight": 18,
       "lines": [
         "You could get lost standing still.",
-        "You could get lost standing still.",
-        "You could get lost standing still."
+        "I have seen wrong turns with more sense than that.",
+        "Careful. Even parchment looks softer than your manners right now."
       ]
     },
     {
@@ -75,8 +75,8 @@
       "weight": 30,
       "lines": [
         "I do not mark every path for every traveler. Some maps are earned.",
-        "I do not mark every path for every traveler. Some maps are earned.",
-        "I do not mark every path for every traveler. Some maps are earned."
+        "Keep your voice even. I am measuring more than your words.",
+        "Some questions are safer when they stand a little farther away."
       ]
     },
     {
@@ -89,7 +89,7 @@
       "lines": [
         "I lost every road for a while. You marked the way back.",
         "I remember your face like a landmark after a long, wrong journey.",
-        "I lost every road for a while. You marked the way back."
+        "You helped pull me back when even my name felt far away."
       ],
       "weight": 60
     },
@@ -103,7 +103,7 @@
       "lines": [
         "The map of that memory is torn, but your name sits near the center.",
         "I remember wandering inside myself. Then a path opened, and you were beside it.",
-        "The map of that memory is torn, but your name sits near the center."
+        "The memory is rough around the edges, but your face stayed in it."
       ],
       "weight": 60
     },
@@ -118,8 +118,8 @@
       "weight": 30,
       "lines": [
         "I remember you, yes. Some routes back home still pass through frightening country.",
-        "I remember you, yes. Some routes back home still pass through frightening country.",
-        "I remember you, yes. Some routes back home still pass through frightening country."
+        "I know you helped. I also remember why my hands still shake.",
+        "The cure left echoes behind. Stand where I can breathe around them."
       ]
     },
     {
@@ -230,8 +230,8 @@
       "weight": 38,
       "lines": [
         "A clean route out and a clean route back. I could ink that with a steady hand.",
-        "A clean route out and a clean route back. I could ink that with a steady hand.",
-        "A clean route out and a clean route back. I could ink that with a steady hand."
+        "Home again, whole enough to thank you properly. That matters.",
+        "We came back with the village still ahead of us. I will count that as good work."
       ]
     },
     {
@@ -245,8 +245,8 @@
       "weight": 38,
       "lines": [
         "That path needs a red mark on the map. I would rather not limp through it twice.",
-        "That path needs a red mark on the map. I would rather not limp through it twice.",
-        "That path needs a red mark on the map. I would rather not limp through it twice."
+        "I made it home, but the road took more from me than it should have.",
+        "Next time, let us return with fewer marks and better choices."
       ]
     },
     {
@@ -260,8 +260,8 @@
       "weight": 42,
       "lines": [
         "I can redraw a bad map. Redrawing trust is harder.",
-        "I can redraw a bad map. Redrawing trust is harder.",
-        "I can redraw a bad map. Redrawing trust is harder."
+        "Following you was trust. What happened after was something else.",
+        "A guide who strikes from close by leaves the longest mark."
       ]
     },
     {
@@ -273,8 +273,8 @@
       "weight": 42,
       "lines": [
         "I could chart that boat route. I might add a warning mark beside it.",
-        "I could chart that boat route. I might add a warning mark beside it.",
-        "I could chart that boat route. I might add a warning mark beside it."
+        "The boat did its part. I am still deciding whether the rest of the plan did.",
+        "Water carried us home, which is more than I expected from that journey."
       ]
     },
     {
@@ -287,8 +287,8 @@
       "weight": 3,
       "lines": [
         "That boat route would look peaceful on a map. The lived version was wetter.",
-        "That boat route would look peaceful on a map. The lived version was wetter.",
-        "That boat route would look peaceful on a map. The lived version was wetter."
+        "That boat trip still sits oddly in my memory, but at least it floated.",
+        "A boat can make a bad plan quieter. It cannot make me forget it."
       ]
     },
     {
@@ -300,8 +300,8 @@
       "weight": 3,
       "lines": [
         "I could map the route you dragged me along, but I would mark several parts as questionable.",
-        "I could map the route you dragged me along, but I would mark several parts as questionable.",
-        "I could map the route you dragged me along, but I would mark several parts as questionable."
+        "I remember following you through that road. My feet remember it even better.",
+        "That trip across that road taught me to ask more questions before walking."
       ]
     },
     {
@@ -315,8 +315,8 @@
       "weight": 4,
       "lines": [
         "The ocean crossing by boat would make a fine blue line on a map. I would label it 'questionable judgment.'",
-        "The ocean crossing by boat would make a fine blue line on a map. I would label it 'questionable judgment.'",
-        "The ocean crossing by boat would make a fine blue line on a map. I would label it 'questionable judgment.'"
+        "That ocean crossing worked because the boat did. I noticed.",
+        "The sea made the route look simple. My nerves disagreed."
       ]
     },
     {
@@ -328,8 +328,8 @@
       "weight": 32,
       "lines": [
         "It helped me keep my bearings when the road stopped feeling safe.",
-        "It helped me keep my bearings when the road stopped feeling safe.",
-        "It helped me keep my bearings when the road stopped feeling safe."
+        "It did the job when fear was loud. That is praise enough.",
+        "Good gear earns trust the moment trouble tests it."
       ]
     },
     {
@@ -341,8 +341,8 @@
       "weight": 32,
       "lines": [
         "Unused so far. A good map and good gear both matter most before trouble starts.",
-        "Unused so far. A good map and good gear both matter most before trouble starts.",
-        "Unused so far. A good map and good gear both matter most before trouble starts."
+        "It did the job when fear was loud. That is praise enough.",
+        "Good gear earns trust the moment trouble tests it."
       ]
     },
     {
@@ -413,8 +413,8 @@
       "key": "cartographer_map_report.missing",
       "lines": [
         "Bring me news from the mark first. A map is not a story until someone walks it.",
-        "Bring me news from the mark first. A map is not a story until someone walks it.",
-        "Bring me news from the mark first. A map is not a story until someone walks it."
+        "I will mark {target_article} with a steadier hand now that you came back.",
+        "Good. {target_article} is no longer just ink and rumor."
       ]
     },
     {
@@ -423,7 +423,7 @@
       "lines": [
         "You found {target_article}? Good. A village that can be reached can also be warned.",
         "{target_article}, then. I will mark the road in softer ink. People live at the end of that line.",
-        "You found {target_article}? Good. A village that can be reached can also be warned."
+        "I will mark {target_article} with a steadier hand now that you came back."
       ],
       "weight": 46
     },
@@ -433,7 +433,7 @@
       "lines": [
         "So {target_article} still stands. Old stone keeps old trouble, but now the way there is honest.",
         "{target_article}. Hm. I will note the hazards twice and the treasure not at all.",
-        "So {target_article} still stands. Old stone keeps old trouble, but now the way there is honest."
+        "I will mark {target_article} with a steadier hand now that you came back."
       ],
       "weight": 46
     },
@@ -443,7 +443,7 @@
       "lines": [
         "You reached {target_article} and came back speaking. That is worth a darker border.",
         "{target_article}, confirmed. Some roofs are warnings. I will draw that one like it bites.",
-        "You reached {target_article} and came back speaking. That is worth a darker border."
+        "I will mark {target_article} with a steadier hand now that you came back."
       ],
       "weight": 46
     },
@@ -453,7 +453,7 @@
       "lines": [
         "{target_article} under open water. Good work. The sea hides landmarks better than any fog.",
         "You found {target_article}? Then the waves were telling the truth for once.",
-        "{target_article} under open water. Good work. The sea hides landmarks better than any fog."
+        "I will mark {target_article} with a steadier hand now that you came back."
       ],
       "weight": 46
     },
@@ -463,7 +463,7 @@
       "lines": [
         "{target_article}. Timber below ground means somebody trusted the dark too much.",
         "You found {target_article}. I will mark the descent and leave room for cave-ins.",
-        "{target_article}. Timber below ground means somebody trusted the dark too much."
+        "I will mark {target_article} with a steadier hand now that you came back."
       ],
       "weight": 46
     },
@@ -473,7 +473,7 @@
       "lines": [
         "{target_article}. Keep your voice low even in the telling. Some places listen after you leave.",
         "You came back from {target_article}. I will mark it, but not invite anyone there lightly.",
-        "{target_article}. Keep your voice low even in the telling. Some places listen after you leave."
+        "I will mark {target_article} with a steadier hand now that you came back."
       ],
       "weight": 46
     },
@@ -483,7 +483,7 @@
       "lines": [
         "{target_article}, found at last. That is not a road; it is a question carved into stone.",
         "You found {target_article}. Some maps point outward. That one points beneath everything.",
-        "{target_article}, found at last. That is not a road; it is a question carved into stone."
+        "I will mark {target_article} with a steadier hand now that you came back."
       ],
       "weight": 46
     },
@@ -493,7 +493,7 @@
       "lines": [
         "{target_article}. Even the name makes the parchment feel warmer.",
         "You found {target_article} and returned. I will not ask what followed you in memory.",
-        "{target_article}. Even the name makes the parchment feel warmer."
+        "I will mark {target_article} with a steadier hand now that you came back."
       ],
       "weight": 46
     },
@@ -503,7 +503,7 @@
       "lines": [
         "{target_article}. I will mark patrol risk on every road that brushes near it.",
         "You found {target_article}. Good. A tower seen on a map is a tower avoided in time.",
-        "{target_article}. I will mark patrol risk on every road that brushes near it."
+        "I will mark {target_article} with a steadier hand now that you came back."
       ],
       "weight": 46
     },
@@ -513,7 +513,7 @@
       "lines": [
         "{target_article}. Ruins are never as empty as hopeful travelers claim.",
         "You found {target_article}. I will draw it lightly. The past dislikes being pinned down.",
-        "{target_article}. Ruins are never as empty as hopeful travelers claim."
+        "I will mark {target_article} with a steadier hand now that you came back."
       ],
       "weight": 46
     },
@@ -523,7 +523,7 @@
       "lines": [
         "{target_article}. A place built to test feet, nerve, and poor judgment.",
         "You found {target_article}. I will mark it as useful, dangerous, and not for the overconfident.",
-        "{target_article}. A place built to test feet, nerve, and poor judgment."
+        "I will mark {target_article} with a steadier hand now that you came back."
       ],
       "weight": 46
     },
@@ -533,7 +533,7 @@
       "lines": [
         "You found {target_article}. Good. The map was a promise; now it is a record.",
         "{target_article}, confirmed. I will clean up the linework and pretend I was certain all along.",
-        "You found {target_article}. Good. The map was a promise; now it is a record."
+        "I will mark {target_article} with a steadier hand now that you came back."
       ],
       "weight": 46
     }
@@ -543,8 +543,8 @@
       "id": "cartographer_opening",
       "lines": [
         "Mind the map table. What do you need?",
-        "Mind the map table. What do you need?",
-        "Mind the map table. What do you need?"
+        "Step clear of the map table. What do you need?",
+        "Mind the map table; I am listening."
       ]
     }
   ],
@@ -553,8 +553,8 @@
       "id": "cartographer_closing",
       "lines": [
         "Back to reading roads and borders, then.",
-        "Back to reading roads and borders, then.",
-        "Back to reading roads and borders, then."
+        "Back to mapping before the work notices I stopped.",
+        "I have route to tend and daylight to spend."
       ]
     }
   ],
@@ -567,8 +567,8 @@
       "weight": 26,
       "lines": [
         "Fine. I will mark this as settled, lightly, in pencil.",
-        "Fine. I will mark this as settled, lightly, in pencil.",
-        "Fine. I will mark this as settled, lightly, in pencil."
+        "Fine. I will set this down before it gets heavier.",
+        "Fine. I can step back, but do not make me regret it."
       ]
     },
     {
@@ -579,8 +579,8 @@
       "weight": 26,
       "lines": [
         "Your count is off. The route to peace is {emerald_cost} {emeralds}.",
-        "Your count is off. The route to peace is {emerald_cost} {emeralds}.",
-        "Your count is off. The route to peace is {emerald_cost} {emeralds}."
+        "That is short of the full repair. Bring {emerald_cost} {emeralds}.",
+        "Not enough. It takes {emerald_cost} {emeralds} to settle this."
       ]
     },
     {
@@ -591,8 +591,8 @@
       "weight": 26,
       "lines": [
         "No. Every path back to trust is closed for now.",
-        "No. Every path back to trust is closed for now.",
-        "No. Every path back to trust is closed for now."
+        "No. Some damage has to cool before payment matters.",
+        "No. Keep {payment_items}; trust is not ready to trade."
       ]
     }
   ]

@@ -29,8 +29,8 @@
       "weight": 26,
       "lines": [
         "Mind the fletching table. Straight arrows do not happen by accident.",
-        "Mind the fletching table. Straight arrows do not happen by accident.",
-        "Mind the fletching table. Straight arrows do not happen by accident."
+        "Give the fletching table room. Arrows works better without elbows in it.",
+        "Step carefully near the fletching table. I would rather greet you than patch you up."
       ]
     },
     {
@@ -39,8 +39,8 @@
       "weight": 18,
       "lines": [
         "A fletcher joke should fly straight. Mine wobble honestly.",
-        "A fletcher joke should fly straight. Mine wobble honestly.",
-        "A fletcher joke should fly straight. Mine wobble honestly."
+        "Arrows jokes need timing. Mine usually arrive with feather on them.",
+        "I keep a spare joke near the fletching table. It is not always ready for public use."
       ]
     },
     {
@@ -49,8 +49,8 @@
       "weight": 18,
       "lines": [
         "That was blunt enough to disappoint an arrow.",
-        "That was blunt enough to disappoint an arrow.",
-        "That was blunt enough to disappoint an arrow."
+        "I have seen crooked shots with more sense than that.",
+        "Careful. Even feather looks softer than your manners right now."
       ]
     },
     {
@@ -63,8 +63,8 @@
       "weight": 30,
       "lines": [
         "Keep testing patience and you will learn how warnings travel.",
-        "Keep testing patience and you will learn how warnings travel.",
-        "Keep testing patience and you will learn how warnings travel."
+        "I have seen crooked shots with more sense than that.",
+        "Careful. Even feather looks softer than your manners right now."
       ]
     },
     {
@@ -77,7 +77,7 @@
       "lines": [
         "I remember the cure flying true when everything else had gone crooked.",
         "You set me back on the string and did not let me snap.",
-        "I remember the cure flying true when everything else had gone crooked."
+        "You helped pull me back when even my name felt far away."
       ],
       "weight": 60
     },
@@ -91,7 +91,7 @@
       "lines": [
         "Your face lands near the target, but the rest of the memory wobbles.",
         "There was a hiss, a bite of gold, and then my thoughts found their fletching.",
-        "Your face lands near the target, but the rest of the memory wobbles."
+        "The memory is rough around the edges, but your face stayed in it."
       ],
       "weight": 60
     },
@@ -106,8 +106,8 @@
       "weight": 30,
       "lines": [
         "I remember you. The arrow of it still shakes in the target.",
-        "I remember you. The arrow of it still shakes in the target.",
-        "I remember you. The arrow of it still shakes in the target."
+        "I know you helped. I also remember why my hands still shake.",
+        "The cure left echoes behind. Stand where I can breathe around them."
       ]
     },
     {
@@ -218,8 +218,8 @@
       "weight": 38,
       "lines": [
         "Straight out, straight back. A good route flies true.",
-        "Straight out, straight back. A good route flies true.",
-        "Straight out, straight back. A good route flies true."
+        "Home again, whole enough to thank you properly. That matters.",
+        "We came back with the village still ahead of us. I will count that as good work."
       ]
     },
     {
@@ -233,8 +233,8 @@
       "weight": 38,
       "lines": [
         "That trip feathered wrong. I came home, but not without a bend in the shaft.",
-        "That trip feathered wrong. I came home, but not without a bend in the shaft.",
-        "That trip feathered wrong. I came home, but not without a bend in the shaft."
+        "I made it home, but the road took more from me than it should have.",
+        "Next time, let us return with fewer marks and better choices."
       ]
     },
     {
@@ -248,8 +248,8 @@
       "weight": 42,
       "lines": [
         "You loosed that hurt at close range. I will remember the aim.",
-        "You loosed that hurt at close range. I will remember the aim.",
-        "You loosed that hurt at close range. I will remember the aim."
+        "Following you was trust. What happened after was something else.",
+        "A guide who strikes from close by leaves the longest mark."
       ]
     },
     {
@@ -261,8 +261,8 @@
       "weight": 42,
       "lines": [
         "The boat drifted, but it did not miss the mark entirely.",
-        "The boat drifted, but it did not miss the mark entirely.",
-        "The boat drifted, but it did not miss the mark entirely."
+        "The boat did its part. I am still deciding whether the rest of the plan did.",
+        "Water carried us home, which is more than I expected from that journey."
       ]
     },
     {
@@ -274,8 +274,8 @@
       "weight": 3,
       "lines": [
         "That route you took me on flew about as straight as a warped arrow.",
-        "That route you took me on flew about as straight as a warped arrow.",
-        "That route you took me on flew about as straight as a warped arrow."
+        "I remember following you through that road. My feet remember it even better.",
+        "That trip across that road taught me to ask more questions before walking."
       ]
     },
     {
@@ -288,8 +288,8 @@
       "weight": 3,
       "lines": [
         "That boat did not fly straight, but at least it floated straight enough.",
-        "That boat did not fly straight, but at least it floated straight enough.",
-        "That boat did not fly straight, but at least it floated straight enough."
+        "That boat trip still sits oddly in my memory, but at least it floated.",
+        "A boat can make a bad plan quieter. It cannot make me forget it."
       ]
     },
     {
@@ -301,8 +301,8 @@
       "weight": 32,
       "lines": [
         "It kept its line under pressure. A steady hand is easier with proper tools.",
-        "It kept its line under pressure. A steady hand is easier with proper tools.",
-        "It kept its line under pressure. A steady hand is easier with proper tools."
+        "It did the job when fear was loud. That is praise enough.",
+        "Good gear earns trust the moment trouble tests it."
       ]
     },
     {
@@ -314,8 +314,8 @@
       "weight": 32,
       "lines": [
         "Still unused. A ready shot is not wasted just because it stays in the quiver.",
-        "Still unused. A ready shot is not wasted just because it stays in the quiver.",
-        "Still unused. A ready shot is not wasted just because it stays in the quiver."
+        "It did the job when fear was loud. That is praise enough.",
+        "Good gear earns trust the moment trouble tests it."
       ]
     },
     {
@@ -388,7 +388,7 @@
       "lines": [
         "Here, {gift_item}. Straight aim starts before the bow is drawn.",
         "Take {gift_item}. If trouble comes, I would like you ready for it.",
-        "Here, {gift_item}. Straight aim starts before the bow is drawn."
+        "Take {gift_item}. It is not much, but it is given with care."
       ],
       "weight": 48
     },
@@ -398,7 +398,7 @@
       "lines": [
         "Good. {gift_item} flew true with {tested_villager}.",
         "Then that advice hit center. Sounds like {gift_item} flew true.",
-        "Good. {gift_item} flew true with {tested_villager}."
+        "Good. {gift_item} suited {tested_villager}; I like advice that holds up."
       ],
       "weight": 44
     },
@@ -408,7 +408,7 @@
       "lines": [
         "That shot drifted. For {gift_subject}, nock {alternative_gift} instead.",
         "{gift_item} missed the mark? Try {alternative_gift}; straighter flight.",
-        "That shot drifted. For {gift_subject}, nock {alternative_gift} instead."
+        "{gift_item} missed the mark for {gift_subject}. Try {alternative_gift} instead."
       ],
       "weight": 44
     },
@@ -423,8 +423,8 @@
       "weight": 20,
       "lines": [
         "That advice flew crooked. Nock {alternative_gift} next time.",
-        "That advice flew crooked. Nock {alternative_gift} next time.",
-        "That advice flew crooked. Nock {alternative_gift} next time."
+        "Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
+        "Then we correct the guess: {alternative_gift} next time."
       ]
     },
     {
@@ -436,8 +436,8 @@
       "weight": 20,
       "lines": [
         "You let loose before checking the fletching. Try {alternative_gift}.",
-        "You let loose before checking the fletching. Try {alternative_gift}.",
-        "You let loose before checking the fletching. Try {alternative_gift}."
+        "Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
+        "Then we correct the guess: {alternative_gift} next time."
       ]
     }
   ],
@@ -446,8 +446,8 @@
       "id": "fletcher_opening",
       "lines": [
         "Mind the fletching table. What do you need?",
-        "Mind the fletching table. What do you need?",
-        "Mind the fletching table. What do you need?"
+        "Step clear of the fletching table. What do you need?",
+        "Mind the fletching table; I am listening."
       ]
     }
   ],
@@ -456,8 +456,8 @@
       "id": "fletcher_closing",
       "lines": [
         "Back to balancing arrows true, then.",
-        "Back to balancing arrows true, then.",
-        "Back to balancing arrows true, then."
+        "Back to arrows before the work notices I stopped.",
+        "I have shaft to tend and daylight to spend."
       ]
     }
   ],
@@ -470,8 +470,8 @@
       "weight": 26,
       "lines": [
         "Fine. I will unstring the anger, but only this once.",
-        "Fine. I will unstring the anger, but only this once.",
-        "Fine. I will unstring the anger, but only this once."
+        "Fine. I will set this down before it gets heavier.",
+        "Fine. I can step back, but do not make me regret it."
       ]
     },
     {
@@ -482,8 +482,8 @@
       "weight": 26,
       "lines": [
         "That does not fly far enough. Bring {emerald_cost} {emeralds}.",
-        "That does not fly far enough. Bring {emerald_cost} {emeralds}.",
-        "That does not fly far enough. Bring {emerald_cost} {emeralds}."
+        "That is short of the full repair. Bring {emerald_cost} {emeralds}.",
+        "Not enough. It takes {emerald_cost} {emeralds} to settle this."
       ]
     },
     {
@@ -494,8 +494,8 @@
       "weight": 26,
       "lines": [
         "No. Some targets stay marked until trust returns.",
-        "No. Some targets stay marked until trust returns.",
-        "No. Some targets stay marked until trust returns."
+        "No. Some damage has to cool before payment matters.",
+        "No. Keep {payment_items}; trust is not ready to trade."
       ]
     }
   ]

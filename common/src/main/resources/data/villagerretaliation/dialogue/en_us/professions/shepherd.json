@@ -29,8 +29,8 @@
       "weight": 26,
       "lines": [
         "Mind the loom. Threads tangle faster when people crowd them.",
-        "Mind the loom. Threads tangle faster when people crowd them.",
-        "Mind the loom. Threads tangle faster when people crowd them."
+        "Give the loom room. Woolwork works better without elbows in it.",
+        "Step carefully near the loom. I would rather greet you than patch you up."
       ]
     },
     {
@@ -39,8 +39,8 @@
       "weight": 18,
       "lines": [
         "My jokes have loose threads. Pull gently.",
-        "My jokes have loose threads. Pull gently.",
-        "My jokes have loose threads. Pull gently."
+        "Woolwork jokes need timing. Mine usually arrive with wool on them.",
+        "I keep a spare joke near the loom. It is not always ready for public use."
       ]
     },
     {
@@ -49,8 +49,8 @@
       "weight": 18,
       "lines": [
         "That thought tangled itself before it reached the loom.",
-        "That thought tangled itself before it reached the loom.",
-        "That thought tangled itself before it reached the loom."
+        "I have seen tangled threads with more sense than that.",
+        "Careful. Even wool looks softer than your manners right now."
       ]
     },
     {
@@ -63,8 +63,8 @@
       "weight": 30,
       "lines": [
         "Do not pull at work you do not understand.",
-        "Do not pull at work you do not understand.",
-        "Do not pull at work you do not understand."
+        "I have seen tangled threads with more sense than that.",
+        "Careful. Even wool looks softer than your manners right now."
       ]
     },
     {
@@ -77,7 +77,7 @@
       "lines": [
         "I remember being lost from the flock. You brought me back to the fold.",
         "My thoughts were all tangled wool. You helped card them straight.",
-        "I remember being lost from the flock. You brought me back to the fold."
+        "You helped pull me back when even my name felt far away."
       ],
       "weight": 60
     },
@@ -91,7 +91,7 @@
       "lines": [
         "Your face feels familiar, soft in one place and snagged in another.",
         "I remember shivering, then warmth returning one thread at a time.",
-        "Your face feels familiar, soft in one place and snagged in another."
+        "The memory is rough around the edges, but your face stayed in it."
       ],
       "weight": 60
     },
@@ -106,8 +106,8 @@
       "weight": 30,
       "lines": [
         "I remember you through panic and wool-dark dreams. Keep your voice low.",
-        "I remember you through panic and wool-dark dreams. Keep your voice low.",
-        "I remember you through panic and wool-dark dreams. Keep your voice low."
+        "I know you helped. I also remember why my hands still shake.",
+        "The cure left echoes behind. Stand where I can breathe around them."
       ]
     },
     {
@@ -218,8 +218,8 @@
       "weight": 38,
       "lines": [
         "Home with no one missing. That is the whole job, really.",
-        "Home with no one missing. That is the whole job, really.",
-        "Home with no one missing. That is the whole job, really."
+        "Home again, whole enough to thank you properly. That matters.",
+        "We came back with the village still ahead of us. I will count that as good work."
       ]
     },
     {
@@ -233,8 +233,8 @@
       "weight": 38,
       "lines": [
         "I am back in the fold, but I was not guarded as carefully as I hoped.",
-        "I am back in the fold, but I was not guarded as carefully as I hoped.",
-        "I am back in the fold, but I was not guarded as carefully as I hoped."
+        "I made it home, but the road took more from me than it should have.",
+        "Next time, let us return with fewer marks and better choices."
       ]
     },
     {
@@ -248,8 +248,8 @@
       "weight": 42,
       "lines": [
         "A shepherd who strikes the flock earns no easy trust.",
-        "A shepherd who strikes the flock earns no easy trust.",
-        "A shepherd who strikes the flock earns no easy trust."
+        "Following you was trust. What happened after was something else.",
+        "A guide who strikes from close by leaves the longest mark."
       ]
     },
     {
@@ -261,8 +261,8 @@
       "weight": 42,
       "lines": [
         "Keeping me in the boat was the hard part. I have chased calmer sheep.",
-        "Keeping me in the boat was the hard part. I have chased calmer sheep.",
-        "Keeping me in the boat was the hard part. I have chased calmer sheep."
+        "The boat did its part. I am still deciding whether the rest of the plan did.",
+        "Water carried us home, which is more than I expected from that journey."
       ]
     },
     {
@@ -275,8 +275,8 @@
       "weight": 3,
       "lines": [
         "That boat ride was calm enough, until I remembered I was trusting you with the shore.",
-        "That boat ride was calm enough, until I remembered I was trusting you with the shore.",
-        "That boat ride was calm enough, until I remembered I was trusting you with the shore."
+        "That boat trip still sits oddly in my memory, but at least it floated.",
+        "A boat can make a bad plan quieter. It cannot make me forget it."
       ]
     },
     {
@@ -289,8 +289,8 @@
       "weight": 3,
       "lines": [
         "When I followed you through {follow_biome}, I finally understood why sheep wander off quietly.",
-        "When I followed you through {follow_biome}, I finally understood why sheep wander off quietly.",
-        "When I followed you through {follow_biome}, I finally understood why sheep wander off quietly."
+        "I remember following you through {follow_biome}. My feet remember it even better.",
+        "That trip across {follow_biome} taught me to ask more questions before walking."
       ]
     },
     {
@@ -302,8 +302,8 @@
       "weight": 32,
       "lines": [
         "It helped keep the wolves from making a story of me. That is enough praise.",
-        "It helped keep the wolves from making a story of me. That is enough praise.",
-        "It helped keep the wolves from making a story of me. That is enough praise."
+        "It did the job when fear was loud. That is praise enough.",
+        "Good gear earns trust the moment trouble tests it."
       ]
     },
     {
@@ -315,8 +315,8 @@
       "weight": 32,
       "lines": [
         "Unused so far. I prefer watching over nervous sheep to testing nervous steel.",
-        "Unused so far. I prefer watching over nervous sheep to testing nervous steel.",
-        "Unused so far. I prefer watching over nervous sheep to testing nervous steel."
+        "It did the job when fear was loud. That is praise enough.",
+        "Good gear earns trust the moment trouble tests it."
       ]
     },
     {
@@ -389,7 +389,7 @@
       "lines": [
         "Take {gift_item}. A little comfort on the road never hurts.",
         "Here, {gift_item}. Keep it close when the night gets cold.",
-        "Take {gift_item}. A little comfort on the road never hurts."
+        "Take {gift_item}. It is not much, but it is given with care."
       ],
       "weight": 48
     },
@@ -399,7 +399,7 @@
       "lines": [
         "Good. {gift_item} suited {tested_villager} like the right dye on clean wool.",
         "Then the pattern held. {tested_villager} liked {gift_item}.",
-        "Good. {gift_item} suited {tested_villager} like the right dye on clean wool."
+        "Good. {gift_item} suited {tested_villager}; I like advice that holds up."
       ],
       "weight": 44
     },
@@ -409,7 +409,7 @@
       "lines": [
         "Wrong color for that cloth. For {gift_subject}, try {alternative_gift}.",
         "{gift_item} clashed? Bring {alternative_gift}; softer on the eyes and temper.",
-        "Wrong color for that cloth. For {gift_subject}, try {alternative_gift}."
+        "{gift_item} missed the mark for {gift_subject}. Try {alternative_gift} instead."
       ],
       "weight": 44
     },
@@ -424,8 +424,8 @@
       "weight": 20,
       "lines": [
         "Wrong pattern. Pick up {alternative_gift} and leave {gift_item} out of it.",
-        "Wrong pattern. Pick up {alternative_gift} and leave {gift_item} out of it.",
-        "Wrong pattern. Pick up {alternative_gift} and leave {gift_item} out of it."
+        "Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
+        "Then we correct the guess: {alternative_gift} next time. {gift_item}"
       ]
     },
     {
@@ -437,8 +437,8 @@
       "weight": 20,
       "lines": [
         "You followed the thread into a knot. Use {alternative_gift} next.",
-        "You followed the thread into a knot. Use {alternative_gift} next.",
-        "You followed the thread into a knot. Use {alternative_gift} next."
+        "Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
+        "Then we correct the guess: {alternative_gift} next time."
       ]
     }
   ],
@@ -447,8 +447,8 @@
       "id": "shepherd_opening",
       "lines": [
         "Mind the loom. What do you need?",
-        "Mind the loom. What do you need?",
-        "Mind the loom. What do you need?"
+        "Step clear of the loom. What do you need?",
+        "Mind the loom; I am listening."
       ]
     }
   ],
@@ -457,8 +457,8 @@
       "id": "shepherd_closing",
       "lines": [
         "Back to turning wool into warmth, then.",
-        "Back to turning wool into warmth, then.",
-        "Back to turning wool into warmth, then."
+        "Back to woolwork before the work notices I stopped.",
+        "I have thread to tend and daylight to spend."
       ]
     }
   ],
@@ -471,8 +471,8 @@
       "weight": 26,
       "lines": [
         "Fine. I will smooth this wool down for now.",
-        "Fine. I will smooth this wool down for now.",
-        "Fine. I will smooth this wool down for now."
+        "Fine. I will set this down before it gets heavier.",
+        "Fine. I can step back, but do not make me regret it."
       ]
     },
     {
@@ -483,8 +483,8 @@
       "weight": 26,
       "lines": [
         "That does not cover the tear. Bring {emerald_cost} {emeralds}.",
-        "That does not cover the tear. Bring {emerald_cost} {emeralds}.",
-        "That does not cover the tear. Bring {emerald_cost} {emeralds}."
+        "That is short of the full repair. Bring {emerald_cost} {emeralds}.",
+        "Not enough. It takes {emerald_cost} {emeralds} to settle this."
       ]
     },
     {
@@ -495,8 +495,8 @@
       "weight": 26,
       "lines": [
         "No. The flock still startles when you come near.",
-        "No. The flock still startles when you come near.",
-        "No. The flock still startles when you come near."
+        "No. Some damage has to cool before payment matters.",
+        "No. Keep {payment_items}; trust is not ready to trade."
       ]
     }
   ]

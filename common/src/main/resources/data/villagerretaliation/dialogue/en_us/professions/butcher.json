@@ -29,8 +29,8 @@
       "weight": 26,
       "lines": [
         "If you smell smoke, that is supper being planned properly.",
-        "If you smell smoke, that is supper being planned properly.",
-        "If you smell smoke, that is supper being planned properly."
+        "Give the smokehouse room. Butchery works better without elbows in it.",
+        "Step carefully near the smokehouse. I would rather greet you than patch you up."
       ]
     },
     {
@@ -39,8 +39,8 @@
       "weight": 18,
       "lines": [
         "My jokes are like my cuts: better when nobody rushes me.",
-        "My jokes are like my cuts: better when nobody rushes me.",
-        "My jokes are like my cuts: better when nobody rushes me."
+        "Butchery jokes need timing. Mine usually arrive with salt on them.",
+        "I keep a spare joke near the smokehouse. It is not always ready for public use."
       ]
     },
     {
@@ -49,8 +49,8 @@
       "weight": 18,
       "lines": [
         "That was stale enough to leave on the shelf.",
-        "That was stale enough to leave on the shelf.",
-        "That was stale enough to leave on the shelf."
+        "I have seen bad meat with more sense than that.",
+        "Careful. Even salt looks softer than your manners right now."
       ]
     },
     {
@@ -63,8 +63,8 @@
       "weight": 30,
       "lines": [
         "I have carved gristle with more grace than you brought here.",
-        "I have carved gristle with more grace than you brought here.",
-        "I have carved gristle with more grace than you brought here."
+        "I have seen bad meat with more sense than that.",
+        "Careful. Even salt looks softer than your manners right now."
       ]
     },
     {
@@ -77,7 +77,7 @@
       "lines": [
         "I remember hunger without a name. You brought me back before it swallowed everything.",
         "The cure left me shaking, but alive. That counts for more than a full smokehouse.",
-        "I remember hunger without a name. You brought me back before it swallowed everything."
+        "You helped pull me back when even my name felt far away."
       ],
       "weight": 60
     },
@@ -91,7 +91,7 @@
       "lines": [
         "Your face stirs something. Not appetite. Memory, I hope.",
         "I remember a sour potion, an apple, and trying not to bite the hand near me.",
-        "Your face stirs something. Not appetite. Memory, I hope."
+        "The memory is rough around the edges, but your face stayed in it."
       ],
       "weight": 60
     },
@@ -106,8 +106,8 @@
       "weight": 30,
       "lines": [
         "I remember enough to be grateful, and enough to be ashamed. Give me room.",
-        "I remember enough to be grateful, and enough to be ashamed. Give me room.",
-        "I remember enough to be grateful, and enough to be ashamed. Give me room."
+        "I know you helped. I also remember why my hands still shake.",
+        "The cure left echoes behind. Stand where I can breathe around them."
       ]
     },
     {
@@ -218,8 +218,8 @@
       "weight": 38,
       "lines": [
         "We came back with all our pieces where they belong. Good enough for my ledger.",
-        "We came back with all our pieces where they belong. Good enough for my ledger.",
-        "We came back with all our pieces where they belong. Good enough for my ledger."
+        "Home again, whole enough to thank you properly. That matters.",
+        "We came back with the village still ahead of us. I will count that as good work."
       ]
     },
     {
@@ -233,8 +233,8 @@
       "weight": 38,
       "lines": [
         "I know a shallow cut from a deep mistake. That trip had a little of both.",
-        "I know a shallow cut from a deep mistake. That trip had a little of both.",
-        "I know a shallow cut from a deep mistake. That trip had a little of both."
+        "I made it home, but the road took more from me than it should have.",
+        "Next time, let us return with fewer marks and better choices."
       ]
     },
     {
@@ -248,8 +248,8 @@
       "weight": 42,
       "lines": [
         "I expect sharp things at work. I did not expect one from the person I followed.",
-        "I expect sharp things at work. I did not expect one from the person I followed.",
-        "I expect sharp things at work. I did not expect one from the person I followed."
+        "Following you was trust. What happened after was something else.",
+        "A guide who strikes from close by leaves the longest mark."
       ]
     },
     {
@@ -261,8 +261,8 @@
       "weight": 42,
       "lines": [
         "I prefer a steady block beneath me, but the boat got us back without carving a new problem.",
-        "I prefer a steady block beneath me, but the boat got us back without carving a new problem.",
-        "I prefer a steady block beneath me, but the boat got us back without carving a new problem."
+        "The boat did its part. I am still deciding whether the rest of the plan did.",
+        "Water carried us home, which is more than I expected from that journey."
       ]
     },
     {
@@ -275,8 +275,8 @@
       "weight": 3,
       "lines": [
         "When you had me follow you, I kept thinking the whole walk needed a sharper plan.",
-        "When you had me follow you, I kept thinking the whole walk needed a sharper plan.",
-        "When you had me follow you, I kept thinking the whole walk needed a sharper plan."
+        "I remember following you through that road. My feet remember it even better.",
+        "That trip across that road taught me to ask more questions before walking."
       ]
     },
     {
@@ -289,8 +289,8 @@
       "weight": 3,
       "lines": [
         "A boat ride is better than being dragged over rough ground. Still, I prefer cutting across town, not water.",
-        "A boat ride is better than being dragged over rough ground. Still, I prefer cutting across town, not water.",
-        "A boat ride is better than being dragged over rough ground. Still, I prefer cutting across town, not water."
+        "That boat trip still sits oddly in my memory, but at least it floated.",
+        "A boat can make a bad plan quieter. It cannot make me forget it."
       ]
     },
     {
@@ -302,8 +302,8 @@
       "weight": 32,
       "lines": [
         "It handled ugly work without making a mess of me. I count that as fine quality.",
-        "It handled ugly work without making a mess of me. I count that as fine quality.",
-        "It handled ugly work without making a mess of me. I count that as fine quality."
+        "It did the job when fear was loud. That is praise enough.",
+        "Good gear earns trust the moment trouble tests it."
       ]
     },
     {
@@ -315,8 +315,8 @@
       "weight": 32,
       "lines": [
         "Still clean. That is how I prefer tools before the hard work starts.",
-        "Still clean. That is how I prefer tools before the hard work starts.",
-        "Still clean. That is how I prefer tools before the hard work starts."
+        "It did the job when fear was loud. That is praise enough.",
+        "Good gear earns trust the moment trouble tests it."
       ]
     },
     {
@@ -389,7 +389,7 @@
       "lines": [
         "Take {gift_item}. A good village keeps its friends fed and standing.",
         "Here, {gift_item}. It is honest work to send someone off with provisions.",
-        "Take {gift_item}. A good village keeps its friends fed and standing."
+        "Take {gift_item}. It is not much, but it is given with care."
       ],
       "weight": 48
     },
@@ -399,7 +399,7 @@
       "lines": [
         "Good. {tested_villager} has a sound nose for {gift_item}. Fresh advice, clean cut.",
         "If {tested_villager} liked {gift_item}, then the cut was right.",
-        "Good. {tested_villager} has a sound nose for {gift_item}. Fresh advice, clean cut."
+        "Good. {gift_item} suited {tested_villager}; I like advice that holds up."
       ],
       "weight": 44
     },
@@ -409,7 +409,7 @@
       "lines": [
         "Bad cut, then. For {gift_subject}, I would set down {gift_item} and bring {alternative_gift}.",
         "Some gifts spoil in the telling. Try {alternative_gift}; that should suit {gift_subject} better.",
-        "Bad cut, then. For {gift_subject}, I would set down {gift_item} and bring {alternative_gift}."
+        "{gift_item} missed the mark for {gift_subject}. Try {alternative_gift} instead."
       ],
       "weight": 44
     },
@@ -424,8 +424,8 @@
       "weight": 20,
       "lines": [
         "You got a tough cut of advice. Next time, bring {alternative_gift}.",
-        "You got a tough cut of advice. Next time, bring {alternative_gift}.",
-        "You got a tough cut of advice. Next time, bring {alternative_gift}."
+        "Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
+        "Then we correct the guess: {alternative_gift} next time."
       ]
     },
     {
@@ -437,8 +437,8 @@
       "weight": 20,
       "lines": [
         "{gift_item} went over badly? Then trim your losses and try {alternative_gift}.",
-        "{gift_item} went over badly? Then trim your losses and try {alternative_gift}.",
-        "{gift_item} went over badly? Then trim your losses and try {alternative_gift}."
+        "Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
+        "Then we correct the guess: {alternative_gift} next time. {gift_item}"
       ]
     }
   ],
@@ -447,8 +447,8 @@
       "id": "butcher_opening",
       "lines": [
         "Mind the smokehouse. What do you need?",
-        "Mind the smokehouse. What do you need?",
-        "Mind the smokehouse. What do you need?"
+        "Step clear of the smokehouse. What do you need?",
+        "Mind the smokehouse; I am listening."
       ]
     }
   ],
@@ -457,8 +457,8 @@
       "id": "butcher_closing",
       "lines": [
         "Back to keeping meat salted and safe, then.",
-        "Back to keeping meat salted and safe, then.",
-        "Back to keeping meat salted and safe, then."
+        "Back to butchery before the work notices I stopped.",
+        "I have cut to tend and daylight to spend."
       ]
     }
   ],
@@ -471,8 +471,8 @@
       "weight": 26,
       "lines": [
         "Fine. I have work to get back to, and anger spoils the day.",
-        "Fine. I have work to get back to, and anger spoils the day.",
-        "Fine. I have work to get back to, and anger spoils the day."
+        "Fine. I will set this down before it gets heavier.",
+        "Fine. I can step back, but do not make me regret it."
       ]
     },
     {
@@ -483,8 +483,8 @@
       "weight": 26,
       "lines": [
         "Too lean an offer. Bring {emerald_cost} {emeralds} if you want this cut clean.",
-        "Too lean an offer. Bring {emerald_cost} {emeralds} if you want this cut clean.",
-        "Too lean an offer. Bring {emerald_cost} {emeralds} if you want this cut clean."
+        "That is short of the full repair. Bring {emerald_cost} {emeralds}.",
+        "Not enough. It takes {emerald_cost} {emeralds} to settle this."
       ]
     },
     {
@@ -495,8 +495,8 @@
       "weight": 26,
       "lines": [
         "No. I know bad meat, and I know bad apologies.",
-        "No. I know bad meat, and I know bad apologies.",
-        "No. I know bad meat, and I know bad apologies."
+        "No. Some damage has to cool before payment matters.",
+        "No. Keep {payment_items}; trust is not ready to trade."
       ]
     }
   ]

@@ -29,8 +29,8 @@
       "weight": 26,
       "lines": [
         "Mind the bottles. Some are medicine, some are mistakes I have not named yet.",
-        "Mind the bottles. Some are medicine, some are mistakes I have not named yet.",
-        "Mind the bottles. Some are medicine, some are mistakes I have not named yet."
+        "Give the brewing stand room. Remedies works better without elbows in it.",
+        "Step carefully near the brewing stand. I would rather greet you than patch you up."
       ]
     },
     {
@@ -39,8 +39,8 @@
       "weight": 18,
       "lines": [
         "A cleric joke is like medicine: if it tastes pleasant, check it twice.",
-        "A cleric joke is like medicine: if it tastes pleasant, check it twice.",
-        "A cleric joke is like medicine: if it tastes pleasant, check it twice."
+        "Remedies jokes need timing. Mine usually arrive with breath on them.",
+        "I keep a spare joke near the brewing stand. It is not always ready for public use."
       ]
     },
     {
@@ -49,8 +49,8 @@
       "weight": 18,
       "lines": [
         "That was an empty bottle of a thought.",
-        "That was an empty bottle of a thought.",
-        "That was an empty bottle of a thought."
+        "I have seen old curses with more sense than that.",
+        "Careful. Even breath looks softer than your manners right now."
       ]
     },
     {
@@ -63,8 +63,8 @@
       "weight": 30,
       "lines": [
         "Speak gently. I have already heard enough harsh things today.",
-        "Speak gently. I have already heard enough harsh things today.",
-        "Speak gently. I have already heard enough harsh things today."
+        "Keep your voice even. I am measuring more than your words.",
+        "Some questions are safer when they stand a little farther away."
       ]
     },
     {
@@ -77,7 +77,7 @@
       "lines": [
         "I remember the cure like a bell under water. You were there when it rang clear.",
         "Whatever mercy found me, it came through your hands.",
-        "I remember the cure like a bell under water. You were there when it rang clear."
+        "You helped pull me back when even my name felt far away."
       ],
       "weight": 60
     },
@@ -91,7 +91,7 @@
       "lines": [
         "My memory kneels and trembles. I know you, but not cleanly.",
         "I remember weakness, bitterness, gold, and then breath. The rest is prayer smoke.",
-        "My memory kneels and trembles. I know you, but not cleanly."
+        "The memory is rough around the edges, but your face stayed in it."
       ],
       "weight": 60
     },
@@ -106,8 +106,8 @@
       "weight": 30,
       "lines": [
         "I remember you from the edge of a curse. Forgive me if my thanks sounds afraid.",
-        "I remember you from the edge of a curse. Forgive me if my thanks sounds afraid.",
-        "I remember you from the edge of a curse. Forgive me if my thanks sounds afraid."
+        "I know you helped. I also remember why my hands still shake.",
+        "The cure left echoes behind. Stand where I can breathe around them."
       ]
     },
     {
@@ -218,8 +218,8 @@
       "weight": 38,
       "lines": [
         "I returned with breath steady and prayers unused. That is a blessing I will not waste.",
-        "I returned with breath steady and prayers unused. That is a blessing I will not waste.",
-        "I returned with breath steady and prayers unused. That is a blessing I will not waste."
+        "Home again, whole enough to thank you properly. That matters.",
+        "We came back with the village still ahead of us. I will count that as good work."
       ]
     },
     {
@@ -233,8 +233,8 @@
       "weight": 38,
       "lines": [
         "I can tend the hurt, but I would rather not collect it on the way home.",
-        "I can tend the hurt, but I would rather not collect it on the way home.",
-        "I can tend the hurt, but I would rather not collect it on the way home."
+        "I made it home, but the road took more from me than it should have.",
+        "Next time, let us return with fewer marks and better choices."
       ]
     },
     {
@@ -248,8 +248,8 @@
       "weight": 42,
       "lines": [
         "A wound from an enemy is simple. A wound from a guide asks harder questions.",
-        "A wound from an enemy is simple. A wound from a guide asks harder questions.",
-        "A wound from an enemy is simple. A wound from a guide asks harder questions."
+        "Following you was trust. What happened after was something else.",
+        "A guide who strikes from close by leaves the longest mark."
       ]
     },
     {
@@ -261,8 +261,8 @@
       "weight": 42,
       "lines": [
         "The boat floated. My nerves, less so. Still, I am home.",
-        "The boat floated. My nerves, less so. Still, I am home.",
-        "The boat floated. My nerves, less so. Still, I am home."
+        "The boat did its part. I am still deciding whether the rest of the plan did.",
+        "Water carried us home, which is more than I expected from that journey."
       ]
     },
     {
@@ -277,8 +277,8 @@
       "weight": 4,
       "lines": [
         "I have prayed about that time I followed you and you struck me. The bruise answered first.",
-        "I have prayed about that time I followed you and you struck me. The bruise answered first.",
-        "I have prayed about that time I followed you and you struck me. The bruise answered first."
+        "I remember following you through that road. My feet remember it even better.",
+        "That trip across that road taught me to ask more questions before walking."
       ]
     },
     {
@@ -291,8 +291,8 @@
       "weight": 3,
       "lines": [
         "I said a quiet prayer during that boat ride. Mostly for balance.",
-        "I said a quiet prayer during that boat ride. Mostly for balance.",
-        "I said a quiet prayer during that boat ride. Mostly for balance."
+        "That boat trip still sits oddly in my memory, but at least it floated.",
+        "A boat can make a bad plan quieter. It cannot make me forget it."
       ]
     },
     {
@@ -304,8 +304,8 @@
       "weight": 32,
       "lines": [
         "It bought me the breath I needed. Sometimes protection is its own blessing.",
-        "It bought me the breath I needed. Sometimes protection is its own blessing.",
-        "It bought me the breath I needed. Sometimes protection is its own blessing."
+        "It did the job when fear was loud. That is praise enough.",
+        "Good gear earns trust the moment trouble tests it."
       ]
     },
     {
@@ -317,8 +317,8 @@
       "weight": 32,
       "lines": [
         "I have not needed it. I will still be grateful before I am desperate.",
-        "I have not needed it. I will still be grateful before I am desperate.",
-        "I have not needed it. I will still be grateful before I am desperate."
+        "It did the job when fear was loud. That is praise enough.",
+        "Good gear earns trust the moment trouble tests it."
       ]
     },
     {
@@ -383,8 +383,8 @@
       "weight": 34,
       "lines": [
         "{theft_witness} says you took {stolen_stack}. Confession is cleaner when it arrives before proof.",
-        "{theft_witness} says you took {stolen_stack}. Confession is cleaner when it arrives before proof.",
-        "{theft_witness} says you took {stolen_stack}. Confession is cleaner when it arrives before proof."
+        "Another way to say it: {theft_witness} says you took {stolen_stack}. Confession is cleaner when it arrives before proof.",
+        "The meaning has not changed for {theft_witness} {stolen_stack}; {theft_witness} says you took {stolen_stack}. Confession is cleaner when it arrives before proof."
       ]
     },
     {
@@ -406,7 +406,7 @@
       "lines": [
         "Take {gift_item}. May it keep trouble at a respectful distance.",
         "Here, {gift_item}. Some blessings are practical enough to fit in a hand.",
-        "Take {gift_item}. May it keep trouble at a respectful distance."
+        "Take {gift_item}. It is not much, but it is given with care."
       ],
       "weight": 48
     },
@@ -416,7 +416,7 @@
       "lines": [
         "Good. {tested_villager} received {gift_item} with the right spirit.",
         "Then the omen was clear. {gift_item} carried kindness where you took it.",
-        "Good. {tested_villager} received {gift_item} with the right spirit."
+        "Good. {gift_item} suited {tested_villager}; I like advice that holds up."
       ],
       "weight": 44
     },
@@ -426,7 +426,7 @@
       "lines": [
         "Then I read the sign poorly. Bring {alternative_gift} to {gift_subject}; it should be received better.",
         "Set {gift_item} aside for that soul. {alternative_gift} is the gentler offering.",
-        "Then I read the sign poorly. Bring {alternative_gift} to {gift_subject}; it should be received better."
+        "{gift_item} missed the mark for {gift_subject}. Try {alternative_gift} instead."
       ],
       "weight": 44
     },
@@ -441,8 +441,8 @@
       "weight": 20,
       "lines": [
         "Not every sign is kind. Offer {alternative_gift} next time.",
-        "Not every sign is kind. Offer {alternative_gift} next time.",
-        "Not every sign is kind. Offer {alternative_gift} next time."
+        "Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
+        "Then we correct the guess: {alternative_gift} next time."
       ]
     },
     {
@@ -455,8 +455,8 @@
       "weight": 20,
       "lines": [
         "If {gift_item} troubled them, perhaps that was the lesson. {alternative_gift} will be calmer.",
-        "If {gift_item} troubled them, perhaps that was the lesson. {alternative_gift} will be calmer.",
-        "If {gift_item} troubled them, perhaps that was the lesson. {alternative_gift} will be calmer."
+        "Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
+        "Then we correct the guess: {alternative_gift} next time. {gift_item}"
       ]
     }
   ],
@@ -465,8 +465,8 @@
       "id": "cleric_opening",
       "lines": [
         "Mind the brewing stand. What do you need?",
-        "Mind the brewing stand. What do you need?",
-        "Mind the brewing stand. What do you need?"
+        "Step clear of the brewing stand. What do you need?",
+        "Mind the brewing stand; I am listening."
       ]
     }
   ],
@@ -475,8 +475,8 @@
       "id": "cleric_closing",
       "lines": [
         "Back to mixing remedies and prayers, then.",
-        "Back to mixing remedies and prayers, then.",
-        "Back to mixing remedies and prayers, then."
+        "Back to remedies before the work notices I stopped.",
+        "I have remedy to tend and daylight to spend."
       ]
     }
   ],
@@ -489,8 +489,8 @@
       "weight": 26,
       "lines": [
         "Fine. I will breathe first and judge second.",
-        "Fine. I will breathe first and judge second.",
-        "Fine. I will breathe first and judge second."
+        "Fine. I will set this down before it gets heavier.",
+        "Fine. I can step back, but do not make me regret it."
       ]
     },
     {
@@ -501,8 +501,8 @@
       "weight": 26,
       "lines": [
         "A remedy needs the full dose. Bring {emerald_cost} {emeralds}.",
-        "A remedy needs the full dose. Bring {emerald_cost} {emeralds}.",
-        "A remedy needs the full dose. Bring {emerald_cost} {emeralds}."
+        "That is short of the full repair. Bring {emerald_cost} {emeralds}.",
+        "Not enough. It takes {emerald_cost} {emeralds} to settle this."
       ]
     },
     {
@@ -513,8 +513,8 @@
       "weight": 26,
       "lines": [
         "No. This wound is not ready to close.",
-        "No. This wound is not ready to close.",
-        "No. This wound is not ready to close."
+        "No. Some damage has to cool before payment matters.",
+        "No. Keep {payment_items}; trust is not ready to trade."
       ]
     }
   ]

@@ -29,8 +29,8 @@
       "weight": 26,
       "lines": [
         "Step lightly on the dock. Loose boards like to announce strangers.",
-        "Step lightly on the dock. Loose boards like to announce strangers.",
-        "Step lightly on the dock. Loose boards like to announce strangers."
+        "Give the dock room. Fishing works better without elbows in it.",
+        "Step carefully near the dock. I would rather greet you than patch you up."
       ]
     },
     {
@@ -39,8 +39,8 @@
       "weight": 18,
       "lines": [
         "A fishing joke needs a good line and someone patient enough to hear it.",
-        "A fishing joke needs a good line and someone patient enough to hear it.",
-        "A fishing joke needs a good line and someone patient enough to hear it."
+        "Fishing jokes need timing. Mine usually arrive with water on them.",
+        "I keep a spare joke near the dock. It is not always ready for public use."
       ]
     },
     {
@@ -49,8 +49,8 @@
       "weight": 18,
       "lines": [
         "That insult was damp before it reached me.",
-        "That insult was damp before it reached me.",
-        "That insult was damp before it reached me."
+        "I have seen snagged lines with more sense than that.",
+        "Careful. Even water looks softer than your manners right now."
       ]
     },
     {
@@ -63,8 +63,8 @@
       "weight": 30,
       "lines": [
         "I keep space between myself and uncertain weather. People are no different.",
-        "I keep space between myself and uncertain weather. People are no different.",
-        "I keep space between myself and uncertain weather. People are no different."
+        "Keep your voice even. I am measuring more than your words.",
+        "Some questions are safer when they stand a little farther away."
       ]
     },
     {
@@ -77,7 +77,7 @@
       "lines": [
         "I remember sinking far below myself. You hauled the line in.",
         "The dark had me hooked. You cut the line clean.",
-        "I remember sinking far below myself. You hauled the line in."
+        "You helped pull me back when even my name felt far away."
       ],
       "weight": 60
     },
@@ -91,7 +91,7 @@
       "lines": [
         "Your face breaks the surface of that memory, then slips under again.",
         "I remember a taste like bad river water, then breathing like it was new.",
-        "Your face breaks the surface of that memory, then slips under again."
+        "The memory is rough around the edges, but your face stayed in it."
       ],
       "weight": 60
     },
@@ -106,8 +106,8 @@
       "weight": 30,
       "lines": [
         "I remember you through deep water and panic. Do not crowd the bank.",
-        "I remember you through deep water and panic. Do not crowd the bank.",
-        "I remember you through deep water and panic. Do not crowd the bank."
+        "I know you helped. I also remember why my hands still shake.",
+        "The cure left echoes behind. Stand where I can breathe around them."
       ]
     },
     {
@@ -218,8 +218,8 @@
       "weight": 38,
       "lines": [
         "A clean return, no snags. I like a trip that ends like a well-tied line.",
-        "A clean return, no snags. I like a trip that ends like a well-tied line.",
-        "A clean return, no snags. I like a trip that ends like a well-tied line."
+        "Home again, whole enough to thank you properly. That matters.",
+        "We came back with the village still ahead of us. I will count that as good work."
       ]
     },
     {
@@ -233,8 +233,8 @@
       "weight": 38,
       "lines": [
         "Something got its hook in me out there. Next time, we cut the line sooner.",
-        "Something got its hook in me out there. Next time, we cut the line sooner.",
-        "Something got its hook in me out there. Next time, we cut the line sooner."
+        "I made it home, but the road took more from me than it should have.",
+        "Next time, let us return with fewer marks and better choices."
       ]
     },
     {
@@ -248,8 +248,8 @@
       "weight": 42,
       "lines": [
         "I know bait when I see it now. Do not ask me to bite twice.",
-        "I know bait when I see it now. Do not ask me to bite twice.",
-        "I know bait when I see it now. Do not ask me to bite twice."
+        "Following you was trust. What happened after was something else.",
+        "A guide who strikes from close by leaves the longest mark."
       ]
     },
     {
@@ -261,8 +261,8 @@
       "weight": 44,
       "lines": [
         "A boat is honest enough. It goes where it is pointed, unlike some plans.",
-        "A boat is honest enough. It goes where it is pointed, unlike some plans.",
-        "A boat is honest enough. It goes where it is pointed, unlike some plans."
+        "The boat did its part. I am still deciding whether the rest of the plan did.",
+        "Water carried us home, which is more than I expected from that journey."
       ]
     },
     {
@@ -275,8 +275,8 @@
       "weight": 4,
       "lines": [
         "You taking me by boat was almost sensible. Almost.",
-        "You taking me by boat was almost sensible. Almost.",
-        "You taking me by boat was almost sensible. Almost."
+        "That boat trip still sits oddly in my memory, but at least it floated.",
+        "A boat can make a bad plan quieter. It cannot make me forget it."
       ]
     },
     {
@@ -289,8 +289,8 @@
       "weight": 4,
       "lines": [
         "Following you over {follow_distance} blocks felt like reeling in a boot with opinions.",
-        "Following you over {follow_distance} blocks felt like reeling in a boot with opinions.",
-        "Following you over {follow_distance} blocks felt like reeling in a boot with opinions."
+        "I remember following you through {follow_distance} blocks. My feet remember it even better.",
+        "That trip across {follow_distance} blocks taught me to ask more questions before walking."
       ]
     },
     {
@@ -304,8 +304,8 @@
       "weight": 5,
       "lines": [
         "If we had to cross ocean, at least you used a boat. That is the first sensible part of the story.",
-        "If we had to cross ocean, at least you used a boat. That is the first sensible part of the story.",
-        "If we had to cross ocean, at least you used a boat. That is the first sensible part of the story."
+        "That ocean crossing worked because the boat did. I noticed.",
+        "The sea made the route look simple. My nerves disagreed."
       ]
     },
     {
@@ -318,8 +318,8 @@
       "weight": 5,
       "lines": [
         "Swimming across ocean with you was not fishing. It was being the catch.",
-        "Swimming across ocean with you was not fishing. It was being the catch.",
-        "Swimming across ocean with you was not fishing. It was being the catch."
+        "Crossing ocean water without a boat is not a memory I recommend keeping.",
+        "I remember every wave from that crossing, and none of them kindly."
       ]
     },
     {
@@ -331,8 +331,8 @@
       "weight": 32,
       "lines": [
         "It held steady. Better than most nets, and those are meant to catch trouble.",
-        "It held steady. Better than most nets, and those are meant to catch trouble.",
-        "It held steady. Better than most nets, and those are meant to catch trouble."
+        "It did the job when fear was loud. That is praise enough.",
+        "Good gear earns trust the moment trouble tests it."
       ]
     },
     {
@@ -344,8 +344,8 @@
       "weight": 32,
       "lines": [
         "Dry, unused, and welcome. Some things should stay out of the water and out of danger.",
-        "Dry, unused, and welcome. Some things should stay out of the water and out of danger.",
-        "Dry, unused, and welcome. Some things should stay out of the water and out of danger."
+        "It did the job when fear was loud. That is praise enough.",
+        "Good gear earns trust the moment trouble tests it."
       ]
     },
     {
@@ -418,7 +418,7 @@
       "lines": [
         "Take {gift_item}. A useful catch should not sit in one pair of hands.",
         "Here, {gift_item}. The water was generous, so I can be too.",
-        "Take {gift_item}. A useful catch should not sit in one pair of hands."
+        "Take {gift_item}. It is not much, but it is given with care."
       ],
       "weight": 48
     },
@@ -428,7 +428,7 @@
       "lines": [
         "Good. {tested_villager} took {gift_item}; that advice had a clean hook.",
         "Then {gift_item} was the right bait for {tested_villager}. Glad it landed.",
-        "Good. {tested_villager} took {gift_item}; that advice had a clean hook."
+        "Good. {gift_item} suited {tested_villager}; I like advice that holds up."
       ],
       "weight": 44
     },
@@ -438,7 +438,7 @@
       "lines": [
         "That line came back empty. For {gift_subject}, cast {alternative_gift} instead.",
         "Some fish spit the hook. Leave {gift_item} and try {alternative_gift} next time.",
-        "That line came back empty. For {gift_subject}, cast {alternative_gift} instead."
+        "{gift_item} missed the mark for {gift_subject}. Try {alternative_gift} instead."
       ],
       "weight": 44
     },
@@ -453,8 +453,8 @@
       "weight": 20,
       "lines": [
         "Bad bait. It happens. Cast {alternative_gift} if you want a better chance.",
-        "Bad bait. It happens. Cast {alternative_gift} if you want a better chance.",
-        "Bad bait. It happens. Cast {alternative_gift} if you want a better chance."
+        "Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
+        "Then we correct the guess: {alternative_gift} next time."
       ]
     },
     {
@@ -466,8 +466,8 @@
       "weight": 20,
       "lines": [
         "You took the line, not me. Still, {alternative_gift} should catch better.",
-        "You took the line, not me. Still, {alternative_gift} should catch better.",
-        "You took the line, not me. Still, {alternative_gift} should catch better."
+        "Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
+        "Then we correct the guess: {alternative_gift} next time."
       ]
     }
   ],
@@ -476,8 +476,8 @@
       "id": "fisherman_opening",
       "lines": [
         "Mind the dock. What do you need?",
-        "Mind the dock. What do you need?",
-        "Mind the dock. What do you need?"
+        "Step clear of the dock. What do you need?",
+        "Mind the dock; I am listening."
       ]
     }
   ],
@@ -486,8 +486,8 @@
       "id": "fisherman_closing",
       "lines": [
         "Back to reading water and weather, then.",
-        "Back to reading water and weather, then.",
-        "Back to reading water and weather, then."
+        "Back to fishing before the work notices I stopped.",
+        "I have line to tend and daylight to spend."
       ]
     }
   ],
@@ -500,8 +500,8 @@
       "weight": 26,
       "lines": [
         "Fine. The line goes slack, for now.",
-        "Fine. The line goes slack, for now.",
-        "Fine. The line goes slack, for now."
+        "Fine. I will set this down before it gets heavier.",
+        "Fine. I can step back, but do not make me regret it."
       ]
     },
     {
@@ -512,8 +512,8 @@
       "weight": 26,
       "lines": [
         "That offer will not hold. I need {emerald_cost} {emeralds}.",
-        "That offer will not hold. I need {emerald_cost} {emeralds}.",
-        "That offer will not hold. I need {emerald_cost} {emeralds}."
+        "That is short of the full repair. Bring {emerald_cost} {emeralds}.",
+        "Not enough. It takes {emerald_cost} {emeralds} to settle this."
       ]
     },
     {
@@ -524,8 +524,8 @@
       "weight": 26,
       "lines": [
         "No. I know when to cut a bad line.",
-        "No. I know when to cut a bad line.",
-        "No. I know when to cut a bad line."
+        "No. Some damage has to cool before payment matters.",
+        "No. Keep {payment_items}; trust is not ready to trade."
       ]
     }
   ]
