@@ -588,6 +588,7 @@ const TAG_SUGGESTIONS = {
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
+const PREVIEW_EXACT_WRAP_LINE_LIMIT = 2500;
 
 let state = createInitialState();
 let activeSection = "overview";
@@ -604,6 +605,8 @@ let wrapPreviewLines = false;
 let previewEditTimer = null;
 let previewEditError = null;
 let previewLineHighlightRanges = [];
+let previewLineNumberState = { source: "", lineCount: 1, rangesKey: "" };
+let previewLineNumberFrame = 0;
 let previewUndoStack = [];
 let previewRedoStack = [];
 let previewBeforeInputSnapshot = null;
@@ -4782,7 +4785,35 @@ function recordPreviewInputHistory() {
 function renderPreviewLineNumbers(source, ranges = []) {
   const style = getComputedStyle(els.preview);
   const lineHeight = parseFloat(style.lineHeight) || 21.7;
-  const lines = String(source || "").split("\n");
+  const text = String(source || "");
+  const lineState = previewLineNumberMetrics(text, ranges);
+  if (wrapPreviewLines && lineState.lineCount <= PREVIEW_EXACT_WRAP_LINE_LIMIT) {
+    renderExactWrappedPreviewLineNumbers(text, ranges, style, lineHeight, lineState.lineCount);
+    return;
+  }
+  const highlighted = previewHighlightedLines(ranges);
+  const viewportHeight = els.preview.clientHeight || 0;
+  const scrollTop = els.preview.scrollTop || 0;
+  const overscan = 18;
+  const firstVisible = Math.min(lineState.lineCount, Math.max(1, Math.floor(scrollTop / lineHeight) + 1 - overscan));
+  const visibleRows = Math.max(1, Math.ceil(viewportHeight / lineHeight) + overscan * 2);
+  const lastVisible = Math.min(lineState.lineCount, firstVisible + visibleRows);
+  const fragment = document.createDocumentFragment();
+  for (let lineNumber = firstVisible; lineNumber <= lastVisible; lineNumber += 1) {
+    const node = document.createElement("div");
+    node.className = "code-preview-line-number";
+    if (highlighted.has(lineNumber)) node.classList.add("is-highlighted");
+    node.textContent = String(lineNumber);
+    fragment.append(node);
+  }
+  els.codePreview.style.setProperty("--preview-line-height", `${lineHeight}px`);
+  els.codePreview.style.setProperty("--preview-gutter-digits", String(Math.max(2, String(lineState.lineCount).length)));
+  els.previewLines.style.transform = `translateY(${(firstVisible - 1) * lineHeight - scrollTop}px)`;
+  els.previewLines.replaceChildren(fragment);
+}
+
+function renderExactWrappedPreviewLineNumbers(source, ranges, style, lineHeight, lineCount) {
+  const lines = source.split("\n");
   const wrappedRows = previewWrappedRowCounts(lines, style);
   const highlighted = previewHighlightedLines(ranges);
   const fragment = document.createDocumentFragment();
@@ -4796,13 +4827,12 @@ function renderPreviewLineNumbers(source, ranges = []) {
     fragment.append(node);
   });
   els.codePreview.style.setProperty("--preview-line-height", `${lineHeight}px`);
-  els.codePreview.style.setProperty("--preview-gutter-digits", String(Math.max(2, String(lines.length).length)));
+  els.codePreview.style.setProperty("--preview-gutter-digits", String(Math.max(2, String(lineCount).length)));
+  els.previewLines.style.transform = `translateY(${-els.preview.scrollTop}px)`;
   els.previewLines.replaceChildren(fragment);
-  syncPreviewLineNumberScroll();
 }
 
 function previewWrappedRowCounts(lines, style) {
-  if (!wrapPreviewLines) return lines.map(() => 1);
   const previewWidth = els.preview.clientWidth;
   if (!previewWidth) return lines.map(() => 1);
   const paddingLeft = parseFloat(style.paddingLeft) || 0;
@@ -4830,6 +4860,23 @@ function previewWrappedRowCounts(lines, style) {
   });
 }
 
+function previewLineNumberMetrics(source, ranges = []) {
+  const rangesKey = ranges.map((range) => `${range.start}:${range.end || range.start}`).join("|");
+  if (previewLineNumberState.source === source && previewLineNumberState.rangesKey === rangesKey) {
+    return previewLineNumberState;
+  }
+  let lineCount = 1;
+  for (let index = 0; index < source.length; index += 1) {
+    if (source.charCodeAt(index) === 10) lineCount += 1;
+  }
+  previewLineNumberState = {
+    source,
+    lineCount,
+    rangesKey
+  };
+  return previewLineNumberState;
+}
+
 function previewHighlightedLines(ranges) {
   const lines = new Set();
   for (const range of ranges) {
@@ -4843,7 +4890,14 @@ function previewHighlightedLines(ranges) {
 }
 
 function syncPreviewLineNumberScroll() {
-  els.previewLines.style.transform = `translateY(${-els.preview.scrollTop}px)`;
+  schedulePreviewLineNumberRender();
+}
+
+function schedulePreviewLineNumberRender() {
+  window.cancelAnimationFrame(previewLineNumberFrame);
+  previewLineNumberFrame = window.requestAnimationFrame(() => {
+    renderPreviewLineNumbers(els.preview.value, previewEditError?.path === selectedPath ? [] : previewLineHighlightRanges);
+  });
 }
 
 function applyPreviewLineHighlights(ranges) {
