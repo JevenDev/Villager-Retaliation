@@ -38,8 +38,30 @@ public final class VillagerInteractionScreenShaderRenderer {
     }
 
     public static void renderInteractionVeil(GuiGraphics graphics, int width, int height, float veilTop, float fadeHeight) {
+        renderInteractionVeil(graphics, width, height, veilTop, fadeHeight, 0.0F, 0.0F, veilTop, 1.0F);
+    }
+
+    public static void renderInteractionVeil(
+            GuiGraphics graphics,
+            int width,
+            int height,
+            float veilTop,
+            float fadeHeight,
+            float panelLeft,
+            float panelRight,
+            float panelTop,
+            float panelBlendWidth) {
         if (interactionVeilShader == null) {
             graphics.fill(0, Math.max(0, Math.round(veilTop + fadeHeight)), width, height, 0xFF000000);
+            if (panelRight > panelLeft) {
+                graphics.fill(
+                        Math.max(0, Math.round(panelLeft)),
+                        Math.max(0, Math.round(panelTop + fadeHeight)),
+                        Math.min(width, Math.round(panelRight)),
+                        height,
+                        0xFF000000
+                );
+            }
             return;
         }
 
@@ -48,16 +70,21 @@ public final class VillagerInteractionScreenShaderRenderer {
         setUniform(interactionVeilShader, "CellSize", DITHER_CELL_SIZE);
         setUniform(interactionVeilShader, "ScreenWidth", (float) width);
         setUniform(interactionVeilShader, "ArcDepth", DITHER_ARC_DEPTH);
+        setUniform(interactionVeilShader, "PanelLeft", panelLeft);
+        setUniform(interactionVeilShader, "PanelRight", panelRight);
+        setUniform(interactionVeilShader, "PanelTop", panelTop);
+        setUniform(interactionVeilShader, "PanelBlendWidth", panelBlendWidth);
         Matrix4f pose = graphics.pose().last().pose();
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.setShader(() -> interactionVeilShader);
 
+        float renderTop = panelRight > panelLeft ? Math.min(veilTop, panelTop) : veilTop;
         BufferBuilder bufferBuilder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
         bufferBuilder.addVertex(pose, 0.0F, height, 0.0F);
         bufferBuilder.addVertex(pose, width, height, 0.0F);
-        bufferBuilder.addVertex(pose, width, Math.max(0.0F, veilTop), 0.0F);
-        bufferBuilder.addVertex(pose, 0.0F, Math.max(0.0F, veilTop), 0.0F);
+        bufferBuilder.addVertex(pose, width, Math.max(0.0F, renderTop), 0.0F);
+        bufferBuilder.addVertex(pose, 0.0F, Math.max(0.0F, renderTop), 0.0F);
         BufferUploader.drawWithShader(bufferBuilder.buildOrThrow());
 
         RenderSystem.disableBlend();

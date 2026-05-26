@@ -64,6 +64,9 @@ public class VillagerInteractionScreen extends Screen {
     private static final int VEIL_DITHER_START_OFFSET = OPTION_HEIGHT - 81;
     private static final int SCREEN_BOTTOM_MARGIN = 48;
     private static final int VEIL_TOP_DITHER_HEIGHT = 64;
+    private static final int SKILLS_VEIL_TOP_PADDING = 22;
+    private static final int SKILLS_VEIL_SIDE_PADDING = 14;
+    private static final int SKILLS_VEIL_BLEND_WIDTH = 48;
     private static final int CHAT_EDGE_MARGIN = 4;
     private static final int CHAT_TOP_MARGIN = 12;
     private static final int CHAT_INPUT_AND_GAP_HEIGHT = 38;
@@ -1147,7 +1150,22 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     void renderBackdropBehindChat(GuiGraphics graphics) {
-        int veilTop = Math.max(0, conversationInfoTop() + VEIL_DITHER_START_OFFSET);
+        int veilTop = interactionVeilTop();
+        if (this.page == DialoguePage.SKILLS) {
+            VillagerInteractionScreenShaderRenderer.renderInteractionVeil(
+                    graphics,
+                    this.width,
+                    this.height,
+                    veilTop,
+                    VEIL_TOP_DITHER_HEIGHT,
+                    optionsLeft() - SKILLS_VEIL_SIDE_PADDING,
+                    optionsLeft() + OPTION_WIDTH + SKILLS_VEIL_SIDE_PADDING,
+                    skillsVeilTop(),
+                    SKILLS_VEIL_BLEND_WIDTH
+            );
+            return;
+        }
+
         VillagerInteractionScreenShaderRenderer.renderInteractionVeil(graphics, this.width, this.height, veilTop, VEIL_TOP_DITHER_HEIGHT);
     }
 
@@ -1589,9 +1607,17 @@ public class VillagerInteractionScreen extends Screen {
         return Math.max(24, Math.max(lowerVeilTop, bottomSafeTop));
     }
 
+    private int skillsVeilTop() {
+        return Math.max(0, skillsPanelTop() - SKILLS_VEIL_TOP_PADDING);
+    }
+
     private int skillsPanelHeight() {
         int rows = (VillagerSkill.values().length + PROFILE_SKILL_COLUMNS - 1) / PROFILE_SKILL_COLUMNS;
         return this.font.lineHeight + 4 + rows * PROFILE_SKILL_ROW_HEIGHT;
+    }
+
+    private int interactionVeilTop() {
+        return Math.max(0, conversationInfoTop() + VEIL_DITHER_START_OFFSET);
     }
 
     private int optionsTop() {

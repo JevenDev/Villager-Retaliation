@@ -8,6 +8,10 @@ uniform float FadeHeight;
 uniform float CellSize;
 uniform float ScreenWidth;
 uniform float ArcDepth;
+uniform float PanelLeft;
+uniform float PanelRight;
+uniform float PanelTop;
+uniform float PanelBlendWidth;
 
 in vec2 vertexScreenPos;
 
@@ -32,6 +36,10 @@ void main() {
     float normalizedX = clamp(vertexScreenPos.x / max(ScreenWidth, 1.0), 0.0, 1.0);
     float edgeDistance = abs(normalizedX * 2.0 - 1.0);
     float arcedVeilTop = VeilTop + ArcDepth * edgeDistance * edgeDistance;
+    float panelEnabled = step(PanelLeft + 1.0, PanelRight);
+    float panelDistance = max(max(PanelLeft - vertexScreenPos.x, vertexScreenPos.x - PanelRight), 0.0);
+    float panelInfluence = panelEnabled * (1.0 - smoothstep(0.0, max(PanelBlendWidth, 1.0), panelDistance));
+    arcedVeilTop = mix(arcedVeilTop, min(arcedVeilTop, PanelTop), panelInfluence);
     float fadeProgress = clamp((vertexScreenPos.y - arcedVeilTop) / max(FadeHeight, 1.0), 0.0, 1.0);
     if (fadeProgress <= 0.0) {
         discard;

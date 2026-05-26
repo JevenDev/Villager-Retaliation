@@ -52,6 +52,30 @@
       "type": "float",
       "count": 1,
       "values": [ 56.0 ]
+    },
+    {
+      "name": "PanelLeft",
+      "type": "float",
+      "count": 1,
+      "values": [ 0.0 ]
+    },
+    {
+      "name": "PanelRight",
+      "type": "float",
+      "count": 1,
+      "values": [ 0.0 ]
+    },
+    {
+      "name": "PanelTop",
+      "type": "float",
+      "count": 1,
+      "values": [ 0.0 ]
+    },
+    {
+      "name": "PanelBlendWidth",
+      "type": "float",
+      "count": 1,
+      "values": [ 1.0 ]
     }
   ]
 }
