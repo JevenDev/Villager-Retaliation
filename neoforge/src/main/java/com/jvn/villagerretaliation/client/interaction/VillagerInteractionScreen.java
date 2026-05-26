@@ -93,6 +93,8 @@ public class VillagerInteractionScreen extends Screen {
     private static final int PROFILE_CHART_OUTLINE_COLOR = 0x90E8E4DA;
     private static final int PROFILE_CHART_VALUE_COLOR = 0xFFE9C46A;
     private static final int PROFILE_CHART_POINT_COLOR = 0xFFFFF3B0;
+    private static final int PROFILE_CHART_POINT_HOVER_COLOR = 0xFFFFFFFF;
+    private static final int PROFILE_CHART_POINT_HIT_RADIUS = 6;
 
     private final int villagerEntityId;
     private final String villagerName;
@@ -236,7 +238,7 @@ public class VillagerInteractionScreen extends Screen {
             if (this.giftButton != null) {
                 this.giftButton.visible = false;
             }
-            renderProfilePage(graphics);
+            renderProfilePage(graphics, mouseX, mouseY);
         } else {
             if (this.giftButton != null) {
                 this.giftButton.visible = false;
@@ -711,7 +713,7 @@ public class VillagerInteractionScreen extends Screen {
 
     }
 
-    private void renderProfilePage(GuiGraphics graphics) {
+    private void renderProfilePage(GuiGraphics graphics, int mouseX, int mouseY) {
         int left = optionsLeft() + 6;
         int top = conversationInfoTop() - 2;
         Optional<VillagerProfileClientCache.DisplayEntry> entry = VillagerProfileClientCache.get(this.villagerEntityId);
@@ -724,21 +726,25 @@ public class VillagerInteractionScreen extends Screen {
         VillagerProfileClientCache.DisplayEntry profile = entry.get();
         int centerX = left + OPTION_WIDTH / 2 - 8;
         int centerY = top + PROFILE_CHART_RADIUS + 16;
-        renderProfileChart(graphics, profile, centerX, centerY);
-        renderProfileRows(graphics, profile, left, centerY + PROFILE_CHART_RADIUS + 18);
+        VillagerSocialAttribute hoveredAttribute = profileChartPointAt(profile, centerX, centerY, mouseX, mouseY);
+        renderProfileChart(graphics, profile, centerX, centerY, hoveredAttribute);
+        if (hoveredAttribute != null) {
+            renderProfileAttributeTooltip(graphics, profile, hoveredAttribute, mouseX, mouseY);
+        }
     }
 
     private void renderProfileChart(
             GuiGraphics graphics,
             VillagerProfileClientCache.DisplayEntry profile,
             int centerX,
-            int centerY) {
+            int centerY,
+            VillagerSocialAttribute hoveredAttribute) {
         VillagerSocialAttribute[] attributes = VillagerSocialAttribute.values();
         ProfilePoint[] outer = new ProfilePoint[attributes.length];
         ProfilePoint[] values = new ProfilePoint[attributes.length];
 
         for (int index = 0; index < attributes.length; index++) {
-            double angle = -Math.PI / 2.0D + index * Math.PI * 2.0D / attributes.length;
+            double angle = profileAttributeAngle(index, attributes.length);
             outer[index] = profilePoint(centerX, centerY, angle, PROFILE_CHART_RADIUS);
             int valueRadius = Math.round(PROFILE_CHART_RADIUS * profile.value(attributes[index]) / 100.0F);
             values[index] = profilePoint(centerX, centerY, angle, valueRadius);
@@ -754,26 +760,61 @@ public class VillagerInteractionScreen extends Screen {
             int next = (index + 1) % attributes.length;
             drawPixelLine(graphics, outer[index].x(), outer[index].y(), outer[next].x(), outer[next].y(), PROFILE_CHART_OUTLINE_COLOR);
             drawPixelLine(graphics, values[index].x(), values[index].y(), values[next].x(), values[next].y(), PROFILE_CHART_VALUE_COLOR);
-            graphics.fill(values[index].x() - 1, values[index].y() - 1, values[index].x() + 2, values[index].y() + 2, PROFILE_CHART_POINT_COLOR);
+            boolean hovered = attributes[index] == hoveredAttribute;
+            int pointRadius = hovered ? 2 : 1;
+            int pointColor = hovered ? PROFILE_CHART_POINT_HOVER_COLOR : PROFILE_CHART_POINT_COLOR;
+            graphics.fill(
+                    values[index].x() - pointRadius,
+                    values[index].y() - pointRadius,
+                    values[index].x() + pointRadius + 1,
+                    values[index].y() + pointRadius + 1,
+                    pointColor
+            );
         }
     }
 
-    private void renderProfileRows(
+    private VillagerSocialAttribute profileChartPointAt(
+            VillagerProfileClientCache.DisplayEntry profile,
+            int centerX,
+            int centerY,
+            int mouseX,
+            int mouseY) {
+        VillagerSocialAttribute[] attributes = VillagerSocialAttribute.values();
+        VillagerSocialAttribute closestAttribute = null;
+        int closestDistance = PROFILE_CHART_POINT_HIT_RADIUS * PROFILE_CHART_POINT_HIT_RADIUS + 1;
+        for (int index = 0; index < attributes.length; index++) {
+            double angle = profileAttributeAngle(index, attributes.length);
+            int valueRadius = Math.round(PROFILE_CHART_RADIUS * profile.value(attributes[index]) / 100.0F);
+            ProfilePoint point = profilePoint(centerX, centerY, angle, valueRadius);
+            int dx = mouseX - point.x();
+            int dy = mouseY - point.y();
+            int distance = dx * dx + dy * dy;
+            if (distance < closestDistance) {
+                closestAttribute = attributes[index];
+                closestDistance = distance;
+            }
+        }
+        return closestAttribute;
+    }
+
+    private void renderProfileAttributeTooltip(
             GuiGraphics graphics,
             VillagerProfileClientCache.DisplayEntry profile,
-            int left,
-            int top) {
-        int y = top;
-        for (VillagerSocialAttribute attribute : VillagerSocialAttribute.values()) {
-            VillagerSocialAttributeRank rank = profile.rank(attribute);
-            String label = translate(
-                    "profile.attribute_row",
-                    localizedAttribute(attribute),
-                    localizedRank(rank)
-            );
-            graphics.drawString(this.font, label, left, y, INFO_VALUE_COLOR, false);
-            y += this.font.lineHeight + 3;
-        }
+            VillagerSocialAttribute attribute,
+            int mouseX,
+            int mouseY) {
+        VillagerSocialAttributeRank rank = profile.rank(attribute);
+        List<Component> tooltip = new ArrayList<>();
+        tooltip.add(Component.literal(localizedAttribute(attribute)).withStyle(ChatFormatting.WHITE));
+        tooltip.add(Component.translatable(GUI_KEY_PREFIX + "profile.tooltip.level", localizedRank(rank)).withStyle(ChatFormatting.YELLOW));
+        tooltip.add(Component.translatable(GUI_KEY_PREFIX + "profile.tooltip.score", profile.value(attribute)).withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.empty());
+        tooltip.add(Component.literal(localizedAttributeDescription(attribute)).withStyle(ChatFormatting.GRAY));
+        graphics.renderComponentTooltip(this.font, tooltip, mouseX, mouseY);
+    }
+
+    private static double profileAttributeAngle(int index, int attributeCount) {
+        return -Math.PI / 2.0D + index * Math.PI * 2.0D / attributeCount;
     }
 
     private static ProfilePoint profilePoint(int centerX, int centerY, double angle, int radius) {
@@ -1722,6 +1763,11 @@ public class VillagerInteractionScreen extends Screen {
 
     private static String localizedAttribute(VillagerSocialAttribute attribute) {
         return I18n.exists(attribute.translationKey()) ? I18n.get(attribute.translationKey()) : attribute.serializedName();
+    }
+
+    private static String localizedAttributeDescription(VillagerSocialAttribute attribute) {
+        String key = attribute.translationKey() + ".description";
+        return I18n.exists(key) ? I18n.get(key) : attribute.serializedName();
     }
 
     private static String localizedRank(VillagerSocialAttributeRank rank) {
