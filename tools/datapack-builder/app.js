@@ -586,6 +586,62 @@ const TAG_SUGGESTIONS = {
   "pacification-professions": CONSTANTS.professions
 };
 
+// Keep each supported datapack surface versioned so migrations can reason about
+// documented keys while preserving unknown user-authored JSON.
+const PACK_VERSION_SCHEMAS = {
+  "1.0.0-beta.11": {
+    collections: {
+      dialogue: DIALOGUE_KINDS.map((kind) => kind.key),
+      forcedDialogue: ["entries"],
+      notifications: ["notifications"],
+      gifts: GIFT_KINDS.map((kind) => kind.key),
+      pacification: ["payments"],
+      stories: STORY_KINDS.map((kind) => kind.key),
+      names: ["male_names", "female_names", "names"]
+    },
+    pathKinds: [
+      "pack.mcmeta",
+      "data/villagerretaliation/dialogue/<locale>/<file>.json",
+      "data/villagerretaliation/forced_dialogue/<file>.json",
+      "data/villagerretaliation/notifications/<locale>/<file>.json",
+      "data/villagerretaliation/gifts/<file>.json",
+      "data/villagerretaliation/pacification/<file>.json",
+      "data/<namespace>/story_structures/<file>.json",
+      "data/<namespace>/story_biomes/<file>.json",
+      "data/villagerretaliation/villager_names/preset_names.json"
+    ],
+    documentedKeys: {
+      meta: schemaKeysFromTooltips("meta"),
+      dialogue: schemaKeysFromTooltips("dialogue"),
+      forcedDialogue: schemaKeysFromTooltips("forced"),
+      notifications: schemaKeysFromTooltips("notification"),
+      gifts: schemaKeysFromTooltips("gift"),
+      pacification: schemaKeysFromTooltips("pacification"),
+      stories: schemaKeysFromTooltips("stories"),
+      names: schemaKeysFromTooltips("names")
+    },
+    importAliases: {
+      packVersion: [`${PACK_VERSION_NAMESPACE}.${PACK_VERSION_STORAGE_KEY}`, "villager_retaliation.packVersion", "vr.packVersion", PACK_VERSION_STORAGE_KEY, "packVersion"],
+      dialogueText: ["text", "texts", "line", "lines"],
+      notificationText: ["text", "texts", "line", "lines"],
+      names: ["male_names", "female_names", "names"]
+    }
+  }
+};
+
+const PACK_MIGRATIONS = [
+  // Future format changes should be registered here as adjacent steps:
+  // {
+  //   from: "1.0.0-beta.11",
+  //   to: "1.0.0-beta.12",
+  //   title: "Short migration title",
+  //   migrate(files, context) {
+  //     // Mutate and return the file map. Use context.report(...) for notes.
+  //     return files;
+  //   }
+  // }
+];
+
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 const PREVIEW_EXACT_WRAP_LINE_LIMIT = 2500;
@@ -638,6 +694,7 @@ const els = {
   importInput: document.querySelector("#import-input"),
   directoryInput: document.querySelector("#directory-input"),
   exportButton: document.querySelector("#export-button"),
+  migrationButton: document.querySelector("#migration-button"),
   starterButton: document.querySelector("#starter-button"),
   settingsButton: document.querySelector("#settings-button"),
   leftPanelToggleButton: document.querySelector("#left-panel-toggle-button"),
@@ -657,6 +714,13 @@ const els = {
   exportIssueList: document.querySelector("#export-issue-list"),
   exportIssueCancel: document.querySelector("#export-issue-cancel"),
   exportIssueConfirm: document.querySelector("#export-issue-confirm"),
+  migrationDialog: document.querySelector("#migration-dialog"),
+  migrationSource: document.querySelector("#migration-source"),
+  migrationTarget: document.querySelector("#migration-target"),
+  migrationRoute: document.querySelector("#migration-route"),
+  migrationReport: document.querySelector("#migration-report"),
+  migrationCancel: document.querySelector("#migration-cancel"),
+  migrationConfirm: document.querySelector("#migration-confirm"),
   wikiButton: document.querySelector("#wiki-button"),
   wikiOverlay: document.querySelector("#wiki-overlay"),
   wikiWindow: document.querySelector(".wiki-window"),
@@ -800,6 +864,16 @@ function escapeHtml(value) {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+function schemaKeysFromTooltips(prefix) {
+  const marker = `${prefix}-`;
+  return unique(
+    Object.keys(FIELD_TOOLTIPS)
+      .filter((key) => key.startsWith(marker))
+      .map((key) => key.slice(marker.length))
+      .sort()
+  );
 }
 
 function icon(name, className = "inline-icon") {
@@ -2865,6 +2939,171 @@ function readPackVersion(json) {
       || json?.[PACK_VERSION_STORAGE_KEY]
       || json?.packVersion
   );
+}
+
+function packSchemaForVersion(version) {
+  return PACK_VERSION_SCHEMAS[normalizePackVersion(version)] || null;
+}
+
+function schemaKeyTotal(schema) {
+  if (!schema?.documentedKeys) return 0;
+  return Object.values(schema.documentedKeys).reduce((total, keys) => total + (Array.isArray(keys) ? keys.length : 0), 0);
+}
+
+function schemaReportItem(version) {
+  const schema = packSchemaForVersion(version);
+  if (!schema) {
+    return {
+      type: "warning",
+      title: "Schema",
+      text: `No schema registry entry is available for ${packVersionInfo(version).label}.`
+    };
+  }
+  const collectionCount = Object.values(schema.collections || {}).reduce((total, keys) => total + keys.length, 0);
+  return {
+    type: "info",
+    title: "Schema",
+    text: `${packVersionInfo(version).label} keeps ${schemaKeyTotal(schema)} documented field keys across ${collectionCount} collections.`
+  };
+}
+
+function packVersionIndex(version) {
+  return PACK_VERSION_IDS.indexOf(normalizePackVersion(version));
+}
+
+function getPackMigrationStep(from, to) {
+  return PACK_MIGRATIONS.find((step) => step.from === from && step.to === to) || null;
+}
+
+function migrationReportItem(type, title, text) {
+  return { type, title, text };
+}
+
+function migrationPlanBetween(sourceVersion, targetVersion) {
+  const source = normalizePackVersion(sourceVersion);
+  const target = normalizePackVersion(targetVersion);
+  const report = [];
+
+  if (!source || !target) {
+    report.push(migrationReportItem("error", "Version", "Choose a supported source and target version."));
+    return { ok: false, canApply: false, source, target, steps: [], report };
+  }
+
+  const sourceIndex = packVersionIndex(source);
+  const targetIndex = packVersionIndex(target);
+  if (sourceIndex < 0 || targetIndex < 0) {
+    report.push(migrationReportItem("error", "Version", "The selected version is not registered in this builder."));
+    return { ok: false, canApply: false, source, target, steps: [], report };
+  }
+
+  if (source === target) {
+    report.push(migrationReportItem("info", "No migration needed", `This pack already targets ${packVersionInfo(target).label}.`));
+    report.push(schemaReportItem(target));
+    return { ok: true, canApply: false, source, target, steps: [], report };
+  }
+
+  if (targetIndex < sourceIndex) {
+    report.push(migrationReportItem("error", "Unsupported direction", "Downgrades are not supported. Choose the same version or a newer target."));
+    return { ok: false, canApply: false, source, target, steps: [], report };
+  }
+
+  const steps = [];
+  for (let index = sourceIndex; index < targetIndex; index += 1) {
+    const from = PACK_VERSION_IDS[index];
+    const to = PACK_VERSION_IDS[index + 1];
+    const step = getPackMigrationStep(from, to);
+    if (!step) {
+      report.push(migrationReportItem("error", "Missing migration", `No registered migration exists for ${packVersionInfo(from).label} to ${packVersionInfo(to).label}.`));
+      report.push(schemaReportItem(from));
+      return { ok: false, canApply: false, source, target, steps, report };
+    }
+    steps.push(step);
+  }
+
+  report.push(migrationReportItem(
+    "ok",
+    "Migration path",
+    steps.map((step) => `${packVersionInfo(step.from).feature} -> ${packVersionInfo(step.to).feature}`).join(", ")
+  ));
+  report.push(schemaReportItem(target));
+  return { ok: true, canApply: true, source, target, steps, report };
+}
+
+function cloneFileMap(files) {
+  const cloned = {};
+  for (const [path, value] of Object.entries(files || {})) {
+    cloned[path] = value instanceof Uint8Array ? new Uint8Array(value) : value;
+  }
+  return cloned;
+}
+
+function updatePackMetaForMigration(files, sourceVersion, targetVersion, report) {
+  const sourceInfo = packVersionInfo(sourceVersion);
+  const targetInfo = packVersionInfo(targetVersion);
+  let json = {};
+  if (typeof files["pack.mcmeta"] === "string") {
+    try {
+      json = JSON.parse(stripTextBom(files["pack.mcmeta"]));
+    } catch {
+      report.push(migrationReportItem("warning", "pack.mcmeta", "Existing pack.mcmeta could not be parsed, so a fresh metadata file was written."));
+    }
+  }
+
+  if (!json || typeof json !== "object" || Array.isArray(json)) json = {};
+  if (!json.pack || typeof json.pack !== "object" || Array.isArray(json.pack)) json.pack = {};
+  const previousFormat = Number(json.pack.pack_format);
+  if (!previousFormat || previousFormat === sourceInfo.packFormat) {
+    json.pack.pack_format = targetInfo.packFormat;
+  }
+  if (!json.pack.description) {
+    json.pack.description = state.meta.description || state.meta.packName || "Villager Retaliation datapack";
+  }
+
+  const marker = json[PACK_VERSION_NAMESPACE];
+  json[PACK_VERSION_NAMESPACE] = marker && typeof marker === "object" && !Array.isArray(marker) ? marker : {};
+  json[PACK_VERSION_NAMESPACE][PACK_VERSION_STORAGE_KEY] = targetInfo.id;
+  files["pack.mcmeta"] = safeJson(json);
+  report.push(migrationReportItem("ok", "pack.mcmeta", `Version marker set to ${targetInfo.id}.`));
+}
+
+function migrateFileMap(inputFiles, sourceVersion, targetVersion) {
+  const plan = migrationPlanBetween(sourceVersion, targetVersion);
+  const report = [...plan.report];
+  let files = cloneFileMap(inputFiles);
+
+  if (!plan.ok) {
+    return { ok: false, source: plan.source, target: plan.target, files, report };
+  }
+
+  try {
+    for (const step of plan.steps) {
+      const context = {
+        from: step.from,
+        to: step.to,
+        source: plan.source,
+        target: plan.target,
+        sourceSchema: packSchemaForVersion(step.from),
+        targetSchema: packSchemaForVersion(step.to),
+        report(type, title, text) {
+          report.push(migrationReportItem(type, title, text));
+        }
+      };
+      if (typeof step.migrate === "function") {
+        files = step.migrate(files, context) || files;
+      }
+      updatePackMetaForMigration(files, step.from, step.to, report);
+      report.push(migrationReportItem("ok", step.title || "Migration step", `${packVersionInfo(step.from).label} converted to ${packVersionInfo(step.to).label}.`));
+    }
+
+    if (plan.steps.length === 0) {
+      updatePackMetaForMigration(files, plan.source, plan.target, report);
+    }
+  } catch (error) {
+    report.push(migrationReportItem("error", "Migration failed", error.message || "The migration step could not complete."));
+    return { ok: false, source: plan.source, target: plan.target, files, report };
+  }
+
+  return { ok: true, source: plan.source, target: plan.target, files, report };
 }
 
 function inferPackVersionFromFiles(files) {
@@ -7292,6 +7531,108 @@ function closeExportIssueDialog(confirmed) {
   }
 }
 
+function versionOptionsHtml() {
+  return PACK_VERSIONS
+    .map((version) => `<option value="${escapeHtml(version.id)}">${escapeHtml(version.label)}</option>`)
+    .join("");
+}
+
+function openMigrationDialog() {
+  if (!els.migrationDialog || !els.migrationSource || !els.migrationTarget) return;
+  const source = normalizePackVersion(state.meta.packVersion) || CURRENT_PACK_VERSION;
+  const sourceIndex = packVersionIndex(source);
+  const laterVersions = sourceIndex >= 0 ? PACK_VERSION_IDS.slice(sourceIndex + 1) : [];
+  const target = laterVersions[laterVersions.length - 1] || source;
+
+  els.migrationSource.innerHTML = versionOptionsHtml();
+  els.migrationTarget.innerHTML = versionOptionsHtml();
+  els.migrationSource.value = source;
+  els.migrationTarget.value = target;
+  els.migrationTarget.disabled = PACK_VERSION_IDS.length <= 1;
+  renderMigrationDialogPlan();
+  els.migrationDialog.classList.add("is-open");
+  els.migrationDialog.setAttribute("aria-hidden", "false");
+  renderIcons();
+  (els.migrationTarget.disabled ? els.migrationCancel : els.migrationTarget)?.focus();
+}
+
+function closeMigrationDialog() {
+  if (!els.migrationDialog) return;
+  els.migrationDialog.classList.remove("is-open");
+  els.migrationDialog.setAttribute("aria-hidden", "true");
+}
+
+function migrationIssueIcon(type) {
+  if (type === "error") return "circle-alert";
+  if (type === "warning") return "triangle-alert";
+  if (type === "ok") return "circle-check";
+  return "info";
+}
+
+function migrationReportHtml(report) {
+  if (!report.length) return `<div class="modal-more">No migration notes.</div>`;
+  return report.map((item) => `
+    <div class="modal-issue ${escapeHtml(item.type)}">
+      ${icon(migrationIssueIcon(item.type), "inline-icon")}
+      <div>
+        <strong>${escapeHtml(item.title)}</strong>
+        <span>${escapeHtml(item.text)}</span>
+      </div>
+    </div>
+  `).join("");
+}
+
+function renderMigrationRoute(plan) {
+  const route = [plan.source || state.meta.packVersion, ...plan.steps.map((step) => step.to)].filter(Boolean);
+  if (route.length <= 1) {
+    return `<div class="migration-route-empty">No version-to-version steps are required.</div>`;
+  }
+  return `
+    <div class="migration-route-steps" aria-label="Migration route">
+      ${route.map((version, index) => `
+        ${index > 0 ? `${icon("arrow-right", "inline-icon")}` : ""}
+        <span>${escapeHtml(packVersionInfo(version).feature)}</span>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderMigrationDialogPlan(reportOverride = null) {
+  if (!els.migrationSource || !els.migrationTarget || !els.migrationRoute || !els.migrationReport || !els.migrationConfirm) return;
+  const source = normalizePackVersion(els.migrationSource.value) || state.meta.packVersion;
+  const target = normalizePackVersion(els.migrationTarget.value) || source;
+  const plan = migrationPlanBetween(source, target);
+  els.migrationRoute.innerHTML = renderMigrationRoute(plan);
+  els.migrationReport.innerHTML = migrationReportHtml(reportOverride || plan.report);
+  els.migrationConfirm.disabled = !plan.canApply;
+  renderIcons();
+}
+
+function applyMigrationFromDialog() {
+  if (!els.migrationSource || !els.migrationTarget) return;
+  const source = normalizePackVersion(els.migrationSource.value) || state.meta.packVersion;
+  const target = normalizePackVersion(els.migrationTarget.value) || source;
+  const result = migrateFileMap(generatedFiles(), source, target);
+  if (!result.ok) {
+    renderMigrationDialogPlan(result.report);
+    return;
+  }
+
+  const previousSelectedPath = selectedPath;
+  state = createInitialState();
+  ingestFiles(result.files);
+  state.meta.packVersion = target;
+  if (!state.meta.packFormat) state.meta.packFormat = packVersionInfo(target).packFormat;
+  selectedPath = Object.hasOwn(generatedFiles(), previousSelectedPath)
+    ? previousSelectedPath
+    : Object.keys(generatedFiles()).sort()[0] || "pack.mcmeta";
+  editing = null;
+  clearEntryFormDirty();
+  closeMigrationDialog();
+  render();
+  showToast(`Converted to ${packVersionInfo(target).label}.`);
+}
+
 function normalizeImportedPaths(fileMap) {
   const normalizedInput = {};
   for (const [path, value] of Object.entries(fileMap)) {
@@ -8198,6 +8539,9 @@ document.addEventListener("drop", async (event) => {
 els.exportButton.addEventListener("click", () => {
   if (canLeaveEntryForm()) exportZip();
 });
+els.migrationButton.addEventListener("click", () => {
+  if (canLeaveEntryForm()) openMigrationDialog();
+});
 els.starterButton.addEventListener("click", () => {
   if (canLeaveEntryForm()) loadStarterPack();
 });
@@ -8276,6 +8620,12 @@ els.exportIssueCancel.addEventListener("click", () => closeExportIssueDialog(fal
 els.exportIssueConfirm.addEventListener("click", () => closeExportIssueDialog(true));
 els.exportIssueDialog.addEventListener("click", (event) => {
   if (event.target === els.exportIssueDialog) closeExportIssueDialog(false);
+});
+els.migrationTarget.addEventListener("change", () => renderMigrationDialogPlan());
+els.migrationCancel.addEventListener("click", closeMigrationDialog);
+els.migrationConfirm.addEventListener("click", applyMigrationFromDialog);
+els.migrationDialog.addEventListener("click", (event) => {
+  if (event.target === els.migrationDialog) closeMigrationDialog();
 });
 els.wikiCloseButton.addEventListener("click", closeWiki);
 els.wikiVersion.addEventListener("change", () => {
@@ -8568,6 +8918,7 @@ document.addEventListener("keydown", (event) => {
     hideTooltip();
     if (els.settingsDialog?.classList.contains("is-open")) closeSettings();
     if (els.exportIssueDialog?.classList.contains("is-open")) closeExportIssueDialog(false);
+    if (els.migrationDialog?.classList.contains("is-open")) closeMigrationDialog();
     if (wikiState.isOpen) closeWiki();
   }
 });

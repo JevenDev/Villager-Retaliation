@@ -1658,6 +1658,16 @@ body.is-file-dragging::after {
   background: var(--warn-bg);
 }
 
+.modal-issue.ok {
+  border-color: #39731c;
+  background: rgba(76, 141, 43, 0.12);
+}
+
+.modal-issue.info {
+  border-color: var(--line);
+  background: var(--panel-2);
+}
+
 .modal-issue span {
   display: block;
   color: var(--muted);
@@ -1678,6 +1688,50 @@ body.is-file-dragging::after {
 
 .settings-window {
   width: min(620px, 100%);
+}
+
+.migration-window {
+  width: min(660px, 100%);
+}
+
+.migration-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.migration-route {
+  min-height: 44px;
+  display: grid;
+  align-items: center;
+  border: 1px solid var(--line-soft);
+  border-radius: 4px;
+  background: var(--panel-2);
+  padding: 9px;
+}
+
+.migration-route-steps {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.migration-route-steps span {
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--panel);
+  padding: 2px 7px;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.migration-route-empty {
+  color: var(--muted);
+  font-size: 13px;
 }
 
 .settings-keybinds {
@@ -2531,6 +2585,10 @@ body.is-wiki-moving {
   .toolbar {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .migration-grid {
+    grid-template-columns: 1fr;
   }
 
   .button {

@@ -8,6 +8,8 @@ The Wiki button opens a versioned, built-in wiki snapshot for the selected Villa
 
 Exports from beta.11 onward include a `villagerretaliation.pack_version` marker in `pack.mcmeta`. Import uses that marker to restore the target VR version automatically. If an older or hand-written pack does not include the marker, choose the intended VR version in Pack Setup before editing or exporting.
 
+Use Convert to migrate a loaded pack to a newer registered format. The builder keeps a schema registry for each supported VR version and runs migrations one adjacent version at a time, so a future beta.11 to beta.16 conversion can apply the beta.11 -> beta.12, beta.12 -> beta.13, and later documented steps in order.
+
 Import follows the same strict folder rules as the game for known Villager Retaliation roots. Dialogue files stay dialogue, notification files stay notifications, and forced-dialogue files stay forced dialogue; mixed old packs should be split into the documented folders before export.
 
 The builder writes dialogue options as `type: "dialogue_option"` with a separate `request`, and writes event chat through `output.mode: "chat"` on normal forced-dialogue triggers. It supports watched-container events, `retaliation_started` chat lines, and `player_item_proximity` item callouts.
