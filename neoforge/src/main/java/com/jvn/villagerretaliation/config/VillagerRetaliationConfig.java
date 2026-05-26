@@ -45,6 +45,13 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.BooleanValue ENABLE_GIFT_KEEPSAKES;
     public static final ModConfigSpec.BooleanValue ENABLE_VILLAGER_SOCIAL_GRAPH;
     public static final ModConfigSpec.BooleanValue ENABLE_VILLAGER_MOODS;
+    public static final ModConfigSpec.BooleanValue ENABLE_SOCIAL_ATTRIBUTE_BEHAVIOR;
+    public static final ModConfigSpec.BooleanValue ENABLE_SOCIAL_ATTRIBUTE_MOOD_EFFECTS;
+    public static final ModConfigSpec.BooleanValue ENABLE_SOCIAL_ATTRIBUTE_DIALOGUE_EFFECTS;
+    public static final ModConfigSpec.BooleanValue ENABLE_SOCIAL_ATTRIBUTE_REPUTATION_EFFECTS;
+    public static final ModConfigSpec.BooleanValue ENABLE_SOCIAL_ATTRIBUTE_RETALIATION_EFFECTS;
+    public static final ModConfigSpec.BooleanValue ENABLE_SOCIAL_ATTRIBUTE_GOSSIP_EFFECTS;
+    public static final ModConfigSpec.DoubleValue SOCIAL_ATTRIBUTE_EFFECT_SCALE;
     public static final ModConfigSpec.BooleanValue ENABLE_FAMILY_BREEDING_RULES;
     public static final ModConfigSpec.BooleanValue ENABLE_PARENT_REPUTATION_INHERITANCE;
 
@@ -376,6 +383,27 @@ public final class VillagerRetaliationConfig {
         ENABLE_VILLAGER_MOODS = BUILDER.comment("Tracks temporary event-driven villager moods used by dialogue and the interaction screen.")
                 .translation("villagerretaliation.configuration.social.enableVillagerMoods")
                 .define("enableVillagerMoods", true);
+        ENABLE_SOCIAL_ATTRIBUTE_BEHAVIOR = BUILDER.comment("Allows villager Social Attributes to subtly affect moods, dialogue, reputation recovery, retaliation decisions, and gossip.")
+                .translation("villagerretaliation.configuration.social.enableSocialAttributeBehavior")
+                .define("enableSocialAttributeBehavior", true);
+        ENABLE_SOCIAL_ATTRIBUTE_MOOD_EFFECTS = BUILDER.comment("Allows Social Attributes to shape temporary villager mood intensity and decay.")
+                .translation("villagerretaliation.configuration.social.enableSocialAttributeMoodEffects")
+                .define("enableSocialAttributeMoodEffects", true);
+        ENABLE_SOCIAL_ATTRIBUTE_DIALOGUE_EFFECTS = BUILDER.comment("Allows Social Attributes and moods to lightly affect dialogue selection.")
+                .translation("villagerretaliation.configuration.social.enableSocialAttributeDialogueEffects")
+                .define("enableSocialAttributeDialogueEffects", true);
+        ENABLE_SOCIAL_ATTRIBUTE_REPUTATION_EFFECTS = BUILDER.comment("Allows Social Attributes to subtly affect gifts, apologies, and reputation recovery.")
+                .translation("villagerretaliation.configuration.social.enableSocialAttributeReputationEffects")
+                .define("enableSocialAttributeReputationEffects", true);
+        ENABLE_SOCIAL_ATTRIBUTE_RETALIATION_EFFECTS = BUILDER.comment("Allows Social Attributes to subtly affect retaliation and combat readiness decisions.")
+                .translation("villagerretaliation.configuration.social.enableSocialAttributeRetaliationEffects")
+                .define("enableSocialAttributeRetaliationEffects", true);
+        ENABLE_SOCIAL_ATTRIBUTE_GOSSIP_EFFECTS = BUILDER.comment("Allows Social Attributes to subtly affect gossip and social reputation ripple.")
+                .translation("villagerretaliation.configuration.social.enableSocialAttributeGossipEffects")
+                .define("enableSocialAttributeGossipEffects", true);
+        SOCIAL_ATTRIBUTE_EFFECT_SCALE = BUILDER.comment("Scales all Social Attribute behavior modifiers. 1.0 keeps the intended subtle Beta.12 values.")
+                .translation("villagerretaliation.configuration.social.socialAttributeEffectScale")
+                .defineInRange("socialAttributeEffectScale", 1.0D, 0.0D, 2.0D);
         ENABLE_FAMILY_BREEDING_RULES = BUILDER.comment("Prevents villager breeding pairs that violate tracked family relationship rules.")
                 .translation("villagerretaliation.configuration.social.enableFamilyBreedingRules")
                 .define("enableFamilyBreedingRules", true);

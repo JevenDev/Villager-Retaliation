@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil.Ang
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueService;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
+import com.jvn.villagerretaliation.mood.VillagerMoodService;
 import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
 import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
@@ -560,11 +561,12 @@ public final class VillagerRetaliationHandler {
             return;
         }
         AngerTarget previousTarget = RETALIATION.angerTarget(villager);
-        if (RETALIATION.anger(villager, attacker)
-                && (previousTarget == null || !previousTarget.targetId().equals(attacker.getUUID()))
-                && announceRetaliation
-                && villager.level() instanceof ServerLevel level) {
-            VillagerAmbientIndicatorService.onRetaliationStarted(level, villager, attacker);
+        if (RETALIATION.anger(villager, attacker) && villager.level() instanceof ServerLevel level) {
+            VillagerMoodService.recordRetaliationStarted(level, villager, attacker);
+            if ((previousTarget == null || !previousTarget.targetId().equals(attacker.getUUID()))
+                    && announceRetaliation) {
+                VillagerAmbientIndicatorService.onRetaliationStarted(level, villager, attacker);
+            }
         }
     }
 
@@ -632,6 +634,9 @@ public final class VillagerRetaliationHandler {
     }
 
     private static void enterFleeState(Villager villager, LivingEntity hostile, long gameTime) {
+        if (villager.level() instanceof ServerLevel level) {
+            VillagerMoodService.recordFleeStarted(level, villager, hostile);
+        }
         VillagerRetaliationVillagerBrainUtil.enterFleeState(villager, hostile, gameTime);
         villager.setAggressive(false);
         villager.setChasing(false);

@@ -5,6 +5,8 @@ import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.DialogueReputationEffect;
 import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
 import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
+import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
+import com.jvn.villagerretaliation.profile.VillagerSocialAttributeBehavior;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import java.util.UUID;
 import net.minecraft.server.level.ServerLevel;
@@ -53,11 +55,14 @@ public final class VillagerMoodService {
         }
 
         long gameTime = level.getGameTime();
+        VillagerMood safeMood = mood == null ? VillagerMood.NEUTRAL : mood;
+        int adjustedIntensity = VillagerSocialAttributeBehavior.adjustMoodIntensity(level, villager, safeMood, intensity);
+        long adjustedDecayTicks = VillagerSocialAttributeBehavior.adjustMoodDecay(level, villager, safeMood, decayTicks);
         VillagerMoodSavedData data = VillagerMoodSavedData.get(level);
         VillagerMoodState current = data.get(villager.getUUID()).withEffectiveDecay(gameTime);
         VillagerMoodState updated = merge(
                 current,
-                VillagerMoodState.of(mood, intensity, causeTag, sourcePlayerId, sourceEntityId, gameTime, decayTicks),
+                VillagerMoodState.of(safeMood, adjustedIntensity, causeTag, sourcePlayerId, sourceEntityId, gameTime, adjustedDecayTicks),
                 gameTime
         );
         data.put(villager.getUUID(), updated);
@@ -149,7 +154,10 @@ public final class VillagerMoodService {
         if (attacker instanceof Player player) {
             setMood(level, villageResident, VillagerMood.ANGRY, 62, "player_attack", player.getUUID(), player.getUUID(), LONG_DECAY_TICKS);
         } else if (attacker instanceof Enemy) {
-            setMood(level, villageResident, VillagerMood.AFRAID, 44, "hostile_attack", null, attacker.getUUID(), MEDIUM_DECAY_TICKS);
+            VillagerMood mood = VillagerSocialAttributeBehavior.value(level, villageResident, VillagerSocialAttribute.GUTS) >= 62
+                    ? VillagerMood.PROTECTIVE
+                    : VillagerMood.AFRAID;
+            setMood(level, villageResident, mood, 44, "hostile_attack", null, attacker.getUUID(), MEDIUM_DECAY_TICKS);
         } else if (attacker instanceof LivingEntity livingEntity) {
             setMood(level, villageResident, VillagerMood.STRESSED, 32, "damage", null, livingEntity.getUUID(), SHORT_DECAY_TICKS);
         }

@@ -18,6 +18,7 @@ import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.interaction.VillagerRecruitmentService;
 import com.jvn.villagerretaliation.loot.VillagerLootHandler;
 import com.jvn.villagerretaliation.loot.WanderingTraderLootHandler;
+import com.jvn.villagerretaliation.mood.VillagerMoodService;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
@@ -120,6 +121,7 @@ public final class VillagerRetaliationEvents {
         }
         if (event.getEntity() instanceof AbstractVillager villager && event.getNewDamage() > 0.0F && villager.level() instanceof ServerLevel level) {
             VillagerAmbientIndicatorService.onVillagerDamaged(level, villager, event.getSource().getEntity());
+            VillagerMoodService.recordVillagerDamaged(level, villager, event.getSource().getEntity());
         }
     }
 
@@ -152,6 +154,7 @@ public final class VillagerRetaliationEvents {
         }
         if (event.getEntity() instanceof AbstractVillager villager && villager.level() instanceof ServerLevel level) {
             VillagerAmbientIndicatorService.onVillagerKilled(level, villager, event.getSource().getEntity());
+            VillagerMoodService.recordVillagerDeath(level, villager, event.getSource().getEntity(), VillagerRetaliationConfig.WITNESS_RADIUS.get());
         }
     }
 
@@ -406,20 +409,26 @@ public final class VillagerRetaliationEvents {
 
         Entity attacker = event.getSource().getEntity();
         VillageEventMemory.remember(level, VillageEventMemory.EventTag.VILLAGER_ATTACKED, villager.blockPosition(), villager, attacker);
+        recordMoodVillageEvent(level, villager, VillageEventMemory.EventTag.VILLAGER_ATTACKED, attacker);
         if (villager.isBaby()) {
             VillageEventMemory.remember(level, VillageEventMemory.EventTag.BABY_VILLAGER_ATTACKED, villager.blockPosition(), villager, attacker);
+            recordMoodVillageEvent(level, villager, VillageEventMemory.EventTag.BABY_VILLAGER_ATTACKED, attacker);
         }
         if (event.getSource().is(DamageTypeTags.IS_FIRE)) {
             VillageEventMemory.remember(level, VillageEventMemory.EventTag.VILLAGE_FIRE, villager.blockPosition(), villager, attacker);
+            recordMoodVillageEvent(level, villager, VillageEventMemory.EventTag.VILLAGE_FIRE, attacker);
         }
         if (attacker instanceof Enemy && isNight(level)) {
             VillageEventMemory.remember(level, VillageEventMemory.EventTag.NIGHT_ATTACK, villager.blockPosition(), villager, attacker);
+            recordMoodVillageEvent(level, villager, VillageEventMemory.EventTag.NIGHT_ATTACK, attacker);
         }
         if (attacker instanceof Raider && isActiveRaidAt(level, attacker)) {
             VillageEventMemory.remember(level, VillageEventMemory.EventTag.RAID, villager.blockPosition(), villager, attacker);
+            recordMoodVillageEvent(level, villager, VillageEventMemory.EventTag.RAID, attacker);
         }
         if (attacker instanceof Player) {
             VillageEventMemory.remember(level, VillageEventMemory.EventTag.PLAYER_ATTACKED_VILLAGER, villager.blockPosition(), villager, attacker);
+            recordMoodVillageEvent(level, villager, VillageEventMemory.EventTag.PLAYER_ATTACKED_VILLAGER, attacker);
         }
     }
 
@@ -469,7 +478,15 @@ public final class VillagerRetaliationEvents {
             return;
         }
         if (level.getGameTime() % 200L == Math.floorMod(villager.getUUID().getLeastSignificantBits(), 200L)) {
-            VillageEventMemory.remember(level, weatherEventTag(level, villager.blockPosition()), villager.blockPosition(), villager, null);
+            VillageEventMemory.EventTag weatherTag = weatherEventTag(level, villager.blockPosition());
+            VillageEventMemory.remember(level, weatherTag, villager.blockPosition(), villager, null);
+            VillagerMoodService.recordVillageEvent(level, villager, weatherTag, null);
+        }
+    }
+
+    private static void recordMoodVillageEvent(ServerLevel level, AbstractVillager villager, VillageEventMemory.EventTag tag, Entity source) {
+        if (villager instanceof Villager villageResident) {
+            VillagerMoodService.recordVillageEvent(level, villageResident, tag, source);
         }
     }
 

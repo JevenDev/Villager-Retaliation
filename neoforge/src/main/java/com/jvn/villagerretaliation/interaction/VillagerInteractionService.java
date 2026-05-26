@@ -296,6 +296,7 @@ public final class VillagerInteractionService {
             itemPaymentResult = paymentResult.get();
         }
         DialogueReputationEffect reputationEffect = DialogueReputationService.apply(context, requestType, interactionState);
+        VillagerMoodService.recordDialogueEffect(context, requestType, reputationEffect);
         playDialogueFeedback(level, villager, reputationEffect);
         VillagerAmbientIndicatorService.onDialogueResponse(level, villager, player, optionId, requestType, reputationEffect);
         String responseText = result.text();
@@ -440,6 +441,7 @@ public final class VillagerInteractionService {
                 giftPreference.reaction(),
                 reputationValue
         );
+        VillagerMoodService.recordGift(level, villager, player, giftPreference.reaction(), reputationValue);
         reduceDialogueAnnoyanceFromGift(level, villager, player, reputationValue);
         sendGiftNotice(player, villager, giftedStack, reputationValue);
         focusVillagerOnPlayer(villager, player);

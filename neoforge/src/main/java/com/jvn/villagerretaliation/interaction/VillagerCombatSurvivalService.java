@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.interaction;
 
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
+import com.jvn.villagerretaliation.mood.VillagerMoodService;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import java.util.HashMap;
 import java.util.Map;
@@ -67,12 +68,14 @@ public final class VillagerCombatSurvivalService {
 
         ServerPlayer player = level.getServer().getPlayerList().getPlayer(villager.getPersistentData().getUUID(ACTIVE_PLAYER_KEY));
         if (player != null && player.isAlive() && !player.isSpectator()) {
+            String eventKind = villager.getPersistentData().getString(ACTIVE_EVENT_KIND_KEY);
             VillagerInteractionTracker.rememberCombatSurvivalReport(
                     level,
                     villager,
                     player,
-                    villager.getPersistentData().getString(ACTIVE_EVENT_KIND_KEY)
+                    eventKind
             );
+            VillagerMoodService.recordCombatSurvival(level, villager, player, eventKind);
         }
         clearActiveCombat(villager);
     }
