@@ -8,6 +8,7 @@ import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.combat.PacifyPaymentOffer;
 import com.jvn.villagerretaliation.combat.VillagerPacificationResult;
 import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
+import com.jvn.villagerretaliation.util.VillagerInventoryItemRemoval;
 import com.jvn.villagerretaliation.util.VillagerLocale;
 import com.jvn.villagerretaliation.util.VillagerPlayerItemCondition;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
@@ -370,6 +371,7 @@ public final class VillagerDialogueResources {
             VillagerPlayerItemCondition playerItemCondition = VillagerPlayerItemCondition.read(entry);
             VillagerReputationCondition reputationCondition = VillagerReputationCondition.read(entry);
             VillagerEquipmentCondition equipmentCondition = VillagerEquipmentCondition.read(entry);
+            DialogueItemPayment itemPayment = readItemPayment(entry);
             boolean forceCameraTowardsVillager = readBoolean(entry, "force_camera_towards_villager");
             boolean requiresUnreportedCartographerMapDiscovery = readBoolean(entry, "requires_unreported_cartographer_map_discovery");
             boolean requiresUnreportedStoryHintDiscovery = readBoolean(entry, "requires_unreported_story_hint_discovery");
@@ -416,6 +418,7 @@ public final class VillagerDialogueResources {
                     equipmentCondition,
                     playerItemCondition,
                     reputationCondition,
+                    itemPayment,
                     forceCameraTowardsVillager,
                     requiresUnreportedCartographerMapDiscovery,
                     requiresUnreportedStoryHintDiscovery,
@@ -454,6 +457,63 @@ public final class VillagerDialogueResources {
             ));
             index++;
         }
+    }
+
+    private static DialogueItemPayment readItemPayment(JsonObject option) {
+        return readItemPayment(option, "give_items", DialogueItemPayment.DialogueItemDestination.VILLAGER_INVENTORY)
+                .or(() -> readItemPayment(option, "take_items", DialogueItemPayment.DialogueItemDestination.DISCARD))
+                .or(() -> readItemPayment(option, "payment", DialogueItemPayment.DialogueItemDestination.DISCARD))
+                .orElse(DialogueItemPayment.empty());
+    }
+
+    private static Optional<DialogueItemPayment> readItemPayment(
+            JsonObject option,
+            String key,
+            DialogueItemPayment.DialogueItemDestination fallbackDestination) {
+        JsonElement element = option.get(key);
+        if (element == null || !element.isJsonObject()) {
+            return Optional.empty();
+        }
+
+        JsonObject entry = element.getAsJsonObject();
+        return VillagerInventoryItemRemoval.read(option, key)
+                .map(removal -> new DialogueItemPayment(
+                        removal,
+                        readResponseVariants(entry, "success_response", "success_responses"),
+                        readResponseVariants(entry, "failure_response", "failure_responses"),
+                        readItemDestination(entry, fallbackDestination),
+                        readEnum(entry, "overflow_destination", DialogueItemPayment.DialogueItemDestination.class).orElse(null),
+                        readBoolean(entry, "require_space", true)
+                ));
+    }
+
+    private static DialogueItemPayment.DialogueItemDestination readItemDestination(
+            JsonObject entry,
+            DialogueItemPayment.DialogueItemDestination fallback) {
+        Optional<DialogueItemPayment.DialogueItemDestination> destination =
+                readEnum(entry, "destination", DialogueItemPayment.DialogueItemDestination.class);
+        if (destination.isPresent()) {
+            return destination.get();
+        }
+        if (hasBoolean(entry, "store_in_villager_inventory")
+                || hasBoolean(entry, "store_in_inventory")
+                || hasBoolean(entry, "store_items")
+                || hasBoolean(entry, "store")) {
+            return readBoolean(entry, "store_in_villager_inventory",
+                    readBoolean(entry, "store_in_inventory",
+                            readBoolean(entry, "store_items", readBoolean(entry, "store"))))
+                    ? DialogueItemPayment.DialogueItemDestination.VILLAGER_INVENTORY
+                    : DialogueItemPayment.DialogueItemDestination.DISCARD;
+        }
+        return fallback;
+    }
+
+    private static List<String> readResponseVariants(JsonObject entry, String singularKey, String pluralKey) {
+        List<String> singular = readStringList(entry, singularKey);
+        if (!singular.isEmpty()) {
+            return singular;
+        }
+        return readStringList(entry, pluralKey);
     }
 
     private static void readDialogueLines(
@@ -925,6 +985,11 @@ public final class VillagerDialogueResources {
         return element == null || !element.isJsonPrimitive() ? fallback : element.getAsBoolean();
     }
 
+    private static boolean hasBoolean(JsonObject entry, String key) {
+        JsonElement element = entry.get(key);
+        return element != null && element.isJsonPrimitive();
+    }
+
     private static String fallbackId(ResourceLocation location, String group, int index) {
         return stablePath(location).replace('/', '_').replace(".json", "") + "_" + group + "_" + index;
     }
@@ -972,7 +1037,7 @@ public final class VillagerDialogueResources {
         return Optional.of(candidates.getLast());
     }
 
-    static String resolveTemplate(String text, Map<String, String> replacements) {
+    public static String resolveTemplate(String text, Map<String, String> replacements) {
         String resolved = text;
         Map<String, String> safeReplacements = new HashMap<>(replacements);
         for (Map.Entry<String, String> entry : safeReplacements.entrySet()) {

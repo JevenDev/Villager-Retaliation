@@ -17,6 +17,7 @@ public record DialogueOptionDefinition(
         VillagerEquipmentCondition equipmentCondition,
         VillagerPlayerItemCondition playerItemCondition,
         VillagerReputationCondition reputationCondition,
+        DialogueItemPayment itemPayment,
         boolean forceCameraTowardsVillager,
         boolean requiresUnreportedCartographerMapDiscovery,
         boolean requiresUnreportedStoryHintDiscovery,
@@ -68,6 +69,9 @@ public record DialogueOptionDefinition(
             return false;
         }
         if (!this.playerItemCondition.matches(context.player())) {
+            return false;
+        }
+        if (!this.itemPayment.isEmpty() && !this.itemPayment.removal().canRemove(context.player())) {
             return false;
         }
         if (!this.reputationCondition.matches(context.reputation(), context.reputationLevel())) {
@@ -187,6 +191,7 @@ public record DialogueOptionDefinition(
                 VillagerEquipmentCondition.empty(),
                 VillagerPlayerItemCondition.empty(),
                 VillagerReputationCondition.empty(),
+                DialogueItemPayment.empty(),
                 false,
                 false,
                 false,

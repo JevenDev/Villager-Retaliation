@@ -149,6 +149,7 @@ See [Dialogue Requests](Dialogue-Requests.md) for simple and expanded dropdown e
 | `player_item_enchantments` | string, object, or array | none | Requires one matching enchantment. String entries use top-level level filters; object entries can use `id`, `min_level`, and `max_level`. Alias: `held_item_enchantments`. |
 | `min_player_item_enchantment_level` | integer | none | Minimum level for string enchantment filters. Alias: `min_held_item_enchantment_level`. |
 | `max_player_item_enchantment_level` | integer | none | Maximum level for string enchantment filters. Alias: `max_held_item_enchantment_level`. |
+| `give_items` | object | none | Removes matching item(s) from the player's inventory before the option succeeds. Alias: `take_items` or `payment`. |
 | `force_camera_towards_villager` | boolean | `false` | Smoothly turns the player's camera toward this villager while the selected response is shown. |
 | `show_for_adults` | boolean | `true` | Adult visibility. |
 | `show_for_babies` | boolean | `true` | Baby visibility. |
@@ -271,6 +272,10 @@ Reputation filters on options and lines check the player's current reputation wi
 
 Player item filters can also use aliases `player_item`, `player_item_tag`, `player_item_tags`, and `player_item_slot`. Dialogue text can use `{player_item}`, `{held_item}`, `{player_item_id}`, `{held_item_id}`, `{player_item_slot}`, `{held_item_slot}`, `{player_item_durability}`, `{held_item_durability}`, `{player_item_max_durability}`, `{held_item_max_durability}`, `{player_item_damage}`, `{held_item_damage}`, `{player_item_durability_percent}`, `{held_item_durability_percent}`, `{player_item_enchantment}`, `{held_item_enchantment}`, `{player_item_enchantment_full}`, `{held_item_enchantment_full}`, `{player_item_enchantment_id}`, `{held_item_enchantment_id}`, `{player_item_enchantment_level}`, and `{held_item_enchantment_level}` when the selected line has a player item filter.
 
+Dialogue options can use `give_items` when selecting the option should hand item(s) to the villager. It accepts `item` or `items`, plus `tag` or `tags`, and `count` / `amount`. The option only appears while the player can supply the item. `destination` can be `villager_inventory`, `discard`, or `drop_at_villager`; `give_items` defaults to `villager_inventory`, while the aliases `take_items` and `payment` default to `discard`. `store_in_villager_inventory: true` is accepted as a boolean shortcut for `destination: "villager_inventory"`. When `require_space` is true, the option fails if the destination cannot accept the full hand-in. Use `failure_response` / `failure_responses` for a missing-item or no-space line, and `success_response` / `success_responses` when the option should use a direct response instead of the normal matching dialogue line.
+
+Successful item hand-in text can use `{payment_count}`, `{payment_items}`, `{payment_item}`, `{payment_item_id}`, `{payment_stack}`, `{given_count}`, `{given_item}`, `{given_item_id}`, `{given_stack}`, and `{given_items}`.
+
 Family-aware dialogue text can use `{parent}`, `{sibling}`, `{spouse}`, `{child}`, `{grandparent}`, `{ancestor}`, `{grandchild}`, `{descendant}`, `{aunt_uncle}`, `{cousin}`, `{niece_nephew}`, `{deceased_family}`, `{extended_relative}`, `{relative}`, and the matching `_possessive` variants.
 
 Relationship-aware dialogue text can use `{partner}`, `{crush}`, `{dating_partner}`, `{fiance}`, `{romantic_spouse}`, `{ex_partner}`, `{late_partner}`, and the matching `_possessive` variants.
@@ -320,6 +325,35 @@ Example option and line for a player holding a sword:
       ],
       "text": "Careful where you point {held_item}. {held_item_enchantment_full}, {held_item_durability} durability left.",
       "weight": 20
+    }
+  ]
+}
+```
+
+Example option that takes and stores a nether star:
+
+```json
+{
+  "options": [
+    {
+      "id": "my_pack.show_nether_star",
+      "label": "Show Nether Star",
+      "type": "dialogue_option",
+      "request": "question",
+      "give_items": {
+        "item": "minecraft:nether_star",
+        "count": 1,
+        "store_in_villager_inventory": true,
+        "failure_response": "Come back when the star is actually in your pack."
+      }
+    }
+  ],
+  "lines": [
+    {
+      "id": "my_pack.nether_star_response",
+      "request": "question",
+      "option": "my_pack.show_nether_star",
+      "text": "That is no ordinary light. I will keep {given_item} safe."
     }
   ]
 }

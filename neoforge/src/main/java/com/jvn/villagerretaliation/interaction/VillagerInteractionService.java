@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.debug.VillagerRetaliationDebugItems;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.DialogueDisposition;
+import com.jvn.villagerretaliation.dialogue.DialogueItemPayment;
 import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueService;
@@ -38,8 +39,10 @@ import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.particles.ParticleOptions;
@@ -270,10 +273,32 @@ public final class VillagerInteractionService {
         }
         DialogueRequestType requestType = dialogueOption.requestType();
         VillagerDialogueService.DialogueResult result = selectDialogueResult(context, dialogueOption, interactionState);
+        DialogueItemPayment itemPayment = dialogueOption.itemPayment();
+        DialogueItemPaymentResult itemPaymentResult = DialogueItemPaymentResult.empty();
+        if (!itemPayment.isEmpty()) {
+            Optional<DialogueItemPaymentResult> paymentResult = executeDialogueItemPayment(player, villager, itemPayment);
+            if (paymentResult.isEmpty()) {
+                String failureText = resolveDialogueItemPaymentResponse(context, itemPayment.selectFailureResponse(context.random()), itemPayment.removal().replacements());
+                sendDialogueReputation(player, villager, level);
+                broadcastVillagerChat(level, villager, failureText);
+                return;
+            }
+            itemPaymentResult = paymentResult.get();
+        }
         DialogueReputationEffect reputationEffect = DialogueReputationService.apply(context, requestType, interactionState);
         playDialogueFeedback(level, villager, reputationEffect);
         VillagerAmbientIndicatorService.onDialogueResponse(level, villager, player, optionId, requestType, reputationEffect);
-        String responseText = reputationEffect.responseOverride() == null ? result.text() : reputationEffect.responseOverride();
+        String responseText = result.text();
+        if (!itemPayment.isEmpty()) {
+            String successText = itemPayment.selectSuccessResponse(context.random());
+            if (!successText.isBlank()) {
+                responseText = resolveDialogueItemPaymentResponse(context, successText, itemPaymentResult.replacements());
+            }
+        }
+        if (reputationEffect.responseOverride() != null) {
+            responseText = reputationEffect.responseOverride();
+        }
+        responseText = VillagerDialogueResources.resolveTemplate(responseText, itemPaymentResult.replacements());
         VillagerInteractionTracker.rememberDialogue(level, villager, player, requestType, result.lineId());
         if (requestType == DialogueRequestType.COMBAT_SURVIVAL_REPORT) {
             VillagerInteractionTracker.claimUnreportedCombatSurvivalReport(level, villager, player);
@@ -1042,6 +1067,97 @@ public final class VillagerInteractionService {
         }
     }
 
+    private static Optional<DialogueItemPaymentResult> executeDialogueItemPayment(
+            ServerPlayer player,
+            Villager villager,
+            DialogueItemPayment itemPayment) {
+        List<ItemStack> previewStacks = itemPayment.removal().previewRemovedStacks(player);
+        if (previewStacks.isEmpty()) {
+            return Optional.empty();
+        }
+
+        DialogueItemTransferTarget primaryTarget = dialogueItemTransferTarget(villager, itemPayment.destination());
+        Optional<DialogueItemTransferTarget> overflowTarget = Optional.ofNullable(itemPayment.overflowDestination())
+                .map(destination -> dialogueItemTransferTarget(villager, destination));
+        boolean primaryFits = primaryTarget.canAccept(previewStacks);
+        if (itemPayment.requireSpace() && !primaryFits && overflowTarget.isEmpty()) {
+            return Optional.empty();
+        }
+        if (overflowTarget.isPresent() && !overflowTarget.get().canAccept(previewStacks)) {
+            return Optional.empty();
+        }
+
+        Optional<List<ItemStack>> removedStacks = itemPayment.removal().removeStacks(player);
+        if (removedStacks.isEmpty()) {
+            return Optional.empty();
+        }
+
+        List<ItemStack> remainder = primaryTarget.accept(removedStacks.get());
+        if (!remainder.isEmpty() && overflowTarget.isPresent()) {
+            remainder = overflowTarget.get().accept(remainder);
+        }
+        if (itemPayment.requireSpace() && !remainder.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(DialogueItemPaymentResult.from(itemPayment, removedStacks.get()));
+    }
+
+    private static DialogueItemTransferTarget dialogueItemTransferTarget(
+            Villager villager,
+            DialogueItemPayment.DialogueItemDestination destination) {
+        return switch (destination) {
+            case DISCARD -> new DialogueItemTransferTarget() {
+                @Override
+                public boolean canAccept(List<ItemStack> stacks) {
+                    return true;
+                }
+
+                @Override
+                public List<ItemStack> accept(List<ItemStack> stacks) {
+                    return List.of();
+                }
+            };
+            case VILLAGER_INVENTORY -> new DialogueItemTransferTarget() {
+                @Override
+                public boolean canAccept(List<ItemStack> stacks) {
+                    return VillagerInventoryAccess.canAddItems(villager, stacks);
+                }
+
+                @Override
+                public List<ItemStack> accept(List<ItemStack> stacks) {
+                    return stacks.stream()
+                            .map(stack -> VillagerInventoryAccess.addItem(villager, stack))
+                            .filter(stack -> !stack.isEmpty())
+                            .toList();
+                }
+            };
+            case DROP_AT_VILLAGER -> new DialogueItemTransferTarget() {
+                @Override
+                public boolean canAccept(List<ItemStack> stacks) {
+                    return true;
+                }
+
+                @Override
+                public List<ItemStack> accept(List<ItemStack> stacks) {
+                    for (ItemStack stack : stacks) {
+                        villager.spawnAtLocation(stack.copy());
+                    }
+                    return List.of();
+                }
+            };
+        };
+    }
+
+    private static String resolveDialogueItemPaymentResponse(
+            DialogueContext context,
+            String response,
+            Map<String, String> replacements) {
+        if (response == null || response.isBlank()) {
+            return "";
+        }
+        return VillagerDialogueResources.resolveTemplate(response, replacements);
+    }
+
     public static String villagerSpeakerLabel(Villager villager) {
         String name = displayName(villager);
         if (villager.isBaby()) {
@@ -1060,6 +1176,13 @@ public final class VillagerInteractionService {
 
     private static String itemId(ItemStack stack) {
         return BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
+    }
+
+    private static String itemListName(List<ItemStack> stacks) {
+        return stacks.stream()
+                .map(VillagerInteractionService::itemName)
+                .reduce((left, right) -> left + ", " + right)
+                .orElse("items");
     }
 
     private static String displayName(Villager villager) {
@@ -1218,5 +1341,36 @@ public final class VillagerInteractionService {
             VillagerFamilyTreeSnapshot familyTree,
             VillagerRelationshipSnapshot relationships,
             List<VillageEventMemory.MemoryEvent> recentEvents) {
+    }
+
+    private record DialogueItemPaymentResult(Map<String, String> replacements) {
+        private static DialogueItemPaymentResult empty() {
+            return new DialogueItemPaymentResult(Map.of());
+        }
+
+        private static DialogueItemPaymentResult from(DialogueItemPayment itemPayment, List<ItemStack> removedStacks) {
+            Map<String, String> replacements = new HashMap<>(itemPayment.removal().replacements());
+            int count = removedStacks.stream().mapToInt(ItemStack::getCount).sum();
+            ItemStack representative = removedStacks.isEmpty() ? ItemStack.EMPTY : removedStacks.getFirst();
+            String itemName = representative.isEmpty() ? "items" : itemName(representative.copyWithCount(1));
+            String itemStack = representative.isEmpty() ? "items" : itemName(representative);
+            String itemId = representative.isEmpty() ? "" : itemId(representative);
+            replacements.put("given_count", Integer.toString(count));
+            replacements.put("given_item_count", Integer.toString(count));
+            replacements.put("given_item", itemName);
+            replacements.put("given_item_id", itemId);
+            replacements.put("given_stack", itemStack);
+            replacements.put("given_items", itemListName(removedStacks));
+            replacements.put("payment_item", itemName);
+            replacements.put("payment_item_id", itemId);
+            replacements.put("payment_stack", itemStack);
+            return new DialogueItemPaymentResult(Map.copyOf(replacements));
+        }
+    }
+
+    private interface DialogueItemTransferTarget {
+        boolean canAccept(List<ItemStack> stacks);
+
+        List<ItemStack> accept(List<ItemStack> stacks);
     }
 }

@@ -15,6 +15,7 @@
 - Added forced dialogue witness equipment filters for armed and unarmed villagers.
 - Added `player_item_proximity` forced-dialogue triggers for held or worn player item reactions near villagers, including chat-output support.
 - Added player item durability and enchantment filters and placeholders for item-filtered dialogue, forced dialogue, and notifications.
+- Added normal dialogue option item hand-ins through `give_items`, with optional villager-inventory storage, drop/discard destinations, failure responses, and `{given_item}` / `{payment_item}` placeholders.
 - Added armed and unarmed villager filters across villager-backed pack rules, including dialogue options, lines, messages, openings, closings, pacify lines, notifications, gifts, pacification payments, and profession loot.
 - Added config support for choosing theft-only container confrontations or opening-based confrontations, and for limiting watched containers to world-generated loot-table containers or allowing all watched containers.
 - Added loot-table filters for forced dialogue entries through `loot_table` and `loot_tables`, so packs can target vanilla or modded generated containers.

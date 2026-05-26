@@ -146,6 +146,21 @@ They can also check enchantments. Use a string when one shared level range is en
 }
 ```
 
+Dialogue options can remove item(s) from the player when the option is selected. Use `give_items` for a hand-in that defaults to storing items in the villager inventory, or `take_items` / `payment` for aliases that default to discarding the removed items.
+
+```json
+{
+  "give_items": {
+    "item": "minecraft:nether_star",
+    "count": 1,
+    "store_in_villager_inventory": true,
+    "failure_response": "Bring me the star first."
+  }
+}
+```
+
+`give_items` accepts `item` / `items`, `tag` / `tags`, `count` / `amount`, `destination`, `overflow_destination`, `require_space`, `success_response` / `success_responses`, and `failure_response` / `failure_responses`. Normal dialogue destinations are `villager_inventory`, `discard`, and `drop_at_villager`.
+
 Villager equipment filters are available anywhere the rule is evaluated against a specific villager: dialogue options, lines, messages, openings, closings, pacify lines, notifications, gift preferences, gift rewards, pacification payments, and profession loot rules. Use `requires_villager_armed` to require a usable weapon in either hand, or `requires_villager_unarmed` to require no usable weapon. The shorter aliases `villager_armed` and `villager_unarmed` are also accepted.
 
 ```json
@@ -251,7 +266,7 @@ Forced-dialogue entries and options can use `reputation_level`, `reputation_leve
 
 Escape and unexpected closes use `leave_option` or the first matching `leave_options` entry, so leaving can have its own response, reputation, stolen-item return, aggro chance, and end-conversation behavior. If a `container_theft` entry does not define either leave field, the generated default returns stolen stacks through `villager_inventory_then_source_container` and rolls an aggro chance based on the player's reputation tier.
 
-Template tokens currently include `{villager}`, `{player}`, `{target}`, `{target_name}`, `{target_kind}`, `{target_type}`, `{container}`, `{count}`, `{item}`, `{item_id}`, `{item_count}`, `{item_stack}`, `{items}`, `{loot_table}`, `{prior_retaliations}`, `{retaliation_offense}`, `{payment_count}`, `{payment_items}`, `{stolen_item}`, `{stolen_item_id}`, `{stolen_count}`, `{stolen_item_count}`, `{stolen_stack}`, `{stolen_items}`, `{x}`, `{y}`, and `{z}`.
+Template tokens currently include `{villager}`, `{player}`, `{target}`, `{target_name}`, `{target_kind}`, `{target_type}`, `{container}`, `{count}`, `{item}`, `{item_id}`, `{item_count}`, `{item_stack}`, `{items}`, `{loot_table}`, `{prior_retaliations}`, `{retaliation_offense}`, `{payment_count}`, `{payment_items}`, `{payment_item}`, `{payment_item_id}`, `{payment_stack}`, `{given_count}`, `{given_item}`, `{given_item_id}`, `{given_stack}`, `{given_items}`, `{stolen_item}`, `{stolen_item_id}`, `{stolen_count}`, `{stolen_item_count}`, `{stolen_stack}`, `{stolen_items}`, `{x}`, `{y}`, and `{z}`.
 
 ## Village Event Tags
 

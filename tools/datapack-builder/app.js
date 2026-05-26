@@ -147,6 +147,7 @@ const CONSTANTS = {
     "villager_retaliation_started"
   ],
   itemSlots: ["main_hand", "off_hand", "hands", "armor", "hotbar", "inventory", "equipment", "any"],
+  dialogueItemDestinations: ["discard", "villager_inventory", "drop_at_villager"],
   forcedItemDestinations: ["discard", "villager_inventory", "villager_inventory_then_source_container", "source_container", "drop_at_villager", "drop_at_container"],
   weather: ["clear", "rain", "thunder"],
   times: ["morning", "afternoon", "evening", "night"],
@@ -343,6 +344,7 @@ const FIELD_TOOLTIPS = {
   "dialogue-player_item_enchantments": "Requires one matching enchantment on the matched player item. Object entries with id, min_level, and max_level are also supported in raw JSON.",
   "dialogue-min_player_item_enchantment_level": "Minimum level required for the matched enchantment.",
   "dialogue-max_player_item_enchantment_level": "Maximum level allowed for the matched enchantment.",
+  "dialogue-give_items": "Optional item hand-in for this option. Use item/items or tag/tags plus count. destination can be discard, villager_inventory, or drop_at_villager.",
   "dialogue-text": "Localized villager text. Enter one variation per line. Placeholder support depends on type and filters, such as {target}, {held_item}, family names, or recruitment values.",
   "dialogue-option": "Restricts a line to option id(s), including custom ids or built-ins such as adult_share_story.",
   "dialogue-weather": "Weather filter for lines: clear, rain, or thunder.",
@@ -3182,6 +3184,10 @@ function entryIssueSeverity(section, kind, entry) {
       { severity: "error", predicate: (item) => firstBadNumber([item], ["order"], Number.isFinite) !== "" },
       { severity: "error", predicate: (item) => firstBadNumber([item], ["weight", "min_recruitment_follow_distance"], (value) => value >= 0) !== "" },
       { severity: "error", predicate: (item) => firstBadNumber([item], ["min_player_item_enchantment_level", "max_player_item_enchantment_level", "min_held_item_enchantment_level", "max_held_item_enchantment_level"], (value) => value >= 1) !== "" },
+      { severity: "error", predicate: (item) => kind === "options" && dialogueItemPayments([item]).some((payment) => !hasAnySelector(payment, ["items", "item", "tags", "tag"]) || (payment.count === undefined && payment.amount === undefined)) },
+      { severity: "error", predicate: (item) => kind === "options" && firstInvalidValue(dialogueItemPayments([item]), ["items", "item", "tags", "tag"], (value) => isValidResourceLocation(value, { allowTag: true })) !== "" },
+      { severity: "warning", predicate: (item) => kind === "options" && firstInvalidValue(dialogueItemPayments([item]), ["destination", "overflow_destination"], (value) => CONSTANTS.dialogueItemDestinations.includes(value)) !== "" },
+      { severity: "error", predicate: (item) => kind === "options" && firstBadNumber(dialogueItemPayments([item]), ["count", "amount"], (value) => value >= 1) !== "" },
       { severity: "error", predicate: (item) => firstBadNumber([item], ["min_reputation", "max_reputation"], Number.isFinite) !== "" },
       { severity: "error", predicate: (item) => {
         const min = numberValue(item.min_reputation);
@@ -3366,6 +3372,13 @@ function dialogueTextValue(entry) {
   return entry?.text ?? "";
 }
 
+function dialogueItemPaymentText(entry) {
+  const payment = entry?.give_items ?? entry?.take_items ?? entry?.payment;
+  if (!payment || typeof payment !== "object" || Array.isArray(payment)) return "";
+  if (entry?.give_items || payment.destination) return prettyJson(payment);
+  return prettyJson({ ...payment, destination: "discard" });
+}
+
 function hasDialogueText(entry) {
   return parseList(dialogueTextValue(entry)).length > 0;
 }
@@ -3438,6 +3451,26 @@ function entryIssueDetail(section, kind, entry) {
     if (min !== undefined && max !== undefined && min > max) {
       return issueDetail("Reputation range", "minimum reputation less than or equal to maximum reputation", `${min} > ${max}`, ["dialogue-min_reputation", "dialogue-max_reputation"]);
     }
+    const payments = kind === "options" ? dialogueItemPayments([entry]) : [];
+    if (payments.some((payment) => !hasAnySelector(payment, ["items", "item", "tags", "tag"]))) {
+      return issueDetail("Give items JSON", "at least one item/items or tag/tags selector", "selector missing", "dialogue-give_items");
+    }
+    if (payments.some((payment) => payment.count === undefined && payment.amount === undefined)) {
+      return issueDetail("Give items JSON", "a count or amount value", "count missing", "dialogue-give_items");
+    }
+    const badPaymentSelector = firstInvalidValue(payments, ["items", "item", "tags", "tag"], (value) => isValidResourceLocation(value, { allowTag: true }));
+    if (badPaymentSelector) {
+      return issueDetail("Give items JSON", "a valid item id or #tag id", badPaymentSelector, "dialogue-give_items");
+    }
+    const badPaymentDestination = firstInvalidValue(payments, ["destination", "overflow_destination"], (value) => CONSTANTS.dialogueItemDestinations.includes(value));
+    if (badPaymentDestination) {
+      return issueDetail("Give items JSON", CONSTANTS.dialogueItemDestinations.join(", "), badPaymentDestination, "dialogue-give_items", "warning");
+    }
+    const badPaymentNumber = firstBadNumberDetail(payments, [
+      { key: "count", label: "Give items count", expected: "a number greater than or equal to 1", fieldId: "dialogue-give_items", valid: (value) => value >= 1 },
+      { key: "amount", label: "Give items amount", expected: "a number greater than or equal to 1", fieldId: "dialogue-give_items", valid: (value) => value >= 1 }
+    ]);
+    if (badPaymentNumber) return issueDetail(badPaymentNumber.label, badPaymentNumber.expected, badPaymentNumber.value, badPaymentNumber.fieldId);
   }
   if (section === "forcedDialogue") {
     const trigger = forcedTriggerValue(entry);
@@ -3691,6 +3724,12 @@ function hasAnySelector(entry, keys) {
   return keys.some((key) => parseList(entry[key]).length > 0 || Boolean(entry[key]));
 }
 
+function dialogueItemPayments(entries) {
+  return entries
+    .map((entry) => entry.give_items || entry.take_items || entry.payment)
+    .filter((payment) => payment && typeof payment === "object" && !Array.isArray(payment));
+}
+
 function hasPlayerItemFilter(entry) {
   return hasAnySelector(entry, [
     "player_item",
@@ -3877,6 +3916,29 @@ function validate() {
   const badDialogueSlot = firstInvalidValue([...state.dialogue.options, ...state.dialogue.lines], ["player_item_slot", "player_item_slots"], (value) => CONSTANTS.itemSlots.includes(value));
   if (badDialogueSlot) {
     addCheck(checks, "warning", "Dialogue item slot", `Unknown item slot: ${badDialogueSlot}.`);
+  }
+  const dialoguePayments = dialogueItemPayments(state.dialogue.options);
+  for (const payment of dialoguePayments) {
+    if (!hasAnySelector(payment, ["items", "item", "tags", "tag"])) {
+      addCheck(checks, "error", "Dialogue give items", "Every give_items object needs at least one item or tag.");
+      break;
+    }
+    if (payment.count === undefined && payment.amount === undefined) {
+      addCheck(checks, "error", "Dialogue give items", "Every give_items object needs a count.");
+      break;
+    }
+  }
+  const badDialoguePaymentSelector = firstInvalidValue(dialoguePayments, ["items", "item", "tags", "tag"], (value) => isValidResourceLocation(value, { allowTag: true }));
+  if (badDialoguePaymentSelector) {
+    addCheck(checks, "error", "Dialogue give items", `Invalid give_items item or tag selector: ${badDialoguePaymentSelector}.`);
+  }
+  const badDialoguePaymentDestination = firstInvalidValue(dialoguePayments, ["destination", "overflow_destination"], (value) => CONSTANTS.dialogueItemDestinations.includes(value));
+  if (badDialoguePaymentDestination) {
+    addCheck(checks, "warning", "Dialogue give items", `Unknown give_items destination: ${badDialoguePaymentDestination}.`);
+  }
+  const badDialoguePaymentNumber = firstBadNumber(dialoguePayments, ["count", "amount"], (value) => value >= 1);
+  if (badDialoguePaymentNumber) {
+    addCheck(checks, "error", "Dialogue give items", `${humanize(badDialoguePaymentNumber)} has an invalid item count.`);
   }
   const reputationConditionEntries = [...state.dialogue.options, ...state.dialogue.lines];
   const badDialogueReputation = firstInvalidValue(reputationConditionEntries, ["reputation_level", "reputation_levels"], (value) => CONSTANTS.reputationLevels.includes(value));
@@ -4915,6 +4977,7 @@ function jsonKeysForFieldId(fieldId, section, kind) {
     "dialogue-story_structure": ["story_structure", "story_structures"],
     "dialogue-story_biome": ["story_biome", "story_biomes"],
     "dialogue-text": ["text", "lines"],
+    "dialogue-give_items": ["give_items", "take_items", "payment"],
     "forced-line": ["line", "lines"],
     "forced-options_json": ["options"],
     "forced-leave_option_json": ["leave_option", "leave_options"],
@@ -5386,6 +5449,7 @@ function renderDialogueForm(kind, entry) {
         ${listField({ id: "dialogue-player_item_slots", label: "Item slots", value: entry.player_item_slots, help: CONSTANTS.itemSlots.join(", ") })}
         ${playerItemDurabilityFields("dialogue", entry)}
         ${playerItemEnchantmentFields("dialogue", entry)}
+        ${textareaField({ id: "dialogue-give_items", label: "Give items JSON", value: dialogueItemPaymentText(entry), help: "Optional. Example: { \"item\": \"minecraft:nether_star\", \"count\": 1, \"destination\": \"villager_inventory\" }", className: "full", rows: 5 })}
         ${toggleGrid(CONSTANTS.optionFlags, entry, "option")}
       </div>
       ${formActions(action, "save-dialogue-entry", "clear-dialogue-form")}
@@ -5900,7 +5964,8 @@ function readDialogueEntry() {
       player_items: readList("dialogue-player_items"),
       player_item_slots: readList("dialogue-player_item_slots"),
       ...readPlayerItemDurability("dialogue"),
-      ...readPlayerItemEnchantments("dialogue")
+      ...readPlayerItemEnchantments("dialogue"),
+      ...readDialogueItemPayment()
     });
   } else if (kind === "lines") {
     const optionIds = readList("dialogue-option");
@@ -5965,6 +6030,21 @@ function readDialogueEntry() {
     });
   }
   return entry;
+}
+
+function readDialogueItemPayment() {
+  const source = readValue("dialogue-give_items").trim();
+  if (!source) return {};
+  try {
+    const value = JSON.parse(stripTextBom(source));
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      return { give_items: value };
+    }
+  } catch {
+    // Toast below gives the user one clear correction.
+  }
+  showToast("Give items JSON must be a JSON object.");
+  return {};
 }
 
 function saveDialogueEntry(event) {

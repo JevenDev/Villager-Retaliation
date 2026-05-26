@@ -78,6 +78,7 @@ public record VillagerDialogueResponsePayload(
                     VillagerEquipmentCondition.empty(),
                     VillagerPlayerItemCondition.empty(),
                     VillagerReputationCondition.empty(),
+                    com.jvn.villagerretaliation.dialogue.DialogueItemPayment.empty(),
                     buffer.readBoolean(),
                     false,
                     false,
