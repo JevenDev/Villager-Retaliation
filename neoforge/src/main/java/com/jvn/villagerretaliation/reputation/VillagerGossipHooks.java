@@ -1,6 +1,8 @@
 package com.jvn.villagerretaliation.reputation;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
+import com.jvn.villagerretaliation.profile.VillagerSocialAttributeBehavior;
 import com.jvn.villagerretaliation.village.VillageMembership;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -35,12 +37,12 @@ public final class VillagerGossipHooks {
         }
         NEXT_GOSSIP_TICKS.put(sourceId, gameTime + GOSSIP_INTERVAL_TICKS);
 
-        int gossipedAmount = (int) Math.round(originalAmount * VillagerRetaliationConfig.GOSSIP_REPUTATION_MULTIPLIER.get());
+        int gossipedAmount = adjustedGossipAmount(level, source, originalAmount);
         if (gossipedAmount == 0) {
             gossipedAmount = originalAmount > 0 ? 1 : -1;
         }
 
-        PENDING_GOSSIP.addLast(new PendingGossip(level, source, playerId, gossipedAmount));
+        PENDING_GOSSIP.addLast(new PendingGossip(level, source, playerId, gossipedAmount, receiverLimit(level, source), gossipRadius(level, source)));
     }
 
     public static void processPending(long gameTime) {
@@ -50,7 +52,7 @@ public final class VillagerGossipHooks {
             if (gossip.level().getServer() == null) {
                 continue;
             }
-            for (Villager receiver : gossipReceivers(gossip.level(), gossip.source())) {
+            for (Villager receiver : gossipReceivers(gossip.level(), gossip.source(), gossip.receiverLimit(), gossip.radius())) {
                 VillagerReputationManager.addGossipReputation(gossip.level(), receiver, gossip.playerId(), gossip.amount(), gossip.source().getUUID());
             }
             processed++;
@@ -67,39 +69,84 @@ public final class VillagerGossipHooks {
         NEXT_GOSSIP_TICKS.entrySet().removeIf(entry -> entry.getValue() <= gameTime);
     }
 
-    private static List<Villager> gossipReceivers(ServerLevel level, Villager source) {
+    private static List<Villager> gossipReceivers(ServerLevel level, Villager source, int receiverLimit, double radius) {
         return VillageMembership.resolve(level, source)
-                .map(area -> nearestReceivers(source, area.membersMatching(receiver -> receiver != source && receiver.isAlive())))
+                .map(area -> nearestReceivers(source, area.membersMatching(receiver -> receiver != source && receiver.isAlive()), receiverLimit))
                 .filter(receivers -> !receivers.isEmpty())
                 .orElseGet(() -> {
-                    AABB area = source.getBoundingBox().inflate(VillagerRetaliationConfig.GOSSIP_RADIUS.get());
+                    AABB area = source.getBoundingBox().inflate(radius);
                     return nearestReceivers(source, level.getEntitiesOfClass(
                             Villager.class,
                             area,
                             receiver -> receiver != source && receiver.isAlive()
-                    ));
+                    ), receiverLimit);
                 });
     }
 
-    private static List<Villager> nearestReceivers(Villager source, Iterable<Villager> candidates) {
-        List<Villager> nearest = new ArrayList<>(GOSSIP_RECEIVERS_PER_SOURCE);
+    private static List<Villager> nearestReceivers(Villager source, Iterable<Villager> candidates, int receiverLimit) {
+        List<Villager> nearest = new ArrayList<>(receiverLimit);
         for (Villager candidate : candidates) {
             int insertAt = 0;
             double distanceSqr = source.distanceToSqr(candidate);
             while (insertAt < nearest.size() && source.distanceToSqr(nearest.get(insertAt)) <= distanceSqr) {
                 insertAt++;
             }
-            if (insertAt >= GOSSIP_RECEIVERS_PER_SOURCE) {
+            if (insertAt >= receiverLimit) {
                 continue;
             }
             nearest.add(insertAt, candidate);
-            if (nearest.size() > GOSSIP_RECEIVERS_PER_SOURCE) {
+            if (nearest.size() > receiverLimit) {
                 nearest.remove(nearest.size() - 1);
             }
         }
         return nearest;
     }
 
-    private record PendingGossip(ServerLevel level, Villager source, UUID playerId, int amount) {
+    private static int adjustedGossipAmount(ServerLevel level, Villager source, int originalAmount) {
+        double baseAmount = originalAmount * VillagerRetaliationConfig.GOSSIP_REPUTATION_MULTIPLIER.get();
+        if (!VillagerSocialAttributeBehavior.enabled(VillagerRetaliationConfig.ENABLE_SOCIAL_ATTRIBUTE_GOSSIP_EFFECTS)) {
+            return (int) Math.round(baseAmount);
+        }
+
+        int influenceOffset = VillagerSocialAttributeBehavior.scaledOffset(
+                level,
+                source,
+                VillagerSocialAttribute.CHARM,
+                15,
+                VillagerRetaliationConfig.ENABLE_SOCIAL_ATTRIBUTE_GOSSIP_EFFECTS
+        ) + VillagerSocialAttributeBehavior.scaledOffset(
+                level,
+                source,
+                VillagerSocialAttribute.KNOWLEDGE,
+                8,
+                VillagerRetaliationConfig.ENABLE_SOCIAL_ATTRIBUTE_GOSSIP_EFFECTS
+        );
+        double influenceMultiplier = Math.clamp(1.0D + influenceOffset / 100.0D, 0.75D, 1.25D);
+        return (int) Math.round(baseAmount * influenceMultiplier);
+    }
+
+    private static int receiverLimit(ServerLevel level, Villager source) {
+        int bonus = VillagerSocialAttributeBehavior.positiveBonus(
+                level,
+                source,
+                VillagerSocialAttribute.CHARM,
+                2,
+                VillagerRetaliationConfig.ENABLE_SOCIAL_ATTRIBUTE_GOSSIP_EFFECTS
+        );
+        return Math.clamp(GOSSIP_RECEIVERS_PER_SOURCE + bonus, 1, 6);
+    }
+
+    private static double gossipRadius(ServerLevel level, Villager source) {
+        int radiusBonus = VillagerSocialAttributeBehavior.positiveBonus(
+                level,
+                source,
+                VillagerSocialAttribute.CHARM,
+                4,
+                VillagerRetaliationConfig.ENABLE_SOCIAL_ATTRIBUTE_GOSSIP_EFFECTS
+        );
+        return VillagerRetaliationConfig.GOSSIP_RADIUS.get() + radiusBonus;
+    }
+
+    private record PendingGossip(ServerLevel level, Villager source, UUID playerId, int amount, int receiverLimit, double radius) {
     }
 }
