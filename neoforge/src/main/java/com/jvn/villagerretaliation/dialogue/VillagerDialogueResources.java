@@ -7,6 +7,7 @@ import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.combat.PacifyPaymentOffer;
 import com.jvn.villagerretaliation.combat.VillagerPacificationResult;
+import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
 import com.jvn.villagerretaliation.util.VillagerInventoryItemRemoval;
 import com.jvn.villagerretaliation.util.VillagerLocale;
@@ -34,6 +35,68 @@ import net.minecraft.world.entity.npc.VillagerProfession;
 
 public final class VillagerDialogueResources {
     private static final String DIALOGUE_ROOT = "dialogue/";
+    private static final Set<String> ROOT_KEYS = Set.of(
+            "options", "lines", "messages", "openings", "closings", "pacify",
+            "notifications", "entries", "preferences", "rewards", "payments");
+    private static final Set<String> OPTION_KEYS = Set.of(
+            "id", "label", "type", "request", "order", "professions", "dispositions",
+            "requires_villager_unarmed", "villager_unarmed", "requires_villager_armed", "villager_armed",
+            "reputation_level", "reputation_levels", "min_reputation", "max_reputation",
+            "player_item", "player_items", "player_item_tag", "player_item_tags", "player_item_slot", "player_item_slots",
+            "min_player_item_durability", "max_player_item_durability", "min_player_item_durability_percent", "max_player_item_durability_percent",
+            "min_held_item_durability", "max_held_item_durability", "min_held_item_durability_percent", "max_held_item_durability_percent",
+            "player_item_enchantment", "player_item_enchantments", "held_item_enchantment", "held_item_enchantments",
+            "min_player_item_enchantment_level", "max_player_item_enchantment_level", "min_held_item_enchantment_level", "max_held_item_enchantment_level",
+            "take_items", "force_camera_towards_villager",
+            "show_for_adults", "show_for_babies",
+            "requires_unreported_cartographer_map_discovery", "requires_unreported_story_hint_discovery",
+            "requires_unreported_combat_survival_report", "requires_unreported_gear_report",
+            "requires_unreported_recruitment_followup", "requires_unreported_cured_recognition",
+            "requires_recent_village_event", "requires_unreported_gift_advice_result",
+            "requires_unapologized_remembered_harm", "requires_unreported_village_defense",
+            "requires_shareable_story",
+            "requires_known_family", "requires_known_parent", "requires_known_sibling", "requires_known_spouse", "requires_known_child",
+            "requires_known_grandparent", "requires_known_grandchild", "requires_known_descendant", "requires_known_aunt_uncle",
+            "requires_known_cousin", "requires_known_niece_nephew", "requires_known_extended_family", "requires_known_deceased_family",
+            "requires_known_relationship", "requires_known_current_relationship", "requires_known_past_relationship", "requires_known_crush",
+            "requires_known_dating_partner", "requires_known_fiance", "requires_known_romantic_spouse", "requires_known_separated_partner",
+            "requires_known_widowed_partner");
+    private static final Set<String> MESSAGE_KEYS = Set.of(
+            "id", "key", "text", "lines", "professions", "dispositions",
+            "requires_villager_unarmed", "villager_unarmed", "requires_villager_armed", "villager_armed",
+            "show_for_adults", "show_for_babies", "weight");
+    private static final Set<String> CONVERSATION_KEYS = Set.of(
+            "id", "text", "lines", "professions", "dispositions",
+            "requires_villager_unarmed", "villager_unarmed", "requires_villager_armed", "villager_armed",
+            "show_for_adults", "show_for_babies", "first_conversation_only", "first_village_interaction_only", "weight");
+    private static final Set<String> PACIFY_KEYS = Set.of(
+            "id", "text", "lines", "outcomes", "professions", "dispositions",
+            "requires_villager_unarmed", "villager_unarmed", "requires_villager_armed", "villager_armed", "weight");
+    private static final Set<String> LINE_KEYS = Set.of(
+            "id", "request", "text", "lines", "option", "option_ids", "professions", "dispositions",
+            "requires_villager_unarmed", "villager_unarmed", "requires_villager_armed", "villager_armed",
+            "reputation_level", "reputation_levels", "min_reputation", "max_reputation",
+            "weather", "times", "event_tags", "player_event_tags",
+            "requires_container_theft_to_self", "requires_container_theft_from_other",
+            "requires_retaliation_to_self", "requires_retaliation_from_other", "retaliation_target_entity_types", "retaliation_target_entities",
+            "player_item", "player_items", "player_item_tag", "player_item_tags", "player_item_slot", "player_item_slots",
+            "min_player_item_durability", "max_player_item_durability", "min_player_item_durability_percent", "max_player_item_durability_percent",
+            "min_held_item_durability", "max_held_item_durability", "min_held_item_durability_percent", "max_held_item_durability_percent",
+            "player_item_enchantment", "player_item_enchantments", "held_item_enchantment", "held_item_enchantments",
+            "min_player_item_enchantment_level", "max_player_item_enchantment_level", "min_held_item_enchantment_level", "max_held_item_enchantment_level",
+            "story_structure", "story_structures", "story_biome", "story_biomes",
+            "requires_recent_broken_bed_memory", "requires_recent_direct_hit_memory",
+            "requires_gear_report_used_in_combat", "requires_gear_report_unused_in_combat",
+            "recruitment_followup_scenarios", "requires_recruitment_memory", "recruitment_memory_scenarios",
+            "min_recruitment_follow_distance", "requires_recruitment_boat_trip", "requires_recruitment_ocean_crossing",
+            "requires_recruitment_swim_trip", "excludes_recruitment_ocean_crossing",
+            "first_conversation_only", "gift_advice", "show_for_adults", "show_for_babies", "weight",
+            "requires_known_family", "requires_known_parent", "requires_known_sibling", "requires_known_spouse", "requires_known_child",
+            "requires_known_grandparent", "requires_known_grandchild", "requires_known_descendant", "requires_known_aunt_uncle",
+            "requires_known_cousin", "requires_known_niece_nephew", "requires_known_extended_family", "requires_known_deceased_family",
+            "requires_known_relationship", "requires_known_current_relationship", "requires_known_past_relationship", "requires_known_crush",
+            "requires_known_dating_partner", "requires_known_fiance", "requires_known_romantic_spouse", "requires_known_separated_partner",
+            "requires_known_widowed_partner");
 
     private static volatile CachedDialoguePools cachedDialoguePools = CachedDialoguePools.empty();
 
@@ -275,6 +338,13 @@ public final class VillagerDialogueResources {
             Map<String, KeyedMessageLine> messages) {
         try (Reader reader = resource.openAsReader()) {
             JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
+            DatapackDiagnostics.warnMisplacedRootKeys(location, "dialogue", root, Map.of(
+                    "notifications", "data/villagerretaliation/notifications/<locale>/<file>.json",
+                    "entries", "data/villagerretaliation/forced_dialogue/<file>.json",
+                    "preferences", "data/villagerretaliation/gifts/<file>.json",
+                    "rewards", "data/villagerretaliation/gifts/<file>.json",
+                    "payments", "data/villagerretaliation/pacification/<file>.json"));
+            DatapackDiagnostics.warnUnknownRootKeys(location, "dialogue", root, ROOT_KEYS);
             Set<VillagerProfession> defaultProfessions = defaultProfessionsFor(location, locale);
             readDialogueOptions(location, root, defaultProfessions, options);
             readKeyedMessages(location, root, defaultProfessions, messages);
@@ -305,6 +375,7 @@ public final class VillagerDialogueResources {
             }
 
             JsonObject entry = element.getAsJsonObject();
+            DatapackDiagnostics.warnUnknownKeys(location, "dialogue message", entryContext("message", entry, index), entry, MESSAGE_KEYS);
             String key = readString(entry, "key");
             List<String> entryLines = readLines(entry);
             if (key.isBlank() || entryLines.isEmpty()) {
@@ -313,7 +384,7 @@ public final class VillagerDialogueResources {
             }
 
             String id = readString(entry, "id");
-            Set<VillagerProfession> professions = readProfessions(entry, defaultProfessions);
+            Set<VillagerProfession> professions = readProfessions(location, entryContext("message", entry, index), entry, defaultProfessions);
             Set<DialogueDisposition> dispositions = readEnumSet(entry, "dispositions", DialogueDisposition.class);
             int weight = Math.max(1, readInt(entry, "weight", 10));
             boolean showForAdults = readBoolean(entry, "show_for_adults", true);
@@ -352,6 +423,8 @@ public final class VillagerDialogueResources {
             }
 
             JsonObject entry = element.getAsJsonObject();
+            DatapackDiagnostics.warnUnknownKeys(location, "dialogue option", entryContext("option", entry, index), entry, OPTION_KEYS);
+            DatapackDiagnostics.warnInertPlayerItemSlots(location, entryContext("option", entry, index), entry);
             String id = readString(entry, "id");
             String label = readString(entry, "label");
             String entryType = readString(entry, "type");
@@ -366,7 +439,7 @@ public final class VillagerDialogueResources {
 
             boolean showForAdults = readBoolean(entry, "show_for_adults", true);
             boolean showForBabies = readBoolean(entry, "show_for_babies", true);
-            Set<VillagerProfession> professions = readProfessions(entry, defaultProfessions);
+            Set<VillagerProfession> professions = readProfessions(location, entryContext("option", entry, index), entry, defaultProfessions);
             Set<DialogueDisposition> dispositions = readEnumSet(entry, "dispositions", DialogueDisposition.class);
             VillagerPlayerItemCondition playerItemCondition = VillagerPlayerItemCondition.read(entry);
             VillagerReputationCondition reputationCondition = VillagerReputationCondition.read(entry);
@@ -534,6 +607,8 @@ public final class VillagerDialogueResources {
             }
 
             JsonObject entry = element.getAsJsonObject();
+            DatapackDiagnostics.warnUnknownKeys(location, "dialogue line", entryContext("line", entry, index), entry, LINE_KEYS);
+            DatapackDiagnostics.warnInertPlayerItemSlots(location, entryContext("line", entry, index), entry);
             Optional<DialogueRequestType> requestType = readEnum(entry, "request", DialogueRequestType.class);
             List<String> entryLines = readLines(entry);
             if (requestType.isEmpty() || entryLines.isEmpty()) {
@@ -548,7 +623,7 @@ public final class VillagerDialogueResources {
                     requestType.get(),
                     entryLines
             );
-            applyDialogueOptions(builder, entry, defaultProfessions);
+            applyDialogueOptions(location, entryContext("line", entry, index), builder, entry, defaultProfessions);
             lines.put(resolvedId, builder.build());
             index++;
         }
@@ -573,6 +648,7 @@ public final class VillagerDialogueResources {
             }
 
             JsonObject entry = element.getAsJsonObject();
+            DatapackDiagnostics.warnUnknownKeys(location, "dialogue " + key, entryContext(key, entry, index), entry, CONVERSATION_KEYS);
             List<String> entryLines = readLines(entry);
             if (entryLines.isEmpty()) {
                 index++;
@@ -580,7 +656,7 @@ public final class VillagerDialogueResources {
             }
 
             String id = readString(entry, "id");
-            Set<VillagerProfession> professions = readProfessions(entry, defaultProfessions);
+            Set<VillagerProfession> professions = readProfessions(location, entryContext(key, entry, index), entry, defaultProfessions);
             Set<DialogueDisposition> dispositions = readEnumSet(entry, "dispositions", DialogueDisposition.class);
             int weight = Math.max(1, readInt(entry, "weight", 10));
             boolean showForAdults = readBoolean(entry, "show_for_adults", true);
@@ -622,6 +698,7 @@ public final class VillagerDialogueResources {
             }
 
             JsonObject entry = element.getAsJsonObject();
+            DatapackDiagnostics.warnUnknownKeys(location, "pacify line", entryContext("pacify", entry, index), entry, PACIFY_KEYS);
             List<String> entryLines = readLines(entry);
             if (entryLines.isEmpty()) {
                 index++;
@@ -629,7 +706,7 @@ public final class VillagerDialogueResources {
             }
 
             String id = readString(entry, "id");
-            Set<VillagerProfession> professions = readProfessions(entry, defaultProfessions);
+            Set<VillagerProfession> professions = readProfessions(location, entryContext("pacify", entry, index), entry, defaultProfessions);
             Set<DialogueDisposition> dispositions = readEnumSet(entry, "dispositions", DialogueDisposition.class);
             Set<VillagerPacificationResult> outcomes = readEnumSet(entry, "outcomes", VillagerPacificationResult.class);
             int weight = Math.max(1, readInt(entry, "weight", 10));
@@ -648,10 +725,12 @@ public final class VillagerDialogueResources {
     }
 
     private static void applyDialogueOptions(
+            ResourceLocation location,
+            String context,
             DialogueLine.Builder builder,
             JsonObject entry,
             Set<VillagerProfession> defaultProfessions) {
-        Set<VillagerProfession> professions = readProfessions(entry, defaultProfessions);
+        Set<VillagerProfession> professions = readProfessions(location, context, entry, defaultProfessions);
         if (!professions.isEmpty()) {
             builder.professions(professions.toArray(VillagerProfession[]::new));
         }
@@ -882,13 +961,27 @@ public final class VillagerDialogueResources {
         return VillagerProfessionUtil.parse(firstSegment).map(Set::of).orElse(Set.of());
     }
 
-    private static Set<VillagerProfession> readProfessions(JsonObject entry, Set<VillagerProfession> defaultProfessions) {
+    private static Set<VillagerProfession> readProfessions(
+            ResourceLocation location,
+            String context,
+            JsonObject entry,
+            Set<VillagerProfession> defaultProfessions) {
         Set<VillagerProfession> professions = java.util.HashSet.newHashSet(defaultProfessions.size() + 1);
         professions.addAll(defaultProfessions);
         for (String value : readStringList(entry, "professions")) {
-            VillagerProfessionUtil.parse(value).ifPresent(professions::add);
+            Optional<VillagerProfession> profession = VillagerProfessionUtil.parse(value);
+            if (profession.isPresent()) {
+                professions.add(profession.get());
+            } else {
+                DatapackDiagnostics.warnUnknownProfession(location, context, value);
+            }
         }
         return Set.copyOf(professions);
+    }
+
+    private static String entryContext(String kind, JsonObject entry, int index) {
+        String id = readString(entry, "id");
+        return id.isBlank() ? kind + "[" + index + "]" : kind + " \"" + id + "\"";
     }
 
     private static Optional<VillagerProfession> parseNamespacedProfessionPath(String key) {

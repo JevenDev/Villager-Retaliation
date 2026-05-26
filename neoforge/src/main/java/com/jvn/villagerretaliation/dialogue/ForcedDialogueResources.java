@@ -7,6 +7,7 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
+import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
 import com.jvn.villagerretaliation.util.VillagerInventoryItemRemoval;
 import com.jvn.villagerretaliation.util.VillagerPlayerItemCondition;
@@ -33,6 +34,27 @@ import net.minecraft.world.entity.npc.VillagerProfession;
 public final class ForcedDialogueResources {
     private static final String RESOURCE_ROOT = "forced_dialogue";
     private static final String LEAVE_OPTION_ID = "leave";
+    private static final Set<String> ROOT_KEYS = Set.of(
+            "entries", "notifications", "messages", "openings", "closings", "pacify",
+            "id", "trigger", "event", "line", "lines", "priority", "chance", "witness_radius",
+            "witness_profession", "witness_professions", "professions",
+            "requires_witness_unarmed", "witness_unarmed", "requires_witness_armed", "witness_armed",
+            "player_item", "player_items", "player_item_tag", "player_item_tags", "player_item_slot", "player_item_slots",
+            "min_player_item_durability", "max_player_item_durability", "min_player_item_durability_percent", "max_player_item_durability_percent",
+            "min_held_item_durability", "max_held_item_durability", "min_held_item_durability_percent", "max_held_item_durability_percent",
+            "player_item_enchantment", "player_item_enchantments", "held_item_enchantment", "held_item_enchantments",
+            "min_player_item_enchantment_level", "max_player_item_enchantment_level", "min_held_item_enchantment_level", "max_held_item_enchantment_level",
+            "requires_line_of_sight", "output", "initiate_dialogue", "aggro_immediately", "force_camera_towards_villager",
+            "reputation", "reputation_level", "reputation_levels", "min_reputation", "max_reputation",
+            "loot_table", "loot_tables", "target_entity_type", "target_entity_types", "target_entities",
+            "min_recent_container_thefts", "max_recent_container_thefts", "min_recent_retaliations", "max_recent_retaliations",
+            "options", "leave_option", "leave_options");
+    private static final Set<String> ENTRY_KEYS = ROOT_KEYS;
+    private static final Set<String> OPTION_KEYS = Set.of(
+            "id", "label", "response", "responses", "reputation", "aggro", "aggro_chance", "end_conversation", "order",
+            "reputation_level", "reputation_levels", "min_reputation", "max_reputation", "take_items", "take_stolen_items");
+    private static final Set<String> NOTIFICATION_TRIGGER_PREFIXES = Set.of(
+            "ambient.", "alert.", "combat.", "dialogue.", "gift.", "recruitment.", "reputation.", "trade.");
     private static volatile CachedForcedDialogues cachedDialogues = CachedForcedDialogues.empty();
 
     private ForcedDialogueResources() {
@@ -112,6 +134,13 @@ public final class ForcedDialogueResources {
             Map<String, ForcedDialogueDefinition> definitions) {
         try (Reader reader = resource.openAsReader()) {
             JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
+            DatapackDiagnostics.warnMisplacedRootKeys(location, "forced dialogue", root, Map.of(
+                    "notifications", "data/villagerretaliation/notifications/<locale>/<file>.json",
+                    "messages", "data/villagerretaliation/dialogue/<locale>/<file>.json",
+                    "openings", "data/villagerretaliation/dialogue/<locale>/<file>.json",
+                    "closings", "data/villagerretaliation/dialogue/<locale>/<file>.json",
+                    "pacify", "data/villagerretaliation/dialogue/<locale>/<file>.json"));
+            DatapackDiagnostics.warnUnknownRootKeys(location, "forced dialogue", root, ROOT_KEYS);
             JsonArray entries = root.getAsJsonArray("entries");
             if (entries != null) {
                 int index = 0;
@@ -131,9 +160,14 @@ public final class ForcedDialogueResources {
     }
 
     private static Optional<ForcedDialogueDefinition> readEntry(ResourceLocation location, JsonObject entry, int index) {
+        DatapackDiagnostics.warnUnknownKeys(location, "forced dialogue", entryContext(entry, index), entry, ENTRY_KEYS);
+        DatapackDiagnostics.warnInertPlayerItemSlots(location, entryContext(entry, index), entry);
         Optional<ForcedDialogueTrigger> trigger = readEnum(entry, "trigger", ForcedDialogueTrigger.class);
         if (trigger.isEmpty()) {
             trigger = readEnum(entry, "event", ForcedDialogueTrigger.class);
+        }
+        if (trigger.isEmpty()) {
+            warnWrongForcedTriggerFamily(location, entry, index);
         }
         List<String> lines = readLines(entry);
         if (trigger.isEmpty() || lines.isEmpty()) {
@@ -145,9 +179,9 @@ public final class ForcedDialogueResources {
             id = fallbackId(location, index);
         }
 
-        List<ForcedDialogueOption> leaveOptions = readLeaveOptions(entry, trigger.get());
+        List<ForcedDialogueOption> leaveOptions = readLeaveOptions(location, entry, trigger.get());
         ForcedDialogueOption leaveOption = leaveOptions.stream().findFirst().orElse(defaultLeaveOption());
-        List<ForcedDialogueOption> options = readOptions(entry, leaveOption);
+        List<ForcedDialogueOption> options = readOptions(location, entry, leaveOption);
         String leaveOptionId = leaveOption.id();
         leaveOption = options.stream()
                 .filter(option -> option.id().equals(leaveOptionId))
@@ -173,7 +207,7 @@ public final class ForcedDialogueResources {
                 readInt(entry, "max_recent_retaliations", Integer.MAX_VALUE),
                 readLootTables(entry),
                 readTargetEntityTypes(entry),
-                readProfessions(entry),
+                readProfessions(location, entryContext(entry, index), entry),
                 VillagerEquipmentCondition.read(entry, "witness"),
                 VillagerPlayerItemCondition.read(entry),
                 VillagerReputationCondition.read(entry),
@@ -198,18 +232,31 @@ public final class ForcedDialogueResources {
         );
     }
 
-    private static Set<VillagerProfession> readProfessions(JsonObject entry) {
+    private static Set<VillagerProfession> readProfessions(ResourceLocation location, String context, JsonObject entry) {
         java.util.LinkedHashSet<VillagerProfession> professions = new java.util.LinkedHashSet<>();
         for (String value : readStringList(entry, "witness_profession")) {
-            VillagerProfessionUtil.parse(value).ifPresent(professions::add);
+            addProfession(location, context, professions, value);
         }
         for (String value : readStringList(entry, "witness_professions")) {
-            VillagerProfessionUtil.parse(value).ifPresent(professions::add);
+            addProfession(location, context, professions, value);
         }
         for (String value : readStringList(entry, "professions")) {
-            VillagerProfessionUtil.parse(value).ifPresent(professions::add);
+            addProfession(location, context, professions, value);
         }
         return Set.copyOf(professions);
+    }
+
+    private static void addProfession(
+            ResourceLocation location,
+            String context,
+            java.util.LinkedHashSet<VillagerProfession> professions,
+            String value) {
+        Optional<VillagerProfession> profession = VillagerProfessionUtil.parse(value);
+        if (profession.isPresent()) {
+            professions.add(profession.get());
+        } else {
+            DatapackDiagnostics.warnUnknownProfession(location, context, value);
+        }
     }
 
     private static Set<ResourceLocation> readLootTables(JsonObject entry) {
@@ -266,7 +313,7 @@ public final class ForcedDialogueResources {
                 .toList();
     }
 
-    private static List<ForcedDialogueOption> readOptions(JsonObject entry, ForcedDialogueOption leaveOption) {
+    private static List<ForcedDialogueOption> readOptions(ResourceLocation location, JsonObject entry, ForcedDialogueOption leaveOption) {
         JsonArray entries = entry.getAsJsonArray("options");
         if (entries == null) {
             return List.of(leaveOption);
@@ -280,6 +327,7 @@ public final class ForcedDialogueResources {
                 continue;
             }
             JsonObject option = element.getAsJsonObject();
+            DatapackDiagnostics.warnUnknownKeys(location, "forced dialogue option", optionContext(option, index), option, OPTION_KEYS);
             String id = readString(option, "id");
             String label = readString(option, "label");
             if (id.isBlank() || label.isBlank()) {
@@ -295,7 +343,7 @@ public final class ForcedDialogueResources {
         return List.copyOf(options);
     }
 
-    private static List<ForcedDialogueOption> readLeaveOptions(JsonObject entry, ForcedDialogueTrigger trigger) {
+    private static List<ForcedDialogueOption> readLeaveOptions(ResourceLocation location, JsonObject entry, ForcedDialogueTrigger trigger) {
         JsonArray options = entry.getAsJsonArray("leave_options");
         if (options != null) {
             List<ForcedDialogueOption> leaveOptions = new ArrayList<>();
@@ -303,6 +351,7 @@ public final class ForcedDialogueResources {
             for (JsonElement element : options) {
                 if (element.isJsonObject()) {
                     JsonObject option = element.getAsJsonObject();
+                    DatapackDiagnostics.warnUnknownKeys(location, "forced dialogue leave option", optionContext(option, index), option, OPTION_KEYS);
                     String label = readString(option, "label");
                     leaveOptions.add(readOption(option, LEAVE_OPTION_ID, label.isBlank() ? "Leave" : label, 1000 + index));
                 }
@@ -587,6 +636,33 @@ public final class ForcedDialogueResources {
 
     private static String fallbackId(ResourceLocation location, int index) {
         return location.getPath().replace('/', '_').replace(".json", "") + "_" + index;
+    }
+
+    private static void warnWrongForcedTriggerFamily(ResourceLocation location, JsonObject entry, int index) {
+        String trigger = readString(entry, "trigger");
+        if (trigger.isBlank()) {
+            trigger = readString(entry, "event");
+        }
+        String normalized = trigger.toLowerCase(Locale.ROOT);
+        boolean notificationLike = NOTIFICATION_TRIGGER_PREFIXES.stream().anyMatch(normalized::startsWith);
+        if (notificationLike) {
+            DatapackDiagnostics.warnInvalidTrigger(
+                    location,
+                    "forced dialogue",
+                    entryContext(entry, index),
+                    trigger,
+                    "Use forced dialogue triggers: container_theft, container_opened, container_broken, retaliation_started, or player_item_proximity.");
+        }
+    }
+
+    private static String entryContext(JsonObject entry, int index) {
+        String id = readString(entry, "id");
+        return id.isBlank() ? "entry[" + index + "]" : "entry \"" + id + "\"";
+    }
+
+    private static String optionContext(JsonObject option, int index) {
+        String id = readString(option, "id");
+        return id.isBlank() ? "option[" + index + "]" : "option \"" + id + "\"";
     }
 
     private record CachedForcedDialogues(MinecraftServer server, List<ForcedDialogueDefinition> definitions) {

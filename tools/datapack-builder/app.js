@@ -7126,12 +7126,16 @@ function closeExportIssueDialog(confirmed) {
 }
 
 function normalizeImportedPaths(fileMap) {
-  const paths = Object.keys(fileMap);
+  const normalizedInput = {};
+  for (const [path, value] of Object.entries(fileMap)) {
+    normalizedInput[path.replaceAll("\\", "/").replace(/^\/+/, "")] = value;
+  }
+  const paths = Object.keys(normalizedInput);
   const packPath = paths.find((path) => path === "pack.mcmeta" || path.endsWith("/pack.mcmeta"));
-  if (!packPath || packPath === "pack.mcmeta") return fileMap;
+  if (!packPath || packPath === "pack.mcmeta") return normalizedInput;
   const prefix = packPath.slice(0, -"pack.mcmeta".length);
   const normalized = {};
-  for (const [path, value] of Object.entries(fileMap)) {
+  for (const [path, value] of Object.entries(normalizedInput)) {
     normalized[path.startsWith(prefix) ? path.slice(prefix.length) : path] = value;
   }
   return normalized;
@@ -7287,17 +7291,14 @@ function ingestKnownJson(path, source) {
     state.meta.locale = dialogueMatch[1];
     state.dialogue.fileName = normalizeFileName(dialogueMatch[2].split("/").pop(), state.dialogue.fileName);
     const profession = dialogueMatch[2].match(/^professions\/([^/]+)/)?.[1];
-    if (isNotificationEntry(json)) {
-      mergeArray("notifications", "notifications", [json], path);
-      return true;
-    }
+    let importedDialogue = false;
     for (const kind of ["options", "lines", "messages", "openings", "closings", "pacify"]) {
       const entries = withDefaultProfession(json[kind], profession);
       if (!Array.isArray(entries)) continue;
-      mergeArray("notifications", "notifications", entries.filter(isNotificationEntry), path);
-      mergeArray("dialogue", kind, entries.filter((entry) => !isNotificationEntry(entry)), path);
+      mergeArray("dialogue", kind, entries, path);
+      importedDialogue = true;
     }
-    return true;
+    return importedDialogue;
   }
 
   const notificationMatch = path.match(/^data\/villagerretaliation\/notifications\/([^/]+)\/(.+)\.json$/);
@@ -7574,10 +7575,11 @@ async function readZip(bytes) {
     }
   }
   if (eocd < 0) throw new Error("Could not find zip directory.");
-  const count = readUint16(bytes, eocd + 10);
   let offset = readUint32(bytes, eocd + 16);
+  const centralDirectorySize = readUint32(bytes, eocd + 12);
+  const centralDirectoryEnd = centralDirectorySize > 0 ? offset + centralDirectorySize : bytes.length;
   const result = {};
-  for (let index = 0; index < count; index++) {
+  while (offset + 46 <= centralDirectoryEnd) {
     if (readUint32(bytes, offset) !== 0x02014b50) break;
     const flags = readUint16(bytes, offset + 8);
     const method = readUint16(bytes, offset + 10);
@@ -7587,10 +7589,13 @@ async function readZip(bytes) {
     const commentLength = readUint16(bytes, offset + 32);
     const localOffset = readUint32(bytes, offset + 42);
     const nameBytes = bytes.slice(offset + 46, offset + 46 + nameLength);
-    const name = new TextDecoder(flags & 0x0800 ? "utf-8" : "utf-8").decode(nameBytes);
+    const name = new TextDecoder("utf-8").decode(nameBytes).replaceAll("\\", "/");
     offset += 46 + nameLength + extraLength + commentLength;
     if (name.endsWith("/")) continue;
 
+    if (readUint32(bytes, localOffset) !== 0x04034b50) {
+      throw new Error(`Invalid zip local file header for ${name}.`);
+    }
     const localNameLength = readUint16(bytes, localOffset + 26);
     const localExtraLength = readUint16(bytes, localOffset + 28);
     const dataStart = localOffset + 30 + localNameLength + localExtraLength;

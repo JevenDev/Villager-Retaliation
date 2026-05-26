@@ -8,6 +8,7 @@ import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.network.VillagerWorldTextIndicatorKind;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
+import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
 import com.jvn.villagerretaliation.util.VillagerLocale;
 import com.jvn.villagerretaliation.util.VillagerPlayerItemCondition;
@@ -35,6 +36,21 @@ public final class VillagerNotificationResources {
     private static final String NOTIFICATION_ROOT = "notifications/";
     private static final int DEFAULT_COLOR = ResolvedVillagerNotification.DEFAULT_COLOR;
     private static final Map<String, Integer> NAMED_COLORS = namedColors();
+    private static final Set<String> ROOT_KEYS = Set.of(
+            "notifications", "options", "messages", "openings", "closings", "pacify", "entries");
+    private static final Set<String> NOTIFICATION_KEYS = Set.of(
+            "id", "trigger", "text", "lines", "kind", "world_text_kind", "style", "color", "text_color", "chat_color",
+            "professions", "requires_villager_unarmed", "villager_unarmed", "requires_villager_armed", "villager_armed",
+            "reputation_level", "reputation_levels", "min_reputation", "max_reputation",
+            "target_entity_type", "target_entity", "target_entity_types", "target_entities",
+            "player_item", "player_items", "player_item_tag", "player_item_tags", "player_item_slot", "player_item_slots",
+            "min_player_item_durability", "max_player_item_durability", "min_player_item_durability_percent", "max_player_item_durability_percent",
+            "min_held_item_durability", "max_held_item_durability", "min_held_item_durability_percent", "max_held_item_durability_percent",
+            "player_item_enchantment", "player_item_enchantments", "held_item_enchantment", "held_item_enchantments",
+            "min_player_item_enchantment_level", "max_player_item_enchantment_level", "min_held_item_enchantment_level", "max_held_item_enchantment_level",
+            "show_for_adults", "show_for_babies", "weight", "chance");
+    private static final Set<String> FORCED_DIALOGUE_TRIGGERS = Set.of(
+            "container_theft", "container_opened", "container_broken", "retaliation_started", "player_item_proximity");
 
     private static volatile CachedNotificationPools cachedNotificationPools = CachedNotificationPools.empty();
 
@@ -154,6 +170,14 @@ public final class VillagerNotificationResources {
             Map<String, VillagerNotificationDefinition> definitions) {
         try (Reader reader = resource.openAsReader()) {
             JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
+            DatapackDiagnostics.warnMisplacedRootKeys(location, "notifications", root, Map.of(
+                    "options", "data/villagerretaliation/dialogue/<locale>/<file>.json",
+                    "messages", "data/villagerretaliation/dialogue/<locale>/<file>.json",
+                    "openings", "data/villagerretaliation/dialogue/<locale>/<file>.json",
+                    "closings", "data/villagerretaliation/dialogue/<locale>/<file>.json",
+                    "pacify", "data/villagerretaliation/dialogue/<locale>/<file>.json",
+                    "entries", "data/villagerretaliation/forced_dialogue/<file>.json"));
+            DatapackDiagnostics.warnUnknownRootKeys(location, "notifications", root, ROOT_KEYS);
             JsonArray entries = root.getAsJsonArray("notifications");
             if (entries == null) {
                 return;
@@ -177,6 +201,16 @@ public final class VillagerNotificationResources {
             JsonObject entry,
             int index) {
         String trigger = readString(entry, "trigger");
+        DatapackDiagnostics.warnUnknownKeys(location, "notification", entryContext(entry, index), entry, NOTIFICATION_KEYS);
+        DatapackDiagnostics.warnInertPlayerItemSlots(location, entryContext(entry, index), entry);
+        if (FORCED_DIALOGUE_TRIGGERS.contains(trigger.toLowerCase(Locale.ROOT))) {
+            DatapackDiagnostics.warnInvalidTrigger(
+                    location,
+                    "notification",
+                    entryContext(entry, index),
+                    trigger,
+                    "Use notification triggers such as ambient.player_item, combat.retaliation_started, or alert.player_attacked_villager.");
+        }
         List<String> lines = readLines(entry);
         if (trigger.isBlank() || lines.isEmpty()) {
             return Optional.empty();
@@ -205,7 +239,7 @@ public final class VillagerNotificationResources {
                 worldTextKind,
                 readBoolean(entry, "show_for_adults", true),
                 readBoolean(entry, "show_for_babies", true),
-                readProfessions(entry),
+                readProfessions(location, entryContext(entry, index), entry),
                 readEnumSet(entry, "reputation_levels", VillagerReputationLevel.class),
                 readResourceLocations(entry, "target_entity_types", "target_entities", "target_entity_type", "target_entity"),
                 VillagerEquipmentCondition.read(entry),
@@ -226,10 +260,15 @@ public final class VillagerNotificationResources {
         return merged;
     }
 
-    private static Set<VillagerProfession> readProfessions(JsonObject entry) {
+    private static Set<VillagerProfession> readProfessions(ResourceLocation location, String context, JsonObject entry) {
         Set<VillagerProfession> professions = new HashSet<>();
         for (String value : readStringList(entry, "professions")) {
-            VillagerProfessionUtil.parse(value).ifPresent(professions::add);
+            Optional<VillagerProfession> profession = VillagerProfessionUtil.parse(value);
+            if (profession.isPresent()) {
+                professions.add(profession.get());
+            } else {
+                DatapackDiagnostics.warnUnknownProfession(location, context, value);
+            }
         }
         return Set.copyOf(professions);
     }
@@ -396,6 +435,11 @@ public final class VillagerNotificationResources {
         String remainder = path.substring(NOTIFICATION_ROOT.length());
         int slash = remainder.indexOf('/');
         return slash < 0 ? remainder : remainder.substring(slash + 1);
+    }
+
+    private static String entryContext(JsonObject entry, int index) {
+        String id = readString(entry, "id");
+        return id.isBlank() ? "notification[" + index + "]" : "notification \"" + id + "\"";
     }
 
     private static String resolveTemplate(String text, Map<String, String> replacements) {
