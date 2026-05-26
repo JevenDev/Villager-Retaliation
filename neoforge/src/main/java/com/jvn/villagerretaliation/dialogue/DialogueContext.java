@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.dialogue;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.profile.VillagerProfile;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
+import com.jvn.villagerretaliation.profile.VillagerSocialAttributes;
 import com.jvn.villagerretaliation.social.VillagerFamilyTreeSnapshot;
 import com.jvn.villagerretaliation.social.VillagerRelationshipSnapshot;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
@@ -63,7 +64,7 @@ public record DialogueContext(
 
     public int socialAttributeValue(VillagerSocialAttribute attribute) {
         return this.profile == null || this.profile.socialAttributes() == null
-                ? 0
+                ? VillagerSocialAttributes.DEFAULT.get(attribute)
                 : this.profile.socialAttributes().get(attribute);
     }
 

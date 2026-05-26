@@ -86,7 +86,12 @@ public record VillagerSocialAttributes(
     }
 
     private static int getOrDefault(CompoundTag tag, String key, int fallback) {
-        return tag.contains(key, Tag.TAG_INT) ? tag.getInt(key) : fallback;
+        if (tag.contains(key, Tag.TAG_INT)) {
+            return tag.getInt(key);
+        }
+
+        String legacyKey = key.substring(0, 1).toLowerCase(java.util.Locale.ROOT) + key.substring(1);
+        return tag.contains(legacyKey, Tag.TAG_INT) ? tag.getInt(legacyKey) : fallback;
     }
 
     public static int clamp(int value) {
