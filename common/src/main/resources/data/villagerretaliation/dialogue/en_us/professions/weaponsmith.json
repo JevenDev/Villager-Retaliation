@@ -48,6 +48,22 @@
       "weight": 20
     }
   ],
+  "options": [
+    {
+      "id": "weaponsmith_inspect_weapon",
+      "label": "Check my weapon",
+      "type": "dialogue_option",
+      "request": "question",
+      "player_items": [
+        "#minecraft:swords",
+        "#minecraft:axes"
+      ],
+      "player_item_slots": [
+        "main_hand"
+      ],
+      "order": 28
+    }
+  ],
   "openings": [
     {
       "id": "weaponsmith_opening",
@@ -99,6 +115,61 @@
         "An unready guard is just confidence standing in the wrong place."
       ],
       "weight": 172
+    },
+    {
+      "id": "weaponsmith_inspect_weapon_strong",
+      "request": "question",
+      "option": "weaponsmith_inspect_weapon",
+      "player_items": [
+        "#minecraft:swords",
+        "#minecraft:axes"
+      ],
+      "player_item_slots": [
+        "main_hand"
+      ],
+      "min_player_item_durability_percent": 60,
+      "lines": [
+        "{held_item} has {held_item_durability} durability left out of {held_item_max_durability}. Plenty of life in that edge.",
+        "{held_item} is sitting at {held_item_durability_percent}% durability. Keep it clean and it will answer when called."
+      ],
+      "weight": 80
+    },
+    {
+      "id": "weaponsmith_inspect_weapon_worn",
+      "request": "question",
+      "option": "weaponsmith_inspect_weapon",
+      "player_items": [
+        "#minecraft:swords",
+        "#minecraft:axes"
+      ],
+      "player_item_slots": [
+        "main_hand"
+      ],
+      "min_player_item_durability_percent": 25,
+      "max_player_item_durability_percent": 59,
+      "lines": [
+        "{held_item} has {held_item_durability} durability left. Serviceable, but do not mistake serviceable for ready.",
+        "{held_item} is down to {held_item_durability_percent}%. It will hold, but I would mend it before trusting it with trouble."
+      ],
+      "weight": 80
+    },
+    {
+      "id": "weaponsmith_inspect_weapon_low",
+      "request": "question",
+      "option": "weaponsmith_inspect_weapon",
+      "player_items": [
+        "#minecraft:swords",
+        "#minecraft:axes"
+      ],
+      "player_item_slots": [
+        "main_hand"
+      ],
+      "max_player_item_durability_percent": 24,
+      "lines": [
+        "{held_item} has only {held_item_durability} durability left. That is a warning, not a weapon.",
+        "{held_item} is at {held_item_durability_percent}%. Mend it before it chooses the worst possible moment to become scrap."
+      ],
+      "weight": 80
     },
     {
       "id": "weaponsmith_story_golem_variants",

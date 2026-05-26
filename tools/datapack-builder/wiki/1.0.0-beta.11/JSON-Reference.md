@@ -121,6 +121,16 @@ Player item filters accept item ids and item tags. Prefix a tag with `#` inside 
 
 If `player_items` is set and no slot filter is supplied, the current default is `hands`.
 
+Player item filters can also check remaining durability. Use `min_player_item_durability` / `max_player_item_durability` for exact remaining durability, or `min_player_item_durability_percent` / `max_player_item_durability_percent` for ranges that work across different tool tiers. The `held_item` aliases are accepted for the same fields.
+
+```json
+{
+  "player_items": ["minecraft:netherite_sword"],
+  "player_item_slots": ["main_hand"],
+  "min_player_item_durability": 500
+}
+```
+
 Villager equipment filters are available anywhere the rule is evaluated against a specific villager: dialogue options, lines, messages, openings, closings, pacify lines, notifications, gift preferences, gift rewards, pacification payments, and profession loot rules. Use `requires_villager_armed` to require a usable weapon in either hand, or `requires_villager_unarmed` to require no usable weapon. The shorter aliases `villager_armed` and `villager_unarmed` are also accepted.
 
 ```json

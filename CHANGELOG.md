@@ -14,6 +14,7 @@
 - Added forced-dialogue chat `chance` support for occasional event callouts.
 - Added forced dialogue witness equipment filters for armed and unarmed villagers.
 - Added `player_item_proximity` forced-dialogue triggers for held or worn player item reactions near villagers, including chat-output support.
+- Added player item durability filters and placeholders for item-filtered dialogue, forced dialogue, and notifications.
 - Added armed and unarmed villager filters across villager-backed pack rules, including dialogue options, lines, messages, openings, closings, pacify lines, notifications, gifts, pacification payments, and profession loot.
 - Added config support for choosing theft-only container confrontations or opening-based confrontations, and for limiting watched containers to world-generated loot-table containers or allowing all watched containers.
 - Added loot-table filters for forced dialogue entries through `loot_table` and `loot_tables`, so packs can target vanilla or modded generated containers.
@@ -24,7 +25,7 @@
 - Added shared reputation condition fields for dialogue options, dialogue lines, forced-dialogue entries, and forced-dialogue options: `reputation_level`, `reputation_levels`, `min_reputation`, and `max_reputation`.
 - Added village container theft memories and gossip through `player_container_theft`, `requires_container_theft_to_self`, and `requires_container_theft_from_other`.
 - Added theft-memory placeholders for dialogue, including `{stolen_item}`, `{stolen_count}`, `{stolen_stack}`, `{stolen_container}`, `{stolen_loot_table}`, `{theft_witness}`, and `{theft_witness_possessive}`.
-- Added datapack-builder support for forced dialogue, item payments, generated-container loot table filters, `player_item_proximity` item callouts, reputation-gated dialogue, armed/unarmed villager filters, and theft-memory event tags.
+- Added datapack-builder support for forced dialogue, item payments, generated-container loot table filters, `player_item_proximity` item callouts, item durability filters, reputation-gated dialogue, armed/unarmed villager filters, and theft-memory event tags.
 - Added datapack-builder support for `dialogue_option` entries with separate `request` fields and forced-dialogue chat output.
 - Added datapack-builder suggestions for the `baby_villager_attacked` event tag.
 - Added a larger built-in dialogue/event library covering reputation tiers, retaliation aftermath, apologies, village defense, raids, golem loss, fire, gifts, gear reports, recruitment memories, and container-theft gossip.

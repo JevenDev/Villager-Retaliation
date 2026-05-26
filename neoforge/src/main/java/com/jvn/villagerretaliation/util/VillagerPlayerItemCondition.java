@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -21,8 +22,18 @@ import net.minecraft.world.item.Items;
 
 public record VillagerPlayerItemCondition(
         List<ItemSelector> selectors,
-        Set<ItemSlot> slots) {
-    private static final VillagerPlayerItemCondition EMPTY = new VillagerPlayerItemCondition(List.of(), Set.of());
+        Set<ItemSlot> slots,
+        OptionalInt minDurability,
+        OptionalInt maxDurability,
+        OptionalInt minDurabilityPercent,
+        OptionalInt maxDurabilityPercent) {
+    private static final VillagerPlayerItemCondition EMPTY = new VillagerPlayerItemCondition(
+            List.of(),
+            Set.of(),
+            OptionalInt.empty(),
+            OptionalInt.empty(),
+            OptionalInt.empty(),
+            OptionalInt.empty());
 
     public static VillagerPlayerItemCondition empty() {
         return EMPTY;
@@ -38,7 +49,21 @@ public record VillagerPlayerItemCondition(
         if (slots.isEmpty()) {
             slots = EnumSet.of(ItemSlot.HANDS);
         }
-        return new VillagerPlayerItemCondition(List.copyOf(selectors), Set.copyOf(slots));
+        return new VillagerPlayerItemCondition(
+                List.copyOf(selectors),
+                Set.copyOf(slots),
+                firstPresent(
+                        readOptionalInt(entry, "min_player_item_durability"),
+                        readOptionalInt(entry, "min_held_item_durability")),
+                firstPresent(
+                        readOptionalInt(entry, "max_player_item_durability"),
+                        readOptionalInt(entry, "max_held_item_durability")),
+                firstPresent(
+                        readOptionalInt(entry, "min_player_item_durability_percent"),
+                        readOptionalInt(entry, "min_held_item_durability_percent")),
+                firstPresent(
+                        readOptionalInt(entry, "max_player_item_durability_percent"),
+                        readOptionalInt(entry, "max_held_item_durability_percent")));
     }
 
     public boolean isEmpty() {
@@ -54,6 +79,7 @@ public record VillagerPlayerItemCondition(
                 .map(match -> {
                     ItemStack stack = match.stack();
                     String itemId = BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
+                    DurabilityInfo durability = DurabilityInfo.of(stack);
                     Map<String, String> replacements = new HashMap<>();
                     replacements.put("player_item", stack.getHoverName().getString());
                     replacements.put("held_item", stack.getHoverName().getString());
@@ -61,6 +87,14 @@ public record VillagerPlayerItemCondition(
                     replacements.put("held_item_id", itemId);
                     replacements.put("player_item_slot", match.slot().id());
                     replacements.put("held_item_slot", match.slot().id());
+                    replacements.put("player_item_durability", Integer.toString(durability.remaining()));
+                    replacements.put("held_item_durability", Integer.toString(durability.remaining()));
+                    replacements.put("player_item_max_durability", Integer.toString(durability.maximum()));
+                    replacements.put("held_item_max_durability", Integer.toString(durability.maximum()));
+                    replacements.put("player_item_damage", Integer.toString(durability.damage()));
+                    replacements.put("held_item_damage", Integer.toString(durability.damage()));
+                    replacements.put("player_item_durability_percent", Integer.toString(durability.percent()));
+                    replacements.put("held_item_durability_percent", Integer.toString(durability.percent()));
                     return replacements;
                 })
                 .orElseGet(Map::of);
@@ -143,9 +177,26 @@ public record VillagerPlayerItemCondition(
         if (stack.isEmpty()) {
             return Optional.empty();
         }
-        return this.selectors.stream().anyMatch(selector -> selector.matches(stack))
+        return this.selectors.stream().anyMatch(selector -> selector.matches(stack)) && matchesDurability(stack)
                 ? Optional.of(new MatchedItem(stack, slot))
                 : Optional.empty();
+    }
+
+    private boolean matchesDurability(ItemStack stack) {
+        if (this.minDurability.isEmpty()
+                && this.maxDurability.isEmpty()
+                && this.minDurabilityPercent.isEmpty()
+                && this.maxDurabilityPercent.isEmpty()) {
+            return true;
+        }
+        if (!stack.isDamageableItem()) {
+            return false;
+        }
+        DurabilityInfo durability = DurabilityInfo.of(stack);
+        return this.minDurability.stream().allMatch(min -> durability.remaining() >= min)
+                && this.maxDurability.stream().allMatch(max -> durability.remaining() <= max)
+                && this.minDurabilityPercent.stream().allMatch(min -> durability.percent() >= min)
+                && this.maxDurabilityPercent.stream().allMatch(max -> durability.percent() <= max);
     }
 
     private static List<ItemSelector> readItemSelectors(JsonObject entry) {
@@ -246,6 +297,22 @@ public record VillagerPlayerItemCondition(
         return values;
     }
 
+    private static OptionalInt readOptionalInt(JsonObject entry, String key) {
+        JsonElement element = entry.get(key);
+        if (element == null || !element.isJsonPrimitive()) {
+            return OptionalInt.empty();
+        }
+        try {
+            return OptionalInt.of(element.getAsInt());
+        } catch (NumberFormatException | UnsupportedOperationException ignored) {
+            return OptionalInt.empty();
+        }
+    }
+
+    private static OptionalInt firstPresent(OptionalInt first, OptionalInt second) {
+        return first.isPresent() ? first : second;
+    }
+
     public enum ItemSlot {
         MAIN_HAND("main_hand"),
         OFF_HAND("off_hand"),
@@ -285,5 +352,18 @@ public record VillagerPlayerItemCondition(
     }
 
     private record MatchedItem(ItemStack stack, ItemSlot slot) {
+    }
+
+    private record DurabilityInfo(int remaining, int maximum, int damage, int percent) {
+        private static DurabilityInfo of(ItemStack stack) {
+            if (!stack.isDamageableItem()) {
+                return new DurabilityInfo(0, 0, 0, 0);
+            }
+            int maximum = Math.max(0, stack.getMaxDamage());
+            int damage = Math.max(0, stack.getDamageValue());
+            int remaining = Math.max(0, maximum - damage);
+            int percent = maximum <= 0 ? 0 : Math.round(remaining * 100.0F / maximum);
+            return new DurabilityInfo(remaining, maximum, damage, percent);
+        }
     }
 }

@@ -336,6 +336,10 @@ const FIELD_TOOLTIPS = {
   "dialogue-max_reputation": "Maximum exact reputation value allowed for dialogue options and lines.",
   "dialogue-player_items": "Requires one matching player item or item tag. Prefix tags with #; aliases such as player_item_tag are accepted by the loader.",
   "dialogue-player_item_slots": "Where to check player items. If player_items is set and slots are blank, the default is hands.",
+  "dialogue-min_player_item_durability": "Minimum remaining durability required on the matched player item.",
+  "dialogue-max_player_item_durability": "Maximum remaining durability allowed on the matched player item.",
+  "dialogue-min_player_item_durability_percent": "Minimum remaining durability percent required on the matched player item.",
+  "dialogue-max_player_item_durability_percent": "Maximum remaining durability percent allowed on the matched player item.",
   "dialogue-text": "Localized villager text. Enter one variation per line. Placeholder support depends on type and filters, such as {target}, {held_item}, family names, or recruitment values.",
   "dialogue-option": "Restricts a line to option id(s), including custom ids or built-ins such as adult_share_story.",
   "dialogue-weather": "Weather filter for lines: clear, rain, or thunder.",
@@ -368,6 +372,10 @@ const FIELD_TOOLTIPS = {
   "forced-requires_witness_armed": "Requires the witnessing villager to have a usable weapon in either hand.",
   "forced-player_items": "For player_item_proximity, requires the nearby player to carry one matching item or item tag. Prefix tags with #.",
   "forced-player_item_slots": "Where to check player items. Defaults to hands when player_items is set.",
+  "forced-min_player_item_durability": "Minimum remaining durability required on the matched player item.",
+  "forced-max_player_item_durability": "Maximum remaining durability allowed on the matched player item.",
+  "forced-min_player_item_durability_percent": "Minimum remaining durability percent required on the matched player item.",
+  "forced-max_player_item_durability_percent": "Maximum remaining durability percent allowed on the matched player item.",
   "forced-chance": "Random chance from 0.0 to 1.0 before a matching event line is shown.",
   "forced-target_entity_types": "Optional retaliation target entity ids such as minecraft:player. Useful for retaliation_started entries.",
   "forced-min_recent_retaliations": "Optional minimum earlier villager_retaliation_started memories for this player near the villager's village.",
@@ -394,6 +402,10 @@ const FIELD_TOOLTIPS = {
   "notification-max_reputation": "Maximum exact reputation value allowed.",
   "notification-player_items": "Requires one matching player item or item tag before this notification can match.",
   "notification-player_item_slots": "Where to check player items. Defaults to hands when player_items is set.",
+  "notification-min_player_item_durability": "Minimum remaining durability required on the matched player item.",
+  "notification-max_player_item_durability": "Maximum remaining durability allowed on the matched player item.",
+  "notification-min_player_item_durability_percent": "Minimum remaining durability percent required on the matched player item.",
+  "notification-max_player_item_durability_percent": "Maximum remaining durability percent allowed on the matched player item.",
   "notification-weight": "Weighted selection among matching notifications. Missing weights usually default to 10.",
   "notification-chance": "Random chance gate from 0.0 to 1.0 before weighted selection.",
   "gifts-fileName": "Creates data/villagerretaliation/gifts/<file>.json. Use default only when replacing the built-in default gift table.",
@@ -5014,6 +5026,15 @@ function listField({ id, label, value = [], help = "", className = "" }) {
   }).replace("</div>", `${renderValueTags(id, tags)}</div>`);
 }
 
+function playerItemDurabilityFields(prefix, entry) {
+  return `
+    ${field({ id: `${prefix}-min_player_item_durability`, label: "Minimum item durability", value: entry.min_player_item_durability ?? entry.min_held_item_durability ?? "", type: "number", attrs: 'min="0" step="1"' })}
+    ${field({ id: `${prefix}-max_player_item_durability`, label: "Maximum item durability", value: entry.max_player_item_durability ?? entry.max_held_item_durability ?? "", type: "number", attrs: 'min="0" step="1"' })}
+    ${field({ id: `${prefix}-min_player_item_durability_percent`, label: "Minimum item durability %", value: entry.min_player_item_durability_percent ?? entry.min_held_item_durability_percent ?? "", type: "number", attrs: 'min="0" max="100" step="1"' })}
+    ${field({ id: `${prefix}-max_player_item_durability_percent`, label: "Maximum item durability %", value: entry.max_player_item_durability_percent ?? entry.max_held_item_durability_percent ?? "", type: "number", attrs: 'min="0" max="100" step="1"' })}
+  `;
+}
+
 function renderValueTags(fieldId, tags) {
   if (!tags.length) return "";
   return `
@@ -5291,6 +5312,7 @@ function renderDialogueForm(kind, entry) {
         ${reputationFilters}
         ${listField({ id: "dialogue-player_items", label: "Required player items or tags", value: entry.player_items, help: "Use #minecraft:swords for item tags." })}
         ${listField({ id: "dialogue-player_item_slots", label: "Item slots", value: entry.player_item_slots, help: CONSTANTS.itemSlots.join(", ") })}
+        ${playerItemDurabilityFields("dialogue", entry)}
         ${toggleGrid(CONSTANTS.optionFlags, entry, "option")}
       </div>
       ${formActions(action, "save-dialogue-entry", "clear-dialogue-form")}
@@ -5313,6 +5335,7 @@ function renderDialogueForm(kind, entry) {
         ${listField({ id: "dialogue-retaliation_target_entity_types", label: "Retaliation target entity types", value: entry.retaliation_target_entity_types ?? entry.retaliation_target_entities })}
         ${listField({ id: "dialogue-player_items", label: "Required player items or tags", value: entry.player_items })}
         ${listField({ id: "dialogue-player_item_slots", label: "Item slots", value: entry.player_item_slots })}
+        ${playerItemDurabilityFields("dialogue", entry)}
         ${listField({ id: "dialogue-story_structure", label: "Story structures", value: entry.story_structure ?? entry.story_structures })}
         ${listField({ id: "dialogue-story_biome", label: "Story biomes", value: entry.story_biome ?? entry.story_biomes })}
         ${listField({ id: "dialogue-recruitment_followup_scenarios", label: "Recruitment follow-up scenarios", value: entry.recruitment_followup_scenarios })}
@@ -5423,6 +5446,7 @@ function renderForcedDialogue() {
             ${villagerEquipmentToggles("forced", entry, "witness")}
             ${listField({ id: "forced-player_items", label: "Player items or tags", value: entry.player_items ?? entry.player_item ?? entry.player_item_tags ?? entry.player_item_tag, help: "Required for player_item_proximity. Use minecraft:diamond_sword or #minecraft:swords." })}
             ${listField({ id: "forced-player_item_slots", label: "Player item slots", value: entry.player_item_slots ?? entry.player_item_slot, help: CONSTANTS.itemSlots.join(", ") })}
+            ${playerItemDurabilityFields("forced", entry)}
             ${listField({ id: "forced-loot_tables", label: "Loot tables", value: entry.loot_tables ?? entry.loot_table, help: "Optional. Match generated containers from loot tables like minecraft:chests/village/village_armorer." })}
             ${listField({ id: "forced-target_entity_types", label: "Target entity types", value: entry.target_entity_types ?? entry.target_entity_type ?? entry.target_entities, help: "Optional. Useful for retaliation_started, for example minecraft:player." })}
             ${field({ id: "forced-min_recent_retaliations", label: "Min prior retaliations", value: entry.min_recent_retaliations ?? "", type: "number", attrs: 'min="0" step="1"' })}
@@ -5502,6 +5526,7 @@ function renderNotifications() {
             ${field({ id: "notification-max_reputation", label: "Maximum reputation", value: entry.max_reputation ?? "", type: "number" })}
             ${listField({ id: "notification-player_items", label: "Required player items or tags", value: entry.player_items })}
             ${listField({ id: "notification-player_item_slots", label: "Item slots", value: entry.player_item_slots })}
+            ${playerItemDurabilityFields("notification", entry)}
             ${field({ id: "notification-weight", label: "Weight", value: entry.weight ?? "", type: "number" })}
             ${field({ id: "notification-chance", label: "Chance", value: entry.chance ?? "", type: "number", attrs: 'min="0" max="1" step="0.01"' })}
             ${toggleGrid([], entry, "notification")}
@@ -5720,6 +5745,15 @@ function readNotificationTextFields() {
   return { text: lines[0] || "" };
 }
 
+function readPlayerItemDurability(prefix) {
+  return {
+    min_player_item_durability: parseInteger(readValue(`${prefix}-min_player_item_durability`)),
+    max_player_item_durability: parseInteger(readValue(`${prefix}-max_player_item_durability`)),
+    min_player_item_durability_percent: parseInteger(readValue(`${prefix}-min_player_item_durability_percent`)),
+    max_player_item_durability_percent: parseInteger(readValue(`${prefix}-max_player_item_durability_percent`))
+  };
+}
+
 function readBooleans(prefix, flags, base = {}) {
   const entry = { ...base };
   const adult = readValue(`${prefix}-show_for_adults`);
@@ -5780,7 +5814,8 @@ function readDialogueEntry() {
       min_reputation: parseInteger(readValue("dialogue-min_reputation")),
       max_reputation: parseInteger(readValue("dialogue-max_reputation")),
       player_items: readList("dialogue-player_items"),
-      player_item_slots: readList("dialogue-player_item_slots")
+      player_item_slots: readList("dialogue-player_item_slots"),
+      ...readPlayerItemDurability("dialogue")
     });
   } else if (kind === "lines") {
     const optionIds = readList("dialogue-option");
@@ -5804,6 +5839,7 @@ function readDialogueEntry() {
       retaliation_target_entity_types: readList("dialogue-retaliation_target_entity_types"),
       player_items: readList("dialogue-player_items"),
       player_item_slots: readList("dialogue-player_item_slots"),
+      ...readPlayerItemDurability("dialogue"),
       story_structures: storyStructures,
       story_biomes: storyBiomes,
       recruitment_followup_scenarios: readList("dialogue-recruitment_followup_scenarios"),
@@ -5900,6 +5936,7 @@ function readForcedDialogueEntry(options = {}) {
     ...readVillagerEquipment("forced", "witness"),
     player_items: readList("forced-player_items"),
     player_item_slots: readList("forced-player_item_slots"),
+    ...readPlayerItemDurability("forced"),
     loot_tables: readList("forced-loot_tables"),
     target_entity_types: readList("forced-target_entity_types"),
     min_recent_retaliations: parseInteger(readValue("forced-min_recent_retaliations")),
@@ -5951,6 +5988,7 @@ function readNotificationEntry() {
     max_reputation: parseInteger(readValue("notification-max_reputation")),
     player_items: readList("notification-player_items"),
     player_item_slots: readList("notification-player_item_slots"),
+    ...readPlayerItemDurability("notification"),
     weight: parseInteger(readValue("notification-weight")),
     chance: parseNumber(readValue("notification-chance"))
   });
@@ -7288,6 +7326,14 @@ function isNotificationEntry(entry) {
     "player_item_tags",
     "player_item_slot",
     "player_item_slots",
+    "min_player_item_durability",
+    "max_player_item_durability",
+    "min_player_item_durability_percent",
+    "max_player_item_durability_percent",
+    "min_held_item_durability",
+    "max_held_item_durability",
+    "min_held_item_durability_percent",
+    "max_held_item_durability_percent",
     "target_entity_type",
     "target_entity",
     "target_entity_types",

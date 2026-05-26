@@ -71,6 +71,10 @@ or an `entries` array:
 | `requires_witness_armed` | boolean | `false` | Requires the witnessing villager to have a usable weapon in either hand. `witness_armed` is also accepted as an alias. |
 | `player_items` | string or array | none | For `player_item_proximity`, requires the nearby player to carry one matching item or item tag. Prefix tags with `#`. Aliases: `player_item`, `player_item_tag`, `player_item_tags`. |
 | `player_item_slots` | string or array | `hands` when `player_items` is set | Slots to check for player item filters: `main_hand`, `off_hand`, `hands`, `armor`, `hotbar`, `inventory`, `equipment`, or `any`. Alias: `player_item_slot`. |
+| `min_player_item_durability` | integer | none | Minimum remaining durability on the matched player item. Alias: `min_held_item_durability`. |
+| `max_player_item_durability` | integer | none | Maximum remaining durability on the matched player item. Alias: `max_held_item_durability`. |
+| `min_player_item_durability_percent` | integer | none | Minimum remaining durability percent on the matched player item. Alias: `min_held_item_durability_percent`. |
+| `max_player_item_durability_percent` | integer | none | Maximum remaining durability percent on the matched player item. Alias: `max_held_item_durability_percent`. |
 | `requires_line_of_sight` | boolean | `true` | Requires the witness to see the player. Container triggers also require sight to the event block. |
 | `output` | object | `{ "mode": "forced_dialogue" }` | Delivery channel for the event line. See Output Fields below. |
 | `initiate_dialogue` | boolean | `true` | Opens the locked interaction screen when `output.mode` is `forced_dialogue`. If false, only the line is sent. |
@@ -146,6 +150,46 @@ Use `trigger: "player_item_proximity"` for held or worn item reactions when a pl
     "mode": "chat",
     "radius": 16
   }
+}
+```
+
+Durability filters can split item callouts into threshold-style branches. Use `priority` when ranges overlap, or use `max_player_item_durability` / `max_player_item_durability_percent` to make ranges exclusive:
+
+```json
+{
+  "entries": [
+    {
+      "id": "my_pack.netherite_sword_fresh",
+      "trigger": "player_item_proximity",
+      "priority": 0,
+      "player_items": ["minecraft:netherite_sword"],
+      "player_item_slots": ["main_hand"],
+      "min_player_item_durability": 500,
+      "line": "{held_item} still has {held_item_durability} durability. That blade is ready.",
+      "output": { "mode": "chat" }
+    },
+    {
+      "id": "my_pack.netherite_sword_usable",
+      "trigger": "player_item_proximity",
+      "priority": 1,
+      "player_items": ["minecraft:netherite_sword"],
+      "player_item_slots": ["main_hand"],
+      "min_player_item_durability": 200,
+      "max_player_item_durability": 499,
+      "line": "{held_item} has {held_item_durability} durability left. Mend it soon.",
+      "output": { "mode": "chat" }
+    },
+    {
+      "id": "my_pack.netherite_sword_low",
+      "trigger": "player_item_proximity",
+      "priority": 2,
+      "player_items": ["minecraft:netherite_sword"],
+      "player_item_slots": ["main_hand"],
+      "max_player_item_durability": 199,
+      "line": "{held_item} is nearly spent. Do not trust it with a long fight.",
+      "output": { "mode": "chat" }
+    }
+  ]
 }
 ```
 
@@ -338,7 +382,7 @@ Forced dialogue `line`, `lines`, option `response` / `responses`, `leave_option.
 {z}
 ```
 
-`{target}` / `{target_name}` is the retaliation target display name, `{target_kind}` is a lowercased entity description such as `player`, `{target_type}` is the entity id, `{container}` is the block display name, `{item}` / `{stolen_item}` is the representative removed item name or matched player item for `player_item_proximity`, `{item_stack}` / `{stolen_stack}` includes the representative item count, `{items}` / `{stolen_items}` lists all removed stacks, `{count}` / `{stolen_count}` is the representative removed stack count for `container_theft`, `{loot_table}` is the matched generated loot table id when one exists, `{player_item}` / `{held_item}` is the matched player item name for item-filtered entries, `{player_item_id}` / `{held_item_id}` is the matched item id, `{player_item_slot}` / `{held_item_slot}` is the matched slot, `{prior_container_thefts}` is the number of remembered earlier container thefts by this player near the witness's village, `{container_theft_offense}` is that count plus the current theft, `{prior_retaliations}` is the number of earlier remembered retaliation starts for the same player near this village, `{retaliation_offense}` is that count plus the current retaliation, `{payment_count}` and `{payment_items}` describe a `take_items` option, and `{x}`, `{y}`, `{z}` are the container or villager position.
+`{target}` / `{target_name}` is the retaliation target display name, `{target_kind}` is a lowercased entity description such as `player`, `{target_type}` is the entity id, `{container}` is the block display name, `{item}` / `{stolen_item}` is the representative removed item name or matched player item for `player_item_proximity`, `{item_stack}` / `{stolen_stack}` includes the representative item count, `{items}` / `{stolen_items}` lists all removed stacks, `{count}` / `{stolen_count}` is the representative removed stack count for `container_theft`, `{loot_table}` is the matched generated loot table id when one exists, `{player_item}` / `{held_item}` is the matched player item name for item-filtered entries, `{player_item_id}` / `{held_item_id}` is the matched item id, `{player_item_slot}` / `{held_item_slot}` is the matched slot, `{player_item_durability}` / `{held_item_durability}` is remaining durability, `{player_item_max_durability}` / `{held_item_max_durability}` is max durability, `{player_item_damage}` / `{held_item_damage}` is current damage, `{player_item_durability_percent}` / `{held_item_durability_percent}` is remaining durability percent, `{prior_container_thefts}` is the number of remembered earlier container thefts by this player near the witness's village, `{container_theft_offense}` is that count plus the current theft, `{prior_retaliations}` is the number of earlier remembered retaliation starts for the same player near this village, `{retaliation_offense}` is that count plus the current retaliation, `{payment_count}` and `{payment_items}` describe a `take_items` option, and `{x}`, `{y}`, `{z}` are the container or villager position.
 
 ## Example
 
