@@ -7,6 +7,8 @@ import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.combat.PacifyPaymentOffer;
 import com.jvn.villagerretaliation.combat.VillagerPacificationResult;
+import com.jvn.villagerretaliation.mood.VillagerMood;
+import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
 import com.jvn.villagerretaliation.util.VillagerInventoryItemRemoval;
@@ -74,8 +76,12 @@ public final class VillagerDialogueResources {
             "requires_villager_unarmed", "villager_unarmed", "requires_villager_armed", "villager_armed", "weight");
     private static final Set<String> LINE_KEYS = Set.of(
             "id", "request", "text", "lines", "option", "option_ids", "professions", "dispositions",
+            "mood", "moods", "min_mood_intensity",
             "requires_villager_unarmed", "villager_unarmed", "requires_villager_armed", "villager_armed",
             "reputation_level", "reputation_levels", "min_reputation", "max_reputation",
+            "requires_high_knowledge", "requires_high_guts", "requires_high_proficiency", "requires_high_kindness", "requires_high_charm",
+            "min_knowledge", "max_knowledge", "min_guts", "max_guts", "min_proficiency", "max_proficiency",
+            "min_kindness", "max_kindness", "min_charm", "max_charm",
             "weather", "times", "event_tags", "player_event_tags",
             "requires_container_theft_to_self", "requires_container_theft_from_other",
             "requires_retaliation_to_self", "requires_retaliation_from_other", "retaliation_target_entity_types", "retaliation_target_entities",
@@ -748,6 +754,19 @@ public final class VillagerDialogueResources {
             builder.dispositions(dispositions.toArray(DialogueDisposition[]::new));
         }
 
+        Set<VillagerMood> moods = EnumSet.noneOf(VillagerMood.class);
+        moods.addAll(readEnumSet(entry, "moods", VillagerMood.class));
+        readEnum(entry, "mood", VillagerMood.class).ifPresent(moods::add);
+        if (!moods.isEmpty()) {
+            builder.moods(moods.toArray(VillagerMood[]::new));
+            builder.minMoodIntensity(readInt(entry, "min_mood_intensity", 0));
+        }
+
+        SocialAttributeCondition socialAttributeCondition = readSocialAttributeCondition(entry);
+        if (!socialAttributeCondition.isEmpty()) {
+            builder.socialAttributeCondition(socialAttributeCondition);
+        }
+
         Set<DialogueContext.WeatherState> weatherStates = readEnumSet(entry, "weather", DialogueContext.WeatherState.class);
         if (!weatherStates.isEmpty()) {
             builder.weatherStates(weatherStates.toArray(DialogueContext.WeatherState[]::new));
@@ -1016,6 +1035,25 @@ public final class VillagerDialogueResources {
         return Set.copyOf(values);
     }
 
+    private static SocialAttributeCondition readSocialAttributeCondition(JsonObject entry) {
+        SocialAttributeCondition.Builder builder = SocialAttributeCondition.builder();
+        for (VillagerSocialAttribute attribute : VillagerSocialAttribute.values()) {
+            String key = attribute.serializedName();
+            if (readBoolean(entry, "requires_high_" + key)) {
+                builder.min(attribute, 60);
+            }
+            Integer minValue = readNullableInt(entry, "min_" + key);
+            if (minValue != null) {
+                builder.min(attribute, minValue);
+            }
+            Integer maxValue = readNullableInt(entry, "max_" + key);
+            if (maxValue != null) {
+                builder.max(attribute, maxValue);
+            }
+        }
+        return builder.build();
+    }
+
     private static <E extends Enum<E>> Optional<E> readEnum(JsonObject entry, String key, Class<E> enumClass) {
         return readEnum(readString(entry, key), enumClass);
     }
@@ -1074,6 +1112,11 @@ public final class VillagerDialogueResources {
     private static int readInt(JsonObject entry, String key, int fallback) {
         JsonElement element = entry.get(key);
         return element == null || !element.isJsonPrimitive() ? fallback : element.getAsInt();
+    }
+
+    private static Integer readNullableInt(JsonObject entry, String key) {
+        JsonElement element = entry.get(key);
+        return element == null || !element.isJsonPrimitive() ? null : element.getAsInt();
     }
 
     private static boolean readBoolean(JsonObject entry, String key) {

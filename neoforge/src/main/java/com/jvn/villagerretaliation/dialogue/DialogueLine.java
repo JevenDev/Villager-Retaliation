@@ -1,5 +1,8 @@
 package com.jvn.villagerretaliation.dialogue;
 
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.mood.VillagerMood;
+import com.jvn.villagerretaliation.profile.VillagerSocialAttributeBehavior;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
 import com.jvn.villagerretaliation.util.VillagerPlayerItemCondition;
@@ -21,6 +24,9 @@ public record DialogueLine(
         boolean showForBabies,
         Set<VillagerProfession> professions,
         Set<DialogueDisposition> dispositions,
+        Set<VillagerMood> moods,
+        int minMoodIntensity,
+        SocialAttributeCondition socialAttributeCondition,
         Set<DialogueContext.WeatherState> weatherStates,
         Set<DialogueContext.TimeOfDay> timeOfDays,
         Set<VillageEventMemory.EventTag> eventTags,
@@ -162,6 +168,20 @@ public record DialogueLine(
         }
         if (!this.dispositions.isEmpty() && !this.dispositions.contains(disposition)) {
             return false;
+        }
+        if (!this.moods.isEmpty()) {
+            if (!VillagerRetaliationConfig.ENABLE_VILLAGER_MOODS.get() || !this.moods.contains(context.primaryMood())) {
+                return false;
+            }
+            if (this.minMoodIntensity > 0 && !context.hasMoodIntensityAtLeast(this.minMoodIntensity)) {
+                return false;
+            }
+        }
+        if (!this.socialAttributeCondition.isEmpty()) {
+            if (!VillagerSocialAttributeBehavior.enabled(VillagerRetaliationConfig.ENABLE_SOCIAL_ATTRIBUTE_DIALOGUE_EFFECTS)
+                    || !this.socialAttributeCondition.matches(context)) {
+                return false;
+            }
         }
         if (!this.reputationCondition.matches(context.reputation(), context.reputationLevel())) {
             return false;
@@ -331,6 +351,12 @@ public record DialogueLine(
         if (!this.dispositions.isEmpty()) {
             score += 2;
         }
+        if (!this.moods.isEmpty()) {
+            score += 4;
+        }
+        if (!this.socialAttributeCondition.isEmpty()) {
+            score += 4;
+        }
         if (!this.reputationCondition.isEmpty()) {
             score += 3;
         }
@@ -428,6 +454,9 @@ public record DialogueLine(
         private boolean showForBabies = true;
         private final Set<VillagerProfession> professions = java.util.HashSet.newHashSet(1);
         private final Set<DialogueDisposition> dispositions = EnumSet.noneOf(DialogueDisposition.class);
+        private final Set<VillagerMood> moods = EnumSet.noneOf(VillagerMood.class);
+        private int minMoodIntensity;
+        private SocialAttributeCondition socialAttributeCondition = SocialAttributeCondition.EMPTY;
         private final Set<DialogueContext.WeatherState> weatherStates = EnumSet.noneOf(DialogueContext.WeatherState.class);
         private final Set<DialogueContext.TimeOfDay> timeOfDays = EnumSet.noneOf(DialogueContext.TimeOfDay.class);
         private final Set<VillageEventMemory.EventTag> eventTags = EnumSet.noneOf(VillageEventMemory.EventTag.class);
@@ -515,6 +544,23 @@ public record DialogueLine(
 
         public Builder dispositions(DialogueDisposition... dispositions) {
             this.dispositions.addAll(java.util.List.of(dispositions));
+            return this;
+        }
+
+        public Builder moods(VillagerMood... moods) {
+            this.moods.addAll(java.util.List.of(moods));
+            return this;
+        }
+
+        public Builder minMoodIntensity(int minMoodIntensity) {
+            this.minMoodIntensity = Math.clamp(minMoodIntensity, 0, 100);
+            return this;
+        }
+
+        public Builder socialAttributeCondition(SocialAttributeCondition socialAttributeCondition) {
+            this.socialAttributeCondition = socialAttributeCondition == null
+                    ? SocialAttributeCondition.EMPTY
+                    : socialAttributeCondition;
             return this;
         }
 
@@ -810,6 +856,9 @@ public record DialogueLine(
                     this.showForBabies,
                     Set.copyOf(this.professions),
                     Set.copyOf(this.dispositions),
+                    Set.copyOf(this.moods),
+                    this.minMoodIntensity,
+                    this.socialAttributeCondition,
                     Set.copyOf(this.weatherStates),
                     Set.copyOf(this.timeOfDays),
                     Set.copyOf(this.eventTags),

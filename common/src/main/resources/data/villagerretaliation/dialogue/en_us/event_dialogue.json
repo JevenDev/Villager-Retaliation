@@ -143,6 +143,83 @@
         "That would hurt more from someone we trusted."
       ],
       "weight": 34
+    },
+    {
+      "id": "attribute_knowledge_event_read",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "requires_high_knowledge": true,
+      "event_tags": [
+        "raid",
+        "night_attack",
+        "village_fire",
+        "thunderstorm"
+      ],
+      "lines": [
+        "The danger was not random. It came from a direction, at a time, and that means we can prepare better next time.",
+        "I am trying to sort what happened into causes instead of panic. Causes can be answered.",
+        "If we remember the pattern, the next alarm can be shorter."
+      ],
+      "weight": 42
+    },
+    {
+      "id": "attribute_guts_protective_greeting",
+      "request": "greeting",
+      "show_for_babies": false,
+      "mood": "protective",
+      "min_mood_intensity": 25,
+      "requires_high_guts": true,
+      "lines": [
+        "I am watching the roads today. Talk, but keep one eye open.",
+        "If trouble comes back, I would rather meet it standing.",
+        "The village is still here. That means we still have something worth guarding."
+      ],
+      "weight": 40
+    },
+    {
+      "id": "attribute_kindness_grateful_question",
+      "request": "question",
+      "show_for_babies": false,
+      "mood": "grateful",
+      "min_mood_intensity": 25,
+      "requires_high_kindness": true,
+      "lines": [
+        "Kindness lands loudly when the world has been noisy. I noticed yours.",
+        "Some help is practical. Some help reminds people they matter. Yours managed both.",
+        "I am still carrying that kindness with me. Light things can do heavy work."
+      ],
+      "weight": 38
+    },
+    {
+      "id": "attribute_charm_joke_return",
+      "request": "joke",
+      "show_for_babies": false,
+      "requires_high_charm": true,
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral"
+      ],
+      "lines": [
+        "That one nearly survived the landing. Try again and I may give it a proper funeral.",
+        "A brave attempt. Comedy is just archery with more witnesses.",
+        "You aimed for laughter and hit the fence. Still, I admire the confidence."
+      ],
+      "weight": 34
+    },
+    {
+      "id": "attribute_proficiency_proud_survival",
+      "request": "combat_survival_report",
+      "show_for_babies": false,
+      "mood": "proud",
+      "min_mood_intensity": 25,
+      "requires_high_proficiency": true,
+      "lines": [
+        "I came through with steady hands. Fear is easier to carry when your tools answer properly.",
+        "I was scared, yes, but I knew what to do with my hands. That matters.",
+        "A clean grip, a clear path, and enough nerve to use both. I will remember that."
+      ],
+      "weight": 44
     }
   ]
 }
