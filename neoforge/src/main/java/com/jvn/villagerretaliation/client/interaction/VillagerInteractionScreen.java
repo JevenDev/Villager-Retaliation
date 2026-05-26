@@ -66,7 +66,7 @@ public class VillagerInteractionScreen extends Screen {
     private static final int SCREEN_BOTTOM_MARGIN = 48;
     private static final int VEIL_TOP_DITHER_HEIGHT = 64;
     private static final int SKILLS_RIGHT_MARGIN = 36;
-    private static final int SKILLS_RIGHT_VEIL_PADDING = 22;
+    private static final int SKILLS_RIGHT_VEIL_CONTENT_PADDING = 10;
     private static final int SKILLS_RIGHT_VEIL_FADE_WIDTH = 64;
     private static final int CHAT_EDGE_MARGIN = 4;
     private static final int CHAT_TOP_MARGIN = 12;
@@ -1626,7 +1626,9 @@ public class VillagerInteractionScreen extends Screen {
         int panelHeight = skillsPanelHeight();
         int minTop = 32;
         int maxTop = Math.max(minTop, this.height - panelHeight - 32);
-        return Mth.clamp((this.height - panelHeight) / 2, minTop, maxTop);
+        int centeredTop = (this.height - panelHeight) / 2;
+        int aboveInfoTop = interactionVeilTop() - panelHeight - 14;
+        return Mth.clamp(Math.min(centeredTop, aboveInfoTop), minTop, maxTop);
     }
 
     private int skillsPanelLeft() {
@@ -1637,15 +1639,15 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     private int skillsRightVeilLeft() {
-        return Math.max(0, skillsPanelLeft() - SKILLS_RIGHT_VEIL_PADDING);
+        return Math.max(0, skillsPanelLeft() - SKILLS_RIGHT_VEIL_FADE_WIDTH - SKILLS_RIGHT_VEIL_CONTENT_PADDING);
     }
 
     private int skillsRightVeilTop() {
-        return Math.max(0, skillsPanelTop() - SKILLS_RIGHT_VEIL_PADDING);
+        return Math.max(0, skillsPanelTop() - VEIL_TOP_DITHER_HEIGHT - SKILLS_RIGHT_VEIL_CONTENT_PADDING);
     }
 
     private int skillsRightVeilBottom() {
-        return Math.min(this.height, skillsPanelTop() + skillsPanelHeight() + SKILLS_RIGHT_VEIL_PADDING);
+        return Math.min(this.height, skillsPanelTop() + skillsPanelHeight() + VEIL_TOP_DITHER_HEIGHT + SKILLS_RIGHT_VEIL_CONTENT_PADDING);
     }
 
     private int skillsPanelHeight() {
