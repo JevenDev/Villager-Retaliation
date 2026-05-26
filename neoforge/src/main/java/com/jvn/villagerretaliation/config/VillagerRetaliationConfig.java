@@ -44,6 +44,7 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.BooleanValue ENABLE_HIGH_REPUTATION_GIFTS;
     public static final ModConfigSpec.BooleanValue ENABLE_GIFT_KEEPSAKES;
     public static final ModConfigSpec.BooleanValue ENABLE_VILLAGER_SOCIAL_GRAPH;
+    public static final ModConfigSpec.BooleanValue ENABLE_VILLAGER_MOODS;
     public static final ModConfigSpec.BooleanValue ENABLE_FAMILY_BREEDING_RULES;
     public static final ModConfigSpec.BooleanValue ENABLE_PARENT_REPUTATION_INHERITANCE;
 
@@ -372,6 +373,9 @@ public final class VillagerRetaliationConfig {
         ENABLE_VILLAGER_SOCIAL_GRAPH = BUILDER.comment("Tracks villager family and relationship profiles used by the interaction screen and dialogue conditions.")
                 .translation("villagerretaliation.configuration.social.enableVillagerSocialGraph")
                 .define("enableVillagerSocialGraph", true);
+        ENABLE_VILLAGER_MOODS = BUILDER.comment("Tracks temporary event-driven villager moods used by dialogue and the interaction screen.")
+                .translation("villagerretaliation.configuration.social.enableVillagerMoods")
+                .define("enableVillagerMoods", true);
         ENABLE_FAMILY_BREEDING_RULES = BUILDER.comment("Prevents villager breeding pairs that violate tracked family relationship rules.")
                 .translation("villagerretaliation.configuration.social.enableFamilyBreedingRules")
                 .define("enableFamilyBreedingRules", true);

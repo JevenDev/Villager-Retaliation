@@ -13,6 +13,7 @@ import com.jvn.villagerretaliation.network.VillagerInventoryRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerProfileRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerRecruitRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerTradeRequestPayload;
+import com.jvn.villagerretaliation.mood.VillagerMood;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttributeRank;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
@@ -104,6 +105,7 @@ public class VillagerInteractionScreen extends Screen {
     private int reputation;
     private VillagerReputationLevel reputationLevel;
     private DialogueDisposition mood;
+    private VillagerMood primaryMood;
     private boolean followingPlayer;
     private final boolean forcedDialogue;
     private final List<DialogueOption> options = new ArrayList<>();
@@ -135,6 +137,7 @@ public class VillagerInteractionScreen extends Screen {
             int reputation,
             VillagerReputationLevel reputationLevel,
             DialogueDisposition mood,
+            VillagerMood primaryMood,
             boolean followingPlayer,
             boolean forcedDialogue,
             boolean forceCameraTowardsVillager,
@@ -152,6 +155,7 @@ public class VillagerInteractionScreen extends Screen {
         this.reputation = reputation;
         this.reputationLevel = reputationLevel;
         this.mood = mood;
+        this.primaryMood = primaryMood == null ? VillagerMood.NEUTRAL : primaryMood;
         this.followingPlayer = followingPlayer;
         this.forcedDialogue = forcedDialogue;
         this.dialogueOptions.addAll(dialogueOptions);
@@ -193,6 +197,7 @@ public class VillagerInteractionScreen extends Screen {
             int reputation,
             VillagerReputationLevel reputationLevel,
             DialogueDisposition mood,
+            VillagerMood primaryMood,
             boolean forceCameraTowardsVillager,
             List<DialogueOptionDefinition> dialogueOptions,
             List<String> knownLikedGiftNames,
@@ -200,6 +205,7 @@ public class VillagerInteractionScreen extends Screen {
         this.reputation = reputation;
         this.reputationLevel = reputationLevel;
         this.mood = mood;
+        this.primaryMood = primaryMood == null ? VillagerMood.NEUTRAL : primaryMood;
         ClientVillagerConversationState.setForceCameraTowardsVillager(forceCameraTowardsVillager);
         this.dialogueOptions.clear();
         this.dialogueOptions.addAll(dialogueOptions);
@@ -1083,7 +1089,7 @@ public class VillagerInteractionScreen extends Screen {
         drawRightAlignedInfo(graphics, this.villagerName, infoBaseY, INFO_VALUE_COLOR, dividerX);
         drawRightAlignedInfo(graphics, this.professionName, infoBaseY + infoLineGap, INFO_SECONDARY_COLOR, dividerX);
         drawRightAlignedInfo(graphics, genderText(), infoBaseY + infoLineGap * 2, INFO_SECONDARY_COLOR, dividerX);
-        drawRightAlignedInfo(graphics, moodText(), infoBaseY + infoLineGap * 3, moodColor(this.mood), dividerX);
+        drawRightAlignedInfo(graphics, moodText(), infoBaseY + infoLineGap * 3, moodColor(this.primaryMood), dividerX);
         drawRightAlignedInfo(graphics, reputationText(), infoBaseY + infoLineGap * 4, INFO_LABEL_COLOR, dividerX);
         renderFamilyButton(graphics, mouseX, mouseY, infoBaseY + infoLineGap * 5, dividerX);
         renderRelationshipButton(graphics, mouseX, mouseY, infoBaseY + infoLineGap * 6, dividerX);
@@ -1485,7 +1491,7 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     private String moodText() {
-        return translate("info.mood", moodName(this.mood));
+        return translate("info.mood", moodName(this.primaryMood));
     }
 
     private String reputationText() {
@@ -1698,11 +1704,11 @@ public class VillagerInteractionScreen extends Screen {
         }
     }
 
-    private static int moodColor(DialogueDisposition mood) {
+    private static int moodColor(VillagerMood mood) {
         return switch (mood) {
-            case RESPECTFUL, FRIENDLY -> 0xD08BE0A9;
-            case CAUTIOUS -> 0xD0E6D58A;
-            case RUDE, HOSTILE, FEARFUL -> 0xD0E69A8A;
+            case GRATEFUL, CONTENT, HOPEFUL, PROUD -> 0xD08BE0A9;
+            case SUSPICIOUS, STRESSED, LONELY -> 0xD0E6D58A;
+            case AFRAID, ANGRY, GRIEVING, PROTECTIVE -> 0xD0E69A8A;
             case NEUTRAL -> 0xCFEAE6DC;
         };
     }
@@ -1774,11 +1780,11 @@ public class VillagerInteractionScreen extends Screen {
         return I18n.exists(rank.translationKey()) ? I18n.get(rank.translationKey()) : rank.serializedName();
     }
 
-    private static String moodName(DialogueDisposition mood) {
+    private static String moodName(VillagerMood mood) {
         if (mood == null) {
             return translate("mood.neutral");
         }
-        return translate("mood." + mood.name().toLowerCase(Locale.ROOT));
+        return translate("mood." + mood.serializedName());
     }
 
     private static String localizedGenderName(String genderName) {

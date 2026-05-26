@@ -17,6 +17,7 @@ import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.dialogue.VillagerStoryHintService;
 import com.jvn.villagerretaliation.dialogue.GiftAdviceKind;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
+import com.jvn.villagerretaliation.mood.VillagerMoodService;
 import com.jvn.villagerretaliation.network.OpenVillagerInteractionPayload;
 import com.jvn.villagerretaliation.network.VillagerConversationEndedPayload;
 import com.jvn.villagerretaliation.network.VillagerDialogueResponsePayload;
@@ -159,6 +160,7 @@ public final class VillagerInteractionService {
                 reputation.value(),
                 reputation.level(),
                 mood,
+                dialogueContext.primaryMood(),
                 VillagerRecruitmentService.isFollowing(villager, player),
                 false,
                 forceCameraTowardsVillager,
@@ -220,6 +222,7 @@ public final class VillagerInteractionService {
                 reputation.value(),
                 reputation.level(),
                 VillagerDialogueService.moodFor(context),
+                context.primaryMood(),
                 VillagerRecruitmentService.isFollowing(villager, player),
                 true,
                 forceCameraTowardsVillager,
@@ -666,6 +669,7 @@ public final class VillagerInteractionService {
                 reputation,
                 reputationLevel,
                 VillagerProfileManager.getOrCreateProfile(level, villager),
+                VillagerMoodService.mood(level, villager),
                 interactionState.firstConversation(),
                 interactionState.firstVillageInteraction(),
                 weatherState(level, villager),
@@ -736,6 +740,7 @@ public final class VillagerInteractionService {
                 reputation.value(),
                 reputation.level(),
                 VillagerDialogueService.moodFor(context),
+                context.primaryMood(),
                 forceCameraTowardsVillager,
                 dialogueOptions,
                 giftKnowledge.likedGiftNames(),
@@ -770,6 +775,7 @@ public final class VillagerInteractionService {
                 reputation.value(),
                 reputation.level(),
                 mood,
+                context.primaryMood(),
                 forceCameraTowardsVillager,
                 dialogueOptions,
                 giftKnowledge.likedGiftNames(),

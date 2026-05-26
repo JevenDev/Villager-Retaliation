@@ -4,6 +4,8 @@ import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.profile.VillagerProfile;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttributes;
+import com.jvn.villagerretaliation.mood.VillagerMood;
+import com.jvn.villagerretaliation.mood.VillagerMoodState;
 import com.jvn.villagerretaliation.social.VillagerFamilyTreeSnapshot;
 import com.jvn.villagerretaliation.social.VillagerRelationshipSnapshot;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
@@ -25,6 +27,7 @@ public record DialogueContext(
         int reputation,
         VillagerReputationLevel reputationLevel,
         VillagerProfile profile,
+        VillagerMoodState moodState,
         boolean firstConversation,
         boolean firstVillageInteraction,
         WeatherState weather,
@@ -70,6 +73,22 @@ public record DialogueContext(
 
     public boolean hasSocialAttributeAtLeast(VillagerSocialAttribute attribute, int value) {
         return socialAttributeValue(attribute) >= value;
+    }
+
+    public VillagerMood primaryMood() {
+        return this.moodState == null ? VillagerMood.NEUTRAL : this.moodState.primaryMood();
+    }
+
+    public int moodIntensity() {
+        return this.moodState == null ? 0 : this.moodState.intensity();
+    }
+
+    public boolean hasMood(VillagerMood mood) {
+        return this.primaryMood() == mood;
+    }
+
+    public boolean hasMoodIntensityAtLeast(int value) {
+        return moodIntensity() >= value;
     }
 
     public boolean hasHighKnowledge() {

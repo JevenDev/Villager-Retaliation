@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.network;
 import com.jvn.villagerretaliation.dialogue.DialogueDisposition;
 import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
+import com.jvn.villagerretaliation.mood.VillagerMood;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
 import com.jvn.villagerretaliation.util.VillagerPlayerItemCondition;
@@ -19,6 +20,7 @@ public record VillagerDialogueResponsePayload(
         int reputation,
         VillagerReputationLevel reputationLevel,
         DialogueDisposition mood,
+        VillagerMood primaryMood,
         boolean forceCameraTowardsVillager,
         List<DialogueOptionDefinition> dialogueOptions,
         List<String> knownLikedGiftNames,
@@ -33,6 +35,7 @@ public record VillagerDialogueResponsePayload(
         buffer.writeVarInt(payload.reputation());
         buffer.writeEnum(payload.reputationLevel());
         buffer.writeEnum(payload.mood());
+        buffer.writeEnum(payload.primaryMood());
         buffer.writeBoolean(payload.forceCameraTowardsVillager());
         writeDialogueOptions(buffer, payload.dialogueOptions());
         writeStringList(buffer, payload.knownLikedGiftNames());
@@ -45,6 +48,7 @@ public record VillagerDialogueResponsePayload(
                 buffer.readVarInt(),
                 buffer.readEnum(VillagerReputationLevel.class),
                 buffer.readEnum(DialogueDisposition.class),
+                buffer.readEnum(VillagerMood.class),
                 buffer.readBoolean(),
                 readDialogueOptions(buffer),
                 readStringList(buffer),

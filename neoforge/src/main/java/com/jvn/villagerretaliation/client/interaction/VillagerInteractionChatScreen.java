@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.client.interaction;
 
 import com.jvn.villagerretaliation.dialogue.DialogueDisposition;
 import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
+import com.jvn.villagerretaliation.mood.VillagerMood;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import java.util.List;
 import net.minecraft.client.Minecraft;
@@ -66,6 +67,7 @@ final class VillagerInteractionChatScreen extends ChatScreen {
             int reputation,
             VillagerReputationLevel reputationLevel,
             DialogueDisposition mood,
+            VillagerMood primaryMood,
             boolean forceCameraTowardsVillager,
             List<DialogueOptionDefinition> dialogueOptions,
             List<String> knownLikedGiftNames,
@@ -74,6 +76,7 @@ final class VillagerInteractionChatScreen extends ChatScreen {
                 reputation,
                 reputationLevel,
                 mood,
+                primaryMood,
                 forceCameraTowardsVillager,
                 dialogueOptions,
                 knownLikedGiftNames,

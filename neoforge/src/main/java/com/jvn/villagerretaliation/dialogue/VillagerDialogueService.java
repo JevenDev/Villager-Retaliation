@@ -1,6 +1,8 @@
 package com.jvn.villagerretaliation.dialogue;
 
 import com.jvn.villagerretaliation.combat.PacifyPaymentOffer;
+import com.jvn.villagerretaliation.mood.VillagerMood;
+import com.jvn.villagerretaliation.mood.VillagerMoodState;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.combat.VillagerPacificationResult;
 import com.jvn.toucanlib.util.ToucanRandom;
@@ -209,7 +211,34 @@ public final class VillagerDialogueService {
         if (context.weather() == DialogueContext.WeatherState.THUNDER) {
             moodRank--;
         }
+        int explicitMoodAdjustment = explicitMoodRankAdjustment(context);
+        if (explicitMoodAdjustment != 0) {
+            moodRank += explicitMoodAdjustment;
+            maxDrift = Math.max(maxDrift, Math.abs(explicitMoodAdjustment));
+        }
         return clamp(moodRank, baselineRank - maxDrift, baselineRank + maxDrift);
+    }
+
+    private static int explicitMoodRankAdjustment(DialogueContext context) {
+        VillagerMoodState moodState = context.moodState();
+        if (moodState == null || moodState.isNeutral()) {
+            return 0;
+        }
+
+        int step = moodState.intensity() >= 70 ? 2 : moodState.intensity() >= 25 ? 1 : 0;
+        if (step == 0) {
+            return 0;
+        }
+        boolean playerCausedMood = context.player().getUUID().equals(moodState.sourcePlayerId());
+        VillagerMood mood = moodState.primaryMood();
+        return switch (mood) {
+            case GRATEFUL -> playerCausedMood || moodState.sourcePlayerId() == null ? step : 0;
+            case CONTENT, HOPEFUL, PROUD -> Math.min(step, 1);
+            case AFRAID, ANGRY -> -step;
+            case SUSPICIOUS, GRIEVING, STRESSED, LONELY -> -Math.min(step, 1);
+            case PROTECTIVE -> playerCausedMood ? -step : 0;
+            case NEUTRAL -> 0;
+        };
     }
 
     private static int moodRank(DialogueDisposition disposition) {
