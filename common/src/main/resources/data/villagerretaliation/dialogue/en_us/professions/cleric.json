@@ -383,8 +383,8 @@
       "weight": 34,
       "lines": [
         "{theft_witness} says you took {stolen_stack}. Confession is cleaner when it arrives before proof.",
-        "Another way to say it: {theft_witness} says you took {stolen_stack}. Confession is cleaner when it arrives before proof.",
-        "The meaning has not changed for {theft_witness} {stolen_stack}; {theft_witness} says you took {stolen_stack}. Confession is cleaner when it arrives before proof."
+        "{theft_witness} brought word of {stolen_stack}. Better to make it right before the village asks twice.",
+        "There is still time to answer {theft_witness_possessive} story about {stolen_stack} with something cleaner than denial."
       ]
     },
     {
