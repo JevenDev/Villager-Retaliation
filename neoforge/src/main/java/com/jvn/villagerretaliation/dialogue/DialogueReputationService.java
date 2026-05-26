@@ -1,6 +1,8 @@
 package com.jvn.villagerretaliation.dialogue;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
+import com.jvn.villagerretaliation.profile.VillagerSocialAttributeBehavior;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import net.minecraft.world.entity.npc.VillagerProfession;
@@ -27,6 +29,7 @@ public final class DialogueReputationService {
         }
 
         PlannedEffect plannedEffect = planEffect(context, requestType, interactionState);
+        plannedEffect = applySocialAttributeRecovery(context, requestType, plannedEffect);
         if (plannedEffect.delta() == 0) {
             return DialogueReputationEffect.none(requestType);
         }
@@ -146,6 +149,67 @@ public final class DialogueReputationService {
             case JOKE -> planJoke(context);
             case INSULT -> planInsult(context, interactionState.firstConversation());
         };
+    }
+
+    private static PlannedEffect applySocialAttributeRecovery(
+            DialogueContext context,
+            DialogueRequestType requestType,
+            PlannedEffect plannedEffect) {
+        if (plannedEffect.delta() == 0
+                || !VillagerSocialAttributeBehavior.enabled(VillagerRetaliationConfig.ENABLE_SOCIAL_ATTRIBUTE_REPUTATION_EFFECTS)) {
+            return plannedEffect;
+        }
+
+        int delta = plannedEffect.delta();
+        if (delta > 0) {
+            if (requestType == DialogueRequestType.APOLOGY) {
+                delta += VillagerSocialAttributeBehavior.positiveBonus(
+                        context.level(),
+                        context.villager(),
+                        VillagerSocialAttribute.KINDNESS,
+                        3,
+                        VillagerRetaliationConfig.ENABLE_SOCIAL_ATTRIBUTE_REPUTATION_EFFECTS
+                );
+                delta += VillagerSocialAttributeBehavior.positiveBonus(
+                        context.level(),
+                        context.villager(),
+                        VillagerSocialAttribute.CHARM,
+                        1,
+                        VillagerRetaliationConfig.ENABLE_SOCIAL_ATTRIBUTE_REPUTATION_EFFECTS
+                );
+            } else if (requestType == DialogueRequestType.GREETING
+                    || requestType == DialogueRequestType.QUESTION
+                    || requestType == DialogueRequestType.STORY
+                    || requestType == DialogueRequestType.JOKE) {
+                delta += VillagerSocialAttributeBehavior.positiveBonus(
+                        context.level(),
+                        context.villager(),
+                        VillagerSocialAttribute.CHARM,
+                        1,
+                        VillagerRetaliationConfig.ENABLE_SOCIAL_ATTRIBUTE_REPUTATION_EFFECTS
+                );
+            } else if (requestType == DialogueRequestType.COMBAT_SURVIVAL_REPORT
+                    || requestType == DialogueRequestType.VILLAGE_DEFENSE_REPORT) {
+                delta += VillagerSocialAttributeBehavior.positiveBonus(
+                        context.level(),
+                        context.villager(),
+                        VillagerSocialAttribute.KINDNESS,
+                        1,
+                        VillagerRetaliationConfig.ENABLE_SOCIAL_ATTRIBUTE_REPUTATION_EFFECTS
+                );
+            }
+        } else if (requestType != DialogueRequestType.INSULT
+                && (plannedEffect.reason().startsWith("repeated_") || requestType == DialogueRequestType.JOKE)) {
+            int softening = VillagerSocialAttributeBehavior.positiveBonus(
+                    context.level(),
+                    context.villager(),
+                    VillagerSocialAttribute.KINDNESS,
+                    1,
+                    VillagerRetaliationConfig.ENABLE_SOCIAL_ATTRIBUTE_REPUTATION_EFFECTS
+            );
+            delta = Math.min(-1, delta + softening);
+        }
+        return plannedEffect.withDelta(delta);
     }
 
     private static PlannedEffect planGreeting(DialogueContext context, boolean firstConversation) {
@@ -321,6 +385,10 @@ public final class DialogueReputationService {
     ) {
         static PlannedEffect none() {
             return new PlannedEffect(0, "none", DialogueReputationEffect.CooldownCategory.NONE, false, null);
+        }
+
+        PlannedEffect withDelta(int delta) {
+            return new PlannedEffect(delta, this.reason, this.cooldownCategory, this.badFirstImpression, this.responseOverride);
         }
     }
 }

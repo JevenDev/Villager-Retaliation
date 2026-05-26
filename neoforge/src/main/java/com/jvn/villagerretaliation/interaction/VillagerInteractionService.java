@@ -28,6 +28,8 @@ import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.notification.VillagerNotifications;
 import com.jvn.villagerretaliation.profile.VillagerProfile;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
+import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
+import com.jvn.villagerretaliation.profile.VillagerSocialAttributeBehavior;
 import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
 import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
@@ -412,7 +414,7 @@ public final class VillagerInteractionService {
         player.getInventory().setChanged();
         VillagerProfession profession = villager.getVillagerData().getProfession();
         VillagerGiftPreferences.GiftPreference giftPreference = VillagerGiftPreferences.evaluate(level, villager, giftedStack);
-        int reputationValue = giftPreference.reputationValue();
+        int reputationValue = adjustedGiftReputation(level, villager, giftPreference);
         VillagerGiftKnowledgeService.rememberGiftResult(level, player, profession, giftedStack, giftPreference);
         Boolean giftAdviceLikedResult = giftAdviceLikedResult(giftPreference.reaction());
         if (giftAdviceLikedResult != null) {
@@ -526,6 +528,45 @@ public final class VillagerInteractionService {
             case DISLIKED, HATED -> false;
             case NEUTRAL -> null;
         };
+    }
+
+    private static int adjustedGiftReputation(
+            ServerLevel level,
+            Villager villager,
+            VillagerGiftPreferences.GiftPreference giftPreference) {
+        int reputationValue = giftPreference.reputationValue();
+        if (!VillagerSocialAttributeBehavior.enabled(VillagerRetaliationConfig.ENABLE_SOCIAL_ATTRIBUTE_REPUTATION_EFFECTS)) {
+            return reputationValue;
+        }
+        if (reputationValue > 0) {
+            int kindnessBonus = VillagerSocialAttributeBehavior.positiveBonus(
+                    level,
+                    villager,
+                    VillagerSocialAttribute.KINDNESS,
+                    giftPreference.reaction() == VillagerGiftPreferences.GiftReaction.LOVED ? 3 : 2,
+                    VillagerRetaliationConfig.ENABLE_SOCIAL_ATTRIBUTE_REPUTATION_EFFECTS
+            );
+            int charmBonus = VillagerSocialAttributeBehavior.positiveBonus(
+                    level,
+                    villager,
+                    VillagerSocialAttribute.CHARM,
+                    1,
+                    VillagerRetaliationConfig.ENABLE_SOCIAL_ATTRIBUTE_REPUTATION_EFFECTS
+            );
+            return reputationValue + kindnessBonus + charmBonus;
+        }
+        if (reputationValue < 0) {
+            int maxSoftening = giftPreference.reaction() == VillagerGiftPreferences.GiftReaction.HATED ? 1 : 2;
+            int kindnessSoftening = VillagerSocialAttributeBehavior.positiveBonus(
+                    level,
+                    villager,
+                    VillagerSocialAttribute.KINDNESS,
+                    maxSoftening,
+                    VillagerRetaliationConfig.ENABLE_SOCIAL_ATTRIBUTE_REPUTATION_EFFECTS
+            );
+            return Math.min(-1, reputationValue + kindnessSoftening);
+        }
+        return reputationValue;
     }
 
     private static void rememberGearGift(ServerLevel level, Villager villager, ServerPlayer player, ItemStack giftedStack) {
