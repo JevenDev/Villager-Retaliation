@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.0.0-beta.12 - Unreleased
+
+### Added
+
+- Added persistent villager social profiles with generated Knowledge, Guts, Proficiency, Kindness, and Charm attributes.
+- Added profession-biased profile generation, stable per-villager profile seeds, saved profile data, and parent-profile blending hooks for inherited villager traits.
+- Added a Profile page to the villager interaction screen with a social-attribute chart, rank labels, localized attribute descriptions, and hover tooltips that show exact scores.
+- Added profile request/sync networking and a client-side profile cache so interaction screens can display server-generated villager profiles.
+- Added debug commands for villager and wandering trader profiles: get, reroll, set attribute, and export.
+- Added villager profile data to dialogue context helpers so dialogue logic can react to high social attributes.
+- Added temporary villager mood states for Neutral, Content, Grateful, Afraid, Angry, Suspicious, Grieving, Protective, Hopeful, Stressed, Proud, and Lonely.
+- Added beta.12 dialogue filters for temporary moods and social attributes: `mood`, `moods`, `min_mood_intensity`, `requires_high_*`, and exact `min_*` / `max_*` attribute ranges.
+- Added beta.12 datapack builder and website wiki support while keeping the beta.11 wiki snapshot separate for beta.11 pack authors.
+
+### Changed
+
+- Promoted the development version from `1.0.0-beta.11` to `1.0.0-beta.12`.
+- Social Attributes now lightly affect mood transitions, reputation recovery, retaliation decisions, and gossip spread when the matching config toggles are enabled.
+- The datapack builder Convert flow can retarget beta.11 packs to beta.12 without renaming or removing existing beta.11 JSON fields.
+
 ## 1.0.0-beta.11-hotfix.1 - 2026-05-26
 
 ### Changed
