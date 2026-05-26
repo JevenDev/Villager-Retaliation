@@ -1721,11 +1721,11 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     private static String localizedAttribute(VillagerSocialAttribute attribute) {
-        return translate("profile.attribute." + attribute.serializedName());
+        return I18n.exists(attribute.translationKey()) ? I18n.get(attribute.translationKey()) : attribute.serializedName();
     }
 
     private static String localizedRank(VillagerSocialAttributeRank rank) {
-        return translate("profile.rank." + rank.serializedName());
+        return I18n.exists(rank.translationKey()) ? I18n.get(rank.translationKey()) : rank.serializedName();
     }
 
     private static String moodName(DialogueDisposition mood) {
