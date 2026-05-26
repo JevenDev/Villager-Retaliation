@@ -1,6 +1,8 @@
 package com.jvn.villagerretaliation.profile;
 
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
+import com.jvn.villagerretaliation.skill.VillagerSkillGenerator;
+import com.jvn.villagerretaliation.skill.VillagerSkillSet;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -31,11 +33,14 @@ public final class VillagerProfileGenerator {
         RandomSource random = RandomSource.create(seed);
         VillagerSocialAttributes generated = generatedAttributes(professionKey, random);
         VillagerSocialAttributes inherited = blendParents(generated, parentProfiles, random);
+        VillagerSkillSet skills = VillagerSkillGenerator.generate(professionKey, inherited, seed);
         return VillagerProfile.create(
                 villager.getUUID(),
                 VillagerProfile.CURRENT_GENERATION_VERSION,
                 seed,
                 inherited,
+                VillagerSkillGenerator.CURRENT_GENERATION_VERSION,
+                skills,
                 professionKey,
                 level.getGameTime()
         );
