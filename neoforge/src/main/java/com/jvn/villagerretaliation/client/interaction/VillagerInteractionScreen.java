@@ -17,7 +17,6 @@ import com.jvn.villagerretaliation.mood.VillagerMood;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttributeRank;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
-import com.jvn.villagerretaliation.skill.VillagerProfessionSkills;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.skill.VillagerSkillRank;
 import com.jvn.villagerretaliation.skill.VillagerSkillValue;
@@ -254,6 +253,11 @@ public class VillagerInteractionScreen extends Screen {
                 this.giftButton.visible = false;
             }
             renderProfilePage(graphics, mouseX, mouseY);
+        } else if (this.page == DialoguePage.SKILLS) {
+            if (this.giftButton != null) {
+                this.giftButton.visible = false;
+            }
+            renderSkillsPage(graphics, mouseX, mouseY);
         } else {
             if (this.giftButton != null) {
                 this.giftButton.visible = false;
@@ -387,6 +391,8 @@ public class VillagerInteractionScreen extends Screen {
             addDialogueOptions();
         } else if (this.page == DialoguePage.PROFILE) {
             addProfileOptions();
+        } else if (this.page == DialoguePage.SKILLS) {
+            addSkillsOptions();
         } else if (this.page == DialoguePage.FAMILY) {
             addFamilyOptions();
         } else if (this.page == DialoguePage.ANCESTRY) {
@@ -435,6 +441,7 @@ public class VillagerInteractionScreen extends Screen {
         this.options.add(DialogueOption.enabled(translate("root.talk"), this::openTalkPage));
         if (!this.baby) {
             this.options.add(DialogueOption.enabled(translate("root.profile"), this::openProfilePage));
+            this.options.add(DialogueOption.enabled(translate("root.skills"), this::openSkillsPage));
             this.options.add(DialogueOption.enabled(translate("root.trade"), this::requestTrade));
             if (VillagerRetaliationConfig.ENABLE_VILLAGER_GIFTS.get()) {
                 this.options.add(DialogueOption.enabled(translate("root.gift"), this::openGiftPage));
@@ -451,6 +458,9 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     private void addProfileOptions() {
+    }
+
+    private void addSkillsOptions() {
     }
 
     private void addRecruitOptions() {
@@ -570,6 +580,13 @@ public class VillagerInteractionScreen extends Screen {
 
     private void openProfilePage() {
         this.page = DialoguePage.PROFILE;
+        this.profileRefreshRequested = false;
+        requestProfileRefresh();
+        rebuildOptions();
+    }
+
+    private void openSkillsPage() {
+        this.page = DialoguePage.SKILLS;
         this.profileRefreshRequested = false;
         requestProfileRefresh();
         rebuildOptions();
@@ -743,10 +760,24 @@ public class VillagerInteractionScreen extends Screen {
         int centerY = top + PROFILE_CHART_RADIUS + 16;
         VillagerSocialAttribute hoveredAttribute = profileChartPointAt(profile, centerX, centerY, mouseX, mouseY);
         renderProfileChart(graphics, profile, centerX, centerY, hoveredAttribute);
-        VillagerSkill hoveredSkill = renderProfileSkills(graphics, profile, left, centerY + PROFILE_CHART_RADIUS + 18, mouseX, mouseY);
         if (hoveredAttribute != null) {
             renderProfileAttributeTooltip(graphics, profile, hoveredAttribute, mouseX, mouseY);
-        } else if (hoveredSkill != null) {
+        }
+    }
+
+    private void renderSkillsPage(GuiGraphics graphics, int mouseX, int mouseY) {
+        int left = optionsLeft() + 6;
+        int top = Math.max(24, focusCenterY() - PROFILE_PANEL_HEIGHT);
+        Optional<VillagerProfileClientCache.DisplayEntry> entry = VillagerProfileClientCache.get(this.villagerEntityId);
+        if (entry.isEmpty()) {
+            requestProfileRefresh();
+            graphics.drawString(this.font, translate("profile.loading"), left, top + 32, INFO_SECONDARY_COLOR, false);
+            return;
+        }
+
+        VillagerProfileClientCache.DisplayEntry profile = entry.get();
+        VillagerSkill hoveredSkill = renderProfileSkills(graphics, profile, left, top + 12, mouseX, mouseY);
+        if (hoveredSkill != null) {
             renderProfileSkillTooltip(graphics, profile, hoveredSkill, mouseX, mouseY);
         }
     }
@@ -1545,10 +1576,14 @@ public class VillagerInteractionScreen extends Screen {
         int left = optionsLeft() + OPTION_TEXT_INSET;
         int contentTop = this.page == DialoguePage.GIFT
                 ? giftInventoryTop()
-                : this.page == DialoguePage.PROFILE ? conversationInfoTop() : optionsTop();
+                : isProfilePanelPage() ? conversationInfoTop() : optionsTop();
         int top = contentTop - this.font.lineHeight - TOP_BACK_BUTTON_GAP;
         int bottom = top + this.font.lineHeight;
         return new TopBackButtonBounds(left, left + textWidth, top, bottom);
+    }
+
+    private boolean isProfilePanelPage() {
+        return this.page == DialoguePage.PROFILE || this.page == DialoguePage.SKILLS;
     }
 
     private int optionsTop() {
@@ -1916,6 +1951,7 @@ public class VillagerInteractionScreen extends Screen {
         ROOT,
         TALK,
         PROFILE,
+        SKILLS,
         GIFT,
         FAMILY,
         ANCESTRY,
