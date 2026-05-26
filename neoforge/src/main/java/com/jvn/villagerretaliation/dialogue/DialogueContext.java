@@ -4,6 +4,9 @@ import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.profile.VillagerProfile;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttributes;
+import com.jvn.villagerretaliation.skill.VillagerSkill;
+import com.jvn.villagerretaliation.skill.VillagerSkillRank;
+import com.jvn.villagerretaliation.skill.VillagerSkillSet;
 import com.jvn.villagerretaliation.mood.VillagerMood;
 import com.jvn.villagerretaliation.mood.VillagerMoodState;
 import com.jvn.villagerretaliation.social.VillagerFamilyTreeSnapshot;
@@ -73,6 +76,24 @@ public record DialogueContext(
 
     public boolean hasSocialAttributeAtLeast(VillagerSocialAttribute attribute, int value) {
         return socialAttributeValue(attribute) >= value;
+    }
+
+    public int skillValue(VillagerSkill skill) {
+        return this.profile == null || this.profile.skills() == null
+                ? VillagerSkillSet.DEFAULT.get(skill)
+                : this.profile.skills().get(skill);
+    }
+
+    public VillagerSkillRank skillRank(VillagerSkill skill) {
+        return VillagerSkillRank.fromValue(skillValue(skill));
+    }
+
+    public boolean hasSkillAtLeast(VillagerSkill skill, int value) {
+        return skillValue(skill) >= VillagerSkillSet.clamp(value);
+    }
+
+    public boolean hasSkillRankAtLeast(VillagerSkill skill, VillagerSkillRank rank) {
+        return rank != null && skillValue(skill) >= rank.minInclusive();
     }
 
     public VillagerMood primaryMood() {
