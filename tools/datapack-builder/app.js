@@ -340,6 +340,9 @@ const FIELD_TOOLTIPS = {
   "dialogue-max_player_item_durability": "Maximum remaining durability allowed on the matched player item.",
   "dialogue-min_player_item_durability_percent": "Minimum remaining durability percent required on the matched player item.",
   "dialogue-max_player_item_durability_percent": "Maximum remaining durability percent allowed on the matched player item.",
+  "dialogue-player_item_enchantments": "Requires one matching enchantment on the matched player item. Object entries with id, min_level, and max_level are also supported in raw JSON.",
+  "dialogue-min_player_item_enchantment_level": "Minimum level required for the matched enchantment.",
+  "dialogue-max_player_item_enchantment_level": "Maximum level allowed for the matched enchantment.",
   "dialogue-text": "Localized villager text. Enter one variation per line. Placeholder support depends on type and filters, such as {target}, {held_item}, family names, or recruitment values.",
   "dialogue-option": "Restricts a line to option id(s), including custom ids or built-ins such as adult_share_story.",
   "dialogue-weather": "Weather filter for lines: clear, rain, or thunder.",
@@ -376,6 +379,9 @@ const FIELD_TOOLTIPS = {
   "forced-max_player_item_durability": "Maximum remaining durability allowed on the matched player item.",
   "forced-min_player_item_durability_percent": "Minimum remaining durability percent required on the matched player item.",
   "forced-max_player_item_durability_percent": "Maximum remaining durability percent allowed on the matched player item.",
+  "forced-player_item_enchantments": "Requires one matching enchantment on the matched player item. Object entries with id, min_level, and max_level are also supported in raw JSON.",
+  "forced-min_player_item_enchantment_level": "Minimum level required for the matched enchantment.",
+  "forced-max_player_item_enchantment_level": "Maximum level allowed for the matched enchantment.",
   "forced-chance": "Random chance from 0.0 to 1.0 before a matching event line is shown.",
   "forced-target_entity_types": "Optional retaliation target entity ids such as minecraft:player. Useful for retaliation_started entries.",
   "forced-min_recent_retaliations": "Optional minimum earlier villager_retaliation_started memories for this player near the villager's village.",
@@ -406,6 +412,9 @@ const FIELD_TOOLTIPS = {
   "notification-max_player_item_durability": "Maximum remaining durability allowed on the matched player item.",
   "notification-min_player_item_durability_percent": "Minimum remaining durability percent required on the matched player item.",
   "notification-max_player_item_durability_percent": "Maximum remaining durability percent allowed on the matched player item.",
+  "notification-player_item_enchantments": "Requires one matching enchantment on the matched player item. Object entries with id, min_level, and max_level are also supported in raw JSON.",
+  "notification-min_player_item_enchantment_level": "Minimum level required for the matched enchantment.",
+  "notification-max_player_item_enchantment_level": "Maximum level allowed for the matched enchantment.",
   "notification-weight": "Weighted selection among matching notifications. Missing weights usually default to 10.",
   "notification-chance": "Random chance gate from 0.0 to 1.0 before weighted selection.",
   "gifts-fileName": "Creates data/villagerretaliation/gifts/<file>.json. Use default only when replacing the built-in default gift table.",
@@ -3163,6 +3172,7 @@ function entryIssueSeverity(section, kind, entry) {
       { severity: "warning", predicate: (item) => entryValues(item, ["dispositions"]).some((value) => !CONSTANTS.dispositions.includes(value)) },
       { severity: "warning", predicate: (item) => entryValues(item, ["professions"]).some((value) => !isValidProfession(value)) },
       { severity: "error", predicate: (item) => ["options", "lines"].includes(kind) && entryValues(item, ["player_item", "player_items", "player_item_tag", "player_item_tags"]).some((value) => !isValidResourceLocation(value, { allowTag: true })) },
+      { severity: "error", predicate: (item) => ["options", "lines"].includes(kind) && entryValues(item, ["player_item_enchantment", "player_item_enchantments", "held_item_enchantment", "held_item_enchantments"]).some((value) => !isValidResourceLocation(value)) },
       { severity: "warning", predicate: (item) => ["options", "lines"].includes(kind) && entryValues(item, ["player_item_slot", "player_item_slots"]).some((value) => !CONSTANTS.itemSlots.includes(value)) },
       { severity: "warning", predicate: (item) => ["options", "lines"].includes(kind) && entryValues(item, ["reputation_level", "reputation_levels"]).some((value) => !CONSTANTS.reputationLevels.includes(value)) },
       { severity: "warning", predicate: (item) => kind === "lines" && entryValues(item, ["weather"]).some((value) => !CONSTANTS.weather.includes(value)) },
@@ -3171,13 +3181,14 @@ function entryIssueSeverity(section, kind, entry) {
       { severity: "warning", predicate: (item) => kind === "pacify" && entryValues(item, ["outcomes"]).some((value) => !CONSTANTS.pacifyOutcomes.includes(value)) },
       { severity: "error", predicate: (item) => firstBadNumber([item], ["order"], Number.isFinite) !== "" },
       { severity: "error", predicate: (item) => firstBadNumber([item], ["weight", "min_recruitment_follow_distance"], (value) => value >= 0) !== "" },
+      { severity: "error", predicate: (item) => firstBadNumber([item], ["min_player_item_enchantment_level", "max_player_item_enchantment_level", "min_held_item_enchantment_level", "max_held_item_enchantment_level"], (value) => value >= 1) !== "" },
       { severity: "error", predicate: (item) => firstBadNumber([item], ["min_reputation", "max_reputation"], Number.isFinite) !== "" },
       { severity: "error", predicate: (item) => {
         const min = numberValue(item.min_reputation);
         const max = numberValue(item.max_reputation);
         return min !== undefined && max !== undefined && min > max;
       } },
-      { severity: "warning", predicate: (item) => firstBlankListValue([item], ["professions", "dispositions", "reputation_level", "reputation_levels", "player_item", "player_items", "player_item_tag", "player_item_tags", "player_item_slot", "player_item_slots", "weather", "times", "event_tags", "player_event_tags", "retaliation_target_entity_types", "story_structures", "story_biomes", "outcomes"]) !== "" },
+      { severity: "warning", predicate: (item) => firstBlankListValue([item], ["professions", "dispositions", "reputation_level", "reputation_levels", "player_item", "player_items", "player_item_tag", "player_item_tags", "player_item_slot", "player_item_slots", "player_item_enchantment", "player_item_enchantments", "held_item_enchantment", "held_item_enchantments", "weather", "times", "event_tags", "player_event_tags", "retaliation_target_entity_types", "story_structures", "story_biomes", "outcomes"]) !== "" },
       { severity: "error", predicate: (item) => entryValues(item, ["retaliation_target_entity_types", "retaliation_target_entities"]).some((value) => !isValidResourceLocation(value)) }
     ];
     return issueSeverityFromEntries([entry], tests);
@@ -3194,6 +3205,7 @@ function entryIssueSeverity(section, kind, entry) {
       { severity: "warning", predicate: (item) => entryValues(item, ["witness_profession", "witness_professions", "professions"]).some((value) => !isValidProfession(value)) },
       { severity: "error", predicate: (item) => entryValues(item, ["loot_table", "loot_tables"]).some((value) => !isValidResourceLocation(value)) },
       { severity: "error", predicate: (item) => entryValues(item, ["target_entity_type", "target_entity_types", "target_entities"]).some((value) => !isValidResourceLocation(value)) },
+      { severity: "error", predicate: (item) => entryValues(item, ["player_item_enchantment", "player_item_enchantments", "held_item_enchantment", "held_item_enchantments"]).some((value) => !isValidResourceLocation(value)) },
       { severity: "error", predicate: (item) => firstBadNumber([item], ["priority", "reputation", "witness_radius", "min_recent_retaliations", "max_recent_retaliations"], (value, itemEntry, key) => {
         if (key === "reputation") return isForcedDialogueOutput(itemEntry) ? Number.isFinite(value) : true;
         if (key === "priority") return Number.isFinite(value);
@@ -3201,6 +3213,7 @@ function entryIssueSeverity(section, kind, entry) {
         return Number.isFinite(value) && value >= 0;
       }) !== "" },
       { severity: "error", predicate: (item) => isChatOutputEntry(item) && firstBadNumber([item.output || {}], ["radius"], (value) => value >= 1) !== "" },
+      { severity: "error", predicate: (item) => firstBadNumber([item], ["min_player_item_enchantment_level", "max_player_item_enchantment_level", "min_held_item_enchantment_level", "max_held_item_enchantment_level"], (value) => value >= 1) !== "" },
       { severity: "warning", predicate: hasIgnoredForcedDialogueFields },
       { severity: "warning", predicate: (item) => firstBlankListValue([item], ["lines", "loot_tables", "witness_profession", "witness_professions", "professions", "target_entity_types", "target_entities"]) !== "" },
       { severity: "error", predicate: (item) => Number.isFinite(item.min_recent_retaliations) && Number.isFinite(item.max_recent_retaliations) && item.min_recent_retaliations > item.max_recent_retaliations },
@@ -3234,8 +3247,10 @@ function entryIssueSeverity(section, kind, entry) {
       { severity: "warning", predicate: (item) => entryValues(item, ["reputation_levels"]).some((value) => !CONSTANTS.reputationLevels.includes(value)) },
       { severity: "error", predicate: (item) => entryValues(item, ["target_entity_type", "target_entity", "target_entity_types", "target_entities"]).some((value) => !isValidResourceLocation(value)) },
       { severity: "error", predicate: (item) => entryValues(item, ["player_item", "player_items", "player_item_tag", "player_item_tags"]).some((value) => !isValidResourceLocation(value, { allowTag: true })) },
+      { severity: "error", predicate: (item) => entryValues(item, ["player_item_enchantment", "player_item_enchantments", "held_item_enchantment", "held_item_enchantments"]).some((value) => !isValidResourceLocation(value)) },
       { severity: "warning", predicate: (item) => entryValues(item, ["player_item_slot", "player_item_slots"]).some((value) => !CONSTANTS.itemSlots.includes(value)) },
       { severity: "error", predicate: (item) => firstBadNumber([item], ["min_reputation", "max_reputation", "weight"], (value, notification, key) => key === "weight" ? value >= 0 : Number.isFinite(value)) !== "" },
+      { severity: "error", predicate: (item) => firstBadNumber([item], ["min_player_item_enchantment_level", "max_player_item_enchantment_level", "min_held_item_enchantment_level", "max_held_item_enchantment_level"], (value) => value >= 1) !== "" },
       { severity: "error", predicate: (item) => {
         const min = numberValue(item.min_reputation);
         const max = numberValue(item.max_reputation);
@@ -3395,6 +3410,7 @@ function entryIssueDetail(section, kind, entry) {
       { keys: ["dispositions"], label: "Dispositions", expected: CONSTANTS.dispositions.join(", "), fieldId: "dialogue-dispositions", valid: (value) => CONSTANTS.dispositions.includes(value), severity: "warning" },
       { keys: ["professions"], label: "Professions", expected: "a valid profession id such as farmer or minecraft:farmer", fieldId: "dialogue-professions", valid: isValidProfession, severity: "warning" },
       { keys: ["player_item", "player_items", "player_item_tag", "player_item_tags"], label: "Required player items or tags", expected: "a valid item id or #tag id", fieldId: "dialogue-player_items", valid: (value) => isValidResourceLocation(value, { allowTag: true }) },
+      { keys: ["player_item_enchantment", "player_item_enchantments", "held_item_enchantment", "held_item_enchantments"], label: "Item enchantments", expected: "a valid enchantment id such as minecraft:sharpness", fieldId: "dialogue-player_item_enchantments", valid: isValidResourceLocation },
       { keys: ["player_item_slot", "player_item_slots"], label: "Item slots", expected: CONSTANTS.itemSlots.join(", "), fieldId: "dialogue-player_item_slots", valid: (value) => CONSTANTS.itemSlots.includes(value), severity: "warning" },
       { keys: ["reputation_level", "reputation_levels"], label: "Reputation levels", expected: CONSTANTS.reputationLevels.join(", "), fieldId: "dialogue-reputation_levels", valid: (value) => CONSTANTS.reputationLevels.includes(value), severity: "warning" },
       { keys: ["weather"], label: "Weather", expected: CONSTANTS.weather.join(", "), fieldId: "dialogue-weather", valid: (value) => CONSTANTS.weather.includes(value), severity: "warning" },
@@ -3411,6 +3427,8 @@ function entryIssueDetail(section, kind, entry) {
       { key: "order", label: "Order", expected: "a valid order number, positive or negative", fieldId: "dialogue-order", valid: Number.isFinite },
       { key: "weight", label: "Weight", expected: "a number greater than or equal to 0", fieldId: "dialogue-weight", valid: (value) => value >= 0 },
       { key: "min_recruitment_follow_distance", label: "Minimum follow distance", expected: "a number greater than or equal to 0", fieldId: "dialogue-min_recruitment_follow_distance", valid: (value) => value >= 0 },
+      { key: "min_player_item_enchantment_level", label: "Minimum enchantment level", expected: "a number greater than or equal to 1", fieldId: "dialogue-min_player_item_enchantment_level", valid: (value) => value >= 1 },
+      { key: "max_player_item_enchantment_level", label: "Maximum enchantment level", expected: "a number greater than or equal to 1", fieldId: "dialogue-max_player_item_enchantment_level", valid: (value) => value >= 1 },
       { key: "min_reputation", label: "Minimum reputation", expected: "a valid number", fieldId: "dialogue-min_reputation", valid: Number.isFinite },
       { key: "max_reputation", label: "Maximum reputation", expected: "a valid number", fieldId: "dialogue-max_reputation", valid: Number.isFinite }
     ]);
@@ -3426,13 +3444,14 @@ function entryIssueDetail(section, kind, entry) {
     if (!trigger) return issueDetail("Trigger", `one of ${CONSTANTS.forcedDialogueTriggers.join(", ")}`, trigger, "forced-trigger");
     if (!hasForcedDialogueLine(entry)) return issueDetail("Opening line(s)", "at least one non-empty line", forcedDialogueLineValue(entry), "forced-line");
     if (!CONSTANTS.forcedDialogueTriggers.includes(trigger)) return issueDetail("Trigger", `one of ${CONSTANTS.forcedDialogueTriggers.join(", ")}`, trigger, "forced-trigger");
-    if (trigger === "player_item_proximity" && entryValues(entry, ["player_item", "player_items", "player_item_tag", "player_item_tags"]).length === 0) {
-      return issueDetail("Player items or tags", "at least one matching item filter for player_item_proximity", "none set", "forced-player_items");
+    if (trigger === "player_item_proximity" && !hasPlayerItemFilter(entry)) {
+      return issueDetail("Player item filter", "at least one item, durability, or enchantment filter for player_item_proximity", "none set", ["forced-player_items", "forced-player_item_enchantments"]);
     }
     if (entry.output?.mode && !CONSTANTS.forcedOutputModes.includes(entry.output.mode)) return issueDetail("Output mode", `one of ${CONSTANTS.forcedOutputModes.join(", ")}`, entry.output.mode, "forced-output_mode");
     const forcedListChecks = [
       { keys: ["witness_profession", "witness_professions", "professions"], label: "Witness professions", expected: "a valid profession id such as armorer or minecraft:weaponsmith", fieldId: "forced-witness_professions", valid: isValidProfession, severity: "warning" },
       { keys: ["player_item", "player_items", "player_item_tag", "player_item_tags"], label: "Player items or tags", expected: "a valid item id or #tag id", fieldId: "forced-player_items", valid: (value) => isValidResourceLocation(value, { allowTag: true }) },
+      { keys: ["player_item_enchantment", "player_item_enchantments", "held_item_enchantment", "held_item_enchantments"], label: "Item enchantments", expected: "a valid enchantment id such as minecraft:sharpness", fieldId: "forced-player_item_enchantments", valid: isValidResourceLocation },
       { keys: ["player_item_slot", "player_item_slots"], label: "Player item slots", expected: CONSTANTS.itemSlots.join(", "), fieldId: "forced-player_item_slots", valid: (value) => CONSTANTS.itemSlots.includes(value), severity: "warning" },
       { keys: ["loot_table", "loot_tables"], label: "Loot tables", expected: "a valid loot table id such as minecraft:chests/village/village_armorer", fieldId: "forced-loot_tables", valid: isValidResourceLocation },
       { keys: ["target_entity_type", "target_entity_types", "target_entities"], label: "Target entity types", expected: "a valid entity id such as minecraft:player", fieldId: "forced-target_entity_types", valid: isValidResourceLocation }
@@ -3445,7 +3464,9 @@ function entryIssueDetail(section, kind, entry) {
       { key: "priority", label: "Priority", expected: "a valid priority number, positive or negative", fieldId: "forced-priority", valid: Number.isFinite },
       { key: "witness_radius", label: "Witness radius", expected: "a number greater than or equal to 1", fieldId: "forced-witness_radius", valid: (value) => value >= 1 },
       { key: "min_recent_retaliations", label: "Min prior retaliations", expected: "a number greater than or equal to 0", fieldId: "forced-min_recent_retaliations", valid: (value) => Number.isFinite(value) && value >= 0 },
-      { key: "max_recent_retaliations", label: "Max prior retaliations", expected: "a number greater than or equal to 0", fieldId: "forced-max_recent_retaliations", valid: (value) => Number.isFinite(value) && value >= 0 }
+      { key: "max_recent_retaliations", label: "Max prior retaliations", expected: "a number greater than or equal to 0", fieldId: "forced-max_recent_retaliations", valid: (value) => Number.isFinite(value) && value >= 0 },
+      { key: "min_player_item_enchantment_level", label: "Minimum enchantment level", expected: "a number greater than or equal to 1", fieldId: "forced-min_player_item_enchantment_level", valid: (value) => value >= 1 },
+      { key: "max_player_item_enchantment_level", label: "Maximum enchantment level", expected: "a number greater than or equal to 1", fieldId: "forced-max_player_item_enchantment_level", valid: (value) => value >= 1 }
     ];
     if (isForcedDialogueOutput(entry)) {
       forcedNumberSpecs.splice(1, 0, { key: "reputation", label: "Reputation change", expected: "a valid number, positive or negative", fieldId: "forced-reputation", valid: Number.isFinite });
@@ -3497,6 +3518,7 @@ function entryIssueDetail(section, kind, entry) {
       { keys: ["reputation_levels"], label: "Reputation levels", expected: CONSTANTS.reputationLevels.join(", "), fieldId: "notification-reputation_levels", valid: (value) => CONSTANTS.reputationLevels.includes(value), severity: "warning" },
       { keys: ["target_entity_type", "target_entity", "target_entity_types", "target_entities"], label: "Target entity types", expected: "a valid entity id such as minecraft:player", fieldId: "notification-target_entity_types", valid: isValidResourceLocation },
       { keys: ["player_item", "player_items", "player_item_tag", "player_item_tags"], label: "Required player items or tags", expected: "a valid item id or #tag id", fieldId: "notification-player_items", valid: (value) => isValidResourceLocation(value, { allowTag: true }) },
+      { keys: ["player_item_enchantment", "player_item_enchantments", "held_item_enchantment", "held_item_enchantments"], label: "Item enchantments", expected: "a valid enchantment id such as minecraft:sharpness", fieldId: "notification-player_item_enchantments", valid: isValidResourceLocation },
       { keys: ["player_item_slot", "player_item_slots"], label: "Item slots", expected: CONSTANTS.itemSlots.join(", "), fieldId: "notification-player_item_slots", valid: (value) => CONSTANTS.itemSlots.includes(value), severity: "warning" }
     ];
     for (const check of checks) {
@@ -3507,7 +3529,9 @@ function entryIssueDetail(section, kind, entry) {
       { key: "min_reputation", label: "Minimum reputation", expected: "a valid number", fieldId: "notification-min_reputation", valid: Number.isFinite },
       { key: "max_reputation", label: "Maximum reputation", expected: "a valid number", fieldId: "notification-max_reputation", valid: Number.isFinite },
       { key: "weight", label: "Weight", expected: "a number greater than or equal to 0", fieldId: "notification-weight", valid: (value) => value >= 0 },
-      { key: "chance", label: "Chance", expected: "a number from 0 to 1", fieldId: "notification-chance", valid: (value) => value >= 0 && value <= 1 }
+      { key: "chance", label: "Chance", expected: "a number from 0 to 1", fieldId: "notification-chance", valid: (value) => value >= 0 && value <= 1 },
+      { key: "min_player_item_enchantment_level", label: "Minimum enchantment level", expected: "a number greater than or equal to 1", fieldId: "notification-min_player_item_enchantment_level", valid: (value) => value >= 1 },
+      { key: "max_player_item_enchantment_level", label: "Maximum enchantment level", expected: "a number greater than or equal to 1", fieldId: "notification-max_player_item_enchantment_level", valid: (value) => value >= 1 }
     ]);
     if (badNumber) return issueDetail(badNumber.label, badNumber.expected, badNumber.value, badNumber.fieldId);
     const min = numberValue(entry.min_reputation);
@@ -3647,11 +3671,51 @@ function firstDuplicate(values) {
 }
 
 function entryValues(entry, keys) {
-  return keys.flatMap((key) => parseList(entry[key]));
+  return keys.flatMap((key) => {
+    const value = entry[key];
+    if (Array.isArray(value)) {
+      return value.flatMap(entryValue);
+    }
+    return entryValue(value);
+  });
+}
+
+function entryValue(value) {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    return parseList(value.id ?? value.enchantment ?? value.name);
+  }
+  return parseList(value);
 }
 
 function hasAnySelector(entry, keys) {
   return keys.some((key) => parseList(entry[key]).length > 0 || Boolean(entry[key]));
+}
+
+function hasPlayerItemFilter(entry) {
+  return hasAnySelector(entry, [
+    "player_item",
+    "player_items",
+    "player_item_tag",
+    "player_item_tags",
+    "player_item_enchantment",
+    "player_item_enchantments",
+    "held_item_enchantment",
+    "held_item_enchantments"
+  ])
+    || [
+      "min_player_item_durability",
+      "max_player_item_durability",
+      "min_player_item_durability_percent",
+      "max_player_item_durability_percent",
+      "min_held_item_durability",
+      "max_held_item_durability",
+      "min_held_item_durability_percent",
+      "max_held_item_durability_percent",
+      "min_player_item_enchantment_level",
+      "max_player_item_enchantment_level",
+      "min_held_item_enchantment_level",
+      "max_held_item_enchantment_level"
+    ].some((key) => numberValue(entry[key]) !== undefined);
 }
 
 function firstInvalidValue(entries, keys, predicate) {
@@ -5035,6 +5099,14 @@ function playerItemDurabilityFields(prefix, entry) {
   `;
 }
 
+function playerItemEnchantmentFields(prefix, entry) {
+  return `
+    ${listField({ id: `${prefix}-player_item_enchantments`, label: "Item enchantments", value: entry.player_item_enchantments ?? entry.player_item_enchantment ?? entry.held_item_enchantments ?? entry.held_item_enchantment, help: "Use ids like minecraft:sharpness. Raw JSON can use objects with id, min_level, and max_level." })}
+    ${field({ id: `${prefix}-min_player_item_enchantment_level`, label: "Minimum enchantment level", value: entry.min_player_item_enchantment_level ?? entry.min_held_item_enchantment_level ?? "", type: "number", attrs: 'min="1" step="1"' })}
+    ${field({ id: `${prefix}-max_player_item_enchantment_level`, label: "Maximum enchantment level", value: entry.max_player_item_enchantment_level ?? entry.max_held_item_enchantment_level ?? "", type: "number", attrs: 'min="1" step="1"' })}
+  `;
+}
+
 function renderValueTags(fieldId, tags) {
   if (!tags.length) return "";
   return `
@@ -5313,6 +5385,7 @@ function renderDialogueForm(kind, entry) {
         ${listField({ id: "dialogue-player_items", label: "Required player items or tags", value: entry.player_items, help: "Use #minecraft:swords for item tags." })}
         ${listField({ id: "dialogue-player_item_slots", label: "Item slots", value: entry.player_item_slots, help: CONSTANTS.itemSlots.join(", ") })}
         ${playerItemDurabilityFields("dialogue", entry)}
+        ${playerItemEnchantmentFields("dialogue", entry)}
         ${toggleGrid(CONSTANTS.optionFlags, entry, "option")}
       </div>
       ${formActions(action, "save-dialogue-entry", "clear-dialogue-form")}
@@ -5336,6 +5409,7 @@ function renderDialogueForm(kind, entry) {
         ${listField({ id: "dialogue-player_items", label: "Required player items or tags", value: entry.player_items })}
         ${listField({ id: "dialogue-player_item_slots", label: "Item slots", value: entry.player_item_slots })}
         ${playerItemDurabilityFields("dialogue", entry)}
+        ${playerItemEnchantmentFields("dialogue", entry)}
         ${listField({ id: "dialogue-story_structure", label: "Story structures", value: entry.story_structure ?? entry.story_structures })}
         ${listField({ id: "dialogue-story_biome", label: "Story biomes", value: entry.story_biome ?? entry.story_biomes })}
         ${listField({ id: "dialogue-recruitment_followup_scenarios", label: "Recruitment follow-up scenarios", value: entry.recruitment_followup_scenarios })}
@@ -5447,6 +5521,7 @@ function renderForcedDialogue() {
             ${listField({ id: "forced-player_items", label: "Player items or tags", value: entry.player_items ?? entry.player_item ?? entry.player_item_tags ?? entry.player_item_tag, help: "Required for player_item_proximity. Use minecraft:diamond_sword or #minecraft:swords." })}
             ${listField({ id: "forced-player_item_slots", label: "Player item slots", value: entry.player_item_slots ?? entry.player_item_slot, help: CONSTANTS.itemSlots.join(", ") })}
             ${playerItemDurabilityFields("forced", entry)}
+            ${playerItemEnchantmentFields("forced", entry)}
             ${listField({ id: "forced-loot_tables", label: "Loot tables", value: entry.loot_tables ?? entry.loot_table, help: "Optional. Match generated containers from loot tables like minecraft:chests/village/village_armorer." })}
             ${listField({ id: "forced-target_entity_types", label: "Target entity types", value: entry.target_entity_types ?? entry.target_entity_type ?? entry.target_entities, help: "Optional. Useful for retaliation_started, for example minecraft:player." })}
             ${field({ id: "forced-min_recent_retaliations", label: "Min prior retaliations", value: entry.min_recent_retaliations ?? "", type: "number", attrs: 'min="0" step="1"' })}
@@ -5527,6 +5602,7 @@ function renderNotifications() {
             ${listField({ id: "notification-player_items", label: "Required player items or tags", value: entry.player_items })}
             ${listField({ id: "notification-player_item_slots", label: "Item slots", value: entry.player_item_slots })}
             ${playerItemDurabilityFields("notification", entry)}
+            ${playerItemEnchantmentFields("notification", entry)}
             ${field({ id: "notification-weight", label: "Weight", value: entry.weight ?? "", type: "number" })}
             ${field({ id: "notification-chance", label: "Chance", value: entry.chance ?? "", type: "number", attrs: 'min="0" max="1" step="0.01"' })}
             ${toggleGrid([], entry, "notification")}
@@ -5754,6 +5830,14 @@ function readPlayerItemDurability(prefix) {
   };
 }
 
+function readPlayerItemEnchantments(prefix) {
+  return {
+    player_item_enchantments: readList(`${prefix}-player_item_enchantments`),
+    min_player_item_enchantment_level: parseInteger(readValue(`${prefix}-min_player_item_enchantment_level`)),
+    max_player_item_enchantment_level: parseInteger(readValue(`${prefix}-max_player_item_enchantment_level`))
+  };
+}
+
 function readBooleans(prefix, flags, base = {}) {
   const entry = { ...base };
   const adult = readValue(`${prefix}-show_for_adults`);
@@ -5815,7 +5899,8 @@ function readDialogueEntry() {
       max_reputation: parseInteger(readValue("dialogue-max_reputation")),
       player_items: readList("dialogue-player_items"),
       player_item_slots: readList("dialogue-player_item_slots"),
-      ...readPlayerItemDurability("dialogue")
+      ...readPlayerItemDurability("dialogue"),
+      ...readPlayerItemEnchantments("dialogue")
     });
   } else if (kind === "lines") {
     const optionIds = readList("dialogue-option");
@@ -5840,6 +5925,7 @@ function readDialogueEntry() {
       player_items: readList("dialogue-player_items"),
       player_item_slots: readList("dialogue-player_item_slots"),
       ...readPlayerItemDurability("dialogue"),
+      ...readPlayerItemEnchantments("dialogue"),
       story_structures: storyStructures,
       story_biomes: storyBiomes,
       recruitment_followup_scenarios: readList("dialogue-recruitment_followup_scenarios"),
@@ -5937,6 +6023,7 @@ function readForcedDialogueEntry(options = {}) {
     player_items: readList("forced-player_items"),
     player_item_slots: readList("forced-player_item_slots"),
     ...readPlayerItemDurability("forced"),
+    ...readPlayerItemEnchantments("forced"),
     loot_tables: readList("forced-loot_tables"),
     target_entity_types: readList("forced-target_entity_types"),
     min_recent_retaliations: parseInteger(readValue("forced-min_recent_retaliations")),
@@ -5989,6 +6076,7 @@ function readNotificationEntry() {
     player_items: readList("notification-player_items"),
     player_item_slots: readList("notification-player_item_slots"),
     ...readPlayerItemDurability("notification"),
+    ...readPlayerItemEnchantments("notification"),
     weight: parseInteger(readValue("notification-weight")),
     chance: parseNumber(readValue("notification-chance"))
   });
@@ -7334,6 +7422,14 @@ function isNotificationEntry(entry) {
     "max_held_item_durability",
     "min_held_item_durability_percent",
     "max_held_item_durability_percent",
+    "player_item_enchantment",
+    "player_item_enchantments",
+    "held_item_enchantment",
+    "held_item_enchantments",
+    "min_player_item_enchantment_level",
+    "max_player_item_enchantment_level",
+    "min_held_item_enchantment_level",
+    "max_held_item_enchantment_level",
     "target_entity_type",
     "target_entity",
     "target_entity_types",

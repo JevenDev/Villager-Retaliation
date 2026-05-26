@@ -87,6 +87,10 @@ Use `text` for single-line entries. Use `lines` when several entries would other
 | `max_player_item_durability` | integer | none | Maximum remaining durability on the matched player item. Alias: `max_held_item_durability`. |
 | `min_player_item_durability_percent` | integer | none | Minimum remaining durability percent on the matched player item. Alias: `min_held_item_durability_percent`. |
 | `max_player_item_durability_percent` | integer | none | Maximum remaining durability percent on the matched player item. Alias: `max_held_item_durability_percent`. |
+| `player_item_enchantment` | string | none | Requires the matched player item to have this enchantment. Alias: `held_item_enchantment`. |
+| `player_item_enchantments` | string, object, or array | none | Requires one matching enchantment. String entries use top-level level filters; object entries can use `id`, `min_level`, and `max_level`. Alias: `held_item_enchantments`. |
+| `min_player_item_enchantment_level` | integer | none | Minimum level for string enchantment filters. Alias: `min_held_item_enchantment_level`. |
+| `max_player_item_enchantment_level` | integer | none | Maximum level for string enchantment filters. Alias: `max_held_item_enchantment_level`. |
 | `show_for_adults` | boolean | `true` | Adult visibility. |
 | `show_for_babies` | boolean | `true` | Baby visibility. |
 | `weight` | integer | `10` | Weighted selection. |
@@ -170,7 +174,7 @@ Placeholder support depends on the trigger. Common built-in notification placeho
 
 Unknown placeholders are left as literal text.
 
-Player item filtered notifications can use `{player_item}`, `{held_item}`, `{player_item_id}`, `{held_item_id}`, `{player_item_slot}`, `{held_item_slot}`, `{player_item_durability}`, `{held_item_durability}`, `{player_item_max_durability}`, `{held_item_max_durability}`, `{player_item_damage}`, `{held_item_damage}`, `{player_item_durability_percent}`, and `{held_item_durability_percent}`. The aliases `player_item`, `player_item_tag`, `player_item_tags`, and `player_item_slot` are also accepted as fields.
+Player item filtered notifications can use `{player_item}`, `{held_item}`, `{player_item_id}`, `{held_item_id}`, `{player_item_slot}`, `{held_item_slot}`, `{player_item_durability}`, `{held_item_durability}`, `{player_item_max_durability}`, `{held_item_max_durability}`, `{player_item_damage}`, `{held_item_damage}`, `{player_item_durability_percent}`, `{held_item_durability_percent}`, `{player_item_enchantment}`, `{held_item_enchantment}`, `{player_item_enchantment_full}`, `{held_item_enchantment_full}`, `{player_item_enchantment_id}`, `{held_item_enchantment_id}`, `{player_item_enchantment_level}`, and `{held_item_enchantment_level}`. The aliases `player_item`, `player_item_tag`, `player_item_tags`, `player_item_slot`, `player_item_enchantment`, and `held_item_enchantment` are also accepted as fields.
 
 Equipment-filtered notifications can use `requires_villager_armed` or `requires_villager_unarmed`, so the same trigger can show different text for armed defenders and empty-handed villagers.
 

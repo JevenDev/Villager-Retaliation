@@ -75,6 +75,10 @@ or an `entries` array:
 | `max_player_item_durability` | integer | none | Maximum remaining durability on the matched player item. Alias: `max_held_item_durability`. |
 | `min_player_item_durability_percent` | integer | none | Minimum remaining durability percent on the matched player item. Alias: `min_held_item_durability_percent`. |
 | `max_player_item_durability_percent` | integer | none | Maximum remaining durability percent on the matched player item. Alias: `max_held_item_durability_percent`. |
+| `player_item_enchantment` | string | none | Requires the matched player item to have this enchantment. Alias: `held_item_enchantment`. |
+| `player_item_enchantments` | string, object, or array | none | Requires one matching enchantment. String entries use top-level level filters; object entries can use `id`, `min_level`, and `max_level`. Alias: `held_item_enchantments`. |
+| `min_player_item_enchantment_level` | integer | none | Minimum level for string enchantment filters. Alias: `min_held_item_enchantment_level`. |
+| `max_player_item_enchantment_level` | integer | none | Maximum level for string enchantment filters. Alias: `max_held_item_enchantment_level`. |
 | `requires_line_of_sight` | boolean | `true` | Requires the witness to see the player. Container triggers also require sight to the event block. |
 | `output` | object | `{ "mode": "forced_dialogue" }` | Delivery channel for the event line. See Output Fields below. |
 | `initiate_dialogue` | boolean | `true` | Opens the locked interaction screen when `output.mode` is `forced_dialogue`. If false, only the line is sent. |
@@ -190,6 +194,26 @@ Durability filters can split item callouts into threshold-style branches. Use `p
       "output": { "mode": "chat" }
     }
   ]
+}
+```
+
+Enchantment filters can be plain ids with shared top-level level bounds, or objects with per-enchantment bounds:
+
+```json
+{
+  "id": "my_pack.sharp_weapon",
+  "trigger": "player_item_proximity",
+  "priority": 0,
+  "player_items": ["#minecraft:swords"],
+  "player_item_slots": ["main_hand"],
+  "player_item_enchantments": [
+    {
+      "id": "minecraft:sharpness",
+      "min_level": 3
+    }
+  ],
+  "line": "{held_item} carries {held_item_enchantment_full}. That edge has intent.",
+  "output": { "mode": "chat" }
 }
 ```
 
@@ -382,7 +406,7 @@ Forced dialogue `line`, `lines`, option `response` / `responses`, `leave_option.
 {z}
 ```
 
-`{target}` / `{target_name}` is the retaliation target display name, `{target_kind}` is a lowercased entity description such as `player`, `{target_type}` is the entity id, `{container}` is the block display name, `{item}` / `{stolen_item}` is the representative removed item name or matched player item for `player_item_proximity`, `{item_stack}` / `{stolen_stack}` includes the representative item count, `{items}` / `{stolen_items}` lists all removed stacks, `{count}` / `{stolen_count}` is the representative removed stack count for `container_theft`, `{loot_table}` is the matched generated loot table id when one exists, `{player_item}` / `{held_item}` is the matched player item name for item-filtered entries, `{player_item_id}` / `{held_item_id}` is the matched item id, `{player_item_slot}` / `{held_item_slot}` is the matched slot, `{player_item_durability}` / `{held_item_durability}` is remaining durability, `{player_item_max_durability}` / `{held_item_max_durability}` is max durability, `{player_item_damage}` / `{held_item_damage}` is current damage, `{player_item_durability_percent}` / `{held_item_durability_percent}` is remaining durability percent, `{prior_container_thefts}` is the number of remembered earlier container thefts by this player near the witness's village, `{container_theft_offense}` is that count plus the current theft, `{prior_retaliations}` is the number of earlier remembered retaliation starts for the same player near this village, `{retaliation_offense}` is that count plus the current retaliation, `{payment_count}` and `{payment_items}` describe a `take_items` option, and `{x}`, `{y}`, `{z}` are the container or villager position.
+`{target}` / `{target_name}` is the retaliation target display name, `{target_kind}` is a lowercased entity description such as `player`, `{target_type}` is the entity id, `{container}` is the block display name, `{item}` / `{stolen_item}` is the representative removed item name or matched player item for `player_item_proximity`, `{item_stack}` / `{stolen_stack}` includes the representative item count, `{items}` / `{stolen_items}` lists all removed stacks, `{count}` / `{stolen_count}` is the representative removed stack count for `container_theft`, `{loot_table}` is the matched generated loot table id when one exists, `{player_item}` / `{held_item}` is the matched player item name for item-filtered entries, `{player_item_id}` / `{held_item_id}` is the matched item id, `{player_item_slot}` / `{held_item_slot}` is the matched slot, `{player_item_durability}` / `{held_item_durability}` is remaining durability, `{player_item_max_durability}` / `{held_item_max_durability}` is max durability, `{player_item_damage}` / `{held_item_damage}` is current damage, `{player_item_durability_percent}` / `{held_item_durability_percent}` is remaining durability percent, `{player_item_enchantment}` / `{held_item_enchantment}` is the matched enchantment name, `{player_item_enchantment_full}` / `{held_item_enchantment_full}` includes the level, `{player_item_enchantment_id}` / `{held_item_enchantment_id}` is the enchantment id, `{player_item_enchantment_level}` / `{held_item_enchantment_level}` is the matched level, `{prior_container_thefts}` is the number of remembered earlier container thefts by this player near the witness's village, `{container_theft_offense}` is that count plus the current theft, `{prior_retaliations}` is the number of earlier remembered retaliation starts for the same player near this village, `{retaliation_offense}` is that count plus the current retaliation, `{payment_count}` and `{payment_items}` describe a `take_items` option, and `{x}`, `{y}`, `{z}` are the container or villager position.
 
 ## Example
 

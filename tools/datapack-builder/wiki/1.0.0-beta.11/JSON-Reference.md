@@ -131,6 +131,21 @@ Player item filters can also check remaining durability. Use `min_player_item_du
 }
 ```
 
+They can also check enchantments. Use a string when one shared level range is enough, or an object when the level range belongs to a specific enchantment. Enchantment checks look at normal item enchantments and stored enchanted-book enchantments.
+
+```json
+{
+  "player_items": ["#minecraft:swords"],
+  "player_item_slots": ["main_hand"],
+  "player_item_enchantments": [
+    {
+      "id": "minecraft:sharpness",
+      "min_level": 3
+    }
+  ]
+}
+```
+
 Villager equipment filters are available anywhere the rule is evaluated against a specific villager: dialogue options, lines, messages, openings, closings, pacify lines, notifications, gift preferences, gift rewards, pacification payments, and profession loot rules. Use `requires_villager_armed` to require a usable weapon in either hand, or `requires_villager_unarmed` to require no usable weapon. The shorter aliases `villager_armed` and `villager_unarmed` are also accepted.
 
 ```json
