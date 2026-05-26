@@ -8,10 +8,10 @@ uniform float FadeHeight;
 uniform float CellSize;
 uniform float ScreenWidth;
 uniform float ArcDepth;
-uniform float PanelLeft;
-uniform float PanelRight;
-uniform float PanelTop;
-uniform float PanelBlendWidth;
+uniform float RightVeilLeft;
+uniform float RightVeilTop;
+uniform float RightVeilBottom;
+uniform float RightVeilFadeWidth;
 
 in vec2 vertexScreenPos;
 
@@ -36,11 +36,20 @@ void main() {
     float normalizedX = clamp(vertexScreenPos.x / max(ScreenWidth, 1.0), 0.0, 1.0);
     float edgeDistance = abs(normalizedX * 2.0 - 1.0);
     float arcedVeilTop = VeilTop + ArcDepth * edgeDistance * edgeDistance;
-    float panelEnabled = step(PanelLeft + 1.0, PanelRight);
-    float panelDistance = max(max(PanelLeft - vertexScreenPos.x, vertexScreenPos.x - PanelRight), 0.0);
-    float panelInfluence = panelEnabled * (1.0 - smoothstep(0.0, max(PanelBlendWidth, 1.0), panelDistance));
-    arcedVeilTop = mix(arcedVeilTop, min(arcedVeilTop, PanelTop), panelInfluence);
-    float fadeProgress = clamp((vertexScreenPos.y - arcedVeilTop) / max(FadeHeight, 1.0), 0.0, 1.0);
+    float bottomFadeProgress = clamp((vertexScreenPos.y - arcedVeilTop) / max(FadeHeight, 1.0), 0.0, 1.0);
+
+    float rightEnabled = step(RightVeilTop + 1.0, RightVeilBottom);
+    float rightCenterY = (RightVeilTop + RightVeilBottom) * 0.5;
+    float rightHalfHeight = max((RightVeilBottom - RightVeilTop) * 0.5, 1.0);
+    float verticalDistance = clamp(abs(vertexScreenPos.y - rightCenterY) / rightHalfHeight, 0.0, 1.0);
+    float arcedRightLeft = RightVeilLeft + ArcDepth * verticalDistance * verticalDistance;
+    float rightVerticalMask = smoothstep(RightVeilTop, RightVeilTop + FadeHeight, vertexScreenPos.y)
+            * (1.0 - smoothstep(RightVeilBottom - FadeHeight, RightVeilBottom, vertexScreenPos.y));
+    float rightFadeProgress = rightEnabled
+            * rightVerticalMask
+            * clamp((vertexScreenPos.x - arcedRightLeft) / max(RightVeilFadeWidth, 1.0), 0.0, 1.0);
+
+    float fadeProgress = max(bottomFadeProgress, rightFadeProgress);
     if (fadeProgress <= 0.0) {
         discard;
     }

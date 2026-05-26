@@ -35,6 +35,7 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.Villager;
@@ -64,9 +65,9 @@ public class VillagerInteractionScreen extends Screen {
     private static final int VEIL_DITHER_START_OFFSET = OPTION_HEIGHT - 81;
     private static final int SCREEN_BOTTOM_MARGIN = 48;
     private static final int VEIL_TOP_DITHER_HEIGHT = 64;
-    private static final int SKILLS_VEIL_TOP_PADDING = 22;
-    private static final int SKILLS_VEIL_SIDE_PADDING = 14;
-    private static final int SKILLS_VEIL_BLEND_WIDTH = 48;
+    private static final int SKILLS_RIGHT_MARGIN = 36;
+    private static final int SKILLS_RIGHT_VEIL_PADDING = 22;
+    private static final int SKILLS_RIGHT_VEIL_FADE_WIDTH = 64;
     private static final int CHAT_EDGE_MARGIN = 4;
     private static final int CHAT_TOP_MARGIN = 12;
     private static final int CHAT_INPUT_AND_GAP_HEIGHT = 38;
@@ -769,7 +770,9 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     private void renderSkillsPage(GuiGraphics graphics, int mouseX, int mouseY) {
-        int left = optionsLeft() + 6;
+        renderSkillsInfo(graphics);
+
+        int left = skillsPanelLeft();
         int top = skillsPanelTop();
         Optional<VillagerProfileClientCache.DisplayEntry> entry = VillagerProfileClientCache.get(this.villagerEntityId);
         if (entry.isEmpty()) {
@@ -783,6 +786,26 @@ public class VillagerInteractionScreen extends Screen {
         if (hoveredSkill != null) {
             renderProfileSkillTooltip(graphics, profile, hoveredSkill, mouseX, mouseY);
         }
+    }
+
+    private void renderSkillsInfo(GuiGraphics graphics) {
+        int left = optionsLeft() + 6;
+        int top = conversationInfoTop() + 2;
+        int width = OPTION_WIDTH - 12;
+        graphics.drawString(this.font, translate("profile.skills.info.title"), left, top, INFO_VALUE_COLOR, false);
+        int y = top + this.font.lineHeight + 8;
+        y = renderWrappedInfoLine(graphics, Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.trade"), left, y, width);
+        y = renderWrappedInfoLine(graphics, Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.specialty"), left, y + 4, width);
+        renderWrappedInfoLine(graphics, Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.recruit"), left, y + 4, width);
+    }
+
+    private int renderWrappedInfoLine(GuiGraphics graphics, Component component, int left, int top, int width) {
+        int y = top;
+        for (FormattedCharSequence line : this.font.split(component, width)) {
+            graphics.drawString(this.font, line, left, y, INFO_SECONDARY_COLOR, false);
+            y += this.font.lineHeight + 2;
+        }
+        return y;
     }
 
     private VillagerSkill renderProfileSkills(
@@ -932,7 +955,6 @@ public class VillagerInteractionScreen extends Screen {
         tooltip.add(Component.translatable(GUI_KEY_PREFIX + "profile.tooltip.score", profile.skillValue(skill)).withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.empty());
         tooltip.add(Component.literal(localizedSkillDescription(skill)).withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.translatable(GUI_KEY_PREFIX + "profile.skill.tooltip.trade_effect").withStyle(ChatFormatting.GRAY));
         graphics.renderComponentTooltip(this.font, tooltip, mouseX, mouseY);
     }
 
@@ -1158,10 +1180,10 @@ public class VillagerInteractionScreen extends Screen {
                     this.height,
                     veilTop,
                     VEIL_TOP_DITHER_HEIGHT,
-                    optionsLeft() - SKILLS_VEIL_SIDE_PADDING,
-                    optionsLeft() + OPTION_WIDTH + SKILLS_VEIL_SIDE_PADDING,
-                    skillsVeilTop(),
-                    SKILLS_VEIL_BLEND_WIDTH
+                    skillsRightVeilLeft(),
+                    skillsRightVeilTop(),
+                    skillsRightVeilBottom(),
+                    SKILLS_RIGHT_VEIL_FADE_WIDTH
             );
             return;
         }
@@ -1591,7 +1613,7 @@ public class VillagerInteractionScreen extends Screen {
 
     private TopBackButtonBounds topBackButtonBounds() {
         int textWidth = this.font.width(backLabel());
-        int left = optionsLeft() + OPTION_TEXT_INSET;
+        int left = this.page == DialoguePage.SKILLS ? skillsPanelLeft() + OPTION_TEXT_INSET : optionsLeft() + OPTION_TEXT_INSET;
         int contentTop = this.page == DialoguePage.GIFT
                 ? giftInventoryTop()
                 : this.page == DialoguePage.SKILLS ? skillsPanelTop()
@@ -1602,13 +1624,29 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     private int skillsPanelTop() {
-        int lowerVeilTop = conversationInfoTop() + VEIL_DITHER_START_OFFSET + 8;
-        int bottomSafeTop = this.height - skillsPanelHeight() - 8;
-        return Math.max(24, Math.max(lowerVeilTop, bottomSafeTop));
+        int panelHeight = skillsPanelHeight();
+        int minTop = 32;
+        int maxTop = Math.max(minTop, this.height - panelHeight - 32);
+        return Mth.clamp((this.height - panelHeight) / 2, minTop, maxTop);
     }
 
-    private int skillsVeilTop() {
-        return Math.max(0, skillsPanelTop() - SKILLS_VEIL_TOP_PADDING);
+    private int skillsPanelLeft() {
+        int maxLeft = Math.max(8, this.width - OPTION_WIDTH - 8);
+        int preferredLeft = this.width - OPTION_WIDTH - SKILLS_RIGHT_MARGIN;
+        int minLeft = optionsLeft() + OPTION_WIDTH + 36;
+        return Math.min(maxLeft, Math.max(minLeft, preferredLeft));
+    }
+
+    private int skillsRightVeilLeft() {
+        return Math.max(0, skillsPanelLeft() - SKILLS_RIGHT_VEIL_PADDING);
+    }
+
+    private int skillsRightVeilTop() {
+        return Math.max(0, skillsPanelTop() - SKILLS_RIGHT_VEIL_PADDING);
+    }
+
+    private int skillsRightVeilBottom() {
+        return Math.min(this.height, skillsPanelTop() + skillsPanelHeight() + SKILLS_RIGHT_VEIL_PADDING);
     }
 
     private int skillsPanelHeight() {
