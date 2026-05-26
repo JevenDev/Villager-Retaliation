@@ -433,6 +433,13 @@ public final class VillagerRetaliationRetaliationUtil {
             return;
         }
 
+        if (VillagerRetaliationVillagerEquipment.isPlayerManagedMainHand(villager)
+                && VillagerRetaliationVillagerEquipment.mainHandMatchesItem(villager, state.equippedWeapon())
+                && VillagerRetaliationVillagerEquipment.restorePlayerManagedMainHand(villager)) {
+            VillagerRetaliationVillagerEquipment.setMainHandDropChance(villager, state.previousDropChance());
+            return;
+        }
+
         if (VillagerRetaliationVillagerWeapons.maintainAcquiredWeaponAuthority(villager)) {
             return;
         }

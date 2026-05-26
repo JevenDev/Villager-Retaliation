@@ -44,17 +44,6 @@ public class VillagerInventoryScreen extends AbstractContainerScreen<VillagerInv
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.options.keyDrop.matches(keyCode, scanCode)
-                && this.hoveredSlot != null
-                && this.menu.isVillagerSlot(this.hoveredSlot)) {
-            return true;
-        }
-        return super.keyPressed(keyCode, scanCode, modifiers);
-    }
-
-    @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.render(graphics, mouseX, mouseY, partialTick);
         renderTooltip(graphics, mouseX, mouseY);

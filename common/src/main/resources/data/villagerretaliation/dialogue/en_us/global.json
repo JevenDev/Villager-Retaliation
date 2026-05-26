@@ -2439,6 +2439,16 @@
       ]
     },
     {
+      "key": "interaction.gift_inventory_full",
+      "lines": [
+        "Sorry, my pockets are a bit full.",
+        "I cannot carry anything else right now.",
+        "My hands are full enough already.",
+        "I do not have room for that right now.",
+        "Keep that for now. I have nowhere to put it."
+      ]
+    },
+    {
       "key": "interaction.recruit_unavailable",
       "lines": [
         "I cannot help right now.",

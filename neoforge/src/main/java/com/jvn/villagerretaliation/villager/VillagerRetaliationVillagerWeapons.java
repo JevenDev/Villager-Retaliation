@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.villager;
 
 import com.jvn.toucanlib.neoforge.loot.ToucanLivingDrops;
+import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -14,6 +15,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.AbstractVillager;
+import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.BowItem;
 import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.ItemStack;
@@ -113,10 +115,6 @@ public final class VillagerRetaliationVillagerWeapons {
     }
 
     public static void equipGroundWeapon(AbstractVillager villager, ItemEntity itemEntity) {
-        if (VillagerRetaliationVillagerEquipment.isPlayerManagedMainHand(villager)) {
-            return;
-        }
-
         ItemStack groundStack = itemEntity.getItem();
         if (groundStack.isEmpty()) {
             return;
@@ -126,10 +124,7 @@ public final class VillagerRetaliationVillagerWeapons {
         ItemStack equippedStack = groundStack.copyWithCount(1);
         ItemStack previousMainHand = villager.getMainHandItem().copy();
         if (!previousMainHand.isEmpty()) {
-            ItemStack remainder = villager.getInventory().addItem(previousMainHand);
-            if (!remainder.isEmpty()) {
-                villager.spawnAtLocation(remainder);
-            }
+            storeOrDropDisplacedMainHand(villager, previousMainHand);
         }
 
         villager.onItemPickup(itemEntity);
@@ -180,10 +175,7 @@ public final class VillagerRetaliationVillagerWeapons {
 
         if (!mainHand.isEmpty()) {
             ItemStack displacedMainHand = mainHand.copy();
-            ItemStack remainder = villager.getInventory().addItem(displacedMainHand);
-            if (!remainder.isEmpty()) {
-                villager.spawnAtLocation(remainder);
-            }
+            storeOrDropDisplacedMainHand(villager, displacedMainHand);
         }
 
         VillagerRetaliationVillagerEquipment.setPickedUpMainHand(villager, trackedPickup);
@@ -201,6 +193,22 @@ public final class VillagerRetaliationVillagerWeapons {
 
     public static void clearCache() {
         NEAREST_WEAPON_CACHE.clear();
+    }
+
+    private static void storeOrDropDisplacedMainHand(AbstractVillager villager, ItemStack stack) {
+        if (stack.isEmpty()) {
+            return;
+        }
+
+        ItemStack remainder = stack.copy();
+        if (villager instanceof Villager regularVillager) {
+            remainder = VillagerInventoryAccess.addItem(regularVillager, remainder);
+        } else {
+            remainder = villager.getInventory().addItem(remainder);
+        }
+        if (!remainder.isEmpty()) {
+            villager.spawnAtLocation(remainder);
+        }
     }
 
     public static boolean isRangedWeapon(ItemStack stack) {
@@ -269,8 +277,7 @@ public final class VillagerRetaliationVillagerWeapons {
 
     private static boolean shouldPathfindForWeapon(AbstractVillager villager, ItemStack equippedWeapon, ItemStack groundWeapon) {
         if (!canSearchForGroundWeapon(villager)
-                || !isUsableWeapon(groundWeapon)
-                || VillagerRetaliationVillagerEquipment.isPlayerManagedMainHand(villager)) {
+                || !isUsableWeapon(groundWeapon)) {
             return false;
         }
 

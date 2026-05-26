@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.0.0-beta.11-hotfix.1 - 2026-05-26
+
+### Changed
+
+- Villagers no longer generate arbitrary profession weapons when attacked. They now fight with weapons they already hold, weapons stored in their inventory, or eligible weapons they can pick up from the ground.
+- Villagers can now swap a held non-weapon item with an inventory weapon for combat, then restore the held item after the borrowed weapon is returned.
+- Villagers with a held non-weapon can now pick up eligible ground weapons; the held item is stored first and only drops if storage is truly full.
+- Villager gifts are now refused before item removal when the receiving villager has no room to store the gift.
+- Villager inventory screens now allow the player's normal drop key to drop hovered villager-slot items.
+
+### Fixed
+
+- Fixed a beta.11 item duplication issue where temporary combat/profession weapons could become real inventory overflow drops when a villager restored a managed held item.
+- Fixed toolsmiths, farmers, and other combat-capable villagers dropping generated weapons or bread while simply walking around or exiting combat.
+- Fixed full-inventory villagers dropping held items instead of swapping them with borrowed inventory weapons.
+- Fixed vanilla trade-preview hand items, such as bells shown when a player holds emeralds near a toolsmith, being treated as real displaced inventory items and dropped.
+- Fixed ground-weapon pickup being blocked when the villager already had a player-managed non-weapon in its main hand.
+
 ## 1.0.0-beta.11 - 2026-05-26
 
 ### Added
