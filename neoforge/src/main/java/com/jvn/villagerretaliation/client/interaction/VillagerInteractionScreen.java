@@ -804,7 +804,7 @@ public class VillagerInteractionScreen extends Screen {
 
     private void renderSkillsInfo(GuiGraphics graphics) {
         int left = optionsLeft() + 6;
-        int top = conversationInfoTop() + 2;
+        int top = Mth.floor(optionTextTop(conversationInfoTop()));
         int width = OPTION_WIDTH - 12;
         graphics.drawString(this.font, translate("profile.skills.info.title"), left, top, INFO_VALUE_COLOR, false);
         int y = top + this.font.lineHeight + 8;
@@ -1612,11 +1612,10 @@ public class VillagerInteractionScreen extends Screen {
 
     private TopBackButtonBounds topBackButtonBounds() {
         int textWidth = this.font.width(backLabel());
-        int left = this.page == DialoguePage.SKILLS ? skillsPanelLeft() + OPTION_TEXT_INSET : optionsLeft() + OPTION_TEXT_INSET;
+        int left = optionsLeft() + OPTION_TEXT_INSET;
         int contentTop = this.page == DialoguePage.GIFT
                 ? giftInventoryTop()
-                : this.page == DialoguePage.SKILLS ? skillsPanelTop()
-                : this.page == DialoguePage.PROFILE ? conversationInfoTop() : optionsTop();
+                : this.page == DialoguePage.PROFILE || this.page == DialoguePage.SKILLS ? conversationInfoTop() : optionsTop();
         int top = contentTop - this.font.lineHeight - TOP_BACK_BUTTON_GAP;
         int bottom = top + this.font.lineHeight;
         return new TopBackButtonBounds(left, left + textWidth, top, bottom);
