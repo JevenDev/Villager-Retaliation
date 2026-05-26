@@ -22,12 +22,15 @@ Use a unique file name for addon dialogue. A datapack file at `data/villagerreta
 
 Dialogue files translate villager speech and keyed dialogue messages. They do not translate the client GUI around the conversation, such as Talk, Trade, Gift, Gender, Mood, Family Tree, or generated relationship rows. Put those strings in a resource-pack language file; see [Localization Guide](Localization.md).
 
+Files are read in sorted resource-location order. A file with top-level `"replace": true` clears previously loaded dialogue options, lines, messages, openings, closings, and pacify lines for that locale pool, then adds its own entries. Use this only when a pack intentionally wants to replace the loaded dialogue pool instead of adding to it.
+
 ## Top-Level Sections
 
 A dialogue file can contain any mix of these arrays:
 
 | Key | Purpose |
 | --- | --- |
+| `replace` | If `true`, clears previously loaded dialogue entries before this file is read. |
 | `options` | Adds choices to the villager talk menu. |
 | `lines` | Adds responses selected for a dialogue request type. |
 | `messages` | Adds keyed one-off text used by specific systems. |
@@ -39,6 +42,7 @@ A dialogue file can contain any mix of these arrays:
 
 ```json
 {
+  "replace": false,
   "options": [
     {
       "id": "my_pack.ask_weather",
@@ -64,6 +68,69 @@ A dialogue file can contain any mix of these arrays:
 ```
 
 The option id is what the player clicks. The line's `option` or `option_ids` links it to that choice.
+
+## Add, Override, Or Replace
+
+Most packs should add entries without `replace`. This keeps the built-in dialogue and adds your option:
+
+```json
+{
+  "options": [
+    {
+      "id": "examplepack.ask_local_rumors",
+      "label": "Ask Local Rumors",
+      "type": "dialogue_option",
+      "request": "story",
+      "order": 30,
+      "show_for_babies": false
+    }
+  ]
+}
+```
+
+To override one entry, use the same `id` as an existing entry. Later files replace earlier entries with the same id:
+
+```json
+{
+  "openings": [
+    {
+      "id": "global_new_villager_opening",
+      "first_conversation_only": true,
+      "show_for_babies": false,
+      "text": "New face. State your business."
+    }
+  ]
+}
+```
+
+Top-level `replace` is file-wide, not entry-wide. This file removes the earlier dialogue pool, then adds only one option:
+
+```json
+{
+  "replace": true,
+  "options": [
+    {
+      "id": "examplepack.ask_local_rumors",
+      "label": "Ask Local Rumors",
+      "type": "dialogue_option",
+      "request": "story",
+      "order": 30,
+      "show_for_babies": false
+    }
+  ]
+}
+```
+
+After that example, built-in options such as Greet, Ask Question, Tell Joke, and Insult are gone unless this file also adds them back. It also clears earlier `lines`, `messages`, `openings`, `closings`, and `pacify` entries. Use `replace: true` for total conversion packs, not for one extra option.
+
+Quick choices:
+
+| Goal | Use |
+| --- | --- |
+| Add one new talk option | No `replace`; add an `options` entry. |
+| Add new villager replies | No `replace`; add `lines`, `messages`, `openings`, or `closings`. |
+| Change one known built-in entry | Reuse that entry's `id`. |
+| Replace all loaded dialogue with your own set | Top-level `"replace": true`, then include every entry you still want. |
 
 ## Text And Line Variations
 

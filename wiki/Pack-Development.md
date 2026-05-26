@@ -101,7 +101,9 @@ Do not put addon content in `data/villagerretaliation/dialogue/en_us/global.json
 
 Dialogue, forced dialogue, notification, gift, and profession loot entries support stable `id` values. When a later locale layer or later file defines the same `id`, it replaces the previous entry in that loaded pool. This is the cleanest way to translate or override one specific line or rule without copying a full built-in file.
 
-Gift preference, gift reward, and profession loot entries also support `"remove": true` when an `id` is supplied. Gift and profession loot files can set top-level `"replace": true` to clear previously loaded rules before reading that file.
+Top-level `"replace": true` is file-wide. In dialogue files, it clears earlier options, lines, messages, openings, closings, and pacify lines before reading that file. In notification files, it clears earlier HUD notifications and world-text entries before reading that file. In gift, profession loot, and villager name files, it clears the matching loaded pool before reading that file. Use top-level `replace` for total replacements, not for one extra entry.
+
+Gift preference, gift reward, and profession loot entries also support `"remove": true` when an `id` is supplied.
 
 Preset names are additive across JSON files under:
 

@@ -24,6 +24,7 @@
 - Added `take_items` forced-dialogue payments that can remove a total item count from the player, including counts larger than one stack.
 - Added payment destinations for removed items: discard, witness villager inventory, source container, drop at villager, and drop at container.
 - Added shared reputation condition fields for dialogue options, dialogue lines, forced-dialogue entries, and forced-dialogue options: `reputation_level`, `reputation_levels`, `min_reputation`, and `max_reputation`.
+- Added top-level `replace` support for dialogue and notification datapack files.
 - Added village container theft memories and gossip through `player_container_theft`, `requires_container_theft_to_self`, and `requires_container_theft_from_other`.
 - Added theft-memory placeholders for dialogue, including `{stolen_item}`, `{stolen_count}`, `{stolen_stack}`, `{stolen_container}`, `{stolen_loot_table}`, `{theft_witness}`, and `{theft_witness_possessive}`.
 - Added datapack-builder support for forced dialogue, item payments, generated-container loot table filters, `player_item_proximity` item callouts, item durability filters, reputation-gated dialogue, armed/unarmed villager filters, and theft-memory event tags.

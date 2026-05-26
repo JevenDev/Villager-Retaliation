@@ -75,6 +75,7 @@ Pack-facing beta.11 changes focus on making data-driven behavior easier to exten
 - Added namespaced custom profession support for dialogue defaults, dialogue filters, notification filters, gift filters, pacification filters, gift-knowledge keys, and profession display fallbacks.
 - Added [Profession Loot JSON](Profession-Loot.md) rule files under `data/villagerretaliation/profession_loot/`.
 - Added loot-table-backed profession drops through `loot_table` references. Loot tables can live in any namespace.
+- Added top-level `replace` support for dialogue and notification files.
 - Added `id`, `remove`, and top-level `replace` support for gift preferences and gift rewards.
 - Added additive villager name files under `data/villagerretaliation/villager_names/`, plus top-level `replace` support.
 

@@ -36,7 +36,7 @@ import net.minecraft.world.entity.npc.VillagerProfession;
 public final class VillagerDialogueResources {
     private static final String DIALOGUE_ROOT = "dialogue/";
     private static final Set<String> ROOT_KEYS = Set.of(
-            "options", "lines", "messages", "openings", "closings", "pacify",
+            "replace", "options", "lines", "messages", "openings", "closings", "pacify",
             "notifications", "entries", "preferences", "rewards", "payments");
     private static final Set<String> OPTION_KEYS = Set.of(
             "id", "label", "type", "request", "order", "professions", "dispositions",
@@ -338,6 +338,14 @@ public final class VillagerDialogueResources {
             Map<String, KeyedMessageLine> messages) {
         try (Reader reader = resource.openAsReader()) {
             JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
+            if (readBoolean(root, "replace", false)) {
+                lines.clear();
+                openings.clear();
+                closings.clear();
+                pacifyLines.clear();
+                options.clear();
+                messages.clear();
+            }
             DatapackDiagnostics.warnMisplacedRootKeys(location, "dialogue", root, Map.of(
                     "notifications", "data/villagerretaliation/notifications/<locale>/<file>.json",
                     "entries", "data/villagerretaliation/forced_dialogue/<file>.json",

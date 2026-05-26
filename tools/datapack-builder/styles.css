@@ -1604,6 +1604,10 @@ body.is-file-dragging::after {
   z-index: 80;
 }
 
+#migration-dialog {
+  z-index: 85;
+}
+
 .modal-window {
   width: min(520px, 100%);
   max-height: min(640px, calc(100vh - 36px));

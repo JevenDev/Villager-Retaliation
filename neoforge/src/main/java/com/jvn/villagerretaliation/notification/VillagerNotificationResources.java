@@ -37,7 +37,7 @@ public final class VillagerNotificationResources {
     private static final int DEFAULT_COLOR = ResolvedVillagerNotification.DEFAULT_COLOR;
     private static final Map<String, Integer> NAMED_COLORS = namedColors();
     private static final Set<String> ROOT_KEYS = Set.of(
-            "notifications", "options", "messages", "openings", "closings", "pacify", "entries");
+            "replace", "notifications", "options", "messages", "openings", "closings", "pacify", "entries");
     private static final Set<String> NOTIFICATION_KEYS = Set.of(
             "id", "trigger", "text", "lines", "kind", "world_text_kind", "style", "color", "text_color", "chat_color",
             "professions", "requires_villager_unarmed", "villager_unarmed", "requires_villager_armed", "villager_armed",
@@ -170,6 +170,9 @@ public final class VillagerNotificationResources {
             Map<String, VillagerNotificationDefinition> definitions) {
         try (Reader reader = resource.openAsReader()) {
             JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
+            if (readBoolean(root, "replace", false)) {
+                definitions.clear();
+            }
             DatapackDiagnostics.warnMisplacedRootKeys(location, "notifications", root, Map.of(
                     "options", "data/villagerretaliation/dialogue/<locale>/<file>.json",
                     "messages", "data/villagerretaliation/dialogue/<locale>/<file>.json",

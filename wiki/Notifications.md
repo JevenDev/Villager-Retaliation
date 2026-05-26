@@ -17,10 +17,13 @@ Use a unique file name for addon notifications. A datapack file at `data/village
 
 Notification files translate HUD notification text and ambient world text. They do not translate the interaction GUI, generated relationship/family labels, reputation overlay labels, or villager chat tag labels. Put those strings in a resource-pack language file; see [Localization Guide](Localization.md).
 
+Files are read in sorted resource-location order. A file with top-level `"replace": true` clears previously loaded notifications for that locale pool, then adds its own notifications. Use this only when a pack intentionally wants to replace the loaded notification/world-text pool instead of adding to it.
+
 ## Minimal Notification
 
 ```json
 {
+  "replace": false,
   "notifications": [
     {
       "id": "my_pack.gift.liked",
@@ -59,10 +62,88 @@ Notification entries can use either `text` for one output or `lines` for several
 
 Use `text` for single-line entries. Use `lines` when several entries would otherwise share the same trigger, filters, chance, and style.
 
+## Add, Override, Or Replace
+
+Most packs should add notification entries without `replace`. This keeps the built-in notifications and adds another possible line for the same trigger:
+
+```json
+{
+  "notifications": [
+    {
+      "id": "examplepack.greeting.extra",
+      "trigger": "dialogue.greeting",
+      "text": "Well met.",
+      "world_text_kind": "dialogue",
+      "weight": 20
+    }
+  ]
+}
+```
+
+To override one entry, use the same `id` as an existing entry. Later files replace earlier entries with the same id:
+
+```json
+{
+  "notifications": [
+    {
+      "id": "examplepack.greeting.extra",
+      "trigger": "dialogue.greeting",
+      "text": "Good day.",
+      "world_text_kind": "dialogue"
+    }
+  ]
+}
+```
+
+Top-level `replace` is file-wide, not trigger-wide. This file removes the earlier notification pool, then adds only the listed notifications:
+
+```json
+{
+  "replace": true,
+  "notifications": [
+    {
+      "id": "examplepack.opening.only",
+      "trigger": "conversation.opening",
+      "lines": [
+        "Hello.",
+        "Good day.",
+        "Need something?"
+      ],
+      "world_text_kind": "dialogue"
+    }
+  ]
+}
+```
+
+After that example, earlier notification entries for `dialogue.greeting`, `trade.completed`, `gift.world.liked`, combat alerts, and every other notification trigger are gone unless this file also adds them back. Use `replace: true` for packs that want to own the whole notification/world-text set.
+
+Quick choices:
+
+| Goal | Use |
+| --- | --- |
+| Add another possible popup | No `replace`; add a notification with the same `trigger`. |
+| Make your popup much more likely | No `replace`; add a higher `weight`. |
+| Change one known entry | Reuse that entry's `id`. |
+| Replace all loaded notifications with your own set | Top-level `"replace": true`, then include every notification you still want. |
+
+Common trigger examples:
+
+| What You Want To Change | Trigger |
+| --- | --- |
+| Floating text when opening a conversation, including fallback words like `Hai`, `Ciao`, and `Heyo` | `conversation.opening` |
+| Floating text when closing a conversation | `conversation.closing` |
+| Floating text after choosing Greet | `dialogue.greeting` |
+| Floating text after asking a question | `dialogue.question` |
+| Floating text after a completed trade | `trade.completed` |
+| Floating text after a liked gift | `gift.world.liked` |
+| Floating text after a disliked gift | `gift.world.disliked` |
+| Floating text when a villager is attacked by a player | `alert.player_attacked_villager` |
+
 ## Fields
 
 | Field | Type | Default | Notes |
 | --- | --- | --- | --- |
+| `replace` | boolean | `false` | Top-level only. If `true`, clears previously loaded notifications before this file is read. |
 | `id` | string | generated | Stable id for translations and overrides. |
 | `trigger` | string | required | Event trigger emitted by the mod. |
 | `text` | string | required unless `lines` is set | HUD/world text. Supports trigger-specific placeholders. |
@@ -116,17 +197,19 @@ villager_death
 
 ## World Text Kinds
 
-Use these values in `world_text_kind`:
+`world_text_kind` controls the floating text's default color, size, motion, particles, and emphasis. It does not control when the text appears; the `trigger` and filters do that. Use `color` or `text_color` when you want the same behavior with a custom tint.
 
-```text
-alert
-murmur
-positive
-negative
-trade
-dialogue
-sleep
-```
+| Value | Default Use | What It Looks Like |
+| --- | --- | --- |
+| `alert` | Danger, attacks, retaliation, urgent warnings. | Largest and punchiest style. Uses warm yellow text by default, rises higher, pops harder, spawns alert particles, and adds an extra `!` accent when the text is more than just `!`. |
+| `murmur` | Ambient nearby comments and low-importance chatter. | Small, quiet, pale text with gentle movement and no special particles. Best for background flavor. |
+| `positive` | Approval, successful jokes, high-reputation gifts, good outcomes. | Green-tinted text with happy/glow particles and a slightly brighter pop than normal dialogue. |
+| `negative` | Refusals, insults, cooldowns, disliked gifts, bad outcomes. | Red-tinted, italic text with sharper motion and angry villager particles. |
+| `trade` | Completed trades and trade-like acknowledgements. | Compact mint-green text with happy/glow particles. Similar to `positive`, but a little more restrained. |
+| `dialogue` | Conversation openings, greetings, questions, neutral gift text. | Soft purple text with subtle enchant particles. Good default for normal spoken snippets. |
+| `sleep` | Sleeping breathing and dream murmurs. | Light blue, longer-lived sleepy text. Special-cases `ZZZ` into drifting `Z` letters and `*snores*` into snore bubble particles. |
+
+The built-in default colors are roughly: `alert` yellow, `murmur` pale gray, `positive` green, `negative` red, `trade` mint, `dialogue` soft purple, and `sleep` light blue.
 
 ## Built-In Trigger Families
 
