@@ -407,12 +407,12 @@ public final class WanderingTraderRetaliationHandler {
     }
 
     private static void equipCombatWeapon(WanderingTrader trader) {
-        if (VillagerRetaliationVillagerWeapons.maintainAcquiredWeaponAuthority(trader)) {
-            RETALIATION.discardTemporaryWeapon(trader);
+        if (RETALIATION.maintainTemporaryWeapon(trader)) {
             return;
         }
 
-        if (RETALIATION.maintainTemporaryWeapon(trader)) {
+        if (VillagerRetaliationVillagerWeapons.maintainAcquiredWeaponAuthority(trader)) {
+            RETALIATION.discardTemporaryWeapon(trader);
             return;
         }
 

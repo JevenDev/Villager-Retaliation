@@ -398,6 +398,10 @@ public final class VillagerInteractionService {
             sendVillagerNotice(player, villager, "interaction.gift_empty_slot");
             return;
         }
+        if (!VillagerInventoryAccess.canAddItems(villager, List.of(selectedStack.copy()))) {
+            sendVillagerNotice(player, villager, "interaction.gift_inventory_full");
+            return;
+        }
 
         ServerLevel level = player.serverLevel();
         ItemStack giftedStack = player.getInventory().removeItem(inventorySlot, selectedStack.getCount());

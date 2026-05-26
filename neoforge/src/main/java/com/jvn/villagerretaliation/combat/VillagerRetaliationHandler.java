@@ -641,7 +641,6 @@ public final class VillagerRetaliationHandler {
     private static boolean tryAcquireGroundWeapon(Villager villager, long gameTime) {
         if (!villager.isAlive()
                 || !VillagerCombatRoles.canScavengeGroundWeapons(villager)
-                || VillagerRetaliationVillagerEquipment.isPlayerManagedMainHand(villager)
                 || VillagerInventoryAccess.hasOpenInventory(villager)
                 || !VillagerRetaliationVillagerCombatUtil.isThreatened(villager)) {
             return false;
@@ -1029,12 +1028,12 @@ public final class VillagerRetaliationHandler {
             return;
         }
 
-        if (VillagerRetaliationVillagerWeapons.maintainAcquiredWeaponAuthority(villager)) {
-            RETALIATION.discardTemporaryWeapon(villager);
+        if (RETALIATION.maintainTemporaryWeapon(villager)) {
             return;
         }
 
-        if (RETALIATION.maintainTemporaryWeapon(villager)) {
+        if (VillagerRetaliationVillagerWeapons.maintainAcquiredWeaponAuthority(villager)) {
+            RETALIATION.discardTemporaryWeapon(villager);
             return;
         }
 
@@ -1045,13 +1044,6 @@ public final class VillagerRetaliationHandler {
         if (tryBorrowInventoryCombatWeapon(villager)) {
             return;
         }
-
-        ItemStack weapon = VillagerCombatRoles.preferredWeapon(villager);
-        if (weapon.isEmpty()) {
-            return;
-        }
-
-        RETALIATION.equipTemporaryWeapon(villager, weapon);
     }
 
     private static boolean hasEquippedWeaponGear(Villager villager) {

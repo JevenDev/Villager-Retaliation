@@ -35,6 +35,8 @@ Use these values in `reaction`:
 
 Total reputation from one gifted stack is clamped between `-100` and `120`.
 
+Players can only give a gift when the receiving villager has room to store the full gifted stack. If the villager inventory is full, the gift is refused and the item stays with the player.
+
 ## Preference Example
 
 ```json

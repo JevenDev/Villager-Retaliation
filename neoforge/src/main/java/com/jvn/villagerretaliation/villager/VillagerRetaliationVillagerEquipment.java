@@ -1,12 +1,17 @@
 package com.jvn.villagerretaliation.villager;
 
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.entity.EntitySelector;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.npc.AbstractVillager;
+import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.trading.MerchantOffer;
 
 public final class VillagerRetaliationVillagerEquipment {
+    private static final double TRADE_PREVIEW_PLAYER_RADIUS = 8.0D;
     private static final String MAINHAND_STATE_TAG = "VillagerRetaliationMainhandState";
     private static final String MAINHAND_OWNER_TAG = "Owner";
     private static final String MAINHAND_STACK_TAG = "Stack";
@@ -158,11 +163,23 @@ public final class VillagerRetaliationVillagerEquipment {
         }
 
         if (!mainHand.isEmpty()) {
-            ItemStack displacedMainHand = mainHand.copy();
-            ItemStack remainder = villager.getInventory().addItem(displacedMainHand);
-            if (!remainder.isEmpty()) {
-                villager.spawnAtLocation(remainder);
+            if (!isVanillaTradePreviewMainHand(villager, mainHand)) {
+                ItemStack displacedMainHand = mainHand.copy();
+                ItemStack remainder = villager.getInventory().addItem(displacedMainHand);
+                if (!remainder.isEmpty()) {
+                    villager.spawnAtLocation(remainder);
+                }
             }
+        }
+
+        setPlayerManagedMainHand(villager, expectedStack);
+        return true;
+    }
+
+    public static boolean restorePlayerManagedMainHand(AbstractVillager villager) {
+        ItemStack expectedStack = playerManagedMainHand(villager);
+        if (expectedStack.isEmpty()) {
+            return false;
         }
 
         setPlayerManagedMainHand(villager, expectedStack);
@@ -196,6 +213,13 @@ public final class VillagerRetaliationVillagerEquipment {
 
     public static void clearPickedUpMainHand(AbstractVillager villager) {
         if (mainHandOwner(villager) == MainHandOwner.PICKED_UP) {
+            clearMainHandState(villager);
+        }
+        villager.getPersistentData().remove(LEGACY_PICKED_UP_MAINHAND_TAG);
+    }
+
+    public static void clearPlayerManagedMainHand(AbstractVillager villager) {
+        if (isPlayerManagedMainHand(villager)) {
             clearMainHandState(villager);
         }
         villager.getPersistentData().remove(LEGACY_PICKED_UP_MAINHAND_TAG);
@@ -258,6 +282,45 @@ public final class VillagerRetaliationVillagerEquipment {
             return;
         }
         setPickedUpMainHand(villager, stack);
+    }
+
+    private static boolean isVanillaTradePreviewMainHand(AbstractVillager villager, ItemStack stack) {
+        if (!(villager instanceof Villager regularVillager) || stack.isEmpty() || regularVillager.getOffers().isEmpty()) {
+            return false;
+        }
+
+        for (MerchantOffer offer : regularVillager.getOffers()) {
+            if (offer.isOutOfStock() || !ItemStack.isSameItemSameComponents(stack, offer.getResult())) {
+                continue;
+            }
+            if (hasNearbyPlayerHoldingTradeCost(regularVillager, offer)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean hasNearbyPlayerHoldingTradeCost(Villager villager, MerchantOffer offer) {
+        return !villager.level()
+                .getEntitiesOfClass(
+                        Player.class,
+                        villager.getBoundingBox().inflate(TRADE_PREVIEW_PLAYER_RADIUS),
+                        player -> EntitySelector.NO_SPECTATORS.test(player) && isHoldingTradeCost(player, offer))
+                .isEmpty();
+    }
+
+    private static boolean isHoldingTradeCost(Player player, MerchantOffer offer) {
+        return isTradeCost(player.getMainHandItem(), offer)
+                || isTradeCost(player.getOffhandItem(), offer);
+    }
+
+    private static boolean isTradeCost(ItemStack stack, MerchantOffer offer) {
+        return !stack.isEmpty()
+                && (matchesCost(stack, offer.getCostA()) || matchesCost(stack, offer.getCostB()));
+    }
+
+    private static boolean matchesCost(ItemStack stack, ItemStack cost) {
+        return !cost.isEmpty() && ItemStack.isSameItemSameComponents(stack, cost);
     }
 
     private static void setManualMainHandState(AbstractVillager villager, ItemStack stack) {
