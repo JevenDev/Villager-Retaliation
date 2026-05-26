@@ -1,0 +1,285 @@
+{
+  "replace": false,
+  "entries": [
+    {
+      "id": "villagerretaliation:mason_apprentice_bricks",
+      "professions": ["minecraft:mason"],
+      "skills": ["villagerretaliation:masonry"],
+      "min_rank": "apprentice",
+      "villager_level": 2,
+      "chance": 1.0,
+      "weight": 10,
+      "cost": {
+        "item": "minecraft:emerald",
+        "count": 2
+      },
+      "result": {
+        "item": "minecraft:bricks",
+        "count": 16
+      },
+      "max_uses": {
+        "base": 12
+      },
+      "xp": 4,
+      "price_multiplier": 0.05
+    },
+    {
+      "id": "villagerretaliation:mason_expert_quartz_blocks",
+      "professions": ["minecraft:mason"],
+      "skills": ["villagerretaliation:masonry"],
+      "min_rank": "expert",
+      "villager_level": 4,
+      "chance": 0.75,
+      "weight": 10,
+      "cost": {
+        "item": "minecraft:emerald",
+        "count": 5
+      },
+      "result": {
+        "item": "minecraft:quartz_block",
+        "count": 8
+      },
+      "max_uses": {
+        "base": 8
+      },
+      "xp": 12,
+      "price_multiplier": 0.05
+    },
+    {
+      "id": "villagerretaliation:leatherworker_apprentice_leather",
+      "professions": ["minecraft:leatherworker"],
+      "skills": ["villagerretaliation:leatherworking"],
+      "min_rank": "apprentice",
+      "villager_level": 2,
+      "chance": 1.0,
+      "weight": 10,
+      "cost": {
+        "item": "minecraft:emerald",
+        "count": 4
+      },
+      "result": {
+        "item": "minecraft:leather",
+        "count": 12
+      },
+      "max_uses": {
+        "base": 10
+      },
+      "xp": 5,
+      "price_multiplier": 0.05
+    },
+    {
+      "id": "villagerretaliation:leatherworker_expert_leather_chestplate",
+      "professions": ["minecraft:leatherworker"],
+      "skills": ["villagerretaliation:leatherworking"],
+      "min_rank": "expert",
+      "villager_level": 4,
+      "chance": 0.7,
+      "weight": 10,
+      "cost": {
+        "item": "minecraft:emerald",
+        "count": 10
+      },
+      "result": {
+        "item": "minecraft:leather_chestplate",
+        "count": 1,
+        "enchantments": {
+          "mode": "random_from",
+          "candidates": [
+            "minecraft:protection",
+            "minecraft:unbreaking"
+          ],
+          "level_by_skill": true,
+          "min_level": 1,
+          "max_level": 3
+        }
+      },
+      "max_uses": {
+        "base": 4
+      },
+      "xp": 12,
+      "price_multiplier": 0.1
+    },
+    {
+      "id": "villagerretaliation:leatherworker_master_saddle",
+      "professions": ["minecraft:leatherworker"],
+      "skills": ["villagerretaliation:animal_handling"],
+      "min_rank": "master",
+      "villager_level": 5,
+      "chance": 0.35,
+      "weight": 10,
+      "cost": {
+        "item": "minecraft:emerald",
+        "count": 12
+      },
+      "result": {
+        "item": "minecraft:saddle",
+        "count": 1
+      },
+      "max_uses": {
+        "base": 2
+      },
+      "xp": 20,
+      "price_multiplier": 0.05,
+      "conditions": {
+        "config_flags": ["skillTradeAllowRareSpecialtyTrades"]
+      }
+    },
+    {
+      "id": "villagerretaliation:butcher_apprentice_cooked_beef",
+      "professions": ["minecraft:butcher"],
+      "skills": ["villagerretaliation:cooking"],
+      "min_rank": "apprentice",
+      "villager_level": 2,
+      "chance": 1.0,
+      "weight": 10,
+      "cost": {
+        "item": "minecraft:emerald",
+        "count": 2
+      },
+      "result": {
+        "item": "minecraft:cooked_beef",
+        "count": 8
+      },
+      "max_uses": {
+        "base": 12
+      },
+      "xp": 4,
+      "price_multiplier": 0.05
+    },
+    {
+      "id": "villagerretaliation:butcher_expert_cooked_porkchop",
+      "professions": ["minecraft:butcher"],
+      "skills": ["villagerretaliation:cooking"],
+      "min_rank": "expert",
+      "villager_level": 4,
+      "chance": 0.75,
+      "weight": 10,
+      "cost": {
+        "item": "minecraft:emerald",
+        "count": 6
+      },
+      "result": {
+        "item": "minecraft:cooked_porkchop",
+        "count": 18
+      },
+      "max_uses": {
+        "base": 8
+      },
+      "xp": 12,
+      "price_multiplier": 0.05
+    },
+    {
+      "id": "villagerretaliation:cartographer_apprentice_maps",
+      "professions": ["minecraft:cartographer"],
+      "skills": ["villagerretaliation:cartography"],
+      "min_rank": "apprentice",
+      "villager_level": 2,
+      "chance": 1.0,
+      "weight": 10,
+      "cost": {
+        "item": "minecraft:emerald",
+        "count": 3
+      },
+      "result": {
+        "item": "minecraft:map",
+        "count": 2
+      },
+      "max_uses": {
+        "base": 10
+      },
+      "xp": 4,
+      "price_multiplier": 0.05
+    },
+    {
+      "id": "villagerretaliation:cartographer_expert_compasses",
+      "professions": ["minecraft:cartographer"],
+      "skills": ["villagerretaliation:cartography"],
+      "min_rank": "expert",
+      "villager_level": 4,
+      "chance": 0.7,
+      "weight": 10,
+      "cost": {
+        "item": "minecraft:emerald",
+        "count": 7
+      },
+      "result": {
+        "item": "minecraft:compass",
+        "count": 2
+      },
+      "max_uses": {
+        "base": 8
+      },
+      "xp": 12,
+      "price_multiplier": 0.05
+    },
+    {
+      "id": "villagerretaliation:cartographer_master_clock",
+      "professions": ["minecraft:cartographer"],
+      "skills": ["villagerretaliation:cartography"],
+      "min_rank": "master",
+      "villager_level": 5,
+      "chance": 0.35,
+      "weight": 10,
+      "cost": {
+        "item": "minecraft:emerald",
+        "count": 12
+      },
+      "result": {
+        "item": "minecraft:clock",
+        "count": 1
+      },
+      "max_uses": {
+        "base": 3
+      },
+      "xp": 18,
+      "price_multiplier": 0.05,
+      "conditions": {
+        "config_flags": ["skillTradeAllowRareSpecialtyTrades"]
+      }
+    },
+    {
+      "id": "villagerretaliation:shepherd_apprentice_wool",
+      "professions": ["minecraft:shepherd"],
+      "skills": ["villagerretaliation:animal_handling"],
+      "min_rank": "apprentice",
+      "villager_level": 2,
+      "chance": 1.0,
+      "weight": 10,
+      "cost": {
+        "item": "minecraft:emerald",
+        "count": 2
+      },
+      "result": {
+        "item": "minecraft:white_wool",
+        "count": 16
+      },
+      "max_uses": {
+        "base": 12
+      },
+      "xp": 4,
+      "price_multiplier": 0.05
+    },
+    {
+      "id": "villagerretaliation:shepherd_expert_scaffolding",
+      "professions": ["minecraft:shepherd"],
+      "skills": ["villagerretaliation:crafting"],
+      "min_rank": "expert",
+      "villager_level": 4,
+      "chance": 0.7,
+      "weight": 10,
+      "cost": {
+        "item": "minecraft:emerald",
+        "count": 5
+      },
+      "result": {
+        "item": "minecraft:scaffolding",
+        "count": 16
+      },
+      "max_uses": {
+        "base": 8
+      },
+      "xp": 12,
+      "price_multiplier": 0.05
+    }
+  ]
+}

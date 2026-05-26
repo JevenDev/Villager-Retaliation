@@ -1,0 +1,74 @@
+{
+  "replace": false,
+  "entries": [
+    {
+      "id": "villagerretaliation:cleric_apprentice_glistering_melon",
+      "professions": ["minecraft:cleric"],
+      "skills": ["villagerretaliation:medicine"],
+      "min_rank": "apprentice",
+      "villager_level": 2,
+      "chance": 1.0,
+      "weight": 10,
+      "cost": {
+        "item": "minecraft:emerald",
+        "count": 3
+      },
+      "result": {
+        "item": "minecraft:glistering_melon_slice",
+        "count": 4
+      },
+      "max_uses": {
+        "base": 10
+      },
+      "xp": 5,
+      "price_multiplier": 0.05
+    },
+    {
+      "id": "villagerretaliation:cleric_expert_ghast_tear",
+      "professions": ["minecraft:cleric"],
+      "skills": ["villagerretaliation:medicine"],
+      "min_rank": "expert",
+      "villager_level": 4,
+      "chance": 0.7,
+      "weight": 10,
+      "cost": {
+        "item": "minecraft:emerald",
+        "count": 8
+      },
+      "result": {
+        "item": "minecraft:ghast_tear",
+        "count": 1
+      },
+      "max_uses": {
+        "base": 4
+      },
+      "xp": 15,
+      "price_multiplier": 0.05
+    },
+    {
+      "id": "villagerretaliation:cleric_master_golden_apple",
+      "professions": ["minecraft:cleric"],
+      "skills": ["villagerretaliation:medicine"],
+      "min_rank": "master",
+      "villager_level": 5,
+      "chance": 0.35,
+      "weight": 10,
+      "cost": {
+        "item": "minecraft:emerald",
+        "count": 18
+      },
+      "result": {
+        "item": "minecraft:golden_apple",
+        "count": 1
+      },
+      "max_uses": {
+        "base": 2
+      },
+      "xp": 20,
+      "price_multiplier": 0.05,
+      "conditions": {
+        "config_flags": ["skillTradeAllowRareSpecialtyTrades"]
+      }
+    }
+  ]
+}

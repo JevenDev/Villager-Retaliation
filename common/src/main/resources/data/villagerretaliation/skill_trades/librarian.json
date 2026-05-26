@@ -1,0 +1,93 @@
+{
+  "replace": false,
+  "entries": [
+    {
+      "id": "villagerretaliation:librarian_skilled_bookshelves",
+      "professions": ["minecraft:librarian"],
+      "skills": ["villagerretaliation:scholarship"],
+      "min_rank": "skilled",
+      "villager_level": 3,
+      "chance": 0.9,
+      "weight": 10,
+      "cost": {
+        "item": "minecraft:emerald",
+        "count": 5
+      },
+      "result": {
+        "item": "minecraft:bookshelf",
+        "count": 4
+      },
+      "max_uses": {
+        "base": 10
+      },
+      "xp": 8,
+      "price_multiplier": 0.05
+    },
+    {
+      "id": "villagerretaliation:librarian_expert_workshop_book",
+      "professions": ["minecraft:librarian"],
+      "skills": ["villagerretaliation:scholarship"],
+      "min_rank": "expert",
+      "villager_level": 4,
+      "chance": 0.75,
+      "weight": 10,
+      "cost": {
+        "item": "minecraft:emerald",
+        "count": 18
+      },
+      "result": {
+        "item": "minecraft:enchanted_book",
+        "count": 1,
+        "enchantments": {
+          "mode": "random_from",
+          "candidates": [
+            "minecraft:unbreaking",
+            "minecraft:efficiency",
+            "minecraft:protection"
+          ],
+          "level_by_skill": true,
+          "min_level": 1,
+          "max_level": 3
+        }
+      },
+      "max_uses": {
+        "base": 4
+      },
+      "xp": 15,
+      "price_multiplier": 0.1
+    },
+    {
+      "id": "villagerretaliation:librarian_master_specialty_book",
+      "professions": ["minecraft:librarian"],
+      "skills": ["villagerretaliation:scholarship"],
+      "min_rank": "master",
+      "villager_level": 5,
+      "chance": 0.45,
+      "weight": 10,
+      "cost": {
+        "item": "minecraft:emerald",
+        "count": 28
+      },
+      "result": {
+        "item": "minecraft:enchanted_book",
+        "count": 1,
+        "enchantments": {
+          "mode": "random_from",
+          "candidates": [
+            "minecraft:fortune",
+            "minecraft:power",
+            "minecraft:luck_of_the_sea"
+          ],
+          "level_by_skill": true,
+          "min_level": 1,
+          "max_level": 3
+        }
+      },
+      "max_uses": {
+        "base": 2
+      },
+      "xp": 25,
+      "price_multiplier": 0.1
+    }
+  ]
+}

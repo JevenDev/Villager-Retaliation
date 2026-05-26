@@ -1,0 +1,89 @@
+{
+  "replace": false,
+  "entries": [
+    {
+      "id": "villagerretaliation:fletcher_apprentice_arrows",
+      "professions": ["minecraft:fletcher"],
+      "skills": ["villagerretaliation:archery"],
+      "min_rank": "apprentice",
+      "villager_level": 2,
+      "chance": 1.0,
+      "weight": 10,
+      "cost": {
+        "item": "minecraft:emerald",
+        "count": 2
+      },
+      "result": {
+        "item": "minecraft:arrow",
+        "count": 24
+      },
+      "max_uses": {
+        "base": 12
+      },
+      "xp": 4,
+      "price_multiplier": 0.05
+    },
+    {
+      "id": "villagerretaliation:fletcher_expert_bowcraft",
+      "professions": ["minecraft:fletcher"],
+      "skills": ["villagerretaliation:archery"],
+      "min_rank": "expert",
+      "villager_level": 4,
+      "chance": 0.75,
+      "weight": 10,
+      "cost": {
+        "item": "minecraft:emerald",
+        "count": 12
+      },
+      "result": {
+        "items": [
+          "minecraft:bow",
+          "minecraft:crossbow"
+        ],
+        "count": 1,
+        "enchantments": {
+          "mode": "random_from",
+          "candidates": [
+            "minecraft:power",
+            "minecraft:punch",
+            "minecraft:piercing",
+            "minecraft:unbreaking"
+          ],
+          "level_by_skill": true,
+          "min_level": 1,
+          "max_level": 3
+        }
+      },
+      "max_uses": {
+        "base": 3
+      },
+      "xp": 15,
+      "price_multiplier": 0.1
+    },
+    {
+      "id": "villagerretaliation:fletcher_master_spectral_arrows",
+      "professions": ["minecraft:fletcher"],
+      "skills": ["villagerretaliation:archery"],
+      "min_rank": "master",
+      "villager_level": 5,
+      "chance": 0.5,
+      "weight": 10,
+      "cost": {
+        "item": "minecraft:emerald",
+        "count": 5
+      },
+      "result": {
+        "item": "minecraft:spectral_arrow",
+        "count": 16
+      },
+      "max_uses": {
+        "base": 6
+      },
+      "xp": 18,
+      "price_multiplier": 0.05,
+      "conditions": {
+        "config_flags": ["skillTradeAllowSpecialArrows"]
+      }
+    }
+  ]
+}

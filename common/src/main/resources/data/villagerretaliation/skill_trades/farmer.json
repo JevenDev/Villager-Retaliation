@@ -1,0 +1,143 @@
+{
+  "replace": false,
+  "entries": [
+    {
+      "id": "villagerretaliation:farmer_apprentice_bone_meal",
+      "professions": ["minecraft:farmer"],
+      "skills": ["villagerretaliation:farming"],
+      "min_rank": "apprentice",
+      "villager_level": 2,
+      "chance": 1.0,
+      "weight": 10,
+      "cost": {
+        "item": "minecraft:emerald",
+        "count": 2
+      },
+      "result": {
+        "item": "minecraft:bone_meal",
+        "count": 16
+      },
+      "max_uses": {
+        "base": 12
+      },
+      "xp": 4,
+      "price_multiplier": 0.05
+    },
+    {
+      "id": "villagerretaliation:farmer_skilled_bread",
+      "professions": ["minecraft:farmer"],
+      "skills": ["villagerretaliation:cooking"],
+      "min_rank": "skilled",
+      "villager_level": 3,
+      "chance": 0.9,
+      "weight": 10,
+      "cost": {
+        "item": "minecraft:emerald",
+        "count": 3
+      },
+      "result": {
+        "item": "minecraft:bread",
+        "count": 10
+      },
+      "max_uses": {
+        "base": 10
+      },
+      "xp": 6,
+      "price_multiplier": 0.05
+    },
+    {
+      "id": "villagerretaliation:farmer_expert_golden_carrots",
+      "professions": ["minecraft:farmer"],
+      "skills": ["villagerretaliation:farming"],
+      "min_rank": "expert",
+      "villager_level": 4,
+      "chance": 0.75,
+      "weight": 10,
+      "cost": {
+        "item": "minecraft:emerald",
+        "count": 6
+      },
+      "result": {
+        "item": "minecraft:golden_carrot",
+        "count": 4
+      },
+      "max_uses": {
+        "base": 8
+      },
+      "xp": 12,
+      "price_multiplier": 0.05
+    },
+    {
+      "id": "villagerretaliation:farmer_master_iron_hoe",
+      "professions": ["minecraft:farmer"],
+      "skills": ["villagerretaliation:farming"],
+      "min_rank": "master",
+      "villager_level": 5,
+      "chance": 0.45,
+      "weight": 10,
+      "cost": {
+        "item": "minecraft:emerald",
+        "count": 16
+      },
+      "result": {
+        "item": "minecraft:iron_hoe",
+        "count": 1,
+        "enchantments": {
+          "mode": "random_from",
+          "candidates": [
+            "minecraft:unbreaking",
+            "minecraft:efficiency",
+            "minecraft:fortune"
+          ],
+          "level_by_skill": true,
+          "min_level": 1,
+          "max_level": 3
+        }
+      },
+      "max_uses": {
+        "base": 2
+      },
+      "xp": 20,
+      "price_multiplier": 0.1,
+      "conditions": {
+        "disabled_config_flags": ["skillTradeAllowHighTierEquipment"]
+      }
+    },
+    {
+      "id": "villagerretaliation:farmer_master_diamond_hoe",
+      "professions": ["minecraft:farmer"],
+      "skills": ["villagerretaliation:farming"],
+      "min_rank": "master",
+      "villager_level": 5,
+      "chance": 0.45,
+      "weight": 10,
+      "cost": {
+        "item": "minecraft:emerald",
+        "count": 16
+      },
+      "result": {
+        "item": "minecraft:diamond_hoe",
+        "count": 1,
+        "enchantments": {
+          "mode": "random_from",
+          "candidates": [
+            "minecraft:unbreaking",
+            "minecraft:efficiency",
+            "minecraft:fortune"
+          ],
+          "level_by_skill": true,
+          "min_level": 1,
+          "max_level": 3
+        }
+      },
+      "max_uses": {
+        "base": 2
+      },
+      "xp": 20,
+      "price_multiplier": 0.1,
+      "conditions": {
+        "config_flags": ["skillTradeAllowHighTierEquipment"]
+      }
+    }
+  ]
+}
