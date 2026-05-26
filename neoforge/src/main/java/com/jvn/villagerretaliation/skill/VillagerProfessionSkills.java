@@ -48,10 +48,10 @@ public final class VillagerProfessionSkills {
             case "librarian" -> withPrimary(primary, VillagerSkill.DIPLOMACY, VillagerSkill.TRADING, VillagerSkill.CARTOGRAPHY);
             case "cartographer" -> withPrimary(primary, VillagerSkill.SCHOLARSHIP, VillagerSkill.SURVIVAL, VillagerSkill.TRADING);
             case "cleric" -> withPrimary(primary, VillagerSkill.SCHOLARSHIP, VillagerSkill.DIPLOMACY, VillagerSkill.SURVIVAL);
-            case "armorer" -> withPrimary(primary, VillagerSkill.GUARDING, VillagerSkill.CRAFTING, VillagerSkill.TRADING);
-            case "weaponsmith" -> withPrimary(primary, VillagerSkill.GUARDING, VillagerSkill.ARCHERY, VillagerSkill.CRAFTING);
-            case "toolsmith" -> withPrimary(primary, VillagerSkill.SMITHING, VillagerSkill.GATHERING, VillagerSkill.TRADING);
-            case "mason" -> withPrimary(primary, VillagerSkill.CRAFTING, VillagerSkill.GATHERING, VillagerSkill.TRADING);
+            case "armorer" -> withPrimary(primary, VillagerSkill.GUARDING, VillagerSkill.MINING, VillagerSkill.CRAFTING, VillagerSkill.TRADING);
+            case "weaponsmith" -> withPrimary(primary, VillagerSkill.GUARDING, VillagerSkill.MINING, VillagerSkill.ARCHERY, VillagerSkill.CRAFTING);
+            case "toolsmith" -> withPrimary(primary, VillagerSkill.SMITHING, VillagerSkill.MINING, VillagerSkill.GATHERING, VillagerSkill.TRADING);
+            case "mason" -> withPrimary(primary, VillagerSkill.CRAFTING, VillagerSkill.MINING, VillagerSkill.GATHERING, VillagerSkill.TRADING);
             case "leatherworker" -> withPrimary(primary, VillagerSkill.CRAFTING, VillagerSkill.ANIMAL_HANDLING, VillagerSkill.TRADING);
             case "butcher" -> withPrimary(primary, VillagerSkill.ANIMAL_HANDLING, VillagerSkill.TRADING, VillagerSkill.GUARDING);
             case "wandering_trader" -> withPrimary(primary, VillagerSkill.DIPLOMACY, VillagerSkill.SURVIVAL, VillagerSkill.GATHERING, VillagerSkill.CARTOGRAPHY);

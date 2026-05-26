@@ -8,7 +8,7 @@ import java.util.Map;
 import net.minecraft.util.RandomSource;
 
 public final class VillagerSkillGenerator {
-    public static final int CURRENT_GENERATION_VERSION = 1;
+    public static final int CURRENT_GENERATION_VERSION = 2;
 
     private static final int UNRELATED_MIN = 8;
     private static final int UNRELATED_MAX = 35;
@@ -96,6 +96,7 @@ public final class VillagerSkillGenerator {
                 VillagerSkill.FARMING,
                 VillagerSkill.FISHING,
                 VillagerSkill.MASONRY,
+                VillagerSkill.MINING,
                 VillagerSkill.LEATHERWORKING
         ));
         applyAttribute(values, attributes.get(VillagerSocialAttribute.KINDNESS), List.of(

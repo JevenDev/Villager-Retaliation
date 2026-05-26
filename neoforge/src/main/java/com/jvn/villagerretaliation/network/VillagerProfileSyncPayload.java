@@ -35,6 +35,7 @@ public record VillagerProfileSyncPayload(
         int scholarship,
         int gathering,
         int masonry,
+        int mining,
         int leatherworking,
         int diplomacy,
         int survival) implements CustomPacketPayload {
@@ -62,6 +63,7 @@ public record VillagerProfileSyncPayload(
         values.put(VillagerSkill.SCHOLARSHIP, this.scholarship);
         values.put(VillagerSkill.GATHERING, this.gathering);
         values.put(VillagerSkill.MASONRY, this.masonry);
+        values.put(VillagerSkill.MINING, this.mining);
         values.put(VillagerSkill.LEATHERWORKING, this.leatherworking);
         values.put(VillagerSkill.DIPLOMACY, this.diplomacy);
         values.put(VillagerSkill.SURVIVAL, this.survival);
@@ -104,6 +106,7 @@ public record VillagerProfileSyncPayload(
                 values.get(VillagerSkill.SCHOLARSHIP),
                 values.get(VillagerSkill.GATHERING),
                 values.get(VillagerSkill.MASONRY),
+                values.get(VillagerSkill.MINING),
                 values.get(VillagerSkill.LEATHERWORKING),
                 values.get(VillagerSkill.DIPLOMACY),
                 values.get(VillagerSkill.SURVIVAL)
@@ -135,6 +138,7 @@ public record VillagerProfileSyncPayload(
         buffer.writeVarInt(payload.scholarship());
         buffer.writeVarInt(payload.gathering());
         buffer.writeVarInt(payload.masonry());
+        buffer.writeVarInt(payload.mining());
         buffer.writeVarInt(payload.leatherworking());
         buffer.writeVarInt(payload.diplomacy());
         buffer.writeVarInt(payload.survival());
@@ -145,6 +149,7 @@ public record VillagerProfileSyncPayload(
                 buffer.readVarInt(),
                 buffer.readUUID(),
                 buffer.readUtf(128),
+                buffer.readVarInt(),
                 buffer.readVarInt(),
                 buffer.readVarInt(),
                 buffer.readVarInt(),

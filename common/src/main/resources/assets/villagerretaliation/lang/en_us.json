@@ -312,6 +312,8 @@
   "villagerretaliation.profile.skill.gathering.description": "Foraging, useful materials, and local resource sense.",
   "villagerretaliation.profile.skill.masonry": "Masonry",
   "villagerretaliation.profile.skill.masonry.description": "Stonework, clay, bricks, and durable building materials.",
+  "villagerretaliation.profile.skill.mining": "Mining",
+  "villagerretaliation.profile.skill.mining.description": "Ore sense, quarry work, and reading stone for useful materials.",
   "villagerretaliation.profile.skill.leatherworking": "Leatherworking",
   "villagerretaliation.profile.skill.leatherworking.description": "Leather gear, saddles, dyes, and animal-work supplies.",
   "villagerretaliation.profile.skill.diplomacy": "Diplomacy",

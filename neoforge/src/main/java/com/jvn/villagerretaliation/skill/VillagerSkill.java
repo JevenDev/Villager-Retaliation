@@ -17,6 +17,7 @@ public enum VillagerSkill {
     SCHOLARSHIP("scholarship"),
     GATHERING("gathering"),
     MASONRY("masonry"),
+    MINING("mining"),
     LEATHERWORKING("leatherworking"),
     DIPLOMACY("diplomacy"),
     SURVIVAL("survival");
