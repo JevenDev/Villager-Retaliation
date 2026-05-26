@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.client.interaction;
 
+import com.jvn.villagerretaliation.client.profile.VillagerProfileClientCache;
 import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
 import com.jvn.villagerretaliation.config.InteractionChatPosition;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
@@ -9,8 +10,11 @@ import com.jvn.villagerretaliation.network.VillagerConversationEndRequestPayload
 import com.jvn.villagerretaliation.network.VillagerDialogueRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerGiftRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerInventoryRequestPayload;
+import com.jvn.villagerretaliation.network.VillagerProfileRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerRecruitRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerTradeRequestPayload;
+import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
+import com.jvn.villagerretaliation.profile.VillagerSocialAttributeRank;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.social.VillagerFamilyTreeSnapshot;
 import com.jvn.villagerretaliation.social.VillagerRelationshipSnapshot;
@@ -18,6 +22,7 @@ import com.jvn.villagerretaliation.villager.VillagerGender;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -83,6 +88,11 @@ public class VillagerInteractionScreen extends Screen {
     private static final int GIFT_INFO_ICON_GAP = 5;
     private static final int DIVIDER_SELECT_WIDTH = 11;
     private static final int DIVIDER_SELECT_HEIGHT = 19;
+    private static final int PROFILE_CHART_RADIUS = 36;
+    private static final int PROFILE_CHART_AXIS_COLOR = 0x55E8E4DA;
+    private static final int PROFILE_CHART_OUTLINE_COLOR = 0x90E8E4DA;
+    private static final int PROFILE_CHART_VALUE_COLOR = 0xFFE9C46A;
+    private static final int PROFILE_CHART_POINT_COLOR = 0xFFFFF3B0;
 
     private final int villagerEntityId;
     private final String villagerName;
@@ -105,6 +115,7 @@ public class VillagerInteractionScreen extends Screen {
     private boolean closingFromServer;
     private boolean openingChat;
     private boolean awaitingForcedDialogueResponse;
+    private boolean profileRefreshRequested;
     private boolean draggingScrollbar;
     private float scrollbarDragOffset;
     private float optionScroll;
@@ -221,6 +232,11 @@ public class VillagerInteractionScreen extends Screen {
         renderTopBackButton(graphics, mouseX, mouseY);
         if (this.page == DialoguePage.GIFT) {
             renderGiftPage(graphics, mouseX, mouseY, partialTick);
+        } else if (this.page == DialoguePage.PROFILE) {
+            if (this.giftButton != null) {
+                this.giftButton.visible = false;
+            }
+            renderProfilePage(graphics);
         } else {
             if (this.giftButton != null) {
                 this.giftButton.visible = false;
@@ -352,6 +368,8 @@ public class VillagerInteractionScreen extends Screen {
         this.options.clear();
         if (this.page == DialoguePage.TALK) {
             addDialogueOptions();
+        } else if (this.page == DialoguePage.PROFILE) {
+            addProfileOptions();
         } else if (this.page == DialoguePage.FAMILY) {
             addFamilyOptions();
         } else if (this.page == DialoguePage.ANCESTRY) {
@@ -399,6 +417,7 @@ public class VillagerInteractionScreen extends Screen {
     private void addRootOptions() {
         this.options.add(DialogueOption.enabled(translate("root.talk"), this::openTalkPage));
         if (!this.baby) {
+            this.options.add(DialogueOption.enabled(translate("root.profile"), this::openProfilePage));
             this.options.add(DialogueOption.enabled(translate("root.trade"), this::requestTrade));
             if (VillagerRetaliationConfig.ENABLE_VILLAGER_GIFTS.get()) {
                 this.options.add(DialogueOption.enabled(translate("root.gift"), this::openGiftPage));
@@ -412,6 +431,9 @@ public class VillagerInteractionScreen extends Screen {
             }
         }
         this.options.add(DialogueOption.enabled(translate("root.goodbye"), this::leaveConversation));
+    }
+
+    private void addProfileOptions() {
     }
 
     private void addRecruitOptions() {
@@ -529,6 +551,13 @@ public class VillagerInteractionScreen extends Screen {
         rebuildOptions();
     }
 
+    private void openProfilePage() {
+        this.page = DialoguePage.PROFILE;
+        this.profileRefreshRequested = false;
+        requestProfileRefresh();
+        rebuildOptions();
+    }
+
     private void openGiftPage() {
         this.page = DialoguePage.GIFT;
         this.selectedInventorySlot = firstGiftableInventorySlot();
@@ -566,6 +595,14 @@ public class VillagerInteractionScreen extends Screen {
 
     private void requestInventory() {
         PacketDistributor.sendToServer(new VillagerInventoryRequestPayload(this.villagerEntityId));
+    }
+
+    private void requestProfileRefresh() {
+        if (this.profileRefreshRequested) {
+            return;
+        }
+        this.profileRefreshRequested = true;
+        PacketDistributor.sendToServer(new VillagerProfileRequestPayload(this.villagerEntityId));
     }
 
     private void requestGift() {
@@ -672,6 +709,103 @@ public class VillagerInteractionScreen extends Screen {
 
         renderScrollbar(graphics, left, top, viewportBottom);
 
+    }
+
+    private void renderProfilePage(GuiGraphics graphics) {
+        int left = optionsLeft() + 6;
+        int top = conversationInfoTop() - 2;
+        Optional<VillagerProfileClientCache.DisplayEntry> entry = VillagerProfileClientCache.get(this.villagerEntityId);
+        if (entry.isEmpty()) {
+            requestProfileRefresh();
+            graphics.drawString(this.font, translate("profile.loading"), left, top + 32, INFO_SECONDARY_COLOR, false);
+            return;
+        }
+
+        VillagerProfileClientCache.DisplayEntry profile = entry.get();
+        int centerX = left + OPTION_WIDTH / 2 - 8;
+        int centerY = top + PROFILE_CHART_RADIUS + 16;
+        renderProfileChart(graphics, profile, centerX, centerY);
+        renderProfileRows(graphics, profile, left, centerY + PROFILE_CHART_RADIUS + 18);
+    }
+
+    private void renderProfileChart(
+            GuiGraphics graphics,
+            VillagerProfileClientCache.DisplayEntry profile,
+            int centerX,
+            int centerY) {
+        VillagerSocialAttribute[] attributes = VillagerSocialAttribute.values();
+        ProfilePoint[] outer = new ProfilePoint[attributes.length];
+        ProfilePoint[] values = new ProfilePoint[attributes.length];
+
+        for (int index = 0; index < attributes.length; index++) {
+            double angle = -Math.PI / 2.0D + index * Math.PI * 2.0D / attributes.length;
+            outer[index] = profilePoint(centerX, centerY, angle, PROFILE_CHART_RADIUS);
+            int valueRadius = Math.round(PROFILE_CHART_RADIUS * profile.value(attributes[index]) / 100.0F);
+            values[index] = profilePoint(centerX, centerY, angle, valueRadius);
+            drawPixelLine(graphics, centerX, centerY, outer[index].x(), outer[index].y(), PROFILE_CHART_AXIS_COLOR);
+
+            String label = localizedAttribute(attributes[index]);
+            int labelX = profilePoint(centerX, centerY, angle, PROFILE_CHART_RADIUS + 18).x() - this.font.width(label) / 2;
+            int labelY = profilePoint(centerX, centerY, angle, PROFILE_CHART_RADIUS + 14).y() - this.font.lineHeight / 2;
+            graphics.drawString(this.font, label, labelX, labelY, INFO_SECONDARY_COLOR, false);
+        }
+
+        for (int index = 0; index < attributes.length; index++) {
+            int next = (index + 1) % attributes.length;
+            drawPixelLine(graphics, outer[index].x(), outer[index].y(), outer[next].x(), outer[next].y(), PROFILE_CHART_OUTLINE_COLOR);
+            drawPixelLine(graphics, values[index].x(), values[index].y(), values[next].x(), values[next].y(), PROFILE_CHART_VALUE_COLOR);
+            graphics.fill(values[index].x() - 1, values[index].y() - 1, values[index].x() + 2, values[index].y() + 2, PROFILE_CHART_POINT_COLOR);
+        }
+    }
+
+    private void renderProfileRows(
+            GuiGraphics graphics,
+            VillagerProfileClientCache.DisplayEntry profile,
+            int left,
+            int top) {
+        int y = top;
+        for (VillagerSocialAttribute attribute : VillagerSocialAttribute.values()) {
+            VillagerSocialAttributeRank rank = profile.rank(attribute);
+            String label = translate(
+                    "profile.attribute_row",
+                    localizedAttribute(attribute),
+                    localizedRank(rank)
+            );
+            graphics.drawString(this.font, label, left, y, INFO_VALUE_COLOR, false);
+            y += this.font.lineHeight + 3;
+        }
+    }
+
+    private static ProfilePoint profilePoint(int centerX, int centerY, double angle, int radius) {
+        int x = centerX + Mth.floor(Math.cos(angle) * radius);
+        int y = centerY + Mth.floor(Math.sin(angle) * radius);
+        return new ProfilePoint(x, y);
+    }
+
+    private static void drawPixelLine(GuiGraphics graphics, int x0, int y0, int x1, int y1, int color) {
+        int dx = Math.abs(x1 - x0);
+        int dy = Math.abs(y1 - y0);
+        int sx = x0 < x1 ? 1 : -1;
+        int sy = y0 < y1 ? 1 : -1;
+        int error = dx - dy;
+        int x = x0;
+        int y = y0;
+
+        while (true) {
+            graphics.fill(x, y, x + 1, y + 1, color);
+            if (x == x1 && y == y1) {
+                return;
+            }
+            int doubledError = error * 2;
+            if (doubledError > -dy) {
+                error -= dy;
+                x += sx;
+            }
+            if (doubledError < dx) {
+                error += dx;
+                y += sy;
+            }
+        }
     }
 
     private void renderGiftPage(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
@@ -1269,7 +1403,10 @@ public class VillagerInteractionScreen extends Screen {
     private TopBackButtonBounds topBackButtonBounds() {
         int textWidth = this.font.width(backLabel());
         int left = optionsLeft() + OPTION_TEXT_INSET;
-        int top = (this.page == DialoguePage.GIFT ? giftInventoryTop() : optionsTop()) - this.font.lineHeight - TOP_BACK_BUTTON_GAP;
+        int contentTop = this.page == DialoguePage.GIFT
+                ? giftInventoryTop()
+                : this.page == DialoguePage.PROFILE ? conversationInfoTop() : optionsTop();
+        int top = contentTop - this.font.lineHeight - TOP_BACK_BUTTON_GAP;
         int bottom = top + this.font.lineHeight;
         return new TopBackButtonBounds(left, left + textWidth, top, bottom);
     }
@@ -1583,6 +1720,14 @@ public class VillagerInteractionScreen extends Screen {
         return hasTranslation(keyOrLabel) ? translate(keyOrLabel) : keyOrLabel;
     }
 
+    private static String localizedAttribute(VillagerSocialAttribute attribute) {
+        return translate("profile.attribute." + attribute.serializedName());
+    }
+
+    private static String localizedRank(VillagerSocialAttributeRank rank) {
+        return translate("profile.rank." + rank.serializedName());
+    }
+
     private static String moodName(DialogueDisposition mood) {
         if (mood == null) {
             return translate("mood.neutral");
@@ -1613,6 +1758,7 @@ public class VillagerInteractionScreen extends Screen {
     private enum DialoguePage {
         ROOT,
         TALK,
+        PROFILE,
         GIFT,
         FAMILY,
         ANCESTRY,
@@ -1625,6 +1771,9 @@ public class VillagerInteractionScreen extends Screen {
         static DialogueOption enabled(String label, Runnable action) {
             return new DialogueOption(label, action);
         }
+    }
+
+    private record ProfilePoint(int x, int y) {
     }
 
     private record ScrollbarThumb(int left, int right, int hitLeft, int hitRight, int top, int bottom, int viewportTop, float trackTravel) {
