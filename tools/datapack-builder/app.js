@@ -129,6 +129,7 @@ const CONSTANTS = {
     "raid",
     "villager_death",
     "villager_attacked",
+    "baby_villager_attacked",
     "player_attacked_villager",
     "player_defended_village",
     "player_defended_raid",
@@ -335,7 +336,7 @@ const FIELD_TOOLTIPS = {
   "dialogue-max_reputation": "Maximum exact reputation value allowed for dialogue options and lines.",
   "dialogue-player_items": "Requires one matching player item or item tag. Prefix tags with #; aliases such as player_item_tag are accepted by the loader.",
   "dialogue-player_item_slots": "Where to check player items. If player_items is set and slots are blank, the default is hands.",
-  "dialogue-text": "Localized villager text. Placeholder support depends on type and filters, such as {target}, {held_item}, family names, or recruitment values.",
+  "dialogue-text": "Localized villager text. Enter one variation per line. Placeholder support depends on type and filters, such as {target}, {held_item}, family names, or recruitment values.",
   "dialogue-option": "Restricts a line to option id(s), including custom ids or built-ins such as adult_share_story.",
   "dialogue-weather": "Weather filter for lines: clear, rain, or thunder.",
   "dialogue-times": "Time filter for lines: morning, afternoon, evening, or night.",
@@ -373,13 +374,13 @@ const FIELD_TOOLTIPS = {
   "forced-max_recent_retaliations": "Optional maximum earlier villager_retaliation_started memories for this player near the villager's village.",
   "forced-initiate_dialogue": "Opens the locked interaction menu when enabled for forced_dialogue output.",
   "forced-force_camera_towards_villager": "Smoothly turns the player's camera toward the witnessing villager while this forced dialogue is active.",
-  "forced-options_json": "JSON array of player response options. Each option can set label, response, reputation, aggro, aggro_chance, end_conversation, order, take_items, take_stolen_items, reputation_levels, min_reputation, and max_reputation.",
+  "forced-options_json": "JSON array of player response options. Each option can use response or responses, plus success_response/success_responses and failure_response/failure_responses for payments or stolen-item returns.",
   "forced-leave_option_json": "Optional JSON object or array for forced Leave/Escape outcomes. Uses option fields such as label, response, reputation, aggro_chance, take_stolen_items, and reputation_levels.",
   "notifications-fileName": "Creates data/villagerretaliation/notifications/<locale>/<file>.json. Avoid global unless intentionally replacing built-in notifications.",
   "notifications-locale": "Locale folder for this notification file. en_us loads first, then the player's locale overlays matching ids.",
   "notification-id": "Stable id for translation overlays and replacement. Generated ids work, but explicit ids are safer.",
   "notification-trigger": "Event trigger emitted by the mod, such as gift.liked, combat.retaliation_started, trade.refused, or alert.witness_death.",
-  "notification-text": "Localized HUD or world text. Supported placeholders depend on the trigger.",
+  "notification-text": "Localized HUD or world text. Enter one variation per line. Supported placeholders depend on the trigger.",
   "notification-kind": "HUD notification category. Defaults to default when omitted.",
   "notification-world_text_kind": "Ambient text style above villagers. The loader also accepts style as an alias.",
   "notification-color": "Default color for text and chat unless text_color or chat_color is more specific. Accepts named colors, #RRGGBB, or #AARRGGBB.",
@@ -499,6 +500,7 @@ const EVENT_TAG_TOOLTIPS = {
   raid: "A raid affected the village.",
   villager_death: "A villager died near the village.",
   villager_attacked: "A villager was attacked.",
+  baby_villager_attacked: "A baby villager was attacked.",
   player_attacked_villager: "The player attacked a villager.",
   player_defended_village: "The player defended the village from hostiles.",
   player_defended_raid: "The player defended the village during a raid.",
@@ -3365,14 +3367,14 @@ function entryIssueDetail(section, kind, entry) {
     }
     if (kind === "lines") {
       if (!entry.request) return issueDetail("Request", `one of ${CONSTANTS.dialogueTypes.join(", ")}`, entry.request, "dialogue-type");
-      if (!hasDialogueText(entry)) return issueDetail("Line text", "non-empty villager text", dialogueTextValue(entry), "dialogue-text");
+      if (!hasDialogueText(entry)) return issueDetail("Line(s)", "non-empty villager text", dialogueTextValue(entry), "dialogue-text");
     }
     if (kind === "messages") {
       if (!entry.key) return issueDetail("Message key", "a non-empty lookup key", entry.key, "dialogue-key");
-      if (!hasDialogueText(entry)) return issueDetail("Message text", "non-empty message text", dialogueTextValue(entry), "dialogue-text");
+      if (!hasDialogueText(entry)) return issueDetail("Message text variation(s)", "non-empty message text", dialogueTextValue(entry), "dialogue-text");
     }
     if (["openings", "closings", "pacify"].includes(kind) && !hasDialogueText(entry)) {
-      return issueDetail("Text", "non-empty dialogue text", dialogueTextValue(entry), "dialogue-text");
+      return issueDetail("Text variation(s)", "non-empty dialogue text", dialogueTextValue(entry), "dialogue-text");
     }
     if (["options", "lines"].includes(kind) && entry.request && !CONSTANTS.dialogueTypes.includes(entry.request)) {
       return issueDetail("Request", `one of ${CONSTANTS.dialogueTypes.join(", ")}`, entry.request, "dialogue-type", "warning");
@@ -3471,7 +3473,7 @@ function entryIssueDetail(section, kind, entry) {
   }
   if (section === "notifications") {
     if (!entry.trigger) return issueDetail("Trigger", "a non-empty notification trigger", entry.trigger, "notification-trigger");
-    if (!hasNotificationText(entry)) return issueDetail("Text", "non-empty notification text", notificationTextValue(entry), "notification-text");
+    if (!hasNotificationText(entry)) return issueDetail("Text variation(s)", "non-empty notification text", notificationTextValue(entry), "notification-text");
     if (!CONSTANTS.notificationTriggers.includes(entry.trigger)) return issueDetail("Trigger", "a built-in trigger or custom trigger emitted by code", entry.trigger, "notification-trigger", "warning");
     const checks = [
       { keys: ["kind"], label: "HUD kind", expected: CONSTANTS.hudKinds.join(", "), fieldId: "notification-kind", valid: (value) => CONSTANTS.hudKinds.includes(value) },
@@ -4836,9 +4838,11 @@ function jsonKeysForFieldId(fieldId, section, kind) {
     "dialogue-option": ["option", "option_ids"],
     "dialogue-story_structure": ["story_structure", "story_structures"],
     "dialogue-story_biome": ["story_biome", "story_biomes"],
+    "dialogue-text": ["text", "lines"],
     "forced-line": ["line", "lines"],
     "forced-options_json": ["options"],
     "forced-leave_option_json": ["leave_option", "leave_options"],
+    "notification-text": ["text", "lines"],
     "gift-items": ["items", "item"],
     "gift-tags": ["tags", "tag"],
     "pacification-items": ["items", "item"],
@@ -5298,7 +5302,7 @@ function renderDialogueForm(kind, entry) {
       <div class="form-grid">
         ${field({ id: "dialogue-id", label: "Line id", value: entry.id })}
         ${selectField({ id: "dialogue-type", label: "Request", value: entry.request ?? "", options: CONSTANTS.dialogueTypes })}
-        ${textareaField({ id: "dialogue-text", label: "Line text", value: dialogueTextValue(entry), className: "full", rows: 3 })}
+        ${textareaField({ id: "dialogue-text", label: "Line(s)", value: dialogueTextValue(entry), help: "One variation per line.", className: "full", rows: 3 })}
         ${listField({ id: "dialogue-option", label: "Option id(s)", value: entry.option ?? entry.option_ids, help: "Link to a custom or built-in talk option." })}
         ${commonFilters}
         ${reputationFilters}
@@ -5327,7 +5331,7 @@ function renderDialogueForm(kind, entry) {
       <div class="form-grid">
         ${field({ id: "dialogue-id", label: "Message id", value: entry.id })}
         ${field({ id: "dialogue-key", label: "Message key", value: entry.key, help: "Gift rules can point response_key at custom message keys." })}
-        ${textareaField({ id: "dialogue-text", label: "Message text", value: dialogueTextValue(entry), className: "full", rows: 3 })}
+        ${textareaField({ id: "dialogue-text", label: "Message text variation(s)", value: dialogueTextValue(entry), help: "One variation per line.", className: "full", rows: 3 })}
         ${commonFilters}
         ${field({ id: "dialogue-weight", label: "Weight", value: entry.weight ?? "", type: "number" })}
         ${toggleGrid([], entry, "message")}
@@ -5340,7 +5344,7 @@ function renderDialogueForm(kind, entry) {
     return `
       <div class="form-grid">
         ${field({ id: "dialogue-id", label: "Pacify line id", value: entry.id })}
-        ${textareaField({ id: "dialogue-text", label: "Pacify text", value: dialogueTextValue(entry), className: "full", rows: 3 })}
+        ${textareaField({ id: "dialogue-text", label: "Pacify line(s)", value: dialogueTextValue(entry), help: "One variation per line.", className: "full", rows: 3 })}
         ${listField({ id: "dialogue-outcomes", label: "Outcomes", value: entry.outcomes, help: CONSTANTS.pacifyOutcomes.join(", ") })}
         ${commonFilters}
         ${field({ id: "dialogue-weight", label: "Weight", value: entry.weight ?? "", type: "number" })}
@@ -5353,7 +5357,7 @@ function renderDialogueForm(kind, entry) {
   return `
     <div class="form-grid">
       ${field({ id: "dialogue-id", label: `${capitalize(kind.slice(0, -1))} id`, value: entry.id })}
-      ${textareaField({ id: "dialogue-text", label: "Text", value: dialogueTextValue(entry), className: "full", rows: 3 })}
+      ${textareaField({ id: "dialogue-text", label: "Text variation(s)", value: dialogueTextValue(entry), help: "One variation per line.", className: "full", rows: 3 })}
       ${commonFilters}
       ${field({ id: "dialogue-weight", label: "Weight", value: entry.weight ?? "", type: "number" })}
       ${toggleGrid(["first_conversation_only", "first_village_interaction_only"], entry, "opening")}
@@ -5410,7 +5414,7 @@ function renderForcedDialogue() {
             ${selectField({ id: "forced-trigger", label: "Trigger", value: forcedTriggerValue(entry), options: CONSTANTS.forcedDialogueTriggers, allowBlank: false })}
             ${selectField({ id: "forced-output_mode", label: "Output mode", value: outputMode, options: CONSTANTS.forcedOutputModes, allowBlank: false })}
             ${field({ id: "forced-output_radius", label: "Output radius", value: outputRadius, type: "number", attrs: 'min="1" step="1"', className: chatOnlyClass })}
-            ${textareaField({ id: "forced-line", label: "Opening line(s)", value: forcedDialogueLineValue(entry), className: "full", rows: 3 })}
+            ${textareaField({ id: "forced-line", label: "Opening line(s)", value: forcedDialogueLineValue(entry), help: "One variation per line.", className: "full", rows: 3 })}
             ${field({ id: "forced-priority", label: "Priority", value: entry.priority ?? "", type: "number" })}
             ${field({ id: "forced-chance", label: "Chance", value: entry.chance ?? "", type: "number", attrs: 'min="0" max="1" step="0.01"' })}
             ${field({ id: "forced-witness_radius", label: "Witness radius", value: entry.witness_radius ?? "", type: "number", attrs: 'min="1" step="1"' })}
@@ -5437,7 +5441,7 @@ function renderForcedDialogue() {
                 ${toggle({ id: "forced-force_camera_towards_villager", label: "Force camera to villager", checked: entry.force_camera_towards_villager === true })}
               </div>
             </div>
-            ${textareaField({ id: "forced-options_json", label: "Options JSON", value: optionsJson, help: "Use an array of player choices with id, label, response, reputation, aggro, aggro_chance, end_conversation, order, and optional take_items or take_stolen_items.", className: `full ${forcedOnlyClass}`, rows: 7 })}
+            ${textareaField({ id: "forced-options_json", label: "Options JSON", value: optionsJson, help: "Use response/responses for option reply variations. Payment or return outcomes can also set success_response/success_responses and failure_response/failure_responses.", className: `full ${forcedOnlyClass}`, rows: 7 })}
             ${textareaField({ id: "forced-leave_option_json", label: "Leave option(s) JSON", value: prettyJson(entry.leave_options ?? entry.leave_option), help: "Optional. Object for one Leave outcome, or array for reputation-gated outcomes.", className: `full ${forcedOnlyClass}`, rows: 4 })}
           </div>
           ${formActions(editing?.section === "forcedDialogue" ? "Update" : "Add", "save-forced-dialogue", "clear-forced-dialogue-form")}
@@ -5484,7 +5488,7 @@ function renderNotifications() {
           <div class="form-grid">
             ${field({ id: "notification-id", label: "Notification id", value: entry.id })}
             ${field({ id: "notification-trigger", label: "Trigger", value: entry.trigger, attrs: 'list="notification-triggers"', help: "Use a built-in trigger or a custom trigger emitted by code." })}
-            ${textareaField({ id: "notification-text", label: "Text", value: notificationTextValue(entry), className: "full", rows: 3 })}
+            ${textareaField({ id: "notification-text", label: "Text variation(s)", value: notificationTextValue(entry), help: "One variation per line.", className: "full", rows: 3 })}
             ${selectField({ id: "notification-kind", label: "HUD kind", value: entry.kind, options: CONSTANTS.hudKinds })}
             ${selectField({ id: "notification-world_text_kind", label: "World text kind", value: entry.world_text_kind ?? entry.style, options: CONSTANTS.worldTextKinds })}
             ${field({ id: "notification-color", label: "Color", value: entry.color, attrs: 'list="color-values"', help: "Named color, #RRGGBB, or #AARRGGBB." })}

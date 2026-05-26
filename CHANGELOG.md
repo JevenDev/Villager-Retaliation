@@ -24,8 +24,9 @@
 - Added shared reputation condition fields for dialogue options, dialogue lines, forced-dialogue entries, and forced-dialogue options: `reputation_level`, `reputation_levels`, `min_reputation`, and `max_reputation`.
 - Added village container theft memories and gossip through `player_container_theft`, `requires_container_theft_to_self`, and `requires_container_theft_from_other`.
 - Added theft-memory placeholders for dialogue, including `{stolen_item}`, `{stolen_count}`, `{stolen_stack}`, `{stolen_container}`, `{stolen_loot_table}`, `{theft_witness}`, and `{theft_witness_possessive}`.
-- Added datapack-builder support for forced dialogue, item payments, generated-container loot table filters, reputation-gated dialogue, armed/unarmed villager filters, and theft-memory event tags.
+- Added datapack-builder support for forced dialogue, item payments, generated-container loot table filters, `player_item_proximity` item callouts, reputation-gated dialogue, armed/unarmed villager filters, and theft-memory event tags.
 - Added datapack-builder support for `dialogue_option` entries with separate `request` fields and forced-dialogue chat output.
+- Added datapack-builder suggestions for the `baby_villager_attacked` event tag.
 - Added a larger built-in dialogue/event library covering reputation tiers, retaliation aftermath, apologies, village defense, raids, golem loss, fire, gifts, gear reports, recruitment memories, and container-theft gossip.
 - Added built-in `retaliation_started` chat-output combat barks for player targets, raiders, undead, monsters, and generic retaliation targets.
 - Added built-in unarmed-villager `retaliation_started` chat-output combat barks.
@@ -45,7 +46,7 @@
 - Forced-dialogue chat now uses normal triggers with `output.mode: "chat"` instead of separate `_chat` trigger names.
 - Forced-dialogue reputation changes now spread through the gossip hook when a villager witnesses the event.
 - Forced dialogue speaker labels now preserve custom villager names in villager chat instead of falling back to profession-only labels.
-- Wiki pages now document forced dialogue, theft memories, reputation-gated dialogue, and the updated datapack builder workflow.
+- Wiki pages now document forced dialogue, player item proximity callouts, theft memories, reputation-gated dialogue, line variation fields, response variation fields, and the updated datapack builder workflow.
 
 ### Notes For Pack Authors
 

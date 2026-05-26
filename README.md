@@ -260,7 +260,7 @@ This is disabled by default and is mainly intended for testing and balancing.
 
 Villager Retaliation! has built-in datapack and resource-pack support for creators who want to tune the experience without writing Java.
 
-Datapacks can add or replace villager dialogue, forced dialogue events, chat event lines, notification text, ambient world text, gift preferences, pacification payments, profession loot, story discoveries, and preset villager names. These systems are data-driven so addon packs and modpacks can make villages feel warmer, harsher, funnier, stranger, or more tied to their own worldbuilding.
+Datapacks can add or replace villager dialogue, forced dialogue events, chat event lines, notification text, ambient world text, gift preferences, pacification payments, profession loot, story discoveries, and preset villager names. Forced dialogue can cover watched-container events, retaliation-started barks, and nearby player item reactions through `player_item_proximity`. These systems are data-driven so addon packs and modpacks can make villages feel warmer, harsher, funnier, stranger, or more tied to their own worldbuilding.
 
 Resource packs can translate the interaction GUI and reputation UI, replace normal and combat villager textures, customize wandering trader textures, and override the combat-capable villager model used when villagers need independent arms for weapons, shields, bows, potions, and throwing animations.
 
@@ -270,7 +270,7 @@ There is also a local browser-based datapack generator included in the GitHub re
 tools/datapack-builder/index.html
 ```
 
-Open it in a browser to create, import, preview, validate, and export Villager Retaliation datapacks. It can generate the current datapack paths for dialogue, forced dialogue, notifications, gifts, pacification, story discovery, preset names, and `pack.mcmeta`.
+Open it in a browser to create, import, preview, validate, and export Villager Retaliation datapacks. It can generate the current datapack paths for dialogue, forced dialogue, notifications, gifts, pacification, story discovery, preset names, and `pack.mcmeta`. Dialogue, forced-opening, and notification text fields accept one variation per line where the runtime supports `lines`.
 
 For full pack-author documentation, examples, JSON references, and model notes, use the [GitHub pack docs](https://github.com/JevenDev/Villager-Retaliation/tree/1.21.1/wiki) rather than this Modrinth page.
 
@@ -279,8 +279,12 @@ For full pack-author documentation, examples, JSON references, and model notes, 
 - [Changelog](CHANGELOG.md)
 - [Wiki Home](wiki/Home.md)
 - [Pack Format Changes](wiki/Pack-Format-Changes.md)
+- [Datapack Generator](wiki/Datapack-Generator.md)
+- [JSON Reference](wiki/JSON-Reference.md)
 - [Forced Dialogue JSON](wiki/Forced-Dialogue.md)
 - [Dialogue JSON](wiki/Dialogue.md)
+- [Event Tags](wiki/Event-Tags.md)
+- [Notifications JSON](wiki/Notifications.md)
 
 ![compatibility](https://cdn.modrinth.com/data/cached_images/1252c11050b7daf8b8621712b58dd1005e7ba982.png)
 
