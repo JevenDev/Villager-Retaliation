@@ -123,6 +123,12 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.BooleanValue VANILLA_GOSSIP_REQUIRES_LINE_OF_SIGHT;
     public static final ModConfigSpec.BooleanValue ENABLE_REPUTATION_TRADE_PRICING;
     public static final ModConfigSpec.DoubleValue REPUTATION_TRADE_PRICE_SCALE;
+    public static final ModConfigSpec.BooleanValue ENABLE_SKILL_TRADE_OVERHAUL;
+    public static final ModConfigSpec.IntValue SKILL_TRADE_MAX_ENCHANTMENT_LEVEL;
+    public static final ModConfigSpec.DoubleValue SKILL_TRADE_RARE_CHANCE_MULTIPLIER;
+    public static final ModConfigSpec.BooleanValue SKILL_TRADE_ALLOW_HIGH_TIER_EQUIPMENT;
+    public static final ModConfigSpec.BooleanValue SKILL_TRADE_ALLOW_SPECIAL_ARROWS;
+    public static final ModConfigSpec.BooleanValue SKILL_TRADE_ALLOW_RARE_SPECIALTY_TRADES;
 
     public static final ModConfigSpec.BooleanValue SHOW_VILLAGER_REPUTATION_DEBUG_OVERLAY;
     public static final ModConfigSpec.DoubleValue REPUTATION_DEBUG_OVERLAY_MAX_DISTANCE;
@@ -567,6 +573,27 @@ public final class VillagerRetaliationConfig {
         REPUTATION_TRADE_PRICE_SCALE = BUILDER.comment("Multiplier converting mod reputation into vanilla-style special price adjustments.")
                 .translation("villagerretaliation.configuration.reputation.reputationTradePriceScale")
                 .defineInRange("reputationTradePriceScale", 0.25D, 0.0D, 10.0D);
+        BUILDER.pop();
+
+        BUILDER.push("trade");
+        ENABLE_SKILL_TRADE_OVERHAUL = BUILDER.comment("When true, villager skill ranks add profession-specific quality and specialty trade offers.")
+                .translation("villagerretaliation.configuration.trade.enableSkillTradeOverhaul")
+                .define("enableSkillTradeOverhaul", true);
+        SKILL_TRADE_MAX_ENCHANTMENT_LEVEL = BUILDER.comment("Maximum enchantment level used by skill-based trade rewards.")
+                .translation("villagerretaliation.configuration.trade.skillTradeMaxEnchantmentLevel")
+                .defineInRange("skillTradeMaxEnchantmentLevel", 3, 1, 5);
+        SKILL_TRADE_RARE_CHANCE_MULTIPLIER = BUILDER.comment("Multiplier applied to rare skill-based offer chances.")
+                .translation("villagerretaliation.configuration.trade.skillTradeRareChanceMultiplier")
+                .defineInRange("skillTradeRareChanceMultiplier", 1.0D, 0.0D, 10.0D);
+        SKILL_TRADE_ALLOW_HIGH_TIER_EQUIPMENT = BUILDER.comment("Allows Expert and Master smithing/crafting trades to offer diamond-tier equipment.")
+                .translation("villagerretaliation.configuration.trade.skillTradeAllowHighTierEquipment")
+                .define("skillTradeAllowHighTierEquipment", true);
+        SKILL_TRADE_ALLOW_SPECIAL_ARROWS = BUILDER.comment("Allows high Archery fletcher trades to offer spectral arrows.")
+                .translation("villagerretaliation.configuration.trade.skillTradeAllowSpecialArrows")
+                .define("skillTradeAllowSpecialArrows", true);
+        SKILL_TRADE_ALLOW_RARE_SPECIALTY_TRADES = BUILDER.comment("Allows rare Master-level skill specialty offers such as saddles, nautilus shells, and golden apples.")
+                .translation("villagerretaliation.configuration.trade.skillTradeAllowRareSpecialtyTrades")
+                .define("skillTradeAllowRareSpecialtyTrades", true);
         BUILDER.pop();
 
         BUILDER.push("debugOverlay");

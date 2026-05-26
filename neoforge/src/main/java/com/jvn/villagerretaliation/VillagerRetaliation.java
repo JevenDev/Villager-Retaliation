@@ -9,6 +9,7 @@ import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.reputation.VillagerReputationEvents;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphService;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueService;
+import com.jvn.villagerretaliation.trade.VillagerSkillTradeEvents;
 import com.jvn.toucanlib.neoforge.event.ToucanEventBuses;
 import com.jvn.toucanlib.util.ToucanIds;
 import net.minecraft.resources.ResourceLocation;
@@ -37,6 +38,8 @@ public class VillagerRetaliation {
                 .listener(VillagerRetaliationEvents::onServerStarted)
                 .listener(VillagerRetaliationEvents::onServerStopping)
                 .listener(VillagerRetaliationEvents::onAddReloadListeners)
+                .listener(VillagerSkillTradeEvents::onVillagerTrades)
+                .listener(VillagerSkillTradeEvents::onWandererTrades)
                 .listener(VillagerRetaliationCommands::onRegisterCommands)
                 .listener(VillagerRetaliationEvents::onLivingDamagePre)
                 .listener(VillagerRetaliationEvents::onLivingDamage)
