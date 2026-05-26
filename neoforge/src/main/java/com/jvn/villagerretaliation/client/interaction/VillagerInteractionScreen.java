@@ -767,7 +767,7 @@ public class VillagerInteractionScreen extends Screen {
 
     private void renderSkillsPage(GuiGraphics graphics, int mouseX, int mouseY) {
         int left = optionsLeft() + 6;
-        int top = Math.max(24, focusCenterY() - PROFILE_PANEL_HEIGHT);
+        int top = skillsPanelTop();
         Optional<VillagerProfileClientCache.DisplayEntry> entry = VillagerProfileClientCache.get(this.villagerEntityId);
         if (entry.isEmpty()) {
             requestProfileRefresh();
@@ -1576,14 +1576,22 @@ public class VillagerInteractionScreen extends Screen {
         int left = optionsLeft() + OPTION_TEXT_INSET;
         int contentTop = this.page == DialoguePage.GIFT
                 ? giftInventoryTop()
-                : isProfilePanelPage() ? conversationInfoTop() : optionsTop();
+                : this.page == DialoguePage.SKILLS ? skillsPanelTop()
+                : this.page == DialoguePage.PROFILE ? conversationInfoTop() : optionsTop();
         int top = contentTop - this.font.lineHeight - TOP_BACK_BUTTON_GAP;
         int bottom = top + this.font.lineHeight;
         return new TopBackButtonBounds(left, left + textWidth, top, bottom);
     }
 
-    private boolean isProfilePanelPage() {
-        return this.page == DialoguePage.PROFILE || this.page == DialoguePage.SKILLS;
+    private int skillsPanelTop() {
+        int lowerVeilTop = conversationInfoTop() + VEIL_DITHER_START_OFFSET + 8;
+        int bottomSafeTop = this.height - skillsPanelHeight() - 8;
+        return Math.max(24, Math.max(lowerVeilTop, bottomSafeTop));
+    }
+
+    private int skillsPanelHeight() {
+        int rows = (VillagerSkill.values().length + PROFILE_SKILL_COLUMNS - 1) / PROFILE_SKILL_COLUMNS;
+        return this.font.lineHeight + 4 + rows * PROFILE_SKILL_ROW_HEIGHT;
     }
 
     private int optionsTop() {
