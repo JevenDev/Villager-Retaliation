@@ -38,31 +38,8 @@ public final class VillagerInteractionScreenShaderRenderer {
     }
 
     public static void renderInteractionVeil(GuiGraphics graphics, int width, int height, float veilTop, float fadeHeight) {
-        renderInteractionVeil(graphics, width, height, veilTop, fadeHeight, 0.0F, 0.0F, 0.0F, 1.0F);
-    }
-
-    public static void renderInteractionVeil(
-            GuiGraphics graphics,
-            int width,
-            int height,
-            float veilTop,
-            float fadeHeight,
-            float rightVeilLeft,
-            float rightVeilTop,
-            float rightVeilBottom,
-            float rightVeilFadeWidth) {
-        boolean rightVeilEnabled = rightVeilBottom > rightVeilTop;
         if (interactionVeilShader == null) {
             graphics.fill(0, Math.max(0, Math.round(veilTop + fadeHeight)), width, height, 0xFF000000);
-            if (rightVeilEnabled) {
-                graphics.fill(
-                        Math.max(0, Math.round(rightVeilLeft + rightVeilFadeWidth)),
-                        Math.max(0, Math.round(rightVeilTop)),
-                        width,
-                        Math.min(height, Math.round(rightVeilBottom)),
-                        0xFF000000
-                );
-            }
             return;
         }
 
@@ -71,21 +48,16 @@ public final class VillagerInteractionScreenShaderRenderer {
         setUniform(interactionVeilShader, "CellSize", DITHER_CELL_SIZE);
         setUniform(interactionVeilShader, "ScreenWidth", (float) width);
         setUniform(interactionVeilShader, "ArcDepth", DITHER_ARC_DEPTH);
-        setUniform(interactionVeilShader, "RightVeilLeft", rightVeilLeft);
-        setUniform(interactionVeilShader, "RightVeilTop", rightVeilTop);
-        setUniform(interactionVeilShader, "RightVeilBottom", rightVeilBottom);
-        setUniform(interactionVeilShader, "RightVeilFadeWidth", rightVeilFadeWidth);
         Matrix4f pose = graphics.pose().last().pose();
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.setShader(() -> interactionVeilShader);
 
-        float renderTop = rightVeilEnabled ? Math.min(veilTop, rightVeilTop) : veilTop;
         BufferBuilder bufferBuilder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
         bufferBuilder.addVertex(pose, 0.0F, height, 0.0F);
         bufferBuilder.addVertex(pose, width, height, 0.0F);
-        bufferBuilder.addVertex(pose, width, Math.max(0.0F, renderTop), 0.0F);
-        bufferBuilder.addVertex(pose, 0.0F, Math.max(0.0F, renderTop), 0.0F);
+        bufferBuilder.addVertex(pose, width, Math.max(0.0F, veilTop), 0.0F);
+        bufferBuilder.addVertex(pose, 0.0F, Math.max(0.0F, veilTop), 0.0F);
         BufferUploader.drawWithShader(bufferBuilder.buildOrThrow());
 
         RenderSystem.disableBlend();

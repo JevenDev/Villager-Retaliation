@@ -52,30 +52,6 @@
       "type": "float",
       "count": 1,
       "values": [ 56.0 ]
-    },
-    {
-      "name": "RightVeilLeft",
-      "type": "float",
-      "count": 1,
-      "values": [ 0.0 ]
-    },
-    {
-      "name": "RightVeilTop",
-      "type": "float",
-      "count": 1,
-      "values": [ 0.0 ]
-    },
-    {
-      "name": "RightVeilBottom",
-      "type": "float",
-      "count": 1,
-      "values": [ 0.0 ]
-    },
-    {
-      "name": "RightVeilFadeWidth",
-      "type": "float",
-      "count": 1,
-      "values": [ 1.0 ]
     }
   ]
 }
