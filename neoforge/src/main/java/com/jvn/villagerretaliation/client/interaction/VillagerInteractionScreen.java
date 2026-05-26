@@ -100,8 +100,11 @@ public class VillagerInteractionScreen extends Screen {
     private static final int PROFILE_CHART_POINT_COLOR = 0xFFFFF3B0;
     private static final int PROFILE_CHART_POINT_HOVER_COLOR = 0xFFFFFFFF;
     private static final int PROFILE_CHART_POINT_HIT_RADIUS = 6;
-    private static final int PROFILE_SKILL_ROW_HEIGHT = 11;
-    private static final int PROFILE_SKILL_MAX_ROWS = 6;
+    private static final int PROFILE_PANEL_HEIGHT = 226;
+    private static final int PROFILE_SKILL_ROW_HEIGHT = 16;
+    private static final int PROFILE_SKILL_BAR_HEIGHT = 4;
+    private static final int PROFILE_SKILL_COLUMNS = 2;
+    private static final int PROFILE_SKILL_COLUMN_GAP = 8;
 
     private final int villagerEntityId;
     private final String villagerName;
@@ -727,7 +730,7 @@ public class VillagerInteractionScreen extends Screen {
 
     private void renderProfilePage(GuiGraphics graphics, int mouseX, int mouseY) {
         int left = optionsLeft() + 6;
-        int top = conversationInfoTop() - 2;
+        int top = Math.max(24, focusCenterY() - PROFILE_PANEL_HEIGHT);
         Optional<VillagerProfileClientCache.DisplayEntry> entry = VillagerProfileClientCache.get(this.villagerEntityId);
         if (entry.isEmpty()) {
             requestProfileRefresh();
@@ -740,7 +743,7 @@ public class VillagerInteractionScreen extends Screen {
         int centerY = top + PROFILE_CHART_RADIUS + 16;
         VillagerSocialAttribute hoveredAttribute = profileChartPointAt(profile, centerX, centerY, mouseX, mouseY);
         renderProfileChart(graphics, profile, centerX, centerY, hoveredAttribute);
-        VillagerSkill hoveredSkill = renderProfileSkills(graphics, profile, left, centerY + PROFILE_CHART_RADIUS + 26, mouseX, mouseY);
+        VillagerSkill hoveredSkill = renderProfileSkills(graphics, profile, left, centerY + PROFILE_CHART_RADIUS + 18, mouseX, mouseY);
         if (hoveredAttribute != null) {
             renderProfileAttributeTooltip(graphics, profile, hoveredAttribute, mouseX, mouseY);
         } else if (hoveredSkill != null) {
@@ -755,54 +758,51 @@ public class VillagerInteractionScreen extends Screen {
             int top,
             int mouseX,
             int mouseY) {
-        List<VillagerSkillValue> highlights = profileSkillHighlights(profile);
+        List<VillagerSkillValue> highlights = profile.bestSkills(VillagerSkill.values().length);
+        int columnWidth = (OPTION_WIDTH - 8 - PROFILE_SKILL_COLUMN_GAP) / PROFILE_SKILL_COLUMNS;
         graphics.drawString(this.font, translate("profile.skills"), left, top, INFO_VALUE_COLOR, false);
-        int y = top + this.font.lineHeight + 3;
         VillagerSkill hovered = null;
-        for (VillagerSkillValue skillValue : highlights) {
+        for (int index = 0; index < highlights.size(); index++) {
+            VillagerSkillValue skillValue = highlights.get(index);
             VillagerSkill skill = skillValue.skill();
-            boolean rowHovered = mouseX >= left - 2
-                    && mouseX <= left + OPTION_WIDTH - 8
+            int column = index % PROFILE_SKILL_COLUMNS;
+            int row = index / PROFILE_SKILL_COLUMNS;
+            int rowLeft = left + column * (columnWidth + PROFILE_SKILL_COLUMN_GAP);
+            int y = top + this.font.lineHeight + 4 + row * PROFILE_SKILL_ROW_HEIGHT;
+            boolean rowHovered = mouseX >= rowLeft - 2
+                    && mouseX <= rowLeft + columnWidth + 2
                     && mouseY >= y - 1
-                    && mouseY <= y + this.font.lineHeight;
+                    && mouseY <= y + PROFILE_SKILL_ROW_HEIGHT - 1;
             if (rowHovered) {
                 hovered = skill;
-                graphics.fill(left - 3, y - 1, left + OPTION_WIDTH - 6, y + this.font.lineHeight, 0x22FFFFFF);
+                graphics.fill(rowLeft - 2, y - 1, rowLeft + columnWidth + 2, y + PROFILE_SKILL_ROW_HEIGHT - 1, 0x22FFFFFF);
             }
 
-            String label = localizedSkill(skill);
-            String rank = localizedSkillRank(skillValue.rank());
-            graphics.drawString(this.font, label, left, y, INFO_SECONDARY_COLOR, false);
-            graphics.drawString(this.font, rank, left + OPTION_WIDTH - 8 - this.font.width(rank), y, skillRankColor(skillValue.rank()), false);
-            y += PROFILE_SKILL_ROW_HEIGHT;
+            String label = fitText(localizedSkill(skill), columnWidth);
+            graphics.drawString(this.font, label, rowLeft, y, INFO_SECONDARY_COLOR, false);
+            renderSkillBar(graphics, rowLeft, y + this.font.lineHeight + 1, columnWidth, skillValue.value(), skillValue.rank());
         }
         return hovered;
     }
 
-    private List<VillagerSkillValue> profileSkillHighlights(VillagerProfileClientCache.DisplayEntry profile) {
-        List<VillagerSkill> selected = new ArrayList<>();
-        addProfileSkill(selected, VillagerProfessionSkills.primarySkill(profile.professionKey()));
-        for (VillagerSkill skill : VillagerProfessionSkills.tradeSkills(profile.professionKey())) {
-            addProfileSkill(selected, skill);
-        }
-        for (VillagerSkillValue skillValue : profile.bestSkills(PROFILE_SKILL_MAX_ROWS)) {
-            addProfileSkill(selected, skillValue.skill());
-        }
-
-        List<VillagerSkillValue> highlights = new ArrayList<>();
-        for (VillagerSkill skill : selected) {
-            if (highlights.size() >= PROFILE_SKILL_MAX_ROWS) {
-                break;
-            }
-            highlights.add(new VillagerSkillValue(skill, profile.skillValue(skill)));
-        }
-        return highlights;
+    private void renderSkillBar(GuiGraphics graphics, int left, int top, int width, int value, VillagerSkillRank rank) {
+        int fillWidth = Mth.clamp(Math.round(width * value / 100.0F), 1, width);
+        graphics.fill(left, top, left + width, top + PROFILE_SKILL_BAR_HEIGHT, 0x55332F2A);
+        graphics.fill(left, top, left + fillWidth, top + PROFILE_SKILL_BAR_HEIGHT, skillRankColor(rank));
+        graphics.fill(left, top, left + width, top + 1, 0x40FFFFFF);
     }
 
-    private static void addProfileSkill(List<VillagerSkill> selected, VillagerSkill skill) {
-        if (skill != null && !selected.contains(skill)) {
-            selected.add(skill);
+    private String fitText(String text, int maxWidth) {
+        if (this.font.width(text) <= maxWidth) {
+            return text;
         }
+
+        String suffix = "...";
+        int suffixWidth = this.font.width(suffix);
+        if (maxWidth <= suffixWidth) {
+            return this.font.plainSubstrByWidth(text, maxWidth);
+        }
+        return this.font.plainSubstrByWidth(text, maxWidth - suffixWidth) + suffix;
     }
 
     private void renderProfileChart(
@@ -895,6 +895,7 @@ public class VillagerInteractionScreen extends Screen {
         List<Component> tooltip = new ArrayList<>();
         tooltip.add(Component.literal(localizedSkill(skill)).withStyle(ChatFormatting.WHITE));
         tooltip.add(Component.translatable(GUI_KEY_PREFIX + "profile.tooltip.level", localizedSkillRank(rank)).withStyle(ChatFormatting.YELLOW));
+        tooltip.add(Component.translatable(GUI_KEY_PREFIX + "profile.tooltip.score", profile.skillValue(skill)).withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.empty());
         tooltip.add(Component.literal(localizedSkillDescription(skill)).withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.translatable(GUI_KEY_PREFIX + "profile.skill.tooltip.trade_effect").withStyle(ChatFormatting.GRAY));
