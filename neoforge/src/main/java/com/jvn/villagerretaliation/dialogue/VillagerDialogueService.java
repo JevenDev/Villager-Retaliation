@@ -54,7 +54,7 @@ public final class VillagerDialogueService {
         List<DialogueLine> availableLines = availableLines(context);
         List<DialogueLine> candidates = availableLines.stream()
                 .filter(line -> line.matches(context, requestType, requestedOptionId, disposition))
-                .sorted(Comparator.comparingInt(line -> recentDialogueIds.contains(line.id()) ? 1 : 0))
+                .sorted(Comparator.comparingInt(line -> line.recentlyUsed(recentDialogueIds) ? 1 : 0))
                 .toList();
         candidates = preferRequestedOptionCandidates(requestedOptionId, candidates);
         candidates = preferDirectHitMemoryCandidates(context, requestType, candidates);
@@ -72,7 +72,7 @@ public final class VillagerDialogueService {
         }
 
         List<DialogueLine> freshCandidates = candidates.stream()
-                .filter(line -> !recentDialogueIds.contains(line.id()))
+                .filter(line -> line.hasFreshVariant(recentDialogueIds))
                 .toList();
         if (!freshCandidates.isEmpty()) {
             candidates = freshCandidates;
@@ -83,12 +83,12 @@ public final class VillagerDialogueService {
         for (DialogueLine candidate : candidates) {
             selected -= effectiveWeight(candidate);
             if (selected < 0) {
-                return new DialogueResult(candidate.id(), resolveText(candidate, context));
+                return resolveText(candidate, context, recentDialogueIds);
             }
         }
 
         DialogueLine fallback = candidates.getLast();
-        return new DialogueResult(fallback.id(), resolveText(fallback, context));
+        return resolveText(fallback, context, recentDialogueIds);
     }
 
     public static String selectOpeningGreeting(DialogueContext context) {
@@ -514,8 +514,17 @@ public final class VillagerDialogueService {
     }
 
     private static String resolveText(DialogueLine line, DialogueContext context) {
+        return resolveText(line.selectText(context.random()), line, context);
+    }
+
+    private static DialogueResult resolveText(DialogueLine line, DialogueContext context, List<String> recentDialogueIds) {
+        DialogueLine.SelectedText selected = line.selectText(context.random(), recentDialogueIds);
+        return new DialogueResult(selected.id(), resolveText(selected.text(), line, context));
+    }
+
+    private static String resolveText(String text, DialogueLine line, DialogueContext context) {
         return VillagerDialogueResources.resolveTemplate(
-                resolveText(line.selectText(context.random()), context),
+                resolveText(text, context),
                 line.playerItemCondition().replacements(context.player())
         );
     }

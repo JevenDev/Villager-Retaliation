@@ -83,6 +83,59 @@ public record DialogueLine(
         return this.lines.get(random.nextInt(this.lines.size()));
     }
 
+    public SelectedText selectText(RandomSource random, List<String> recentDialogueIds) {
+        if (this.lines.isEmpty()) {
+            return new SelectedText(this.id, "");
+        }
+        if (this.lines.size() == 1) {
+            return new SelectedText(this.id, this.lines.getFirst());
+        }
+
+        List<Integer> freshIndexes = new java.util.ArrayList<>();
+        if (!recentDialogueIds.contains(this.id)) {
+            for (int index = 0; index < this.lines.size(); index++) {
+                if (!recentDialogueIds.contains(variantId(index))) {
+                    freshIndexes.add(index);
+                }
+            }
+        }
+        int selectedIndex = freshIndexes.isEmpty()
+                ? random.nextInt(this.lines.size())
+                : freshIndexes.get(random.nextInt(freshIndexes.size()));
+        return new SelectedText(variantId(selectedIndex), this.lines.get(selectedIndex));
+    }
+
+    public boolean recentlyUsed(List<String> recentDialogueIds) {
+        if (recentDialogueIds.contains(this.id)) {
+            return true;
+        }
+        for (int index = 0; index < this.lines.size(); index++) {
+            if (recentDialogueIds.contains(variantId(index))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean hasFreshVariant(List<String> recentDialogueIds) {
+        if (this.lines.isEmpty() || recentDialogueIds.contains(this.id)) {
+            return false;
+        }
+        if (this.lines.size() == 1) {
+            return !recentDialogueIds.contains(this.id);
+        }
+        for (int index = 0; index < this.lines.size(); index++) {
+            if (!recentDialogueIds.contains(variantId(index))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String variantId(int index) {
+        return this.id + "#line_" + index;
+    }
+
     public boolean matches(DialogueContext context, DialogueRequestType requestedType, DialogueDisposition disposition) {
         return matches(context, requestedType, "", disposition);
     }
@@ -361,6 +414,9 @@ public record DialogueLine(
 
     public static Builder builder(String id, DialogueRequestType requestType, List<String> lines) {
         return new Builder(id, requestType, lines);
+    }
+
+    public record SelectedText(String id, String text) {
     }
 
     public static class Builder {

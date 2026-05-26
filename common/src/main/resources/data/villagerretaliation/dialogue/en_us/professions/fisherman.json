@@ -1,53 +1,50 @@
 {
   "messages": [
     {
+      "id": "fisherman_gift_given_variants",
       "key": "gift_given",
-      "text": "Take {gift_item}. A useful catch should not sit in one pair of hands.",
-      "weight": 24
+      "lines": [
+        "Take {gift_item}. A useful catch should not sit in one pair of hands.",
+        "Here, {gift_item}. The water was generous, so I can be too."
+      ],
+      "weight": 48
     },
     {
-      "key": "gift_given",
-      "text": "Here, {gift_item}. The water was generous, so I can be too.",
-      "weight": 24
-    },
-    {
+      "id": "fisherman_gift_advice_followup_liked_variants",
       "key": "gift_advice_followup.liked",
-      "text": "Good. {tested_villager} took {gift_item}; that advice had a clean hook.",
-      "weight": 22
+      "lines": [
+        "Good. {tested_villager} took {gift_item}; that advice had a clean hook.",
+        "Then {gift_item} was the right bait for {tested_villager}. Glad it landed."
+      ],
+      "weight": 44
     },
     {
-      "key": "gift_advice_followup.liked",
-      "text": "Then {gift_item} was the right bait for {tested_villager}. Glad it landed.",
-      "weight": 22
+      "id": "fisherman_gift_advice_followup_disliked_variants",
+      "key": "gift_advice_followup.disliked",
+      "lines": [
+        "That line came back empty. For {gift_subject}, cast {alternative_gift} instead.",
+        "Some fish spit the hook. Leave {gift_item} and try {alternative_gift} next time."
+      ],
+      "weight": 44
     },
     {
       "key": "gift_advice_followup.disliked",
-      "text": "That line came back empty. For {gift_subject}, cast {alternative_gift} instead.",
-      "weight": 22
-    },
-    {
-      "key": "gift_advice_followup.disliked",
-      "text": "Some fish spit the hook. Leave {gift_item} and try {alternative_gift} next time.",
-      "weight": 22
-    },
-    {
-      "key": "gift_advice_followup.disliked",
-      "text": "Bad bait. It happens. Cast {alternative_gift} if you want a better chance.",
       "dispositions": [
         "cautious",
         "rude",
         "hostile",
         "fearful"
       ],
+      "text": "Bad bait. It happens. Cast {alternative_gift} if you want a better chance.",
       "weight": 20
     },
     {
       "key": "gift_advice_followup.disliked",
-      "text": "You took the line, not me. Still, {alternative_gift} should catch better.",
       "dispositions": [
         "rude",
         "hostile"
       ],
+      "text": "You took the line, not me. Still, {alternative_gift} should catch better.",
       "weight": 20
     }
   ],
@@ -61,446 +58,6 @@
     {
       "id": "fisherman_closing",
       "text": "Back to reading water and weather, then."
-    }
-  ],
-  "lines": [
-    {
-      "id": "fisherman_question_nets",
-      "request": "question",
-      "text": "Empty nets at dusk make every rumor sound heavier.",
-      "weight": 30
-    },
-    {
-      "id": "fisherman_question_water",
-      "request": "question",
-      "text": "Water keeps secrets until the weather shakes them loose.",
-      "weight": 30
-    },
-    {
-      "id": "fisherman_story_line",
-      "request": "story",
-      "text": "A snapped line once saved me from hauling in something worse than nothing.",
-      "weight": 26
-    },
-    {
-      "id": "fisherman_new_greeting_dock",
-      "request": "greeting",
-      "text": "Step lightly on the dock. Loose boards like to announce strangers.",
-      "weight": 26
-    },
-    {
-      "id": "fisherman_new_question_water",
-      "request": "question",
-      "text": "Water looks calm right up until it proves it was thinking.",
-      "weight": 28
-    },
-    {
-      "id": "fisherman_new_question_nets",
-      "request": "question",
-      "text": "A good net catches food. A bad net catches excuses.",
-      "weight": 28
-    },
-    {
-      "id": "fisherman_new_story_fog",
-      "request": "story",
-      "text": "Once the fog came in so thick I trusted the dock by smell.",
-      "weight": 24
-    },
-    {
-      "id": "fisherman_new_joke_line",
-      "request": "joke",
-      "text": "A fishing joke needs a good line and someone patient enough to hear it.",
-      "weight": 18
-    },
-    {
-      "id": "fisherman_new_insult_soggy",
-      "request": "insult",
-      "text": "That insult was damp before it reached me.",
-      "weight": 18
-    },
-    {
-      "id": "fisherman_new_question_weather",
-      "request": "question",
-      "text": "Weather has more moods than any trader I have met.",
-      "weight": 28
-    },
-    {
-      "id": "fisherman_new_question_twine",
-      "request": "question",
-      "text": "Good twine matters. Small failures love important moments.",
-      "weight": 28
-    },
-    {
-      "id": "fisherman_new_story_empty_net",
-      "request": "story",
-      "text": "An empty net can still bring home a lesson, though nobody cooks it.",
-      "weight": 24
-    },
-    {
-      "id": "fisherman_new_cautious_distance",
-      "request": "question",
-      "text": "I keep space between myself and uncertain weather. People are no different.",
-      "dispositions": [
-        "cautious",
-        "rude"
-      ],
-      "weight": 30
-    },
-    {
-      "id": "fisherman_cured_recognition_warm_1",
-      "request": "cured_recognition",
-      "text": "I remember sinking far below myself. You hauled the line in.",
-      "weight": 30,
-      "dispositions": [
-        "friendly",
-        "respectful"
-      ]
-    },
-    {
-      "id": "fisherman_cured_recognition_warm_2",
-      "request": "cured_recognition",
-      "text": "The dark had me hooked. You cut the line clean.",
-      "weight": 30,
-      "dispositions": [
-        "friendly",
-        "respectful"
-      ]
-    },
-    {
-      "id": "fisherman_cured_recognition_confused_1",
-      "request": "cured_recognition",
-      "text": "Your face breaks the surface of that memory, then slips under again.",
-      "weight": 30,
-      "dispositions": [
-        "neutral",
-        "cautious"
-      ]
-    },
-    {
-      "id": "fisherman_cured_recognition_confused_2",
-      "request": "cured_recognition",
-      "text": "I remember a taste like bad river water, then breathing like it was new.",
-      "weight": 30,
-      "dispositions": [
-        "neutral",
-        "cautious"
-      ]
-    },
-    {
-      "id": "fisherman_cured_recognition_uneasy_1",
-      "request": "cured_recognition",
-      "text": "I remember you through deep water and panic. Do not crowd the bank.",
-      "weight": 30,
-      "dispositions": [
-        "rude",
-        "hostile",
-        "fearful"
-      ]
-    },
-    {
-      "id": "fisherman_village_event_thunderstorm_1",
-      "request": "village_event_report",
-      "event_tags": [
-        "thunderstorm"
-      ],
-      "text": "Thunder shook the barrel so hard the docks creaked under the thunder, but everyone near me is still standing.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "fisherman_village_event_thunderstorm_2",
-      "request": "village_event_report",
-      "event_tags": [
-        "thunderstorm"
-      ],
-      "text": "I checked nets, barrels, and dock posts after the lightning, then counted heads. No one should be alone after a sky like that.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "fisherman_village_event_thunderstorm_3",
-      "request": "village_event_report",
-      "event_tags": [
-        "thunderstorm"
-      ],
-      "text": "Near the barrel, the bell sounded small under that thunder. We stayed inside and kept the doors watched.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "fisherman_village_event_thunderstorm_4",
-      "request": "village_event_report",
-      "event_tags": [
-        "thunderstorm"
-      ],
-      "text": "That thunder made everyone quiet. I checked the barrels twice.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "fisherman_village_event_thunderstorm_5",
-      "request": "village_event_report",
-      "event_tags": [
-        "thunderstorm"
-      ],
-      "text": "The sky can keep its lightning. I have barrels to set right.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "fisherman_village_event_fire_1",
-      "request": "village_event_report",
-      "event_tags": [
-        "village_fire"
-      ],
-      "text": "I checked tarred rope and dry dock planks for sparks first, then checked faces for smoke and fear.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "fisherman_village_event_fire_2",
-      "request": "village_event_report",
-      "event_tags": [
-        "village_fire"
-      ],
-      "text": "We passed water hand to hand and kept people away from the smoke. I checked the dock planks after.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "fisherman_village_event_fire_3",
-      "request": "village_event_report",
-      "event_tags": [
-        "village_fire"
-      ],
-      "text": "The nets can wait. People come first.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "fisherman_village_event_fire_4",
-      "request": "village_event_report",
-      "event_tags": [
-        "village_fire"
-      ],
-      "text": "We saved what we could reach around the barrel, then stopped pretending things matter more than neighbors.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "fisherman_village_event_fire_5",
-      "request": "village_event_report",
-      "event_tags": [
-        "village_fire"
-      ],
-      "text": "The smoke is thinning near the barrel, but everyone is still sniffing the air like it might lie.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "fisherman_village_event_raid_1",
-      "request": "village_event_report",
-      "event_tags": [
-        "raid",
-        "player_defended_raid"
-      ],
-      "text": "During a raid, the nets can dry crooked; who makes it behind a door matters more.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "fisherman_village_event_raid_2",
-      "request": "village_event_report",
-      "event_tags": [
-        "raid",
-        "player_defended_raid"
-      ],
-      "text": "The horns stopped, but my hands near the barrel still expect another wave from the road.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "fisherman_village_event_raid_3",
-      "request": "village_event_report",
-      "event_tags": [
-        "raid",
-        "player_defended_raid"
-      ],
-      "text": "We counted living neighbors before nets, barrels, and dock posts. That is the only count worth starting with.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "fisherman_village_event_raid_4",
-      "request": "village_event_report",
-      "event_tags": [
-        "raid",
-        "player_defended_raid"
-      ],
-      "text": "Raiders came looking for easy emeralds. They found barred doors near the barrel and a bell that would not stop ringing.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "fisherman_village_event_raid_5",
-      "request": "village_event_report",
-      "event_tags": [
-        "raid",
-        "player_defended_raid"
-      ],
-      "text": "From the barrel, I saw fear cross the square; then I saw courage get there first.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "fisherman_village_event_night_attack_1",
-      "request": "village_event_report",
-      "event_tags": [
-        "night_attack"
-      ],
-      "text": "Night trouble tests the loose latch by the barrel first. We are fixing those before sunset.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "fisherman_village_event_night_attack_2",
-      "request": "village_event_report",
-      "event_tags": [
-        "night_attack"
-      ],
-      "text": "I stayed near the water past the lanterns and listened for anyone calling from the dark.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "fisherman_village_event_night_attack_3",
-      "request": "village_event_report",
-      "event_tags": [
-        "night_attack"
-      ],
-      "text": "Dawn gave the barrel enough light to count wounds, missing blocks, and who made it home.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "fisherman_village_event_night_attack_4",
-      "request": "village_event_report",
-      "event_tags": [
-        "night_attack"
-      ],
-      "text": "The dark tested everyone. Most of us passed by keeping a coil of rope between us and teeth.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "fisherman_village_event_night_attack_5",
-      "request": "village_event_report",
-      "event_tags": [
-        "night_attack"
-      ],
-      "text": "We are safe enough near the barrel, though every shadow is being inspected twice.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "fisherman_village_event_sandstorm_1",
-      "request": "village_event_report",
-      "event_tags": [
-        "sandstorm"
-      ],
-      "text": "The wind threw sand through every crack. I am still cleaning sand out of the barrels.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "fisherman_village_event_sandstorm_2",
-      "request": "village_event_report",
-      "event_tags": [
-        "sandstorm"
-      ],
-      "text": "I checked nets, barrels, and dock posts, then checked who was coughing too hard to answer.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "fisherman_village_event_sandstorm_3",
-      "request": "village_event_report",
-      "event_tags": [
-        "sandstorm"
-      ],
-      "text": "Sand reached the barrel, the hinges, and half our eyes, but no one has been reported missing.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "fisherman_village_event_sandstorm_4",
-      "request": "village_event_report",
-      "event_tags": [
-        "sandstorm"
-      ],
-      "text": "A hard wind teaches a fisherman which doors actually close and which ones only pretend.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "fisherman_village_event_sandstorm_5",
-      "request": "village_event_report",
-      "event_tags": [
-        "sandstorm"
-      ],
-      "text": "We are safe enough near the barrel, though the whole village sounds like it is chewing gravel.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "fisherman_village_event_snowstorm_1",
-      "request": "village_event_report",
-      "event_tags": [
-        "snowstorm"
-      ],
-      "text": "The nets can dry crooked. Warm hands, clear paths, and full hearths come first.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "fisherman_village_event_snowstorm_2",
-      "request": "village_event_report",
-      "event_tags": [
-        "snowstorm"
-      ],
-      "text": "Snow piled against the doors, but everyone near the barrel found shelter.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "fisherman_village_event_snowstorm_3",
-      "request": "village_event_report",
-      "event_tags": [
-        "snowstorm"
-      ],
-      "text": "Cold works quietly around the barrel. We are checking on anyone who stayed quiet too long.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "fisherman_village_event_snowstorm_4",
-      "request": "village_event_report",
-      "event_tags": [
-        "snowstorm"
-      ],
-      "text": "I am clearing ice from the dock edge and watching for footprints that stop too soon.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "fisherman_village_event_snowstorm_5",
-      "request": "village_event_report",
-      "event_tags": [
-        "snowstorm"
-      ],
-      "text": "We are alright for now near the barrel. Keep the fires fed and the paths open.",
-      "weight": 34,
-      "show_for_babies": false
     }
   ],
   "pacify": [
@@ -527,6 +84,193 @@
       ],
       "text": "No. I know when to cut a bad line.",
       "weight": 26
+    }
+  ],
+  "lines": [
+    {
+      "id": "fisherman_question_nets_variants",
+      "request": "question",
+      "lines": [
+        "Empty nets at dusk make every rumor sound heavier.",
+        "Water keeps secrets until the weather shakes them loose.",
+        "Water looks calm right up until it proves it was thinking.",
+        "A good net catches food. A bad net catches excuses.",
+        "Weather has more moods than any trader I have met.",
+        "Good twine matters. Small failures love important moments."
+      ],
+      "weight": 172
+    },
+    {
+      "id": "fisherman_story_line_variants",
+      "request": "story",
+      "lines": [
+        "A snapped line once saved me from hauling in something worse than nothing.",
+        "Once the fog came in so thick I trusted the dock by smell.",
+        "An empty net can still bring home a lesson, though nobody cooks it."
+      ],
+      "weight": 74
+    },
+    {
+      "id": "fisherman_new_greeting_dock",
+      "request": "greeting",
+      "text": "Step lightly on the dock. Loose boards like to announce strangers.",
+      "weight": 26
+    },
+    {
+      "id": "fisherman_new_joke_line",
+      "request": "joke",
+      "text": "A fishing joke needs a good line and someone patient enough to hear it.",
+      "weight": 18
+    },
+    {
+      "id": "fisherman_new_insult_soggy",
+      "request": "insult",
+      "text": "That insult was damp before it reached me.",
+      "weight": 18
+    },
+    {
+      "id": "fisherman_new_cautious_distance",
+      "request": "question",
+      "dispositions": [
+        "cautious",
+        "rude"
+      ],
+      "text": "I keep space between myself and uncertain weather. People are no different.",
+      "weight": 30
+    },
+    {
+      "id": "fisherman_cured_recognition_warm",
+      "request": "cured_recognition",
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ],
+      "lines": [
+        "I remember sinking far below myself. You hauled the line in.",
+        "The dark had me hooked. You cut the line clean."
+      ],
+      "weight": 60
+    },
+    {
+      "id": "fisherman_cured_recognition_confused",
+      "request": "cured_recognition",
+      "dispositions": [
+        "neutral",
+        "cautious"
+      ],
+      "lines": [
+        "Your face breaks the surface of that memory, then slips under again.",
+        "I remember a taste like bad river water, then breathing like it was new."
+      ],
+      "weight": 60
+    },
+    {
+      "id": "fisherman_cured_recognition_uneasy_1",
+      "request": "cured_recognition",
+      "dispositions": [
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "text": "I remember you through deep water and panic. Do not crowd the bank.",
+      "weight": 30
+    },
+    {
+      "id": "fisherman_village_event_thunderstorm",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "lines": [
+        "Thunder shook the barrel so hard the docks creaked under the thunder, but everyone near me is still standing.",
+        "I checked nets, barrels, and dock posts after the lightning, then counted heads. No one should be alone after a sky like that.",
+        "Near the barrel, the bell sounded small under that thunder. We stayed inside and kept the doors watched.",
+        "That thunder made everyone quiet. I checked the barrels twice.",
+        "The sky can keep its lightning. I have barrels to set right."
+      ],
+      "weight": 170
+    },
+    {
+      "id": "fisherman_village_event_fire",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "village_fire"
+      ],
+      "lines": [
+        "I checked tarred rope and dry dock planks for sparks first, then checked faces for smoke and fear.",
+        "We passed water hand to hand and kept people away from the smoke. I checked the dock planks after.",
+        "The nets can wait. People come first.",
+        "We saved what we could reach around the barrel, then stopped pretending things matter more than neighbors.",
+        "The smoke is thinning near the barrel, but everyone is still sniffing the air like it might lie."
+      ],
+      "weight": 170
+    },
+    {
+      "id": "fisherman_village_event_raid",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "lines": [
+        "During a raid, the nets can dry crooked; who makes it behind a door matters more.",
+        "The horns stopped, but my hands near the barrel still expect another wave from the road.",
+        "We counted living neighbors before nets, barrels, and dock posts. That is the only count worth starting with.",
+        "Raiders came looking for easy emeralds. They found barred doors near the barrel and a bell that would not stop ringing.",
+        "From the barrel, I saw fear cross the square; then I saw courage get there first."
+      ],
+      "weight": 170
+    },
+    {
+      "id": "fisherman_village_event_night_attack",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "night_attack"
+      ],
+      "lines": [
+        "Night trouble tests the loose latch by the barrel first. We are fixing those before sunset.",
+        "I stayed near the water past the lanterns and listened for anyone calling from the dark.",
+        "Dawn gave the barrel enough light to count wounds, missing blocks, and who made it home.",
+        "The dark tested everyone. Most of us passed by keeping a coil of rope between us and teeth.",
+        "We are safe enough near the barrel, though every shadow is being inspected twice."
+      ],
+      "weight": 170
+    },
+    {
+      "id": "fisherman_village_event_sandstorm",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "sandstorm"
+      ],
+      "lines": [
+        "The wind threw sand through every crack. I am still cleaning sand out of the barrels.",
+        "I checked nets, barrels, and dock posts, then checked who was coughing too hard to answer.",
+        "Sand reached the barrel, the hinges, and half our eyes, but no one has been reported missing.",
+        "A hard wind teaches a fisherman which doors actually close and which ones only pretend.",
+        "We are safe enough near the barrel, though the whole village sounds like it is chewing gravel."
+      ],
+      "weight": 170
+    },
+    {
+      "id": "fisherman_village_event_snowstorm",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "snowstorm"
+      ],
+      "lines": [
+        "The nets can dry crooked. Warm hands, clear paths, and full hearths come first.",
+        "Snow piled against the doors, but everyone near the barrel found shelter.",
+        "Cold works quietly around the barrel. We are checking on anyone who stayed quiet too long.",
+        "I am clearing ice from the dock edge and watching for footprints that stop too soon.",
+        "We are alright for now near the barrel. Keep the fires fed and the paths open."
+      ],
+      "weight": 170
     }
   ]
 }

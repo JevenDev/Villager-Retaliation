@@ -1,53 +1,50 @@
 {
   "messages": [
     {
+      "id": "farmer_gift_given_variants",
       "key": "gift_given",
-      "text": "Here, {gift_item}. Good things grow better when they are shared.",
-      "weight": 24
+      "lines": [
+        "Here, {gift_item}. Good things grow better when they are shared.",
+        "Take {gift_item}. Consider it a small harvest for the kindness you planted."
+      ],
+      "weight": 48
     },
     {
-      "key": "gift_given",
-      "text": "Take {gift_item}. Consider it a small harvest for the kindness you planted.",
-      "weight": 24
-    },
-    {
+      "id": "farmer_gift_advice_followup_liked_variants",
       "key": "gift_advice_followup.liked",
-      "text": "Good. {gift_item} took root with {tested_villager}. That is a healthy sign.",
-      "weight": 22
+      "lines": [
+        "Good. {gift_item} took root with {tested_villager}. That is a healthy sign.",
+        "Then the advice sprouted. If {tested_villager} liked {gift_item}, that is a fair harvest."
+      ],
+      "weight": 44
     },
     {
-      "key": "gift_advice_followup.liked",
-      "text": "Then the advice sprouted. If {tested_villager} liked {gift_item}, that is a fair harvest.",
-      "weight": 22
+      "id": "farmer_gift_advice_followup_disliked_variants",
+      "key": "gift_advice_followup.disliked",
+      "lines": [
+        "Wrong soil for that seed. For {gift_subject}, plant {alternative_gift} instead.",
+        "{gift_item} did not grow there? Try {alternative_gift}. Some rows need different seed."
+      ],
+      "weight": 44
     },
     {
       "key": "gift_advice_followup.disliked",
-      "text": "Wrong soil for that seed. For {gift_subject}, plant {alternative_gift} instead.",
-      "weight": 22
-    },
-    {
-      "key": "gift_advice_followup.disliked",
-      "text": "{gift_item} did not grow there? Try {alternative_gift}. Some rows need different seed.",
-      "weight": 22
-    },
-    {
-      "key": "gift_advice_followup.disliked",
-      "text": "Bad seed, bad soil, or bad advice. Hard to say. Plant {alternative_gift} next.",
       "dispositions": [
         "cautious",
         "rude",
         "hostile",
         "fearful"
       ],
+      "text": "Bad seed, bad soil, or bad advice. Hard to say. Plant {alternative_gift} next.",
       "weight": 20
     },
     {
       "key": "gift_advice_followup.disliked",
-      "text": "You harvested a frown from {gift_item}? Then sow {alternative_gift} and move on.",
       "dispositions": [
         "rude",
         "hostile"
       ],
+      "text": "You harvested a frown from {gift_item}? Then sow {alternative_gift} and move on.",
       "weight": 20
     }
   ],
@@ -61,446 +58,6 @@
     {
       "id": "farmer_closing",
       "text": "Back to coaxing food from stubborn soil, then."
-    }
-  ],
-  "lines": [
-    {
-      "id": "farmer_question_rows",
-      "request": "question",
-      "text": "Dry rows and trampled crops teach a farmer to watch every footstep.",
-      "weight": 30
-    },
-    {
-      "id": "farmer_question_soil",
-      "request": "question",
-      "text": "The soil's been kind lately. That's more than I can say for some visitors.",
-      "weight": 30
-    },
-    {
-      "id": "farmer_story_harvest",
-      "request": "story",
-      "text": "A good harvest keeps a village standing.",
-      "weight": 26
-    },
-    {
-      "id": "farmer_new_greeting_rows",
-      "request": "greeting",
-      "text": "Stay off the rows if you can. The crops remember boots.",
-      "weight": 26
-    },
-    {
-      "id": "farmer_new_question_seed",
-      "request": "question",
-      "text": "Seeds are small, but they know how to make a person wait.",
-      "weight": 28
-    },
-    {
-      "id": "farmer_new_question_rain",
-      "request": "question",
-      "text": "Good rain is a blessing. Too much rain is work wearing a blessing mask.",
-      "weight": 28
-    },
-    {
-      "id": "farmer_new_story_scarecrow",
-      "request": "story",
-      "text": "I once fixed a scarecrow so well it scared me at dusk.",
-      "weight": 24
-    },
-    {
-      "id": "farmer_new_joke_carrot",
-      "request": "joke",
-      "text": "A carrot joke takes root slowly, if anyone lets it.",
-      "weight": 18
-    },
-    {
-      "id": "farmer_new_insult_mud",
-      "request": "insult",
-      "text": "That thought came in muddy and left tracks.",
-      "weight": 18
-    },
-    {
-      "id": "farmer_new_question_harvest",
-      "request": "question",
-      "text": "A harvest is just a hundred small chores deciding to agree.",
-      "weight": 28
-    },
-    {
-      "id": "farmer_new_question_bread",
-      "request": "question",
-      "text": "Bread starts long before the oven. Most good things do.",
-      "weight": 28
-    },
-    {
-      "id": "farmer_new_story_frost",
-      "request": "story",
-      "text": "One frost took half the field and taught the whole village humility.",
-      "weight": 24
-    },
-    {
-      "id": "farmer_new_rude_field",
-      "request": "insult",
-      "text": "I would not plant that opinion in poor soil.",
-      "dispositions": [
-        "rude",
-        "hostile"
-      ],
-      "weight": 30
-    },
-    {
-      "id": "farmer_cured_recognition_warm_1",
-      "request": "cured_recognition",
-      "text": "I remember waking like a field after frost. You gave the roots a chance.",
-      "weight": 30,
-      "dispositions": [
-        "friendly",
-        "respectful"
-      ]
-    },
-    {
-      "id": "farmer_cured_recognition_warm_2",
-      "request": "cured_recognition",
-      "text": "You pulled me back from spoiled soil. I will not forget that harvest.",
-      "weight": 30,
-      "dispositions": [
-        "friendly",
-        "respectful"
-      ]
-    },
-    {
-      "id": "farmer_cured_recognition_confused_1",
-      "request": "cured_recognition",
-      "text": "Your face is familiar, like a seed found in last year's coat.",
-      "weight": 30,
-      "dispositions": [
-        "neutral",
-        "cautious"
-      ]
-    },
-    {
-      "id": "farmer_cured_recognition_confused_2",
-      "request": "cured_recognition",
-      "text": "I remember mud, hunger, and sunlight arriving too bright. Were you the sunlight?",
-      "weight": 30,
-      "dispositions": [
-        "neutral",
-        "cautious"
-      ]
-    },
-    {
-      "id": "farmer_cured_recognition_uneasy_1",
-      "request": "cured_recognition",
-      "text": "I remember you, but the memory still has grave dirt under its nails.",
-      "weight": 30,
-      "dispositions": [
-        "rude",
-        "hostile",
-        "fearful"
-      ]
-    },
-    {
-      "id": "farmer_village_event_thunderstorm_1",
-      "request": "village_event_report",
-      "event_tags": [
-        "thunderstorm"
-      ],
-      "text": "Thunder shook the composter so hard the animals kicked at every thunderclap, but everyone near me is still standing.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "farmer_village_event_thunderstorm_2",
-      "request": "village_event_report",
-      "event_tags": [
-        "thunderstorm"
-      ],
-      "text": "I checked fields, pens, and seed chests after the lightning, then counted heads. No one should be alone after a sky like that.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "farmer_village_event_thunderstorm_3",
-      "request": "village_event_report",
-      "event_tags": [
-        "thunderstorm"
-      ],
-      "text": "Near the composter, the bell sounded small under that thunder. We stayed inside and kept the doors watched.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "farmer_village_event_thunderstorm_4",
-      "request": "village_event_report",
-      "event_tags": [
-        "thunderstorm"
-      ],
-      "text": "That thunder made everyone quiet. I checked the pens twice.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "farmer_village_event_thunderstorm_5",
-      "request": "village_event_report",
-      "event_tags": [
-        "thunderstorm"
-      ],
-      "text": "The sky can keep its lightning. I have pens to set right.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "farmer_village_event_fire_1",
-      "request": "village_event_report",
-      "event_tags": [
-        "village_fire"
-      ],
-      "text": "I checked hay bales and fence posts for sparks first, then checked faces for smoke and fear.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "farmer_village_event_fire_2",
-      "request": "village_event_report",
-      "event_tags": [
-        "village_fire"
-      ],
-      "text": "We passed water hand to hand and kept people away from the smoke. I checked the hay bales after.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "farmer_village_event_fire_3",
-      "request": "village_event_report",
-      "event_tags": [
-        "village_fire"
-      ],
-      "text": "The rows can wait. People come first.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "farmer_village_event_fire_4",
-      "request": "village_event_report",
-      "event_tags": [
-        "village_fire"
-      ],
-      "text": "We saved what we could reach around the composter, then stopped pretending things matter more than neighbors.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "farmer_village_event_fire_5",
-      "request": "village_event_report",
-      "event_tags": [
-        "village_fire"
-      ],
-      "text": "The smoke is thinning near the composter, but everyone is still sniffing the air like it might lie.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "farmer_village_event_raid_1",
-      "request": "village_event_report",
-      "event_tags": [
-        "raid",
-        "player_defended_raid"
-      ],
-      "text": "During a raid, the rows can wait; who makes it behind a door matters more.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "farmer_village_event_raid_2",
-      "request": "village_event_report",
-      "event_tags": [
-        "raid",
-        "player_defended_raid"
-      ],
-      "text": "The horns stopped, but my hands near the composter still expect another wave from the road.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "farmer_village_event_raid_3",
-      "request": "village_event_report",
-      "event_tags": [
-        "raid",
-        "player_defended_raid"
-      ],
-      "text": "We counted living neighbors before fields, pens, and seed chests. That is the only count worth starting with.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "farmer_village_event_raid_4",
-      "request": "village_event_report",
-      "event_tags": [
-        "raid",
-        "player_defended_raid"
-      ],
-      "text": "Raiders came looking for easy emeralds. They found barred doors near the fields and a bell that would not stop ringing.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "farmer_village_event_raid_5",
-      "request": "village_event_report",
-      "event_tags": [
-        "raid",
-        "player_defended_raid"
-      ],
-      "text": "From the fields, I saw fear cross the square; then I saw courage get there first.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "farmer_village_event_night_attack_1",
-      "request": "village_event_report",
-      "event_tags": [
-        "night_attack"
-      ],
-      "text": "Night trouble tests the loose latch by the composter first. We are fixing those before sunset.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "farmer_village_event_night_attack_2",
-      "request": "village_event_report",
-      "event_tags": [
-        "night_attack"
-      ],
-      "text": "I stayed near the crop rows beyond the torchlight and listened for anyone calling from the dark.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "farmer_village_event_night_attack_3",
-      "request": "village_event_report",
-      "event_tags": [
-        "night_attack"
-      ],
-      "text": "Dawn gave the composter enough light to count wounds, missing blocks, and who made it home.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "farmer_village_event_night_attack_4",
-      "request": "village_event_report",
-      "event_tags": [
-        "night_attack"
-      ],
-      "text": "The dark tested everyone. Most of us passed by keeping a loaf of bread between us and teeth.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "farmer_village_event_night_attack_5",
-      "request": "village_event_report",
-      "event_tags": [
-        "night_attack"
-      ],
-      "text": "We are safe enough near the composter, though every shadow is being inspected twice.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "farmer_village_event_sandstorm_1",
-      "request": "village_event_report",
-      "event_tags": [
-        "sandstorm"
-      ],
-      "text": "The wind threw sand through every crack. I am still cleaning sand out of the wheat.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "farmer_village_event_sandstorm_2",
-      "request": "village_event_report",
-      "event_tags": [
-        "sandstorm"
-      ],
-      "text": "I checked fields, pens, and seed chests, then checked who was coughing too hard to answer.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "farmer_village_event_sandstorm_3",
-      "request": "village_event_report",
-      "event_tags": [
-        "sandstorm"
-      ],
-      "text": "Sand reached the composter, the hinges, and half our eyes, but no one has been reported missing.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "farmer_village_event_sandstorm_4",
-      "request": "village_event_report",
-      "event_tags": [
-        "sandstorm"
-      ],
-      "text": "A hard wind teaches a farmer which doors actually close and which ones only pretend.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "farmer_village_event_sandstorm_5",
-      "request": "village_event_report",
-      "event_tags": [
-        "sandstorm"
-      ],
-      "text": "We are safe enough near the composter, though the whole village sounds like it is chewing gravel.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "farmer_village_event_snowstorm_1",
-      "request": "village_event_report",
-      "event_tags": [
-        "snowstorm"
-      ],
-      "text": "The rows can wait. Warm hands, clear paths, and full hearths come first.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "farmer_village_event_snowstorm_2",
-      "request": "village_event_report",
-      "event_tags": [
-        "snowstorm"
-      ],
-      "text": "Snow piled against the doors, but everyone near the fields found shelter.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "farmer_village_event_snowstorm_3",
-      "request": "village_event_report",
-      "event_tags": [
-        "snowstorm"
-      ],
-      "text": "Cold works quietly around the composter. We are checking on anyone who stayed quiet too long.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "farmer_village_event_snowstorm_4",
-      "request": "village_event_report",
-      "event_tags": [
-        "snowstorm"
-      ],
-      "text": "I am clearing snow off the paths to the pens and watching for footprints that stop too soon.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "farmer_village_event_snowstorm_5",
-      "request": "village_event_report",
-      "event_tags": [
-        "snowstorm"
-      ],
-      "text": "We are alright for now near the composter. Keep the fires fed and the paths open.",
-      "weight": 34,
-      "show_for_babies": false
     }
   ],
   "pacify": [
@@ -527,6 +84,193 @@
       ],
       "text": "No. You trampled too much for a handful of green to fix it.",
       "weight": 26
+    }
+  ],
+  "lines": [
+    {
+      "id": "farmer_question_rows_variants",
+      "request": "question",
+      "lines": [
+        "Dry rows and trampled crops teach a farmer to watch every footstep.",
+        "The soil's been kind lately. That's more than I can say for some visitors.",
+        "Seeds are small, but they know how to make a person wait.",
+        "Good rain is a blessing. Too much rain is work wearing a blessing mask.",
+        "A harvest is just a hundred small chores deciding to agree.",
+        "Bread starts long before the oven. Most good things do."
+      ],
+      "weight": 172
+    },
+    {
+      "id": "farmer_story_harvest_variants",
+      "request": "story",
+      "lines": [
+        "A good harvest keeps a village standing.",
+        "I once fixed a scarecrow so well it scared me at dusk.",
+        "One frost took half the field and taught the whole village humility."
+      ],
+      "weight": 74
+    },
+    {
+      "id": "farmer_new_greeting_rows",
+      "request": "greeting",
+      "text": "Stay off the rows if you can. The crops remember boots.",
+      "weight": 26
+    },
+    {
+      "id": "farmer_new_joke_carrot",
+      "request": "joke",
+      "text": "A carrot joke takes root slowly, if anyone lets it.",
+      "weight": 18
+    },
+    {
+      "id": "farmer_new_insult_mud",
+      "request": "insult",
+      "text": "That thought came in muddy and left tracks.",
+      "weight": 18
+    },
+    {
+      "id": "farmer_new_rude_field",
+      "request": "insult",
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
+      "text": "I would not plant that opinion in poor soil.",
+      "weight": 30
+    },
+    {
+      "id": "farmer_cured_recognition_warm",
+      "request": "cured_recognition",
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ],
+      "lines": [
+        "I remember waking like a field after frost. You gave the roots a chance.",
+        "You pulled me back from spoiled soil. I will not forget that harvest."
+      ],
+      "weight": 60
+    },
+    {
+      "id": "farmer_cured_recognition_confused",
+      "request": "cured_recognition",
+      "dispositions": [
+        "neutral",
+        "cautious"
+      ],
+      "lines": [
+        "Your face is familiar, like a seed found in last year's coat.",
+        "I remember mud, hunger, and sunlight arriving too bright. Were you the sunlight?"
+      ],
+      "weight": 60
+    },
+    {
+      "id": "farmer_cured_recognition_uneasy_1",
+      "request": "cured_recognition",
+      "dispositions": [
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "text": "I remember you, but the memory still has grave dirt under its nails.",
+      "weight": 30
+    },
+    {
+      "id": "farmer_village_event_thunderstorm",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "lines": [
+        "Thunder shook the composter so hard the animals kicked at every thunderclap, but everyone near me is still standing.",
+        "I checked fields, pens, and seed chests after the lightning, then counted heads. No one should be alone after a sky like that.",
+        "Near the composter, the bell sounded small under that thunder. We stayed inside and kept the doors watched.",
+        "That thunder made everyone quiet. I checked the pens twice.",
+        "The sky can keep its lightning. I have pens to set right."
+      ],
+      "weight": 170
+    },
+    {
+      "id": "farmer_village_event_fire",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "village_fire"
+      ],
+      "lines": [
+        "I checked hay bales and fence posts for sparks first, then checked faces for smoke and fear.",
+        "We passed water hand to hand and kept people away from the smoke. I checked the hay bales after.",
+        "The rows can wait. People come first.",
+        "We saved what we could reach around the composter, then stopped pretending things matter more than neighbors.",
+        "The smoke is thinning near the composter, but everyone is still sniffing the air like it might lie."
+      ],
+      "weight": 170
+    },
+    {
+      "id": "farmer_village_event_raid",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "lines": [
+        "During a raid, the rows can wait; who makes it behind a door matters more.",
+        "The horns stopped, but my hands near the composter still expect another wave from the road.",
+        "We counted living neighbors before fields, pens, and seed chests. That is the only count worth starting with.",
+        "Raiders came looking for easy emeralds. They found barred doors near the fields and a bell that would not stop ringing.",
+        "From the fields, I saw fear cross the square; then I saw courage get there first."
+      ],
+      "weight": 170
+    },
+    {
+      "id": "farmer_village_event_night_attack",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "night_attack"
+      ],
+      "lines": [
+        "Night trouble tests the loose latch by the composter first. We are fixing those before sunset.",
+        "I stayed near the crop rows beyond the torchlight and listened for anyone calling from the dark.",
+        "Dawn gave the composter enough light to count wounds, missing blocks, and who made it home.",
+        "The dark tested everyone. Most of us passed by keeping a loaf of bread between us and teeth.",
+        "We are safe enough near the composter, though every shadow is being inspected twice."
+      ],
+      "weight": 170
+    },
+    {
+      "id": "farmer_village_event_sandstorm",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "sandstorm"
+      ],
+      "lines": [
+        "The wind threw sand through every crack. I am still cleaning sand out of the wheat.",
+        "I checked fields, pens, and seed chests, then checked who was coughing too hard to answer.",
+        "Sand reached the composter, the hinges, and half our eyes, but no one has been reported missing.",
+        "A hard wind teaches a farmer which doors actually close and which ones only pretend.",
+        "We are safe enough near the composter, though the whole village sounds like it is chewing gravel."
+      ],
+      "weight": 170
+    },
+    {
+      "id": "farmer_village_event_snowstorm",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "snowstorm"
+      ],
+      "lines": [
+        "The rows can wait. Warm hands, clear paths, and full hearths come first.",
+        "Snow piled against the doors, but everyone near the fields found shelter.",
+        "Cold works quietly around the composter. We are checking on anyone who stayed quiet too long.",
+        "I am clearing snow off the paths to the pens and watching for footprints that stop too soon.",
+        "We are alright for now near the composter. Keep the fires fed and the paths open."
+      ],
+      "weight": 170
     }
   ]
 }

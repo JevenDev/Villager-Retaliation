@@ -41,6 +41,7 @@
 - Built-in dialogue now leans harder into the mod's core identity: villagers remember personal harm, share gossip, reward defense cautiously, and respond differently to the same player based on current reputation.
 - Dialogue options now use `type: "dialogue_option"` with a separate `request` value, and dialogue lines now use `request`.
 - General player-selected conversation now uses `question`; `small_talk` is no longer a separate request.
+- Built-in dialogue variants now use `lines` arrays instead of repeated near-identical entries, and recent-dialogue tracking now remembers individual line-array variants.
 - Forced-dialogue chat now uses normal triggers with `output.mode: "chat"` instead of separate `_chat` trigger names.
 - Forced-dialogue reputation changes now spread through the gossip hook when a villager witnesses the event.
 - Forced dialogue speaker labels now preserve custom villager names in villager chat instead of falling back to profession-only labels.

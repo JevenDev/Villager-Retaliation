@@ -1,53 +1,50 @@
 {
   "messages": [
     {
+      "id": "librarian_gift_given_variants",
       "key": "gift_given",
-      "text": "Take {gift_item}. Knowledge is not the only thing worth lending carefully.",
-      "weight": 24
+      "lines": [
+        "Take {gift_item}. Knowledge is not the only thing worth lending carefully.",
+        "Here, {gift_item}. Return with a story, and I will call it a fair trade."
+      ],
+      "weight": 48
     },
     {
-      "key": "gift_given",
-      "text": "Here, {gift_item}. Return with a story, and I will call it a fair trade.",
-      "weight": 24
-    },
-    {
+      "id": "librarian_gift_advice_followup_liked_variants",
       "key": "gift_advice_followup.liked",
-      "text": "Excellent. I will mark {gift_item} as a good recommendation, then.",
-      "weight": 22
+      "lines": [
+        "Excellent. I will mark {gift_item} as a good recommendation, then.",
+        "Then my reference was sound. {gift_item} belongs on that page."
+      ],
+      "weight": 44
     },
     {
-      "key": "gift_advice_followup.liked",
-      "text": "Then my reference was sound. {gift_item} belongs on that page.",
-      "weight": 22
+      "id": "librarian_gift_advice_followup_disliked_variants",
+      "key": "gift_advice_followup.disliked",
+      "lines": [
+        "An error in the margin, then. For {gift_subject}, revise the gift to {alternative_gift}.",
+        "{gift_item} was the wrong citation. Try {alternative_gift}; much stronger source."
+      ],
+      "weight": 44
     },
     {
       "key": "gift_advice_followup.disliked",
-      "text": "An error in the margin, then. For {gift_subject}, revise the gift to {alternative_gift}.",
-      "weight": 22
-    },
-    {
-      "key": "gift_advice_followup.disliked",
-      "text": "{gift_item} was the wrong citation. Try {alternative_gift}; much stronger source.",
-      "weight": 22
-    },
-    {
-      "key": "gift_advice_followup.disliked",
-      "text": "Then consider that note corrected. For {gift_subject}, write down {alternative_gift}.",
       "dispositions": [
         "cautious",
         "rude",
         "hostile",
         "fearful"
       ],
+      "text": "Then consider that note corrected. For {gift_subject}, write down {alternative_gift}.",
       "weight": 20
     },
     {
       "key": "gift_advice_followup.disliked",
-      "text": "You accepted a poor source without checking it. Next source: {alternative_gift}.",
       "dispositions": [
         "rude",
         "hostile"
       ],
+      "text": "You accepted a poor source without checking it. Next source: {alternative_gift}.",
       "weight": 20
     }
   ],
@@ -61,446 +58,6 @@
     {
       "id": "librarian_closing",
       "text": "Back to keeping records and stories straight, then."
-    }
-  ],
-  "lines": [
-    {
-      "id": "librarian_question_pages",
-      "request": "question",
-      "text": "Missing pages worry me less than people who never read warnings.",
-      "weight": 30
-    },
-    {
-      "id": "librarian_question_memory",
-      "request": "question",
-      "text": "Villages remember more than people expect.",
-      "weight": 30
-    },
-    {
-      "id": "librarian_story_records",
-      "request": "story",
-      "text": "Every trade, every kindness, every cruelty. Someone writes it down.",
-      "weight": 26
-    },
-    {
-      "id": "librarian_new_greeting_lectern",
-      "request": "greeting",
-      "text": "Mind the lectern. It has heard better questions than most people ask.",
-      "weight": 26
-    },
-    {
-      "id": "librarian_new_question_ink",
-      "request": "question",
-      "text": "Ink is quiet until someone needs proof.",
-      "weight": 28
-    },
-    {
-      "id": "librarian_new_question_record",
-      "request": "question",
-      "text": "Records do not care who feels embarrassed by them.",
-      "weight": 28
-    },
-    {
-      "id": "librarian_new_story_margin",
-      "request": "story",
-      "text": "The best clue I ever found was written in a margin by someone annoyed.",
-      "weight": 24
-    },
-    {
-      "id": "librarian_new_joke_footnote",
-      "request": "joke",
-      "text": "I had a footnote for this joke, but mercy won.",
-      "weight": 18
-    },
-    {
-      "id": "librarian_new_insult_blank",
-      "request": "insult",
-      "text": "That thought had too many blank pages.",
-      "weight": 18
-    },
-    {
-      "id": "librarian_new_question_shelf",
-      "request": "question",
-      "text": "A tidy shelf is proof that peace can be arranged, briefly.",
-      "weight": 28
-    },
-    {
-      "id": "librarian_new_question_warning",
-      "request": "question",
-      "text": "Forgotten warnings do not become kinder. They become surprises.",
-      "weight": 28
-    },
-    {
-      "id": "librarian_new_story_borrowed",
-      "request": "story",
-      "text": "Someone once returned a book cleaner than they borrowed it. We still discuss it.",
-      "weight": 24
-    },
-    {
-      "id": "librarian_new_hostile_memory",
-      "request": "question",
-      "text": "You may prefer I forget. I have chosen a profession that argues otherwise.",
-      "dispositions": [
-        "rude",
-        "hostile"
-      ],
-      "weight": 30
-    },
-    {
-      "id": "librarian_cured_recognition_warm_1",
-      "request": "cured_recognition",
-      "text": "I remember the page turning back from a very bad ending.",
-      "weight": 30,
-      "dispositions": [
-        "friendly",
-        "respectful"
-      ]
-    },
-    {
-      "id": "librarian_cured_recognition_warm_2",
-      "request": "cured_recognition",
-      "text": "Your face is one of the first words I could read again.",
-      "weight": 30,
-      "dispositions": [
-        "friendly",
-        "respectful"
-      ]
-    },
-    {
-      "id": "librarian_cured_recognition_confused_1",
-      "request": "cured_recognition",
-      "text": "The chapter is damaged, but your name survived in the margin.",
-      "weight": 30,
-      "dispositions": [
-        "neutral",
-        "cautious"
-      ]
-    },
-    {
-      "id": "librarian_cured_recognition_confused_2",
-      "request": "cured_recognition",
-      "text": "I remember fragments: weakness, gold, a bitter draught, and you waiting.",
-      "weight": 30,
-      "dispositions": [
-        "neutral",
-        "cautious"
-      ]
-    },
-    {
-      "id": "librarian_cured_recognition_uneasy_1",
-      "request": "cured_recognition",
-      "text": "I remember you. Some books should be opened slowly after a curse.",
-      "weight": 30,
-      "dispositions": [
-        "rude",
-        "hostile",
-        "fearful"
-      ]
-    },
-    {
-      "id": "librarian_village_event_thunderstorm_1",
-      "request": "village_event_report",
-      "event_tags": [
-        "thunderstorm"
-      ],
-      "text": "Thunder shook the lectern so hard the shelves shivered in their corners, but everyone near me is still standing.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "librarian_village_event_thunderstorm_2",
-      "request": "village_event_report",
-      "event_tags": [
-        "thunderstorm"
-      ],
-      "text": "I checked books, shelves, and written names after the lightning, then counted heads. No one should be alone after a sky like that.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "librarian_village_event_thunderstorm_3",
-      "request": "village_event_report",
-      "event_tags": [
-        "thunderstorm"
-      ],
-      "text": "Near the lectern, the bell sounded small under that thunder. We stayed inside and kept the doors watched.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "librarian_village_event_thunderstorm_4",
-      "request": "village_event_report",
-      "event_tags": [
-        "thunderstorm"
-      ],
-      "text": "That thunder made everyone quiet. I checked the shelves twice.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "librarian_village_event_thunderstorm_5",
-      "request": "village_event_report",
-      "event_tags": [
-        "thunderstorm"
-      ],
-      "text": "The sky can keep its lightning. I have shelves to set right.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "librarian_village_event_fire_1",
-      "request": "village_event_report",
-      "event_tags": [
-        "village_fire"
-      ],
-      "text": "I checked paper, shelves, and lamp oil for sparks first, then checked faces for smoke and fear.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "librarian_village_event_fire_2",
-      "request": "village_event_report",
-      "event_tags": [
-        "village_fire"
-      ],
-      "text": "We passed water hand to hand and kept people away from the smoke. I checked the lectern after.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "librarian_village_event_fire_3",
-      "request": "village_event_report",
-      "event_tags": [
-        "village_fire"
-      ],
-      "text": "The books can wait. People come first.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "librarian_village_event_fire_4",
-      "request": "village_event_report",
-      "event_tags": [
-        "village_fire"
-      ],
-      "text": "We saved what we could reach around the lectern, then stopped pretending things matter more than neighbors.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "librarian_village_event_fire_5",
-      "request": "village_event_report",
-      "event_tags": [
-        "village_fire"
-      ],
-      "text": "The smoke is thinning near the lectern, but everyone is still sniffing the air like it might lie.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "librarian_village_event_raid_1",
-      "request": "village_event_report",
-      "event_tags": [
-        "raid",
-        "player_defended_raid"
-      ],
-      "text": "During a raid, the books can stay shelved; who makes it behind a door matters more.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "librarian_village_event_raid_2",
-      "request": "village_event_report",
-      "event_tags": [
-        "raid",
-        "player_defended_raid"
-      ],
-      "text": "The horns stopped, but my hands near the lectern still expect another wave from the road.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "librarian_village_event_raid_3",
-      "request": "village_event_report",
-      "event_tags": [
-        "raid",
-        "player_defended_raid"
-      ],
-      "text": "We counted living neighbors before books, shelves, and written names. That is the only count worth starting with.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "librarian_village_event_raid_4",
-      "request": "village_event_report",
-      "event_tags": [
-        "raid",
-        "player_defended_raid"
-      ],
-      "text": "Raiders came looking for easy emeralds. They found barred doors near the lectern and a bell that would not stop ringing.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "librarian_village_event_raid_5",
-      "request": "village_event_report",
-      "event_tags": [
-        "raid",
-        "player_defended_raid"
-      ],
-      "text": "From the lectern, I saw fear cross the square; then I saw courage get there first.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "librarian_village_event_night_attack_1",
-      "request": "village_event_report",
-      "event_tags": [
-        "night_attack"
-      ],
-      "text": "Night trouble tests the loose latch by the lectern first. We are fixing those before sunset.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "librarian_village_event_night_attack_2",
-      "request": "village_event_report",
-      "event_tags": [
-        "night_attack"
-      ],
-      "text": "I stayed near the quiet aisle by the lectern and listened for anyone calling from the dark.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "librarian_village_event_night_attack_3",
-      "request": "village_event_report",
-      "event_tags": [
-        "night_attack"
-      ],
-      "text": "Dawn gave the lectern enough light to count wounds, missing blocks, and who made it home.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "librarian_village_event_night_attack_4",
-      "request": "village_event_report",
-      "event_tags": [
-        "night_attack"
-      ],
-      "text": "The dark tested everyone. Most of us passed by keeping a note in the margin between us and teeth.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "librarian_village_event_night_attack_5",
-      "request": "village_event_report",
-      "event_tags": [
-        "night_attack"
-      ],
-      "text": "We are safe enough near the lectern, though every shadow is being inspected twice.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "librarian_village_event_sandstorm_1",
-      "request": "village_event_report",
-      "event_tags": [
-        "sandstorm"
-      ],
-      "text": "The wind threw sand through every crack. I am still cleaning dust out of the pages.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "librarian_village_event_sandstorm_2",
-      "request": "village_event_report",
-      "event_tags": [
-        "sandstorm"
-      ],
-      "text": "I checked books, shelves, and written names, then checked who was coughing too hard to answer.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "librarian_village_event_sandstorm_3",
-      "request": "village_event_report",
-      "event_tags": [
-        "sandstorm"
-      ],
-      "text": "Sand reached the lectern, the hinges, and half our eyes, but no one has been reported missing.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "librarian_village_event_sandstorm_4",
-      "request": "village_event_report",
-      "event_tags": [
-        "sandstorm"
-      ],
-      "text": "A hard wind teaches a librarian which doors actually close and which ones only pretend.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "librarian_village_event_sandstorm_5",
-      "request": "village_event_report",
-      "event_tags": [
-        "sandstorm"
-      ],
-      "text": "We are safe enough near the lectern, though the whole village sounds like it is chewing gravel.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "librarian_village_event_snowstorm_1",
-      "request": "village_event_report",
-      "event_tags": [
-        "snowstorm"
-      ],
-      "text": "The books can stay shelved. Warm hands, clear paths, and full hearths come first.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "librarian_village_event_snowstorm_2",
-      "request": "village_event_report",
-      "event_tags": [
-        "snowstorm"
-      ],
-      "text": "Snow piled against the doors, but everyone near the lectern found shelter.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "librarian_village_event_snowstorm_3",
-      "request": "village_event_report",
-      "event_tags": [
-        "snowstorm"
-      ],
-      "text": "Cold works quietly around the lectern. We are checking on anyone who stayed quiet too long.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "librarian_village_event_snowstorm_4",
-      "request": "village_event_report",
-      "event_tags": [
-        "snowstorm"
-      ],
-      "text": "I am clearing cold off the library floor and watching for footprints that stop too soon.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "librarian_village_event_snowstorm_5",
-      "request": "village_event_report",
-      "event_tags": [
-        "snowstorm"
-      ],
-      "text": "We are alright for now near the lectern. Keep the fires fed and the paths open.",
-      "weight": 34,
-      "show_for_babies": false
     }
   ],
   "pacify": [
@@ -527,6 +84,193 @@
       ],
       "text": "No. The record is too fresh, and not in your favor.",
       "weight": 26
+    }
+  ],
+  "lines": [
+    {
+      "id": "librarian_question_pages_variants",
+      "request": "question",
+      "lines": [
+        "Missing pages worry me less than people who never read warnings.",
+        "Villages remember more than people expect.",
+        "Ink is quiet until someone needs proof.",
+        "Records do not care who feels embarrassed by them.",
+        "A tidy shelf is proof that peace can be arranged, briefly.",
+        "Forgotten warnings do not become kinder. They become surprises."
+      ],
+      "weight": 172
+    },
+    {
+      "id": "librarian_story_records_variants",
+      "request": "story",
+      "lines": [
+        "Every trade, every kindness, every cruelty. Someone writes it down.",
+        "The best clue I ever found was written in a margin by someone annoyed.",
+        "Someone once returned a book cleaner than they borrowed it. We still discuss it."
+      ],
+      "weight": 74
+    },
+    {
+      "id": "librarian_new_greeting_lectern",
+      "request": "greeting",
+      "text": "Mind the lectern. It has heard better questions than most people ask.",
+      "weight": 26
+    },
+    {
+      "id": "librarian_new_joke_footnote",
+      "request": "joke",
+      "text": "I had a footnote for this joke, but mercy won.",
+      "weight": 18
+    },
+    {
+      "id": "librarian_new_insult_blank",
+      "request": "insult",
+      "text": "That thought had too many blank pages.",
+      "weight": 18
+    },
+    {
+      "id": "librarian_new_hostile_memory",
+      "request": "question",
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
+      "text": "You may prefer I forget. I have chosen a profession that argues otherwise.",
+      "weight": 30
+    },
+    {
+      "id": "librarian_cured_recognition_warm",
+      "request": "cured_recognition",
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ],
+      "lines": [
+        "I remember the page turning back from a very bad ending.",
+        "Your face is one of the first words I could read again."
+      ],
+      "weight": 60
+    },
+    {
+      "id": "librarian_cured_recognition_confused",
+      "request": "cured_recognition",
+      "dispositions": [
+        "neutral",
+        "cautious"
+      ],
+      "lines": [
+        "The chapter is damaged, but your name survived in the margin.",
+        "I remember fragments: weakness, gold, a bitter draught, and you waiting."
+      ],
+      "weight": 60
+    },
+    {
+      "id": "librarian_cured_recognition_uneasy_1",
+      "request": "cured_recognition",
+      "dispositions": [
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "text": "I remember you. Some books should be opened slowly after a curse.",
+      "weight": 30
+    },
+    {
+      "id": "librarian_village_event_thunderstorm",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "lines": [
+        "Thunder shook the lectern so hard the shelves shivered in their corners, but everyone near me is still standing.",
+        "I checked books, shelves, and written names after the lightning, then counted heads. No one should be alone after a sky like that.",
+        "Near the lectern, the bell sounded small under that thunder. We stayed inside and kept the doors watched.",
+        "That thunder made everyone quiet. I checked the shelves twice.",
+        "The sky can keep its lightning. I have shelves to set right."
+      ],
+      "weight": 170
+    },
+    {
+      "id": "librarian_village_event_fire",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "village_fire"
+      ],
+      "lines": [
+        "I checked paper, shelves, and lamp oil for sparks first, then checked faces for smoke and fear.",
+        "We passed water hand to hand and kept people away from the smoke. I checked the lectern after.",
+        "The books can wait. People come first.",
+        "We saved what we could reach around the lectern, then stopped pretending things matter more than neighbors.",
+        "The smoke is thinning near the lectern, but everyone is still sniffing the air like it might lie."
+      ],
+      "weight": 170
+    },
+    {
+      "id": "librarian_village_event_raid",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "lines": [
+        "During a raid, the books can stay shelved; who makes it behind a door matters more.",
+        "The horns stopped, but my hands near the lectern still expect another wave from the road.",
+        "We counted living neighbors before books, shelves, and written names. That is the only count worth starting with.",
+        "Raiders came looking for easy emeralds. They found barred doors near the lectern and a bell that would not stop ringing.",
+        "From the lectern, I saw fear cross the square; then I saw courage get there first."
+      ],
+      "weight": 170
+    },
+    {
+      "id": "librarian_village_event_night_attack",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "night_attack"
+      ],
+      "lines": [
+        "Night trouble tests the loose latch by the lectern first. We are fixing those before sunset.",
+        "I stayed near the quiet aisle by the lectern and listened for anyone calling from the dark.",
+        "Dawn gave the lectern enough light to count wounds, missing blocks, and who made it home.",
+        "The dark tested everyone. Most of us passed by keeping a note in the margin between us and teeth.",
+        "We are safe enough near the lectern, though every shadow is being inspected twice."
+      ],
+      "weight": 170
+    },
+    {
+      "id": "librarian_village_event_sandstorm",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "sandstorm"
+      ],
+      "lines": [
+        "The wind threw sand through every crack. I am still cleaning dust out of the pages.",
+        "I checked books, shelves, and written names, then checked who was coughing too hard to answer.",
+        "Sand reached the lectern, the hinges, and half our eyes, but no one has been reported missing.",
+        "A hard wind teaches a librarian which doors actually close and which ones only pretend.",
+        "We are safe enough near the lectern, though the whole village sounds like it is chewing gravel."
+      ],
+      "weight": 170
+    },
+    {
+      "id": "librarian_village_event_snowstorm",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "snowstorm"
+      ],
+      "lines": [
+        "The books can stay shelved. Warm hands, clear paths, and full hearths come first.",
+        "Snow piled against the doors, but everyone near the lectern found shelter.",
+        "Cold works quietly around the lectern. We are checking on anyone who stayed quiet too long.",
+        "I am clearing cold off the library floor and watching for footprints that stop too soon.",
+        "We are alright for now near the lectern. Keep the fires fed and the paths open."
+      ],
+      "weight": 170
     }
   ]
 }

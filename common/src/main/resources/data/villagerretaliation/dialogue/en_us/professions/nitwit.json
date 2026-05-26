@@ -1,53 +1,50 @@
 {
   "messages": [
     {
+      "id": "nitwit_gift_given_variants",
       "key": "gift_given",
-      "text": "Take {gift_item}. I was saving it for a very good reason I forgot.",
-      "weight": 24
+      "lines": [
+        "Take {gift_item}. I was saving it for a very good reason I forgot.",
+        "Here, {gift_item}. It feels like the sort of thing a friend should have."
+      ],
+      "weight": 48
     },
     {
-      "key": "gift_given",
-      "text": "Here, {gift_item}. It feels like the sort of thing a friend should have.",
-      "weight": 24
-    },
-    {
+      "id": "nitwit_gift_advice_followup_liked_variants",
       "key": "gift_advice_followup.liked",
-      "text": "See? {tested_villager} liked {gift_item}. I am occasionally brilliant by accident.",
-      "weight": 22
+      "lines": [
+        "See? {tested_villager} liked {gift_item}. I am occasionally brilliant by accident.",
+        "Ha! {gift_item} worked. I will be unbearable about this for at least a minute."
+      ],
+      "weight": 44
     },
     {
-      "key": "gift_advice_followup.liked",
-      "text": "Ha! {gift_item} worked. I will be unbearable about this for at least a minute.",
-      "weight": 22
+      "id": "nitwit_gift_advice_followup_disliked_variants",
+      "key": "gift_advice_followup.disliked",
+      "lines": [
+        "Oh. Then pretend I said {alternative_gift}. For {gift_subject}, that sounds much wiser.",
+        "{gift_item} failed? Strange. Try {alternative_gift}; my second guesses are famous to me."
+      ],
+      "weight": 44
     },
     {
       "key": "gift_advice_followup.disliked",
-      "text": "Oh. Then pretend I said {alternative_gift}. For {gift_subject}, that sounds much wiser.",
-      "weight": 22
-    },
-    {
-      "key": "gift_advice_followup.disliked",
-      "text": "{gift_item} failed? Strange. Try {alternative_gift}; my second guesses are famous to me.",
-      "weight": 22
-    },
-    {
-      "key": "gift_advice_followup.disliked",
-      "text": "That was advice? I thought we were guessing. Guess {alternative_gift} next.",
       "dispositions": [
         "cautious",
         "rude",
         "hostile",
         "fearful"
       ],
+      "text": "That was advice? I thought we were guessing. Guess {alternative_gift} next.",
       "weight": 20
     },
     {
       "key": "gift_advice_followup.disliked",
-      "text": "You tried it anyway? Bold. I respect that almost enough to suggest {alternative_gift}.",
       "dispositions": [
         "rude",
         "hostile"
       ],
+      "text": "You tried it anyway? Bold. I respect that almost enough to suggest {alternative_gift}.",
       "weight": 20
     }
   ],
@@ -61,446 +58,6 @@
     {
       "id": "nitwit_closing",
       "text": "Back to finding odd jobs and stranger thoughts, then."
-    }
-  ],
-  "lines": [
-    {
-      "id": "nitwit_question_thought",
-      "request": "question",
-      "text": "I had a thought once. Left it somewhere safe, probably.",
-      "weight": 30
-    },
-    {
-      "id": "nitwit_question_thinking",
-      "request": "question",
-      "text": "If you find my thought, tell it I was looking useful.",
-      "weight": 30
-    },
-    {
-      "id": "nitwit_story_stick",
-      "request": "story",
-      "text": "A nice stick can be many things if nobody important is watching.",
-      "weight": 26
-    },
-    {
-      "id": "nitwit_new_greeting_corner",
-      "request": "greeting",
-      "text": "Hello. I was keeping this corner company.",
-      "weight": 26
-    },
-    {
-      "id": "nitwit_new_question_button",
-      "request": "question",
-      "text": "I found a button once. No wall, just ambition.",
-      "weight": 28
-    },
-    {
-      "id": "nitwit_new_question_where",
-      "request": "question",
-      "text": "Where am I going? Usually somewhere nearby, once I remember why.",
-      "weight": 28
-    },
-    {
-      "id": "nitwit_new_story_bucket",
-      "request": "story",
-      "text": "I carried an empty bucket all morning. Very light work. Very confusing.",
-      "weight": 24
-    },
-    {
-      "id": "nitwit_new_joke_thought",
-      "request": "joke",
-      "text": "My joke wandered off, but it promised to be funny if it returns.",
-      "weight": 18
-    },
-    {
-      "id": "nitwit_new_insult_hat",
-      "request": "insult",
-      "text": "Your hat looks like it is thinking harder than you.",
-      "weight": 18
-    },
-    {
-      "id": "nitwit_new_question_shadow",
-      "request": "question",
-      "text": "I tried following my shadow, but it got behind me somehow.",
-      "weight": 28
-    },
-    {
-      "id": "nitwit_new_question_job",
-      "request": "question",
-      "text": "A job sounds useful. I am saving usefulness for the right moment.",
-      "weight": 28
-    },
-    {
-      "id": "nitwit_new_story_bread",
-      "request": "story",
-      "text": "I once put bread in a chest and called it planning. Nobody argued.",
-      "weight": 24
-    },
-    {
-      "id": "nitwit_new_cautious_simple",
-      "request": "question",
-      "text": "I can be silly from over here. Over here feels better.",
-      "dispositions": [
-        "cautious",
-        "fearful"
-      ],
-      "weight": 30
-    },
-    {
-      "id": "nitwit_cured_recognition_warm_1",
-      "request": "cured_recognition",
-      "text": "I remember you! Mostly. You were the not-scary part of the scary bit.",
-      "weight": 30,
-      "dispositions": [
-        "friendly",
-        "respectful"
-      ]
-    },
-    {
-      "id": "nitwit_cured_recognition_warm_2",
-      "request": "cured_recognition",
-      "text": "You helped me be me again. I am very attached to being me.",
-      "weight": 30,
-      "dispositions": [
-        "friendly",
-        "respectful"
-      ]
-    },
-    {
-      "id": "nitwit_cured_recognition_confused_1",
-      "request": "cured_recognition",
-      "text": "I know your face. Did we meet before or after I stopped groaning?",
-      "weight": 30,
-      "dispositions": [
-        "neutral",
-        "cautious"
-      ]
-    },
-    {
-      "id": "nitwit_cured_recognition_confused_2",
-      "request": "cured_recognition",
-      "text": "There was an apple, but not the normal apple kind of day.",
-      "weight": 30,
-      "dispositions": [
-        "neutral",
-        "cautious"
-      ]
-    },
-    {
-      "id": "nitwit_cured_recognition_uneasy_1",
-      "request": "cured_recognition",
-      "text": "I remember some of it, and I would like to remember less of it.",
-      "weight": 30,
-      "dispositions": [
-        "rude",
-        "hostile",
-        "fearful"
-      ]
-    },
-    {
-      "id": "nitwit_village_event_thunderstorm_1",
-      "request": "village_event_report",
-      "event_tags": [
-        "thunderstorm"
-      ],
-      "text": "Thunder shook the village square so hard I jumped before the bell did, but everyone near me is still standing.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "nitwit_village_event_thunderstorm_2",
-      "request": "village_event_report",
-      "event_tags": [
-        "thunderstorm"
-      ],
-      "text": "I checked doors, beds, and hiding places after the lightning, then counted heads. No one should be alone after a sky like that.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "nitwit_village_event_thunderstorm_3",
-      "request": "village_event_report",
-      "event_tags": [
-        "thunderstorm"
-      ],
-      "text": "By the bell, the thunder made the whole square flinch. I stayed inside and kept away from windows.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "nitwit_village_event_thunderstorm_4",
-      "request": "village_event_report",
-      "event_tags": [
-        "thunderstorm"
-      ],
-      "text": "That thunder made everyone quiet. I checked my hiding spot twice.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "nitwit_village_event_thunderstorm_5",
-      "request": "village_event_report",
-      "event_tags": [
-        "thunderstorm"
-      ],
-      "text": "The sky can keep its lightning. I have a safe corner to find.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "nitwit_village_event_fire_1",
-      "request": "village_event_report",
-      "event_tags": [
-        "village_fire"
-      ],
-      "text": "I checked roofs and fences for sparks, then checked faces for smoke and fear.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "nitwit_village_event_fire_2",
-      "request": "village_event_report",
-      "event_tags": [
-        "village_fire"
-      ],
-      "text": "We passed water hand to hand and kept people away from the smoke. I carried the bucket after.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "nitwit_village_event_fire_3",
-      "request": "village_event_report",
-      "event_tags": [
-        "village_fire"
-      ],
-      "text": "My chores can wait. People come first.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "nitwit_village_event_fire_4",
-      "request": "village_event_report",
-      "event_tags": [
-        "village_fire"
-      ],
-      "text": "We saved what we could near the bell, then made sure no one was still coughing alone.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "nitwit_village_event_fire_5",
-      "request": "village_event_report",
-      "event_tags": [
-        "village_fire"
-      ],
-      "text": "The smoke is thinner now, but I keep smelling my sleeves to make sure it is really gone.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "nitwit_village_event_raid_1",
-      "request": "village_event_report",
-      "event_tags": [
-        "raid",
-        "player_defended_raid"
-      ],
-      "text": "During a raid, whatever i was doing can wait; who makes it behind a door matters more.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "nitwit_village_event_raid_2",
-      "request": "village_event_report",
-      "event_tags": [
-        "raid",
-        "player_defended_raid"
-      ],
-      "text": "The horns stopped, but I still keep looking at the road like it might shout again.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "nitwit_village_event_raid_3",
-      "request": "village_event_report",
-      "event_tags": [
-        "raid",
-        "player_defended_raid"
-      ],
-      "text": "We counted living neighbors before doors, beds, and hiding places. That is the only count worth starting with.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "nitwit_village_event_raid_4",
-      "request": "village_event_report",
-      "event_tags": [
-        "raid",
-        "player_defended_raid"
-      ],
-      "text": "Raiders came looking for easy emeralds. They found barred doors near the bell and a bell that would not stop ringing.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "nitwit_village_event_raid_5",
-      "request": "village_event_report",
-      "event_tags": [
-        "raid",
-        "player_defended_raid"
-      ],
-      "text": "From the bell, I saw fear cross the square; then I saw courage get there first.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "nitwit_village_event_night_attack_1",
-      "request": "village_event_report",
-      "event_tags": [
-        "night_attack"
-      ],
-      "text": "Night trouble found the door everyone meant to fix tomorrow. It is getting fixed today.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "nitwit_village_event_night_attack_2",
-      "request": "village_event_report",
-      "event_tags": [
-        "night_attack"
-      ],
-      "text": "I stayed near the dark between houses and listened for anyone calling from the dark.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "nitwit_village_event_night_attack_3",
-      "request": "village_event_report",
-      "event_tags": [
-        "night_attack"
-      ],
-      "text": "Dawn made it easier to see who was missing, which is not the same as making it easier.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "nitwit_village_event_night_attack_4",
-      "request": "village_event_report",
-      "event_tags": [
-        "night_attack"
-      ],
-      "text": "The dark tested everyone. Most of us passed by keeping both hands free between us and teeth.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "nitwit_village_event_night_attack_5",
-      "request": "village_event_report",
-      "event_tags": [
-        "night_attack"
-      ],
-      "text": "We are safe enough, but I still look twice at anything shaped like a monster.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "nitwit_village_event_sandstorm_1",
-      "request": "village_event_report",
-      "event_tags": [
-        "sandstorm"
-      ],
-      "text": "The wind threw sand through every crack. I am still cleaning sand from my sleeves.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "nitwit_village_event_sandstorm_2",
-      "request": "village_event_report",
-      "event_tags": [
-        "sandstorm"
-      ],
-      "text": "I checked doors, beds, and hiding places, then checked who was coughing too hard to answer.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "nitwit_village_event_sandstorm_3",
-      "request": "village_event_report",
-      "event_tags": [
-        "sandstorm"
-      ],
-      "text": "Sand got in my sleeves, my mouth, and places sand should not know about. No one is missing, though.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "nitwit_village_event_sandstorm_4",
-      "request": "village_event_report",
-      "event_tags": [
-        "sandstorm"
-      ],
-      "text": "A hard wind teaches a nitwit which doors actually close and which ones only pretend.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "nitwit_village_event_sandstorm_5",
-      "request": "village_event_report",
-      "event_tags": [
-        "sandstorm"
-      ],
-      "text": "We are safe enough, but every step sounds crunchy and everyone is blinking too much.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "nitwit_village_event_snowstorm_1",
-      "request": "village_event_report",
-      "event_tags": [
-        "snowstorm"
-      ],
-      "text": "Whatever I was doing can wait. Warm hands, clear paths, and full hearths come first.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "nitwit_village_event_snowstorm_2",
-      "request": "village_event_report",
-      "event_tags": [
-        "snowstorm"
-      ],
-      "text": "Snow piled against the doors, but everyone near the bell found shelter.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "nitwit_village_event_snowstorm_3",
-      "request": "village_event_report",
-      "event_tags": [
-        "snowstorm"
-      ],
-      "text": "Cold is sneaky. I am checking on anyone who stopped complaining about it.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "nitwit_village_event_snowstorm_4",
-      "request": "village_event_report",
-      "event_tags": [
-        "snowstorm"
-      ],
-      "text": "I am clearing snow out of my shoes and watching for footprints that stop too soon.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "nitwit_village_event_snowstorm_5",
-      "request": "village_event_report",
-      "event_tags": [
-        "snowstorm"
-      ],
-      "text": "We are alright for now. I am keeping close to smoke, soup, and shoveled paths.",
-      "weight": 34,
-      "show_for_babies": false
     }
   ],
   "pacify": [
@@ -527,6 +84,193 @@
       ],
       "text": "No. Even I know this is not fixed.",
       "weight": 26
+    }
+  ],
+  "lines": [
+    {
+      "id": "nitwit_question_thought_variants",
+      "request": "question",
+      "lines": [
+        "I had a thought once. Left it somewhere safe, probably.",
+        "If you find my thought, tell it I was looking useful.",
+        "I found a button once. No wall, just ambition.",
+        "Where am I going? Usually somewhere nearby, once I remember why.",
+        "I tried following my shadow, but it got behind me somehow.",
+        "A job sounds useful. I am saving usefulness for the right moment."
+      ],
+      "weight": 172
+    },
+    {
+      "id": "nitwit_story_stick_variants",
+      "request": "story",
+      "lines": [
+        "A nice stick can be many things if nobody important is watching.",
+        "I carried an empty bucket all morning. Very light work. Very confusing.",
+        "I once put bread in a chest and called it planning. Nobody argued."
+      ],
+      "weight": 74
+    },
+    {
+      "id": "nitwit_new_greeting_corner",
+      "request": "greeting",
+      "text": "Hello. I was keeping this corner company.",
+      "weight": 26
+    },
+    {
+      "id": "nitwit_new_joke_thought",
+      "request": "joke",
+      "text": "My joke wandered off, but it promised to be funny if it returns.",
+      "weight": 18
+    },
+    {
+      "id": "nitwit_new_insult_hat",
+      "request": "insult",
+      "text": "Your hat looks like it is thinking harder than you.",
+      "weight": 18
+    },
+    {
+      "id": "nitwit_new_cautious_simple",
+      "request": "question",
+      "dispositions": [
+        "cautious",
+        "fearful"
+      ],
+      "text": "I can be silly from over here. Over here feels better.",
+      "weight": 30
+    },
+    {
+      "id": "nitwit_cured_recognition_warm",
+      "request": "cured_recognition",
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ],
+      "lines": [
+        "I remember you! Mostly. You were the not-scary part of the scary bit.",
+        "You helped me be me again. I am very attached to being me."
+      ],
+      "weight": 60
+    },
+    {
+      "id": "nitwit_cured_recognition_confused",
+      "request": "cured_recognition",
+      "dispositions": [
+        "neutral",
+        "cautious"
+      ],
+      "lines": [
+        "I know your face. Did we meet before or after I stopped groaning?",
+        "There was an apple, but not the normal apple kind of day."
+      ],
+      "weight": 60
+    },
+    {
+      "id": "nitwit_cured_recognition_uneasy_1",
+      "request": "cured_recognition",
+      "dispositions": [
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "text": "I remember some of it, and I would like to remember less of it.",
+      "weight": 30
+    },
+    {
+      "id": "nitwit_village_event_thunderstorm",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "lines": [
+        "Thunder shook the village square so hard I jumped before the bell did, but everyone near me is still standing.",
+        "I checked doors, beds, and hiding places after the lightning, then counted heads. No one should be alone after a sky like that.",
+        "By the bell, the thunder made the whole square flinch. I stayed inside and kept away from windows.",
+        "That thunder made everyone quiet. I checked my hiding spot twice.",
+        "The sky can keep its lightning. I have a safe corner to find."
+      ],
+      "weight": 170
+    },
+    {
+      "id": "nitwit_village_event_fire",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "village_fire"
+      ],
+      "lines": [
+        "I checked roofs and fences for sparks, then checked faces for smoke and fear.",
+        "We passed water hand to hand and kept people away from the smoke. I carried the bucket after.",
+        "My chores can wait. People come first.",
+        "We saved what we could near the bell, then made sure no one was still coughing alone.",
+        "The smoke is thinner now, but I keep smelling my sleeves to make sure it is really gone."
+      ],
+      "weight": 170
+    },
+    {
+      "id": "nitwit_village_event_raid",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "lines": [
+        "During a raid, whatever i was doing can wait; who makes it behind a door matters more.",
+        "The horns stopped, but I still keep looking at the road like it might shout again.",
+        "We counted living neighbors before doors, beds, and hiding places. That is the only count worth starting with.",
+        "Raiders came looking for easy emeralds. They found barred doors near the bell and a bell that would not stop ringing.",
+        "From the bell, I saw fear cross the square; then I saw courage get there first."
+      ],
+      "weight": 170
+    },
+    {
+      "id": "nitwit_village_event_night_attack",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "night_attack"
+      ],
+      "lines": [
+        "Night trouble found the door everyone meant to fix tomorrow. It is getting fixed today.",
+        "I stayed near the dark between houses and listened for anyone calling from the dark.",
+        "Dawn made it easier to see who was missing, which is not the same as making it easier.",
+        "The dark tested everyone. Most of us passed by keeping both hands free between us and teeth.",
+        "We are safe enough, but I still look twice at anything shaped like a monster."
+      ],
+      "weight": 170
+    },
+    {
+      "id": "nitwit_village_event_sandstorm",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "sandstorm"
+      ],
+      "lines": [
+        "The wind threw sand through every crack. I am still cleaning sand from my sleeves.",
+        "I checked doors, beds, and hiding places, then checked who was coughing too hard to answer.",
+        "Sand got in my sleeves, my mouth, and places sand should not know about. No one is missing, though.",
+        "A hard wind teaches a nitwit which doors actually close and which ones only pretend.",
+        "We are safe enough, but every step sounds crunchy and everyone is blinking too much."
+      ],
+      "weight": 170
+    },
+    {
+      "id": "nitwit_village_event_snowstorm",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "snowstorm"
+      ],
+      "lines": [
+        "Whatever I was doing can wait. Warm hands, clear paths, and full hearths come first.",
+        "Snow piled against the doors, but everyone near the bell found shelter.",
+        "Cold is sneaky. I am checking on anyone who stopped complaining about it.",
+        "I am clearing snow out of my shoes and watching for footprints that stop too soon.",
+        "We are alright for now. I am keeping close to smoke, soup, and shoveled paths."
+      ],
+      "weight": 170
     }
   ]
 }

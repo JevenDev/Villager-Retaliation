@@ -1,53 +1,50 @@
 {
   "messages": [
     {
+      "id": "leatherworker_gift_given_variants",
       "key": "gift_given",
-      "text": "Take {gift_item}. Good gear should travel, not gather dust.",
-      "weight": 24
+      "lines": [
+        "Take {gift_item}. Good gear should travel, not gather dust.",
+        "Here, {gift_item}. It has more use with you than sitting by my cauldron."
+      ],
+      "weight": 48
     },
     {
-      "key": "gift_given",
-      "text": "Here, {gift_item}. It has more use with you than sitting by my cauldron.",
-      "weight": 24
-    },
-    {
+      "id": "leatherworker_gift_advice_followup_liked_variants",
       "key": "gift_advice_followup.liked",
-      "text": "Good. {gift_item} sat well with {tested_villager}, like softened leather.",
-      "weight": 22
+      "lines": [
+        "Good. {gift_item} sat well with {tested_villager}, like softened leather.",
+        "Then the fit was comfortable. {tested_villager} liked {gift_item}."
+      ],
+      "weight": 44
     },
     {
-      "key": "gift_advice_followup.liked",
-      "text": "Then the fit was comfortable. {tested_villager} liked {gift_item}.",
-      "weight": 22
+      "id": "leatherworker_gift_advice_followup_disliked_variants",
+      "key": "gift_advice_followup.disliked",
+      "lines": [
+        "Too stiff for them, then. For {gift_subject}, try {alternative_gift}.",
+        "{gift_item} rubbed wrong? Bring {alternative_gift}; better fit, less complaint."
+      ],
+      "weight": 44
     },
     {
       "key": "gift_advice_followup.disliked",
-      "text": "Too stiff for them, then. For {gift_subject}, try {alternative_gift}.",
-      "weight": 22
-    },
-    {
-      "key": "gift_advice_followup.disliked",
-      "text": "{gift_item} rubbed wrong? Bring {alternative_gift}; better fit, less complaint.",
-      "weight": 22
-    },
-    {
-      "key": "gift_advice_followup.disliked",
-      "text": "That advice chafed. {alternative_gift} should sit easier.",
       "dispositions": [
         "cautious",
         "rude",
         "hostile",
         "fearful"
       ],
+      "text": "That advice chafed. {alternative_gift} should sit easier.",
       "weight": 20
     },
     {
       "key": "gift_advice_followup.disliked",
-      "text": "You wore bad advice too long. Trade it for {alternative_gift}.",
       "dispositions": [
         "rude",
         "hostile"
       ],
+      "text": "You wore bad advice too long. Trade it for {alternative_gift}.",
       "weight": 20
     }
   ],
@@ -61,446 +58,6 @@
     {
       "id": "leatherworker_closing",
       "text": "Back to curing leather without wasting hide, then."
-    }
-  ],
-  "lines": [
-    {
-      "id": "leatherworker_question_stitching",
-      "request": "question",
-      "text": "Bad stitching in the rain tells on itself quickly.",
-      "weight": 30
-    },
-    {
-      "id": "leatherworker_question_gear",
-      "request": "question",
-      "text": "Gear that lasts is mostly patience made visible.",
-      "weight": 30
-    },
-    {
-      "id": "leatherworker_story_hide",
-      "request": "story",
-      "text": "A split seam can ruin a journey faster than a bad map.",
-      "weight": 26
-    },
-    {
-      "id": "leatherworker_new_greeting_tannery",
-      "request": "greeting",
-      "text": "Mind the tannery. The smell is honest, at least.",
-      "weight": 26
-    },
-    {
-      "id": "leatherworker_new_question_stitch",
-      "request": "question",
-      "text": "A stitch done poorly waits for the worst time to confess.",
-      "weight": 28
-    },
-    {
-      "id": "leatherworker_new_question_hide",
-      "request": "question",
-      "text": "Good leather is patience you can wear.",
-      "weight": 28
-    },
-    {
-      "id": "leatherworker_new_story_boots",
-      "request": "story",
-      "text": "I once made boots that outlasted three owners and four bad roads.",
-      "weight": 24
-    },
-    {
-      "id": "leatherworker_new_joke_skin",
-      "request": "joke",
-      "text": "Leather jokes need a thick skin. I keep saying that until someone laughs.",
-      "weight": 18
-    },
-    {
-      "id": "leatherworker_new_insult_split",
-      "request": "insult",
-      "text": "That sentence split like cheap stitching.",
-      "weight": 18
-    },
-    {
-      "id": "leatherworker_new_question_rain",
-      "request": "question",
-      "text": "Rain tells the truth about gear faster than any seller will.",
-      "weight": 28
-    },
-    {
-      "id": "leatherworker_new_question_gear",
-      "request": "question",
-      "text": "A pack should carry weight without reminding you every step.",
-      "weight": 28
-    },
-    {
-      "id": "leatherworker_new_story_apron",
-      "request": "story",
-      "text": "My apron has seen enough mistakes to deserve its own corner by the fire.",
-      "weight": 24
-    },
-    {
-      "id": "leatherworker_new_rude_work",
-      "request": "insult",
-      "text": "Do not mock work that lasts longer than your manners.",
-      "dispositions": [
-        "rude",
-        "hostile"
-      ],
-      "weight": 30
-    },
-    {
-      "id": "leatherworker_cured_recognition_warm_1",
-      "request": "cured_recognition",
-      "text": "I remember being stitched back into myself. Your hands held the thread.",
-      "weight": 30,
-      "dispositions": [
-        "friendly",
-        "respectful"
-      ]
-    },
-    {
-      "id": "leatherworker_cured_recognition_warm_2",
-      "request": "cured_recognition",
-      "text": "The cure left scars, but good leather can carry scars. So can I.",
-      "weight": 30,
-      "dispositions": [
-        "friendly",
-        "respectful"
-      ]
-    },
-    {
-      "id": "leatherworker_cured_recognition_confused_1",
-      "request": "cured_recognition",
-      "text": "Your face is worn into the memory, but the edges are rough.",
-      "weight": 30,
-      "dispositions": [
-        "neutral",
-        "cautious"
-      ]
-    },
-    {
-      "id": "leatherworker_cured_recognition_confused_2",
-      "request": "cured_recognition",
-      "text": "I remember straps, shaking, and a second chance pulled tight.",
-      "weight": 30,
-      "dispositions": [
-        "neutral",
-        "cautious"
-      ]
-    },
-    {
-      "id": "leatherworker_cured_recognition_uneasy_1",
-      "request": "cured_recognition",
-      "text": "I remember you, and I remember the tearing. Both are true.",
-      "weight": 30,
-      "dispositions": [
-        "rude",
-        "hostile",
-        "fearful"
-      ]
-    },
-    {
-      "id": "leatherworker_village_event_thunderstorm_1",
-      "request": "village_event_report",
-      "event_tags": [
-        "thunderstorm"
-      ],
-      "text": "Thunder shook the cauldron so hard the cauldron shook rings across the water, but everyone near me is still standing.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "leatherworker_village_event_thunderstorm_2",
-      "request": "village_event_report",
-      "event_tags": [
-        "thunderstorm"
-      ],
-      "text": "I checked hides, saddles, and dye vats after the lightning, then counted heads. No one should be alone after a sky like that.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "leatherworker_village_event_thunderstorm_3",
-      "request": "village_event_report",
-      "event_tags": [
-        "thunderstorm"
-      ],
-      "text": "Near the cauldron, the bell sounded small under that thunder. We stayed inside and kept the doors watched.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "leatherworker_village_event_thunderstorm_4",
-      "request": "village_event_report",
-      "event_tags": [
-        "thunderstorm"
-      ],
-      "text": "That thunder made everyone quiet. I checked the hides twice.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "leatherworker_village_event_thunderstorm_5",
-      "request": "village_event_report",
-      "event_tags": [
-        "thunderstorm"
-      ],
-      "text": "The sky can keep its lightning. I have hides to set right.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "leatherworker_village_event_fire_1",
-      "request": "village_event_report",
-      "event_tags": [
-        "village_fire"
-      ],
-      "text": "I checked dry hides and dye racks for sparks first, then checked faces for smoke and fear.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "leatherworker_village_event_fire_2",
-      "request": "village_event_report",
-      "event_tags": [
-        "village_fire"
-      ],
-      "text": "We passed water hand to hand and kept people away from the smoke. I checked the cauldron after.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "leatherworker_village_event_fire_3",
-      "request": "village_event_report",
-      "event_tags": [
-        "village_fire"
-      ],
-      "text": "The hides can wait. People come first.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "leatherworker_village_event_fire_4",
-      "request": "village_event_report",
-      "event_tags": [
-        "village_fire"
-      ],
-      "text": "We saved what we could reach around the cauldron, then stopped pretending things matter more than neighbors.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "leatherworker_village_event_fire_5",
-      "request": "village_event_report",
-      "event_tags": [
-        "village_fire"
-      ],
-      "text": "The smoke is thinning near the cauldron, but everyone is still sniffing the air like it might lie.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "leatherworker_village_event_raid_1",
-      "request": "village_event_report",
-      "event_tags": [
-        "raid",
-        "player_defended_raid"
-      ],
-      "text": "During a raid, the hides can soak another day; who makes it behind a door matters more.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "leatherworker_village_event_raid_2",
-      "request": "village_event_report",
-      "event_tags": [
-        "raid",
-        "player_defended_raid"
-      ],
-      "text": "The horns stopped, but my hands near the cauldron still expect another wave from the road.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "leatherworker_village_event_raid_3",
-      "request": "village_event_report",
-      "event_tags": [
-        "raid",
-        "player_defended_raid"
-      ],
-      "text": "We counted living neighbors before hides, saddles, and dye vats. That is the only count worth starting with.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "leatherworker_village_event_raid_4",
-      "request": "village_event_report",
-      "event_tags": [
-        "raid",
-        "player_defended_raid"
-      ],
-      "text": "Raiders came looking for easy emeralds. They found barred doors near the cauldron and a bell that would not stop ringing.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "leatherworker_village_event_raid_5",
-      "request": "village_event_report",
-      "event_tags": [
-        "raid",
-        "player_defended_raid"
-      ],
-      "text": "From the cauldron, I saw fear cross the square; then I saw courage get there first.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "leatherworker_village_event_night_attack_1",
-      "request": "village_event_report",
-      "event_tags": [
-        "night_attack"
-      ],
-      "text": "Night trouble tests the loose latch by the cauldron first. We are fixing those before sunset.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "leatherworker_village_event_night_attack_2",
-      "request": "village_event_report",
-      "event_tags": [
-        "night_attack"
-      ],
-      "text": "I stayed near the cauldron corner and listened for anyone calling from the dark.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "leatherworker_village_event_night_attack_3",
-      "request": "village_event_report",
-      "event_tags": [
-        "night_attack"
-      ],
-      "text": "Dawn gave the cauldron enough light to count wounds, missing blocks, and who made it home.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "leatherworker_village_event_night_attack_4",
-      "request": "village_event_report",
-      "event_tags": [
-        "night_attack"
-      ],
-      "text": "The dark tested everyone. Most of us passed by keeping stout boots between us and teeth.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "leatherworker_village_event_night_attack_5",
-      "request": "village_event_report",
-      "event_tags": [
-        "night_attack"
-      ],
-      "text": "We are safe enough near the cauldron, though every shadow is being inspected twice.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "leatherworker_village_event_sandstorm_1",
-      "request": "village_event_report",
-      "event_tags": [
-        "sandstorm"
-      ],
-      "text": "The wind threw sand through every crack. I am still cleaning sand out of the leather seams.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "leatherworker_village_event_sandstorm_2",
-      "request": "village_event_report",
-      "event_tags": [
-        "sandstorm"
-      ],
-      "text": "I checked hides, saddles, and dye vats, then checked who was coughing too hard to answer.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "leatherworker_village_event_sandstorm_3",
-      "request": "village_event_report",
-      "event_tags": [
-        "sandstorm"
-      ],
-      "text": "Sand reached the cauldron, the hinges, and half our eyes, but no one has been reported missing.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "leatherworker_village_event_sandstorm_4",
-      "request": "village_event_report",
-      "event_tags": [
-        "sandstorm"
-      ],
-      "text": "A hard wind teaches a leatherworker which doors actually close and which ones only pretend.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "leatherworker_village_event_sandstorm_5",
-      "request": "village_event_report",
-      "event_tags": [
-        "sandstorm"
-      ],
-      "text": "We are safe enough near the cauldron, though the whole village sounds like it is chewing gravel.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "leatherworker_village_event_snowstorm_1",
-      "request": "village_event_report",
-      "event_tags": [
-        "snowstorm"
-      ],
-      "text": "The hides can soak another day. Warm hands, clear paths, and full hearths come first.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "leatherworker_village_event_snowstorm_2",
-      "request": "village_event_report",
-      "event_tags": [
-        "snowstorm"
-      ],
-      "text": "Snow piled against the doors, but everyone near the cauldron found shelter.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "leatherworker_village_event_snowstorm_3",
-      "request": "village_event_report",
-      "event_tags": [
-        "snowstorm"
-      ],
-      "text": "Cold works quietly around the cauldron. We are checking on anyone who stayed quiet too long.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "leatherworker_village_event_snowstorm_4",
-      "request": "village_event_report",
-      "event_tags": [
-        "snowstorm"
-      ],
-      "text": "I am clearing stiff frost from the hides and watching for footprints that stop too soon.",
-      "weight": 34,
-      "show_for_babies": false
-    },
-    {
-      "id": "leatherworker_village_event_snowstorm_5",
-      "request": "village_event_report",
-      "event_tags": [
-        "snowstorm"
-      ],
-      "text": "We are alright for now near the cauldron. Keep the fires fed and the paths open.",
-      "weight": 34,
-      "show_for_babies": false
     }
   ],
   "pacify": [
@@ -527,6 +84,193 @@
       ],
       "text": "No. This split runs too deep for {payment_items}.",
       "weight": 26
+    }
+  ],
+  "lines": [
+    {
+      "id": "leatherworker_question_stitching_variants",
+      "request": "question",
+      "lines": [
+        "Bad stitching in the rain tells on itself quickly.",
+        "Gear that lasts is mostly patience made visible.",
+        "A stitch done poorly waits for the worst time to confess.",
+        "Good leather is patience you can wear.",
+        "Rain tells the truth about gear faster than any seller will.",
+        "A pack should carry weight without reminding you every step."
+      ],
+      "weight": 172
+    },
+    {
+      "id": "leatherworker_story_hide_variants",
+      "request": "story",
+      "lines": [
+        "A split seam can ruin a journey faster than a bad map.",
+        "I once made boots that outlasted three owners and four bad roads.",
+        "My apron has seen enough mistakes to deserve its own corner by the fire."
+      ],
+      "weight": 74
+    },
+    {
+      "id": "leatherworker_new_greeting_tannery",
+      "request": "greeting",
+      "text": "Mind the tannery. The smell is honest, at least.",
+      "weight": 26
+    },
+    {
+      "id": "leatherworker_new_joke_skin",
+      "request": "joke",
+      "text": "Leather jokes need a thick skin. I keep saying that until someone laughs.",
+      "weight": 18
+    },
+    {
+      "id": "leatherworker_new_insult_split",
+      "request": "insult",
+      "text": "That sentence split like cheap stitching.",
+      "weight": 18
+    },
+    {
+      "id": "leatherworker_new_rude_work",
+      "request": "insult",
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
+      "text": "Do not mock work that lasts longer than your manners.",
+      "weight": 30
+    },
+    {
+      "id": "leatherworker_cured_recognition_warm",
+      "request": "cured_recognition",
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ],
+      "lines": [
+        "I remember being stitched back into myself. Your hands held the thread.",
+        "The cure left scars, but good leather can carry scars. So can I."
+      ],
+      "weight": 60
+    },
+    {
+      "id": "leatherworker_cured_recognition_confused",
+      "request": "cured_recognition",
+      "dispositions": [
+        "neutral",
+        "cautious"
+      ],
+      "lines": [
+        "Your face is worn into the memory, but the edges are rough.",
+        "I remember straps, shaking, and a second chance pulled tight."
+      ],
+      "weight": 60
+    },
+    {
+      "id": "leatherworker_cured_recognition_uneasy_1",
+      "request": "cured_recognition",
+      "dispositions": [
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "text": "I remember you, and I remember the tearing. Both are true.",
+      "weight": 30
+    },
+    {
+      "id": "leatherworker_village_event_thunderstorm",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "lines": [
+        "Thunder shook the cauldron so hard the cauldron shook rings across the water, but everyone near me is still standing.",
+        "I checked hides, saddles, and dye vats after the lightning, then counted heads. No one should be alone after a sky like that.",
+        "Near the cauldron, the bell sounded small under that thunder. We stayed inside and kept the doors watched.",
+        "That thunder made everyone quiet. I checked the hides twice.",
+        "The sky can keep its lightning. I have hides to set right."
+      ],
+      "weight": 170
+    },
+    {
+      "id": "leatherworker_village_event_fire",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "village_fire"
+      ],
+      "lines": [
+        "I checked dry hides and dye racks for sparks first, then checked faces for smoke and fear.",
+        "We passed water hand to hand and kept people away from the smoke. I checked the cauldron after.",
+        "The hides can wait. People come first.",
+        "We saved what we could reach around the cauldron, then stopped pretending things matter more than neighbors.",
+        "The smoke is thinning near the cauldron, but everyone is still sniffing the air like it might lie."
+      ],
+      "weight": 170
+    },
+    {
+      "id": "leatherworker_village_event_raid",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "lines": [
+        "During a raid, the hides can soak another day; who makes it behind a door matters more.",
+        "The horns stopped, but my hands near the cauldron still expect another wave from the road.",
+        "We counted living neighbors before hides, saddles, and dye vats. That is the only count worth starting with.",
+        "Raiders came looking for easy emeralds. They found barred doors near the cauldron and a bell that would not stop ringing.",
+        "From the cauldron, I saw fear cross the square; then I saw courage get there first."
+      ],
+      "weight": 170
+    },
+    {
+      "id": "leatherworker_village_event_night_attack",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "night_attack"
+      ],
+      "lines": [
+        "Night trouble tests the loose latch by the cauldron first. We are fixing those before sunset.",
+        "I stayed near the cauldron corner and listened for anyone calling from the dark.",
+        "Dawn gave the cauldron enough light to count wounds, missing blocks, and who made it home.",
+        "The dark tested everyone. Most of us passed by keeping stout boots between us and teeth.",
+        "We are safe enough near the cauldron, though every shadow is being inspected twice."
+      ],
+      "weight": 170
+    },
+    {
+      "id": "leatherworker_village_event_sandstorm",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "sandstorm"
+      ],
+      "lines": [
+        "The wind threw sand through every crack. I am still cleaning sand out of the leather seams.",
+        "I checked hides, saddles, and dye vats, then checked who was coughing too hard to answer.",
+        "Sand reached the cauldron, the hinges, and half our eyes, but no one has been reported missing.",
+        "A hard wind teaches a leatherworker which doors actually close and which ones only pretend.",
+        "We are safe enough near the cauldron, though the whole village sounds like it is chewing gravel."
+      ],
+      "weight": 170
+    },
+    {
+      "id": "leatherworker_village_event_snowstorm",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "snowstorm"
+      ],
+      "lines": [
+        "The hides can soak another day. Warm hands, clear paths, and full hearths come first.",
+        "Snow piled against the doors, but everyone near the cauldron found shelter.",
+        "Cold works quietly around the cauldron. We are checking on anyone who stayed quiet too long.",
+        "I am clearing stiff frost from the hides and watching for footprints that stop too soon.",
+        "We are alright for now near the cauldron. Keep the fires fed and the paths open."
+      ],
+      "weight": 170
     }
   ]
 }
