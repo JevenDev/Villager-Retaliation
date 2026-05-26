@@ -5,6 +5,11 @@ import static net.minecraft.commands.Commands.literal;
 
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
+import com.jvn.villagerretaliation.profile.VillagerProfile;
+import com.jvn.villagerretaliation.profile.VillagerProfileManager;
+import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
+import com.jvn.villagerretaliation.profile.VillagerSocialAttributes;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.social.VillagerRelationshipStage;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphSavedData;
@@ -12,12 +17,17 @@ import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.SharedSuggestionProvider;
+import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.phys.AABB;
@@ -43,6 +53,29 @@ public final class VillagerRetaliationCommands {
                                                 context,
                                                 StringArgumentType.getString(context, "stage")
                                         ))))
+                        .then(literal("profile")
+                                .then(literal("get")
+                                        .then(argument("target", EntityArgument.entity())
+                                                .executes(VillagerRetaliationCommands::getProfile)))
+                                .then(literal("reroll")
+                                        .then(argument("target", EntityArgument.entity())
+                                                .executes(VillagerRetaliationCommands::rerollProfile)))
+                                .then(literal("set")
+                                        .then(argument("target", EntityArgument.entity())
+                                                .then(argument("attribute", StringArgumentType.word())
+                                                        .suggests((context, builder) -> SharedSuggestionProvider.suggest(
+                                                                Arrays.stream(VillagerSocialAttribute.values())
+                                                                        .map(VillagerSocialAttribute::serializedName),
+                                                                builder
+                                                        ))
+                                                        .then(argument("value", IntegerArgumentType.integer(
+                                                                VillagerSocialAttributes.MIN_VALUE,
+                                                                VillagerSocialAttributes.MAX_VALUE
+                                                        ))
+                                                                .executes(VillagerRetaliationCommands::setProfileAttribute)))))
+                                .then(literal("export")
+                                        .then(argument("target", EntityArgument.entity())
+                                                .executes(VillagerRetaliationCommands::exportProfile))))
         );
     }
 
@@ -121,5 +154,87 @@ public final class VillagerRetaliationCommands {
                 true
         );
         return 1;
+    }
+
+    private static int getProfile(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        CommandSourceStack source = context.getSource();
+        AbstractVillager villager = profileTarget(context);
+        if (villager == null || !(villager.level() instanceof ServerLevel level)) {
+            return 0;
+        }
+
+        VillagerProfile profile = VillagerProfileManager.getOrCreateProfile(level, villager);
+        syncProfileIfPlayer(source, villager, profile);
+        source.sendSuccess(() -> Component.literal(VillagerProfileManager.displayLine(profile, true)), false);
+        return 1;
+    }
+
+    private static int rerollProfile(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        CommandSourceStack source = context.getSource();
+        AbstractVillager villager = profileTarget(context);
+        if (villager == null || !(villager.level() instanceof ServerLevel level)) {
+            return 0;
+        }
+
+        VillagerProfile profile = VillagerProfileManager.rerollProfile(level, villager);
+        syncProfileIfPlayer(source, villager, profile);
+        String name = VillagerPresetNameRegistry.resolveDisplayName(villager).getString();
+        source.sendSuccess(() -> Component.literal("Rerolled profile for " + name + "."), true);
+        return 1;
+    }
+
+    private static int setProfileAttribute(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        CommandSourceStack source = context.getSource();
+        AbstractVillager villager = profileTarget(context);
+        if (villager == null || !(villager.level() instanceof ServerLevel level)) {
+            return 0;
+        }
+
+        String attributeName = StringArgumentType.getString(context, "attribute");
+        VillagerSocialAttribute attribute = VillagerSocialAttribute.bySerializedName(attributeName);
+        if (attribute == null) {
+            source.sendFailure(Component.literal("Unknown social attribute: " + attributeName));
+            return 0;
+        }
+
+        int value = IntegerArgumentType.getInteger(context, "value");
+        boolean changed = VillagerProfileManager.setAttribute(level, villager, attribute, value);
+        VillagerProfile profile = VillagerProfileManager.getOrCreateProfile(level, villager);
+        syncProfileIfPlayer(source, villager, profile);
+        String name = VillagerPresetNameRegistry.resolveDisplayName(villager).getString();
+        source.sendSuccess(
+                () -> Component.literal("Set " + name + "'s " + attribute.serializedName() + " to "
+                        + VillagerSocialAttributes.clamp(value) + (changed ? "." : " (unchanged).")),
+                true
+        );
+        return changed ? 1 : 0;
+    }
+
+    private static int exportProfile(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        CommandSourceStack source = context.getSource();
+        AbstractVillager villager = profileTarget(context);
+        if (villager == null || !(villager.level() instanceof ServerLevel level)) {
+            return 0;
+        }
+
+        VillagerProfile profile = VillagerProfileManager.getOrCreateProfile(level, villager);
+        syncProfileIfPlayer(source, villager, profile);
+        source.sendSuccess(() -> Component.literal(VillagerProfileManager.exportProfile(profile)), false);
+        return 1;
+    }
+
+    private static AbstractVillager profileTarget(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        Entity target = EntityArgument.getEntity(context, "target");
+        if (target instanceof AbstractVillager villager) {
+            return villager;
+        }
+        context.getSource().sendFailure(Component.literal("Target must be a villager or wandering trader."));
+        return null;
+    }
+
+    private static void syncProfileIfPlayer(CommandSourceStack source, AbstractVillager villager, VillagerProfile profile) {
+        if (source.getEntity() instanceof ServerPlayer player) {
+            VillagerReputationNetworking.sendProfile(player, villager, profile);
+        }
     }
 }
