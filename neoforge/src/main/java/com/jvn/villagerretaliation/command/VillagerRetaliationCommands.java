@@ -11,6 +11,8 @@ import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttributes;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
+import com.jvn.villagerretaliation.skill.VillagerSkill;
+import com.jvn.villagerretaliation.skill.VillagerSkillSet;
 import com.jvn.villagerretaliation.social.VillagerRelationshipStage;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphSavedData;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
@@ -76,6 +78,36 @@ public final class VillagerRetaliationCommands {
                                 .then(literal("export")
                                         .then(argument("target", EntityArgument.entity())
                                                 .executes(VillagerRetaliationCommands::exportProfile))))
+                        .then(literal("skill")
+                                .then(literal("get")
+                                        .then(argument("target", EntityArgument.entity())
+                                                .executes(VillagerRetaliationCommands::getSkills)
+                                                .then(argument("skill", StringArgumentType.word())
+                                                        .suggests((context, builder) -> SharedSuggestionProvider.suggest(
+                                                                Arrays.stream(VillagerSkill.values())
+                                                                        .map(VillagerSkill::serializedName),
+                                                                builder
+                                                        ))
+                                                        .executes(VillagerRetaliationCommands::getSkill))))
+                                .then(literal("set")
+                                        .then(argument("target", EntityArgument.entity())
+                                                .then(argument("skill", StringArgumentType.word())
+                                                        .suggests((context, builder) -> SharedSuggestionProvider.suggest(
+                                                                Arrays.stream(VillagerSkill.values())
+                                                                        .map(VillagerSkill::serializedName),
+                                                                builder
+                                                        ))
+                                                        .then(argument("value", IntegerArgumentType.integer(
+                                                                VillagerSkillSet.MIN_VALUE,
+                                                                VillagerSkillSet.MAX_VALUE
+                                                        ))
+                                                                .executes(VillagerRetaliationCommands::setSkill)))))
+                                .then(literal("reroll")
+                                        .then(argument("target", EntityArgument.entity())
+                                                .executes(VillagerRetaliationCommands::rerollSkills)))
+                                .then(literal("export")
+                                        .then(argument("target", EntityArgument.entity())
+                                                .executes(VillagerRetaliationCommands::exportSkills))))
         );
     }
 
@@ -211,6 +243,93 @@ public final class VillagerRetaliationCommands {
     }
 
     private static int exportProfile(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        CommandSourceStack source = context.getSource();
+        AbstractVillager villager = profileTarget(context);
+        if (villager == null || !(villager.level() instanceof ServerLevel level)) {
+            return 0;
+        }
+
+        VillagerProfile profile = VillagerProfileManager.getOrCreateProfile(level, villager);
+        syncProfileIfPlayer(source, villager, profile);
+        source.sendSuccess(() -> Component.literal(VillagerProfileManager.exportProfile(profile)), false);
+        return 1;
+    }
+
+    private static int getSkills(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        CommandSourceStack source = context.getSource();
+        AbstractVillager villager = profileTarget(context);
+        if (villager == null || !(villager.level() instanceof ServerLevel level)) {
+            return 0;
+        }
+
+        VillagerProfile profile = VillagerProfileManager.getOrCreateProfile(level, villager);
+        syncProfileIfPlayer(source, villager, profile);
+        source.sendSuccess(() -> Component.literal(VillagerProfileManager.skillDisplayLine(profile, true)), false);
+        return 1;
+    }
+
+    private static int getSkill(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        CommandSourceStack source = context.getSource();
+        AbstractVillager villager = profileTarget(context);
+        if (villager == null || !(villager.level() instanceof ServerLevel level)) {
+            return 0;
+        }
+
+        String skillName = StringArgumentType.getString(context, "skill");
+        VillagerSkill skill = VillagerSkill.bySerializedName(skillName);
+        if (skill == null) {
+            source.sendFailure(Component.literal("Unknown villager skill: " + skillName));
+            return 0;
+        }
+
+        VillagerProfile profile = VillagerProfileManager.getOrCreateProfile(level, villager);
+        syncProfileIfPlayer(source, villager, profile);
+        source.sendSuccess(() -> Component.literal(VillagerProfileManager.skillDisplayLine(profile, skill, true)), false);
+        return 1;
+    }
+
+    private static int setSkill(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        CommandSourceStack source = context.getSource();
+        AbstractVillager villager = profileTarget(context);
+        if (villager == null || !(villager.level() instanceof ServerLevel level)) {
+            return 0;
+        }
+
+        String skillName = StringArgumentType.getString(context, "skill");
+        VillagerSkill skill = VillagerSkill.bySerializedName(skillName);
+        if (skill == null) {
+            source.sendFailure(Component.literal("Unknown villager skill: " + skillName));
+            return 0;
+        }
+
+        int value = IntegerArgumentType.getInteger(context, "value");
+        boolean changed = VillagerProfileManager.setSkill(level, villager, skill, value);
+        VillagerProfile profile = VillagerProfileManager.getOrCreateProfile(level, villager);
+        syncProfileIfPlayer(source, villager, profile);
+        String name = VillagerPresetNameRegistry.resolveDisplayName(villager).getString();
+        source.sendSuccess(
+                () -> Component.literal("Set " + name + "'s " + skill.serializedName() + " skill to "
+                        + VillagerSkillSet.clamp(value) + (changed ? "." : " (unchanged).")),
+                true
+        );
+        return changed ? 1 : 0;
+    }
+
+    private static int rerollSkills(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        CommandSourceStack source = context.getSource();
+        AbstractVillager villager = profileTarget(context);
+        if (villager == null || !(villager.level() instanceof ServerLevel level)) {
+            return 0;
+        }
+
+        VillagerProfile profile = VillagerProfileManager.rerollSkills(level, villager);
+        syncProfileIfPlayer(source, villager, profile);
+        String name = VillagerPresetNameRegistry.resolveDisplayName(villager).getString();
+        source.sendSuccess(() -> Component.literal("Rerolled skills for " + name + "."), true);
+        return 1;
+    }
+
+    private static int exportSkills(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         CommandSourceStack source = context.getSource();
         AbstractVillager villager = profileTarget(context);
         if (villager == null || !(villager.level() instanceof ServerLevel level)) {
