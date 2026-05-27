@@ -20,7 +20,6 @@ import com.jvn.villagerretaliation.profile.VillagerSocialAttributeRank;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.skill.VillagerSkillRank;
-import com.jvn.villagerretaliation.skill.VillagerSkillValue;
 import com.jvn.villagerretaliation.social.VillagerFamilyTreeSnapshot;
 import com.jvn.villagerretaliation.social.VillagerRelationshipSnapshot;
 import com.jvn.villagerretaliation.villager.VillagerGender;
@@ -39,7 +38,6 @@ import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.Villager;
@@ -143,6 +141,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private final OptionListContext optionListContext = new OptionListContext();
     private final NavigationChromeContext navigationChromeContext = new NavigationChromeContext();
     private final ConversationPanelContext conversationPanelContext = new ConversationPanelContext();
+    private final ProfilePageContext profilePageContext = new ProfilePageContext();
+    private final SkillsPageContext skillsPageContext = new SkillsPageContext();
 
     public VillagerInteractionScreen(
             int villagerEntityId,
@@ -778,318 +778,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void renderProfilePage(GuiGraphics graphics, int mouseX, int mouseY) {
-        int left = optionsLeft() + 6;
-        int top = conversationInfoTop() + 2;
-        Optional<VillagerProfileClientCache.DisplayEntry> entry = VillagerProfileClientCache.get(this.villagerEntityId);
-        if (entry.isEmpty()) {
-            requestProfileRefresh();
-            graphics.drawString(this.font, translate("profile.loading"), left, top + 32, INFO_SECONDARY_COLOR, false);
-            return;
-        }
-
-        VillagerProfileClientCache.DisplayEntry profile = entry.get();
-        int centerX = left + OPTION_WIDTH / 2 - 8;
-        int centerY = top + PROFILE_CHART_RADIUS + 16;
-        VillagerSocialAttribute hoveredAttribute = profileChartPointAt(profile, centerX, centerY, mouseX, mouseY);
-        renderProfileChart(graphics, profile, centerX, centerY, hoveredAttribute);
-        if (hoveredAttribute != null) {
-            renderProfileAttributeTooltip(graphics, profile, hoveredAttribute, mouseX, mouseY);
-        }
+        VillagerInteractionProfilePage.render(this.profilePageContext, graphics, mouseX, mouseY);
     }
 
     private void renderSkillsPage(GuiGraphics graphics, int mouseX, int mouseY) {
-        renderSkillsInfo(graphics);
-
-        int left = skillsPanelLeft();
-        int top = skillsPanelTop();
-        renderSkillsContainerBackground(graphics, left, top);
-        Optional<VillagerProfileClientCache.DisplayEntry> entry = VillagerProfileClientCache.get(this.villagerEntityId);
-        if (entry.isEmpty()) {
-            requestProfileRefresh();
-            graphics.drawString(this.font, translate("profile.loading"), left, top + 32, INFO_SECONDARY_COLOR, false);
-            return;
-        }
-
-        VillagerProfileClientCache.DisplayEntry profile = entry.get();
-        int contentTop = top + SKILLS_CONTAINER_PADDING_Y;
-        VillagerSkill hoveredSkill = renderProfileSkills(graphics, profile, left, contentTop, mouseX, mouseY);
-        if (hoveredSkill != null) {
-            renderProfileSkillTooltip(graphics, profile, hoveredSkill, mouseX, mouseY);
-        }
-    }
-
-    private void renderSkillsContainerBackground(GuiGraphics graphics, int left, int top) {
-        int containerLeft = left - SKILLS_CONTAINER_PADDING_X;
-        int containerTop = top;
-        int containerRight = left + OPTION_WIDTH;
-        int containerBottom = top + skillsContainerHeight();
-        graphics.fill(containerLeft, containerTop, containerRight, containerBottom, SKILLS_CONTAINER_BACKGROUND_COLOR);
-        graphics.fill(containerLeft, containerTop, containerLeft + 2, containerBottom, SKILLS_CONTAINER_STRIPE_COLOR);
-        graphics.fill(containerLeft, containerBottom, containerRight, containerBottom + 1, SKILLS_CONTAINER_SHADOW_COLOR);
-    }
-
-    private void renderSkillsInfo(GuiGraphics graphics) {
-        int left = optionsLeft() + 6;
-        int viewportTop = skillInfoViewportTop();
-        int viewportBottom = skillInfoViewportBottom();
-        int top = Mth.floor(optionTextTop(viewportTop) - this.skillScroll);
-        int width = OPTION_WIDTH - 12;
-        graphics.enableScissor(left - 18, viewportTop, left + OPTION_WIDTH + 4, viewportBottom);
-        graphics.drawString(
-                this.font,
-                this.selectedSkillDetails == null ? translate("profile.skills.info.title") : localizedSkill(this.selectedSkillDetails),
-                left,
-                top,
-                INFO_VALUE_COLOR,
-                false);
-        int y = top + optionStride();
-        Optional<VillagerProfileClientCache.DisplayEntry> entry = VillagerProfileClientCache.get(this.villagerEntityId);
-        if (this.selectedSkillDetails != null && entry.isPresent()) {
-            VillagerProfileClientCache.DisplayEntry profile = entry.get();
-            y = renderWrappedSkillInfoLine(
-                    graphics,
-                    Component.translatable(
-                            GUI_KEY_PREFIX + "profile.tooltip.level",
-                            localizedSkillRank(profile.skillRank(this.selectedSkillDetails))),
-                    left,
-                    y,
-                    width);
-            y = renderWrappedSkillInfoLine(
-                    graphics,
-                    Component.translatable(GUI_KEY_PREFIX + "profile.tooltip.score", profile.skillValue(this.selectedSkillDetails)),
-                    left,
-                    y + 2,
-                    width);
-            renderWrappedSkillInfoLine(
-                    graphics,
-                    Component.literal(localizedExpandedSkillDescription(this.selectedSkillDetails)),
-                    left,
-                    y + 4,
-                    width);
-        } else {
-            y = renderWrappedSkillInfoLine(graphics, Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.trade"), left, y, width);
-            y = renderWrappedSkillInfoLine(graphics, Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.specialty"), left, y + 4, width);
-            renderWrappedSkillInfoLine(graphics, Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.recruit"), left, y + 4, width);
-        }
-        graphics.disableScissor();
-        renderScrollbar(graphics, skillInfoScrollbarThumb(), this.skillScroll, maxSkillScroll());
-    }
-
-    private int renderWrappedInfoLine(GuiGraphics graphics, Component component, int left, int top, int width) {
-        int y = top;
-        for (FormattedCharSequence line : this.font.split(component, width)) {
-            graphics.drawString(this.font, line, left, y, INFO_SECONDARY_COLOR, false);
-            y += this.font.lineHeight + 2;
-        }
-        return y;
-    }
-
-    private int renderWrappedSkillInfoLine(GuiGraphics graphics, Component component, int left, int top, int width) {
-        int y = top;
-        int viewportTop = skillInfoViewportTop();
-        int viewportBottom = skillInfoViewportBottom();
-        for (FormattedCharSequence line : this.font.split(component, width)) {
-            float alpha = skillInfoEdgeFadeAlpha(y, viewportTop, viewportBottom);
-            graphics.drawString(this.font, line, left, y, VillagerInteractionUiUtil.withAlpha(INFO_SECONDARY_COLOR, alpha), false);
-            y += this.font.lineHeight + 2;
-        }
-        return y;
-    }
-
-    private VillagerSkill renderProfileSkills(
-            GuiGraphics graphics,
-            VillagerProfileClientCache.DisplayEntry profile,
-            int left,
-            int top,
-            int mouseX,
-            int mouseY) {
-        List<VillagerSkillValue> highlights = profile.bestSkills(VillagerSkill.values().length);
-        int columnWidth = (OPTION_WIDTH - 8 - PROFILE_SKILL_COLUMN_GAP) / PROFILE_SKILL_COLUMNS;
-        graphics.drawString(this.font, translate("profile.skills"), left, top, INFO_VALUE_COLOR, false);
-        VillagerSkill hovered = null;
-        for (int index = 0; index < highlights.size(); index++) {
-            VillagerSkillValue skillValue = highlights.get(index);
-            VillagerSkill skill = skillValue.skill();
-            int column = index % PROFILE_SKILL_COLUMNS;
-            int row = index / PROFILE_SKILL_COLUMNS;
-            int rowLeft = left + column * (columnWidth + PROFILE_SKILL_COLUMN_GAP);
-            int y = top + this.font.lineHeight + 4 + row * (PROFILE_SKILL_ROW_HEIGHT + PROFILE_SKILL_ROW_GAP);
-            boolean rowHovered = mouseX >= rowLeft - 2
-                    && mouseX <= rowLeft + columnWidth + 2
-                    && mouseY >= y - 1
-                    && mouseY <= y + PROFILE_SKILL_ROW_HEIGHT - 1;
-            if (rowHovered) {
-                hovered = skill;
-                graphics.fill(rowLeft - 2, y - 1, rowLeft + columnWidth + 2, y + PROFILE_SKILL_ROW_HEIGHT - 1, 0x22FFFFFF);
-            }
-
-            String label = fitText(localizedSkill(skill), columnWidth);
-            graphics.drawString(this.font, label, rowLeft, y, INFO_SECONDARY_COLOR, false);
-            renderSkillBar(graphics, rowLeft, y + this.font.lineHeight + 1, columnWidth, skillValue.value(), skillValue.rank());
-        }
-        return hovered;
-    }
-
-    private void renderSkillBar(GuiGraphics graphics, int left, int top, int width, int value, VillagerSkillRank rank) {
-        int fillWidth = Mth.clamp(Math.round(width * value / 100.0F), 1, width);
-        graphics.fill(left, top, left + width, top + PROFILE_SKILL_BAR_HEIGHT, 0x55332F2A);
-        graphics.fill(left, top, left + fillWidth, top + PROFILE_SKILL_BAR_HEIGHT, skillRankColor(rank));
-        graphics.fill(left, top, left + width, top + 1, 0x40FFFFFF);
-    }
-
-    private String fitText(String text, int maxWidth) {
-        if (this.font.width(text) <= maxWidth) {
-            return text;
-        }
-
-        String suffix = "...";
-        int suffixWidth = this.font.width(suffix);
-        if (maxWidth <= suffixWidth) {
-            return this.font.plainSubstrByWidth(text, maxWidth);
-        }
-        return this.font.plainSubstrByWidth(text, maxWidth - suffixWidth) + suffix;
-    }
-
-    private void renderProfileChart(
-            GuiGraphics graphics,
-            VillagerProfileClientCache.DisplayEntry profile,
-            int centerX,
-            int centerY,
-            VillagerSocialAttribute hoveredAttribute) {
-        VillagerSocialAttribute[] attributes = VillagerSocialAttribute.values();
-        ProfilePoint[] outer = new ProfilePoint[attributes.length];
-        ProfilePoint[] values = new ProfilePoint[attributes.length];
-
-        for (int index = 0; index < attributes.length; index++) {
-            double angle = profileAttributeAngle(index, attributes.length);
-            outer[index] = profilePoint(centerX, centerY, angle, PROFILE_CHART_RADIUS);
-            int valueRadius = Math.round(PROFILE_CHART_RADIUS * profile.value(attributes[index]) / 100.0F);
-            values[index] = profilePoint(centerX, centerY, angle, valueRadius);
-            drawPixelLine(graphics, centerX, centerY, outer[index].x(), outer[index].y(), PROFILE_CHART_AXIS_COLOR);
-
-            String label = localizedAttribute(attributes[index]);
-            int labelX = profilePoint(centerX, centerY, angle, PROFILE_CHART_RADIUS + 18).x() - this.font.width(label) / 2;
-            int labelY = profilePoint(centerX, centerY, angle, PROFILE_CHART_RADIUS + 14).y() - this.font.lineHeight / 2;
-            graphics.drawString(this.font, label, labelX, labelY, INFO_SECONDARY_COLOR, false);
-        }
-
-        for (int index = 0; index < attributes.length; index++) {
-            int next = (index + 1) % attributes.length;
-            drawPixelLine(graphics, outer[index].x(), outer[index].y(), outer[next].x(), outer[next].y(), PROFILE_CHART_OUTLINE_COLOR);
-            drawPixelLine(graphics, values[index].x(), values[index].y(), values[next].x(), values[next].y(), PROFILE_CHART_VALUE_COLOR);
-            boolean hovered = attributes[index] == hoveredAttribute;
-            int pointRadius = hovered ? 2 : 1;
-            int pointColor = hovered ? PROFILE_CHART_POINT_HOVER_COLOR : PROFILE_CHART_POINT_COLOR;
-            graphics.fill(
-                    values[index].x() - pointRadius,
-                    values[index].y() - pointRadius,
-                    values[index].x() + pointRadius + 1,
-                    values[index].y() + pointRadius + 1,
-                    pointColor
-            );
-        }
-    }
-
-    private VillagerSocialAttribute profileChartPointAt(
-            VillagerProfileClientCache.DisplayEntry profile,
-            int centerX,
-            int centerY,
-            int mouseX,
-            int mouseY) {
-        VillagerSocialAttribute[] attributes = VillagerSocialAttribute.values();
-        VillagerSocialAttribute closestAttribute = null;
-        int closestDistance = PROFILE_CHART_POINT_HIT_RADIUS * PROFILE_CHART_POINT_HIT_RADIUS + 1;
-        for (int index = 0; index < attributes.length; index++) {
-            double angle = profileAttributeAngle(index, attributes.length);
-            int valueRadius = Math.round(PROFILE_CHART_RADIUS * profile.value(attributes[index]) / 100.0F);
-            ProfilePoint point = profilePoint(centerX, centerY, angle, valueRadius);
-            int dx = mouseX - point.x();
-            int dy = mouseY - point.y();
-            int distance = dx * dx + dy * dy;
-            if (distance < closestDistance) {
-                closestAttribute = attributes[index];
-                closestDistance = distance;
-            }
-        }
-        return closestAttribute;
-    }
-
-    private void renderProfileAttributeTooltip(
-            GuiGraphics graphics,
-            VillagerProfileClientCache.DisplayEntry profile,
-            VillagerSocialAttribute attribute,
-            int mouseX,
-            int mouseY) {
-        VillagerSocialAttributeRank rank = profile.rank(attribute);
-        List<Component> tooltip = new ArrayList<>();
-        tooltip.add(Component.literal(localizedAttribute(attribute)).withStyle(ChatFormatting.WHITE));
-        tooltip.add(Component.translatable(GUI_KEY_PREFIX + "profile.tooltip.level", localizedRank(rank)).withStyle(ChatFormatting.YELLOW));
-        tooltip.add(Component.translatable(GUI_KEY_PREFIX + "profile.tooltip.score", profile.value(attribute)).withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.empty());
-        tooltip.add(Component.literal(localizedAttributeDescription(attribute)).withStyle(ChatFormatting.GRAY));
-        graphics.renderComponentTooltip(this.font, tooltip, mouseX, mouseY);
-    }
-
-    private void renderProfileSkillTooltip(
-            GuiGraphics graphics,
-            VillagerProfileClientCache.DisplayEntry profile,
-            VillagerSkill skill,
-            int mouseX,
-            int mouseY) {
-        VillagerSkillRank rank = profile.skillRank(skill);
-        List<Component> tooltip = new ArrayList<>();
-        tooltip.add(Component.literal(localizedSkill(skill)).withStyle(ChatFormatting.WHITE));
-        tooltip.add(Component.translatable(GUI_KEY_PREFIX + "profile.tooltip.level", localizedSkillRank(rank)).withStyle(ChatFormatting.YELLOW));
-        tooltip.add(Component.translatable(GUI_KEY_PREFIX + "profile.tooltip.score", profile.skillValue(skill)).withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.empty());
-        tooltip.add(Component.literal(localizedSkillDescription(skill)).withStyle(ChatFormatting.GRAY));
-        graphics.renderComponentTooltip(this.font, tooltip, mouseX, mouseY);
-    }
-
-    private static int skillRankColor(VillagerSkillRank rank) {
-        return switch (rank) {
-            case NOVICE -> 0xB8D5D0C6;
-            case APPRENTICE -> 0xD0DDE7A4;
-            case SKILLED -> 0xD0A8D8F0;
-            case EXPERT -> 0xD0E9C46A;
-            case MASTER -> 0xFFEFB0FF;
-        };
-    }
-
-    private static double profileAttributeAngle(int index, int attributeCount) {
-        return -Math.PI / 2.0D + index * Math.PI * 2.0D / attributeCount;
-    }
-
-    private static ProfilePoint profilePoint(int centerX, int centerY, double angle, int radius) {
-        int x = centerX + Mth.floor(Math.cos(angle) * radius);
-        int y = centerY + Mth.floor(Math.sin(angle) * radius);
-        return new ProfilePoint(x, y);
-    }
-
-    private static void drawPixelLine(GuiGraphics graphics, int x0, int y0, int x1, int y1, int color) {
-        int dx = Math.abs(x1 - x0);
-        int dy = Math.abs(y1 - y0);
-        int sx = x0 < x1 ? 1 : -1;
-        int sy = y0 < y1 ? 1 : -1;
-        int error = dx - dy;
-        int x = x0;
-        int y = y0;
-
-        while (true) {
-            graphics.fill(x, y, x + 1, y + 1, color);
-            if (x == x1 && y == y1) {
-                return;
-            }
-            int doubledError = error * 2;
-            if (doubledError > -dy) {
-                error -= dy;
-                x += sx;
-            }
-            if (doubledError < dx) {
-                error += dx;
-                y += sy;
-            }
-        }
+        VillagerInteractionSkillsPage.render(this.skillsPageContext, graphics, mouseX, mouseY);
     }
 
     private void renderGiftPage(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
@@ -1254,7 +947,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             return false;
         }
 
-        VillagerSkill clickedSkill = skillAt(entry.get(), mouseX, mouseY);
+        VillagerSkill clickedSkill = VillagerInteractionSkillsPage.skillAt(this.skillsPageContext, entry.get(), mouseX, mouseY);
         if (clickedSkill == null) {
             return false;
         }
@@ -1316,28 +1009,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private boolean tryClickGiftPage(double mouseX, double mouseY) {
         return VillagerInteractionGiftPage.tryClick(this.giftPageContext, mouseX, mouseY, optionsLeft(), conversationInfoTop());
-    }
-
-    private VillagerSkill skillAt(VillagerProfileClientCache.DisplayEntry profile, double mouseX, double mouseY) {
-        int left = skillsPanelLeft();
-        int top = skillsPanelTop() + SKILLS_CONTAINER_PADDING_Y;
-        List<VillagerSkillValue> highlights = profile.bestSkills(VillagerSkill.values().length);
-        int columnWidth = (OPTION_WIDTH - 8 - PROFILE_SKILL_COLUMN_GAP) / PROFILE_SKILL_COLUMNS;
-        for (int index = 0; index < highlights.size(); index++) {
-            VillagerSkillValue skillValue = highlights.get(index);
-            int column = index % PROFILE_SKILL_COLUMNS;
-            int row = index / PROFILE_SKILL_COLUMNS;
-            int rowLeft = left + column * (columnWidth + PROFILE_SKILL_COLUMN_GAP);
-            int y = top + this.font.lineHeight + 4 + row * (PROFILE_SKILL_ROW_HEIGHT + PROFILE_SKILL_ROW_GAP);
-            boolean rowHovered = mouseX >= rowLeft - 2
-                    && mouseX <= rowLeft + columnWidth + 2
-                    && mouseY >= y - 1
-                    && mouseY <= y + PROFILE_SKILL_ROW_HEIGHT - 1;
-            if (rowHovered) {
-                return skillValue.skill();
-            }
-        }
-        return null;
     }
 
     private int firstGiftableInventorySlot() {
@@ -1444,33 +1115,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private int skillsInfoContentHeight() {
-        int width = OPTION_WIDTH - 12;
-        int y = this.font.lineHeight + optionStride() - this.font.lineHeight;
-        if (this.selectedSkillDetails != null) {
-            Optional<VillagerProfileClientCache.DisplayEntry> entry = VillagerProfileClientCache.get(this.villagerEntityId);
-            if (entry.isPresent()) {
-                VillagerProfileClientCache.DisplayEntry profile = entry.get();
-                y = wrappedInfoLineBottom(
-                        Component.translatable(
-                                GUI_KEY_PREFIX + "profile.tooltip.level",
-                                localizedSkillRank(profile.skillRank(this.selectedSkillDetails))),
-                        y,
-                        width);
-                y = wrappedInfoLineBottom(
-                        Component.translatable(GUI_KEY_PREFIX + "profile.tooltip.score", profile.skillValue(this.selectedSkillDetails)),
-                        y + 2,
-                        width);
-                return wrappedInfoLineBottom(Component.literal(localizedExpandedSkillDescription(this.selectedSkillDetails)), y + 4, width);
-            }
-        }
-        y = wrappedInfoLineBottom(Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.trade"), y, width);
-        y = wrappedInfoLineBottom(Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.specialty"), y + 4, width);
-        return wrappedInfoLineBottom(Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.recruit"), y + 4, width);
-    }
-
-    private int wrappedInfoLineBottom(Component component, int top, int width) {
-        int lines = this.font.split(component, width).size();
-        return top + lines * (this.font.lineHeight + 2);
+        return VillagerInteractionSkillsPage.skillsInfoContentHeight(this.skillsPageContext);
     }
 
     private int interactionVeilTop() {
@@ -1893,9 +1538,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
     }
 
-    private record ProfilePoint(int x, int y) {
-    }
-
     private record TopBackButtonBounds(int left, int right, int top, int bottom) {
     }
 
@@ -2249,6 +1891,264 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         @Override
         public ResourceLocation dividerSelectTexture() {
             return VillagerRetaliationClientAssets.DIVIDER_SELECT_TEXTURE;
+        }
+    }
+
+    private final class ProfilePageContext implements VillagerInteractionProfilePage.Context {
+        @Override
+        public Font font() {
+            return VillagerInteractionScreen.this.font;
+        }
+
+        @Override
+        public int optionsLeft() {
+            return VillagerInteractionScreen.this.optionsLeft();
+        }
+
+        @Override
+        public int conversationInfoTop() {
+            return VillagerInteractionScreen.this.conversationInfoTop();
+        }
+
+        @Override
+        public int optionWidth() {
+            return OPTION_WIDTH;
+        }
+
+        @Override
+        public int infoSecondaryColor() {
+            return INFO_SECONDARY_COLOR;
+        }
+
+        @Override
+        public int profileChartRadius() {
+            return PROFILE_CHART_RADIUS;
+        }
+
+        @Override
+        public int profileChartAxisColor() {
+            return PROFILE_CHART_AXIS_COLOR;
+        }
+
+        @Override
+        public int profileChartOutlineColor() {
+            return PROFILE_CHART_OUTLINE_COLOR;
+        }
+
+        @Override
+        public int profileChartValueColor() {
+            return PROFILE_CHART_VALUE_COLOR;
+        }
+
+        @Override
+        public int profileChartPointColor() {
+            return PROFILE_CHART_POINT_COLOR;
+        }
+
+        @Override
+        public int profileChartPointHoverColor() {
+            return PROFILE_CHART_POINT_HOVER_COLOR;
+        }
+
+        @Override
+        public int profileChartPointHitRadius() {
+            return PROFILE_CHART_POINT_HIT_RADIUS;
+        }
+
+        @Override
+        public String localizedAttribute(VillagerSocialAttribute attribute) {
+            return VillagerInteractionScreen.localizedAttribute(attribute);
+        }
+
+        @Override
+        public String localizedRank(VillagerSocialAttributeRank rank) {
+            return VillagerInteractionScreen.localizedRank(rank);
+        }
+
+        @Override
+        public String localizedAttributeDescription(VillagerSocialAttribute attribute) {
+            return VillagerInteractionScreen.localizedAttributeDescription(attribute);
+        }
+
+        @Override
+        public String translate(String key, Object... args) {
+            return VillagerInteractionScreen.translate(key, args);
+        }
+
+        @Override
+        public Optional<VillagerProfileClientCache.DisplayEntry> profileEntry() {
+            return VillagerProfileClientCache.get(VillagerInteractionScreen.this.villagerEntityId);
+        }
+
+        @Override
+        public void requestProfileRefresh() {
+            VillagerInteractionScreen.this.requestProfileRefresh();
+        }
+    }
+
+    private final class SkillsPageContext implements VillagerInteractionSkillsPage.Context {
+        @Override
+        public Font font() {
+            return VillagerInteractionScreen.this.font;
+        }
+
+        @Override
+        public int optionsLeft() {
+            return VillagerInteractionScreen.this.optionsLeft();
+        }
+
+        @Override
+        public int optionWidth() {
+            return OPTION_WIDTH;
+        }
+
+        @Override
+        public int skillsPanelLeft() {
+            return VillagerInteractionScreen.this.skillsPanelLeft();
+        }
+
+        @Override
+        public int skillsPanelTop() {
+            return VillagerInteractionScreen.this.skillsPanelTop();
+        }
+
+        @Override
+        public int skillsContainerHeight() {
+            return VillagerInteractionScreen.this.skillsContainerHeight();
+        }
+
+        @Override
+        public int skillsContainerPaddingX() {
+            return SKILLS_CONTAINER_PADDING_X;
+        }
+
+        @Override
+        public int skillsContainerPaddingY() {
+            return SKILLS_CONTAINER_PADDING_Y;
+        }
+
+        @Override
+        public int skillsContainerBackgroundColor() {
+            return SKILLS_CONTAINER_BACKGROUND_COLOR;
+        }
+
+        @Override
+        public int skillsContainerStripeColor() {
+            return SKILLS_CONTAINER_STRIPE_COLOR;
+        }
+
+        @Override
+        public int skillsContainerShadowColor() {
+            return SKILLS_CONTAINER_SHADOW_COLOR;
+        }
+
+        @Override
+        public int profileSkillRowHeight() {
+            return PROFILE_SKILL_ROW_HEIGHT;
+        }
+
+        @Override
+        public int profileSkillRowGap() {
+            return PROFILE_SKILL_ROW_GAP;
+        }
+
+        @Override
+        public int profileSkillBarHeight() {
+            return PROFILE_SKILL_BAR_HEIGHT;
+        }
+
+        @Override
+        public int profileSkillColumns() {
+            return PROFILE_SKILL_COLUMNS;
+        }
+
+        @Override
+        public int profileSkillColumnGap() {
+            return PROFILE_SKILL_COLUMN_GAP;
+        }
+
+        @Override
+        public int infoValueColor() {
+            return INFO_VALUE_COLOR;
+        }
+
+        @Override
+        public int infoSecondaryColor() {
+            return INFO_SECONDARY_COLOR;
+        }
+
+        @Override
+        public float skillScroll() {
+            return VillagerInteractionScreen.this.skillScroll;
+        }
+
+        @Override
+        public int optionStride() {
+            return VillagerInteractionScreen.this.optionStride();
+        }
+
+        @Override
+        public int skillInfoViewportTop() {
+            return VillagerInteractionScreen.this.skillInfoViewportTop();
+        }
+
+        @Override
+        public int skillInfoViewportBottom() {
+            return VillagerInteractionScreen.this.skillInfoViewportBottom();
+        }
+
+        @Override
+        public float skillInfoEdgeFadeAlpha(float lineY, int viewportTop, int viewportBottom) {
+            return VillagerInteractionScreen.this.skillInfoEdgeFadeAlpha(lineY, viewportTop, viewportBottom);
+        }
+
+        @Override
+        public VillagerSkill selectedSkillDetails() {
+            return VillagerInteractionScreen.this.selectedSkillDetails;
+        }
+
+        @Override
+        public String localizedSkill(VillagerSkill skill) {
+            return VillagerInteractionScreen.localizedSkill(skill);
+        }
+
+        @Override
+        public String localizedSkillRank(VillagerSkillRank rank) {
+            return VillagerInteractionScreen.localizedSkillRank(rank);
+        }
+
+        @Override
+        public String localizedExpandedSkillDescription(VillagerSkill skill) {
+            return VillagerInteractionScreen.localizedExpandedSkillDescription(skill);
+        }
+
+        @Override
+        public String localizedSkillDescription(VillagerSkill skill) {
+            return VillagerInteractionScreen.localizedSkillDescription(skill);
+        }
+
+        @Override
+        public String translate(String key, Object... args) {
+            return VillagerInteractionScreen.translate(key, args);
+        }
+
+        @Override
+        public Optional<VillagerProfileClientCache.DisplayEntry> profileEntry() {
+            return VillagerProfileClientCache.get(VillagerInteractionScreen.this.villagerEntityId);
+        }
+
+        @Override
+        public void requestProfileRefresh() {
+            VillagerInteractionScreen.this.requestProfileRefresh();
+        }
+
+        @Override
+        public void renderSkillInfoScrollbar(GuiGraphics graphics) {
+            VillagerInteractionScreen.this.renderScrollbar(
+                    graphics,
+                    VillagerInteractionScreen.this.skillInfoScrollbarThumb(),
+                    VillagerInteractionScreen.this.skillScroll,
+                    VillagerInteractionScreen.this.maxSkillScroll());
         }
     }
 }
