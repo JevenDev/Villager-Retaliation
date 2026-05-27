@@ -133,48 +133,7 @@ public final class VillagerInteractionService {
     }
 
     public static void openInteractionScreen(ServerPlayer player, Villager villager, boolean forceCameraTowardsVillager) {
-        ServerLevel level = player.serverLevel();
-        VillagerProfile profile = VillagerProfileManager.getOrCreateProfile(level, villager);
-        ReputationSnapshot reputation = reputationSnapshot(level, villager, player);
-        VillagerInteractionTracker.InteractionState interactionState = VillagerInteractionTracker.getState(level, villager, player);
-        DialogueContextSnapshots contextSnapshots = dialogueContextSnapshots(level, villager);
-        DialogueContext dialogueContext = createDialogueContext(
-                level,
-                player,
-                villager,
-                interactionState,
-                reputation.value(),
-                reputation.level(),
-                contextSnapshots
-        );
-        DialogueDisposition mood = VillagerDialogueService.moodFor(dialogueContext);
-        String greetingText = VillagerDialogueService.selectOpeningGreeting(dialogueContext);
-        List<DialogueOptionDefinition> dialogueOptions = VillagerDialogueResources.dialogueOptions(dialogueContext, mood);
-        VillagerGiftKnowledgeService.GiftKnowledgeSnapshot giftKnowledge =
-                VillagerGiftKnowledgeService.knownGifts(level, player, villager.getVillagerData().getProfession());
-        VillagerReputationNetworking.sendProfile(player, villager, profile);
-        PacketDistributor.sendToPlayer(player, new OpenVillagerInteractionPayload(
-                villager.getId(),
-                "",
-                VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
-                professionTranslationKey(villager),
-                VillagerPresetNameRegistry.resolveGender(villager).serializedName(),
-                villager.isBaby(),
-                reputation.value(),
-                reputation.level(),
-                mood,
-                dialogueContext.primaryMood(),
-                VillagerRecruitmentService.isFollowing(villager, player),
-                false,
-                forceCameraTowardsVillager,
-                dialogueOptions,
-                giftKnowledge.likedGiftNames(),
-                giftKnowledge.dislikedGiftNames(),
-                contextSnapshots.familyTree(),
-                contextSnapshots.relationships()
-        ));
-        VillagerAmbientIndicatorService.onConversationOpened(level, villager, player);
-        broadcastVillagerChat(level, villager, greetingText);
+        VillagerInteractionScreenOpener.openNormal(player, villager, forceCameraTowardsVillager);
     }
 
     public static boolean openForcedDialogue(
@@ -195,57 +154,12 @@ public final class VillagerInteractionService {
             return false;
         }
 
-        openForcedInteractionScreen(player, villager, dialogueOptions, forceCameraTowardsVillager);
+        VillagerInteractionScreenOpener.openForced(player, villager, dialogueOptions, forceCameraTowardsVillager);
         focusVillagerOnPlayer(villager, player);
         if (!openingText.isBlank()) {
             broadcastForcedVillagerChat(player.serverLevel(), villager, openingText);
         }
         return true;
-    }
-
-    private static void openForcedInteractionScreen(
-            ServerPlayer player,
-            Villager villager,
-            List<DialogueOptionDefinition> dialogueOptions,
-            boolean forceCameraTowardsVillager) {
-        ServerLevel level = player.serverLevel();
-        VillagerProfile profile = VillagerProfileManager.getOrCreateProfile(level, villager);
-        ReputationSnapshot reputation = reputationSnapshot(level, villager, player);
-        DialogueContext context = createDialogueContext(level, player, villager);
-        VillagerGiftKnowledgeService.GiftKnowledgeSnapshot giftKnowledge =
-                VillagerGiftKnowledgeService.knownGifts(level, player, villager.getVillagerData().getProfession());
-        VillagerReputationNetworking.sendProfile(player, villager, profile);
-        PacketDistributor.sendToPlayer(player, new OpenVillagerInteractionPayload(
-                villager.getId(),
-                "",
-                VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
-                professionTranslationKey(villager),
-                VillagerPresetNameRegistry.resolveGender(villager).serializedName(),
-                villager.isBaby(),
-                reputation.value(),
-                reputation.level(),
-                VillagerDialogueService.moodFor(context),
-                context.primaryMood(),
-                VillagerRecruitmentService.isFollowing(villager, player),
-                true,
-                forceCameraTowardsVillager,
-                dialogueOptions,
-                giftKnowledge.likedGiftNames(),
-                giftKnowledge.dislikedGiftNames(),
-                VillagerSocialGraphService.familySnapshot(level, villager),
-                VillagerSocialGraphService.relationshipSnapshot(level, villager)
-        ));
-        VillagerAmbientIndicatorService.onConversationOpened(level, villager, player);
-    }
-
-    private static String professionTranslationKey(Villager villager) {
-        if (villager.isBaby()) {
-            return "villagerretaliation.gui.profession.child";
-        }
-        return VillagerProfessionUtil.translationKey(
-                villager.getVillagerData().getProfession(),
-                "villagerretaliation.gui.profession.unemployed"
-        );
     }
 
     public static void handleDialogueRequest(ServerPlayer player, int entityId, String optionId) {
