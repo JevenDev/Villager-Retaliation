@@ -15,6 +15,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.npc.AbstractVillager;
+import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.EnchantedBookItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -39,8 +40,15 @@ public final class SkillTradeOfferFactory {
             ResourceLocation professionId,
             int villagerLevel,
             RandomSource random) {
-        return createOffer(level, villager, random, definition ->
-                definition.matchesVillager(professionId, villagerLevel), true, Set.of());
+        OfferSelection selection = createRememberedVillagerSelection(
+                level,
+                villager,
+                professionId,
+                random,
+                definition -> definition.matchesVillager(professionId, villagerLevel),
+                true,
+                Set.of());
+        return selection == null ? null : selection.offer();
     }
 
     @Nullable
@@ -51,8 +59,15 @@ public final class SkillTradeOfferFactory {
             int villagerLevel,
             RandomSource random,
             Set<Item> excludedResultItems) {
-        return createOffer(level, villager, random, definition ->
-                definition.matchesVillager(professionId, villagerLevel), false, excludedResultItems);
+        OfferSelection selection = createRememberedVillagerSelection(
+                level,
+                villager,
+                professionId,
+                random,
+                definition -> definition.matchesVillager(professionId, villagerLevel),
+                false,
+                excludedResultItems);
+        return selection == null ? null : selection.offer();
     }
 
     @Nullable
@@ -61,7 +76,7 @@ public final class SkillTradeOfferFactory {
             AbstractVillager trader,
             SkillTradePool pool,
             RandomSource random) {
-        return createOffer(level, trader, random, definition -> definition.matchesWanderingTrader(pool), true, Set.of());
+        return createOffer(level, trader, random, definition -> definition.matchesWanderingTrader(pool));
     }
 
     @Nullable
@@ -70,17 +85,66 @@ public final class SkillTradeOfferFactory {
             AbstractVillager villager,
             RandomSource random,
             DefinitionFilter filter) {
-        return createOffer(level, villager, random, filter, true, Set.of());
+        OfferSelection selection = createOfferSelection(level, villager, random, filter, true, Set.of(), Set.of());
+        return selection == null ? null : selection.offer();
     }
 
     @Nullable
-    private static MerchantOffer createOffer(
+    public static MerchantOffer createVillagerOfferFromDefinition(
+            ServerLevel level,
+            AbstractVillager villager,
+            SkillTradeDefinition definition,
+            RandomSource random,
+            Set<Item> excludedResultItems) {
+        if (!VillagerRetaliationConfig.ENABLE_SKILL_TRADE_OVERHAUL.get()
+                || definition == null
+                || !definition.conditions().matches()) {
+            return null;
+        }
+
+        int skillValue = bestSkillValue(level, villager, definition);
+        if (!definition.isSkillEligible(skillValue)) {
+            return null;
+        }
+
+        SkillTradeScalingContext context = new SkillTradeScalingContext(definition, skillValue);
+        return createSelectedOffer(level, random, definition, context, excludedResultItems);
+    }
+
+    @Nullable
+    private static OfferSelection createRememberedVillagerSelection(
+            ServerLevel level,
+            AbstractVillager villager,
+            ResourceLocation professionId,
+            RandomSource random,
+            DefinitionFilter filter,
+            boolean requireChanceRoll,
+            Set<Item> excludedResultItems) {
+        Set<ResourceLocation> knownDefinitionIds = villager instanceof Villager resident
+                ? Set.copyOf(VillagerTradeMemory.knownDefinitionIds(resident, professionId))
+                : Set.of();
+        OfferSelection selection = null;
+        if (!knownDefinitionIds.isEmpty()) {
+            selection = createOfferSelection(level, villager, random, filter, false, excludedResultItems, knownDefinitionIds);
+        }
+        if (selection == null) {
+            selection = createOfferSelection(level, villager, random, filter, requireChanceRoll, excludedResultItems, Set.of());
+        }
+        if (selection != null && villager instanceof Villager resident) {
+            VillagerTradeMemory.rememberDefinition(level, resident, professionId, selection.definition().id());
+        }
+        return selection;
+    }
+
+    @Nullable
+    private static OfferSelection createOfferSelection(
             ServerLevel level,
             AbstractVillager villager,
             RandomSource random,
             DefinitionFilter filter,
             boolean requireChanceRoll,
-            Set<Item> excludedResultItems) {
+            Set<Item> excludedResultItems,
+            Set<ResourceLocation> onlyDefinitionIds) {
         if (!VillagerRetaliationConfig.ENABLE_SKILL_TRADE_OVERHAUL.get()) {
             return null;
         }
@@ -88,6 +152,9 @@ public final class SkillTradeOfferFactory {
         List<ResolvedDefinition> candidates = new ArrayList<>();
         for (SkillTradeDefinition definition : SkillTradeResources.definitions(level.getServer())) {
             if (!filter.matches(definition) || !definition.conditions().matches()) {
+                continue;
+            }
+            if (!onlyDefinitionIds.isEmpty() && !onlyDefinitionIds.contains(definition.id())) {
                 continue;
             }
             if (!excludedResultItems.isEmpty()
@@ -107,10 +174,11 @@ public final class SkillTradeOfferFactory {
         }
 
         ResolvedDefinition selected = selectWeighted(candidates, random);
-        return createSelectedOffer(level, random, selected.definition(), selected.context(), excludedResultItems);
+        MerchantOffer offer = createSelectedOffer(level, random, selected.definition(), selected.context(), excludedResultItems);
+        return offer == null ? null : new OfferSelection(offer, selected.definition());
     }
 
-    private static int bestSkillValue(ServerLevel level, AbstractVillager villager, SkillTradeDefinition definition) {
+    public static int bestSkillValue(ServerLevel level, AbstractVillager villager, SkillTradeDefinition definition) {
         int best = 0;
         for (VillagerSkill skill : definition.skills()) {
             best = Math.max(best, VillagerProfileManager.getSkill(level, villager, skill));
@@ -272,5 +340,8 @@ public final class SkillTradeOfferFactory {
     }
 
     private record ResolvedDefinition(SkillTradeDefinition definition, SkillTradeScalingContext context) {
+    }
+
+    private record OfferSelection(MerchantOffer offer, SkillTradeDefinition definition) {
     }
 }

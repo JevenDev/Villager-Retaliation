@@ -29,6 +29,7 @@ import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.reputation.VillagerReputationEvents;
 import com.jvn.toucanlib.util.ToucanHazardAttribution;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphService;
+import com.jvn.villagerretaliation.trade.VillagerTradeMemory;
 import com.jvn.villagerretaliation.util.VillagerDataWarmup;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
@@ -185,6 +186,7 @@ public final class VillagerRetaliationEvents {
             VillagerRecruitmentService.onVillagerTickPost(villager);
             rememberWeatherEventNearVillager(villager);
             if (villager.level() instanceof ServerLevel level) {
+                VillagerTradeMemory.ensureProfessionPool(level, villager);
                 ForcedDialogueService.maybeTriggerPlayerItemProximity(level, villager);
             }
             VillagerRetaliationHandler.onEntityTickPost(event);
