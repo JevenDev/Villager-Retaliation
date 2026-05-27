@@ -111,6 +111,8 @@ public class VillagerInteractionScreen extends Screen {
     private static final int PROFILE_SKILL_BAR_HEIGHT = 4;
     private static final int PROFILE_SKILL_COLUMNS = 2;
     private static final int PROFILE_SKILL_COLUMN_GAP = 8;
+    private static final Runnable NO_ACTION = () -> {
+    };
 
     private final int villagerEntityId;
     private final String villagerName;
@@ -467,23 +469,23 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     private void addRootOptions() {
-        this.options.add(DialogueOption.enabled(translate("root.talk"), this::openTalkPage));
+        addOption("root.talk", this::openTalkPage);
         if (!this.baby) {
-            this.options.add(DialogueOption.enabled(translate("root.profile"), this::openProfilePage));
-            this.options.add(DialogueOption.enabled(translate("root.skills"), this::openSkillsPage));
-            this.options.add(DialogueOption.enabled(translate("root.trade"), this::requestTrade));
+            addOption("root.profile", this::openProfilePage);
+            addOption("root.skills", this::openSkillsPage);
+            addOption("root.trade", this::requestTrade);
             if (VillagerRetaliationConfig.ENABLE_VILLAGER_GIFTS.get()) {
-                this.options.add(DialogueOption.enabled(translate("root.gift"), this::openGiftPage));
+                addOption("root.gift", this::openGiftPage);
             }
             if (canRequestVillagerInventory()) {
-                this.options.add(DialogueOption.enabled(translate("root.inventory"), this::requestInventory));
+                addOption("root.inventory", this::requestInventory);
             }
-            this.options.add(DialogueOption.enabled(translate("root.recruit"), this::openRecruitPage));
+            addOption("root.recruit", this::openRecruitPage);
             if (this.relationships.hasRelationships()) {
-                this.options.add(DialogueOption.enabled(translate("root.relationships"), this::openRelationshipPage));
+                addOption("root.relationships", this::openRelationshipPage);
             }
         }
-        this.options.add(DialogueOption.enabled(translate("root.goodbye"), this::leaveConversation));
+        addOption("root.goodbye", this::leaveConversation);
     }
 
     private void addProfileOptions() {
@@ -493,7 +495,7 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     private void addRecruitOptions() {
-        this.options.add(DialogueOption.enabled(translate("recruit.hire"), () -> requestRecruit(VillagerRecruitRequestPayload.Action.HIRE)));
+        addOption("recruit.hire", () -> requestRecruit(VillagerRecruitRequestPayload.Action.HIRE));
         this.options.add(DialogueOption.enabled(
                 this.followingPlayer ? translate("recruit.stop_following") : translate("recruit.follow_me"),
                 () -> requestRecruit(VillagerRecruitRequestPayload.Action.FOLLOW)));
@@ -526,8 +528,7 @@ public class VillagerInteractionScreen extends Screen {
         addFamilyRows("family.friend", this.familyTree.friends());
         addFamilyRows("family.rival", this.familyTree.rivals());
         if (this.options.isEmpty()) {
-            this.options.add(DialogueOption.enabled(translate("family.none"), () -> {
-            }));
+            addPassiveOption("family.none");
         }
     }
 
@@ -543,8 +544,7 @@ public class VillagerInteractionScreen extends Screen {
             );
         }
         if (this.options.isEmpty()) {
-            this.options.add(DialogueOption.enabled(translate("family.no_descendants"), () -> {
-            }));
+            addPassiveOption("family.no_descendants");
         }
     }
 
@@ -560,23 +560,19 @@ public class VillagerInteractionScreen extends Screen {
             );
         }
         if (this.options.isEmpty()) {
-            this.options.add(DialogueOption.enabled(translate("family.no_ancestry"), () -> {
-            }));
+            addPassiveOption("family.no_ancestry");
         }
     }
 
     private void addRelationshipOptions() {
         for (VillagerRelationshipSnapshot.RomanticBondView bond : this.relationships.current()) {
-            this.options.add(DialogueOption.enabled(relationshipLabel(bond), () -> {
-            }));
+            this.options.add(DialogueOption.enabled(relationshipLabel(bond), NO_ACTION));
         }
         for (VillagerRelationshipSnapshot.RomanticBondView bond : this.relationships.past()) {
-            this.options.add(DialogueOption.enabled(relationshipLabel(bond), () -> {
-            }));
+            this.options.add(DialogueOption.enabled(relationshipLabel(bond), NO_ACTION));
         }
         if (this.options.isEmpty()) {
-            this.options.add(DialogueOption.enabled(translate("relationships.none"), () -> {
-            }));
+            addPassiveOption("relationships.none");
         }
     }
 
@@ -592,8 +588,9 @@ public class VillagerInteractionScreen extends Screen {
     private void addFamilyRows(String labelKey, List<VillagerFamilyTreeSnapshot.FamilyMember> members) {
         for (VillagerFamilyTreeSnapshot.FamilyMember member : members) {
             if (member != null && !member.name().isBlank()) {
-                this.options.add(DialogueOption.enabled(translate("family.row", localizedLabel(labelKey), familyMemberLabel(member)), () -> {
-                }));
+                this.options.add(DialogueOption.enabled(
+                        translate("family.row", localizedLabel(labelKey), familyMemberLabel(member)),
+                        NO_ACTION));
             }
         }
     }
@@ -602,58 +599,55 @@ public class VillagerInteractionScreen extends Screen {
         this.options.add(DialogueOption.enabled(label, () -> requestDialogue(optionId)));
     }
 
+    private void addOption(String labelKey, Runnable action) {
+        this.options.add(DialogueOption.enabled(translate(labelKey), action));
+    }
+
+    private void addPassiveOption(String labelKey) {
+        addOption(labelKey, NO_ACTION);
+    }
+
     private void openTalkPage() {
-        this.page = DialoguePage.TALK;
-        rebuildOptions();
+        openPage(DialoguePage.TALK);
     }
 
     private void openProfilePage() {
-        this.page = DialoguePage.PROFILE;
         this.profileRefreshRequested = false;
         requestProfileRefresh();
-        rebuildOptions();
+        openPage(DialoguePage.PROFILE);
     }
 
     private void openSkillsPage() {
-        this.page = DialoguePage.SKILLS;
         this.profileRefreshRequested = false;
-        this.skillScroll = 0.0F;
-        this.targetSkillScroll = 0.0F;
-        this.selectedSkillDetails = null;
+        clearSelectedSkillDetails();
         this.draggingSkillScrollbar = false;
         requestProfileRefresh();
-        rebuildOptions();
+        openPage(DialoguePage.SKILLS);
     }
 
     private void openGiftPage() {
-        this.page = DialoguePage.GIFT;
         this.selectedInventorySlot = firstGiftableInventorySlot();
-        rebuildOptions();
+        openPage(DialoguePage.GIFT);
     }
 
     private void openRecruitPage() {
-        this.page = DialoguePage.RECRUIT;
-        rebuildOptions();
+        openPage(DialoguePage.RECRUIT);
     }
 
     private void openFamilyPage() {
-        this.page = DialoguePage.FAMILY;
-        rebuildOptions();
+        openPage(DialoguePage.FAMILY);
     }
 
     private void openRelationshipPage() {
-        this.page = DialoguePage.RELATIONSHIPS;
-        rebuildOptions();
+        openPage(DialoguePage.RELATIONSHIPS);
     }
 
     private void openAncestryPage() {
-        this.page = DialoguePage.ANCESTRY;
-        rebuildOptions();
+        openPage(DialoguePage.ANCESTRY);
     }
 
     private void openDescendantsPage() {
-        this.page = DialoguePage.DESCENDANTS;
-        rebuildOptions();
+        openPage(DialoguePage.DESCENDANTS);
     }
 
     private void requestTrade() {
@@ -695,16 +689,14 @@ public class VillagerInteractionScreen extends Screen {
             return;
         }
         if (this.page != DialoguePage.ROOT) {
-            this.page = DialoguePage.ROOT;
             this.selectedInventorySlot = -1;
-            rebuildOptions();
+            openPage(DialoguePage.ROOT);
         }
     }
 
     private void navigateBackPage() {
         if (this.page == DialoguePage.ANCESTRY || this.page == DialoguePage.DESCENDANTS) {
-            this.page = DialoguePage.FAMILY;
-            rebuildOptions();
+            openPage(DialoguePage.FAMILY);
             return;
         }
         navigateToRootPage();
@@ -716,9 +708,7 @@ public class VillagerInteractionScreen extends Screen {
             return;
         }
         if (this.page == DialoguePage.SKILLS && this.selectedSkillDetails != null) {
-            this.selectedSkillDetails = null;
-            this.skillScroll = 0.0F;
-            this.targetSkillScroll = 0.0F;
+            clearSelectedSkillDetails();
             return;
         }
         if (canNavigateBack()) {
@@ -745,6 +735,21 @@ public class VillagerInteractionScreen extends Screen {
         if (action == VillagerRecruitRequestPayload.Action.FOLLOW) {
             this.followingPlayer = !this.followingPlayer;
         }
+    }
+
+    private void openPage(DialoguePage page) {
+        this.page = page;
+        rebuildOptions();
+    }
+
+    private void clearSelectedSkillDetails() {
+        this.selectedSkillDetails = null;
+        resetSkillInfoScroll();
+    }
+
+    private void resetSkillInfoScroll() {
+        this.skillScroll = 0.0F;
+        this.targetSkillScroll = 0.0F;
     }
 
     private void moveSelection(int direction) {
@@ -789,7 +794,7 @@ public class VillagerInteractionScreen extends Screen {
         }
         graphics.disableScissor();
 
-        renderScrollbar(graphics, left, top, viewportBottom);
+        renderScrollbar(graphics);
 
     }
 
@@ -906,7 +911,7 @@ public class VillagerInteractionScreen extends Screen {
         int viewportBottom = skillInfoViewportBottom();
         for (FormattedCharSequence line : this.font.split(component, width)) {
             float alpha = skillInfoEdgeFadeAlpha(y, viewportTop, viewportBottom);
-            graphics.drawString(this.font, line, left, y, withAlpha(INFO_SECONDARY_COLOR, alpha), false);
+            graphics.drawString(this.font, line, left, y, VillagerInteractionUiUtil.withAlpha(INFO_SECONDARY_COLOR, alpha), false);
             y += this.font.lineHeight + 2;
         }
         return y;
@@ -1219,9 +1224,9 @@ public class VillagerInteractionScreen extends Screen {
         applyOptionTransform(graphics, left, y, scale, cursorShiftX, cursorShiftY);
         renderOptionBackground(graphics, isHovered, left, y, edgeAlpha);
         if (selected) {
-            graphics.drawString(this.font, ">", left - 7, Mth.floor(y + 5.0F), withAlpha(0xFFFFFFFF, edgeAlpha), false);
+            graphics.drawString(this.font, ">", left - 7, Mth.floor(y + 5.0F), VillagerInteractionUiUtil.withAlpha(0xFFFFFFFF, edgeAlpha), false);
         }
-        graphics.drawString(this.font, option.label(), left + OPTION_TEXT_INSET, Mth.floor(y + 5.0F), withAlpha(textColor, edgeAlpha), false);
+        graphics.drawString(this.font, option.label(), left + OPTION_TEXT_INSET, Mth.floor(y + 5.0F), VillagerInteractionUiUtil.withAlpha(textColor, edgeAlpha), false);
         graphics.pose().popPose();
     }
 
@@ -1242,7 +1247,7 @@ public class VillagerInteractionScreen extends Screen {
         int bgTop = Mth.floor(top + 1.0F);
         int bgRight = left + OPTION_WIDTH - 8;
         int bgBottom = bgTop + OPTION_HEIGHT - 1;
-        graphics.fill(bgLeft, bgTop, bgRight, bgBottom, withAlpha(0xFF000000, edgeAlpha * 0.16F));
+        graphics.fill(bgLeft, bgTop, bgRight, bgBottom, VillagerInteractionUiUtil.withAlpha(0xFF000000, edgeAlpha * 0.16F));
     }
 
     private static float optionScale(boolean selected, float hoverMix) {
@@ -1355,30 +1360,35 @@ public class VillagerInteractionScreen extends Screen {
     private void renderFamilyButton(GuiGraphics graphics, int mouseX, int mouseY, int y, int dividerX) {
         String text = familyButtonText();
         FamilyButtonBounds bounds = familyButtonBounds(y, dividerX, text);
-        boolean hovered = bounds.contains(mouseX, mouseY);
-        boolean familyPageActive = this.page == DialoguePage.FAMILY
-                || this.page == DialoguePage.ANCESTRY
-                || this.page == DialoguePage.DESCENDANTS;
-        int color = familyPageActive
-                ? INFO_VALUE_COLOR
-                : hovered ? 0xFFE5E5DE : INFO_SECONDARY_COLOR;
-        if (hovered || familyPageActive) {
-            graphics.fill(bounds.left() - 6, bounds.top() - 2, bounds.right() + 4, bounds.bottom() + 2, hovered ? 0x30000000 : 0x18000000);
-        }
-        graphics.drawString(this.font, text, bounds.left(), y, color, false);
+        renderInfoActionButton(graphics, text, y, bounds, mouseX, mouseY, isFamilyPageActive());
     }
 
     private void renderRelationshipButton(GuiGraphics graphics, int mouseX, int mouseY, int y, int dividerX) {
         String text = relationshipButtonText();
         FamilyButtonBounds bounds = familyButtonBounds(y, dividerX, text);
+        renderInfoActionButton(graphics, text, y, bounds, mouseX, mouseY, this.page == DialoguePage.RELATIONSHIPS);
+    }
+
+    private void renderInfoActionButton(
+            GuiGraphics graphics,
+            String text,
+            int y,
+            FamilyButtonBounds bounds,
+            int mouseX,
+            int mouseY,
+            boolean active) {
         boolean hovered = bounds.contains(mouseX, mouseY);
-        int color = this.page == DialoguePage.RELATIONSHIPS
-                ? INFO_VALUE_COLOR
-                : hovered ? 0xFFE5E5DE : INFO_SECONDARY_COLOR;
-        if (hovered || this.page == DialoguePage.RELATIONSHIPS) {
+        int color = active ? INFO_VALUE_COLOR : hovered ? 0xFFE5E5DE : INFO_SECONDARY_COLOR;
+        if (hovered || active) {
             graphics.fill(bounds.left() - 6, bounds.top() - 2, bounds.right() + 4, bounds.bottom() + 2, hovered ? 0x30000000 : 0x18000000);
         }
         graphics.drawString(this.font, text, bounds.left(), y, color, false);
+    }
+
+    private boolean isFamilyPageActive() {
+        return this.page == DialoguePage.FAMILY
+                || this.page == DialoguePage.ANCESTRY
+                || this.page == DialoguePage.DESCENDANTS;
     }
 
     private void renderDivider(GuiGraphics graphics, int optionsTop) {
@@ -1489,9 +1499,7 @@ public class VillagerInteractionScreen extends Screen {
         }
 
         if (this.page == DialoguePage.SKILLS && this.selectedSkillDetails != null) {
-            this.selectedSkillDetails = null;
-            this.skillScroll = 0.0F;
-            this.targetSkillScroll = 0.0F;
+            clearSelectedSkillDetails();
             return true;
         }
 
@@ -1516,7 +1524,7 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     private boolean tryBeginScrollbarDrag(double mouseX, double mouseY) {
-        ScrollbarThumb scrollbarThumb = scrollbarThumb();
+        VillagerInteractionUiUtil.ScrollbarThumb scrollbarThumb = scrollbarThumb();
         if (scrollbarThumb == null || !scrollbarThumb.contains(mouseX, mouseY)) {
             return false;
         }
@@ -1531,7 +1539,7 @@ public class VillagerInteractionScreen extends Screen {
             return false;
         }
 
-        ScrollbarThumb scrollbarThumb = skillInfoScrollbarThumb();
+        VillagerInteractionUiUtil.ScrollbarThumb scrollbarThumb = skillInfoScrollbarThumb();
         if (scrollbarThumb == null || !scrollbarThumb.contains(mouseX, mouseY)) {
             return false;
         }
@@ -1557,13 +1565,12 @@ public class VillagerInteractionScreen extends Screen {
         }
 
         this.selectedSkillDetails = clickedSkill == this.selectedSkillDetails ? null : clickedSkill;
-        this.skillScroll = 0.0F;
-        this.targetSkillScroll = 0.0F;
+        resetSkillInfoScroll();
         return true;
     }
 
     private boolean dragScrollbar(double mouseY) {
-        ScrollbarThumb scrollbarThumb = scrollbarThumb();
+        VillagerInteractionUiUtil.ScrollbarThumb scrollbarThumb = scrollbarThumb();
         if (scrollbarThumb == null) {
             this.draggingScrollbar = false;
             return false;
@@ -1582,7 +1589,7 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     private boolean dragSkillScrollbar(double mouseY) {
-        ScrollbarThumb scrollbarThumb = skillInfoScrollbarThumb();
+        VillagerInteractionUiUtil.ScrollbarThumb scrollbarThumb = skillInfoScrollbarThumb();
         if (scrollbarThumb == null) {
             this.draggingSkillScrollbar = false;
             return false;
@@ -2045,41 +2052,39 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     private float edgeFadeAlpha(float optionY, int viewportTop, int viewportBottom) {
-        if (maxOptionScroll() <= 0.0F) {
-            return 1.0F;
-        }
-
-        float fadeBand = 16.0F;
-        boolean canScrollUp = this.optionScroll > 0.75F;
-        boolean canScrollDown = this.optionScroll < maxOptionScroll() - 0.75F;
-        float optionTop = optionY;
-        float optionBottom = optionY + OPTION_HEIGHT;
-        float topFade = canScrollUp ? Mth.clamp((optionBottom - viewportTop) / fadeBand, 0.0F, 1.0F) : 1.0F;
-        float bottomFade = canScrollDown ? Mth.clamp((viewportBottom - optionTop) / fadeBand, 0.0F, 1.0F) : 1.0F;
-        return Math.min(topFade, bottomFade);
+        return VillagerInteractionUiUtil.edgeFadeAlpha(
+                this.optionScroll,
+                maxOptionScroll(),
+                optionY,
+                optionY + OPTION_HEIGHT,
+                viewportTop,
+                viewportBottom,
+                16.0F
+        );
     }
 
     private float skillInfoEdgeFadeAlpha(float lineY, int viewportTop, int viewportBottom) {
-        if (maxSkillScroll() <= 0.0F) {
-            return 1.0F;
-        }
-
-        float fadeBand = 16.0F;
-        boolean canScrollUp = this.skillScroll > 0.75F;
-        boolean canScrollDown = this.skillScroll < maxSkillScroll() - 0.75F;
-        float lineTop = lineY;
-        float lineBottom = lineY + this.font.lineHeight;
-        float topFade = canScrollUp ? Mth.clamp((lineBottom - viewportTop) / fadeBand, 0.0F, 1.0F) : 1.0F;
-        float bottomFade = canScrollDown ? Mth.clamp((viewportBottom - lineTop) / fadeBand, 0.0F, 1.0F) : 1.0F;
-        return Math.min(topFade, bottomFade);
+        return VillagerInteractionUiUtil.edgeFadeAlpha(
+                this.skillScroll,
+                maxSkillScroll(),
+                lineY,
+                lineY + this.font.lineHeight,
+                viewportTop,
+                viewportBottom,
+                16.0F
+        );
     }
 
-    private void renderScrollbar(GuiGraphics graphics, int optionsLeft, int viewportTop, int viewportBottom) {
-        ScrollbarThumb scrollbarThumb = scrollbarThumb();
+    private void renderScrollbar(GuiGraphics graphics) {
+        VillagerInteractionUiUtil.ScrollbarThumb scrollbarThumb = scrollbarThumb();
         renderScrollbar(graphics, scrollbarThumb, this.optionScroll, maxOptionScroll());
     }
 
-    private void renderScrollbar(GuiGraphics graphics, ScrollbarThumb scrollbarThumb, float currentScroll, float maxScroll) {
+    private void renderScrollbar(
+            GuiGraphics graphics,
+            VillagerInteractionUiUtil.ScrollbarThumb scrollbarThumb,
+            float currentScroll,
+            float maxScroll) {
         if (scrollbarThumb == null) {
             return;
         }
@@ -2096,57 +2101,46 @@ public class VillagerInteractionScreen extends Screen {
             if (canScrollDown && y >= scrollbarThumb.bottom() - fadeLength) {
                 alphaFactor = Math.min(alphaFactor, (scrollbarThumb.bottom() - y) / (float) fadeLength);
             }
-            graphics.fill(scrollbarThumb.left(), y, scrollbarThumb.right(), y + 1, withAlpha(0xBFFFFFFF, alphaFactor));
+            graphics.fill(scrollbarThumb.left(), y, scrollbarThumb.right(), y + 1, VillagerInteractionUiUtil.withAlpha(0xBFFFFFFF, alphaFactor));
         }
     }
 
-    private ScrollbarThumb scrollbarThumb() {
+    private VillagerInteractionUiUtil.ScrollbarThumb scrollbarThumb() {
         float maxScroll = maxOptionScroll();
-        if (maxScroll <= 0.0F) {
-            return null;
-        }
-
         int viewportTop = optionsTop();
         int viewportHeight = optionViewportHeight();
-        int scrollbarLeft = optionsScrollbarLeft();
-        int scrollbarRight = scrollbarLeft + OPTION_SCROLLBAR_WIDTH;
-        int thumbHeight = Math.max(18, Mth.floor(viewportHeight * (viewportHeight / optionContentHeight())));
-        float trackTravel = Math.max(0.0F, viewportHeight - thumbHeight);
-        float scrollRatio = maxScroll <= 0.0F ? 0.0F : this.optionScroll / maxScroll;
-        int thumbTop = viewportTop + Mth.floor(trackTravel * scrollRatio);
-        int hitLeft = scrollbarLeft - (OPTION_SCROLLBAR_HIT_WIDTH - OPTION_SCROLLBAR_WIDTH) / 2;
-        int hitRight = hitLeft + OPTION_SCROLLBAR_HIT_WIDTH;
-        return new ScrollbarThumb(scrollbarLeft, scrollbarRight, hitLeft, hitRight, thumbTop, thumbTop + thumbHeight, viewportTop, trackTravel);
+        return VillagerInteractionUiUtil.buildScrollbarThumb(
+                viewportTop,
+                viewportHeight,
+                optionsScrollbarLeft(),
+                OPTION_SCROLLBAR_WIDTH,
+                OPTION_SCROLLBAR_HIT_WIDTH,
+                18,
+                this.optionScroll,
+                maxScroll,
+                optionContentHeight()
+        );
     }
 
-    private ScrollbarThumb skillInfoScrollbarThumb() {
+    private VillagerInteractionUiUtil.ScrollbarThumb skillInfoScrollbarThumb() {
         float maxScroll = maxSkillScroll();
-        if (maxScroll <= 0.0F) {
-            return null;
-        }
-
         int viewportTop = skillInfoViewportTop();
         int viewportHeight = skillInfoViewportHeight();
-        int scrollbarLeft = optionsScrollbarLeft();
-        int scrollbarRight = scrollbarLeft + OPTION_SCROLLBAR_WIDTH;
-        int contentHeight = skillsInfoContentHeight();
-        int thumbHeight = Math.max(18, Mth.floor(viewportHeight * (viewportHeight / (float) contentHeight)));
-        float trackTravel = Math.max(0.0F, viewportHeight - thumbHeight);
-        float scrollRatio = maxScroll <= 0.0F ? 0.0F : this.skillScroll / maxScroll;
-        int thumbTop = viewportTop + Mth.floor(trackTravel * scrollRatio);
-        int hitLeft = scrollbarLeft - (OPTION_SCROLLBAR_HIT_WIDTH - OPTION_SCROLLBAR_WIDTH) / 2;
-        int hitRight = hitLeft + OPTION_SCROLLBAR_HIT_WIDTH;
-        return new ScrollbarThumb(scrollbarLeft, scrollbarRight, hitLeft, hitRight, thumbTop, thumbTop + thumbHeight, viewportTop, trackTravel);
+        return VillagerInteractionUiUtil.buildScrollbarThumb(
+                viewportTop,
+                viewportHeight,
+                optionsScrollbarLeft(),
+                OPTION_SCROLLBAR_WIDTH,
+                OPTION_SCROLLBAR_HIT_WIDTH,
+                18,
+                this.skillScroll,
+                maxScroll,
+                skillsInfoContentHeight()
+        );
     }
 
     private int optionsScrollbarLeft() {
         return optionsLeft() + OPTION_WIDTH + OPTION_SCROLLBAR_OFFSET;
-    }
-
-    private static int withAlpha(int color, float alphaFactor) {
-        int alpha = color >>> 24;
-        int adjustedAlpha = Mth.clamp(Mth.floor(alpha * alphaFactor), 0, 255);
-        return adjustedAlpha << 24 | color & 0x00FFFFFF;
     }
 
     private float hoverIntensity(double mouseX, double mouseY, int left, float top) {
@@ -2315,19 +2309,6 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     private record ProfilePoint(int x, int y) {
-    }
-
-    private record ScrollbarThumb(int left, int right, int hitLeft, int hitRight, int top, int bottom, int viewportTop, float trackTravel) {
-        int height() {
-            return this.bottom - this.top;
-        }
-
-        boolean contains(double mouseX, double mouseY) {
-            return mouseX >= this.hitLeft
-                    && mouseX <= this.hitRight
-                    && mouseY >= this.top
-                    && mouseY <= this.bottom;
-        }
     }
 
     private record TopBackButtonBounds(int left, int right, int top, int bottom) {
