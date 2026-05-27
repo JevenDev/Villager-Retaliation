@@ -135,6 +135,7 @@ public final class VillagerProfileManager {
             builder.append("\"").append(skill.serializedName()).append("\":").append(skills.get(skill));
         }
         builder.append("},");
+        builder.append("\"highestSkillGrowthTradeLevelAwarded\":").append(profile.highestSkillGrowthTradeLevelAwarded()).append(",");
         builder.append("\"createdGameTime\":").append(profile.createdGameTime()).append(",");
         builder.append("\"updatedGameTime\":").append(profile.updatedGameTime());
         builder.append("}");

@@ -17,6 +17,7 @@ public class VillagerProfile {
     private static final String TAG_SKILL_GENERATED_VERSION = "SkillGeneratedVersion";
     private static final String TAG_SKILLS = "Skills";
     private static final String TAG_LAST_KNOWN_PROFESSION = "LastKnownProfession";
+    private static final String TAG_HIGHEST_SKILL_GROWTH_TRADE_LEVEL_AWARDED = "HighestSkillGrowthTradeLevelAwarded";
     private static final String TAG_CREATED_GAME_TIME = "CreatedGameTime";
     private static final String TAG_UPDATED_GAME_TIME = "UpdatedGameTime";
 
@@ -27,6 +28,7 @@ public class VillagerProfile {
     private int skillGeneratedVersion;
     private VillagerSkillSet skills;
     private String lastKnownProfession;
+    private int highestSkillGrowthTradeLevelAwarded;
     private long createdGameTime;
     private long updatedGameTime;
 
@@ -38,6 +40,7 @@ public class VillagerProfile {
             int skillGeneratedVersion,
             VillagerSkillSet skills,
             String lastKnownProfession,
+            int highestSkillGrowthTradeLevelAwarded,
             long createdGameTime,
             long updatedGameTime) {
         this.villagerUuid = villagerUuid;
@@ -47,6 +50,7 @@ public class VillagerProfile {
         this.skillGeneratedVersion = skillGeneratedVersion;
         this.skills = skills == null ? VillagerSkillSet.EMPTY : skills;
         this.lastKnownProfession = lastKnownProfession == null ? "" : lastKnownProfession;
+        this.highestSkillGrowthTradeLevelAwarded = Math.clamp(highestSkillGrowthTradeLevelAwarded, 1, 5);
         this.createdGameTime = createdGameTime;
         this.updatedGameTime = updatedGameTime;
     }
@@ -68,6 +72,7 @@ public class VillagerProfile {
                 skillGeneratedVersion,
                 skills,
                 lastKnownProfession,
+                1,
                 gameTime,
                 gameTime
         );
@@ -92,6 +97,9 @@ public class VillagerProfile {
                 tag.contains(TAG_SKILL_GENERATED_VERSION, Tag.TAG_INT) ? tag.getInt(TAG_SKILL_GENERATED_VERSION) : 0,
                 skills,
                 tag.getString(TAG_LAST_KNOWN_PROFESSION),
+                tag.contains(TAG_HIGHEST_SKILL_GROWTH_TRADE_LEVEL_AWARDED, Tag.TAG_INT)
+                        ? tag.getInt(TAG_HIGHEST_SKILL_GROWTH_TRADE_LEVEL_AWARDED)
+                        : 1,
                 tag.contains(TAG_CREATED_GAME_TIME, Tag.TAG_LONG) ? tag.getLong(TAG_CREATED_GAME_TIME) : 0L,
                 tag.contains(TAG_UPDATED_GAME_TIME, Tag.TAG_LONG) ? tag.getLong(TAG_UPDATED_GAME_TIME) : 0L
         );
@@ -106,6 +114,7 @@ public class VillagerProfile {
         tag.putInt(TAG_SKILL_GENERATED_VERSION, this.skillGeneratedVersion);
         tag.put(TAG_SKILLS, this.skills.save());
         tag.putString(TAG_LAST_KNOWN_PROFESSION, this.lastKnownProfession);
+        tag.putInt(TAG_HIGHEST_SKILL_GROWTH_TRADE_LEVEL_AWARDED, this.highestSkillGrowthTradeLevelAwarded);
         tag.putLong(TAG_CREATED_GAME_TIME, this.createdGameTime);
         tag.putLong(TAG_UPDATED_GAME_TIME, this.updatedGameTime);
         return tag;
@@ -137,6 +146,10 @@ public class VillagerProfile {
 
     public String lastKnownProfession() {
         return this.lastKnownProfession;
+    }
+
+    public int highestSkillGrowthTradeLevelAwarded() {
+        return this.highestSkillGrowthTradeLevelAwarded;
     }
 
     public long createdGameTime() {
@@ -174,6 +187,16 @@ public class VillagerProfile {
         }
         this.skills = safeSkills;
         this.skillGeneratedVersion = skillGeneratedVersion;
+        this.updatedGameTime = gameTime;
+        return true;
+    }
+
+    public boolean markSkillGrowthTradeLevelAwarded(int tradeLevel, long gameTime) {
+        int clamped = Math.clamp(tradeLevel, 1, 5);
+        if (clamped <= this.highestSkillGrowthTradeLevelAwarded) {
+            return false;
+        }
+        this.highestSkillGrowthTradeLevelAwarded = clamped;
         this.updatedGameTime = gameTime;
         return true;
     }

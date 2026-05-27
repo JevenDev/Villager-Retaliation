@@ -129,6 +129,11 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.BooleanValue SKILL_TRADE_ALLOW_HIGH_TIER_EQUIPMENT;
     public static final ModConfigSpec.BooleanValue SKILL_TRADE_ALLOW_SPECIAL_ARROWS;
     public static final ModConfigSpec.BooleanValue SKILL_TRADE_ALLOW_RARE_SPECIALTY_TRADES;
+    public static final ModConfigSpec.BooleanValue ENABLE_SKILL_GROWTH_FROM_TRADING_LEVELS;
+    public static final ModConfigSpec.IntValue SKILL_GROWTH_PRIMARY_MIN;
+    public static final ModConfigSpec.IntValue SKILL_GROWTH_PRIMARY_MAX;
+    public static final ModConfigSpec.DoubleValue SKILL_GROWTH_SECONDARY_CHANCE;
+    public static final ModConfigSpec.IntValue SKILL_GROWTH_SECONDARY_MAX;
 
     public static final ModConfigSpec.BooleanValue SHOW_VILLAGER_REPUTATION_DEBUG_OVERLAY;
     public static final ModConfigSpec.DoubleValue REPUTATION_DEBUG_OVERLAY_MAX_DISTANCE;
@@ -594,6 +599,21 @@ public final class VillagerRetaliationConfig {
         SKILL_TRADE_ALLOW_RARE_SPECIALTY_TRADES = BUILDER.comment("Allows rare Master-level skill specialty offers such as saddles, nautilus shells, and golden apples.")
                 .translation("villagerretaliation.configuration.trade.skillTradeAllowRareSpecialtyTrades")
                 .define("skillTradeAllowRareSpecialtyTrades", true);
+        ENABLE_SKILL_GROWTH_FROM_TRADING_LEVELS = BUILDER.comment("When true, villagers gain small profession skill increases once per newly reached vanilla trade level.")
+                .translation("villagerretaliation.configuration.trade.enableSkillGrowthFromTradingLevels")
+                .define("enableSkillGrowthFromTradingLevels", true);
+        SKILL_GROWTH_PRIMARY_MIN = BUILDER.comment("Minimum primary skill points awarded by a trade-level milestone.")
+                .translation("villagerretaliation.configuration.trade.skillGrowthPrimaryMin")
+                .defineInRange("skillGrowthPrimaryMin", 1, 0, 10);
+        SKILL_GROWTH_PRIMARY_MAX = BUILDER.comment("Maximum primary skill points awarded by a trade-level milestone.")
+                .translation("villagerretaliation.configuration.trade.skillGrowthPrimaryMax")
+                .defineInRange("skillGrowthPrimaryMax", 5, 0, 10);
+        SKILL_GROWTH_SECONDARY_CHANCE = BUILDER.comment("Chance that a newly reached trade-level milestone also improves one related secondary skill.")
+                .translation("villagerretaliation.configuration.trade.skillGrowthSecondaryChance")
+                .defineInRange("skillGrowthSecondaryChance", 0.35D, 0.0D, 1.0D);
+        SKILL_GROWTH_SECONDARY_MAX = BUILDER.comment("Maximum secondary skill points awarded by a trade-level milestone.")
+                .translation("villagerretaliation.configuration.trade.skillGrowthSecondaryMax")
+                .defineInRange("skillGrowthSecondaryMax", 1, 0, 5);
         BUILDER.pop();
 
         BUILDER.push("debugOverlay");
