@@ -353,7 +353,9 @@ public final class VillagerRetaliationCommands {
                 .limit(8)
                 .forEach(candidate -> source.sendSuccess(() -> Component.literal("Candidate "
                         + candidate.id()
-                        + ": weight=" + candidate.weight()
+                        + ": priority=" + candidate.priority()
+                        + (candidate.category().isBlank() ? "" : ", category=" + candidate.category())
+                        + ", weight=" + candidate.weight()
                         + ", specificity=" + candidate.specificityScore()
                         + ", effective=" + candidate.effectiveWeight()
                         + ", recent=" + candidate.recentlyUsed()

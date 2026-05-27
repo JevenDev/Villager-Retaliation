@@ -387,6 +387,8 @@ const FIELD_TOOLTIPS = {
   "dialogue-recruitment_memory_biomes": "Filters recruitment memory lines by remembered biome ids (for example minecraft:badlands).",
   "dialogue-min_recruitment_follow_distance": "Minimum followed distance in blocks for recruitment memory lines.",
   "dialogue-gift_advice": "Filters a line to a gift advice result such as global_liked, profession_disliked, or already_known.",
+  "dialogue-priority": "Beta.12+. Normal dialogue line priority. Higher priority candidates are chosen before weighted random selection. Defaults to 0.",
+  "dialogue-category": "Beta.12+. Optional author label shown by dialogue explain. Does not affect matching or selection.",
   "dialogue-weight": "Weighted selection among matching entries. Missing weights usually default to 10.",
   "dialogue-key": "Message lookup key used by systems such as gift preference response_key.",
   "dialogue-outcomes": "Pacification result filter, such as success, not_enough_emeralds, blocked_by_reputation, or not_applicable.",
@@ -653,7 +655,9 @@ const BETA_12_ONLY_DIALOGUE_KEYS = [
   "max_kindness",
   "min_charm",
   "max_charm",
-  "conditions"
+  "conditions",
+  "priority",
+  "category"
 ];
 
 // Keep each supported datapack surface versioned so migrations can reason about
@@ -3831,6 +3835,7 @@ function entryIssueDetail(section, kind, entry) {
     }
     const badNumber = firstBadNumberDetail([entry], [
       { key: "order", label: "Order", expected: "a valid order number, positive or negative", fieldId: "dialogue-order", valid: Number.isFinite },
+      { key: "priority", label: "Priority", expected: "a valid priority number, positive or negative", fieldId: "dialogue-priority", valid: Number.isFinite },
       { key: "weight", label: "Weight", expected: "a number greater than or equal to 0", fieldId: "dialogue-weight", valid: (value) => value >= 0 },
       { key: "min_recruitment_follow_distance", label: "Minimum follow distance", expected: "a number greater than or equal to 0", fieldId: "dialogue-min_recruitment_follow_distance", valid: (value) => value >= 0 },
       { key: "min_mood_intensity", label: "Minimum mood intensity", expected: "a number from 0 to 100", fieldId: "dialogue-min_mood_intensity", valid: (value) => value >= 0 && value <= 100 },
@@ -6128,6 +6133,8 @@ function renderDialogueForm(kind, entry) {
         ${listField({ id: "dialogue-recruitment_memory_biomes", label: "Recruitment memory biomes", value: entry.recruitment_memory_biome ?? entry.recruitment_memory_biomes })}
         ${field({ id: "dialogue-min_recruitment_follow_distance", label: "Minimum follow distance", value: entry.min_recruitment_follow_distance ?? "", type: "number" })}
         ${selectField({ id: "dialogue-gift_advice", label: "Gift advice filter", value: entry.gift_advice, options: CONSTANTS.giftAdvice })}
+        ${field({ id: "dialogue-priority", label: "Priority", value: entry.priority ?? "", type: "number" })}
+        ${field({ id: "dialogue-category", label: "Category", value: entry.category ?? "" })}
         ${field({ id: "dialogue-weight", label: "Weight", value: entry.weight ?? "", type: "number" })}
         ${toggleGrid(CONSTANTS.lineFlags, entry, "line")}
       </div>
@@ -6647,6 +6654,8 @@ function readDialogueEntry() {
       recruitment_memory_biomes: readList("dialogue-recruitment_memory_biomes"),
       min_recruitment_follow_distance: parseInteger(readValue("dialogue-min_recruitment_follow_distance")),
       gift_advice: readValue("dialogue-gift_advice"),
+      priority: parseInteger(readValue("dialogue-priority")),
+      category: readValue("dialogue-category").trim(),
       weight: parseInteger(readValue("dialogue-weight"))
     });
   } else if (kind === "messages") {

@@ -137,7 +137,7 @@ Quick choices:
 
 ## Text And Line Variations
 
-Dialogue entries that output speech can use either `text` for one line or `lines` for several equal line variations. This applies to `lines`, `messages`, `openings`, `closings`, and `pacify` entries. The entry is selected by its normal `weight` first; if it has `lines`, one variation is then selected at random. Built-in beta.11 and newer dialogue uses `lines` with at least three variants for most spoken entries to keep repeated conversations fresher.
+Dialogue entries that output speech can use either `text` for one line or `lines` for several equal line variations. This applies to `lines`, `messages`, `openings`, `closings`, and `pacify` entries. After an entry wins selection, one value from `lines` is selected at random. Built-in beta.11 and newer dialogue uses `lines` with at least three variants for most spoken entries to keep repeated conversations fresher.
 
 Use `lines` when several entries would otherwise have the same filters and weight:
 
@@ -352,9 +352,13 @@ See [Dialogue Requests](Dialogue-Requests.md) for simple and expanded dropdown e
 | `gift_advice` | enum | none | See gift advice kinds below. |
 | `show_for_adults` | boolean | `true` | Adult visibility. |
 | `show_for_babies` | boolean | `true` | Baby visibility. |
+| `priority` | integer | `0` | Beta.12+. Higher-priority normal dialogue lines are selected before weighted random choice. |
+| `category` | string | none | Beta.12+. Optional author/debug label shown by `/villagerretaliation dialogue explain`; does not affect matching. |
 | `weight` | integer | `10` | Weighted selection. |
 
 Reputation filters on options and lines check the player's current reputation with the specific villager being spoken to. Use `reputation_levels` for tier-based behavior, or `min_reputation` / `max_reputation` when you need an exact numeric boundary.
+
+Normal dialogue line selection is: matching filters, requested option or memory preference, recent-variant freshness, highest `priority`, then weighted random selection. The effective weight shown by `/villagerretaliation dialogue explain` is `weight + specificityScore * 8`, so more specific filters still get a small documented boost inside the same priority tier.
 
 ### Compound Line Conditions
 

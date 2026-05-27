@@ -78,6 +78,8 @@ public record DialogueLine(
         boolean requiresKnownWidowedPartner,
         List<DialogueCondition> conditions,
         GiftAdviceKind giftAdviceKind,
+        int priority,
+        String category,
         int weight
 ) {
     public String text() {
@@ -518,6 +520,8 @@ public record DialogueLine(
         private boolean requiresKnownWidowedPartner;
         private final List<DialogueCondition> conditions = new java.util.ArrayList<>();
         private GiftAdviceKind giftAdviceKind;
+        private int priority;
+        private String category = "";
         private int weight = 10;
 
         protected Builder(String id, DialogueRequestType requestType, String text) {
@@ -879,6 +883,16 @@ public record DialogueLine(
             return this;
         }
 
+        public Builder priority(int priority) {
+            this.priority = priority;
+            return this;
+        }
+
+        public Builder category(String category) {
+            this.category = category == null ? "" : category.trim();
+            return this;
+        }
+
         public Builder weight(int weight) {
             this.weight = weight;
             return this;
@@ -948,6 +962,8 @@ public record DialogueLine(
                     this.requiresKnownWidowedPartner,
                     List.copyOf(this.conditions),
                     this.giftAdviceKind,
+                    this.priority,
+                    this.category,
                     this.weight
             );
         }

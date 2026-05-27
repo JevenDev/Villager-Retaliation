@@ -99,7 +99,7 @@ public final class VillagerDialogueResources {
             "recruitment_memory_biome", "recruitment_memory_biomes",
             "min_recruitment_follow_distance", "requires_recruitment_boat_trip", "requires_recruitment_ocean_crossing",
             "requires_recruitment_swim_trip", "excludes_recruitment_ocean_crossing",
-            "first_conversation_only", "gift_advice", "show_for_adults", "show_for_babies", "weight",
+            "first_conversation_only", "gift_advice", "show_for_adults", "show_for_babies", "priority", "category", "weight",
             "requires_known_family", "requires_known_parent", "requires_known_sibling", "requires_known_spouse", "requires_known_child",
             "requires_known_grandparent", "requires_known_grandchild", "requires_known_descendant", "requires_known_aunt_uncle",
             "requires_known_cousin", "requires_known_niece_nephew", "requires_known_extended_family", "requires_known_deceased_family",
@@ -1033,6 +1033,8 @@ public final class VillagerDialogueResources {
             builder.optionIds(optionIds.toArray(String[]::new));
         }
 
+        builder.priority(readInt(entry, "priority", 0));
+        builder.category(readString(entry, "category"));
         builder.weight(readInt(entry, "weight", 10));
     }
 

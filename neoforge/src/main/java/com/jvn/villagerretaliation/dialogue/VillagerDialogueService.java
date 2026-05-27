@@ -55,11 +55,23 @@ public final class VillagerDialogueService {
             }
         }
 
-        List<DialogueCandidateExplanation> candidates = matched.stream()
-                .sorted(Comparator.comparingInt(VillagerDialogueService::effectiveWeight).reversed()
+        List<DialogueLine> weightedPool = matched;
+        List<DialogueLine> freshCandidates = weightedPool.stream()
+                .filter(line -> line.hasFreshVariant(recentDialogueIds))
+                .toList();
+        if (!freshCandidates.isEmpty()) {
+            weightedPool = freshCandidates;
+        }
+        List<DialogueLine> priorityPool = preferHighestPriority(weightedPool);
+
+        List<DialogueCandidateExplanation> candidates = priorityPool.stream()
+                .sorted(Comparator.comparingInt(DialogueLine::priority).reversed()
+                        .thenComparing(Comparator.comparingInt(VillagerDialogueService::effectiveWeight).reversed())
                         .thenComparing(DialogueLine::id))
                 .map(line -> new DialogueCandidateExplanation(
                         line.id(),
+                        line.priority(),
+                        line.category(),
                         line.weight(),
                         line.specificityScore(),
                         effectiveWeight(line),
@@ -69,11 +81,25 @@ public final class VillagerDialogueService {
         Set<String> candidateIds = candidates.stream()
                 .map(DialogueCandidateExplanation::id)
                 .collect(java.util.stream.Collectors.toSet());
+        Set<String> matchedIds = matched.stream()
+                .map(DialogueLine::id)
+                .collect(java.util.stream.Collectors.toSet());
+        Set<String> weightedIds = weightedPool.stream()
+                .map(DialogueLine::id)
+                .collect(java.util.stream.Collectors.toSet());
         Map<String, Long> rejectionCounts = availableLines.stream()
                 .filter(line -> !candidateIds.contains(line.id()))
-                .map(line -> rejectionReason(line, context, requestType, requestedOptionId, disposition))
+                .map(line -> {
+                    if (matchedIds.contains(line.id()) && !weightedIds.contains(line.id())) {
+                        return "recently used";
+                    }
+                    if (weightedIds.contains(line.id())) {
+                        return "lower priority";
+                    }
+                    return rejectionReason(line, context, requestType, requestedOptionId, disposition);
+                })
                 .collect(java.util.stream.Collectors.groupingBy(reason -> reason, java.util.LinkedHashMap::new, java.util.stream.Collectors.counting()));
-        int totalWeight = matched.stream().mapToInt(VillagerDialogueService::effectiveWeight).sum();
+        int totalWeight = priorityPool.stream().mapToInt(VillagerDialogueService::effectiveWeight).sum();
         String fallbackReason = candidates.isEmpty()
                 ? "No weighted line matched; dialogue.fallback will be used."
                 : usedNeutralFallback
@@ -136,6 +162,7 @@ public final class VillagerDialogueService {
         if (!freshCandidates.isEmpty()) {
             candidates = freshCandidates;
         }
+        candidates = preferHighestPriority(candidates);
 
         int totalWeight = candidates.stream().mapToInt(VillagerDialogueService::effectiveWeight).sum();
         int selected = context.random().nextInt(Math.max(1, totalWeight));
@@ -338,6 +365,19 @@ public final class VillagerDialogueService {
 
     public static int effectiveWeight(DialogueLine line) {
         return line.weight() + line.specificityScore() * 8;
+    }
+
+    private static List<DialogueLine> preferHighestPriority(List<DialogueLine> candidates) {
+        if (candidates.isEmpty()) {
+            return candidates;
+        }
+        int highestPriority = candidates.stream()
+                .mapToInt(DialogueLine::priority)
+                .max()
+                .orElse(0);
+        return candidates.stream()
+                .filter(line -> line.priority() == highestPriority)
+                .toList();
     }
 
     private static List<DialogueLine> availableLines(DialogueContext context) {
@@ -795,6 +835,8 @@ public final class VillagerDialogueService {
 
     public record DialogueCandidateExplanation(
             String id,
+            int priority,
+            String category,
             int weight,
             int specificityScore,
             int effectiveWeight,

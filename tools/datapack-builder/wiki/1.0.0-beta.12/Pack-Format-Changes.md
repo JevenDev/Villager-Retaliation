@@ -51,6 +51,7 @@ Pack-facing beta.12 changes introduce persistent Social Attributes and temporary
 - Added Respected Special Orders: high-reputation players can choose targetable skill-trade definitions for longer, cooldown-gated restock requests, up to three active requests per villager/player.
 - Added an `Ask about orders` dialogue branch for active Special Orders, with a data-driven root dialogue option, dynamic per-order status options, and eight stock-time response variations.
 - Added recruitment-memory biome line filters `recruitment_memory_biome` and `recruitment_memory_biomes` for recruitment follow-up dialogue.
+- Added normal dialogue line `priority` and `category` fields. Higher `priority` lines win before weighted random selection; `category` is an author/debug label shown by dialogue explain.
 - Added optional skill-trade `request` metadata: `targetable`, `display_priority`, `min_reputation`, `wait_days`, `cooldown_days`, and `extra_cost`.
 - Added the forced-dialogue trigger value `trade_refresh` for data-driven trade-refresh option templates.
 - Added built-in forced-dialogue entries `trade_refresh.ready_options`, `trade_refresh.available_options`, `trade_refresh.unavailable_options`, `trade_refresh.revered_options`, `trade_refresh.special_order_select_options`, `trade_refresh.special_order_confirm_options`, and `trade_refresh.special_order_status_options`.
@@ -62,6 +63,7 @@ Pack-facing beta.12 changes introduce persistent Social Attributes and temporary
 - The Datapack Generator now exposes beta.12 mood and Social Attribute line filters only when the selected VR version is `1.0.0-beta.12`.
 - The generator's Convert flow can move beta.11 packs to beta.12 by updating `pack.mcmeta` with the beta.12 VR version marker. Existing beta.11 JSON fields are not renamed or removed.
 - Documentation now distinguishes dialogue `dispositions` from beta.12 temporary `mood` / `moods` filters.
+- Normal dialogue line selection now has an explicit priority tier before weighted random selection. Existing packs keep the default `priority: 0`.
 - Forced-dialogue option ids should remain unique among simultaneously visible options, but reputation-filtered variants can reuse an id when their filters are mutually exclusive. The built-in trade-refresh option templates use this to provide tier-specific responses for the same visible button.
 - Skill-trade replacement selection now avoids giving a refresh result item that already exists in the villager's current offer list.
 - Built-in villager skill-trade entries are Special Order targetable by default. Wandering trader skill-trade entries are not targetable.
@@ -83,6 +85,7 @@ Pack-facing beta.12 changes introduce persistent Social Attributes and temporary
 - Packs that customize skill trades can add `request.targetable: true` to make an entry directly requestable as a Special Order. The queued request stores the trade definition id, so cost, result, enchantment, skill gates, level gates, and config flags remain tied to the original entry.
 - Packs that customize trade-refresh dialogue should override the `trade_refresh.*` dialogue message keys for opening lines and follow-ups, and the `trade_refresh.ready_options`, `trade_refresh.available_options`, `trade_refresh.unavailable_options`, `trade_refresh.revered_options`, `trade_refresh.special_order_select_options`, and `trade_refresh.special_order_confirm_options` forced-dialogue entries for button responses.
 - Keep using `dispositions` for reputation-derived tone filters. Use `mood` / `moods` only for temporary event-driven emotional state.
+- Use `priority` when one matched line should reliably win over another. Use `weight` to tune random odds inside the same priority tier.
 - Use `requires_high_*` when a simple score of 60+ is enough. Use `min_*` and `max_*` score ranges when a line needs exact attribute bands.
 
 ## 1.0.0-beta.11 - 2026-05-26

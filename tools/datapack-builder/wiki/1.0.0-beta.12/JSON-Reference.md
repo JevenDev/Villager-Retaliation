@@ -364,6 +364,8 @@ For the full current list, when each value is remembered, and dropdown examples 
 
 `weight` controls weighted random selection among matching entries. Higher values are more likely. Missing weights usually default to `10`, and values below `1` are clamped or ignored depending on the system.
 
+Normal dialogue `lines` also support `priority` and `category` in beta.12+. Higher `priority` values narrow the candidate pool before weighted random selection. `category` is only an author/debug label surfaced by `/villagerretaliation dialogue explain`.
+
 Notifications also support `chance`, a number from `0.0` to `1.0`:
 
 ```json
