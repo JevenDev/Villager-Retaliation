@@ -3,6 +3,8 @@ package com.jvn.villagerretaliation.profile;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.skill.VillagerSkillGenerator;
 import com.jvn.villagerretaliation.skill.VillagerSkillSet;
+import java.util.EnumMap;
+import java.util.Map;
 import java.util.UUID;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
@@ -18,6 +20,7 @@ public class VillagerProfile {
     private static final String TAG_SKILLS = "Skills";
     private static final String TAG_LAST_KNOWN_PROFESSION = "LastKnownProfession";
     private static final String TAG_HIGHEST_SKILL_GROWTH_TRADE_LEVEL_AWARDED = "HighestSkillGrowthTradeLevelAwarded";
+    private static final String TAG_REGULAR_TRADE_SKILL_GROWTH_PROGRESS = "RegularTradeSkillGrowthProgress";
     private static final String TAG_CREATED_GAME_TIME = "CreatedGameTime";
     private static final String TAG_UPDATED_GAME_TIME = "UpdatedGameTime";
 
@@ -29,6 +32,7 @@ public class VillagerProfile {
     private VillagerSkillSet skills;
     private String lastKnownProfession;
     private int highestSkillGrowthTradeLevelAwarded;
+    private final EnumMap<VillagerSkill, Double> regularTradeSkillGrowthProgress;
     private long createdGameTime;
     private long updatedGameTime;
 
@@ -41,6 +45,7 @@ public class VillagerProfile {
             VillagerSkillSet skills,
             String lastKnownProfession,
             int highestSkillGrowthTradeLevelAwarded,
+            Map<VillagerSkill, Double> regularTradeSkillGrowthProgress,
             long createdGameTime,
             long updatedGameTime) {
         this.villagerUuid = villagerUuid;
@@ -51,6 +56,7 @@ public class VillagerProfile {
         this.skills = skills == null ? VillagerSkillSet.EMPTY : skills;
         this.lastKnownProfession = lastKnownProfession == null ? "" : lastKnownProfession;
         this.highestSkillGrowthTradeLevelAwarded = Math.clamp(highestSkillGrowthTradeLevelAwarded, 1, 5);
+        this.regularTradeSkillGrowthProgress = copyRegularTradeSkillGrowthProgress(regularTradeSkillGrowthProgress);
         this.createdGameTime = createdGameTime;
         this.updatedGameTime = updatedGameTime;
     }
@@ -73,6 +79,7 @@ public class VillagerProfile {
                 skills,
                 lastKnownProfession,
                 1,
+                Map.of(),
                 gameTime,
                 gameTime
         );
@@ -100,6 +107,9 @@ public class VillagerProfile {
                 tag.contains(TAG_HIGHEST_SKILL_GROWTH_TRADE_LEVEL_AWARDED, Tag.TAG_INT)
                         ? tag.getInt(TAG_HIGHEST_SKILL_GROWTH_TRADE_LEVEL_AWARDED)
                         : 1,
+                tag.contains(TAG_REGULAR_TRADE_SKILL_GROWTH_PROGRESS, Tag.TAG_COMPOUND)
+                        ? loadRegularTradeSkillGrowthProgress(tag.getCompound(TAG_REGULAR_TRADE_SKILL_GROWTH_PROGRESS))
+                        : Map.of(),
                 tag.contains(TAG_CREATED_GAME_TIME, Tag.TAG_LONG) ? tag.getLong(TAG_CREATED_GAME_TIME) : 0L,
                 tag.contains(TAG_UPDATED_GAME_TIME, Tag.TAG_LONG) ? tag.getLong(TAG_UPDATED_GAME_TIME) : 0L
         );
@@ -115,6 +125,10 @@ public class VillagerProfile {
         tag.put(TAG_SKILLS, this.skills.save());
         tag.putString(TAG_LAST_KNOWN_PROFESSION, this.lastKnownProfession);
         tag.putInt(TAG_HIGHEST_SKILL_GROWTH_TRADE_LEVEL_AWARDED, this.highestSkillGrowthTradeLevelAwarded);
+        CompoundTag regularTradeProgress = saveRegularTradeSkillGrowthProgress();
+        if (!regularTradeProgress.isEmpty()) {
+            tag.put(TAG_REGULAR_TRADE_SKILL_GROWTH_PROGRESS, regularTradeProgress);
+        }
         tag.putLong(TAG_CREATED_GAME_TIME, this.createdGameTime);
         tag.putLong(TAG_UPDATED_GAME_TIME, this.updatedGameTime);
         return tag;
@@ -150,6 +164,14 @@ public class VillagerProfile {
 
     public int highestSkillGrowthTradeLevelAwarded() {
         return this.highestSkillGrowthTradeLevelAwarded;
+    }
+
+    public Map<VillagerSkill, Double> regularTradeSkillGrowthProgress() {
+        return Map.copyOf(this.regularTradeSkillGrowthProgress);
+    }
+
+    public double regularTradeSkillGrowthProgress(VillagerSkill skill) {
+        return this.regularTradeSkillGrowthProgress.getOrDefault(skill, 0.0D);
     }
 
     public long createdGameTime() {
@@ -201,6 +223,26 @@ public class VillagerProfile {
         return true;
     }
 
+    public boolean setRegularTradeSkillGrowthProgress(VillagerSkill skill, double progress, long gameTime) {
+        if (skill == null) {
+            return false;
+        }
+
+        double clamped = clampRegularTradeSkillGrowthProgress(progress);
+        double current = regularTradeSkillGrowthProgress(skill);
+        if (Math.abs(current - clamped) < 0.000_001D) {
+            return false;
+        }
+
+        if (clamped <= 0.000_001D) {
+            this.regularTradeSkillGrowthProgress.remove(skill);
+        } else {
+            this.regularTradeSkillGrowthProgress.put(skill, clamped);
+        }
+        this.updatedGameTime = gameTime;
+        return true;
+    }
+
     public boolean needsSkillGeneration() {
         return this.skillGeneratedVersion < VillagerSkillGenerator.CURRENT_GENERATION_VERSION || !this.skills.hasAllSkills();
     }
@@ -233,5 +275,61 @@ public class VillagerProfile {
             this.createdGameTime = gameTime;
         }
         this.updatedGameTime = gameTime;
+    }
+
+    private static EnumMap<VillagerSkill, Double> copyRegularTradeSkillGrowthProgress(Map<VillagerSkill, Double> progress) {
+        EnumMap<VillagerSkill, Double> copy = new EnumMap<>(VillagerSkill.class);
+        if (progress == null) {
+            return copy;
+        }
+
+        for (Map.Entry<VillagerSkill, Double> entry : progress.entrySet()) {
+            if (entry.getKey() != null && entry.getValue() != null) {
+                double value = clampRegularTradeSkillGrowthProgress(entry.getValue());
+                if (value > 0.000_001D) {
+                    copy.put(entry.getKey(), value);
+                }
+            }
+        }
+        return copy;
+    }
+
+    private static EnumMap<VillagerSkill, Double> loadRegularTradeSkillGrowthProgress(CompoundTag tag) {
+        EnumMap<VillagerSkill, Double> progress = new EnumMap<>(VillagerSkill.class);
+        if (tag == null) {
+            return progress;
+        }
+
+        for (VillagerSkill skill : VillagerSkill.values()) {
+            double value = 0.0D;
+            if (tag.contains(skill.serializedName(), Tag.TAG_DOUBLE)) {
+                value = tag.getDouble(skill.serializedName());
+            } else if (tag.contains(skill.name(), Tag.TAG_DOUBLE)) {
+                value = tag.getDouble(skill.name());
+            }
+
+            value = clampRegularTradeSkillGrowthProgress(value);
+            if (value > 0.000_001D) {
+                progress.put(skill, value);
+            }
+        }
+        return progress;
+    }
+
+    private CompoundTag saveRegularTradeSkillGrowthProgress() {
+        CompoundTag tag = new CompoundTag();
+        for (Map.Entry<VillagerSkill, Double> entry : this.regularTradeSkillGrowthProgress.entrySet()) {
+            if (entry.getKey() != null && entry.getValue() != null && entry.getValue() > 0.000_001D) {
+                tag.putDouble(entry.getKey().serializedName(), clampRegularTradeSkillGrowthProgress(entry.getValue()));
+            }
+        }
+        return tag;
+    }
+
+    private static double clampRegularTradeSkillGrowthProgress(double progress) {
+        if (!Double.isFinite(progress)) {
+            return 0.0D;
+        }
+        return Math.max(0.0D, Math.min(0.999_999D, progress));
     }
 }

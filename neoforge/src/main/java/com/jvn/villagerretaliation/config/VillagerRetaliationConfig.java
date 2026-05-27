@@ -132,6 +132,8 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.BooleanValue SKILL_TRADE_ALLOW_SPECIAL_ARROWS;
     public static final ModConfigSpec.BooleanValue SKILL_TRADE_ALLOW_RARE_SPECIALTY_TRADES;
     public static final ModConfigSpec.BooleanValue ENABLE_SKILL_GROWTH_FROM_TRADING_LEVELS;
+    public static final ModConfigSpec.BooleanValue ENABLE_REGULAR_TRADE_SKILL_GROWTH;
+    public static final ModConfigSpec.DoubleValue REGULAR_TRADE_SKILL_GROWTH_AMOUNT;
     public static final ModConfigSpec.BooleanValue ENABLE_SKILL_GROWTH_FEEDBACK;
     public static final ModConfigSpec.IntValue SKILL_GROWTH_PRIMARY_MIN;
     public static final ModConfigSpec.IntValue SKILL_GROWTH_PRIMARY_MAX;
@@ -611,7 +613,13 @@ public final class VillagerRetaliationConfig {
         ENABLE_SKILL_GROWTH_FROM_TRADING_LEVELS = BUILDER.comment("When true, villagers gain small profession skill increases once per newly reached vanilla trade level.")
                 .translation("villagerretaliation.configuration.trade.enableSkillGrowthFromTradingLevels")
                 .define("enableSkillGrowthFromTradingLevels", true);
-        ENABLE_SKILL_GROWTH_FEEDBACK = BUILDER.comment("Shows a subtle actionbar message to the trading player when a villager improves a skill from a trade-level milestone.")
+        ENABLE_REGULAR_TRADE_SKILL_GROWTH = BUILDER.comment("When true, normal villager trades add slow fractional progress toward the villager's primary profession skill.")
+                .translation("villagerretaliation.configuration.trade.enableRegularTradeSkillGrowth")
+                .define("enableRegularTradeSkillGrowth", true);
+        REGULAR_TRADE_SKILL_GROWTH_AMOUNT = BUILDER.comment("Primary profession skill progress added by each normal villager trade. Whole points are awarded when saved progress reaches 1.0.")
+                .translation("villagerretaliation.configuration.trade.regularTradeSkillGrowthAmount")
+                .defineInRange("regularTradeSkillGrowthAmount", 0.1D, 0.0D, 10.0D);
+        ENABLE_SKILL_GROWTH_FEEDBACK = BUILDER.comment("Shows a subtle actionbar message to the trading player when a villager improves a skill through trade growth.")
                 .translation("villagerretaliation.configuration.trade.enableSkillGrowthFeedback")
                 .define("enableSkillGrowthFeedback", true);
         SKILL_GROWTH_PRIMARY_MIN = BUILDER.comment("Minimum primary skill points awarded by a trade-level milestone.")

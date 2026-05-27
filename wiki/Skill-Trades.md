@@ -276,6 +276,10 @@ Wandering traders can use skill trade pools, but vanilla trade-level milestone g
 
 ## Skill Growth From Trade Levels
 
+Each completed normal villager trade can also add slow fractional progress to the villager's primary profession skill. By default, each trade adds `0.1` progress, so ten regular trades add one visible skill point. Fractional progress is stored on the villager profile as `RegularTradeSkillGrowthProgress`; skill values still display and sync as whole numbers from 1..100.
+
+Regular trade growth is profession-primary only. A farmer's completed trades slowly improve Farming, a cartographer's completed trades slowly improve Cartography, and smithing professions improve their mapped primary skill. This is intentionally separate from reputation pricing and does not affect player trust.
+
 When a normal villager reaches a new vanilla trade level, the mod can improve relevant Skills once for each newly crossed milestone:
 
 ```text
@@ -319,6 +323,8 @@ skillTradeAllowHighTierEquipment
 skillTradeAllowSpecialArrows
 skillTradeAllowRareSpecialtyTrades
 enableSkillGrowthFromTradingLevels
+enableRegularTradeSkillGrowth
+regularTradeSkillGrowthAmount
 enableSkillGrowthFeedback
 skillGrowthPrimaryMin
 skillGrowthPrimaryMax

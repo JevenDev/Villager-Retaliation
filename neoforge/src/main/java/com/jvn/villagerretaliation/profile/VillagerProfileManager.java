@@ -136,6 +136,20 @@ public final class VillagerProfileManager {
         }
         builder.append("},");
         builder.append("\"highestSkillGrowthTradeLevelAwarded\":").append(profile.highestSkillGrowthTradeLevelAwarded()).append(",");
+        builder.append("\"regularTradeSkillGrowthProgress\":{");
+        boolean firstProgress = true;
+        for (VillagerSkill skill : VillagerSkill.values()) {
+            double progress = profile.regularTradeSkillGrowthProgress(skill);
+            if (progress <= 0.0D) {
+                continue;
+            }
+            if (!firstProgress) {
+                builder.append(",");
+            }
+            firstProgress = false;
+            builder.append("\"").append(skill.serializedName()).append("\":").append(progress);
+        }
+        builder.append("},");
         builder.append("\"createdGameTime\":").append(profile.createdGameTime()).append(",");
         builder.append("\"updatedGameTime\":").append(profile.updatedGameTime());
         builder.append("}");
