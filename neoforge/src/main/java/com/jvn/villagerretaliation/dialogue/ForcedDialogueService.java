@@ -697,62 +697,72 @@ public final class ForcedDialogueService {
             return;
         }
 
-        List<ForcedDialogueDefinition> definitions = ForcedDialogueResources
-                .selectCandidates(level.getServer(), ForcedDialogueTrigger.PLAYER_ITEM_PROXIMITY, null)
-                .stream()
-                .filter(ForcedDialogueDefinition::hasPlayerItemCondition)
-                .filter(definition -> definition.matchesWitness(villager))
-                .toList();
+        List<ForcedDialogueDefinition> definitions = ForcedDialogueResources.playerItemProximityCandidates(level.getServer());
         if (definitions.isEmpty()) {
             return;
         }
 
-        double maxRadius = definitions.stream()
-                .mapToDouble(ForcedDialogueDefinition::witnessRadius)
-                .max()
-                .orElse(0.0D);
+        List<ForcedDialogueDefinition> witnessDefinitions = new ArrayList<>();
+        double maxRadius = 0.0D;
+        for (ForcedDialogueDefinition definition : definitions) {
+            if (!definition.matchesWitness(villager)) {
+                continue;
+            }
+            witnessDefinitions.add(definition);
+            maxRadius = Math.max(maxRadius, definition.witnessRadius());
+        }
         if (maxRadius <= 0.0D) {
             return;
         }
 
         AABB area = villager.getBoundingBox().inflate(maxRadius);
-        List<ServerPlayer> players = level.getEntitiesOfClass(ServerPlayer.class, area).stream()
-                .filter(player -> player.isAlive() && !player.isSpectator() && !player.isCreative())
-                .filter(player -> !FORCED_SESSIONS.containsKey(player.getUUID()))
-                .sorted(Comparator.comparingDouble(player -> villager.distanceToSqr(player)))
-                .toList();
+        List<ServerPlayer> players = new ArrayList<>();
+        for (ServerPlayer player : level.getEntitiesOfClass(ServerPlayer.class, area)) {
+            if (player.isAlive()
+                    && !player.isSpectator()
+                    && !player.isCreative()
+                    && !FORCED_SESSIONS.containsKey(player.getUUID())) {
+                players.add(player);
+            }
+        }
+        if (players.size() > 1) {
+            players.sort(Comparator.comparingDouble(player -> villager.distanceToSqr(player)));
+        }
         for (ServerPlayer player : players) {
-            List<ForcedDialogueDefinition> matchingDefinitions = definitions.stream()
-                    .filter(definition -> definition.matchesPlayerItem(player))
-                    .filter(definition -> definitionMatchesReputation(level, villager, player, definition))
-                    .filter(definition -> villager.distanceToSqr(player) <= definition.witnessRadius() * definition.witnessRadius())
-                    .filter(definition -> !definition.requiresLineOfSight() || villager.hasLineOfSight(player))
-                    .filter(definition -> playerItemProximityReady(gameTime, villager, player, definition))
-                    .toList();
-            if (matchingDefinitions.isEmpty()) {
-                continue;
-            }
-
-            boolean handled = false;
-            for (ForcedDialogueDefinition definition : matchingDefinitions) {
-                if (isChatOutput(definition) && triggerPlayerItemProximityChat(level, villager, player, definition)) {
-                    markPlayerItemProximityUsed(gameTime, villager, player, definition);
-                    handled = true;
-                    break;
-                }
-            }
-            for (ForcedDialogueDefinition definition : matchingDefinitions) {
-                if (!isChatOutput(definition) && triggerPlayerItemProximity(level, villager, player, definition)) {
-                    markPlayerItemProximityUsed(gameTime, villager, player, definition);
-                    handled = true;
-                    break;
-                }
-            }
-            if (handled) {
+            if (tryPlayerItemProximityDefinitions(level, villager, player, witnessDefinitions, gameTime, true)
+                    || tryPlayerItemProximityDefinitions(level, villager, player, witnessDefinitions, gameTime, false)) {
                 prunePlayerItemProximityCooldowns(gameTime);
                 return;
             }
         }
+    }
+
+    private static boolean tryPlayerItemProximityDefinitions(
+            ServerLevel level,
+            Villager villager,
+            ServerPlayer player,
+            List<ForcedDialogueDefinition> definitions,
+            long gameTime,
+            boolean chatOutput) {
+        for (ForcedDialogueDefinition definition : definitions) {
+            if (isChatOutput(definition) != chatOutput
+                    || !definition.matchesPlayerItem(player)
+                    || !definitionMatchesReputation(level, villager, player, definition)
+                    || villager.distanceToSqr(player) > definition.witnessRadius() * definition.witnessRadius()
+                    || (definition.requiresLineOfSight() && !villager.hasLineOfSight(player))
+                    || !playerItemProximityReady(gameTime, villager, player, definition)) {
+                continue;
+            }
+
+            boolean triggered = chatOutput
+                    ? triggerPlayerItemProximityChat(level, villager, player, definition)
+                    : triggerPlayerItemProximity(level, villager, player, definition);
+            if (triggered) {
+                markPlayerItemProximityUsed(gameTime, villager, player, definition);
+                return true;
+            }
+        }
+        return false;
     }
 
     public static boolean triggerRetaliationStarted(ServerLevel level, Villager villager, ServerPlayer player) {

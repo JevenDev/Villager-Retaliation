@@ -26,7 +26,9 @@ import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.reputation.VillagerGossipHooks;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
+import com.jvn.villagerretaliation.reputation.VillagerReputationEvents;
 import com.jvn.toucanlib.util.ToucanHazardAttribution;
+import com.jvn.villagerretaliation.social.VillagerSocialGraphService;
 import com.jvn.villagerretaliation.util.VillagerDataWarmup;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
@@ -159,35 +161,46 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onEntityTickPre(EntityTickEvent.Pre event) {
-        if (event.getEntity() instanceof Villager villager) {
+        Entity entity = event.getEntity();
+        if (entity instanceof Villager villager) {
             VillagerRecruitmentService.onVillagerTickPre(villager);
             if (villager.level() instanceof ServerLevel level) {
                 VillagerAmbientIndicatorService.maybeEmitSleepIndicator(level, villager);
             }
+            VillagerFleeBehaviorHandler.onEntityTickPre(event);
+            VillagerRetaliationHandler.onEntityTickPre(event);
+        } else if (entity instanceof WanderingTrader) {
+            WanderingTraderRetaliationHandler.onEntityTickPre(event);
         }
-        VillagerFleeBehaviorHandler.onEntityTickPre(event);
-        VillagerRetaliationHandler.onEntityTickPre(event);
-        WanderingTraderRetaliationHandler.onEntityTickPre(event);
     }
 
     public static void onEntityTickPost(EntityTickEvent.Post event) {
-        if (event.getEntity() instanceof ServerPlayer player) {
+        Entity entity = event.getEntity();
+        if (entity instanceof ServerPlayer player) {
             VillagerReputationAdvancements.onPlayerTick(player);
+            return;
         }
-        if (event.getEntity() instanceof Villager villager) {
+        if (entity instanceof Villager villager) {
             VillagerConversationService.tickVillager(villager);
             VillagerRecruitmentService.onVillagerTickPost(villager);
             rememberWeatherEventNearVillager(villager);
             if (villager.level() instanceof ServerLevel level) {
                 ForcedDialogueService.maybeTriggerPlayerItemProximity(level, villager);
             }
-        }
-        clearIronGolemTargetingVillagers(event.getEntity());
-        VillagerRetaliationHandler.onEntityTickPost(event);
-        WanderingTraderRetaliationHandler.onEntityTickPost(event);
-        VillagerFleeBehaviorHandler.onEntityTickPost(event);
-        if (event.getEntity() instanceof Villager villager) {
+            VillagerRetaliationHandler.onEntityTickPost(event);
+            VillagerFleeBehaviorHandler.onEntityTickPost(event);
             VillagerCombatSurvivalService.onVillagerTickPost(villager);
+            VillagerSocialGraphService.onEntityTickPost(event);
+            VillagerReputationEvents.onEntityTickPost(event);
+            return;
+        }
+        if (entity instanceof WanderingTrader) {
+            WanderingTraderRetaliationHandler.onEntityTickPost(event);
+            VillagerReputationEvents.onEntityTickPost(event);
+            return;
+        }
+        if (entity instanceof IronGolem) {
+            clearIronGolemTargetingVillagers(entity);
         }
     }
 

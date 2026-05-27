@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -56,6 +57,9 @@ public final class ForcedDialogueResources {
             "reputation_level", "reputation_levels", "min_reputation", "max_reputation", "take_items", "take_stolen_items");
     private static final Set<String> NOTIFICATION_TRIGGER_PREFIXES = Set.of(
             "ambient.", "alert.", "combat.", "dialogue.", "gift.", "recruitment.", "reputation.", "trade.");
+    private static final Comparator<ForcedDialogueDefinition> CANDIDATE_ORDER =
+            Comparator.comparingInt(ForcedDialogueDefinition::priority)
+                    .thenComparing(definition -> definition.lootTables().isEmpty() ? 1 : 0);
     private static volatile CachedForcedDialogues cachedDialogues = CachedForcedDialogues.empty();
 
     private ForcedDialogueResources() {
@@ -85,35 +89,36 @@ public final class ForcedDialogueResources {
         return select(server, trigger, lootTable, targetEntityType);
     }
 
+    public static List<ForcedDialogueDefinition> playerItemProximityCandidates(MinecraftServer server) {
+        return load(server).playerItemProximityCandidates();
+    }
+
     private static List<ForcedDialogueDefinition> select(
             MinecraftServer server,
             ForcedDialogueTrigger trigger,
             ResourceLocation lootTable,
             ResourceLocation targetEntityType) {
-        return load(server).stream()
-                .filter(definition -> definition.trigger() == trigger)
+        return load(server).byTrigger().getOrDefault(trigger, List.of()).stream()
                 .filter(definition -> definition.matchesLootTable(lootTable))
                 .filter(definition -> definition.matchesTargetEntityType(targetEntityType))
-                .sorted(Comparator.comparingInt(ForcedDialogueDefinition::priority)
-                        .thenComparing(definition -> definition.lootTables().isEmpty() ? 1 : 0))
                 .toList();
     }
 
-    private static List<ForcedDialogueDefinition> load(MinecraftServer server) {
+    private static CachedForcedDialogues load(MinecraftServer server) {
         CachedForcedDialogues current = cachedDialogues;
         if (current.server() == server) {
-            return current.definitions();
+            return current;
         }
 
         synchronized (ForcedDialogueResources.class) {
             current = cachedDialogues;
             if (current.server() == server) {
-                return current.definitions();
+                return current;
             }
 
             List<ForcedDialogueDefinition> loaded = read(server);
-            cachedDialogues = new CachedForcedDialogues(server, loaded);
-            return loaded;
+            cachedDialogues = CachedForcedDialogues.create(server, loaded);
+            return cachedDialogues;
         }
     }
 
@@ -667,9 +672,40 @@ public final class ForcedDialogueResources {
         return id.isBlank() ? "option[" + index + "]" : "option \"" + id + "\"";
     }
 
-    private record CachedForcedDialogues(MinecraftServer server, List<ForcedDialogueDefinition> definitions) {
+    private record CachedForcedDialogues(
+            MinecraftServer server,
+            List<ForcedDialogueDefinition> definitions,
+            Map<ForcedDialogueTrigger, List<ForcedDialogueDefinition>> byTrigger,
+            List<ForcedDialogueDefinition> playerItemProximityCandidates) {
         private static CachedForcedDialogues empty() {
-            return new CachedForcedDialogues(null, List.of());
+            return new CachedForcedDialogues(null, List.of(), Map.of(), List.of());
+        }
+
+        private static CachedForcedDialogues create(MinecraftServer server, List<ForcedDialogueDefinition> loaded) {
+            List<ForcedDialogueDefinition> definitions = loaded.stream()
+                    .sorted(CANDIDATE_ORDER)
+                    .toList();
+            EnumMap<ForcedDialogueTrigger, List<ForcedDialogueDefinition>> byTrigger = new EnumMap<>(ForcedDialogueTrigger.class);
+            for (ForcedDialogueTrigger trigger : ForcedDialogueTrigger.values()) {
+                List<ForcedDialogueDefinition> matches = definitions.stream()
+                        .filter(definition -> definition.trigger() == trigger)
+                        .toList();
+                if (!matches.isEmpty()) {
+                    byTrigger.put(trigger, matches);
+                }
+            }
+            List<ForcedDialogueDefinition> playerItemProximityCandidates = byTrigger
+                    .getOrDefault(ForcedDialogueTrigger.PLAYER_ITEM_PROXIMITY, List.of())
+                    .stream()
+                    .filter(definition -> definition.lootTables().isEmpty())
+                    .filter(definition -> definition.targetEntityTypes().isEmpty())
+                    .filter(ForcedDialogueDefinition::hasPlayerItemCondition)
+                    .toList();
+            return new CachedForcedDialogues(
+                    server,
+                    definitions,
+                    Map.copyOf(byTrigger),
+                    playerItemProximityCandidates);
         }
     }
 
