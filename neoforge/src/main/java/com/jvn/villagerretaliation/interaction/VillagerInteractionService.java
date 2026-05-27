@@ -249,16 +249,12 @@ public final class VillagerInteractionService {
     }
 
     public static void handleDialogueRequest(ServerPlayer player, int entityId, String optionId) {
-        Villager villager = resolveVillager(player, entityId);
-        if (villager == null) {
-            sendNotice(player, entityId, "interaction.unavailable");
+        Optional<InteractionTargetContext> target = InteractionRequestValidator.requireDialogueConversation(player, entityId);
+        if (target.isEmpty()) {
             return;
         }
-        if (!VillagerConversationService.validate(player, villager)) {
-            PacketDistributor.sendToPlayer(player, new VillagerConversationEndedPayload(entityId, ""));
-            sendVillagerNotice(player, villager, "interaction.conversation_ended");
-            return;
-        }
+        InteractionTargetContext contextTarget = target.get();
+        Villager villager = contextTarget.villager();
         if (ForcedDialogueService.handleDialogueRequest(player, villager, optionId)) {
             return;
         }
@@ -271,14 +267,12 @@ public final class VillagerInteractionService {
             return;
         }
         if (shouldRefuseDespisedConversation(villager, player)) {
-            VillagerConversationService.endForPlayer(player, true);
-            VillagerAmbientIndicatorService.onTradeRefused(villager);
-            sendVillagerNotice(player, villager, "interaction.refuse_despised");
+            InteractionRequestValidator.endConversationWithRefusal(contextTarget, "interaction.refuse_despised");
             return;
         }
         focusVillagerOnPlayer(villager, player);
 
-        ServerLevel level = player.serverLevel();
+        ServerLevel level = contextTarget.level();
         VillagerInteractionTracker.InteractionState interactionState = VillagerInteractionTracker.getState(level, villager, player);
         ReputationSnapshot reputation = reputationSnapshot(level, villager, player);
         DialogueContext context = createDialogueContext(level, player, villager, interactionState, reputation.value(), reputation.level());
@@ -335,19 +329,14 @@ public final class VillagerInteractionService {
     }
 
     public static void handleTradeRequest(ServerPlayer player, int entityId) {
-        Villager villager = resolveVillager(player, entityId);
-        if (villager == null) {
-            sendNotice(player, entityId, "interaction.trade_unavailable");
+        Optional<InteractionTargetContext> target = InteractionRequestValidator.requireTradeConversation(player, entityId);
+        if (target.isEmpty()) {
             return;
         }
-        if (!VillagerConversationService.validate(player, villager)) {
-            sendVillagerNotice(player, villager, "interaction.conversation_ended");
-            return;
-        }
+        InteractionTargetContext contextTarget = target.get();
+        Villager villager = contextTarget.villager();
         if (shouldRefuseDespisedConversation(villager, player)) {
-            VillagerConversationService.endForPlayer(player, true);
-            VillagerAmbientIndicatorService.onTradeRefused(villager);
-            sendVillagerNotice(player, villager, "interaction.refuse_trade");
+            InteractionRequestValidator.endConversationWithRefusal(contextTarget, "interaction.refuse_trade");
             return;
         }
         focusVillagerOnPlayer(villager, player);
@@ -360,16 +349,14 @@ public final class VillagerInteractionService {
     }
 
     public static void handleInventoryRequest(ServerPlayer player, int entityId) {
-        Villager villager = resolveVillager(player, entityId);
-        if (villager == null) {
-            sendNotice(player, entityId, "interaction.inventory_unavailable");
+        Optional<InteractionTargetContext> target = InteractionRequestValidator.requireInventoryConversation(player, entityId);
+        if (target.isEmpty()) {
             return;
         }
-        if (!VillagerConversationService.validate(player, villager)) {
-            sendVillagerNotice(player, villager, "interaction.conversation_ended");
-            return;
-        }
-        if (!(player.level() instanceof ServerLevel level) || !VillagerInventoryAccess.canAccess(level, villager, player)) {
+        InteractionTargetContext contextTarget = target.get();
+        Villager villager = contextTarget.villager();
+        ServerLevel level = contextTarget.level();
+        if (!VillagerInventoryAccess.canAccess(level, villager, player)) {
             sendVillagerNotice(player, villager, "interaction.not_trusted_enough");
             return;
         }
@@ -384,19 +371,14 @@ public final class VillagerInteractionService {
             sendNotice(player, entityId, "interaction.gift_unavailable");
             return;
         }
-        Villager villager = resolveVillager(player, entityId);
-        if (villager == null) {
-            sendNotice(player, entityId, "interaction.gift_unavailable");
+        Optional<InteractionTargetContext> target = InteractionRequestValidator.requireGiftConversation(player, entityId);
+        if (target.isEmpty()) {
             return;
         }
-        if (!VillagerConversationService.validate(player, villager)) {
-            sendVillagerNotice(player, villager, "interaction.conversation_ended");
-            return;
-        }
+        InteractionTargetContext contextTarget = target.get();
+        Villager villager = contextTarget.villager();
         if (shouldRefuseDespisedConversation(villager, player)) {
-            VillagerConversationService.endForPlayer(player, true);
-            VillagerAmbientIndicatorService.onTradeRefused(villager);
-            sendVillagerNotice(player, villager, "interaction.keep_distance");
+            InteractionRequestValidator.endConversationWithRefusal(contextTarget, "interaction.keep_distance");
             return;
         }
         if (villager.isBaby()) {
@@ -418,7 +400,7 @@ public final class VillagerInteractionService {
             return;
         }
 
-        ServerLevel level = player.serverLevel();
+        ServerLevel level = contextTarget.level();
         ItemStack giftedStack = player.getInventory().removeItem(inventorySlot, selectedStack.getCount());
         player.getInventory().setChanged();
         VillagerProfession profession = villager.getVillagerData().getProfession();
@@ -466,18 +448,13 @@ public final class VillagerInteractionService {
     }
 
     public static void handleRecruitRequest(ServerPlayer player, int entityId, VillagerRecruitRequestPayload.Action action) {
-        Villager villager = resolveVillager(player, entityId);
-        if (villager == null) {
-            sendNotice(player, entityId, "interaction.recruit_unavailable");
+        Optional<InteractionTargetContext> target = InteractionRequestValidator.requireRecruitConversation(player, entityId);
+        if (target.isEmpty()) {
             return;
         }
-        if (!VillagerConversationService.validate(player, villager)) {
-            sendVillagerNotice(player, villager, "interaction.conversation_ended");
-            return;
-        }
-        if (!(player.level() instanceof ServerLevel level)) {
-            return;
-        }
+        InteractionTargetContext contextTarget = target.get();
+        Villager villager = contextTarget.villager();
+        ServerLevel level = contextTarget.level();
         if (!VillagerRecruitmentService.canRecruit(level, villager, player)) {
             sendVillagerNotice(player, villager, "interaction.not_trusted_enough");
             return;
