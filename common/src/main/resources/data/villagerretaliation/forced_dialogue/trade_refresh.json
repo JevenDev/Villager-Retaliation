@@ -972,7 +972,7 @@
       "options": [
         {
           "id": "trade_refresh.surprise_me",
-          "label": "Surprise me.",
+          "label": "Surprise me",
           "order": 0,
           "end_conversation": false,
           "responses": [
@@ -983,7 +983,7 @@
         },
         {
           "id": "trade_refresh.special_order",
-          "label": "I'm looking for something specific.",
+          "label": "I'm looking for something specific",
           "order": 1,
           "end_conversation": false,
           "responses": [
@@ -1005,7 +1005,7 @@
         },
         {
           "id": "leave",
-          "label": "Never mind.",
+          "label": "Never mind",
           "order": 3,
           "end_conversation": true,
           "responses": [
@@ -1023,7 +1023,7 @@
       "force_camera_towards_villager": true,
       "requires_line_of_sight": false,
       "leave_option": {
-        "label": "Never mind.",
+        "label": "Never mind",
         "order": 500,
         "end_conversation": true,
         "responses": [
@@ -1046,14 +1046,16 @@
           "order": 0,
           "end_conversation": false,
           "responses": [
-            "Done. I will set the order aside and prepare it properly.",
-            "Agreed. I will arrange that trade and mark the time.",
-            "Then it is ordered. Come back when it is ready."
+            "Done. I will set aside {trade_item} and start preparing it.",
+            "Agreed. {trade_item} goes on the ledger now.",
+            "Then it is ordered. Give me {wait_days} {wait_day_word} to make it ready.",
+            "I will reserve the work for {trade_item}. The clock starts now.",
+            "Good. I will handle {trade_item} properly and mark the recovery time after."
           ]
         },
         {
           "id": "leave",
-          "label": "Never mind.",
+          "label": "Never mind",
           "order": 1,
           "end_conversation": true,
           "responses": [
@@ -1071,7 +1073,7 @@
       "force_camera_towards_villager": true,
       "requires_line_of_sight": false,
       "leave_option": {
-        "label": "That's all.",
+        "label": "That's all",
         "order": 500,
         "end_conversation": true,
         "responses": [

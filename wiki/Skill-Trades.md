@@ -284,7 +284,7 @@ Wandering traders can use skill trade pools, but vanilla trade-level milestone g
 
 ## Skill Growth From Trade Levels
 
-Each completed normal villager trade can also add slow fractional progress to the villager's primary profession skill. By default, each trade adds `0.1` progress, so ten regular trades add one visible skill point. Fractional progress is stored on the villager profile as `RegularTradeSkillGrowthProgress`; skill values still display and sync as whole numbers from 1..100.
+Each completed normal villager trade can also add slow fractional progress to the villager's primary profession skill. By default, each trade adds `0.5` progress, so two regular trades add one visible skill point. Fractional progress is stored on the villager profile as `RegularTradeSkillGrowthProgress`; skill values still display and sync as whole numbers from 1..100.
 
 Regular trade growth is profession-primary only. A farmer's completed trades slowly improve Farming, a cartographer's completed trades slowly improve Cartography, and smithing professions improve their mapped primary skill. This is intentionally separate from reputation pricing and does not affect player trust.
 
@@ -415,14 +415,14 @@ Special Orders are high-reputation targeted trade requests. By default, a player
 When a Respected+ player clicks the refresh button, the villager offers a data-driven choice:
 
 - `Surprise me.` queues the existing random next-day refresh.
-- `I'm looking for something specific.` opens a dynamic list of unlocked targetable skill-trade definitions.
+- `I'm looking for something specific.` opens a dynamic list of unlocked targetable skill-trade definitions. The list rows use concise trade names, collapse duplicate result items by keeping the higher-count result, and speak wait and cooldown details through the data-driven confirmation and queued dialogue lines.
 - `Never mind.` cancels without changing the offer.
 
 Players request a skill-trade definition id, not an arbitrary item id. Eligibility still respects profession, villager trade level, `min_rank`, config flags, and the trade entry's request reputation gate. Unlike random offer generation and `Surprise me` refreshes, Special Orders ignore `max_rank` once the villager has unlocked a definition, so high-skill villagers can still request earlier catalog items and can duplicate items they already stock. A successful Special Order is stored on the villager, appears as a pending refresh icon on the selected slot, survives reloads, and replaces that slot when ready. The requested definition is also remembered in the villager's persistent profession pool. Each player can have up to `specialOrderMaxActivePerPlayer` active Special Orders with the same villager, capped at three.
 
-The default balance is a 2 Minecraft day wait and a 3 Minecraft day cooldown. Entry metadata can override both. Cooldown starts when an order is fulfilled, so a trusted player can queue multiple active requests up to the active-order cap, then must wait before adding more after completed work. Extra request costs are supported by metadata and are only consumed when `specialOrderExtraCostEnabled` is true and the request passes validation. Payment is taken when the request is accepted, not when the order completes.
+The default balance is a 2 Minecraft day wait and a 3 Minecraft day cooldown. Entry metadata can override both. Cooldown starts when an order is fulfilled, so a trusted player can queue multiple active requests up to the active-order cap, then must wait before placing another Special Order with the same villager after completed work. Extra request costs are supported by metadata and are only consumed when `specialOrderExtraCostEnabled` is true and the request passes validation. Payment is taken when the request is accepted, not when the order completes.
 
-When a player has active Special Orders with a villager, the built-in dialogue data shows `Ask about orders.` above the general question option using `requires_active_special_orders`. This opens a dynamic list of that player's active requests for that villager. Selecting a request gives a localized stock-time response using `trade_refresh.special_order_status` with `{trade_item}`, `{offer_slot}`, `{days_remaining}`, and `{time_remaining}` replacements.
+When a player has active Special Orders with a villager, the built-in dialogue data shows `Ask about orders.` above the general question option using `requires_active_special_orders`. This opens a dynamic list of that player's active requests for that villager. Selecting a request gives a localized stock-time response using `trade_refresh.special_order_status` with `{trade_item}`, `{offer_slot}`, `{days_remaining}`, and `{time_remaining}` replacements. The `Place Special Order` button uses the normal forced-dialogue `responses` array for randomized follow-up text after a successful request. Special Order wait and cooldown messages also receive `{wait_day_word}` and `{cooldown_day_word}` so dialogue can say `day` or `days` naturally.
 
 ```json
 "request": {

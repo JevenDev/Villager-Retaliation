@@ -646,7 +646,7 @@ public final class VillagerRetaliationConfig {
                 .define("enableRegularTradeSkillGrowth", true);
         REGULAR_TRADE_SKILL_GROWTH_AMOUNT = BUILDER.comment("Primary profession skill progress added by each normal villager trade. Whole points are awarded when saved progress reaches 1.0.")
                 .translation("villagerretaliation.configuration.trade.regularTradeSkillGrowthAmount")
-                .defineInRange("regularTradeSkillGrowthAmount", 0.1D, 0.0D, 10.0D);
+                .defineInRange("regularTradeSkillGrowthAmount", 0.5D, 0.0D, 10.0D);
         ENABLE_SKILL_BASED_TRADE_LEVELING = BUILDER.comment("When true, a villager's primary profession skill slows or restores vanilla villager trade-level XP gain.")
                 .translation("villagerretaliation.configuration.trade.enableSkillBasedTradeLeveling")
                 .define("enableSkillBasedTradeLeveling", true);

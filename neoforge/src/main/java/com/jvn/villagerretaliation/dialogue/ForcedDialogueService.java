@@ -477,6 +477,20 @@ public final class ForcedDialogueService {
                     villager,
                     session.tradeRefreshOfferIndex(),
                     definitionId);
+            if (result.queued()) {
+                String response = ForcedDialogueResources.resolveTemplate(
+                        option.selectResponse(player.serverLevel().getRandom()),
+                        tradeRefreshContext(player.serverLevel(), villager, player, result.replacements()),
+                        result.replacements());
+                if (!response.isBlank()) {
+                    VillagerInteractionService.broadcastForcedVillagerChat(
+                            player.serverLevel(),
+                            villager,
+                            response,
+                            VillagerInteractionService.villagerSpeakerLabel(villager)
+                    );
+                }
+            }
             FORCED_SESSIONS.remove(player.getUUID());
             VillagerConversationService.endForPlayer(player, true);
             openTradeRefreshDialogue(player.serverLevel(), villager, player, result.messageKey(), result.replacements());
@@ -738,7 +752,9 @@ public final class ForcedDialogueService {
                 "trade_item", specialOrder.tradeItem(),
                 "trade_definition", definitionId.toString(),
                 "wait_days", Integer.toString(specialOrder.waitDays()),
-                "cooldown_days", Integer.toString(specialOrder.cooldownDays()));
+                "wait_day_word", VillagerSpecialOrderService.pluralWord(specialOrder.waitDays(), "day", "days"),
+                "cooldown_days", Integer.toString(specialOrder.cooldownDays()),
+                "cooldown_day_word", VillagerSpecialOrderService.pluralWord(specialOrder.cooldownDays(), "day", "days"));
         ForcedDialogueDefinition optionDefinition = tradeRefreshOptionDefinitionById(
                 level,
                 villager,

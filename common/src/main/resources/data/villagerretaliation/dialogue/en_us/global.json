@@ -2441,41 +2441,41 @@
     {
       "key": "trade_refresh.special_order_confirm",
       "lines": [
-        "A Special Order for {trade_item} will take {wait_days} day(s), with {cooldown_days} day(s) before another order.",
-        "I can arrange {trade_item}. It will take {wait_days} day(s), and I will need {cooldown_days} day(s) before another order.",
-        "{trade_item} is possible. Give me {wait_days} day(s), then wait {cooldown_days} day(s) before asking for another."
+        "A Special Order for {trade_item} will take {wait_days} {wait_day_word}. After it is fulfilled, I need {cooldown_days} {cooldown_day_word} before another order from you.",
+        "I can arrange {trade_item}. It will take {wait_days} {wait_day_word}, and I will need {cooldown_days} {cooldown_day_word} before taking another order from you.",
+        "{trade_item} is possible. Give me {wait_days} {wait_day_word}, then wait {cooldown_days} {cooldown_day_word} before asking me for another order."
       ]
     },
     {
       "key": "trade_refresh.special_order_queued",
       "lines": [
-        "Your Special Order for {trade_item} is set. Come back after {wait_days} day(s).",
-        "I have marked the Special Order for {trade_item}. It will be ready after {wait_days} day(s).",
-        "{trade_item} is ordered. Give me {wait_days} day(s) to prepare it properly."
+        "Your Special Order for {trade_item} is set. Come back after {wait_days} {wait_day_word}, then give me {cooldown_days} {cooldown_day_word} before another order.",
+        "I have marked the Special Order for {trade_item}. It will be ready after {wait_days} {wait_day_word}, with {cooldown_days} {cooldown_day_word} of recovery after fulfillment.",
+        "{trade_item} is ordered. Give me {wait_days} {wait_day_word} to prepare it properly, then {cooldown_days} {cooldown_day_word} before the next request."
       ]
     },
     {
       "key": "trade_refresh.special_order_queued_first",
       "lines": [
-        "Your first Special Order is on the ledger: {trade_item}. Give me {wait_days} day(s).",
-        "I have room for that. {trade_item} will be ready after {wait_days} day(s).",
-        "{trade_item} is marked as your first active order. I will prepare it properly."
+        "Your first Special Order is on the ledger: {trade_item}. Give me {wait_days} {wait_day_word}, then {cooldown_days} {cooldown_day_word} before another order.",
+        "I have room for that. {trade_item} will be ready after {wait_days} {wait_day_word}, with {cooldown_days} {cooldown_day_word} of recovery after fulfillment.",
+        "{trade_item} is marked as your first active order. I will prepare it in {wait_days} {wait_day_word}, then need {cooldown_days} {cooldown_day_word} before another."
       ]
     },
     {
       "key": "trade_refresh.special_order_queued_second",
       "lines": [
-        "That makes two active Special Orders. I will add {trade_item} to the list.",
-        "I can manage a second request. {trade_item} will take {wait_days} day(s).",
-        "{trade_item} is now your second open order. I still have one more slot after this."
+        "That makes two active Special Orders. I will add {trade_item} to the list for {wait_days} {wait_day_word} from now.",
+        "I can manage a second request. {trade_item} will take {wait_days} {wait_day_word}, then {cooldown_days} {cooldown_day_word} before another order.",
+        "{trade_item} is now your second open order. I still have one more slot after this, and a {cooldown_days} {cooldown_day_word} cooldown after fulfillment."
       ]
     },
     {
       "key": "trade_refresh.special_order_queued_third",
       "lines": [
-        "{trade_item} is accepted, but that fills your third Special Order slot.",
-        "I will take this third request for {trade_item}. Let me finish one before you add more.",
-        "Three orders is my limit. {trade_item} is on the ledger, and the queue is full."
+        "{trade_item} is accepted, but that fills your third Special Order slot. It will take {wait_days} {wait_day_word}.",
+        "I will take this third request for {trade_item}. Let me finish one before you add more, then wait {cooldown_days} {cooldown_day_word}.",
+        "Three orders is my limit. {trade_item} is on the ledger, and the queue is full until something is ready."
       ]
     },
     {
@@ -2497,17 +2497,17 @@
     {
       "key": "trade_refresh.special_order_limit_reached",
       "lines": [
-        "I already have {active_orders} Special Orders open for you. Three is all I can manage at once.",
-        "Your ledger is full at {active_orders} request(s). Let me finish one before adding another.",
-        "No more than {max_orders} Special Orders at a time. Come back when one is ready."
+        "I already have {active_orders} active {active_order_word} for you. {max_orders} {max_order_word} {max_order_count_word} all I can manage at once.",
+        "Your ledger is full at {active_orders} {active_order_word}. Let me finish one before adding another.",
+        "No more than {max_orders} Special {max_order_word} at a time. Come back when one is ready."
       ]
     },
     {
       "key": "trade_refresh.special_order_cooldown",
       "lines": [
-        "I need {cooldown_days} more day(s) before taking another Special Order from you.",
-        "Ask again after {cooldown_days} day(s). Specific stock takes recovery time.",
-        "Not yet. I need {cooldown_days} day(s) before another Special Order."
+        "I need {cooldown_days} more {cooldown_day_word} before taking another Special Order from you.",
+        "Ask me again after {cooldown_days} {cooldown_day_word}. Specific stock takes recovery time.",
+        "Not yet. I need {cooldown_days} {cooldown_day_word} before another Special Order from you."
       ]
     },
     {

@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -20,6 +21,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.item.trading.MerchantOffers;
@@ -67,12 +69,41 @@ public final class VillagerSpecialOrderService {
         ResourceLocation professionId = VillagerProfessionUtil.id(villager.getVillagerData().getProfession());
         int villagerLevel = villager.getVillagerData().getLevel();
         VillagerReputationLevel playerLevel = VillagerReputationManager.getReputationLevel(level, villager, player.getUUID());
-        List<SpecialOrderOption> options = new ArrayList<>();
+        List<SkillTradeDefinition> eligibleDefinitions = new ArrayList<>();
         for (SkillTradeDefinition definition : SkillTradeResources.definitions(level.getServer())) {
             if (!isEligibleDefinition(level, villager, definition, professionId, villagerLevel, playerLevel)) {
                 continue;
             }
-            options.add(SpecialOrderOption.create(definition, effectiveWaitDays(definition), effectiveCooldownDays(definition)));
+            eligibleDefinitions.add(definition);
+        }
+
+        List<SkillTradeDefinition> uniqueDefinitions = new ArrayList<>();
+        Map<Item, SkillTradeDefinition> bestDefinitionsByItem = new LinkedHashMap<>();
+        Map<Item, Integer> bestCountsByItem = new HashMap<>();
+        for (SkillTradeDefinition definition : eligibleDefinitions) {
+            if (definition.result().items().isEmpty()) {
+                uniqueDefinitions.add(definition);
+                continue;
+            }
+
+            Item item = definition.result().items().getFirst();
+            int count = tradeResultCount(level, villager, definition);
+            int previousCount = bestCountsByItem.getOrDefault(item, -1);
+            if (count > previousCount) {
+                bestDefinitionsByItem.put(item, definition);
+                bestCountsByItem.put(item, count);
+            }
+        }
+        uniqueDefinitions.addAll(bestDefinitionsByItem.values());
+
+        List<SpecialOrderOption> options = new ArrayList<>();
+        for (SkillTradeDefinition definition : uniqueDefinitions) {
+            options.add(SpecialOrderOption.create(
+                    level,
+                    villager,
+                    definition,
+                    effectiveWaitDays(definition),
+                    effectiveCooldownDays(definition)));
         }
         options.sort(Comparator
                 .comparingInt((SpecialOrderOption option) -> option.definition().request().displayPriority())
@@ -127,8 +158,10 @@ public final class VillagerSpecialOrderService {
         pruneCooldowns(villager, currentDay);
         long cooldownEndDay = cooldownEndDay(villager, player.getUUID());
         if (cooldownEndDay > currentDay) {
+            long cooldownDays = cooldownEndDay - currentDay;
             return QueueResult.failed("trade_refresh.special_order_cooldown", Map.of(
-                    "cooldown_days", Long.toString(cooldownEndDay - currentDay)));
+                    "cooldown_days", Long.toString(cooldownDays),
+                    "cooldown_day_word", pluralWord(cooldownDays, "day", "days")));
         }
 
         SpecialOrderOption option = availableOptions(level, villager, player, offerIndex)
@@ -307,7 +340,7 @@ public final class VillagerSpecialOrderService {
             String tradeItem = definitionId == null
                     ? order.getString(TRADE_DEFINITION_KEY)
                     : SkillTradeResources.definition(level.getServer(), definitionId)
-                            .map(VillagerSpecialOrderService::tradeItemName)
+                            .map(definition -> tradeItemName(level, villager, definition))
                             .orElse(definitionId.toString());
             long daysRemaining = Math.max(0L, order.getLong(READY_DAY_KEY) - currentDay);
             int offerIndex = order.getInt(OFFER_INDEX_KEY);
@@ -369,6 +402,9 @@ public final class VillagerSpecialOrderService {
     private static QueueResult activeOrderLimitReached(int activeOrders, int maxActiveOrders) {
         return QueueResult.failed("trade_refresh.special_order_limit_reached", Map.of(
                 "active_orders", Integer.toString(activeOrders),
+                "active_order_word", pluralWord(activeOrders, "request", "requests"),
+                "max_order_count_word", pluralWord(maxActiveOrders, "is", "are"),
+                "max_order_word", pluralWord(maxActiveOrders, "order", "orders"),
                 "max_orders", Integer.toString(maxActiveOrders)));
     }
 
@@ -399,8 +435,14 @@ public final class VillagerSpecialOrderService {
                 "trade_item", option.tradeItem(),
                 "trade_definition", option.definition().id().toString(),
                 "wait_days", Integer.toString(option.waitDays()),
+                "wait_day_word", pluralWord(option.waitDays(), "day", "days"),
                 "cooldown_days", Integer.toString(option.cooldownDays()),
+                "cooldown_day_word", pluralWord(option.cooldownDays(), "day", "days"),
                 "extra_cost", costDescription(cost));
+    }
+
+    public static String pluralWord(long count, String singular, String plural) {
+        return count == 1L ? singular : plural;
     }
 
     private static String queuedMessageKey(int activeOrders) {
@@ -412,17 +454,11 @@ public final class VillagerSpecialOrderService {
         };
     }
 
-    private static String optionLabel(SkillTradeDefinition definition, String tradeItem, int waitDays, int cooldownDays) {
+    private static String optionLabel(SkillTradeDefinition definition, String tradeItem) {
         SpecialOrderCost cost = effectiveCost(definition);
-        StringBuilder label = new StringBuilder(tradeItem)
-                .append(" - ")
-                .append(waitDays)
-                .append(waitDays == 1 ? " day" : " days");
-        if (cooldownDays > 0) {
-            label.append(", ").append(cooldownDays).append(cooldownDays == 1 ? " day cooldown" : " day cooldown");
-        }
+        StringBuilder label = new StringBuilder(tradeItem);
         if (!cost.isEmpty()) {
-            label.append(", ").append(costDescription(cost));
+            label.append(" - ").append(costDescription(cost));
         }
         return label.toString();
     }
@@ -438,12 +474,20 @@ public final class VillagerSpecialOrderService {
         return daysRemaining == 1L ? "1 more day" : daysRemaining + " more days";
     }
 
-    private static String tradeItemName(SkillTradeDefinition definition) {
+    private static String tradeItemName(ServerLevel level, Villager villager, SkillTradeDefinition definition) {
         if (definition.result().items().isEmpty()) {
             return definition.id().toString();
         }
-        ItemStack stack = new ItemStack(definition.result().items().getFirst(), definition.result().count());
-        return stack.getHoverName().getString();
+        int count = tradeResultCount(level, villager, definition);
+        ItemStack stack = new ItemStack(definition.result().items().getFirst(), count);
+        String name = stack.getHoverName().getString();
+        return count > 1 ? count + "x " + name : name;
+    }
+
+    private static int tradeResultCount(ServerLevel level, Villager villager, SkillTradeDefinition definition) {
+        int skillValue = SkillTradeOfferFactory.bestSkillValue(level, villager, definition);
+        SkillTradeScalingContext context = new SkillTradeScalingContext(definition, skillValue);
+        return SkillTradeQualityScaler.resultCount(context, definition.result().count());
     }
 
     private static String costDescription(SpecialOrderCost cost) {
@@ -579,11 +623,16 @@ public final class VillagerSpecialOrderService {
             String tradeItem,
             int waitDays,
             int cooldownDays) {
-        private static SpecialOrderOption create(SkillTradeDefinition definition, int waitDays, int cooldownDays) {
-            String tradeItem = tradeItemName(definition);
+        private static SpecialOrderOption create(
+                ServerLevel level,
+                Villager villager,
+                SkillTradeDefinition definition,
+                int waitDays,
+                int cooldownDays) {
+            String tradeItem = tradeItemName(level, villager, definition);
             return new SpecialOrderOption(
                     definition,
-                    optionLabel(definition, tradeItem, waitDays, cooldownDays),
+                    optionLabel(definition, tradeItem),
                     tradeItem,
                     waitDays,
                     cooldownDays);

@@ -22,6 +22,12 @@
 - Social Attributes now lightly affect mood transitions, reputation recovery, retaliation decisions, and gossip spread when the matching config toggles are enabled.
 - The datapack builder Convert flow can retarget beta.11 packs to beta.12 without renaming or removing existing beta.11 JSON fields.
 - Trade refresh replacement selection compares full result stacks instead of only item types, so variants such as different enchanted books can appear while exact duplicate refreshed trades are still avoided when possible.
+- Special Order selection rows now show concise trade names while wait and cooldown details are delivered through the data-driven confirmation and queued dialogue lines.
+- Special Order selection rows now include result counts when greater than one, distinguishing entries such as Empty Map from 2x Empty Map.
+- Special Order selection rows now collapse requestable definitions with the same result item by keeping the higher-count result, such as preferring 2x Empty Map over Empty Map.
+- Special Order confirmation, queued, cooldown, and limit dialogue now receives singular/plural placeholders so built-in lines say `day`/`days` and `request`/`requests` naturally.
+- Clicking `Place Special Order` now plays a randomized data-driven follow-up response before the queued-order dialogue opens.
+- Regular completed trades now add `0.5` primary profession skill progress by default instead of `0.1`, giving one visible skill point every two trades.
 - Special Orders now treat `min_rank` as the skill unlock and ignore `max_rank`, letting high-skill villagers fulfill earlier catalog requests and duplicate items they already stock.
 
 ### Fixed
