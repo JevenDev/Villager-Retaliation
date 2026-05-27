@@ -73,9 +73,11 @@ public final class ForcedDialogueService {
     private static final String TRADE_REFRESH_REVERED_OPTIONS_ID = "trade_refresh.revered_options";
     private static final String TRADE_REFRESH_SPECIAL_ORDER_SELECT_OPTIONS_ID = "trade_refresh.special_order_select_options";
     private static final String TRADE_REFRESH_SPECIAL_ORDER_CONFIRM_OPTIONS_ID = "trade_refresh.special_order_confirm_options";
+    private static final String TRADE_REFRESH_SPECIAL_ORDER_STATUS_OPTIONS_ID = "trade_refresh.special_order_status_options";
     private static final String TRADE_REFRESH_SURPRISE_OPTION_ID = "trade_refresh.surprise_me";
     private static final String TRADE_REFRESH_SPECIAL_ORDER_OPTION_ID = "trade_refresh.special_order";
     private static final String TRADE_REFRESH_CONFIRM_SPECIAL_ORDER_OPTION_ID = "trade_refresh.confirm_special_order";
+    public static final String SPECIAL_ORDER_STATUS_ROOT_OPTION_ID = "trade_refresh.special_order.status";
     private static final long RECENT_CONTAINER_CLICK_TICKS = 8L;
     private static final long FORCED_SESSION_TIMEOUT_TICKS = 20L * 60L;
     private static final long PLAYER_ITEM_PROXIMITY_SCAN_INTERVAL_TICKS = 80L;
@@ -355,6 +357,58 @@ public final class ForcedDialogueService {
         }
     }
 
+    public static boolean hasActiveSpecialOrders(ServerLevel level, Villager villager, ServerPlayer player) {
+        return !VillagerSpecialOrderService.activeOrderStatuses(level, villager, player.getUUID()).isEmpty();
+    }
+
+    public static boolean openSpecialOrderStatusDialogue(ServerPlayer player, Villager villager) {
+        ServerLevel level = player.serverLevel();
+        List<VillagerSpecialOrderService.ActiveOrderStatus> activeOrders =
+                VillagerSpecialOrderService.activeOrderStatuses(level, villager, player.getUUID());
+        if (activeOrders.isEmpty()) {
+            VillagerInteractionService.sendVillagerNotice(player, villager, "trade_refresh.special_order_status_empty");
+            return true;
+        }
+        Optional<ForcedDialogueDefinition> optionDefinition = tradeRefreshOptionDefinitionById(
+                level,
+                villager,
+                player,
+                TRADE_REFRESH_SPECIAL_ORDER_STATUS_OPTIONS_ID);
+        if (optionDefinition.isEmpty()) {
+            String fallback = tradeRefreshLine(level, villager, player, "trade_refresh.special_order_status_select", Map.of());
+            VillagerInteractionService.sendVillagerNotice(player, villager, fallback);
+            return true;
+        }
+
+        ForcedDialogueDefinition definition = specialOrderStatusDefinition(
+                level,
+                villager,
+                player,
+                "trade_refresh.special_order_status_select",
+                Map.of(),
+                optionDefinition.get(),
+                activeOrders);
+        ForcedDialogueContext context = tradeRefreshContext(level, villager, player, Map.of());
+        if (VillagerInteractionService.openForcedDialogue(
+                player,
+                villager,
+                definition.selectLine(level.getRandom()),
+                forcedOptions(definition, level, villager, player),
+                true)) {
+            FORCED_SESSIONS.put(player.getUUID(), new ForcedDialogueSession(
+                    villager.getUUID(),
+                    definition,
+                    context,
+                    level.dimension(),
+                    villager.blockPosition().immutable(),
+                    List.of(),
+                    level.getGameTime(),
+                    -1,
+                    ""));
+        }
+        return true;
+    }
+
     public static boolean handleLeaveRequest(ServerPlayer player, Villager villager, boolean forceEndConversation) {
         ForcedDialogueSession session = FORCED_SESSIONS.get(player.getUUID());
         if (!VillagerRetaliationConfig.ENABLE_FORCED_DIALOGUE.get()
@@ -458,6 +512,11 @@ public final class ForcedDialogueService {
         }
         if (isTradeRefreshSpecialOrderOption(session, option)) {
             openSpecialOrderSelectionDialogue(player, villager, session);
+            return true;
+        }
+        Optional<Integer> selectedSpecialOrderStatus = VillagerSpecialOrderService.selectedStatusOfferIndex(option.id());
+        if (selectedSpecialOrderStatus.isPresent() && isTradeRefreshDefinition(session)) {
+            openSpecialOrderStatusResponseDialogue(player, villager, selectedSpecialOrderStatus.get());
             return true;
         }
         Optional<ResourceLocation> selectedSpecialOrder = VillagerSpecialOrderService.selectedDefinitionId(option.id());
@@ -676,6 +735,69 @@ public final class ForcedDialogueService {
         updateTradeRefreshSession(player, villager, definition, context, session.tradeRefreshOfferIndex(), definitionId.toString());
     }
 
+    private static void openSpecialOrderStatusResponseDialogue(
+            ServerPlayer player,
+            Villager villager,
+            int offerIndex) {
+        ServerLevel level = player.serverLevel();
+        Optional<VillagerSpecialOrderService.ActiveOrderStatus> selectedStatus =
+                VillagerSpecialOrderService.activeOrderStatus(level, villager, player.getUUID(), offerIndex);
+        if (selectedStatus.isEmpty()) {
+            FORCED_SESSIONS.remove(player.getUUID());
+            VillagerConversationService.endForPlayer(player, true);
+            openTradeRefreshDialogue(level, villager, player, "trade_refresh.special_order_status_empty", Map.of());
+            return;
+        }
+
+        List<VillagerSpecialOrderService.ActiveOrderStatus> activeOrders =
+                VillagerSpecialOrderService.activeOrderStatuses(level, villager, player.getUUID());
+        Optional<ForcedDialogueDefinition> optionDefinition = tradeRefreshOptionDefinitionById(
+                level,
+                villager,
+                player,
+                TRADE_REFRESH_SPECIAL_ORDER_STATUS_OPTIONS_ID);
+        if (optionDefinition.isEmpty()) {
+            openTradeRefreshDialogue(level, villager, player, "trade_refresh.special_order_status", selectedStatus.get().replacements());
+            return;
+        }
+        ForcedDialogueDefinition definition = specialOrderStatusDefinition(
+                level,
+                villager,
+                player,
+                "trade_refresh.special_order_status",
+                selectedStatus.get().replacements(),
+                optionDefinition.get(),
+                activeOrders);
+        ForcedDialogueContext context = tradeRefreshContext(level, villager, player, selectedStatus.get().replacements());
+        updateTradeRefreshSession(player, villager, definition, context, -1, "");
+    }
+
+    private static ForcedDialogueDefinition specialOrderStatusDefinition(
+            ServerLevel level,
+            Villager villager,
+            ServerPlayer player,
+            String messageKey,
+            Map<String, String> replacements,
+            ForcedDialogueDefinition optionDefinition,
+            List<VillagerSpecialOrderService.ActiveOrderStatus> activeOrders) {
+        List<ForcedDialogueOption> options = new ArrayList<>();
+        int order = 0;
+        for (VillagerSpecialOrderService.ActiveOrderStatus activeOrder : activeOrders) {
+            options.add(dynamicTradeRefreshOption(
+                    VillagerSpecialOrderService.statusOptionId(activeOrder.offerIndex()),
+                    activeOrder.label(),
+                    order++));
+        }
+        options.addAll(optionDefinition.options());
+        String line = tradeRefreshLine(level, villager, player, messageKey, replacements);
+        return tradeRefreshDefinition(
+                line,
+                optionDefinition,
+                List.copyOf(options),
+                optionDefinition.leaveOption(),
+                optionDefinition.leaveOptions());
+    }
+
     private static ForcedDialogueOption dynamicTradeRefreshOption(String id, String label, int order) {
         return new ForcedDialogueOption(
                 id,
@@ -731,7 +853,8 @@ public final class ForcedDialogueService {
                 || "trade_refresh.special_order_pending".equals(messageKey)
                 || "trade_refresh.special_order_limit_reached".equals(messageKey)
                 || "trade_refresh.special_order_cooldown".equals(messageKey)
-                || "trade_refresh.special_order_payment_missing".equals(messageKey);
+                || "trade_refresh.special_order_payment_missing".equals(messageKey)
+                || "trade_refresh.special_order_status_empty".equals(messageKey);
     }
 
     private static ForcedDialogueContext tradeRefreshContext(

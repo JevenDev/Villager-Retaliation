@@ -2510,6 +2510,35 @@
       ]
     },
     {
+      "key": "trade_refresh.special_order_status_select",
+      "lines": [
+        "Which Special Order do you want to check?",
+        "I have your orders here. Which one?",
+        "The ledger is open. Point to the order you mean."
+      ]
+    },
+    {
+      "key": "trade_refresh.special_order_status",
+      "lines": [
+        "{trade_item} should be stocked in {time_remaining}.",
+        "For {trade_item}, I need {time_remaining} before it is ready.",
+        "That order is still moving. {trade_item} has {time_remaining} left.",
+        "{trade_item} is marked for slot {offer_slot}. Give it {time_remaining}.",
+        "I have not forgotten {trade_item}. It needs {time_remaining}.",
+        "The {trade_item} order is on schedule: {time_remaining}.",
+        "For that {trade_item} request, expect {time_remaining} before I can stock it.",
+        "{trade_item} is still being prepared. Check back in {time_remaining}."
+      ]
+    },
+    {
+      "key": "trade_refresh.special_order_status_empty",
+      "lines": [
+        "I do not have any active Special Orders for you right now.",
+        "There is nothing open for you on my order ledger.",
+        "No Special Orders are waiting under your name."
+      ]
+    },
+    {
       "key": "interaction.inventory_unavailable",
       "lines": [
         "I cannot show you that right now.",

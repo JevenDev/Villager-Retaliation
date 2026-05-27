@@ -1063,6 +1063,23 @@
           ]
         }
       ]
+    },
+    {
+      "id": "trade_refresh.special_order_status_options",
+      "trigger": "trade_refresh",
+      "line": "Special order status option set.",
+      "force_camera_towards_villager": true,
+      "requires_line_of_sight": false,
+      "leave_option": {
+        "label": "That's all.",
+        "order": 500,
+        "end_conversation": true,
+        "responses": [
+          "Then I will get back to the ledger.",
+          "Good. I will keep the orders moving.",
+          "Come back when you need the count again."
+        ]
+      }
     }
   ]
 }

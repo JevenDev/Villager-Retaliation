@@ -149,7 +149,11 @@ public final class VillagerInteractionService {
         );
         DialogueDisposition mood = VillagerDialogueService.moodFor(dialogueContext);
         String greetingText = VillagerDialogueService.selectOpeningGreeting(dialogueContext);
-        List<DialogueOptionDefinition> dialogueOptions = VillagerDialogueResources.dialogueOptions(dialogueContext, mood);
+        List<DialogueOptionDefinition> dialogueOptions = withSpecialOrderStatusOption(
+                level,
+                villager,
+                player,
+                VillagerDialogueResources.dialogueOptions(dialogueContext, mood));
         VillagerGiftKnowledgeService.GiftKnowledgeSnapshot giftKnowledge =
                 VillagerGiftKnowledgeService.knownGifts(level, player, villager.getVillagerData().getProfession());
         VillagerReputationNetworking.sendProfile(player, villager, profile);
@@ -262,6 +266,10 @@ public final class VillagerInteractionService {
         if (ForcedDialogueService.handleDialogueRequest(player, villager, optionId)) {
             return;
         }
+        if (ForcedDialogueService.SPECIAL_ORDER_STATUS_ROOT_OPTION_ID.equals(optionId)) {
+            ForcedDialogueService.openSpecialOrderStatusDialogue(player, villager);
+            return;
+        }
         if (VillagerConversationService.isForced(player, villager) && !ForcedDialogueService.hasSession(player, villager)) {
             VillagerConversationService.endForPlayer(player, true);
             return;
@@ -349,6 +357,26 @@ public final class VillagerInteractionService {
         focusVillagerOnPlayer(villager, player);
         VillagerConversationService.endForPlayer(player, true);
         openTrading(player, villager, true);
+    }
+
+    private static List<DialogueOptionDefinition> withSpecialOrderStatusOption(
+            ServerLevel level,
+            Villager villager,
+            ServerPlayer player,
+            List<DialogueOptionDefinition> dialogueOptions) {
+        if (!ForcedDialogueService.hasActiveSpecialOrders(level, villager, player)) {
+            return dialogueOptions;
+        }
+        List<DialogueOptionDefinition> options = new java.util.ArrayList<>(dialogueOptions);
+        options.add(DialogueOptionDefinition.simple(
+                ForcedDialogueService.SPECIAL_ORDER_STATUS_ROOT_OPTION_ID,
+                "Ask about orders.",
+                DialogueRequestType.QUESTION,
+                1));
+        options.sort(java.util.Comparator
+                .comparingInt(DialogueOptionDefinition::order)
+                .thenComparing(DialogueOptionDefinition::id));
+        return List.copyOf(options);
     }
 
     public static void handleTradeRefreshRequest(ServerPlayer player, int entityId, int offerIndex) {

@@ -307,6 +307,8 @@ Never mind.
 
 `trade_refresh.special_order_confirm_options` supplies the final confirmation buttons after the player chooses a target definition.
 
+`trade_refresh.special_order_status_options` supplies the leave wording for the dynamic order-status list. The rows are generated from the player's active Special Orders with that villager.
+
 The trade option must use this id if it should return to the merchant screen:
 
 ```text
@@ -322,10 +324,11 @@ trade_refresh.requirements
 trade_refresh.surprise_me
 trade_refresh.special_order
 trade_refresh.confirm_special_order
+trade_refresh.special_order.status
 leave
 ```
 
-To replace the built-in wording, add a forced-dialogue file with entries using the same ids. The trade-refresh service keeps the actual opening line from the selected dialogue message and copies the options from the matching forced-dialogue entry. Special Order opening, unavailable, queued, active-limit, cooldown, payment, selection, and confirmation lines remain normal dialogue message keys under `data/villagerretaliation/dialogue/<locale>/`.
+To replace the built-in wording, add a forced-dialogue file with entries using the same ids. The trade-refresh service keeps the actual opening line from the selected dialogue message and copies the options from the matching forced-dialogue entry. Special Order opening, unavailable, queued, active-limit, cooldown, payment, selection, confirmation, and order-status lines remain normal dialogue message keys under `data/villagerretaliation/dialogue/<locale>/`.
 
 ```json
 {

@@ -422,6 +422,8 @@ Players request a skill-trade definition id, not an arbitrary item id. Eligibili
 
 The default balance is a 2 Minecraft day wait and a 3 Minecraft day cooldown. Entry metadata can override both. Cooldown starts when an order is fulfilled, so a trusted player can queue multiple active requests up to the active-order cap, then must wait before adding more after completed work. Extra request costs are supported by metadata and are only consumed when `specialOrderExtraCostEnabled` is true and the request passes validation. Payment is taken when the request is accepted, not when the order completes.
 
+When a player has active Special Orders with a villager, the normal Talk menu adds `Ask about orders.` above the general question option. This opens a dynamic list of that player's active requests for that villager. Selecting a request gives a localized stock-time response using `trade_refresh.special_order_status` with `{trade_item}`, `{offer_slot}`, `{days_remaining}`, and `{time_remaining}` replacements.
+
 ```json
 "request": {
   "targetable": true,

@@ -28,6 +28,7 @@ import org.jetbrains.annotations.Nullable;
 
 public final class VillagerSpecialOrderService {
     public static final String SELECT_OPTION_PREFIX = "trade_refresh.special_order.select.";
+    public static final String STATUS_OPTION_PREFIX = "trade_refresh.special_order.status.";
 
     private static final String ORDERS_KEY = "VillagerRetaliationSpecialOrders";
     private static final String COOLDOWNS_KEY = "VillagerRetaliationSpecialOrderCooldowns";
@@ -91,6 +92,21 @@ public final class VillagerSpecialOrderService {
 
     public static String selectionOptionId(ResourceLocation definitionId) {
         return SELECT_OPTION_PREFIX + definitionId;
+    }
+
+    public static Optional<Integer> selectedStatusOfferIndex(String optionId) {
+        if (optionId == null || !optionId.startsWith(STATUS_OPTION_PREFIX)) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(Integer.parseInt(optionId.substring(STATUS_OPTION_PREFIX.length())));
+        } catch (NumberFormatException ignored) {
+            return Optional.empty();
+        }
+    }
+
+    public static String statusOptionId(int offerIndex) {
+        return STATUS_OPTION_PREFIX + offerIndex;
     }
 
     public static QueueResult queue(
@@ -275,6 +291,51 @@ public final class VillagerSpecialOrderService {
         return count;
     }
 
+    public static List<ActiveOrderStatus> activeOrderStatuses(ServerLevel level, Villager villager, UUID playerId) {
+        CompoundTag persistentData = villager.getPersistentData();
+        if (!persistentData.contains(ORDERS_KEY, Tag.TAG_LIST)) {
+            return List.of();
+        }
+
+        long currentDay = currentDay(level);
+        ListTag orders = persistentData.getList(ORDERS_KEY, Tag.TAG_COMPOUND);
+        List<ActiveOrderStatus> statuses = new ArrayList<>(orders.size());
+        for (int i = 0; i < orders.size(); i++) {
+            CompoundTag order = orders.getCompound(i);
+            if (!order.hasUUID(PLAYER_KEY)
+                    || !order.getUUID(PLAYER_KEY).equals(playerId)
+                    || !isActiveStatus(order.getString(STATUS_KEY))) {
+                continue;
+            }
+            ResourceLocation definitionId = ResourceLocation.tryParse(order.getString(TRADE_DEFINITION_KEY));
+            String tradeItem = definitionId == null
+                    ? order.getString(TRADE_DEFINITION_KEY)
+                    : SkillTradeResources.definition(level.getServer(), definitionId)
+                            .map(VillagerSpecialOrderService::tradeItemName)
+                            .orElse(definitionId.toString());
+            long daysRemaining = Math.max(0L, order.getLong(READY_DAY_KEY) - currentDay);
+            int offerIndex = order.getInt(OFFER_INDEX_KEY);
+            statuses.add(new ActiveOrderStatus(
+                    offerIndex,
+                    definitionId,
+                    tradeItem,
+                    daysRemaining,
+                    timeRemainingDescription(daysRemaining),
+                    orderLabel(offerIndex, tradeItem, daysRemaining)));
+        }
+        statuses.sort(Comparator
+                .comparingLong(ActiveOrderStatus::daysRemaining)
+                .thenComparingInt(ActiveOrderStatus::offerIndex)
+                .thenComparing(ActiveOrderStatus::tradeItem, String.CASE_INSENSITIVE_ORDER));
+        return List.copyOf(statuses);
+    }
+
+    public static Optional<ActiveOrderStatus> activeOrderStatus(ServerLevel level, Villager villager, UUID playerId, int offerIndex) {
+        return activeOrderStatuses(level, villager, playerId).stream()
+                .filter(status -> status.offerIndex() == offerIndex)
+                .findFirst();
+    }
+
     public static boolean isOnCooldown(ServerLevel level, Villager villager, UUID playerId) {
         pruneCooldowns(villager, currentDay(level));
         return cooldownEndDay(villager, playerId) > currentDay(level);
@@ -359,6 +420,17 @@ public final class VillagerSpecialOrderService {
             label.append(", ").append(costDescription(cost));
         }
         return label.toString();
+    }
+
+    private static String orderLabel(int offerIndex, String tradeItem, long daysRemaining) {
+        return "Slot " + (offerIndex + 1) + ": " + tradeItem + " - " + timeRemainingDescription(daysRemaining);
+    }
+
+    private static String timeRemainingDescription(long daysRemaining) {
+        if (daysRemaining <= 0L) {
+            return "ready now";
+        }
+        return daysRemaining == 1L ? "1 more day" : daysRemaining + " more days";
     }
 
     private static String tradeItemName(SkillTradeDefinition definition) {
@@ -525,6 +597,23 @@ public final class VillagerSpecialOrderService {
                     tradeItem,
                     waitDays,
                     cooldownDays);
+        }
+    }
+
+    public record ActiveOrderStatus(
+            int offerIndex,
+            @Nullable ResourceLocation definitionId,
+            String tradeItem,
+            long daysRemaining,
+            String timeRemaining,
+            String label) {
+        public Map<String, String> replacements() {
+            return Map.of(
+                    "trade_item", this.tradeItem,
+                    "trade_definition", this.definitionId == null ? "" : this.definitionId.toString(),
+                    "offer_slot", Integer.toString(this.offerIndex + 1),
+                    "days_remaining", Long.toString(this.daysRemaining),
+                    "time_remaining", this.timeRemaining);
         }
     }
 
