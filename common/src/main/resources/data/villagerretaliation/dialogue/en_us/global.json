@@ -2703,6 +2703,39 @@
       ]
     },
     {
+      "key": "trade_refresh.ready_interjection",
+      "lines": [
+        "Sorry to butt in, {interrupted_villager}, but {player}, I finished that request you wanted.",
+        "Oh, nice. I actually have a new trade ready for you too.",
+        "Before you go, {player}, I also have {restocked_summary} ready for you.",
+        "Quick thing, {player}. I finished restocking {restocked_summary} too.",
+        "I do not mean to interrupt, {interrupted_villager}, but {player}, your request is ready at my counter.",
+        "Since we are talking orders, {player}, I have {restocked_summary} ready as well."
+      ]
+    },
+    {
+      "key": "trade_refresh.ready_theft_interjection",
+      "lines": [
+        "Whoa... bad time? I just wanted to let you know those trades you asked for are ready.",
+        "This seems like a bad moment, but {player}, I finished that request you wanted.",
+        "I do not want to step into whatever this is, but I have {restocked_summary} ready for you.",
+        "Awkward timing. Your requested stock is ready at my counter.",
+        "I will be quick: {restocked_summary} is ready when this is settled."
+      ]
+    },
+    {
+      "key": "container_theft.backup_interjection",
+      "lines": [
+        "Yeah, {previous_villager} is right. I saw you take {stolen_item_reference} too.",
+        "I saw {stolen_item_pronoun} too, {player}. {stolen_count} {stolen_count_word} came from {stolen_container}.",
+        "{previous_villager} is not the only one who noticed. Put {stolen_stack} back.",
+        "I was there too. Do not pretend {stolen_items} walked out on their own.",
+        "Back them up? Gladly. I saw you take {stolen_stack}.",
+        "I have seen this {witnessed_container_thefts} {container_theft_time_word} now. Put {stolen_item_pronoun} back.",
+        "You were caught {container_theft_again_phrase}, and this time I saw {stolen_count} {stolen_count_word} leave {stolen_container}."
+      ]
+    },
+    {
       "key": "trade_refresh.special_order_select",
       "lines": [
         "These are the Special Orders I can realistically arrange right now.",
