@@ -969,8 +969,13 @@ public final class VillagerInteractionService {
             return InteractionResult.FAIL;
         }
         if (villager.level() instanceof ServerLevel level) {
-            VillagerTradeRefreshService.applyReadyRefreshes(level, villager, player);
+            VillagerTradeRefreshService.ReadyRefreshResult readyRefreshes =
+                    VillagerTradeRefreshService.applyReadyRefreshesDetailed(level, villager, player);
             VillagerTradeRefreshService.sendState(player, villager);
+            if (readyRefreshes.hasPlayerReadyTrades()) {
+                ForcedDialogueService.openTradeRefreshReadyDialogue(level, villager, player, readyRefreshes);
+                return InteractionResult.CONSUME;
+            }
         }
         if (villager.getOffers().isEmpty()) {
             villager.setUnhappyCounter(40);

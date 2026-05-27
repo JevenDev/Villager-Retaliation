@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -210,13 +211,23 @@ public final class VillagerTradeRefreshService {
     }
 
     public static boolean applyReadyRefreshes(ServerLevel level, Villager villager, @Nullable ServerPlayer player) {
-        boolean changed = VillagerSpecialOrderService.applyReadyOrders(level, villager, player);
+        return applyReadyRefreshesDetailed(level, villager, player).changed();
+    }
+
+    public static ReadyRefreshResult applyReadyRefreshesDetailed(
+            ServerLevel level,
+            Villager villager,
+            @Nullable ServerPlayer player) {
+        VillagerSpecialOrderService.ApplyReadyOrdersResult specialOrderResult =
+                VillagerSpecialOrderService.applyReadyOrdersDetailed(level, villager, player);
+        boolean changed = specialOrderResult.changed();
+        List<String> playerReadyTradeItems = new ArrayList<>(specialOrderResult.playerReadyTradeItems());
         CompoundTag persistentData = villager.getPersistentData();
         if (!persistentData.contains(PENDING_REFRESHES_KEY, Tag.TAG_LIST)) {
             if (changed && player != null) {
                 VillagerReputationTradePricing.refreshPricesForPlayer(level, villager, player);
             }
-            return changed;
+            return new ReadyRefreshResult(changed, List.copyOf(playerReadyTradeItems));
         }
 
         MerchantOffers offers = villager.getOffers();
@@ -248,6 +259,12 @@ public final class VillagerTradeRefreshService {
             }
 
             offers.set(offerIndex, replacement);
+            if (player != null
+                    && entry.hasUUID(PLAYER_KEY)
+                    && entry.getUUID(PLAYER_KEY).equals(player.getUUID())) {
+                String tradeItem = entry.getString(TRADE_ITEM_KEY);
+                playerReadyTradeItems.add(tradeItem.isBlank() ? replacement.getResult().getHoverName().getString() : tradeItem);
+            }
             changed = true;
         }
 
@@ -259,7 +276,7 @@ public final class VillagerTradeRefreshService {
         if (changed && player != null) {
             VillagerReputationTradePricing.refreshPricesForPlayer(level, villager, player);
         }
-        return changed;
+        return new ReadyRefreshResult(changed, List.copyOf(playerReadyTradeItems));
     }
 
     public static void sendState(ServerPlayer player, Villager villager) {
@@ -387,5 +404,39 @@ public final class VillagerTradeRefreshService {
 
     private static long currentDay(ServerLevel level) {
         return Math.floorDiv(level.getDayTime(), 24000L);
+    }
+
+    public record ReadyRefreshResult(boolean changed, List<String> playerReadyTradeItems) {
+        public boolean hasPlayerReadyTrades() {
+            return !this.playerReadyTradeItems.isEmpty();
+        }
+
+        public Map<String, String> replacements() {
+            int tradeCount = this.playerReadyTradeItems.size();
+            String tradeItems = naturalJoin(this.playerReadyTradeItems);
+            String restockedSummary = tradeCount == 1
+                    ? tradeItems
+                    : "the " + tradeCount + " trades you wanted";
+            return Map.of(
+                    "trade_count", Integer.toString(tradeCount),
+                    "trade_word", tradeCount == 1 ? "trade" : "trades",
+                    "trade_items", tradeItems,
+                    "restocked_summary", restockedSummary);
+        }
+
+        private static String naturalJoin(List<String> values) {
+            if (values.isEmpty()) {
+                return "";
+            }
+            if (values.size() == 1) {
+                return values.getFirst();
+            }
+            if (values.size() == 2) {
+                return values.get(0) + " and " + values.get(1);
+            }
+            return values.subList(0, values.size() - 1).stream().collect(Collectors.joining(", "))
+                    + ", and "
+                    + values.getLast();
+        }
     }
 }

@@ -2431,6 +2431,16 @@
       ]
     },
     {
+      "key": "trade_refresh.ready",
+      "lines": [
+        "Hey, I restocked {restocked_summary} for you.",
+        "I have {restocked_summary} ready for you now.",
+        "I stocked {restocked_summary} and left them waiting on my side of the counter.",
+        "I finished restocking {restocked_summary}. Take a look.",
+        "I have your requested stock ready. I restocked {restocked_summary}."
+      ]
+    },
+    {
       "key": "trade_refresh.special_order_select",
       "lines": [
         "These are the Special Orders I can realistically arrange right now.",

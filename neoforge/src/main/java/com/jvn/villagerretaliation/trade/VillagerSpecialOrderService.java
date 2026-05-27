@@ -202,9 +202,16 @@ public final class VillagerSpecialOrderService {
     }
 
     public static boolean applyReadyOrders(ServerLevel level, Villager villager, @Nullable ServerPlayer player) {
+        return applyReadyOrdersDetailed(level, villager, player).changed();
+    }
+
+    public static ApplyReadyOrdersResult applyReadyOrdersDetailed(
+            ServerLevel level,
+            Villager villager,
+            @Nullable ServerPlayer player) {
         CompoundTag persistentData = villager.getPersistentData();
         if (!persistentData.contains(ORDERS_KEY, Tag.TAG_LIST)) {
-            return false;
+            return new ApplyReadyOrdersResult(false, List.of());
         }
 
         MerchantOffers offers = villager.getOffers();
@@ -213,6 +220,7 @@ public final class VillagerSpecialOrderService {
         Set<Integer> appliedIndexes = new HashSet<>();
         long currentDay = currentDay(level);
         boolean changed = false;
+        List<String> playerReadyTradeItems = new ArrayList<>();
         for (int i = 0; i < orders.size(); i++) {
             CompoundTag order = orders.getCompound(i);
             String status = order.getString(STATUS_KEY);
@@ -250,6 +258,11 @@ public final class VillagerSpecialOrderService {
             }
 
             offers.set(offerIndex, replacement);
+            if (player != null
+                    && order.hasUUID(PLAYER_KEY)
+                    && order.getUUID(PLAYER_KEY).equals(player.getUUID())) {
+                playerReadyTradeItems.add(tradeItemName(level, villager, definition.get()));
+            }
             if (order.hasUUID(PLAYER_KEY)) {
                 setCooldown(villager, order.getUUID(PLAYER_KEY), order.getLong(COOLDOWN_END_DAY_KEY));
             }
@@ -267,7 +280,7 @@ public final class VillagerSpecialOrderService {
         } else {
             persistentData.put(ORDERS_KEY, remaining);
         }
-        return changed;
+        return new ApplyReadyOrdersResult(changed, List.copyOf(playerReadyTradeItems));
     }
 
     public static List<Integer> pendingOfferIndexes(Villager villager) {
@@ -669,6 +682,9 @@ public final class VillagerSpecialOrderService {
                     "days_remaining", Long.toString(this.daysRemaining),
                     "time_remaining", this.timeRemaining);
         }
+    }
+
+    public record ApplyReadyOrdersResult(boolean changed, List<String> playerReadyTradeItems) {
     }
 
     public record QueueResult(boolean queued, String messageKey, Map<String, String> replacements) {
