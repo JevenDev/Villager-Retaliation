@@ -292,7 +292,7 @@ See [Dialogue Requests](Dialogue-Requests.md) for simple and expanded dropdown e
 | `max_reputation` | integer | none | Maximum exact reputation value with this villager. |
 | `weather` | string or array | any | `clear`, `rain`, or `thunder`. |
 | `times` | string or array | any | `morning`, `afternoon`, `evening`, or `night`. |
-| `conditions` | array | none | Beta.12+. Compound condition blocks for line logic. Existing top-level fields still work and are not being removed. |
+| `conditions` | array | none | Beta.12+. Compound condition blocks for line logic. Replaces deprecated flat memory/family/relationship line fields before beta.13. |
 | `event_tags` | string or array | any | Requires a recent nearby event with a matching tag. |
 | `player_event_tags` | string or array | any | Requires a recent event associated with the player. |
 | `requires_container_theft_to_self` | boolean | `false` | Requires recent player container-theft memory witnessed by this villager. |
@@ -365,7 +365,49 @@ Use `text_key` when one rule should resolve text from `messages` instead of carr
 
 ### Compound Line Conditions
 
-`conditions` is an additive path for new normal dialogue line rules. Do not remove existing fields from packs just to use it: legacy fields such as `requires_known_family`, `player_event_tags`, and `requires_container_theft_to_self` remain supported. Use `conditions` when the line needs compound logic that flat fields cannot express clearly, such as "A or B, but not C."
+`conditions` is the preferred path for new normal dialogue line rules. The flat legacy normal-line fields below still work in beta.12, but are deprecated and scheduled for removal in beta.13. Migrate them to `conditions` before targeting beta.13.
+
+Deprecated beta.12 line fields:
+
+```text
+requires_known_family
+requires_known_parent
+requires_known_sibling
+requires_known_spouse
+requires_known_child
+requires_known_grandparent
+requires_known_grandchild
+requires_known_descendant
+requires_known_aunt_uncle
+requires_known_cousin
+requires_known_niece_nephew
+requires_known_extended_family
+requires_known_deceased_family
+requires_known_relationship
+requires_known_current_relationship
+requires_known_past_relationship
+requires_known_crush
+requires_known_dating_partner
+requires_known_fiance
+requires_known_romantic_spouse
+requires_known_separated_partner
+requires_known_widowed_partner
+requires_recent_broken_bed_memory
+requires_recent_direct_hit_memory
+requires_gear_report_used_in_combat
+requires_gear_report_unused_in_combat
+requires_recruitment_memory
+requires_recruitment_boat_trip
+requires_recruitment_ocean_crossing
+requires_recruitment_swim_trip
+excludes_recruitment_ocean_crossing
+requires_container_theft_to_self
+requires_container_theft_from_other
+requires_retaliation_to_self
+requires_retaliation_from_other
+```
+
+Use `conditions` when the line needs compound logic that flat fields cannot express clearly, such as "A or B, but not C."
 
 Condition blocks support:
 
@@ -457,9 +499,9 @@ Relationship-aware dialogue text can use `{partner}`, `{crush}`, `{dating_partne
 Recruitment memory lines can use `{follow_biome}` and `{follow_distance}`.
 Use `recruitment_memory_biome` / `recruitment_memory_biomes` when a follow-up line should only trigger for specific left-behind or travel biomes.
 
-Container theft memory lines can use `{stolen_item}`, `{stolen_item_id}`, `{stolen_count}`, `{stolen_item_count}`, `{stolen_stack}`, `{stolen_container}`, `{stolen_loot_table}`, `{theft_witness}`, and `{theft_witness_possessive}`. Use `player_event_tags: ["player_container_theft"]` to target the memory, then add `requires_container_theft_to_self` for lines like "my {stolen_item}" or `requires_container_theft_from_other` for gossip like "{theft_witness} told me about {stolen_stack}."
+Container theft memory lines can use `{stolen_item}`, `{stolen_item_id}`, `{stolen_count}`, `{stolen_item_count}`, `{stolen_stack}`, `{stolen_container}`, `{stolen_loot_table}`, `{theft_witness}`, and `{theft_witness_possessive}`. Use a `conditions` memory block with `tag: "player_container_theft"` and `source: "this_villager"` for lines like "my {stolen_item}", or `source: "other_villager"` for gossip like "{theft_witness} told me about {stolen_stack}." The older `requires_container_theft_to_self` and `requires_container_theft_from_other` fields are deprecated for removal in beta.13.
 
-Retaliation memory lines can use `{retaliation_target}`, `{retaliation_target_name}`, `{retaliation_target_kind}`, `{retaliation_target_type}`, `{retaliation_witness}`, and `{retaliation_witness_possessive}`. Use `event_tags: ["villager_retaliation_started"]` for village gossip, `player_event_tags: ["villager_retaliation_started"]` when the current player was the target, and add `requires_retaliation_to_self`, `requires_retaliation_from_other`, or `retaliation_target_entity_types` when you want direct/self-or-other or mob-type-specific lines.
+Retaliation memory lines can use `{retaliation_target}`, `{retaliation_target_name}`, `{retaliation_target_kind}`, `{retaliation_target_type}`, `{retaliation_witness}`, and `{retaliation_witness_possessive}`. Use a `conditions` memory block with `tag: "villager_retaliation_started"` and `source: "this_villager"` or `source: "other_villager"` when you want direct/self-or-other lines. Use `retaliation_target_entity_types` for mob-type-specific lines. The older `requires_retaliation_to_self` and `requires_retaliation_from_other` fields are deprecated for removal in beta.13.
 
 Example option and line for a player holding a sword:
 

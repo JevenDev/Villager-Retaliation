@@ -72,7 +72,7 @@ Pack-facing beta.12 changes introduce persistent Social Attributes and temporary
 
 ### Deprecated
 
-- No beta.12 pack-facing fields are deprecated.
+- Deprecated flat normal dialogue line memory/family/relationship helper fields in favor of `conditions`. They still load in beta.12, but are scheduled for removal in beta.13: `requires_known_family`, `requires_known_parent`, `requires_known_sibling`, `requires_known_spouse`, `requires_known_child`, `requires_known_grandparent`, `requires_known_grandchild`, `requires_known_descendant`, `requires_known_aunt_uncle`, `requires_known_cousin`, `requires_known_niece_nephew`, `requires_known_extended_family`, `requires_known_deceased_family`, `requires_known_relationship`, `requires_known_current_relationship`, `requires_known_past_relationship`, `requires_known_crush`, `requires_known_dating_partner`, `requires_known_fiance`, `requires_known_romantic_spouse`, `requires_known_separated_partner`, `requires_known_widowed_partner`, `requires_recent_broken_bed_memory`, `requires_recent_direct_hit_memory`, `requires_gear_report_used_in_combat`, `requires_gear_report_unused_in_combat`, `requires_recruitment_memory`, `requires_recruitment_boat_trip`, `requires_recruitment_ocean_crossing`, `requires_recruitment_swim_trip`, `excludes_recruitment_ocean_crossing`, `requires_container_theft_to_self`, `requires_container_theft_from_other`, `requires_retaliation_to_self`, and `requires_retaliation_from_other`.
 
 ### Removed
 
@@ -88,6 +88,7 @@ Pack-facing beta.12 changes introduce persistent Social Attributes and temporary
 - Keep using `dispositions` for reputation-derived tone filters. Use `mood` / `moods` only for temporary event-driven emotional state.
 - Use `priority` when one matched line should reliably win over another. Use `weight` to tune random odds inside the same priority tier.
 - Use `text_key` for new locale-heavy packs when translators should override message text without copying the full line filters.
+- Migrate deprecated flat normal dialogue line helper fields to `conditions` before beta.13. The beta.12 runtime and Datapack Generator warn when a normal dialogue line still uses those fields.
 - Use `requires_high_*` when a simple score of 60+ is enough. Use `min_*` and `max_*` score ranges when a line needs exact attribute bands.
 
 ## 1.0.0-beta.11 - 2026-05-26

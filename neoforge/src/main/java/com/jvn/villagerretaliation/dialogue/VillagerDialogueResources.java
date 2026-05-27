@@ -106,6 +106,19 @@ public final class VillagerDialogueResources {
             "requires_known_relationship", "requires_known_current_relationship", "requires_known_past_relationship", "requires_known_crush",
             "requires_known_dating_partner", "requires_known_fiance", "requires_known_romantic_spouse", "requires_known_separated_partner",
             "requires_known_widowed_partner");
+    private static final Set<String> BETA13_DEPRECATED_LINE_KEYS = Set.of(
+            "requires_known_family", "requires_known_parent", "requires_known_sibling", "requires_known_spouse", "requires_known_child",
+            "requires_known_grandparent", "requires_known_grandchild", "requires_known_descendant", "requires_known_aunt_uncle",
+            "requires_known_cousin", "requires_known_niece_nephew", "requires_known_extended_family", "requires_known_deceased_family",
+            "requires_known_relationship", "requires_known_current_relationship", "requires_known_past_relationship", "requires_known_crush",
+            "requires_known_dating_partner", "requires_known_fiance", "requires_known_romantic_spouse", "requires_known_separated_partner",
+            "requires_known_widowed_partner",
+            "requires_recent_broken_bed_memory", "requires_recent_direct_hit_memory",
+            "requires_gear_report_used_in_combat", "requires_gear_report_unused_in_combat",
+            "requires_recruitment_memory", "requires_recruitment_boat_trip", "requires_recruitment_ocean_crossing",
+            "requires_recruitment_swim_trip", "excludes_recruitment_ocean_crossing",
+            "requires_container_theft_to_self", "requires_container_theft_from_other",
+            "requires_retaliation_to_self", "requires_retaliation_from_other");
 
     private static volatile CachedDialoguePools cachedDialoguePools = CachedDialoguePools.empty();
 
@@ -663,6 +676,14 @@ public final class VillagerDialogueResources {
 
             JsonObject entry = element.getAsJsonObject();
             DatapackDiagnostics.warnUnknownKeys(location, "dialogue line", entryContext("line", entry, index), entry, LINE_KEYS);
+            DatapackDiagnostics.warnDeprecatedKeys(
+                    location,
+                    "dialogue line",
+                    entryContext("line", entry, index),
+                    entry,
+                    BETA13_DEPRECATED_LINE_KEYS,
+                    "1.0.0-beta.13",
+                    "Use the conditions array with memory, family, relationship, or recruitment_memory condition blocks instead.");
             DatapackDiagnostics.warnInertPlayerItemSlots(location, entryContext("line", entry, index), entry);
             Optional<DialogueRequestType> requestType = readEnum(entry, "request", DialogueRequestType.class);
             List<String> entryLines = readLines(entry);

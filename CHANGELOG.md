@@ -12,6 +12,10 @@
 - Added villager profile data to dialogue context helpers so dialogue logic can react to high social attributes.
 - Added temporary villager mood states for Neutral, Content, Grateful, Afraid, Angry, Suspicious, Grieving, Protective, Hopeful, Stressed, Proud, and Lonely.
 - Added beta.12 dialogue filters for temporary moods and social attributes: `mood`, `moods`, `min_mood_intensity`, `requires_high_*`, and exact `min_*` / `max_*` attribute ranges.
+- Added beta.12 normal-dialogue `conditions` blocks for compound line logic, including memory, family, relationship, and recruitment-memory checks.
+- Added normal dialogue line `priority`, `category`, and `text_key` fields for explicit selection tiers, debug grouping, and localized text indirection.
+- Added `/villagerretaliation dialogue explain` and `/villagerretaliation datapack diagnostics` to make dialogue selection and datapack reload warnings easier to inspect in-game.
+- Added built-in dialogue data validation and datapack-builder wiki snapshot checks to catch schema/docs drift during development.
 - Added beta.12 datapack builder and website wiki support while keeping the beta.11 wiki snapshot separate for beta.11 pack authors.
 - Added trade-refresh buttons to villager trade slots so players can ask a villager to replace a specific trade on the next Minecraft day when an eligible skill-trade replacement exists.
 - Added data-driven forced dialogue for trade-refresh results, including accepted, already-pending, unavailable, and not-ready responses with reputation-specific option replies.
@@ -40,6 +44,12 @@
 - Special Orders now treat `min_rank` as the skill unlock and ignore `max_rank`, letting high-skill villagers fulfill earlier catalog requests and duplicate items they already stock.
 - Forced conversation request validation now keeps active forced-dialogue sessions attached to their villager target while forced-session distance and availability rules are still met.
 - Built-in container-theft leave outcomes now default to response arrays (`responses`, `success_responses`, `failure_responses`) for more varied short reactions.
+- Built-in normal dialogue lines now use beta.12 `conditions` for migrated memory, family, relationship, and recruitment filters.
+- Normal dialogue line selection now applies explicit `priority` tiers before weighted random selection. Existing packs keep the default `priority: 0`.
+
+### Deprecated
+
+- Deprecated flat normal dialogue line memory, family, relationship, recruitment, container-theft, gear-report, and retaliation helper fields in favor of `conditions`. They still load in beta.12, but are scheduled for removal in beta.13: `requires_known_family`, `requires_known_parent`, `requires_known_sibling`, `requires_known_spouse`, `requires_known_child`, `requires_known_grandparent`, `requires_known_grandchild`, `requires_known_descendant`, `requires_known_aunt_uncle`, `requires_known_cousin`, `requires_known_niece_nephew`, `requires_known_extended_family`, `requires_known_deceased_family`, `requires_known_relationship`, `requires_known_current_relationship`, `requires_known_past_relationship`, `requires_known_crush`, `requires_known_dating_partner`, `requires_known_fiance`, `requires_known_romantic_spouse`, `requires_known_separated_partner`, `requires_known_widowed_partner`, `requires_recent_broken_bed_memory`, `requires_recent_direct_hit_memory`, `requires_gear_report_used_in_combat`, `requires_gear_report_unused_in_combat`, `requires_recruitment_memory`, `requires_recruitment_boat_trip`, `requires_recruitment_ocean_crossing`, `requires_recruitment_swim_trip`, `excludes_recruitment_ocean_crossing`, `requires_container_theft_to_self`, `requires_container_theft_from_other`, `requires_retaliation_to_self`, and `requires_retaliation_from_other`.
 
 ### Fixed
 

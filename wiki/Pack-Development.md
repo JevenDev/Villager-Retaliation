@@ -89,7 +89,7 @@ data/villagerretaliation/forced_dialogue/my_pack_events.json
 data/villagerretaliation/notifications/en_us/my_pack_notifications.json
 ```
 
-On reload, the mod logs warnings for common path mistakes, unsupported fields that will be ignored, notification triggers used in forced-dialogue files, forced-dialogue triggers used in notification files, inert player item slot filters, and unknown profession ids. Use `/villagerretaliation datapack diagnostics` in game to show recent Villager Retaliation datapack warnings since the last resource reload.
+On reload, the mod logs warnings for common path mistakes, unsupported fields that will be ignored, deprecated fields scheduled for removal, notification triggers used in forced-dialogue files, forced-dialogue triggers used in notification files, inert player item slot filters, and unknown profession ids. Use `/villagerretaliation datapack diagnostics` in game to show recent Villager Retaliation datapack warnings since the last resource reload.
 
 For additive dialogue, forced dialogue, and notification packs, use your own file names, such as:
 
@@ -155,7 +155,7 @@ Before testing in game:
 - Validate JSON syntax with your editor or a JSON linter.
 - Confirm paths exactly match the documented roots.
 - Confirm enum values are spelled correctly. Values are case-insensitive in code, but lowercase snake case is recommended.
-- Run `/villagerretaliation datapack diagnostics` after `/reload`, or check the latest log. Villager Retaliation warns when it sees content in the wrong system folder, unsupported fields, wrong trigger families, item slot filters that cannot match, duplicate ids, skipped files, or profession ids that are not registered.
+- Run `/villagerretaliation datapack diagnostics` after `/reload`, or check the latest log. Villager Retaliation warns when it sees content in the wrong system folder, unsupported fields, deprecated fields scheduled for removal, wrong trigger families, item slot filters that cannot match, duplicate ids, skipped files, or profession ids that are not registered.
 - Give overrideable dialogue, forced dialogue, notification, gift, and profession loot entries explicit `id` values.
 - Use a small test pack first, then expand once the hook works.
 

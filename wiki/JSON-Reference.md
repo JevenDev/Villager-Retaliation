@@ -352,9 +352,9 @@ Dialogue lines can filter recent village memories with `event_tags` and player-s
 }
 ```
 
-Container theft memories use `player_container_theft` and can be narrowed with `requires_container_theft_to_self` or `requires_container_theft_from_other`. Theft lines can reference `{stolen_item}`, `{stolen_count}`, `{stolen_stack}`, `{stolen_container}`, `{theft_witness}`, and `{theft_witness_possessive}`.
+Container theft memories use `player_container_theft` and can be narrowed with a `conditions` memory block using `source: "this_villager"` or `source: "other_villager"`. The older `requires_container_theft_to_self` and `requires_container_theft_from_other` line fields still load in beta.12, but are deprecated for removal in beta.13. Theft lines can reference `{stolen_item}`, `{stolen_count}`, `{stolen_stack}`, `{stolen_container}`, `{theft_witness}`, and `{theft_witness_possessive}`.
 
-Retaliation memories use `villager_retaliation_started` and can be narrowed with `requires_retaliation_to_self`, `requires_retaliation_from_other`, and `retaliation_target_entity_types`. Retaliation lines can reference `{retaliation_target}`, `{retaliation_target_name}`, `{retaliation_target_kind}`, `{retaliation_target_type}`, `{retaliation_witness}`, and `{retaliation_witness_possessive}`.
+Retaliation memories use `villager_retaliation_started` and can be narrowed with a `conditions` memory block using `source: "this_villager"` or `source: "other_villager"`, plus `retaliation_target_entity_types` for target type filters. The older `requires_retaliation_to_self` and `requires_retaliation_from_other` fields still load in beta.12, but are deprecated for removal in beta.13. Retaliation lines can reference `{retaliation_target}`, `{retaliation_target_name}`, `{retaliation_target_kind}`, `{retaliation_target_type}`, `{retaliation_witness}`, and `{retaliation_witness_possessive}`.
 
 Baby villager hit memories use `baby_villager_attacked`. Pair it with `player_event_tags: ["player_attacked_villager"]` when a line should accuse or react to the current player.
 

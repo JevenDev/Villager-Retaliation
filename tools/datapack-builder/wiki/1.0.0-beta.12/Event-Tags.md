@@ -93,7 +93,12 @@ Expanded:
       "player_event_tags": [
         "baby_born"
       ],
-      "requires_known_child": true,
+      "conditions": [
+        {
+          "type": "family",
+          "relation": "child"
+        }
+      ],
       "text": "You helped bring {child} into this village. The fields will know that kindness.",
       "weight": 30
     }
@@ -187,10 +192,14 @@ Expanded:
     {
       "id": "my_pack.event.container_theft.gossip",
       "request": "greeting",
-      "player_event_tags": [
-        "player_container_theft"
+      "conditions": [
+        {
+          "type": "memory",
+          "tag": "player_container_theft",
+          "source": "other_villager",
+          "player": true
+        }
       ],
-      "requires_container_theft_from_other": true,
       "dispositions": [
         "cautious",
         "rude",
@@ -202,10 +211,14 @@ Expanded:
     {
       "id": "my_pack.event.container_theft.direct",
       "request": "question",
-      "player_event_tags": [
-        "player_container_theft"
+      "conditions": [
+        {
+          "type": "memory",
+          "tag": "player_container_theft",
+          "source": "this_villager",
+          "player": true
+        }
       ],
-      "requires_container_theft_to_self": true,
       "dispositions": [
         "cautious",
         "rude",
@@ -223,7 +236,7 @@ Expanded:
 <details>
 <summary><strong>villager_retaliation_started</strong></summary>
 
-Use this after a villager or wandering trader acquires a new retaliation target. Lines can use `{retaliation_target}`, `{retaliation_target_name}`, `{retaliation_target_kind}`, `{retaliation_target_type}`, `{retaliation_witness}`, and `{retaliation_witness_possessive}`. Add `requires_retaliation_to_self`, `requires_retaliation_from_other`, or `retaliation_target_entity_types` on dialogue lines when you want more specific filtering.
+Use this after a villager or wandering trader acquires a new retaliation target. Lines can use `{retaliation_target}`, `{retaliation_target_name}`, `{retaliation_target_kind}`, `{retaliation_target_type}`, `{retaliation_witness}`, and `{retaliation_witness_possessive}`. Use a `conditions` memory block with `source: "this_villager"` or `source: "other_villager"`, plus `retaliation_target_entity_types` when you want more specific filtering.
 
 Simple:
 
@@ -253,7 +266,13 @@ Expanded:
       "event_tags": [
         "villager_retaliation_started"
       ],
-      "requires_retaliation_to_self": true,
+      "conditions": [
+        {
+          "type": "memory",
+          "tag": "villager_retaliation_started",
+          "source": "this_villager"
+        }
+      ],
       "retaliation_target_entity_types": [
         "minecraft:zombie",
         "minecraft:husk"
@@ -755,7 +774,12 @@ Expanded:
       "player_event_tags": [
         "player_attacked_villager"
       ],
-      "requires_recent_direct_hit_memory": true,
+      "conditions": [
+        {
+          "type": "memory",
+          "kind": "recent_direct_hit"
+        }
+      ],
       "dispositions": [
         "rude",
         "hostile",

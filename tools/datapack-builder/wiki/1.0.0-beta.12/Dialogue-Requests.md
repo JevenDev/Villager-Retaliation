@@ -152,7 +152,12 @@ Expanded:
       "id": "my_pack.question.family_child",
       "request": "question",
       "option": "my_pack.ask_family",
-      "requires_known_child": true,
+      "conditions": [
+        {
+          "type": "family",
+          "relation": "child"
+        }
+      ],
       "dispositions": [
         "friendly",
         "respectful",
@@ -440,7 +445,12 @@ Expanded:
       "id": "my_pack.gear_report.used",
       "request": "gear_report",
       "option": "my_pack.ask_gear",
-      "requires_gear_report_used_in_combat": true,
+      "conditions": [
+        {
+          "type": "memory",
+          "kind": "gear_report_used_in_combat"
+        }
+      ],
       "text": "You were right to hand it over. It has already done honest work.",
       "weight": 25
     }
@@ -487,9 +497,13 @@ Expanded:
       "id": "my_pack.recruitment_followup.ocean",
       "request": "recruitment_followup",
       "option": "my_pack.ask_followup",
-      "requires_recruitment_memory": true,
-      "requires_recruitment_ocean_crossing": true,
-      "min_recruitment_follow_distance": 600,
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "ocean_crossing": true,
+          "min_follow_distance": 600
+        }
+      ],
       "text": "I followed you through {follow_biome} for {follow_distance}. That is more road than most promises survive.",
       "weight": 30
     }
@@ -645,7 +659,12 @@ Expanded:
       "id": "my_pack.apology.bed",
       "request": "apology",
       "option": "my_pack.apologize",
-      "requires_recent_broken_bed_memory": true,
+      "conditions": [
+        {
+          "type": "memory",
+          "kind": "recent_broken_bed"
+        }
+      ],
       "dispositions": [
         "cautious",
         "rude",

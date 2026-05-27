@@ -74,6 +74,28 @@ public final class DatapackDiagnostics {
         }
     }
 
+    public static void warnDeprecatedKeys(
+            ResourceLocation location,
+            String systemName,
+            String context,
+            JsonObject entry,
+            Set<String> deprecatedKeys,
+            String removalVersion,
+            String replacement) {
+        for (String key : entry.keySet()) {
+            if (deprecatedKeys.contains(key)) {
+                warn(
+                        "Villager Retaliation datapack {} {} uses deprecated {} field \"{}\"; it will be removed in {}. {}",
+                        location,
+                        context,
+                        systemName,
+                        key,
+                        removalVersion,
+                        replacement);
+            }
+        }
+    }
+
     public static void warnInvalidTrigger(
             ResourceLocation location,
             String systemName,

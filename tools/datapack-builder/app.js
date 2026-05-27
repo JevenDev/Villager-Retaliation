@@ -662,6 +662,44 @@ const BETA_12_ONLY_DIALOGUE_KEYS = [
   "text_key"
 ];
 
+const BETA_13_DEPRECATED_DIALOGUE_LINE_KEYS = [
+  "requires_known_family",
+  "requires_known_parent",
+  "requires_known_sibling",
+  "requires_known_spouse",
+  "requires_known_child",
+  "requires_known_grandparent",
+  "requires_known_grandchild",
+  "requires_known_descendant",
+  "requires_known_aunt_uncle",
+  "requires_known_cousin",
+  "requires_known_niece_nephew",
+  "requires_known_extended_family",
+  "requires_known_deceased_family",
+  "requires_known_relationship",
+  "requires_known_current_relationship",
+  "requires_known_past_relationship",
+  "requires_known_crush",
+  "requires_known_dating_partner",
+  "requires_known_fiance",
+  "requires_known_romantic_spouse",
+  "requires_known_separated_partner",
+  "requires_known_widowed_partner",
+  "requires_recent_broken_bed_memory",
+  "requires_recent_direct_hit_memory",
+  "requires_gear_report_used_in_combat",
+  "requires_gear_report_unused_in_combat",
+  "requires_recruitment_memory",
+  "requires_recruitment_boat_trip",
+  "requires_recruitment_ocean_crossing",
+  "requires_recruitment_swim_trip",
+  "excludes_recruitment_ocean_crossing",
+  "requires_container_theft_to_self",
+  "requires_container_theft_from_other",
+  "requires_retaliation_to_self",
+  "requires_retaliation_from_other"
+];
+
 // Keep each supported datapack surface versioned so migrations can reason about
 // documented keys while preserving unknown user-authored JSON.
 const PACK_VERSION_SCHEMAS = {
@@ -2925,6 +2963,14 @@ function tooltipForFlag(flag) {
   return FLAG_TOOLTIPS[flag] || humanize(flag);
 }
 
+function tooltipForToggleFlag(flag, prefix) {
+  const base = tooltipForFlag(flag);
+  if (prefix === "line" && BETA_13_DEPRECATED_DIALOGUE_LINE_KEYS.includes(flag)) {
+    return `${base} Deprecated for normal dialogue lines and scheduled for removal in beta.13; use conditions instead.`;
+  }
+  return base;
+}
+
 function tooltipForTag(fieldId, value) {
   if (fieldId.includes("event_tags")) return EVENT_TAG_TOOLTIPS[value] || "Village-memory tag accepted by event_tags or player_event_tags.";
   if (fieldId.includes("professions")) return value === "none" || value === "unemployed"
@@ -3524,10 +3570,11 @@ function entryIssueSeverity(section, kind, entry) {
   if (section === "dialogue") {
     const tests = [
       { severity: "error", predicate: (item) => kind === "options" && (!item.id || !item.label || item.type !== "dialogue_option" || !item.request) },
-      { severity: "error", predicate: (item) => kind === "lines" && (!item.request || !hasDialogueText(item)) },
+      { severity: "error", predicate: (item) => kind === "lines" && (!item.request || (!hasDialogueText(item) && !item.text_key)) },
       { severity: "error", predicate: (item) => kind === "messages" && (!item.key || !hasDialogueText(item)) },
       { severity: "error", predicate: (item) => ["openings", "closings", "pacify"].includes(kind) && !hasDialogueText(item) },
       { severity: "warning", predicate: (item) => ["options", "lines"].includes(kind) && item.request && !CONSTANTS.dialogueTypes.includes(item.request) },
+      { severity: "warning", predicate: (item) => kind === "lines" && hasBeta13DeprecatedDialogueLineField(item) },
       { severity: "warning", predicate: (item) => entryValues(item, ["dispositions"]).some((value) => !CONSTANTS.dispositions.includes(value)) },
       { severity: "warning", predicate: (item) => kind === "lines" && hasBeta12DialogueField(item) && !supportsBeta12DialogueFields() },
       { severity: "warning", predicate: (item) => kind === "lines" && entryValues(item, ["mood", "moods"]).some((value) => !CONSTANTS.moods.includes(value)) },
@@ -3778,6 +3825,10 @@ function hasBeta12DialogueField(entry) {
   return BETA_12_ONLY_DIALOGUE_KEYS.some((key) => entry?.[key] !== undefined);
 }
 
+function hasBeta13DeprecatedDialogueLineField(entry) {
+  return BETA_13_DEPRECATED_DIALOGUE_LINE_KEYS.some((key) => entry?.[key] !== undefined);
+}
+
 function invalidSocialAttributeRange(entry) {
   for (const attribute of CONSTANTS.socialAttributes) {
     const min = numberValue(entry?.[`min_${attribute}`]);
@@ -3816,6 +3867,10 @@ function entryIssueDetail(section, kind, entry) {
     }
     if (kind === "lines" && hasBeta12DialogueField(entry) && !supportsBeta12DialogueFields()) {
       return issueDetail("Beta.12 dialogue filters", "VR 1.0.0-beta.12 or newer", state.meta.packVersion, "meta-packVersion", "warning");
+    }
+    if (kind === "lines" && hasBeta13DeprecatedDialogueLineField(entry)) {
+      const field = BETA_13_DEPRECATED_DIALOGUE_LINE_KEYS.find((key) => entry?.[key] !== undefined);
+      return issueDetail("Deprecated line field", "`conditions` replacement before VR 1.0.0-beta.13", field, `line-${field}`, "warning");
     }
     const dialogueListChecks = [
       { keys: ["dispositions"], label: "Dispositions", expected: CONSTANTS.dispositions.join(", "), fieldId: "dialogue-dispositions", valid: (value) => CONSTANTS.dispositions.includes(value), severity: "warning" },
@@ -5857,7 +5912,7 @@ function toggleGrid(flags, entry, prefix) {
   const toggles = `
     ${toggle({ id: `${prefix}-show_for_adults`, label: "Show for adults", checked: entry.show_for_adults !== false, tooltip: tooltipForFlag("show_for_adults") })}
     ${toggle({ id: `${prefix}-show_for_babies`, label: "Show for babies", checked: entry.show_for_babies !== false, tooltip: tooltipForFlag("show_for_babies") })}
-    ${flags.map((flag) => toggle({ id: `${prefix}-${flag}`, label: humanize(flag), checked: entry[flag] === true, tooltip: tooltipForFlag(flag) })).join("")}
+    ${flags.map((flag) => toggle({ id: `${prefix}-${flag}`, label: humanize(flag), checked: entry[flag] === true, tooltip: tooltipForToggleFlag(flag, prefix) })).join("")}
   `;
   const toggleCount = flags.length + 2;
   if (toggleCount >= COLLAPSIBLE_TOGGLE_MIN_COUNT) {
