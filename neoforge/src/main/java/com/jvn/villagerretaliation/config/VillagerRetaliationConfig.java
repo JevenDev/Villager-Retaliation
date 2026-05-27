@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.config;
 
+import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 public final class VillagerRetaliationConfig {
@@ -124,6 +125,12 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.BooleanValue ENABLE_REPUTATION_TRADE_PRICING;
     public static final ModConfigSpec.DoubleValue REPUTATION_TRADE_PRICE_SCALE;
     public static final ModConfigSpec.BooleanValue ENABLE_SKILL_TRADE_OVERHAUL;
+    public static final ModConfigSpec.BooleanValue ENABLE_SPECIAL_ORDERS;
+    public static final ModConfigSpec.EnumValue<VillagerReputationLevel> SPECIAL_ORDER_MIN_REPUTATION;
+    public static final ModConfigSpec.IntValue SPECIAL_ORDER_WAIT_DAYS;
+    public static final ModConfigSpec.IntValue SPECIAL_ORDER_COOLDOWN_DAYS;
+    public static final ModConfigSpec.BooleanValue SPECIAL_ORDER_EXTRA_COST_ENABLED;
+    public static final ModConfigSpec.BooleanValue SPECIAL_ORDER_ONE_ACTIVE_PER_PLAYER;
     public static final ModConfigSpec.BooleanValue SKILL_TRADE_QUALITY_SCALING;
     public static final ModConfigSpec.BooleanValue SKILL_TRADE_LOW_SKILL_PENALTIES;
     public static final ModConfigSpec.IntValue SKILL_TRADE_MAX_ENCHANTMENT_LEVEL;
@@ -592,6 +599,24 @@ public final class VillagerRetaliationConfig {
         ENABLE_SKILL_TRADE_OVERHAUL = BUILDER.comment("When true, villager skill ranks add profession-specific quality and specialty trade offers.")
                 .translation("villagerretaliation.configuration.trade.enableSkillTradeOverhaul")
                 .define("enableSkillTradeOverhaul", true);
+        ENABLE_SPECIAL_ORDERS = BUILDER.comment("When true, high-reputation players can place targeted Special Orders for targetable skill-trade definitions.")
+                .translation("villagerretaliation.configuration.trade.enableSpecialOrders")
+                .define("enableSpecialOrders", true);
+        SPECIAL_ORDER_MIN_REPUTATION = BUILDER.comment("Minimum per-villager reputation tier needed to place Special Orders.")
+                .translation("villagerretaliation.configuration.trade.specialOrderMinReputation")
+                .defineEnum("specialOrderMinReputation", VillagerReputationLevel.REVERED);
+        SPECIAL_ORDER_WAIT_DAYS = BUILDER.comment("Default Minecraft days before an accepted Special Order becomes ready when a trade entry does not override wait_days.")
+                .translation("villagerretaliation.configuration.trade.specialOrderWaitDays")
+                .defineInRange("specialOrderWaitDays", 2, 1, 30);
+        SPECIAL_ORDER_COOLDOWN_DAYS = BUILDER.comment("Default Minecraft days before the same player can place another Special Order with the same villager when a trade entry does not override cooldown_days.")
+                .translation("villagerretaliation.configuration.trade.specialOrderCooldownDays")
+                .defineInRange("specialOrderCooldownDays", 3, 0, 30);
+        SPECIAL_ORDER_EXTRA_COST_ENABLED = BUILDER.comment("When true, Special Order request metadata can charge an extra item cost when the request is accepted.")
+                .translation("villagerretaliation.configuration.trade.specialOrderExtraCostEnabled")
+                .define("specialOrderExtraCostEnabled", false);
+        SPECIAL_ORDER_ONE_ACTIVE_PER_PLAYER = BUILDER.comment("When true, each player can have only one active Special Order with a villager at a time.")
+                .translation("villagerretaliation.configuration.trade.specialOrderOneActivePerPlayer")
+                .define("specialOrderOneActivePerPlayer", true);
         SKILL_TRADE_QUALITY_SCALING = BUILDER.comment("When true, skill trade entries with quality_scaling enabled adjust count, base emerald cost, stock, rare chance, XP, and enchantment quality by skill rank.")
                 .translation("villagerretaliation.configuration.trade.skillTradeQualityScaling")
                 .define("skillTradeQualityScaling", true);

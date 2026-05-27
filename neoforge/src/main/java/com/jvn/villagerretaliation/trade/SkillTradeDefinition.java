@@ -21,6 +21,7 @@ public record SkillTradeDefinition(
         float priceMultiplier,
         SkillTradeConditions conditions,
         SkillTradeQualityScaling qualityScaling,
+        SkillTradeRequestMetadata request,
         SkillTradePool pool) {
     public static final ResourceLocation WANDERING_TRADER_PROFESSION = ResourceLocation.withDefaultNamespace("wandering_trader");
 
@@ -37,12 +38,19 @@ public record SkillTradeDefinition(
         priceMultiplier = Math.clamp(priceMultiplier, 0.0F, 1.0F);
         conditions = conditions == null ? SkillTradeConditions.EMPTY : conditions;
         qualityScaling = qualityScaling == null ? SkillTradeQualityScaling.DISABLED : qualityScaling;
+        request = request == null ? SkillTradeRequestMetadata.NOT_TARGETABLE : request;
         pool = pool == null ? SkillTradePool.VILLAGER : pool;
     }
 
     public boolean matchesVillager(ResourceLocation professionId, int level) {
         return this.pool == SkillTradePool.VILLAGER
                 && this.villagerLevel == level
+                && (this.professions.isEmpty() || this.professions.contains(professionId));
+    }
+
+    public boolean matchesVillagerAtOrBelow(ResourceLocation professionId, int level) {
+        return this.pool == SkillTradePool.VILLAGER
+                && this.villagerLevel <= level
                 && (this.professions.isEmpty() || this.professions.contains(professionId));
     }
 

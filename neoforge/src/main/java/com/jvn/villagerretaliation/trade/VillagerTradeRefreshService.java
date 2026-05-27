@@ -59,7 +59,8 @@ public final class VillagerTradeRefreshService {
             ForcedDialogueService.openTradeRefreshDialogue(level, villager, player, "trade_refresh.unavailable", Map.of());
             return;
         }
-        if (hasPendingRefresh(villager, offerIndex)) {
+        if (hasPendingRefresh(villager, offerIndex)
+                || VillagerSpecialOrderService.pendingOfferIndexes(villager).contains(offerIndex)) {
             sendState(player, villager);
             ForcedDialogueService.openTradeRefreshDialogue(level, villager, player, "trade_refresh.already_pending", Map.of());
             return;
@@ -85,9 +86,13 @@ public final class VillagerTradeRefreshService {
     }
 
     public static boolean applyReadyRefreshes(ServerLevel level, Villager villager, @Nullable ServerPlayer player) {
+        boolean changed = VillagerSpecialOrderService.applyReadyOrders(level, villager, player);
         CompoundTag persistentData = villager.getPersistentData();
         if (!persistentData.contains(PENDING_REFRESHES_KEY, Tag.TAG_LIST)) {
-            return false;
+            if (changed && player != null) {
+                VillagerReputationTradePricing.refreshPricesForPlayer(level, villager, player);
+            }
+            return changed;
         }
 
         MerchantOffers offers = villager.getOffers();
@@ -95,7 +100,6 @@ public final class VillagerTradeRefreshService {
         ListTag remaining = new ListTag();
         Set<Integer> refreshedIndexes = new HashSet<>();
         long currentDay = currentDay(level);
-        boolean changed = false;
 
         for (int i = 0; i < pending.size(); i++) {
             CompoundTag entry = pending.getCompound(i);
@@ -138,15 +142,21 @@ public final class VillagerTradeRefreshService {
     }
 
     public static List<Integer> pendingOfferIndexes(Villager villager) {
+        List<Integer> specialOrderIndexes = VillagerSpecialOrderService.pendingOfferIndexes(villager);
         CompoundTag persistentData = villager.getPersistentData();
         if (!persistentData.contains(PENDING_REFRESHES_KEY, Tag.TAG_LIST)) {
-            return List.of();
+            return specialOrderIndexes;
         }
 
         ListTag pending = persistentData.getList(PENDING_REFRESHES_KEY, Tag.TAG_COMPOUND);
-        List<Integer> indexes = new ArrayList<>(pending.size());
+        List<Integer> indexes = new ArrayList<>(pending.size() + specialOrderIndexes.size());
         for (int i = 0; i < pending.size(); i++) {
             int offerIndex = pending.getCompound(i).getInt(OFFER_INDEX_KEY);
+            if (!indexes.contains(offerIndex)) {
+                indexes.add(offerIndex);
+            }
+        }
+        for (int offerIndex : specialOrderIndexes) {
             if (!indexes.contains(offerIndex)) {
                 indexes.add(offerIndex);
             }

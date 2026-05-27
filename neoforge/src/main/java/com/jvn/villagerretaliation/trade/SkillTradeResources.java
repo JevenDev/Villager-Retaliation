@@ -7,6 +7,7 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import com.jvn.villagerretaliation.VillagerRetaliation;
+import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.skill.VillagerSkillRank;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
@@ -60,6 +61,7 @@ public final class SkillTradeResources {
             "conditions",
             "quality_scaling",
             "qualityScaling",
+            "request",
             "pool",
             "wanderer_pool",
             "wandererPool"
@@ -104,6 +106,20 @@ public final class SkillTradeResources {
             "enchantments_by_skill",
             "enchantmentsBySkill"
     );
+    private static final Set<String> REQUEST_KEYS = Set.of(
+            "targetable",
+            "display_priority",
+            "displayPriority",
+            "min_reputation",
+            "minReputation",
+            "wait_days",
+            "waitDays",
+            "cooldown_days",
+            "cooldownDays",
+            "extra_cost",
+            "extraCost"
+    );
+    private static final Set<String> REQUEST_COST_KEYS = Set.of("item", "count");
 
     private static volatile CachedSkillTrades cachedSkillTrades = CachedSkillTrades.empty();
 
@@ -120,6 +136,16 @@ public final class SkillTradeResources {
 
     public static List<SkillTradeDefinition> definitions(MinecraftServer server) {
         return load(server).definitions();
+    }
+
+    public static Optional<SkillTradeDefinition> definition(MinecraftServer server, ResourceLocation id) {
+        if (id == null) {
+            return Optional.empty();
+        }
+        return definitions(server)
+                .stream()
+                .filter(definition -> definition.id().equals(id))
+                .findFirst();
     }
 
     private static SkillTradePoolData load(MinecraftServer server) {
@@ -260,6 +286,7 @@ public final class SkillTradeResources {
                 (float) readDouble(entry, "price_multiplier", "priceMultiplier", 0.05D),
                 readConditions(location, context, entry),
                 readQualityScaling(location, context, entry),
+                readRequestMetadata(location, context, entry),
                 pool
         ));
     }
@@ -593,6 +620,53 @@ public final class SkillTradeResources {
                 readBoolean(scaling, "rare_chance_by_skill", "rareChanceBySkill", true),
                 readBoolean(scaling, "enchantments_by_skill", "enchantmentsBySkill", true)
         );
+    }
+
+    private static SkillTradeRequestMetadata readRequestMetadata(ResourceLocation location, String context, JsonObject entry) {
+        JsonObject request = readObject(entry, "request");
+        if (request == null) {
+            return SkillTradeRequestMetadata.NOT_TARGETABLE;
+        }
+
+        DatapackDiagnostics.warnUnknownKeys(location, "skill trade request", context, request, REQUEST_KEYS);
+        return new SkillTradeRequestMetadata(
+                readBoolean(request, "targetable", false),
+                readInt(request, "display_priority", "displayPriority", 0),
+                readReputationLevel(request, "min_reputation", "minReputation", VillagerReputationLevel.REVERED),
+                readInt(request, "wait_days", "waitDays", 0),
+                readInt(request, "cooldown_days", "cooldownDays", 0),
+                readRequestCost(location, context, request)
+        );
+    }
+
+    private static VillagerReputationLevel readReputationLevel(
+            JsonObject entry,
+            String snakeKey,
+            String camelKey,
+            VillagerReputationLevel fallback) {
+        String value = readString(entry, snakeKey, camelKey);
+        if (value.isBlank()) {
+            return fallback;
+        }
+        try {
+            return VillagerReputationLevel.valueOf(value.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException ignored) {
+            return fallback;
+        }
+    }
+
+    private static SpecialOrderCost readRequestCost(ResourceLocation location, String context, JsonObject request) {
+        JsonObject cost = readObject(request, "extra_cost");
+        if (cost == null) {
+            cost = readObject(request, "extraCost");
+        }
+        if (cost == null) {
+            return SpecialOrderCost.EMPTY;
+        }
+
+        DatapackDiagnostics.warnUnknownKeys(location, "skill trade request extra_cost", context, cost, REQUEST_COST_KEYS);
+        Item item = readItem(cost, "item").orElse(Items.EMERALD);
+        return new SpecialOrderCost(item, readInt(cost, "count", 0));
     }
 
     private static Set<SkillTradeConfigFlag> readConfigFlags(
