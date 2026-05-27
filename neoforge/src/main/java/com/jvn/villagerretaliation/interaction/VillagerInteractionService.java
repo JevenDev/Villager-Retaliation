@@ -38,6 +38,7 @@ import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.social.VillagerFamilyTreeSnapshot;
 import com.jvn.villagerretaliation.social.VillagerRelationshipSnapshot;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphService;
+import com.jvn.villagerretaliation.trade.VillagerTradeRefreshService;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.util.VillagerLocale;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
@@ -348,6 +349,10 @@ public final class VillagerInteractionService {
         focusVillagerOnPlayer(villager, player);
         VillagerConversationService.endForPlayer(player, true);
         openTrading(player, villager, true);
+    }
+
+    public static void handleTradeRefreshRequest(ServerPlayer player, int entityId, int offerIndex) {
+        VillagerTradeRefreshService.handleRequest(player, entityId, offerIndex);
     }
 
     public static void handleInventoryRequest(ServerPlayer player, int entityId) {
@@ -959,6 +964,10 @@ public final class VillagerInteractionService {
             VillagerAmbientIndicatorService.onTradeRefused(villager);
             return InteractionResult.FAIL;
         }
+        if (villager.level() instanceof ServerLevel level) {
+            VillagerTradeRefreshService.applyReadyRefreshes(level, villager, player);
+            VillagerTradeRefreshService.sendState(player, villager);
+        }
         if (villager.getOffers().isEmpty()) {
             villager.setUnhappyCounter(40);
             if (sendFailureMessage) {
@@ -1022,7 +1031,7 @@ public final class VillagerInteractionService {
         return VillagerAggressionPolicy.shouldAttackOnSight(villager, player);
     }
 
-    private static void sendNotice(ServerPlayer player, int entityId, String text) {
+    public static void sendNotice(ServerPlayer player, int entityId, String text) {
         String resolvedText = VillagerDialogueResources
                 .globalMessage(player.getServer(), player.getRandom(), text, VillagerLocale.locale(player))
                 .orElse(text);
@@ -1033,6 +1042,17 @@ public final class VillagerInteractionService {
         String resolvedText = text;
         if (villager.level() instanceof ServerLevel level) {
             resolvedText = VillagerDialogueResources.message(createDialogueContext(level, player, villager), text).orElse(text);
+        }
+        PacketDistributor.sendToPlayer(
+                player,
+                new VillagerInteractionNoticePayload(villager.getId(), resolvedText, "")
+        );
+    }
+
+    public static void sendVillagerNotice(ServerPlayer player, Villager villager, String text, Map<String, String> replacements) {
+        String resolvedText = text;
+        if (villager.level() instanceof ServerLevel level) {
+            resolvedText = VillagerDialogueResources.message(createDialogueContext(level, player, villager), text, replacements).orElse(text);
         }
         PacketDistributor.sendToPlayer(
                 player,

@@ -7,6 +7,7 @@ import com.mojang.logging.LogUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
@@ -15,6 +16,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.item.EnchantedBookItem;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
@@ -38,7 +40,19 @@ public final class SkillTradeOfferFactory {
             int villagerLevel,
             RandomSource random) {
         return createOffer(level, villager, random, definition ->
-                definition.matchesVillager(professionId, villagerLevel));
+                definition.matchesVillager(professionId, villagerLevel), true, Set.of());
+    }
+
+    @Nullable
+    public static MerchantOffer createVillagerRefreshOffer(
+            ServerLevel level,
+            AbstractVillager villager,
+            ResourceLocation professionId,
+            int villagerLevel,
+            RandomSource random,
+            Set<Item> excludedResultItems) {
+        return createOffer(level, villager, random, definition ->
+                definition.matchesVillager(professionId, villagerLevel), false, excludedResultItems);
     }
 
     @Nullable
@@ -47,7 +61,7 @@ public final class SkillTradeOfferFactory {
             AbstractVillager trader,
             SkillTradePool pool,
             RandomSource random) {
-        return createOffer(level, trader, random, definition -> definition.matchesWanderingTrader(pool));
+        return createOffer(level, trader, random, definition -> definition.matchesWanderingTrader(pool), true, Set.of());
     }
 
     @Nullable
@@ -56,6 +70,17 @@ public final class SkillTradeOfferFactory {
             AbstractVillager villager,
             RandomSource random,
             DefinitionFilter filter) {
+        return createOffer(level, villager, random, filter, true, Set.of());
+    }
+
+    @Nullable
+    private static MerchantOffer createOffer(
+            ServerLevel level,
+            AbstractVillager villager,
+            RandomSource random,
+            DefinitionFilter filter,
+            boolean requireChanceRoll,
+            Set<Item> excludedResultItems) {
         if (!VillagerRetaliationConfig.ENABLE_SKILL_TRADE_OVERHAUL.get()) {
             return null;
         }
@@ -65,10 +90,14 @@ public final class SkillTradeOfferFactory {
             if (!filter.matches(definition) || !definition.conditions().matches()) {
                 continue;
             }
+            if (!excludedResultItems.isEmpty()
+                    && definition.result().items().stream().noneMatch(item -> !excludedResultItems.contains(item))) {
+                continue;
+            }
 
             int skillValue = bestSkillValue(level, villager, definition);
             SkillTradeScalingContext context = new SkillTradeScalingContext(definition, skillValue);
-            if (!definition.isSkillEligible(skillValue) || !passesChance(context, random)) {
+            if (!definition.isSkillEligible(skillValue) || (requireChanceRoll && !passesChance(context, random))) {
                 continue;
             }
             candidates.add(new ResolvedDefinition(definition, context));
@@ -78,7 +107,7 @@ public final class SkillTradeOfferFactory {
         }
 
         ResolvedDefinition selected = selectWeighted(candidates, random);
-        return createSelectedOffer(level, random, selected.definition(), selected.context());
+        return createSelectedOffer(level, random, selected.definition(), selected.context(), excludedResultItems);
     }
 
     private static int bestSkillValue(ServerLevel level, AbstractVillager villager, SkillTradeDefinition definition) {
@@ -112,8 +141,9 @@ public final class SkillTradeOfferFactory {
             ServerLevel level,
             RandomSource random,
             SkillTradeDefinition definition,
-            SkillTradeScalingContext context) {
-        ItemStack result = definition.result().createBaseStack(random);
+            SkillTradeScalingContext context,
+            Set<Item> excludedResultItems) {
+        ItemStack result = definition.result().createBaseStack(random, item -> !excludedResultItems.contains(item));
         if (result.isEmpty()) {
             return null;
         }

@@ -29,6 +29,7 @@ Adult villagers can defend themselves, react to crimes they witness, use profess
 - Make villagers suspicious, hostile, despised, or feared if you push things too far
 - Talk to villagers through a reputation-aware interaction screen
 - Get different dialogue depending on reputation, profession, recent events, and local village activity
+- Refresh individual villager trade slots when their skills unlock better stock
 - Let villagers confront players for opening or stealing from generated village chests
 - Give gifts, discover preferences, and see trusted villagers keep favorite items as keepsakes
 - Learn village stories, follow villager map hints, and build family or relationship history
@@ -83,6 +84,8 @@ Trusted villagers may greet you warmly, suspicious villagers may be cold, and ho
 Villagers can also share stories about discovered structures and biomes, give unreliable or reputation-aware gift advice, remember family and romantic relationships, and be recruited to follow or help the player when conditions allow.
 
 Villagers can confront players for opening, breaking, or stealing from watched containers, including generated village chests. Breaking generated containers unpacks and counts the dropped loot before applying reputation loss, so smashing fuller village stores is worse than cracking an empty box. Data packs can customize the event dialogue, target specific loot tables, require item payments, and show different responses based on the player's current reputation with the witnessing villager.
+
+Villagers with skill-generated trade pools can also refresh specific trade slots. A refresh request is stored until the next Minecraft day, then replaces that slot with an eligible skill-trade offer if the villager knows one and does not already offer the same result item. The refresh dialogue and option replies are data-driven, so packs can customize the tone through normal dialogue and forced-dialogue JSON.
 
 ### Profession Combat
 

@@ -13,7 +13,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 public final class VillagerReputationNetworking {
-    private static final String PROTOCOL_VERSION = "9";
+    private static final String PROTOCOL_VERSION = "10";
 
     private VillagerReputationNetworking() {
     }
@@ -86,6 +86,12 @@ public final class VillagerReputationNetworking {
                 "com.jvn.villagerretaliation.client.profile.VillagerProfileClientCache",
                 "accept"
         );
+        network.safePlayToClientThreaded(
+                VillagerTradeRefreshStatePayload.TYPE,
+                VillagerTradeRefreshStatePayload.STREAM_CODEC,
+                "com.jvn.villagerretaliation.client.trade.VillagerTradeRefreshButtons",
+                "acceptState"
+        );
         network.playToServer(
                 VillagerReputationRequestPayload.TYPE,
                 VillagerReputationRequestPayload.STREAM_CODEC,
@@ -121,6 +127,16 @@ public final class VillagerReputationNetworking {
                         ToucanNetwork.withServerPlayer(context, player -> VillagerInteractionService.handleTradeRequest(
                             player,
                             payload.entityId()
+                    )))
+        );
+        network.playToServer(
+                VillagerTradeRefreshRequestPayload.TYPE,
+                VillagerTradeRefreshRequestPayload.STREAM_CODEC,
+                (payload, context) -> ToucanNetwork.enqueue(context, () ->
+                        ToucanNetwork.withServerPlayer(context, player -> VillagerInteractionService.handleTradeRefreshRequest(
+                            player,
+                            payload.entityId(),
+                            payload.offerIndex()
                     )))
         );
         network.playToServer(

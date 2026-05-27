@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.trade;
 
 import java.util.List;
+import java.util.function.Predicate;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -16,11 +17,20 @@ public record SkillTradeResult(
     }
 
     public ItemStack createBaseStack(RandomSource random) {
+        return createBaseStack(random, item -> true);
+    }
+
+    public ItemStack createBaseStack(RandomSource random, Predicate<Item> itemFilter) {
         if (this.items.isEmpty()) {
             return ItemStack.EMPTY;
         }
 
-        Item item = this.items.get(random.nextInt(this.items.size()));
+        List<Item> candidates = this.items.stream().filter(itemFilter).toList();
+        if (candidates.isEmpty()) {
+            return ItemStack.EMPTY;
+        }
+
+        Item item = candidates.get(random.nextInt(candidates.size()));
         return new ItemStack(item, this.count);
     }
 }

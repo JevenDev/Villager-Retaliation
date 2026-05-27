@@ -15,6 +15,8 @@ Use a unique file name for addon entries. A datapack file at `data/villagerretal
 
 Forced dialogue text is server-side datapack text. Button labels and villager responses in forced dialogue entries are not resource-pack language keys.
 
+The built-in trade-refresh UI also uses forced-dialogue data for its locked follow-up conversations. Those entries live under the same `forced_dialogue` path and use `trigger: "trade_refresh"`, but they are selected by the trade-refresh service rather than by a world event witness search.
+
 ## Top-Level Shape
 
 A forced dialogue file can be a single entry:
@@ -108,6 +110,19 @@ When multiple entries match, lower `priority` wins. If priority is tied, an entr
 Use `lines` when an event can happen often. The selected line is resolved through the same placeholders as `line`, so variations can reference `{stolen_stack}`, `{container}`, `{villager}`, and the other forced-dialogue tokens.
 
 Use `chance` when a callout should be occasional. If the chance roll fails, the event stays silent and does not fall through to lower-priority entries.
+
+Built-in trigger values:
+
+```text
+container_theft
+container_opened
+container_broken
+retaliation_started
+player_item_proximity
+trade_refresh
+```
+
+`trade_refresh` is an internal forced-dialogue option-template trigger used by the villager trade refresh button. It does not fire from a generic world event by itself.
 
 ## Output Modes
 
@@ -228,7 +243,7 @@ If a `container_theft` entry does not define `leave_option` or `leave_options`, 
 
 | Field | Type | Default | Purpose |
 | --- | --- | --- | --- |
-| `id` | string | required | Choice id. Must be unique within the entry. |
+| `id` | string | required | Choice id. Keep ids unique among options that can be visible at the same time. Reputation-filtered variants may reuse an id when the filters are mutually exclusive. |
 | `label` | string | required | Button text shown to the player. |
 | `response` | string | none | Villager response after the player chooses this option. When `responses` is also set, this is included as the first possible variation. |
 | `responses` | array | none | Additional villager response variations for this option. One response is selected at random. |
@@ -247,6 +262,89 @@ If a `container_theft` entry does not define `leave_option` or `leave_options`, 
 Use reputation filters on entries to swap the whole event by rank, or on options to change the choices available inside one event. For example, the built-in container opening prompts only catch neutral and suspicious players on opening, hostile/despised/feared players get harsher opening responses, and trusted or better players can open watched containers until they actually remove items.
 
 Escape does not bypass forced dialogue. Pressing Escape activates the entry's matching `leave_option` / `leave_options` outcome, so pack makers can attach response text, reputation changes, stolen-item returns, aggro chance, or other outcomes to leaving.
+
+## Trade Refresh Dialogue
+
+Beta.12 uses forced-dialogue data to control the choice lists shown after a player asks a villager to refresh one trade slot. The opening sentence is still a normal dialogue message, so it can be localized through `data/villagerretaliation/dialogue/<locale>/`. The options and villager replies are forced-dialogue entries.
+
+The built-in option-template ids are:
+
+```text
+trade_refresh.available_options
+trade_refresh.unavailable_options
+```
+
+`trade_refresh.available_options` is used for accepted refresh requests and already-pending requests. It normally shows:
+
+```text
+Trade
+Thanks!
+Why so long?
+Leave
+```
+
+`trade_refresh.unavailable_options` is used when the villager cannot refresh that slot yet. It normally shows:
+
+```text
+Trade
+What do you need?
+Leave
+```
+
+The trade option must use this id if it should return to the merchant screen:
+
+```text
+trade_refresh.trade
+```
+
+The built-in data also uses:
+
+```text
+trade_refresh.thanks
+trade_refresh.why_so_long
+trade_refresh.requirements
+leave
+```
+
+To replace the built-in wording, add a forced-dialogue file with entries using the same ids. The trade-refresh service keeps the actual opening line from the selected dialogue message and copies the options from the matching forced-dialogue entry.
+
+```json
+{
+  "entries": [
+    {
+      "id": "trade_refresh.available_options",
+      "trigger": "trade_refresh",
+      "line": "Trade refresh available option set.",
+      "force_camera_towards_villager": true,
+      "requires_line_of_sight": false,
+      "options": [
+        {
+          "id": "trade_refresh.trade",
+          "label": "Trade",
+          "order": 0,
+          "end_conversation": false,
+          "reputation_levels": ["trusted", "respected", "revered", "royalty"],
+          "responses": [
+            "Of course. Let us get back to business.",
+            "The counter is open. I will keep this orderly."
+          ]
+        },
+        {
+          "id": "trade_refresh.thanks",
+          "label": "Thanks!",
+          "order": 1,
+          "end_conversation": true,
+          "responses": [
+            "You are welcome. Come back tomorrow."
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+When reusing the same option id for different reputation tiers, make the `reputation_levels`, `min_reputation`, or `max_reputation` filters mutually exclusive so only one version of that button is visible to a player.
 
 ### `take_items`
 

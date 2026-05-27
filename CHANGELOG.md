@@ -13,12 +13,15 @@
 - Added temporary villager mood states for Neutral, Content, Grateful, Afraid, Angry, Suspicious, Grieving, Protective, Hopeful, Stressed, Proud, and Lonely.
 - Added beta.12 dialogue filters for temporary moods and social attributes: `mood`, `moods`, `min_mood_intensity`, `requires_high_*`, and exact `min_*` / `max_*` attribute ranges.
 - Added beta.12 datapack builder and website wiki support while keeping the beta.11 wiki snapshot separate for beta.11 pack authors.
+- Added trade-refresh buttons to villager trade slots so players can ask a villager to replace a specific trade on the next Minecraft day when an eligible skill-trade replacement exists.
+- Added data-driven forced dialogue for trade-refresh results, including accepted, already-pending, unavailable, and not-ready responses with reputation-specific option replies.
 
 ### Changed
 
 - Promoted the development version from `1.0.0-beta.11` to `1.0.0-beta.12`.
 - Social Attributes now lightly affect mood transitions, reputation recovery, retaliation decisions, and gossip spread when the matching config toggles are enabled.
 - The datapack builder Convert flow can retarget beta.11 packs to beta.12 without renaming or removing existing beta.11 JSON fields.
+- Trade refresh replacement selection avoids result item types the villager already offers, reducing duplicate refreshed trades.
 
 ## 1.0.0-beta.11-hotfix.1 - 2026-05-26
 

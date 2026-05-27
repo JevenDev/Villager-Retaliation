@@ -2382,6 +2382,38 @@
       ]
     },
     {
+      "key": "trade_refresh.accept",
+      "lines": [
+        "I'll look into replacing my {trade_item} trade. Come back tomorrow to see what I have to offer.",
+        "I can reconsider the {trade_item} trade. Give me until tomorrow and I may have something different.",
+        "The {trade_item} trade could use another look. Come back tomorrow and we will see what I can offer."
+      ]
+    },
+    {
+      "key": "trade_refresh.already_pending",
+      "lines": [
+        "I am already looking into that trade. Come back tomorrow.",
+        "That trade is already under review. Give me until tomorrow.",
+        "I have not forgotten. Check with me tomorrow."
+      ]
+    },
+    {
+      "key": "trade_refresh.not_ready",
+      "lines": [
+        "I do not know a better trade for that yet.",
+        "My skills are not ready to replace that trade with anything better.",
+        "Ask again when I have learned enough to offer something worthwhile."
+      ]
+    },
+    {
+      "key": "trade_refresh.unavailable",
+      "lines": [
+        "I cannot change that trade right now.",
+        "That trade cannot be refreshed right now.",
+        "Now is not the time to change that offer."
+      ]
+    },
+    {
       "key": "interaction.inventory_unavailable",
       "lines": [
         "I cannot show you that right now.",

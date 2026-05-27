@@ -16,8 +16,10 @@ import com.jvn.villagerretaliation.skill.VillagerSkillSet;
 import com.jvn.villagerretaliation.social.VillagerRelationshipStage;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphSavedData;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
+import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import java.util.Arrays;
@@ -26,6 +28,7 @@ import java.util.List;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.commands.arguments.selector.EntitySelector;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -57,13 +60,13 @@ public final class VillagerRetaliationCommands {
                                         ))))
                         .then(literal("profile")
                                 .then(literal("get")
-                                        .then(argument("target", EntityArgument.entity())
+                                        .then(targetArgument()
                                                 .executes(VillagerRetaliationCommands::getProfile)))
                                 .then(literal("reroll")
-                                        .then(argument("target", EntityArgument.entity())
+                                        .then(targetArgument()
                                                 .executes(VillagerRetaliationCommands::rerollProfile)))
                                 .then(literal("set")
-                                        .then(argument("target", EntityArgument.entity())
+                                        .then(targetArgument()
                                                 .then(argument("attribute", StringArgumentType.word())
                                                         .suggests((context, builder) -> SharedSuggestionProvider.suggest(
                                                                 Arrays.stream(VillagerSocialAttribute.values())
@@ -76,11 +79,11 @@ public final class VillagerRetaliationCommands {
                                                         ))
                                                                 .executes(VillagerRetaliationCommands::setProfileAttribute)))))
                                 .then(literal("export")
-                                        .then(argument("target", EntityArgument.entity())
+                                        .then(targetArgument()
                                                 .executes(VillagerRetaliationCommands::exportProfile))))
                         .then(literal("skill")
                                 .then(literal("get")
-                                        .then(argument("target", EntityArgument.entity())
+                                        .then(targetArgument()
                                                 .executes(VillagerRetaliationCommands::getSkills)
                                                 .then(argument("skill", StringArgumentType.word())
                                                         .suggests((context, builder) -> SharedSuggestionProvider.suggest(
@@ -90,7 +93,7 @@ public final class VillagerRetaliationCommands {
                                                         ))
                                                         .executes(VillagerRetaliationCommands::getSkill))))
                                 .then(literal("set")
-                                        .then(argument("target", EntityArgument.entity())
+                                        .then(targetArgument()
                                                 .then(argument("skill", StringArgumentType.word())
                                                         .suggests((context, builder) -> SharedSuggestionProvider.suggest(
                                                                 Arrays.stream(VillagerSkill.values())
@@ -103,12 +106,24 @@ public final class VillagerRetaliationCommands {
                                                         ))
                                                                 .executes(VillagerRetaliationCommands::setSkill)))))
                                 .then(literal("reroll")
-                                        .then(argument("target", EntityArgument.entity())
+                                        .then(targetArgument()
                                                 .executes(VillagerRetaliationCommands::rerollSkills)))
                                 .then(literal("export")
-                                        .then(argument("target", EntityArgument.entity())
+                                        .then(targetArgument()
                                                 .executes(VillagerRetaliationCommands::exportSkills))))
         );
+    }
+
+    private static RequiredArgumentBuilder<CommandSourceStack, String> targetArgument() {
+        return argument("target", StringArgumentType.string())
+                .suggests((context, builder) -> SharedSuggestionProvider.suggest(
+                        context.getSource().getLevel().getEntitiesOfClass(AbstractVillager.class, commandSuggestionArea(context.getSource()))
+                                .stream()
+                                .map(villager -> VillagerPresetNameRegistry.resolveDisplayName(villager).getString())
+                                .filter(name -> !name.isBlank())
+                                .distinct(),
+                        builder
+                ));
     }
 
     private static int setNearbyReputation(CommandContext<CommandSourceStack> context, int reputation) {
@@ -343,12 +358,75 @@ public final class VillagerRetaliationCommands {
     }
 
     private static AbstractVillager profileTarget(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        Entity target = EntityArgument.getEntity(context, "target");
+        CommandSourceStack source = context.getSource();
+        String targetValue = StringArgumentType.getString(context, "target");
+        Entity target = parseEntityTarget(source, targetValue);
         if (target instanceof AbstractVillager villager) {
             return villager;
         }
-        context.getSource().sendFailure(Component.literal("Target must be a villager or wandering trader."));
+        if (target != null) {
+            source.sendFailure(Component.literal("Target must be a villager or wandering trader."));
+            return null;
+        }
+
+        AbstractVillager namedVillager = findVillagerByName(source, targetValue);
+        if (namedVillager != null) {
+            return namedVillager;
+        }
+        source.sendFailure(Component.literal("No villager or wandering trader named \"" + targetValue + "\" was found."));
         return null;
+    }
+
+    private static Entity parseEntityTarget(CommandSourceStack source, String targetValue) throws CommandSyntaxException {
+        StringReader reader = new StringReader(targetValue);
+        EntitySelector selector;
+        try {
+            selector = EntityArgument.entity().parse(reader);
+        } catch (CommandSyntaxException exception) {
+            return null;
+        }
+        if (reader.canRead()) {
+            return null;
+        }
+        try {
+            return selector.findSingleEntity(source);
+        } catch (CommandSyntaxException exception) {
+            return null;
+        }
+    }
+
+    private static AbstractVillager findVillagerByName(CommandSourceStack source, String targetName) {
+        String normalizedTargetName = normalizeName(targetName);
+        if (normalizedTargetName.isBlank()) {
+            return null;
+        }
+
+        return source.getLevel()
+                .getEntitiesOfClass(AbstractVillager.class, commandSearchArea(source), AbstractVillager::isAlive)
+                .stream()
+                .filter(villager -> normalizeName(VillagerPresetNameRegistry.resolveDisplayName(villager).getString()).equals(normalizedTargetName))
+                .min(Comparator.comparingDouble(villager -> distanceToSourceSqr(source, villager)))
+                .orElse(null);
+    }
+
+    private static AABB commandSuggestionArea(CommandSourceStack source) {
+        return commandSearchArea(source);
+    }
+
+    private static AABB commandSearchArea(CommandSourceStack source) {
+        double radius = Math.max(32.0D, VillagerRetaliationConfig.WITNESS_RADIUS.get());
+        if (source.getEntity() != null) {
+            return source.getEntity().getBoundingBox().inflate(radius);
+        }
+        return AABB.ofSize(source.getPosition(), radius * 2.0D, radius * 2.0D, radius * 2.0D);
+    }
+
+    private static double distanceToSourceSqr(CommandSourceStack source, Entity entity) {
+        return source.getPosition().distanceToSqr(entity.position());
+    }
+
+    private static String normalizeName(String name) {
+        return name == null ? "" : name.trim().toLowerCase(java.util.Locale.ROOT);
     }
 
     private static void syncProfileIfPlayer(CommandSourceStack source, AbstractVillager villager, VillagerProfile profile) {

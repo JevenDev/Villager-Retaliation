@@ -380,7 +380,7 @@ public final class ForcedDialogueResources {
         return List.of(readOption(option, LEAVE_OPTION_ID, label.isBlank() ? "Leave" : label, 1000));
     }
 
-    private static ForcedDialogueOption defaultLeaveOption() {
+    static ForcedDialogueOption defaultLeaveOption() {
         return readOption(new JsonObject(), LEAVE_OPTION_ID, "Leave", 1000);
     }
 
@@ -719,7 +719,8 @@ public final class ForcedDialogueResources {
         CONTAINER_OPENED,
         CONTAINER_BROKEN,
         RETALIATION_STARTED,
-        PLAYER_ITEM_PROXIMITY
+        PLAYER_ITEM_PROXIMITY,
+        TRADE_REFRESH
     }
 
     public enum ForcedDialogueOutputMode {
@@ -858,7 +859,7 @@ public final class ForcedDialogueResources {
                 null,
                 true);
 
-        private static ForcedDialogueStolenItemReturn empty() {
+        static ForcedDialogueStolenItemReturn empty() {
             return EMPTY;
         }
 
@@ -898,7 +899,7 @@ public final class ForcedDialogueResources {
                 null,
                 true);
 
-        private static ForcedDialogueItemPayment empty() {
+        static ForcedDialogueItemPayment empty() {
             return EMPTY;
         }
 

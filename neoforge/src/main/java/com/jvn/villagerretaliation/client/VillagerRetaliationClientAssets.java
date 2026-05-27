@@ -13,6 +13,8 @@ public final class VillagerRetaliationClientAssets {
             ResourceLocation.withDefaultNamespace("textures/entity/wandering_trader.png");
     public static final ResourceLocation COMBAT_TRADER_SKIN =
             texture("entity/wandering_trader/wandering_trader");
+    public static final ResourceLocation VILLAGER_TRADE_EXTENDED_TEXTURE =
+            texture("gui/trade/villager_extended");
 
     public static final ResourceLocation DIVIDER_SELECT_TEXTURE =
             texture("gui/villager_interaction_screen/divider_select");
@@ -22,6 +24,16 @@ public final class VillagerRetaliationClientAssets {
             texture("gui/villager_interaction_screen/info_icon");
     public static final ResourceLocation VILLAGER_INVENTORY_TEXTURE =
             texture("gui/villager_interaction_screen/villager_inventory");
+    public static final ResourceLocation TRADE_REROLL_BUTTON_TEXTURE =
+            texture("gui/trade/reroll_button");
+    public static final ResourceLocation TRADE_REROLL_BUTTON_HIGHLIGHTED_TEXTURE =
+            texture("gui/trade/reroll_button_highlighted");
+    public static final ResourceLocation TRADE_REROLL_ICON_TEXTURE =
+            texture("gui/trade/reroll_icon");
+    public static final ResourceLocation TRADE_REROLL_ICON_HIGHLIGHTED_TEXTURE =
+            texture("gui/trade/reroll_icon_highlighted");
+    public static final ResourceLocation TRADE_REROLL_REQUEST_SENT_ICON_TEXTURE =
+            texture("gui/trade/reroll_request_sent_icon");
 
     public static final ResourceLocation COMBAT_VILLAGER_MODEL =
             VillagerRetaliation.id("models/entity/villager/combat_villager.json");

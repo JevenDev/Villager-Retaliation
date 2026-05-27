@@ -31,6 +31,7 @@ These pages describe the current supported format:
 - [Gift JSON](Gifts.md)
 - [Pacification JSON](Pacification.md)
 - [Profession Loot JSON](Profession-Loot.md)
+- [Skill Trades](Skill-Trades.md)
 - [Story Discovery JSON](Story-Discovery.md)
 - [Resource Pack Models And Textures](Resource-Pack-Models.md)
 
@@ -45,6 +46,10 @@ Pack-facing beta.12 changes introduce persistent Social Attributes and temporary
 - Added Social Attribute dialogue line shorthands `requires_high_knowledge`, `requires_high_guts`, `requires_high_proficiency`, `requires_high_kindness`, and `requires_high_charm`. Each requires the matching profile score to be at least 60.
 - Added exact Social Attribute dialogue line ranges: `min_knowledge`, `max_knowledge`, `min_guts`, `max_guts`, `min_proficiency`, `max_proficiency`, `min_kindness`, `max_kindness`, `min_charm`, and `max_charm`.
 - Added resource-pack language keys for temporary mood labels under `villagerretaliation.mood.*`, Profile page attribute labels/descriptions under `villagerretaliation.profile.attribute.*`, profile ranks under `villagerretaliation.profile.rank.*`, and Profile UI rows/tooltips under `villagerretaliation.gui.profile.*`.
+- Added villager trade refresh support for skill-generated trades. Refresh requests are stored per villager and per offer slot, mature on the next Minecraft day, and replace the selected slot with an eligible skill-trade offer when ready.
+- Added the forced-dialogue trigger value `trade_refresh` for data-driven trade-refresh option templates.
+- Added built-in forced-dialogue entries `trade_refresh.available_options` and `trade_refresh.unavailable_options`, with reputation-filtered responses for accepted and unavailable refresh requests.
+- Added dialogue message keys `trade_refresh.accept`, `trade_refresh.already_pending`, `trade_refresh.not_ready`, and `trade_refresh.unavailable` for the opening lines used by trade-refresh forced dialogue.
 - Added a `1.0.0-beta.12` target to the Datapack Generator and built-in website wiki. The beta.11 snapshot remains separate.
 
 ### Modified
@@ -52,6 +57,8 @@ Pack-facing beta.12 changes introduce persistent Social Attributes and temporary
 - The Datapack Generator now exposes beta.12 mood and Social Attribute line filters only when the selected VR version is `1.0.0-beta.12`.
 - The generator's Convert flow can move beta.11 packs to beta.12 by updating `pack.mcmeta` with the beta.12 VR version marker. Existing beta.11 JSON fields are not renamed or removed.
 - Documentation now distinguishes dialogue `dispositions` from beta.12 temporary `mood` / `moods` filters.
+- Forced-dialogue option ids should remain unique among simultaneously visible options, but reputation-filtered variants can reuse an id when their filters are mutually exclusive. The built-in trade-refresh option templates use this to provide tier-specific responses for the same visible button.
+- Skill-trade replacement selection now avoids giving a refresh result item that already exists in the villager's current offer list.
 
 ### Deprecated
 
@@ -65,6 +72,8 @@ Pack-facing beta.12 changes introduce persistent Social Attributes and temporary
 
 - Existing beta.11 datapacks do not need JSON changes to load under beta.12.
 - Packs that want to use mood or Social Attribute line filters should set the builder target to `1.0.0-beta.12` or add `villagerretaliation.pack_version: "1.0.0-beta.12"` in `pack.mcmeta`.
+- Packs that customize skill trades can make better refresh results available by adding eligible higher-rank entries. A villager cannot refresh into a result item they already offer.
+- Packs that customize trade-refresh dialogue should override the `trade_refresh.*` dialogue message keys for opening lines and the `trade_refresh.available_options` / `trade_refresh.unavailable_options` forced-dialogue entries for button responses.
 - Keep using `dispositions` for reputation-derived tone filters. Use `mood` / `moods` only for temporary event-driven emotional state.
 - Use `requires_high_*` when a simple score of 60+ is enough. Use `min_*` and `max_*` score ranges when a line needs exact attribute bands.
 
