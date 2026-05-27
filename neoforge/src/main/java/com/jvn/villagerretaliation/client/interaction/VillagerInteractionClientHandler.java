@@ -207,8 +207,8 @@ public final class VillagerInteractionClientHandler {
         return new GuiMessageTag(
                 accentColor,
                 null,
-                Component.translatable(GUI_KEY_PREFIX + "chat.tooltip").withStyle(ChatFormatting.GRAY),
-                I18n.get(GUI_KEY_PREFIX + "chat.tag")
+                Component.translatable(guiKey("chat.tooltip")).withStyle(ChatFormatting.GRAY),
+                gui("chat.tag")
         );
     }
 
@@ -216,7 +216,7 @@ public final class VillagerInteractionClientHandler {
         int color = lineIndex % 2 == 0 ? VILLAGER_CHAT_PRIMARY_TEXT_COLOR : VILLAGER_CHAT_SECONDARY_TEXT_COLOR;
         MutableComponent message = Component.empty();
         if (speakerLabel != null && !speakerLabel.isBlank()) {
-            message.append(Component.literal(I18n.get(GUI_KEY_PREFIX + "chat.speaker_prefix", speakerLabel))
+            message.append(Component.literal(gui("chat.speaker_prefix", speakerLabel))
                     .withStyle(style -> style.withColor(accentColor)));
         }
         return message.append(Component.literal(text).withStyle(style -> style.withColor(color)));
@@ -243,17 +243,17 @@ public final class VillagerInteractionClientHandler {
             return cachedSpeakerLabel;
         }
         if (minecraft.level == null) {
-            return I18n.get(GUI_KEY_PREFIX + "speaker.villager");
+            return gui("speaker.villager");
         }
         Entity entity = minecraft.level.getEntity(entityId);
         if (!(entity instanceof Villager villager)) {
             return VillagerNameClientCache.displayName(entityId)
                     .map(Component::getString)
                     .filter(name -> !name.isBlank())
-                    .orElseGet(() -> I18n.get(GUI_KEY_PREFIX + "speaker.villager"));
+                    .orElseGet(() -> gui("speaker.villager"));
         }
         if (villager.isBaby()) {
-            return I18n.get(GUI_KEY_PREFIX + "speaker.child");
+            return gui("speaker.child");
         }
         String profession = localizedProfessionName(villager);
         Optional<String> cachedDisplayName = VillagerNameClientCache.displayName(entityId)
@@ -265,24 +265,24 @@ public final class VillagerInteractionClientHandler {
         }
         if (!villager.hasCustomName()) {
             return isGenericProfession(profession)
-                    ? I18n.get(GUI_KEY_PREFIX + "speaker.villager")
-                    : I18n.get(GUI_KEY_PREFIX + "speaker.profession", profession);
+                    ? gui("speaker.villager")
+                    : gui("speaker.profession", profession);
         }
         String customName = villager.getCustomName() == null ? "" : villager.getCustomName().getString().trim();
         if (customName.isBlank()) {
             return isGenericProfession(profession)
-                    ? I18n.get(GUI_KEY_PREFIX + "speaker.villager")
-                    : I18n.get(GUI_KEY_PREFIX + "speaker.profession", profession);
+                    ? gui("speaker.villager")
+                    : gui("speaker.profession", profession);
         }
         return formatSpeakerLabel(customName, profession);
     }
 
     private static String resolveVillagerName(String villagerNameKey, String villagerNameFallback) {
-        if (villagerNameKey != null && !villagerNameKey.isBlank() && I18n.exists(villagerNameKey)) {
+        if (hasTranslation(villagerNameKey)) {
             return I18n.get(villagerNameKey);
         }
         return villagerNameFallback == null || villagerNameFallback.isBlank()
-                ? I18n.get(GUI_KEY_PREFIX + "speaker.villager")
+                ? gui("speaker.villager")
                 : villagerNameFallback;
     }
 
@@ -290,45 +290,57 @@ public final class VillagerInteractionClientHandler {
         if (profession == null || profession.isBlank() || isGenericProfession(profession)) {
             return villagerName;
         }
-        return I18n.get(GUI_KEY_PREFIX + "speaker.named", profession, villagerName);
+        return gui("speaker.named", profession, villagerName);
     }
 
     private static String resolveProfessionName(Entity entity, String professionKey, boolean baby) {
-        if (professionKey != null && !professionKey.isBlank() && I18n.exists(professionKey)) {
+        if (hasTranslation(professionKey)) {
             return I18n.get(professionKey);
         }
         if (entity instanceof Villager villager) {
             return localizedProfessionName(villager);
         }
-        return I18n.get(GUI_KEY_PREFIX + (baby ? "profession.child" : "profession.unemployed"));
+        return baby ? gui("profession.child") : gui("profession.unemployed");
     }
 
     private static String localizedProfessionName(Villager villager) {
         if (villager.isBaby()) {
-            return I18n.get(GUI_KEY_PREFIX + "profession.child");
+            return gui("profession.child");
         }
         VillagerProfession profession = villager.getVillagerData().getProfession();
         String key = professionTranslationKey(profession);
         if (I18n.exists(key)) {
             return I18n.get(key);
         }
-        return VillagerInteractionTextUtil.professionName(profession, I18n.get(GUI_KEY_PREFIX + "profession.unemployed"));
+        return VillagerInteractionTextUtil.professionName(profession, gui("profession.unemployed"));
     }
 
     private static String professionTranslationKey(VillagerProfession profession) {
-        return VillagerProfessionUtil.translationKey(profession, GUI_KEY_PREFIX + "profession.unemployed");
+        return VillagerProfessionUtil.translationKey(profession, guiKey("profession.unemployed"));
     }
 
     private static String resolveGenderName(String genderName) {
         if (genderName == null || genderName.isBlank()) {
-            return I18n.get(GUI_KEY_PREFIX + "gender.unknown");
+            return gui("gender.unknown");
         }
-        String key = GUI_KEY_PREFIX + "gender." + genderName.trim().toLowerCase(Locale.ROOT);
+        String key = guiKey("gender." + genderName.trim().toLowerCase(Locale.ROOT));
         return I18n.exists(key) ? I18n.get(key) : genderName;
     }
 
     private static boolean isGenericProfession(String profession) {
-        return profession.equals(I18n.get(GUI_KEY_PREFIX + "speaker.villager"))
-                || profession.equals(I18n.get(GUI_KEY_PREFIX + "profession.unemployed"));
+        return profession.equals(gui("speaker.villager"))
+                || profession.equals(gui("profession.unemployed"));
+    }
+
+    private static String gui(String key, Object... args) {
+        return I18n.get(guiKey(key), args);
+    }
+
+    private static String guiKey(String key) {
+        return GUI_KEY_PREFIX + key;
+    }
+
+    private static boolean hasTranslation(String translationKey) {
+        return translationKey != null && !translationKey.isBlank() && I18n.exists(translationKey);
     }
 }

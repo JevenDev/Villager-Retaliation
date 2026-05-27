@@ -25,6 +25,11 @@ public final class VillagerWorldTextIndicatorClient {
     private static final int TRADE_COLOR = 0xFF6BFFB4;
     private static final int DIALOGUE_COLOR = 0xFFD7C7FF;
     private static final int SLEEP_COLOR = 0xFFA9E8FF;
+    private static final MotionProfile ALERT_MOTION = new MotionProfile(0.08D, 0.10D, 0.20D, 0.16D, 0.10D, 0.08D, 11.0F);
+    private static final MotionProfile NEGATIVE_MOTION = new MotionProfile(0.07D, 0.08D, 0.16D, 0.12D, 0.07D, 0.06D, 9.0F);
+    private static final MotionProfile POSITIVE_TRADE_MOTION = new MotionProfile(0.06D, 0.06D, 0.14D, 0.12D, 0.07D, 0.06D, 7.0F);
+    private static final MotionProfile DIALOGUE_MOTION = new MotionProfile(0.05D, 0.06D, 0.11D, 0.09D, 0.055D, 0.045D, 6.0F);
+    private static final MotionProfile DEFAULT_MOTION = new MotionProfile(0.04D, 0.06D, 0.08D, 0.07D, 0.04D, 0.035D, 5.0F);
     private static long pausedAtMillis = -1L;
     private static long pausedDurationMillis;
 
@@ -259,6 +264,7 @@ public final class VillagerWorldTextIndicatorClient {
             ToucanWorldTextStyle style,
             VillagerWorldTextIndicatorKind kind,
             double sideBias) {
+        MotionProfile motion = motionProfile(kind);
         Vec3 center = villager.position().add(0.0D, villager.getBbHeight() * 0.66D, 0.0D);
         Vec3 toCamera = minecraft.gameRenderer.getMainCamera().getPosition().subtract(center);
         Vec3 horizontalToCamera = new Vec3(toCamera.x, 0.0D, toCamera.z);
@@ -270,13 +276,13 @@ public final class VillagerWorldTextIndicatorClient {
         Vec3 away = horizontalToCamera.normalize().scale(-1.0D);
         double randomSide = Math.random() < 0.5D ? -1.0D : 1.0D;
         double sideSign = sideBias * randomSide;
-        double sideOffset = villager.getBbWidth() * 0.50D + sideOffset(style.label(), kind) + Math.random() * 0.035D;
-        double awayOffset = awayAmount(kind) + Math.random() * 0.04D;
-        double verticalOffset = verticalOffset(kind) + (Math.random() - 0.5D) * 0.04D;
+        double sideOffset = villager.getBbWidth() * 0.50D + sideOffset(style.label(), motion) + Math.random() * 0.035D;
+        double awayOffset = motion.awayAmount() + Math.random() * 0.04D;
+        double verticalOffset = motion.verticalOffset() + (Math.random() - 0.5D) * 0.04D;
         Vec3 offset = side.scale(sideOffset * sideSign).add(away.scale(awayOffset)).add(0.0D, verticalOffset, 0.0D);
-        Vec3 drift = side.scale((driftDistance(kind) + Math.random() * 0.04D) * sideSign).add(0.0D, driftRise(kind), 0.0D);
-        double arcHeight = arcHeight(kind) + Math.random() * 0.08D;
-        float tilt = (float) ((tiltDegrees(kind) + Math.random() * 3.0D) * -sideSign);
+        Vec3 drift = side.scale((motion.driftDistance() + Math.random() * 0.04D) * sideSign).add(0.0D, motion.driftRise(), 0.0D);
+        double arcHeight = motion.arcHeight() + Math.random() * 0.08D;
+        float tilt = (float) ((motion.tiltDegrees() + Math.random() * 3.0D) * -sideSign);
 
         WORLD_TEXT.addAnchoredDirected(
                 villager,
@@ -304,71 +310,19 @@ public final class VillagerWorldTextIndicatorClient {
         );
     }
 
-    private static double sideOffset(String text, VillagerWorldTextIndicatorKind kind) {
+    private static double sideOffset(String text, MotionProfile motion) {
         int length = text == null ? 1 : Math.max(1, text.strip().length());
         double textWidth = Mth.clamp(length, 1, 14) * 0.035D;
-        double kindPadding = switch (kind) {
-            case ALERT -> 0.08D;
-            case NEGATIVE -> 0.07D;
-            case POSITIVE, TRADE -> 0.06D;
-            case DIALOGUE -> 0.05D;
-            default -> 0.04D;
-        };
-        return textWidth + kindPadding;
+        return textWidth + motion.kindPadding();
     }
 
-    private static double awayAmount(VillagerWorldTextIndicatorKind kind) {
+    private static MotionProfile motionProfile(VillagerWorldTextIndicatorKind kind) {
         return switch (kind) {
-            case ALERT -> 0.10D;
-            case NEGATIVE -> 0.08D;
-            default -> 0.06D;
-        };
-    }
-
-    private static double verticalOffset(VillagerWorldTextIndicatorKind kind) {
-        return switch (kind) {
-            case ALERT -> 0.20D;
-            case POSITIVE, TRADE -> 0.14D;
-            case NEGATIVE -> 0.16D;
-            case DIALOGUE -> 0.11D;
-            default -> 0.08D;
-        };
-    }
-
-    private static double driftDistance(VillagerWorldTextIndicatorKind kind) {
-        return switch (kind) {
-            case ALERT -> 0.16D;
-            case POSITIVE, NEGATIVE, TRADE -> 0.12D;
-            case DIALOGUE -> 0.09D;
-            default -> 0.07D;
-        };
-    }
-
-    private static double driftRise(VillagerWorldTextIndicatorKind kind) {
-        return switch (kind) {
-            case ALERT -> 0.10D;
-            case POSITIVE, NEGATIVE, TRADE -> 0.07D;
-            case DIALOGUE -> 0.055D;
-            default -> 0.04D;
-        };
-    }
-
-    private static double arcHeight(VillagerWorldTextIndicatorKind kind) {
-        return switch (kind) {
-            case ALERT -> 0.08D;
-            case POSITIVE, NEGATIVE, TRADE -> 0.06D;
-            case DIALOGUE -> 0.045D;
-            default -> 0.035D;
-        };
-    }
-
-    private static float tiltDegrees(VillagerWorldTextIndicatorKind kind) {
-        return switch (kind) {
-            case ALERT -> 11.0F;
-            case NEGATIVE -> 9.0F;
-            case POSITIVE, TRADE -> 7.0F;
-            case DIALOGUE -> 6.0F;
-            default -> 5.0F;
+            case ALERT -> ALERT_MOTION;
+            case NEGATIVE -> NEGATIVE_MOTION;
+            case POSITIVE, TRADE -> POSITIVE_TRADE_MOTION;
+            case DIALOGUE -> DIALOGUE_MOTION;
+            default -> DEFAULT_MOTION;
         };
     }
 
@@ -428,6 +382,16 @@ public final class VillagerWorldTextIndicatorClient {
 
         long activePauseMillis = pausedAtMillis >= 0L ? wallNow - pausedAtMillis : 0L;
         return wallNow - pausedDurationMillis - activePauseMillis;
+    }
+
+    private record MotionProfile(
+            double kindPadding,
+            double awayAmount,
+            double verticalOffset,
+            double driftDistance,
+            double driftRise,
+            double arcHeight,
+            float tiltDegrees) {
     }
 
 }

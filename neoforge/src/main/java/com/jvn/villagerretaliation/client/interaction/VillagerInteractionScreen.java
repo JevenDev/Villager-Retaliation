@@ -35,6 +35,7 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
@@ -388,7 +389,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         restoreChatWidthOverride();
         ClientVillagerConversationState.clear();
         if (!this.closingFromServer) {
-            PacketDistributor.sendToServer(new VillagerConversationEndRequestPayload(this.villagerEntityId));
+            sendToServer(new VillagerConversationEndRequestPayload(this.villagerEntityId));
         }
         super.removed();
     }
@@ -651,11 +652,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void requestTrade() {
-        PacketDistributor.sendToServer(new VillagerTradeRequestPayload(this.villagerEntityId));
+        sendToServer(new VillagerTradeRequestPayload(this.villagerEntityId));
     }
 
     private void requestInventory() {
-        PacketDistributor.sendToServer(new VillagerInventoryRequestPayload(this.villagerEntityId));
+        sendToServer(new VillagerInventoryRequestPayload(this.villagerEntityId));
     }
 
     private void requestProfileRefresh() {
@@ -663,14 +664,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             return;
         }
         this.profileRefreshRequested = true;
-        PacketDistributor.sendToServer(new VillagerProfileRequestPayload(this.villagerEntityId));
+        sendToServer(new VillagerProfileRequestPayload(this.villagerEntityId));
     }
 
     private void requestGift() {
         if (this.selectedInventorySlot < 0) {
             return;
         }
-        PacketDistributor.sendToServer(new VillagerGiftRequestPayload(this.villagerEntityId, this.selectedInventorySlot));
+        sendToServer(new VillagerGiftRequestPayload(this.villagerEntityId, this.selectedInventorySlot));
         this.selectedInventorySlot = firstGiftableInventorySlot();
     }
 
@@ -681,7 +682,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             }
             this.awaitingForcedDialogueResponse = true;
         }
-        PacketDistributor.sendToServer(new VillagerDialogueRequestPayload(this.villagerEntityId, optionId));
+        sendToServer(new VillagerDialogueRequestPayload(this.villagerEntityId, optionId));
     }
 
     private void navigateToRootPage() {
@@ -731,10 +732,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void requestRecruit(VillagerRecruitRequestPayload.Action action) {
-        PacketDistributor.sendToServer(new VillagerRecruitRequestPayload(this.villagerEntityId, action));
+        sendToServer(new VillagerRecruitRequestPayload(this.villagerEntityId, action));
         if (action == VillagerRecruitRequestPayload.Action.FOLLOW) {
             this.followingPlayer = !this.followingPlayer;
         }
+    }
+
+    private void sendToServer(CustomPacketPayload payload) {
+        PacketDistributor.sendToServer(payload);
     }
 
     private void openPage(DialoguePage page) {
