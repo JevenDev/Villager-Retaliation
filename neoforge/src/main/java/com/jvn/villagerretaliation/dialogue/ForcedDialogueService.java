@@ -482,11 +482,31 @@ public final class ForcedDialogueService {
                             VillagerInteractionService.villagerSpeakerLabel(villager)
                     );
                 }
+                FORCED_SESSIONS.remove(player.getUUID());
+                VillagerConversationService.endForPlayer(player, true);
+                openTradeRefreshDialogue(player.serverLevel(), villager, player, result.messageKey(), result.replacements());
+            } else {
+                updateTradeRefreshFailureSession(player, villager, session, result.messageKey(), result.replacements());
             }
-            FORCED_SESSIONS.remove(player.getUUID());
-            VillagerConversationService.endForPlayer(player, true);
-            openTradeRefreshDialogue(player.serverLevel(), villager, player, result.messageKey(), result.replacements());
             return true;
+        }
+        if (isTradeRefreshSurpriseOption(session, option)) {
+            Optional<VillagerSpecialOrderService.QueueResult> limitResult =
+                    VillagerTradeRefreshService.activeRequestLimitReached(villager, player.getUUID());
+            if (limitResult.isPresent()) {
+                VillagerTradeRefreshService.sendState(player, villager);
+                updateTradeRefreshFailureSession(player, villager, session, limitResult.get().messageKey(), limitResult.get().replacements());
+                return true;
+            }
+        }
+        if (isTradeRefreshSpecialOrderOption(session, option)) {
+            Optional<VillagerSpecialOrderService.QueueResult> blocker =
+                    specialOrderSelectionBlocker(player.serverLevel(), villager, player);
+            if (blocker.isPresent()) {
+                VillagerTradeRefreshService.sendState(player, villager);
+                updateTradeRefreshFailureSession(player, villager, session, blocker.get().messageKey(), blocker.get().replacements());
+                return true;
+            }
         }
         String responseText = option.selectResponse(player.serverLevel().getRandom());
         String stolenItemReturnResponse = stolenItemReturn.selectSuccessResponse(player.serverLevel().getRandom());
@@ -705,36 +725,33 @@ public final class ForcedDialogueService {
                 option.reputationCondition());
     }
 
+    private static Optional<VillagerSpecialOrderService.QueueResult> specialOrderSelectionBlocker(
+            ServerLevel level,
+            Villager villager,
+            ServerPlayer player) {
+        if (VillagerSpecialOrderService.hasReachedActiveOrderLimit(villager, player.getUUID())) {
+            return Optional.of(VillagerSpecialOrderService.activeOrderLimitReached(villager, player.getUUID()));
+        }
+        return VillagerSpecialOrderService.activeCooldown(level, villager, player.getUUID());
+    }
+
     private static void openSpecialOrderSelectionDialogue(
             ServerPlayer player,
             Villager villager,
             ForcedDialogueSession session) {
         ServerLevel level = player.serverLevel();
-        if (VillagerSpecialOrderService.hasReachedActiveOrderLimit(villager, player.getUUID())) {
-            VillagerSpecialOrderService.QueueResult result =
-                    VillagerSpecialOrderService.activeOrderLimitReached(villager, player.getUUID());
-            FORCED_SESSIONS.remove(player.getUUID());
-            VillagerConversationService.endForPlayer(player, true);
+        Optional<VillagerSpecialOrderService.QueueResult> blocker =
+                specialOrderSelectionBlocker(level, villager, player);
+        if (blocker.isPresent()) {
             VillagerTradeRefreshService.sendState(player, villager);
-            openTradeRefreshDialogue(level, villager, player, result.messageKey(), result.replacements());
-            return;
-        }
-        Optional<VillagerSpecialOrderService.QueueResult> cooldownResult =
-                VillagerSpecialOrderService.activeCooldown(level, villager, player.getUUID());
-        if (cooldownResult.isPresent()) {
-            FORCED_SESSIONS.remove(player.getUUID());
-            VillagerConversationService.endForPlayer(player, true);
-            VillagerTradeRefreshService.sendState(player, villager);
-            openTradeRefreshDialogue(level, villager, player, cooldownResult.get().messageKey(), cooldownResult.get().replacements());
+            updateTradeRefreshFailureSession(player, villager, session, blocker.get().messageKey(), blocker.get().replacements());
             return;
         }
 
         List<VillagerSpecialOrderService.SpecialOrderOption> specialOrders =
                 VillagerSpecialOrderService.availableOptions(level, villager, player, session.tradeRefreshOfferIndex());
         if (specialOrders.isEmpty()) {
-            FORCED_SESSIONS.remove(player.getUUID());
-            VillagerConversationService.endForPlayer(player, true);
-            openTradeRefreshDialogue(level, villager, player, "trade_refresh.special_order_unavailable", Map.of());
+            updateTradeRefreshFailureSession(player, villager, session, "trade_refresh.special_order_unavailable", Map.of());
             return;
         }
 
@@ -771,22 +788,11 @@ public final class ForcedDialogueService {
             ForcedDialogueSession session,
             ResourceLocation definitionId) {
         ServerLevel level = player.serverLevel();
-        if (VillagerSpecialOrderService.hasReachedActiveOrderLimit(villager, player.getUUID())) {
-            VillagerSpecialOrderService.QueueResult result =
-                    VillagerSpecialOrderService.activeOrderLimitReached(villager, player.getUUID());
-            FORCED_SESSIONS.remove(player.getUUID());
-            VillagerConversationService.endForPlayer(player, true);
+        Optional<VillagerSpecialOrderService.QueueResult> blocker =
+                specialOrderSelectionBlocker(level, villager, player);
+        if (blocker.isPresent()) {
             VillagerTradeRefreshService.sendState(player, villager);
-            openTradeRefreshDialogue(level, villager, player, result.messageKey(), result.replacements());
-            return;
-        }
-        Optional<VillagerSpecialOrderService.QueueResult> cooldownResult =
-                VillagerSpecialOrderService.activeCooldown(level, villager, player.getUUID());
-        if (cooldownResult.isPresent()) {
-            FORCED_SESSIONS.remove(player.getUUID());
-            VillagerConversationService.endForPlayer(player, true);
-            VillagerTradeRefreshService.sendState(player, villager);
-            openTradeRefreshDialogue(level, villager, player, cooldownResult.get().messageKey(), cooldownResult.get().replacements());
+            updateTradeRefreshFailureSession(player, villager, session, blocker.get().messageKey(), blocker.get().replacements());
             return;
         }
 
@@ -797,9 +803,7 @@ public final class ForcedDialogueService {
                 .findFirst()
                 .orElse(null);
         if (specialOrder == null) {
-            FORCED_SESSIONS.remove(player.getUUID());
-            VillagerConversationService.endForPlayer(player, true);
-            openTradeRefreshDialogue(level, villager, player, "trade_refresh.special_order_unavailable", Map.of());
+            updateTradeRefreshFailureSession(player, villager, session, "trade_refresh.special_order_unavailable", Map.of());
             return;
         }
 
@@ -900,6 +904,37 @@ public final class ForcedDialogueService {
                 VillagerReputationCondition.empty());
     }
 
+    private static void updateTradeRefreshFailureSession(
+            ServerPlayer player,
+            Villager villager,
+            ForcedDialogueSession session,
+            String messageKey,
+            Map<String, String> replacements) {
+        ServerLevel level = player.serverLevel();
+        String line = tradeRefreshLine(level, villager, player, messageKey, replacements);
+        Optional<ForcedDialogueDefinition> optionDefinition = tradeRefreshOptionDefinition(level, villager, player, messageKey);
+        if (optionDefinition.isEmpty()) {
+            VillagerInteractionService.sendVillagerNotice(player, villager, line);
+            return;
+        }
+        ForcedDialogueDefinition options = tradeRefreshRequirementOptions(
+                level,
+                villager,
+                player,
+                optionDefinition.get(),
+                messageKey,
+                replacements);
+        ForcedDialogueDefinition definition = tradeRefreshDefinition(line, options);
+        ForcedDialogueContext context = tradeRefreshContext(level, villager, player, replacements);
+        updateTradeRefreshSession(
+                player,
+                villager,
+                definition,
+                context,
+                session.tradeRefreshOfferIndex(),
+                session.tradeRefreshDefinitionId());
+    }
+
     private static void updateTradeRefreshSession(
             ServerPlayer player,
             Villager villager,
@@ -939,6 +974,7 @@ public final class ForcedDialogueService {
                 || "trade_refresh.special_order_unavailable".equals(messageKey)
                 || "trade_refresh.special_order_pending".equals(messageKey)
                 || "trade_refresh.special_order_limit_reached".equals(messageKey)
+                || "trade_refresh.request_limit_reached".equals(messageKey)
                 || "trade_refresh.special_order_cooldown".equals(messageKey)
                 || "trade_refresh.special_order_payment_missing".equals(messageKey)
                 || "trade_refresh.special_order_status_empty".equals(messageKey);
@@ -951,6 +987,7 @@ public final class ForcedDialogueService {
             case "trade_refresh.special_order_unavailable" -> Optional.of("trade_refresh.requirements.special_order_unavailable");
             case "trade_refresh.special_order_pending" -> Optional.of("trade_refresh.requirements.special_order_pending");
             case "trade_refresh.special_order_limit_reached" -> Optional.of("trade_refresh.requirements.special_order_limit_reached");
+            case "trade_refresh.request_limit_reached" -> Optional.of("trade_refresh.requirements.request_limit_reached");
             case "trade_refresh.special_order_cooldown" -> Optional.of("trade_refresh.requirements.special_order_cooldown");
             case "trade_refresh.special_order_payment_missing" -> Optional.of("trade_refresh.requirements.special_order_payment_missing");
             case "trade_refresh.special_order_status_empty" -> Optional.of("trade_refresh.requirements.special_order_status_empty");

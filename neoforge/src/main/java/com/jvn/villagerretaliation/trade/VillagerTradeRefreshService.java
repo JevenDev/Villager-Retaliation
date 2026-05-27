@@ -10,7 +10,9 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -28,6 +30,7 @@ import org.jetbrains.annotations.Nullable;
 
 public final class VillagerTradeRefreshService {
     private static final String PENDING_REFRESHES_KEY = "VillagerRetaliationPendingTradeRefreshes";
+    private static final String PLAYER_KEY = "Player";
     private static final String OFFER_INDEX_KEY = "OfferIndex";
     private static final String READY_DAY_KEY = "ReadyDay";
     private static final String TRADE_ITEM_KEY = "TradeItem";
@@ -150,6 +153,18 @@ public final class VillagerTradeRefreshService {
             ServerPlayer player,
             int offerIndex,
             String tradeItem) {
+        Optional<VillagerSpecialOrderService.QueueResult> limitResult =
+                activeRequestLimitReached(villager, player.getUUID());
+        if (limitResult.isPresent()) {
+            sendState(player, villager);
+            ForcedDialogueService.openTradeRefreshDialogue(
+                    level,
+                    villager,
+                    player,
+                    limitResult.get().messageKey(),
+                    limitResult.get().replacements());
+            return;
+        }
         if (createReplacement(level, villager, offerIndex) == null
                 && createReplacementAvoidingCurrentSlot(level, villager, offerIndex) == null) {
             sendState(player, villager);
@@ -157,7 +172,7 @@ public final class VillagerTradeRefreshService {
             return;
         }
 
-        scheduleRefresh(villager, offerIndex, currentDay(level) + 1L, tradeItem);
+        scheduleRefresh(villager, player.getUUID(), offerIndex, currentDay(level) + 1L, tradeItem);
         sendState(player, villager);
         ForcedDialogueService.openTradeRefreshDialogue(
                 level,
@@ -165,6 +180,33 @@ public final class VillagerTradeRefreshService {
                 player,
                 "trade_refresh.accept",
                 Map.of("trade_item", tradeItem));
+    }
+
+    private static int activeRequestCount(Villager villager, UUID playerId) {
+        return activeRandomRefreshCount(villager, playerId) + VillagerSpecialOrderService.activeOrderCount(villager, playerId);
+    }
+
+    public static Optional<VillagerSpecialOrderService.QueueResult> activeRequestLimitReached(
+            Villager villager,
+            UUID playerId) {
+        int activeRequests = activeRequestCount(villager, playerId);
+        int maxActiveRequests = VillagerSpecialOrderService.maxActiveOrders();
+        if (activeRequests < maxActiveRequests) {
+            return Optional.empty();
+        }
+        return Optional.of(new VillagerSpecialOrderService.QueueResult(
+                false,
+                "trade_refresh.request_limit_reached",
+                activeRequestLimitReplacements(activeRequests, maxActiveRequests)));
+    }
+
+    private static Map<String, String> activeRequestLimitReplacements(int activeRequests, int maxActiveRequests) {
+        return Map.of(
+                "active_orders", Integer.toString(activeRequests),
+                "active_order_word", VillagerSpecialOrderService.pluralWord(activeRequests, "request", "requests"),
+                "max_order_count_word", VillagerSpecialOrderService.pluralWord(maxActiveRequests, "is", "are"),
+                "max_order_word", VillagerSpecialOrderService.pluralWord(maxActiveRequests, "request", "requests"),
+                "max_orders", Integer.toString(maxActiveRequests));
     }
 
     public static boolean applyReadyRefreshes(ServerLevel level, Villager villager, @Nullable ServerPlayer player) {
@@ -249,17 +291,35 @@ public final class VillagerTradeRefreshService {
         return List.copyOf(indexes);
     }
 
-    private static void scheduleRefresh(Villager villager, int offerIndex, long readyDay, String tradeItem) {
+    private static void scheduleRefresh(Villager villager, UUID playerId, int offerIndex, long readyDay, String tradeItem) {
         CompoundTag persistentData = villager.getPersistentData();
         ListTag pending = persistentData.contains(PENDING_REFRESHES_KEY, Tag.TAG_LIST)
                 ? persistentData.getList(PENDING_REFRESHES_KEY, Tag.TAG_COMPOUND)
                 : new ListTag();
         CompoundTag entry = new CompoundTag();
+        entry.putUUID(PLAYER_KEY, playerId);
         entry.putInt(OFFER_INDEX_KEY, offerIndex);
         entry.putLong(READY_DAY_KEY, readyDay);
         entry.putString(TRADE_ITEM_KEY, tradeItem);
         pending.add(entry);
         persistentData.put(PENDING_REFRESHES_KEY, pending);
+    }
+
+    private static int activeRandomRefreshCount(Villager villager, UUID playerId) {
+        CompoundTag persistentData = villager.getPersistentData();
+        if (!persistentData.contains(PENDING_REFRESHES_KEY, Tag.TAG_LIST)) {
+            return 0;
+        }
+
+        ListTag pending = persistentData.getList(PENDING_REFRESHES_KEY, Tag.TAG_COMPOUND);
+        int count = 0;
+        for (int i = 0; i < pending.size(); i++) {
+            CompoundTag entry = pending.getCompound(i);
+            if (entry.hasUUID(PLAYER_KEY) && entry.getUUID(PLAYER_KEY).equals(playerId)) {
+                count++;
+            }
+        }
+        return count;
     }
 
     private static boolean hasPendingRefresh(Villager villager, int offerIndex) {

@@ -31,6 +31,8 @@
 - Special Order status choices now remain in the forced-dialogue flow when selected from the `Ask about orders` menu.
 - `Ask about orders` now opens its dynamic status choices by updating the existing dialogue screen instead of replacing the client screen.
 - Trade refresh `What do you need?` replies now explain the specific blocker, such as missing replacement stock, full Special Order slots, cooldown, or missing payment.
+- Random trade-refresh requests now share the same three-active-request cap as Special Orders and use matching request-limit dialogue.
+- Trade refresh blocker responses reached from an existing forced-dialogue menu now update that menu in place, or fall back to villager chat if no option set is available.
 - Regular completed trades now add `0.5` primary profession skill progress by default instead of `0.1`, giving one visible skill point every two trades.
 - Special Orders now treat `min_rank` as the skill unlock and ignore `max_rank`, letting high-skill villagers fulfill earlier catalog requests and duplicate items they already stock.
 

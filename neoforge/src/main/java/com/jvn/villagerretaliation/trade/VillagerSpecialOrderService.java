@@ -399,7 +399,7 @@ public final class VillagerSpecialOrderService {
         return definitionMin.trustRank() > configMin.trustRank() ? definitionMin : configMin;
     }
 
-    private static int maxActiveOrders() {
+    public static int maxActiveOrders() {
         return Math.clamp(VillagerRetaliationConfig.SPECIAL_ORDER_MAX_ACTIVE_PER_PLAYER.get(), 1, 3);
     }
 

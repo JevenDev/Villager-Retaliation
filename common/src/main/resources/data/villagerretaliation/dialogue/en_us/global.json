@@ -2503,6 +2503,14 @@
       ]
     },
     {
+      "key": "trade_refresh.request_limit_reached",
+      "lines": [
+        "I already have {active_orders} active {active_order_word} for you. {max_orders} {max_order_word} {max_order_count_word} all I can manage at once.",
+        "Your request ledger is full at {active_orders} {active_order_word}. Let me finish one before adding another.",
+        "No more than {max_orders} active {max_order_word} at a time. Come back when one is ready."
+      ]
+    },
+    {
       "key": "trade_refresh.special_order_cooldown",
       "lines": [
         "I need {cooldown_days} more {cooldown_day_word} before taking another Special Order from you.",
@@ -2585,6 +2593,14 @@
         "I need a free order slot. You already have {active_orders} active {active_order_word}, and {max_orders} {max_order_word} is my limit.",
         "Your ledger is full. I need one of your {active_orders} active {active_order_word} to finish first.",
         "I cannot take more than {max_orders} Special {max_order_word} at once. Let one clear, then ask again."
+      ]
+    },
+    {
+      "key": "trade_refresh.requirements.request_limit_reached",
+      "lines": [
+        "I need a free request slot. You already have {active_orders} active {active_order_word}, and {max_orders} {max_order_word} is my limit.",
+        "Your request ledger is full. I need one of your {active_orders} active {active_order_word} to finish first.",
+        "I cannot manage more than {max_orders} active {max_order_word} for you at once."
       ]
     },
     {
