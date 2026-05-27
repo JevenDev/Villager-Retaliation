@@ -27,6 +27,9 @@
 - Special Order selection rows now collapse requestable definitions with the same result item by keeping the higher-count result, such as preferring 2x Empty Map over Empty Map.
 - Special Order confirmation, queued, cooldown, and limit dialogue now receives singular/plural placeholders so built-in lines say `day`/`days` and `request`/`requests` naturally.
 - Clicking `Place Special Order` now plays a randomized data-driven follow-up response before the queued-order dialogue opens.
+- Special Order cooldown now starts when the request is accepted, preventing the same player from immediately placing another Special Order with that villager.
+- Special Order status choices now remain in the forced-dialogue flow when selected from the `Ask about orders` menu.
+- `Ask about orders` now opens its dynamic status choices by updating the existing dialogue screen instead of replacing the client screen.
 - Regular completed trades now add `0.5` primary profession skill progress by default instead of `0.1`, giving one visible skill point every two trades.
 - Special Orders now treat `min_rank` as the skill unlock and ignore `max_rank`, letting high-skill villagers fulfill earlier catalog requests and duplicate items they already stock.
 

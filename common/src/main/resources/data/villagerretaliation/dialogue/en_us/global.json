@@ -26,7 +26,7 @@
     },
     {
       "id": "trade_refresh.special_order.status",
-      "label": "Ask about orders.",
+      "label": "Ask about orders",
       "type": "dialogue_option",
       "request": "question",
       "order": 1,
@@ -2441,7 +2441,7 @@
     {
       "key": "trade_refresh.special_order_confirm",
       "lines": [
-        "A Special Order for {trade_item} will take {wait_days} {wait_day_word}. After it is fulfilled, I need {cooldown_days} {cooldown_day_word} before another order from you.",
+        "A Special Order for {trade_item} will take {wait_days} {wait_day_word}. I need {cooldown_days} {cooldown_day_word} before another order from you.",
         "I can arrange {trade_item}. It will take {wait_days} {wait_day_word}, and I will need {cooldown_days} {cooldown_day_word} before taking another order from you.",
         "{trade_item} is possible. Give me {wait_days} {wait_day_word}, then wait {cooldown_days} {cooldown_day_word} before asking me for another order."
       ]
@@ -2450,7 +2450,7 @@
       "key": "trade_refresh.special_order_queued",
       "lines": [
         "Your Special Order for {trade_item} is set. Come back after {wait_days} {wait_day_word}, then give me {cooldown_days} {cooldown_day_word} before another order.",
-        "I have marked the Special Order for {trade_item}. It will be ready after {wait_days} {wait_day_word}, with {cooldown_days} {cooldown_day_word} of recovery after fulfillment.",
+        "I have marked the Special Order for {trade_item}. It will be ready after {wait_days} {wait_day_word}, and I need {cooldown_days} {cooldown_day_word} before another request.",
         "{trade_item} is ordered. Give me {wait_days} {wait_day_word} to prepare it properly, then {cooldown_days} {cooldown_day_word} before the next request."
       ]
     },
@@ -2458,7 +2458,7 @@
       "key": "trade_refresh.special_order_queued_first",
       "lines": [
         "Your first Special Order is on the ledger: {trade_item}. Give me {wait_days} {wait_day_word}, then {cooldown_days} {cooldown_day_word} before another order.",
-        "I have room for that. {trade_item} will be ready after {wait_days} {wait_day_word}, with {cooldown_days} {cooldown_day_word} of recovery after fulfillment.",
+        "I have room for that. {trade_item} will be ready after {wait_days} {wait_day_word}, and I need {cooldown_days} {cooldown_day_word} before another request.",
         "{trade_item} is marked as your first active order. I will prepare it in {wait_days} {wait_day_word}, then need {cooldown_days} {cooldown_day_word} before another."
       ]
     },
@@ -2467,7 +2467,7 @@
       "lines": [
         "That makes two active Special Orders. I will add {trade_item} to the list for {wait_days} {wait_day_word} from now.",
         "I can manage a second request. {trade_item} will take {wait_days} {wait_day_word}, then {cooldown_days} {cooldown_day_word} before another order.",
-        "{trade_item} is now your second open order. I still have one more slot after this, and a {cooldown_days} {cooldown_day_word} cooldown after fulfillment."
+        "{trade_item} is now your second open order. I still have one more slot after this, and a {cooldown_days} {cooldown_day_word} cooldown before another request."
       ]
     },
     {

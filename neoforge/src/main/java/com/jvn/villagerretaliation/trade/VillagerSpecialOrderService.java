@@ -156,12 +156,9 @@ public final class VillagerSpecialOrderService {
 
         long currentDay = currentDay(level);
         pruneCooldowns(villager, currentDay);
-        long cooldownEndDay = cooldownEndDay(villager, player.getUUID());
-        if (cooldownEndDay > currentDay) {
-            long cooldownDays = cooldownEndDay - currentDay;
-            return QueueResult.failed("trade_refresh.special_order_cooldown", Map.of(
-                    "cooldown_days", Long.toString(cooldownDays),
-                    "cooldown_day_word", pluralWord(cooldownDays, "day", "days")));
+        QueueResult cooldownResult = activeCooldown(villager, player.getUUID(), currentDay);
+        if (cooldownResult != null) {
+            return cooldownResult;
         }
 
         SpecialOrderOption option = availableOptions(level, villager, player, offerIndex)
@@ -182,7 +179,7 @@ public final class VillagerSpecialOrderService {
         }
 
         long readyDay = currentDay + option.waitDays();
-        long nextCooldownEndDay = readyDay + option.cooldownDays();
+        long nextCooldownEndDay = currentDay + option.cooldownDays();
         CompoundTag persistentData = villager.getPersistentData();
         ListTag orders = ordersTag(persistentData);
         CompoundTag order = new CompoundTag();
@@ -195,6 +192,7 @@ public final class VillagerSpecialOrderService {
         order.putString(STATUS_KEY, STATUS_PENDING);
         orders.add(order);
         persistentData.put(ORDERS_KEY, orders);
+        setCooldown(villager, player.getUUID(), nextCooldownEndDay);
         VillagerTradeMemory.rememberDefinition(level, villager, VillagerProfessionUtil.id(villager.getVillagerData().getProfession()), definitionId);
         int queuedOrderCount = activeOrders + 1;
         Map<String, String> replacements = new HashMap<>(replacements(option, cost));
@@ -350,7 +348,7 @@ public final class VillagerSpecialOrderService {
                     tradeItem,
                     daysRemaining,
                     timeRemainingDescription(daysRemaining),
-                    orderLabel(offerIndex, tradeItem, daysRemaining)));
+                    orderLabel(tradeItem)));
         }
         statuses.sort(Comparator
                 .comparingLong(ActiveOrderStatus::daysRemaining)
@@ -368,6 +366,12 @@ public final class VillagerSpecialOrderService {
     public static boolean isOnCooldown(ServerLevel level, Villager villager, UUID playerId) {
         pruneCooldowns(villager, currentDay(level));
         return cooldownEndDay(villager, playerId) > currentDay(level);
+    }
+
+    public static Optional<QueueResult> activeCooldown(ServerLevel level, Villager villager, UUID playerId) {
+        long currentDay = currentDay(level);
+        pruneCooldowns(villager, currentDay);
+        return Optional.ofNullable(activeCooldown(villager, playerId, currentDay));
     }
 
     private static boolean isEligibleDefinition(
@@ -406,6 +410,17 @@ public final class VillagerSpecialOrderService {
                 "max_order_count_word", pluralWord(maxActiveOrders, "is", "are"),
                 "max_order_word", pluralWord(maxActiveOrders, "order", "orders"),
                 "max_orders", Integer.toString(maxActiveOrders)));
+    }
+
+    private static QueueResult activeCooldown(Villager villager, UUID playerId, long currentDay) {
+        long cooldownEndDay = cooldownEndDay(villager, playerId);
+        if (cooldownEndDay <= currentDay) {
+            return null;
+        }
+        long cooldownDays = cooldownEndDay - currentDay;
+        return QueueResult.failed("trade_refresh.special_order_cooldown", Map.of(
+                "cooldown_days", Long.toString(cooldownDays),
+                "cooldown_day_word", pluralWord(cooldownDays, "day", "days")));
     }
 
     private static boolean meetsReputation(VillagerReputationLevel playerLevel, VillagerReputationLevel requiredLevel) {
@@ -463,8 +478,8 @@ public final class VillagerSpecialOrderService {
         return label.toString();
     }
 
-    private static String orderLabel(int offerIndex, String tradeItem, long daysRemaining) {
-        return "Slot " + (offerIndex + 1) + ": " + tradeItem + " - " + timeRemainingDescription(daysRemaining);
+    private static String orderLabel(String tradeItem) {
+        return tradeItem;
     }
 
     private static String timeRemainingDescription(long daysRemaining) {

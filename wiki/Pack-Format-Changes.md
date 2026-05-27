@@ -49,7 +49,7 @@ Pack-facing beta.12 changes introduce persistent Social Attributes and temporary
 - Added villager trade refresh support for skill-generated trades. Refresh requests are stored per villager and per offer slot, mature on the next Minecraft day, and replace the selected slot with an eligible skill-trade offer when ready.
 - Added persistent per-villager, per-profession skill-trade pools. Villagers remember known skill-trade definition ids for professions they have actually held and reuse that memory when reacquiring the same profession.
 - Added Respected Special Orders: high-reputation players can choose targetable skill-trade definitions for longer, cooldown-gated restock requests, up to three active requests per villager/player.
-- Added an `Ask about orders.` dialogue branch for active Special Orders, with a data-driven root dialogue option, dynamic per-order status options, and eight stock-time response variations.
+- Added an `Ask about orders` dialogue branch for active Special Orders, with a data-driven root dialogue option, dynamic per-order status options, and eight stock-time response variations.
 - Added optional skill-trade `request` metadata: `targetable`, `display_priority`, `min_reputation`, `wait_days`, `cooldown_days`, and `extra_cost`.
 - Added the forced-dialogue trigger value `trade_refresh` for data-driven trade-refresh option templates.
 - Added built-in forced-dialogue entries `trade_refresh.available_options`, `trade_refresh.unavailable_options`, `trade_refresh.revered_options`, `trade_refresh.special_order_select_options`, `trade_refresh.special_order_confirm_options`, and `trade_refresh.special_order_status_options`.

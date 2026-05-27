@@ -385,23 +385,7 @@ public final class ForcedDialogueService {
                 optionDefinition.get(),
                 activeOrders);
         ForcedDialogueContext context = tradeRefreshContext(level, villager, player, Map.of());
-        if (VillagerInteractionService.openForcedDialogue(
-                player,
-                villager,
-                definition.selectLine(level.getRandom()),
-                forcedOptions(definition, level, villager, player),
-                true)) {
-            FORCED_SESSIONS.put(player.getUUID(), new ForcedDialogueSession(
-                    villager.getUUID(),
-                    definition,
-                    context,
-                    level.dimension(),
-                    villager.blockPosition().immutable(),
-                    List.of(),
-                    level.getGameTime(),
-                    -1,
-                    ""));
-        }
+        updateTradeRefreshSession(player, villager, definition, context, -1, "");
         return true;
     }
 
@@ -525,7 +509,7 @@ public final class ForcedDialogueService {
             return true;
         }
         Optional<Integer> selectedSpecialOrderStatus = VillagerSpecialOrderService.selectedStatusOfferIndex(option.id());
-        if (selectedSpecialOrderStatus.isPresent() && isTradeRefreshDefinition(session)) {
+        if (selectedSpecialOrderStatus.isPresent()) {
             openSpecialOrderStatusResponseDialogue(player, villager, selectedSpecialOrderStatus.get());
             return true;
         }
@@ -682,6 +666,15 @@ public final class ForcedDialogueService {
             openTradeRefreshDialogue(level, villager, player, result.messageKey(), result.replacements());
             return;
         }
+        Optional<VillagerSpecialOrderService.QueueResult> cooldownResult =
+                VillagerSpecialOrderService.activeCooldown(level, villager, player.getUUID());
+        if (cooldownResult.isPresent()) {
+            FORCED_SESSIONS.remove(player.getUUID());
+            VillagerConversationService.endForPlayer(player, true);
+            VillagerTradeRefreshService.sendState(player, villager);
+            openTradeRefreshDialogue(level, villager, player, cooldownResult.get().messageKey(), cooldownResult.get().replacements());
+            return;
+        }
 
         List<VillagerSpecialOrderService.SpecialOrderOption> specialOrders =
                 VillagerSpecialOrderService.availableOptions(level, villager, player, session.tradeRefreshOfferIndex());
@@ -732,6 +725,15 @@ public final class ForcedDialogueService {
             VillagerConversationService.endForPlayer(player, true);
             VillagerTradeRefreshService.sendState(player, villager);
             openTradeRefreshDialogue(level, villager, player, result.messageKey(), result.replacements());
+            return;
+        }
+        Optional<VillagerSpecialOrderService.QueueResult> cooldownResult =
+                VillagerSpecialOrderService.activeCooldown(level, villager, player.getUUID());
+        if (cooldownResult.isPresent()) {
+            FORCED_SESSIONS.remove(player.getUUID());
+            VillagerConversationService.endForPlayer(player, true);
+            VillagerTradeRefreshService.sendState(player, villager);
+            openTradeRefreshDialogue(level, villager, player, cooldownResult.get().messageKey(), cooldownResult.get().replacements());
             return;
         }
 
