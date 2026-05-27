@@ -280,6 +280,22 @@ Each completed normal villager trade can also add slow fractional progress to th
 
 Regular trade growth is profession-primary only. A farmer's completed trades slowly improve Farming, a cartographer's completed trades slowly improve Cartography, and smithing professions improve their mapped primary skill. This is intentionally separate from reputation pricing and does not affect player trust.
 
+## Skill-Based Trade Leveling
+
+Normal villager trade-level XP is also scaled by the villager's primary profession skill. Low-skill villagers keep only a small fraction of the vanilla trade XP, so reaching Apprentice, Journeyman, Expert, and Master takes much longer. High-skill villagers approach vanilla leveling speed.
+
+The default curve is intentionally strict:
+
+```text
+Very low primary skill: about 20% vanilla villager trade XP
+Medium primary skill: roughly 40% vanilla villager trade XP
+Very high primary skill: up to 100% vanilla villager trade XP
+```
+
+Fractional scaled XP is stored on the villager profile as `TradeLevelSkillAdjustedXpProgress`, so small trades can still add up over time without giving every trade a full villager XP point. This affects only vanilla villager trade-level XP; player XP orbs, reputation, and skill growth are handled separately.
+
+If skill-based trade leveling is disabled, vanilla villager trade-level XP gain is left alone.
+
 When a normal villager reaches a new vanilla trade level, the mod can improve relevant Skills once for each newly crossed milestone:
 
 ```text
@@ -325,6 +341,9 @@ skillTradeAllowRareSpecialtyTrades
 enableSkillGrowthFromTradingLevels
 enableRegularTradeSkillGrowth
 regularTradeSkillGrowthAmount
+enableSkillBasedTradeLeveling
+skillBasedTradeLevelingMinMultiplier
+skillBasedTradeLevelingMaxMultiplier
 enableSkillGrowthFeedback
 skillGrowthPrimaryMin
 skillGrowthPrimaryMax

@@ -136,9 +136,13 @@ public class VillagerInteractionScreen extends Screen {
     private boolean awaitingForcedDialogueResponse;
     private boolean profileRefreshRequested;
     private boolean draggingScrollbar;
+    private boolean draggingSkillScrollbar;
     private float scrollbarDragOffset;
+    private float skillScrollbarDragOffset;
     private float optionScroll;
     private float targetOptionScroll;
+    private float skillScroll;
+    private float targetSkillScroll;
     private int selectedInventorySlot = -1;
     private Button giftButton;
     private Double originalChatWidth;
@@ -248,6 +252,7 @@ public class VillagerInteractionScreen extends Screen {
         focusVillagerOnPlayer();
         updateMouseSelection(mouseX, mouseY);
         updateOptionScroll();
+        updateSkillScroll();
 
         int optionsTop = optionsTop();
         renderConversationFocus(graphics, conversationInfoTop(), mouseX, mouseY);
@@ -318,6 +323,7 @@ public class VillagerInteractionScreen extends Screen {
         if (tryClickBackButton(mouseX, mouseY)
                 || tryClickFamilyButton(mouseX, mouseY)
                 || tryClickRelationshipButton(mouseX, mouseY)
+                || tryBeginSkillInfoScrollbarDrag(mouseX, mouseY)
                 || tryBeginScrollbarDrag(mouseX, mouseY)
                 || tryActivateHoveredOption(mouseX, mouseY)) {
             return true;
@@ -328,6 +334,13 @@ public class VillagerInteractionScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (this.page == DialoguePage.SKILLS
+                && maxSkillScroll() > 0.0F
+                && isPointInsideSkillsInfoScrollArea(mouseX, mouseY)) {
+            setTargetSkillScroll(this.targetSkillScroll - (float) scrollY * OPTION_SCROLL_STEP);
+            return true;
+        }
+
         if (maxOptionScroll() <= 0.0F || !isPointInsideOptionScrollArea(mouseX, mouseY)) {
             return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
         }
@@ -338,6 +351,9 @@ public class VillagerInteractionScreen extends Screen {
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        if (isLeftMouseButton(button) && this.draggingSkillScrollbar) {
+            return dragSkillScrollbar(mouseY);
+        }
         if (isLeftMouseButton(button) && this.draggingScrollbar) {
             return dragScrollbar(mouseY);
         }
@@ -346,6 +362,10 @@ public class VillagerInteractionScreen extends Screen {
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        if (isLeftMouseButton(button) && this.draggingSkillScrollbar) {
+            this.draggingSkillScrollbar = false;
+            return true;
+        }
         if (isLeftMouseButton(button) && this.draggingScrollbar) {
             this.draggingScrollbar = false;
             return true;
@@ -595,6 +615,9 @@ public class VillagerInteractionScreen extends Screen {
     private void openSkillsPage() {
         this.page = DialoguePage.SKILLS;
         this.profileRefreshRequested = false;
+        this.skillScroll = 0.0F;
+        this.targetSkillScroll = 0.0F;
+        this.draggingSkillScrollbar = false;
         requestProfileRefresh();
         rebuildOptions();
     }
@@ -730,6 +753,15 @@ public class VillagerInteractionScreen extends Screen {
         }
     }
 
+    private void updateSkillScroll() {
+        this.skillScroll = Mth.clamp(this.skillScroll, 0.0F, maxSkillScroll());
+        this.targetSkillScroll = Mth.clamp(this.targetSkillScroll, 0.0F, maxSkillScroll());
+        this.skillScroll = Mth.lerp(OPTION_SCROLL_LERP, this.skillScroll, this.targetSkillScroll);
+        if (Math.abs(this.skillScroll - this.targetSkillScroll) < 0.15F) {
+            this.skillScroll = this.targetSkillScroll;
+        }
+    }
+
     private void renderOptions(GuiGraphics graphics, int mouseX, int mouseY, int top) {
         int left = optionsLeft();
         int viewportHeight = optionViewportHeight();
@@ -805,13 +837,18 @@ public class VillagerInteractionScreen extends Screen {
 
     private void renderSkillsInfo(GuiGraphics graphics) {
         int left = optionsLeft() + 6;
-        int top = Mth.floor(optionTextTop(conversationInfoTop()));
+        int viewportTop = conversationInfoTop();
+        int viewportBottom = viewportTop + rootOptionViewportHeight();
+        int top = Mth.floor(optionTextTop(viewportTop) - this.skillScroll);
         int width = OPTION_WIDTH - 12;
+        graphics.enableScissor(left - 18, viewportTop, left + OPTION_WIDTH + 4, viewportBottom);
         graphics.drawString(this.font, translate("profile.skills.info.title"), left, top, INFO_VALUE_COLOR, false);
         int y = top + optionStride();
         y = renderWrappedInfoLine(graphics, Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.trade"), left, y, width);
         y = renderWrappedInfoLine(graphics, Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.specialty"), left, y + 4, width);
         renderWrappedInfoLine(graphics, Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.recruit"), left, y + 4, width);
+        graphics.disableScissor();
+        renderScrollbar(graphics, skillInfoScrollbarThumb(), this.skillScroll, maxSkillScroll());
     }
 
     private int renderWrappedInfoLine(GuiGraphics graphics, Component component, int left, int top, int width) {
@@ -1430,6 +1467,21 @@ public class VillagerInteractionScreen extends Screen {
         return true;
     }
 
+    private boolean tryBeginSkillInfoScrollbarDrag(double mouseX, double mouseY) {
+        if (this.page != DialoguePage.SKILLS) {
+            return false;
+        }
+
+        ScrollbarThumb scrollbarThumb = skillInfoScrollbarThumb();
+        if (scrollbarThumb == null || !scrollbarThumb.contains(mouseX, mouseY)) {
+            return false;
+        }
+
+        this.draggingSkillScrollbar = true;
+        this.skillScrollbarDragOffset = (float) mouseY - scrollbarThumb.top();
+        return true;
+    }
+
     private boolean dragScrollbar(double mouseY) {
         ScrollbarThumb scrollbarThumb = scrollbarThumb();
         if (scrollbarThumb == null) {
@@ -1446,6 +1498,25 @@ public class VillagerInteractionScreen extends Screen {
             setTargetOptionScroll(maxOptionScroll() * ratio);
         }
         this.optionScroll = this.targetOptionScroll;
+        return true;
+    }
+
+    private boolean dragSkillScrollbar(double mouseY) {
+        ScrollbarThumb scrollbarThumb = skillInfoScrollbarThumb();
+        if (scrollbarThumb == null) {
+            this.draggingSkillScrollbar = false;
+            return false;
+        }
+
+        float trackTravel = scrollbarThumb.trackTravel();
+        if (trackTravel <= 0.0F) {
+            setTargetSkillScroll(0.0F);
+        } else {
+            float thumbTop = (float) mouseY - this.skillScrollbarDragOffset;
+            float ratio = Mth.clamp((thumbTop - scrollbarThumb.viewportTop()) / trackTravel, 0.0F, 1.0F);
+            setTargetSkillScroll(maxSkillScroll() * ratio);
+        }
+        this.skillScroll = this.targetSkillScroll;
         return true;
     }
 
@@ -1587,6 +1658,14 @@ public class VillagerInteractionScreen extends Screen {
         return mouseX >= left && mouseX <= right && mouseY >= top - 4 && mouseY <= bottom + 4;
     }
 
+    private boolean isPointInsideSkillsInfoScrollArea(double mouseX, double mouseY) {
+        int left = optionsLeft() - 18;
+        int right = optionsLeft() + OPTION_WIDTH + 4;
+        int top = conversationInfoTop();
+        int bottom = top + rootOptionViewportHeight();
+        return mouseX >= left && mouseX <= right && mouseY >= top - 4 && mouseY <= bottom + 4;
+    }
+
     private static boolean isLeftMouseButton(int button) {
         return button == GLFW.GLFW_MOUSE_BUTTON_LEFT;
     }
@@ -1647,6 +1726,27 @@ public class VillagerInteractionScreen extends Screen {
         return this.font.lineHeight + 4
                 + rows * PROFILE_SKILL_ROW_HEIGHT
                 + Math.max(0, rows - 1) * PROFILE_SKILL_ROW_GAP;
+    }
+
+    private float maxSkillScroll() {
+        return Math.max(0.0F, Mth.floor(optionTextTop(0)) + skillsInfoContentHeight() - rootOptionViewportHeight());
+    }
+
+    private void setTargetSkillScroll(float scroll) {
+        this.targetSkillScroll = Mth.clamp(scroll, 0.0F, maxSkillScroll());
+    }
+
+    private int skillsInfoContentHeight() {
+        int width = OPTION_WIDTH - 12;
+        int y = this.font.lineHeight + optionStride() - this.font.lineHeight;
+        y = wrappedInfoLineBottom(Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.trade"), y, width);
+        y = wrappedInfoLineBottom(Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.specialty"), y + 4, width);
+        return wrappedInfoLineBottom(Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.recruit"), y + 4, width);
+    }
+
+    private int wrappedInfoLineBottom(Component component, int top, int width) {
+        int lines = this.font.split(component, width).size();
+        return top + lines * (this.font.lineHeight + 2);
     }
 
     private int interactionVeilTop() {
@@ -1827,12 +1927,16 @@ public class VillagerInteractionScreen extends Screen {
 
     private void renderScrollbar(GuiGraphics graphics, int optionsLeft, int viewportTop, int viewportBottom) {
         ScrollbarThumb scrollbarThumb = scrollbarThumb();
+        renderScrollbar(graphics, scrollbarThumb, this.optionScroll, maxOptionScroll());
+    }
+
+    private void renderScrollbar(GuiGraphics graphics, ScrollbarThumb scrollbarThumb, float currentScroll, float maxScroll) {
         if (scrollbarThumb == null) {
             return;
         }
 
-        boolean canScrollUp = this.optionScroll > 0.75F;
-        boolean canScrollDown = this.optionScroll < maxOptionScroll() - 0.75F;
+        boolean canScrollUp = currentScroll > 0.75F;
+        boolean canScrollDown = currentScroll < maxScroll - 0.75F;
         int fadeLength = Math.min(8, Math.max(3, scrollbarThumb.height() / 3));
 
         for (int y = scrollbarThumb.top(); y < scrollbarThumb.bottom(); y++) {
@@ -1860,6 +1964,26 @@ public class VillagerInteractionScreen extends Screen {
         int thumbHeight = Math.max(18, Mth.floor(viewportHeight * (viewportHeight / optionContentHeight())));
         float trackTravel = Math.max(0.0F, viewportHeight - thumbHeight);
         float scrollRatio = maxScroll <= 0.0F ? 0.0F : this.optionScroll / maxScroll;
+        int thumbTop = viewportTop + Mth.floor(trackTravel * scrollRatio);
+        int hitLeft = scrollbarLeft - (OPTION_SCROLLBAR_HIT_WIDTH - OPTION_SCROLLBAR_WIDTH) / 2;
+        int hitRight = hitLeft + OPTION_SCROLLBAR_HIT_WIDTH;
+        return new ScrollbarThumb(scrollbarLeft, scrollbarRight, hitLeft, hitRight, thumbTop, thumbTop + thumbHeight, viewportTop, trackTravel);
+    }
+
+    private ScrollbarThumb skillInfoScrollbarThumb() {
+        float maxScroll = maxSkillScroll();
+        if (maxScroll <= 0.0F) {
+            return null;
+        }
+
+        int viewportTop = conversationInfoTop();
+        int viewportHeight = rootOptionViewportHeight();
+        int scrollbarLeft = optionsScrollbarLeft();
+        int scrollbarRight = scrollbarLeft + OPTION_SCROLLBAR_WIDTH;
+        int contentHeight = skillsInfoContentHeight();
+        int thumbHeight = Math.max(18, Mth.floor(viewportHeight * (viewportHeight / (float) contentHeight)));
+        float trackTravel = Math.max(0.0F, viewportHeight - thumbHeight);
+        float scrollRatio = maxScroll <= 0.0F ? 0.0F : this.skillScroll / maxScroll;
         int thumbTop = viewportTop + Mth.floor(trackTravel * scrollRatio);
         int hitLeft = scrollbarLeft - (OPTION_SCROLLBAR_HIT_WIDTH - OPTION_SCROLLBAR_WIDTH) / 2;
         int hitRight = hitLeft + OPTION_SCROLLBAR_HIT_WIDTH;

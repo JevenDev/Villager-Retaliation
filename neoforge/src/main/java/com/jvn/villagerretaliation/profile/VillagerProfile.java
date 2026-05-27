@@ -21,6 +21,7 @@ public class VillagerProfile {
     private static final String TAG_LAST_KNOWN_PROFESSION = "LastKnownProfession";
     private static final String TAG_HIGHEST_SKILL_GROWTH_TRADE_LEVEL_AWARDED = "HighestSkillGrowthTradeLevelAwarded";
     private static final String TAG_REGULAR_TRADE_SKILL_GROWTH_PROGRESS = "RegularTradeSkillGrowthProgress";
+    private static final String TAG_TRADE_LEVEL_SKILL_ADJUSTED_XP_PROGRESS = "TradeLevelSkillAdjustedXpProgress";
     private static final String TAG_CREATED_GAME_TIME = "CreatedGameTime";
     private static final String TAG_UPDATED_GAME_TIME = "UpdatedGameTime";
 
@@ -33,6 +34,7 @@ public class VillagerProfile {
     private String lastKnownProfession;
     private int highestSkillGrowthTradeLevelAwarded;
     private final EnumMap<VillagerSkill, Double> regularTradeSkillGrowthProgress;
+    private double tradeLevelSkillAdjustedXpProgress;
     private long createdGameTime;
     private long updatedGameTime;
 
@@ -46,6 +48,7 @@ public class VillagerProfile {
             String lastKnownProfession,
             int highestSkillGrowthTradeLevelAwarded,
             Map<VillagerSkill, Double> regularTradeSkillGrowthProgress,
+            double tradeLevelSkillAdjustedXpProgress,
             long createdGameTime,
             long updatedGameTime) {
         this.villagerUuid = villagerUuid;
@@ -57,6 +60,7 @@ public class VillagerProfile {
         this.lastKnownProfession = lastKnownProfession == null ? "" : lastKnownProfession;
         this.highestSkillGrowthTradeLevelAwarded = Math.clamp(highestSkillGrowthTradeLevelAwarded, 1, 5);
         this.regularTradeSkillGrowthProgress = copyRegularTradeSkillGrowthProgress(regularTradeSkillGrowthProgress);
+        this.tradeLevelSkillAdjustedXpProgress = clampFractionalProgress(tradeLevelSkillAdjustedXpProgress);
         this.createdGameTime = createdGameTime;
         this.updatedGameTime = updatedGameTime;
     }
@@ -80,6 +84,7 @@ public class VillagerProfile {
                 lastKnownProfession,
                 1,
                 Map.of(),
+                0.0D,
                 gameTime,
                 gameTime
         );
@@ -110,6 +115,9 @@ public class VillagerProfile {
                 tag.contains(TAG_REGULAR_TRADE_SKILL_GROWTH_PROGRESS, Tag.TAG_COMPOUND)
                         ? loadRegularTradeSkillGrowthProgress(tag.getCompound(TAG_REGULAR_TRADE_SKILL_GROWTH_PROGRESS))
                         : Map.of(),
+                tag.contains(TAG_TRADE_LEVEL_SKILL_ADJUSTED_XP_PROGRESS, Tag.TAG_DOUBLE)
+                        ? tag.getDouble(TAG_TRADE_LEVEL_SKILL_ADJUSTED_XP_PROGRESS)
+                        : 0.0D,
                 tag.contains(TAG_CREATED_GAME_TIME, Tag.TAG_LONG) ? tag.getLong(TAG_CREATED_GAME_TIME) : 0L,
                 tag.contains(TAG_UPDATED_GAME_TIME, Tag.TAG_LONG) ? tag.getLong(TAG_UPDATED_GAME_TIME) : 0L
         );
@@ -128,6 +136,9 @@ public class VillagerProfile {
         CompoundTag regularTradeProgress = saveRegularTradeSkillGrowthProgress();
         if (!regularTradeProgress.isEmpty()) {
             tag.put(TAG_REGULAR_TRADE_SKILL_GROWTH_PROGRESS, regularTradeProgress);
+        }
+        if (this.tradeLevelSkillAdjustedXpProgress > 0.000_001D) {
+            tag.putDouble(TAG_TRADE_LEVEL_SKILL_ADJUSTED_XP_PROGRESS, this.tradeLevelSkillAdjustedXpProgress);
         }
         tag.putLong(TAG_CREATED_GAME_TIME, this.createdGameTime);
         tag.putLong(TAG_UPDATED_GAME_TIME, this.updatedGameTime);
@@ -172,6 +183,10 @@ public class VillagerProfile {
 
     public double regularTradeSkillGrowthProgress(VillagerSkill skill) {
         return this.regularTradeSkillGrowthProgress.getOrDefault(skill, 0.0D);
+    }
+
+    public double tradeLevelSkillAdjustedXpProgress() {
+        return this.tradeLevelSkillAdjustedXpProgress;
     }
 
     public long createdGameTime() {
@@ -228,7 +243,7 @@ public class VillagerProfile {
             return false;
         }
 
-        double clamped = clampRegularTradeSkillGrowthProgress(progress);
+        double clamped = clampFractionalProgress(progress);
         double current = regularTradeSkillGrowthProgress(skill);
         if (Math.abs(current - clamped) < 0.000_001D) {
             return false;
@@ -239,6 +254,17 @@ public class VillagerProfile {
         } else {
             this.regularTradeSkillGrowthProgress.put(skill, clamped);
         }
+        this.updatedGameTime = gameTime;
+        return true;
+    }
+
+    public boolean setTradeLevelSkillAdjustedXpProgress(double progress, long gameTime) {
+        double clamped = clampFractionalProgress(progress);
+        if (Math.abs(this.tradeLevelSkillAdjustedXpProgress - clamped) < 0.000_001D) {
+            return false;
+        }
+
+        this.tradeLevelSkillAdjustedXpProgress = clamped <= 0.000_001D ? 0.0D : clamped;
         this.updatedGameTime = gameTime;
         return true;
     }
@@ -285,7 +311,7 @@ public class VillagerProfile {
 
         for (Map.Entry<VillagerSkill, Double> entry : progress.entrySet()) {
             if (entry.getKey() != null && entry.getValue() != null) {
-                double value = clampRegularTradeSkillGrowthProgress(entry.getValue());
+                double value = clampFractionalProgress(entry.getValue());
                 if (value > 0.000_001D) {
                     copy.put(entry.getKey(), value);
                 }
@@ -308,7 +334,7 @@ public class VillagerProfile {
                 value = tag.getDouble(skill.name());
             }
 
-            value = clampRegularTradeSkillGrowthProgress(value);
+            value = clampFractionalProgress(value);
             if (value > 0.000_001D) {
                 progress.put(skill, value);
             }
@@ -320,13 +346,13 @@ public class VillagerProfile {
         CompoundTag tag = new CompoundTag();
         for (Map.Entry<VillagerSkill, Double> entry : this.regularTradeSkillGrowthProgress.entrySet()) {
             if (entry.getKey() != null && entry.getValue() != null && entry.getValue() > 0.000_001D) {
-                tag.putDouble(entry.getKey().serializedName(), clampRegularTradeSkillGrowthProgress(entry.getValue()));
+                tag.putDouble(entry.getKey().serializedName(), clampFractionalProgress(entry.getValue()));
             }
         }
         return tag;
     }
 
-    private static double clampRegularTradeSkillGrowthProgress(double progress) {
+    private static double clampFractionalProgress(double progress) {
         if (!Double.isFinite(progress)) {
             return 0.0D;
         }

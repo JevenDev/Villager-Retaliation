@@ -134,6 +134,9 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.BooleanValue ENABLE_SKILL_GROWTH_FROM_TRADING_LEVELS;
     public static final ModConfigSpec.BooleanValue ENABLE_REGULAR_TRADE_SKILL_GROWTH;
     public static final ModConfigSpec.DoubleValue REGULAR_TRADE_SKILL_GROWTH_AMOUNT;
+    public static final ModConfigSpec.BooleanValue ENABLE_SKILL_BASED_TRADE_LEVELING;
+    public static final ModConfigSpec.DoubleValue SKILL_BASED_TRADE_LEVELING_MIN_MULTIPLIER;
+    public static final ModConfigSpec.DoubleValue SKILL_BASED_TRADE_LEVELING_MAX_MULTIPLIER;
     public static final ModConfigSpec.BooleanValue ENABLE_SKILL_GROWTH_FEEDBACK;
     public static final ModConfigSpec.IntValue SKILL_GROWTH_PRIMARY_MIN;
     public static final ModConfigSpec.IntValue SKILL_GROWTH_PRIMARY_MAX;
@@ -619,6 +622,15 @@ public final class VillagerRetaliationConfig {
         REGULAR_TRADE_SKILL_GROWTH_AMOUNT = BUILDER.comment("Primary profession skill progress added by each normal villager trade. Whole points are awarded when saved progress reaches 1.0.")
                 .translation("villagerretaliation.configuration.trade.regularTradeSkillGrowthAmount")
                 .defineInRange("regularTradeSkillGrowthAmount", 0.1D, 0.0D, 10.0D);
+        ENABLE_SKILL_BASED_TRADE_LEVELING = BUILDER.comment("When true, a villager's primary profession skill slows or restores vanilla villager trade-level XP gain.")
+                .translation("villagerretaliation.configuration.trade.enableSkillBasedTradeLeveling")
+                .define("enableSkillBasedTradeLeveling", true);
+        SKILL_BASED_TRADE_LEVELING_MIN_MULTIPLIER = BUILDER.comment("Villager trade-level XP multiplier at the lowest primary profession skill. 0.2 means very low-skill villagers level about five times slower.")
+                .translation("villagerretaliation.configuration.trade.skillBasedTradeLevelingMinMultiplier")
+                .defineInRange("skillBasedTradeLevelingMinMultiplier", 0.2D, 0.0D, 1.0D);
+        SKILL_BASED_TRADE_LEVELING_MAX_MULTIPLIER = BUILDER.comment("Villager trade-level XP multiplier at the highest primary profession skill. Keep at 1.0 for high-skill villagers to level at vanilla speed.")
+                .translation("villagerretaliation.configuration.trade.skillBasedTradeLevelingMaxMultiplier")
+                .defineInRange("skillBasedTradeLevelingMaxMultiplier", 1.0D, 0.0D, 1.0D);
         ENABLE_SKILL_GROWTH_FEEDBACK = BUILDER.comment("Shows a subtle actionbar message to the trading player when a villager improves a skill through trade growth.")
                 .translation("villagerretaliation.configuration.trade.enableSkillGrowthFeedback")
                 .define("enableSkillGrowthFeedback", true);

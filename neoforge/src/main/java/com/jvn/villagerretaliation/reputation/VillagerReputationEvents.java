@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.inventory.VillagerTradePaymentTracker;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.skill.VillagerSkillGrowthService;
+import com.jvn.villagerretaliation.skill.VillagerTradeLevelingService;
 import com.jvn.toucanlib.util.ToucanHazardAttribution;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
@@ -200,8 +201,11 @@ public final class VillagerReputationEvents {
         AbstractVillager villager = event.getAbstractVillager();
         if (villager.level() instanceof ServerLevel level) {
             VillagerReputationManager.addTradeReputation(level, villager, event.getEntity());
-            if (villager instanceof Villager villageResident && event.getEntity() instanceof ServerPlayer serverPlayer) {
-                storeTradePayments(level, villageResident, serverPlayer, event.getMerchantOffer());
+            if (villager instanceof Villager villageResident) {
+                if (event.getEntity() instanceof ServerPlayer serverPlayer) {
+                    storeTradePayments(level, villageResident, serverPlayer, event.getMerchantOffer());
+                }
+                VillagerTradeLevelingService.onTradeCompleted(level, villageResident, event.getMerchantOffer());
             }
             VillagerAmbientIndicatorService.onTradeCompleted(level, villager, event.getEntity());
             if (event.getEntity() instanceof ServerPlayer serverPlayer) {

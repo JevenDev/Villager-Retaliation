@@ -150,6 +150,7 @@ public final class VillagerProfileManager {
             builder.append("\"").append(skill.serializedName()).append("\":").append(progress);
         }
         builder.append("},");
+        builder.append("\"tradeLevelSkillAdjustedXpProgress\":").append(profile.tradeLevelSkillAdjustedXpProgress()).append(",");
         builder.append("\"createdGameTime\":").append(profile.createdGameTime()).append(",");
         builder.append("\"updatedGameTime\":").append(profile.updatedGameTime());
         builder.append("}");
