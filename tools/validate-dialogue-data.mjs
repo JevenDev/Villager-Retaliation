@@ -49,6 +49,31 @@ const legacyLineFields = new Set([
   "requires_retaliation_from_other"
 ]);
 
+const legacyOptionFields = new Set([
+  "requires_known_family",
+  "requires_known_parent",
+  "requires_known_sibling",
+  "requires_known_spouse",
+  "requires_known_child",
+  "requires_known_grandparent",
+  "requires_known_grandchild",
+  "requires_known_descendant",
+  "requires_known_aunt_uncle",
+  "requires_known_cousin",
+  "requires_known_niece_nephew",
+  "requires_known_extended_family",
+  "requires_known_deceased_family",
+  "requires_known_relationship",
+  "requires_known_current_relationship",
+  "requires_known_past_relationship",
+  "requires_known_crush",
+  "requires_known_dating_partner",
+  "requires_known_fiance",
+  "requires_known_romantic_spouse",
+  "requires_known_separated_partner",
+  "requires_known_widowed_partner"
+]);
+
 const conditionTypes = new Set([
   "all",
   "all_of",
@@ -388,29 +413,38 @@ function checkDialogue(file, data) {
   checkIds(file, data.closings ?? [], "closing");
   checkIds(file, data.pacify ?? [], "pacify line");
 
+  for (const [index, option] of (data.options ?? []).entries()) {
+    for (const field of legacyOptionFields) {
+      if (Object.hasOwn(option, field)) {
+        errors.push(`${relative(file)}: options[${index}] uses legacy migrated field "${field}"; use conditions instead for built-in data.`);
+      }
+    }
+    checkConditions(file, option, `options[${index}]`);
+  }
+
   for (const [index, line] of (data.lines ?? []).entries()) {
     for (const field of legacyLineFields) {
       if (Object.hasOwn(line, field)) {
         errors.push(`${relative(file)}: lines[${index}] uses legacy migrated field "${field}"; use conditions instead for built-in data.`);
       }
     }
-    checkConditions(file, line, index);
+    checkConditions(file, line, `lines[${index}]`);
   }
 }
 
-function checkConditions(file, line, lineIndex) {
-  if (!Object.hasOwn(line, "conditions")) {
+function checkConditions(file, entry, location) {
+  if (!Object.hasOwn(entry, "conditions")) {
     return;
   }
-  if (!Array.isArray(line.conditions)) {
-    errors.push(`${relative(file)}: lines[${lineIndex}].conditions must be an array.`);
+  if (!Array.isArray(entry.conditions)) {
+    errors.push(`${relative(file)}: ${location}.conditions must be an array.`);
     return;
   }
-  if (line.conditions.length === 0) {
-    errors.push(`${relative(file)}: lines[${lineIndex}].conditions must not be empty.`);
+  if (entry.conditions.length === 0) {
+    errors.push(`${relative(file)}: ${location}.conditions must not be empty.`);
     return;
   }
-  line.conditions.forEach((condition, index) => checkCondition(file, condition, `lines[${lineIndex}].conditions[${index}]`));
+  entry.conditions.forEach((condition, index) => checkCondition(file, condition, `${location}.conditions[${index}]`));
 }
 
 function checkCondition(file, condition, location) {

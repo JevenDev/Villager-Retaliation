@@ -375,7 +375,7 @@ const FIELD_TOOLTIPS = {
   "dialogue-option": "Restricts a line to option id(s), including custom ids or built-ins such as adult_share_story.",
   "dialogue-weather": "Weather filter for lines: clear, rain, or thunder.",
   "dialogue-times": "Time filter for lines: morning, afternoon, evening, or night.",
-  "dialogue-conditions": "Optional beta.12+ condition blocks for compound line logic. Supports all_of, any_of, not, reputation, memory, family, relationship, recruitment_memory, villager_age, weather, and time.",
+  "dialogue-conditions": "Optional beta.12+ condition blocks for compound option or line logic. Supports all_of, any_of, not, reputation, memory, family, relationship, recruitment_memory, villager_age, weather, and time.",
   "dialogue-event_tags": "Requires a recent nearby village memory with a matching event tag.",
   "dialogue-player_event_tags": "Requires a recent village memory associated with the current player.",
   "dialogue-retaliation_target_entity_types": "Restricts retaliation-memory lines to recent villager retaliation targets such as minecraft:player or minecraft:zombie.",
@@ -662,7 +662,7 @@ const BETA_12_ONLY_DIALOGUE_KEYS = [
   "text_key"
 ];
 
-const BETA_13_DEPRECATED_DIALOGUE_LINE_KEYS = [
+const BETA_13_PLANNED_DIALOGUE_LINE_DEPRECATION_KEYS = [
   "requires_known_family",
   "requires_known_parent",
   "requires_known_sibling",
@@ -698,6 +698,31 @@ const BETA_13_DEPRECATED_DIALOGUE_LINE_KEYS = [
   "requires_container_theft_from_other",
   "requires_retaliation_to_self",
   "requires_retaliation_from_other"
+];
+
+const BETA_13_PLANNED_DIALOGUE_OPTION_DEPRECATION_KEYS = [
+  "requires_known_family",
+  "requires_known_parent",
+  "requires_known_sibling",
+  "requires_known_spouse",
+  "requires_known_child",
+  "requires_known_grandparent",
+  "requires_known_grandchild",
+  "requires_known_descendant",
+  "requires_known_aunt_uncle",
+  "requires_known_cousin",
+  "requires_known_niece_nephew",
+  "requires_known_extended_family",
+  "requires_known_deceased_family",
+  "requires_known_relationship",
+  "requires_known_current_relationship",
+  "requires_known_past_relationship",
+  "requires_known_crush",
+  "requires_known_dating_partner",
+  "requires_known_fiance",
+  "requires_known_romantic_spouse",
+  "requires_known_separated_partner",
+  "requires_known_widowed_partner"
 ];
 
 // Keep each supported datapack surface versioned so migrations can reason about
@@ -2965,8 +2990,11 @@ function tooltipForFlag(flag) {
 
 function tooltipForToggleFlag(flag, prefix) {
   const base = tooltipForFlag(flag);
-  if (prefix === "line" && BETA_13_DEPRECATED_DIALOGUE_LINE_KEYS.includes(flag)) {
-    return `${base} Deprecated for normal dialogue lines and scheduled for removal in beta.13; use conditions instead.`;
+  if (prefix === "line" && BETA_13_PLANNED_DIALOGUE_LINE_DEPRECATION_KEYS.includes(flag)) {
+    return `${base} Planned for beta.13 deprecation; use conditions instead.`;
+  }
+  if (prefix === "option" && BETA_13_PLANNED_DIALOGUE_OPTION_DEPRECATION_KEYS.includes(flag)) {
+    return `${base} Planned for beta.13 deprecation; use conditions instead.`;
   }
   return base;
 }
@@ -3034,7 +3062,9 @@ function listToText(value) {
 }
 
 function prettyJson(value) {
-  if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).length === 0) return "";
+  if (!value || typeof value !== "object") return "";
+  if (Array.isArray(value) && value.length === 0) return "";
+  if (!Array.isArray(value) && Object.keys(value).length === 0) return "";
   return JSON.stringify(value, null, 2);
 }
 
@@ -3574,9 +3604,10 @@ function entryIssueSeverity(section, kind, entry) {
       { severity: "error", predicate: (item) => kind === "messages" && (!item.key || !hasDialogueText(item)) },
       { severity: "error", predicate: (item) => ["openings", "closings", "pacify"].includes(kind) && !hasDialogueText(item) },
       { severity: "warning", predicate: (item) => ["options", "lines"].includes(kind) && item.request && !CONSTANTS.dialogueTypes.includes(item.request) },
-      { severity: "warning", predicate: (item) => kind === "lines" && hasBeta13DeprecatedDialogueLineField(item) },
+      { severity: "warning", predicate: (item) => kind === "options" && hasPlannedBeta13DialogueOptionDeprecationField(item) },
+      { severity: "warning", predicate: (item) => kind === "lines" && hasPlannedBeta13DialogueLineDeprecationField(item) },
       { severity: "warning", predicate: (item) => entryValues(item, ["dispositions"]).some((value) => !CONSTANTS.dispositions.includes(value)) },
-      { severity: "warning", predicate: (item) => kind === "lines" && hasBeta12DialogueField(item) && !supportsBeta12DialogueFields() },
+      { severity: "warning", predicate: (item) => ["options", "lines"].includes(kind) && hasBeta12DialogueField(item) && !supportsBeta12DialogueFields() },
       { severity: "warning", predicate: (item) => kind === "lines" && entryValues(item, ["mood", "moods"]).some((value) => !CONSTANTS.moods.includes(value)) },
       { severity: "warning", predicate: (item) => entryValues(item, ["professions"]).some((value) => !isValidProfession(value)) },
       { severity: "error", predicate: (item) => ["options", "lines"].includes(kind) && entryValues(item, ["player_item", "player_items", "player_item_tag", "player_item_tags"]).some((value) => !isValidResourceLocation(value, { allowTag: true })) },
@@ -3825,8 +3856,12 @@ function hasBeta12DialogueField(entry) {
   return BETA_12_ONLY_DIALOGUE_KEYS.some((key) => entry?.[key] !== undefined);
 }
 
-function hasBeta13DeprecatedDialogueLineField(entry) {
-  return BETA_13_DEPRECATED_DIALOGUE_LINE_KEYS.some((key) => entry?.[key] !== undefined);
+function hasPlannedBeta13DialogueLineDeprecationField(entry) {
+  return BETA_13_PLANNED_DIALOGUE_LINE_DEPRECATION_KEYS.some((key) => entry?.[key] !== undefined);
+}
+
+function hasPlannedBeta13DialogueOptionDeprecationField(entry) {
+  return BETA_13_PLANNED_DIALOGUE_OPTION_DEPRECATION_KEYS.some((key) => entry?.[key] !== undefined);
 }
 
 function invalidSocialAttributeRange(entry) {
@@ -3868,9 +3903,16 @@ function entryIssueDetail(section, kind, entry) {
     if (kind === "lines" && hasBeta12DialogueField(entry) && !supportsBeta12DialogueFields()) {
       return issueDetail("Beta.12 dialogue filters", "VR 1.0.0-beta.12 or newer", state.meta.packVersion, "meta-packVersion", "warning");
     }
-    if (kind === "lines" && hasBeta13DeprecatedDialogueLineField(entry)) {
-      const field = BETA_13_DEPRECATED_DIALOGUE_LINE_KEYS.find((key) => entry?.[key] !== undefined);
-      return issueDetail("Deprecated line field", "`conditions` replacement before VR 1.0.0-beta.13", field, `line-${field}`, "warning");
+    if (kind === "options" && hasBeta12DialogueField(entry) && !supportsBeta12DialogueFields()) {
+      return issueDetail("Beta.12 option conditions", "VR 1.0.0-beta.12 or newer", state.meta.packVersion, "meta-packVersion", "warning");
+    }
+    if (kind === "options" && hasPlannedBeta13DialogueOptionDeprecationField(entry)) {
+      const field = BETA_13_PLANNED_DIALOGUE_OPTION_DEPRECATION_KEYS.find((key) => entry?.[key] !== undefined);
+      return issueDetail("Planned beta.13 option deprecation", "`conditions` replacement before VR 1.0.0-beta.13", field, `option-${field}`, "warning");
+    }
+    if (kind === "lines" && hasPlannedBeta13DialogueLineDeprecationField(entry)) {
+      const field = BETA_13_PLANNED_DIALOGUE_LINE_DEPRECATION_KEYS.find((key) => entry?.[key] !== undefined);
+      return issueDetail("Planned beta.13 line deprecation", "`conditions` replacement before VR 1.0.0-beta.13", field, `line-${field}`, "warning");
     }
     const dialogueListChecks = [
       { keys: ["dispositions"], label: "Dispositions", expected: CONSTANTS.dispositions.join(", "), fieldId: "dialogue-dispositions", valid: (value) => CONSTANTS.dispositions.includes(value), severity: "warning" },
@@ -5847,6 +5889,18 @@ function beta12DialogueLineFilters(entry) {
   `;
 }
 
+function dialogueConditionsField(entry) {
+  if (!supportsBeta12DialogueFields()) return "";
+  return textareaField({
+    id: "dialogue-conditions",
+    label: "Conditions JSON",
+    value: prettyJson(entry.conditions),
+    help: "Optional. JSON array of condition blocks for compound matching.",
+    className: "full",
+    rows: 6
+  });
+}
+
 function socialAttributeHighToggles(entry) {
   const toggles = CONSTANTS.socialAttributes
     .map((attribute) => {
@@ -6153,6 +6207,7 @@ function renderDialogueForm(kind, entry) {
         ${field({ id: "dialogue-order", label: "Order", value: entry.order ?? "", type: "number" })}
         ${commonFilters}
         ${reputationFilters}
+        ${dialogueConditionsField(entry)}
         ${listField({ id: "dialogue-player_items", label: "Required player items or tags", value: entry.player_items, help: "Use #minecraft:swords for item tags." })}
         ${listField({ id: "dialogue-player_item_slots", label: "Item slots", value: entry.player_item_slots, help: CONSTANTS.itemSlots.join(", ") })}
         ${playerItemDurabilityFields("dialogue", entry)}
@@ -6175,6 +6230,7 @@ function renderDialogueForm(kind, entry) {
         ${commonFilters}
         ${reputationFilters}
         ${beta12DialogueLineFilters(entry)}
+        ${dialogueConditionsField(entry)}
         ${listField({ id: "dialogue-weather", label: "Weather", value: entry.weather, help: CONSTANTS.weather.join(", ") })}
         ${listField({ id: "dialogue-times", label: "Times", value: entry.times, help: CONSTANTS.times.join(", ") })}
         ${listField({ id: "dialogue-event_tags", label: "Village event tags", value: entry.event_tags })}
@@ -6674,6 +6730,7 @@ function readDialogueEntry() {
       reputation_levels: readList("dialogue-reputation_levels"),
       min_reputation: parseInteger(readValue("dialogue-min_reputation")),
       max_reputation: parseInteger(readValue("dialogue-max_reputation")),
+      conditions: readDialogueConditions(),
       player_items: readList("dialogue-player_items"),
       player_item_slots: readList("dialogue-player_item_slots"),
       ...readPlayerItemDurability("dialogue"),
@@ -6697,6 +6754,7 @@ function readDialogueEntry() {
       min_reputation: parseInteger(readValue("dialogue-min_reputation")),
       max_reputation: parseInteger(readValue("dialogue-max_reputation")),
       ...readBeta12DialogueLineFilters(),
+      conditions: readDialogueConditions(),
       weather: readList("dialogue-weather"),
       times: readList("dialogue-times"),
       event_tags: readList("dialogue-event_tags"),
@@ -6763,6 +6821,11 @@ function readBeta12DialogueLineFilters() {
     result[`max_${attribute}`] = parseInteger(readValue(`dialogue-max_${attribute}`));
   }
   return result;
+}
+
+function readDialogueConditions() {
+  if (!supportsBeta12DialogueFields()) return [];
+  return parseJsonArrayField("dialogue-conditions", "Conditions JSON") ?? [];
 }
 
 function readDialogueItemPayment() {

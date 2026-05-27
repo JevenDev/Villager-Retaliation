@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.dialogue;
 import com.jvn.villagerretaliation.util.VillagerPlayerItemCondition;
 import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
 import com.jvn.villagerretaliation.util.VillagerReputationCondition;
+import java.util.List;
 import java.util.Set;
 import net.minecraft.world.entity.npc.VillagerProfession;
 
@@ -52,12 +53,17 @@ public record DialogueOptionDefinition(
         boolean requiresKnownRomanticSpouse,
         boolean requiresKnownSeparatedPartner,
         boolean requiresKnownWidowedPartner,
+        List<DialogueCondition> conditions,
         boolean requiresActiveSpecialOrders,
         int order
 ) {
     private static final String LEFT_BEHIND_OPTION_ID = "recruitment_left_behind";
     private static final String DEFAULT_FOLLOWUP_OPTION_ID = "recruitment_followup";
     private static final String LEFT_BEHIND_SCENARIO = "left_behind";
+
+    public DialogueOptionDefinition {
+        conditions = conditions == null ? List.of() : List.copyOf(conditions);
+    }
 
     public boolean matches(DialogueContext context, DialogueDisposition disposition) {
         if (LEFT_BEHIND_OPTION_ID.equals(this.id) && !context.hasRecruitmentMemoryScenario(LEFT_BEHIND_SCENARIO)) {
@@ -187,6 +193,9 @@ public record DialogueOptionDefinition(
         if (this.requiresKnownWidowedPartner && !context.hasKnownWidowedPartner()) {
             return false;
         }
+        if (!this.conditions.stream().allMatch(condition -> condition.matches(context))) {
+            return false;
+        }
         if (this.requiresActiveSpecialOrders && !context.hasActiveSpecialOrders()) {
             return false;
         }
@@ -240,6 +249,7 @@ public record DialogueOptionDefinition(
                 false,
                 false,
                 false,
+                List.of(),
                 false,
                 order
         );

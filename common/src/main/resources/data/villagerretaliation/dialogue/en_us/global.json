@@ -40,7 +40,11 @@
       "request": "question",
       "order": 2,
       "show_for_babies": false,
-      "requires_known_family": true
+      "conditions": [
+        {
+          "type": "family"
+        }
+      ]
     },
     {
       "id": "adult_relationships",
@@ -49,7 +53,11 @@
       "request": "question",
       "order": 3,
       "show_for_babies": false,
-      "requires_known_relationship": true
+      "conditions": [
+        {
+          "type": "relationship"
+        }
+      ]
     },
     {
       "id": "adult_gift_preferences",
@@ -202,7 +210,11 @@
       "request": "question",
       "order": 2,
       "show_for_adults": false,
-      "requires_known_family": true
+      "conditions": [
+        {
+          "type": "family"
+        }
+      ]
     },
     {
       "id": "baby_gift_preferences",

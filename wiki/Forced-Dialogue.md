@@ -63,7 +63,7 @@ or an `entries` array:
 | --- | --- | --- | --- |
 | `id` | string | generated from file path | Stable id for replacement by later-loading files. |
 | `trigger` | enum | required | Event that can start this forced dialogue. |
-| `event` | enum | none | Alias for `trigger`. |
+| `event` | enum | none | Legacy alias for `trigger`; new packs should write `trigger`. |
 | `line` | string | required unless `lines` is set | Villager line shown when the event fires. |
 | `lines` | array | required unless `line` is set | Alternate villager lines. One is selected at random when the event fires. |
 | `priority` | integer | `0` | Lower values win when multiple entries match the same trigger. |
@@ -96,7 +96,7 @@ or an `entries` array:
 | `loot_table` | string | none | Optional single loot table id this entry can match. |
 | `loot_tables` | array | none | Optional loot table ids this entry can match. If omitted, the entry can match any watched container. |
 | `target_entity_type` | string | none | Optional single retaliation target entity id such as `minecraft:player`. |
-| `target_entity_types` | array | none | Optional retaliation target entity ids. `target_entities` is also accepted as an alias. |
+| `target_entity_types` | array | none | Optional retaliation target entity ids. `target_entities` is still accepted as an alias. |
 | `min_recent_container_thefts` | integer | `0` | Minimum remembered container thefts by this player near the witness's village before this entry can trigger. |
 | `max_recent_container_thefts` | integer | unlimited | Maximum remembered container thefts by this player near the witness's village before this entry can trigger. |
 | `min_recent_retaliations` | integer | `0` | Minimum earlier `villager_retaliation_started` memories for this player near the villager's village. Useful for escalation. |
@@ -126,7 +126,7 @@ trade_refresh
 
 ## Output Modes
 
-Use `output.mode` to choose how the event line is delivered. This keeps the event trigger focused on what happened and the output focused on how players see it.
+Use `output.mode` to choose how the event line is delivered. This keeps `trigger` focused on what happened and `output` focused on how players see it.
 
 | Mode | Behavior |
 | --- | --- |
@@ -153,7 +153,7 @@ Use `output.mode` to choose how the event line is delivered. This keeps the even
 
 Use the same trigger with different `output.mode` values when an event should both emit a chat callout and open a locked forced-dialogue scene. Chat entries can play first, then a separate `forced_dialogue` entry for the same trigger can still run.
 
-For direct reactions that should require an actual witness, prefer a forced-dialogue entry with `output.mode: "chat"` over ambient notification text. That gives the reaction access to `witness_radius`, `requires_line_of_sight`, witness profession filters, chance, priority, and target filters while still delivering the result as normal villager chat instead of opening the interaction screen.
+For direct reactions that should require an actual witness, prefer a forced-dialogue entry with `output.mode: "chat"` over ambient notification text. That gives the reaction access to `witness_radius`, `requires_line_of_sight`, witness profession filters, chance, priority, and target filters while still delivering the result as normal villager chat instead of opening the interaction screen. Use notifications for HUD/world-text feedback that does not need forced-dialogue witness selection, locked-screen options, stolen-item return behavior, or forced-dialogue item payments.
 
 Use `trigger: "player_item_proximity"` for held or worn item reactions when a player walks near a villager. The trigger requires a `player_items` or `player_item_tags` filter so it does not fire for every nearby player:
 

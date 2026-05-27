@@ -117,6 +117,7 @@ public record VillagerDialogueResponsePayload(
                     false,
                     false,
                     false,
+                    List.of(),
                     false,
                     buffer.readVarInt()
             ));
