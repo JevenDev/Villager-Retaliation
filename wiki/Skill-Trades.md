@@ -415,10 +415,10 @@ Special Orders are high-reputation targeted trade requests. By default, a player
 When a Respected+ player clicks the refresh button, the villager offers a data-driven choice:
 
 - `Surprise me.` queues the existing random next-day refresh.
-- `I'm looking for something specific.` opens a dynamic list of currently eligible targetable skill-trade definitions.
+- `I'm looking for something specific.` opens a dynamic list of unlocked targetable skill-trade definitions.
 - `Never mind.` cancels without changing the offer.
 
-Players request a skill-trade definition id, not an arbitrary item id. Eligibility still respects profession, villager trade level, skill rank, `min_rank` / `max_rank`, config flags, and the trade entry's request reputation gate. A successful Special Order is stored on the villager, appears as a pending refresh icon on the selected slot, survives reloads, and replaces that slot when ready. The requested definition is also remembered in the villager's persistent profession pool. Each player can have up to `specialOrderMaxActivePerPlayer` active Special Orders with the same villager, capped at three.
+Players request a skill-trade definition id, not an arbitrary item id. Eligibility still respects profession, villager trade level, `min_rank`, config flags, and the trade entry's request reputation gate. Unlike random offer generation and `Surprise me` refreshes, Special Orders ignore `max_rank` once the villager has unlocked a definition, so high-skill villagers can still request earlier catalog items and can duplicate items they already stock. A successful Special Order is stored on the villager, appears as a pending refresh icon on the selected slot, survives reloads, and replaces that slot when ready. The requested definition is also remembered in the villager's persistent profession pool. Each player can have up to `specialOrderMaxActivePerPlayer` active Special Orders with the same villager, capped at three.
 
 The default balance is a 2 Minecraft day wait and a 3 Minecraft day cooldown. Entry metadata can override both. Cooldown starts when an order is fulfilled, so a trusted player can queue multiple active requests up to the active-order cap, then must wait before adding more after completed work. Extra request costs are supported by metadata and are only consumed when `specialOrderExtraCostEnabled` is true and the request passes validation. Payment is taken when the request is accepted, not when the order completes.
 

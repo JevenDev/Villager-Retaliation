@@ -22,6 +22,7 @@
 - Social Attributes now lightly affect mood transitions, reputation recovery, retaliation decisions, and gossip spread when the matching config toggles are enabled.
 - The datapack builder Convert flow can retarget beta.11 packs to beta.12 without renaming or removing existing beta.11 JSON fields.
 - Trade refresh replacement selection avoids result item types the villager already offers, reducing duplicate refreshed trades.
+- Special Orders now treat `min_rank` as the skill unlock and ignore `max_rank`, letting high-skill villagers fulfill earlier catalog requests and duplicate items they already stock.
 
 ### Fixed
 

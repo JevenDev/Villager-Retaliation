@@ -85,7 +85,7 @@ Villagers can also share stories about discovered structures and biomes, give un
 
 Villagers can confront players for opening, breaking, or stealing from watched containers, including generated village chests. Breaking generated containers unpacks and counts the dropped loot before applying reputation loss, so smashing fuller village stores is worse than cracking an empty box. Data packs can customize the event dialogue, target specific loot tables, require item payments, and show different responses based on the player's current reputation with the witnessing villager.
 
-Villagers with skill-generated trade pools can also refresh specific trade slots. A refresh request is stored until the next Minecraft day, then replaces that slot with an eligible skill-trade offer if the villager knows one and does not already offer the same result item. The refresh dialogue and option replies are data-driven, so packs can customize the tone through normal dialogue and forced-dialogue JSON.
+Villagers with skill-generated trade pools can also refresh specific trade slots. A random refresh request is stored until the next Minecraft day, then replaces that slot with an eligible skill-trade offer if the villager knows one and does not already offer the same result item. High-reputation Special Orders let players target unlocked skill-trade definitions directly, including earlier-rank catalog items and items the villager already stocks. The refresh dialogue and option replies are data-driven, so packs can customize the tone through normal dialogue and forced-dialogue JSON.
 
 ### Profession Combat
 

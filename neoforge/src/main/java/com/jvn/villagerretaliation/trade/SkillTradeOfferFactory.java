@@ -96,6 +96,33 @@ public final class SkillTradeOfferFactory {
             SkillTradeDefinition definition,
             RandomSource random,
             Set<Item> excludedResultItems) {
+        return createVillagerOfferFromDefinition(level, villager, definition, random, excludedResultItems, false);
+    }
+
+    @Nullable
+    public static MerchantOffer createVillagerSpecialOrderOfferFromDefinition(
+            ServerLevel level,
+            AbstractVillager villager,
+            SkillTradeDefinition definition,
+            RandomSource random) {
+        return createVillagerOfferFromDefinition(level, villager, definition, random, Set.of(), true);
+    }
+
+    public static boolean isSkillUnlockedForSpecialOrder(
+            ServerLevel level,
+            AbstractVillager villager,
+            SkillTradeDefinition definition) {
+        return bestSkillValue(level, villager, definition) >= definition.minRank().minInclusive();
+    }
+
+    @Nullable
+    private static MerchantOffer createVillagerOfferFromDefinition(
+            ServerLevel level,
+            AbstractVillager villager,
+            SkillTradeDefinition definition,
+            RandomSource random,
+            Set<Item> excludedResultItems,
+            boolean ignoreMaxRank) {
         if (!VillagerRetaliationConfig.ENABLE_SKILL_TRADE_OVERHAUL.get()
                 || definition == null
                 || !definition.conditions().matches()) {
@@ -103,7 +130,7 @@ public final class SkillTradeOfferFactory {
         }
 
         int skillValue = bestSkillValue(level, villager, definition);
-        if (!definition.isSkillEligible(skillValue)) {
+        if (!isSkillEligible(definition, skillValue, ignoreMaxRank)) {
             return null;
         }
 
@@ -184,6 +211,12 @@ public final class SkillTradeOfferFactory {
             best = Math.max(best, VillagerProfileManager.getSkill(level, villager, skill));
         }
         return best;
+    }
+
+    private static boolean isSkillEligible(SkillTradeDefinition definition, int skillValue, boolean ignoreMaxRank) {
+        return ignoreMaxRank
+                ? skillValue >= definition.minRank().minInclusive()
+                : definition.isSkillEligible(skillValue);
     }
 
     private static boolean passesChance(SkillTradeScalingContext context, RandomSource random) {

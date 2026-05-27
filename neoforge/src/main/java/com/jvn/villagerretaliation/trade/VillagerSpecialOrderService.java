@@ -20,7 +20,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.npc.Villager;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.item.trading.MerchantOffers;
@@ -211,20 +210,11 @@ public final class VillagerSpecialOrderService {
                 continue;
             }
 
-            MerchantOffer replacement = SkillTradeOfferFactory.createVillagerOfferFromDefinition(
+            MerchantOffer replacement = SkillTradeOfferFactory.createVillagerSpecialOrderOfferFromDefinition(
                     level,
                     villager,
                     definition.get(),
-                    villager.getRandom(),
-                    currentResultItemsExcept(offers, offerIndex));
-            if (replacement == null) {
-                replacement = SkillTradeOfferFactory.createVillagerOfferFromDefinition(
-                        level,
-                        villager,
-                        definition.get(),
-                        villager.getRandom(),
-                        Set.of());
-            }
+                    villager.getRandom());
             if (replacement == null) {
                 changed = true;
                 continue;
@@ -357,8 +347,7 @@ public final class VillagerSpecialOrderService {
         if (!meetsReputation(playerLevel, effectiveMinReputation(definition))) {
             return false;
         }
-        int skillValue = SkillTradeOfferFactory.bestSkillValue(level, villager, definition);
-        return definition.isSkillEligible(skillValue);
+        return SkillTradeOfferFactory.isSkillUnlockedForSpecialOrder(level, villager, definition);
     }
 
     private static VillagerReputationLevel effectiveMinReputation(SkillTradeDefinition definition) {
@@ -482,21 +471,6 @@ public final class VillagerSpecialOrderService {
         List<ItemStack> stacks = new ArrayList<>(player.getInventory().items);
         stacks.addAll(player.getInventory().offhand);
         return stacks;
-    }
-
-    private static Set<Item> currentResultItemsExcept(MerchantOffers offers, int exceptOfferIndex) {
-        Set<Item> items = new HashSet<>();
-        for (int i = 0; i < offers.size(); i++) {
-            if (i == exceptOfferIndex) {
-                continue;
-            }
-            MerchantOffer offer = offers.get(i);
-            ItemStack result = offer.getResult();
-            if (!result.isEmpty()) {
-                items.add(result.getItem());
-            }
-        }
-        return Set.copyOf(items);
     }
 
     private static ListTag ordersTag(CompoundTag persistentData) {
