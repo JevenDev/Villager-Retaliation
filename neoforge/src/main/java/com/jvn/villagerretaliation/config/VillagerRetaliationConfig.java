@@ -124,6 +124,8 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.BooleanValue ENABLE_REPUTATION_TRADE_PRICING;
     public static final ModConfigSpec.DoubleValue REPUTATION_TRADE_PRICE_SCALE;
     public static final ModConfigSpec.BooleanValue ENABLE_SKILL_TRADE_OVERHAUL;
+    public static final ModConfigSpec.BooleanValue SKILL_TRADE_QUALITY_SCALING;
+    public static final ModConfigSpec.BooleanValue SKILL_TRADE_LOW_SKILL_PENALTIES;
     public static final ModConfigSpec.IntValue SKILL_TRADE_MAX_ENCHANTMENT_LEVEL;
     public static final ModConfigSpec.DoubleValue SKILL_TRADE_RARE_CHANCE_MULTIPLIER;
     public static final ModConfigSpec.BooleanValue SKILL_TRADE_ALLOW_HIGH_TIER_EQUIPMENT;
@@ -584,6 +586,12 @@ public final class VillagerRetaliationConfig {
         ENABLE_SKILL_TRADE_OVERHAUL = BUILDER.comment("When true, villager skill ranks add profession-specific quality and specialty trade offers.")
                 .translation("villagerretaliation.configuration.trade.enableSkillTradeOverhaul")
                 .define("enableSkillTradeOverhaul", true);
+        SKILL_TRADE_QUALITY_SCALING = BUILDER.comment("When true, skill trade entries with quality_scaling enabled adjust count, base emerald cost, stock, rare chance, XP, and enchantment quality by skill rank.")
+                .translation("villagerretaliation.configuration.trade.skillTradeQualityScaling")
+                .define("skillTradeQualityScaling", true);
+        SKILL_TRADE_LOW_SKILL_PENALTIES = BUILDER.comment("When true, low skill ranks can reduce skill trade counts, stock, rare chance, and increase base emerald costs for quality-scaled entries.")
+                .translation("villagerretaliation.configuration.trade.skillTradeLowSkillPenalties")
+                .define("skillTradeLowSkillPenalties", true);
         SKILL_TRADE_MAX_ENCHANTMENT_LEVEL = BUILDER.comment("Maximum enchantment level used by skill-based trade rewards.")
                 .translation("villagerretaliation.configuration.trade.skillTradeMaxEnchantmentLevel")
                 .defineInRange("skillTradeMaxEnchantmentLevel", 3, 1, 5);

@@ -17,44 +17,44 @@ public final class SkillTradeQualityScaler {
         }
 
         scaledChance *= VillagerRetaliationConfig.SKILL_TRADE_RARE_CHANCE_MULTIPLIER.get();
-        if (!context.scaling().scalesRareChance()) {
+        if (!scalesQuality(context) || !context.scaling().scalesRareChance()) {
             scaledChance += Math.max(0, context.skillValue() - context.definition().minRank().minInclusive()) / 250.0D;
             return Mth.clamp(scaledChance, 0.0D, 1.0D);
         }
 
-        SkillTradeQuality quality = SkillTradeQuality.forRank(context.rank());
+        SkillTradeQuality quality = quality(context);
         scaledChance *= quality.rareChanceMultiplier();
         scaledChance += 0.05D * context.eligibleProgress();
         return Mth.clamp(scaledChance, 0.0D, 1.0D);
     }
 
     public static int resultCount(SkillTradeScalingContext context, int baseCount) {
-        if (!context.scaling().scalesCount()) {
+        if (!scalesQuality(context) || !context.scaling().scalesCount()) {
             return Math.clamp(baseCount, 1, 64);
         }
-        return scaleStackCount(baseCount, SkillTradeQuality.forRank(context.rank()).countMultiplier());
+        return scaleStackCount(baseCount, quality(context).countMultiplier());
     }
 
     public static int emeraldCost(SkillTradeScalingContext context, Item costItem, int baseCount) {
-        if (!context.scaling().scalesCost() || costItem != Items.EMERALD) {
+        if (!scalesQuality(context) || !context.scaling().scalesCost() || costItem != Items.EMERALD) {
             return Math.clamp(baseCount, 1, 64);
         }
-        return scaleStackCount(baseCount, SkillTradeQuality.forRank(context.rank()).emeraldCostMultiplier());
+        return scaleStackCount(baseCount, quality(context).emeraldCostMultiplier());
     }
 
     public static int maxUses(SkillTradeScalingContext context, int baseMaxUses) {
-        if (!context.scaling().scalesMaxUses()) {
+        if (!scalesQuality(context) || !context.scaling().scalesMaxUses()) {
             return Math.clamp(baseMaxUses, 1, 128);
         }
-        int scaled = Mth.floor(baseMaxUses * SkillTradeQuality.forRank(context.rank()).maxUsesMultiplier());
+        int scaled = Mth.floor(baseMaxUses * quality(context).maxUsesMultiplier());
         return Math.clamp(scaled, 1, 128);
     }
 
     public static int xp(SkillTradeScalingContext context, int baseXp) {
-        if (!context.scaling().scalesXp()) {
+        if (!scalesQuality(context) || !context.scaling().scalesXp()) {
             return Math.clamp(baseXp, 0, 10_000);
         }
-        int scaled = Mth.floor(baseXp * SkillTradeQuality.forRank(context.rank()).xpMultiplier());
+        int scaled = Mth.floor(baseXp * quality(context).xpMultiplier());
         return Math.clamp(scaled, 0, 10_000);
     }
 
@@ -64,7 +64,7 @@ public final class SkillTradeQualityScaler {
         if (!enchantments.levelBySkill()) {
             return enchantments.minLevel();
         }
-        if (!context.scaling().scalesEnchantments()) {
+        if (!scalesQuality(context) || !context.scaling().scalesEnchantments()) {
             return legacyRequestedEnchantmentLevel(context.skillValue(), enchantments);
         }
 
@@ -84,6 +84,24 @@ public final class SkillTradeQualityScaler {
             return Math.max(enchantments.minLevel(), Math.min(enchantments.maxLevel(), 2));
         }
         return enchantments.minLevel();
+    }
+
+    private static boolean scalesQuality(SkillTradeScalingContext context) {
+        return VillagerRetaliationConfig.SKILL_TRADE_QUALITY_SCALING.get() && context.scaling().enabled();
+    }
+
+    private static SkillTradeQuality quality(SkillTradeScalingContext context) {
+        SkillTradeQuality quality = SkillTradeQuality.forRank(context.rank());
+        if (VillagerRetaliationConfig.SKILL_TRADE_LOW_SKILL_PENALTIES.get()) {
+            return quality;
+        }
+        return new SkillTradeQuality(
+                Math.max(1.0D, quality.countMultiplier()),
+                Math.min(1.0D, quality.emeraldCostMultiplier()),
+                Math.max(1.0D, quality.maxUsesMultiplier()),
+                Math.max(1.0D, quality.xpMultiplier()),
+                Math.max(1.0D, quality.rareChanceMultiplier())
+        );
     }
 
     private static int scaleStackCount(int baseCount, double multiplier) {
