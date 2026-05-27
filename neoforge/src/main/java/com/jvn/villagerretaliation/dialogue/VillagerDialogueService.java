@@ -23,6 +23,8 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.AbstractVillager;
 
 public final class VillagerDialogueService {
+    private static final long LONG_ABSENCE_MIN_DAYS = 3L;
+
     private VillagerDialogueService() {
     }
 
@@ -186,6 +188,10 @@ public final class VillagerDialogueService {
         if (containerTheftMemory.isPresent()) {
             return containerTheftMemory.get();
         }
+        Optional<String> longAbsence = selectOpeningLongAbsenceLine(context);
+        if (longAbsence.isPresent()) {
+            return longAbsence.get();
+        }
         DialogueDisposition disposition = moodFor(context);
         return selectConversationLine(
                 context,
@@ -193,6 +199,27 @@ public final class VillagerDialogueService {
                 VillagerDialogueResources.openingLines(context, disposition),
                 List.of()
         );
+    }
+
+    private static Optional<String> selectOpeningLongAbsenceLine(DialogueContext context) {
+        if (!context.hasKnownLastSeenDay()) {
+            return Optional.empty();
+        }
+        long daysSinceLastSeen = context.daysSinceLastSeenCount();
+        if (daysSinceLastSeen < LONG_ABSENCE_MIN_DAYS) {
+            return Optional.empty();
+        }
+        int chance = (int) Math.min(85L, 40L + (daysSinceLastSeen - LONG_ABSENCE_MIN_DAYS) * 10L);
+        if (context.random().nextInt(100) >= chance) {
+            return Optional.empty();
+        }
+        Map<String, String> replacements = Map.of(
+                "days_since_seen", context.daysSinceLastSeenCountText(),
+                "day_or_days", context.daysSinceLastSeenDayUnit(),
+                "days_since_seen_phrase", context.daysSinceLastSeenPhrase()
+        );
+        return VillagerDialogueResources.professionPriorityMessage(context, "opening.return_after_absence", replacements)
+                .or(() -> VillagerDialogueResources.message(context, "opening.return_after_absence", replacements));
     }
 
     public static String selectClosingGoodbye(DialogueContext context) {
@@ -657,6 +684,9 @@ public final class VillagerDialogueService {
         return resolveRetaliationText(resolveContainerTheftText(text
                 .replace("{attack_weapon}", context.rememberedAttackWeapon())
                 .replace("{gear_kind}", context.gearReportKind())
+                .replace("{days_since_seen}", context.daysSinceLastSeenCountText())
+                .replace("{day_or_days}", context.daysSinceLastSeenDayUnit())
+                .replace("{days_since_seen_phrase}", context.daysSinceLastSeenPhrase())
                 .replace("{follow_biome}", context.recruitmentMemoryBiome())
                 .replace("{follow_distance}", Integer.toString(context.recruitmentMemoryDistanceBlocks()))
                 .replace("{cured_villager}", curedVillagerName)
@@ -834,9 +864,9 @@ public final class VillagerDialogueService {
         List<String> candidates = new ArrayList<>(globalLines);
         candidates.addAll(professionLines);
         if (candidates.isEmpty()) {
-            return fallback;
+            return resolveText(fallback, context);
         }
-        return ToucanRandom.choose(context.random(), candidates);
+        return resolveText(ToucanRandom.choose(context.random(), candidates), context);
     }
 
     public record DialogueResult(String lineId, String text) {

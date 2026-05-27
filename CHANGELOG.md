@@ -23,6 +23,7 @@
 - Added trade-refresh ready follow-up dialogue with `trade_refresh.ready` message lines and `trade_refresh.ready_options` forced-dialogue options, including placeholders for restocked trade summaries.
 - Added recruitment left-behind follow-up dialogue with a dedicated talk option and biome-aware memory filtering through `recruitment_memory_biome` / `recruitment_memory_biomes`.
 - Added selectable Skills-page detail cards with expanded localized skill descriptions and an in-tooltip click hint for deeper skill info.
+- Added persistent per-villager last-seen day memory for each player, plus absence-aware opening dialogue that can reference day gaps with `{days_since_seen}`, `{day_or_days}`, and `{days_since_seen_phrase}` placeholders.
 
 ### Changed
 
@@ -49,6 +50,7 @@
 - Built-in family and relationship dialogue options now use beta.12 `conditions`.
 - Normal dialogue line selection now applies explicit `priority` tiers before weighted random selection. Existing packs keep the default `priority: 0`.
 - The schema docs and Datapack Generator now distinguish canonical field names from compatibility aliases across player-item filters, item hand-ins, equipment filters, notification world text style, and forced-dialogue triggers.
+- First-conversation opening lines now avoid replaying for villagers that already have persisted last-seen memory of the player, even after world leave/join cycles.
 
 ### Planned Beta.13 Deprecations
 

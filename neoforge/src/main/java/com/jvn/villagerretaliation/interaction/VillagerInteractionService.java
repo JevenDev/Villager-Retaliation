@@ -344,6 +344,8 @@ public final class VillagerInteractionService {
                 VillagerMoodService.mood(level, villager),
                 interactionState.firstConversation(),
                 interactionState.firstVillageInteraction(),
+                interactionState.lastSeenDay(),
+                interactionState.daysSinceLastSeen(),
                 weatherState(level, villager),
                 timeOfDay(level),
                 interactionState.lastPositiveDialogueReputationGameTime(),

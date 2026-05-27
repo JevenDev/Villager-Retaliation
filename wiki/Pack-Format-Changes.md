@@ -59,6 +59,7 @@ Pack-facing beta.12 changes introduce persistent Social Attributes and temporary
 - Added built-in forced-dialogue entries `trade_refresh.ready_options`, `trade_refresh.available_options`, `trade_refresh.unavailable_options`, `trade_refresh.revered_options`, `trade_refresh.special_order_select_options`, `trade_refresh.special_order_confirm_options`, and `trade_refresh.special_order_status_options`.
 - Added dialogue message keys `trade_refresh.ready`, `trade_refresh.accept`, `trade_refresh.already_pending`, `trade_refresh.not_ready`, `trade_refresh.unavailable`, `trade_refresh.revered_prompt`, and `trade_refresh.special_order_*` for trade-refresh and Special Order opening/follow-up lines, including ready restock prompts, queue responses, active-request cap responses, and order-status responses.
 - Added a `1.0.0-beta.12` target to the Datapack Generator and built-in website wiki. The beta.11 snapshot remains separate.
+- Added persisted per-villager last-seen memory and built-in absence-aware opening message key `opening.return_after_absence` with placeholders `{days_since_seen}`, `{day_or_days}`, and `{days_since_seen_phrase}`.
 
 ### Modified
 
@@ -71,6 +72,7 @@ Pack-facing beta.12 changes introduce persistent Social Attributes and temporary
 - Skill-trade replacement selection now avoids giving a refresh result item that already exists in the villager's current offer list.
 - Built-in villager skill-trade entries are Special Order targetable by default. Wandering trader skill-trade entries are not targetable.
 - Ready trade-refresh follow-ups can now open a forced-dialogue session tied to the speaking villager, and conversation validation allows that forced session target while forced-session rules still pass.
+- `first_conversation_only` opening behavior now respects persisted seen-memory, so first-time intros do not replay for villagers that already remember the player after leave/join.
 
 ### Planned Beta.13 Deprecations
 
@@ -95,6 +97,7 @@ Pack-facing beta.12 changes introduce persistent Social Attributes and temporary
 - Prefer `conditions` for new dialogue option family and relationship checks. The flat option helper fields are still accepted for compatibility in beta.12, but are planned for beta.13 deprecation.
 - Prefer canonical field names from [JSON Reference](JSON-Reference.md). Aliases remain compatibility inputs, not the recommended names for new examples.
 - Use `requires_high_*` when a simple score of 60+ is enough. Use `min_*` and `max_*` score ranges when a line needs exact attribute bands.
+- Packs that customize opening greetings can override `opening.return_after_absence` to control how villagers mention long gaps between visits.
 
 ## 1.0.0-beta.11 - 2026-05-26
 

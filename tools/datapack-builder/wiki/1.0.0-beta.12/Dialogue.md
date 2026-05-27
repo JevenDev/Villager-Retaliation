@@ -482,6 +482,12 @@ Relationship-aware dialogue text can use `{partner}`, `{crush}`, `{dating_partne
 Recruitment memory lines can use `{follow_biome}` and `{follow_distance}`.
 Use `recruitment_memory_biome` / `recruitment_memory_biomes` when a follow-up line should only trigger for specific left-behind or travel biomes.
 
+Opening and normal dialogue text can also use absence-memory placeholders:
+
+- `{days_since_seen}` - numeric day gap as text (for example `3`)
+- `{day_or_days}` - singular/plural helper (`day` / `days`)
+- `{days_since_seen_phrase}` - natural phrase such as `today`, `yesterday`, `3 days ago`, or `about a week ago`
+
 Container theft memory lines can use `{stolen_item}`, `{stolen_item_id}`, `{stolen_count}`, `{stolen_item_count}`, `{stolen_stack}`, `{stolen_container}`, `{stolen_loot_table}`, `{theft_witness}`, and `{theft_witness_possessive}`. Use a `conditions` memory block with `tag: "player_container_theft"` and `source: "this_villager"` for lines like "my {stolen_item}", or `source: "other_villager"` for gossip like "{theft_witness} told me about {stolen_stack}." The older `requires_container_theft_to_self` and `requires_container_theft_from_other` fields are deprecated for removal in beta.13.
 
 Retaliation memory lines can use `{retaliation_target}`, `{retaliation_target_name}`, `{retaliation_target_kind}`, `{retaliation_target_type}`, `{retaliation_witness}`, and `{retaliation_witness_possessive}`. Use a `conditions` memory block with `tag: "villager_retaliation_started"` and `source: "this_villager"` or `source: "other_villager"` when you want direct/self-or-other lines. Use `retaliation_target_entity_types` for mob-type-specific lines. The older `requires_retaliation_to_self` and `requires_retaliation_from_other` fields are deprecated for removal in beta.13.
@@ -708,6 +714,8 @@ Gift preference rules can set `response_key` to point at any message key. Those 
 ```
 
 Openings and closings support `id`, `text`, `lines`, `professions`, `dispositions`, `requires_villager_unarmed`, `requires_villager_armed`, `show_for_adults`, `show_for_babies`, `first_conversation_only`, `first_village_interaction_only`, and `weight`. Beta.12 `mood` and social attribute fields apply to dialogue `lines`, not openings or closings.
+
+`first_conversation_only` is now tied to persisted interaction memory. If the villager already has saved last-seen memory for that player, first-conversation openings are skipped even after world leave/join.
 
 For `messages`, `openings`, and `closings`, entries with a profession filter default to adult-only unless they explicitly set `show_for_babies: true`. This keeps profession/job-site flavor from being selected for baby villagers by accident. Unfiltered entries still default to both adults and babies.
 

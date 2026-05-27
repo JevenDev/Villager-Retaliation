@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.interaction;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.DialogueDisposition;
 import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
+import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueService;
 import com.jvn.villagerretaliation.mood.VillagerMood;
@@ -42,6 +43,7 @@ public final class VillagerInteractionScreenOpener {
                 forceCameraTowardsVillager,
                 dialogueOptions
         );
+        VillagerInteractionTracker.rememberConversationOpened(level, villager, player);
         PacketDistributor.sendToPlayer(player, payload);
         VillagerAmbientIndicatorService.onConversationOpened(level, villager, player);
         VillagerInteractionService.broadcastVillagerChat(level, villager, greetingText);
@@ -64,6 +66,7 @@ public final class VillagerInteractionScreenOpener {
                 forceCameraTowardsVillager,
                 dialogueOptions
         );
+        VillagerInteractionTracker.rememberConversationOpened(level, villager, player);
         PacketDistributor.sendToPlayer(player, payload);
         VillagerAmbientIndicatorService.onConversationOpened(level, villager, player);
     }

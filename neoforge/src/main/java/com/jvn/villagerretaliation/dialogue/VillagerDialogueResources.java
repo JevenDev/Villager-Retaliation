@@ -1344,7 +1344,7 @@ public final class VillagerDialogueResources {
             if (!this.equipmentCondition.matches(context.villager())) {
                 return false;
             }
-            if (this.firstConversationOnly && !context.firstConversation()) {
+            if (this.firstConversationOnly && (!context.firstConversation() || context.hasKnownLastSeenDay())) {
                 return false;
             }
             if (this.firstVillageInteractionOnly && !context.firstVillageInteraction()) {

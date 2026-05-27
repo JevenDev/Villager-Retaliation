@@ -28,9 +28,13 @@ public final class VillagerInteractionTracker {
         long gameTime = level.getGameTime();
         long day = level.getDayTime() / 24000L;
         long optionResetTicks = VillagerRetaliationConfig.REPEATED_DIALOGUE_OPTION_RESET_TICKS.get();
+        long lastSeenDay = entry.lastSeenDay();
+        long daysSinceLastSeen = lastSeenDay == Long.MIN_VALUE ? Long.MIN_VALUE : Math.max(0L, day - lastSeenDay);
         return new InteractionState(
                 !entry.hasTalked(),
                 isFirstVillageInteraction(level, villager, player, data),
+                lastSeenDay,
+                daysSinceLastSeen,
                 entry.recentDialogueIds(),
                 entry.lastPositiveDialogueReputationGameTime(),
                 entry.lastPositiveDialogueReputationDay(),
@@ -66,12 +70,14 @@ public final class VillagerInteractionTracker {
     public static void rememberDialogue(ServerLevel level, Villager villager, ServerPlayer player, DialogueRequestType requestType, String dialogueId) {
         VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
         VillagerInteractionSavedData.InteractionEntry entry = data.getOrCreate(villager.getUUID(), player.getUUID());
+        long day = level.getDayTime() / 24000L;
         entry.markTalked();
+        entry.markSeenDay(day);
         entry.rememberDialogueId(
                 requestType,
                 dialogueId,
                 level.getGameTime(),
-                level.getDayTime() / 24000L,
+                day,
                 VillagerRetaliationConfig.REPEATED_DIALOGUE_OPTION_RESET_TICKS.get()
         );
         data.setDirty();
@@ -432,6 +438,15 @@ public final class VillagerInteractionTracker {
         data.setDirty();
     }
 
+    public static void rememberConversationOpened(ServerLevel level, Villager villager, ServerPlayer player) {
+        VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
+        VillagerInteractionSavedData.InteractionEntry entry = data.getOrCreate(villager.getUUID(), player.getUUID());
+        long day = level.getDayTime() / 24000L;
+        if (entry.markSeenDay(day)) {
+            data.setDirty();
+        }
+    }
+
     public static Optional<RecruitmentMemory> recruitmentMemory(ServerLevel level, Villager villager, ServerPlayer player) {
         return Optional.ofNullable(VillagerInteractionSavedData.get(level)
                 .recruitmentMemory(villager.getUUID(), player.getUUID()));
@@ -576,6 +591,8 @@ public final class VillagerInteractionTracker {
     public record InteractionState(
             boolean firstConversation,
             boolean firstVillageInteraction,
+            long lastSeenDay,
+            long daysSinceLastSeen,
             List<String> recentDialogueIds,
             long lastPositiveDialogueReputationGameTime,
             long lastPositiveDialogueReputationDay,

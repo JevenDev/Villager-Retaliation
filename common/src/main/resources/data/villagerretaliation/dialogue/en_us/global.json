@@ -2560,6 +2560,26 @@
       ]
     },
     {
+      "key": "opening.return_after_absence",
+      "show_for_babies": false,
+      "lines": [
+        "Been {days_since_seen} {day_or_days} since I saw you. What brings you back?",
+        "I have not seen you since {days_since_seen_phrase}. What do you need today?",
+        "You have been gone a while. {days_since_seen} {day_or_days}, by my count."
+      ],
+      "weight": 34
+    },
+    {
+      "key": "opening.return_after_absence",
+      "show_for_adults": false,
+      "lines": [
+        "I have not seen you since {days_since_seen_phrase}. Were you exploring?",
+        "You were gone for {days_since_seen} {day_or_days}. Did you see anything neat?",
+        "Hey, you are back. It has been {days_since_seen} {day_or_days}."
+      ],
+      "weight": 34
+    },
+    {
       "key": "interaction.follow_betrayal",
       "lines": [
         "I trusted you.",

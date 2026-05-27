@@ -34,6 +34,8 @@ public record DialogueContext(
         VillagerMoodState moodState,
         boolean firstConversation,
         boolean firstVillageInteraction,
+        long lastSeenDay,
+        long daysSinceLastSeen,
         WeatherState weather,
         TimeOfDay timeOfDay,
         long lastPositiveDialogueReputationGameTime,
@@ -64,6 +66,50 @@ public record DialogueContext(
     private static final long BROKEN_BED_MEMORY_TICKS = 20L * 60L * 20L;
     private static final long DIALOGUE_MOOD_MEMORY_TICKS = 20L * 60L * 5L;
     private static final int HIGH_SOCIAL_ATTRIBUTE_THRESHOLD = 60;
+
+    public boolean hasKnownLastSeenDay() {
+        return this.lastSeenDay != Long.MIN_VALUE;
+    }
+
+    public long daysSinceLastSeenCount() {
+        return this.daysSinceLastSeen == Long.MIN_VALUE ? 0L : Math.max(0L, this.daysSinceLastSeen);
+    }
+
+    public String daysSinceLastSeenCountText() {
+        return Long.toString(daysSinceLastSeenCount());
+    }
+
+    public String daysSinceLastSeenDayUnit() {
+        return daysSinceLastSeenCount() == 1L ? "day" : "days";
+    }
+
+    public String daysSinceLastSeenPhrase() {
+        if (!hasKnownLastSeenDay()) {
+            return "a while ago";
+        }
+        long days = daysSinceLastSeenCount();
+        if (days <= 0L) {
+            return "today";
+        }
+        if (days == 1L) {
+            return "yesterday";
+        }
+        if (days < 7L) {
+            return days + " days ago";
+        }
+        if (days < 14L) {
+            return "about a week ago";
+        }
+        if (days < 30L) {
+            long weeks = Math.max(2L, days / 7L);
+            return weeks + " weeks ago";
+        }
+        if (days < 60L) {
+            return "about a month ago";
+        }
+        long months = Math.max(2L, days / 30L);
+        return months + " months ago";
+    }
 
     public boolean hasRecentEvent(VillageEventMemory.EventTag... tags) {
         return VillageEventMemory.hasAny(this.recentEvents, tags);
