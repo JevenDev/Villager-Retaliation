@@ -76,6 +76,7 @@ public record DialogueLine(
         boolean requiresKnownRomanticSpouse,
         boolean requiresKnownSeparatedPartner,
         boolean requiresKnownWidowedPartner,
+        List<DialogueCondition> conditions,
         GiftAdviceKind giftAdviceKind,
         int weight
 ) {
@@ -337,6 +338,9 @@ public record DialogueLine(
         if (this.requiresKnownWidowedPartner && !context.hasKnownWidowedPartner()) {
             return false;
         }
+        if (!this.conditions.stream().allMatch(condition -> condition.matches(context))) {
+            return false;
+        }
         return this.weight > 0;
     }
 
@@ -436,6 +440,7 @@ public record DialogueLine(
         if (this.giftAdviceKind != null) {
             score += 3;
         }
+        score += this.conditions.stream().mapToInt(DialogueCondition::specificityScore).sum();
         return score;
     }
 
@@ -511,6 +516,7 @@ public record DialogueLine(
         private boolean requiresKnownRomanticSpouse;
         private boolean requiresKnownSeparatedPartner;
         private boolean requiresKnownWidowedPartner;
+        private final List<DialogueCondition> conditions = new java.util.ArrayList<>();
         private GiftAdviceKind giftAdviceKind;
         private int weight = 10;
 
@@ -866,6 +872,13 @@ public record DialogueLine(
             return this;
         }
 
+        public Builder conditions(List<DialogueCondition> conditions) {
+            if (conditions != null) {
+                this.conditions.addAll(conditions);
+            }
+            return this;
+        }
+
         public Builder weight(int weight) {
             this.weight = weight;
             return this;
@@ -933,6 +946,7 @@ public record DialogueLine(
                     this.requiresKnownRomanticSpouse,
                     this.requiresKnownSeparatedPartner,
                     this.requiresKnownWidowedPartner,
+                    List.copyOf(this.conditions),
                     this.giftAdviceKind,
                     this.weight
             );

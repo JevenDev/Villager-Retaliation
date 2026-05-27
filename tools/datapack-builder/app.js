@@ -374,6 +374,7 @@ const FIELD_TOOLTIPS = {
   "dialogue-option": "Restricts a line to option id(s), including custom ids or built-ins such as adult_share_story.",
   "dialogue-weather": "Weather filter for lines: clear, rain, or thunder.",
   "dialogue-times": "Time filter for lines: morning, afternoon, evening, or night.",
+  "dialogue-conditions": "Optional beta.12+ condition blocks for compound line logic. Supports all_of, any_of, not, reputation, memory, villager_age, weather, and time.",
   "dialogue-event_tags": "Requires a recent nearby village memory with a matching event tag.",
   "dialogue-player_event_tags": "Requires a recent village memory associated with the current player.",
   "dialogue-retaliation_target_entity_types": "Restricts retaliation-memory lines to recent villager retaliation targets such as minecraft:player or minecraft:zombie.",
@@ -651,7 +652,8 @@ const BETA_12_ONLY_DIALOGUE_KEYS = [
   "min_kindness",
   "max_kindness",
   "min_charm",
-  "max_charm"
+  "max_charm",
+  "conditions"
 ];
 
 // Keep each supported datapack surface versioned so migrations can reason about

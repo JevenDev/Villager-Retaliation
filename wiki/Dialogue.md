@@ -291,6 +291,7 @@ See [Dialogue Requests](Dialogue-Requests.md) for simple and expanded dropdown e
 | `max_reputation` | integer | none | Maximum exact reputation value with this villager. |
 | `weather` | string or array | any | `clear`, `rain`, or `thunder`. |
 | `times` | string or array | any | `morning`, `afternoon`, `evening`, or `night`. |
+| `conditions` | array | none | Beta.12+. Compound condition blocks for line logic. Existing top-level fields still work and are not being removed. |
 | `event_tags` | string or array | any | Requires a recent nearby event with a matching tag. |
 | `player_event_tags` | string or array | any | Requires a recent event associated with the player. |
 | `requires_container_theft_to_self` | boolean | `false` | Requires recent player container-theft memory witnessed by this villager. |
@@ -354,6 +355,60 @@ See [Dialogue Requests](Dialogue-Requests.md) for simple and expanded dropdown e
 | `weight` | integer | `10` | Weighted selection. |
 
 Reputation filters on options and lines check the player's current reputation with the specific villager being spoken to. Use `reputation_levels` for tier-based behavior, or `min_reputation` / `max_reputation` when you need an exact numeric boundary.
+
+### Compound Line Conditions
+
+`conditions` is an additive path for new normal dialogue line rules. Do not remove existing fields from packs just to use it: legacy fields such as `requires_known_family`, `player_event_tags`, and `requires_container_theft_to_self` remain supported. Use `conditions` when the line needs compound logic that flat fields cannot express clearly, such as "A or B, but not C."
+
+Condition blocks support:
+
+| Type | Keys | Notes |
+| --- | --- | --- |
+| `all_of` / `and` | `conditions` | Matches when every child condition matches. |
+| `any_of` / `or` | `conditions` | Matches when at least one child condition matches. |
+| `not` | `condition` | Inverts one child condition. |
+| `reputation` | `level`, `levels`, `min`, `max` | `level`/`levels` also accept `reputation_level`/`reputation_levels`; `min`/`max` also accept `min_reputation`/`max_reputation`. |
+| `memory` | `tag`, `tags`, `source`, `player`, `kind` | `source` can be `self`, `this_villager`, `other_villager`, or omitted. `player` defaults to `true`, meaning the event must involve the current player. `kind` can be `recent_broken_bed`, `recent_direct_hit`, `gear_report_used_in_combat`, `gear_report_unused_in_combat`, or `recruitment_memory`. |
+| `villager_age` | `baby`, `adult` | Matches the speaker's age. |
+| `weather` | `state`, `states` | Uses `clear`, `rain`, or `thunder`. |
+| `time` / `time_of_day` | `value`, `values` | Uses `morning`, `afternoon`, `evening`, or `night`. |
+
+Example:
+
+```json
+{
+  "id": "my_pack.trusted_theft_gossip_not_baby",
+  "request": "question",
+  "conditions": [
+    {
+      "type": "any_of",
+      "conditions": [
+        {
+          "type": "reputation",
+          "levels": [
+            "trusted",
+            "respected"
+          ]
+        },
+        {
+          "type": "memory",
+          "tag": "player_container_theft",
+          "source": "other_villager"
+        }
+      ]
+    },
+    {
+      "type": "not",
+      "condition": {
+        "type": "villager_age",
+        "baby": true
+      }
+    }
+  ],
+  "text": "I hear things. Good things, bad things, and chest things.",
+  "weight": 20
+}
+```
 
 Beta.12 separates three social concepts that can all affect line selection:
 

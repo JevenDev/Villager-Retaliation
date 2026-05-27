@@ -91,6 +91,7 @@ public final class VillagerDialogueResources {
             "player_item_enchantment", "player_item_enchantments", "held_item_enchantment", "held_item_enchantments",
             "min_player_item_enchantment_level", "max_player_item_enchantment_level", "min_held_item_enchantment_level", "max_held_item_enchantment_level",
             "story_structure", "story_structures", "story_biome", "story_biomes",
+            "conditions",
             "requires_recent_broken_bed_memory", "requires_recent_direct_hit_memory",
             "requires_gear_report_used_in_combat", "requires_gear_report_unused_in_combat",
             "recruitment_followup_scenarios", "requires_recruitment_memory", "recruitment_memory_scenarios",
@@ -968,6 +969,7 @@ public final class VillagerDialogueResources {
         if (readBoolean(entry, "requires_known_widowed_partner")) {
             builder.requiresKnownWidowedPartner();
         }
+        builder.conditions(DialogueCondition.readList(location, context, entry));
         builder.showForAdults(readBoolean(entry, "show_for_adults", true));
         builder.showForBabies(readBoolean(entry, "show_for_babies", true));
         readEnum(entry, "gift_advice", GiftAdviceKind.class).ifPresent(builder::giftAdviceKind);
