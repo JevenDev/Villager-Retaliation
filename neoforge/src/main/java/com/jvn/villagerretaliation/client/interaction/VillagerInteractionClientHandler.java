@@ -10,12 +10,14 @@ import com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
 import net.minecraft.client.GuiMessageTag;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -28,6 +30,23 @@ public final class VillagerInteractionClientHandler {
     private static final long VILLAGER_CHAT_CONTINUATION_WINDOW_MILLIS = 15_000L;
     private static final int VILLAGER_CHAT_PRIMARY_TEXT_COLOR = 0xFFFFFF;
     private static final int VILLAGER_CHAT_SECONDARY_TEXT_COLOR = 0xD8D8D8;
+    private static final int DEFAULT_PROFESSION_ACCENT_COLOR = 0xBDBDBD;
+    private static final Map<VillagerProfession, Integer> PROFESSION_ACCENT_COLORS = Map.ofEntries(
+            Map.entry(VillagerProfession.ARMORER, 0x8FA7B3),
+            Map.entry(VillagerProfession.BUTCHER, 0xD64F4F),
+            Map.entry(VillagerProfession.CARTOGRAPHER, 0x4FB6B8),
+            Map.entry(VillagerProfession.CLERIC, 0xB967FF),
+            Map.entry(VillagerProfession.FARMER, 0x7CFC00),
+            Map.entry(VillagerProfession.FISHERMAN, 0x3BA7FF),
+            Map.entry(VillagerProfession.FLETCHER, 0x83B547),
+            Map.entry(VillagerProfession.LEATHERWORKER, 0xA86A3D),
+            Map.entry(VillagerProfession.LIBRARIAN, 0xD9558F),
+            Map.entry(VillagerProfession.MASON, 0x9A8F86),
+            Map.entry(VillagerProfession.NITWIT, 0x6AD36A),
+            Map.entry(VillagerProfession.SHEPHERD, 0xF2F2F2),
+            Map.entry(VillagerProfession.TOOLSMITH, 0x6FC3D0),
+            Map.entry(VillagerProfession.WEAPONSMITH, 0xFF8A2A)
+    );
     private static int lastChatSpeakerEntityId = Integer.MIN_VALUE;
     private static String lastChatSpeakerLabel = "";
     private static long lastChatMessageMillis;
@@ -76,29 +95,17 @@ public final class VillagerInteractionClientHandler {
 
     public static void acceptDialogue(VillagerDialogueResponsePayload payload) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.screen instanceof VillagerInteractionScreen screen
-                && screen.matchesVillager(payload.entityId())) {
+        VillagerInteractionSessionScreen screen = activeInteractionScreen(minecraft.screen, payload.entityId());
+        if (screen != null) {
             screen.updateReputation(
-                    payload.reputation(),
-                    payload.reputationLevel(),
-                    payload.mood(),
-                    payload.primaryMood(),
-                    payload.forceCameraTowardsVillager(),
-                    payload.dialogueOptions(),
-                    payload.knownLikedGiftNames(),
-                    payload.knownDislikedGiftNames()
-            );
-        } else if (minecraft.screen instanceof VillagerInteractionChatScreen screen
-                && screen.matchesVillager(payload.entityId())) {
-            screen.updateReputation(
-                    payload.reputation(),
-                    payload.reputationLevel(),
-                    payload.mood(),
-                    payload.primaryMood(),
-                    payload.forceCameraTowardsVillager(),
-                    payload.dialogueOptions(),
-                    payload.knownLikedGiftNames(),
-                    payload.knownDislikedGiftNames()
+                payload.reputation(),
+                payload.reputationLevel(),
+                payload.mood(),
+                payload.primaryMood(),
+                payload.forceCameraTowardsVillager(),
+                payload.dialogueOptions(),
+                payload.knownLikedGiftNames(),
+                payload.knownDislikedGiftNames()
             );
         }
     }
@@ -109,15 +116,20 @@ public final class VillagerInteractionClientHandler {
 
     public static void acceptConversationEnded(VillagerConversationEndedPayload payload) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.screen instanceof VillagerInteractionScreen screen
-                && screen.matchesVillager(payload.entityId())) {
-            screen.closeFromServer();
-        } else if (minecraft.screen instanceof VillagerInteractionChatScreen screen
-                && screen.matchesVillager(payload.entityId())) {
+        VillagerInteractionSessionScreen screen = activeInteractionScreen(minecraft.screen, payload.entityId());
+        if (screen != null) {
             screen.closeFromServer();
         }
         ClientVillagerConversationState.forgetSpeakerLabel(payload.entityId());
         resetVillagerChatGroup(payload.entityId());
+    }
+
+    private static VillagerInteractionSessionScreen activeInteractionScreen(Screen screen, int villagerEntityId) {
+        if (screen instanceof VillagerInteractionSessionScreen interactionScreen
+                && interactionScreen.matchesVillager(villagerEntityId)) {
+            return interactionScreen;
+        }
+        return null;
     }
 
     private static void pushVillagerChatMessage(Minecraft minecraft, int entityId, String text, String speakerLabel) {
@@ -222,49 +234,7 @@ public final class VillagerInteractionClientHandler {
     }
 
     private static int professionAccentColor(VillagerProfession profession) {
-        if (profession == VillagerProfession.ARMORER) {
-            return 0x8FA7B3;
-        }
-        if (profession == VillagerProfession.BUTCHER) {
-            return 0xD64F4F;
-        }
-        if (profession == VillagerProfession.CARTOGRAPHER) {
-            return 0x4FB6B8;
-        }
-        if (profession == VillagerProfession.CLERIC) {
-            return 0xB967FF;
-        }
-        if (profession == VillagerProfession.FARMER) {
-            return 0x7CFC00;
-        }
-        if (profession == VillagerProfession.FISHERMAN) {
-            return 0x3BA7FF;
-        }
-        if (profession == VillagerProfession.FLETCHER) {
-            return 0x83B547;
-        }
-        if (profession == VillagerProfession.LEATHERWORKER) {
-            return 0xA86A3D;
-        }
-        if (profession == VillagerProfession.LIBRARIAN) {
-            return 0xD9558F;
-        }
-        if (profession == VillagerProfession.MASON) {
-            return 0x9A8F86;
-        }
-        if (profession == VillagerProfession.NITWIT) {
-            return 0x6AD36A;
-        }
-        if (profession == VillagerProfession.SHEPHERD) {
-            return 0xF2F2F2;
-        }
-        if (profession == VillagerProfession.TOOLSMITH) {
-            return 0x6FC3D0;
-        }
-        if (profession == VillagerProfession.WEAPONSMITH) {
-            return 0xFF8A2A;
-        }
-        return 0xBDBDBD;
+        return PROFESSION_ACCENT_COLORS.getOrDefault(profession, DEFAULT_PROFESSION_ACCENT_COLOR);
     }
 
     private static String resolveVillagerSpeakerName(Minecraft minecraft, int entityId) {

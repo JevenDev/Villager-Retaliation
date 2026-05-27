@@ -43,7 +43,7 @@ import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.lwjgl.glfw.GLFW;
 
-public class VillagerInteractionScreen extends Screen {
+public class VillagerInteractionScreen extends Screen implements VillagerInteractionSessionScreen {
     private static final String GUI_KEY_PREFIX = "villagerretaliation.gui.";
     private static final String BACK_LABEL_KEY = GUI_KEY_PREFIX + "back";
     private static final String BACK_HINT_KEY = GUI_KEY_PREFIX + "hint.back";

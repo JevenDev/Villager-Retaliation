@@ -10,7 +10,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.ChatScreen;
 import org.lwjgl.glfw.GLFW;
 
-final class VillagerInteractionChatScreen extends ChatScreen {
+final class VillagerInteractionChatScreen extends ChatScreen implements VillagerInteractionSessionScreen {
     private final VillagerInteractionScreen interactionScreen;
 
     VillagerInteractionChatScreen(VillagerInteractionScreen interactionScreen, String initialText) {
@@ -59,11 +59,13 @@ final class VillagerInteractionChatScreen extends ChatScreen {
         return super.mouseClicked(mouseX - layout.xOffset(), mouseY - layout.yOffset(), button);
     }
 
-    boolean matchesVillager(int entityId) {
+    @Override
+    public boolean matchesVillager(int entityId) {
         return this.interactionScreen.matchesVillager(entityId);
     }
 
-    void updateReputation(
+    @Override
+    public void updateReputation(
             int reputation,
             VillagerReputationLevel reputationLevel,
             DialogueDisposition mood,
@@ -84,7 +86,8 @@ final class VillagerInteractionChatScreen extends ChatScreen {
         );
     }
 
-    void closeFromServer() {
+    @Override
+    public void closeFromServer() {
         this.interactionScreen.closeFromServer();
     }
 
