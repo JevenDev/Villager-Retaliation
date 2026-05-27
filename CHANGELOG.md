@@ -23,6 +23,10 @@
 - The datapack builder Convert flow can retarget beta.11 packs to beta.12 without renaming or removing existing beta.11 JSON fields.
 - Trade refresh replacement selection avoids result item types the villager already offers, reducing duplicate refreshed trades.
 
+### Fixed
+
+- Disabled vanilla villager trade-preview hand behavior so nearby players holding emeralds or other trade costs no longer cause displayed trade results to replace, duplicate, or drop held villager items.
+
 ## 1.0.0-beta.11-hotfix.1 - 2026-05-26
 
 ### Changed

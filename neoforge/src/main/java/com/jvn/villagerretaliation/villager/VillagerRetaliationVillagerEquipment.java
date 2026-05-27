@@ -69,6 +69,8 @@ public final class VillagerRetaliationVillagerEquipment {
         boolean alreadyRolledForRole = roleKey.equals(rolledRoleKey);
         boolean ownsCurrentMainHand = mainHandOwner(villager) == MainHandOwner.ROLE;
         ItemStack currentMainHand = villager.getMainHandItem();
+        ItemStack storedRoleStack = roleMainHand(villager);
+        ItemStack expectedRoleStack = storedRoleStack.isEmpty() ? stack : storedRoleStack;
 
         if (stack.isEmpty()) {
             if (ownsCurrentMainHand) {
@@ -79,6 +81,13 @@ public final class VillagerRetaliationVillagerEquipment {
         }
 
         if (alreadyRolledForRole) {
+            if (ownsCurrentMainHand && currentMainHand.isEmpty()) {
+                setEquipment(villager, EquipmentSlot.MAINHAND, expectedRoleStack, false);
+                setMainHandDropChance(villager, Mob.DEFAULT_EQUIPMENT_DROP_CHANCE);
+                setRoleMainHandState(villager, roleKey, expectedRoleStack);
+            } else if (ownsCurrentMainHand && storedRoleStack.isEmpty() && !currentMainHand.isEmpty()) {
+                setRoleMainHandState(villager, roleKey, currentMainHand);
+            }
             return;
         }
 
@@ -86,7 +95,7 @@ public final class VillagerRetaliationVillagerEquipment {
         if (currentMainHand.isEmpty() || ownsCurrentMainHand) {
             setEquipment(villager, EquipmentSlot.MAINHAND, stack, false);
             setMainHandDropChance(villager, Mob.DEFAULT_EQUIPMENT_DROP_CHANCE);
-            setRoleMainHandState(villager, roleKey);
+            setRoleMainHandState(villager, roleKey, stack);
         }
     }
 
@@ -186,6 +195,29 @@ public final class VillagerRetaliationVillagerEquipment {
         return true;
     }
 
+    public static boolean suppressVanillaTradePreviewMainHand(Villager villager, ItemStack protectedMainHand) {
+        ItemStack mainHand = villager.getMainHandItem();
+        MainHandOwner owner = mainHandOwner(villager);
+        ItemStack protectedStack = owner == MainHandOwner.ROLE ? roleMainHand(villager) : protectedMainHand;
+        if (protectedStack.isEmpty()) {
+            protectedStack = protectedMainHand;
+        }
+        boolean protectedStackMatches = owner == MainHandOwner.ROLE
+                ? ItemStack.isSameItem(mainHand, protectedStack)
+                : sameStack(mainHand, protectedStack);
+        if (!isVanillaTradePreviewMainHand(villager, mainHand)
+                || (!protectedStack.isEmpty() && protectedStackMatches)) {
+            return false;
+        }
+
+        if (isPlayerManagedMainHand(villager)) {
+            return restorePlayerManagedMainHand(villager);
+        }
+
+        setEquipment(villager, EquipmentSlot.MAINHAND, ItemStack.EMPTY, false);
+        return true;
+    }
+
     public static boolean hasPickedUpMainHand(AbstractVillager villager) {
         return !pickedUpMainHand(villager).isEmpty();
     }
@@ -275,6 +307,16 @@ public final class VillagerRetaliationVillagerEquipment {
         return ItemStack.EMPTY;
     }
 
+    private static ItemStack roleMainHand(AbstractVillager villager) {
+        CompoundTag stateTag = villager.getPersistentData().getCompound(MAINHAND_STATE_TAG);
+        if (mainHandOwner(villager) == MainHandOwner.ROLE
+                && !stateTag.isEmpty()
+                && stateTag.contains(MAINHAND_STACK_TAG, CompoundTag.TAG_COMPOUND)) {
+            return ItemStack.parseOptional(villager.level().registryAccess(), stateTag.getCompound(MAINHAND_STACK_TAG));
+        }
+        return ItemStack.EMPTY;
+    }
+
     private static void setPlayerManagedMainHand(AbstractVillager villager, ItemStack stack) {
         if (mainHandOwner(villager) == MainHandOwner.MANUAL) {
             setEquipment(villager, EquipmentSlot.MAINHAND, stack, true);
@@ -341,10 +383,13 @@ public final class VillagerRetaliationVillagerEquipment {
         villager.getPersistentData().remove(LEGACY_PICKED_UP_MAINHAND_TAG);
     }
 
-    private static void setRoleMainHandState(AbstractVillager villager, String roleKey) {
+    private static void setRoleMainHandState(AbstractVillager villager, String roleKey, ItemStack stack) {
         CompoundTag stateTag = new CompoundTag();
         stateTag.putString(MAINHAND_OWNER_TAG, OWNER_ROLE);
         stateTag.putString(ROLE_MAINHAND_KEY_TAG, roleKey);
+        if (!stack.isEmpty()) {
+            stateTag.put(MAINHAND_STACK_TAG, stack.saveOptional(villager.level().registryAccess()));
+        }
         villager.getPersistentData().put(MAINHAND_STATE_TAG, stateTag);
         villager.getPersistentData().remove(LEGACY_PICKED_UP_MAINHAND_TAG);
 

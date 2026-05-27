@@ -1,7 +1,14 @@
 package com.jvn.villagerretaliation.villager;
 
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.ai.Brain;
+import net.minecraft.world.entity.ai.behavior.Behavior;
+import net.minecraft.world.entity.ai.behavior.BehaviorControl;
+import net.minecraft.world.entity.ai.behavior.ShowTradesToPlayer;
 import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.util.LandRandomPos;
@@ -30,6 +37,25 @@ public final class VillagerRetaliationVillagerBrainUtil {
         return brain.hasMemoryValue(MemoryModuleType.HURT_BY)
                 || brain.hasMemoryValue(MemoryModuleType.HURT_BY_ENTITY)
                 || brain.hasMemoryValue(MemoryModuleType.NEAREST_HOSTILE);
+    }
+
+    public static void removeTradePreviewBehavior(ServerLevel level, Villager villager) {
+        Brain<Villager> brain = villager.getBrain();
+        long gameTime = level.getGameTime();
+        for (Map<Activity, Set<BehaviorControl<? super Villager>>> behaviorsByActivity : brain.availableBehaviorsByPriority.values()) {
+            for (Set<BehaviorControl<? super Villager>> behaviors : behaviorsByActivity.values()) {
+                Iterator<BehaviorControl<? super Villager>> iterator = behaviors.iterator();
+                while (iterator.hasNext()) {
+                    BehaviorControl<? super Villager> behavior = iterator.next();
+                    if (behavior instanceof ShowTradesToPlayer) {
+                        if (behavior.getStatus() == Behavior.Status.RUNNING) {
+                            behavior.doStop(level, villager, gameTime);
+                        }
+                        iterator.remove();
+                    }
+                }
+            }
+        }
     }
 
     public static void enterFleeState(Villager villager, @Nullable LivingEntity hostile, long gameTime) {

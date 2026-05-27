@@ -119,6 +119,9 @@ public final class VillagerRetaliationHandler {
         }
 
         ensureProfessionMainHand(villager);
+        if (villager.level() instanceof ServerLevel level) {
+            VillagerRetaliationVillagerBrainUtil.removeTradePreviewBehavior(level, villager);
+        }
         if (!VillagerCombatRoles.isArmorer(villager)
                 || !VillagerRetaliationConfig.ARMORERS_FIGHT_BACK.get()
                 || !isHardMode(villager)) {
@@ -300,6 +303,10 @@ public final class VillagerRetaliationHandler {
     public static void onEntityTickPre(EntityTickEvent.Pre event) {
         if (!(event.getEntity() instanceof Villager villager) || villager.level().isClientSide) {
             return;
+        }
+
+        if (villager.level() instanceof ServerLevel level) {
+            VillagerRetaliationVillagerBrainUtil.removeTradePreviewBehavior(level, villager);
         }
 
         if (shouldSuppressFleeingForRetaliation(villager)) {
@@ -1096,6 +1103,7 @@ public final class VillagerRetaliationHandler {
         String roleKey = BuiltInRegistries.VILLAGER_PROFESSION
                 .getKey(villager.getVillagerData().getProfession())
                 .toString();
+        VillagerRetaliationVillagerEquipment.suppressVanillaTradePreviewMainHand(villager, roleWeapon);
         VillagerRetaliationVillagerEquipment.ensureRoleMainHand(villager, roleKey, roleWeapon);
     }
 
