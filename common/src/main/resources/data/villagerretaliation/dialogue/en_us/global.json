@@ -2509,7 +2509,9 @@
       "lines": [
         "I already have {active_orders} active {active_order_word} for you. {max_orders} {max_order_word} {max_order_count_word} all I can manage at once.",
         "Your ledger is full at {active_orders} {active_order_word}. Let me finish one before adding another.",
-        "No more than {max_orders} Special {max_order_word} at a time. Come back when one is ready."
+        "No more than {max_orders} Special {max_order_word} at a time. Come back when one is ready.",
+        "I cannot open another request until one of your {active_order_word} is complete.",
+        "{max_orders} active {max_order_word} is my cap. Let one resolve first."
       ]
     },
     {
@@ -2602,7 +2604,9 @@
       "lines": [
         "I need a free order slot. You already have {active_orders} active {active_order_word}, and {max_orders} {max_order_word} is my limit.",
         "Your ledger is full. I need one of your {active_orders} active {active_order_word} to finish first.",
-        "I cannot take more than {max_orders} Special {max_order_word} at once. Let one clear, then ask again."
+        "I cannot take more than {max_orders} Special {max_order_word} at once. Let one clear, then ask again.",
+        "My order ledger has no open slot right now. Wait for one of your active requests to complete.",
+        "I can queue this after one of your current {active_order_word} is done."
       ]
     },
     {

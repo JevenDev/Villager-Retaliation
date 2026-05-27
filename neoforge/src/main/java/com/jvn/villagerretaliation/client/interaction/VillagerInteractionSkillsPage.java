@@ -222,6 +222,8 @@ final class VillagerInteractionSkillsPage {
         tooltip.add(Component.translatable(GUI_KEY_PREFIX + "profile.tooltip.score", profile.skillValue(skill)).withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.empty());
         tooltip.add(Component.literal(context.localizedSkillDescription(skill)).withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.empty());
+        tooltip.add(Component.literal("Click for more info").withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
         graphics.renderComponentTooltip(context.font(), tooltip, mouseX, mouseY);
     }
 
