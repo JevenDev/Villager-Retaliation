@@ -11,6 +11,7 @@ import com.jvn.villagerretaliation.mood.VillagerMood;
 import com.jvn.villagerretaliation.mood.VillagerMoodState;
 import com.jvn.villagerretaliation.social.VillagerFamilyTreeSnapshot;
 import com.jvn.villagerretaliation.social.VillagerRelationshipSnapshot;
+import com.jvn.villagerretaliation.trade.VillagerSpecialOrderService;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import java.util.Comparator;
 import java.util.List;
@@ -218,6 +219,10 @@ public record DialogueContext(
 
     public boolean hasKnownWidowedPartner() {
         return this.relationships.hasWidowedPartner();
+    }
+
+    public boolean hasActiveSpecialOrders() {
+        return !VillagerSpecialOrderService.activeOrderStatuses(this.level, this.villager, this.player.getUUID()).isEmpty();
     }
 
     public boolean hasRecentPlayerEvent(VillageEventMemory.EventTag... tags) {

@@ -256,6 +256,7 @@ See [Dialogue Requests](Dialogue-Requests.md) for simple and expanded dropdown e
 | `requires_known_romantic_spouse` | boolean | `false` | Shows when the villager has a romantic spouse. |
 | `requires_known_separated_partner` | boolean | `false` | Shows when the villager has a separated partner. |
 | `requires_known_widowed_partner` | boolean | `false` | Shows when the villager has a late partner. |
+| `requires_active_special_orders` | boolean | `false` | Shows when the player has active Special Orders with this villager. |
 
 ## Line Fields
 

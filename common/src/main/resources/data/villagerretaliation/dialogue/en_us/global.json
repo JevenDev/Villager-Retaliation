@@ -25,6 +25,15 @@
       "show_for_babies": false
     },
     {
+      "id": "trade_refresh.special_order.status",
+      "label": "Ask about orders.",
+      "type": "dialogue_option",
+      "request": "question",
+      "order": 1,
+      "show_for_babies": false,
+      "requires_active_special_orders": true
+    },
+    {
       "id": "adult_family",
       "label": "Ask About Family",
       "type": "dialogue_option",

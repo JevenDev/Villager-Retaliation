@@ -52,6 +52,7 @@ public record DialogueOptionDefinition(
         boolean requiresKnownRomanticSpouse,
         boolean requiresKnownSeparatedPartner,
         boolean requiresKnownWidowedPartner,
+        boolean requiresActiveSpecialOrders,
         int order
 ) {
     public boolean matches(DialogueContext context, DialogueDisposition disposition) {
@@ -176,6 +177,9 @@ public record DialogueOptionDefinition(
         if (this.requiresKnownWidowedPartner && !context.hasKnownWidowedPartner()) {
             return false;
         }
+        if (this.requiresActiveSpecialOrders && !context.hasActiveSpecialOrders()) {
+            return false;
+        }
         return this.dispositions.isEmpty() || this.dispositions.contains(disposition);
     }
 
@@ -192,6 +196,7 @@ public record DialogueOptionDefinition(
                 VillagerPlayerItemCondition.empty(),
                 VillagerReputationCondition.empty(),
                 DialogueItemPayment.empty(),
+                false,
                 false,
                 false,
                 false,

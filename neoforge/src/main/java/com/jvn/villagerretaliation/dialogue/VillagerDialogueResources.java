@@ -62,7 +62,7 @@ public final class VillagerDialogueResources {
             "requires_known_cousin", "requires_known_niece_nephew", "requires_known_extended_family", "requires_known_deceased_family",
             "requires_known_relationship", "requires_known_current_relationship", "requires_known_past_relationship", "requires_known_crush",
             "requires_known_dating_partner", "requires_known_fiance", "requires_known_romantic_spouse", "requires_known_separated_partner",
-            "requires_known_widowed_partner");
+            "requires_known_widowed_partner", "requires_active_special_orders");
     private static final Set<String> MESSAGE_KEYS = Set.of(
             "id", "key", "text", "lines", "professions", "dispositions",
             "requires_villager_unarmed", "villager_unarmed", "requires_villager_armed", "villager_armed",
@@ -493,6 +493,7 @@ public final class VillagerDialogueResources {
             boolean requiresKnownRomanticSpouse = readBoolean(entry, "requires_known_romantic_spouse");
             boolean requiresKnownSeparatedPartner = readBoolean(entry, "requires_known_separated_partner");
             boolean requiresKnownWidowedPartner = readBoolean(entry, "requires_known_widowed_partner");
+            boolean requiresActiveSpecialOrders = readBoolean(entry, "requires_active_special_orders");
             int order = readInt(entry, "order", index);
             options.put(id, new DialogueOptionDefinition(
                     id,
@@ -540,6 +541,7 @@ public final class VillagerDialogueResources {
                     requiresKnownRomanticSpouse,
                     requiresKnownSeparatedPartner,
                     requiresKnownWidowedPartner,
+                    requiresActiveSpecialOrders,
                     order
             ));
             index++;

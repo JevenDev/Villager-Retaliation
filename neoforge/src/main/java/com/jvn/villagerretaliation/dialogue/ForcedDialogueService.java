@@ -357,10 +357,6 @@ public final class ForcedDialogueService {
         }
     }
 
-    public static boolean hasActiveSpecialOrders(ServerLevel level, Villager villager, ServerPlayer player) {
-        return !VillagerSpecialOrderService.activeOrderStatuses(level, villager, player.getUUID()).isEmpty();
-    }
-
     public static boolean openSpecialOrderStatusDialogue(ServerPlayer player, Villager villager) {
         ServerLevel level = player.serverLevel();
         List<VillagerSpecialOrderService.ActiveOrderStatus> activeOrders =
