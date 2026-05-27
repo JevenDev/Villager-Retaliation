@@ -257,12 +257,17 @@
       "request": "recruitment_followup",
       "option": "recruitment_followup",
       "show_for_babies": false,
-      "requires_recruitment_boat_trip": true,
       "weight": 42,
       "lines": [
         "Keeping me in the boat was the hard part. I have chased calmer sheep.",
         "The boat did its part. I am still deciding whether the rest of the plan did.",
         "Water carried us home, which is more than I expected from that journey."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "boat_trip": true
+        }
       ]
     },
     {
@@ -270,13 +275,17 @@
       "request": "question",
       "option": "adult_general_question",
       "show_for_babies": false,
-      "requires_recruitment_memory": true,
-      "requires_recruitment_boat_trip": true,
       "weight": 3,
       "lines": [
         "That boat ride was calm enough, until I remembered I was trusting you with the shore.",
         "That boat trip still sits oddly in my memory, but at least it floated.",
         "A boat can make a bad plan quieter. It cannot make me forget it."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "boat_trip": true
+        }
       ]
     },
     {
@@ -284,13 +293,17 @@
       "request": "question",
       "option": "adult_general_question",
       "show_for_babies": false,
-      "requires_recruitment_memory": true,
-      "excludes_recruitment_ocean_crossing": true,
       "weight": 3,
       "lines": [
         "When I followed you through {follow_biome}, I finally understood why sheep wander off quietly.",
         "I remember following you through {follow_biome}. My feet remember it even better.",
         "That trip across {follow_biome} taught me to ask more questions before walking."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "excludes_ocean_crossing": true
+        }
       ]
     },
     {
@@ -298,12 +311,17 @@
       "request": "gear_report",
       "option": "gear_report",
       "show_for_babies": false,
-      "requires_gear_report_used_in_combat": true,
       "weight": 32,
       "lines": [
         "It helped keep the wolves from making a story of me. That is enough praise.",
         "It did the job when fear was loud. That is praise enough.",
         "Good gear earns trust the moment trouble tests it."
+      ],
+      "conditions": [
+        {
+          "type": "memory",
+          "kind": "gear_report_used_in_combat"
+        }
       ]
     },
     {
@@ -311,12 +329,17 @@
       "request": "gear_report",
       "option": "gear_report",
       "show_for_babies": false,
-      "requires_gear_report_unused_in_combat": true,
       "weight": 32,
       "lines": [
         "Unused so far. I prefer watching over nervous sheep to testing nervous steel.",
         "It did the job when fear was loud. That is praise enough.",
         "Good gear earns trust the moment trouble tests it."
+      ],
+      "conditions": [
+        {
+          "type": "memory",
+          "kind": "gear_report_unused_in_combat"
+        }
       ]
     },
     {

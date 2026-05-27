@@ -257,12 +257,17 @@
       "request": "recruitment_followup",
       "option": "recruitment_followup",
       "show_for_babies": false,
-      "requires_recruitment_boat_trip": true,
       "weight": 42,
       "lines": [
         "I know soil better than water. The boat was appreciated.",
         "The boat did its part. I am still deciding whether the rest of the plan did.",
         "Water carried us home, which is more than I expected from that journey."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "boat_trip": true
+        }
       ]
     },
     {
@@ -270,13 +275,17 @@
       "request": "question",
       "option": "adult_general_question",
       "show_for_babies": false,
-      "requires_recruitment_memory": true,
-      "excludes_recruitment_ocean_crossing": true,
       "weight": 3,
       "lines": [
         "You remember that walk through {follow_biome}? I have tilled softer ground than that road.",
         "I remember following you through {follow_biome}. My feet remember it even better.",
         "That trip across {follow_biome} taught me to ask more questions before walking."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "excludes_ocean_crossing": true
+        }
       ]
     },
     {
@@ -284,13 +293,17 @@
       "request": "question",
       "option": "adult_general_question",
       "show_for_babies": false,
-      "requires_recruitment_memory": true,
-      "requires_recruitment_boat_trip": true,
       "weight": 3,
       "lines": [
         "Boats are not much like fields. No furrows, no rows, just water deciding if it likes you.",
         "That boat trip still sits oddly in my memory, but at least it floated.",
         "A boat can make a bad plan quieter. It cannot make me forget it."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "boat_trip": true
+        }
       ]
     },
     {
@@ -298,12 +311,17 @@
       "request": "gear_report",
       "option": "gear_report",
       "show_for_babies": false,
-      "requires_gear_report_used_in_combat": true,
       "weight": 32,
       "lines": [
         "It kept me standing. Crops recover faster when the farmer does too.",
         "It did the job when fear was loud. That is praise enough.",
         "Good gear earns trust the moment trouble tests it."
+      ],
+      "conditions": [
+        {
+          "type": "memory",
+          "kind": "gear_report_used_in_combat"
+        }
       ]
     },
     {
@@ -311,12 +329,17 @@
       "request": "gear_report",
       "option": "gear_report",
       "show_for_babies": false,
-      "requires_gear_report_unused_in_combat": true,
       "weight": 32,
       "lines": [
         "Unused, thankfully. I would rather wear out a hoe than this.",
         "It did the job when fear was loud. That is praise enough.",
         "Good gear earns trust the moment trouble tests it."
+      ],
+      "conditions": [
+        {
+          "type": "memory",
+          "kind": "gear_report_unused_in_combat"
+        }
       ]
     },
     {

@@ -257,12 +257,17 @@
         "friendly",
         "neutral"
       ],
-      "requires_known_parent": true,
       "weight": 24,
       "lines": [
         "{parent} still checks in on me when the village gets loud. Family has a way of making even a crowded place feel anchored.",
         "{parent} knows when the village gets too loud for me. That kind of care stays sturdy.",
         "When trouble circles the square, {parent} is one of the voices I listen for."
+      ],
+      "conditions": [
+        {
+          "type": "family",
+          "relation": "parent"
+        }
       ]
     },
     {
@@ -275,12 +280,17 @@
         "friendly",
         "neutral"
       ],
-      "requires_known_child": true,
       "weight": 24,
       "lines": [
         "I keep an eye on {child}. Around here, every child learns quickly which footsteps mean help.",
         "{child} is one reason I watch the paths more closely than I used to.",
         "Children learn the village by watching us. I try to give {child} something good to copy."
+      ],
+      "conditions": [
+        {
+          "type": "family",
+          "relation": "child"
+        }
       ]
     },
     {
@@ -293,12 +303,17 @@
         "friendly",
         "neutral"
       ],
-      "requires_known_sibling": true,
       "weight": 22,
       "lines": [
         "{sibling} and I do not always agree, but I would still stand between them and trouble.",
         "{sibling} can test my patience and still have my loyalty.",
         "I know every way {sibling} can annoy me, and every reason I would defend them."
+      ],
+      "conditions": [
+        {
+          "type": "family",
+          "relation": "sibling"
+        }
       ]
     },
     {
@@ -312,12 +327,17 @@
         "neutral",
         "cautious"
       ],
-      "requires_known_grandparent": true,
       "weight": 18,
       "lines": [
         "{grandparent} taught the family which paths are safe after dark. Some advice survives longer than the person who first said it.",
         "{grandparent} remembers roads I only know as stories. I listen when they warn me.",
         "{grandparent_possessive} old advice still keeps my feet out of trouble. {grandparent}"
+      ],
+      "conditions": [
+        {
+          "type": "family",
+          "relation": "grandparent"
+        }
       ]
     },
     {
@@ -330,12 +350,17 @@
         "friendly",
         "neutral"
       ],
-      "requires_known_descendant": true,
       "weight": 18,
       "lines": [
         "When I think about {descendant}, I try to leave the village a little kinder than I found it.",
         "{descendant} makes the future feel like a real place, not just a word.",
         "I want {descendant} to inherit more than locked doors and nervous bells."
+      ],
+      "conditions": [
+        {
+          "type": "family",
+          "relation": "descendant"
+        }
       ]
     },
     {
@@ -343,12 +368,17 @@
       "request": "question",
       "option": "adult_family",
       "show_for_babies": false,
-      "requires_known_extended_family": true,
       "weight": 14,
       "lines": [
         "{extended_relative} is not in my house every night, but family branches still share the same weather.",
         "{extended_relative} may live under another roof, but kinship still knocks when trouble comes.",
         "Family stretches farther than a doorstep. {extended_relative} proves that often enough."
+      ],
+      "conditions": [
+        {
+          "type": "family",
+          "relation": "extended_family"
+        }
       ]
     },
     {
@@ -356,12 +386,17 @@
       "request": "question",
       "option": "adult_family",
       "show_for_babies": false,
-      "requires_known_deceased_family": true,
       "weight": 16,
       "lines": [
         "We still say {deceased_family_possessive} name when the village gathers. Remembering is a kind of shelter.",
         "{deceased_family_possessive} memory still has a chair in this village.",
         "We speak of {deceased_family} carefully. Grief is still part of the household. {deceased_family_possessive}"
+      ],
+      "conditions": [
+        {
+          "type": "family",
+          "relation": "deceased_family"
+        }
       ]
     },
     {
@@ -375,12 +410,17 @@
         "hostile",
         "fearful"
       ],
-      "requires_known_family": true,
       "weight": 28,
       "lines": [
         "{relative} is family. That is enough to make me careful about who asks.",
         "Ask about {relative} with respect, and maybe I will answer.",
         "Family names are not loose coins. {relative} matters to me."
+      ],
+      "conditions": [
+        {
+          "type": "family",
+          "relation": "family"
+        }
       ]
     },
     {
@@ -393,12 +433,17 @@
         "friendly",
         "neutral"
       ],
-      "requires_known_current_relationship": true,
       "weight": 18,
       "lines": [
         "{partner} makes the village feel less like a place I survive and more like a place I choose.",
         "With {partner}, even a hard day has somewhere softer to end.",
         "{partner} makes the village feel less like walls and more like home."
+      ],
+      "conditions": [
+        {
+          "type": "relationship",
+          "state": "current_relationship"
+        }
       ]
     },
     {
@@ -411,12 +456,17 @@
         "friendly",
         "neutral"
       ],
-      "requires_known_crush": true,
       "weight": 24,
       "lines": [
         "I keep finding reasons to pass near {crush}. Maybe it is foolish. Maybe foolish things keep people kind.",
         "I notice when {crush} crosses the square. I pretend not to, badly.",
         "{crush} makes ordinary errands feel suspiciously important."
+      ],
+      "conditions": [
+        {
+          "type": "relationship",
+          "state": "crush"
+        }
       ]
     },
     {
@@ -429,12 +479,17 @@
         "friendly",
         "neutral"
       ],
-      "requires_known_dating_partner": true,
       "weight": 24,
       "lines": [
         "{dating_partner} and I are seeing where the road goes. Slowly is fine when the road matters.",
         "{dating_partner} and I are taking it carefully. Careful things can still be brave.",
         "I like walking beside {dating_partner}. The road feels less noisy that way."
+      ],
+      "conditions": [
+        {
+          "type": "relationship",
+          "state": "dating_partner"
+        }
       ]
     },
     {
@@ -442,12 +497,17 @@
       "request": "question",
       "option": "adult_relationships",
       "show_for_babies": false,
-      "requires_known_fiance": true,
       "weight": 24,
       "lines": [
         "{fiance} and I are trying to plan a future sturdy enough to survive this place.",
         "{fiance} and I are planning more than a ceremony. We are planning a life that holds.",
         "When I say {fiance_possessive} name, the future feels less theoretical. {fiance}"
+      ],
+      "conditions": [
+        {
+          "type": "relationship",
+          "state": "fiance"
+        }
       ]
     },
     {
@@ -455,12 +515,17 @@
       "request": "question",
       "option": "adult_relationships",
       "show_for_babies": false,
-      "requires_known_romantic_spouse": true,
       "weight": 24,
       "lines": [
         "{romantic_spouse} knows which silences mean I am tired and which mean I need help. That is a rare comfort.",
         "{romantic_spouse} knows my storms and still keeps a light on.",
         "Home sounds different when {romantic_spouse} is there."
+      ],
+      "conditions": [
+        {
+          "type": "relationship",
+          "state": "romantic_spouse"
+        }
       ]
     },
     {
@@ -474,12 +539,17 @@
         "neutral",
         "cautious"
       ],
-      "requires_known_separated_partner": true,
       "weight": 18,
       "lines": [
         "{ex_partner} and I had our season. Some roads part before they turn cruel, and that can be mercy.",
         "{ex_partner} and I learned what we could, then stopped before kindness ran out.",
         "Some endings with {ex_partner} still deserve gentleness."
+      ],
+      "conditions": [
+        {
+          "type": "relationship",
+          "state": "separated_partner"
+        }
       ]
     },
     {
@@ -487,12 +557,17 @@
       "request": "question",
       "option": "adult_relationships",
       "show_for_babies": false,
-      "requires_known_widowed_partner": true,
       "weight": 18,
       "lines": [
         "{late_partner} is gone, but some mornings I still make room for them in my thoughts.",
         "{late_partner} is gone, but love leaves habits behind.",
         "I still carry {late_partner_possessive} name carefully. {late_partner}"
+      ],
+      "conditions": [
+        {
+          "type": "relationship",
+          "state": "widowed_partner"
+        }
       ]
     },
     {
@@ -506,12 +581,17 @@
         "hostile",
         "fearful"
       ],
-      "requires_known_relationship": true,
       "weight": 28,
       "lines": [
         "{partner} is not a market rumor. Ask gently, or do not ask.",
         "Do not turn {partner} into gossip. Some things deserve a closed door.",
         "If you ask about {partner}, ask like the answer belongs to a person."
+      ],
+      "conditions": [
+        {
+          "type": "relationship",
+          "state": "relationship"
+        }
       ]
     },
     {
@@ -519,12 +599,17 @@
       "request": "question",
       "option": "baby_family",
       "show_for_adults": false,
-      "requires_known_parent": true,
       "weight": 28,
       "lines": [
         "{parent} says I should stay where the bell can hear me.",
         "{parent} says the safest place is where someone can see me.",
         "{parent} can find me even when I am pretending very hard to hide."
+      ],
+      "conditions": [
+        {
+          "type": "family",
+          "relation": "parent"
+        }
       ]
     },
     {
@@ -532,12 +617,17 @@
       "request": "question",
       "option": "baby_family",
       "show_for_adults": false,
-      "requires_known_sibling": true,
       "weight": 22,
       "lines": [
         "{sibling} thinks they are faster than me. They are not always right.",
         "{sibling} says I am little. I say I am compact.",
         "{sibling} runs fast, but I know better shortcuts."
+      ],
+      "conditions": [
+        {
+          "type": "family",
+          "relation": "sibling"
+        }
       ]
     },
     {
@@ -545,12 +635,17 @@
       "request": "question",
       "option": "baby_family",
       "show_for_adults": false,
-      "requires_known_grandparent": true,
       "weight": 16,
       "lines": [
         "{grandparent} knows stories that start before my bed was even made.",
         "{grandparent} tells stories with extra corners in them.",
         "{grandparent} remembers when everything was somehow uphill."
+      ],
+      "conditions": [
+        {
+          "type": "family",
+          "relation": "grandparent"
+        }
       ]
     },
     {
@@ -558,12 +653,17 @@
       "request": "question",
       "option": "baby_family",
       "show_for_adults": false,
-      "requires_known_cousin": true,
       "weight": 14,
       "lines": [
         "{cousin} says we are related enough to share chores. I think that sounds suspicious.",
         "{cousin} says chores are easier with two people. I think they mean me.",
         "{cousin} knows games that suspiciously look like work."
+      ],
+      "conditions": [
+        {
+          "type": "family",
+          "relation": "cousin"
+        }
       ]
     },
     {
@@ -574,12 +674,17 @@
       "recruitment_followup_scenarios": [
         "safe"
       ],
-      "excludes_recruitment_ocean_crossing": true,
       "weight": 36,
       "lines": [
         "Thank you for bringing me back near home. A short road feels longer when the night has teeth.",
         "You got me home. That turns a long road into a remembered kindness.",
         "I am back near the bell, and that matters more than I can say neatly."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "excludes_ocean_crossing": true
+        }
       ]
     },
     {
@@ -605,13 +710,18 @@
       "recruitment_followup_scenarios": [
         "injured"
       ],
-      "excludes_recruitment_ocean_crossing": true,
       "lines": [
         "I made it back, but not cleanly. Next time, we move slower or fight sooner.",
         "I am glad to be home, but I am still feeling that road. Do not mistake thanks for forgetting.",
         "I returned, but the road left bruises in the story."
       ],
-      "weight": 68
+      "weight": 68,
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "excludes_ocean_crossing": true
+        }
+      ]
     },
     {
       "id": "recruitment_followup_betrayed_cut",
@@ -636,12 +746,17 @@
       "recruitment_followup_scenarios": [
         "safe"
       ],
-      "requires_recruitment_boat_trip": true,
       "weight": 44,
       "lines": [
         "The boat helped. I will admit, being carried home by water is easier on the knees.",
         "Floating home beat walking the whole way. I will admit that.",
         "The boat did honest work carrying us back."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "boat_trip": true
+        }
       ]
     },
     {
@@ -652,13 +767,18 @@
       "recruitment_followup_scenarios": [
         "safe"
       ],
-      "requires_recruitment_boat_trip": true,
-      "requires_recruitment_ocean_crossing": true,
       "weight": 50,
       "lines": [
         "Crossing ocean by boat was a better idea than swimming it. Thank you for keeping me dry.",
         "The ocean looked less endless with a boat under us. Thank you for that much.",
         "A boat between me and the deep water was the correct kind of wisdom."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "boat_trip": true,
+          "ocean_crossing": true
+        }
       ]
     },
     {
@@ -669,12 +789,17 @@
       "recruitment_followup_scenarios": [
         "safe"
       ],
-      "requires_recruitment_swim_trip": true,
       "weight": 50,
       "lines": [
         "I crossed ocean water without a boat and still made it home. Next time, please find wood before waves.",
         "I made it across, but my bones still vote for boats next time.",
         "Swimming the ocean was not bravery. It was a shortage of better planning."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "swim_trip": true
+        }
       ]
     },
     {
@@ -685,12 +810,17 @@
       "recruitment_followup_scenarios": [
         "injured"
       ],
-      "requires_recruitment_boat_trip": true,
       "weight": 44,
       "lines": [
         "The boat ride was the quiet part. Getting hurt before or after it spoiled the memory.",
         "The water stayed calm. The rest of the journey did not.",
         "I would remember the boat more kindly if the hurt had not come with it."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "boat_trip": true
+        }
       ]
     },
     {
@@ -701,13 +831,18 @@
       "recruitment_followup_scenarios": [
         "injured"
       ],
-      "requires_recruitment_boat_trip": true,
-      "requires_recruitment_ocean_crossing": true,
       "weight": 50,
       "lines": [
         "The ocean crossing by boat was manageable. The part where I got hurt was less impressive.",
         "The water stayed calm. The rest of the journey did not.",
         "I would remember the boat more kindly if the hurt had not come with it."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "boat_trip": true,
+          "ocean_crossing": true
+        }
       ]
     },
     {
@@ -718,12 +853,17 @@
       "recruitment_followup_scenarios": [
         "injured"
       ],
-      "requires_recruitment_swim_trip": true,
       "weight": 50,
       "lines": [
         "Swimming across ocean and coming home hurt is not an adventure I want repeated.",
         "Ocean swimming while hurt is a memory I would like to leave behind.",
         "The waves did not help the bruises. Neither did the plan."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "swim_trip": true
+        }
       ]
     },
     {
@@ -734,12 +874,17 @@
       "recruitment_followup_scenarios": [
         "betrayed"
       ],
-      "requires_recruitment_boat_trip": true,
       "weight": 46,
       "lines": [
         "You put me in a boat, took me along, and then broke trust. Strange journey, worse ending.",
         "Being carried over water did not make betrayal lighter.",
         "The boat brought us along. You broke the part that mattered."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "boat_trip": true
+        }
       ]
     },
     {
@@ -747,13 +892,17 @@
       "request": "question",
       "option": "adult_general_question",
       "show_for_babies": false,
-      "requires_recruitment_memory": true,
-      "excludes_recruitment_ocean_crossing": true,
       "weight": 4,
       "lines": [
         "Remember when you made me follow you across {follow_biome}? I still know that road by ache alone.",
         "I remember {follow_biome}. Some places stay in your feet after you leave.",
         "{follow_biome} was a long lesson in asking where we are going first."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "excludes_ocean_crossing": true
+        }
       ]
     },
     {
@@ -761,14 +910,18 @@
       "request": "question",
       "option": "adult_general_question",
       "show_for_babies": false,
-      "requires_recruitment_memory": true,
-      "min_recruitment_follow_distance": 500,
-      "excludes_recruitment_ocean_crossing": true,
       "weight": 5,
       "lines": [
         "Remember when you made me follow you over {follow_distance} blocks? My legs complained for days.",
         "{follow_distance} blocks is a long way to wonder if you chose the right guide.",
         "My legs remember those {follow_distance} blocks with unnecessary detail."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "min_follow_distance": 500,
+          "excludes_ocean_crossing": true
+        }
       ]
     },
     {
@@ -776,13 +929,17 @@
       "request": "question",
       "option": "adult_general_question",
       "show_for_babies": false,
-      "requires_recruitment_memory": true,
-      "requires_recruitment_boat_trip": true,
       "weight": 4,
       "lines": [
         "Remember when you took me along in a boat? I was not sure whether to thank you or ask where the oars had gone.",
         "I remember that boat. Sitting still while the world moved was strange comfort.",
         "The oars had a plan. I wish the rest of us had one too."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "boat_trip": true
+        }
       ]
     },
     {
@@ -790,13 +947,17 @@
       "request": "question",
       "option": "adult_general_question",
       "show_for_babies": false,
-      "requires_recruitment_memory": true,
-      "requires_recruitment_swim_trip": true,
       "weight": 5,
       "lines": [
         "Remember when you took me across ocean water without a boat? I remember every splash.",
         "No boat, ocean water, and too much time to think. I remember.",
         "I still remember the ocean trying to make every step impossible."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "swim_trip": true
+        }
       ]
     },
     {
@@ -804,14 +965,18 @@
       "request": "question",
       "option": "adult_general_question",
       "show_for_babies": false,
-      "requires_recruitment_memory": true,
-      "min_recruitment_follow_distance": 500,
-      "requires_recruitment_boat_trip": true,
       "weight": 4,
       "lines": [
         "That boat trip was part of a {follow_distance} block outing. Water did some of the work, but not enough.",
         "That boat helped with {follow_distance} blocks of trouble, but not enough to make it easy.",
         "{follow_distance} blocks sounds shorter when water does some of the carrying."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "min_follow_distance": 500,
+          "boat_trip": true
+        }
       ]
     },
     {
@@ -819,15 +984,19 @@
       "request": "question",
       "option": "adult_general_question",
       "show_for_babies": false,
-      "requires_recruitment_memory": true,
-      "recruitment_memory_scenarios": [
-        "betrayed"
-      ],
       "weight": 5,
       "lines": [
         "Remember when I followed you and you hit me? I do. Still hurts.",
         "I followed because I thought you meant safety. The hit changed that sentence.",
         "Some memories hurt before anyone says another word."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "scenarios": [
+            "betrayed"
+          ]
+        }
       ]
     },
     {
@@ -835,15 +1004,19 @@
       "request": "question",
       "option": "adult_general_question",
       "show_for_babies": false,
-      "requires_recruitment_memory": true,
-      "recruitment_memory_scenarios": [
-        "injured"
-      ],
       "weight": 4,
       "lines": [
         "I remember following you home hurt. I was grateful, but not exactly comfortable.",
         "I was grateful to get home and angry that getting home hurt. Both fit.",
         "That journey ended here, but the ache took longer to arrive."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "scenarios": [
+            "injured"
+          ]
+        }
       ]
     },
     {
@@ -851,28 +1024,38 @@
       "request": "gear_report",
       "option": "gear_report",
       "show_for_babies": false,
-      "requires_gear_report_used_in_combat": true,
       "lines": [
         "It held when trouble came close. That matters more than shine.",
         "I had to trust it in a fight. I am glad you thought ahead.",
         "The {gear_kind} earned its place. I noticed that more than I expected.",
         "When it mattered, I was better prepared than I would have been alone."
       ],
-      "weight": 112
+      "weight": 112,
+      "conditions": [
+        {
+          "type": "memory",
+          "kind": "gear_report_used_in_combat"
+        }
+      ]
     },
     {
       "id": "gear_report_global_unused",
       "request": "gear_report",
       "option": "gear_report",
       "show_for_babies": false,
-      "requires_gear_report_unused_in_combat": true,
       "lines": [
         "I have not needed it yet. That is the best kind of preparation.",
         "It is ready. I would rather carry caution than regret.",
         "The {gear_kind} is still waiting. I hope it stays that way.",
         "I have not had to use it. Still, walking home feels a little easier."
       ],
-      "weight": 112
+      "weight": 112,
+      "conditions": [
+        {
+          "type": "memory",
+          "kind": "gear_report_unused_in_combat"
+        }
+      ]
     },
     {
       "id": "village_defense_global_counted",
@@ -1110,13 +1293,18 @@
         "hostile",
         "fearful"
       ],
-      "requires_recent_direct_hit_memory": true,
       "lines": [
         "I still remember that {attack_weapon}. Conversations get colder after that.",
         "It is hard to speak plainly while remembering that {attack_weapon}.",
         "That {attack_weapon} stayed in my memory longer than the bruise did."
       ],
-      "weight": 96
+      "weight": 96,
+      "conditions": [
+        {
+          "type": "memory",
+          "kind": "recent_direct_hit"
+        }
+      ]
     },
     {
       "id": "global_new_greeting_bell",
@@ -1643,16 +1831,19 @@
         "hostile",
         "fearful"
       ],
-      "player_event_tags": [
-        "player_container_theft"
-      ],
-      "requires_container_theft_to_self": true,
       "lines": [
         "I still remember you trying to take my {stolen_item}.",
         "You want an answer after the {stolen_stack} from the {stolen_container}? Fine. Ask, but ask honestly.",
         "I remember the {stolen_item}. I remember who reached for it too."
       ],
-      "weight": 64
+      "weight": 64,
+      "conditions": [
+        {
+          "type": "memory",
+          "tag": "player_container_theft",
+          "source": "this_villager"
+        }
+      ]
     },
     {
       "id": "container_theft_memory_village_question_1",
@@ -1664,15 +1855,18 @@
         "hostile",
         "fearful"
       ],
-      "player_event_tags": [
-        "player_container_theft"
-      ],
-      "requires_container_theft_from_other": true,
       "weight": 32,
       "lines": [
         "{theft_witness} told me about you stealing {stolen_stack}. Not cool.",
         "{theft_witness} said you took {stolen_stack}. That story travels fast.",
         "{theft_witness_possessive} account of the {stolen_stack} has reached plenty of ears. {theft_witness}"
+      ],
+      "conditions": [
+        {
+          "type": "memory",
+          "tag": "player_container_theft",
+          "source": "other_villager"
+        }
       ]
     },
     {
@@ -1685,15 +1879,18 @@
         "hostile",
         "fearful"
       ],
-      "player_event_tags": [
-        "player_container_theft"
-      ],
-      "requires_container_theft_from_other": true,
       "weight": 30,
       "lines": [
         "I know what happened at the {stolen_container}. {theft_witness_possessive} story reached me.",
         "The {stolen_container} has been part of more conversations since you touched it. {theft_witness_possessive}",
         "{theft_witness} saw enough at the {stolen_container} for the village to remember. {theft_witness_possessive}"
+      ],
+      "conditions": [
+        {
+          "type": "memory",
+          "tag": "player_container_theft",
+          "source": "other_villager"
+        }
       ]
     },
     {
@@ -1874,12 +2071,17 @@
       "player_event_tags": [
         "player_attacked_villager"
       ],
-      "requires_recent_direct_hit_memory": true,
       "weight": 35,
       "lines": [
         "I can hear the apology. I can also remember the hit. Both are true right now.",
         "I hear sorry. I am waiting to see safer hands.",
         "The apology reached me. The memory did too."
+      ],
+      "conditions": [
+        {
+          "type": "memory",
+          "kind": "recent_direct_hit"
+        }
       ]
     },
     {
@@ -2198,49 +2400,68 @@
     {
       "id": "sleep_broken_bed_apology_1",
       "request": "apology",
-      "requires_recent_broken_bed_memory": true,
       "weight": 32,
       "lines": [
         "A bed is where fear is supposed to stop for the night. Breaking one says more than you think.",
         "Beds are where fear is meant to end. Breaking one wakes more than a sleeper.",
         "A broken bed makes the whole night feel unsafe."
+      ],
+      "conditions": [
+        {
+          "type": "memory",
+          "kind": "recent_broken_bed"
+        }
       ]
     },
     {
       "id": "gear_report_used_combat_1",
       "request": "gear_report",
       "show_for_babies": false,
-      "requires_gear_report_used_in_combat": true,
       "weight": 28,
       "lines": [
         "The gear held. I did too. That is not the same as enjoying the test.",
         "The gear did its work. I am still deciding what that cost me.",
         "It held when I needed it, and I am here because of that."
+      ],
+      "conditions": [
+        {
+          "type": "memory",
+          "kind": "gear_report_used_in_combat"
+        }
       ]
     },
     {
       "id": "gear_report_unused_combat_1",
       "request": "gear_report",
       "show_for_babies": false,
-      "requires_gear_report_unused_in_combat": true,
       "weight": 28,
       "lines": [
         "I have kept the gear ready. Around here, ready is a kind of prayer.",
         "The gear is still ready, and I prefer it that way.",
         "Unused protection is still protection. It keeps tomorrow possible."
+      ],
+      "conditions": [
+        {
+          "type": "memory",
+          "kind": "gear_report_unused_in_combat"
+        }
       ]
     },
     {
       "id": "recruitment_followup_betrayal_shadow_1",
       "request": "recruitment_followup",
       "show_for_babies": false,
-      "requires_recruitment_memory": true,
-      "min_recruitment_follow_distance": 128,
       "weight": 30,
       "lines": [
         "Following you taught me something about the world. I am still deciding what it taught me about you.",
         "That trip taught me the world is wide and trust can be narrow.",
         "I followed your road. I am still judging where it led."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "min_follow_distance": 128
+        }
       ]
     },
     {
@@ -2252,15 +2473,18 @@
         "despised",
         "feared"
       ],
-      "player_event_tags": [
-        "player_container_theft"
-      ],
-      "requires_container_theft_to_self": true,
       "weight": 34,
       "lines": [
         "You stole {stolen_stack}. If you expected the village to file that under small mistakes, you misread us.",
         "You took {stolen_stack}. Do not dress theft up as confusion.",
         "{stolen_stack} went missing with your name close behind it."
+      ],
+      "conditions": [
+        {
+          "type": "memory",
+          "tag": "player_container_theft",
+          "source": "this_villager"
+        }
       ]
     },
     {
@@ -2273,30 +2497,36 @@
         "revered",
         "royalty"
       ],
-      "player_event_tags": [
-        "player_container_theft"
-      ],
-      "requires_container_theft_to_self": true,
       "weight": 32,
       "lines": [
         "The {stolen_item} bothered me because I thought better of you. I would like to be right again.",
         "The {stolen_item} hurt because trust was standing nearby.",
         "I keep thinking about the {stolen_item}, and about who I thought you were."
+      ],
+      "conditions": [
+        {
+          "type": "memory",
+          "tag": "player_container_theft",
+          "source": "this_villager"
+        }
       ]
     },
     {
       "id": "container_theft_memory_village_baby_1",
       "request": "question",
       "show_for_adults": false,
-      "player_event_tags": [
-        "player_container_theft"
-      ],
-      "requires_container_theft_from_other": true,
       "weight": 26,
       "lines": [
         "Someone said you took {stolen_item}. Are you giving it back?",
         "They said {stolen_item} was not yours. Is that true?",
         "Are you bringing back the {stolen_item}, or should I tell someone?"
+      ],
+      "conditions": [
+        {
+          "type": "memory",
+          "tag": "player_container_theft",
+          "source": "other_villager"
+        }
       ]
     }
   ],

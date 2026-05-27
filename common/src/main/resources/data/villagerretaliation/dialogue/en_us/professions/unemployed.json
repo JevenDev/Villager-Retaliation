@@ -245,12 +245,17 @@
       "recruitment_followup_scenarios": [
         "betrayed"
       ],
-      "excludes_recruitment_ocean_crossing": true,
       "weight": 42,
       "lines": [
         "I followed because I thought you knew where we were going. I was wrong about more than the road.",
         "Following you was trust. What happened after was something else.",
         "A guide who strikes from close by leaves the longest mark."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "excludes_ocean_crossing": true
+        }
       ]
     },
     {
@@ -258,12 +263,17 @@
       "request": "recruitment_followup",
       "option": "recruitment_followup",
       "show_for_babies": false,
-      "requires_recruitment_boat_trip": true,
       "weight": 42,
       "lines": [
         "I learned I am not ready for a career in boating. But I survived the lesson.",
         "The boat did its part. I am still deciding whether the rest of the plan did.",
         "Water carried us home, which is more than I expected from that journey."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "boat_trip": true
+        }
       ]
     },
     {
@@ -271,13 +281,17 @@
       "request": "question",
       "option": "adult_general_question",
       "show_for_babies": false,
-      "requires_recruitment_memory": true,
-      "excludes_recruitment_ocean_crossing": true,
       "weight": 3,
       "lines": [
         "I followed you once and learned something: I need better shoes before I choose a trade.",
         "I remember following you through that road. My feet remember it even better.",
         "That trip across that road taught me to ask more questions before walking."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "excludes_ocean_crossing": true
+        }
       ]
     },
     {
@@ -285,13 +299,17 @@
       "request": "question",
       "option": "adult_general_question",
       "show_for_babies": false,
-      "requires_recruitment_memory": true,
-      "requires_recruitment_boat_trip": true,
       "weight": 3,
       "lines": [
         "I followed you into a boat once. Not a trade, apparently, but it felt like training.",
         "That boat trip still sits oddly in my memory, but at least it floated.",
         "A boat can make a bad plan quieter. It cannot make me forget it."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "boat_trip": true
+        }
       ]
     },
     {
@@ -299,12 +317,17 @@
       "request": "gear_report",
       "option": "gear_report",
       "show_for_babies": false,
-      "requires_gear_report_used_in_combat": true,
       "weight": 32,
       "lines": [
         "It helped. Maybe being ready is a profession of its own for now.",
         "It did the job when fear was loud. That is praise enough.",
         "Good gear earns trust the moment trouble tests it."
+      ],
+      "conditions": [
+        {
+          "type": "memory",
+          "kind": "gear_report_used_in_combat"
+        }
       ]
     },
     {
@@ -312,12 +335,17 @@
       "request": "gear_report",
       "option": "gear_report",
       "show_for_babies": false,
-      "requires_gear_report_unused_in_combat": true,
       "weight": 32,
       "lines": [
         "Unused so far. I may not have a trade, but I know preparation when I see it.",
         "It did the job when fear was loud. That is praise enough.",
         "Good gear earns trust the moment trouble tests it."
+      ],
+      "conditions": [
+        {
+          "type": "memory",
+          "kind": "gear_report_unused_in_combat"
+        }
       ]
     },
     {

@@ -368,7 +368,10 @@ Condition blocks support:
 | `any_of` / `or` | `conditions` | Matches when at least one child condition matches. |
 | `not` | `condition` | Inverts one child condition. |
 | `reputation` | `level`, `levels`, `min`, `max` | `level`/`levels` also accept `reputation_level`/`reputation_levels`; `min`/`max` also accept `min_reputation`/`max_reputation`. |
-| `memory` | `tag`, `tags`, `source`, `player`, `kind` | `source` can be `self`, `this_villager`, `other_villager`, or omitted. `player` defaults to `true`, meaning the event must involve the current player. `kind` can be `recent_broken_bed`, `recent_direct_hit`, `gear_report_used_in_combat`, `gear_report_unused_in_combat`, or `recruitment_memory`. |
+| `memory` | `tag`, `tags`, `source`, `player`, `kind` | `source` can be `self`, `this_villager`, `other_villager`, or omitted. `player` defaults to `true`, meaning the event must involve the current player. `kind` can be `recent_broken_bed`, `recent_direct_hit`, `gear_report_used_in_combat`, or `gear_report_unused_in_combat`. |
+| `family` | `relation`, `relations` | Matches known family data. Values include `family`, `parent`, `sibling`, `spouse`, `child`, `grandparent`, `grandchild`, `descendant`, `aunt_uncle`, `cousin`, `niece_nephew`, `extended_family`, and `deceased_family`. |
+| `relationship` | `state`, `states` | Matches known romantic relationship data. Values include `relationship`, `current_relationship`, `past_relationship`, `crush`, `dating_partner`, `fiance`, `romantic_spouse`, `separated_partner`, and `widowed_partner`. |
+| `recruitment_memory` | `scenario`, `scenarios`, `biome`, `biomes`, `min_follow_distance`, `boat_trip`, `ocean_crossing`, `swim_trip`, `excludes_ocean_crossing` | Matches stored recruitment travel memory. `biome` values are normalized the same way as legacy `recruitment_memory_biome`. |
 | `villager_age` | `baby`, `adult` | Matches the speaker's age. |
 | `weather` | `state`, `states` | Uses `clear`, `rain`, or `thunder`. |
 | `time` / `time_of_day` | `value`, `values` | Uses `morning`, `afternoon`, `evening`, or `night`. |

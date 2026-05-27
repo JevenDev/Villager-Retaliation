@@ -257,12 +257,17 @@
       "request": "recruitment_followup",
       "option": "recruitment_followup",
       "show_for_babies": false,
-      "requires_recruitment_boat_trip": true,
       "weight": 42,
       "lines": [
         "No foundation under a boat, yet somehow it held. I respect the craft.",
         "A boat has no proper base, but I cannot argue with arriving alive.",
         "The water carried us better than I expected. I still prefer roads."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "boat_trip": true
+        }
       ]
     },
     {
@@ -270,14 +275,18 @@
       "request": "question",
       "option": "adult_general_question",
       "show_for_babies": false,
-      "requires_recruitment_memory": true,
-      "min_recruitment_follow_distance": 500,
-      "excludes_recruitment_ocean_crossing": true,
       "weight": 4,
       "lines": [
         "After following you that far, I understood why roads need better foundations.",
         "That road needed a mason, and so did my feet.",
         "Long paths teach you where the ground gives up."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "min_follow_distance": 500,
+          "excludes_ocean_crossing": true
+        }
       ]
     },
     {
@@ -285,13 +294,17 @@
       "request": "question",
       "option": "adult_general_question",
       "show_for_babies": false,
-      "requires_recruitment_memory": true,
-      "requires_recruitment_boat_trip": true,
       "weight": 3,
       "lines": [
         "I do not trust anything with no foundation, but that boat held better than I expected.",
         "That boat had no foundation and too much confidence, but it crossed.",
         "I still distrust floating floors. Yours happened to survive."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "boat_trip": true
+        }
       ]
     },
     {
@@ -299,12 +312,17 @@
       "request": "gear_report",
       "option": "gear_report",
       "show_for_babies": false,
-      "requires_gear_report_used_in_combat": true,
       "weight": 32,
       "lines": [
         "Solid work. It took the pressure like good stone in the right wall.",
         "It held under strain, which is the only praise that matters.",
         "Good gear does not boast. It simply refuses to break."
+      ],
+      "conditions": [
+        {
+          "type": "memory",
+          "kind": "gear_report_used_in_combat"
+        }
       ]
     },
     {
@@ -312,12 +330,17 @@
       "request": "gear_report",
       "option": "gear_report",
       "show_for_babies": false,
-      "requires_gear_report_unused_in_combat": true,
       "weight": 32,
       "lines": [
         "Still unmarked. Strong things do not need to boast before the load comes.",
         "It has not met pressure yet. That can be a blessing.",
         "Unscarred gear is not wasted if it keeps fear smaller."
+      ],
+      "conditions": [
+        {
+          "type": "memory",
+          "kind": "gear_report_unused_in_combat"
+        }
       ]
     },
     {

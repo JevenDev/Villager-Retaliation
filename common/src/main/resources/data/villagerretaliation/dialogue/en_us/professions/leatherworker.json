@@ -257,12 +257,17 @@
       "request": "recruitment_followup",
       "option": "recruitment_followup",
       "show_for_babies": false,
-      "requires_recruitment_boat_trip": true,
       "weight": 42,
       "lines": [
         "Boat spray is poor treatment for leather. Better than swimming, though.",
         "The boat did its part. I am still deciding whether the rest of the plan did.",
         "Water carried us home, which is more than I expected from that journey."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "boat_trip": true
+        }
       ]
     },
     {
@@ -270,13 +275,17 @@
       "request": "question",
       "option": "adult_general_question",
       "show_for_babies": false,
-      "requires_recruitment_memory": true,
-      "requires_recruitment_boat_trip": true,
       "weight": 3,
       "lines": [
         "I still remember that boat trip. Wet leather complains longer than villagers do.",
         "That boat trip still sits oddly in my memory, but at least it floated.",
         "A boat can make a bad plan quieter. It cannot make me forget it."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "boat_trip": true
+        }
       ]
     },
     {
@@ -284,13 +293,17 @@
       "request": "question",
       "option": "adult_general_question",
       "show_for_babies": false,
-      "requires_recruitment_memory": true,
-      "excludes_recruitment_ocean_crossing": true,
       "weight": 3,
       "lines": [
         "I still think about that walk. My boots forgave you before my feet did.",
         "I remember following you through that road. My feet remember it even better.",
         "That trip across that road taught me to ask more questions before walking."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "excludes_ocean_crossing": true
+        }
       ]
     },
     {
@@ -298,13 +311,17 @@
       "request": "question",
       "option": "adult_general_question",
       "show_for_babies": false,
-      "requires_recruitment_memory": true,
-      "requires_recruitment_swim_trip": true,
       "weight": 4,
       "lines": [
         "Ocean swimming is terrible for leather and worse for my mood.",
         "Crossing ocean water without a boat is not a memory I recommend keeping.",
         "I remember every wave from that crossing, and none of them kindly."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "swim_trip": true
+        }
       ]
     },
     {
@@ -312,12 +329,17 @@
       "request": "gear_report",
       "option": "gear_report",
       "show_for_babies": false,
-      "requires_gear_report_used_in_combat": true,
       "weight": 32,
       "lines": [
         "It flexed where it should and held where it had to. Good work saves skin.",
         "It did the job when fear was loud. That is praise enough.",
         "Good gear earns trust the moment trouble tests it."
+      ],
+      "conditions": [
+        {
+          "type": "memory",
+          "kind": "gear_report_used_in_combat"
+        }
       ]
     },
     {
@@ -325,12 +347,17 @@
       "request": "gear_report",
       "option": "gear_report",
       "show_for_babies": false,
-      "requires_gear_report_unused_in_combat": true,
       "weight": 32,
       "lines": [
         "No scuffs yet. I appreciate gear that does not rush to prove itself.",
         "It did the job when fear was loud. That is praise enough.",
         "Good gear earns trust the moment trouble tests it."
+      ],
+      "conditions": [
+        {
+          "type": "memory",
+          "kind": "gear_report_unused_in_combat"
+        }
       ]
     },
     {

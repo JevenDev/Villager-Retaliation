@@ -269,12 +269,17 @@
       "request": "recruitment_followup",
       "option": "recruitment_followup",
       "show_for_babies": false,
-      "requires_recruitment_boat_trip": true,
       "weight": 42,
       "lines": [
         "I could chart that boat route. I might add a warning mark beside it.",
         "The boat did its part. I am still deciding whether the rest of the plan did.",
         "Water carried us home, which is more than I expected from that journey."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "boat_trip": true
+        }
       ]
     },
     {
@@ -282,13 +287,17 @@
       "request": "question",
       "option": "adult_general_question",
       "show_for_babies": false,
-      "requires_recruitment_memory": true,
-      "requires_recruitment_boat_trip": true,
       "weight": 3,
       "lines": [
         "That boat route would look peaceful on a map. The lived version was wetter.",
         "That boat trip still sits oddly in my memory, but at least it floated.",
         "A boat can make a bad plan quieter. It cannot make me forget it."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "boat_trip": true
+        }
       ]
     },
     {
@@ -296,12 +305,16 @@
       "request": "question",
       "option": "adult_general_question",
       "show_for_babies": false,
-      "requires_recruitment_memory": true,
       "weight": 3,
       "lines": [
         "I could map the route you dragged me along, but I would mark several parts as questionable.",
         "I remember following you through that road. My feet remember it even better.",
         "That trip across that road taught me to ask more questions before walking."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory"
+        }
       ]
     },
     {
@@ -309,14 +322,18 @@
       "request": "question",
       "option": "adult_general_question",
       "show_for_babies": false,
-      "requires_recruitment_memory": true,
-      "requires_recruitment_boat_trip": true,
-      "requires_recruitment_ocean_crossing": true,
       "weight": 4,
       "lines": [
         "The ocean crossing by boat would make a fine blue line on a map. I would label it 'questionable judgment.'",
         "That ocean crossing worked because the boat did. I noticed.",
         "The sea made the route look simple. My nerves disagreed."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "boat_trip": true,
+          "ocean_crossing": true
+        }
       ]
     },
     {
@@ -324,12 +341,17 @@
       "request": "gear_report",
       "option": "gear_report",
       "show_for_babies": false,
-      "requires_gear_report_used_in_combat": true,
       "weight": 32,
       "lines": [
         "It helped me keep my bearings when the road stopped feeling safe.",
         "It did the job when fear was loud. That is praise enough.",
         "Good gear earns trust the moment trouble tests it."
+      ],
+      "conditions": [
+        {
+          "type": "memory",
+          "kind": "gear_report_used_in_combat"
+        }
       ]
     },
     {
@@ -337,12 +359,17 @@
       "request": "gear_report",
       "option": "gear_report",
       "show_for_babies": false,
-      "requires_gear_report_unused_in_combat": true,
       "weight": 32,
       "lines": [
         "Unused so far. A good map and good gear both matter most before trouble starts.",
         "It did the job when fear was loud. That is praise enough.",
         "Good gear earns trust the moment trouble tests it."
+      ],
+      "conditions": [
+        {
+          "type": "memory",
+          "kind": "gear_report_unused_in_combat"
+        }
       ]
     },
     {

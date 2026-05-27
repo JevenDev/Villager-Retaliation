@@ -18,6 +18,7 @@ import org.slf4j.Logger;
 
 public sealed interface DialogueCondition permits DialogueCondition.AllOf, DialogueCondition.AnyOf,
         DialogueCondition.Not, DialogueCondition.Reputation, DialogueCondition.Memory,
+        DialogueCondition.Family, DialogueCondition.Relationship, DialogueCondition.RecruitmentMemory,
         DialogueCondition.VillagerAge, DialogueCondition.Weather, DialogueCondition.Time {
     Logger LOGGER = LogUtils.getLogger();
 
@@ -58,6 +59,9 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
             case "not" -> read(location, context + ".condition", condition.get("condition")).map(Not::new);
             case "reputation" -> Optional.of(readReputation(condition));
             case "memory" -> readMemory(location, context, condition);
+            case "family" -> Optional.of(readFamily(condition));
+            case "relationship" -> Optional.of(readRelationship(condition));
+            case "recruitment_memory" -> Optional.of(readRecruitmentMemory(condition));
             case "villager_age" -> Optional.of(readVillagerAge(condition));
             case "weather" -> readWeather(condition);
             case "time", "time_of_day" -> readTime(condition);
@@ -139,6 +143,28 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
         return Optional.of(new Memory(Set.copyOf(tags), readMemorySource(condition), readBoolean(condition, "player", true), MemoryKind.EVENT_TAG));
     }
 
+    private static Family readFamily(JsonObject condition) {
+        return new Family(readNormalizedStrings(condition, "relation", "relations"));
+    }
+
+    private static Relationship readRelationship(JsonObject condition) {
+        return new Relationship(readNormalizedStrings(condition, "state", "states", "relation", "relations"));
+    }
+
+    private static RecruitmentMemory readRecruitmentMemory(JsonObject condition) {
+        Set<String> scenarios = readNormalizedStrings(condition, "scenario", "scenarios");
+        Set<String> biomeKeys = readBiomeKeys(condition, "biome", "biomes");
+        Boolean boatTrip = readNullableBoolean(condition, "boat_trip");
+        Boolean oceanCrossing = readNullableBoolean(condition, "ocean_crossing");
+        Boolean swimTrip = readNullableBoolean(condition, "swim_trip");
+        Boolean excludesOceanCrossing = readNullableBoolean(condition, "excludes_ocean_crossing");
+        Integer minDistance = readNullableInt(condition, "min_follow_distance");
+        if (minDistance == null) {
+            minDistance = readNullableInt(condition, "min_recruitment_follow_distance");
+        }
+        return new RecruitmentMemory(scenarios, biomeKeys, minDistance, boatTrip, oceanCrossing, swimTrip, excludesOceanCrossing);
+    }
+
     private static MemorySource readMemorySource(JsonObject condition) {
         String source = readString(condition, "source").toLowerCase(Locale.ROOT);
         return switch (source) {
@@ -209,6 +235,45 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
             }
         }
         return values;
+    }
+
+    private static Set<String> readNormalizedStrings(JsonObject entry, String... keys) {
+        java.util.LinkedHashSet<String> values = new java.util.LinkedHashSet<>();
+        for (String key : keys) {
+            for (String value : readStringList(entry, key)) {
+                String normalized = value.trim().toLowerCase(Locale.ROOT);
+                if (!normalized.isBlank()) {
+                    values.add(normalized);
+                }
+            }
+        }
+        return Set.copyOf(values);
+    }
+
+    private static Set<String> readBiomeKeys(JsonObject entry, String... keys) {
+        java.util.LinkedHashSet<String> values = new java.util.LinkedHashSet<>();
+        for (String key : keys) {
+            for (String value : readStringList(entry, key)) {
+                String normalized = normalizeBiomeKey(value);
+                if (!normalized.isBlank()) {
+                    values.add(normalized);
+                }
+            }
+        }
+        return Set.copyOf(values);
+    }
+
+    private static String normalizeBiomeKey(String value) {
+        if (value == null || value.isBlank()) {
+            return "";
+        }
+        String normalized = value.trim().toLowerCase(Locale.ROOT)
+                .replace(':', '_')
+                .replaceAll("[^a-z0-9]+", "_");
+        while (normalized.contains("__")) {
+            normalized = normalized.replace("__", "_");
+        }
+        return normalized.replaceAll("^_+|_+$", "");
     }
 
     private static Integer readNullableInt(JsonObject entry, String key) {
@@ -339,6 +404,122 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
         @Override
         public int specificityScore() {
             return 5;
+        }
+    }
+
+    record Family(Set<String> relations) implements DialogueCondition {
+        @Override
+        public boolean matches(DialogueContext context) {
+            if (this.relations.isEmpty()) {
+                return context.hasKnownFamily();
+            }
+            for (String relation : this.relations) {
+                if (matchesRelation(context, relation)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private boolean matchesRelation(DialogueContext context, String relation) {
+            return switch (relation) {
+                case "family", "any" -> context.hasKnownFamily();
+                case "parent" -> context.hasKnownParent();
+                case "sibling" -> context.hasKnownSibling();
+                case "spouse" -> context.hasKnownSpouse();
+                case "child" -> context.hasKnownChild();
+                case "grandparent" -> context.hasKnownGrandparent();
+                case "grandchild" -> context.hasKnownGrandchild();
+                case "descendant" -> context.hasKnownDescendant();
+                case "aunt_uncle", "aunt_or_uncle" -> context.hasKnownAuntUncle();
+                case "cousin" -> context.hasKnownCousin();
+                case "niece_nephew", "niece_or_nephew" -> context.hasKnownNieceNephew();
+                case "extended_family" -> context.hasKnownExtendedFamily();
+                case "deceased_family" -> context.hasKnownDeceasedFamily();
+                default -> false;
+            };
+        }
+
+        @Override
+        public int specificityScore() {
+            return 5;
+        }
+    }
+
+    record Relationship(Set<String> states) implements DialogueCondition {
+        @Override
+        public boolean matches(DialogueContext context) {
+            if (this.states.isEmpty()) {
+                return context.hasKnownRelationship();
+            }
+            for (String state : this.states) {
+                if (matchesState(context, state)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private boolean matchesState(DialogueContext context, String state) {
+            return switch (state) {
+                case "relationship", "any" -> context.hasKnownRelationship();
+                case "current", "current_relationship" -> context.hasKnownCurrentRelationship();
+                case "past", "past_relationship" -> context.hasKnownPastRelationship();
+                case "crush" -> context.hasKnownCrush();
+                case "dating", "dating_partner" -> context.hasKnownDatingPartner();
+                case "fiance", "fiancee" -> context.hasKnownFiance();
+                case "romantic_spouse", "spouse" -> context.hasKnownRomanticSpouse();
+                case "separated", "separated_partner" -> context.hasKnownSeparatedPartner();
+                case "widowed", "widowed_partner" -> context.hasKnownWidowedPartner();
+                default -> false;
+            };
+        }
+
+        @Override
+        public int specificityScore() {
+            return 5;
+        }
+    }
+
+    record RecruitmentMemory(
+            Set<String> scenarios,
+            Set<String> biomeKeys,
+            Integer minFollowDistance,
+            Boolean boatTrip,
+            Boolean oceanCrossing,
+            Boolean swimTrip,
+            Boolean excludesOceanCrossing) implements DialogueCondition {
+        @Override
+        public boolean matches(DialogueContext context) {
+            if (!context.hasRecruitmentMemory()) {
+                return false;
+            }
+            if (!this.scenarios.isEmpty() && this.scenarios.stream().noneMatch(context::hasRecruitmentMemoryScenario)) {
+                return false;
+            }
+            if (!this.biomeKeys.isEmpty() && !this.biomeKeys.contains(context.recruitmentMemoryBiomeKey())) {
+                return false;
+            }
+            if (this.minFollowDistance != null && context.recruitmentMemoryDistanceBlocks() < this.minFollowDistance) {
+                return false;
+            }
+            if (this.boatTrip != null && context.hasRecruitmentMemoryBoatTrip() != this.boatTrip) {
+                return false;
+            }
+            if (this.oceanCrossing != null && context.hasRecruitmentMemoryOceanCrossing() != this.oceanCrossing) {
+                return false;
+            }
+            if (this.swimTrip != null && context.hasRecruitmentMemorySwimTrip() != this.swimTrip) {
+                return false;
+            }
+            return this.excludesOceanCrossing == null
+                    || !this.excludesOceanCrossing
+                    || !context.hasRecruitmentMemoryOceanCrossing();
+        }
+
+        @Override
+        public int specificityScore() {
+            return 0;
         }
     }
 

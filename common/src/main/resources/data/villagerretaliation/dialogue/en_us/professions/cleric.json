@@ -257,12 +257,17 @@
       "request": "recruitment_followup",
       "option": "recruitment_followup",
       "show_for_babies": false,
-      "requires_recruitment_boat_trip": true,
       "weight": 42,
       "lines": [
         "The boat floated. My nerves, less so. Still, I am home.",
         "The boat did its part. I am still deciding whether the rest of the plan did.",
         "Water carried us home, which is more than I expected from that journey."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "boat_trip": true
+        }
       ]
     },
     {
@@ -270,15 +275,19 @@
       "request": "question",
       "option": "adult_general_question",
       "show_for_babies": false,
-      "requires_recruitment_memory": true,
-      "recruitment_memory_scenarios": [
-        "betrayed"
-      ],
       "weight": 4,
       "lines": [
         "I have prayed about that time I followed you and you struck me. The bruise answered first.",
         "I remember following you through that road. My feet remember it even better.",
         "That trip across that road taught me to ask more questions before walking."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "scenarios": [
+            "betrayed"
+          ]
+        }
       ]
     },
     {
@@ -286,13 +295,17 @@
       "request": "question",
       "option": "adult_general_question",
       "show_for_babies": false,
-      "requires_recruitment_memory": true,
-      "requires_recruitment_boat_trip": true,
       "weight": 3,
       "lines": [
         "I said a quiet prayer during that boat ride. Mostly for balance.",
         "That boat trip still sits oddly in my memory, but at least it floated.",
         "A boat can make a bad plan quieter. It cannot make me forget it."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "boat_trip": true
+        }
       ]
     },
     {
@@ -300,12 +313,17 @@
       "request": "gear_report",
       "option": "gear_report",
       "show_for_babies": false,
-      "requires_gear_report_used_in_combat": true,
       "weight": 32,
       "lines": [
         "It bought me the breath I needed. Sometimes protection is its own blessing.",
         "It did the job when fear was loud. That is praise enough.",
         "Good gear earns trust the moment trouble tests it."
+      ],
+      "conditions": [
+        {
+          "type": "memory",
+          "kind": "gear_report_used_in_combat"
+        }
       ]
     },
     {
@@ -313,12 +331,17 @@
       "request": "gear_report",
       "option": "gear_report",
       "show_for_babies": false,
-      "requires_gear_report_unused_in_combat": true,
       "weight": 32,
       "lines": [
         "I have not needed it. I will still be grateful before I am desperate.",
         "It did the job when fear was loud. That is praise enough.",
         "Good gear earns trust the moment trouble tests it."
+      ],
+      "conditions": [
+        {
+          "type": "memory",
+          "kind": "gear_report_unused_in_combat"
+        }
       ]
     },
     {
@@ -376,15 +399,18 @@
       "id": "container_theft_memory_village_profession_cleric_1",
       "request": "question",
       "show_for_babies": false,
-      "player_event_tags": [
-        "player_container_theft"
-      ],
-      "requires_container_theft_from_other": true,
       "weight": 34,
       "lines": [
         "{theft_witness} says you took {stolen_stack}. Confession is cleaner when it arrives before proof.",
         "{theft_witness} brought word of {stolen_stack}. Better to make it right before the village asks twice.",
         "There is still time to answer {theft_witness_possessive} story about {stolen_stack} with something cleaner than denial."
+      ],
+      "conditions": [
+        {
+          "type": "memory",
+          "tag": "player_container_theft",
+          "source": "other_villager"
+        }
       ]
     },
     {
