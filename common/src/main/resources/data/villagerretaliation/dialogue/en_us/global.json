@@ -2717,19 +2717,19 @@
       "key": "trade_refresh.ready_interjection.second",
       "lines": [
         "Sorry, one more counter calling: {player}, I have {restocked_summary} ready too.",
-        "{previous_villager}, give me a breath. {player}, your request is ready at my counter.",
-        "Since this already became a line, I am next: {restocked_summary} is ready.",
-        "Second interruption, unfortunately. I finished {restocked_summary} for you.",
+        "Let me squeeze in before everyone scatters: {player}, your request is ready at my counter.",
+        "Since everyone is already gathered, {player}, {restocked_summary} is ready.",
+        "I hate to add to the noise, but I finished {restocked_summary} for you.",
         "Before the crowd disperses, {player}, I have {restocked_summary} ready as well."
       ]
     },
     {
       "key": "trade_refresh.ready_interjection.third",
       "lines": [
-        "And because this is apparently a queue now, {player}, I also finished {restocked_summary}.",
-        "Third voice, same business: {restocked_summary} is ready.",
+        "And before you get pulled away, {player}, I also finished {restocked_summary}.",
+        "One more thing from my counter: {restocked_summary} is ready.",
         "I waited my turn. {player}, your requested stock is ready too.",
-        "No more elbows after me, I hope. I have {restocked_summary} waiting.",
+        "I will keep this short. I have {restocked_summary} waiting.",
         "One last counter report: {restocked_summary} is ready."
       ]
     },
@@ -2746,7 +2746,7 @@
     {
       "key": "trade_refresh.ready_theft_interjection.second",
       "lines": [
-        "I know this is getting stranger, but I am the second interruption: {restocked_summary} is ready.",
+        "I know this is getting stranger, but {restocked_summary} is ready.",
         "Bad timing twice over. {player}, I have {restocked_summary} ready too.",
         "I will make this quick while everyone is staring: {restocked_summary} is ready.",
         "{previous_villager}, I know. Still, {player}, your request is finished."
@@ -2755,7 +2755,7 @@
     {
       "key": "trade_refresh.ready_theft_interjection.third",
       "lines": [
-        "This is a terrible moment for a third voice, but {restocked_summary} is ready.",
+        "This is a terrible moment to speak up, but {restocked_summary} is ready.",
         "I waited because this looked serious. Your stock is ready too.",
         "Last thing from me: {restocked_summary} is ready when this settles.",
         "No pressure, except all of this pressure. I have {restocked_summary} ready."
@@ -2777,17 +2777,17 @@
       "key": "container_theft.backup_interjection.second",
       "lines": [
         "{previous_villager} is not exaggerating. I saw {stolen_stack} leave {stolen_container} too.",
-        "Second witness, same story: {stolen_item_reference} came out of {stolen_container} in your hands.",
+        "I saw it too: {stolen_item_reference} came out of {stolen_container} in your hands.",
         "I was close enough to see it. Return {stolen_stack}, {player}.",
-        "You can argue with one voice. Two witnesses make that harder."
+        "One voice is easy to argue with. Two of us saw what happened."
       ]
     },
     {
       "key": "container_theft.backup_interjection.third",
       "lines": [
-        "Third witness now, {player}. Put {stolen_item_pronoun} back.",
-        "That is three of us seeing the same theft. Return {stolen_stack}.",
-        "I waited my turn. I saw {stolen_items} leave {stolen_container} too.",
+        "I saw it too, {player}. Put {stolen_item_pronoun} back.",
+        "More than one of us saw the same theft. Return {stolen_stack}.",
+        "I was watching as well. I saw {stolen_items} leave {stolen_container}.",
         "Nobody here is guessing. {stolen_count} {stolen_count_word} came out with you."
       ]
     },
@@ -2805,7 +2805,7 @@
       "key": "container_opened.backup_interjection.second",
       "lines": [
         "{previous_villager} saw it, and so did I. Close {container}.",
-        "Second witness, same warning: village stores are not open shelves.",
+        "I saw it too. Village stores are not open shelves.",
         "I was watching too, {player}. Step back from {container} and ask.",
         "It is not just one complaint. That {container} belongs to the village."
       ]
@@ -2813,9 +2813,9 @@
     {
       "key": "container_opened.backup_interjection.third",
       "lines": [
-        "Third voice, same boundary: close {container} and ask first.",
-        "There are three sets of eyes on this now, {player}. Step away from {container}.",
-        "I waited my turn. That {container} still is not yours to search.",
+        "Same boundary from me: close {container} and ask first.",
+        "More than one of us is watching now, {player}. Step away from {container}.",
+        "I saw enough. That {container} still is not yours to search.",
         "No one is piling on for sport. Village stores need permission."
       ]
     },
