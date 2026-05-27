@@ -139,6 +139,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private Button giftButton;
     private Double originalChatWidth;
     private final GiftPageContext giftPageContext = new GiftPageContext();
+    private final OptionListContext optionListContext = new OptionListContext();
+    private final NavigationChromeContext navigationChromeContext = new NavigationChromeContext();
 
     public VillagerInteractionScreen(
             int villagerEntityId,
@@ -771,25 +773,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void renderOptions(GuiGraphics graphics, int mouseX, int mouseY, int top) {
-        int left = optionsLeft();
-        int viewportHeight = optionViewportHeight();
-        int viewportBottom = top + viewportHeight;
-        int hovered = optionAt(mouseX, mouseY);
-
-        graphics.enableScissor(left - 24, top - 3, left + OPTION_WIDTH + 10, viewportBottom + 3);
-        for (int index = 0; index < this.options.size(); index++) {
-            DialogueOption option = this.options.get(index);
-            float y = top + index * optionStride() - this.optionScroll;
-            if (y + OPTION_HEIGHT < top - 10 || y > viewportBottom + 10) {
-                continue;
-            }
-
-            renderOption(graphics, option, index, hovered, mouseX, mouseY, left, y, top, viewportBottom);
-        }
-        graphics.disableScissor();
-
-        renderScrollbar(graphics);
-
+        VillagerInteractionOptionList.render(this.optionListContext, graphics, mouseX, mouseY);
     }
 
     private void renderProfilePage(GuiGraphics graphics, int mouseX, int mouseY) {
@@ -1119,85 +1103,12 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         );
     }
 
-    private void renderOption(
-            GuiGraphics graphics,
-            DialogueOption option,
-            int index,
-            int hovered,
-            int mouseX,
-            int mouseY,
-            int left,
-            float y,
-            int viewportTop,
-            int viewportBottom
-    ) {
-        boolean selected = index == this.selectedOption;
-        boolean isHovered = hovered == index;
-        float hoverMix = isHovered ? hoverIntensity(mouseX, mouseY, left, y) : 0.0F;
-        float scale = optionScale(selected, hoverMix);
-        float cursorShiftX = isHovered ? hoverShift(mouseX, left, OPTION_WIDTH, 3.2F) * hoverMix : 0.0F;
-        float cursorShiftY = isHovered ? hoverShift(mouseY, y, OPTION_HEIGHT, 1.6F) * hoverMix : 0.0F;
-        float edgeAlpha = edgeFadeAlpha(y, viewportTop, viewportBottom);
-        int textColor = optionTextColor(selected, isHovered);
-
-        graphics.pose().pushPose();
-        applyOptionTransform(graphics, left, y, scale, cursorShiftX, cursorShiftY);
-        renderOptionBackground(graphics, isHovered, left, y, edgeAlpha);
-        if (selected) {
-            graphics.drawString(this.font, ">", left - 7, Mth.floor(y + 5.0F), VillagerInteractionUiUtil.withAlpha(0xFFFFFFFF, edgeAlpha), false);
-        }
-        graphics.drawString(this.font, option.label(), left + OPTION_TEXT_INSET, Mth.floor(y + 5.0F), VillagerInteractionUiUtil.withAlpha(textColor, edgeAlpha), false);
-        graphics.pose().popPose();
-    }
-
-    private void applyOptionTransform(GuiGraphics graphics, int left, float top, float scale, float shiftX, float shiftY) {
-        float pivotX = left + OPTION_WIDTH * 0.5F;
-        float pivotY = top + OPTION_HEIGHT * 0.5F;
-        graphics.pose().translate(pivotX + shiftX, pivotY + shiftY, 0.0F);
-        graphics.pose().scale(scale, scale, 1.0F);
-        graphics.pose().translate(-pivotX, -pivotY, 0.0F);
-    }
-
-    private void renderOptionBackground(GuiGraphics graphics, boolean hovered, int left, float top, float edgeAlpha) {
-        if (!hovered) {
-            return;
-        }
-
-        int bgLeft = left - 12;
-        int bgTop = Mth.floor(top + 1.0F);
-        int bgRight = left + OPTION_WIDTH - 8;
-        int bgBottom = bgTop + OPTION_HEIGHT - 1;
-        graphics.fill(bgLeft, bgTop, bgRight, bgBottom, VillagerInteractionUiUtil.withAlpha(0xFF000000, edgeAlpha * 0.16F));
-    }
-
-    private static float optionScale(boolean selected, float hoverMix) {
-        return 1.0F + (selected ? OPTION_SELECTED_SCALE : 0.0F) + hoverMix * OPTION_HOVER_SCALE;
-    }
-
-    private static int optionTextColor(boolean selected, boolean hovered) {
-        if (selected) {
-            return 0xFFF8F8F4;
-        }
-        return hovered ? 0xFFE5E5DE : 0xCFC7C8C5;
-    }
-
     private void renderTopBackButton(GuiGraphics graphics, int mouseX, int mouseY) {
-        if (!isTopBackButtonVisible()) {
-            return;
-        }
-
-        TopBackButtonBounds bounds = topBackButtonBounds();
-        boolean hovered = isPointInsideTopBackButton(mouseX, mouseY);
-        int textColor = hovered ? 0xFFF8F8F4 : 0xCFC7C8C5;
-        int backgroundColor = hovered ? 0x30000000 : 0x18000000;
-
-        graphics.fill(bounds.left() - 6, bounds.top() - 2, bounds.right() + 4, bounds.bottom() + 2, backgroundColor);
-        graphics.drawString(this.font, backLabel(), bounds.left(), bounds.top(), textColor, false);
+        VillagerInteractionNavigationChrome.renderTopBackButton(this.navigationChromeContext, graphics, mouseX, mouseY);
     }
 
     private void renderHint(GuiGraphics graphics) {
-        String hintText = translate(canNavigateBack() ? "hint.back" : "hint.leave");
-        graphics.drawString(this.font, hintText, this.width - this.font.width(hintText) - 8, this.height - 14, 0x66FFFFFF, false);
+        VillagerInteractionNavigationChrome.renderHint(this.navigationChromeContext, graphics);
     }
 
     void renderBackdropBehindChat(GuiGraphics graphics) {
@@ -1388,29 +1299,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void updateMouseSelection(int mouseX, int mouseY) {
-        int hovered = optionAt(mouseX, mouseY);
+        int hovered = VillagerInteractionOptionList.optionAt(this.optionListContext, mouseX, mouseY);
         if (hovered >= 0) {
             this.selectedOption = hovered;
         }
-    }
-
-    private int optionAt(double mouseX, double mouseY) {
-        int left = optionsLeft();
-        int top = optionsTop();
-        int bottom = top + optionViewportHeight();
-        if (mouseX < left - 18 || mouseX > left + OPTION_WIDTH) {
-            return -1;
-        }
-        if (mouseY < top - 2 || mouseY > bottom + 2) {
-            return -1;
-        }
-        for (int index = 0; index < this.options.size(); index++) {
-            float y = top + index * optionStride() - this.optionScroll;
-            if (mouseY >= y - 2.0F && mouseY <= y + OPTION_HEIGHT + 2.0F) {
-                return index;
-            }
-        }
-        return -1;
     }
 
     private boolean tryClickBackButton(double mouseX, double mouseY) {
@@ -1528,7 +1420,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private boolean tryActivateHoveredOption(double mouseX, double mouseY) {
-        int hovered = optionAt(mouseX, mouseY);
+        int hovered = VillagerInteractionOptionList.optionAt(this.optionListContext, mouseX, mouseY);
         if (hovered < 0) {
             return false;
         }
@@ -2192,6 +2084,155 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         @Override
         public List<String> knownDislikedGiftNames() {
             return VillagerInteractionScreen.this.knownDislikedGiftNames;
+        }
+    }
+
+    private final class OptionListContext implements VillagerInteractionOptionList.Context {
+        @Override
+        public Font font() {
+            return VillagerInteractionScreen.this.font;
+        }
+
+        @Override
+        public int optionsLeft() {
+            return VillagerInteractionScreen.this.optionsLeft();
+        }
+
+        @Override
+        public int optionsTop() {
+            return VillagerInteractionScreen.this.optionsTop();
+        }
+
+        @Override
+        public int optionWidth() {
+            return OPTION_WIDTH;
+        }
+
+        @Override
+        public int optionHeight() {
+            return OPTION_HEIGHT;
+        }
+
+        @Override
+        public int optionTextInset() {
+            return OPTION_TEXT_INSET;
+        }
+
+        @Override
+        public int optionCount() {
+            return VillagerInteractionScreen.this.options.size();
+        }
+
+        @Override
+        public String optionLabel(int index) {
+            return VillagerInteractionScreen.this.options.get(index).label();
+        }
+
+        @Override
+        public int selectedOption() {
+            return VillagerInteractionScreen.this.selectedOption;
+        }
+
+        @Override
+        public float optionScroll() {
+            return VillagerInteractionScreen.this.optionScroll;
+        }
+
+        @Override
+        public int optionViewportHeight() {
+            return VillagerInteractionScreen.this.optionViewportHeight();
+        }
+
+        @Override
+        public int optionStride() {
+            return VillagerInteractionScreen.this.optionStride();
+        }
+
+        @Override
+        public float edgeFadeAlpha(float optionY, int viewportTop, int viewportBottom) {
+            return VillagerInteractionScreen.this.edgeFadeAlpha(optionY, viewportTop, viewportBottom);
+        }
+
+        @Override
+        public float hoverIntensity(double mouseX, double mouseY, int left, float top) {
+            return VillagerInteractionScreen.this.hoverIntensity(mouseX, mouseY, left, top);
+        }
+
+        @Override
+        public float hoverShift(double mouse, float start, float size, float strength) {
+            return VillagerInteractionScreen.this.hoverShift(mouse, start, size, strength);
+        }
+
+        @Override
+        public float optionHoverScale() {
+            return OPTION_HOVER_SCALE;
+        }
+
+        @Override
+        public float optionSelectedScale() {
+            return OPTION_SELECTED_SCALE;
+        }
+
+        @Override
+        public void renderScrollbar(GuiGraphics graphics) {
+            VillagerInteractionScreen.this.renderScrollbar(graphics);
+        }
+    }
+
+    private final class NavigationChromeContext implements VillagerInteractionNavigationChrome.Context {
+        @Override
+        public Font font() {
+            return VillagerInteractionScreen.this.font;
+        }
+
+        @Override
+        public int screenWidth() {
+            return VillagerInteractionScreen.this.width;
+        }
+
+        @Override
+        public int screenHeight() {
+            return VillagerInteractionScreen.this.height;
+        }
+
+        @Override
+        public boolean topBackButtonVisible() {
+            return VillagerInteractionScreen.this.isTopBackButtonVisible();
+        }
+
+        @Override
+        public boolean topBackButtonHovered(int mouseX, int mouseY) {
+            return VillagerInteractionScreen.this.isPointInsideTopBackButton(mouseX, mouseY);
+        }
+
+        @Override
+        public int topBackLeft() {
+            return VillagerInteractionScreen.this.topBackButtonBounds().left();
+        }
+
+        @Override
+        public int topBackRight() {
+            return VillagerInteractionScreen.this.topBackButtonBounds().right();
+        }
+
+        @Override
+        public int topBackTop() {
+            return VillagerInteractionScreen.this.topBackButtonBounds().top();
+        }
+
+        @Override
+        public int topBackBottom() {
+            return VillagerInteractionScreen.this.topBackButtonBounds().bottom();
+        }
+
+        @Override
+        public String backLabel() {
+            return VillagerInteractionScreen.backLabel();
+        }
+
+        @Override
+        public String hintText() {
+            return VillagerInteractionScreen.this.translate(VillagerInteractionScreen.this.canNavigateBack() ? "hint.back" : "hint.leave");
         }
     }
 }
