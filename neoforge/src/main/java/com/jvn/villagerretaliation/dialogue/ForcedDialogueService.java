@@ -318,7 +318,7 @@ public final class ForcedDialogueService {
         Map<String, String> replacements = Map.of("trade_item", tradeItem);
         String line = tradeRefreshLine(level, villager, player, "trade_refresh.revered_prompt", replacements);
         if (!VillagerRetaliationConfig.ENABLE_FORCED_DIALOGUE.get()) {
-            VillagerInteractionService.sendVillagerNotice(player, villager, line);
+            VillagerTradeRefreshService.handleSurpriseRequest(player, villager, offerIndex);
             return;
         }
 
@@ -351,7 +351,7 @@ public final class ForcedDialogueService {
                     offerIndex,
                     ""));
         } else {
-            VillagerInteractionService.sendVillagerNotice(player, villager, line);
+            VillagerTradeRefreshService.handleSurpriseRequest(player, villager, offerIndex);
         }
     }
 
