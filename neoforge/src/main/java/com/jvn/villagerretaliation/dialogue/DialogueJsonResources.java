@@ -5,6 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
+import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
@@ -12,17 +13,24 @@ import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 
 final class DialogueJsonResources {
     private DialogueJsonResources() {
     }
 
-    static void readEntryObjects(Resource resource, Consumer<JsonObject> entryConsumer) {
-        readEntryObjects(resource, ignored -> null, (entry, ignored) -> entryConsumer.accept(entry));
+    static void readEntryObjects(
+            ResourceLocation location,
+            String systemName,
+            Resource resource,
+            Consumer<JsonObject> entryConsumer) {
+        readEntryObjects(location, systemName, resource, ignored -> null, (entry, ignored) -> entryConsumer.accept(entry));
     }
 
     static <T> void readEntryObjects(
+            ResourceLocation location,
+            String systemName,
             Resource resource,
             Function<JsonObject, T> rootContextFactory,
             BiConsumer<JsonObject, T> entryConsumer
@@ -42,8 +50,8 @@ final class DialogueJsonResources {
             }
 
             entryConsumer.accept(root, rootContext);
-        } catch (IOException | IllegalStateException | JsonParseException ignored) {
-            // Invalid datapack files are ignored so one custom story list cannot break dialogue.
+        } catch (IOException | IllegalStateException | JsonParseException exception) {
+            DatapackDiagnostics.warnSkippedFile(location, systemName, exception);
         }
     }
 

@@ -152,16 +152,27 @@ public final class ForcedDialogueResources {
                 int index = 0;
                 for (JsonElement element : entries) {
                     if (element.isJsonObject()) {
-                        readEntry(location, element.getAsJsonObject(), index).ifPresent(definition -> definitions.put(definition.id(), definition));
+                        readEntry(location, element.getAsJsonObject(), index)
+                                .ifPresent(definition -> putDefinition(location, definitions, definition));
                     }
                     index++;
                 }
                 return;
             }
 
-            readEntry(location, root, 0).ifPresent(definition -> definitions.put(definition.id(), definition));
-        } catch (IOException | IllegalStateException | JsonParseException ignored) {
-            // Invalid datapack files are ignored so one custom event cannot break every forced dialogue.
+            readEntry(location, root, 0).ifPresent(definition -> putDefinition(location, definitions, definition));
+        } catch (IOException | IllegalStateException | JsonParseException exception) {
+            DatapackDiagnostics.warnSkippedFile(location, "forced dialogue", exception);
+        }
+    }
+
+    private static void putDefinition(
+            ResourceLocation location,
+            Map<String, ForcedDialogueDefinition> definitions,
+            ForcedDialogueDefinition definition) {
+        ForcedDialogueDefinition previous = definitions.put(definition.id(), definition);
+        if (previous != null) {
+            DatapackDiagnostics.warnDuplicateId(location, "forced dialogue", definition.id(), previous.source());
         }
     }
 
@@ -196,6 +207,7 @@ public final class ForcedDialogueResources {
 
         return Optional.of(new ForcedDialogueDefinition(
                 id,
+                location,
                 trigger.get(),
                 readOutput(entry),
                 lines,
@@ -747,6 +759,7 @@ public final class ForcedDialogueResources {
 
     public record ForcedDialogueDefinition(
             String id,
+            ResourceLocation source,
             ForcedDialogueTrigger trigger,
             ForcedDialogueOutput output,
             List<String> lines,

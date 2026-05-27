@@ -52,6 +52,8 @@ public final class BiomeStoryResources {
                 .stream()
                 .sorted(Comparator.comparing(entry -> entry.getKey().toString()))
                 .forEach(entry -> DialogueJsonResources.readEntryObjects(
+                        entry.getKey(),
+                        "story biome",
                         entry.getValue(),
                         json -> readEntry(json, entries)
                 ));

@@ -53,12 +53,14 @@ public final class DangerousStructureStoryResources {
                 .entrySet()
                 .stream()
                 .sorted(Comparator.comparing(entry -> entry.getKey().toString()))
-                .forEach(entry -> readFile(entry.getValue(), entries));
+                .forEach(entry -> readFile(entry.getKey(), entry.getValue(), entries));
         return List.copyOf(entries.values());
     }
 
-    private static void readFile(Resource resource, Map<ResourceLocation, Entry> entries) {
+    private static void readFile(ResourceLocation location, Resource resource, Map<ResourceLocation, Entry> entries) {
         DialogueJsonResources.readEntryObjects(
+                location,
+                "story structure",
                 resource,
                 root -> Math.max(1, DialogueJsonResources.readInt(root, "radius", DEFAULT_RADIUS)),
                 (entry, fallbackRadius) -> readEntry(entry, fallbackRadius, entries)

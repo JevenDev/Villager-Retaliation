@@ -679,6 +679,7 @@ public final class ForcedDialogueService {
             List<ForcedDialogueOption> leaveOptions) {
         return new ForcedDialogueDefinition(
                 TRADE_REFRESH_DEFINITION_ID,
+                optionDefinition.source(),
                 optionDefinition.trigger(),
                 optionDefinition.output(),
                 line.isBlank() ? List.of() : List.of(line),

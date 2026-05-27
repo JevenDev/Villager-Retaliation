@@ -75,6 +75,30 @@ public final class DatapackDiagnostics {
                 expected);
     }
 
+    public static void warnSkippedFile(
+            ResourceLocation location,
+            String systemName,
+            Exception exception) {
+        LOGGER.warn(
+                "Villager Retaliation datapack {} could not load {} data and will be skipped: {}",
+                location,
+                systemName,
+                exception.getMessage());
+    }
+
+    public static void warnDuplicateId(
+            ResourceLocation location,
+            String systemName,
+            String id,
+            ResourceLocation previousLocation) {
+        LOGGER.warn(
+                "Villager Retaliation datapack {} replaces {} id \"{}\" that was already loaded from {}.",
+                location,
+                systemName,
+                id,
+                previousLocation);
+    }
+
     public static void warnUnknownProfession(
             ResourceLocation location,
             String context,

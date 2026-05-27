@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.dialogue;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.combat.PacifyPaymentOffer;
@@ -325,13 +326,34 @@ public final class VillagerDialogueResources {
             Map<String, DialogueOptionDefinition> options,
             Map<String, KeyedMessageLine> messages) {
         String root = DIALOGUE_ROOT + locale;
+        Map<String, ResourceLocation> lineSources = new HashMap<>();
+        Map<String, ResourceLocation> openingSources = new HashMap<>();
+        Map<String, ResourceLocation> closingSources = new HashMap<>();
+        Map<String, ResourceLocation> pacifySources = new HashMap<>();
+        Map<String, ResourceLocation> optionSources = new HashMap<>();
+        Map<String, ResourceLocation> messageSources = new HashMap<>();
         server.getResourceManager()
                 .listResources(root, location -> location.getNamespace().equals(VillagerRetaliation.MOD_ID)
                         && location.getPath().endsWith(".json"))
                 .entrySet()
                 .stream()
                 .sorted(Comparator.comparing(entry -> entry.getKey().toString()))
-                .forEach(entry -> readFile(entry.getKey(), entry.getValue(), locale, lines, openings, closings, pacifyLines, options, messages));
+                .forEach(entry -> readFile(
+                        entry.getKey(),
+                        entry.getValue(),
+                        locale,
+                        lines,
+                        openings,
+                        closings,
+                        pacifyLines,
+                        options,
+                        messages,
+                        lineSources,
+                        openingSources,
+                        closingSources,
+                        pacifySources,
+                        optionSources,
+                        messageSources));
     }
 
     private static void readFile(
@@ -343,7 +365,13 @@ public final class VillagerDialogueResources {
             Map<String, ConversationLine> closings,
             Map<String, PacifyLine> pacifyLines,
             Map<String, DialogueOptionDefinition> options,
-            Map<String, KeyedMessageLine> messages) {
+            Map<String, KeyedMessageLine> messages,
+            Map<String, ResourceLocation> lineSources,
+            Map<String, ResourceLocation> openingSources,
+            Map<String, ResourceLocation> closingSources,
+            Map<String, ResourceLocation> pacifySources,
+            Map<String, ResourceLocation> optionSources,
+            Map<String, ResourceLocation> messageSources) {
         try (Reader reader = resource.openAsReader()) {
             JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
             if (readBoolean(root, "replace", false)) {
@@ -353,6 +381,12 @@ public final class VillagerDialogueResources {
                 pacifyLines.clear();
                 options.clear();
                 messages.clear();
+                lineSources.clear();
+                openingSources.clear();
+                closingSources.clear();
+                pacifySources.clear();
+                optionSources.clear();
+                messageSources.clear();
             }
             DatapackDiagnostics.warnMisplacedRootKeys(location, "dialogue", root, Map.of(
                     "notifications", "data/villagerretaliation/notifications/<locale>/<file>.json",
@@ -362,14 +396,14 @@ public final class VillagerDialogueResources {
                     "payments", "data/villagerretaliation/pacification/<file>.json"));
             DatapackDiagnostics.warnUnknownRootKeys(location, "dialogue", root, ROOT_KEYS);
             Set<VillagerProfession> defaultProfessions = defaultProfessionsFor(location, locale);
-            readDialogueOptions(location, root, defaultProfessions, options);
-            readKeyedMessages(location, root, defaultProfessions, messages);
-            readDialogueLines(location, root, defaultProfessions, lines);
-            readConversationLines(location, root, "openings", defaultProfessions, openings);
-            readConversationLines(location, root, "closings", defaultProfessions, closings);
-            readPacifyLines(location, root, defaultProfessions, pacifyLines);
-        } catch (IOException | IllegalStateException exception) {
-            // Invalid dialogue resources are ignored so one bad datapack file cannot break every conversation.
+            readDialogueOptions(location, root, defaultProfessions, options, optionSources);
+            readKeyedMessages(location, root, defaultProfessions, messages, messageSources);
+            readDialogueLines(location, root, defaultProfessions, lines, lineSources);
+            readConversationLines(location, root, "openings", defaultProfessions, openings, openingSources);
+            readConversationLines(location, root, "closings", defaultProfessions, closings, closingSources);
+            readPacifyLines(location, root, defaultProfessions, pacifyLines, pacifySources);
+        } catch (IOException | IllegalStateException | JsonParseException exception) {
+            DatapackDiagnostics.warnSkippedFile(location, "dialogue", exception);
         }
     }
 
@@ -377,7 +411,8 @@ public final class VillagerDialogueResources {
             ResourceLocation location,
             JsonObject root,
             Set<VillagerProfession> defaultProfessions,
-            Map<String, KeyedMessageLine> messages) {
+            Map<String, KeyedMessageLine> messages,
+            Map<String, ResourceLocation> messageSources) {
         JsonArray entries = root.getAsJsonArray("messages");
         if (entries == null) {
             return;
@@ -406,7 +441,7 @@ public final class VillagerDialogueResources {
             boolean showForAdults = readBoolean(entry, "show_for_adults", true);
             boolean showForBabies = readBoolean(entry, "show_for_babies", professions.isEmpty());
             String resolvedId = id.isBlank() ? fallbackId(location, "message", index) : id;
-            messages.put(resolvedId, new KeyedMessageLine(
+            putEntry(location, "dialogue message", resolvedId, new KeyedMessageLine(
                     resolvedId,
                     key,
                     entryLines,
@@ -416,7 +451,7 @@ public final class VillagerDialogueResources {
                     dispositions,
                     VillagerEquipmentCondition.read(entry),
                     weight
-            ));
+            ), messages, messageSources);
             index++;
         }
     }
@@ -425,7 +460,8 @@ public final class VillagerDialogueResources {
             ResourceLocation location,
             JsonObject root,
             Set<VillagerProfession> defaultProfessions,
-            Map<String, DialogueOptionDefinition> options) {
+            Map<String, DialogueOptionDefinition> options,
+            Map<String, ResourceLocation> optionSources) {
         JsonArray entries = root.getAsJsonArray("options");
         if (entries == null) {
             return;
@@ -497,7 +533,7 @@ public final class VillagerDialogueResources {
             boolean requiresKnownWidowedPartner = readBoolean(entry, "requires_known_widowed_partner");
             boolean requiresActiveSpecialOrders = readBoolean(entry, "requires_active_special_orders");
             int order = readInt(entry, "order", index);
-            options.put(id, new DialogueOptionDefinition(
+            putEntry(location, "dialogue option", id, new DialogueOptionDefinition(
                     id,
                     label,
                     requestType.get(),
@@ -545,7 +581,7 @@ public final class VillagerDialogueResources {
                     requiresKnownWidowedPartner,
                     requiresActiveSpecialOrders,
                     order
-            ));
+            ), options, optionSources);
             index++;
         }
     }
@@ -611,7 +647,8 @@ public final class VillagerDialogueResources {
             ResourceLocation location,
             JsonObject root,
             Set<VillagerProfession> defaultProfessions,
-            Map<String, DialogueLine> lines) {
+            Map<String, DialogueLine> lines,
+            Map<String, ResourceLocation> lineSources) {
         JsonArray entries = root.getAsJsonArray("lines");
         if (entries == null) {
             return;
@@ -642,7 +679,7 @@ public final class VillagerDialogueResources {
                     entryLines
             );
             applyDialogueOptions(location, entryContext("line", entry, index), builder, entry, defaultProfessions);
-            lines.put(resolvedId, builder.build());
+            putEntry(location, "dialogue line", resolvedId, builder.build(), lines, lineSources);
             index++;
         }
     }
@@ -652,7 +689,8 @@ public final class VillagerDialogueResources {
             JsonObject root,
             String key,
             Set<VillagerProfession> defaultProfessions,
-            Map<String, ConversationLine> lines) {
+            Map<String, ConversationLine> lines,
+            Map<String, ResourceLocation> lineSources) {
         JsonArray entries = root.getAsJsonArray(key);
         if (entries == null) {
             return;
@@ -682,7 +720,7 @@ public final class VillagerDialogueResources {
             boolean firstConversationOnly = readBoolean(entry, "first_conversation_only");
             boolean firstVillageInteractionOnly = readBoolean(entry, "first_village_interaction_only");
             String resolvedId = id.isBlank() ? fallbackId(location, key, index) : id;
-            lines.put(resolvedId, new ConversationLine(
+            putEntry(location, "dialogue " + key, resolvedId, new ConversationLine(
                     resolvedId,
                     entryLines,
                     showForAdults,
@@ -693,7 +731,7 @@ public final class VillagerDialogueResources {
                     weight,
                     firstConversationOnly,
                     firstVillageInteractionOnly
-            ));
+            ), lines, lineSources);
             index++;
         }
     }
@@ -702,7 +740,8 @@ public final class VillagerDialogueResources {
             ResourceLocation location,
             JsonObject root,
             Set<VillagerProfession> defaultProfessions,
-            Map<String, PacifyLine> lines) {
+            Map<String, PacifyLine> lines,
+            Map<String, ResourceLocation> pacifySources) {
         JsonArray entries = root.getAsJsonArray("pacify");
         if (entries == null) {
             return;
@@ -729,7 +768,7 @@ public final class VillagerDialogueResources {
             Set<VillagerPacificationResult> outcomes = readEnumSet(entry, "outcomes", VillagerPacificationResult.class);
             int weight = Math.max(1, readInt(entry, "weight", 10));
             String resolvedId = id.isBlank() ? fallbackId(location, "pacify", index) : id;
-            lines.put(resolvedId, new PacifyLine(
+            putEntry(location, "pacify line", resolvedId, new PacifyLine(
                     resolvedId,
                     entryLines,
                     professions,
@@ -737,9 +776,23 @@ public final class VillagerDialogueResources {
                     outcomes,
                     VillagerEquipmentCondition.read(entry),
                     weight
-            ));
+            ), lines, pacifySources);
             index++;
         }
+    }
+
+    private static <T> void putEntry(
+            ResourceLocation location,
+            String systemName,
+            String id,
+            T entry,
+            Map<String, T> entries,
+            Map<String, ResourceLocation> sources) {
+        ResourceLocation previousLocation = sources.put(id, location);
+        if (previousLocation != null) {
+            DatapackDiagnostics.warnDuplicateId(location, systemName, id, previousLocation);
+        }
+        entries.put(id, entry);
     }
 
     private static void applyDialogueOptions(
