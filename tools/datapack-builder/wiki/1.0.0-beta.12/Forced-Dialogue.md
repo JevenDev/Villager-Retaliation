@@ -325,7 +325,7 @@ trade_refresh.confirm_special_order
 leave
 ```
 
-To replace the built-in wording, add a forced-dialogue file with entries using the same ids. The trade-refresh service keeps the actual opening line from the selected dialogue message and copies the options from the matching forced-dialogue entry. Special Order opening, unavailable, queued, cooldown, payment, selection, and confirmation lines remain normal dialogue message keys under `data/villagerretaliation/dialogue/<locale>/`.
+To replace the built-in wording, add a forced-dialogue file with entries using the same ids. The trade-refresh service keeps the actual opening line from the selected dialogue message and copies the options from the matching forced-dialogue entry. Special Order opening, unavailable, queued, active-limit, cooldown, payment, selection, and confirmation lines remain normal dialogue message keys under `data/villagerretaliation/dialogue/<locale>/`.
 
 ```json
 {

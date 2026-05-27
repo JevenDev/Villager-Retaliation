@@ -418,9 +418,9 @@ When a Revered+ player clicks the refresh button, the villager offers a data-dri
 - `I'm looking for something specific.` opens a dynamic list of currently eligible targetable skill-trade definitions.
 - `Never mind.` cancels without changing the offer.
 
-Players request a skill-trade definition id, not an arbitrary item id. Eligibility still respects profession, villager trade level, skill rank, `min_rank` / `max_rank`, config flags, and the trade entry's request reputation gate. A successful Special Order is stored on the villager, appears as a pending refresh icon on the selected slot, survives reloads, and replaces that slot when ready. The requested definition is also remembered in the villager's persistent profession pool.
+Players request a skill-trade definition id, not an arbitrary item id. Eligibility still respects profession, villager trade level, skill rank, `min_rank` / `max_rank`, config flags, and the trade entry's request reputation gate. A successful Special Order is stored on the villager, appears as a pending refresh icon on the selected slot, survives reloads, and replaces that slot when ready. The requested definition is also remembered in the villager's persistent profession pool. Each player can have up to `specialOrderMaxActivePerPlayer` active Special Orders with the same villager, capped at three.
 
-The default balance is a 2 Minecraft day wait and a 3 Minecraft day cooldown. Entry metadata can override both. Extra request costs are supported by metadata and are only consumed when `specialOrderExtraCostEnabled` is true and the request passes validation. Payment is taken when the request is accepted, not when the order completes.
+The default balance is a 2 Minecraft day wait and a 3 Minecraft day cooldown. Entry metadata can override both. Cooldown starts when an order is fulfilled, so a trusted player can queue multiple active requests up to the active-order cap, then must wait before adding more after completed work. Extra request costs are supported by metadata and are only consumed when `specialOrderExtraCostEnabled` is true and the request passes validation. Payment is taken when the request is accepted, not when the order completes.
 
 ```json
 "request": {
@@ -444,7 +444,7 @@ The default balance is a 2 Minecraft day wait and a 3 Minecraft day cooldown. En
 | `display_priority` | integer | `0` | Higher values sort earlier in the dynamic Special Order list. |
 | `min_reputation` | string | `revered` | Minimum reputation tier for this specific order. The global config minimum still applies. |
 | `wait_days` | integer | config value | Minecraft days before the order can apply. |
-| `cooldown_days` | integer | config value | Minecraft days before the same player can place another order with that villager. |
+| `cooldown_days` | integer | config value | Minecraft days after fulfillment before the same player can place another order with that villager. |
 | `extra_cost` | object | none | Optional item/count cost, normally emeralds. Ignored unless extra costs are enabled in config. |
 
 If a target definition is missing or no longer valid when the order is ready, the mod drops that request safely instead of creating an invalid offer.

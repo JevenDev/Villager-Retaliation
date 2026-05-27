@@ -2446,6 +2446,30 @@
       ]
     },
     {
+      "key": "trade_refresh.special_order_queued_first",
+      "lines": [
+        "Your first Special Order is on the ledger: {trade_item}. Give me {wait_days} day(s).",
+        "I have room for that. {trade_item} will be ready after {wait_days} day(s).",
+        "{trade_item} is marked as your first active order. I will prepare it properly."
+      ]
+    },
+    {
+      "key": "trade_refresh.special_order_queued_second",
+      "lines": [
+        "That makes two active Special Orders. I will add {trade_item} to the list.",
+        "I can manage a second request. {trade_item} will take {wait_days} day(s).",
+        "{trade_item} is now your second open order. I still have one more slot after this."
+      ]
+    },
+    {
+      "key": "trade_refresh.special_order_queued_third",
+      "lines": [
+        "{trade_item} is accepted, but that fills your third Special Order slot.",
+        "I will take this third request for {trade_item}. Let me finish one before you add more.",
+        "Three orders is my limit. {trade_item} is on the ledger, and the queue is full."
+      ]
+    },
+    {
       "key": "trade_refresh.special_order_unavailable",
       "lines": [
         "I cannot arrange that Special Order right now.",
@@ -2456,9 +2480,17 @@
     {
       "key": "trade_refresh.special_order_pending",
       "lines": [
-        "I am already preparing a Special Order for you.",
-        "Your current Special Order is still on my ledger.",
-        "One Special Order at a time. Let me finish the first."
+        "I am already preparing a Special Order for that trade.",
+        "That slot is already marked on my ledger.",
+        "Let me finish the current order for that trade first."
+      ]
+    },
+    {
+      "key": "trade_refresh.special_order_limit_reached",
+      "lines": [
+        "I already have {active_orders} Special Orders open for you. Three is all I can manage at once.",
+        "Your ledger is full at {active_orders} request(s). Let me finish one before adding another.",
+        "No more than {max_orders} Special Orders at a time. Come back when one is ready."
       ]
     },
     {

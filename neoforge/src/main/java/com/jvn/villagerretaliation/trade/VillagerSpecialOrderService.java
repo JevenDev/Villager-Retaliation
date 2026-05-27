@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -101,9 +102,12 @@ public final class VillagerSpecialOrderService {
         if (!canUseSpecialOrders(level, villager, player)) {
             return QueueResult.failed("trade_refresh.special_order_unavailable", Map.of());
         }
-        if (VillagerRetaliationConfig.SPECIAL_ORDER_ONE_ACTIVE_PER_PLAYER.get()
-                && hasActiveOrder(villager, player.getUUID())) {
-            return QueueResult.failed("trade_refresh.special_order_pending", Map.of());
+        int activeOrders = activeOrderCount(villager, player.getUUID());
+        int maxActiveOrders = VillagerRetaliationConfig.SPECIAL_ORDER_MAX_ACTIVE_PER_PLAYER.get();
+        if (activeOrders >= maxActiveOrders) {
+            return QueueResult.failed("trade_refresh.special_order_limit_reached", Map.of(
+                    "active_orders", Integer.toString(activeOrders),
+                    "max_orders", Integer.toString(maxActiveOrders)));
         }
 
         long currentDay = currentDay(level);
@@ -132,7 +136,7 @@ public final class VillagerSpecialOrderService {
         }
 
         long readyDay = currentDay + option.waitDays();
-        long nextCooldownEndDay = currentDay + option.cooldownDays();
+        long nextCooldownEndDay = readyDay + option.cooldownDays();
         CompoundTag persistentData = villager.getPersistentData();
         ListTag orders = ordersTag(persistentData);
         CompoundTag order = new CompoundTag();
@@ -145,9 +149,12 @@ public final class VillagerSpecialOrderService {
         order.putString(STATUS_KEY, STATUS_PENDING);
         orders.add(order);
         persistentData.put(ORDERS_KEY, orders);
-        setCooldown(villager, player.getUUID(), nextCooldownEndDay);
         VillagerTradeMemory.rememberDefinition(level, villager, VillagerProfessionUtil.id(villager.getVillagerData().getProfession()), definitionId);
-        return QueueResult.queued("trade_refresh.special_order_queued", replacements(option, cost));
+        int queuedOrderCount = activeOrders + 1;
+        Map<String, String> replacements = new HashMap<>(replacements(option, cost));
+        replacements.put("active_orders", Integer.toString(queuedOrderCount));
+        replacements.put("max_orders", Integer.toString(maxActiveOrders));
+        return QueueResult.queued(queuedMessageKey(queuedOrderCount), replacements);
     }
 
     public static boolean applyReadyOrders(ServerLevel level, Villager villager, @Nullable ServerPlayer player) {
@@ -208,6 +215,9 @@ public final class VillagerSpecialOrderService {
             }
 
             offers.set(offerIndex, replacement);
+            if (order.hasUUID(PLAYER_KEY)) {
+                setCooldown(villager, order.getUUID(PLAYER_KEY), order.getLong(COOLDOWN_END_DAY_KEY));
+            }
             order.putString(STATUS_KEY, STATUS_APPLIED);
             VillagerTradeMemory.rememberDefinition(
                     level,
@@ -246,22 +256,23 @@ public final class VillagerSpecialOrderService {
         return List.copyOf(indexes);
     }
 
-    public static boolean hasActiveOrder(Villager villager, UUID playerId) {
+    public static int activeOrderCount(Villager villager, UUID playerId) {
         CompoundTag persistentData = villager.getPersistentData();
         if (!persistentData.contains(ORDERS_KEY, Tag.TAG_LIST)) {
-            return false;
+            return 0;
         }
 
         ListTag orders = persistentData.getList(ORDERS_KEY, Tag.TAG_COMPOUND);
+        int count = 0;
         for (int i = 0; i < orders.size(); i++) {
             CompoundTag order = orders.getCompound(i);
             if (order.hasUUID(PLAYER_KEY)
                     && order.getUUID(PLAYER_KEY).equals(playerId)
                     && isActiveStatus(order.getString(STATUS_KEY))) {
-                return true;
+                count++;
             }
         }
-        return false;
+        return count;
     }
 
     public static boolean isOnCooldown(ServerLevel level, Villager villager, UUID playerId) {
@@ -324,6 +335,15 @@ public final class VillagerSpecialOrderService {
                 "wait_days", Integer.toString(option.waitDays()),
                 "cooldown_days", Integer.toString(option.cooldownDays()),
                 "extra_cost", costDescription(cost));
+    }
+
+    private static String queuedMessageKey(int activeOrders) {
+        return switch (activeOrders) {
+            case 1 -> "trade_refresh.special_order_queued_first";
+            case 2 -> "trade_refresh.special_order_queued_second";
+            case 3 -> "trade_refresh.special_order_queued_third";
+            default -> "trade_refresh.special_order_queued";
+        };
     }
 
     private static String optionLabel(SkillTradeDefinition definition, String tradeItem, int waitDays, int cooldownDays) {

@@ -130,7 +130,7 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.IntValue SPECIAL_ORDER_WAIT_DAYS;
     public static final ModConfigSpec.IntValue SPECIAL_ORDER_COOLDOWN_DAYS;
     public static final ModConfigSpec.BooleanValue SPECIAL_ORDER_EXTRA_COST_ENABLED;
-    public static final ModConfigSpec.BooleanValue SPECIAL_ORDER_ONE_ACTIVE_PER_PLAYER;
+    public static final ModConfigSpec.IntValue SPECIAL_ORDER_MAX_ACTIVE_PER_PLAYER;
     public static final ModConfigSpec.BooleanValue SKILL_TRADE_QUALITY_SCALING;
     public static final ModConfigSpec.BooleanValue SKILL_TRADE_LOW_SKILL_PENALTIES;
     public static final ModConfigSpec.IntValue SKILL_TRADE_MAX_ENCHANTMENT_LEVEL;
@@ -614,9 +614,9 @@ public final class VillagerRetaliationConfig {
         SPECIAL_ORDER_EXTRA_COST_ENABLED = BUILDER.comment("When true, Special Order request metadata can charge an extra item cost when the request is accepted.")
                 .translation("villagerretaliation.configuration.trade.specialOrderExtraCostEnabled")
                 .define("specialOrderExtraCostEnabled", false);
-        SPECIAL_ORDER_ONE_ACTIVE_PER_PLAYER = BUILDER.comment("When true, each player can have only one active Special Order with a villager at a time.")
-                .translation("villagerretaliation.configuration.trade.specialOrderOneActivePerPlayer")
-                .define("specialOrderOneActivePerPlayer", true);
+        SPECIAL_ORDER_MAX_ACTIVE_PER_PLAYER = BUILDER.comment("Maximum active Special Orders each player can have with one villager at a time.")
+                .translation("villagerretaliation.configuration.trade.specialOrderMaxActivePerPlayer")
+                .defineInRange("specialOrderMaxActivePerPlayer", 3, 1, 3);
         SKILL_TRADE_QUALITY_SCALING = BUILDER.comment("When true, skill trade entries with quality_scaling enabled adjust count, base emerald cost, stock, rare chance, XP, and enchantment quality by skill rank.")
                 .translation("villagerretaliation.configuration.trade.skillTradeQualityScaling")
                 .define("skillTradeQualityScaling", true);

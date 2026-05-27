@@ -729,6 +729,7 @@ public final class ForcedDialogueService {
                 || "trade_refresh.unavailable".equals(messageKey)
                 || "trade_refresh.special_order_unavailable".equals(messageKey)
                 || "trade_refresh.special_order_pending".equals(messageKey)
+                || "trade_refresh.special_order_limit_reached".equals(messageKey)
                 || "trade_refresh.special_order_cooldown".equals(messageKey)
                 || "trade_refresh.special_order_payment_missing".equals(messageKey);
     }

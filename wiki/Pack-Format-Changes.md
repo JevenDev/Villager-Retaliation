@@ -48,11 +48,11 @@ Pack-facing beta.12 changes introduce persistent Social Attributes and temporary
 - Added resource-pack language keys for temporary mood labels under `villagerretaliation.mood.*`, Profile page attribute labels/descriptions under `villagerretaliation.profile.attribute.*`, profile ranks under `villagerretaliation.profile.rank.*`, and Profile UI rows/tooltips under `villagerretaliation.gui.profile.*`.
 - Added villager trade refresh support for skill-generated trades. Refresh requests are stored per villager and per offer slot, mature on the next Minecraft day, and replace the selected slot with an eligible skill-trade offer when ready.
 - Added persistent per-villager, per-profession skill-trade pools. Villagers remember known skill-trade definition ids for professions they have actually held and reuse that memory when reacquiring the same profession.
-- Added Revered Special Orders: high-reputation players can choose targetable skill-trade definitions for a longer, cooldown-gated restock request.
+- Added Revered Special Orders: high-reputation players can choose targetable skill-trade definitions for longer, cooldown-gated restock requests, up to three active requests per villager/player.
 - Added optional skill-trade `request` metadata: `targetable`, `display_priority`, `min_reputation`, `wait_days`, `cooldown_days`, and `extra_cost`.
 - Added the forced-dialogue trigger value `trade_refresh` for data-driven trade-refresh option templates.
 - Added built-in forced-dialogue entries `trade_refresh.available_options`, `trade_refresh.unavailable_options`, `trade_refresh.revered_options`, `trade_refresh.special_order_select_options`, and `trade_refresh.special_order_confirm_options`.
-- Added dialogue message keys `trade_refresh.accept`, `trade_refresh.already_pending`, `trade_refresh.not_ready`, `trade_refresh.unavailable`, `trade_refresh.revered_prompt`, and `trade_refresh.special_order_*` for the opening lines used by trade-refresh and Special Order forced dialogue.
+- Added dialogue message keys `trade_refresh.accept`, `trade_refresh.already_pending`, `trade_refresh.not_ready`, `trade_refresh.unavailable`, `trade_refresh.revered_prompt`, and `trade_refresh.special_order_*` for the opening lines used by trade-refresh and Special Order forced dialogue, including first/second/third queue responses and the active-request cap response.
 - Added a `1.0.0-beta.12` target to the Datapack Generator and built-in website wiki. The beta.11 snapshot remains separate.
 
 ### Modified

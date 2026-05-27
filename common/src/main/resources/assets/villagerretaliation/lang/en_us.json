@@ -138,7 +138,7 @@
   "villagerretaliation.configuration.trade.specialOrderWaitDays": "Special Order Wait Days",
   "villagerretaliation.configuration.trade.specialOrderCooldownDays": "Special Order Cooldown Days",
   "villagerretaliation.configuration.trade.specialOrderExtraCostEnabled": "Special Order Extra Cost Enabled",
-  "villagerretaliation.configuration.trade.specialOrderOneActivePerPlayer": "Special Order One Active Per Player",
+  "villagerretaliation.configuration.trade.specialOrderMaxActivePerPlayer": "Special Order Max Active Per Player",
   "villagerretaliation.configuration.trade.skillTradeQualityScaling": "Skill Trade Quality Scaling",
   "villagerretaliation.configuration.trade.skillTradeLowSkillPenalties": "Skill Trade Low-Skill Penalties",
   "villagerretaliation.configuration.trade.skillTradeMaxEnchantmentLevel": "Skill Trade Max Enchantment Level",
