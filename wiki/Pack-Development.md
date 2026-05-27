@@ -89,7 +89,7 @@ data/villagerretaliation/forced_dialogue/my_pack_events.json
 data/villagerretaliation/notifications/en_us/my_pack_notifications.json
 ```
 
-On reload, the mod logs warnings for common path mistakes, unsupported fields that will be ignored, notification triggers used in forced-dialogue files, forced-dialogue triggers used in notification files, inert player item slot filters, and unknown profession ids.
+On reload, the mod logs warnings for common path mistakes, unsupported fields that will be ignored, notification triggers used in forced-dialogue files, forced-dialogue triggers used in notification files, inert player item slot filters, and unknown profession ids. Use `/villagerretaliation datapack diagnostics` in game to show recent Villager Retaliation datapack warnings since the last resource reload.
 
 For additive dialogue, forced dialogue, and notification packs, use your own file names, such as:
 
@@ -155,7 +155,7 @@ Before testing in game:
 - Validate JSON syntax with your editor or a JSON linter.
 - Confirm paths exactly match the documented roots.
 - Confirm enum values are spelled correctly. Values are case-insensitive in code, but lowercase snake case is recommended.
-- Check the latest log after `/reload`. Villager Retaliation warns when it sees content in the wrong system folder, unsupported fields, wrong trigger families, item slot filters that cannot match, or profession ids that are not registered.
+- Run `/villagerretaliation datapack diagnostics` after `/reload`, or check the latest log. Villager Retaliation warns when it sees content in the wrong system folder, unsupported fields, wrong trigger families, item slot filters that cannot match, duplicate ids, skipped files, or profession ids that are not registered.
 - Give overrideable dialogue, forced dialogue, notification, gift, and profession loot entries explicit `id` values.
 - Use a small test pack first, then expand once the hook works.
 
@@ -167,7 +167,7 @@ Before testing in game:
 4. For event-tagged dialogue, trigger the event near the target villager and talk to them before the short village-memory window expires.
 5. For forced dialogue, trigger the event with an adult villager close enough to witness it; `container_theft` and `container_opened` also need line of sight by default.
 6. For generated-container forced dialogue, test first with a container that still has an unresolved loot table, such as a newly generated village chest. After the first detected open, the mod remembers that container's original loot table for later opens. Player-placed chests do not match forced-dialogue container triggers.
-7. Check latest logs for JSON warnings, especially if a datapack entry appears to do nothing.
+7. Run `/villagerretaliation datapack diagnostics` or check latest logs for JSON warnings, especially if a datapack entry appears to do nothing.
 8. Add filters one at a time after the unfiltered version works.
 9. For reputation-gated options or lines, test with `/villagerretaliation setNearbyReputation <value>` and confirm each tier sees the intended choices.
 10. For normal dialogue lines, use `/villagerretaliation dialogue explain <villager> <request> [option_id]` to inspect matched candidates, top rejection reasons, effective weights, specificity scores, recent-line state, and whether neutral fallback would be used.

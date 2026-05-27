@@ -44,6 +44,7 @@ public final class VillagerDataWarmup {
     }
 
     public static void clearResourceCaches() {
+        DatapackDiagnostics.clear();
         VillagerDialogueResources.clearCache();
         VillagerGiftResources.clearCache();
         ProfessionLootResources.clearCache();

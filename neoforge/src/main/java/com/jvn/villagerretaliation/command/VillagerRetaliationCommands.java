@@ -21,6 +21,7 @@ import com.jvn.villagerretaliation.skill.VillagerSkillSet;
 import com.jvn.villagerretaliation.social.VillagerRelationshipStage;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphSavedData;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
+import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -77,6 +78,9 @@ public final class VillagerRetaliationCommands {
                                                                 .executes(context -> explainDialogue(
                                                                         context,
                                                                         StringArgumentType.getString(context, "option"))))))))
+                        .then(literal("datapack")
+                                .then(literal("diagnostics")
+                                        .executes(VillagerRetaliationCommands::showDatapackDiagnostics)))
                         .then(literal("profile")
                                 .then(literal("get")
                                         .then(targetArgument()
@@ -329,6 +333,23 @@ public final class VillagerRetaliationCommands {
         } catch (IllegalArgumentException exception) {
             return null;
         }
+    }
+
+    private static int showDatapackDiagnostics(CommandContext<CommandSourceStack> context) {
+        List<DatapackDiagnostics.Entry> diagnostics = DatapackDiagnostics.recent();
+        CommandSourceStack source = context.getSource();
+        if (diagnostics.isEmpty()) {
+            source.sendSuccess(() -> Component.literal("No Villager Retaliation datapack diagnostics since the last resource reload."), false);
+            return 1;
+        }
+
+        source.sendSuccess(() -> Component.literal("Villager Retaliation datapack diagnostics: "
+                + diagnostics.size() + " warning" + (diagnostics.size() == 1 ? "" : "s")
+                + " since the last resource reload. Showing latest 10."), false);
+        diagnostics.stream()
+                .skip(Math.max(0, diagnostics.size() - 10))
+                .forEach(entry -> source.sendSuccess(() -> Component.literal("- " + entry.message()), false));
+        return diagnostics.size();
     }
 
     private static void sendDialogueExplanation(

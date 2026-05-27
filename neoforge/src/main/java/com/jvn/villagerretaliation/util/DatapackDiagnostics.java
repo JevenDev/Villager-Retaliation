@@ -3,6 +3,9 @@ package com.jvn.villagerretaliation.util;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.mojang.logging.LogUtils;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import net.minecraft.resources.ResourceLocation;
@@ -10,8 +13,22 @@ import org.slf4j.Logger;
 
 public final class DatapackDiagnostics {
     private static final Logger LOGGER = LogUtils.getLogger();
+    private static final int MAX_RECENT_DIAGNOSTICS = 80;
+    private static final ArrayDeque<Entry> RECENT = new ArrayDeque<>();
 
     private DatapackDiagnostics() {
+    }
+
+    public static List<Entry> recent() {
+        synchronized (RECENT) {
+            return List.copyOf(RECENT);
+        }
+    }
+
+    public static void clear() {
+        synchronized (RECENT) {
+            RECENT.clear();
+        }
     }
 
     public static void warnMisplacedRootKeys(
@@ -21,7 +38,7 @@ public final class DatapackDiagnostics {
             Map<String, String> expectedPaths) {
         for (Map.Entry<String, String> entry : expectedPaths.entrySet()) {
             if (root.has(entry.getKey())) {
-                LOGGER.warn(
+                warn(
                         "Villager Retaliation datapack {} is loaded as {}, but contains top-level \"{}\". Move that content to {}.",
                         location,
                         systemName,
@@ -47,7 +64,7 @@ public final class DatapackDiagnostics {
             Set<String> allowedKeys) {
         for (String key : entry.keySet()) {
             if (!allowedKeys.contains(key)) {
-                LOGGER.warn(
+                warn(
                         "Villager Retaliation datapack {} {} contains unsupported {} field \"{}\"; it will be ignored.",
                         location,
                         context,
@@ -66,7 +83,7 @@ public final class DatapackDiagnostics {
         if (trigger == null || trigger.isBlank()) {
             return;
         }
-        LOGGER.warn(
+        warn(
                 "Villager Retaliation datapack {} {} uses trigger \"{}\", which is not a valid {} trigger. {}",
                 location,
                 context,
@@ -79,7 +96,7 @@ public final class DatapackDiagnostics {
             ResourceLocation location,
             String systemName,
             Exception exception) {
-        LOGGER.warn(
+        warn(
                 "Villager Retaliation datapack {} could not load {} data and will be skipped: {}",
                 location,
                 systemName,
@@ -91,7 +108,7 @@ public final class DatapackDiagnostics {
             String systemName,
             String id,
             ResourceLocation previousLocation) {
-        LOGGER.warn(
+        warn(
                 "Villager Retaliation datapack {} replaces {} id \"{}\" that was already loaded from {}.",
                 location,
                 systemName,
@@ -109,7 +126,7 @@ public final class DatapackDiagnostics {
         String hint = profession.contains(":")
                 ? "Confirm that a loaded mod registers this profession id."
                 : "Vanilla professions may omit minecraft:, but modded professions need their full id such as modid:" + profession + ".";
-        LOGGER.warn(
+        warn(
                 "Villager Retaliation datapack {} {} references unknown profession \"{}\". {}",
                 location,
                 context,
@@ -147,10 +164,46 @@ public final class DatapackDiagnostics {
                 "max_held_item_enchantment_level")) {
             return;
         }
-        LOGGER.warn(
+        warn(
                 "Villager Retaliation datapack {} {} sets player_item_slots without an item, tag, durability, or enchantment filter; the slot filter will not match anything by itself.",
                 location,
                 context);
+    }
+
+    private static void warn(String template, Object... args) {
+        LOGGER.warn(template, args);
+        remember(format(template, args));
+    }
+
+    private static void remember(String message) {
+        synchronized (RECENT) {
+            RECENT.addLast(new Entry(message));
+            while (RECENT.size() > MAX_RECENT_DIAGNOSTICS) {
+                RECENT.removeFirst();
+            }
+        }
+    }
+
+    private static String format(String template, Object... args) {
+        StringBuilder builder = new StringBuilder(template.length() + args.length * 16);
+        int cursor = 0;
+        int argIndex = 0;
+        int placeholder = template.indexOf("{}");
+        while (placeholder >= 0) {
+            builder.append(template, cursor, placeholder);
+            builder.append(argIndex < args.length ? String.valueOf(args[argIndex++]) : "{}");
+            cursor = placeholder + 2;
+            placeholder = template.indexOf("{}", cursor);
+        }
+        builder.append(template, cursor, template.length());
+        if (argIndex < args.length) {
+            List<String> extras = new ArrayList<>();
+            while (argIndex < args.length) {
+                extras.add(String.valueOf(args[argIndex++]));
+            }
+            builder.append(" ").append(extras);
+        }
+        return builder.toString();
     }
 
     private static boolean hasAny(JsonObject entry, String... keys) {
@@ -161,5 +214,8 @@ public final class DatapackDiagnostics {
             }
         }
         return false;
+    }
+
+    public record Entry(String message) {
     }
 }
