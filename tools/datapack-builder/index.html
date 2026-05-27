@@ -290,6 +290,23 @@
       </section>
     </div>
 
+    <script>
+      window.VR_CODEMIRROR_READY = Promise.all([
+        import("https://esm.sh/@codemirror/state@6.5.2"),
+        import("https://esm.sh/@codemirror/view@6.38.1?deps=@codemirror/state@6.5.2"),
+        import("https://esm.sh/@codemirror/language@6.11.3?deps=@codemirror/state@6.5.2,@codemirror/view@6.38.1"),
+        import("https://esm.sh/@codemirror/commands@6.8.1?deps=@codemirror/state@6.5.2,@codemirror/view@6.38.1,@codemirror/language@6.11.3"),
+        import("https://esm.sh/@codemirror/lang-json@6.0.2?deps=@codemirror/state@6.5.2,@codemirror/view@6.38.1,@codemirror/language@6.11.3"),
+        import("https://esm.sh/@codemirror/autocomplete@6.18.6?deps=@codemirror/state@6.5.2,@codemirror/view@6.38.1,@codemirror/language@6.11.3")
+      ]).then(([state, view, language, commands, jsonLanguage, autocomplete]) => ({
+        ...state,
+        ...view,
+        ...commands,
+        ...jsonLanguage,
+        ...language,
+        ...autocomplete
+      }));
+    </script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <script src="./wiki-snapshot.js"></script>
     <script src="./app.js"></script>

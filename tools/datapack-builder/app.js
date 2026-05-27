@@ -102,7 +102,8 @@ const CONSTANTS = {
     "container_opened",
     "container_broken",
     "retaliation_started",
-    "player_item_proximity"
+    "player_item_proximity",
+    "trade_refresh"
   ],
   forcedOutputModes: ["forced_dialogue", "chat"],
   reputationLevels: ["royalty", "revered", "respected", "trusted", "neutral", "suspicious", "hostile", "despised", "feared"],
@@ -797,6 +798,7 @@ let wrapPreviewLines = false;
 let previewEditTimer = null;
 let previewEditError = null;
 let previewLineHighlightRanges = [];
+let pendingPreviewEntryScroll = false;
 let previewLineNumberState = { source: "", lineCount: 1, rangesKey: "" };
 let previewLineNumberFrame = 0;
 let previewUndoStack = [];
@@ -804,6 +806,13 @@ let previewRedoStack = [];
 let previewBeforeInputSnapshot = null;
 let previewHistoryPath = "";
 let isApplyingPreviewHistory = false;
+let previewEditor = null;
+let previewEditorApi = null;
+let previewEditorLineHighlightEffect = null;
+let previewEditorWrapCompartment = null;
+let previewEditorReadOnlyCompartment = null;
+let previewEditorReadOnly = false;
+let isApplyingPreviewEditorValue = false;
 let fileTreeSignature = "";
 let currentViewSnapshotCache = null;
 let entryListPages = {};
@@ -4787,21 +4796,6 @@ function validate() {
         break;
       }
     }
-    const duplicateForcedOption = firstDuplicateEntries(options);
-    if (duplicateForcedOption) {
-      const location = {
-        section: "forcedDialogue",
-        kind: "entries",
-        index: state.forcedDialogue.entries.indexOf(entry),
-        path: entryPath("forcedDialogue", entry),
-        fieldId: "forced-options_json"
-      };
-      addCheck(checks, "warning", "Forced option ids", `Duplicate forced option id: ${duplicateForcedOption.value} in ${locationLabel(location)}.`, {
-        locations: [location],
-        paths: [location.path]
-      });
-      break;
-    }
     const badOptionNumber = firstBadNumber(actionableOptions, ["order", "reputation", "aggro_chance"], (value, entry, key) => key === "aggro_chance" ? value >= 0 && value <= 1 : Number.isFinite(value));
     if (badOptionNumber) {
       addCheck(checks, "error", "Forced option number", `${humanize(badOptionNumber)} has an invalid number.`);
@@ -5284,24 +5278,286 @@ function setActiveKindForLocation(location) {
   if (location.section === "stories") activeStoryKind = location.kind;
 }
 
+function pinAppViewport() {
+  window.scrollTo(0, 0);
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
+}
+
+function stabilizeAppViewport() {
+  pinAppViewport();
+  window.requestAnimationFrame(pinAppViewport);
+  window.setTimeout(pinAppViewport, 50);
+}
+
+function scrollChildIntoContainer(child, container, { block = "center" } = {}) {
+  if (!child || !container) return;
+  const childRect = child.getBoundingClientRect();
+  const containerRect = container.getBoundingClientRect();
+  const currentTop = container.scrollTop;
+  let nextTop = currentTop;
+  if (block === "center") {
+    nextTop += childRect.top - containerRect.top - (container.clientHeight / 2) + (childRect.height / 2);
+  } else if (childRect.top < containerRect.top) {
+    nextTop += childRect.top - containerRect.top - 10;
+  } else if (childRect.bottom > containerRect.bottom) {
+    nextTop += childRect.bottom - containerRect.bottom + 10;
+  }
+  const maxTop = Math.max(0, container.scrollHeight - container.clientHeight);
+  container.scrollTop = Math.max(0, Math.min(maxTop, nextTop));
+}
+
+function scrollEntryCardIntoView(location) {
+  const card = els.panel.querySelector(`.entry-card[data-section="${CSS.escape(location.section)}"][data-kind="${CSS.escape(location.kind)}"][data-index="${Number(location.index)}"]`);
+  scrollChildIntoContainer(card, card?.closest(".entry-list"), { block: "nearest" });
+}
+
+function scrollFieldIntoForm(field) {
+  const target = field?.closest(".field") || field?.closest(".toggle") || field;
+  scrollChildIntoContainer(target, target?.closest(".entry-form"), { block: "center" });
+}
+
 function jumpToCheck(check) {
   const location = check?.locations?.[0];
   if (!location || !canLeaveEntryForm()) return;
   activeSection = location.section;
   setActiveKindForLocation(location);
-  editing = {
-    section: location.section,
-    kind: location.kind,
-    index: location.index
-  };
-  selectedPath = location.path || selectedPath;
-  clearEntryFormDirty();
+  selectEntryForEditing(location.section, location.kind, location.index);
+  if (location.path) selectedPath = location.path;
   render();
   window.requestAnimationFrame(() => {
+    pinAppViewport();
+    scrollEntryCardIntoView(location);
     const field = location.fieldId ? document.querySelector(`#${CSS.escape(location.fieldId)}`) : null;
     field?.focus({ preventScroll: true });
-    field?.closest(".field")?.scrollIntoView({ block: "center" });
+    scrollFieldIntoForm(field);
+    stabilizeAppViewport();
   });
+}
+
+function initializePreviewEditor() {
+  if (!window.VR_CODEMIRROR_READY || !els.codePreview || !els.preview) return;
+  window.VR_CODEMIRROR_READY
+    .then((api) => setupPreviewEditor(api))
+    .catch((error) => {
+      console.warn("CodeMirror preview editor failed to load; using textarea fallback.", error);
+    });
+}
+
+function setupPreviewEditor(api) {
+  if (previewEditor || !api?.EditorView || !api?.EditorState) return;
+  previewEditorApi = api;
+  const host = document.createElement("div");
+  host.className = "code-preview-editor";
+  els.codePreview.append(host);
+
+  const {
+    EditorState,
+    EditorView,
+    Compartment,
+    Decoration,
+    StateEffect,
+    StateField,
+    json,
+    lineNumbers,
+    highlightActiveLineGutter,
+    highlightSpecialChars,
+    history,
+    drawSelection,
+    dropCursor,
+    indentOnInput,
+    syntaxHighlighting,
+    defaultHighlightStyle,
+    bracketMatching,
+    closeBrackets,
+    autocompletion,
+    rectangularSelection,
+    crosshairCursor,
+    highlightActiveLine,
+    keymap,
+    closeBracketsKeymap,
+    defaultKeymap,
+    historyKeymap,
+    foldKeymap,
+    completionKeymap,
+    indentWithTab
+  } = api;
+
+  previewEditorWrapCompartment = new Compartment();
+  previewEditorReadOnlyCompartment = new Compartment();
+  previewEditorLineHighlightEffect = StateEffect.define();
+  const highlightField = StateField.define({
+    create() {
+      return Decoration.none;
+    },
+    update(value, transaction) {
+      for (const effect of transaction.effects) {
+        if (effect.is(previewEditorLineHighlightEffect)) return effect.value;
+      }
+      return value.map(transaction.changes);
+    },
+    provide: (field) => EditorView.decorations.from(field)
+  });
+
+  const previewTheme = EditorView.theme({
+    "&": {
+      height: "100%",
+      minHeight: "0",
+      backgroundColor: "transparent",
+      color: "#d8d8d8",
+      fontSize: "14px"
+    },
+    ".cm-scroller": {
+      fontFamily: "var(--font-code)",
+      lineHeight: "1.55",
+      overflow: "auto"
+    },
+    ".cm-content": {
+      minHeight: "100%",
+      padding: "14px 15px",
+      caretColor: "#f3f3f3",
+      tabSize: "2"
+    },
+    ".cm-line": {
+      padding: "0 0"
+    },
+    ".cm-gutters": {
+      backgroundColor: "#1b1b1b",
+      borderRight: "1px solid #2b2b2b",
+      color: "#6d6d6d"
+    },
+    ".cm-lineNumbers .cm-gutterElement": {
+      padding: "0 10px 0 12px"
+    },
+    ".cm-activeLine": {
+      backgroundColor: "rgba(255, 255, 255, 0.035)"
+    },
+    ".cm-activeLineGutter": {
+      backgroundColor: "#262626",
+      color: "#b8b8b8"
+    },
+    ".cm-selectionBackground, &.cm-focused .cm-selectionBackground": {
+      backgroundColor: "rgba(76, 141, 43, 0.38)"
+    },
+    ".cm-preview-issue-line": {
+      backgroundColor: "rgba(209, 106, 92, 0.18)"
+    },
+    ".cm-preview-entry-line": {
+      backgroundColor: "rgba(76, 141, 43, 0.22)"
+    },
+    ".cm-preview-issue-line.cm-preview-entry-line": {
+      backgroundColor: "rgba(142, 124, 65, 0.28)"
+    }
+  }, { dark: true });
+
+  previewEditor = new EditorView({
+    state: EditorState.create({
+      doc: els.preview.value || "",
+      extensions: [
+        lineNumbers(),
+        highlightActiveLineGutter(),
+        highlightSpecialChars(),
+        history(),
+        drawSelection(),
+        dropCursor(),
+        EditorState.allowMultipleSelections.of(true),
+        indentOnInput(),
+        syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+        bracketMatching(),
+        closeBrackets(),
+        autocompletion(),
+        rectangularSelection(),
+        crosshairCursor(),
+        highlightActiveLine(),
+        json(),
+        keymap.of([
+          indentWithTab,
+          ...(closeBracketsKeymap || []),
+          ...(defaultKeymap || []),
+          ...(historyKeymap || []),
+          ...(foldKeymap || []),
+          ...(completionKeymap || [])
+        ]),
+        EditorState.tabSize.of(2),
+        EditorView.contentAttributes.of({
+          "aria-label": "Edit selected generated file",
+          autocapitalize: "off",
+          autocomplete: "off",
+          autocorrect: "off",
+          spellcheck: "false"
+        }),
+        EditorView.updateListener.of((update) => {
+          if (!update.docChanged || isApplyingPreviewEditorValue) return;
+          els.preview.value = update.state.doc.toString();
+          updatePreviewHistoryButtons();
+          handlePreviewEditorInput();
+        }),
+        previewEditorWrapCompartment.of(wrapPreviewLines ? EditorView.lineWrapping : []),
+        previewEditorReadOnlyCompartment.of(previewEditorReadOnlyExtensions(false)),
+        highlightField,
+        previewTheme
+      ]
+    }),
+    parent: host
+  });
+
+  els.codePreview.classList.add("is-codemirror");
+  setPreviewEditorReadOnly(els.preview.readOnly);
+  renderPreview();
+}
+
+function previewEditorReadOnlyExtensions(readOnly) {
+  if (!previewEditorApi) return [];
+  return [
+    previewEditorApi.EditorState.readOnly.of(readOnly),
+    previewEditorApi.EditorView.editable.of(!readOnly)
+  ];
+}
+
+function previewDocumentValue() {
+  return previewEditor ? previewEditor.state.doc.toString() : els.preview.value;
+}
+
+function setPreviewDocumentValue(value) {
+  const text = String(value ?? "");
+  if (els.preview.value !== text) els.preview.value = text;
+  if (!previewEditor || previewEditor.state.doc.toString() === text) return;
+  isApplyingPreviewEditorValue = true;
+  previewEditor.dispatch({
+    changes: { from: 0, to: previewEditor.state.doc.length, insert: text }
+  });
+  isApplyingPreviewEditorValue = false;
+}
+
+function setPreviewEditorReadOnly(readOnly) {
+  previewEditorReadOnly = readOnly;
+  els.preview.readOnly = readOnly;
+  if (!previewEditor || !previewEditorReadOnlyCompartment) return;
+  previewEditor.dispatch({
+    effects: previewEditorReadOnlyCompartment.reconfigure(previewEditorReadOnlyExtensions(readOnly))
+  });
+}
+
+function reconfigurePreviewEditorWrapping() {
+  if (!previewEditor || !previewEditorWrapCompartment || !previewEditorApi) return;
+  previewEditor.dispatch({
+    effects: previewEditorWrapCompartment.reconfigure(wrapPreviewLines ? previewEditorApi.EditorView.lineWrapping : [])
+  });
+}
+
+function focusPreviewEditor() {
+  if (previewEditor) {
+    previewEditor.focus();
+  } else {
+    els.preview.focus();
+  }
+}
+
+function handlePreviewEditorInput() {
+  recordPreviewInputHistory();
+  renderPreviewLineNumbers(previewDocumentValue(), previewEditError?.path === selectedPath ? [] : previewLineHighlightRanges);
+  window.clearTimeout(previewEditTimer);
+  previewEditTimer = window.setTimeout(applyPreviewEdit, 180);
 }
 
 function renderPreview() {
@@ -5316,21 +5572,32 @@ function renderPreview() {
   els.wrapPreviewButton.classList.toggle("is-on", wrapPreviewLines);
   els.wrapPreviewButton.setAttribute("aria-pressed", String(wrapPreviewLines));
   els.wrapPreviewButton.setAttribute("data-tooltip", wrapPreviewLines ? "Keep preview lines unwrapped." : "Wrap preview lines.");
+  reconfigurePreviewEditorWrapping();
   if (value instanceof Uint8Array) {
-    els.preview.value = `Binary file preserved (${value.byteLength} bytes).`;
-    els.preview.readOnly = true;
+    setPreviewDocumentValue(`Binary file preserved (${value.byteLength} bytes).`);
+    setPreviewEditorReadOnly(true);
     resetPreviewHistory(selectedPath);
     previewLineHighlightRanges = [];
     applyPreviewLineHighlights([]);
-    renderPreviewLineNumbers(els.preview.value, []);
+    renderPreviewLineNumbers(previewDocumentValue(), []);
+    pendingPreviewEntryScroll = false;
   } else {
-    els.preview.readOnly = false;
-    els.preview.value = value || "";
+    setPreviewEditorReadOnly(false);
+    setPreviewDocumentValue(value || "");
     resetPreviewHistory(selectedPath);
-    const ranges = hasInvalidJson ? [] : withDraftState(() => previewIssueLineRanges(selectedPath, els.preview.value));
+    const source = previewDocumentValue();
+    const issueRanges = hasInvalidJson ? [] : withDraftState(() => previewIssueLineRanges(selectedPath, source));
+    const entryRanges = hasInvalidJson ? [] : previewSelectedEntryLineRanges(selectedPath, source);
+    const ranges = mergeLineRanges([...issueRanges, ...entryRanges]);
     previewLineHighlightRanges = ranges;
-    applyPreviewLineHighlights(ranges);
-    renderPreviewLineNumbers(els.preview.value, ranges);
+    applyPreviewLineHighlights(issueRanges, entryRanges);
+    renderPreviewLineNumbers(source, ranges);
+    if (pendingPreviewEntryScroll) {
+      pendingPreviewEntryScroll = false;
+      if (entryRanges.length > 0) {
+        window.requestAnimationFrame(() => scrollPreviewToLineRange(entryRanges[0]));
+      }
+    }
   }
   updatePreviewHistoryButtons();
 }
@@ -5511,6 +5778,11 @@ function restorePreviewSnapshot(snapshot) {
 }
 
 function undoPreviewEdit() {
+  if (previewEditor && previewEditorApi?.undo) {
+    previewEditorApi.undo(previewEditor);
+    updatePreviewHistoryButtons();
+    return;
+  }
   const snapshot = previewUndoStack.pop();
   if (!snapshot) return;
   previewRedoStack.push(previewSnapshot());
@@ -5518,6 +5790,11 @@ function undoPreviewEdit() {
 }
 
 function redoPreviewEdit() {
+  if (previewEditor && previewEditorApi?.redo) {
+    previewEditorApi.redo(previewEditor);
+    updatePreviewHistoryButtons();
+    return;
+  }
   const snapshot = previewRedoStack.pop();
   if (!snapshot) return;
   previewUndoStack.push(previewSnapshot());
@@ -5525,8 +5802,12 @@ function redoPreviewEdit() {
 }
 
 function updatePreviewHistoryButtons() {
-  const canUndo = !els.preview.readOnly && previewUndoStack.length > 0;
-  const canRedo = !els.preview.readOnly && previewRedoStack.length > 0;
+  const canUndo = previewEditor
+    ? !previewEditorReadOnly && previewEditorApi?.undoDepth?.(previewEditor.state) > 0
+    : !els.preview.readOnly && previewUndoStack.length > 0;
+  const canRedo = previewEditor
+    ? !previewEditorReadOnly && previewEditorApi?.redoDepth?.(previewEditor.state) > 0
+    : !els.preview.readOnly && previewRedoStack.length > 0;
   els.undoPreviewButton.disabled = !canUndo;
   els.redoPreviewButton.disabled = !canRedo;
   els.undoPreviewButton.setAttribute("aria-disabled", String(!canUndo));
@@ -5549,14 +5830,21 @@ function recordPreviewInputHistory() {
 }
 
 function renderPreviewLineNumbers(source, ranges = []) {
+  if (previewEditor) {
+    els.previewLines.replaceChildren();
+    els.previewLines.style.transform = "";
+    return;
+  }
   const style = getComputedStyle(els.preview);
-  const lineHeight = parseFloat(style.lineHeight) || 21.7;
   const text = String(source || "");
   const lineState = previewLineNumberMetrics(text, ranges);
   if (wrapPreviewLines && lineState.lineCount <= PREVIEW_EXACT_WRAP_LINE_LIMIT) {
-    renderExactWrappedPreviewLineNumbers(text, ranges, style, lineHeight, lineState.lineCount);
+    const wrappedRows = previewWrappedRowCounts(text.split("\n"), style);
+    const lineHeight = previewRowHeight(text, style, wrappedRows);
+    renderExactWrappedPreviewLineNumbers(text, ranges, lineHeight, lineState.lineCount, wrappedRows);
     return;
   }
+  const lineHeight = previewRowHeight(text, style);
   const highlighted = previewHighlightedLines(ranges);
   const viewportHeight = els.preview.clientHeight || 0;
   const scrollTop = els.preview.scrollTop || 0;
@@ -5578,9 +5866,8 @@ function renderPreviewLineNumbers(source, ranges = []) {
   els.previewLines.replaceChildren(fragment);
 }
 
-function renderExactWrappedPreviewLineNumbers(source, ranges, style, lineHeight, lineCount) {
+function renderExactWrappedPreviewLineNumbers(source, ranges, lineHeight, lineCount, wrappedRows) {
   const lines = source.split("\n");
-  const wrappedRows = previewWrappedRowCounts(lines, style);
   const highlighted = previewHighlightedLines(ranges);
   const fragment = document.createDocumentFragment();
   lines.forEach((_, index) => {
@@ -5596,6 +5883,18 @@ function renderExactWrappedPreviewLineNumbers(source, ranges, style, lineHeight,
   els.codePreview.style.setProperty("--preview-gutter-digits", String(Math.max(2, String(lineCount).length)));
   els.previewLines.style.transform = `translateY(${-els.preview.scrollTop}px)`;
   els.previewLines.replaceChildren(fragment);
+}
+
+function previewRowHeight(source, style = getComputedStyle(els.preview), wrappedRows = null) {
+  const fallback = parseFloat(style.lineHeight) || 21.7;
+  const paddingTop = parseFloat(style.paddingTop) || 0;
+  const paddingBottom = parseFloat(style.paddingBottom) || 0;
+  const rows = wrappedRows
+    ? wrappedRows.reduce((total, count) => total + count, 0)
+    : Math.max(1, previewLineNumberMetrics(source).lineCount);
+  const measured = (els.preview.scrollHeight - paddingTop - paddingBottom) / Math.max(1, rows);
+  const nearExpected = Math.abs(measured - fallback) / fallback < 0.25;
+  return Number.isFinite(measured) && measured > 0 && nearExpected ? measured : fallback;
 }
 
 function previewWrappedRowCounts(lines, style) {
@@ -5662,23 +5961,95 @@ function syncPreviewLineNumberScroll() {
 function schedulePreviewLineNumberRender() {
   window.cancelAnimationFrame(previewLineNumberFrame);
   previewLineNumberFrame = window.requestAnimationFrame(() => {
-    renderPreviewLineNumbers(els.preview.value, previewEditError?.path === selectedPath ? [] : previewLineHighlightRanges);
+    renderPreviewLineNumbers(previewDocumentValue(), previewEditError?.path === selectedPath ? [] : previewLineHighlightRanges);
   });
 }
 
-function applyPreviewLineHighlights(ranges) {
-  const lineHeight = parseFloat(getComputedStyle(els.preview).lineHeight) || 21.7;
-  const paddingTop = parseFloat(getComputedStyle(els.preview).paddingTop) || 0;
-  const color = "rgba(209, 106, 92, 0.18)";
-  const backgrounds = ranges.slice(0, 12).map((range) => {
+function previewLineOffsets(source, style = getComputedStyle(els.preview)) {
+  const text = String(source || "");
+  const lines = text.split("\n");
+  const wrappedRows = wrapPreviewLines && lines.length <= PREVIEW_EXACT_WRAP_LINE_LIMIT
+    ? previewWrappedRowCounts(lines, style)
+    : null;
+  const lineHeight = previewRowHeight(text, style, wrappedRows);
+  const offsets = [0];
+  for (let index = 0; index < lines.length; index += 1) {
+    offsets.push(offsets[index] + (wrappedRows ? wrappedRows[index] : 1) * lineHeight);
+  }
+  return { offsets, lineHeight };
+}
+
+function previewLineHighlightBackgrounds(ranges, color, source, style, lineOffsets = null) {
+  const offsetState = lineOffsets || previewLineOffsets(source, style);
+  const paddingTop = parseFloat(style.paddingTop) || 0;
+  return ranges.slice(0, 12).map((range) => {
     const start = Math.max(1, range.start);
     const end = Math.max(start, range.end || start);
-    const top = paddingTop + (start - 1) * lineHeight;
-    const bottom = paddingTop + end * lineHeight;
+    const top = paddingTop + (offsetState.offsets[start - 1] ?? ((start - 1) * offsetState.lineHeight));
+    const bottom = paddingTop + (offsetState.offsets[end] ?? (end * offsetState.lineHeight));
     return `linear-gradient(to bottom, transparent 0, transparent ${top}px, ${color} ${top}px, ${color} ${bottom}px, transparent ${bottom}px)`;
   });
+}
+
+function applyPreviewLineHighlights(issueRanges, entryRanges = []) {
+  if (previewEditor) {
+    applyPreviewEditorLineHighlights(issueRanges, entryRanges);
+    return;
+  }
+  const style = getComputedStyle(els.preview);
+  const lineOffsets = previewLineOffsets(els.preview.value, style);
+  const backgrounds = [
+    ...previewLineHighlightBackgrounds(issueRanges, "rgba(209, 106, 92, 0.18)", els.preview.value, style, lineOffsets),
+    ...previewLineHighlightBackgrounds(entryRanges, "rgba(76, 141, 43, 0.22)", els.preview.value, style, lineOffsets)
+  ];
   els.codePreview.classList.toggle("has-line-highlights", backgrounds.length > 0);
   els.preview.style.backgroundImage = backgrounds.join(", ");
+}
+
+function applyPreviewEditorLineHighlights(issueRanges, entryRanges = []) {
+  if (!previewEditor || !previewEditorApi?.Decoration || !previewEditorLineHighlightEffect) return;
+  const doc = previewEditor.state.doc;
+  const decorations = [];
+  const addRanges = (ranges, className) => {
+    for (const range of ranges.slice(0, 12)) {
+      const start = clamp(Math.max(1, range.start || 1), 1, doc.lines);
+      const end = clamp(Math.max(start, range.end || start), 1, doc.lines);
+      for (let lineNumber = start; lineNumber <= end; lineNumber += 1) {
+        decorations.push(previewEditorApi.Decoration.line({ class: className }).range(doc.line(lineNumber).from));
+      }
+    }
+  };
+  addRanges(issueRanges, "cm-preview-issue-line");
+  addRanges(entryRanges, "cm-preview-entry-line");
+  els.codePreview.classList.toggle("has-line-highlights", decorations.length > 0);
+  previewEditor.dispatch({
+    effects: previewEditorLineHighlightEffect.of(previewEditorApi.Decoration.set(decorations, true))
+  });
+}
+
+function scrollPreviewToLineRange(range) {
+  if (!range || (previewEditor ? previewEditorReadOnly : els.preview.readOnly)) return;
+  if (previewEditor && previewEditorApi?.EditorView) {
+    const doc = previewEditor.state.doc;
+    const lineNumber = clamp(Math.max(1, range.start || 1), 1, doc.lines);
+    const line = doc.line(lineNumber);
+    previewEditor.dispatch({
+      effects: previewEditorApi.EditorView.scrollIntoView(line.from, {
+        y: "start",
+        yMargin: Math.round(previewEditor.scrollDOM.clientHeight * 0.22)
+      })
+    });
+    stabilizeAppViewport();
+    return;
+  }
+  const style = getComputedStyle(els.preview);
+  const paddingTop = parseFloat(style.paddingTop) || 0;
+  const lineOffsets = previewLineOffsets(els.preview.value, style);
+  const top = paddingTop + (lineOffsets.offsets[Math.max(1, range.start) - 1] ?? 0);
+  const target = Math.max(0, top - (els.preview.clientHeight * 0.22));
+  els.preview.scrollTop = target;
+  renderPreviewLineNumbers(previewDocumentValue(), previewLineHighlightRanges);
+  stabilizeAppViewport();
 }
 
 function previewIssueLineRanges(path, source) {
@@ -5689,6 +6060,14 @@ function previewIssueLineRanges(path, source) {
     ranges.push(...findIssueLineRanges(source, entry, detail, section, kind));
   }
   return mergeLineRanges(ranges);
+}
+
+function previewSelectedEntryLineRanges(path, source) {
+  if (!editing) return [];
+  const entry = currentEditingEntry();
+  if (!entry || entryPath(editing.section, entry) !== path) return [];
+  const range = findEntryLineRange(source, entry);
+  return range ? [range] : [];
 }
 
 function previewIssueEntries(path) {
@@ -5860,7 +6239,12 @@ function renderPreservingEntryListScroll() {
   const scrollState = list ? { top: list.scrollTop, left: list.scrollLeft } : null;
   render();
   restoreEntryListScroll(scrollState);
-  window.requestAnimationFrame(() => restoreEntryListScroll(scrollState));
+  pinAppViewport();
+  window.requestAnimationFrame(() => {
+    restoreEntryListScroll(scrollState);
+    pinAppViewport();
+  });
+  window.setTimeout(pinAppViewport, 50);
 }
 
 function restoreEntryListScroll(scrollState) {
@@ -7214,6 +7598,14 @@ function currentEntryPath() {
   return inferSelectedPath(activeSection);
 }
 
+function selectEntryForEditing(section, kind, index, { scrollPreview = true } = {}) {
+  editing = { section, kind, index };
+  const entry = state[section]?.[kind]?.[index];
+  if (entry) selectedPath = entryPath(section, entry);
+  pendingPreviewEntryScroll = scrollPreview;
+  clearEntryFormDirty();
+}
+
 function clearEntryFormDirty() {
   entryFormDirty = false;
   document.body.classList.remove("is-unsaved-shaking");
@@ -7838,14 +8230,14 @@ async function copyCurrentFile() {
     showToast("Binary files cannot be copied as text.");
     return;
   }
-  await navigator.clipboard.writeText(els.preview.value || "");
+  await navigator.clipboard.writeText(previewDocumentValue() || "");
   showToast("Copied current file.");
 }
 
 function downloadCurrentFile() {
   const files = currentViewFiles();
   const generated = files[selectedPath] || "";
-  const value = generated instanceof Uint8Array ? generated : els.preview.value;
+  const value = generated instanceof Uint8Array ? generated : previewDocumentValue();
   const blob = value instanceof Uint8Array
     ? new Blob([value])
     : new Blob([value], { type: "application/json" });
@@ -7859,7 +8251,7 @@ function applyPreviewEdit() {
     warnUnsavedEntry();
     return;
   }
-  const source = els.preview.value;
+  const source = previewDocumentValue();
   if (generatedFiles()[selectedPath] instanceof Uint8Array) return;
   const applied = applyEditedFile(selectedPath, source);
   if (!applied) {
@@ -7879,8 +8271,10 @@ function applyPreviewEdit() {
   invalidateCurrentViewSnapshot();
   els.codePreview.classList.remove("is-invalid");
   els.preview.closest(".preview")?.classList.remove("has-error");
-  previewLineHighlightRanges = withDraftState(() => previewIssueLineRanges(selectedPath, source));
-  applyPreviewLineHighlights(previewLineHighlightRanges);
+  const issueRanges = withDraftState(() => previewIssueLineRanges(selectedPath, source));
+  const entryRanges = previewSelectedEntryLineRanges(selectedPath, source);
+  previewLineHighlightRanges = mergeLineRanges([...issueRanges, ...entryRanges]);
+  applyPreviewLineHighlights(issueRanges, entryRanges);
   renderPreviewLineNumbers(source, previewLineHighlightRanges);
   renderTabs();
   renderPanel();
@@ -8192,13 +8586,37 @@ function normalizeImportedPaths(fileMap) {
   }
   const paths = Object.keys(normalizedInput);
   const packPath = paths.find((path) => path === "pack.mcmeta" || path.endsWith("/pack.mcmeta"));
-  if (!packPath || packPath === "pack.mcmeta") return normalizedInput;
-  const prefix = packPath.slice(0, -"pack.mcmeta".length);
   const normalized = {};
-  for (const [path, value] of Object.entries(normalizedInput)) {
-    normalized[path.startsWith(prefix) ? path.slice(prefix.length) : path] = value;
+  if (!packPath || packPath === "pack.mcmeta") {
+    Object.assign(normalized, normalizedInput);
+  } else {
+    const prefix = packPath.slice(0, -"pack.mcmeta".length);
+    for (const [path, value] of Object.entries(normalizedInput)) {
+      normalized[path.startsWith(prefix) ? path.slice(prefix.length) : path] = value;
+    }
+  }
+
+  return normalizeNamespaceRootImportPaths(normalized);
+}
+
+function normalizeNamespaceRootImportPaths(fileMap) {
+  const paths = Object.keys(fileMap);
+  if (paths.some((path) => path.startsWith("data/"))) return fileMap;
+  const namespaceRoots = new Set(paths
+    .filter(isNamespaceRootDataPath)
+    .map((path) => path.split("/")[0]));
+  if (namespaceRoots.size === 0) return fileMap;
+
+  const normalized = {};
+  for (const [path, value] of Object.entries(fileMap)) {
+    const namespaceRoot = path.split("/")[0];
+    normalized[namespaceRoots.has(namespaceRoot) ? `data/${path}` : path] = value;
   }
   return normalized;
+}
+
+function isNamespaceRootDataPath(path) {
+  return /^[a-z0-9_.-]+\/(?:dialogue|forced_dialogue|notifications|gifts|pacification|villager_names|story_structures|story_biomes)\/.+\.json$/i.test(path);
 }
 
 function isTextPath(path) {
@@ -8840,12 +9258,7 @@ els.panel.addEventListener("click", (event) => {
         && editing.kind === entryCard.dataset.kind
         && editing.index === Number(entryCard.dataset.index);
       if (!isSameEntry && !canLeaveEntryForm()) return;
-      editing = {
-        section: entryCard.dataset.section,
-        kind: entryCard.dataset.kind,
-        index: Number(entryCard.dataset.index)
-      };
-      clearEntryFormDirty();
+      selectEntryForEditing(entryCard.dataset.section, entryCard.dataset.kind, Number(entryCard.dataset.index));
       renderPreservingEntryListScroll();
     }
     return;
@@ -8871,12 +9284,7 @@ els.panel.addEventListener("click", (event) => {
       && editing.kind === actionButton.dataset.kind
       && editing.index === Number(actionButton.dataset.index);
     if (!isSameEntry && !canLeaveEntryForm()) return;
-    editing = {
-      section: actionButton.dataset.section,
-      kind: actionButton.dataset.kind,
-      index: Number(actionButton.dataset.index)
-    };
-    clearEntryFormDirty();
+    selectEntryForEditing(actionButton.dataset.section, actionButton.dataset.kind, Number(actionButton.dataset.index));
     renderPreservingEntryListScroll();
   }
   if (action === "delete-entry") {
@@ -8955,12 +9363,7 @@ els.panel.addEventListener("keydown", (event) => {
     && editing.index === Number(entryCard.dataset.index);
   if (!isSameEntry && !canLeaveEntryForm()) return;
   event.preventDefault();
-  editing = {
-    section: entryCard.dataset.section,
-    kind: entryCard.dataset.kind,
-    index: Number(entryCard.dataset.index)
-  };
-  clearEntryFormDirty();
+  selectEntryForEditing(entryCard.dataset.section, entryCard.dataset.kind, Number(entryCard.dataset.index));
   renderPreservingEntryListScroll();
 });
 
@@ -9026,6 +9429,8 @@ els.fileTree.addEventListener("click", (event) => {
 els.checks.addEventListener("click", (event) => {
   const checkButton = event.target.closest("[data-check-index]");
   if (!checkButton) return;
+  event.preventDefault();
+  checkButton.blur();
   const check = currentViewChecks()[Number(checkButton.dataset.checkIndex)];
   jumpToCheck(check);
 });
@@ -9148,11 +9553,11 @@ els.wrapPreviewButton.addEventListener("click", () => {
 });
 els.undoPreviewButton.addEventListener("click", () => {
   undoPreviewEdit();
-  els.preview.focus();
+  focusPreviewEditor();
 });
 els.redoPreviewButton.addEventListener("click", () => {
   redoPreviewEdit();
-  els.preview.focus();
+  focusPreviewEditor();
 });
 els.wikiButton.addEventListener("click", openWiki);
 els.settingsButton.addEventListener("click", openSettings);
@@ -9405,10 +9810,7 @@ els.preview.addEventListener("keydown", handlePreviewEditorKeydown);
 els.preview.addEventListener("beforeinput", recordPreviewBeforeInput);
 els.preview.addEventListener("scroll", syncPreviewLineNumberScroll);
 els.preview.addEventListener("input", () => {
-  recordPreviewInputHistory();
-  renderPreviewLineNumbers(els.preview.value, previewEditError?.path === selectedPath ? [] : previewLineHighlightRanges);
-  window.clearTimeout(previewEditTimer);
-  previewEditTimer = window.setTimeout(applyPreviewEdit, 180);
+  handlePreviewEditorInput();
 });
 document.addEventListener("pointerover", (event) => {
   const target = tooltipTarget(event.target);
@@ -9482,7 +9884,7 @@ document.addEventListener("scroll", positionTooltip, true);
 window.addEventListener("resize", () => {
   keepPanelSizesInRange();
   if (wikiState.isOpen) applyWikiLayout();
-  renderPreviewLineNumbers(els.preview.value, previewLineHighlightRanges);
+  renderPreviewLineNumbers(previewDocumentValue(), previewLineHighlightRanges);
   positionTooltip();
 });
 window.addEventListener("beforeunload", (event) => {
@@ -9497,4 +9899,5 @@ setupWikiChrome();
 setupToolbarHints();
 updateShortcutTooltips();
 applyStoredPanelSizes();
+initializePreviewEditor();
 render();
