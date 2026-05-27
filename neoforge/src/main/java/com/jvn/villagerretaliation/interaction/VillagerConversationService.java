@@ -149,11 +149,17 @@ public final class VillagerConversationService {
         if (player.level().dimension() != session.dimension()) {
             return false;
         }
-        if (!VillagerInteractionService.shouldStayConversable(player, villager, session.forced())) {
-            return false;
-        }
-        if (villager.getTarget() != null || villager.getLastHurtByMob() != null) {
-            return false;
+        if (session.forced()) {
+            if (!VillagerInteractionService.shouldStayForcedConversationSession(player, villager)) {
+                return false;
+            }
+        } else {
+            if (!VillagerInteractionService.shouldStayConversable(player, villager, false)) {
+                return false;
+            }
+            if (villager.getTarget() != null || villager.getLastHurtByMob() != null) {
+                return false;
+            }
         }
         long idleTicks = player.serverLevel().getGameTime() - session.lastInteractionGameTime();
         return idleTicks <= IDLE_TIMEOUT_TICKS;

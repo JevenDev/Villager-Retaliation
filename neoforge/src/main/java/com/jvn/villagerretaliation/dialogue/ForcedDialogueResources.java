@@ -387,19 +387,19 @@ public final class ForcedDialogueResources {
     private static List<ForcedDialogueOption> defaultTheftLeaveOptions() {
         JsonObject trusted = defaultTheftLeaveOption(
                 List.of("trusted", "respected", "revered", "royalty"),
-                "I will take {stolen_items} back. Go, and do not make me regret letting you leave.",
+                List.of("Put that back!", "Hands off!", "Not yours!"),
                 -2,
                 0.05D,
                 1000);
         JsonObject wary = defaultTheftLeaveOption(
                 List.of("neutral", "suspicious"),
-                "I will take {stolen_items} back. Walking away does not make this settled.",
+                List.of("Thief!", "Hey! Thief!", "Not yours!"),
                 -4,
                 0.25D,
                 1001);
         JsonObject hostile = defaultTheftLeaveOption(
                 List.of("hostile", "despised", "feared"),
-                "No. I will take {stolen_items} back, and you are done running from this.",
+                List.of("Thief! Put it back!", "Drop it, thief!", "Put it back, now!"),
                 -8,
                 0.75D,
                 1002);
@@ -411,13 +411,15 @@ public final class ForcedDialogueResources {
 
     private static JsonObject defaultTheftLeaveOption(
             List<String> reputationLevels,
-            String response,
+            List<String> responses,
             int reputation,
             double aggroChance,
             int order) {
         JsonObject option = new JsonObject();
         option.addProperty("label", "Leave");
-        option.addProperty("response", response);
+        JsonArray responseArray = new JsonArray();
+        responses.forEach(responseArray::add);
+        option.add("responses", responseArray);
         option.addProperty("reputation", reputation);
         option.addProperty("end_conversation", true);
         option.addProperty("aggro_chance", aggroChance);
@@ -427,8 +429,14 @@ public final class ForcedDialogueResources {
         option.add("reputation_levels", levels);
         JsonObject stolenItems = new JsonObject();
         stolenItems.addProperty("destination", "villager_inventory_then_source_container");
-        stolenItems.addProperty("success_response", response);
-        stolenItems.addProperty("failure_response", "You no longer have {stolen_items}. Then we are past excuses.");
+        JsonArray successResponses = new JsonArray();
+        responses.forEach(successResponses::add);
+        stolenItems.add("success_responses", successResponses);
+        JsonArray failureResponses = new JsonArray();
+        failureResponses.add("Thief! Hand it over.");
+        failureResponses.add("Where is it, thief?");
+        failureResponses.add("You stole from us!");
+        stolenItems.add("failure_responses", failureResponses);
         stolenItems.addProperty("failure_reputation", -5);
         stolenItems.addProperty("failure_aggro", true);
         stolenItems.addProperty("failure_end_conversation", true);

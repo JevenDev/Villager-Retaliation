@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.interaction;
 
 import com.jvn.villagerretaliation.network.VillagerConversationEndedPayload;
 import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
+import com.jvn.villagerretaliation.dialogue.ForcedDialogueService;
 import java.util.Optional;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -18,6 +19,7 @@ public final class InteractionRequestValidator {
                 entityId,
                 "interaction.unavailable",
                 "interaction.conversation_ended",
+                true,
                 true
         );
     }
@@ -28,6 +30,7 @@ public final class InteractionRequestValidator {
                 entityId,
                 "interaction.trade_unavailable",
                 "interaction.conversation_ended",
+                false,
                 false
         );
     }
@@ -38,6 +41,7 @@ public final class InteractionRequestValidator {
                 entityId,
                 "interaction.inventory_unavailable",
                 "interaction.conversation_ended",
+                false,
                 false
         );
     }
@@ -48,6 +52,7 @@ public final class InteractionRequestValidator {
                 entityId,
                 "interaction.gift_unavailable",
                 "interaction.conversation_ended",
+                false,
                 false
         );
     }
@@ -58,6 +63,7 @@ public final class InteractionRequestValidator {
                 entityId,
                 "interaction.recruit_unavailable",
                 "interaction.conversation_ended",
+                false,
                 false
         );
     }
@@ -75,8 +81,14 @@ public final class InteractionRequestValidator {
             int entityId,
             String unavailableNoticeKey,
             String conversationEndedNoticeKey,
-            boolean sendConversationEndedPayload) {
-        Optional<InteractionTargetContext> target = requireVillagerTarget(player, entityId, unavailableNoticeKey);
+            boolean sendConversationEndedPayload,
+            boolean allowForcedSessionTarget) {
+        Optional<InteractionTargetContext> target = requireVillagerTarget(
+                player,
+                entityId,
+                unavailableNoticeKey,
+                allowForcedSessionTarget
+        );
         if (target.isEmpty()) {
             return Optional.empty();
         }
@@ -94,10 +106,18 @@ public final class InteractionRequestValidator {
     private static Optional<InteractionTargetContext> requireVillagerTarget(
             ServerPlayer player,
             int entityId,
-            String unavailableNoticeKey) {
+            String unavailableNoticeKey,
+            boolean allowForcedSessionTarget) {
         Entity entity = player.serverLevel().getEntity(entityId);
-        if (!(entity instanceof Villager villager)
-                || !VillagerInteractionService.canUseInteractionSystem(player, villager)) {
+        if (!(entity instanceof Villager villager)) {
+            VillagerInteractionService.sendNotice(player, entityId, unavailableNoticeKey);
+            return Optional.empty();
+        }
+        boolean canUseNormalTarget = VillagerInteractionService.canUseInteractionSystem(player, villager);
+        boolean forcedSessionTarget = allowForcedSessionTarget
+                && VillagerConversationService.isForced(player, villager)
+                && ForcedDialogueService.hasSession(player, villager);
+        if (!canUseNormalTarget && !forcedSessionTarget) {
             VillagerInteractionService.sendNotice(player, entityId, unavailableNoticeKey);
             return Optional.empty();
         }

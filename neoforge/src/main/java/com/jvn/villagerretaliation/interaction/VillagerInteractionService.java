@@ -260,6 +260,14 @@ public final class VillagerInteractionService {
 
     public static void handleConversationEndRequest(ServerPlayer player, int entityId) {
         Villager villager = resolveVillager(player, entityId);
+        if (villager == null) {
+            Entity entity = player.serverLevel().getEntity(entityId);
+            if (entity instanceof Villager forcedVillager
+                    && VillagerConversationService.isForced(player, forcedVillager)
+                    && ForcedDialogueService.hasSession(player, forcedVillager)) {
+                villager = forcedVillager;
+            }
+        }
         if (villager == null || !VillagerConversationService.validate(player, villager)) {
             ForcedDialogueService.endForPlayer(player);
             VillagerConversationService.endForPlayer(player, true);
@@ -525,6 +533,16 @@ public final class VillagerInteractionService {
                 ? VillagerRetaliationConfig.MAX_FORCED_DIALOGUE_DISTANCE.get()
                 : VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get();
         return canUseInteractionTarget(player, villager, true, maxDistance);
+    }
+
+    static boolean shouldStayForcedConversationSession(ServerPlayer player, Villager villager) {
+        double maxDistance = VillagerRetaliationConfig.MAX_FORCED_DIALOGUE_DISTANCE.get();
+        return villager.isAlive()
+                && !villager.isSleeping()
+                && !villager.isTrading()
+                && player.isAlive()
+                && !player.isSpectator()
+                && player.distanceToSqr(villager) <= maxDistance * maxDistance;
     }
 
     private static boolean shouldBypassInteractionScreen(ItemStack stack) {
