@@ -2,12 +2,61 @@
   "replace": false,
   "entries": [
     {
+      "id": "villagerretaliation:librarian_low_books",
+      "professions": ["minecraft:librarian"],
+      "skills": ["villagerretaliation:scholarship"],
+      "min_rank": "novice",
+      "max_rank": "apprentice",
+      "villager_level": 1,
+      "chance": 0.85,
+      "weight": 12,
+      "cost": {
+        "item": "minecraft:emerald",
+        "count": 2
+      },
+      "result": {
+        "item": "minecraft:book",
+        "count": 3
+      },
+      "max_uses": {
+        "base": 6
+      },
+      "xp": 3,
+      "price_multiplier": 0.05,
+      "quality_scaling": true
+    },
+    {
+      "id": "villagerretaliation:librarian_low_bookshelf",
+      "professions": ["minecraft:librarian"],
+      "skills": ["villagerretaliation:scholarship", "villagerretaliation:crafting"],
+      "min_rank": "novice",
+      "max_rank": "apprentice",
+      "villager_level": 2,
+      "chance": 0.75,
+      "weight": 9,
+      "cost": {
+        "item": "minecraft:emerald",
+        "count": 4
+      },
+      "result": {
+        "item": "minecraft:bookshelf",
+        "count": 2
+      },
+      "max_uses": {
+        "base": 6
+      },
+      "xp": 5,
+      "price_multiplier": 0.05,
+      "quality_scaling": true
+    },
+    {
       "id": "villagerretaliation:librarian_skilled_bookshelves",
       "professions": ["minecraft:librarian"],
       "skills": ["villagerretaliation:scholarship"],
       "min_rank": "skilled",
+      "max_rank": "expert",
       "villager_level": 3,
-      "chance": 0.9,
+      "chance": 0.85,
       "weight": 10,
       "cost": {
         "item": "minecraft:emerald",
@@ -18,22 +67,24 @@
         "count": 4
       },
       "max_uses": {
-        "base": 10
+        "base": 9
       },
       "xp": 8,
-      "price_multiplier": 0.05
+      "price_multiplier": 0.05,
+      "quality_scaling": true
     },
     {
-      "id": "villagerretaliation:librarian_expert_workshop_book",
+      "id": "villagerretaliation:librarian_skilled_workshop_book",
       "professions": ["minecraft:librarian"],
       "skills": ["villagerretaliation:scholarship"],
-      "min_rank": "expert",
+      "min_rank": "skilled",
+      "max_rank": "expert",
       "villager_level": 4,
-      "chance": 0.75,
-      "weight": 10,
+      "chance": 0.5,
+      "weight": 7,
       "cost": {
         "item": "minecraft:emerald",
-        "count": 18
+        "count": 16
       },
       "result": {
         "item": "minecraft:enchanted_book",
@@ -47,26 +98,27 @@
           ],
           "level_by_skill": true,
           "min_level": 1,
-          "max_level": 3
+          "max_level": 2
         }
       },
       "max_uses": {
-        "base": 4
+        "base": 3
       },
       "xp": 15,
-      "price_multiplier": 0.1
+      "price_multiplier": 0.1,
+      "quality_scaling": true
     },
     {
-      "id": "villagerretaliation:librarian_master_specialty_book",
+      "id": "villagerretaliation:librarian_expert_reference_book",
       "professions": ["minecraft:librarian"],
       "skills": ["villagerretaliation:scholarship"],
-      "min_rank": "master",
-      "villager_level": 5,
+      "min_rank": "expert",
+      "villager_level": 4,
       "chance": 0.45,
-      "weight": 10,
+      "weight": 6,
       "cost": {
         "item": "minecraft:emerald",
-        "count": 28
+        "count": 22
       },
       "result": {
         "item": "minecraft:enchanted_book",
@@ -76,7 +128,8 @@
           "candidates": [
             "minecraft:fortune",
             "minecraft:power",
-            "minecraft:luck_of_the_sea"
+            "minecraft:luck_of_the_sea",
+            "minecraft:piercing"
           ],
           "level_by_skill": true,
           "min_level": 1,
@@ -84,10 +137,46 @@
         }
       },
       "max_uses": {
+        "base": 3
+      },
+      "xp": 20,
+      "price_multiplier": 0.1,
+      "quality_scaling": true
+    },
+    {
+      "id": "villagerretaliation:librarian_master_specialty_book",
+      "professions": ["minecraft:librarian"],
+      "skills": ["villagerretaliation:scholarship"],
+      "min_rank": "master",
+      "villager_level": 5,
+      "chance": 0.35,
+      "weight": 5,
+      "cost": {
+        "item": "minecraft:emerald",
+        "count": 30
+      },
+      "result": {
+        "item": "minecraft:enchanted_book",
+        "count": 1,
+        "enchantments": {
+          "mode": "random_from",
+          "candidates": [
+            "minecraft:fortune",
+            "minecraft:power",
+            "minecraft:luck_of_the_sea",
+            "minecraft:looting"
+          ],
+          "level_by_skill": true,
+          "min_level": 2,
+          "max_level": 3
+        }
+      },
+      "max_uses": {
         "base": 2
       },
       "xp": 25,
-      "price_multiplier": 0.1
+      "price_multiplier": 0.1,
+      "quality_scaling": true
     }
   ]
 }

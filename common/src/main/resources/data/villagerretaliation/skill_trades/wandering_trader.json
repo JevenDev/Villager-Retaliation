@@ -2,13 +2,39 @@
   "replace": false,
   "entries": [
     {
+      "id": "villagerretaliation:wandering_trader_low_cactus",
+      "professions": ["minecraft:wandering_trader"],
+      "pool": "generic",
+      "skills": ["villagerretaliation:trading", "villagerretaliation:gathering"],
+      "min_rank": "novice",
+      "max_rank": "apprentice",
+      "villager_level": 1,
+      "chance": 0.75,
+      "weight": 10,
+      "cost": {
+        "item": "minecraft:emerald",
+        "count": 2
+      },
+      "result": {
+        "item": "minecraft:cactus",
+        "count": 4
+      },
+      "max_uses": {
+        "base": 5
+      },
+      "xp": 2,
+      "price_multiplier": 0.05,
+      "quality_scaling": true
+    },
+    {
       "id": "villagerretaliation:wandering_trader_skilled_glow_berries",
       "professions": ["minecraft:wandering_trader"],
       "pool": "generic",
-      "skills": ["villagerretaliation:trading"],
+      "skills": ["villagerretaliation:trading", "villagerretaliation:gathering"],
       "min_rank": "skilled",
+      "max_rank": "expert",
       "villager_level": 1,
-      "chance": 0.85,
+      "chance": 0.8,
       "weight": 10,
       "cost": {
         "item": "minecraft:emerald",
@@ -19,33 +45,59 @@
         "count": 8
       },
       "max_uses": {
-        "base": 8
+        "base": 7
       },
       "xp": 2,
-      "price_multiplier": 0.05
+      "price_multiplier": 0.05,
+      "quality_scaling": true
     },
     {
       "id": "villagerretaliation:wandering_trader_expert_experience_bottles",
       "professions": ["minecraft:wandering_trader"],
       "pool": "generic",
-      "skills": ["villagerretaliation:survival"],
+      "skills": ["villagerretaliation:survival", "villagerretaliation:trading"],
       "min_rank": "expert",
       "villager_level": 1,
-      "chance": 0.65,
-      "weight": 10,
+      "chance": 0.5,
+      "weight": 7,
       "cost": {
         "item": "minecraft:emerald",
-        "count": 5
+        "count": 6
       },
       "result": {
         "item": "minecraft:experience_bottle",
         "count": 3
       },
       "max_uses": {
-        "base": 6
+        "base": 5
       },
       "xp": 5,
-      "price_multiplier": 0.05
+      "price_multiplier": 0.05,
+      "quality_scaling": true
+    },
+    {
+      "id": "villagerretaliation:wandering_trader_master_packed_ice",
+      "professions": ["minecraft:wandering_trader"],
+      "pool": "rare",
+      "skills": ["villagerretaliation:survival", "villagerretaliation:trading"],
+      "min_rank": "master",
+      "villager_level": 1,
+      "chance": 0.45,
+      "weight": 6,
+      "cost": {
+        "item": "minecraft:emerald",
+        "count": 4
+      },
+      "result": {
+        "item": "minecraft:packed_ice",
+        "count": 12
+      },
+      "max_uses": {
+        "base": 4
+      },
+      "xp": 6,
+      "price_multiplier": 0.05,
+      "quality_scaling": true
     },
     {
       "id": "villagerretaliation:wandering_trader_master_nautilus_shell",
@@ -54,11 +106,11 @@
       "skills": ["villagerretaliation:trading"],
       "min_rank": "master",
       "villager_level": 1,
-      "chance": 0.55,
-      "weight": 10,
+      "chance": 0.3,
+      "weight": 4,
       "cost": {
         "item": "minecraft:emerald",
-        "count": 14
+        "count": 15
       },
       "result": {
         "item": "minecraft:nautilus_shell",
@@ -71,7 +123,8 @@
       "price_multiplier": 0.05,
       "conditions": {
         "config_flags": ["skillTradeAllowRareSpecialtyTrades"]
-      }
+      },
+      "quality_scaling": true
     }
   ]
 }

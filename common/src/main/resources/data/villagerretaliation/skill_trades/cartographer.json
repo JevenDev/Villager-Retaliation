@@ -2,33 +2,33 @@
   "replace": false,
   "entries": [
     {
-      "id": "villagerretaliation:cleric_low_redstone",
-      "professions": ["minecraft:cleric"],
-      "skills": ["villagerretaliation:medicine", "villagerretaliation:scholarship"],
+      "id": "villagerretaliation:cartographer_low_basic_maps",
+      "professions": ["minecraft:cartographer"],
+      "skills": ["villagerretaliation:cartography"],
       "min_rank": "novice",
       "max_rank": "apprentice",
       "villager_level": 1,
-      "chance": 0.8,
-      "weight": 10,
+      "chance": 0.85,
+      "weight": 12,
       "cost": {
         "item": "minecraft:emerald",
-        "count": 2
+        "count": 8
       },
       "result": {
-        "item": "minecraft:redstone",
-        "count": 4
+        "item": "minecraft:map",
+        "count": 1
       },
       "max_uses": {
-        "base": 6
+        "base": 4
       },
-      "xp": 3,
+      "xp": 4,
       "price_multiplier": 0.05,
       "quality_scaling": true
     },
     {
-      "id": "villagerretaliation:cleric_low_glistering_melon",
-      "professions": ["minecraft:cleric"],
-      "skills": ["villagerretaliation:medicine"],
+      "id": "villagerretaliation:cartographer_low_glass_panes",
+      "professions": ["minecraft:cartographer"],
+      "skills": ["villagerretaliation:cartography", "villagerretaliation:crafting"],
       "min_rank": "novice",
       "max_rank": "apprentice",
       "villager_level": 2,
@@ -36,111 +36,111 @@
       "weight": 9,
       "cost": {
         "item": "minecraft:emerald",
-        "count": 3
+        "count": 2
       },
       "result": {
-        "item": "minecraft:glistering_melon_slice",
-        "count": 3
+        "item": "minecraft:glass_pane",
+        "count": 8
       },
       "max_uses": {
         "base": 6
       },
-      "xp": 5,
+      "xp": 4,
       "price_multiplier": 0.05,
       "quality_scaling": true
     },
     {
-      "id": "villagerretaliation:cleric_skilled_glowstone",
-      "professions": ["minecraft:cleric"],
-      "skills": ["villagerretaliation:medicine", "villagerretaliation:scholarship"],
+      "id": "villagerretaliation:cartographer_skilled_map_bundle",
+      "professions": ["minecraft:cartographer"],
+      "skills": ["villagerretaliation:cartography"],
       "min_rank": "skilled",
       "max_rank": "expert",
       "villager_level": 3,
       "chance": 0.8,
-      "weight": 9,
+      "weight": 10,
       "cost": {
         "item": "minecraft:emerald",
-        "count": 4
+        "count": 10
       },
       "result": {
-        "item": "minecraft:glowstone",
-        "count": 4
+        "item": "minecraft:map",
+        "count": 2
       },
       "max_uses": {
-        "base": 8
+        "base": 6
       },
       "xp": 8,
       "price_multiplier": 0.05,
       "quality_scaling": true
     },
     {
-      "id": "villagerretaliation:cleric_skilled_blaze_powder",
-      "professions": ["minecraft:cleric"],
-      "skills": ["villagerretaliation:medicine", "villagerretaliation:survival"],
+      "id": "villagerretaliation:cartographer_skilled_compass",
+      "professions": ["minecraft:cartographer"],
+      "skills": ["villagerretaliation:cartography", "villagerretaliation:survival"],
       "min_rank": "skilled",
       "max_rank": "expert",
       "villager_level": 4,
-      "chance": 0.55,
-      "weight": 7,
+      "chance": 0.65,
+      "weight": 8,
       "cost": {
         "item": "minecraft:emerald",
-        "count": 6
+        "count": 7
       },
       "result": {
-        "item": "minecraft:blaze_powder",
-        "count": 3
+        "item": "minecraft:compass",
+        "count": 1
       },
       "max_uses": {
         "base": 5
       },
-      "xp": 12,
+      "xp": 10,
       "price_multiplier": 0.05,
       "quality_scaling": true
     },
     {
-      "id": "villagerretaliation:cleric_expert_ghast_tear",
-      "professions": ["minecraft:cleric"],
-      "skills": ["villagerretaliation:medicine"],
+      "id": "villagerretaliation:cartographer_expert_clock",
+      "professions": ["minecraft:cartographer"],
+      "skills": ["villagerretaliation:cartography"],
       "min_rank": "expert",
       "villager_level": 4,
       "chance": 0.45,
       "weight": 6,
       "cost": {
         "item": "minecraft:emerald",
-        "count": 9
+        "count": 12
       },
       "result": {
-        "item": "minecraft:ghast_tear",
+        "item": "minecraft:clock",
         "count": 1
       },
       "max_uses": {
-        "base": 3
+        "base": 4
       },
-      "xp": 15,
+      "xp": 14,
       "price_multiplier": 0.05,
       "quality_scaling": true
     },
     {
-      "id": "villagerretaliation:cleric_master_golden_apple",
-      "professions": ["minecraft:cleric"],
-      "skills": ["villagerretaliation:medicine"],
+      "id": "villagerretaliation:cartographer_master_recovery_compass",
+      "professions": ["minecraft:cartographer"],
+      "skills": ["villagerretaliation:cartography", "villagerretaliation:survival"],
       "min_rank": "master",
       "villager_level": 5,
-      "chance": 0.3,
+      "chance": 0.28,
       "weight": 4,
       "cost": {
         "item": "minecraft:emerald",
-        "count": 20
+        "count": 24
       },
       "result": {
-        "item": "minecraft:golden_apple",
+        "item": "minecraft:recovery_compass",
         "count": 1
       },
       "max_uses": {
-        "base": 2
+        "base": 1
       },
-      "xp": 20,
-      "price_multiplier": 0.05,
+      "xp": 25,
+      "price_multiplier": 0.1,
       "conditions": {
         "config_flags": ["skillTradeAllowRareSpecialtyTrades"]
       },

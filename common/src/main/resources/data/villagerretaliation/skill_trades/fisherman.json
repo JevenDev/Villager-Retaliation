@@ -2,38 +2,115 @@
   "replace": false,
   "entries": [
     {
-      "id": "villagerretaliation:fisherman_apprentice_cooked_cod",
+      "id": "villagerretaliation:fisherman_low_cooked_cod",
       "professions": ["minecraft:fisherman"],
-      "skills": ["villagerretaliation:fishing"],
-      "min_rank": "apprentice",
-      "villager_level": 2,
-      "chance": 1.0,
-      "weight": 10,
+      "skills": ["villagerretaliation:fishing", "villagerretaliation:cooking"],
+      "min_rank": "novice",
+      "max_rank": "apprentice",
+      "villager_level": 1,
+      "chance": 0.85,
+      "weight": 12,
       "cost": {
         "item": "minecraft:emerald",
         "count": 2
       },
       "result": {
         "item": "minecraft:cooked_cod",
+        "count": 8
+      },
+      "max_uses": {
+        "base": 6
+      },
+      "xp": 3,
+      "price_multiplier": 0.05,
+      "quality_scaling": true
+    },
+    {
+      "id": "villagerretaliation:fisherman_low_string",
+      "professions": ["minecraft:fisherman"],
+      "skills": ["villagerretaliation:fishing", "villagerretaliation:gathering"],
+      "min_rank": "novice",
+      "max_rank": "apprentice",
+      "villager_level": 2,
+      "chance": 0.75,
+      "weight": 9,
+      "cost": {
+        "item": "minecraft:emerald",
+        "count": 2
+      },
+      "result": {
+        "item": "minecraft:string",
+        "count": 10
+      },
+      "max_uses": {
+        "base": 7
+      },
+      "xp": 4,
+      "price_multiplier": 0.05,
+      "quality_scaling": true
+    },
+    {
+      "id": "villagerretaliation:fisherman_skilled_salmon_bundle",
+      "professions": ["minecraft:fisherman"],
+      "skills": ["villagerretaliation:fishing", "villagerretaliation:cooking"],
+      "min_rank": "skilled",
+      "max_rank": "expert",
+      "villager_level": 3,
+      "chance": 0.85,
+      "weight": 10,
+      "cost": {
+        "item": "minecraft:emerald",
+        "count": 3
+      },
+      "result": {
+        "items": [
+          "minecraft:salmon",
+          "minecraft:cooked_salmon"
+        ],
         "count": 12
       },
       "max_uses": {
-        "base": 12
+        "base": 8
       },
-      "xp": 4,
-      "price_multiplier": 0.05
+      "xp": 7,
+      "price_multiplier": 0.05,
+      "quality_scaling": true
     },
     {
-      "id": "villagerretaliation:fisherman_expert_fishing_rod",
+      "id": "villagerretaliation:fisherman_skilled_fishing_rod",
+      "professions": ["minecraft:fisherman"],
+      "skills": ["villagerretaliation:fishing"],
+      "min_rank": "skilled",
+      "max_rank": "expert",
+      "villager_level": 4,
+      "chance": 0.65,
+      "weight": 8,
+      "cost": {
+        "item": "minecraft:emerald",
+        "count": 8
+      },
+      "result": {
+        "item": "minecraft:fishing_rod",
+        "count": 1
+      },
+      "max_uses": {
+        "base": 4
+      },
+      "xp": 12,
+      "price_multiplier": 0.08,
+      "quality_scaling": true
+    },
+    {
+      "id": "villagerretaliation:fisherman_expert_enchanted_rod",
       "professions": ["minecraft:fisherman"],
       "skills": ["villagerretaliation:fishing"],
       "min_rank": "expert",
       "villager_level": 4,
-      "chance": 0.7,
-      "weight": 10,
+      "chance": 0.45,
+      "weight": 7,
       "cost": {
         "item": "minecraft:emerald",
-        "count": 10
+        "count": 12
       },
       "result": {
         "item": "minecraft:fishing_rod",
@@ -54,7 +131,8 @@
         "base": 3
       },
       "xp": 15,
-      "price_multiplier": 0.1
+      "price_multiplier": 0.1,
+      "quality_scaling": true
     },
     {
       "id": "villagerretaliation:fisherman_master_nautilus_shell",
@@ -62,11 +140,11 @@
       "skills": ["villagerretaliation:fishing"],
       "min_rank": "master",
       "villager_level": 5,
-      "chance": 0.35,
-      "weight": 10,
+      "chance": 0.3,
+      "weight": 5,
       "cost": {
         "item": "minecraft:emerald",
-        "count": 12
+        "count": 14
       },
       "result": {
         "item": "minecraft:nautilus_shell",
@@ -79,7 +157,8 @@
       "price_multiplier": 0.05,
       "conditions": {
         "config_flags": ["skillTradeAllowRareSpecialtyTrades"]
-      }
+      },
+      "quality_scaling": true
     }
   ]
 }

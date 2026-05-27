@@ -2,12 +2,37 @@
   "replace": false,
   "entries": [
     {
+      "id": "villagerretaliation:armorer_low_shield",
+      "professions": ["minecraft:armorer"],
+      "skills": ["villagerretaliation:smithing", "villagerretaliation:guarding"],
+      "min_rank": "novice",
+      "max_rank": "apprentice",
+      "villager_level": 2,
+      "chance": 0.7,
+      "weight": 8,
+      "cost": {
+        "item": "minecraft:emerald",
+        "count": 7
+      },
+      "result": {
+        "item": "minecraft:shield",
+        "count": 1
+      },
+      "max_uses": {
+        "base": 3
+      },
+      "xp": 6,
+      "price_multiplier": 0.05,
+      "quality_scaling": true
+    },
+    {
       "id": "villagerretaliation:armorer_skilled_iron_chestplate",
       "professions": ["minecraft:armorer"],
       "skills": ["villagerretaliation:smithing"],
       "min_rank": "skilled",
+      "max_rank": "expert",
       "villager_level": 3,
-      "chance": 0.9,
+      "chance": 0.8,
       "weight": 10,
       "cost": {
         "item": "minecraft:emerald",
@@ -21,42 +46,8 @@
         "base": 5
       },
       "xp": 10,
-      "price_multiplier": 0.1
-    },
-    {
-      "id": "villagerretaliation:armorer_expert_iron_chestplate",
-      "professions": ["minecraft:armorer"],
-      "skills": ["villagerretaliation:smithing"],
-      "min_rank": "expert",
-      "villager_level": 5,
-      "chance": 0.55,
-      "weight": 10,
-      "cost": {
-        "item": "minecraft:emerald",
-        "count": 26
-      },
-      "result": {
-        "item": "minecraft:iron_chestplate",
-        "count": 1,
-        "enchantments": {
-          "mode": "random_from",
-          "candidates": [
-            "minecraft:protection",
-            "minecraft:unbreaking"
-          ],
-          "level_by_skill": true,
-          "min_level": 1,
-          "max_level": 3
-        }
-      },
-      "max_uses": {
-        "base": 2
-      },
-      "xp": 25,
-      "price_multiplier": 0.15,
-      "conditions": {
-        "disabled_config_flags": ["skillTradeAllowHighTierEquipment"]
-      }
+      "price_multiplier": 0.1,
+      "quality_scaling": true
     },
     {
       "id": "villagerretaliation:armorer_expert_diamond_chestplate",
@@ -64,11 +55,11 @@
       "skills": ["villagerretaliation:smithing"],
       "min_rank": "expert",
       "villager_level": 5,
-      "chance": 0.55,
-      "weight": 10,
+      "chance": 0.35,
+      "weight": 5,
       "cost": {
         "item": "minecraft:emerald",
-        "count": 26
+        "count": 28
       },
       "result": {
         "item": "minecraft:diamond_chestplate",
@@ -91,15 +82,41 @@
       "price_multiplier": 0.15,
       "conditions": {
         "config_flags": ["skillTradeAllowHighTierEquipment"]
-      }
+      },
+      "quality_scaling": true
+    },
+    {
+      "id": "villagerretaliation:weaponsmith_low_iron_axe",
+      "professions": ["minecraft:weaponsmith"],
+      "skills": ["villagerretaliation:smithing", "villagerretaliation:guarding"],
+      "min_rank": "novice",
+      "max_rank": "apprentice",
+      "villager_level": 2,
+      "chance": 0.75,
+      "weight": 9,
+      "cost": {
+        "item": "minecraft:emerald",
+        "count": 8
+      },
+      "result": {
+        "item": "minecraft:iron_axe",
+        "count": 1
+      },
+      "max_uses": {
+        "base": 3
+      },
+      "xp": 6,
+      "price_multiplier": 0.05,
+      "quality_scaling": true
     },
     {
       "id": "villagerretaliation:weaponsmith_skilled_iron_sword",
       "professions": ["minecraft:weaponsmith"],
       "skills": ["villagerretaliation:smithing"],
       "min_rank": "skilled",
+      "max_rank": "expert",
       "villager_level": 3,
-      "chance": 0.9,
+      "chance": 0.8,
       "weight": 10,
       "cost": {
         "item": "minecraft:emerald",
@@ -110,46 +127,11 @@
         "count": 1
       },
       "max_uses": {
-        "base": 6
+        "base": 5
       },
       "xp": 10,
-      "price_multiplier": 0.1
-    },
-    {
-      "id": "villagerretaliation:weaponsmith_expert_iron_sword",
-      "professions": ["minecraft:weaponsmith"],
-      "skills": ["villagerretaliation:smithing"],
-      "min_rank": "expert",
-      "villager_level": 5,
-      "chance": 0.6,
-      "weight": 10,
-      "cost": {
-        "item": "minecraft:emerald",
-        "count": 24
-      },
-      "result": {
-        "item": "minecraft:iron_sword",
-        "count": 1,
-        "enchantments": {
-          "mode": "random_from",
-          "candidates": [
-            "minecraft:sharpness",
-            "minecraft:unbreaking",
-            "minecraft:looting"
-          ],
-          "level_by_skill": true,
-          "min_level": 1,
-          "max_level": 3
-        }
-      },
-      "max_uses": {
-        "base": 2
-      },
-      "xp": 25,
-      "price_multiplier": 0.15,
-      "conditions": {
-        "disabled_config_flags": ["skillTradeAllowHighTierEquipment"]
-      }
+      "price_multiplier": 0.1,
+      "quality_scaling": true
     },
     {
       "id": "villagerretaliation:weaponsmith_expert_diamond_sword",
@@ -157,11 +139,11 @@
       "skills": ["villagerretaliation:smithing"],
       "min_rank": "expert",
       "villager_level": 5,
-      "chance": 0.6,
-      "weight": 10,
+      "chance": 0.35,
+      "weight": 5,
       "cost": {
         "item": "minecraft:emerald",
-        "count": 24
+        "count": 26
       },
       "result": {
         "item": "minecraft:diamond_sword",
@@ -185,15 +167,41 @@
       "price_multiplier": 0.15,
       "conditions": {
         "config_flags": ["skillTradeAllowHighTierEquipment"]
-      }
+      },
+      "quality_scaling": true
+    },
+    {
+      "id": "villagerretaliation:toolsmith_low_iron_shovel",
+      "professions": ["minecraft:toolsmith"],
+      "skills": ["villagerretaliation:crafting", "villagerretaliation:gathering"],
+      "min_rank": "novice",
+      "max_rank": "apprentice",
+      "villager_level": 2,
+      "chance": 0.75,
+      "weight": 9,
+      "cost": {
+        "item": "minecraft:emerald",
+        "count": 6
+      },
+      "result": {
+        "item": "minecraft:iron_shovel",
+        "count": 1
+      },
+      "max_uses": {
+        "base": 4
+      },
+      "xp": 6,
+      "price_multiplier": 0.05,
+      "quality_scaling": true
     },
     {
       "id": "villagerretaliation:toolsmith_skilled_iron_pickaxe",
       "professions": ["minecraft:toolsmith"],
       "skills": ["villagerretaliation:crafting"],
       "min_rank": "skilled",
+      "max_rank": "expert",
       "villager_level": 3,
-      "chance": 0.9,
+      "chance": 0.8,
       "weight": 10,
       "cost": {
         "item": "minecraft:emerald",
@@ -204,46 +212,11 @@
         "count": 1
       },
       "max_uses": {
-        "base": 6
+        "base": 5
       },
       "xp": 10,
-      "price_multiplier": 0.1
-    },
-    {
-      "id": "villagerretaliation:toolsmith_expert_iron_pickaxe",
-      "professions": ["minecraft:toolsmith"],
-      "skills": ["villagerretaliation:crafting"],
-      "min_rank": "expert",
-      "villager_level": 5,
-      "chance": 0.6,
-      "weight": 10,
-      "cost": {
-        "item": "minecraft:emerald",
-        "count": 24
-      },
-      "result": {
-        "item": "minecraft:iron_pickaxe",
-        "count": 1,
-        "enchantments": {
-          "mode": "random_from",
-          "candidates": [
-            "minecraft:efficiency",
-            "minecraft:unbreaking",
-            "minecraft:fortune"
-          ],
-          "level_by_skill": true,
-          "min_level": 1,
-          "max_level": 3
-        }
-      },
-      "max_uses": {
-        "base": 2
-      },
-      "xp": 25,
-      "price_multiplier": 0.15,
-      "conditions": {
-        "disabled_config_flags": ["skillTradeAllowHighTierEquipment"]
-      }
+      "price_multiplier": 0.1,
+      "quality_scaling": true
     },
     {
       "id": "villagerretaliation:toolsmith_expert_diamond_pickaxe",
@@ -251,11 +224,11 @@
       "skills": ["villagerretaliation:crafting"],
       "min_rank": "expert",
       "villager_level": 5,
-      "chance": 0.6,
-      "weight": 10,
+      "chance": 0.35,
+      "weight": 5,
       "cost": {
         "item": "minecraft:emerald",
-        "count": 24
+        "count": 26
       },
       "result": {
         "item": "minecraft:diamond_pickaxe",
@@ -279,7 +252,8 @@
       "price_multiplier": 0.15,
       "conditions": {
         "config_flags": ["skillTradeAllowHighTierEquipment"]
-      }
+      },
+      "quality_scaling": true
     }
   ]
 }

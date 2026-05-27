@@ -2,38 +2,112 @@
   "replace": false,
   "entries": [
     {
-      "id": "villagerretaliation:fletcher_apprentice_arrows",
+      "id": "villagerretaliation:fletcher_low_arrows",
       "professions": ["minecraft:fletcher"],
       "skills": ["villagerretaliation:archery"],
-      "min_rank": "apprentice",
-      "villager_level": 2,
-      "chance": 1.0,
-      "weight": 10,
+      "min_rank": "novice",
+      "max_rank": "apprentice",
+      "villager_level": 1,
+      "chance": 0.85,
+      "weight": 12,
       "cost": {
         "item": "minecraft:emerald",
         "count": 2
       },
       "result": {
         "item": "minecraft:arrow",
-        "count": 24
+        "count": 16
       },
       "max_uses": {
-        "base": 12
+        "base": 6
       },
-      "xp": 4,
-      "price_multiplier": 0.05
+      "xp": 3,
+      "price_multiplier": 0.05,
+      "quality_scaling": true
     },
     {
-      "id": "villagerretaliation:fletcher_expert_bowcraft",
+      "id": "villagerretaliation:fletcher_low_basic_bow",
+      "professions": ["minecraft:fletcher"],
+      "skills": ["villagerretaliation:archery", "villagerretaliation:crafting"],
+      "min_rank": "novice",
+      "max_rank": "apprentice",
+      "villager_level": 2,
+      "chance": 0.55,
+      "weight": 8,
+      "cost": {
+        "item": "minecraft:emerald",
+        "count": 7
+      },
+      "result": {
+        "item": "minecraft:bow",
+        "count": 1
+      },
+      "max_uses": {
+        "base": 3
+      },
+      "xp": 6,
+      "price_multiplier": 0.05,
+      "quality_scaling": true
+    },
+    {
+      "id": "villagerretaliation:fletcher_skilled_ammo_bundle",
+      "professions": ["minecraft:fletcher"],
+      "skills": ["villagerretaliation:archery"],
+      "min_rank": "skilled",
+      "max_rank": "expert",
+      "villager_level": 3,
+      "chance": 0.8,
+      "weight": 10,
+      "cost": {
+        "item": "minecraft:emerald",
+        "count": 3
+      },
+      "result": {
+        "item": "minecraft:arrow",
+        "count": 32
+      },
+      "max_uses": {
+        "base": 8
+      },
+      "xp": 8,
+      "price_multiplier": 0.05,
+      "quality_scaling": true
+    },
+    {
+      "id": "villagerretaliation:fletcher_skilled_crossbow",
+      "professions": ["minecraft:fletcher"],
+      "skills": ["villagerretaliation:archery", "villagerretaliation:crafting"],
+      "min_rank": "skilled",
+      "max_rank": "expert",
+      "villager_level": 4,
+      "chance": 0.65,
+      "weight": 8,
+      "cost": {
+        "item": "minecraft:emerald",
+        "count": 12
+      },
+      "result": {
+        "item": "minecraft:crossbow",
+        "count": 1
+      },
+      "max_uses": {
+        "base": 4
+      },
+      "xp": 12,
+      "price_multiplier": 0.08,
+      "quality_scaling": true
+    },
+    {
+      "id": "villagerretaliation:fletcher_expert_enchanted_bowcraft",
       "professions": ["minecraft:fletcher"],
       "skills": ["villagerretaliation:archery"],
       "min_rank": "expert",
       "villager_level": 4,
-      "chance": 0.75,
-      "weight": 10,
+      "chance": 0.45,
+      "weight": 7,
       "cost": {
         "item": "minecraft:emerald",
-        "count": 12
+        "count": 16
       },
       "result": {
         "items": [
@@ -47,6 +121,7 @@
             "minecraft:power",
             "minecraft:punch",
             "minecraft:piercing",
+            "minecraft:quick_charge",
             "minecraft:unbreaking"
           ],
           "level_by_skill": true,
@@ -58,7 +133,8 @@
         "base": 3
       },
       "xp": 15,
-      "price_multiplier": 0.1
+      "price_multiplier": 0.1,
+      "quality_scaling": true
     },
     {
       "id": "villagerretaliation:fletcher_master_spectral_arrows",
@@ -66,24 +142,25 @@
       "skills": ["villagerretaliation:archery"],
       "min_rank": "master",
       "villager_level": 5,
-      "chance": 0.5,
-      "weight": 10,
+      "chance": 0.4,
+      "weight": 6,
       "cost": {
         "item": "minecraft:emerald",
-        "count": 5
+        "count": 6
       },
       "result": {
         "item": "minecraft:spectral_arrow",
         "count": 16
       },
       "max_uses": {
-        "base": 6
+        "base": 5
       },
       "xp": 18,
       "price_multiplier": 0.05,
       "conditions": {
         "config_flags": ["skillTradeAllowSpecialArrows"]
-      }
+      },
+      "quality_scaling": true
     }
   ]
 }
