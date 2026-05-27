@@ -1,7 +1,9 @@
 package com.jvn.villagerretaliation.interaction;
 
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
+import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
+import com.jvn.villagerretaliation.dialogue.VillagerDialogueService;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload;
@@ -53,11 +55,14 @@ public final class VillagerRecruitmentService {
     private static final long FOLLOW_REPUTATION_CHECK_INTERVAL_TICKS = 40L;
     private static final double FOLLOW_VEHICLE_BOARD_DISTANCE_SQR = 4.0D * 4.0D;
     private static final long RECENT_BETRAYED_FOLLOWER_DEATH_NOTICE_TICKS = 200L;
+    private static final String LEFT_BEHIND_SCENARIO = "left_behind";
+    private static final String LEFT_BEHIND_OPTION_ID = "recruitment_left_behind";
     private static final Map<UUID, RecentRecruitmentOwner> RECENT_BETRAYED_FOLLOWERS = new HashMap<>();
     private static final Map<UUID, Long> NEXT_FOLLOW_TRAVEL_MEMORY_TICKS = new HashMap<>();
     private static final Map<UUID, Long> NEXT_FOLLOW_REPUTATION_CHECK_TICKS = new HashMap<>();
     private static final Map<UUID, Long> LAST_FOLLOWER_AI_SUPPRESSION_TICKS = new HashMap<>();
     private static final Map<UUID, FollowPathState> FOLLOW_PATH_STATES = new HashMap<>();
+    private static final Map<RecruitmentDialogueKey, Long> LAST_LEFT_BEHIND_PROXIMITY_GAME_TIMES = new HashMap<>();
 
     private VillagerRecruitmentService() {
     }
@@ -239,7 +244,7 @@ public final class VillagerRecruitmentService {
         }
         syncVehicleWithPlayer(villager, player);
         if (isBeyondMaxFollowDistance(villager, player)) {
-            stopFollowing(level, villager, player);
+            stopFollowingBecauseLeftBehind(level, villager, player);
             sendNoLongerFollowingNotice(player, villager);
             return;
         }
@@ -262,6 +267,75 @@ public final class VillagerRecruitmentService {
         } else if (distanceSqr < FOLLOW_STOP_DISTANCE_SQR) {
             stopFollowNavigation(villager);
         }
+    }
+
+    public static void onPlayerTick(ServerPlayer player) {
+        if (!(player.level() instanceof ServerLevel level) || !player.isAlive() || player.isSpectator()) {
+            return;
+        }
+
+        double maxDistance = VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get();
+        double maxDistanceSqr = maxDistance * maxDistance;
+        Villager nearestVillager = null;
+        double nearestDistanceSqr = Double.MAX_VALUE;
+        VillagerInteractionTracker.RecruitmentFollowupReport nearestReport = null;
+
+        for (Villager villager : level.getEntitiesOfClass(Villager.class, player.getBoundingBox().inflate(maxDistance))) {
+            if (!villager.isAlive()) {
+                continue;
+            }
+            Optional<VillagerInteractionTracker.RecruitmentFollowupReport> report =
+                    VillagerInteractionTracker.unreportedRecruitmentFollowup(level, villager, player);
+            if (report.isEmpty() || !LEFT_BEHIND_SCENARIO.equalsIgnoreCase(report.get().scenario())) {
+                continue;
+            }
+            double distanceSqr = villager.distanceToSqr(player);
+            if (distanceSqr > maxDistanceSqr) {
+                continue;
+            }
+            RecruitmentDialogueKey key = new RecruitmentDialogueKey(villager.getUUID(), player.getUUID());
+            if (LAST_LEFT_BEHIND_PROXIMITY_GAME_TIMES.getOrDefault(key, Long.MIN_VALUE) >= report.get().gameTime()) {
+                continue;
+            }
+            if (distanceSqr < nearestDistanceSqr) {
+                nearestDistanceSqr = distanceSqr;
+                nearestVillager = villager;
+                nearestReport = report.get();
+            }
+        }
+
+        if (nearestVillager == null || nearestReport == null) {
+            return;
+        }
+
+        DialogueContext context = VillagerInteractionService.createDialogueContext(level, player, nearestVillager);
+        Optional<DialogueOptionDefinition> option = VillagerDialogueResources.dialogueOption(context, LEFT_BEHIND_OPTION_ID);
+        if (option.isEmpty()) {
+            return;
+        }
+
+        VillagerDialogueService.DialogueResult result = VillagerDialogueService.select(
+                context,
+                option.get(),
+                VillagerInteractionTracker.getState(level, nearestVillager, player).recentDialogueIds());
+        if (result.text().isBlank()) {
+            return;
+        }
+
+        VillagerInteractionTracker.rememberDialogue(level, nearestVillager, player, option.get().requestType(), result.lineId());
+        LAST_LEFT_BEHIND_PROXIMITY_GAME_TIMES.put(
+                new RecruitmentDialogueKey(nearestVillager.getUUID(), player.getUUID()),
+                nearestReport.gameTime());
+        VillagerInteractionService.broadcastVillagerChat(level, nearestVillager, result.text());
+    }
+
+    public static void clearRuntimeState() {
+        RECENT_BETRAYED_FOLLOWERS.clear();
+        NEXT_FOLLOW_TRAVEL_MEMORY_TICKS.clear();
+        NEXT_FOLLOW_REPUTATION_CHECK_TICKS.clear();
+        LAST_FOLLOWER_AI_SUPPRESSION_TICKS.clear();
+        FOLLOW_PATH_STATES.clear();
+        LAST_LEFT_BEHIND_PROXIMITY_GAME_TIMES.clear();
     }
 
     private static void syncVehicleWithPlayer(Villager villager, ServerPlayer player) {
@@ -444,6 +518,16 @@ public final class VillagerRecruitmentService {
         villager.getPersistentData().putBoolean(FOLLOW_CROSSED_OCEAN_KEY, isOceanBiome(level, start));
     }
 
+    private static void stopFollowingBecauseLeftBehind(ServerLevel level, Villager villager, ServerPlayer player) {
+        if (!isFollowing(villager, player)) {
+            clearFollowTarget(villager);
+            return;
+        }
+        rememberRecruitmentMemory(level, villager, player, LEFT_BEHIND_SCENARIO);
+        VillagerInteractionTracker.rememberRecruitmentFollowup(level, villager, player, LEFT_BEHIND_SCENARIO);
+        clearFollowTarget(villager);
+    }
+
     private static void rememberRecruitmentMemory(ServerLevel level, Villager villager, ServerPlayer player, String scenario) {
         VillagerInteractionTracker.rememberRecruitmentMemory(
                 level,
@@ -618,5 +702,8 @@ public final class VillagerRecruitmentService {
             long nextRecalculationGameTime,
             int failedPathFindingPenalty
     ) {
+    }
+
+    private record RecruitmentDialogueKey(UUID villagerId, UUID playerId) {
     }
 }

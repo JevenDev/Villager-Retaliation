@@ -47,6 +47,7 @@ public record DialogueLine(
         Set<String> recruitmentFollowupScenarios,
         boolean requiresRecruitmentMemory,
         Set<String> recruitmentMemoryScenarios,
+        Set<String> recruitmentMemoryBiomeKeys,
         int minRecruitmentFollowDistance,
         boolean requiresRecruitmentBoatTrip,
         boolean requiresRecruitmentOceanCrossing,
@@ -248,6 +249,10 @@ public record DialogueLine(
         }
         if (!this.recruitmentMemoryScenarios.isEmpty()
                 && this.recruitmentMemoryScenarios.stream().noneMatch(context::hasRecruitmentMemoryScenario)) {
+            return false;
+        }
+        if (!this.recruitmentMemoryBiomeKeys.isEmpty()
+                && !this.recruitmentMemoryBiomeKeys.contains(context.recruitmentMemoryBiomeKey())) {
             return false;
         }
         if (this.minRecruitmentFollowDistance > 0
@@ -477,6 +482,7 @@ public record DialogueLine(
         private final Set<String> recruitmentFollowupScenarios = new java.util.HashSet<>();
         private boolean requiresRecruitmentMemory;
         private final Set<String> recruitmentMemoryScenarios = new java.util.HashSet<>();
+        private final Set<String> recruitmentMemoryBiomeKeys = new java.util.HashSet<>();
         private int minRecruitmentFollowDistance;
         private boolean requiresRecruitmentBoatTrip;
         private boolean requiresRecruitmentOceanCrossing;
@@ -686,6 +692,25 @@ public record DialogueLine(
             return this;
         }
 
+        public Builder recruitmentMemoryBiomeKeys(String... biomeKeys) {
+            for (String biomeKey : biomeKeys) {
+                if (biomeKey == null || biomeKey.isBlank()) {
+                    continue;
+                }
+                String normalized = biomeKey.trim().toLowerCase(java.util.Locale.ROOT)
+                        .replace(':', '_')
+                        .replaceAll("[^a-z0-9]+", "_");
+                while (normalized.contains("__")) {
+                    normalized = normalized.replace("__", "_");
+                }
+                normalized = normalized.replaceAll("^_+|_+$", "");
+                if (!normalized.isBlank()) {
+                    this.recruitmentMemoryBiomeKeys.add(normalized);
+                }
+            }
+            return this;
+        }
+
         public Builder minRecruitmentFollowDistance(int distance) {
             this.minRecruitmentFollowDistance = Math.max(0, distance);
             return this;
@@ -879,6 +904,7 @@ public record DialogueLine(
                     Set.copyOf(this.recruitmentFollowupScenarios),
                     this.requiresRecruitmentMemory,
                     Set.copyOf(this.recruitmentMemoryScenarios),
+                    Set.copyOf(this.recruitmentMemoryBiomeKeys),
                     this.minRecruitmentFollowDistance,
                     this.requiresRecruitmentBoatTrip,
                     this.requiresRecruitmentOceanCrossing,

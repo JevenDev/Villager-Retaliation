@@ -437,6 +437,15 @@ public record DialogueContext(
                 : this.recruitmentMemory.biomeName();
     }
 
+    public String recruitmentMemoryBiomeKey() {
+        String biome = recruitmentMemoryBiome().trim().toLowerCase(java.util.Locale.ROOT);
+        String normalized = biome.replace(':', '_').replaceAll("[^a-z0-9]+", "_");
+        while (normalized.contains("__")) {
+            normalized = normalized.replace("__", "_");
+        }
+        return normalized.replaceAll("^_+|_+$", "");
+    }
+
     public Optional<VillagerInteractionTracker.GiftAdviceResultReport> unreportedGiftAdviceResult() {
         return Optional.ofNullable(this.giftAdviceResultReport);
     }

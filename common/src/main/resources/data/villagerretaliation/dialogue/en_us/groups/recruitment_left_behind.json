@@ -1,0 +1,1167 @@
+{
+    "options":  [
+                    {
+                        "id":  "recruitment_left_behind",
+                        "label":  "About leaving you behind...",
+                        "type":  "dialogue_option",
+                        "request":  "recruitment_followup",
+                        "order":  -1,
+                        "show_for_babies":  false,
+                        "requires_unreported_recruitment_followup":  true
+                    }
+                ],
+    "lines":  [
+                  {
+                      "id":  "recruitment_left_behind_badlands",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:badlands",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me baking out in the Badlands. The sun and those cliffs make trouble feel endless.",
+                                    "The Badlands are all heat, stone, and nowhere to hide. Come back before something finds me first.",
+                                    "If you are going to wander off, don\u0027t do it in the Badlands where every step feels exposed.",
+                                    "I waited in the Badlands wondering whether the heat or the drop-offs would get me first."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_bamboo_jungle",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:bamboo_jungle",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me alone in the Bamboo Jungle. Everything rustles like it is sneaking up on me.",
+                                    "The Bamboo Jungle is too dense to lose sight of you in. I could barely tell which way was safe.",
+                                    "I was stuck in the Bamboo Jungle listening to every stalk creak and every branch snap.",
+                                    "If you disappear in a Bamboo Jungle, all I have left is noise and bad guesses."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_basalt_deltas",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:basalt_deltas",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me in the Basalt Deltas. The ground looks sharp enough to cut through courage.",
+                                    "The Basalt Deltas are ash, basalt, and misery. I needed you back a lot sooner.",
+                                    "I stood in the Basalt Deltas trying not to think about lava finding a path to my feet.",
+                                    "If you must wander off, do not do it in the Basalt Deltas where everything feels broken and hot."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_beach",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:beach",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me stranded on the Beach. Open sand makes every threat feel close.",
+                                    "A Beach sounds peaceful until you are alone on it with nowhere solid to retreat to.",
+                                    "I was waiting on the Beach wondering what was coming out of the water next.",
+                                    "If you go missing on a Beach, I get the waves, the wind, and no cover at all."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_birch_forest",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:birch_forest",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me alone in the Birch Forest. It is too easy to lose you between all those pale trunks.",
+                                    "The Birch Forest looked calm right up until I realized I was standing there by myself.",
+                                    "I waited in the Birch Forest listening for your steps and hearing everything except you.",
+                                    "A Birch Forest feels much less friendly when I am the one left behind in it."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_cherry_grove",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:cherry_grove",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me in the Cherry Grove. Pretty blossoms do not stop bad things from happening.",
+                                    "The Cherry Grove looked lovely until I noticed I was alone under all that pink.",
+                                    "I was stuck in the Cherry Grove trying not to let the quiet make me nervous.",
+                                    "Even a Cherry Grove feels dangerous when you vanish and leave me there by myself."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_cold_ocean",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:cold_ocean",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me near the Cold Ocean. That water bites hard enough without me facing it alone.",
+                                    "The Cold Ocean is no place to lose track of each other. One bad slip and I am done for.",
+                                    "I waited by the Cold Ocean trying to ignore how quickly that wind chills through me.",
+                                    "If you disappear beside a Cold Ocean, all I can think about is freezing before help returns."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_crimson_forest",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:crimson_forest",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me in the Crimson Forest. Everything there looks alive in the worst possible way.",
+                                    "The Crimson Forest is red, loud, and unsettling enough with company. Alone is worse.",
+                                    "I was stuck in the Crimson Forest watching every fungus patch like it might lunge.",
+                                    "If you wander off in the Crimson Forest, do not expect me to enjoy waiting for you."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_dark_forest",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:dark_forest",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me in the Dark Forest. The shadows there feel like they are watching.",
+                                    "A Dark Forest is the wrong place to realize I cannot see where you went.",
+                                    "I waited in the Dark Forest listening to every twig snap like it was a warning.",
+                                    "If you vanish in a Dark Forest, I get darkness, roots, and far too much imagination."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_deep_cold_ocean",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:deep_cold_ocean",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me by the Deep Cold Ocean. Cold water and deep water are both bad enough already.",
+                                    "The Deep Cold Ocean made every wave sound like a threat while I was waiting for you.",
+                                    "I was alone near the Deep Cold Ocean trying not to think about how little room I had for mistakes.",
+                                    "If you are going to lose me, do not do it beside a Deep Cold Ocean where everything feels fatal."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_deep_dark",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:deep_dark",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me in the Deep Dark. I do not want to learn what hears me first down there.",
+                                    "The Deep Dark is not a place for patience. It is a place for panic whispered quietly.",
+                                    "I stood in the Deep Dark afraid even my breathing was too loud once you were gone.",
+                                    "If you disappear in the Deep Dark, I am left measuring every sound like it might be my last."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_deep_frozen_ocean",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:deep_frozen_ocean",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me near the Deep Frozen Ocean. Cold, depth, and ice are a terrible combination.",
+                                    "The Deep Frozen Ocean is no place to stand alone while the wind cuts through everything.",
+                                    "I waited by the Deep Frozen Ocean wondering whether the cold or the water would claim me first.",
+                                    "If you vanish beside a Deep Frozen Ocean, I am left with ice, depth, and no good options."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_deep_lukewarm_ocean",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:deep_lukewarm_ocean",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me near the Deep Lukewarm Ocean. Deep water is still deep water even when it feels mild.",
+                                    "The Deep Lukewarm Ocean sounded gentler than it felt once I was alone beside it.",
+                                    "I was stranded near the Deep Lukewarm Ocean with too much water and too little certainty.",
+                                    "If you wander off by a Deep Lukewarm Ocean, I still have to worry about what is moving below."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_deep_ocean",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:deep_ocean",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me beside the Deep Ocean. Looking into water that dark does nothing good for my nerves.",
+                                    "The Deep Ocean made every wave sound enormous once I realized you had stopped leading.",
+                                    "I waited by the Deep Ocean trying not to imagine what might be rising from below.",
+                                    "If you disappear near the Deep Ocean, all I am left with is open water and bad thoughts."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_desert",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:desert",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me in the Desert. Sun, sand, and no shade make poor company.",
+                                    "The Desert is too wide and too hot to be abandoned in.",
+                                    "I stood in the Desert with heat in my eyes and no idea when you were coming back.",
+                                    "If you wander off in a Desert, I am left roasting and scanning every dune for danger."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_dripstone_caves",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:dripstone_caves",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me in the Dripstone Caves. One wrong step and the cave does the rest.",
+                                    "The Dripstone Caves are all sharp ceilings and sharper floors. I hated waiting there alone.",
+                                    "I was stuck in the Dripstone Caves watching every spike like it had chosen me personally.",
+                                    "If you vanish in the Dripstone Caves, I am left between falling stone and bad footing."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_end_barrens",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:end_barrens",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me in the End Barrens. Empty places are worse when the fall never really ends.",
+                                    "The End Barrens felt like being forgotten at the edge of the world.",
+                                    "I waited in the End Barrens trying not to look too hard at how little was beneath me.",
+                                    "If you disappear in the End Barrens, I am left with silence, void, and nerves."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_end_highlands",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:end_highlands",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me in the End Highlands. Everything there feels far away from safety.",
+                                    "The End Highlands are no place to lose the one person I was following.",
+                                    "I stood in the End Highlands trying not to think about how small one mistake could make me.",
+                                    "If you vanish in the End Highlands, I am left on strange stone hoping nothing notices me."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_end_midlands",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:end_midlands",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me in the End Midlands. That place has a way of making every path feel temporary.",
+                                    "The End Midlands were unsettling enough before I realized I was alone there.",
+                                    "I waited in the End Midlands with nothing familiar in sight and far too much empty air nearby.",
+                                    "If you disappear in the End Midlands, I am left feeling one bad step from nowhere."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_eroded_badlands",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:eroded_badlands",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me in the Eroded Badlands. Those spires make every route feel like a trap.",
+                                    "The Eroded Badlands are heat and stone towers and too many places to get cornered.",
+                                    "I was stuck in the Eroded Badlands trying to pick a safe path between all those ridges.",
+                                    "If you wander off in the Eroded Badlands, I am the one left sweating beside sheer drops."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_flower_forest",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:flower_forest",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me in the Flower Forest. It looks peaceful until you are the only one there.",
+                                    "A Flower Forest feels a lot less charming when I am abandoned in the middle of it.",
+                                    "I waited in the Flower Forest listening for you and hearing bees, wind, and not much else.",
+                                    "Even a Flower Forest makes my nerves climb once I realize I am alone in it."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_forest",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:forest",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me alone in the Forest. Trees are comforting right up until they hide everything.",
+                                    "The Forest looked ordinary until you were gone and every shadow seemed important.",
+                                    "I waited in the Forest trying to tell the difference between harmless noise and danger.",
+                                    "If you vanish in a Forest, I am left guessing which direction counts as safe."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_frozen_ocean",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:frozen_ocean",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me by the Frozen Ocean. Ice and freezing water are not mistakes I can afford.",
+                                    "The Frozen Ocean made every gust feel cruel once I was standing there alone.",
+                                    "I waited near the Frozen Ocean wondering whether the ice would hold if I had to move fast.",
+                                    "If you wander off beside a Frozen Ocean, I am left with cold, cracks, and worry."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_frozen_peaks",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:frozen_peaks",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me on the Frozen Peaks. One slip up there and the mountain finishes the story.",
+                                    "The Frozen Peaks are all wind, ice, and bad footing. I needed you back quickly.",
+                                    "I was alone on the Frozen Peaks trying not to let the cold or the height get into my head.",
+                                    "If you disappear on the Frozen Peaks, I am left freezing above a very long fall."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_frozen_river",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:frozen_river",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me by the Frozen River. Ice only looks patient until it breaks.",
+                                    "The Frozen River was too cold and too uncertain to be waiting beside alone.",
+                                    "I stood near the Frozen River trying not to trust the ice more than it deserved.",
+                                    "If you wander off at a Frozen River, I am left choosing between cold banks and colder water."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_grove",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:grove",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me in the Grove. Snowy woods on a slope are still dangerous, no matter how calm they look.",
+                                    "The Grove was quiet in the worst way once I realized I was standing there by myself.",
+                                    "I waited in the Grove with snow underfoot and too many shadows between the trees.",
+                                    "If you vanish in a Grove, I am left cold, uphill, and listening for trouble."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_ice_spikes",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:ice_spikes",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me out here in the Ice Spikes. It\u0027s already so cold and dangerous as is.",
+                                    "The Ice Spikes are all freezing wind and sharp towers. I did not want to face that alone.",
+                                    "I was stuck in the Ice Spikes trying not to panic every time the wind howled through them.",
+                                    "If you disappear in the Ice Spikes, I am left shivering between blades of ice and bad luck."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_jagged_peaks",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:jagged_peaks",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me on the Jagged Peaks. The name alone should have warned you.",
+                                    "The Jagged Peaks are too steep and too cold to be abandoned on.",
+                                    "I waited on the Jagged Peaks trying not to think about how little room there was for a misstep.",
+                                    "If you vanish on the Jagged Peaks, I am left clinging to rock and hoping for your return."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_jungle",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:jungle",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me in the Jungle. I cannot tell whether the next sound is leaves or teeth.",
+                                    "The Jungle is too thick to lose your guide in. I could barely see a safe way forward.",
+                                    "I was stranded in the Jungle with vines everywhere and no clear line back to you.",
+                                    "If you disappear in a Jungle, I am left with heat, noise, and no honest path."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_lukewarm_ocean",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:lukewarm_ocean",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me by the Lukewarm Ocean. Calm water still hides problems underneath it.",
+                                    "The Lukewarm Ocean looked gentle right up until I had to wait beside it alone.",
+                                    "I stood near the Lukewarm Ocean wondering what was moving below the surface while you were gone.",
+                                    "If you wander off beside a Lukewarm Ocean, I still have to fear what I cannot see."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_lush_caves",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:lush_caves",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me in the Lush Caves. Pretty moss does not make caves any safer.",
+                                    "The Lush Caves are beautiful until you remember how easy it is to get lost underground.",
+                                    "I was waiting in the Lush Caves with dripping water and too many unseen corners.",
+                                    "If you vanish in the Lush Caves, I am left admiring plants while worrying about monsters."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_mangrove_swamp",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:mangrove_swamp",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me in the Mangrove Swamp. Mud, roots, and shallow water slow everything down.",
+                                    "The Mangrove Swamp is too tangled to stand alone in with any confidence.",
+                                    "I waited in the Mangrove Swamp trying not to trip over roots while listening for danger.",
+                                    "If you disappear in a Mangrove Swamp, I am left ankle-deep in worry and swamp water."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_meadow",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:meadow",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me in the Meadow. Open ground on a mountain is still open ground.",
+                                    "The Meadow looked gentle until I noticed how exposed I was standing there alone.",
+                                    "I waited in the Meadow with wind all around and nowhere proper to hide.",
+                                    "If you wander off in a Meadow, I am left out in the open hoping nothing spots me first."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_mushroom_fields",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:mushroom_fields",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me in the Mushroom Fields. Strange and harmless-looking is still strange.",
+                                    "The Mushroom Fields felt too quiet and too odd once I had to wait there alone.",
+                                    "I stood in the Mushroom Fields wondering whether I was more bothered by the silence or the giant mushrooms.",
+                                    "If you vanish in the Mushroom Fields, I am left surrounded by oddities and no reassurance at all."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_nether_wastes",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:nether_wastes",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me in the Nether Wastes. Heat, ash, and open lava are not fair company.",
+                                    "The Nether Wastes are exactly where I never want to be abandoned.",
+                                    "I waited in the Nether Wastes trying not to look at every lava pool like it was leaning closer.",
+                                    "If you disappear in the Nether Wastes, I am left in the middle of fire and bad choices."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_ocean",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:ocean",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me by the Ocean. Open water gives me too many things to worry about.",
+                                    "The Ocean felt far too large once I realized I was standing there alone.",
+                                    "I waited beside the Ocean trying not to imagine what might surface while you were gone.",
+                                    "If you wander off near the Ocean, I am left with waves, wind, and no walls at all."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_old_growth_birch_forest",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:old_growth_birch_forest",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me in the Old Growth Birch Forest. Bigger trees only mean bigger shadows.",
+                                    "The Old Growth Birch Forest felt too wide to search once I lost sight of you.",
+                                    "I was stuck in the Old Growth Birch Forest listening for your footsteps under all that canopy.",
+                                    "If you vanish in an Old Growth Birch Forest, I am left between trunks that all look the same."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_old_growth_pine_taiga",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:old_growth_pine_taiga",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me in the Old Growth Pine Taiga. Those towering pines make it feel colder than it already is.",
+                                    "The Old Growth Pine Taiga is too dense and too dim to be stranded in.",
+                                    "I waited in the Old Growth Pine Taiga with needles underfoot and too little sky above.",
+                                    "If you disappear in an Old Growth Pine Taiga, I am left cold under trees that swallow sound."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_old_growth_spruce_taiga",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:old_growth_spruce_taiga",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me in the Old Growth Spruce Taiga. Those trees make every shadow feel heavier.",
+                                    "The Old Growth Spruce Taiga was dark and cold enough before I had to face it alone.",
+                                    "I waited in the Old Growth Spruce Taiga trying not to let the silence get into my head.",
+                                    "If you wander off in an Old Growth Spruce Taiga, I am left surrounded by towering trunks and nerves."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_plains",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:plains",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me out in the Plains. Open land means anything can see me coming.",
+                                    "The Plains are far too exposed to be standing around in alone.",
+                                    "I waited in the Plains wishing for even one proper place to take cover.",
+                                    "If you vanish in the Plains, I am left under open sky with nowhere to disappear."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_river",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:river",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me by the River. Banks get slippery fast when I have to move in a hurry.",
+                                    "The River sounded peaceful until I was alone beside it waiting for you.",
+                                    "I stood near the River trying to watch the water and the shoreline at the same time.",
+                                    "If you wander off at a River, I am left with mud, current, and no clear advantage."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_savanna",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:savanna",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me in the Savanna. Tall grass and open ground make terrible cover.",
+                                    "The Savanna is too dry and too exposed to lose each other in.",
+                                    "I waited in the Savanna with the sun overhead and nowhere solid to hide.",
+                                    "If you disappear in a Savanna, I am left in grass that hides danger better than it hides me."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_savanna_plateau",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:savanna_plateau",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me on the Savanna Plateau. High ground only helps if I am not alone on it.",
+                                    "The Savanna Plateau felt far too exposed once I lost sight of you.",
+                                    "I was stuck on the Savanna Plateau with wind, cliffs, and no good cover.",
+                                    "If you wander off on a Savanna Plateau, I am left out in the open above a long drop."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_small_end_islands",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:small_end_islands",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me on the Small End Islands. There is barely enough world there to stand on.",
+                                    "The Small End Islands are no place to be abandoned unless you want me panicking at the edge.",
+                                    "I waited on the Small End Islands trying not to look down into all that nothing.",
+                                    "If you disappear on the Small End Islands, I am left counting every step like it might be my last."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_snowy_beach",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:snowy_beach",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me on the Snowy Beach. Cold wind off the water is miserable enough already.",
+                                    "A Snowy Beach is all freezing air, open ground, and too few places to hide.",
+                                    "I waited on the Snowy Beach trying not to let the cold make me careless.",
+                                    "If you vanish on a Snowy Beach, I am left shivering between surf and snow."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_snowy_plains",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:snowy_plains",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me in the Snowy Plains. Cold and open is a terrible combination.",
+                                    "The Snowy Plains gave me nowhere to hide and far too much wind to endure.",
+                                    "I stood in the Snowy Plains watching the horizon and wishing it had fewer dangers on it.",
+                                    "If you disappear in the Snowy Plains, I am left freezing in the open with no shelter nearby."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_snowy_slopes",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:snowy_slopes",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me on the Snowy Slopes. Ice and inclines are bad partners.",
+                                    "The Snowy Slopes are cold enough without adding the risk of sliding into trouble.",
+                                    "I waited on the Snowy Slopes trying to keep my footing and my nerves at the same time.",
+                                    "If you wander off on the Snowy Slopes, I am left freezing on a tilted problem."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_snowy_taiga",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:snowy_taiga",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me in the Snowy Taiga. Cold trees and deeper shadows are not comforting.",
+                                    "The Snowy Taiga was quiet in a way that made me expect the worst.",
+                                    "I waited in the Snowy Taiga listening to the wind in the pines and not much else.",
+                                    "If you disappear in a Snowy Taiga, I am left cold under dark branches with no help in sight."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_soul_sand_valley",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:soul_sand_valley",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me in the Soul Sand Valley. Even the ground there fights every step.",
+                                    "The Soul Sand Valley is bad enough when I can move quickly. Alone, I cannot.",
+                                    "I waited in the Soul Sand Valley trying not to panic while the ground slowed me down.",
+                                    "If you vanish in a Soul Sand Valley, I am left trudging through fear one heavy step at a time."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_sparse_jungle",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:sparse_jungle",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me in the Sparse Jungle. Fewer trees do not make it feel much safer.",
+                                    "The Sparse Jungle still has enough brush to hide trouble while I wait for you.",
+                                    "I stood in the Sparse Jungle trying to decide which rustle mattered most.",
+                                    "If you disappear in a Sparse Jungle, I am left with heat, brush, and too many maybes."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_stony_peaks",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:stony_peaks",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me on the Stony Peaks. Rocks and height are enough danger without being alone.",
+                                    "The Stony Peaks made every path feel like it wanted a wrong step from me.",
+                                    "I waited on the Stony Peaks with wind in my ears and loose stone underfoot.",
+                                    "If you wander off on the Stony Peaks, I am left balancing fear and bad footing."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_stony_shore",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:stony_shore",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me on the Stony Shore. Wet stone and open water are a poor pair.",
+                                    "The Stony Shore gave me nowhere soft to stand and nowhere safe to retreat to.",
+                                    "I waited on the Stony Shore trying not to slip while I kept watch for you.",
+                                    "If you disappear on a Stony Shore, I am left on slick rocks listening to the water grow louder."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_sunflower_plains",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:sunflower_plains",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me in the Sunflower Plains. Cheerful flowers do not count as cover.",
+                                    "The Sunflower Plains are bright, open, and far too easy to be spotted in.",
+                                    "I waited in the Sunflower Plains wishing those flowers hid me better than they do.",
+                                    "If you vanish in the Sunflower Plains, I am left staring through petals for danger."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_swamp",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:swamp",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me in the Swamp. Mud, water, and gloom make a miserable watch post.",
+                                    "The Swamp is too soggy and too murky to be standing alone in.",
+                                    "I waited in the Swamp trying not to trip into the water while I looked for you.",
+                                    "If you disappear in a Swamp, I am left wading through mud and bad feelings."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_taiga",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:taiga",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me in the Taiga. The cold and the trees make every sound feel farther away.",
+                                    "The Taiga was dim enough that losing sight of you felt immediate and permanent.",
+                                    "I waited in the Taiga with needles underfoot and cold air in my lungs.",
+                                    "If you wander off in a Taiga, I am left under dark branches hoping you remember me quickly."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_the_end",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:the_end",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me in the End. I would rather not be abandoned on alien stone over a void.",
+                                    "The End is already wrong enough without being left alone there.",
+                                    "I stood in the End trying not to think about how far from normal everything was.",
+                                    "If you disappear in the End, I am left somewhere that barely feels meant for living things."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_the_void",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:the_void",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me by the Void. There is not exactly a second chance if I slip there.",
+                                    "The Void is the sort of place where being alone feels like a direct threat.",
+                                    "I waited near the Void trying very hard not to think about what was under me.",
+                                    "If you vanish by the Void, I am left one mistake away from not coming back."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_warm_ocean",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:warm_ocean",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me near the Warm Ocean. Warm water still hides things I do not want to meet.",
+                                    "The Warm Ocean seemed pleasant until I had to watch it alone.",
+                                    "I waited by the Warm Ocean wondering what might rise from below while you were gone.",
+                                    "If you wander off beside a Warm Ocean, I am still left with open water and no cover."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_warped_forest",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:warped_forest",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me in the Warped Forest. Nothing there looks like it belongs anywhere safe.",
+                                    "The Warped Forest is too strange to be deserted in with a steady mind.",
+                                    "I waited in the Warped Forest trying not to stare too long at anything around me.",
+                                    "If you disappear in a Warped Forest, I am left alone in the sort of place that should stay imagined."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_windswept_forest",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:windswept_forest",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me in the Windswept Forest. The gusts there make every tree sound angry.",
+                                    "The Windswept Forest is too loud and too uneven to lose your guide in.",
+                                    "I waited in the Windswept Forest with the wind pushing at me from every side.",
+                                    "If you vanish in a Windswept Forest, I am left listening to branches thrash and hoping none fall."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_windswept_gravelly_hills",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:windswept_gravelly_hills",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me in the Windswept Gravelly Hills. Loose gravel and strong wind are cruel company.",
+                                    "The Windswept Gravelly Hills feel one bad step away from sliding apart under me.",
+                                    "I waited in the Windswept Gravelly Hills trying not to trust the ground too much.",
+                                    "If you disappear in the Windswept Gravelly Hills, I am left bracing against wind on unstable stone."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_windswept_hills",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:windswept_hills",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me in the Windswept Hills. Every gust up there feels like a shove.",
+                                    "The Windswept Hills are too exposed to stand alone on for long.",
+                                    "I waited in the Windswept Hills with wind in my face and no shelter worth the name.",
+                                    "If you wander off in the Windswept Hills, I am left fighting the weather and my nerves together."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_windswept_savanna",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:windswept_savanna",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me in the Windswept Savanna. Open cliffs and hard gusts are a bad mix.",
+                                    "The Windswept Savanna is far too exposed to be stranded in without warning.",
+                                    "I waited in the Windswept Savanna with the wind tugging at me and too much empty space around.",
+                                    "If you disappear in a Windswept Savanna, I am left alone on rough ground with nowhere proper to hide."
+                                ]
+                  },
+                  {
+                      "id":  "recruitment_left_behind_wooded_badlands",
+                      "request":  "recruitment_followup",
+                      "option":  "recruitment_left_behind",
+                      "show_for_babies":  false,
+                      "requires_recruitment_memory":  true,
+                      "recruitment_memory_scenarios":  [
+                                                           "left_behind"
+                                                       ],
+                      "recruitment_memory_biome":  "minecraft:wooded_badlands",
+                      "weight":  20,
+                      "lines":  [
+                                    "Don\u0027t leave me in the Wooded Badlands. Heat, steep stone, and scrubby cover are not enough.",
+                                    "The Wooded Badlands still feel harsh even with trees scattered around.",
+                                    "I waited in the Wooded Badlands trying to watch the ledges and the gaps at the same time.",
+                                    "If you wander off in the Wooded Badlands, I am left baking beside cliffs with too few safe routes."
+                                ]
+                  }
+              ]
+}

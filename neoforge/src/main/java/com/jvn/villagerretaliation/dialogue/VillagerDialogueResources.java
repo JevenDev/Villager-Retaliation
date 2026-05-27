@@ -94,6 +94,7 @@ public final class VillagerDialogueResources {
             "requires_recent_broken_bed_memory", "requires_recent_direct_hit_memory",
             "requires_gear_report_used_in_combat", "requires_gear_report_unused_in_combat",
             "recruitment_followup_scenarios", "requires_recruitment_memory", "recruitment_memory_scenarios",
+            "recruitment_memory_biome", "recruitment_memory_biomes",
             "min_recruitment_follow_distance", "requires_recruitment_boat_trip", "requires_recruitment_ocean_crossing",
             "requires_recruitment_swim_trip", "excludes_recruitment_ocean_crossing",
             "first_conversation_only", "gift_advice", "show_for_adults", "show_for_babies", "weight",
@@ -878,6 +879,12 @@ public final class VillagerDialogueResources {
         List<String> recruitmentMemoryScenarios = readStringList(entry, "recruitment_memory_scenarios");
         if (!recruitmentMemoryScenarios.isEmpty()) {
             builder.recruitmentMemoryScenarios(recruitmentMemoryScenarios.toArray(String[]::new));
+        }
+        List<String> recruitmentMemoryBiomes = new ArrayList<>();
+        recruitmentMemoryBiomes.addAll(readStringList(entry, "recruitment_memory_biome"));
+        recruitmentMemoryBiomes.addAll(readStringList(entry, "recruitment_memory_biomes"));
+        if (!recruitmentMemoryBiomes.isEmpty()) {
+            builder.recruitmentMemoryBiomeKeys(recruitmentMemoryBiomes.toArray(String[]::new));
         }
         builder.minRecruitmentFollowDistance(readInt(entry, "min_recruitment_follow_distance", 0));
         if (readBoolean(entry, "requires_recruitment_boat_trip")) {

@@ -86,6 +86,7 @@ public final class VillagerRetaliationEvents {
         VillagerRetaliationVillagerRules.clearCachedChecks();
         VillagerGossipHooks.clear();
         VillagerReputationManager.clearSyncState();
+        VillagerRecruitmentService.clearRuntimeState();
     }
 
     public static void onAddReloadListeners(AddReloadListenerEvent event) {
@@ -179,6 +180,7 @@ public final class VillagerRetaliationEvents {
         Entity entity = event.getEntity();
         if (entity instanceof ServerPlayer player) {
             VillagerReputationAdvancements.onPlayerTick(player);
+            VillagerRecruitmentService.onPlayerTick(player);
             return;
         }
         if (entity instanceof Villager villager) {

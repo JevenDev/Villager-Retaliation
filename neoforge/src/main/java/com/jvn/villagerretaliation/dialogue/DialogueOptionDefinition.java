@@ -55,7 +55,17 @@ public record DialogueOptionDefinition(
         boolean requiresActiveSpecialOrders,
         int order
 ) {
+    private static final String LEFT_BEHIND_OPTION_ID = "recruitment_left_behind";
+    private static final String DEFAULT_FOLLOWUP_OPTION_ID = "recruitment_followup";
+    private static final String LEFT_BEHIND_SCENARIO = "left_behind";
+
     public boolean matches(DialogueContext context, DialogueDisposition disposition) {
+        if (LEFT_BEHIND_OPTION_ID.equals(this.id) && !context.hasRecruitmentMemoryScenario(LEFT_BEHIND_SCENARIO)) {
+            return false;
+        }
+        if (DEFAULT_FOLLOWUP_OPTION_ID.equals(this.id) && context.hasRecruitmentMemoryScenario(LEFT_BEHIND_SCENARIO)) {
+            return false;
+        }
         if (context.villager().isBaby()) {
             if (!this.showForBabies) {
                 return false;
