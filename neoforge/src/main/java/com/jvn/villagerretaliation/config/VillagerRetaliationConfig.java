@@ -504,7 +504,7 @@ public final class VillagerRetaliationConfig {
                 .defineInRange("generatedContainerBreakItemReputationLoss", -1, -1000, 0);
         TRADE_REPUTATION_GAIN = BUILDER.comment("Reputation gained by trading with a specific villager.")
                 .translation("villagerretaliation.configuration.reputation.tradeReputationGain")
-                .defineInRange("tradeReputationGain", 2, -1000, 1000);
+                .defineInRange("tradeReputationGain", 1, -1000, 1000);
         MAX_TRADE_REPUTATION_GAIN_PER_VILLAGER_PER_DAY = BUILDER.comment("Maximum positive trade reputation gain per villager per Minecraft day.")
                 .translation("villagerretaliation.configuration.reputation.maxTradeReputationGainPerVillagerPerDay")
                 .defineInRange("maxTradeReputationGainPerVillagerPerDay", 8, 0, 1000);
