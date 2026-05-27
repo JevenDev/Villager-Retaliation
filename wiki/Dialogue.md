@@ -319,6 +319,7 @@ See [Dialogue Requests](Dialogue-Requests.md) for simple and expanded dropdown e
 | `recruitment_followup_scenarios` | string or array | any | Scenario ids stored by recruitment follow-up logic. |
 | `requires_recruitment_memory` | boolean | `false` | Requires recruitment memory. |
 | `recruitment_memory_scenarios` | string or array | any | Scenario ids stored by recruitment memory logic. |
+| `recruitment_memory_biome` / `recruitment_memory_biomes` | string or array | any | Restricts recruitment-memory lines to remembered biome ids, normalized to biome-key form (for example `minecraft:badlands` -> `minecraft_badlands`). |
 | `min_recruitment_follow_distance` | integer | `0` | Minimum followed distance in blocks. |
 | `requires_recruitment_boat_trip` | boolean | `false` | Requires boat trip memory. |
 | `requires_recruitment_ocean_crossing` | boolean | `false` | Requires ocean crossing memory. |
@@ -389,6 +390,7 @@ Family-aware dialogue text can use `{parent}`, `{sibling}`, `{spouse}`, `{child}
 Relationship-aware dialogue text can use `{partner}`, `{crush}`, `{dating_partner}`, `{fiance}`, `{romantic_spouse}`, `{ex_partner}`, `{late_partner}`, and the matching `_possessive` variants.
 
 Recruitment memory lines can use `{follow_biome}` and `{follow_distance}`.
+Use `recruitment_memory_biome` / `recruitment_memory_biomes` when a follow-up line should only trigger for specific left-behind or travel biomes.
 
 Container theft memory lines can use `{stolen_item}`, `{stolen_item_id}`, `{stolen_count}`, `{stolen_item_count}`, `{stolen_stack}`, `{stolen_container}`, `{stolen_loot_table}`, `{theft_witness}`, and `{theft_witness_possessive}`. Use `player_event_tags: ["player_container_theft"]` to target the memory, then add `requires_container_theft_to_self` for lines like "my {stolen_item}" or `requires_container_theft_from_other` for gossip like "{theft_witness} told me about {stolen_stack}."
 

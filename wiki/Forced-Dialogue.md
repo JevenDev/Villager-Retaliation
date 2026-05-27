@@ -270,11 +270,22 @@ Beta.12 uses forced-dialogue data to control the choice lists shown after a play
 The built-in option-template ids are:
 
 ```text
+trade_refresh.ready_options
 trade_refresh.available_options
 trade_refresh.unavailable_options
 trade_refresh.revered_options
 trade_refresh.special_order_select_options
 trade_refresh.special_order_confirm_options
+trade_refresh.special_order_status_options
+```
+
+`trade_refresh.ready_options` is used when queued refreshes or Special Orders become ready for the interacting player. It normally shows:
+
+```text
+Trade
+Thanks!
+What got restocked?
+Leave
 ```
 
 `trade_refresh.available_options` is used for accepted refresh requests and already-pending requests. It normally shows:
@@ -318,6 +329,7 @@ trade_refresh.trade
 The built-in data also uses:
 
 ```text
+trade_refresh.ready
 trade_refresh.thanks
 trade_refresh.why_so_long
 trade_refresh.requirements

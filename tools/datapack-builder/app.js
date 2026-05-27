@@ -383,6 +383,7 @@ const FIELD_TOOLTIPS = {
   "dialogue-story_biome": "Restricts share_story lines to one or more biome ids from story discovery JSON.",
   "dialogue-recruitment_followup_scenarios": "Filters recruitment follow-up lines by stored scenario ids.",
   "dialogue-recruitment_memory_scenarios": "Filters recruitment memory lines by stored scenario ids.",
+  "dialogue-recruitment_memory_biomes": "Filters recruitment memory lines by remembered biome ids (for example minecraft:badlands).",
   "dialogue-min_recruitment_follow_distance": "Minimum followed distance in blocks for recruitment memory lines.",
   "dialogue-gift_advice": "Filters a line to a gift advice result such as global_liked, profession_disliked, or already_known.",
   "dialogue-weight": "Weighted selection among matching entries. Missing weights usually default to 10.",
@@ -6122,6 +6123,7 @@ function renderDialogueForm(kind, entry) {
         ${listField({ id: "dialogue-story_biome", label: "Story biomes", value: entry.story_biome ?? entry.story_biomes })}
         ${listField({ id: "dialogue-recruitment_followup_scenarios", label: "Recruitment follow-up scenarios", value: entry.recruitment_followup_scenarios })}
         ${listField({ id: "dialogue-recruitment_memory_scenarios", label: "Recruitment memory scenarios", value: entry.recruitment_memory_scenarios })}
+        ${listField({ id: "dialogue-recruitment_memory_biomes", label: "Recruitment memory biomes", value: entry.recruitment_memory_biome ?? entry.recruitment_memory_biomes })}
         ${field({ id: "dialogue-min_recruitment_follow_distance", label: "Minimum follow distance", value: entry.min_recruitment_follow_distance ?? "", type: "number" })}
         ${selectField({ id: "dialogue-gift_advice", label: "Gift advice filter", value: entry.gift_advice, options: CONSTANTS.giftAdvice })}
         ${field({ id: "dialogue-weight", label: "Weight", value: entry.weight ?? "", type: "number" })}
@@ -6640,6 +6642,7 @@ function readDialogueEntry() {
       story_biomes: storyBiomes,
       recruitment_followup_scenarios: readList("dialogue-recruitment_followup_scenarios"),
       recruitment_memory_scenarios: readList("dialogue-recruitment_memory_scenarios"),
+      recruitment_memory_biomes: readList("dialogue-recruitment_memory_biomes"),
       min_recruitment_follow_distance: parseInteger(readValue("dialogue-min_recruitment_follow_distance")),
       gift_advice: readValue("dialogue-gift_advice"),
       weight: parseInteger(readValue("dialogue-weight"))

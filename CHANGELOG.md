@@ -15,6 +15,9 @@
 - Added beta.12 datapack builder and website wiki support while keeping the beta.11 wiki snapshot separate for beta.11 pack authors.
 - Added trade-refresh buttons to villager trade slots so players can ask a villager to replace a specific trade on the next Minecraft day when an eligible skill-trade replacement exists.
 - Added data-driven forced dialogue for trade-refresh results, including accepted, already-pending, unavailable, and not-ready responses with reputation-specific option replies.
+- Added trade-refresh ready follow-up dialogue with `trade_refresh.ready` message lines and `trade_refresh.ready_options` forced-dialogue options, including placeholders for restocked trade summaries.
+- Added recruitment left-behind follow-up dialogue with a dedicated talk option and biome-aware memory filtering through `recruitment_memory_biome` / `recruitment_memory_biomes`.
+- Added selectable Skills-page detail cards with expanded localized skill descriptions and an in-tooltip click hint for deeper skill info.
 
 ### Changed
 
@@ -35,6 +38,8 @@
 - Trade refresh blocker responses reached from an existing forced-dialogue menu now update that menu in place, or fall back to villager chat if no option set is available.
 - Regular completed trades now add `0.5` primary profession skill progress by default instead of `0.1`, giving one visible skill point every two trades.
 - Special Orders now treat `min_rank` as the skill unlock and ignore `max_rank`, letting high-skill villagers fulfill earlier catalog requests and duplicate items they already stock.
+- Forced conversation request validation now keeps active forced-dialogue sessions attached to their villager target while forced-session distance and availability rules are still met.
+- Built-in container-theft leave outcomes now default to response arrays (`responses`, `success_responses`, `failure_responses`) for more varied short reactions.
 
 ### Fixed
 
