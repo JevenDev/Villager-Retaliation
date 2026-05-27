@@ -143,6 +143,7 @@ public class VillagerInteractionScreen extends Screen {
     private float targetOptionScroll;
     private float skillScroll;
     private float targetSkillScroll;
+    private VillagerSkill selectedSkillDetails;
     private int selectedInventorySlot = -1;
     private Button giftButton;
     private Double originalChatWidth;
@@ -323,6 +324,7 @@ public class VillagerInteractionScreen extends Screen {
         if (tryClickBackButton(mouseX, mouseY)
                 || tryClickFamilyButton(mouseX, mouseY)
                 || tryClickRelationshipButton(mouseX, mouseY)
+                || trySelectSkillDetails(mouseX, mouseY)
                 || tryBeginSkillInfoScrollbarDrag(mouseX, mouseY)
                 || tryBeginScrollbarDrag(mouseX, mouseY)
                 || tryActivateHoveredOption(mouseX, mouseY)) {
@@ -617,6 +619,7 @@ public class VillagerInteractionScreen extends Screen {
         this.profileRefreshRequested = false;
         this.skillScroll = 0.0F;
         this.targetSkillScroll = 0.0F;
+        this.selectedSkillDetails = null;
         this.draggingSkillScrollbar = false;
         requestProfileRefresh();
         rebuildOptions();
@@ -710,6 +713,12 @@ public class VillagerInteractionScreen extends Screen {
     private void goBackOrLeaveConversation() {
         if (this.forcedDialogue) {
             requestDialogue(FORCED_LEAVE_OPTION_ID);
+            return;
+        }
+        if (this.page == DialoguePage.SKILLS && this.selectedSkillDetails != null) {
+            this.selectedSkillDetails = null;
+            this.skillScroll = 0.0F;
+            this.targetSkillScroll = 0.0F;
             return;
         }
         if (canNavigateBack()) {
@@ -837,16 +846,47 @@ public class VillagerInteractionScreen extends Screen {
 
     private void renderSkillsInfo(GuiGraphics graphics) {
         int left = optionsLeft() + 6;
-        int viewportTop = conversationInfoTop();
-        int viewportBottom = viewportTop + rootOptionViewportHeight();
+        int viewportTop = skillInfoViewportTop();
+        int viewportBottom = skillInfoViewportBottom();
         int top = Mth.floor(optionTextTop(viewportTop) - this.skillScroll);
         int width = OPTION_WIDTH - 12;
         graphics.enableScissor(left - 18, viewportTop, left + OPTION_WIDTH + 4, viewportBottom);
-        graphics.drawString(this.font, translate("profile.skills.info.title"), left, top, INFO_VALUE_COLOR, false);
+        graphics.drawString(
+                this.font,
+                this.selectedSkillDetails == null ? translate("profile.skills.info.title") : localizedSkill(this.selectedSkillDetails),
+                left,
+                top,
+                INFO_VALUE_COLOR,
+                false);
         int y = top + optionStride();
-        y = renderWrappedInfoLine(graphics, Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.trade"), left, y, width);
-        y = renderWrappedInfoLine(graphics, Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.specialty"), left, y + 4, width);
-        renderWrappedInfoLine(graphics, Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.recruit"), left, y + 4, width);
+        Optional<VillagerProfileClientCache.DisplayEntry> entry = VillagerProfileClientCache.get(this.villagerEntityId);
+        if (this.selectedSkillDetails != null && entry.isPresent()) {
+            VillagerProfileClientCache.DisplayEntry profile = entry.get();
+            y = renderWrappedSkillInfoLine(
+                    graphics,
+                    Component.translatable(
+                            GUI_KEY_PREFIX + "profile.tooltip.level",
+                            localizedSkillRank(profile.skillRank(this.selectedSkillDetails))),
+                    left,
+                    y,
+                    width);
+            y = renderWrappedSkillInfoLine(
+                    graphics,
+                    Component.translatable(GUI_KEY_PREFIX + "profile.tooltip.score", profile.skillValue(this.selectedSkillDetails)),
+                    left,
+                    y + 2,
+                    width);
+            renderWrappedSkillInfoLine(
+                    graphics,
+                    Component.literal(localizedExpandedSkillDescription(this.selectedSkillDetails)),
+                    left,
+                    y + 4,
+                    width);
+        } else {
+            y = renderWrappedSkillInfoLine(graphics, Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.trade"), left, y, width);
+            y = renderWrappedSkillInfoLine(graphics, Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.specialty"), left, y + 4, width);
+            renderWrappedSkillInfoLine(graphics, Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.recruit"), left, y + 4, width);
+        }
         graphics.disableScissor();
         renderScrollbar(graphics, skillInfoScrollbarThumb(), this.skillScroll, maxSkillScroll());
     }
@@ -855,6 +895,18 @@ public class VillagerInteractionScreen extends Screen {
         int y = top;
         for (FormattedCharSequence line : this.font.split(component, width)) {
             graphics.drawString(this.font, line, left, y, INFO_SECONDARY_COLOR, false);
+            y += this.font.lineHeight + 2;
+        }
+        return y;
+    }
+
+    private int renderWrappedSkillInfoLine(GuiGraphics graphics, Component component, int left, int top, int width) {
+        int y = top;
+        int viewportTop = skillInfoViewportTop();
+        int viewportBottom = skillInfoViewportBottom();
+        for (FormattedCharSequence line : this.font.split(component, width)) {
+            float alpha = skillInfoEdgeFadeAlpha(y, viewportTop, viewportBottom);
+            graphics.drawString(this.font, line, left, y, withAlpha(INFO_SECONDARY_COLOR, alpha), false);
             y += this.font.lineHeight + 2;
         }
         return y;
@@ -1436,6 +1488,13 @@ public class VillagerInteractionScreen extends Screen {
             return false;
         }
 
+        if (this.page == DialoguePage.SKILLS && this.selectedSkillDetails != null) {
+            this.selectedSkillDetails = null;
+            this.skillScroll = 0.0F;
+            this.targetSkillScroll = 0.0F;
+            return true;
+        }
+
         navigateBackPage();
         return true;
     }
@@ -1479,6 +1538,27 @@ public class VillagerInteractionScreen extends Screen {
 
         this.draggingSkillScrollbar = true;
         this.skillScrollbarDragOffset = (float) mouseY - scrollbarThumb.top();
+        return true;
+    }
+
+    private boolean trySelectSkillDetails(double mouseX, double mouseY) {
+        if (this.page != DialoguePage.SKILLS) {
+            return false;
+        }
+
+        Optional<VillagerProfileClientCache.DisplayEntry> entry = VillagerProfileClientCache.get(this.villagerEntityId);
+        if (entry.isEmpty()) {
+            return false;
+        }
+
+        VillagerSkill clickedSkill = skillAt(entry.get(), mouseX, mouseY);
+        if (clickedSkill == null) {
+            return false;
+        }
+
+        this.selectedSkillDetails = clickedSkill == this.selectedSkillDetails ? null : clickedSkill;
+        this.skillScroll = 0.0F;
+        this.targetSkillScroll = 0.0F;
         return true;
     }
 
@@ -1542,6 +1622,28 @@ public class VillagerInteractionScreen extends Screen {
             return true;
         }
         return false;
+    }
+
+    private VillagerSkill skillAt(VillagerProfileClientCache.DisplayEntry profile, double mouseX, double mouseY) {
+        int left = skillsPanelLeft();
+        int top = skillsPanelTop() + SKILLS_CONTAINER_PADDING_Y;
+        List<VillagerSkillValue> highlights = profile.bestSkills(VillagerSkill.values().length);
+        int columnWidth = (OPTION_WIDTH - 8 - PROFILE_SKILL_COLUMN_GAP) / PROFILE_SKILL_COLUMNS;
+        for (int index = 0; index < highlights.size(); index++) {
+            VillagerSkillValue skillValue = highlights.get(index);
+            int column = index % PROFILE_SKILL_COLUMNS;
+            int row = index / PROFILE_SKILL_COLUMNS;
+            int rowLeft = left + column * (columnWidth + PROFILE_SKILL_COLUMN_GAP);
+            int y = top + this.font.lineHeight + 4 + row * (PROFILE_SKILL_ROW_HEIGHT + PROFILE_SKILL_ROW_GAP);
+            boolean rowHovered = mouseX >= rowLeft - 2
+                    && mouseX <= rowLeft + columnWidth + 2
+                    && mouseY >= y - 1
+                    && mouseY <= y + PROFILE_SKILL_ROW_HEIGHT - 1;
+            if (rowHovered) {
+                return skillValue.skill();
+            }
+        }
+        return null;
     }
 
     private int giftSlotAt(double mouseX, double mouseY) {
@@ -1661,8 +1763,8 @@ public class VillagerInteractionScreen extends Screen {
     private boolean isPointInsideSkillsInfoScrollArea(double mouseX, double mouseY) {
         int left = optionsLeft() - 18;
         int right = optionsLeft() + OPTION_WIDTH + 4;
-        int top = conversationInfoTop();
-        int bottom = top + rootOptionViewportHeight();
+        int top = skillInfoViewportTop();
+        int bottom = skillInfoViewportBottom();
         return mouseX >= left && mouseX <= right && mouseY >= top - 4 && mouseY <= bottom + 4;
     }
 
@@ -1729,7 +1831,7 @@ public class VillagerInteractionScreen extends Screen {
     }
 
     private float maxSkillScroll() {
-        return Math.max(0.0F, Mth.floor(optionTextTop(0)) + skillsInfoContentHeight() - rootOptionViewportHeight());
+        return Math.max(0.0F, Mth.floor(optionTextTop(0)) + skillsInfoContentHeight() - skillInfoViewportHeight());
     }
 
     private void setTargetSkillScroll(float scroll) {
@@ -1739,6 +1841,23 @@ public class VillagerInteractionScreen extends Screen {
     private int skillsInfoContentHeight() {
         int width = OPTION_WIDTH - 12;
         int y = this.font.lineHeight + optionStride() - this.font.lineHeight;
+        if (this.selectedSkillDetails != null) {
+            Optional<VillagerProfileClientCache.DisplayEntry> entry = VillagerProfileClientCache.get(this.villagerEntityId);
+            if (entry.isPresent()) {
+                VillagerProfileClientCache.DisplayEntry profile = entry.get();
+                y = wrappedInfoLineBottom(
+                        Component.translatable(
+                                GUI_KEY_PREFIX + "profile.tooltip.level",
+                                localizedSkillRank(profile.skillRank(this.selectedSkillDetails))),
+                        y,
+                        width);
+                y = wrappedInfoLineBottom(
+                        Component.translatable(GUI_KEY_PREFIX + "profile.tooltip.score", profile.skillValue(this.selectedSkillDetails)),
+                        y + 2,
+                        width);
+                return wrappedInfoLineBottom(Component.literal(localizedExpandedSkillDescription(this.selectedSkillDetails)), y + 4, width);
+            }
+        }
         y = wrappedInfoLineBottom(Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.trade"), y, width);
         y = wrappedInfoLineBottom(Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.specialty"), y + 4, width);
         return wrappedInfoLineBottom(Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.recruit"), y + 4, width);
@@ -1751,6 +1870,21 @@ public class VillagerInteractionScreen extends Screen {
 
     private int interactionVeilTop() {
         return Math.max(0, conversationInfoTop() + VEIL_DITHER_START_OFFSET);
+    }
+
+    private int skillInfoViewportTop() {
+        return conversationInfoTop();
+    }
+
+    private int skillInfoViewportBottom() {
+        int infoBaseY = Mth.floor(optionTextTop(conversationInfoTop()));
+        int familyY = infoBaseY + optionStride() * 5;
+        FamilyButtonBounds bounds = familyButtonBounds(familyY, dividerX(), familyButtonText());
+        return bounds.bottom() + 2;
+    }
+
+    private int skillInfoViewportHeight() {
+        return Math.max(1, skillInfoViewportBottom() - skillInfoViewportTop());
     }
 
     private int optionsTop() {
@@ -1925,6 +2059,21 @@ public class VillagerInteractionScreen extends Screen {
         return Math.min(topFade, bottomFade);
     }
 
+    private float skillInfoEdgeFadeAlpha(float lineY, int viewportTop, int viewportBottom) {
+        if (maxSkillScroll() <= 0.0F) {
+            return 1.0F;
+        }
+
+        float fadeBand = 16.0F;
+        boolean canScrollUp = this.skillScroll > 0.75F;
+        boolean canScrollDown = this.skillScroll < maxSkillScroll() - 0.75F;
+        float lineTop = lineY;
+        float lineBottom = lineY + this.font.lineHeight;
+        float topFade = canScrollUp ? Mth.clamp((lineBottom - viewportTop) / fadeBand, 0.0F, 1.0F) : 1.0F;
+        float bottomFade = canScrollDown ? Mth.clamp((viewportBottom - lineTop) / fadeBand, 0.0F, 1.0F) : 1.0F;
+        return Math.min(topFade, bottomFade);
+    }
+
     private void renderScrollbar(GuiGraphics graphics, int optionsLeft, int viewportTop, int viewportBottom) {
         ScrollbarThumb scrollbarThumb = scrollbarThumb();
         renderScrollbar(graphics, scrollbarThumb, this.optionScroll, maxOptionScroll());
@@ -1976,8 +2125,8 @@ public class VillagerInteractionScreen extends Screen {
             return null;
         }
 
-        int viewportTop = conversationInfoTop();
-        int viewportHeight = rootOptionViewportHeight();
+        int viewportTop = skillInfoViewportTop();
+        int viewportHeight = skillInfoViewportHeight();
         int scrollbarLeft = optionsScrollbarLeft();
         int scrollbarRight = scrollbarLeft + OPTION_SCROLLBAR_WIDTH;
         int contentHeight = skillsInfoContentHeight();
@@ -2105,6 +2254,14 @@ public class VillagerInteractionScreen extends Screen {
 
     private static String localizedSkillDescription(VillagerSkill skill) {
         return I18n.exists(skill.descriptionTranslationKey()) ? I18n.get(skill.descriptionTranslationKey()) : skill.serializedName();
+    }
+
+    private static String localizedExpandedSkillDescription(VillagerSkill skill) {
+        String key = skill.descriptionTranslationKey() + ".details";
+        if (I18n.exists(key)) {
+            return I18n.get(key);
+        }
+        return localizedSkillDescription(skill);
     }
 
     private static String localizedSkillRank(VillagerSkillRank rank) {
