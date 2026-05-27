@@ -603,10 +603,10 @@ public class VillagerInteractionSavedData extends SavedData {
         return entry == null ? new InteractionEntry() : entry;
     }
 
-    boolean hasTalkedWithAny(Iterable<UUID> villagerIds, UUID playerId) {
+    boolean hasMetWithAny(Iterable<UUID> villagerIds, UUID playerId) {
         for (UUID villagerId : villagerIds) {
             InteractionEntry entry = getIndexedEntry(villagerId, playerId);
-            if (entry != null && entry.hasTalked()) {
+            if (entry != null && entry.hasMet()) {
                 return true;
             }
         }
@@ -1186,6 +1186,10 @@ public class VillagerInteractionSavedData extends SavedData {
 
         public boolean hasTalked() {
             return this.hasTalked;
+        }
+
+        public boolean hasMet() {
+            return this.hasTalked || this.lastSeenDay != Long.MIN_VALUE;
         }
 
         public void markTalked() {

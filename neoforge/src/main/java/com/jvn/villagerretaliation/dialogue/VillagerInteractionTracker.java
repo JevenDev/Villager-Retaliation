@@ -306,7 +306,7 @@ public final class VillagerInteractionTracker {
             ServerPlayer player,
             VillagerInteractionSavedData data) {
         return VillageMembership.resolve(level, villager)
-                .map(area -> !data.hasTalkedWithAny(
+                .map(area -> !data.hasMetWithAny(
                         area.members().stream().map(Villager::getUUID).toList(),
                         player.getUUID()
                 ))
