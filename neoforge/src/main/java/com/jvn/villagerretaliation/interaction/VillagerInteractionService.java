@@ -281,84 +281,7 @@ public final class VillagerInteractionService {
     }
 
     public static void handleGiftRequest(ServerPlayer player, int entityId, int inventorySlot) {
-        if (!VillagerRetaliationConfig.ENABLE_VILLAGER_GIFTS.get()) {
-            sendNotice(player, entityId, "interaction.gift_unavailable");
-            return;
-        }
-        Optional<InteractionTargetContext> target = InteractionRequestValidator.requireGiftConversation(player, entityId);
-        if (target.isEmpty()) {
-            return;
-        }
-        InteractionTargetContext contextTarget = target.get();
-        Villager villager = contextTarget.villager();
-        if (shouldRefuseDespisedConversation(villager, player)) {
-            InteractionRequestValidator.endConversationWithRefusal(contextTarget, "interaction.keep_distance");
-            return;
-        }
-        if (villager.isBaby()) {
-            sendVillagerNotice(player, villager, "interaction.child_refuse_gift");
-            return;
-        }
-        if (inventorySlot < 0 || inventorySlot >= 36) {
-            sendVillagerNotice(player, villager, "interaction.gift_invalid");
-            return;
-        }
-
-        ItemStack selectedStack = player.getInventory().getItem(inventorySlot);
-        if (selectedStack.isEmpty()) {
-            sendVillagerNotice(player, villager, "interaction.gift_empty_slot");
-            return;
-        }
-        if (!VillagerInventoryAccess.canAddItems(villager, List.of(selectedStack.copy()))) {
-            sendVillagerNotice(player, villager, "interaction.gift_inventory_full");
-            return;
-        }
-
-        ServerLevel level = contextTarget.level();
-        ItemStack giftedStack = player.getInventory().removeItem(inventorySlot, selectedStack.getCount());
-        player.getInventory().setChanged();
-        VillagerProfession profession = villager.getVillagerData().getProfession();
-        VillagerGiftPreferences.GiftPreference giftPreference = VillagerGiftPreferences.evaluate(level, villager, giftedStack);
-        int reputationValue = adjustedGiftReputation(level, villager, giftPreference);
-        VillagerGiftKnowledgeService.rememberGiftResult(level, player, profession, giftedStack, giftPreference);
-        Boolean giftAdviceLikedResult = giftAdviceLikedResult(giftPreference.reaction());
-        if (giftAdviceLikedResult != null) {
-            VillagerInteractionTracker.markGiftAdviceResult(
-                    level,
-                    villager,
-                    player,
-                    itemId(giftedStack),
-                    itemName(giftedStack),
-                    VillagerGiftKnowledgeService.professionKey(profession),
-                    VillagerInteractionTextUtil.professionName(profession, "villager").toLowerCase(java.util.Locale.ROOT),
-                    VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
-                    giftAdviceLikedResult
-            );
-        }
-        VillagerReputationManager.addGiftReputation(level, villager, player, reputationValue);
-        VillagerGiftKeepsakes.storeGift(level, villager, player, giftedStack, giftPreference);
-        rememberGearGift(level, villager, player, giftedStack);
-        VillageEventMemory.rememberGift(
-                level,
-                villager.blockPosition(),
-                villager,
-                player,
-                VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
-                itemName(giftedStack),
-                giftPreference.reaction(),
-                reputationValue
-        );
-        VillagerMoodService.recordGift(level, villager, player, giftPreference.reaction(), reputationValue);
-        reduceDialogueAnnoyanceFromGift(level, villager, player, reputationValue);
-        sendGiftNotice(player, villager, giftedStack, reputationValue);
-        focusVillagerOnPlayer(villager, player);
-        playGiftFeedback(level, villager, reputationValue);
-        VillagerAmbientIndicatorService.onGiftReceived(villager, reputationValue);
-
-        DialogueContext giftContext = createDialogueContext(level, player, villager);
-        String responseText = giftResponseText(giftContext, giftPreference, giftedStack);
-        sendDialogueReputation(player, villager, level);
-        broadcastVillagerChat(level, villager, responseText);
+        VillagerGiftRequestHandler.handle(player, entityId, inventorySlot);
     }
 
     public static void handleRecruitRequest(ServerPlayer player, int entityId, VillagerRecruitRequestPayload.Action action) {
@@ -385,120 +308,6 @@ public final class VillagerInteractionService {
         sendVillagerNotice(player, villager, responseText);
         PacketDistributor.sendToPlayer(player, new VillagerConversationEndedPayload(villager.getId(), responseText));
         VillagerConversationService.endForPlayer(player, false);
-    }
-
-    private static void reduceDialogueAnnoyanceFromGift(ServerLevel level, Villager villager, ServerPlayer player, int reputationValue) {
-        int divisor = VillagerRetaliationConfig.GIFT_ANNOYANCE_REDUCTION_DIVISOR.get();
-        if (reputationValue <= 0 || divisor <= 0) {
-            return;
-        }
-        int reduction = Math.max(1, reputationValue / divisor);
-        VillagerInteractionTracker.reduceRepeatedDialogueUseCounts(level, villager, player, reduction);
-    }
-
-    private static String giftResponseKey(VillagerGiftPreferences.GiftPreference giftPreference) {
-        String scope = giftPreference.professionSpecific() ? "profession" : "global";
-        String reaction = giftPreference.reaction().name().toLowerCase(java.util.Locale.ROOT);
-        return "gift_response." + scope + "." + reaction;
-    }
-
-    private static String giftResponseText(
-            DialogueContext context,
-            VillagerGiftPreferences.GiftPreference giftPreference,
-            ItemStack giftedStack) {
-        Map<String, String> replacements = Map.of(
-                "gift_item", giftedStack.getHoverName().getString(),
-                "item", itemName(giftedStack),
-                "gift_item_id", itemId(giftedStack),
-                "item_id", itemId(giftedStack)
-        );
-        String responseKey = giftPreference.responseKey();
-        if (responseKey != null && !responseKey.isBlank()) {
-            String customResponse = VillagerDialogueResources.message(context, responseKey, replacements).orElse("");
-            if (!customResponse.isBlank()) {
-                return customResponse;
-            }
-        }
-        return VillagerDialogueResources.message(context, giftResponseKey(giftPreference), replacements).orElse("");
-    }
-
-    private static Boolean giftAdviceLikedResult(VillagerGiftPreferences.GiftReaction reaction) {
-        return switch (reaction) {
-            case LOVED, LIKED -> true;
-            case DISLIKED, HATED -> false;
-            case NEUTRAL -> null;
-        };
-    }
-
-    private static int adjustedGiftReputation(
-            ServerLevel level,
-            Villager villager,
-            VillagerGiftPreferences.GiftPreference giftPreference) {
-        int reputationValue = giftPreference.reputationValue();
-        if (!VillagerSocialAttributeBehavior.enabled(VillagerRetaliationConfig.ENABLE_SOCIAL_ATTRIBUTE_REPUTATION_EFFECTS)) {
-            return reputationValue;
-        }
-        if (reputationValue > 0) {
-            int kindnessBonus = VillagerSocialAttributeBehavior.positiveBonus(
-                    level,
-                    villager,
-                    VillagerSocialAttribute.KINDNESS,
-                    giftPreference.reaction() == VillagerGiftPreferences.GiftReaction.LOVED ? 3 : 2,
-                    VillagerRetaliationConfig.ENABLE_SOCIAL_ATTRIBUTE_REPUTATION_EFFECTS
-            );
-            int charmBonus = VillagerSocialAttributeBehavior.positiveBonus(
-                    level,
-                    villager,
-                    VillagerSocialAttribute.CHARM,
-                    1,
-                    VillagerRetaliationConfig.ENABLE_SOCIAL_ATTRIBUTE_REPUTATION_EFFECTS
-            );
-            return reputationValue + kindnessBonus + charmBonus;
-        }
-        if (reputationValue < 0) {
-            int maxSoftening = giftPreference.reaction() == VillagerGiftPreferences.GiftReaction.HATED ? 1 : 2;
-            int kindnessSoftening = VillagerSocialAttributeBehavior.positiveBonus(
-                    level,
-                    villager,
-                    VillagerSocialAttribute.KINDNESS,
-                    maxSoftening,
-                    VillagerRetaliationConfig.ENABLE_SOCIAL_ATTRIBUTE_REPUTATION_EFFECTS
-            );
-            return Math.min(-1, reputationValue + kindnessSoftening);
-        }
-        return reputationValue;
-    }
-
-    private static void rememberGearGift(ServerLevel level, Villager villager, ServerPlayer player, ItemStack giftedStack) {
-        String gearKind = gearKind(giftedStack);
-        if (!gearKind.isBlank()) {
-            VillagerInteractionTracker.rememberGearReport(level, villager, player, gearKind);
-        }
-    }
-
-    private static String gearKind(ItemStack stack) {
-        if (VillagerRetaliationVillagerWeapons.isUsableWeapon(stack)) {
-            return "weapon";
-        }
-        Equipable equipable = Equipable.get(stack);
-        return equipable == null ? "" : "armor";
-    }
-
-    private static void sendGiftNotice(ServerPlayer player, Villager villager, ItemStack giftedStack, int reputationValue) {
-        VillagerReputationNoticeKind kind = reputationValue < 0
-                ? VillagerReputationNoticeKind.GIFT_DISLIKED
-                : reputationValue > 0 ? VillagerReputationNoticeKind.GIFT_LIKED : VillagerReputationNoticeKind.GIFT_NEUTRAL;
-        String reaction = reputationValue < 0 ? "Disliked gift" : reputationValue > 0 ? "Liked gift" : "Accepted gift";
-        String trigger = reputationValue < 0 ? "gift.disliked" : reputationValue > 0 ? "gift.liked" : "gift.neutral";
-        VillagerNotifications.sendHud(
-                player,
-                player.serverLevel(),
-                villager,
-                trigger,
-                VillagerNotifications.replacements("item", itemName(giftedStack), "villager", displayName(villager)),
-                reaction + ": " + itemName(giftedStack),
-                kind
-        );
     }
 
     public static void handleReputationRequest(ServerPlayer player, int entityId) {
@@ -657,7 +466,7 @@ public final class VillagerInteractionService {
         return new ReputationSnapshot(reputation.value(), reputation.level());
     }
 
-    private static void sendDialogueReputation(ServerPlayer player, Villager villager, ServerLevel level) {
+    static void sendDialogueReputation(ServerPlayer player, Villager villager, ServerLevel level) {
         sendDialogueReputation(player, villager, level, null, null, false);
     }
 
@@ -1301,7 +1110,7 @@ public final class VillagerInteractionService {
         }
     }
 
-    private static void playGiftFeedback(ServerLevel level, Villager villager, int reputationValue) {
+    static void playGiftFeedback(ServerLevel level, Villager villager, int reputationValue) {
         if (reputationValue > 0) {
             spawnDialogueParticles(level, villager, ParticleTypes.HAPPY_VILLAGER, 7, 0.02D);
             villager.playSound(SoundEvents.VILLAGER_YES, 0.75F, 0.9F + villager.getRandom().nextFloat() * 0.25F);
@@ -1329,7 +1138,7 @@ public final class VillagerInteractionService {
         );
     }
 
-    private static void focusVillagerOnPlayer(Villager villager, ServerPlayer player) {
+    static void focusVillagerOnPlayer(Villager villager, ServerPlayer player) {
         villager.getLookControl().setLookAt(player, 30.0F, 30.0F);
     }
 
