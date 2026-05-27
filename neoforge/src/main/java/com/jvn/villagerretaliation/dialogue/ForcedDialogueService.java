@@ -19,8 +19,11 @@ import com.jvn.villagerretaliation.network.GeneratedContainerTooltipPayload;
 import com.jvn.villagerretaliation.reputation.VillagerGossipHooks;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager.ReputationSnapshot;
+import com.jvn.villagerretaliation.trade.VillagerSpecialOrderService;
+import com.jvn.villagerretaliation.trade.VillagerTradeRefreshService;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
+import com.jvn.villagerretaliation.util.VillagerReputationCondition;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -67,6 +70,12 @@ public final class ForcedDialogueService {
     private static final String LEAVE_OPTION_ID = "leave";
     private static final String TRADE_REFRESH_DEFINITION_ID = "trade_refresh";
     private static final String TRADE_REFRESH_TRADE_OPTION_ID = "trade_refresh.trade";
+    private static final String TRADE_REFRESH_REVERED_OPTIONS_ID = "trade_refresh.revered_options";
+    private static final String TRADE_REFRESH_SPECIAL_ORDER_SELECT_OPTIONS_ID = "trade_refresh.special_order_select_options";
+    private static final String TRADE_REFRESH_SPECIAL_ORDER_CONFIRM_OPTIONS_ID = "trade_refresh.special_order_confirm_options";
+    private static final String TRADE_REFRESH_SURPRISE_OPTION_ID = "trade_refresh.surprise_me";
+    private static final String TRADE_REFRESH_SPECIAL_ORDER_OPTION_ID = "trade_refresh.special_order";
+    private static final String TRADE_REFRESH_CONFIRM_SPECIAL_ORDER_OPTION_ID = "trade_refresh.confirm_special_order";
     private static final long RECENT_CONTAINER_CLICK_TICKS = 8L;
     private static final long FORCED_SESSION_TIMEOUT_TICKS = 20L * 60L;
     private static final long PLAYER_ITEM_PROXIMITY_SCAN_INTERVAL_TICKS = 80L;
@@ -255,9 +264,7 @@ public final class ForcedDialogueService {
             ServerPlayer player,
             String messageKey,
             Map<String, String> replacements) {
-        String line = VillagerDialogueResources
-                .message(VillagerInteractionService.createDialogueContext(level, player, villager), messageKey, replacements)
-                .orElse(messageKey);
+        String line = tradeRefreshLine(level, villager, player, messageKey, replacements);
         if (!VillagerRetaliationConfig.ENABLE_FORCED_DIALOGUE.get()) {
             VillagerInteractionService.sendVillagerNotice(player, villager, line);
             return;
@@ -286,6 +293,63 @@ public final class ForcedDialogueService {
                     List.of(),
                     level.getGameTime()
             ));
+        } else {
+            VillagerInteractionService.sendVillagerNotice(player, villager, line);
+        }
+    }
+
+    private static String tradeRefreshLine(
+            ServerLevel level,
+            Villager villager,
+            ServerPlayer player,
+            String messageKey,
+            Map<String, String> replacements) {
+        return VillagerDialogueResources
+                .message(VillagerInteractionService.createDialogueContext(level, player, villager), messageKey, replacements)
+                .orElse(messageKey);
+    }
+
+    public static void openTradeRefreshChoiceDialogue(
+            ServerLevel level,
+            Villager villager,
+            ServerPlayer player,
+            int offerIndex,
+            String tradeItem) {
+        Map<String, String> replacements = Map.of("trade_item", tradeItem);
+        String line = tradeRefreshLine(level, villager, player, "trade_refresh.revered_prompt", replacements);
+        if (!VillagerRetaliationConfig.ENABLE_FORCED_DIALOGUE.get()) {
+            VillagerInteractionService.sendVillagerNotice(player, villager, line);
+            return;
+        }
+
+        player.closeContainer();
+        Optional<ForcedDialogueDefinition> optionDefinition = tradeRefreshOptionDefinitionById(
+                level,
+                villager,
+                player,
+                TRADE_REFRESH_REVERED_OPTIONS_ID);
+        if (optionDefinition.isEmpty()) {
+            VillagerTradeRefreshService.handleSurpriseRequest(player, villager, offerIndex);
+            return;
+        }
+        ForcedDialogueDefinition definition = tradeRefreshDefinition(line, optionDefinition.get());
+        ForcedDialogueContext context = tradeRefreshContext(level, villager, player, replacements);
+        if (VillagerInteractionService.openForcedDialogue(
+                player,
+                villager,
+                line,
+                forcedOptions(definition, level, villager, player),
+                true)) {
+            FORCED_SESSIONS.put(player.getUUID(), new ForcedDialogueSession(
+                    villager.getUUID(),
+                    definition,
+                    context,
+                    level.dimension(),
+                    villager.blockPosition().immutable(),
+                    List.of(),
+                    level.getGameTime(),
+                    offerIndex,
+                    ""));
         } else {
             VillagerInteractionService.sendVillagerNotice(player, villager, line);
         }
@@ -356,6 +420,18 @@ public final class ForcedDialogueService {
                 && VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()) {
             VillagerReputationManager.addDialogueReputation(player.serverLevel(), villager, player, itemPayment.successReputationDelta());
         }
+        if (isTradeRefreshConfirmSpecialOrderOption(session, option)) {
+            ResourceLocation definitionId = ResourceLocation.tryParse(session.tradeRefreshDefinitionId());
+            VillagerSpecialOrderService.QueueResult result = VillagerTradeRefreshService.queueSpecialOrder(
+                    player,
+                    villager,
+                    session.tradeRefreshOfferIndex(),
+                    definitionId);
+            FORCED_SESSIONS.remove(player.getUUID());
+            VillagerConversationService.endForPlayer(player, true);
+            openTradeRefreshDialogue(player.serverLevel(), villager, player, result.messageKey(), result.replacements());
+            return true;
+        }
         String responseText = option.selectResponse(player.serverLevel().getRandom());
         String stolenItemReturnResponse = stolenItemReturn.selectSuccessResponse(player.serverLevel().getRandom());
         if (returnedStolenItems && !stolenItemReturnResponse.isBlank()) {
@@ -373,6 +449,21 @@ public final class ForcedDialogueService {
                     response,
                     VillagerInteractionService.villagerSpeakerLabel(villager)
             );
+        }
+        if (isTradeRefreshSurpriseOption(session, option)) {
+            FORCED_SESSIONS.remove(player.getUUID());
+            VillagerConversationService.endForPlayer(player, true);
+            VillagerTradeRefreshService.handleSurpriseRequest(player, villager, session.tradeRefreshOfferIndex());
+            return true;
+        }
+        if (isTradeRefreshSpecialOrderOption(session, option)) {
+            openSpecialOrderSelectionDialogue(player, villager, session);
+            return true;
+        }
+        Optional<ResourceLocation> selectedSpecialOrder = VillagerSpecialOrderService.selectedDefinitionId(option.id());
+        if (selectedSpecialOrder.isPresent() && isTradeRefreshDefinition(session)) {
+            openSpecialOrderConfirmDialogue(player, villager, session, selectedSpecialOrder.get());
+            return true;
         }
         if (isTradeRefreshTradeOption(session, option)) {
             FORCED_SESSIONS.remove(player.getUUID());
@@ -408,6 +499,29 @@ public final class ForcedDialogueService {
                 && TRADE_REFRESH_TRADE_OPTION_ID.equals(option.id());
     }
 
+    private static boolean isTradeRefreshSurpriseOption(ForcedDialogueSession session, ForcedDialogueOption option) {
+        return isTradeRefreshDefinition(session)
+                && TRADE_REFRESH_SURPRISE_OPTION_ID.equals(option.id())
+                && session.tradeRefreshOfferIndex() >= 0;
+    }
+
+    private static boolean isTradeRefreshSpecialOrderOption(ForcedDialogueSession session, ForcedDialogueOption option) {
+        return isTradeRefreshDefinition(session)
+                && TRADE_REFRESH_SPECIAL_ORDER_OPTION_ID.equals(option.id())
+                && session.tradeRefreshOfferIndex() >= 0;
+    }
+
+    private static boolean isTradeRefreshConfirmSpecialOrderOption(ForcedDialogueSession session, ForcedDialogueOption option) {
+        return isTradeRefreshDefinition(session)
+                && TRADE_REFRESH_CONFIRM_SPECIAL_ORDER_OPTION_ID.equals(option.id())
+                && session.tradeRefreshOfferIndex() >= 0
+                && !session.tradeRefreshDefinitionId().isBlank();
+    }
+
+    private static boolean isTradeRefreshDefinition(ForcedDialogueSession session) {
+        return TRADE_REFRESH_DEFINITION_ID.equals(session.definition().id());
+    }
+
     private static boolean optionMatchesReputation(
             ServerLevel level,
             Villager villager,
@@ -418,6 +532,20 @@ public final class ForcedDialogueService {
     }
 
     private static ForcedDialogueDefinition tradeRefreshDefinition(String line, ForcedDialogueDefinition optionDefinition) {
+        return tradeRefreshDefinition(
+                line,
+                optionDefinition,
+                optionDefinition.options(),
+                optionDefinition.leaveOption(),
+                optionDefinition.leaveOptions());
+    }
+
+    private static ForcedDialogueDefinition tradeRefreshDefinition(
+            String line,
+            ForcedDialogueDefinition optionDefinition,
+            List<ForcedDialogueOption> options,
+            ForcedDialogueOption leaveOption,
+            List<ForcedDialogueOption> leaveOptions) {
         return new ForcedDialogueDefinition(
                 TRADE_REFRESH_DEFINITION_ID,
                 optionDefinition.trigger(),
@@ -441,9 +569,9 @@ public final class ForcedDialogueService {
                 optionDefinition.witnessEquipmentCondition(),
                 optionDefinition.playerItemCondition(),
                 optionDefinition.reputationCondition(),
-                optionDefinition.options(),
-                optionDefinition.leaveOption(),
-                optionDefinition.leaveOptions());
+                options,
+                leaveOption,
+                leaveOptions);
     }
 
     private static Optional<ForcedDialogueDefinition> tradeRefreshOptionDefinition(
@@ -454,6 +582,14 @@ public final class ForcedDialogueService {
         String definitionId = isTradeRefreshUnavailable(messageKey)
                 ? "trade_refresh.unavailable_options"
                 : "trade_refresh.available_options";
+        return tradeRefreshOptionDefinitionById(level, villager, player, definitionId);
+    }
+
+    private static Optional<ForcedDialogueDefinition> tradeRefreshOptionDefinitionById(
+            ServerLevel level,
+            Villager villager,
+            ServerPlayer player,
+            String definitionId) {
         return ForcedDialogueResources
                 .selectCandidates(level.getServer(), ForcedDialogueTrigger.TRADE_REFRESH, null)
                 .stream()
@@ -463,8 +599,138 @@ public final class ForcedDialogueService {
                 .findFirst();
     }
 
+    private static void openSpecialOrderSelectionDialogue(
+            ServerPlayer player,
+            Villager villager,
+            ForcedDialogueSession session) {
+        ServerLevel level = player.serverLevel();
+        List<VillagerSpecialOrderService.SpecialOrderOption> specialOrders =
+                VillagerSpecialOrderService.availableOptions(level, villager, player, session.tradeRefreshOfferIndex());
+        if (specialOrders.isEmpty()) {
+            FORCED_SESSIONS.remove(player.getUUID());
+            VillagerConversationService.endForPlayer(player, true);
+            openTradeRefreshDialogue(level, villager, player, "trade_refresh.special_order_unavailable", Map.of());
+            return;
+        }
+
+        ForcedDialogueDefinition optionDefinition = tradeRefreshOptionDefinitionById(
+                level,
+                villager,
+                player,
+                TRADE_REFRESH_SPECIAL_ORDER_SELECT_OPTIONS_ID)
+                .orElse(session.definition());
+        List<ForcedDialogueOption> options = new ArrayList<>();
+        int order = 0;
+        for (VillagerSpecialOrderService.SpecialOrderOption specialOrder : specialOrders) {
+            options.add(dynamicTradeRefreshOption(
+                    VillagerSpecialOrderService.selectionOptionId(specialOrder.definition().id()),
+                    specialOrder.label(),
+                    order++));
+        }
+        options.addAll(optionDefinition.options());
+
+        String line = tradeRefreshLine(level, villager, player, "trade_refresh.special_order_select", Map.of());
+        ForcedDialogueDefinition definition = tradeRefreshDefinition(
+                line,
+                optionDefinition,
+                List.copyOf(options),
+                optionDefinition.leaveOption(),
+                optionDefinition.leaveOptions());
+        ForcedDialogueContext context = tradeRefreshContext(level, villager, player, Map.of());
+        updateTradeRefreshSession(player, villager, definition, context, session.tradeRefreshOfferIndex(), "");
+    }
+
+    private static void openSpecialOrderConfirmDialogue(
+            ServerPlayer player,
+            Villager villager,
+            ForcedDialogueSession session,
+            ResourceLocation definitionId) {
+        ServerLevel level = player.serverLevel();
+        VillagerSpecialOrderService.SpecialOrderOption specialOrder = VillagerSpecialOrderService
+                .availableOptions(level, villager, player, session.tradeRefreshOfferIndex())
+                .stream()
+                .filter(candidate -> candidate.definition().id().equals(definitionId))
+                .findFirst()
+                .orElse(null);
+        if (specialOrder == null) {
+            FORCED_SESSIONS.remove(player.getUUID());
+            VillagerConversationService.endForPlayer(player, true);
+            openTradeRefreshDialogue(level, villager, player, "trade_refresh.special_order_unavailable", Map.of());
+            return;
+        }
+
+        Map<String, String> replacements = Map.of(
+                "trade_item", specialOrder.tradeItem(),
+                "trade_definition", definitionId.toString(),
+                "wait_days", Integer.toString(specialOrder.waitDays()),
+                "cooldown_days", Integer.toString(specialOrder.cooldownDays()));
+        ForcedDialogueDefinition optionDefinition = tradeRefreshOptionDefinitionById(
+                level,
+                villager,
+                player,
+                TRADE_REFRESH_SPECIAL_ORDER_CONFIRM_OPTIONS_ID)
+                .orElse(session.definition());
+        String line = tradeRefreshLine(level, villager, player, "trade_refresh.special_order_confirm", replacements);
+        ForcedDialogueDefinition definition = tradeRefreshDefinition(line, optionDefinition);
+        ForcedDialogueContext context = tradeRefreshContext(level, villager, player, replacements);
+        updateTradeRefreshSession(player, villager, definition, context, session.tradeRefreshOfferIndex(), definitionId.toString());
+    }
+
+    private static ForcedDialogueOption dynamicTradeRefreshOption(String id, String label, int order) {
+        return new ForcedDialogueOption(
+                id,
+                label,
+                List.of(),
+                0,
+                false,
+                0.0D,
+                false,
+                order,
+                ForcedDialogueStolenItemReturn.empty(),
+                ForcedDialogueItemPayment.empty(),
+                VillagerReputationCondition.empty());
+    }
+
+    private static void updateTradeRefreshSession(
+            ServerPlayer player,
+            Villager villager,
+            ForcedDialogueDefinition definition,
+            ForcedDialogueContext context,
+            int offerIndex,
+            String definitionId) {
+        ServerLevel level = player.serverLevel();
+        FORCED_SESSIONS.put(player.getUUID(), new ForcedDialogueSession(
+                villager.getUUID(),
+                definition,
+                context,
+                level.dimension(),
+                villager.blockPosition().immutable(),
+                List.of(),
+                level.getGameTime(),
+                offerIndex,
+                definitionId));
+        String line = definition.selectLine(level.getRandom());
+        if (!line.isBlank()) {
+            VillagerInteractionService.broadcastForcedVillagerChat(
+                    level,
+                    villager,
+                    line,
+                    VillagerInteractionService.villagerSpeakerLabel(villager));
+        }
+        VillagerInteractionService.sendForcedDialogueReputation(
+                player,
+                villager,
+                forcedOptions(definition, level, villager, player),
+                definition.forceCameraTowardsVillager());
+    }
+
     private static boolean isTradeRefreshUnavailable(String messageKey) {
-        return "trade_refresh.not_ready".equals(messageKey) || "trade_refresh.unavailable".equals(messageKey);
+        return "trade_refresh.not_ready".equals(messageKey)
+                || "trade_refresh.unavailable".equals(messageKey)
+                || "trade_refresh.special_order_unavailable".equals(messageKey)
+                || "trade_refresh.special_order_pending".equals(messageKey)
+                || "trade_refresh.special_order_cooldown".equals(messageKey)
+                || "trade_refresh.special_order_payment_missing".equals(messageKey);
     }
 
     private static ForcedDialogueContext tradeRefreshContext(
@@ -1898,7 +2164,28 @@ public final class ForcedDialogueService {
             net.minecraft.resources.ResourceKey<Level> sourceContainerDimension,
             BlockPos sourceContainerPos,
             List<ItemStack> removedStacks,
-            long startedGameTime) {
+            long startedGameTime,
+            int tradeRefreshOfferIndex,
+            String tradeRefreshDefinitionId) {
+        private ForcedDialogueSession(
+                UUID villagerId,
+                ForcedDialogueDefinition definition,
+                ForcedDialogueContext context,
+                net.minecraft.resources.ResourceKey<Level> sourceContainerDimension,
+                BlockPos sourceContainerPos,
+                List<ItemStack> removedStacks,
+                long startedGameTime) {
+            this(
+                    villagerId,
+                    definition,
+                    context,
+                    sourceContainerDimension,
+                    sourceContainerPos,
+                    removedStacks,
+                    startedGameTime,
+                    -1,
+                    "");
+        }
     }
 
     private record PlayerItemProximityKey(

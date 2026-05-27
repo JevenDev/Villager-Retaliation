@@ -2414,6 +2414,70 @@
       ]
     },
     {
+      "key": "trade_refresh.revered_prompt",
+      "lines": [
+        "I can reconsider the {trade_item} trade, or I can take a Special Order if you know what you want.",
+        "For you, I can either surprise you tomorrow or arrange something specific with more time.",
+        "That {trade_item} trade can change. Do you want my judgment, or a Special Order?"
+      ]
+    },
+    {
+      "key": "trade_refresh.special_order_select",
+      "lines": [
+        "These are the Special Orders I can realistically arrange right now.",
+        "Here is what my skills and suppliers can support.",
+        "Choose carefully. Specific stock takes longer to prepare."
+      ]
+    },
+    {
+      "key": "trade_refresh.special_order_confirm",
+      "lines": [
+        "A Special Order for {trade_item} will take {wait_days} day(s), with {cooldown_days} day(s) before another order.",
+        "I can arrange {trade_item}. It will take {wait_days} day(s), and I will need {cooldown_days} day(s) before another order.",
+        "{trade_item} is possible. Give me {wait_days} day(s), then wait {cooldown_days} day(s) before asking for another."
+      ]
+    },
+    {
+      "key": "trade_refresh.special_order_queued",
+      "lines": [
+        "Your Special Order for {trade_item} is set. Come back after {wait_days} day(s).",
+        "I have marked the Special Order for {trade_item}. It will be ready after {wait_days} day(s).",
+        "{trade_item} is ordered. Give me {wait_days} day(s) to prepare it properly."
+      ]
+    },
+    {
+      "key": "trade_refresh.special_order_unavailable",
+      "lines": [
+        "I cannot arrange that Special Order right now.",
+        "That specific order is beyond what I can offer today.",
+        "I do not have a realistic way to prepare that order yet."
+      ]
+    },
+    {
+      "key": "trade_refresh.special_order_pending",
+      "lines": [
+        "I am already preparing a Special Order for you.",
+        "Your current Special Order is still on my ledger.",
+        "One Special Order at a time. Let me finish the first."
+      ]
+    },
+    {
+      "key": "trade_refresh.special_order_cooldown",
+      "lines": [
+        "I need {cooldown_days} more day(s) before taking another Special Order from you.",
+        "Ask again after {cooldown_days} day(s). Specific stock takes recovery time.",
+        "Not yet. I need {cooldown_days} day(s) before another Special Order."
+      ]
+    },
+    {
+      "key": "trade_refresh.special_order_payment_missing",
+      "lines": [
+        "I need {extra_cost} before I can accept that Special Order.",
+        "Bring {extra_cost}, and I can put that order on the ledger.",
+        "That order has an extra cost: {extra_cost}."
+      ]
+    },
+    {
       "key": "interaction.inventory_unavailable",
       "lines": [
         "I cannot show you that right now.",

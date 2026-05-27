@@ -68,13 +68,95 @@ public final class VillagerTradeRefreshService {
 
         MerchantOffer currentOffer = offers.get(offerIndex);
         ItemStack result = currentOffer.getResult();
-        if (result.isEmpty() || createReplacement(level, villager, offerIndex) == null) {
+        if (result.isEmpty()) {
             sendState(player, villager);
             ForcedDialogueService.openTradeRefreshDialogue(level, villager, player, "trade_refresh.not_ready", Map.of());
             return;
         }
 
         String tradeItem = result.getHoverName().getString();
+        if (VillagerSpecialOrderService.canUseSpecialOrders(level, villager, player)) {
+            sendState(player, villager);
+            ForcedDialogueService.openTradeRefreshChoiceDialogue(level, villager, player, offerIndex, tradeItem);
+            return;
+        }
+
+        scheduleRandomRefresh(level, villager, player, offerIndex, tradeItem);
+    }
+
+    public static void handleSurpriseRequest(ServerPlayer player, Villager villager, int offerIndex) {
+        if (!(player.level() instanceof ServerLevel level) || !villager.isAlive()) {
+            return;
+        }
+        MerchantOffers offers = villager.getOffers();
+        if (!VillagerRetaliationConfig.ENABLE_SKILL_TRADE_OVERHAUL.get()
+                || offerIndex < 0
+                || offerIndex >= offers.size()) {
+            sendState(player, villager);
+            ForcedDialogueService.openTradeRefreshDialogue(level, villager, player, "trade_refresh.unavailable", Map.of());
+            return;
+        }
+
+        if (hasPendingRefresh(villager, offerIndex)
+                || VillagerSpecialOrderService.pendingOfferIndexes(villager).contains(offerIndex)) {
+            sendState(player, villager);
+            ForcedDialogueService.openTradeRefreshDialogue(level, villager, player, "trade_refresh.already_pending", Map.of());
+            return;
+        }
+
+        MerchantOffer currentOffer = offers.get(offerIndex);
+        ItemStack result = currentOffer.getResult();
+        if (result.isEmpty()) {
+            sendState(player, villager);
+            ForcedDialogueService.openTradeRefreshDialogue(level, villager, player, "trade_refresh.not_ready", Map.of());
+            return;
+        }
+
+        scheduleRandomRefresh(level, villager, player, offerIndex, result.getHoverName().getString());
+    }
+
+    public static VillagerSpecialOrderService.QueueResult queueSpecialOrder(
+            ServerPlayer player,
+            Villager villager,
+            int offerIndex,
+            ResourceLocation definitionId) {
+        if (!(player.level() instanceof ServerLevel level)
+                || !villager.isAlive()
+                || definitionId == null) {
+            return new VillagerSpecialOrderService.QueueResult(false, "trade_refresh.special_order_unavailable", Map.of());
+        }
+
+        MerchantOffers offers = villager.getOffers();
+        if (!VillagerRetaliationConfig.ENABLE_SKILL_TRADE_OVERHAUL.get()
+                || offerIndex < 0
+                || offerIndex >= offers.size()
+                || offers.get(offerIndex).getResult().isEmpty()) {
+            sendState(player, villager);
+            return new VillagerSpecialOrderService.QueueResult(false, "trade_refresh.special_order_unavailable", Map.of());
+        }
+        if (hasPendingRefresh(villager, offerIndex)
+                || VillagerSpecialOrderService.pendingOfferIndexes(villager).contains(offerIndex)) {
+            sendState(player, villager);
+            return new VillagerSpecialOrderService.QueueResult(false, "trade_refresh.special_order_pending", Map.of());
+        }
+
+        VillagerSpecialOrderService.QueueResult result = VillagerSpecialOrderService.queue(level, villager, player, offerIndex, definitionId);
+        sendState(player, villager);
+        return result;
+    }
+
+    private static void scheduleRandomRefresh(
+            ServerLevel level,
+            Villager villager,
+            ServerPlayer player,
+            int offerIndex,
+            String tradeItem) {
+        if (createReplacement(level, villager, offerIndex) == null) {
+            sendState(player, villager);
+            ForcedDialogueService.openTradeRefreshDialogue(level, villager, player, "trade_refresh.not_ready", Map.of());
+            return;
+        }
+
         scheduleRefresh(villager, offerIndex, currentDay(level) + 1L, tradeItem);
         sendState(player, villager);
         ForcedDialogueService.openTradeRefreshDialogue(

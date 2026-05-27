@@ -962,6 +962,107 @@
           ]
         }
       ]
+    },
+    {
+      "id": "trade_refresh.revered_options",
+      "trigger": "trade_refresh",
+      "line": "Special order option set.",
+      "force_camera_towards_villager": true,
+      "requires_line_of_sight": false,
+      "options": [
+        {
+          "id": "trade_refresh.surprise_me",
+          "label": "Surprise me.",
+          "order": 0,
+          "end_conversation": false,
+          "responses": [
+            "Then I will use my judgment and look for something worthwhile.",
+            "Fair enough. I will see what the shelves can become.",
+            "A surprise, then. Give me time to make it a good one."
+          ]
+        },
+        {
+          "id": "trade_refresh.special_order",
+          "label": "I'm looking for something specific.",
+          "order": 1,
+          "end_conversation": false,
+          "responses": [
+            "Specific requests take more care, but for you I will hear it.",
+            "Tell me what you want arranged, and I will say if it is realistic.",
+            "A Special Order, then. Let us be precise."
+          ]
+        },
+        {
+          "id": "trade_refresh.trade",
+          "label": "Trade",
+          "order": 2,
+          "end_conversation": false,
+          "responses": [
+            "Of course. The counter is still open.",
+            "Back to trade, then. We can decide later.",
+            "Very well. The current offers stand."
+          ]
+        },
+        {
+          "id": "leave",
+          "label": "Never mind.",
+          "order": 3,
+          "end_conversation": true,
+          "responses": [
+            "No trouble. Better not to change stock on a vague thought.",
+            "Fair enough. Ask again when you know what you want.",
+            "Then I will leave the ledger as it is."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "trade_refresh.special_order_select_options",
+      "trigger": "trade_refresh",
+      "line": "Special order selection option set.",
+      "force_camera_towards_villager": true,
+      "requires_line_of_sight": false,
+      "leave_option": {
+        "label": "Never mind.",
+        "order": 500,
+        "end_conversation": true,
+        "responses": [
+          "Fair enough. A specific order can wait.",
+          "Then I will not set anything aside.",
+          "No order placed. The counter stays as it was."
+        ]
+      }
+    },
+    {
+      "id": "trade_refresh.special_order_confirm_options",
+      "trigger": "trade_refresh",
+      "line": "Special order confirmation option set.",
+      "force_camera_towards_villager": true,
+      "requires_line_of_sight": false,
+      "options": [
+        {
+          "id": "trade_refresh.confirm_special_order",
+          "label": "Place Special Order",
+          "order": 0,
+          "end_conversation": false,
+          "responses": [
+            "Done. I will set the order aside and prepare it properly.",
+            "Agreed. I will arrange that trade and mark the time.",
+            "Then it is ordered. Come back when it is ready."
+          ]
+        },
+        {
+          "id": "leave",
+          "label": "Never mind.",
+          "order": 1,
+          "end_conversation": true,
+          "responses": [
+            "No order placed. Better a paused ledger than a bad promise.",
+            "Fair enough. I will keep the stock flexible.",
+            "Then I will not reserve anything yet."
+          ]
+        }
+      ]
     }
   ]
 }
