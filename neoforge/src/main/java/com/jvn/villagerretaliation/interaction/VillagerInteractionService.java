@@ -107,6 +107,11 @@ public final class VillagerInteractionService {
             return InteractionResult.FAIL;
         }
 
+        if (villager.level() instanceof ServerLevel level
+                && ForcedDialogueService.tryOpenTradeRefreshReadyDialogue(level, villager, player)) {
+            return InteractionResult.CONSUME;
+        }
+
         if (!VillagerConversationService.start(player, villager)) {
             sendVillagerNotice(player, villager, "interaction.busy");
             return InteractionResult.FAIL;

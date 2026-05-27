@@ -279,6 +279,29 @@ public final class VillagerTradeRefreshService {
         return new ReadyRefreshResult(changed, List.copyOf(playerReadyTradeItems));
     }
 
+    public static boolean hasReadyRefreshesForPlayer(ServerLevel level, Villager villager, ServerPlayer player) {
+        if (VillagerSpecialOrderService.hasReadyOrderForPlayer(level, villager, player.getUUID())) {
+            return true;
+        }
+
+        CompoundTag persistentData = villager.getPersistentData();
+        if (!persistentData.contains(PENDING_REFRESHES_KEY, Tag.TAG_LIST)) {
+            return false;
+        }
+
+        long currentDay = currentDay(level);
+        ListTag pending = persistentData.getList(PENDING_REFRESHES_KEY, Tag.TAG_COMPOUND);
+        for (int i = 0; i < pending.size(); i++) {
+            CompoundTag entry = pending.getCompound(i);
+            if (entry.hasUUID(PLAYER_KEY)
+                    && entry.getUUID(PLAYER_KEY).equals(player.getUUID())
+                    && entry.getLong(READY_DAY_KEY) <= currentDay) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static void sendState(ServerPlayer player, Villager villager) {
         PacketDistributor.sendToPlayer(player, new VillagerTradeRefreshStatePayload(
                 villager.getId(),

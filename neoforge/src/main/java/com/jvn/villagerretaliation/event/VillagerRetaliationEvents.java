@@ -189,6 +189,7 @@ public final class VillagerRetaliationEvents {
             rememberWeatherEventNearVillager(villager);
             if (villager.level() instanceof ServerLevel level) {
                 VillagerTradeMemory.ensureProfessionPool(level, villager);
+                ForcedDialogueService.maybeTriggerTradeRefreshReadyProximity(level, villager);
                 ForcedDialogueService.maybeTriggerPlayerItemProximity(level, villager);
             }
             VillagerRetaliationHandler.onEntityTickPost(event);

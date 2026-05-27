@@ -82,6 +82,7 @@ public final class ForcedDialogueService {
     public static final String SPECIAL_ORDER_STATUS_ROOT_OPTION_ID = "trade_refresh.special_order.status";
     private static final long RECENT_CONTAINER_CLICK_TICKS = 8L;
     private static final long FORCED_SESSION_TIMEOUT_TICKS = 20L * 60L;
+    private static final long TRADE_REFRESH_READY_SCAN_INTERVAL_TICKS = 40L;
     private static final long PLAYER_ITEM_PROXIMITY_SCAN_INTERVAL_TICKS = 80L;
     private static final long PLAYER_ITEM_PROXIMITY_COOLDOWN_TICKS = 20L * 30L;
     private static final Map<UUID, RecentContainerClick> RECENT_CONTAINER_CLICKS = new HashMap<>();
@@ -413,6 +414,30 @@ public final class ForcedDialogueService {
         } else {
             VillagerInteractionService.sendVillagerNotice(player, villager, line);
         }
+    }
+
+    public static boolean tryOpenTradeRefreshReadyDialogue(
+            ServerLevel level,
+            Villager villager,
+            ServerPlayer player) {
+        if (FORCED_SESSIONS.containsKey(player.getUUID())
+                || VillagerConversationService.isConversing(player)
+                || VillagerConversationService.isConversing(villager)
+                || (VillagerRetaliationConfig.ENABLE_FORCED_DIALOGUE.get()
+                        && !VillagerInteractionService.canUseForcedInteractionSystem(player, villager))
+                || !VillagerTradeRefreshService.hasReadyRefreshesForPlayer(level, villager, player)) {
+            return false;
+        }
+
+        VillagerTradeRefreshService.ReadyRefreshResult readyRefreshes =
+                VillagerTradeRefreshService.applyReadyRefreshesDetailed(level, villager, player);
+        VillagerTradeRefreshService.sendState(player, villager);
+        if (!readyRefreshes.hasPlayerReadyTrades()) {
+            return false;
+        }
+
+        openTradeRefreshReadyDialogue(level, villager, player, readyRefreshes);
+        return true;
     }
 
     public static boolean openSpecialOrderStatusDialogue(ServerPlayer player, Villager villager) {
@@ -1407,6 +1432,44 @@ public final class ForcedDialogueService {
 
     public static void endForPlayer(ServerPlayer player) {
         FORCED_SESSIONS.remove(player.getUUID());
+    }
+
+    public static void maybeTriggerTradeRefreshReadyProximity(ServerLevel level, Villager villager) {
+        if (!VillagerRetaliationConfig.ENABLE_FORCED_DIALOGUE.get()
+                || !VillagerRetaliationConfig.ENABLE_SKILL_TRADE_OVERHAUL.get()
+                || !villager.isAlive()
+                || villager.isBaby()
+                || villager.isTrading()) {
+            return;
+        }
+
+        long gameTime = level.getGameTime();
+        if (gameTime % TRADE_REFRESH_READY_SCAN_INTERVAL_TICKS
+                != Math.floorMod(villager.getUUID().getLeastSignificantBits(), TRADE_REFRESH_READY_SCAN_INTERVAL_TICKS)) {
+            return;
+        }
+
+        double radius = VillagerRetaliationConfig.MAX_FORCED_DIALOGUE_DISTANCE.get();
+        AABB area = villager.getBoundingBox().inflate(radius);
+        List<ServerPlayer> players = new ArrayList<>();
+        for (ServerPlayer player : level.getEntitiesOfClass(ServerPlayer.class, area)) {
+            if (player.isAlive()
+                    && !player.isSpectator()
+                    && !FORCED_SESSIONS.containsKey(player.getUUID())
+                    && !VillagerConversationService.isConversing(player)
+                    && VillagerInteractionService.canUseForcedInteractionSystem(player, villager)
+                    && VillagerTradeRefreshService.hasReadyRefreshesForPlayer(level, villager, player)) {
+                players.add(player);
+            }
+        }
+        if (players.size() > 1) {
+            players.sort(Comparator.comparingDouble(player -> villager.distanceToSqr(player)));
+        }
+        for (ServerPlayer player : players) {
+            if (tryOpenTradeRefreshReadyDialogue(level, villager, player)) {
+                return;
+            }
+        }
     }
 
     public static void maybeTriggerPlayerItemProximity(ServerLevel level, Villager villager) {

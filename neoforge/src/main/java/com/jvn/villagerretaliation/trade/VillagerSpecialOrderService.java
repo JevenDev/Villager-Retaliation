@@ -327,6 +327,26 @@ public final class VillagerSpecialOrderService {
         return activeOrderCount(villager, playerId) >= maxActiveOrders();
     }
 
+    public static boolean hasReadyOrderForPlayer(ServerLevel level, Villager villager, UUID playerId) {
+        CompoundTag persistentData = villager.getPersistentData();
+        if (!persistentData.contains(ORDERS_KEY, Tag.TAG_LIST)) {
+            return false;
+        }
+
+        long currentDay = currentDay(level);
+        ListTag orders = persistentData.getList(ORDERS_KEY, Tag.TAG_COMPOUND);
+        for (int i = 0; i < orders.size(); i++) {
+            CompoundTag order = orders.getCompound(i);
+            if (order.hasUUID(PLAYER_KEY)
+                    && order.getUUID(PLAYER_KEY).equals(playerId)
+                    && isActiveStatus(order.getString(STATUS_KEY))
+                    && order.getLong(READY_DAY_KEY) <= currentDay) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static QueueResult activeOrderLimitReached(Villager villager, UUID playerId) {
         return activeOrderLimitReached(activeOrderCount(villager, playerId), maxActiveOrders());
     }

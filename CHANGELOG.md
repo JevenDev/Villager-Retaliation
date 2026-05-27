@@ -21,6 +21,7 @@
 - Added trade-refresh buttons to villager trade slots so players can ask a villager to replace a specific trade on the next Minecraft day when an eligible skill-trade replacement exists.
 - Added data-driven forced dialogue for trade-refresh results, including accepted, already-pending, unavailable, and not-ready responses with reputation-specific option replies.
 - Added trade-refresh ready follow-up dialogue with `trade_refresh.ready` message lines and `trade_refresh.ready_options` forced-dialogue options, including placeholders for restocked trade summaries.
+- Ready trade-refresh requests now trigger the ready follow-up when the player gets close to the villager, applying the refreshed trades before the player opens the trade menu so the order-status dialogue option does not linger after completion.
 - Added recruitment left-behind follow-up dialogue with a dedicated talk option and biome-aware memory filtering through `recruitment_memory_biome` / `recruitment_memory_biomes`.
 - Added selectable Skills-page detail cards with expanded localized skill descriptions and an in-tooltip click hint for deeper skill info.
 - Added persistent per-villager last-seen day memory for each player, plus absence-aware opening dialogue that can reference day gaps with `{days_since_seen}`, `{day_or_days}`, and `{days_since_seen_phrase}` placeholders.

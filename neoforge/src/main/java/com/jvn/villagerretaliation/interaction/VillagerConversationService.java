@@ -106,6 +106,11 @@ public final class VillagerConversationService {
         return PLAYER_BY_VILLAGER.containsKey(villager.getUUID());
     }
 
+    public static boolean isConversing(ServerPlayer player) {
+        VillagerConversationSession session = SESSIONS_BY_PLAYER.get(player.getUUID());
+        return session != null && session.active();
+    }
+
     public static void tickVillager(Villager villager) {
         UUID playerId = PLAYER_BY_VILLAGER.get(villager.getUUID());
         if (playerId == null || !(villager.level() instanceof ServerLevel level)) {
