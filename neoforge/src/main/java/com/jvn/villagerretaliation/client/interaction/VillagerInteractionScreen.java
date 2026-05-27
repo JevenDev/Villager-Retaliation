@@ -38,6 +38,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
@@ -141,6 +142,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private final GiftPageContext giftPageContext = new GiftPageContext();
     private final OptionListContext optionListContext = new OptionListContext();
     private final NavigationChromeContext navigationChromeContext = new NavigationChromeContext();
+    private final ConversationPanelContext conversationPanelContext = new ConversationPanelContext();
 
     public VillagerInteractionScreen(
             int villagerEntityId,
@@ -250,8 +252,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         updateSkillScroll();
 
         int optionsTop = optionsTop();
-        renderConversationFocus(graphics, conversationInfoTop(), mouseX, mouseY);
-        renderDivider(graphics, optionsTop);
+        VillagerInteractionConversationPanel.render(this.conversationPanelContext, graphics, mouseX, mouseY);
         renderTopBackButton(graphics, mouseX, mouseY);
         if (this.page == DialoguePage.GIFT) {
             renderGiftPage(graphics, mouseX, mouseY, partialTick);
@@ -1170,132 +1171,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         );
     }
 
-    private void renderConversationFocus(GuiGraphics graphics, int optionsTop, int mouseX, int mouseY) {
-        int dividerX = dividerX();
-        int infoBaseY = Mth.floor(optionTextTop(optionsTop));
-        int infoLineGap = optionStride();
-
-        drawRightAlignedInfo(graphics, this.villagerName, infoBaseY, INFO_VALUE_COLOR, dividerX);
-        drawRightAlignedInfo(graphics, this.professionName, infoBaseY + infoLineGap, INFO_SECONDARY_COLOR, dividerX);
-        drawRightAlignedInfo(graphics, genderText(), infoBaseY + infoLineGap * 2, INFO_SECONDARY_COLOR, dividerX);
-        drawRightAlignedInfo(graphics, moodText(), infoBaseY + infoLineGap * 3, moodColor(this.primaryMood), dividerX);
-        drawRightAlignedInfo(graphics, reputationText(), infoBaseY + infoLineGap * 4, INFO_LABEL_COLOR, dividerX);
-        renderFamilyButton(graphics, mouseX, mouseY, infoBaseY + infoLineGap * 5, dividerX);
-        renderRelationshipButton(graphics, mouseX, mouseY, infoBaseY + infoLineGap * 6, dividerX);
-    }
-
-    private void drawRightAlignedInfo(GuiGraphics graphics, String text, int y, int color, int dividerX) {
-        graphics.drawString(this.font, text, dividerX - 28 - this.font.width(text), y, color, false);
-    }
-
-    private void renderFamilyButton(GuiGraphics graphics, int mouseX, int mouseY, int y, int dividerX) {
-        String text = familyButtonText();
-        FamilyButtonBounds bounds = familyButtonBounds(y, dividerX, text);
-        renderInfoActionButton(graphics, text, y, bounds, mouseX, mouseY, isFamilyPageActive());
-    }
-
-    private void renderRelationshipButton(GuiGraphics graphics, int mouseX, int mouseY, int y, int dividerX) {
-        String text = relationshipButtonText();
-        FamilyButtonBounds bounds = familyButtonBounds(y, dividerX, text);
-        renderInfoActionButton(graphics, text, y, bounds, mouseX, mouseY, this.page == DialoguePage.RELATIONSHIPS);
-    }
-
-    private void renderInfoActionButton(
-            GuiGraphics graphics,
-            String text,
-            int y,
-            FamilyButtonBounds bounds,
-            int mouseX,
-            int mouseY,
-            boolean active) {
-        boolean hovered = bounds.contains(mouseX, mouseY);
-        int color = active ? INFO_VALUE_COLOR : hovered ? 0xFFE5E5DE : INFO_SECONDARY_COLOR;
-        if (hovered || active) {
-            graphics.fill(bounds.left() - 6, bounds.top() - 2, bounds.right() + 4, bounds.bottom() + 2, hovered ? 0x30000000 : 0x18000000);
-        }
-        graphics.drawString(this.font, text, bounds.left(), y, color, false);
-    }
-
     private boolean isFamilyPageActive() {
         return this.page == DialoguePage.FAMILY
                 || this.page == DialoguePage.ANCESTRY
                 || this.page == DialoguePage.DESCENDANTS;
     }
 
-    private void renderDivider(GuiGraphics graphics, int optionsTop) {
-        int dividerX = dividerX();
-        int dividerTop = conversationInfoTop() - 12;
-        int dividerBottom = conversationInfoTop() + rootOptionViewportHeight() + 2;
-        int lineLeft = dividerX - 1;
-        int lineRight = dividerX + 1;
-        int selectorTop = dividerTop + (DIVIDER_HEIGHT - DIVIDER_SELECT_HEIGHT) / 2;
-        int selectorBottom = selectorTop + DIVIDER_SELECT_HEIGHT;
-
-        float selectorAnchorY = this.page == DialoguePage.GIFT ? Float.NaN : dividerSelectorAnchorY(optionsTop, dividerTop, dividerBottom);
-        if (!Float.isNaN(selectorAnchorY)) {
-            selectorTop = Mth.floor(selectorAnchorY + OPTION_HEIGHT * 0.5F - DIVIDER_SELECT_HEIGHT * 0.5F);
-            selectorTop = Mth.clamp(selectorTop, dividerTop, dividerBottom - DIVIDER_SELECT_HEIGHT);
-            selectorBottom = selectorTop + DIVIDER_SELECT_HEIGHT;
-        }
-
-        graphics.fill(lineLeft, dividerTop, lineRight, selectorTop, DIVIDER_CORE_COLOR);
-        graphics.fill(lineLeft, selectorBottom, lineRight, dividerBottom, DIVIDER_CORE_COLOR);
-
-        int selectorLeft = lineRight - DIVIDER_SELECT_WIDTH;
-        graphics.blit(
-                VillagerRetaliationClientAssets.DIVIDER_SELECT_TEXTURE,
-                selectorLeft,
-                selectorTop,
-                0,
-                0,
-                DIVIDER_SELECT_WIDTH,
-                DIVIDER_SELECT_HEIGHT,
-                DIVIDER_SELECT_WIDTH,
-                DIVIDER_SELECT_HEIGHT
-        );
-    }
-
-    private float dividerSelectorAnchorY(int optionsTop, int dividerTop, int dividerBottom) {
-        if (this.selectedOption < 0 || this.selectedOption >= this.options.size()) {
-            return Float.NaN;
-        }
-
-        int viewportTop = optionsTop;
-        int viewportBottom = optionsTop + optionViewportHeight();
-        float selectedY = optionsTop + this.selectedOption * optionStride() - this.optionScroll;
-        if (isOptionTextFullyVisible(selectedY, viewportTop, viewportBottom)) {
-            return selectedY;
-        }
-
-        float selectedTextTop = optionTextTop(selectedY);
-        float selectedTextBottom = selectedTextTop + this.font.lineHeight;
-        if (selectedTextBottom > viewportBottom) {
-            for (int index = this.selectedOption - 1; index >= 0; index--) {
-                float optionY = optionsTop + index * optionStride() - this.optionScroll;
-                if (isOptionTextFullyVisible(optionY, viewportTop, viewportBottom)) {
-                    return optionY;
-                }
-            }
-        } else if (selectedTextTop < viewportTop) {
-            for (int index = this.selectedOption + 1; index < this.options.size(); index++) {
-                float optionY = optionsTop + index * optionStride() - this.optionScroll;
-                if (isOptionTextFullyVisible(optionY, viewportTop, viewportBottom)) {
-                    return optionY;
-                }
-            }
-        }
-
-        return Mth.clamp(selectedY, dividerTop, dividerBottom - OPTION_HEIGHT);
-    }
-
-    private boolean isOptionTextFullyVisible(float optionY, int viewportTop, int viewportBottom) {
-        float textTop = optionTextTop(optionY);
-        float textBottom = textTop + this.font.lineHeight;
-        return textTop >= viewportTop && textBottom <= viewportBottom;
-    }
-
     private float optionTextTop(float optionY) {
-        return optionY + 5.0F;
+        return VillagerInteractionConversationPanel.optionTextTop(optionY);
     }
 
     private void updateMouseSelection(int mouseX, int mouseY) {
@@ -1599,10 +1482,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private int skillInfoViewportBottom() {
-        int infoBaseY = Mth.floor(optionTextTop(conversationInfoTop()));
-        int familyY = infoBaseY + optionStride() * 5;
-        FamilyButtonBounds bounds = familyButtonBounds(familyY, dividerX(), familyButtonText());
-        return bounds.bottom() + 2;
+        return VillagerInteractionConversationPanel.skillInfoViewportBottom(this.conversationPanelContext);
     }
 
     private int skillInfoViewportHeight() {
@@ -1660,21 +1540,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private boolean isPointInsideFamilyButton(double mouseX, double mouseY) {
-        int infoBaseY = Mth.floor(optionTextTop(conversationInfoTop()));
-        int y = infoBaseY + optionStride() * 5;
-        return familyButtonBounds(y, dividerX(), familyButtonText()).contains(mouseX, mouseY);
+        return VillagerInteractionConversationPanel.isPointInsideFamilyButton(this.conversationPanelContext, mouseX, mouseY);
     }
 
     private boolean isPointInsideRelationshipButton(double mouseX, double mouseY) {
-        int infoBaseY = Mth.floor(optionTextTop(conversationInfoTop()));
-        int y = infoBaseY + optionStride() * 6;
-        return familyButtonBounds(y, dividerX(), relationshipButtonText()).contains(mouseX, mouseY);
-    }
-
-    private FamilyButtonBounds familyButtonBounds(int y, int dividerX, String text) {
-        int width = this.font.width(text);
-        int left = dividerX - 28 - width;
-        return new FamilyButtonBounds(left, left + width, y, y + this.font.lineHeight);
+        return VillagerInteractionConversationPanel.isPointInsideRelationshipButton(this.conversationPanelContext, mouseX, mouseY);
     }
 
     private boolean canRequestVillagerInventory() {
@@ -2039,12 +1909,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
     }
 
-    private record FamilyButtonBounds(int left, int right, int top, int bottom) {
-        boolean contains(double mouseX, double mouseY) {
-            return VillagerClientUiUtil.containsInclusive(mouseX, mouseY, this.left, this.top - 2, this.right, this.bottom + 2);
-        }
-    }
-
     private final class GiftPageContext implements VillagerInteractionGiftPage.Context {
         @Override
         public Font font() {
@@ -2233,6 +2097,158 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         @Override
         public String hintText() {
             return VillagerInteractionScreen.this.translate(VillagerInteractionScreen.this.canNavigateBack() ? "hint.back" : "hint.leave");
+        }
+    }
+
+    private final class ConversationPanelContext implements VillagerInteractionConversationPanel.Context {
+        @Override
+        public Font font() {
+            return VillagerInteractionScreen.this.font;
+        }
+
+        @Override
+        public int dividerX() {
+            return VillagerInteractionScreen.this.dividerX();
+        }
+
+        @Override
+        public int conversationInfoTop() {
+            return VillagerInteractionScreen.this.conversationInfoTop();
+        }
+
+        @Override
+        public int optionsTop() {
+            return VillagerInteractionScreen.this.optionsTop();
+        }
+
+        @Override
+        public int optionViewportHeight() {
+            return VillagerInteractionScreen.this.optionViewportHeight();
+        }
+
+        @Override
+        public int rootOptionViewportHeight() {
+            return VillagerInteractionScreen.this.rootOptionViewportHeight();
+        }
+
+        @Override
+        public int optionStride() {
+            return VillagerInteractionScreen.this.optionStride();
+        }
+
+        @Override
+        public int optionHeight() {
+            return OPTION_HEIGHT;
+        }
+
+        @Override
+        public int optionCount() {
+            return VillagerInteractionScreen.this.options.size();
+        }
+
+        @Override
+        public int selectedOption() {
+            return VillagerInteractionScreen.this.selectedOption;
+        }
+
+        @Override
+        public float optionScroll() {
+            return VillagerInteractionScreen.this.optionScroll;
+        }
+
+        @Override
+        public boolean giftPageActive() {
+            return VillagerInteractionScreen.this.page == DialoguePage.GIFT;
+        }
+
+        @Override
+        public boolean familyPageActive() {
+            return VillagerInteractionScreen.this.isFamilyPageActive();
+        }
+
+        @Override
+        public boolean relationshipPageActive() {
+            return VillagerInteractionScreen.this.page == DialoguePage.RELATIONSHIPS;
+        }
+
+        @Override
+        public String villagerName() {
+            return VillagerInteractionScreen.this.villagerName;
+        }
+
+        @Override
+        public String professionName() {
+            return VillagerInteractionScreen.this.professionName;
+        }
+
+        @Override
+        public String genderText() {
+            return VillagerInteractionScreen.this.genderText();
+        }
+
+        @Override
+        public String moodText() {
+            return VillagerInteractionScreen.this.moodText();
+        }
+
+        @Override
+        public String reputationText() {
+            return VillagerInteractionScreen.this.reputationText();
+        }
+
+        @Override
+        public String familyButtonText() {
+            return VillagerInteractionScreen.this.familyButtonText();
+        }
+
+        @Override
+        public String relationshipButtonText() {
+            return VillagerInteractionScreen.this.relationshipButtonText();
+        }
+
+        @Override
+        public int moodColor() {
+            return VillagerInteractionScreen.moodColor(VillagerInteractionScreen.this.primaryMood);
+        }
+
+        @Override
+        public int infoValueColor() {
+            return INFO_VALUE_COLOR;
+        }
+
+        @Override
+        public int infoSecondaryColor() {
+            return INFO_SECONDARY_COLOR;
+        }
+
+        @Override
+        public int infoLabelColor() {
+            return INFO_LABEL_COLOR;
+        }
+
+        @Override
+        public int dividerCoreColor() {
+            return DIVIDER_CORE_COLOR;
+        }
+
+        @Override
+        public int dividerHeight() {
+            return DIVIDER_HEIGHT;
+        }
+
+        @Override
+        public int dividerSelectWidth() {
+            return DIVIDER_SELECT_WIDTH;
+        }
+
+        @Override
+        public int dividerSelectHeight() {
+            return DIVIDER_SELECT_HEIGHT;
+        }
+
+        @Override
+        public ResourceLocation dividerSelectTexture() {
+            return VillagerRetaliationClientAssets.DIVIDER_SELECT_TEXTURE;
         }
     }
 }
