@@ -36,6 +36,22 @@ and:
 
 are both accepted by the loaders that use `professions`, filters, item lists, tags, and story target lists. Arrays are clearer for pack documentation and future edits.
 
+## Canonical Names And Aliases
+
+The wiki tables list canonical field names first. Shorter or older aliases still load where documented, but new packs should prefer canonical names so examples stay consistent:
+
+| Prefer | Accepted aliases |
+| --- | --- |
+| `trigger` | `event` in forced dialogue |
+| `player_items`, `player_item_slots`, `player_item_enchantments` | `player_item`, `player_item_tag`, `player_item_tags`, `player_item_slot`, `held_item_enchantment`, `held_item_enchantments`, and other `held_item_*` range aliases |
+| `give_items` for normal dialogue hand-ins | `take_items`, `payment` |
+| `destination: "villager_inventory"` | `store_in_villager_inventory`, `store_in_inventory`, `store_items`, `store` |
+| `requires_villager_armed`, `requires_villager_unarmed` | `villager_armed`, `villager_unarmed` |
+| `requires_witness_armed`, `requires_witness_unarmed` | `witness_armed`, `witness_unarmed` |
+| `world_text_kind` | `style` in notifications |
+
+Compatibility aliases are meant for old packs and quick hand-authored JSON. The Datapack Generator writes canonical names when possible.
+
 ## Text Or Lines
 
 Speech-like entries usually accept `text` for one output or `lines` for several equal variations.
@@ -130,7 +146,7 @@ Most filters are additive within a field: if you list several professions, any o
 }
 ```
 
-Player item filters accept item ids and item tags. Prefix a tag with `#` inside `player_items`, or use `player_item_tag` / `player_item_tags`.
+Player item filters accept item ids and item tags. Prefix a tag with `#` inside canonical `player_items`. The older `player_item_tag` / `player_item_tags` fields still load as aliases.
 
 ```json
 {
@@ -143,7 +159,7 @@ If `player_items` is set and no slot filter is supplied, the current default is 
 
 `player_item_slots` narrows an item condition; it does not create one by itself. Pair slot filters with `player_items`, an item tag, a durability range, or an enchantment filter.
 
-Player item filters can also check remaining durability. Use `min_player_item_durability` / `max_player_item_durability` for exact remaining durability, or `min_player_item_durability_percent` / `max_player_item_durability_percent` for ranges that work across different tool tiers. The `held_item` aliases are accepted for the same fields.
+Player item filters can also check remaining durability. Use `min_player_item_durability` / `max_player_item_durability` for exact remaining durability, or `min_player_item_durability_percent` / `max_player_item_durability_percent` for ranges that work across different tool tiers. The older `held_item` aliases are accepted for the same fields.
 
 ```json
 {
@@ -168,7 +184,7 @@ They can also check enchantments. Use a string when one shared level range is en
 }
 ```
 
-Dialogue options can remove item(s) from the player when the option is selected. Use `give_items` for a hand-in that defaults to storing items in the villager inventory, or `take_items` / `payment` for aliases that default to discarding the removed items.
+Dialogue options can remove item(s) from the player when the option is selected. Use canonical `give_items` for a hand-in; it defaults to storing items in the villager inventory. The older `take_items` / `payment` aliases still load and default to discarding the removed items.
 
 ```json
 {
@@ -183,7 +199,7 @@ Dialogue options can remove item(s) from the player when the option is selected.
 
 `give_items` accepts `item` / `items`, `tag` / `tags`, `count` / `amount`, `destination`, `overflow_destination`, `require_space`, `success_response` / `success_responses`, and `failure_response` / `failure_responses`. Normal dialogue destinations are `villager_inventory`, `discard`, and `drop_at_villager`.
 
-Villager equipment filters are available anywhere the rule is evaluated against a specific villager: dialogue options, lines, messages, openings, closings, pacify lines, notifications, gift preferences, gift rewards, pacification payments, and profession loot rules. Use `requires_villager_armed` to require a usable weapon in either hand, or `requires_villager_unarmed` to require no usable weapon. The shorter aliases `villager_armed` and `villager_unarmed` are also accepted.
+Villager equipment filters are available anywhere the rule is evaluated against a specific villager: dialogue options, lines, messages, openings, closings, pacify lines, notifications, gift preferences, gift rewards, pacification payments, and profession loot rules. Use canonical `requires_villager_armed` to require a usable weapon in either hand, or canonical `requires_villager_unarmed` to require no usable weapon. The shorter aliases `villager_armed` and `villager_unarmed` are still accepted.
 
 ```json
 {

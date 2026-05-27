@@ -3727,7 +3727,6 @@ function entryIssueSeverity(section, kind, entry) {
       { severity: "warning", predicate: (item) => firstBlankListValue([item], ["lines", "loot_tables", "witness_profession", "witness_professions", "professions", "target_entity_types", "target_entities"]) !== "" },
       { severity: "error", predicate: (item) => Number.isFinite(item.min_recent_retaliations) && Number.isFinite(item.max_recent_retaliations) && item.min_recent_retaliations > item.max_recent_retaliations },
       { severity: "error", predicate: () => options.some((option) => !option.id || !option.label) },
-      { severity: "warning", predicate: () => Boolean(firstDuplicate(options.map((option) => option.id))) },
       { severity: "error", predicate: () => firstBadNumber(actionableOptions, ["order", "reputation", "aggro_chance"], (value, option, key) => key === "aggro_chance" ? value >= 0 && value <= 1 : Number.isFinite(value)) !== "" },
       { severity: "warning", predicate: () => firstInvalidValue(actionableOptions, ["reputation_level", "reputation_levels"], (value) => CONSTANTS.reputationLevels.includes(value)) !== "" },
       { severity: "error", predicate: () => firstBadNumber(actionableOptions, ["min_reputation", "max_reputation"], Number.isFinite) !== "" },
@@ -4120,8 +4119,6 @@ function entryIssueDetail(section, kind, entry) {
     const options = Array.isArray(entry.options) ? entry.options : [];
     const actionableOptions = [...options, ...forcedLeaveOptions(entry)];
     if (options.some((option) => !option.id || !option.label)) return issueDetail("Options JSON", "every option has id and label", "an option is missing one", "forced-options_json");
-    const duplicateOption = firstDuplicate(options.map((option) => option.id));
-    if (duplicateOption) return issueDetail("Options JSON", "unique option ids", duplicateOption, "forced-options_json", "warning");
     const badOptionNumber = firstBadNumberDetail(actionableOptions, [
       { key: "order", label: "Options JSON order", expected: "a valid number", fieldId: "forced-options_json", valid: Number.isFinite },
       { key: "reputation", label: "Options JSON reputation", expected: "a valid number", fieldId: "forced-options_json", valid: Number.isFinite },

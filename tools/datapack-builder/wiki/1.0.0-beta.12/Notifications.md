@@ -150,7 +150,7 @@ Common trigger examples:
 | `lines` | array | required unless `text` is set | Alternate HUD/world texts. One is selected at random after this entry wins weighted selection. |
 | `kind` | enum | `default` | HUD notification category. |
 | `world_text_kind` | enum | `dialogue` | Style used for world text. |
-| `style` | enum | `dialogue` | Alias for `world_text_kind`. |
+| `style` | enum | `dialogue` | Legacy alias for `world_text_kind`; new packs should write `world_text_kind`. |
 | `color` | color | default white | Sets text and chat color unless more specific colors are provided. |
 | `text_color` | color | `color` | On-screen text color. |
 | `chat_color` | color | `text_color` | Chat/log color where used. |

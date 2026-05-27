@@ -209,6 +209,7 @@ See [Dialogue Requests](Dialogue-Requests.md) for simple and expanded dropdown e
 | `reputation_levels` | string or array | any | Filters by the player's current reputation tier with this villager: `royalty`, `revered`, `respected`, `trusted`, `neutral`, `suspicious`, `hostile`, `despised`, or `feared`. |
 | `min_reputation` | integer | none | Minimum exact reputation value with this villager. |
 | `max_reputation` | integer | none | Maximum exact reputation value with this villager. |
+| `conditions` | array | none | Beta.12+. Compound condition blocks for option visibility. Prefer this for new family and relationship option checks. |
 | `player_items` | string or array | none | Requires the player to have one matching item or item tag. Prefix tags with `#`. |
 | `player_item_slots` | string or array | `hands` when `player_items` is set | Slots to check: `main_hand`, `off_hand`, `hands`, `armor`, `hotbar`, `inventory`, `equipment`, or `any`. |
 | `min_player_item_durability` | integer | none | Minimum remaining durability on the matched player item. Alias: `min_held_item_durability`. |
@@ -234,28 +235,8 @@ See [Dialogue Requests](Dialogue-Requests.md) for simple and expanded dropdown e
 | `requires_unapologized_remembered_harm` | boolean | `false` | Shows after remembered harm that has not been apologized for. |
 | `requires_unreported_village_defense` | boolean | `false` | Shows after the player defends the village. |
 | `requires_shareable_story` | boolean | `false` | Shows when the villager has a discovered structure or biome story. |
-| `requires_known_family` | boolean | `false` | Shows when the villager has any known family relationship. |
-| `requires_known_parent` | boolean | `false` | Shows when the villager has a known parent. |
-| `requires_known_sibling` | boolean | `false` | Shows when the villager has a known sibling. |
-| `requires_known_spouse` | boolean | `false` | Shows when the villager has a known family spouse. |
-| `requires_known_child` | boolean | `false` | Shows when the villager has a known child. |
-| `requires_known_grandparent` | boolean | `false` | Shows when the villager has a known grandparent. |
-| `requires_known_grandchild` | boolean | `false` | Shows when the villager has a known grandchild. |
-| `requires_known_descendant` | boolean | `false` | Shows when the villager has a known descendant. |
-| `requires_known_aunt_uncle` | boolean | `false` | Shows when the villager has a known aunt or uncle. |
-| `requires_known_cousin` | boolean | `false` | Shows when the villager has a known cousin. |
-| `requires_known_niece_nephew` | boolean | `false` | Shows when the villager has a known niece or nephew. |
-| `requires_known_extended_family` | boolean | `false` | Shows when the villager has known extended family. |
-| `requires_known_deceased_family` | boolean | `false` | Shows when the villager has a known deceased family member. |
-| `requires_known_relationship` | boolean | `false` | Shows when the villager has any known romantic relationship state. |
-| `requires_known_current_relationship` | boolean | `false` | Shows when the villager has a current romantic partner. |
-| `requires_known_past_relationship` | boolean | `false` | Shows when the villager has a past romantic partner. |
-| `requires_known_crush` | boolean | `false` | Shows when the villager has a known crush. |
-| `requires_known_dating_partner` | boolean | `false` | Shows when the villager is dating someone. |
-| `requires_known_fiance` | boolean | `false` | Shows when the villager is engaged. |
-| `requires_known_romantic_spouse` | boolean | `false` | Shows when the villager has a romantic spouse. |
-| `requires_known_separated_partner` | boolean | `false` | Shows when the villager has a separated partner. |
-| `requires_known_widowed_partner` | boolean | `false` | Shows when the villager has a late partner. |
+| `requires_known_family` and related family fields | boolean | `false` | Supported in beta.12, but planned for beta.13 deprecation. Use `conditions` with `type: "family"`. |
+| `requires_known_relationship` and related relationship fields | boolean | `false` | Supported in beta.12, but planned for beta.13 deprecation. Use `conditions` with `type: "relationship"`. |
 | `requires_active_special_orders` | boolean | `false` | Shows when the player has active Special Orders with this villager. |
 
 ## Line Fields
@@ -359,15 +340,17 @@ See [Dialogue Requests](Dialogue-Requests.md) for simple and expanded dropdown e
 
 Reputation filters on options and lines check the player's current reputation with the specific villager being spoken to. Use `reputation_levels` for tier-based behavior, or `min_reputation` / `max_reputation` when you need an exact numeric boundary.
 
+Flat filters such as `professions`, `dispositions`, `reputation_levels`, `weather`, `times`, `show_for_adults`, and `show_for_babies` are convenience fields for common one-step checks. Use `conditions` when an option or line needs compound logic, grouped alternatives, negation, or family/relationship checks. When both flat filters and `conditions` are present, all of them must match.
+
 Normal dialogue line selection is: matching filters, requested option or memory preference, recent-variant freshness, highest `priority`, then weighted random selection. The effective weight shown by `/villagerretaliation dialogue explain` is `weight + specificityScore * 8`, so more specific filters still get a small documented boost inside the same priority tier.
 
 Use `text_key` when one rule should resolve text from `messages` instead of carrying localized text directly. The message entry can provide `lines` variants and can be overridden per locale by id/key without copying the rule filters.
 
-### Compound Line Conditions
+### Compound Conditions
 
-`conditions` is the preferred path for new normal dialogue line rules. The flat legacy normal-line fields below still work in beta.12, but are deprecated and scheduled for removal in beta.13. Migrate them to `conditions` before targeting beta.13.
+`conditions` is the preferred path for new normal dialogue line rules and for new family or relationship option visibility. The flat legacy fields below still work in beta.12, but are planned for beta.13 deprecation. Migrate them to `conditions` before targeting beta.13.
 
-Deprecated beta.12 line fields:
+Beta.13 deprecation candidates:
 
 ```text
 requires_known_family
@@ -407,7 +390,7 @@ requires_retaliation_to_self
 requires_retaliation_from_other
 ```
 
-Use `conditions` when the line needs compound logic that flat fields cannot express clearly, such as "A or B, but not C."
+Use `conditions` when an option or line needs compound logic that flat fields cannot express clearly, such as "A or B, but not C."
 
 Condition blocks support:
 

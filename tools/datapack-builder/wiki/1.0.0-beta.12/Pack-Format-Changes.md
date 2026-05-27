@@ -51,6 +51,7 @@ Pack-facing beta.12 changes introduce persistent Social Attributes and temporary
 - Added Respected Special Orders: high-reputation players can choose targetable skill-trade definitions for longer, cooldown-gated restock requests, up to three active requests per villager/player.
 - Added an `Ask about orders` dialogue branch for active Special Orders, with a data-driven root dialogue option, dynamic per-order status options, and eight stock-time response variations.
 - Added recruitment-memory biome line filters `recruitment_memory_biome` and `recruitment_memory_biomes` for recruitment follow-up dialogue.
+- Added `conditions` support to dialogue options, so option visibility can use the same compound condition blocks as normal dialogue lines.
 - Added normal dialogue line `priority` and `category` fields. Higher `priority` lines win before weighted random selection; `category` is an author/debug label shown by dialogue explain.
 - Added normal dialogue line `text_key` so a rule entry can resolve its text from keyed `messages` instead of embedding localized text directly.
 - Added optional skill-trade `request` metadata: `targetable`, `display_priority`, `min_reputation`, `wait_days`, `cooldown_days`, and `extra_cost`.
@@ -64,15 +65,17 @@ Pack-facing beta.12 changes introduce persistent Social Attributes and temporary
 - The Datapack Generator now exposes beta.12 mood and Social Attribute line filters only when the selected VR version is `1.0.0-beta.12`.
 - The generator's Convert flow can move beta.11 packs to beta.12 by updating `pack.mcmeta` with the beta.12 VR version marker. Existing beta.11 JSON fields are not renamed or removed.
 - Documentation now distinguishes dialogue `dispositions` from beta.12 temporary `mood` / `moods` filters.
+- Documentation now separates canonical field names from compatibility aliases, including `trigger`, `player_items`, `give_items`, `requires_villager_*`, `requires_witness_*`, and `world_text_kind`.
 - Normal dialogue line selection now has an explicit priority tier before weighted random selection. Existing packs keep the default `priority: 0`.
 - Forced-dialogue option ids should remain unique among simultaneously visible options, but reputation-filtered variants can reuse an id when their filters are mutually exclusive. The built-in trade-refresh option templates use this to provide tier-specific responses for the same visible button.
 - Skill-trade replacement selection now avoids giving a refresh result item that already exists in the villager's current offer list.
 - Built-in villager skill-trade entries are Special Order targetable by default. Wandering trader skill-trade entries are not targetable.
 - Ready trade-refresh follow-ups can now open a forced-dialogue session tied to the speaking villager, and conversation validation allows that forced session target while forced-session rules still pass.
 
-### Deprecated
+### Planned Beta.13 Deprecations
 
-- Deprecated flat normal dialogue line memory/family/relationship helper fields in favor of `conditions`. They still load in beta.12, but are scheduled for removal in beta.13: `requires_known_family`, `requires_known_parent`, `requires_known_sibling`, `requires_known_spouse`, `requires_known_child`, `requires_known_grandparent`, `requires_known_grandchild`, `requires_known_descendant`, `requires_known_aunt_uncle`, `requires_known_cousin`, `requires_known_niece_nephew`, `requires_known_extended_family`, `requires_known_deceased_family`, `requires_known_relationship`, `requires_known_current_relationship`, `requires_known_past_relationship`, `requires_known_crush`, `requires_known_dating_partner`, `requires_known_fiance`, `requires_known_romantic_spouse`, `requires_known_separated_partner`, `requires_known_widowed_partner`, `requires_recent_broken_bed_memory`, `requires_recent_direct_hit_memory`, `requires_gear_report_used_in_combat`, `requires_gear_report_unused_in_combat`, `requires_recruitment_memory`, `requires_recruitment_boat_trip`, `requires_recruitment_ocean_crossing`, `requires_recruitment_swim_trip`, `excludes_recruitment_ocean_crossing`, `requires_container_theft_to_self`, `requires_container_theft_from_other`, `requires_retaliation_to_self`, and `requires_retaliation_from_other`.
+- The flat normal dialogue line memory/family/relationship helper fields still load in beta.12, but are planned for beta.13 deprecation in favor of `conditions`: `requires_known_family`, `requires_known_parent`, `requires_known_sibling`, `requires_known_spouse`, `requires_known_child`, `requires_known_grandparent`, `requires_known_grandchild`, `requires_known_descendant`, `requires_known_aunt_uncle`, `requires_known_cousin`, `requires_known_niece_nephew`, `requires_known_extended_family`, `requires_known_deceased_family`, `requires_known_relationship`, `requires_known_current_relationship`, `requires_known_past_relationship`, `requires_known_crush`, `requires_known_dating_partner`, `requires_known_fiance`, `requires_known_romantic_spouse`, `requires_known_separated_partner`, `requires_known_widowed_partner`, `requires_recent_broken_bed_memory`, `requires_recent_direct_hit_memory`, `requires_gear_report_used_in_combat`, `requires_gear_report_unused_in_combat`, `requires_recruitment_memory`, `requires_recruitment_boat_trip`, `requires_recruitment_ocean_crossing`, `requires_recruitment_swim_trip`, `excludes_recruitment_ocean_crossing`, `requires_container_theft_to_self`, `requires_container_theft_from_other`, `requires_retaliation_to_self`, and `requires_retaliation_from_other`.
+- The flat dialogue option family and relationship helper fields still load in beta.12, but are planned for beta.13 deprecation in favor of `conditions`: `requires_known_family`, `requires_known_parent`, `requires_known_sibling`, `requires_known_spouse`, `requires_known_child`, `requires_known_grandparent`, `requires_known_grandchild`, `requires_known_descendant`, `requires_known_aunt_uncle`, `requires_known_cousin`, `requires_known_niece_nephew`, `requires_known_extended_family`, `requires_known_deceased_family`, `requires_known_relationship`, `requires_known_current_relationship`, `requires_known_past_relationship`, `requires_known_crush`, `requires_known_dating_partner`, `requires_known_fiance`, `requires_known_romantic_spouse`, `requires_known_separated_partner`, and `requires_known_widowed_partner`.
 
 ### Removed
 
@@ -88,7 +91,9 @@ Pack-facing beta.12 changes introduce persistent Social Attributes and temporary
 - Keep using `dispositions` for reputation-derived tone filters. Use `mood` / `moods` only for temporary event-driven emotional state.
 - Use `priority` when one matched line should reliably win over another. Use `weight` to tune random odds inside the same priority tier.
 - Use `text_key` for new locale-heavy packs when translators should override message text without copying the full line filters.
-- Migrate deprecated flat normal dialogue line helper fields to `conditions` before beta.13. The beta.12 runtime and Datapack Generator warn when a normal dialogue line still uses those fields.
+- Migrate flat normal dialogue line helper fields to `conditions` before beta.13 if you want to avoid the beta.13 deprecation path.
+- Prefer `conditions` for new dialogue option family and relationship checks. The flat option helper fields are still accepted for compatibility in beta.12, but are planned for beta.13 deprecation.
+- Prefer canonical field names from [JSON Reference](JSON-Reference.md). Aliases remain compatibility inputs, not the recommended names for new examples.
 - Use `requires_high_*` when a simple score of 60+ is enough. Use `min_*` and `max_*` score ranges when a line needs exact attribute bands.
 
 ## 1.0.0-beta.11 - 2026-05-26

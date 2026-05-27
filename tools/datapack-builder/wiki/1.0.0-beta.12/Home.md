@@ -1,6 +1,6 @@
 # Villager Retaliation Wiki
 
-Villager Retaliation is data-driven in the places pack makers usually want to touch: dialogue, forced dialogue events, notifications, gifts, pacification payments, profession loot, story discoveries, villager names, combat villager models, and beta.12 dialogue filters for temporary moods and villager Social Attributes. This wiki is written for JSON authors, datapack authors, resource-pack authors, and modpack developers who want predictable hooks without touching Java.
+Villager Retaliation is data-driven in the places pack makers usually want to touch: dialogue, forced dialogue events, notifications, gifts, pacification payments, profession loot, skill trades, story discoveries, villager names, combat villager models, and beta.12 dialogue filters for temporary moods and villager Social Attributes. This wiki is written for JSON authors, datapack authors, resource-pack authors, and modpack developers who want predictable hooks without touching Java.
 
 ## Quick Links
 
@@ -18,6 +18,7 @@ Villager Retaliation is data-driven in the places pack makers usually want to to
 - [Gift JSON](Gifts.md) - gift preferences, reactions, item and tag selectors, profession overrides, priority, and high-reputation rewards.
 - [Pacification JSON](Pacification.md) - item or tag payments, modded currencies, costs, and profession-specific pacify rules.
 - [Profession Loot JSON](Profession-Loot.md) - datapack profession loot rules backed by Minecraft loot tables.
+- [Skill Trades](Skill-Trades.md) - profession, skill, rank, chance, item, enchantment, and config-gated extra trade offers.
 - [Story Discovery JSON](Story-Discovery.md) - structure and biome discovery lists used by `share_story` dialogue.
 - [Villager Names](Villager-Names.md) - adding to or replacing the preset name pool.
 - [Resource Pack Models And Textures](Resource-Pack-Models.md) - combat textures, combat model JSON, non-combat model opt-in, and EMF compatibility.
@@ -36,6 +37,7 @@ Villager Retaliation is data-driven in the places pack makers usually want to to
 | Pacification payments | Datapack | `data/villagerretaliation/pacification/` |
 | Profession loot rules | Datapack | `data/villagerretaliation/profession_loot/` |
 | Profession loot tables | Datapack | `data/<namespace>/loot_table/villager/profession/` |
+| Skill trades | Datapack | `data/<namespace>/skill_trades/` |
 | Story structures | Datapack | `data/<namespace>/story_structures/` |
 | Story biomes | Datapack | `data/<namespace>/story_biomes/` |
 | Preset villager names | Datapack | `data/villagerretaliation/villager_names/` |

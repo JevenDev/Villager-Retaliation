@@ -38,6 +38,8 @@ The Dialogue tab supports reputation-gated options and lines through `reputation
 
 When an imported datapack contains beta.12-compatible fields that are planned for beta.13 deprecation, the generator keeps them working in the generated JSON but marks the entry with a blue `Marked for deprecation` notice. The normal form shows the replacement field instead, usually `conditions`, so new edits move toward the beta.13 shape without silently deleting old compatibility fields.
 
+The generator writes canonical field names where it has structured controls: `trigger` instead of `event`, `player_items` instead of item/tag aliases, `requires_villager_armed` instead of `villager_armed`, and `world_text_kind` instead of notification `style`. Imported packs that use compatibility aliases still preserve those fields when the raw JSON editor is the only place that owns them.
+
 The Forced, Notifications, Gifts, and Pacification tabs expose armed/unarmed villager filters where the game has a specific villager to evaluate. Forced dialogue uses witness filters; the other tabs use villager filters.
 
 The generator is meant for datapacks. Use a resource pack separately for GUI language keys, villager textures, and model JSON.
