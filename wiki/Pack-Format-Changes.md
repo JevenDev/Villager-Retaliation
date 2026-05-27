@@ -52,6 +52,7 @@ Pack-facing beta.12 changes introduce persistent Social Attributes and temporary
 - Added an `Ask about orders` dialogue branch for active Special Orders, with a data-driven root dialogue option, dynamic per-order status options, and eight stock-time response variations.
 - Added recruitment-memory biome line filters `recruitment_memory_biome` and `recruitment_memory_biomes` for recruitment follow-up dialogue.
 - Added normal dialogue line `priority` and `category` fields. Higher `priority` lines win before weighted random selection; `category` is an author/debug label shown by dialogue explain.
+- Added normal dialogue line `text_key` so a rule entry can resolve its text from keyed `messages` instead of embedding localized text directly.
 - Added optional skill-trade `request` metadata: `targetable`, `display_priority`, `min_reputation`, `wait_days`, `cooldown_days`, and `extra_cost`.
 - Added the forced-dialogue trigger value `trade_refresh` for data-driven trade-refresh option templates.
 - Added built-in forced-dialogue entries `trade_refresh.ready_options`, `trade_refresh.available_options`, `trade_refresh.unavailable_options`, `trade_refresh.revered_options`, `trade_refresh.special_order_select_options`, `trade_refresh.special_order_confirm_options`, and `trade_refresh.special_order_status_options`.
@@ -86,6 +87,7 @@ Pack-facing beta.12 changes introduce persistent Social Attributes and temporary
 - Packs that customize trade-refresh dialogue should override the `trade_refresh.*` dialogue message keys for opening lines and follow-ups, and the `trade_refresh.ready_options`, `trade_refresh.available_options`, `trade_refresh.unavailable_options`, `trade_refresh.revered_options`, `trade_refresh.special_order_select_options`, and `trade_refresh.special_order_confirm_options` forced-dialogue entries for button responses.
 - Keep using `dispositions` for reputation-derived tone filters. Use `mood` / `moods` only for temporary event-driven emotional state.
 - Use `priority` when one matched line should reliably win over another. Use `weight` to tune random odds inside the same priority tier.
+- Use `text_key` for new locale-heavy packs when translators should override message text without copying the full line filters.
 - Use `requires_high_*` when a simple score of 60+ is enough. Use `min_*` and `max_*` score ranges when a line needs exact attribute bands.
 
 ## 1.0.0-beta.11 - 2026-05-26

@@ -266,6 +266,7 @@ See [Dialogue Requests](Dialogue-Requests.md) for simple and expanded dropdown e
 | `request` | enum | required | Must match the requested dialogue request. |
 | `text` | string | required unless `lines` is set | The response text. |
 | `lines` | array | required unless `text` is set | Alternate response texts. One is selected at random after this entry wins weighted selection. |
+| `text_key` | string | none | Beta.12+. Message key used as this line's text, letting filters stay in `lines` while localized variants live in `messages`. |
 | `option` | string or array | none | Restricts the line to option id(s). |
 | `option_ids` | string or array | none | Same purpose as `option`. |
 | `professions` | string or array | inherited/any | Filters by profession. |
@@ -359,6 +360,8 @@ See [Dialogue Requests](Dialogue-Requests.md) for simple and expanded dropdown e
 Reputation filters on options and lines check the player's current reputation with the specific villager being spoken to. Use `reputation_levels` for tier-based behavior, or `min_reputation` / `max_reputation` when you need an exact numeric boundary.
 
 Normal dialogue line selection is: matching filters, requested option or memory preference, recent-variant freshness, highest `priority`, then weighted random selection. The effective weight shown by `/villagerretaliation dialogue explain` is `weight + specificityScore * 8`, so more specific filters still get a small documented boost inside the same priority tier.
+
+Use `text_key` when one rule should resolve text from `messages` instead of carrying localized text directly. The message entry can provide `lines` variants and can be overridden per locale by id/key without copying the rule filters.
 
 ### Compound Line Conditions
 

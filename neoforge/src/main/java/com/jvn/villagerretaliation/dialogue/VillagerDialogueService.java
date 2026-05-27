@@ -718,12 +718,31 @@ public final class VillagerDialogueService {
     }
 
     private static String resolveText(DialogueLine line, DialogueContext context) {
+        Optional<String> textKeyResult = resolveTextKey(line, context);
+        if (textKeyResult.isPresent()) {
+            return textKeyResult.get();
+        }
         return resolveText(line.selectText(context.random()), line, context);
     }
 
     private static DialogueResult resolveText(DialogueLine line, DialogueContext context, List<String> recentDialogueIds) {
+        Optional<String> textKeyResult = resolveTextKey(line, context);
+        if (textKeyResult.isPresent() || line.lines().isEmpty()) {
+            return new DialogueResult(line.id(), textKeyResult.orElse(""));
+        }
         DialogueLine.SelectedText selected = line.selectText(context.random(), recentDialogueIds);
         return new DialogueResult(selected.id(), resolveText(selected.text(), line, context));
+    }
+
+    private static Optional<String> resolveTextKey(DialogueLine line, DialogueContext context) {
+        if (line.textKey().isBlank()) {
+            return Optional.empty();
+        }
+        return VillagerDialogueResources.message(
+                        context,
+                        line.textKey(),
+                        line.playerItemCondition().replacements(context.player()))
+                .map(text -> resolveText(text, context));
     }
 
     private static String resolveText(String text, DialogueLine line, DialogueContext context) {

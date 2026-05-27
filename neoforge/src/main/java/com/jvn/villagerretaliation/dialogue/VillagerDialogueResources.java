@@ -76,7 +76,7 @@ public final class VillagerDialogueResources {
             "id", "text", "lines", "outcomes", "professions", "dispositions",
             "requires_villager_unarmed", "villager_unarmed", "requires_villager_armed", "villager_armed", "weight");
     private static final Set<String> LINE_KEYS = Set.of(
-            "id", "request", "text", "lines", "option", "option_ids", "professions", "dispositions",
+            "id", "request", "text", "lines", "text_key", "option", "option_ids", "professions", "dispositions",
             "mood", "moods", "min_mood_intensity",
             "requires_villager_unarmed", "villager_unarmed", "requires_villager_armed", "villager_armed",
             "reputation_level", "reputation_levels", "min_reputation", "max_reputation",
@@ -666,7 +666,8 @@ public final class VillagerDialogueResources {
             DatapackDiagnostics.warnInertPlayerItemSlots(location, entryContext("line", entry, index), entry);
             Optional<DialogueRequestType> requestType = readEnum(entry, "request", DialogueRequestType.class);
             List<String> entryLines = readLines(entry);
-            if (requestType.isEmpty() || entryLines.isEmpty()) {
+            String textKey = readString(entry, "text_key");
+            if (requestType.isEmpty() || (entryLines.isEmpty() && textKey.isBlank())) {
                 index++;
                 continue;
             }
@@ -678,6 +679,7 @@ public final class VillagerDialogueResources {
                     requestType.get(),
                     entryLines
             );
+            builder.textKey(textKey);
             applyDialogueOptions(location, entryContext("line", entry, index), builder, entry, defaultProfessions);
             putEntry(location, "dialogue line", resolvedId, builder.build(), lines, lineSources);
             index++;

@@ -18,6 +18,7 @@ import net.minecraft.world.entity.npc.VillagerProfession;
 public record DialogueLine(
         String id,
         List<String> lines,
+        String textKey,
         DialogueRequestType requestType,
         Set<String> optionIds,
         boolean showForAdults,
@@ -461,6 +462,7 @@ public record DialogueLine(
         private final String id;
         private final DialogueRequestType requestType;
         private final List<String> lines;
+        private String textKey = "";
         private final Set<String> optionIds = new java.util.HashSet<>();
         private boolean showForAdults = true;
         private boolean showForBabies = true;
@@ -545,6 +547,11 @@ public record DialogueLine(
                     this.optionIds.add(optionId.trim());
                 }
             }
+            return this;
+        }
+
+        public Builder textKey(String textKey) {
+            this.textKey = textKey == null ? "" : textKey.trim();
             return this;
         }
 
@@ -902,6 +909,7 @@ public record DialogueLine(
             return new DialogueLine(
                     this.id,
                     this.lines,
+                    this.textKey,
                     this.requestType,
                     Set.copyOf(this.optionIds),
                     this.showForAdults,

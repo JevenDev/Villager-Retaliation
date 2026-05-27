@@ -371,6 +371,7 @@ const FIELD_TOOLTIPS = {
   "dialogue-max_player_item_enchantment_level": "Maximum level allowed for the matched enchantment.",
   "dialogue-give_items": "Optional item hand-in for this option. Use item/items or tag/tags plus count. destination can be discard, villager_inventory, or drop_at_villager.",
   "dialogue-text": "Localized villager text. Enter one variation per line. Placeholder support depends on type and filters, such as {target}, {held_item}, family names, or recruitment values.",
+  "dialogue-text_key": "Beta.12+. Optional message key for line text. Use this to keep line filters separate from localized text variants in messages.",
   "dialogue-option": "Restricts a line to option id(s), including custom ids or built-ins such as adult_share_story.",
   "dialogue-weather": "Weather filter for lines: clear, rain, or thunder.",
   "dialogue-times": "Time filter for lines: morning, afternoon, evening, or night.",
@@ -657,7 +658,8 @@ const BETA_12_ONLY_DIALOGUE_KEYS = [
   "max_charm",
   "conditions",
   "priority",
-  "category"
+  "category",
+  "text_key"
 ];
 
 // Keep each supported datapack surface versioned so migrations can reason about
@@ -3796,7 +3798,7 @@ function entryIssueDetail(section, kind, entry) {
     }
     if (kind === "lines") {
       if (!entry.request) return issueDetail("Request", `one of ${CONSTANTS.dialogueTypes.join(", ")}`, entry.request, "dialogue-type");
-      if (!hasDialogueText(entry)) return issueDetail("Line(s)", "non-empty villager text", dialogueTextValue(entry), "dialogue-text");
+      if (!hasDialogueText(entry) && !entry.text_key) return issueDetail("Line(s) or text key", "non-empty villager text or a message key", dialogueTextValue(entry) || entry.text_key, ["dialogue-text", "dialogue-text_key"]);
     }
     if (kind === "messages") {
       if (!entry.key) return issueDetail("Message key", "a non-empty lookup key", entry.key, "dialogue-key");
@@ -6113,6 +6115,7 @@ function renderDialogueForm(kind, entry) {
         ${field({ id: "dialogue-id", label: "Line id", value: entry.id })}
         ${selectField({ id: "dialogue-type", label: "Request", value: entry.request ?? "", options: CONSTANTS.dialogueTypes })}
         ${textareaField({ id: "dialogue-text", label: "Line(s)", value: dialogueTextValue(entry), help: "One variation per line.", className: "full", rows: 3 })}
+        ${field({ id: "dialogue-text_key", label: "Text key", value: entry.text_key ?? "" })}
         ${listField({ id: "dialogue-option", label: "Option id(s)", value: entry.option ?? entry.option_ids, help: "Link to a custom or built-in talk option." })}
         ${commonFilters}
         ${reputationFilters}
@@ -6630,6 +6633,7 @@ function readDialogueEntry() {
       id: readValue("dialogue-id").trim(),
       request: readValue("dialogue-type"),
       ...readDialogueTextFields(),
+      text_key: readValue("dialogue-text_key").trim(),
       option: optionIds.length <= 1 ? optionIds[0] : optionIds,
       professions: readList("dialogue-professions"),
       dispositions: readList("dialogue-dispositions"),
