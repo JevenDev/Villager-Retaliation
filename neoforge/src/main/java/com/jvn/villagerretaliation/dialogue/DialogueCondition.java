@@ -3,8 +3,8 @@ package com.jvn.villagerretaliation.dialogue;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
+import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
-import com.mojang.logging.LogUtils;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumSet;
@@ -14,13 +14,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import net.minecraft.resources.ResourceLocation;
-import org.slf4j.Logger;
 
 public sealed interface DialogueCondition permits DialogueCondition.AllOf, DialogueCondition.AnyOf,
         DialogueCondition.Not, DialogueCondition.Reputation, DialogueCondition.Memory,
         DialogueCondition.Family, DialogueCondition.Relationship, DialogueCondition.RecruitmentMemory,
         DialogueCondition.VillagerAge, DialogueCondition.Weather, DialogueCondition.Time {
-    Logger LOGGER = LogUtils.getLogger();
 
     boolean matches(DialogueContext context);
 
@@ -203,7 +201,7 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
     }
 
     private static void warnInvalid(ResourceLocation location, String context, String message) {
-        LOGGER.warn("Villager Retaliation datapack {} {} has invalid dialogue condition: {}", location, context, message);
+        DatapackDiagnostics.warnInvalidDialogueCondition(location, context, message);
     }
 
     private static String readString(JsonObject entry, String key) {

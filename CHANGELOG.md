@@ -14,8 +14,8 @@
 - Added beta.12 dialogue filters for temporary moods and social attributes: `mood`, `moods`, `min_mood_intensity`, `requires_high_*`, and exact `min_*` / `max_*` attribute ranges.
 - Added beta.12 normal-dialogue `conditions` blocks for compound line logic, including memory, family, relationship, and recruitment-memory checks.
 - Added normal dialogue line `priority`, `category`, and `text_key` fields for explicit selection tiers, debug grouping, and localized text indirection.
-- Added `/villagerretaliation dialogue explain` and `/villagerretaliation datapack diagnostics` to make dialogue selection and datapack reload warnings easier to inspect in-game.
-- Added built-in dialogue data validation and datapack-builder wiki snapshot checks to catch schema/docs drift during development.
+- Added `/villagerretaliation dialogue explain` and `/villagerretaliation datapack diagnostics` to make dialogue selection and datapack reload warnings, including invalid condition schemas, easier to inspect in-game.
+- Added built-in dialogue data validation and datapack-builder wiki snapshot checks to catch schema/docs drift during development, including deep validation for beta.12 `conditions` blocks.
 - Added beta.12 datapack builder and website wiki support while keeping the beta.11 wiki snapshot separate for beta.11 pack authors.
 - Added trade-refresh buttons to villager trade slots so players can ask a villager to replace a specific trade on the next Minecraft day when an eligible skill-trade replacement exists.
 - Added data-driven forced dialogue for trade-refresh results, including accepted, already-pending, unavailable, and not-ready responses with reputation-specific option replies.

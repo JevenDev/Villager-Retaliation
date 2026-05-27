@@ -96,6 +96,14 @@ public final class DatapackDiagnostics {
         }
     }
 
+    public static void warnInvalidDialogueCondition(ResourceLocation location, String context, String message) {
+        warn(
+                "Villager Retaliation datapack {} {} has invalid dialogue condition: {}",
+                location,
+                context,
+                message);
+    }
+
     public static void warnInvalidTrigger(
             ResourceLocation location,
             String systemName,

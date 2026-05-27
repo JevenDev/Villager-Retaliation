@@ -49,6 +49,134 @@ const legacyLineFields = new Set([
   "requires_retaliation_from_other"
 ]);
 
+const conditionTypes = new Set([
+  "all",
+  "all_of",
+  "and",
+  "any",
+  "any_of",
+  "or",
+  "not",
+  "reputation",
+  "memory",
+  "family",
+  "relationship",
+  "recruitment_memory",
+  "villager_age",
+  "weather",
+  "time",
+  "time_of_day"
+]);
+
+const conditionKeys = {
+  all: new Set(["type", "conditions"]),
+  all_of: new Set(["type", "conditions"]),
+  and: new Set(["type", "conditions"]),
+  any: new Set(["type", "conditions"]),
+  any_of: new Set(["type", "conditions"]),
+  or: new Set(["type", "conditions"]),
+  not: new Set(["type", "condition"]),
+  reputation: new Set(["type", "level", "levels", "reputation_level", "reputation_levels", "min", "min_reputation", "max", "max_reputation"]),
+  memory: new Set(["type", "kind", "tag", "tags", "source", "player"]),
+  family: new Set(["type", "relation", "relations"]),
+  relationship: new Set(["type", "state", "states", "relation", "relations"]),
+  recruitment_memory: new Set([
+    "type",
+    "scenario",
+    "scenarios",
+    "biome",
+    "biomes",
+    "min_follow_distance",
+    "min_recruitment_follow_distance",
+    "boat_trip",
+    "ocean_crossing",
+    "swim_trip",
+    "excludes_ocean_crossing"
+  ]),
+  villager_age: new Set(["type", "baby", "adult"]),
+  weather: new Set(["type", "state", "states"]),
+  time: new Set(["type", "value", "values"]),
+  time_of_day: new Set(["type", "value", "values"])
+};
+
+const reputationLevels = new Set(["royalty", "revered", "respected", "trusted", "neutral", "suspicious", "hostile", "despised", "feared"]);
+const memoryKinds = new Set([
+  "recent_broken_bed",
+  "recent_direct_hit",
+  "gear_report_used_in_combat",
+  "gear_report_unused_in_combat",
+  "recruitment_memory"
+]);
+const memoryTags = new Set([
+  "baby_born",
+  "iron_golem_defeated_mob",
+  "thunderstorm",
+  "sandstorm",
+  "snowstorm",
+  "village_fire",
+  "night_attack",
+  "raid",
+  "villager_death",
+  "villager_attacked",
+  "baby_villager_attacked",
+  "player_attacked_villager",
+  "player_defended_village",
+  "player_defended_raid",
+  "player_cured_villager",
+  "golem_created",
+  "golem_killed",
+  "nearby_hostile_mob",
+  "reputation_changed",
+  "player_gave_loved_gift",
+  "player_gave_liked_gift",
+  "player_gave_neutral_gift",
+  "player_gave_disliked_gift",
+  "player_gave_hated_gift",
+  "player_container_theft",
+  "villager_retaliation_started"
+]);
+const memorySources = new Set(["any", "self", "this_villager", "villager", "other", "other_villager", "another_villager"]);
+const familyRelations = new Set([
+  "family",
+  "any",
+  "parent",
+  "sibling",
+  "spouse",
+  "child",
+  "grandparent",
+  "grandchild",
+  "descendant",
+  "aunt_uncle",
+  "aunt_or_uncle",
+  "cousin",
+  "niece_nephew",
+  "niece_or_nephew",
+  "extended_family",
+  "deceased_family"
+]);
+const relationshipStates = new Set([
+  "relationship",
+  "any",
+  "current",
+  "current_relationship",
+  "past",
+  "past_relationship",
+  "crush",
+  "dating",
+  "dating_partner",
+  "fiance",
+  "fiancee",
+  "romantic_spouse",
+  "spouse",
+  "separated",
+  "separated_partner",
+  "widowed",
+  "widowed_partner"
+]);
+const recruitmentScenarios = new Set(["betrayed", "injured", "left_behind"]);
+const weatherStates = new Set(["clear", "rain", "thunder"]);
+const timesOfDay = new Set(["morning", "afternoon", "evening", "night"]);
+
 const knownPlaceholders = new Set([
   "active_order_word",
   "active_orders",
@@ -266,7 +394,191 @@ function checkDialogue(file, data) {
         errors.push(`${relative(file)}: lines[${index}] uses legacy migrated field "${field}"; use conditions instead for built-in data.`);
       }
     }
+    checkConditions(file, line, index);
   }
+}
+
+function checkConditions(file, line, lineIndex) {
+  if (!Object.hasOwn(line, "conditions")) {
+    return;
+  }
+  if (!Array.isArray(line.conditions)) {
+    errors.push(`${relative(file)}: lines[${lineIndex}].conditions must be an array.`);
+    return;
+  }
+  if (line.conditions.length === 0) {
+    errors.push(`${relative(file)}: lines[${lineIndex}].conditions must not be empty.`);
+    return;
+  }
+  line.conditions.forEach((condition, index) => checkCondition(file, condition, `lines[${lineIndex}].conditions[${index}]`));
+}
+
+function checkCondition(file, condition, location) {
+  if (!condition || typeof condition !== "object" || Array.isArray(condition)) {
+    errors.push(`${relative(file)}: ${location} must be a condition object.`);
+    return;
+  }
+
+  const type = normalizedString(condition.type);
+  if (!type) {
+    errors.push(`${relative(file)}: ${location}.type is required.`);
+    return;
+  }
+  if (!conditionTypes.has(type)) {
+    errors.push(`${relative(file)}: ${location}.type "${condition.type}" is not a supported condition type.`);
+    return;
+  }
+
+  const allowedKeys = conditionKeys[type];
+  for (const key of Object.keys(condition)) {
+    if (!allowedKeys.has(key)) {
+      errors.push(`${relative(file)}: ${location}.${key} is not valid for ${type} conditions.`);
+    }
+  }
+
+  if (["all", "all_of", "and", "any", "any_of", "or"].includes(type)) {
+    checkConditionArray(file, condition.conditions, `${location}.conditions`);
+  } else if (type === "not") {
+    checkCondition(file, condition.condition, `${location}.condition`);
+  } else if (type === "reputation") {
+    checkStringValues(file, condition, location, ["level", "levels", "reputation_level", "reputation_levels"], reputationLevels, "reputation level");
+    checkOptionalInteger(file, condition, location, "min");
+    checkOptionalInteger(file, condition, location, "min_reputation");
+    checkOptionalInteger(file, condition, location, "max");
+    checkOptionalInteger(file, condition, location, "max_reputation");
+  } else if (type === "memory") {
+    checkMemoryCondition(file, condition, location);
+  } else if (type === "family") {
+    checkStringValues(file, condition, location, ["relation", "relations"], familyRelations, "family relation");
+  } else if (type === "relationship") {
+    checkStringValues(file, condition, location, ["state", "states", "relation", "relations"], relationshipStates, "relationship state");
+  } else if (type === "recruitment_memory") {
+    checkStringValues(file, condition, location, ["scenario", "scenarios"], recruitmentScenarios, "recruitment scenario");
+    checkStringList(file, condition, location, ["biome", "biomes"], "biome id");
+    checkOptionalInteger(file, condition, location, "min_follow_distance", { min: 0 });
+    checkOptionalInteger(file, condition, location, "min_recruitment_follow_distance", { min: 0 });
+    checkOptionalBoolean(file, condition, location, "boat_trip");
+    checkOptionalBoolean(file, condition, location, "ocean_crossing");
+    checkOptionalBoolean(file, condition, location, "swim_trip");
+    checkOptionalBoolean(file, condition, location, "excludes_ocean_crossing");
+  } else if (type === "villager_age") {
+    checkOptionalBoolean(file, condition, location, "baby");
+    checkOptionalBoolean(file, condition, location, "adult");
+  } else if (type === "weather") {
+    checkStringValues(file, condition, location, ["state", "states"], weatherStates, "weather state", { requireAny: true });
+  } else if (type === "time" || type === "time_of_day") {
+    checkStringValues(file, condition, location, ["value", "values"], timesOfDay, "time of day", { requireAny: true });
+  }
+}
+
+function checkConditionArray(file, conditions, location) {
+  if (!Array.isArray(conditions)) {
+    errors.push(`${relative(file)}: ${location} must be an array.`);
+    return;
+  }
+  if (conditions.length === 0) {
+    errors.push(`${relative(file)}: ${location} must not be empty.`);
+    return;
+  }
+  conditions.forEach((condition, index) => checkCondition(file, condition, `${location}[${index}]`));
+}
+
+function checkMemoryCondition(file, condition, location) {
+  const kind = normalizedString(condition.kind);
+  if (kind) {
+    if (!memoryKinds.has(kind)) {
+      errors.push(`${relative(file)}: ${location}.kind "${condition.kind}" is not a supported memory kind.`);
+    }
+    return;
+  }
+
+  const tags = readValues(condition, ["tag", "tags"]);
+  if (tags.length === 0) {
+    errors.push(`${relative(file)}: ${location} must define kind, tag, or tags.`);
+  }
+  checkStringValues(file, condition, location, ["tag", "tags"], memoryTags, "memory tag");
+  checkStringValues(file, condition, location, ["source"], memorySources, "memory source");
+  checkOptionalBoolean(file, condition, location, "player");
+}
+
+function checkStringValues(file, entry, location, keys, allowedValues, label, options = {}) {
+  const values = readValues(entry, keys);
+  if (options.requireAny && values.length === 0) {
+    errors.push(`${relative(file)}: ${location} must define ${keys.join(" or ")}.`);
+  }
+  for (const value of values) {
+    const normalized = normalizedString(value);
+    if (!normalized || !allowedValues.has(normalized)) {
+      errors.push(`${relative(file)}: ${location} has unsupported ${label} "${value}".`);
+    }
+  }
+}
+
+function checkStringList(file, entry, location, keys, label) {
+  for (const key of keys) {
+    const value = entry[key];
+    if (value === undefined) {
+      continue;
+    }
+    if (typeof value === "string") {
+      if (!value.trim()) {
+        errors.push(`${relative(file)}: ${location}.${key} must not be blank.`);
+      }
+      continue;
+    }
+    if (!Array.isArray(value)) {
+      errors.push(`${relative(file)}: ${location}.${key} must be a string or array of strings.`);
+      continue;
+    }
+    value.forEach((child, index) => {
+      if (typeof child !== "string" || !child.trim()) {
+        errors.push(`${relative(file)}: ${location}.${key}[${index}] must be a nonblank string ${label}.`);
+      }
+    });
+  }
+}
+
+function checkOptionalInteger(file, entry, location, key, options = {}) {
+  const value = entry[key];
+  if (value === undefined) {
+    return;
+  }
+  if (!Number.isInteger(value)) {
+    errors.push(`${relative(file)}: ${location}.${key} must be an integer.`);
+    return;
+  }
+  if (options.min !== undefined && value < options.min) {
+    errors.push(`${relative(file)}: ${location}.${key} must be at least ${options.min}.`);
+  }
+}
+
+function checkOptionalBoolean(file, entry, location, key) {
+  const value = entry[key];
+  if (value !== undefined && typeof value !== "boolean") {
+    errors.push(`${relative(file)}: ${location}.${key} must be a boolean.`);
+  }
+}
+
+function readValues(entry, keys) {
+  const values = [];
+  for (const key of keys) {
+    const value = entry[key];
+    if (value === undefined) {
+      continue;
+    }
+    if (typeof value === "string") {
+      values.push(value);
+    } else if (Array.isArray(value)) {
+      values.push(...value);
+    } else {
+      values.push(value);
+    }
+  }
+  return values;
+}
+
+function normalizedString(value) {
+  return typeof value === "string" ? value.trim().toLowerCase() : "";
 }
 
 function checkIds(file, entries, label) {
