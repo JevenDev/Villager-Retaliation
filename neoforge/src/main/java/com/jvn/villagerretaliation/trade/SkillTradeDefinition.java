@@ -20,6 +20,7 @@ public record SkillTradeDefinition(
         int xp,
         float priceMultiplier,
         SkillTradeConditions conditions,
+        SkillTradeQualityScaling qualityScaling,
         SkillTradePool pool) {
     public static final ResourceLocation WANDERING_TRADER_PROFESSION = ResourceLocation.withDefaultNamespace("wandering_trader");
 
@@ -35,6 +36,7 @@ public record SkillTradeDefinition(
         xp = Math.clamp(xp, 0, 10_000);
         priceMultiplier = Math.clamp(priceMultiplier, 0.0F, 1.0F);
         conditions = conditions == null ? SkillTradeConditions.EMPTY : conditions;
+        qualityScaling = qualityScaling == null ? SkillTradeQualityScaling.DISABLED : qualityScaling;
         pool = pool == null ? SkillTradePool.VILLAGER : pool;
     }
 

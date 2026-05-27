@@ -67,17 +67,18 @@ public final class SkillTradeOfferFactory {
             }
 
             int skillValue = bestSkillValue(level, villager, definition);
-            if (!definition.isSkillEligible(skillValue) || !passesChance(definition, skillValue, random)) {
+            SkillTradeScalingContext context = new SkillTradeScalingContext(definition, skillValue);
+            if (!definition.isSkillEligible(skillValue) || !passesChance(context, random)) {
                 continue;
             }
-            candidates.add(new ResolvedDefinition(definition, skillValue));
+            candidates.add(new ResolvedDefinition(definition, context));
         }
         if (candidates.isEmpty()) {
             return null;
         }
 
         ResolvedDefinition selected = selectWeighted(candidates, random);
-        return createSelectedOffer(level, random, selected.definition(), selected.skillValue());
+        return createSelectedOffer(level, random, selected.definition(), selected.context());
     }
 
     private static int bestSkillValue(ServerLevel level, AbstractVillager villager, SkillTradeDefinition definition) {
@@ -88,13 +89,8 @@ public final class SkillTradeOfferFactory {
         return best;
     }
 
-    private static boolean passesChance(SkillTradeDefinition definition, int skillValue, RandomSource random) {
-        double scaledChance = definition.chance();
-        if (scaledChance < 1.0D) {
-            scaledChance *= VillagerRetaliationConfig.SKILL_TRADE_RARE_CHANCE_MULTIPLIER.get();
-            scaledChance += Math.max(0, skillValue - definition.minRank().minInclusive()) / 250.0D;
-        }
-        return random.nextDouble() < Math.clamp(scaledChance, 0.0D, 1.0D);
+    private static boolean passesChance(SkillTradeScalingContext context, RandomSource random) {
+        return random.nextDouble() < SkillTradeQualityScaler.rareChance(context);
     }
 
     private static ResolvedDefinition selectWeighted(List<ResolvedDefinition> candidates, RandomSource random) {
@@ -116,20 +112,24 @@ public final class SkillTradeOfferFactory {
             ServerLevel level,
             RandomSource random,
             SkillTradeDefinition definition,
-            int skillValue) {
+            SkillTradeScalingContext context) {
         ItemStack result = definition.result().createBaseStack(random);
         if (result.isEmpty()) {
             return null;
         }
 
-        result = applyEnchantments(level, random, definition, result, skillValue);
-        int costCount = definition.cost().countForSkill(skillValue, definition.minRank().minInclusive());
-        int maxUses = definition.maxUses().valueForSkill(skillValue, definition.minRank().minInclusive());
+        result.setCount(SkillTradeQualityScaler.resultCount(context, result.getCount()));
+        result = applyEnchantments(level, random, definition, result, context);
+        int baseCostCount = definition.cost().countForSkill(context.skillValue(), definition.minRank().minInclusive());
+        int costCount = SkillTradeQualityScaler.emeraldCost(context, definition.cost().item(), baseCostCount);
+        int baseMaxUses = definition.maxUses().valueForSkill(context.skillValue(), definition.minRank().minInclusive());
+        int maxUses = SkillTradeQualityScaler.maxUses(context, baseMaxUses);
+        int xp = SkillTradeQualityScaler.xp(context, definition.xp());
         return new MerchantOffer(
                 new ItemCost(definition.cost().item(), costCount),
                 result,
                 maxUses,
-                definition.xp(),
+                xp,
                 definition.priceMultiplier()
         );
     }
@@ -139,7 +139,7 @@ public final class SkillTradeOfferFactory {
             RandomSource random,
             SkillTradeDefinition definition,
             ItemStack stack,
-            int skillValue) {
+            SkillTradeScalingContext context) {
         SkillTradeEnchantments enchantments = definition.result().enchantments();
         if (!enchantments.enabled() || stack.isEmpty()) {
             return stack;
@@ -148,8 +148,8 @@ public final class SkillTradeOfferFactory {
         Registry<Enchantment> registry = level.registryAccess().registryOrThrow(Registries.ENCHANTMENT);
         return switch (enchantments.mode()) {
             case NONE -> stack;
-            case RANDOM_FROM -> applyRandomEnchantment(registry, random, definition, stack, skillValue, enchantments);
-            case FIXED -> applyFixedEnchantments(registry, definition, stack, skillValue, enchantments);
+            case RANDOM_FROM -> applyRandomEnchantment(registry, random, definition, stack, context, enchantments);
+            case FIXED -> applyFixedEnchantments(registry, definition, stack, context, enchantments);
         };
     }
 
@@ -158,7 +158,7 @@ public final class SkillTradeOfferFactory {
             RandomSource random,
             SkillTradeDefinition definition,
             ItemStack stack,
-            int skillValue,
+            SkillTradeScalingContext context,
             SkillTradeEnchantments enchantments) {
         List<Holder.Reference<Enchantment>> candidates = enchantments.candidates()
                 .stream()
@@ -173,7 +173,7 @@ public final class SkillTradeOfferFactory {
         }
 
         Holder.Reference<Enchantment> selected = candidates.get(random.nextInt(candidates.size()));
-        int level = enchantmentLevel(skillValue, selected, enchantments);
+        int level = enchantmentLevel(context, selected, enchantments);
         if (stack.is(Items.ENCHANTED_BOOK)) {
             return EnchantedBookItem.createForEnchantment(new EnchantmentInstance(selected, level));
         }
@@ -185,7 +185,7 @@ public final class SkillTradeOfferFactory {
             Registry<Enchantment> registry,
             SkillTradeDefinition definition,
             ItemStack stack,
-            int skillValue,
+            SkillTradeScalingContext context,
             SkillTradeEnchantments enchantments) {
         Map<ResourceLocation, Integer> fixedLevels = enchantments.fixedLevels();
         List<ResourceLocation> ids = fixedLevels.isEmpty() ? enchantments.candidates() : List.copyOf(fixedLevels.keySet());
@@ -204,7 +204,7 @@ public final class SkillTradeOfferFactory {
             int configuredLevel = fixedLevels.getOrDefault(id, 0);
             int level = configuredLevel > 0
                     ? cappedEnchantmentLevel(configuredLevel, enchantment, enchantments)
-                    : enchantmentLevel(skillValue, enchantment, enchantments);
+                    : enchantmentLevel(context, enchantment, enchantments);
             if (stack.is(Items.ENCHANTED_BOOK)) {
                 return EnchantedBookItem.createForEnchantment(new EnchantmentInstance(enchantment, level));
             }
@@ -218,19 +218,10 @@ public final class SkillTradeOfferFactory {
     }
 
     private static int enchantmentLevel(
-            int skillValue,
+            SkillTradeScalingContext context,
             Holder<Enchantment> enchantment,
             SkillTradeEnchantments enchantments) {
-        int requestedLevel;
-        if (enchantments.levelBySkill()) {
-            requestedLevel = skillValue >= 90
-                    ? enchantments.maxLevel()
-                    : skillValue >= 72
-                    ? Math.max(enchantments.minLevel(), Math.min(enchantments.maxLevel(), 2))
-                    : enchantments.minLevel();
-        } else {
-            requestedLevel = enchantments.minLevel();
-        }
+        int requestedLevel = SkillTradeQualityScaler.requestedEnchantmentLevel(context, enchantments);
         return cappedEnchantmentLevel(requestedLevel, enchantment, enchantments);
     }
 
@@ -250,6 +241,6 @@ public final class SkillTradeOfferFactory {
         boolean matches(SkillTradeDefinition definition);
     }
 
-    private record ResolvedDefinition(SkillTradeDefinition definition, int skillValue) {
+    private record ResolvedDefinition(SkillTradeDefinition definition, SkillTradeScalingContext context) {
     }
 }

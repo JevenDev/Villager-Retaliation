@@ -58,6 +58,8 @@ public final class SkillTradeResources {
             "price_multiplier",
             "priceMultiplier",
             "conditions",
+            "quality_scaling",
+            "qualityScaling",
             "pool",
             "wanderer_pool",
             "wandererPool"
@@ -86,6 +88,21 @@ public final class SkillTradeResources {
             "configFlagsDisabled",
             "not_config_flags",
             "notConfigFlags"
+    );
+    private static final Set<String> QUALITY_SCALING_KEYS = Set.of(
+            "enabled",
+            "count_by_skill",
+            "countBySkill",
+            "cost_by_skill",
+            "costBySkill",
+            "max_uses_by_skill",
+            "maxUsesBySkill",
+            "xp_by_skill",
+            "xpBySkill",
+            "rare_chance_by_skill",
+            "rareChanceBySkill",
+            "enchantments_by_skill",
+            "enchantmentsBySkill"
     );
 
     private static volatile CachedSkillTrades cachedSkillTrades = CachedSkillTrades.empty();
@@ -242,6 +259,7 @@ public final class SkillTradeResources {
                 readInt(entry, "xp", 0),
                 (float) readDouble(entry, "price_multiplier", "priceMultiplier", 0.05D),
                 readConditions(location, context, entry),
+                readQualityScaling(location, context, entry),
                 pool
         ));
     }
@@ -545,6 +563,35 @@ public final class SkillTradeResources {
                         "configFlagsDisabled",
                         "not_config_flags",
                         "notConfigFlags")
+        );
+    }
+
+    private static SkillTradeQualityScaling readQualityScaling(ResourceLocation location, String context, JsonObject entry) {
+        JsonElement element = entry.has("quality_scaling") ? entry.get("quality_scaling") : entry.get("qualityScaling");
+        if (element == null || element.isJsonNull()) {
+            return SkillTradeQualityScaling.DISABLED;
+        }
+        if (element.isJsonPrimitive()) {
+            return readBoolean(element, false)
+                    ? SkillTradeQualityScaling.ENABLED_DEFAULTS
+                    : SkillTradeQualityScaling.DISABLED;
+        }
+        if (!element.isJsonObject()) {
+            LOGGER.warn("Villager Retaliation skill trade {} {} has non-object quality_scaling; it will be ignored.", location, context);
+            return SkillTradeQualityScaling.DISABLED;
+        }
+
+        JsonObject scaling = element.getAsJsonObject();
+        DatapackDiagnostics.warnUnknownKeys(location, "skill trade quality_scaling", context, scaling, QUALITY_SCALING_KEYS);
+        boolean enabled = readBoolean(scaling, "enabled", true);
+        return new SkillTradeQualityScaling(
+                enabled,
+                readBoolean(scaling, "count_by_skill", "countBySkill", true),
+                readBoolean(scaling, "cost_by_skill", "costBySkill", true),
+                readBoolean(scaling, "max_uses_by_skill", "maxUsesBySkill", true),
+                readBoolean(scaling, "xp_by_skill", "xpBySkill", false),
+                readBoolean(scaling, "rare_chance_by_skill", "rareChanceBySkill", true),
+                readBoolean(scaling, "enchantments_by_skill", "enchantmentsBySkill", true)
         );
     }
 
