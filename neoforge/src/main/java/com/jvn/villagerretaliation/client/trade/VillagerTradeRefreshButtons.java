@@ -1,6 +1,8 @@
 package com.jvn.villagerretaliation.client.trade;
 
 import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
+import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
+import com.jvn.villagerretaliation.client.villager.VillagerTradingTargetFinder;
 import com.jvn.villagerretaliation.network.VillagerTradeRefreshRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerTradeRefreshStatePayload;
 import java.lang.reflect.Field;
@@ -15,11 +17,9 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.MerchantScreen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.item.trading.MerchantOffers;
-import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.client.event.ScreenEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.lwjgl.glfw.GLFW;
@@ -32,7 +32,6 @@ public final class VillagerTradeRefreshButtons {
     private static final int BUTTON_X = -15;
     private static final int BUTTON_Y_OFFSET = 2;
     private static final int TEXTURE_SIZE = 20;
-    private static final double TRADING_LOOKUP_RADIUS = 8.0D;
     private static final Field SCROLL_OFF_FIELD = scrollOffField();
     private static final Map<Integer, Set<Integer>> PENDING_REFRESHES_BY_MERCHANT = new ConcurrentHashMap<>();
 
@@ -52,7 +51,8 @@ public final class VillagerTradeRefreshButtons {
             return;
         }
         Minecraft minecraft = Minecraft.getInstance();
-        Optional<Integer> merchantId = tradingMerchantId(minecraft);
+        Optional<Integer> merchantId = VillagerTradingTargetFinder.findTradingVillagerOrClosest(minecraft)
+                .map(villager -> villager.getId());
         if (minecraft.options.hideGui || merchantId.isEmpty()) {
             return;
         }
@@ -73,7 +73,8 @@ public final class VillagerTradeRefreshButtons {
             return;
         }
         Minecraft minecraft = Minecraft.getInstance();
-        Optional<Integer> merchantId = tradingMerchantId(minecraft);
+        Optional<Integer> merchantId = VillagerTradingTargetFinder.findTradingVillagerOrClosest(minecraft)
+                .map(villager -> villager.getId());
         if (merchantId.isEmpty()) {
             return;
         }
@@ -173,27 +174,6 @@ public final class VillagerTradeRefreshButtons {
         return "x" + stack.getCount() + " " + stack.getHoverName().getString();
     }
 
-    private static Optional<Integer> tradingMerchantId(Minecraft minecraft) {
-        if (minecraft.level == null || minecraft.player == null) {
-            return Optional.empty();
-        }
-
-        AABB searchArea = minecraft.player.getBoundingBox().inflate(TRADING_LOOKUP_RADIUS);
-        AbstractVillager closest = null;
-        double closestDistance = Double.MAX_VALUE;
-        for (AbstractVillager villager : minecraft.level.getEntitiesOfClass(AbstractVillager.class, searchArea)) {
-            if (villager.getTradingPlayer() == minecraft.player) {
-                return Optional.of(villager.getId());
-            }
-            double distance = minecraft.player.distanceToSqr(villager);
-            if (distance < closestDistance) {
-                closestDistance = distance;
-                closest = villager;
-            }
-        }
-        return closest == null ? Optional.empty() : Optional.of(closest.getId());
-    }
-
     private static int scrollOff(MerchantScreen screen) {
         if (SCROLL_OFF_FIELD == null) {
             return 0;
@@ -217,7 +197,7 @@ public final class VillagerTradeRefreshButtons {
 
     private record RefreshButtonBounds(int left, int top, int right, int bottom) {
         private boolean contains(double x, double y) {
-            return x >= this.left && x < this.right && y >= this.top && y < this.bottom;
+            return VillagerClientUiUtil.containsExclusive(x, y, this.left, this.top, this.right, this.bottom);
         }
     }
 }

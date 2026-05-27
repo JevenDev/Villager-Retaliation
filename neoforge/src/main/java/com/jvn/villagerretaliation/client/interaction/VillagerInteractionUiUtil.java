@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.client.interaction;
 
+import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
 import net.minecraft.util.Mth;
 
 final class VillagerInteractionUiUtil {
@@ -61,9 +62,7 @@ final class VillagerInteractionUiUtil {
     }
 
     static int withAlpha(int color, float alphaFactor) {
-        int alpha = color >>> 24;
-        int adjustedAlpha = Mth.clamp(Mth.floor(alpha * alphaFactor), 0, 255);
-        return adjustedAlpha << 24 | color & 0x00FFFFFF;
+        return VillagerClientUiUtil.withAlphaFloor(color, alphaFactor);
     }
 
     record ScrollbarThumb(
@@ -80,10 +79,7 @@ final class VillagerInteractionUiUtil {
         }
 
         boolean contains(double mouseX, double mouseY) {
-            return mouseX >= this.hitLeft
-                    && mouseX <= this.hitRight
-                    && mouseY >= this.top
-                    && mouseY <= this.bottom;
+            return VillagerClientUiUtil.containsInclusive(mouseX, mouseY, this.hitLeft, this.top, this.hitRight, this.bottom);
         }
     }
 }

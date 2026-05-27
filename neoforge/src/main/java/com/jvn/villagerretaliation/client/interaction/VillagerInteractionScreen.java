@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.client.interaction;
 
 import com.jvn.villagerretaliation.client.profile.VillagerProfileClientCache;
+import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
 import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
 import com.jvn.villagerretaliation.config.InteractionChatPosition;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
@@ -47,8 +48,6 @@ import org.lwjgl.glfw.GLFW;
 public class VillagerInteractionScreen extends Screen implements VillagerInteractionSessionScreen {
     private static final String GUI_KEY_PREFIX = "villagerretaliation.gui.";
     private static final String BACK_LABEL_KEY = GUI_KEY_PREFIX + "back";
-    private static final String BACK_HINT_KEY = GUI_KEY_PREFIX + "hint.back";
-    private static final String LEAVE_HINT_KEY = GUI_KEY_PREFIX + "hint.leave";
     private static final String FORCED_LEAVE_OPTION_ID = "leave";
     private static final int OPTION_WIDTH = 180;
     private static final int OPTION_HEIGHT = 18;
@@ -1281,7 +1280,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void renderHint(GuiGraphics graphics) {
-        String hintText = I18n.get(canNavigateBack() ? BACK_HINT_KEY : LEAVE_HINT_KEY);
+        String hintText = translate(canNavigateBack() ? "hint.back" : "hint.leave");
         graphics.drawString(this.font, hintText, this.width - this.font.width(hintText) - 8, this.height - 14, 0x66FFFFFF, false);
     }
 
@@ -1798,10 +1797,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
 
         TopBackButtonBounds bounds = topBackButtonBounds();
-        return mouseX >= bounds.left()
-                && mouseX <= bounds.right()
-                && mouseY >= bounds.top() - 2
-                && mouseY <= bounds.bottom() + 2;
+        return VillagerClientUiUtil.containsInclusive(mouseX, mouseY, bounds.left(), bounds.top() - 2, bounds.right(), bounds.bottom() + 2);
     }
 
     private TopBackButtonBounds topBackButtonBounds() {
@@ -2337,10 +2333,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private record FamilyButtonBounds(int left, int right, int top, int bottom) {
         boolean contains(double mouseX, double mouseY) {
-            return mouseX >= this.left
-                    && mouseX <= this.right
-                    && mouseY >= this.top - 2
-                    && mouseY <= this.bottom + 2;
+            return VillagerClientUiUtil.containsInclusive(mouseX, mouseY, this.left, this.top - 2, this.right, this.bottom + 2);
         }
     }
 }

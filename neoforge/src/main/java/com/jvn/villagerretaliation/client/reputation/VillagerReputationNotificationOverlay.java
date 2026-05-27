@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.client.reputation;
 
+import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
 import com.jvn.villagerretaliation.config.ReputationChangeDisplayMode;
 import com.jvn.villagerretaliation.config.ReputationChangeHudPosition;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
@@ -167,10 +168,10 @@ public final class VillagerReputationNotificationOverlay {
     }
 
     private static void renderEntry(GuiGraphics graphics, Font font, NotificationEntry entry, int x, int y, int width, float alpha) {
-        int background = withAlpha(BACKGROUND_COLOR, alpha);
-        int stripe = withAlpha(STRIPE_COLOR, alpha);
-        int shadow = withAlpha(SHADOW_COLOR, alpha);
-        int textColor = withAlpha(textColor(entry), alpha);
+        int background = VillagerClientUiUtil.withAlphaRound(BACKGROUND_COLOR, alpha);
+        int stripe = VillagerClientUiUtil.withAlphaRound(STRIPE_COLOR, alpha);
+        int shadow = VillagerClientUiUtil.withAlphaRound(SHADOW_COLOR, alpha);
+        int textColor = VillagerClientUiUtil.withAlphaRound(textColor(entry), alpha);
 
         graphics.fill(x, y, x + width, y + ENTRY_HEIGHT, background);
         graphics.fill(x, y, x + 2, y + ENTRY_HEIGHT, stripe);
@@ -236,12 +237,6 @@ public final class VillagerReputationNotificationOverlay {
             }
         }
         return Component.literal(payload.text()).withStyle(chatColor(payload.kind()), ChatFormatting.ITALIC);
-    }
-
-    private static int withAlpha(int color, float alphaFactor) {
-        int alphaChannel = color >>> 24;
-        int adjustedAlpha = Math.max(0, Math.min(255, Math.round(alphaChannel * alphaFactor)));
-        return adjustedAlpha << 24 | (color & 0x00FFFFFF);
     }
 
     private record Anchor(int x, int y) {

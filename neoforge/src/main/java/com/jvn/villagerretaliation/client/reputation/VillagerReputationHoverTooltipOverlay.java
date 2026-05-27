@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.client.reputation;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.jvn.villagerretaliation.client.interaction.ClientVillagerConversationState;
+import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.network.VillagerReputationRequestPayload;
 import java.util.Optional;
@@ -172,10 +173,10 @@ public final class VillagerReputationHoverTooltipOverlay {
         int right = left + tooltipWidth;
         int bottom = top + tooltipHeight;
 
-        int bgTop = withAlpha(BACKGROUND_TOP, alphaFactor);
-        int bgBottom = withAlpha(BACKGROUND_BOTTOM, alphaFactor);
-        int borderTop = withAlpha(BORDER_TOP, alphaFactor);
-        int borderBottom = withAlpha(BORDER_BOTTOM, alphaFactor);
+        int bgTop = VillagerClientUiUtil.withAlphaRound(BACKGROUND_TOP, alphaFactor);
+        int bgBottom = VillagerClientUiUtil.withAlphaRound(BACKGROUND_BOTTOM, alphaFactor);
+        int borderTop = VillagerClientUiUtil.withAlphaRound(BORDER_TOP, alphaFactor);
+        int borderBottom = VillagerClientUiUtil.withAlphaRound(BORDER_BOTTOM, alphaFactor);
 
         TooltipRenderUtil.renderTooltipBackground(
                 graphics,
@@ -202,18 +203,12 @@ public final class VillagerReputationHoverTooltipOverlay {
 
         int textX = iconX + ICON_SIZE + ICON_TEXT_GAP;
         int textY = top + Math.round((tooltipHeight - font.lineHeight) / 2.0F);
-        graphics.drawString(font, label, textX, textY, withAlpha(0xFFFFFFFF, alphaFactor), false);
+        graphics.drawString(font, label, textX, textY, VillagerClientUiUtil.withAlphaRound(0xFFFFFFFF, alphaFactor), false);
         graphics.pose().popPose();
     }
 
     private static float lerp(float start, float end, float delta) {
         return start + (end - start) * delta;
-    }
-
-    private static int withAlpha(int color, float alphaFactor) {
-        int alphaChannel = color >>> 24;
-        int adjustedAlpha = Math.max(0, Math.min(255, Math.round(alphaChannel * alphaFactor)));
-        return adjustedAlpha << 24 | (color & 0x00FFFFFF);
     }
 
     private record HoverEntry(int reputation, com.jvn.villagerretaliation.reputation.VillagerReputationLevel level) {
