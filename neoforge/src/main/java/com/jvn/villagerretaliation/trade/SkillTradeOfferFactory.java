@@ -67,7 +67,7 @@ public final class SkillTradeOfferFactory {
             }
 
             int skillValue = bestSkillValue(level, villager, definition);
-            if (skillValue < definition.minRank().minInclusive() || !passesChance(definition, skillValue, random)) {
+            if (!definition.isSkillEligible(skillValue) || !passesChance(definition, skillValue, random)) {
                 continue;
             }
             candidates.add(new ResolvedDefinition(definition, skillValue));

@@ -44,6 +44,8 @@ public final class SkillTradeResources {
             "skill",
             "min_rank",
             "minRank",
+            "max_rank",
+            "maxRank",
             "villager_level",
             "villagerLevel",
             "chance",
@@ -209,12 +211,28 @@ public final class SkillTradeResources {
             return Optional.empty();
         }
 
+        VillagerSkillRank minRank = readRank(entry, "min_rank", "minRank", VillagerSkillRank.NOVICE);
+        Optional<VillagerSkillRank> maxRank = readOptionalRank(location, context, entry, "max_rank", "maxRank");
+        if (hasAnyKey(entry, "max_rank", "maxRank") && maxRank.isEmpty()) {
+            return Optional.empty();
+        }
+        if (maxRank.isPresent() && maxRank.get().ordinal() < minRank.ordinal()) {
+            LOGGER.warn(
+                    "Villager Retaliation skill trade {} {} has max_rank {} below min_rank {}; it will be skipped.",
+                    location,
+                    context,
+                    maxRank.get().serializedName(),
+                    minRank.serializedName());
+            return Optional.empty();
+        }
+
         SkillTradePool pool = readPool(entry, professions);
         return Optional.of(new SkillTradeDefinition(
                 id,
                 professions,
                 skills,
-                readRank(entry, "min_rank", "minRank", VillagerSkillRank.NOVICE),
+                minRank,
+                maxRank.orElse(null),
                 readInt(entry, "villager_level", "villagerLevel", 1),
                 readChance(location, context, entry),
                 readInt(entry, "weight", 1),
@@ -301,6 +319,37 @@ public final class SkillTradeResources {
             VillagerSkillRank fallback) {
         VillagerSkillRank rank = VillagerSkillRank.bySerializedName(readString(entry, snakeKey, camelKey));
         return rank == null ? fallback : rank;
+    }
+
+    private static boolean hasAnyKey(JsonObject entry, String... keys) {
+        for (String key : keys) {
+            if (entry.has(key)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static Optional<VillagerSkillRank> readOptionalRank(
+            ResourceLocation location,
+            String context,
+            JsonObject entry,
+            String snakeKey,
+            String camelKey) {
+        if (!entry.has(snakeKey) && !entry.has(camelKey)) {
+            return Optional.empty();
+        }
+
+        String value = readString(entry, snakeKey, camelKey);
+        VillagerSkillRank rank = VillagerSkillRank.bySerializedName(value);
+        if (rank == null) {
+            LOGGER.warn(
+                    "Villager Retaliation skill trade {} {} references unknown max_rank \"{}\"; it will be skipped.",
+                    location,
+                    context,
+                    value);
+        }
+        return Optional.ofNullable(rank);
     }
 
     private static double readChance(ResourceLocation location, String context, JsonObject entry) {

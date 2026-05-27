@@ -10,6 +10,7 @@ public record SkillTradeDefinition(
         Set<ResourceLocation> professions,
         Set<VillagerSkill> skills,
         VillagerSkillRank minRank,
+        VillagerSkillRank maxRank,
         int villagerLevel,
         double chance,
         int weight,
@@ -46,5 +47,10 @@ public record SkillTradeDefinition(
     public boolean matchesWanderingTrader(SkillTradePool requestedPool) {
         return this.pool == requestedPool
                 && (this.professions.isEmpty() || this.professions.contains(WANDERING_TRADER_PROFESSION));
+    }
+
+    public boolean isSkillEligible(int skillValue) {
+        return skillValue >= this.minRank.minInclusive()
+                && (this.maxRank == null || skillValue <= this.maxRank.maxInclusive());
     }
 }
