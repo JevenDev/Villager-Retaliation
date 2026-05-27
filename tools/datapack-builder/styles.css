@@ -27,6 +27,8 @@
   --false-text: #fff0ed;
   --warn: #d2a84e;
   --warn-bg: #302716;
+  --info: #6aa3d8;
+  --info-bg: #172332;
   --code: #202020;
   --shadow: 0 2px 8px rgba(0, 0, 0, 0.32);
   --font-ui: "Mojangles", "Helvetica Neue", sans-serif;
@@ -494,6 +496,11 @@ body.is-resizing-row {
   background: var(--warn-bg);
 }
 
+.tab.has-info {
+  border-color: #29455f;
+  background: var(--info-bg);
+}
+
 .tab.has-error {
   border-color: #60302a;
   background: var(--danger-bg);
@@ -511,10 +518,22 @@ body.is-resizing-row {
   background: #3a211e;
 }
 
+.tab.has-info:hover,
+.tab.has-info.is-active {
+  border-color: var(--info);
+  background: #1a2a3d;
+}
+
 .tab.has-warning .tab-count {
   border-color: #5e4821;
   background: #241d12;
   color: #f0d397;
+}
+
+.tab.has-info .tab-count {
+  border-color: #29455f;
+  background: #142031;
+  color: #b8d8f2;
 }
 
 .tab.has-error .tab-count {
@@ -586,6 +605,12 @@ body.is-resizing-row {
   border-color: #5e4821;
   background: var(--warn-bg);
   color: #f0d397;
+}
+
+.panel-title > span.has-info {
+  border-color: #29455f;
+  background: var(--info-bg);
+  color: #b8d8f2;
 }
 
 .panel-title > span.has-error {
@@ -729,6 +754,11 @@ button.check {
 .check.warning {
   border-color: #5e4821;
   background: var(--warn-bg);
+}
+
+.check.info {
+  border-color: #29455f;
+  background: var(--info-bg);
 }
 
 .check.error {
@@ -1035,6 +1065,13 @@ button.check {
   box-shadow: 0 0 0 1px var(--warn);
 }
 
+.field.has-info input,
+.field.has-info select,
+.field.has-info textarea {
+  border-color: var(--info);
+  box-shadow: 0 0 0 1px var(--info);
+}
+
 .field .field-issue {
   display: block;
   color: #f3cbc7;
@@ -1043,6 +1080,43 @@ button.check {
 
 .field.has-warning .field-issue {
   color: #f0d397;
+}
+
+.field.has-info .field-issue {
+  color: #b8d8f2;
+}
+
+.compat-alert {
+  min-height: 42px;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--panel-2);
+  padding: 10px 12px;
+}
+
+.compat-alert.info {
+  border-color: #29455f;
+  background: var(--info-bg);
+  color: #dceeff;
+}
+
+.compat-alert .inline-icon {
+  margin-top: 2px;
+  color: var(--info);
+}
+
+.compat-alert div {
+  display: grid;
+  gap: 3px;
+}
+
+.compat-alert span {
+  color: #b8d8f2;
+  font-size: 13px;
 }
 
 .tooltip-label {
@@ -1110,6 +1184,12 @@ button:focus-visible,
   color: #f0d397;
 }
 
+.entry-tab.has-info {
+  border-color: #29455f;
+  background: var(--info-bg);
+  color: #b8d8f2;
+}
+
 .entry-tab.has-error {
   border-color: #60302a;
   background: var(--danger-bg);
@@ -1120,6 +1200,12 @@ button:focus-visible,
 .entry-tab.has-warning.is-active {
   border-color: var(--warn);
   background: #392c16;
+}
+
+.entry-tab.has-info:hover,
+.entry-tab.has-info.is-active {
+  border-color: var(--info);
+  background: #1a2a3d;
 }
 
 .entry-tab.has-error:hover,
@@ -1229,6 +1315,12 @@ button:focus-visible,
   box-shadow: 0 0 0 1px #5e4821;
 }
 
+.entry-card.has-info {
+  border-color: #29455f;
+  background: var(--info-bg);
+  box-shadow: 0 0 0 1px #29455f;
+}
+
 .entry-card.has-error {
   border-color: #60302a;
   background: var(--danger-bg);
@@ -1247,8 +1339,18 @@ button:focus-visible,
   background: #3a211e;
 }
 
+.entry-card.has-info:hover,
+.entry-card.has-info.is-active {
+  border-color: var(--info);
+  background: #1a2a3d;
+}
+
 .entry-card.has-warning.is-active {
   box-shadow: inset 3px 0 0 var(--warn), 0 0 0 1px var(--warn);
+}
+
+.entry-card.has-info.is-active {
+  box-shadow: inset 3px 0 0 var(--info), 0 0 0 1px var(--info);
 }
 
 .entry-card.has-error.is-active {
@@ -1265,6 +1367,11 @@ button:focus-visible,
   color: #e3a19a;
 }
 
+.entry-card.has-info small,
+.entry-card.has-info .inline-icon {
+  color: #b8d8f2;
+}
+
 .entry-card .entry-issue {
   color: #f3cbc7;
   overflow-wrap: anywhere;
@@ -1272,6 +1379,10 @@ button:focus-visible,
 
 .entry-card.has-warning .entry-issue {
   color: #f0d397;
+}
+
+.entry-card.has-info .entry-issue {
+  color: #b8d8f2;
 }
 
 .entry-card:focus-visible {
@@ -1467,6 +1578,11 @@ button:focus-visible,
 .toggle.has-warning {
   border-color: var(--warn);
   box-shadow: 0 0 0 1px var(--warn);
+}
+
+.toggle.has-info {
+  border-color: var(--info);
+  box-shadow: 0 0 0 1px var(--info);
 }
 
 .value-tags {
@@ -1668,8 +1784,8 @@ body.is-file-dragging::after {
 }
 
 .modal-issue.info {
-  border-color: var(--line);
-  background: var(--panel-2);
+  border-color: #29455f;
+  background: var(--info-bg);
 }
 
 .modal-issue span {

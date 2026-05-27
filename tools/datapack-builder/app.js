@@ -662,6 +662,35 @@ const BETA_12_ONLY_DIALOGUE_KEYS = [
   "text_key"
 ];
 
+const BETA_12_ONLY_DIALOGUE_OPTION_KEYS = [
+  "conditions"
+];
+
+const BETA_12_ONLY_DIALOGUE_LINE_KEYS = [
+  "mood",
+  "moods",
+  "min_mood_intensity",
+  "requires_high_knowledge",
+  "requires_high_guts",
+  "requires_high_proficiency",
+  "requires_high_kindness",
+  "requires_high_charm",
+  "min_knowledge",
+  "max_knowledge",
+  "min_guts",
+  "max_guts",
+  "min_proficiency",
+  "max_proficiency",
+  "min_kindness",
+  "max_kindness",
+  "min_charm",
+  "max_charm",
+  "conditions",
+  "priority",
+  "category",
+  "text_key"
+];
+
 const BETA_13_PLANNED_DIALOGUE_LINE_DEPRECATION_KEYS = [
   "requires_known_family",
   "requires_known_parent",
@@ -724,6 +753,8 @@ const BETA_13_PLANNED_DIALOGUE_OPTION_DEPRECATION_KEYS = [
   "requires_known_separated_partner",
   "requires_known_widowed_partner"
 ];
+
+const BETA_13_PLANNED_DIALOGUE_DEPRECATION_REPLACEMENT = "`conditions` blocks";
 
 // Keep each supported datapack surface versioned so migrations can reason about
 // documented keys while preserving unknown user-authored JSON.
@@ -3141,6 +3172,27 @@ function supportsBeta12DialogueFields(version = state.meta.packVersion) {
   return packVersionAtLeast(version, "1.0.0-beta.12");
 }
 
+function beta12DialogueKeysForKind(kind) {
+  if (kind === "options") return BETA_12_ONLY_DIALOGUE_OPTION_KEYS;
+  if (kind === "lines") return BETA_12_ONLY_DIALOGUE_LINE_KEYS;
+  return [];
+}
+
+function hiddenDialogueVersionKeys(kind) {
+  return supportsBeta12DialogueFields() ? [] : beta12DialogueKeysForKind(kind);
+}
+
+function plannedBeta13DialogueDeprecationKeysForKind(kind) {
+  if (kind === "options") return BETA_13_PLANNED_DIALOGUE_OPTION_DEPRECATION_KEYS;
+  if (kind === "lines") return BETA_13_PLANNED_DIALOGUE_LINE_DEPRECATION_KEYS;
+  return [];
+}
+
+function authoredDialogueFlags(flags, kind) {
+  const hidden = new Set(plannedBeta13DialogueDeprecationKeysForKind(kind));
+  return flags.filter((flag) => !hidden.has(flag));
+}
+
 function getPackMigrationStep(from, to) {
   return PACK_MIGRATIONS.find((step) => step.from === from && step.to === to) || null;
 }
@@ -3576,12 +3628,14 @@ function warningPathsForChecks(checks) {
 function strongestSeverity(current, next) {
   if (current === "error" || next === "error") return "error";
   if (current === "warning" || next === "warning") return "warning";
+  if (current === "info" || next === "info") return "info";
   return "";
 }
 
 function issueSeverityClass(severity) {
   if (severity === "error") return "has-error";
   if (severity === "warning") return "has-warning";
+  if (severity === "info") return "has-info";
   return "";
 }
 
@@ -3604,8 +3658,8 @@ function entryIssueSeverity(section, kind, entry) {
       { severity: "error", predicate: (item) => kind === "messages" && (!item.key || !hasDialogueText(item)) },
       { severity: "error", predicate: (item) => ["openings", "closings", "pacify"].includes(kind) && !hasDialogueText(item) },
       { severity: "warning", predicate: (item) => ["options", "lines"].includes(kind) && item.request && !CONSTANTS.dialogueTypes.includes(item.request) },
-      { severity: "warning", predicate: (item) => kind === "options" && hasPlannedBeta13DialogueOptionDeprecationField(item) },
-      { severity: "warning", predicate: (item) => kind === "lines" && hasPlannedBeta13DialogueLineDeprecationField(item) },
+      { severity: "info", predicate: (item) => kind === "options" && hasPlannedBeta13DialogueOptionDeprecationField(item) },
+      { severity: "info", predicate: (item) => kind === "lines" && hasPlannedBeta13DialogueLineDeprecationField(item) },
       { severity: "warning", predicate: (item) => entryValues(item, ["dispositions"]).some((value) => !CONSTANTS.dispositions.includes(value)) },
       { severity: "warning", predicate: (item) => ["options", "lines"].includes(kind) && hasBeta12DialogueField(item) && !supportsBeta12DialogueFields() },
       { severity: "warning", predicate: (item) => kind === "lines" && entryValues(item, ["mood", "moods"]).some((value) => !CONSTANTS.moods.includes(value)) },
@@ -3784,6 +3838,17 @@ function issueDetail(field, expected, received, fieldIds, severity = "error") {
   };
 }
 
+function infoIssueDetail(message, fieldIds = []) {
+  return {
+    field: "Info",
+    expected: "",
+    received: "",
+    fieldIds: Array.isArray(fieldIds) ? fieldIds : [fieldIds].filter(Boolean),
+    message,
+    severity: "info"
+  };
+}
+
 function firstInvalidListValue(entry, keys, predicate) {
   for (const key of keys) {
     for (const value of entryValues(entry, [key])) {
@@ -3864,6 +3929,28 @@ function hasPlannedBeta13DialogueOptionDeprecationField(entry) {
   return BETA_13_PLANNED_DIALOGUE_OPTION_DEPRECATION_KEYS.some((key) => entry?.[key] !== undefined);
 }
 
+function plannedBeta13DialogueDeprecationFields(kind, entry) {
+  return plannedBeta13DialogueDeprecationKeysForKind(kind).filter((key) => entry?.[key] !== undefined);
+}
+
+function dialogueDeprecationReplacementText(fields) {
+  const hasFamily = fields.some((field) => field.startsWith("requires_known_") && !field.includes("relationship") && !field.includes("crush") && !field.includes("dating") && !field.includes("fiance") && !field.includes("romantic") && !field.includes("separated") && !field.includes("widowed"));
+  const hasRelationship = fields.some((field) => field.includes("relationship") || field.includes("crush") || field.includes("dating") || field.includes("fiance") || field.includes("romantic") || field.includes("separated") || field.includes("widowed"));
+  const hasMemory = fields.some((field) => field.includes("memory") || field.includes("gear_report") || field.includes("container_theft") || field.includes("retaliation") || field.includes("recruitment"));
+  const replacements = [];
+  if (hasFamily) replacements.push("family condition blocks");
+  if (hasRelationship) replacements.push("relationship condition blocks");
+  if (hasMemory) replacements.push("memory or recruitment condition blocks");
+  return replacements.length ? replacements.join(", ") : BETA_13_PLANNED_DIALOGUE_DEPRECATION_REPLACEMENT;
+}
+
+function dialogueDeprecationMessage(kind, entry) {
+  const fields = plannedBeta13DialogueDeprecationFields(kind, entry);
+  if (fields.length === 0) return "";
+  const fieldText = fields.length === 1 ? fields[0] : `${fields.slice(0, 3).join(", ")}${fields.length > 3 ? `, and ${fields.length - 3} more` : ""}`;
+  return `Marked for beta.13 deprecation: ${fieldText}. Replace with ${dialogueDeprecationReplacementText(fields)} inside conditions.`;
+}
+
 function invalidSocialAttributeRange(entry) {
   for (const attribute of CONSTANTS.socialAttributes) {
     const min = numberValue(entry?.[`min_${attribute}`]);
@@ -3907,12 +3994,10 @@ function entryIssueDetail(section, kind, entry) {
       return issueDetail("Beta.12 option conditions", "VR 1.0.0-beta.12 or newer", state.meta.packVersion, "meta-packVersion", "warning");
     }
     if (kind === "options" && hasPlannedBeta13DialogueOptionDeprecationField(entry)) {
-      const field = BETA_13_PLANNED_DIALOGUE_OPTION_DEPRECATION_KEYS.find((key) => entry?.[key] !== undefined);
-      return issueDetail("Planned beta.13 option deprecation", "`conditions` replacement before VR 1.0.0-beta.13", field, `option-${field}`, "warning");
+      return infoIssueDetail(dialogueDeprecationMessage(kind, entry), "dialogue-conditions");
     }
     if (kind === "lines" && hasPlannedBeta13DialogueLineDeprecationField(entry)) {
-      const field = BETA_13_PLANNED_DIALOGUE_LINE_DEPRECATION_KEYS.find((key) => entry?.[key] !== undefined);
-      return issueDetail("Planned beta.13 line deprecation", "`conditions` replacement before VR 1.0.0-beta.13", field, `line-${field}`, "warning");
+      return infoIssueDetail(dialogueDeprecationMessage(kind, entry), "dialogue-conditions");
     }
     const dialogueListChecks = [
       { keys: ["dispositions"], label: "Dispositions", expected: CONSTANTS.dispositions.join(", "), fieldId: "dialogue-dispositions", valid: (value) => CONSTANTS.dispositions.includes(value), severity: "warning" },
@@ -4444,7 +4529,7 @@ function validate() {
     }
   }
   for (const entry of state.dialogue.lines) {
-    if (!entry.request || !hasDialogueText(entry)) {
+    if (!entry.request || (!hasDialogueText(entry) && !(supportsBeta12DialogueFields() && entry.text_key))) {
       addCheck(checks, "error", "Dialogue line", "Every line needs a request and text.");
       break;
     }
@@ -4493,6 +4578,29 @@ function validate() {
   }
   if (!supportsBeta12DialogueFields() && state.dialogue.lines.some(hasBeta12DialogueField)) {
     addCheck(checks, "warning", "Dialogue beta.12 fields", "Mood and social-attribute dialogue filters require the VR 1.0.0-beta.12 target.");
+  }
+  if (!supportsBeta12DialogueFields() && state.dialogue.options.some(hasBeta12DialogueField)) {
+    addCheck(checks, "warning", "Dialogue beta.12 option fields", "Option conditions require the VR 1.0.0-beta.12 target.");
+  }
+  const plannedOptionDeprecation = state.dialogue.options
+    .map((entry, index) => ({ entry, index }))
+    .filter(({ entry }) => hasPlannedBeta13DialogueOptionDeprecationField(entry));
+  if (plannedOptionDeprecation.length > 0) {
+    const locations = entryLocations("dialogue", "options", plannedOptionDeprecation, "dialogue-conditions");
+    addCheck(checks, "info", "Dialogue option deprecation", dialogueDeprecationMessage("options", plannedOptionDeprecation[0].entry), {
+      locations,
+      paths: locations.map((location) => location.path)
+    });
+  }
+  const plannedLineDeprecation = state.dialogue.lines
+    .map((entry, index) => ({ entry, index }))
+    .filter(({ entry }) => hasPlannedBeta13DialogueLineDeprecationField(entry));
+  if (plannedLineDeprecation.length > 0) {
+    const locations = entryLocations("dialogue", "lines", plannedLineDeprecation, "dialogue-conditions");
+    addCheck(checks, "info", "Dialogue line deprecation", dialogueDeprecationMessage("lines", plannedLineDeprecation[0].entry), {
+      locations,
+      paths: locations.map((location) => location.path)
+    });
   }
   const badMood = firstInvalidValue(state.dialogue.lines, ["mood", "moods"], (value) => CONSTANTS.moods.includes(value));
   if (badMood) {
@@ -5090,6 +5198,7 @@ function renderTabs() {
     tab.classList.toggle("is-active", active);
     tab.classList.toggle("has-error", severity === "error");
     tab.classList.toggle("has-warning", severity === "warning");
+    tab.classList.toggle("has-info", severity === "info");
     if (active) {
       tab.setAttribute("aria-current", "step");
     } else {
@@ -5144,10 +5253,12 @@ function renderChecks() {
   const issueCount = checks.filter((check) => check.type !== "ok").length;
   const hasError = checks.some((check) => check.type === "error");
   const hasWarning = checks.some((check) => check.type === "warning");
+  const hasInfo = checks.some((check) => check.type === "info");
   els.checkCount.textContent = String(issueCount);
   els.checkCount.classList.toggle("has-error", hasError);
   els.checkCount.classList.toggle("has-warning", !hasError && hasWarning);
-  els.checkCount.classList.toggle("is-ok", !hasError && !hasWarning);
+  els.checkCount.classList.toggle("has-info", !hasError && !hasWarning && hasInfo);
+  els.checkCount.classList.toggle("is-ok", !hasError && !hasWarning && !hasInfo);
   els.checks.innerHTML = checks
     .map((check, index) => {
       const details = Array.isArray(check.locations) && check.locations.length > 0
@@ -5157,7 +5268,7 @@ function renderChecks() {
       const attrs = check.locations?.length ? ` type="button" data-check-index="${index}"` : "";
       return `
       <${tag} class="check ${escapeHtml(check.type)}"${attrs}>
-        ${icon(check.type === "error" ? "circle-alert" : check.type === "warning" ? "triangle-alert" : "circle-check", "inline-icon")}
+        ${icon(check.type === "error" ? "circle-alert" : check.type === "warning" ? "triangle-alert" : check.type === "info" ? "info" : "circle-check", "inline-icon")}
         <strong>${escapeHtml(check.title)}</strong>
         <span>${escapeHtml(check.text)}</span>
         ${details}
@@ -5784,18 +5895,18 @@ function currentEditingEntry() {
 }
 
 function applyEntryIssueHighlights() {
-  els.panel.querySelectorAll(".field.has-error, .field.has-warning").forEach((fieldNode) => {
-    fieldNode.classList.remove("has-error", "has-warning");
+  els.panel.querySelectorAll(".field.has-error, .field.has-warning, .field.has-info").forEach((fieldNode) => {
+    fieldNode.classList.remove("has-error", "has-warning", "has-info");
     fieldNode.querySelector(".field-issue")?.remove();
   });
-  els.panel.querySelectorAll(".toggle.has-error, .toggle.has-warning").forEach((toggleNode) => {
-    toggleNode.classList.remove("has-error", "has-warning");
+  els.panel.querySelectorAll(".toggle.has-error, .toggle.has-warning, .toggle.has-info").forEach((toggleNode) => {
+    toggleNode.classList.remove("has-error", "has-warning", "has-info");
   });
   const entry = currentEditingEntry();
   if (!entry || !editing) return;
   const issue = entryIssueDetail(editing.section, editing.kind, entry);
   if (!issue || issue.fieldIds.length === 0) return;
-  const className = issue.severity === "warning" ? "has-warning" : "has-error";
+  const className = issueSeverityClass(issue.severity) || "has-error";
   for (const fieldId of issue.fieldIds) {
     const control = els.panel.querySelector(`#${CSS.escape(fieldId)}`);
     const target = control?.closest(".field") || control?.closest(".toggle");
@@ -5899,6 +6010,29 @@ function dialogueConditionsField(entry) {
     className: "full",
     rows: 6
   });
+}
+
+function beta12DialogueLineMetadataFields(entry) {
+  if (!supportsBeta12DialogueFields()) return "";
+  return `
+    ${field({ id: "dialogue-text_key", label: "Text key", value: entry.text_key ?? "" })}
+    ${field({ id: "dialogue-priority", label: "Priority", value: entry.priority ?? "", type: "number" })}
+    ${field({ id: "dialogue-category", label: "Category", value: entry.category ?? "" })}
+  `;
+}
+
+function dialogueDeprecationAlert(kind, entry) {
+  const message = dialogueDeprecationMessage(kind, entry);
+  if (!message) return "";
+  return `
+    <div class="compat-alert info full" role="status">
+      ${icon("info", "inline-icon")}
+      <div>
+        <strong>Marked for deprecation</strong>
+        <span>${escapeHtml(message)}</span>
+      </div>
+    </div>
+  `;
 }
 
 function socialAttributeHighToggles(entry) {
@@ -6201,6 +6335,7 @@ function renderDialogueForm(kind, entry) {
   if (kind === "options") {
     return `
       <div class="form-grid">
+        ${dialogueDeprecationAlert(kind, entry)}
         ${field({ id: "dialogue-id", label: "Option id", value: entry.id })}
         ${field({ id: "dialogue-label", label: "Button label", value: entry.label })}
         ${selectField({ id: "dialogue-type", label: "Request", value: entry.request ?? "", options: CONSTANTS.dialogueTypes })}
@@ -6213,7 +6348,7 @@ function renderDialogueForm(kind, entry) {
         ${playerItemDurabilityFields("dialogue", entry)}
         ${playerItemEnchantmentFields("dialogue", entry)}
         ${textareaField({ id: "dialogue-give_items", label: "Give items JSON", value: dialogueItemPaymentText(entry), help: "Optional. Example: { \"item\": \"minecraft:nether_star\", \"count\": 1, \"destination\": \"villager_inventory\" }", className: "full", rows: 5 })}
-        ${toggleGrid(CONSTANTS.optionFlags, entry, "option")}
+        ${toggleGrid(authoredDialogueFlags(CONSTANTS.optionFlags, kind), entry, "option")}
       </div>
       ${formActions(action, "save-dialogue-entry", "clear-dialogue-form")}
     `;
@@ -6222,10 +6357,11 @@ function renderDialogueForm(kind, entry) {
   if (kind === "lines") {
     return `
       <div class="form-grid">
+        ${dialogueDeprecationAlert(kind, entry)}
         ${field({ id: "dialogue-id", label: "Line id", value: entry.id })}
         ${selectField({ id: "dialogue-type", label: "Request", value: entry.request ?? "", options: CONSTANTS.dialogueTypes })}
         ${textareaField({ id: "dialogue-text", label: "Line(s)", value: dialogueTextValue(entry), help: "One variation per line.", className: "full", rows: 3 })}
-        ${field({ id: "dialogue-text_key", label: "Text key", value: entry.text_key ?? "" })}
+        ${beta12DialogueLineMetadataFields(entry)}
         ${listField({ id: "dialogue-option", label: "Option id(s)", value: entry.option ?? entry.option_ids, help: "Link to a custom or built-in talk option." })}
         ${commonFilters}
         ${reputationFilters}
@@ -6247,10 +6383,8 @@ function renderDialogueForm(kind, entry) {
         ${listField({ id: "dialogue-recruitment_memory_biomes", label: "Recruitment memory biomes", value: entry.recruitment_memory_biome ?? entry.recruitment_memory_biomes })}
         ${field({ id: "dialogue-min_recruitment_follow_distance", label: "Minimum follow distance", value: entry.min_recruitment_follow_distance ?? "", type: "number" })}
         ${selectField({ id: "dialogue-gift_advice", label: "Gift advice filter", value: entry.gift_advice, options: CONSTANTS.giftAdvice })}
-        ${field({ id: "dialogue-priority", label: "Priority", value: entry.priority ?? "", type: "number" })}
-        ${field({ id: "dialogue-category", label: "Category", value: entry.category ?? "" })}
         ${field({ id: "dialogue-weight", label: "Weight", value: entry.weight ?? "", type: "number" })}
-        ${toggleGrid(CONSTANTS.lineFlags, entry, "line")}
+        ${toggleGrid(authoredDialogueFlags(CONSTANTS.lineFlags, kind), entry, "line")}
       </div>
       ${formActions(action, "save-dialogue-entry", "clear-dialogue-form")}
     `;
@@ -6685,6 +6819,26 @@ function readBooleans(prefix, flags, base = {}) {
   return entry;
 }
 
+function preservedHiddenDialogueFields(kind, entry) {
+  if (!editing || editing.section !== "dialogue" || editing.kind !== kind) return {};
+  const source = currentEditingEntry();
+  if (!source || typeof source !== "object") return {};
+  const keys = new Set([
+    ...hiddenDialogueVersionKeys(kind),
+    ...plannedBeta13DialogueDeprecationKeysForKind(kind)
+  ]);
+  const preserved = {};
+  for (const key of keys) {
+    const emptyEntryValue = entry[key] === undefined
+      || entry[key] === ""
+      || (Array.isArray(entry[key]) && entry[key].length === 0);
+    if (source[key] !== undefined && emptyEntryValue) {
+      preserved[key] = source[key];
+    }
+  }
+  return preserved;
+}
+
 function readCurrentDraftEntry(options = {}) {
   const form = els.panel.querySelector(".entry-form");
   if (!form) return null;
@@ -6718,7 +6872,7 @@ function readDialogueEntry() {
   const kind = activeDialogueKind;
   let entry = {};
   if (kind === "options") {
-    entry = readBooleans("option", CONSTANTS.optionFlags, {
+    entry = readBooleans("option", authoredDialogueFlags(CONSTANTS.optionFlags, kind), {
       id: readValue("dialogue-id").trim(),
       label: readValue("dialogue-label").trim(),
       type: "dialogue_option",
@@ -6741,7 +6895,7 @@ function readDialogueEntry() {
     const optionIds = readList("dialogue-option");
     const storyStructures = readList("dialogue-story_structure");
     const storyBiomes = readList("dialogue-story_biome");
-    entry = readBooleans("line", CONSTANTS.lineFlags, {
+    entry = readBooleans("line", authoredDialogueFlags(CONSTANTS.lineFlags, kind), {
       id: readValue("dialogue-id").trim(),
       request: readValue("dialogue-type"),
       ...readDialogueTextFields(),
@@ -6805,7 +6959,10 @@ function readDialogueEntry() {
       weight: parseInteger(readValue("dialogue-weight"))
     });
   }
-  return entry;
+  return {
+    ...preservedHiddenDialogueFields(kind, entry),
+    ...entry
+  };
 }
 
 function readBeta12DialogueLineFilters() {
@@ -7896,7 +8053,7 @@ function showExportIssueDialog(checks) {
     .slice(0, 8)
     .map((check) => `
       <div class="modal-issue ${escapeHtml(check.type)}">
-        ${icon(check.type === "error" ? "circle-alert" : "triangle-alert", "inline-icon")}
+        ${icon(check.type === "error" ? "circle-alert" : check.type === "warning" ? "triangle-alert" : "info", "inline-icon")}
         <div>
           <strong>${escapeHtml(check.title)}</strong>
           <span>${escapeHtml(check.text)}</span>
