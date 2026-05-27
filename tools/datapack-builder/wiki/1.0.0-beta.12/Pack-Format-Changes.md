@@ -48,7 +48,7 @@ Pack-facing beta.12 changes introduce persistent Social Attributes and temporary
 - Added resource-pack language keys for temporary mood labels under `villagerretaliation.mood.*`, Profile page attribute labels/descriptions under `villagerretaliation.profile.attribute.*`, profile ranks under `villagerretaliation.profile.rank.*`, and Profile UI rows/tooltips under `villagerretaliation.gui.profile.*`.
 - Added villager trade refresh support for skill-generated trades. Refresh requests are stored per villager and per offer slot, mature on the next Minecraft day, and replace the selected slot with an eligible skill-trade offer when ready.
 - Added persistent per-villager, per-profession skill-trade pools. Villagers remember known skill-trade definition ids for professions they have actually held and reuse that memory when reacquiring the same profession.
-- Added Revered Special Orders: high-reputation players can choose targetable skill-trade definitions for longer, cooldown-gated restock requests, up to three active requests per villager/player.
+- Added Respected Special Orders: high-reputation players can choose targetable skill-trade definitions for longer, cooldown-gated restock requests, up to three active requests per villager/player.
 - Added an `Ask about orders.` dialogue branch for active Special Orders, with dynamic per-order status options and eight stock-time response variations.
 - Added optional skill-trade `request` metadata: `targetable`, `display_priority`, `min_reputation`, `wait_days`, `cooldown_days`, and `extra_cost`.
 - Added the forced-dialogue trigger value `trade_refresh` for data-driven trade-refresh option templates.

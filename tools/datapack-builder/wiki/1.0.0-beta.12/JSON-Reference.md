@@ -97,13 +97,13 @@ The profession must already be registered by a mod; Villager Retaliation JSON ca
 
 ## Skill Trade Requests
 
-Skill trade entries can include optional Special Order metadata under `request`. Entries without `request.targetable: true` are still valid normal skill trades, but Revered+ players cannot directly choose them from the Special Order list.
+Skill trade entries can include optional Special Order metadata under `request`. Entries without `request.targetable: true` are still valid normal skill trades, but Respected+ players cannot directly choose them from the Special Order list.
 
 ```json
 "request": {
   "targetable": true,
   "display_priority": 10,
-  "min_reputation": "revered",
+  "min_reputation": "respected",
   "wait_days": 2,
   "cooldown_days": 3,
   "extra_cost": {

@@ -12,13 +12,13 @@ public record SkillTradeRequestMetadata(
     public static final SkillTradeRequestMetadata NOT_TARGETABLE = new SkillTradeRequestMetadata(
             false,
             0,
-            VillagerReputationLevel.REVERED,
+            VillagerReputationLevel.RESPECTED,
             0,
             0,
             SpecialOrderCost.EMPTY);
 
     public SkillTradeRequestMetadata {
-        minReputation = minReputation == null ? VillagerReputationLevel.REVERED : minReputation;
+        minReputation = minReputation == null ? VillagerReputationLevel.RESPECTED : minReputation;
         waitDays = Math.max(0, waitDays);
         cooldownDays = Math.max(0, cooldownDays);
         extraCost = extraCost == null ? SpecialOrderCost.EMPTY : extraCost;

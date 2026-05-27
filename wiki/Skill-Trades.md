@@ -48,7 +48,7 @@ data/villagerretaliation/skill_trades/wandering_trader.json
       "request": {
         "targetable": true,
         "display_priority": 10,
-        "min_reputation": "revered",
+        "min_reputation": "respected",
         "wait_days": 2,
         "cooldown_days": 3
       },
@@ -410,9 +410,9 @@ See [Forced Dialogue JSON](Forced-Dialogue.md#trade-refresh-dialogue) for the bu
 
 ## Special Orders
 
-Special Orders are high-reputation targeted trade requests. By default, a player must be `revered` or `royalty` with that villager and `enableSpecialOrders` must be enabled. Lower-reputation players keep the normal random refresh path.
+Special Orders are high-reputation targeted trade requests. By default, a player must be `respected`, `revered`, or `royalty` with that villager and `enableSpecialOrders` must be enabled. Lower-reputation players keep the normal random refresh path.
 
-When a Revered+ player clicks the refresh button, the villager offers a data-driven choice:
+When a Respected+ player clicks the refresh button, the villager offers a data-driven choice:
 
 - `Surprise me.` queues the existing random next-day refresh.
 - `I'm looking for something specific.` opens a dynamic list of currently eligible targetable skill-trade definitions.
@@ -428,7 +428,7 @@ When a player has active Special Orders with a villager, the normal Talk menu ad
 "request": {
   "targetable": true,
   "display_priority": 10,
-  "min_reputation": "revered",
+  "min_reputation": "respected",
   "wait_days": 2,
   "cooldown_days": 3,
   "extra_cost": {
@@ -444,7 +444,7 @@ When a player has active Special Orders with a villager, the normal Talk menu ad
 | --- | --- | --- | --- |
 | `targetable` | boolean | `false` | Required for direct Special Orders. |
 | `display_priority` | integer | `0` | Higher values sort earlier in the dynamic Special Order list. |
-| `min_reputation` | string | `revered` | Minimum reputation tier for this specific order. The global config minimum still applies. |
+| `min_reputation` | string | `respected` | Minimum reputation tier for this specific order. The global config minimum still applies. |
 | `wait_days` | integer | config value | Minecraft days before the order can apply. |
 | `cooldown_days` | integer | config value | Minecraft days after fulfillment before the same player can place another order with that villager. |
 | `extra_cost` | object | none | Optional item/count cost, normally emeralds. Ignored unless extra costs are enabled in config. |

@@ -294,7 +294,7 @@ What do you need?
 Leave
 ```
 
-`trade_refresh.revered_options` is used before scheduling anything when a Revered+ player clicks a refresh button. It normally shows:
+`trade_refresh.revered_options` is used before scheduling anything when a Respected+ player clicks a refresh button. It normally shows:
 
 ```text
 Surprise me.

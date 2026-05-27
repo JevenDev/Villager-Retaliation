@@ -604,7 +604,7 @@ public final class VillagerRetaliationConfig {
                 .define("enableSpecialOrders", true);
         SPECIAL_ORDER_MIN_REPUTATION = BUILDER.comment("Minimum per-villager reputation tier needed to place Special Orders.")
                 .translation("villagerretaliation.configuration.trade.specialOrderMinReputation")
-                .defineEnum("specialOrderMinReputation", VillagerReputationLevel.REVERED);
+                .defineEnum("specialOrderMinReputation", VillagerReputationLevel.RESPECTED);
         SPECIAL_ORDER_WAIT_DAYS = BUILDER.comment("Default Minecraft days before an accepted Special Order becomes ready when a trade entry does not override wait_days.")
                 .translation("villagerretaliation.configuration.trade.specialOrderWaitDays")
                 .defineInRange("specialOrderWaitDays", 2, 1, 30);

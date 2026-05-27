@@ -632,7 +632,7 @@ public final class SkillTradeResources {
         return new SkillTradeRequestMetadata(
                 readBoolean(request, "targetable", false),
                 readInt(request, "display_priority", "displayPriority", 0),
-                readReputationLevel(request, "min_reputation", "minReputation", VillagerReputationLevel.REVERED),
+                readReputationLevel(request, "min_reputation", "minReputation", VillagerReputationLevel.RESPECTED),
                 readInt(request, "wait_days", "waitDays", 0),
                 readInt(request, "cooldown_days", "cooldownDays", 0),
                 readRequestCost(location, context, request)

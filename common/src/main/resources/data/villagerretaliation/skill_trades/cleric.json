@@ -32,7 +32,7 @@
       "request": {
         "targetable": true,
         "display_priority": 10,
-        "min_reputation": "revered",
+        "min_reputation": "respected",
         "wait_days": 2,
         "cooldown_days": 3
       }
@@ -67,7 +67,7 @@
       "request": {
         "targetable": true,
         "display_priority": 20,
-        "min_reputation": "revered",
+        "min_reputation": "respected",
         "wait_days": 2,
         "cooldown_days": 3
       }
@@ -103,7 +103,7 @@
       "request": {
         "targetable": true,
         "display_priority": 30,
-        "min_reputation": "revered",
+        "min_reputation": "respected",
         "wait_days": 2,
         "cooldown_days": 3
       }
@@ -139,7 +139,7 @@
       "request": {
         "targetable": true,
         "display_priority": 40,
-        "min_reputation": "revered",
+        "min_reputation": "respected",
         "wait_days": 2,
         "cooldown_days": 3
       }
@@ -173,7 +173,7 @@
       "request": {
         "targetable": true,
         "display_priority": 40,
-        "min_reputation": "revered",
+        "min_reputation": "respected",
         "wait_days": 2,
         "cooldown_days": 3
       }
@@ -212,7 +212,7 @@
       "request": {
         "targetable": true,
         "display_priority": 50,
-        "min_reputation": "revered",
+        "min_reputation": "respected",
         "wait_days": 2,
         "cooldown_days": 3
       }
