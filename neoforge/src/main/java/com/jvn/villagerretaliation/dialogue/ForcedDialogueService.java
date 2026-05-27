@@ -77,6 +77,7 @@ public final class ForcedDialogueService {
     private static final String TRADE_REFRESH_SURPRISE_OPTION_ID = "trade_refresh.surprise_me";
     private static final String TRADE_REFRESH_SPECIAL_ORDER_OPTION_ID = "trade_refresh.special_order";
     private static final String TRADE_REFRESH_CONFIRM_SPECIAL_ORDER_OPTION_ID = "trade_refresh.confirm_special_order";
+    private static final String TRADE_REFRESH_REQUIREMENTS_OPTION_ID = "trade_refresh.requirements";
     public static final String SPECIAL_ORDER_STATUS_ROOT_OPTION_ID = "trade_refresh.special_order.status";
     private static final long RECENT_CONTAINER_CLICK_TICKS = 8L;
     private static final long FORCED_SESSION_TIMEOUT_TICKS = 20L * 60L;
@@ -278,7 +279,14 @@ public final class ForcedDialogueService {
             VillagerInteractionService.sendVillagerNotice(player, villager, line);
             return;
         }
-        ForcedDialogueDefinition definition = tradeRefreshDefinition(line, optionDefinition.get());
+        ForcedDialogueDefinition options = tradeRefreshRequirementOptions(
+                level,
+                villager,
+                player,
+                optionDefinition.get(),
+                messageKey,
+                replacements);
+        ForcedDialogueDefinition definition = tradeRefreshDefinition(line, options);
         ForcedDialogueContext context = tradeRefreshContext(level, villager, player, replacements);
         if (VillagerInteractionService.openForcedDialogue(
                 player,
@@ -652,6 +660,51 @@ public final class ForcedDialogueService {
                 .findFirst();
     }
 
+    private static ForcedDialogueDefinition tradeRefreshRequirementOptions(
+            ServerLevel level,
+            Villager villager,
+            ServerPlayer player,
+            ForcedDialogueDefinition optionDefinition,
+            String messageKey,
+            Map<String, String> replacements) {
+        Optional<String> requirementMessageKey = tradeRefreshRequirementMessageKey(messageKey);
+        if (requirementMessageKey.isEmpty()) {
+            return optionDefinition;
+        }
+        String response = tradeRefreshLine(level, villager, player, requirementMessageKey.get(), replacements);
+        if (response.isBlank() || response.equals(requirementMessageKey.get())) {
+            return optionDefinition;
+        }
+        List<ForcedDialogueOption> options = optionDefinition.options()
+                .stream()
+                .map(option -> withRequirementResponse(option, response))
+                .toList();
+        return tradeRefreshDefinition(
+                optionDefinition.selectLine(level.getRandom()),
+                optionDefinition,
+                options,
+                optionDefinition.leaveOption(),
+                optionDefinition.leaveOptions());
+    }
+
+    private static ForcedDialogueOption withRequirementResponse(ForcedDialogueOption option, String response) {
+        if (!TRADE_REFRESH_REQUIREMENTS_OPTION_ID.equals(option.id())) {
+            return option;
+        }
+        return new ForcedDialogueOption(
+                option.id(),
+                option.label(),
+                List.of(response),
+                option.reputationDelta(),
+                option.aggro(),
+                option.aggroChance(),
+                option.endConversation(),
+                option.order(),
+                option.stolenItemReturn(),
+                option.itemPayment(),
+                option.reputationCondition());
+    }
+
     private static void openSpecialOrderSelectionDialogue(
             ServerPlayer player,
             Villager villager,
@@ -889,6 +942,20 @@ public final class ForcedDialogueService {
                 || "trade_refresh.special_order_cooldown".equals(messageKey)
                 || "trade_refresh.special_order_payment_missing".equals(messageKey)
                 || "trade_refresh.special_order_status_empty".equals(messageKey);
+    }
+
+    private static Optional<String> tradeRefreshRequirementMessageKey(String messageKey) {
+        return switch (messageKey) {
+            case "trade_refresh.not_ready" -> Optional.of("trade_refresh.requirements.not_ready");
+            case "trade_refresh.unavailable" -> Optional.of("trade_refresh.requirements.unavailable");
+            case "trade_refresh.special_order_unavailable" -> Optional.of("trade_refresh.requirements.special_order_unavailable");
+            case "trade_refresh.special_order_pending" -> Optional.of("trade_refresh.requirements.special_order_pending");
+            case "trade_refresh.special_order_limit_reached" -> Optional.of("trade_refresh.requirements.special_order_limit_reached");
+            case "trade_refresh.special_order_cooldown" -> Optional.of("trade_refresh.requirements.special_order_cooldown");
+            case "trade_refresh.special_order_payment_missing" -> Optional.of("trade_refresh.requirements.special_order_payment_missing");
+            case "trade_refresh.special_order_status_empty" -> Optional.of("trade_refresh.requirements.special_order_status_empty");
+            default -> Optional.empty();
+        };
     }
 
     private static ForcedDialogueContext tradeRefreshContext(

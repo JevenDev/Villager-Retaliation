@@ -2548,6 +2548,70 @@
       ]
     },
     {
+      "key": "trade_refresh.requirements.not_ready",
+      "lines": [
+        "I need to know a valid replacement for that trade first. My current stock cannot support one.",
+        "That trade has no better replacement I can source at my current skill.",
+        "I need a real replacement option for that slot. Right now, I do not have one."
+      ]
+    },
+    {
+      "key": "trade_refresh.requirements.unavailable",
+      "lines": [
+        "I need an actual trade slot I can change. That one is not available for refresh.",
+        "That offer cannot be changed from here. I need a valid, stocked trade slot.",
+        "I need the trade to be open and refreshable first. This one is not."
+      ]
+    },
+    {
+      "key": "trade_refresh.requirements.special_order_unavailable",
+      "lines": [
+        "I need a Special Order that matches what I can source for this profession and skill.",
+        "That order is outside my current catalog. I cannot promise stock I cannot source.",
+        "I need that item to be one of the Special Orders I can actually arrange."
+      ]
+    },
+    {
+      "key": "trade_refresh.requirements.special_order_pending",
+      "lines": [
+        "I need to finish the current order for that trade before taking another one.",
+        "That trade is already on my ledger. Let me complete it first.",
+        "I cannot double-book the same trade. I need the current order cleared first."
+      ]
+    },
+    {
+      "key": "trade_refresh.requirements.special_order_limit_reached",
+      "lines": [
+        "I need a free order slot. You already have {active_orders} active {active_order_word}, and {max_orders} {max_order_word} is my limit.",
+        "Your ledger is full. I need one of your {active_orders} active {active_order_word} to finish first.",
+        "I cannot take more than {max_orders} Special {max_order_word} at once. Let one clear, then ask again."
+      ]
+    },
+    {
+      "key": "trade_refresh.requirements.special_order_cooldown",
+      "lines": [
+        "I need {cooldown_days} more {cooldown_day_word} before I can take another Special Order from you.",
+        "The only blocker is recovery time. Ask me again after {cooldown_days} {cooldown_day_word}.",
+        "I can talk orders again after {cooldown_days} {cooldown_day_word}."
+      ]
+    },
+    {
+      "key": "trade_refresh.requirements.special_order_payment_missing",
+      "lines": [
+        "I need the extra cost first: {extra_cost}.",
+        "Bring {extra_cost}, and I can accept that order.",
+        "The order is possible, but I need {extra_cost} before I put it on the ledger."
+      ]
+    },
+    {
+      "key": "trade_refresh.requirements.special_order_status_empty",
+      "lines": [
+        "I need an active Special Order to check. You do not have one with me right now.",
+        "There is no order status to explain because your ledger is empty.",
+        "I can check an order once you have one open."
+      ]
+    },
+    {
       "key": "interaction.inventory_unavailable",
       "lines": [
         "I cannot show you that right now.",
