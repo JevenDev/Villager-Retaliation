@@ -3,8 +3,12 @@
   "entries": [
     {
       "id": "villagerretaliation:fletcher_low_arrows",
-      "professions": ["minecraft:fletcher"],
-      "skills": ["villagerretaliation:archery"],
+      "professions": [
+        "minecraft:fletcher"
+      ],
+      "skills": [
+        "villagerretaliation:archery"
+      ],
       "min_rank": "novice",
       "max_rank": "apprentice",
       "villager_level": 1,
@@ -23,12 +27,24 @@
       },
       "xp": 3,
       "price_multiplier": 0.05,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 10,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:fletcher_low_basic_bow",
-      "professions": ["minecraft:fletcher"],
-      "skills": ["villagerretaliation:archery", "villagerretaliation:crafting"],
+      "professions": [
+        "minecraft:fletcher"
+      ],
+      "skills": [
+        "villagerretaliation:archery",
+        "villagerretaliation:crafting"
+      ],
       "min_rank": "novice",
       "max_rank": "apprentice",
       "villager_level": 2,
@@ -47,12 +63,23 @@
       },
       "xp": 6,
       "price_multiplier": 0.05,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 20,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:fletcher_skilled_ammo_bundle",
-      "professions": ["minecraft:fletcher"],
-      "skills": ["villagerretaliation:archery"],
+      "professions": [
+        "minecraft:fletcher"
+      ],
+      "skills": [
+        "villagerretaliation:archery"
+      ],
       "min_rank": "skilled",
       "max_rank": "expert",
       "villager_level": 3,
@@ -71,12 +98,24 @@
       },
       "xp": 8,
       "price_multiplier": 0.05,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 30,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:fletcher_skilled_crossbow",
-      "professions": ["minecraft:fletcher"],
-      "skills": ["villagerretaliation:archery", "villagerretaliation:crafting"],
+      "professions": [
+        "minecraft:fletcher"
+      ],
+      "skills": [
+        "villagerretaliation:archery",
+        "villagerretaliation:crafting"
+      ],
       "min_rank": "skilled",
       "max_rank": "expert",
       "villager_level": 4,
@@ -95,12 +134,23 @@
       },
       "xp": 12,
       "price_multiplier": 0.08,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 40,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:fletcher_expert_enchanted_bowcraft",
-      "professions": ["minecraft:fletcher"],
-      "skills": ["villagerretaliation:archery"],
+      "professions": [
+        "minecraft:fletcher"
+      ],
+      "skills": [
+        "villagerretaliation:archery"
+      ],
       "min_rank": "expert",
       "villager_level": 4,
       "chance": 0.45,
@@ -134,12 +184,23 @@
       },
       "xp": 15,
       "price_multiplier": 0.1,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 40,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:fletcher_master_spectral_arrows",
-      "professions": ["minecraft:fletcher"],
-      "skills": ["villagerretaliation:archery"],
+      "professions": [
+        "minecraft:fletcher"
+      ],
+      "skills": [
+        "villagerretaliation:archery"
+      ],
       "min_rank": "master",
       "villager_level": 5,
       "chance": 0.4,
@@ -158,9 +219,18 @@
       "xp": 18,
       "price_multiplier": 0.05,
       "conditions": {
-        "config_flags": ["skillTradeAllowSpecialArrows"]
+        "config_flags": [
+          "skillTradeAllowSpecialArrows"
+        ]
       },
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 50,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     }
   ]
 }

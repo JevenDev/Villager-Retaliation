@@ -3,8 +3,13 @@
   "entries": [
     {
       "id": "villagerretaliation:farmer_low_basic_bread",
-      "professions": ["minecraft:farmer"],
-      "skills": ["villagerretaliation:farming", "villagerretaliation:cooking"],
+      "professions": [
+        "minecraft:farmer"
+      ],
+      "skills": [
+        "villagerretaliation:farming",
+        "villagerretaliation:cooking"
+      ],
       "min_rank": "novice",
       "max_rank": "apprentice",
       "villager_level": 1,
@@ -23,12 +28,23 @@
       },
       "xp": 3,
       "price_multiplier": 0.05,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 10,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:farmer_low_bone_meal",
-      "professions": ["minecraft:farmer"],
-      "skills": ["villagerretaliation:farming"],
+      "professions": [
+        "minecraft:farmer"
+      ],
+      "skills": [
+        "villagerretaliation:farming"
+      ],
       "min_rank": "novice",
       "max_rank": "apprentice",
       "villager_level": 2,
@@ -47,12 +63,24 @@
       },
       "xp": 4,
       "price_multiplier": 0.05,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 20,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:farmer_skilled_crop_bundle",
-      "professions": ["minecraft:farmer"],
-      "skills": ["villagerretaliation:farming", "villagerretaliation:gathering"],
+      "professions": [
+        "minecraft:farmer"
+      ],
+      "skills": [
+        "villagerretaliation:farming",
+        "villagerretaliation:gathering"
+      ],
       "min_rank": "skilled",
       "max_rank": "expert",
       "villager_level": 3,
@@ -75,12 +103,23 @@
       },
       "xp": 6,
       "price_multiplier": 0.05,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 30,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:farmer_skilled_iron_hoe",
-      "professions": ["minecraft:farmer"],
-      "skills": ["villagerretaliation:farming"],
+      "professions": [
+        "minecraft:farmer"
+      ],
+      "skills": [
+        "villagerretaliation:farming"
+      ],
       "min_rank": "skilled",
       "max_rank": "expert",
       "villager_level": 4,
@@ -99,12 +138,24 @@
       },
       "xp": 12,
       "price_multiplier": 0.08,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 40,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:farmer_expert_golden_carrots",
-      "professions": ["minecraft:farmer"],
-      "skills": ["villagerretaliation:farming", "villagerretaliation:cooking"],
+      "professions": [
+        "minecraft:farmer"
+      ],
+      "skills": [
+        "villagerretaliation:farming",
+        "villagerretaliation:cooking"
+      ],
       "min_rank": "expert",
       "villager_level": 4,
       "chance": 0.55,
@@ -122,12 +173,24 @@
       },
       "xp": 12,
       "price_multiplier": 0.05,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 40,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:farmer_master_suspicious_stew",
-      "professions": ["minecraft:farmer"],
-      "skills": ["villagerretaliation:cooking", "villagerretaliation:farming"],
+      "professions": [
+        "minecraft:farmer"
+      ],
+      "skills": [
+        "villagerretaliation:cooking",
+        "villagerretaliation:farming"
+      ],
       "min_rank": "master",
       "villager_level": 5,
       "chance": 0.45,
@@ -145,12 +208,23 @@
       },
       "xp": 15,
       "price_multiplier": 0.05,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 50,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:farmer_master_diamond_hoe",
-      "professions": ["minecraft:farmer"],
-      "skills": ["villagerretaliation:farming"],
+      "professions": [
+        "minecraft:farmer"
+      ],
+      "skills": [
+        "villagerretaliation:farming"
+      ],
       "min_rank": "master",
       "villager_level": 5,
       "chance": 0.32,
@@ -180,9 +254,18 @@
       "xp": 20,
       "price_multiplier": 0.1,
       "conditions": {
-        "config_flags": ["skillTradeAllowHighTierEquipment"]
+        "config_flags": [
+          "skillTradeAllowHighTierEquipment"
+        ]
       },
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 50,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     }
   ]
 }

@@ -3,8 +3,12 @@
   "entries": [
     {
       "id": "villagerretaliation:librarian_low_books",
-      "professions": ["minecraft:librarian"],
-      "skills": ["villagerretaliation:scholarship"],
+      "professions": [
+        "minecraft:librarian"
+      ],
+      "skills": [
+        "villagerretaliation:scholarship"
+      ],
       "min_rank": "novice",
       "max_rank": "apprentice",
       "villager_level": 1,
@@ -23,12 +27,24 @@
       },
       "xp": 3,
       "price_multiplier": 0.05,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 10,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:librarian_low_bookshelf",
-      "professions": ["minecraft:librarian"],
-      "skills": ["villagerretaliation:scholarship", "villagerretaliation:crafting"],
+      "professions": [
+        "minecraft:librarian"
+      ],
+      "skills": [
+        "villagerretaliation:scholarship",
+        "villagerretaliation:crafting"
+      ],
       "min_rank": "novice",
       "max_rank": "apprentice",
       "villager_level": 2,
@@ -47,12 +63,23 @@
       },
       "xp": 5,
       "price_multiplier": 0.05,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 20,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:librarian_skilled_bookshelves",
-      "professions": ["minecraft:librarian"],
-      "skills": ["villagerretaliation:scholarship"],
+      "professions": [
+        "minecraft:librarian"
+      ],
+      "skills": [
+        "villagerretaliation:scholarship"
+      ],
       "min_rank": "skilled",
       "max_rank": "expert",
       "villager_level": 3,
@@ -71,12 +98,23 @@
       },
       "xp": 8,
       "price_multiplier": 0.05,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 30,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:librarian_skilled_workshop_book",
-      "professions": ["minecraft:librarian"],
-      "skills": ["villagerretaliation:scholarship"],
+      "professions": [
+        "minecraft:librarian"
+      ],
+      "skills": [
+        "villagerretaliation:scholarship"
+      ],
       "min_rank": "skilled",
       "max_rank": "expert",
       "villager_level": 4,
@@ -106,12 +144,23 @@
       },
       "xp": 15,
       "price_multiplier": 0.1,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 40,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:librarian_expert_reference_book",
-      "professions": ["minecraft:librarian"],
-      "skills": ["villagerretaliation:scholarship"],
+      "professions": [
+        "minecraft:librarian"
+      ],
+      "skills": [
+        "villagerretaliation:scholarship"
+      ],
       "min_rank": "expert",
       "villager_level": 4,
       "chance": 0.45,
@@ -141,12 +190,23 @@
       },
       "xp": 20,
       "price_multiplier": 0.1,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 40,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:librarian_master_specialty_book",
-      "professions": ["minecraft:librarian"],
-      "skills": ["villagerretaliation:scholarship"],
+      "professions": [
+        "minecraft:librarian"
+      ],
+      "skills": [
+        "villagerretaliation:scholarship"
+      ],
       "min_rank": "master",
       "villager_level": 5,
       "chance": 0.35,
@@ -176,7 +236,14 @@
       },
       "xp": 25,
       "price_multiplier": 0.1,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 50,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     }
   ]
 }

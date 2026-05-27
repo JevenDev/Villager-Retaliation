@@ -3,8 +3,13 @@
   "entries": [
     {
       "id": "villagerretaliation:cleric_low_redstone",
-      "professions": ["minecraft:cleric"],
-      "skills": ["villagerretaliation:medicine", "villagerretaliation:scholarship"],
+      "professions": [
+        "minecraft:cleric"
+      ],
+      "skills": [
+        "villagerretaliation:medicine",
+        "villagerretaliation:scholarship"
+      ],
       "min_rank": "novice",
       "max_rank": "apprentice",
       "villager_level": 1,
@@ -23,12 +28,23 @@
       },
       "xp": 3,
       "price_multiplier": 0.05,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 10,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:cleric_low_glistering_melon",
-      "professions": ["minecraft:cleric"],
-      "skills": ["villagerretaliation:medicine"],
+      "professions": [
+        "minecraft:cleric"
+      ],
+      "skills": [
+        "villagerretaliation:medicine"
+      ],
       "min_rank": "novice",
       "max_rank": "apprentice",
       "villager_level": 2,
@@ -47,12 +63,24 @@
       },
       "xp": 5,
       "price_multiplier": 0.05,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 20,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:cleric_skilled_glowstone",
-      "professions": ["minecraft:cleric"],
-      "skills": ["villagerretaliation:medicine", "villagerretaliation:scholarship"],
+      "professions": [
+        "minecraft:cleric"
+      ],
+      "skills": [
+        "villagerretaliation:medicine",
+        "villagerretaliation:scholarship"
+      ],
       "min_rank": "skilled",
       "max_rank": "expert",
       "villager_level": 3,
@@ -71,12 +99,24 @@
       },
       "xp": 8,
       "price_multiplier": 0.05,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 30,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:cleric_skilled_blaze_powder",
-      "professions": ["minecraft:cleric"],
-      "skills": ["villagerretaliation:medicine", "villagerretaliation:survival"],
+      "professions": [
+        "minecraft:cleric"
+      ],
+      "skills": [
+        "villagerretaliation:medicine",
+        "villagerretaliation:survival"
+      ],
       "min_rank": "skilled",
       "max_rank": "expert",
       "villager_level": 4,
@@ -95,12 +135,23 @@
       },
       "xp": 12,
       "price_multiplier": 0.05,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 40,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:cleric_expert_ghast_tear",
-      "professions": ["minecraft:cleric"],
-      "skills": ["villagerretaliation:medicine"],
+      "professions": [
+        "minecraft:cleric"
+      ],
+      "skills": [
+        "villagerretaliation:medicine"
+      ],
       "min_rank": "expert",
       "villager_level": 4,
       "chance": 0.45,
@@ -118,12 +169,23 @@
       },
       "xp": 15,
       "price_multiplier": 0.05,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 40,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:cleric_master_golden_apple",
-      "professions": ["minecraft:cleric"],
-      "skills": ["villagerretaliation:medicine"],
+      "professions": [
+        "minecraft:cleric"
+      ],
+      "skills": [
+        "villagerretaliation:medicine"
+      ],
       "min_rank": "master",
       "villager_level": 5,
       "chance": 0.3,
@@ -142,9 +204,18 @@
       "xp": 20,
       "price_multiplier": 0.05,
       "conditions": {
-        "config_flags": ["skillTradeAllowRareSpecialtyTrades"]
+        "config_flags": [
+          "skillTradeAllowRareSpecialtyTrades"
+        ]
       },
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 50,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     }
   ]
 }

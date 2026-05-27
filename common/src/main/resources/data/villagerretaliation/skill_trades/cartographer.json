@@ -3,8 +3,12 @@
   "entries": [
     {
       "id": "villagerretaliation:cartographer_low_basic_maps",
-      "professions": ["minecraft:cartographer"],
-      "skills": ["villagerretaliation:cartography"],
+      "professions": [
+        "minecraft:cartographer"
+      ],
+      "skills": [
+        "villagerretaliation:cartography"
+      ],
       "min_rank": "novice",
       "max_rank": "apprentice",
       "villager_level": 1,
@@ -23,12 +27,24 @@
       },
       "xp": 4,
       "price_multiplier": 0.05,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 10,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:cartographer_low_glass_panes",
-      "professions": ["minecraft:cartographer"],
-      "skills": ["villagerretaliation:cartography", "villagerretaliation:crafting"],
+      "professions": [
+        "minecraft:cartographer"
+      ],
+      "skills": [
+        "villagerretaliation:cartography",
+        "villagerretaliation:crafting"
+      ],
       "min_rank": "novice",
       "max_rank": "apprentice",
       "villager_level": 2,
@@ -47,12 +63,23 @@
       },
       "xp": 4,
       "price_multiplier": 0.05,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 20,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:cartographer_skilled_map_bundle",
-      "professions": ["minecraft:cartographer"],
-      "skills": ["villagerretaliation:cartography"],
+      "professions": [
+        "minecraft:cartographer"
+      ],
+      "skills": [
+        "villagerretaliation:cartography"
+      ],
       "min_rank": "skilled",
       "max_rank": "expert",
       "villager_level": 3,
@@ -71,12 +98,24 @@
       },
       "xp": 8,
       "price_multiplier": 0.05,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 30,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:cartographer_skilled_compass",
-      "professions": ["minecraft:cartographer"],
-      "skills": ["villagerretaliation:cartography", "villagerretaliation:survival"],
+      "professions": [
+        "minecraft:cartographer"
+      ],
+      "skills": [
+        "villagerretaliation:cartography",
+        "villagerretaliation:survival"
+      ],
       "min_rank": "skilled",
       "max_rank": "expert",
       "villager_level": 4,
@@ -95,12 +134,23 @@
       },
       "xp": 10,
       "price_multiplier": 0.05,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 40,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:cartographer_expert_clock",
-      "professions": ["minecraft:cartographer"],
-      "skills": ["villagerretaliation:cartography"],
+      "professions": [
+        "minecraft:cartographer"
+      ],
+      "skills": [
+        "villagerretaliation:cartography"
+      ],
       "min_rank": "expert",
       "villager_level": 4,
       "chance": 0.45,
@@ -118,12 +168,24 @@
       },
       "xp": 14,
       "price_multiplier": 0.05,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 40,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:cartographer_master_recovery_compass",
-      "professions": ["minecraft:cartographer"],
-      "skills": ["villagerretaliation:cartography", "villagerretaliation:survival"],
+      "professions": [
+        "minecraft:cartographer"
+      ],
+      "skills": [
+        "villagerretaliation:cartography",
+        "villagerretaliation:survival"
+      ],
       "min_rank": "master",
       "villager_level": 5,
       "chance": 0.28,
@@ -142,9 +204,18 @@
       "xp": 25,
       "price_multiplier": 0.1,
       "conditions": {
-        "config_flags": ["skillTradeAllowRareSpecialtyTrades"]
+        "config_flags": [
+          "skillTradeAllowRareSpecialtyTrades"
+        ]
       },
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 50,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     }
   ]
 }

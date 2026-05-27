@@ -3,8 +3,12 @@
   "entries": [
     {
       "id": "villagerretaliation:mason_low_bricks",
-      "professions": ["minecraft:mason"],
-      "skills": ["villagerretaliation:masonry"],
+      "professions": [
+        "minecraft:mason"
+      ],
+      "skills": [
+        "villagerretaliation:masonry"
+      ],
       "min_rank": "novice",
       "max_rank": "apprentice",
       "villager_level": 2,
@@ -23,12 +27,24 @@
       },
       "xp": 4,
       "price_multiplier": 0.05,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 20,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:mason_skilled_stone_bricks",
-      "professions": ["minecraft:mason"],
-      "skills": ["villagerretaliation:masonry", "villagerretaliation:mining"],
+      "professions": [
+        "minecraft:mason"
+      ],
+      "skills": [
+        "villagerretaliation:masonry",
+        "villagerretaliation:mining"
+      ],
       "min_rank": "skilled",
       "max_rank": "expert",
       "villager_level": 3,
@@ -47,12 +63,23 @@
       },
       "xp": 8,
       "price_multiplier": 0.05,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 30,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:mason_expert_quartz_blocks",
-      "professions": ["minecraft:mason"],
-      "skills": ["villagerretaliation:masonry"],
+      "professions": [
+        "minecraft:mason"
+      ],
+      "skills": [
+        "villagerretaliation:masonry"
+      ],
       "min_rank": "expert",
       "villager_level": 4,
       "chance": 0.55,
@@ -70,12 +97,23 @@
       },
       "xp": 12,
       "price_multiplier": 0.05,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 40,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:leatherworker_low_leather",
-      "professions": ["minecraft:leatherworker"],
-      "skills": ["villagerretaliation:leatherworking"],
+      "professions": [
+        "minecraft:leatherworker"
+      ],
+      "skills": [
+        "villagerretaliation:leatherworking"
+      ],
       "min_rank": "novice",
       "max_rank": "apprentice",
       "villager_level": 2,
@@ -94,12 +132,24 @@
       },
       "xp": 4,
       "price_multiplier": 0.05,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 20,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:leatherworker_skilled_leather_chestplate",
-      "professions": ["minecraft:leatherworker"],
-      "skills": ["villagerretaliation:leatherworking", "villagerretaliation:crafting"],
+      "professions": [
+        "minecraft:leatherworker"
+      ],
+      "skills": [
+        "villagerretaliation:leatherworking",
+        "villagerretaliation:crafting"
+      ],
       "min_rank": "skilled",
       "max_rank": "expert",
       "villager_level": 3,
@@ -118,12 +168,23 @@
       },
       "xp": 10,
       "price_multiplier": 0.08,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 30,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:leatherworker_expert_reinforced_leather",
-      "professions": ["minecraft:leatherworker"],
-      "skills": ["villagerretaliation:leatherworking"],
+      "professions": [
+        "minecraft:leatherworker"
+      ],
+      "skills": [
+        "villagerretaliation:leatherworking"
+      ],
       "min_rank": "expert",
       "villager_level": 4,
       "chance": 0.45,
@@ -151,12 +212,24 @@
       },
       "xp": 14,
       "price_multiplier": 0.1,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 40,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:leatherworker_master_saddle",
-      "professions": ["minecraft:leatherworker"],
-      "skills": ["villagerretaliation:animal_handling", "villagerretaliation:leatherworking"],
+      "professions": [
+        "minecraft:leatherworker"
+      ],
+      "skills": [
+        "villagerretaliation:animal_handling",
+        "villagerretaliation:leatherworking"
+      ],
       "min_rank": "master",
       "villager_level": 5,
       "chance": 0.3,
@@ -175,14 +248,27 @@
       "xp": 20,
       "price_multiplier": 0.05,
       "conditions": {
-        "config_flags": ["skillTradeAllowRareSpecialtyTrades"]
+        "config_flags": [
+          "skillTradeAllowRareSpecialtyTrades"
+        ]
       },
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 50,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:butcher_low_cooked_chicken",
-      "professions": ["minecraft:butcher"],
-      "skills": ["villagerretaliation:cooking"],
+      "professions": [
+        "minecraft:butcher"
+      ],
+      "skills": [
+        "villagerretaliation:cooking"
+      ],
       "min_rank": "novice",
       "max_rank": "apprentice",
       "villager_level": 2,
@@ -201,12 +287,24 @@
       },
       "xp": 4,
       "price_multiplier": 0.05,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 20,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:butcher_skilled_cooked_beef",
-      "professions": ["minecraft:butcher"],
-      "skills": ["villagerretaliation:cooking", "villagerretaliation:animal_handling"],
+      "professions": [
+        "minecraft:butcher"
+      ],
+      "skills": [
+        "villagerretaliation:cooking",
+        "villagerretaliation:animal_handling"
+      ],
       "min_rank": "skilled",
       "max_rank": "expert",
       "villager_level": 3,
@@ -225,12 +323,23 @@
       },
       "xp": 8,
       "price_multiplier": 0.05,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 30,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:butcher_expert_cooked_porkchop",
-      "professions": ["minecraft:butcher"],
-      "skills": ["villagerretaliation:cooking"],
+      "professions": [
+        "minecraft:butcher"
+      ],
+      "skills": [
+        "villagerretaliation:cooking"
+      ],
       "min_rank": "expert",
       "villager_level": 4,
       "chance": 0.55,
@@ -248,12 +357,23 @@
       },
       "xp": 12,
       "price_multiplier": 0.05,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 40,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:butcher_master_rabbit_stew",
-      "professions": ["minecraft:butcher"],
-      "skills": ["villagerretaliation:cooking"],
+      "professions": [
+        "minecraft:butcher"
+      ],
+      "skills": [
+        "villagerretaliation:cooking"
+      ],
       "min_rank": "master",
       "villager_level": 5,
       "chance": 0.4,
@@ -271,12 +391,23 @@
       },
       "xp": 15,
       "price_multiplier": 0.05,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 50,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:shepherd_low_wool",
-      "professions": ["minecraft:shepherd"],
-      "skills": ["villagerretaliation:animal_handling"],
+      "professions": [
+        "minecraft:shepherd"
+      ],
+      "skills": [
+        "villagerretaliation:animal_handling"
+      ],
       "min_rank": "novice",
       "max_rank": "apprentice",
       "villager_level": 2,
@@ -295,12 +426,24 @@
       },
       "xp": 4,
       "price_multiplier": 0.05,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 20,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:shepherd_skilled_banner",
-      "professions": ["minecraft:shepherd"],
-      "skills": ["villagerretaliation:animal_handling", "villagerretaliation:crafting"],
+      "professions": [
+        "minecraft:shepherd"
+      ],
+      "skills": [
+        "villagerretaliation:animal_handling",
+        "villagerretaliation:crafting"
+      ],
       "min_rank": "skilled",
       "max_rank": "expert",
       "villager_level": 3,
@@ -319,12 +462,23 @@
       },
       "xp": 8,
       "price_multiplier": 0.05,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 30,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:shepherd_expert_scaffolding",
-      "professions": ["minecraft:shepherd"],
-      "skills": ["villagerretaliation:crafting"],
+      "professions": [
+        "minecraft:shepherd"
+      ],
+      "skills": [
+        "villagerretaliation:crafting"
+      ],
       "min_rank": "expert",
       "villager_level": 4,
       "chance": 0.55,
@@ -342,7 +496,14 @@
       },
       "xp": 12,
       "price_multiplier": 0.05,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 40,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     }
   ]
 }

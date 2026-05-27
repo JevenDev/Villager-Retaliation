@@ -3,8 +3,13 @@
   "entries": [
     {
       "id": "villagerretaliation:armorer_low_shield",
-      "professions": ["minecraft:armorer"],
-      "skills": ["villagerretaliation:smithing", "villagerretaliation:guarding"],
+      "professions": [
+        "minecraft:armorer"
+      ],
+      "skills": [
+        "villagerretaliation:smithing",
+        "villagerretaliation:guarding"
+      ],
       "min_rank": "novice",
       "max_rank": "apprentice",
       "villager_level": 2,
@@ -23,12 +28,23 @@
       },
       "xp": 6,
       "price_multiplier": 0.05,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 20,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:armorer_skilled_iron_chestplate",
-      "professions": ["minecraft:armorer"],
-      "skills": ["villagerretaliation:smithing"],
+      "professions": [
+        "minecraft:armorer"
+      ],
+      "skills": [
+        "villagerretaliation:smithing"
+      ],
       "min_rank": "skilled",
       "max_rank": "expert",
       "villager_level": 3,
@@ -47,12 +63,23 @@
       },
       "xp": 10,
       "price_multiplier": 0.1,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 30,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:armorer_expert_diamond_chestplate",
-      "professions": ["minecraft:armorer"],
-      "skills": ["villagerretaliation:smithing"],
+      "professions": [
+        "minecraft:armorer"
+      ],
+      "skills": [
+        "villagerretaliation:smithing"
+      ],
       "min_rank": "expert",
       "villager_level": 5,
       "chance": 0.35,
@@ -81,14 +108,28 @@
       "xp": 25,
       "price_multiplier": 0.15,
       "conditions": {
-        "config_flags": ["skillTradeAllowHighTierEquipment"]
+        "config_flags": [
+          "skillTradeAllowHighTierEquipment"
+        ]
       },
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 50,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:weaponsmith_low_iron_axe",
-      "professions": ["minecraft:weaponsmith"],
-      "skills": ["villagerretaliation:smithing", "villagerretaliation:guarding"],
+      "professions": [
+        "minecraft:weaponsmith"
+      ],
+      "skills": [
+        "villagerretaliation:smithing",
+        "villagerretaliation:guarding"
+      ],
       "min_rank": "novice",
       "max_rank": "apprentice",
       "villager_level": 2,
@@ -107,12 +148,23 @@
       },
       "xp": 6,
       "price_multiplier": 0.05,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 20,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:weaponsmith_skilled_iron_sword",
-      "professions": ["minecraft:weaponsmith"],
-      "skills": ["villagerretaliation:smithing"],
+      "professions": [
+        "minecraft:weaponsmith"
+      ],
+      "skills": [
+        "villagerretaliation:smithing"
+      ],
       "min_rank": "skilled",
       "max_rank": "expert",
       "villager_level": 3,
@@ -131,12 +183,23 @@
       },
       "xp": 10,
       "price_multiplier": 0.1,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 30,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:weaponsmith_expert_diamond_sword",
-      "professions": ["minecraft:weaponsmith"],
-      "skills": ["villagerretaliation:smithing"],
+      "professions": [
+        "minecraft:weaponsmith"
+      ],
+      "skills": [
+        "villagerretaliation:smithing"
+      ],
       "min_rank": "expert",
       "villager_level": 5,
       "chance": 0.35,
@@ -166,14 +229,28 @@
       "xp": 25,
       "price_multiplier": 0.15,
       "conditions": {
-        "config_flags": ["skillTradeAllowHighTierEquipment"]
+        "config_flags": [
+          "skillTradeAllowHighTierEquipment"
+        ]
       },
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 50,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:toolsmith_low_iron_shovel",
-      "professions": ["minecraft:toolsmith"],
-      "skills": ["villagerretaliation:crafting", "villagerretaliation:gathering"],
+      "professions": [
+        "minecraft:toolsmith"
+      ],
+      "skills": [
+        "villagerretaliation:crafting",
+        "villagerretaliation:gathering"
+      ],
       "min_rank": "novice",
       "max_rank": "apprentice",
       "villager_level": 2,
@@ -192,12 +269,23 @@
       },
       "xp": 6,
       "price_multiplier": 0.05,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 20,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:toolsmith_skilled_iron_pickaxe",
-      "professions": ["minecraft:toolsmith"],
-      "skills": ["villagerretaliation:crafting"],
+      "professions": [
+        "minecraft:toolsmith"
+      ],
+      "skills": [
+        "villagerretaliation:crafting"
+      ],
       "min_rank": "skilled",
       "max_rank": "expert",
       "villager_level": 3,
@@ -216,12 +304,23 @@
       },
       "xp": 10,
       "price_multiplier": 0.1,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 30,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:toolsmith_expert_diamond_pickaxe",
-      "professions": ["minecraft:toolsmith"],
-      "skills": ["villagerretaliation:crafting"],
+      "professions": [
+        "minecraft:toolsmith"
+      ],
+      "skills": [
+        "villagerretaliation:crafting"
+      ],
       "min_rank": "expert",
       "villager_level": 5,
       "chance": 0.35,
@@ -251,9 +350,18 @@
       "xp": 25,
       "price_multiplier": 0.15,
       "conditions": {
-        "config_flags": ["skillTradeAllowHighTierEquipment"]
+        "config_flags": [
+          "skillTradeAllowHighTierEquipment"
+        ]
       },
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 50,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     }
   ]
 }

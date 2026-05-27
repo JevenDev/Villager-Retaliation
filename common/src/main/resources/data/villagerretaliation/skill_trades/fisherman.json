@@ -3,8 +3,13 @@
   "entries": [
     {
       "id": "villagerretaliation:fisherman_low_cooked_cod",
-      "professions": ["minecraft:fisherman"],
-      "skills": ["villagerretaliation:fishing", "villagerretaliation:cooking"],
+      "professions": [
+        "minecraft:fisherman"
+      ],
+      "skills": [
+        "villagerretaliation:fishing",
+        "villagerretaliation:cooking"
+      ],
       "min_rank": "novice",
       "max_rank": "apprentice",
       "villager_level": 1,
@@ -23,12 +28,24 @@
       },
       "xp": 3,
       "price_multiplier": 0.05,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 10,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:fisherman_low_string",
-      "professions": ["minecraft:fisherman"],
-      "skills": ["villagerretaliation:fishing", "villagerretaliation:gathering"],
+      "professions": [
+        "minecraft:fisherman"
+      ],
+      "skills": [
+        "villagerretaliation:fishing",
+        "villagerretaliation:gathering"
+      ],
       "min_rank": "novice",
       "max_rank": "apprentice",
       "villager_level": 2,
@@ -47,12 +64,24 @@
       },
       "xp": 4,
       "price_multiplier": 0.05,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 20,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:fisherman_skilled_salmon_bundle",
-      "professions": ["minecraft:fisherman"],
-      "skills": ["villagerretaliation:fishing", "villagerretaliation:cooking"],
+      "professions": [
+        "minecraft:fisherman"
+      ],
+      "skills": [
+        "villagerretaliation:fishing",
+        "villagerretaliation:cooking"
+      ],
       "min_rank": "skilled",
       "max_rank": "expert",
       "villager_level": 3,
@@ -74,12 +103,23 @@
       },
       "xp": 7,
       "price_multiplier": 0.05,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 30,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:fisherman_skilled_fishing_rod",
-      "professions": ["minecraft:fisherman"],
-      "skills": ["villagerretaliation:fishing"],
+      "professions": [
+        "minecraft:fisherman"
+      ],
+      "skills": [
+        "villagerretaliation:fishing"
+      ],
       "min_rank": "skilled",
       "max_rank": "expert",
       "villager_level": 4,
@@ -98,12 +138,23 @@
       },
       "xp": 12,
       "price_multiplier": 0.08,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 40,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:fisherman_expert_enchanted_rod",
-      "professions": ["minecraft:fisherman"],
-      "skills": ["villagerretaliation:fishing"],
+      "professions": [
+        "minecraft:fisherman"
+      ],
+      "skills": [
+        "villagerretaliation:fishing"
+      ],
       "min_rank": "expert",
       "villager_level": 4,
       "chance": 0.45,
@@ -132,12 +183,23 @@
       },
       "xp": 15,
       "price_multiplier": 0.1,
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 40,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     },
     {
       "id": "villagerretaliation:fisherman_master_nautilus_shell",
-      "professions": ["minecraft:fisherman"],
-      "skills": ["villagerretaliation:fishing"],
+      "professions": [
+        "minecraft:fisherman"
+      ],
+      "skills": [
+        "villagerretaliation:fishing"
+      ],
       "min_rank": "master",
       "villager_level": 5,
       "chance": 0.3,
@@ -156,9 +218,18 @@
       "xp": 18,
       "price_multiplier": 0.05,
       "conditions": {
-        "config_flags": ["skillTradeAllowRareSpecialtyTrades"]
+        "config_flags": [
+          "skillTradeAllowRareSpecialtyTrades"
+        ]
       },
-      "quality_scaling": true
+      "quality_scaling": true,
+      "request": {
+        "targetable": true,
+        "display_priority": 50,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      }
     }
   ]
 }
