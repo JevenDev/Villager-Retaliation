@@ -20,7 +20,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.inventory.MerchantMenu;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.item.trading.MerchantOffers;
@@ -151,7 +150,8 @@ public final class VillagerTradeRefreshService {
             ServerPlayer player,
             int offerIndex,
             String tradeItem) {
-        if (createReplacement(level, villager, offerIndex) == null) {
+        if (createReplacement(level, villager, offerIndex) == null
+                && createReplacementAvoidingCurrentSlot(level, villager, offerIndex) == null) {
             sendState(player, villager);
             ForcedDialogueService.openTradeRefreshDialogue(level, villager, player, "trade_refresh.not_ready", Map.of());
             return;
@@ -197,6 +197,9 @@ public final class VillagerTradeRefreshService {
             }
 
             MerchantOffer replacement = createReplacement(level, villager, offerIndex);
+            if (replacement == null) {
+                replacement = createReplacementAvoidingCurrentSlot(level, villager, offerIndex);
+            }
             if (replacement == null) {
                 remaining.add(entry.copy());
                 continue;
@@ -276,6 +279,29 @@ public final class VillagerTradeRefreshService {
 
     @Nullable
     private static MerchantOffer createReplacement(ServerLevel level, Villager villager, int offerIndex) {
+        return createReplacement(level, villager, offerIndex, currentResultStacks(villager.getOffers()));
+    }
+
+    @Nullable
+    private static MerchantOffer createReplacementAvoidingCurrentSlot(ServerLevel level, Villager villager, int offerIndex) {
+        MerchantOffers offers = villager.getOffers();
+        if (offerIndex < 0 || offerIndex >= offers.size()) {
+            return null;
+        }
+        ItemStack currentResult = offers.get(offerIndex).getResult();
+        return createReplacement(
+                level,
+                villager,
+                offerIndex,
+                currentResult.isEmpty() ? List.of() : List.of(currentResult));
+    }
+
+    @Nullable
+    private static MerchantOffer createReplacement(
+            ServerLevel level,
+            Villager villager,
+            int offerIndex,
+            List<ItemStack> excludedResultStacks) {
         ResourceLocation professionId = VillagerProfessionUtil.id(villager.getVillagerData().getProfession());
         int villagerLevel = villager.getVillagerData().getLevel();
         return SkillTradeOfferFactory.createVillagerRefreshOffer(
@@ -284,19 +310,19 @@ public final class VillagerTradeRefreshService {
                 professionId,
                 villagerLevel,
                 villager.getRandom(),
-                currentResultItems(villager.getOffers()));
+                excludedResultStacks);
     }
 
-    private static Set<Item> currentResultItems(MerchantOffers offers) {
-        Set<Item> items = new HashSet<>();
+    private static List<ItemStack> currentResultStacks(MerchantOffers offers) {
+        List<ItemStack> stacks = new ArrayList<>(offers.size());
         for (int i = 0; i < offers.size(); i++) {
             MerchantOffer offer = offers.get(i);
             ItemStack result = offer.getResult();
             if (!result.isEmpty()) {
-                items.add(result.getItem());
+                stacks.add(result.copy());
             }
         }
-        return Set.copyOf(items);
+        return List.copyOf(stacks);
     }
 
     private static long currentDay(ServerLevel level) {

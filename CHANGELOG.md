@@ -21,11 +21,13 @@
 - Promoted the development version from `1.0.0-beta.11` to `1.0.0-beta.12`.
 - Social Attributes now lightly affect mood transitions, reputation recovery, retaliation decisions, and gossip spread when the matching config toggles are enabled.
 - The datapack builder Convert flow can retarget beta.11 packs to beta.12 without renaming or removing existing beta.11 JSON fields.
-- Trade refresh replacement selection avoids result item types the villager already offers, reducing duplicate refreshed trades.
+- Trade refresh replacement selection compares full result stacks instead of only item types, so variants such as different enchanted books can appear while exact duplicate refreshed trades are still avoided when possible.
 - Special Orders now treat `min_rank` as the skill unlock and ignore `max_rank`, letting high-skill villagers fulfill earlier catalog requests and duplicate items they already stock.
 
 ### Fixed
 
+- Special Order selection now shows the active-order limit dialogue as soon as a player tries to place a fourth active order with the same villager, and the cap is hard-clamped to three even if config data is stale.
+- Multiple ready random refreshes now all fulfill in one pass when they were accepted earlier; they still prefer replacement results not already present in the offer list, but fall back to duplicates as long as the slot is not recycling the same exact result.
 - Disabled vanilla villager trade-preview hand behavior so nearby players holding emeralds or other trade costs no longer cause displayed trade results to replace, duplicate, or drop held villager items.
 
 ## 1.0.0-beta.11-hotfix.1 - 2026-05-26

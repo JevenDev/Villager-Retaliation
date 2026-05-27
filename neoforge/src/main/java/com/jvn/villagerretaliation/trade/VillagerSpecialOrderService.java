@@ -118,11 +118,9 @@ public final class VillagerSpecialOrderService {
             return QueueResult.failed("trade_refresh.special_order_unavailable", Map.of());
         }
         int activeOrders = activeOrderCount(villager, player.getUUID());
-        int maxActiveOrders = VillagerRetaliationConfig.SPECIAL_ORDER_MAX_ACTIVE_PER_PLAYER.get();
+        int maxActiveOrders = maxActiveOrders();
         if (activeOrders >= maxActiveOrders) {
-            return QueueResult.failed("trade_refresh.special_order_limit_reached", Map.of(
-                    "active_orders", Integer.toString(activeOrders),
-                    "max_orders", Integer.toString(maxActiveOrders)));
+            return activeOrderLimitReached(activeOrders, maxActiveOrders);
         }
 
         long currentDay = currentDay(level);
@@ -281,6 +279,14 @@ public final class VillagerSpecialOrderService {
         return count;
     }
 
+    public static boolean hasReachedActiveOrderLimit(Villager villager, UUID playerId) {
+        return activeOrderCount(villager, playerId) >= maxActiveOrders();
+    }
+
+    public static QueueResult activeOrderLimitReached(Villager villager, UUID playerId) {
+        return activeOrderLimitReached(activeOrderCount(villager, playerId), maxActiveOrders());
+    }
+
     public static List<ActiveOrderStatus> activeOrderStatuses(ServerLevel level, Villager villager, UUID playerId) {
         CompoundTag persistentData = villager.getPersistentData();
         if (!persistentData.contains(ORDERS_KEY, Tag.TAG_LIST)) {
@@ -354,6 +360,16 @@ public final class VillagerSpecialOrderService {
         VillagerReputationLevel configMin = VillagerRetaliationConfig.SPECIAL_ORDER_MIN_REPUTATION.get();
         VillagerReputationLevel definitionMin = definition.request().minReputation();
         return definitionMin.trustRank() > configMin.trustRank() ? definitionMin : configMin;
+    }
+
+    private static int maxActiveOrders() {
+        return Math.clamp(VillagerRetaliationConfig.SPECIAL_ORDER_MAX_ACTIVE_PER_PLAYER.get(), 1, 3);
+    }
+
+    private static QueueResult activeOrderLimitReached(int activeOrders, int maxActiveOrders) {
+        return QueueResult.failed("trade_refresh.special_order_limit_reached", Map.of(
+                "active_orders", Integer.toString(activeOrders),
+                "max_orders", Integer.toString(maxActiveOrders)));
     }
 
     private static boolean meetsReputation(VillagerReputationLevel playerLevel, VillagerReputationLevel requiredLevel) {

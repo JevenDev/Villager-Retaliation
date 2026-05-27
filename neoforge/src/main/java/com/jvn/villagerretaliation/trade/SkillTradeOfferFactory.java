@@ -17,7 +17,6 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.EnchantedBookItem;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
@@ -29,6 +28,7 @@ import org.slf4j.Logger;
 
 public final class SkillTradeOfferFactory {
     private static final Logger LOGGER = LogUtils.getLogger();
+    private static final int DUPLICATE_RESULT_ATTEMPTS = 16;
 
     private SkillTradeOfferFactory() {
     }
@@ -47,7 +47,7 @@ public final class SkillTradeOfferFactory {
                 random,
                 definition -> definition.matchesVillager(professionId, villagerLevel),
                 true,
-                Set.of());
+                List.of());
         return selection == null ? null : selection.offer();
     }
 
@@ -58,7 +58,7 @@ public final class SkillTradeOfferFactory {
             ResourceLocation professionId,
             int villagerLevel,
             RandomSource random,
-            Set<Item> excludedResultItems) {
+            List<ItemStack> excludedResultStacks) {
         OfferSelection selection = createRememberedVillagerSelection(
                 level,
                 villager,
@@ -66,7 +66,7 @@ public final class SkillTradeOfferFactory {
                 random,
                 definition -> definition.matchesVillager(professionId, villagerLevel),
                 false,
-                excludedResultItems);
+                excludedResultStacks);
         return selection == null ? null : selection.offer();
     }
 
@@ -85,7 +85,7 @@ public final class SkillTradeOfferFactory {
             AbstractVillager villager,
             RandomSource random,
             DefinitionFilter filter) {
-        OfferSelection selection = createOfferSelection(level, villager, random, filter, true, Set.of(), Set.of());
+        OfferSelection selection = createOfferSelection(level, villager, random, filter, true, List.of(), Set.of());
         return selection == null ? null : selection.offer();
     }
 
@@ -95,8 +95,8 @@ public final class SkillTradeOfferFactory {
             AbstractVillager villager,
             SkillTradeDefinition definition,
             RandomSource random,
-            Set<Item> excludedResultItems) {
-        return createVillagerOfferFromDefinition(level, villager, definition, random, excludedResultItems, false);
+            List<ItemStack> excludedResultStacks) {
+        return createVillagerOfferFromDefinition(level, villager, definition, random, excludedResultStacks, false);
     }
 
     @Nullable
@@ -105,7 +105,7 @@ public final class SkillTradeOfferFactory {
             AbstractVillager villager,
             SkillTradeDefinition definition,
             RandomSource random) {
-        return createVillagerOfferFromDefinition(level, villager, definition, random, Set.of(), true);
+        return createVillagerOfferFromDefinition(level, villager, definition, random, List.of(), true);
     }
 
     public static boolean isSkillUnlockedForSpecialOrder(
@@ -121,7 +121,7 @@ public final class SkillTradeOfferFactory {
             AbstractVillager villager,
             SkillTradeDefinition definition,
             RandomSource random,
-            Set<Item> excludedResultItems,
+            List<ItemStack> excludedResultStacks,
             boolean ignoreMaxRank) {
         if (!VillagerRetaliationConfig.ENABLE_SKILL_TRADE_OVERHAUL.get()
                 || definition == null
@@ -135,7 +135,7 @@ public final class SkillTradeOfferFactory {
         }
 
         SkillTradeScalingContext context = new SkillTradeScalingContext(definition, skillValue);
-        return createSelectedOffer(level, random, definition, context, excludedResultItems);
+        return createSelectedOffer(level, random, definition, context, excludedResultStacks);
     }
 
     @Nullable
@@ -146,16 +146,16 @@ public final class SkillTradeOfferFactory {
             RandomSource random,
             DefinitionFilter filter,
             boolean requireChanceRoll,
-            Set<Item> excludedResultItems) {
+            List<ItemStack> excludedResultStacks) {
         Set<ResourceLocation> knownDefinitionIds = villager instanceof Villager resident
                 ? Set.copyOf(VillagerTradeMemory.knownDefinitionIds(resident, professionId))
                 : Set.of();
         OfferSelection selection = null;
         if (!knownDefinitionIds.isEmpty()) {
-            selection = createOfferSelection(level, villager, random, filter, false, excludedResultItems, knownDefinitionIds);
+            selection = createOfferSelection(level, villager, random, filter, false, excludedResultStacks, knownDefinitionIds);
         }
         if (selection == null) {
-            selection = createOfferSelection(level, villager, random, filter, requireChanceRoll, excludedResultItems, Set.of());
+            selection = createOfferSelection(level, villager, random, filter, requireChanceRoll, excludedResultStacks, Set.of());
         }
         if (selection != null && villager instanceof Villager resident) {
             VillagerTradeMemory.rememberDefinition(level, resident, professionId, selection.definition().id());
@@ -170,7 +170,7 @@ public final class SkillTradeOfferFactory {
             RandomSource random,
             DefinitionFilter filter,
             boolean requireChanceRoll,
-            Set<Item> excludedResultItems,
+            List<ItemStack> excludedResultStacks,
             Set<ResourceLocation> onlyDefinitionIds) {
         if (!VillagerRetaliationConfig.ENABLE_SKILL_TRADE_OVERHAUL.get()) {
             return null;
@@ -182,10 +182,6 @@ public final class SkillTradeOfferFactory {
                 continue;
             }
             if (!onlyDefinitionIds.isEmpty() && !onlyDefinitionIds.contains(definition.id())) {
-                continue;
-            }
-            if (!excludedResultItems.isEmpty()
-                    && definition.result().items().stream().noneMatch(item -> !excludedResultItems.contains(item))) {
                 continue;
             }
 
@@ -200,9 +196,16 @@ public final class SkillTradeOfferFactory {
             return null;
         }
 
-        ResolvedDefinition selected = selectWeighted(candidates, random);
-        MerchantOffer offer = createSelectedOffer(level, random, selected.definition(), selected.context(), excludedResultItems);
-        return offer == null ? null : new OfferSelection(offer, selected.definition());
+        List<ResolvedDefinition> remaining = new ArrayList<>(candidates);
+        while (!remaining.isEmpty()) {
+            ResolvedDefinition selected = selectWeighted(remaining, random);
+            MerchantOffer offer = createSelectedOffer(level, random, selected.definition(), selected.context(), excludedResultStacks);
+            if (offer != null) {
+                return new OfferSelection(offer, selected.definition());
+            }
+            remaining.remove(selected);
+        }
+        return null;
     }
 
     public static int bestSkillValue(ServerLevel level, AbstractVillager villager, SkillTradeDefinition definition) {
@@ -243,26 +246,43 @@ public final class SkillTradeOfferFactory {
             RandomSource random,
             SkillTradeDefinition definition,
             SkillTradeScalingContext context,
-            Set<Item> excludedResultItems) {
-        ItemStack result = definition.result().createBaseStack(random, item -> !excludedResultItems.contains(item));
-        if (result.isEmpty()) {
-            return null;
-        }
+            List<ItemStack> excludedResultStacks) {
+        int attempts = excludedResultStacks.isEmpty() ? 1 : DUPLICATE_RESULT_ATTEMPTS;
+        for (int attempt = 0; attempt < attempts; attempt++) {
+            ItemStack result = definition.result().createBaseStack(random);
+            if (result.isEmpty()) {
+                return null;
+            }
 
-        result.setCount(SkillTradeQualityScaler.resultCount(context, result.getCount()));
-        result = applyEnchantments(level, random, definition, result, context);
-        int baseCostCount = definition.cost().countForSkill(context.skillValue(), definition.minRank().minInclusive());
-        int costCount = SkillTradeQualityScaler.emeraldCost(context, definition.cost().item(), baseCostCount);
-        int baseMaxUses = definition.maxUses().valueForSkill(context.skillValue(), definition.minRank().minInclusive());
-        int maxUses = SkillTradeQualityScaler.maxUses(context, baseMaxUses);
-        int xp = SkillTradeQualityScaler.xp(context, definition.xp());
-        return new MerchantOffer(
-                new ItemCost(definition.cost().item(), costCount),
-                result,
-                maxUses,
-                xp,
-                definition.priceMultiplier()
-        );
+            result.setCount(SkillTradeQualityScaler.resultCount(context, result.getCount()));
+            result = applyEnchantments(level, random, definition, result, context);
+            if (matchesExcludedResult(result, excludedResultStacks)) {
+                continue;
+            }
+
+            int baseCostCount = definition.cost().countForSkill(context.skillValue(), definition.minRank().minInclusive());
+            int costCount = SkillTradeQualityScaler.emeraldCost(context, definition.cost().item(), baseCostCount);
+            int baseMaxUses = definition.maxUses().valueForSkill(context.skillValue(), definition.minRank().minInclusive());
+            int maxUses = SkillTradeQualityScaler.maxUses(context, baseMaxUses);
+            int xp = SkillTradeQualityScaler.xp(context, definition.xp());
+            return new MerchantOffer(
+                    new ItemCost(definition.cost().item(), costCount),
+                    result,
+                    maxUses,
+                    xp,
+                    definition.priceMultiplier()
+            );
+        }
+        return null;
+    }
+
+    private static boolean matchesExcludedResult(ItemStack result, List<ItemStack> excludedResultStacks) {
+        for (ItemStack excluded : excludedResultStacks) {
+            if (!excluded.isEmpty() && ItemStack.isSameItemSameComponents(result, excluded)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static ItemStack applyEnchantments(

@@ -395,9 +395,9 @@ Beta.12 adds a trade-refresh button beside each visible villager trade. When a p
 1. The skill trade overhaul must be enabled.
 2. The selected slot must still exist.
 3. The villager must know at least one eligible replacement for their profession, vanilla trade level, and current skill rank.
-4. The replacement result item must not already appear in the villager's current offer list.
+4. The replacement should not exactly match a result already in the villager's current offer list when another variant is available.
 
-If a replacement is available, the request is stored on that villager and becomes ready on the next Minecraft day. The current trade is not changed immediately. When the player comes back after the request is ready, the pending slot is replaced with a newly generated skill-trade offer and reputation pricing is refreshed for the player.
+If a replacement is available, the request is stored on that villager and becomes ready on the next Minecraft day. The current trade is not changed immediately. When the player comes back after the request is ready, the pending slot is replaced with a newly generated skill-trade offer and reputation pricing is refreshed for the player. Refresh duplicate checks compare full result stacks, including components such as stored enchantments, so an enchanted-book slot can refresh into another enchanted book when the enchantment or level differs.
 
 If the villager does not know a better trade yet, the refresh request opens a forced dialogue explaining that the villager needs more skill, better supply, or more time. Pack authors can influence what can appear by adding or changing `skill_trades` entries. Higher-skill entries with `min_rank` values such as `expert` or `master` become available to refresh once the villager's relevant skill reaches those ranks.
 

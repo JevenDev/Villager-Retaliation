@@ -659,6 +659,16 @@ public final class ForcedDialogueService {
             Villager villager,
             ForcedDialogueSession session) {
         ServerLevel level = player.serverLevel();
+        if (VillagerSpecialOrderService.hasReachedActiveOrderLimit(villager, player.getUUID())) {
+            VillagerSpecialOrderService.QueueResult result =
+                    VillagerSpecialOrderService.activeOrderLimitReached(villager, player.getUUID());
+            FORCED_SESSIONS.remove(player.getUUID());
+            VillagerConversationService.endForPlayer(player, true);
+            VillagerTradeRefreshService.sendState(player, villager);
+            openTradeRefreshDialogue(level, villager, player, result.messageKey(), result.replacements());
+            return;
+        }
+
         List<VillagerSpecialOrderService.SpecialOrderOption> specialOrders =
                 VillagerSpecialOrderService.availableOptions(level, villager, player, session.tradeRefreshOfferIndex());
         if (specialOrders.isEmpty()) {
@@ -701,6 +711,16 @@ public final class ForcedDialogueService {
             ForcedDialogueSession session,
             ResourceLocation definitionId) {
         ServerLevel level = player.serverLevel();
+        if (VillagerSpecialOrderService.hasReachedActiveOrderLimit(villager, player.getUUID())) {
+            VillagerSpecialOrderService.QueueResult result =
+                    VillagerSpecialOrderService.activeOrderLimitReached(villager, player.getUUID());
+            FORCED_SESSIONS.remove(player.getUUID());
+            VillagerConversationService.endForPlayer(player, true);
+            VillagerTradeRefreshService.sendState(player, villager);
+            openTradeRefreshDialogue(level, villager, player, result.messageKey(), result.replacements());
+            return;
+        }
+
         VillagerSpecialOrderService.SpecialOrderOption specialOrder = VillagerSpecialOrderService
                 .availableOptions(level, villager, player, session.tradeRefreshOfferIndex())
                 .stream()
