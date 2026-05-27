@@ -95,6 +95,26 @@ Modded professions are supported anywhere a `professions` filter is accepted. Us
 
 The profession must already be registered by a mod; Villager Retaliation JSON can reference professions, but it does not create them.
 
+## Skill Trade Requests
+
+Skill trade entries can include optional Special Order metadata under `request`. Entries without `request.targetable: true` are still valid normal skill trades, but Revered+ players cannot directly choose them from the Special Order list.
+
+```json
+"request": {
+  "targetable": true,
+  "display_priority": 10,
+  "min_reputation": "revered",
+  "wait_days": 2,
+  "cooldown_days": 3,
+  "extra_cost": {
+    "item": "minecraft:emerald",
+    "count": 12
+  }
+}
+```
+
+Special Orders store the selected skill-trade definition id, not a raw item id. Profession, villager level, skill rank, config gates, quality scaling, costs, results, and enchantment behavior still come from the original skill-trade entry. If a requested definition is missing later, the request is skipped safely.
+
 ## Common Filters
 
 Dialogue, notifications, gifts, pacification, and rewards share a few ideas even when the exact field list differs by page.

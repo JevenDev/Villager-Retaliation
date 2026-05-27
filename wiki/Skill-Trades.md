@@ -45,6 +45,13 @@ data/villagerretaliation/skill_trades/wandering_trader.json
       "max_uses": { "base": 4 },
       "xp": 4,
       "price_multiplier": 0.05,
+      "request": {
+        "targetable": true,
+        "display_priority": 10,
+        "min_reputation": "revered",
+        "wait_days": 2,
+        "cooldown_days": 3
+      },
       "quality_scaling": true
     }
   ]
@@ -116,6 +123,7 @@ data/villagerretaliation/skill_trades/wandering_trader.json
 | `xp` | integer | `0` | Villager XP reward. |
 | `price_multiplier` | number | `0.05` | Vanilla merchant price multiplier. Reputation pricing uses this separately. |
 | `conditions` | object | none | Optional config gates. |
+| `request` | object | not targetable | Optional Special Order metadata. Entries without `request.targetable: true` can still appear through normal skill-trade generation and random refresh, but cannot be directly requested. |
 | `quality_scaling` | boolean or object | disabled | Optional rank-based quality scaling for this entry. |
 
 Bad entries log useful warnings and are skipped instead of crashing the load.
@@ -372,6 +380,14 @@ For each villager profession and trade level, the mod adds one skill-trade pool 
 
 Because the final offer is a normal merchant offer, vanilla mechanics and Villager Retaliation reputation pricing continue to work on top of it.
 
+## Persistent Trade Pools
+
+Beta.12 stores a per-villager trade memory on the villager's persistent NBT. A profession pool is created only when that villager actually has that profession. The pool stores the profession id, a pool version, a seed, the game time it was generated, and known skill-trade definition ids.
+
+If a villager loses a job temporarily, the pool remains. If the same villager reacquires the same profession later, skill-trade generation and refreshes prefer the definitions already remembered for that profession instead of fully rerolling that villager's custom trade identity. If the villager changes to another profession, that profession gets its own pool, and switching back reuses the earlier pool.
+
+This memory stores stable skill-trade definition ids instead of serialized merchant offers. If a datapack removes a remembered definition, the mod skips it safely and falls back to other eligible definitions where possible.
+
 ## Trade Refreshes
 
 Beta.12 adds a trade-refresh button beside each visible villager trade. When a player asks to refresh a slot, the villager checks the same skill-trade pool used by normal offer generation:
@@ -387,7 +403,48 @@ If the villager does not know a better trade yet, the refresh request opens a fo
 
 Trade-refresh speech is data-driven:
 
-- The opening lines use dialogue message keys in `data/villagerretaliation/dialogue/<locale>/`, such as `trade_refresh.accept`, `trade_refresh.already_pending`, `trade_refresh.not_ready`, and `trade_refresh.unavailable`.
+- The opening lines use dialogue message keys in `data/villagerretaliation/dialogue/<locale>/`, such as `trade_refresh.accept`, `trade_refresh.already_pending`, `trade_refresh.not_ready`, `trade_refresh.unavailable`, and the `trade_refresh.special_order_*` keys.
 - The forced-dialogue option labels and responses use `trigger: "trade_refresh"` entries in `data/villagerretaliation/forced_dialogue/`.
 
 See [Forced Dialogue JSON](Forced-Dialogue.md#trade-refresh-dialogue) for the built-in option ids and override strategy.
+
+## Special Orders
+
+Special Orders are high-reputation targeted trade requests. By default, a player must be `revered` or `royalty` with that villager and `enableSpecialOrders` must be enabled. Lower-reputation players keep the normal random refresh path.
+
+When a Revered+ player clicks the refresh button, the villager offers a data-driven choice:
+
+- `Surprise me.` queues the existing random next-day refresh.
+- `I'm looking for something specific.` opens a dynamic list of currently eligible targetable skill-trade definitions.
+- `Never mind.` cancels without changing the offer.
+
+Players request a skill-trade definition id, not an arbitrary item id. Eligibility still respects profession, villager trade level, skill rank, `min_rank` / `max_rank`, config flags, and the trade entry's request reputation gate. A successful Special Order is stored on the villager, appears as a pending refresh icon on the selected slot, survives reloads, and replaces that slot when ready. The requested definition is also remembered in the villager's persistent profession pool.
+
+The default balance is a 2 Minecraft day wait and a 3 Minecraft day cooldown. Entry metadata can override both. Extra request costs are supported by metadata and are only consumed when `specialOrderExtraCostEnabled` is true and the request passes validation. Payment is taken when the request is accepted, not when the order completes.
+
+```json
+"request": {
+  "targetable": true,
+  "display_priority": 10,
+  "min_reputation": "revered",
+  "wait_days": 2,
+  "cooldown_days": 3,
+  "extra_cost": {
+    "item": "minecraft:emerald",
+    "count": 12
+  }
+}
+```
+
+`request` fields:
+
+| Field | Type | Default | Notes |
+| --- | --- | --- | --- |
+| `targetable` | boolean | `false` | Required for direct Special Orders. |
+| `display_priority` | integer | `0` | Higher values sort earlier in the dynamic Special Order list. |
+| `min_reputation` | string | `revered` | Minimum reputation tier for this specific order. The global config minimum still applies. |
+| `wait_days` | integer | config value | Minecraft days before the order can apply. |
+| `cooldown_days` | integer | config value | Minecraft days before the same player can place another order with that villager. |
+| `extra_cost` | object | none | Optional item/count cost, normally emeralds. Ignored unless extra costs are enabled in config. |
+
+If a target definition is missing or no longer valid when the order is ready, the mod drops that request safely instead of creating an invalid offer.

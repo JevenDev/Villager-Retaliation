@@ -272,6 +272,9 @@ The built-in option-template ids are:
 ```text
 trade_refresh.available_options
 trade_refresh.unavailable_options
+trade_refresh.revered_options
+trade_refresh.special_order_select_options
+trade_refresh.special_order_confirm_options
 ```
 
 `trade_refresh.available_options` is used for accepted refresh requests and already-pending requests. It normally shows:
@@ -291,6 +294,19 @@ What do you need?
 Leave
 ```
 
+`trade_refresh.revered_options` is used before scheduling anything when a Revered+ player clicks a refresh button. It normally shows:
+
+```text
+Surprise me.
+I'm looking for something specific.
+Trade
+Never mind.
+```
+
+`trade_refresh.special_order_select_options` supplies the cancel/leave wording for the dynamic Special Order list. The trade rows themselves are generated from targetable `skill_trades` definitions.
+
+`trade_refresh.special_order_confirm_options` supplies the final confirmation buttons after the player chooses a target definition.
+
 The trade option must use this id if it should return to the merchant screen:
 
 ```text
@@ -303,10 +319,13 @@ The built-in data also uses:
 trade_refresh.thanks
 trade_refresh.why_so_long
 trade_refresh.requirements
+trade_refresh.surprise_me
+trade_refresh.special_order
+trade_refresh.confirm_special_order
 leave
 ```
 
-To replace the built-in wording, add a forced-dialogue file with entries using the same ids. The trade-refresh service keeps the actual opening line from the selected dialogue message and copies the options from the matching forced-dialogue entry.
+To replace the built-in wording, add a forced-dialogue file with entries using the same ids. The trade-refresh service keeps the actual opening line from the selected dialogue message and copies the options from the matching forced-dialogue entry. Special Order opening, unavailable, queued, cooldown, payment, selection, and confirmation lines remain normal dialogue message keys under `data/villagerretaliation/dialogue/<locale>/`.
 
 ```json
 {
