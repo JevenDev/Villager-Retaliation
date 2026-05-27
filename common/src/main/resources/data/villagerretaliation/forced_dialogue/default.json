@@ -11,7 +11,7 @@
       "player_item_slots": [
         "main_hand"
       ],
-      "witness_radius": 8,
+      "witness_radius": 4,
       "requires_line_of_sight": true,
       "lines": [
         "That diamond blade is hard to miss, {player}. Keep it pointed elsewhere.",

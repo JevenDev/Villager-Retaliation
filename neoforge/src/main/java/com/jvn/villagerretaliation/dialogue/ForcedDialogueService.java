@@ -426,7 +426,8 @@ public final class ForcedDialogueService {
                     villager.blockPosition().immutable(),
                     List.of(),
                     level.getGameTime(),
-                    true
+                    true,
+                    replacements
             ));
             return true;
         } else {
@@ -611,7 +612,10 @@ public final class ForcedDialogueService {
         if (!itemPayment.isEmpty() && !itemPaymentResponse.isBlank()) {
             responseText = itemPaymentResponse;
         }
-        String response = ForcedDialogueResources.resolveTemplate(responseText, session.context(), itemPayment.removal().replacements());
+        String response = ForcedDialogueResources.resolveTemplate(
+                responseText,
+                session.context(),
+                sessionResponseReplacements(session, itemPayment.removal().replacements()));
         if (!response.isBlank()) {
             VillagerInteractionService.broadcastForcedVillagerChat(
                     player.serverLevel(),
@@ -1091,6 +1095,20 @@ public final class ForcedDialogueService {
             case "trade_refresh.special_order_status_empty" -> Optional.of("trade_refresh.requirements.special_order_status_empty");
             default -> Optional.empty();
         };
+    }
+
+    private static Map<String, String> sessionResponseReplacements(
+            ForcedDialogueSession session,
+            Map<String, String> extraReplacements) {
+        if (session.replacements().isEmpty()) {
+            return extraReplacements;
+        }
+        if (extraReplacements.isEmpty()) {
+            return session.replacements();
+        }
+        Map<String, String> replacements = new HashMap<>(session.replacements());
+        replacements.putAll(extraReplacements);
+        return replacements;
     }
 
     private static ForcedDialogueContext tradeRefreshContext(
@@ -2861,6 +2879,7 @@ public final class ForcedDialogueService {
             int tradeRefreshOfferIndex,
             String tradeRefreshDefinitionId,
             boolean tradeRefreshReady,
+            Map<String, String> replacements,
             List<UUID> participantVillagerIds) {
         private ForcedDialogueSession(
                 UUID villagerId,
@@ -2881,6 +2900,7 @@ public final class ForcedDialogueService {
                     -1,
                     "",
                     false,
+                    Map.of(),
                     List.of(villagerId));
         }
 
@@ -2904,6 +2924,32 @@ public final class ForcedDialogueService {
                     -1,
                     "",
                     tradeRefreshReady,
+                    Map.of(),
+                    List.of(villagerId));
+        }
+
+        private ForcedDialogueSession(
+                UUID villagerId,
+                ForcedDialogueDefinition definition,
+                ForcedDialogueContext context,
+                net.minecraft.resources.ResourceKey<Level> sourceContainerDimension,
+                BlockPos sourceContainerPos,
+                List<ItemStack> removedStacks,
+                long startedGameTime,
+                boolean tradeRefreshReady,
+                Map<String, String> replacements) {
+            this(
+                    villagerId,
+                    definition,
+                    context,
+                    sourceContainerDimension,
+                    sourceContainerPos,
+                    removedStacks,
+                    startedGameTime,
+                    -1,
+                    "",
+                    tradeRefreshReady,
+                    Map.copyOf(replacements),
                     List.of(villagerId));
         }
 
@@ -2928,6 +2974,7 @@ public final class ForcedDialogueService {
                     -1,
                     "",
                     tradeRefreshReady,
+                    Map.of(),
                     participantVillagerIds);
         }
 
@@ -2952,6 +2999,7 @@ public final class ForcedDialogueService {
                     tradeRefreshOfferIndex,
                     tradeRefreshDefinitionId,
                     false,
+                    Map.of(),
                     List.of(villagerId));
         }
     }
