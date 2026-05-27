@@ -51,7 +51,7 @@ public final class VillagerTradeRefreshButtons {
             return;
         }
         Minecraft minecraft = Minecraft.getInstance();
-        Optional<Integer> merchantId = VillagerTradingTargetFinder.findTradingVillagerOrClosest(minecraft)
+        Optional<Integer> merchantId = VillagerTradingTargetFinder.findTradingVillagerOrSingleNearby(minecraft)
                 .map(villager -> villager.getId());
         if (minecraft.options.hideGui || merchantId.isEmpty()) {
             return;
@@ -73,7 +73,7 @@ public final class VillagerTradeRefreshButtons {
             return;
         }
         Minecraft minecraft = Minecraft.getInstance();
-        Optional<Integer> merchantId = VillagerTradingTargetFinder.findTradingVillagerOrClosest(minecraft)
+        Optional<Integer> merchantId = VillagerTradingTargetFinder.findTradingVillagerOrSingleNearby(minecraft)
                 .map(villager -> villager.getId());
         if (merchantId.isEmpty()) {
             return;

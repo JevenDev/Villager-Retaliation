@@ -31,6 +31,7 @@ final class VillagerInteractionConversationPanel {
     }
 
     static int skillInfoViewportBottom(Context context) {
+        // Skill details stop at the family-action row so the scrolling text never overlaps the action buttons.
         int y = infoBaseY(context, context.conversationInfoTop()) + context.optionStride() * 5;
         return buttonBounds(context, y, context.familyButtonText()).bottom() + INFO_ACTION_PADDING_Y;
     }

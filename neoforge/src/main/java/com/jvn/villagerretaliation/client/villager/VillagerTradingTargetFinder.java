@@ -33,15 +33,40 @@ public final class VillagerTradingTargetFinder {
         return findTradingVillagerOrClosest(minecraft, DEFAULT_LOOKUP_RADIUS);
     }
 
-    public static Optional<AbstractVillager> findTradingVillagerOrClosest(Minecraft minecraft, double lookupRadius) {
-        List<AbstractVillager> villagers = nearbySorted(minecraft, lookupRadius);
-        if (minecraft.player != null) {
-            for (AbstractVillager villager : villagers) {
-                if (villager.getTradingPlayer() == minecraft.player) {
-                    return Optional.of(villager);
-                }
-            }
+    public static Optional<AbstractVillager> findTradingVillager(Minecraft minecraft) {
+        return findTradingVillager(minecraft, DEFAULT_LOOKUP_RADIUS);
+    }
+
+    public static Optional<AbstractVillager> findTradingVillager(Minecraft minecraft, double lookupRadius) {
+        if (minecraft.player == null) {
+            return Optional.empty();
         }
-        return villagers.stream().findFirst();
+        return nearbySorted(minecraft, lookupRadius).stream()
+                .filter(villager -> villager.getTradingPlayer() == minecraft.player)
+                .findFirst();
+    }
+
+    public static Optional<AbstractVillager> findTradingVillagerOrSingleNearby(Minecraft minecraft) {
+        return findTradingVillagerOrSingleNearby(minecraft, DEFAULT_LOOKUP_RADIUS);
+    }
+
+    public static Optional<AbstractVillager> findTradingVillagerOrSingleNearby(Minecraft minecraft, double lookupRadius) {
+        Optional<AbstractVillager> tradingVillager = findTradingVillager(minecraft, lookupRadius);
+        if (tradingVillager.isPresent()) {
+            return tradingVillager;
+        }
+        List<AbstractVillager> villagers = nearbySorted(minecraft, lookupRadius);
+        if (villagers.size() != 1) {
+            return Optional.empty();
+        }
+        return Optional.of(villagers.get(0));
+    }
+
+    public static Optional<AbstractVillager> findTradingVillagerOrClosest(Minecraft minecraft, double lookupRadius) {
+        Optional<AbstractVillager> tradingVillager = findTradingVillager(minecraft, lookupRadius);
+        if (tradingVillager.isPresent()) {
+            return tradingVillager;
+        }
+        return nearbySorted(minecraft, lookupRadius).stream().findFirst();
     }
 }
