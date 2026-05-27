@@ -42,6 +42,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
 import net.minecraft.world.Containers;
 import net.minecraft.world.RandomizableContainer;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -84,6 +85,8 @@ public final class ForcedDialogueService {
     private static final String TRADE_REFRESH_REQUIREMENTS_OPTION_ID = "trade_refresh.requirements";
     private static final String CONTAINER_THEFT_BACKUP_MESSAGE_KEY = "container_theft.backup_interjection";
     private static final String CONTAINER_THEFT_BACKUP_DEFINITION_ID = "container_theft.backup_interjection";
+    private static final String CONTAINER_OPENED_BACKUP_MESSAGE_KEY = "container_opened.backup_interjection";
+    private static final String CONTAINER_OPENED_BACKUP_DEFINITION_ID = "container_opened.backup_interjection";
     public static final String SPECIAL_ORDER_STATUS_ROOT_OPTION_ID = "trade_refresh.special_order.status";
     private static final long RECENT_CONTAINER_CLICK_TICKS = 8L;
     private static final long FORCED_SESSION_TIMEOUT_TICKS = 20L * 60L;
@@ -260,12 +263,21 @@ public final class ForcedDialogueService {
             return true;
         }
 
-        return handleSelectedOption(player, villager, session, selected.get(), false);
+        return handleSelectedOption(player, villager, session, selected.get(), false, false);
     }
 
     public static boolean hasSession(ServerPlayer player, Villager villager) {
         ForcedDialogueSession session = FORCED_SESSIONS.get(player.getUUID());
         return session != null && session.villagerId().equals(villager.getUUID());
+    }
+
+    public static boolean isStaleConversationEndRequest(ServerPlayer player, int entityId) {
+        ForcedDialogueSession session = FORCED_SESSIONS.get(player.getUUID());
+        if (session == null) {
+            return false;
+        }
+        Entity entity = player.serverLevel().getEntity(entityId);
+        return entity instanceof Villager villager && !session.villagerId().equals(villager.getUUID());
     }
 
     public static void openTradeRefreshDialogue(
@@ -321,9 +333,15 @@ public final class ForcedDialogueService {
             ServerPlayer player,
             String messageKey,
             Map<String, String> replacements) {
-        return VillagerDialogueResources
-                .message(VillagerInteractionService.createDialogueContext(level, player, villager), messageKey, replacements)
-                .orElse(messageKey);
+        DialogueContext context = VillagerInteractionService.createDialogueContext(level, player, villager);
+        Optional<String> line = VillagerDialogueResources.message(context, messageKey, replacements);
+        if (line.isEmpty()) {
+            String fallbackMessageKey = baseInterjectionMessageKey(messageKey);
+            if (!fallbackMessageKey.equals(messageKey)) {
+                line = VillagerDialogueResources.message(context, fallbackMessageKey, replacements);
+            }
+        }
+        return line.orElse(messageKey);
     }
 
     public static void openTradeRefreshChoiceDialogue(
@@ -387,6 +405,44 @@ public final class ForcedDialogueService {
             VillagerTradeRefreshService.ReadyRefreshResult readyRefreshes,
             String messageKey,
             Map<String, String> extraReplacements) {
+        return openTradeRefreshReadyDialogue(
+                level,
+                villager,
+                player,
+                readyRefreshes,
+                messageKey,
+                extraReplacements,
+                List.of(villager.getUUID()));
+    }
+
+    private static boolean openTradeRefreshReadyDialogue(
+            ServerLevel level,
+            Villager villager,
+            ServerPlayer player,
+            VillagerTradeRefreshService.ReadyRefreshResult readyRefreshes,
+            String messageKey,
+            Map<String, String> extraReplacements,
+            List<UUID> participantVillagerIds) {
+        return openTradeRefreshReadyDialogue(
+                level,
+                villager,
+                player,
+                readyRefreshes,
+                messageKey,
+                extraReplacements,
+                participantVillagerIds,
+                List.of(villager.getUUID()));
+    }
+
+    private static boolean openTradeRefreshReadyDialogue(
+            ServerLevel level,
+            Villager villager,
+            ServerPlayer player,
+            VillagerTradeRefreshService.ReadyRefreshResult readyRefreshes,
+            String messageKey,
+            Map<String, String> extraReplacements,
+            List<UUID> participantVillagerIds,
+            List<UUID> spokenVillagerIds) {
         if (!readyRefreshes.hasPlayerReadyTrades()) {
             return false;
         }
@@ -427,7 +483,9 @@ public final class ForcedDialogueService {
                     List.of(),
                     level.getGameTime(),
                     true,
-                    replacements
+                    replacements,
+                    participantVillagerIds,
+                    spokenVillagerIds
             ));
             return true;
         } else {
@@ -500,7 +558,7 @@ public final class ForcedDialogueService {
             return false;
         }
         Optional<ForcedDialogueOption> selected = selectLeaveOption(player, villager, session);
-        return handleSelectedOption(player, villager, session, selected.get(), forceEndConversation);
+        return handleSelectedOption(player, villager, session, selected.get(), forceEndConversation, true);
     }
 
     private static Optional<ForcedDialogueOption> selectLeaveOption(
@@ -528,8 +586,22 @@ public final class ForcedDialogueService {
             ServerPlayer player,
             Villager villager,
             ForcedDialogueSession session,
-        ForcedDialogueOption option,
-        boolean forceEndConversation) {
+            ForcedDialogueOption option,
+            boolean forceEndConversation) {
+        return handleSelectedOption(player, villager, session, option, forceEndConversation, false);
+    }
+
+    private static boolean handleSelectedOption(
+            ServerPlayer player,
+            Villager villager,
+            ForcedDialogueSession session,
+            ForcedDialogueOption option,
+            boolean forceEndConversation,
+            boolean leaveRequest) {
+        if (leaveRequest && tryAdvanceDynamicForcedDialogueGroup(player, villager, session)) {
+            return true;
+        }
+
         ForcedDialogueStolenItemReturn stolenItemReturn = option.stolenItemReturn();
         boolean returnedStolenItems = false;
         if (!stolenItemReturn.isEmpty()) {
@@ -645,7 +717,7 @@ public final class ForcedDialogueService {
             openSpecialOrderConfirmDialogue(player, villager, session, selectedSpecialOrder.get());
             return true;
         }
-        if (!aggro && tryAdvanceDynamicForcedDialogueGroup(player, villager, session)) {
+        if (!leaveRequest && !aggro && tryAdvanceDynamicForcedDialogueGroup(player, villager, session)) {
             return true;
         }
         if (isTradeRefreshTradeOption(session, option)) {
@@ -1512,6 +1584,44 @@ public final class ForcedDialogueService {
         }
     }
 
+    public static void tickSharedForcedDialogueParticipant(ServerLevel level, Villager villager) {
+        if (!VillagerRetaliationConfig.ENABLE_FORCED_DIALOGUE.get()
+                || !villager.isAlive()
+                || villager.isBaby()
+                || villager.isTrading()) {
+            return;
+        }
+
+        UUID villagerId = villager.getUUID();
+        for (Map.Entry<UUID, ForcedDialogueSession> entry : List.copyOf(FORCED_SESSIONS.entrySet())) {
+            if (!(level.getPlayerByUUID(entry.getKey()) instanceof ServerPlayer player)
+                    || !player.isAlive()
+                    || player.isSpectator()
+                    || !VillagerConversationService.isConversing(player)) {
+                continue;
+            }
+
+            ForcedDialogueSession session = FORCED_SESSIONS.get(entry.getKey());
+            if (session == null) {
+                continue;
+            }
+            if (session.villagerId().equals(villagerId)) {
+                continue;
+            }
+
+            if (session.participantVillagerIds().contains(villagerId)) {
+                VillagerConversationService.holdSharedForcedParticipant(villager, player);
+                continue;
+            }
+
+            if (isEligibleSharedForcedDialogueContinuation(level, player, villager, session)) {
+                ForcedDialogueSession updated = withParticipant(session, villager);
+                FORCED_SESSIONS.put(player.getUUID(), updated);
+                VillagerConversationService.holdSharedForcedParticipant(villager, player);
+            }
+        }
+    }
+
     private static boolean tryAdvanceDynamicForcedDialogueGroup(
             ServerPlayer player,
             Villager currentVillager,
@@ -1520,14 +1630,16 @@ public final class ForcedDialogueService {
             return tryAdvanceTradeRefreshReadyGroup(
                     player,
                     currentVillager,
+                    session,
                     TRADE_REFRESH_READY_INTERJECTION_MESSAGE_KEY);
         }
-        if (session.definition().trigger() == ForcedDialogueTrigger.CONTAINER_THEFT) {
+        if (isSharedContainerDialogueTrigger(session.definition().trigger())) {
             return tryAdvanceTradeRefreshReadyGroup(
                     player,
                     currentVillager,
+                    session,
                     TRADE_REFRESH_READY_THEFT_INTERJECTION_MESSAGE_KEY)
-                    || tryAdvanceContainerTheftBackup(player, currentVillager, session);
+                    || tryAdvanceContainerWitnessInterjection(player, currentVillager, session);
         }
         return false;
     }
@@ -1535,6 +1647,7 @@ public final class ForcedDialogueService {
     private static boolean tryAdvanceTradeRefreshReadyGroup(
             ServerPlayer player,
             Villager currentVillager,
+            ForcedDialogueSession session,
             String messageKey) {
         ServerLevel level = player.serverLevel();
         for (Villager nextVillager : nearbyReadyTradeRefreshVillagers(level, currentVillager, player)) {
@@ -1547,17 +1660,88 @@ public final class ForcedDialogueService {
 
             FORCED_SESSIONS.remove(player.getUUID());
             VillagerConversationService.endForPlayer(player, false);
-            Map<String, String> replacements = tradeRefreshInterjectionReplacements(currentVillager, nextVillager, player);
+            int speakerIndex = nextInterjectionSpeakerIndex(session);
+            Map<String, String> replacements = tradeRefreshInterjectionReplacements(
+                    currentVillager,
+                    nextVillager,
+                    player,
+                    speakerIndex);
             openTradeRefreshReadyDialogue(
                     level,
                     nextVillager,
                     player,
                     readyRefreshes,
-                    messageKey,
-                    replacements);
+                    interjectionMessageKey(messageKey, speakerIndex),
+                    replacements,
+                    appendedParticipantIds(session, nextVillager),
+                    appendedSpokenVillagerIds(session, nextVillager));
             return true;
         }
         return false;
+    }
+
+    private static boolean isEligibleSharedForcedDialogueContinuation(
+            ServerLevel level,
+            ServerPlayer player,
+            Villager villager,
+            ForcedDialogueSession session) {
+        if (VillagerConversationService.isConversing(villager)
+                || !VillagerInteractionService.canUseForcedInteractionSystem(player, villager)) {
+            return false;
+        }
+        if (VillagerRetaliationConfig.ENABLE_SKILL_TRADE_OVERHAUL.get()
+                && VillagerTradeRefreshService.hasReadyRefreshesForPlayer(level, villager, player)) {
+            return true;
+        }
+        return isSharedContainerDialogueTrigger(session.definition().trigger())
+                && matchingAdditionalContainerWitnessDefinition(level, player, session, villager).isPresent();
+    }
+
+    private static boolean isSharedContainerDialogueTrigger(ForcedDialogueTrigger trigger) {
+        return trigger == ForcedDialogueTrigger.CONTAINER_THEFT
+                || trigger == ForcedDialogueTrigger.CONTAINER_OPENED;
+    }
+
+    private static int nextInterjectionSpeakerIndex(ForcedDialogueSession session) {
+        return session.spokenVillagerIds().size() + 1;
+    }
+
+    private static String interjectionMessageKey(String baseKey, int speakerIndex) {
+        if (speakerIndex == 2) {
+            return baseKey + ".second";
+        }
+        if (speakerIndex == 3) {
+            return baseKey + ".third";
+        }
+        return baseKey;
+    }
+
+    private static String baseInterjectionMessageKey(String messageKey) {
+        if (messageKey.endsWith(".second")) {
+            return messageKey.substring(0, messageKey.length() - ".second".length());
+        }
+        if (messageKey.endsWith(".third")) {
+            return messageKey.substring(0, messageKey.length() - ".third".length());
+        }
+        return messageKey;
+    }
+
+    private static String interjectionOrdinal(int speakerIndex) {
+        return switch (speakerIndex) {
+            case 1 -> "first";
+            case 2 -> "second";
+            case 3 -> "third";
+            case 4 -> "fourth";
+            case 5 -> "fifth";
+            default -> Integer.toString(speakerIndex);
+        };
+    }
+
+    private static List<ForcedDialogueOption> containerWitnessInterjectionOptions(ForcedDialogueDefinition definition) {
+        if (!definition.options().isEmpty()) {
+            return definition.options();
+        }
+        return List.of(definition.leaveOption());
     }
 
     private static List<Villager> nearbyReadyTradeRefreshVillagers(
@@ -1585,48 +1769,48 @@ public final class ForcedDialogueService {
     private static Map<String, String> tradeRefreshInterjectionReplacements(
             Villager interruptedVillager,
             Villager nextVillager,
-            ServerPlayer player) {
+            ServerPlayer player,
+            int speakerIndex) {
         return Map.of(
                 "interrupted_villager", VillagerPresetNameRegistry.resolveDisplayName(interruptedVillager).getString(),
                 "previous_villager", VillagerPresetNameRegistry.resolveDisplayName(interruptedVillager).getString(),
                 "current_villager", VillagerPresetNameRegistry.resolveDisplayName(nextVillager).getString(),
-                "player", player.getDisplayName().getString());
+                "player", player.getDisplayName().getString(),
+                "interjection_index", Integer.toString(speakerIndex),
+                "interjection_ordinal", interjectionOrdinal(speakerIndex),
+                "speaker_index", Integer.toString(speakerIndex),
+                "speaker_ordinal", interjectionOrdinal(speakerIndex));
     }
 
-    private static boolean tryAdvanceContainerTheftBackup(
+    private static boolean tryAdvanceContainerWitnessInterjection(
             ServerPlayer player,
             Villager currentVillager,
             ForcedDialogueSession session) {
         ServerLevel level = player.serverLevel();
-        Optional<Villager> nextWitness = findAdditionalTheftWitness(level, player, session);
+        Optional<ContainerWitnessCandidate> nextWitness = findAdditionalContainerWitness(level, player, session);
         if (nextWitness.isEmpty()) {
             return false;
         }
 
-        Villager witness = nextWitness.get();
-        ForcedDialogueContext context = containerTheftBackupContext(level, witness, player, session);
-        rememberContainerTheft(level, witness, player, containerSnapshot(session, level), session.removedStacks(), stolenItemCount(session));
-        if (session.definition().reputationDelta() != 0 && VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()) {
-            VillagerReputationManager.addWitnessedReputation(
-                    level,
-                    witness,
-                    player.getUUID(),
-                    session.definition().reputationDelta(),
-                    session.sourceContainerPos());
-            VillagerGossipHooks.spreadReputation(level, witness, player.getUUID(), session.definition().reputationDelta());
-        }
+        ContainerWitnessCandidate candidate = nextWitness.get();
+        Villager witness = candidate.villager();
+        ForcedDialogueDefinition witnessDefinition = candidate.definition();
+        ForcedDialogueContext context = containerWitnessContext(level, witness, player, session);
+        applyContainerWitnessConsequences(level, witness, player, session, witnessDefinition);
 
-            String line = tradeRefreshLine(
+        String line = containerWitnessInterjectionLine(
                 level,
                 witness,
                 player,
-                CONTAINER_THEFT_BACKUP_MESSAGE_KEY,
-                containerTheftBackupReplacements(currentVillager, witness, player, context));
+                currentVillager,
+                witnessDefinition,
+                context,
+                nextInterjectionSpeakerIndex(session));
         ForcedDialogueDefinition definition = forcedInterjectionDefinition(
-                CONTAINER_THEFT_BACKUP_DEFINITION_ID,
+                containerInterjectionDefinitionId(witnessDefinition.trigger()),
                 line,
-                session.definition(),
-                List.of(session.definition().leaveOption()));
+                witnessDefinition,
+                containerWitnessInterjectionOptions(witnessDefinition));
 
         FORCED_SESSIONS.remove(player.getUUID());
         VillagerConversationService.endForPlayer(player, false);
@@ -1645,40 +1829,157 @@ public final class ForcedDialogueService {
                     session.removedStacks(),
                     level.getGameTime(),
                     false,
-                    appendedParticipantIds(session, witness)));
+                    appendedParticipantIds(session, witness),
+                    appendedSpokenVillagerIds(session, witness)));
         } else if (!line.isBlank()) {
             VillagerInteractionService.sendVillagerNotice(player, witness, line);
         }
         return true;
     }
 
-    private static Optional<Villager> findAdditionalTheftWitness(
+    private static Optional<ContainerWitnessCandidate> findAdditionalContainerWitness(
             ServerLevel level,
             ServerPlayer player,
             ForcedDialogueSession session) {
         if (session.sourceContainerDimension() != level.dimension()) {
             return Optional.empty();
         }
-        ForcedDialogueDefinition definition = session.definition();
+        List<ForcedDialogueDefinition> definitions = sharedContainerWitnessDefinitions(level, session);
+        if (definitions.isEmpty()) {
+            return Optional.empty();
+        }
+
+        BlockPos pos = session.sourceContainerPos();
+        double radius = definitions.stream()
+                .mapToDouble(ForcedDialogueDefinition::witnessRadius)
+                .max()
+                .orElse(session.definition().witnessRadius());
+        AABB area = AABB.ofSize(Vec3.atCenterOf(pos), radius * 2.0D, radius * 2.0D, radius * 2.0D);
+        return level.getEntitiesOfClass(Villager.class, area, villager -> villager.isAlive() && !villager.isBaby()).stream()
+                .filter(villager -> !session.spokenVillagerIds().contains(villager.getUUID()))
+                .map(villager -> matchingAdditionalContainerWitnessDefinition(level, player, session, villager, definitions)
+                        .map(definition -> new ContainerWitnessCandidate(villager, definition)))
+                .flatMap(Optional::stream)
+                .min(Comparator
+                        .comparing((ContainerWitnessCandidate candidate) -> !session.participantVillagerIds().contains(candidate.villager().getUUID()))
+                        .thenComparingDouble(candidate -> candidate.villager().distanceToSqr(player)));
+    }
+
+    private static Optional<ForcedDialogueDefinition> matchingAdditionalContainerWitnessDefinition(
+            ServerLevel level,
+            ServerPlayer player,
+            ForcedDialogueSession session,
+            Villager villager) {
+        return matchingAdditionalContainerWitnessDefinition(level, player, session, villager, sharedContainerWitnessDefinitions(level, session));
+    }
+
+    private static Optional<ForcedDialogueDefinition> matchingAdditionalContainerWitnessDefinition(
+            ServerLevel level,
+            ServerPlayer player,
+            ForcedDialogueSession session,
+            Villager villager,
+            List<ForcedDialogueDefinition> definitions) {
+        return definitions.stream()
+                .filter(definition -> isAdditionalContainerWitnessCandidate(level, player, session, villager, definition))
+                .findFirst();
+    }
+
+    private static List<ForcedDialogueDefinition> sharedContainerWitnessDefinitions(
+            ServerLevel level,
+            ForcedDialogueSession session) {
+        if (!isSharedContainerDialogueTrigger(session.definition().trigger())) {
+            return List.of();
+        }
+        ResourceLocation lootTable = session.context().lootTable().isBlank()
+                ? null
+                : ResourceLocation.tryParse(session.context().lootTable());
+        List<ForcedDialogueDefinition> definitions = ForcedDialogueResources
+                .selectCandidates(level.getServer(), session.definition().trigger(), lootTable)
+                .stream()
+                .filter(definition -> !isChatOutput(definition))
+                .filter(ForcedDialogueDefinition::initiateDialogue)
+                .toList();
+        return definitions.isEmpty() ? List.of(session.definition()) : definitions;
+    }
+
+    private static boolean isAdditionalContainerWitnessCandidate(
+            ServerLevel level,
+            ServerPlayer player,
+            ForcedDialogueSession session,
+            Villager villager,
+            ForcedDialogueDefinition definition) {
+        if (session.sourceContainerDimension() != level.dimension()
+                || session.spokenVillagerIds().contains(villager.getUUID())
+                || !villager.isAlive()
+                || villager.isBaby()
+                || VillagerConversationService.isConversing(villager)
+                || !VillagerInteractionService.canUseForcedInteractionSystem(player, villager)) {
+            return false;
+        }
         BlockPos pos = session.sourceContainerPos();
         double radius = definition.witnessRadius();
         double radiusSqr = radius * radius;
-        AABB area = AABB.ofSize(Vec3.atCenterOf(pos), radius * 2.0D, radius * 2.0D, radius * 2.0D);
-        return level.getEntitiesOfClass(Villager.class, area, villager -> villager.isAlive() && !villager.isBaby()).stream()
-                .filter(villager -> !session.participantVillagerIds().contains(villager.getUUID()))
-                .filter(villager -> !VillagerConversationService.isConversing(villager))
-                .filter(definition::matchesWitness)
-                .filter(villager -> villager.distanceToSqr(player) <= radiusSqr || villager.blockPosition().distSqr(pos) <= radiusSqr)
-                .filter(villager -> !definition.requiresLineOfSight() || hasTheftLineOfSight(level, villager, player, pos))
-                .filter(villager -> definitionMatchesReputation(level, villager, player, definition))
-                .filter(villager -> definition.matchesRecentContainerThefts(VillageEventMemory.countForPlayer(
+        boolean closeEnough = villager.distanceToSqr(player) <= radiusSqr || villager.blockPosition().distSqr(pos) <= radiusSqr;
+        return closeEnough
+                && definition.matchesWitness(villager)
+                && (!definition.requiresLineOfSight() || hasTheftLineOfSight(level, villager, player, pos))
+                && definitionMatchesReputation(level, villager, player, definition)
+                && definition.matchesRecentContainerThefts(VillageEventMemory.countForPlayer(
                         VillageEventMemory.recentForVillage(level, villager),
                         player.getUUID(),
-                        VillageEventMemory.EventTag.PLAYER_CONTAINER_THEFT)))
-                .min(Comparator.comparingDouble(villager -> villager.distanceToSqr(player)));
+                        VillageEventMemory.EventTag.PLAYER_CONTAINER_THEFT));
     }
 
-    private static ForcedDialogueContext containerTheftBackupContext(
+    private static void applyContainerWitnessConsequences(
+            ServerLevel level,
+            Villager witness,
+            ServerPlayer player,
+            ForcedDialogueSession session,
+            ForcedDialogueDefinition definition) {
+        if (definition.trigger() == ForcedDialogueTrigger.CONTAINER_THEFT) {
+            rememberContainerTheft(level, witness, player, containerSnapshot(session, level), session.removedStacks(), stolenItemCount(session));
+        }
+        if (definition.reputationDelta() != 0 && VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()) {
+            VillagerReputationManager.addWitnessedReputation(
+                    level,
+                    witness,
+                    player.getUUID(),
+                    definition.reputationDelta(),
+                    session.sourceContainerPos());
+            VillagerGossipHooks.spreadReputation(level, witness, player.getUUID(), definition.reputationDelta());
+        }
+    }
+
+    private static String containerWitnessInterjectionLine(
+            ServerLevel level,
+            Villager witness,
+            ServerPlayer player,
+            Villager previousWitness,
+            ForcedDialogueDefinition definition,
+            ForcedDialogueContext context,
+            int speakerIndex) {
+        String fallback = ForcedDialogueResources.resolveTemplate(definition.selectLine(level.getRandom()), context);
+        String baseMessageKey = definition.trigger() == ForcedDialogueTrigger.CONTAINER_THEFT
+                ? CONTAINER_THEFT_BACKUP_MESSAGE_KEY
+                : CONTAINER_OPENED_BACKUP_MESSAGE_KEY;
+        Map<String, String> replacements = definition.trigger() == ForcedDialogueTrigger.CONTAINER_THEFT
+                ? containerTheftBackupReplacements(previousWitness, witness, player, context, speakerIndex)
+                : containerOpenedBackupReplacements(previousWitness, witness, player, context, speakerIndex);
+        DialogueContext dialogueContext = VillagerInteractionService.createDialogueContext(level, player, witness);
+        String messageKey = interjectionMessageKey(baseMessageKey, speakerIndex);
+        return VillagerDialogueResources
+                .message(dialogueContext, messageKey, replacements)
+                .or(() -> VillagerDialogueResources.message(dialogueContext, baseMessageKey, replacements))
+                .orElse(fallback);
+    }
+
+    private static String containerInterjectionDefinitionId(ForcedDialogueTrigger trigger) {
+        return trigger == ForcedDialogueTrigger.CONTAINER_THEFT
+                ? CONTAINER_THEFT_BACKUP_DEFINITION_ID
+                : CONTAINER_OPENED_BACKUP_DEFINITION_ID;
+    }
+
+    private static ForcedDialogueContext containerWitnessContext(
             ServerLevel level,
             Villager witness,
             ServerPlayer player,
@@ -1712,7 +2013,8 @@ public final class ForcedDialogueService {
             Villager previousWitness,
             Villager currentWitness,
             ServerPlayer player,
-            ForcedDialogueContext context) {
+            ForcedDialogueContext context,
+            int speakerIndex) {
         int priorThefts = Math.max(0, context.priorContainerThefts());
         int witnessedThefts = priorThefts + 1;
         boolean singleItem = context.itemCount() == 1;
@@ -1733,7 +2035,30 @@ public final class ForcedDialogueService {
                 Map.entry("stolen_items", context.itemList()),
                 Map.entry("stolen_stack", context.itemStack()),
                 Map.entry("stolen_loot_table", context.lootTable()),
+                Map.entry("interjection_index", Integer.toString(speakerIndex)),
+                Map.entry("interjection_ordinal", interjectionOrdinal(speakerIndex)),
+                Map.entry("speaker_index", Integer.toString(speakerIndex)),
+                Map.entry("speaker_ordinal", interjectionOrdinal(speakerIndex)),
                 Map.entry("witnessed_container_thefts", Integer.toString(witnessedThefts)));
+    }
+
+    private static Map<String, String> containerOpenedBackupReplacements(
+            Villager previousWitness,
+            Villager currentWitness,
+            ServerPlayer player,
+            ForcedDialogueContext context,
+            int speakerIndex) {
+        return Map.ofEntries(
+                Map.entry("interrupted_villager", VillagerPresetNameRegistry.resolveDisplayName(previousWitness).getString()),
+                Map.entry("previous_villager", VillagerPresetNameRegistry.resolveDisplayName(previousWitness).getString()),
+                Map.entry("current_villager", VillagerPresetNameRegistry.resolveDisplayName(currentWitness).getString()),
+                Map.entry("player", player.getDisplayName().getString()),
+                Map.entry("container", context.containerName()),
+                Map.entry("container_loot_table", context.lootTable()),
+                Map.entry("interjection_index", Integer.toString(speakerIndex)),
+                Map.entry("interjection_ordinal", interjectionOrdinal(speakerIndex)),
+                Map.entry("speaker_index", Integer.toString(speakerIndex)),
+                Map.entry("speaker_ordinal", interjectionOrdinal(speakerIndex)));
     }
 
     private static String containerTheftAgainPhrase(int priorThefts) {
@@ -1805,6 +2130,35 @@ public final class ForcedDialogueService {
             participantIds.add(villager.getUUID());
         }
         return List.copyOf(participantIds);
+    }
+
+    private static List<UUID> appendedSpokenVillagerIds(ForcedDialogueSession session, Villager villager) {
+        List<UUID> spokenVillagerIds = new ArrayList<>(session.spokenVillagerIds());
+        if (!spokenVillagerIds.contains(villager.getUUID())) {
+            spokenVillagerIds.add(villager.getUUID());
+        }
+        return List.copyOf(spokenVillagerIds);
+    }
+
+    private static ForcedDialogueSession withParticipant(ForcedDialogueSession session, Villager villager) {
+        List<UUID> participantIds = appendedParticipantIds(session, villager);
+        if (participantIds.equals(session.participantVillagerIds())) {
+            return session;
+        }
+        return new ForcedDialogueSession(
+                session.villagerId(),
+                session.definition(),
+                session.context(),
+                session.sourceContainerDimension(),
+                session.sourceContainerPos(),
+                session.removedStacks(),
+                session.startedGameTime(),
+                session.tradeRefreshOfferIndex(),
+                session.tradeRefreshDefinitionId(),
+                session.tradeRefreshReady(),
+                session.replacements(),
+                participantIds,
+                session.spokenVillagerIds());
     }
 
     public static void maybeTriggerPlayerItemProximity(ServerLevel level, Villager villager) {
@@ -2868,6 +3222,11 @@ public final class ForcedDialogueService {
             long gameTime) {
     }
 
+    private record ContainerWitnessCandidate(
+            Villager villager,
+            ForcedDialogueDefinition definition) {
+    }
+
     private record ForcedDialogueSession(
             UUID villagerId,
             ForcedDialogueDefinition definition,
@@ -2880,7 +3239,8 @@ public final class ForcedDialogueService {
             String tradeRefreshDefinitionId,
             boolean tradeRefreshReady,
             Map<String, String> replacements,
-            List<UUID> participantVillagerIds) {
+            List<UUID> participantVillagerIds,
+            List<UUID> spokenVillagerIds) {
         private ForcedDialogueSession(
                 UUID villagerId,
                 ForcedDialogueDefinition definition,
@@ -2901,6 +3261,7 @@ public final class ForcedDialogueService {
                     "",
                     false,
                     Map.of(),
+                    List.of(villagerId),
                     List.of(villagerId));
         }
 
@@ -2925,6 +3286,7 @@ public final class ForcedDialogueService {
                     "",
                     tradeRefreshReady,
                     Map.of(),
+                    List.of(villagerId),
                     List.of(villagerId));
         }
 
@@ -2950,7 +3312,36 @@ public final class ForcedDialogueService {
                     "",
                     tradeRefreshReady,
                     Map.copyOf(replacements),
+                    List.of(villagerId),
                     List.of(villagerId));
+        }
+
+        private ForcedDialogueSession(
+                UUID villagerId,
+                ForcedDialogueDefinition definition,
+                ForcedDialogueContext context,
+                net.minecraft.resources.ResourceKey<Level> sourceContainerDimension,
+                BlockPos sourceContainerPos,
+                List<ItemStack> removedStacks,
+                long startedGameTime,
+                boolean tradeRefreshReady,
+                Map<String, String> replacements,
+                List<UUID> participantVillagerIds,
+                List<UUID> spokenVillagerIds) {
+            this(
+                    villagerId,
+                    definition,
+                    context,
+                    sourceContainerDimension,
+                    sourceContainerPos,
+                    removedStacks,
+                    startedGameTime,
+                    -1,
+                    "",
+                    tradeRefreshReady,
+                    Map.copyOf(replacements),
+                    List.copyOf(participantVillagerIds),
+                    List.copyOf(spokenVillagerIds));
         }
 
         private ForcedDialogueSession(
@@ -2971,11 +3362,36 @@ public final class ForcedDialogueService {
                     sourceContainerPos,
                     removedStacks,
                     startedGameTime,
+                    tradeRefreshReady,
+                    participantVillagerIds,
+                    participantVillagerIds);
+        }
+
+        private ForcedDialogueSession(
+                UUID villagerId,
+                ForcedDialogueDefinition definition,
+                ForcedDialogueContext context,
+                net.minecraft.resources.ResourceKey<Level> sourceContainerDimension,
+                BlockPos sourceContainerPos,
+                List<ItemStack> removedStacks,
+                long startedGameTime,
+                boolean tradeRefreshReady,
+                List<UUID> participantVillagerIds,
+                List<UUID> spokenVillagerIds) {
+            this(
+                    villagerId,
+                    definition,
+                    context,
+                    sourceContainerDimension,
+                    sourceContainerPos,
+                    removedStacks,
+                    startedGameTime,
                     -1,
                     "",
                     tradeRefreshReady,
                     Map.of(),
-                    participantVillagerIds);
+                    List.copyOf(participantVillagerIds),
+                    List.copyOf(spokenVillagerIds));
         }
 
         private ForcedDialogueSession(
@@ -3000,6 +3416,7 @@ public final class ForcedDialogueService {
                     tradeRefreshDefinitionId,
                     false,
                     Map.of(),
+                    List.of(villagerId),
                     List.of(villagerId));
         }
     }

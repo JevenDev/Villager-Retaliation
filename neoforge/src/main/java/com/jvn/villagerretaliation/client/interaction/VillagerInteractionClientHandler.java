@@ -72,7 +72,12 @@ public final class VillagerInteractionClientHandler {
                 formatSpeakerLabel(villagerName, professionName)
         );
         resetVillagerChatGroup();
-        minecraft.setScreen(new VillagerInteractionScreen(
+        boolean replacingInteractionScreen = minecraft.screen instanceof VillagerInteractionSessionScreen;
+        if (replacingInteractionScreen) {
+            VillagerInteractionSessionScreen interactionScreen = (VillagerInteractionSessionScreen) minecraft.screen;
+            interactionScreen.replaceFromServer();
+        }
+        VillagerInteractionScreen screen = new VillagerInteractionScreen(
                 payload.entityId(),
                 villagerName,
                 professionName,
@@ -90,7 +95,13 @@ public final class VillagerInteractionClientHandler {
                 payload.knownDislikedGiftNames(),
                 payload.familyTree(),
                 payload.relationships()
-        ));
+        );
+        minecraft.setScreen(screen);
+        if (replacingInteractionScreen && ClientVillagerConversationState.active()) {
+            ClientVillagerConversationState.retarget(payload.entityId(), payload.forceCameraTowardsVillager());
+        } else {
+            ClientVillagerConversationState.start(payload.entityId(), payload.forceCameraTowardsVillager());
+        }
     }
 
     public static void acceptDialogue(VillagerDialogueResponsePayload payload) {

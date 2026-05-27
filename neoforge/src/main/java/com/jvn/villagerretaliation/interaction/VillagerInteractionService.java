@@ -274,6 +274,9 @@ public final class VillagerInteractionService {
             }
         }
         if (villager == null || !VillagerConversationService.validate(player, villager)) {
+            if (ForcedDialogueService.isStaleConversationEndRequest(player, entityId)) {
+                return;
+            }
             ForcedDialogueService.endForPlayer(player);
             VillagerConversationService.endForPlayer(player, true);
             return;

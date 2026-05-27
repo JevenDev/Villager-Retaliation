@@ -23,6 +23,12 @@ public final class ClientVillagerConversationState {
         forceCameraTowardsVillager = forceCamera;
     }
 
+    public static void retarget(int entityId, boolean forceCamera) {
+        focusedVillagerEntityId = entityId;
+        cameraReleaseTicks = 0;
+        forceCameraTowardsVillager = forceCamera;
+    }
+
     public static int focusedVillagerEntityId() {
         return focusedVillagerEntityId;
     }

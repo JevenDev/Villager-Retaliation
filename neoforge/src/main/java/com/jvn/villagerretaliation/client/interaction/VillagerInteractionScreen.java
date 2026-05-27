@@ -122,6 +122,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private DialoguePage page = DialoguePage.ROOT;
     private int selectedOption;
     private boolean closingFromServer;
+    private boolean replacingFromServer;
     private boolean openingChat;
     private boolean awaitingForcedDialogueResponse;
     private boolean profileRefreshRequested;
@@ -182,7 +183,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if (forcedDialogue) {
             this.page = DialoguePage.TALK;
         }
-        ClientVillagerConversationState.start(villagerEntityId, forceCameraTowardsVillager);
     }
 
     @Override
@@ -233,6 +233,12 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if (this.page == DialoguePage.TALK) {
             rebuildOptionsKeepingListPosition();
         }
+    }
+
+    public void replaceFromServer() {
+        this.closingFromServer = true;
+        this.replacingFromServer = true;
+        restoreChatWidthOverride();
     }
 
     public void closeFromServer() {
@@ -379,7 +385,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
 
         restoreChatWidthOverride();
-        ClientVillagerConversationState.clear();
+        if (!this.replacingFromServer) {
+            ClientVillagerConversationState.clear();
+        }
         if (!this.closingFromServer) {
             sendToServer(new VillagerConversationEndRequestPayload(this.villagerEntityId));
         }

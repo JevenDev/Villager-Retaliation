@@ -133,6 +133,22 @@ public final class VillagerConversationService {
         holdVillager(villager, player, session);
     }
 
+    public static void holdSharedForcedParticipant(Villager villager, ServerPlayer player) {
+        if (!VillagerInteractionService.shouldStayForcedConversationSession(player, villager)) {
+            return;
+        }
+        if (villager.isSleeping()) {
+            villager.stopSleeping();
+        }
+        villager.getLookControl().setLookAt(player, 30.0F, 30.0F);
+        if (approachPlayerForForcedDialogue(villager, player)) {
+            return;
+        }
+        if (VillagerRetaliationConfig.FREEZE_VILLAGER_DURING_DIALOGUE.get() && !villager.getNavigation().isDone()) {
+            villager.getNavigation().stop();
+        }
+    }
+
     public static void endForEntityLeaving(Entity entity, boolean notifyClient) {
         if (entity instanceof ServerPlayer player) {
             endForPlayer(player, notifyClient);

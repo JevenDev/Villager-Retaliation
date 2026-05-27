@@ -87,6 +87,11 @@ final class VillagerInteractionChatScreen extends ChatScreen implements Villager
     }
 
     @Override
+    public void replaceFromServer() {
+        this.interactionScreen.replaceFromServer();
+    }
+
+    @Override
     public void closeFromServer() {
         this.interactionScreen.closeFromServer();
     }

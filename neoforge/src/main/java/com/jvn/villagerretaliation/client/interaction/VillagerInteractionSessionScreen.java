@@ -19,5 +19,7 @@ interface VillagerInteractionSessionScreen {
             List<String> knownLikedGiftNames,
             List<String> knownDislikedGiftNames);
 
+    void replaceFromServer();
+
     void closeFromServer();
 }
