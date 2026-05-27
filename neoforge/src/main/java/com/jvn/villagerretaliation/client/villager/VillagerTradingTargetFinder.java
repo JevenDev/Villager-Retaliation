@@ -29,10 +29,6 @@ public final class VillagerTradingTargetFinder {
         return villagers;
     }
 
-    public static Optional<AbstractVillager> findTradingVillagerOrClosest(Minecraft minecraft) {
-        return findTradingVillagerOrClosest(minecraft, DEFAULT_LOOKUP_RADIUS);
-    }
-
     public static Optional<AbstractVillager> findTradingVillager(Minecraft minecraft) {
         return findTradingVillager(minecraft, DEFAULT_LOOKUP_RADIUS);
     }
@@ -62,11 +58,4 @@ public final class VillagerTradingTargetFinder {
         return Optional.of(villagers.get(0));
     }
 
-    public static Optional<AbstractVillager> findTradingVillagerOrClosest(Minecraft minecraft, double lookupRadius) {
-        Optional<AbstractVillager> tradingVillager = findTradingVillager(minecraft, lookupRadius);
-        if (tradingVillager.isPresent()) {
-            return tradingVillager;
-        }
-        return nearbySorted(minecraft, lookupRadius).stream().findFirst();
-    }
 }
