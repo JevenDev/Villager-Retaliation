@@ -30,6 +30,7 @@ import java.util.Locale;
 import java.util.Optional;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.ChatComponent;
 import net.minecraft.client.gui.components.Button;
@@ -83,20 +84,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final int INFO_VALUE_COLOR = 0xFFF8F6EF;
     private static final int INFO_SECONDARY_COLOR = 0xB8D5D0C6;
     private static final int DIVIDER_CORE_COLOR = 0xFFFFFFFF;
-    private static final int INVENTORY_COLUMNS = 9;
-    private static final int INVENTORY_MAIN_ROWS = 3;
-    private static final int INVENTORY_SLOT_SIZE = 18;
-    private static final int INVENTORY_TEXTURE_WIDTH = 176;
-    private static final int INVENTORY_TEXTURE_HEIGHT = 90;
-    private static final int INVENTORY_SLOT_START_X = 7;
-    private static final int INVENTORY_SLOT_START_Y = 7;
-    private static final int INVENTORY_HOTBAR_Y = 65;
-    private static final int INVENTORY_ITEM_OFFSET = 1;
-    private static final int INVENTORY_BUTTON_WIDTH = 64;
-    private static final int INVENTORY_BUTTON_HEIGHT = 18;
-    private static final int INVENTORY_BUTTON_GAP = 4;
-    private static final int GIFT_INFO_ICON_SIZE = 16;
-    private static final int GIFT_INFO_ICON_GAP = 5;
+    private static final int GIFT_BUTTON_WIDTH = 64;
+    private static final int GIFT_BUTTON_HEIGHT = 18;
     private static final int DIVIDER_SELECT_WIDTH = 11;
     private static final int DIVIDER_SELECT_HEIGHT = 19;
     private static final int PROFILE_CHART_RADIUS = 36;
@@ -149,6 +138,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private int selectedInventorySlot = -1;
     private Button giftButton;
     private Double originalChatWidth;
+    private final GiftPageContext giftPageContext = new GiftPageContext();
 
     public VillagerInteractionScreen(
             int villagerEntityId,
@@ -194,7 +184,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     @Override
     protected void init() {
         this.giftButton = addRenderableWidget(Button.builder(Component.translatable(GUI_KEY_PREFIX + "gift.give"), button -> requestGift())
-                .bounds(0, 0, INVENTORY_BUTTON_WIDTH, INVENTORY_BUTTON_HEIGHT)
+                .bounds(0, 0, GIFT_BUTTON_WIDTH, GIFT_BUTTON_HEIGHT)
                 .build());
         this.giftButton.visible = false;
         rebuildOptions();
@@ -1118,89 +1108,15 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void renderGiftPage(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        int left = giftInventoryLeft();
-        int top = giftInventoryTop();
-        int hoveredSlot = giftSlotAt(mouseX, mouseY);
-
-        renderGiftSlots(graphics, left, top, hoveredSlot);
-        renderGiftInfoIcon(graphics, mouseX, mouseY);
-        renderGiftButton(graphics, mouseX, mouseY, partialTick);
-
-        ItemStack hoveredStack = stackForInventorySlot(hoveredSlot);
-        if (isPointInsideGiftInfoIcon(mouseX, mouseY)) {
-            renderGiftKnowledgeTooltip(graphics, mouseX, mouseY);
-        } else if (!hoveredStack.isEmpty()) {
-            graphics.renderTooltip(this.font, hoveredStack, mouseX, mouseY);
-        }
-    }
-
-    private void renderGiftSlots(GuiGraphics graphics, int left, int top, int hoveredSlot) {
-        graphics.blit(
-                VillagerRetaliationClientAssets.GIFT_INVENTORY_TEXTURE,
-                left,
-                top,
-                0,
-                0,
-                INVENTORY_TEXTURE_WIDTH,
-                INVENTORY_TEXTURE_HEIGHT,
-                INVENTORY_TEXTURE_WIDTH,
-                INVENTORY_TEXTURE_HEIGHT
+        VillagerInteractionGiftPage.render(
+                this.giftPageContext,
+                graphics,
+                mouseX,
+                mouseY,
+                partialTick,
+                optionsLeft(),
+                conversationInfoTop()
         );
-
-        for (int row = 0; row < INVENTORY_MAIN_ROWS; row++) {
-            for (int column = 0; column < INVENTORY_COLUMNS; column++) {
-                int inventorySlot = 9 + row * INVENTORY_COLUMNS + column;
-                renderGiftSlot(
-                        graphics,
-                        inventorySlot,
-                        left + INVENTORY_SLOT_START_X + column * INVENTORY_SLOT_SIZE,
-                        top + INVENTORY_SLOT_START_Y + row * INVENTORY_SLOT_SIZE,
-                        hoveredSlot
-                );
-            }
-        }
-
-        for (int column = 0; column < INVENTORY_COLUMNS; column++) {
-            renderGiftSlot(
-                    graphics,
-                    column,
-                    left + INVENTORY_SLOT_START_X + column * INVENTORY_SLOT_SIZE,
-                    top + INVENTORY_HOTBAR_Y,
-                    hoveredSlot
-            );
-        }
-    }
-
-    private void renderGiftSlot(GuiGraphics graphics, int inventorySlot, int x, int y, int hoveredSlot) {
-        boolean selected = inventorySlot == this.selectedInventorySlot;
-        boolean hovered = inventorySlot == hoveredSlot;
-        ItemStack stack = stackForInventorySlot(inventorySlot);
-        if (!stack.isEmpty()) {
-            graphics.renderItem(stack, x + INVENTORY_ITEM_OFFSET, y + INVENTORY_ITEM_OFFSET);
-            graphics.renderItemDecorations(this.font, stack, x + INVENTORY_ITEM_OFFSET, y + INVENTORY_ITEM_OFFSET);
-        }
-        if (selected || hovered) {
-            int color = selected ? 0x88EAE6DC : 0x55FFFFFF;
-            graphics.fill(x + INVENTORY_ITEM_OFFSET, y + INVENTORY_ITEM_OFFSET, x + 16 + INVENTORY_ITEM_OFFSET, y + 16 + INVENTORY_ITEM_OFFSET, color);
-        }
-    }
-
-    private void renderGiftButton(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        if (this.giftButton == null) {
-            return;
-        }
-        GiftButtonBounds bounds = giftButtonBounds();
-        boolean enabled = this.selectedInventorySlot >= 0 && !stackForInventorySlot(this.selectedInventorySlot).isEmpty();
-        this.giftButton.setPosition(bounds.left(), bounds.top());
-        this.giftButton.setMessage(Component.literal(giftButtonLabel()));
-        this.giftButton.active = enabled;
-        this.giftButton.visible = true;
-        this.giftButton.render(graphics, mouseX, mouseY, partialTick);
-    }
-
-    private String giftButtonLabel() {
-        ItemStack selectedStack = stackForInventorySlot(this.selectedInventorySlot);
-        return selectedStack.getCount() > 1 ? translate("gift.give_stack") : translate("gift.give");
     }
 
     private void renderOption(
@@ -1624,15 +1540,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private boolean tryClickGiftPage(double mouseX, double mouseY) {
-        int clickedSlot = giftSlotAt(mouseX, mouseY);
-        if (clickedSlot >= 0) {
-            ItemStack stack = stackForInventorySlot(clickedSlot);
-            if (!stack.isEmpty()) {
-                this.selectedInventorySlot = clickedSlot;
-            }
-            return true;
-        }
-        return false;
+        return VillagerInteractionGiftPage.tryClick(this.giftPageContext, mouseX, mouseY, optionsLeft(), conversationInfoTop());
     }
 
     private VillagerSkill skillAt(VillagerProfileClientCache.DisplayEntry profile, double mouseX, double mouseY) {
@@ -1657,33 +1565,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         return null;
     }
 
-    private int giftSlotAt(double mouseX, double mouseY) {
-        int left = giftInventoryLeft();
-        int top = giftInventoryTop();
-        int slotLeft = left + INVENTORY_SLOT_START_X;
-        int mainTop = top + INVENTORY_SLOT_START_Y;
-        if (mouseX >= slotLeft && mouseX < slotLeft + INVENTORY_COLUMNS * INVENTORY_SLOT_SIZE
-                && mouseY >= mainTop && mouseY < mainTop + INVENTORY_MAIN_ROWS * INVENTORY_SLOT_SIZE) {
-            int column = Mth.floor((mouseX - slotLeft) / INVENTORY_SLOT_SIZE);
-            int row = Mth.floor((mouseY - mainTop) / INVENTORY_SLOT_SIZE);
-            return 9 + row * INVENTORY_COLUMNS + column;
-        }
-
-        int hotbarTop = top + INVENTORY_HOTBAR_Y;
-        if (mouseX >= slotLeft && mouseX < slotLeft + INVENTORY_COLUMNS * INVENTORY_SLOT_SIZE
-                && mouseY >= hotbarTop && mouseY < hotbarTop + INVENTORY_SLOT_SIZE) {
-            return Mth.floor((mouseX - slotLeft) / INVENTORY_SLOT_SIZE);
-        }
-        return -1;
-    }
-
     private int firstGiftableInventorySlot() {
-        for (int slot = 0; slot < 36; slot++) {
-            if (!stackForInventorySlot(slot).isEmpty()) {
-                return slot;
-            }
-        }
-        return -1;
+        return VillagerInteractionGiftPage.firstGiftableInventorySlot(this.giftPageContext);
     }
 
     private ItemStack stackForInventorySlot(int inventorySlot) {
@@ -1695,72 +1578,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private int giftInventoryLeft() {
-        return optionsLeft() + 10;
+        return VillagerInteractionGiftPage.giftInventoryLeft(optionsLeft());
     }
 
     private int giftInventoryTop() {
-        return conversationInfoTop();
-    }
-
-    private GiftButtonBounds giftButtonBounds() {
-        int left = giftInventoryLeft() + INVENTORY_TEXTURE_WIDTH - INVENTORY_BUTTON_WIDTH;
-        int top = giftInventoryTop() - INVENTORY_BUTTON_HEIGHT - INVENTORY_BUTTON_GAP;
-        return new GiftButtonBounds(left, top, left + INVENTORY_BUTTON_WIDTH, top + INVENTORY_BUTTON_HEIGHT);
-    }
-
-    private void renderGiftInfoIcon(GuiGraphics graphics, int mouseX, int mouseY) {
-        GiftInfoIconBounds bounds = giftInfoIconBounds();
-        graphics.blit(
-                VillagerRetaliationClientAssets.GIFT_INFO_ICON_TEXTURE,
-                bounds.left(),
-                bounds.top(),
-                0,
-                0,
-                GIFT_INFO_ICON_SIZE,
-                GIFT_INFO_ICON_SIZE,
-                GIFT_INFO_ICON_SIZE,
-                GIFT_INFO_ICON_SIZE
-        );
-    }
-
-    private void renderGiftKnowledgeTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
-        List<Component> tooltip = new ArrayList<>();
-        tooltip.add(Component.translatable(GUI_KEY_PREFIX + "gift.known_gifts").withStyle(ChatFormatting.AQUA));
-        tooltip.add(Component.literal(this.professionName).withStyle(ChatFormatting.AQUA));
-        tooltip.add(Component.empty());
-        if (this.knownLikedGiftNames.isEmpty() && this.knownDislikedGiftNames.isEmpty()) {
-            tooltip.add(Component.translatable(GUI_KEY_PREFIX + "gift.learn_more").withStyle(ChatFormatting.GRAY));
-        } else {
-            addGiftTooltipSection(tooltip, "gift.likes", this.knownLikedGiftNames, ChatFormatting.GREEN);
-            addGiftTooltipSection(tooltip, "gift.dislikes", this.knownDislikedGiftNames, ChatFormatting.RED);
-        }
-        graphics.renderComponentTooltip(this.font, tooltip, mouseX, mouseY);
-    }
-
-    private static void addGiftTooltipSection(List<Component> tooltip, String labelKey, List<String> giftNames, ChatFormatting color) {
-        tooltip.add(Component.translatable(GUI_KEY_PREFIX + labelKey + "_header").withStyle(color));
-        if (giftNames.isEmpty()) {
-            tooltip.add(Component.translatable(GUI_KEY_PREFIX + "gift.unknown_indented").withStyle(ChatFormatting.GRAY));
-            return;
-        }
-        for (String giftName : giftNames) {
-            tooltip.add(Component.literal("  " + giftName).withStyle(color));
-        }
-    }
-
-    private boolean isPointInsideGiftInfoIcon(double mouseX, double mouseY) {
-        GiftInfoIconBounds bounds = giftInfoIconBounds();
-        return mouseX >= bounds.left()
-                && mouseX <= bounds.right()
-                && mouseY >= bounds.top()
-                && mouseY <= bounds.bottom();
-    }
-
-    private GiftInfoIconBounds giftInfoIconBounds() {
-        GiftButtonBounds giftButton = giftButtonBounds();
-        int left = giftButton.left() - GIFT_INFO_ICON_GAP - GIFT_INFO_ICON_SIZE;
-        int top = giftButton.top() + (INVENTORY_BUTTON_HEIGHT - GIFT_INFO_ICON_SIZE) / 2;
-        return new GiftInfoIconBounds(left, top, left + GIFT_INFO_ICON_SIZE, top + GIFT_INFO_ICON_SIZE);
+        return VillagerInteractionGiftPage.giftInventoryTop(conversationInfoTop());
     }
 
     private boolean isPointInsideOptionScrollArea(double mouseX, double mouseY) {
@@ -2315,12 +2137,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private record TopBackButtonBounds(int left, int right, int top, int bottom) {
     }
 
-    private record GiftButtonBounds(int left, int top, int right, int bottom) {
-    }
-
-    private record GiftInfoIconBounds(int left, int top, int right, int bottom) {
-    }
-
     record ChatRenderLayout(int left, int top, int right, int bottom, int xOffset, int yOffset) {
         int translatedMouseX(int mouseX) {
             return mouseX - this.xOffset;
@@ -2334,6 +2150,48 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private record FamilyButtonBounds(int left, int right, int top, int bottom) {
         boolean contains(double mouseX, double mouseY) {
             return VillagerClientUiUtil.containsInclusive(mouseX, mouseY, this.left, this.top - 2, this.right, this.bottom + 2);
+        }
+    }
+
+    private final class GiftPageContext implements VillagerInteractionGiftPage.Context {
+        @Override
+        public Font font() {
+            return VillagerInteractionScreen.this.font;
+        }
+
+        @Override
+        public int selectedInventorySlot() {
+            return VillagerInteractionScreen.this.selectedInventorySlot;
+        }
+
+        @Override
+        public void setSelectedInventorySlot(int slot) {
+            VillagerInteractionScreen.this.selectedInventorySlot = slot;
+        }
+
+        @Override
+        public Button giftButton() {
+            return VillagerInteractionScreen.this.giftButton;
+        }
+
+        @Override
+        public ItemStack stackForInventorySlot(int inventorySlot) {
+            return VillagerInteractionScreen.this.stackForInventorySlot(inventorySlot);
+        }
+
+        @Override
+        public String professionName() {
+            return VillagerInteractionScreen.this.professionName;
+        }
+
+        @Override
+        public List<String> knownLikedGiftNames() {
+            return VillagerInteractionScreen.this.knownLikedGiftNames;
+        }
+
+        @Override
+        public List<String> knownDislikedGiftNames() {
+            return VillagerInteractionScreen.this.knownDislikedGiftNames;
         }
     }
 }
