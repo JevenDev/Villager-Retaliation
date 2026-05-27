@@ -107,6 +107,7 @@ public class VillagerInteractionScreen extends Screen {
     private static final int PROFILE_CHART_POINT_HOVER_COLOR = 0xFFFFFFFF;
     private static final int PROFILE_CHART_POINT_HIT_RADIUS = 6;
     private static final int PROFILE_SKILL_ROW_HEIGHT = 16;
+    private static final int PROFILE_SKILL_ROW_GAP = 2;
     private static final int PROFILE_SKILL_BAR_HEIGHT = 4;
     private static final int PROFILE_SKILL_COLUMNS = 2;
     private static final int PROFILE_SKILL_COLUMN_GAP = 8;
@@ -839,7 +840,7 @@ public class VillagerInteractionScreen extends Screen {
             int column = index % PROFILE_SKILL_COLUMNS;
             int row = index / PROFILE_SKILL_COLUMNS;
             int rowLeft = left + column * (columnWidth + PROFILE_SKILL_COLUMN_GAP);
-            int y = top + this.font.lineHeight + 4 + row * PROFILE_SKILL_ROW_HEIGHT;
+            int y = top + this.font.lineHeight + 4 + row * (PROFILE_SKILL_ROW_HEIGHT + PROFILE_SKILL_ROW_GAP);
             boolean rowHovered = mouseX >= rowLeft - 2
                     && mouseX <= rowLeft + columnWidth + 2
                     && mouseY >= y - 1
@@ -1643,7 +1644,9 @@ public class VillagerInteractionScreen extends Screen {
 
     private int skillsPanelHeight() {
         int rows = (VillagerSkill.values().length + PROFILE_SKILL_COLUMNS - 1) / PROFILE_SKILL_COLUMNS;
-        return this.font.lineHeight + 4 + rows * PROFILE_SKILL_ROW_HEIGHT;
+        return this.font.lineHeight + 4
+                + rows * PROFILE_SKILL_ROW_HEIGHT
+                + Math.max(0, rows - 1) * PROFILE_SKILL_ROW_GAP;
     }
 
     private int interactionVeilTop() {
