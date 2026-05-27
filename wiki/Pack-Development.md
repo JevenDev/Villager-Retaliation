@@ -170,5 +170,6 @@ Before testing in game:
 7. Check latest logs for JSON warnings, especially if a datapack entry appears to do nothing.
 8. Add filters one at a time after the unfiltered version works.
 9. For reputation-gated options or lines, test with `/villagerretaliation setNearbyReputation <value>` and confirm each tier sees the intended choices.
-10. For localized entries, test once with default `en_us` and once with the target language.
-11. If the pack translates the GUI, enable the matching resource pack while testing the translated datapack.
+10. For normal dialogue lines, use `/villagerretaliation dialogue explain <villager> <request> [option_id]` to inspect matched candidates, top rejection reasons, effective weights, specificity scores, recent-line state, and whether neutral fallback would be used.
+11. For localized entries, test once with default `en_us` and once with the target language.
+12. If the pack translates the GUI, enable the matching resource pack while testing the translated datapack.

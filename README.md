@@ -209,11 +209,14 @@ Requires operator.
 ```mcfunction
 /villagerretaliation setNearbyReputation <integer>
 /villagerretaliation setNearestRelationship <crush|dating|engaged|married|separated>
+/villagerretaliation dialogue explain <villager> <request> [option_id]
 ```
 
 This sets nearby villagers' and wandering traders' reputation toward the executing player. It is mainly useful for testing tiers, trade pricing, despised behavior, feared behavior, pacification, and the debug overlay.
 
 `setNearestRelationship` is a relationship-system debug command. It applies the chosen romantic stage to the two nearest adult villagers, respecting the social graph's adult, alive, close-family, and exclusive-partner validation rules.
+
+`dialogue explain` is a datapack authoring command for normal villager dialogue lines. It reports matched candidates, top rejection reasons, effective weights, specificity scores, recent-line state, and neutral fallback behavior for the chosen villager, request, and optional option id.
 
 Example:
 

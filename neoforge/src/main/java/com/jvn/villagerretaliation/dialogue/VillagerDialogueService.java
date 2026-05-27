@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.dialogue;
 
 import com.jvn.villagerretaliation.combat.PacifyPaymentOffer;
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.mood.VillagerMood;
 import com.jvn.villagerretaliation.mood.VillagerMoodState;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
@@ -15,6 +16,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.UUID;
 import net.minecraft.world.entity.Entity;
@@ -30,6 +32,61 @@ public final class VillagerDialogueService {
 
     public static DialogueResult select(DialogueContext context, DialogueOptionDefinition option, List<String> recentDialogueIds) {
         return select(context, option.requestType(), option.id(), recentDialogueIds);
+    }
+
+    public static DialogueExplanation explain(
+            DialogueContext context,
+            DialogueRequestType requestType,
+            String requestedOptionId,
+            List<String> recentDialogueIds) {
+        DialogueDisposition disposition = moodFor(context);
+        List<DialogueLine> availableLines = availableLines(context);
+        List<DialogueLine> matched = availableLines.stream()
+                .filter(line -> line.matches(context, requestType, requestedOptionId, disposition))
+                .toList();
+        boolean usedNeutralFallback = false;
+        if (matched.isEmpty() && disposition != DialogueDisposition.NEUTRAL) {
+            List<DialogueLine> neutralMatches = availableLines.stream()
+                    .filter(line -> line.matches(context, requestType, requestedOptionId, DialogueDisposition.NEUTRAL))
+                    .toList();
+            if (!neutralMatches.isEmpty()) {
+                matched = neutralMatches;
+                usedNeutralFallback = true;
+            }
+        }
+
+        List<DialogueCandidateExplanation> candidates = matched.stream()
+                .sorted(Comparator.comparingInt(VillagerDialogueService::effectiveWeight).reversed()
+                        .thenComparing(DialogueLine::id))
+                .map(line -> new DialogueCandidateExplanation(
+                        line.id(),
+                        line.weight(),
+                        line.specificityScore(),
+                        effectiveWeight(line),
+                        line.recentlyUsed(recentDialogueIds),
+                        line.hasFreshVariant(recentDialogueIds)))
+                .toList();
+        Set<String> candidateIds = candidates.stream()
+                .map(DialogueCandidateExplanation::id)
+                .collect(java.util.stream.Collectors.toSet());
+        Map<String, Long> rejectionCounts = availableLines.stream()
+                .filter(line -> !candidateIds.contains(line.id()))
+                .map(line -> rejectionReason(line, context, requestType, requestedOptionId, disposition))
+                .collect(java.util.stream.Collectors.groupingBy(reason -> reason, java.util.LinkedHashMap::new, java.util.stream.Collectors.counting()));
+        int totalWeight = matched.stream().mapToInt(VillagerDialogueService::effectiveWeight).sum();
+        String fallbackReason = candidates.isEmpty()
+                ? "No weighted line matched; dialogue.fallback will be used."
+                : usedNeutralFallback
+                        ? "No line matched current disposition " + disposition.name().toLowerCase(Locale.ROOT) + "; using neutral fallback pool."
+                        : "";
+        return new DialogueExplanation(
+                availableLines.size(),
+                candidates,
+                rejectionCounts,
+                totalWeight,
+                disposition,
+                usedNeutralFallback,
+                fallbackReason);
     }
 
     private static DialogueResult select(
@@ -279,12 +336,90 @@ public final class VillagerDialogueService {
         return Math.max(min, Math.min(max, value));
     }
 
-    private static int effectiveWeight(DialogueLine line) {
+    public static int effectiveWeight(DialogueLine line) {
         return line.weight() + line.specificityScore() * 8;
     }
 
     private static List<DialogueLine> availableLines(DialogueContext context) {
         return VillagerDialogueResources.lines(context.level().getServer());
+    }
+
+    private static String rejectionReason(
+            DialogueLine line,
+            DialogueContext context,
+            DialogueRequestType requestedType,
+            String requestedOptionId,
+            DialogueDisposition disposition) {
+        if (line.requestType() != requestedType) {
+            return "request";
+        }
+        if (context.villager().isBaby() ? !line.showForBabies() : !line.showForAdults()) {
+            return "age visibility";
+        }
+        if (!line.optionIds().isEmpty() && !line.optionIds().contains(requestedOptionId)) {
+            return "option id";
+        }
+        if (line.firstConversationOnly() && !context.firstConversation()) {
+            return "first conversation";
+        }
+        if (!line.professions().isEmpty() && !line.professions().contains(context.profession())) {
+            return "profession";
+        }
+        if (!line.dispositions().isEmpty() && !line.dispositions().contains(disposition)) {
+            return "disposition";
+        }
+        if (!line.moods().isEmpty()) {
+            if (!VillagerRetaliationConfig.ENABLE_VILLAGER_MOODS.get() || !line.moods().contains(context.primaryMood())) {
+                return "mood";
+            }
+            if (line.minMoodIntensity() > 0 && !context.hasMoodIntensityAtLeast(line.minMoodIntensity())) {
+                return "mood intensity";
+            }
+        }
+        if (!line.socialAttributeCondition().isEmpty()
+                && !line.socialAttributeCondition().matches(context)) {
+            return "social attributes";
+        }
+        if (!line.reputationCondition().matches(context.reputation(), context.reputationLevel())) {
+            return "reputation";
+        }
+        if (!line.weatherStates().isEmpty() && !line.weatherStates().contains(context.weather())) {
+            return "weather";
+        }
+        if (!line.timeOfDays().isEmpty() && !line.timeOfDays().contains(context.timeOfDay())) {
+            return "time";
+        }
+        if (!line.eventTags().isEmpty() && context.recentEvents().stream().noneMatch(event -> line.eventTags().contains(event.tag()))) {
+            return "event tags";
+        }
+        if (!line.playerEventTags().isEmpty() && !context.hasRecentPlayerEvent(line.playerEventTags().toArray(VillageEventMemory.EventTag[]::new))) {
+            return "player event tags";
+        }
+        if ((line.requiresContainerTheftToSelf() && context.recentContainerTheftToThisVillager().isEmpty())
+                || (line.requiresContainerTheftFromOther() && context.recentContainerTheftFromAnotherVillager().isEmpty())) {
+            return "container theft memory";
+        }
+        if ((line.requiresRetaliationToSelf() && context.recentRetaliationToThisVillager().isEmpty())
+                || (line.requiresRetaliationFromOther() && context.recentRetaliationFromAnotherVillager().isEmpty())) {
+            return "retaliation memory";
+        }
+        if (!line.equipmentCondition().matches(context.villager())) {
+            return "villager equipment";
+        }
+        if (!line.playerItemCondition().matches(context.player())) {
+            return "player item";
+        }
+        if (!line.storyTargetIds().isEmpty()
+                && context.shareableStory().map(report -> !line.storyTargetIds().contains(report.targetId())).orElse(true)) {
+            return "story target";
+        }
+        if (!line.conditions().isEmpty() && !line.conditions().stream().allMatch(condition -> condition.matches(context))) {
+            return "conditions";
+        }
+        if (line.weight() <= 0) {
+            return "weight";
+        }
+        return "other";
     }
 
     private static Optional<DialogueResult> selectGiftMemoryLine(
@@ -646,5 +781,24 @@ public final class VillagerDialogueService {
     }
 
     public record DialogueResult(String lineId, String text) {
+    }
+
+    public record DialogueExplanation(
+            int totalLines,
+            List<DialogueCandidateExplanation> candidates,
+            Map<String, Long> rejectionCounts,
+            int totalEffectiveWeight,
+            DialogueDisposition disposition,
+            boolean usedNeutralFallback,
+            String fallbackReason) {
+    }
+
+    public record DialogueCandidateExplanation(
+            String id,
+            int weight,
+            int specificityScore,
+            int effectiveWeight,
+            boolean recentlyUsed,
+            boolean hasFreshVariant) {
     }
 }

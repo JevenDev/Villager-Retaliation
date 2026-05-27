@@ -5,6 +5,11 @@ import static net.minecraft.commands.Commands.literal;
 
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.dialogue.DialogueContext;
+import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
+import com.jvn.villagerretaliation.dialogue.VillagerDialogueService;
+import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
+import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.profile.VillagerProfile;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
@@ -58,6 +63,20 @@ public final class VillagerRetaliationCommands {
                                                 context,
                                                 StringArgumentType.getString(context, "stage")
                                         ))))
+                        .then(literal("dialogue")
+                                .then(literal("explain")
+                                        .then(targetArgument()
+                                                .then(argument("request", StringArgumentType.word())
+                                                        .suggests((context, builder) -> SharedSuggestionProvider.suggest(
+                                                                Arrays.stream(DialogueRequestType.values())
+                                                                        .map(value -> value.name().toLowerCase(java.util.Locale.ROOT)),
+                                                                builder
+                                                        ))
+                                                        .executes(context -> explainDialogue(context, ""))
+                                                        .then(argument("option", StringArgumentType.string())
+                                                                .executes(context -> explainDialogue(
+                                                                        context,
+                                                                        StringArgumentType.getString(context, "option"))))))))
                         .then(literal("profile")
                                 .then(literal("get")
                                         .then(targetArgument()
@@ -268,6 +287,85 @@ public final class VillagerRetaliationCommands {
         syncProfileIfPlayer(source, villager, profile);
         source.sendSuccess(() -> Component.literal(VillagerProfileManager.exportProfile(profile)), false);
         return 1;
+    }
+
+    private static int explainDialogue(CommandContext<CommandSourceStack> context, String optionId) throws CommandSyntaxException {
+        CommandSourceStack source = context.getSource();
+        if (!(source.getEntity() instanceof ServerPlayer player)) {
+            source.sendFailure(Component.literal("This command can only be run by a player."));
+            return 0;
+        }
+
+        AbstractVillager target = profileTarget(context);
+        if (!(target instanceof Villager villager) || !(villager.level() instanceof ServerLevel level)) {
+            source.sendFailure(Component.literal("Target must be a villager."));
+            return 0;
+        }
+
+        String requestName = StringArgumentType.getString(context, "request");
+        DialogueRequestType requestType = parseDialogueRequest(requestName);
+        if (requestType == null) {
+            source.sendFailure(Component.literal("Unknown dialogue request: " + requestName));
+            return 0;
+        }
+
+        DialogueContext dialogueContext = VillagerInteractionService.createDialogueContext(level, player, villager);
+        List<String> recentDialogueIds = VillagerInteractionTracker.getState(level, villager, player).recentDialogueIds();
+        VillagerDialogueService.DialogueExplanation explanation = VillagerDialogueService.explain(
+                dialogueContext,
+                requestType,
+                optionId == null ? "" : optionId,
+                recentDialogueIds);
+        sendDialogueExplanation(source, villager, requestType, optionId, explanation);
+        return Math.max(1, explanation.candidates().size());
+    }
+
+    private static DialogueRequestType parseDialogueRequest(String requestName) {
+        if (requestName == null || requestName.isBlank()) {
+            return null;
+        }
+        try {
+            return DialogueRequestType.valueOf(requestName.trim().toUpperCase(java.util.Locale.ROOT));
+        } catch (IllegalArgumentException exception) {
+            return null;
+        }
+    }
+
+    private static void sendDialogueExplanation(
+            CommandSourceStack source,
+            Villager villager,
+            DialogueRequestType requestType,
+            String optionId,
+            VillagerDialogueService.DialogueExplanation explanation) {
+        String villagerName = VillagerPresetNameRegistry.resolveDisplayName(villager).getString();
+        String optionText = optionId == null || optionId.isBlank() ? "<none>" : optionId;
+        source.sendSuccess(() -> Component.literal("Dialogue explain for " + villagerName
+                + ": request=" + requestType.name().toLowerCase(java.util.Locale.ROOT)
+                + ", option=" + optionText
+                + ", disposition=" + explanation.disposition().name().toLowerCase(java.util.Locale.ROOT)), false);
+        source.sendSuccess(() -> Component.literal("Pool: " + explanation.totalLines()
+                + " loaded lines, " + explanation.candidates().size()
+                + " candidates, total effective weight " + explanation.totalEffectiveWeight() + "."), false);
+        if (!explanation.fallbackReason().isBlank()) {
+            source.sendSuccess(() -> Component.literal(explanation.fallbackReason()), false);
+        }
+        explanation.candidates().stream()
+                .limit(8)
+                .forEach(candidate -> source.sendSuccess(() -> Component.literal("Candidate "
+                        + candidate.id()
+                        + ": weight=" + candidate.weight()
+                        + ", specificity=" + candidate.specificityScore()
+                        + ", effective=" + candidate.effectiveWeight()
+                        + ", recent=" + candidate.recentlyUsed()
+                        + ", freshVariant=" + candidate.hasFreshVariant()), false));
+        if (!explanation.rejectionCounts().isEmpty()) {
+            String rejectionSummary = explanation.rejectionCounts().entrySet().stream()
+                    .limit(8)
+                    .map(entry -> entry.getKey() + "=" + entry.getValue())
+                    .collect(java.util.stream.Collectors.joining(", "));
+            source.sendSuccess(() -> Component.literal("Top rejection reasons: " + rejectionSummary), false);
+        }
+        source.sendSuccess(() -> Component.literal("Note: story, gift-memory, and container-theft memory preselectors can run before the weighted line pool."), false);
     }
 
     private static int getSkills(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
