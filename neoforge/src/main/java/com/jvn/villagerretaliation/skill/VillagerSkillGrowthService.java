@@ -5,8 +5,10 @@ import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.profile.VillagerProfile;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.profile.VillagerProfileSavedData;
+import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
@@ -43,14 +45,16 @@ public final class VillagerSkillGrowthService {
         }
         changed |= profile.markSkillGrowthTradeLevelAwarded(currentTradeLevel, level.getGameTime());
 
+        VillagerSkillGrowthResult result = new VillagerSkillGrowthResult(previousAwardedLevel, currentTradeLevel, increases);
         if (changed) {
             VillagerProfileSavedData.get(level).setDirty();
             if (player != null) {
                 VillagerReputationNetworking.sendProfile(player, villager, profile);
+                sendFeedback(player, villager, result);
             }
         }
 
-        return new VillagerSkillGrowthResult(previousAwardedLevel, currentTradeLevel, increases);
+        return result;
     }
 
     private static boolean awardMilestone(
@@ -120,5 +124,23 @@ public final class VillagerSkillGrowthService {
             return milestoneMin;
         }
         return milestoneMin + random.nextInt(milestoneMax - milestoneMin + 1);
+    }
+
+    private static void sendFeedback(
+            ServerPlayer player,
+            AbstractVillager villager,
+            VillagerSkillGrowthResult result) {
+        if (!VillagerRetaliationConfig.ENABLE_SKILL_GROWTH_FEEDBACK.get()) {
+            return;
+        }
+
+        result.primaryIncrease()
+                .or(() -> result.increases().stream().findFirst())
+                .ifPresent(increase -> player.displayClientMessage(
+                        Component.translatable(
+                                "villagerretaliation.skill_growth.improved",
+                                VillagerPresetNameRegistry.resolveDisplayName(villager),
+                                Component.translatable(increase.skill().translationKey())),
+                        true));
     }
 }
