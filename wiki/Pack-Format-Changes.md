@@ -58,6 +58,7 @@ Pack-facing beta.12 changes introduce persistent Social Attributes and temporary
 - Added the forced-dialogue trigger value `trade_refresh` for data-driven trade-refresh option templates.
 - Added built-in forced-dialogue entries `trade_refresh.ready_options`, `trade_refresh.available_options`, `trade_refresh.unavailable_options`, `trade_refresh.revered_options`, `trade_refresh.special_order_select_options`, `trade_refresh.special_order_confirm_options`, and `trade_refresh.special_order_status_options`.
 - Added dialogue message keys `trade_refresh.ready`, `trade_refresh.accept`, `trade_refresh.already_pending`, `trade_refresh.not_ready`, `trade_refresh.unavailable`, `trade_refresh.revered_prompt`, and `trade_refresh.special_order_*` for trade-refresh and Special Order opening/follow-up lines, including ready restock prompts, queue responses, active-request cap responses, and order-status responses.
+- Added shared forced-dialogue interjection message keys `trade_refresh.ready_interjection`, `trade_refresh.ready_theft_interjection`, `container_theft.backup_interjection`, and `container_opened.backup_interjection`, including `.second` / `.third` variants and interjection-order placeholders for multi-villager forced-dialogue chains.
 - Added a `1.0.0-beta.12` target to the Datapack Generator and built-in website wiki. The beta.11 snapshot remains separate.
 - Added persisted per-villager last-seen memory and built-in absence-aware opening message key `opening.return_after_absence` with placeholders `{days_since_seen}`, `{day_or_days}`, and `{days_since_seen_phrase}`.
 
@@ -73,6 +74,8 @@ Pack-facing beta.12 changes introduce persistent Social Attributes and temporary
 - Built-in villager skill-trade entries are Special Order targetable by default. Wandering trader skill-trade entries are not targetable.
 - Ready trade-refresh follow-ups can now open a forced-dialogue session tied to the speaking villager, and conversation validation allows that forced session target while forced-session rules still pass.
 - `first_conversation_only` opening behavior now respects persisted seen-memory, so first-time intros do not replay for villagers that already remember the player after leave/join.
+- `first_village_interaction_only` opening behavior now also respects persisted seen-memory from any villager in the same resolved village, so "new here" openings do not replay for returning players after leave/join.
+- Forced-dialogue option and leave responses now keep session-scoped replacements when a forced session advances, so interjection and ready-trade placeholders stay available to follow-up responses.
 
 ### Planned Beta.13 Deprecations
 
@@ -89,7 +92,7 @@ Pack-facing beta.12 changes introduce persistent Social Attributes and temporary
 - Packs that want to use mood or Social Attribute line filters should set the builder target to `1.0.0-beta.12` or add `villagerretaliation.pack_version: "1.0.0-beta.12"` in `pack.mcmeta`.
 - Packs that customize skill trades can make better refresh results available by adding eligible higher-rank entries. A villager cannot refresh into a result item they already offer.
 - Packs that customize skill trades can add `request.targetable: true` to make an entry directly requestable as a Special Order. The queued request stores the trade definition id, so cost, result, enchantment, skill gates, level gates, and config flags remain tied to the original entry.
-- Packs that customize trade-refresh dialogue should override the `trade_refresh.*` dialogue message keys for opening lines and follow-ups, and the `trade_refresh.ready_options`, `trade_refresh.available_options`, `trade_refresh.unavailable_options`, `trade_refresh.revered_options`, `trade_refresh.special_order_select_options`, and `trade_refresh.special_order_confirm_options` forced-dialogue entries for button responses.
+- Packs that customize trade-refresh dialogue should override the `trade_refresh.*` dialogue message keys for opening lines and follow-ups, including `trade_refresh.ready_interjection` and `trade_refresh.ready_theft_interjection` for shared ready-request interruptions, and the `trade_refresh.ready_options`, `trade_refresh.available_options`, `trade_refresh.unavailable_options`, `trade_refresh.revered_options`, `trade_refresh.special_order_select_options`, and `trade_refresh.special_order_confirm_options` forced-dialogue entries for button responses.
 - Keep using `dispositions` for reputation-derived tone filters. Use `mood` / `moods` only for temporary event-driven emotional state.
 - Use `priority` when one matched line should reliably win over another. Use `weight` to tune random odds inside the same priority tier.
 - Use `text_key` for new locale-heavy packs when translators should override message text without copying the full line filters.

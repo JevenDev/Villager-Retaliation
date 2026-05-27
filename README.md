@@ -79,7 +79,7 @@ Villagers can feel more like actual NPCs instead of silent trade menus.
 
 The interaction screen gives players a dedicated way to talk, give gifts, recruit, check relationships, and read reputation context. Dialogue can react to personal reputation, profession, recent village events, helpful actions, aggression, local danger, family ties, relationships, and whether this is the first time that villager has met the player.
 
-Villagers now also keep a persistent per-player last-seen memory across world leave/join. When enough in-game days have passed, opening lines can acknowledge the gap (for example, "it's been 3 days").
+Villagers now also keep a persistent per-player last-seen memory across world leave/join. When enough in-game days have passed, opening lines can acknowledge the gap (for example, "it's been 3 days"), and first-time village greetings will not replay for returning players after a reload.
 
 Trusted villagers may greet you warmly, suspicious villagers may be cold, and hostile villagers may insult or refuse you. The goal is to make each villager feel more personal without breaking the vanilla feel.
 

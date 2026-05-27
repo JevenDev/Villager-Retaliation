@@ -717,6 +717,8 @@ Openings and closings support `id`, `text`, `lines`, `professions`, `disposition
 
 `first_conversation_only` is now tied to persisted interaction memory. If the villager already has saved last-seen memory for that player, first-conversation openings are skipped even after world leave/join.
 
+`first_village_interaction_only` also checks persisted seen-memory from villagers in the same resolved village. Once any villager in that village has seen or talked to the player, village-level "new here" openings will not replay after world leave/join.
+
 For `messages`, `openings`, and `closings`, entries with a profession filter default to adult-only unless they explicitly set `show_for_babies: true`. This keeps profession/job-site flavor from being selected for baby villagers by accident. Unfiltered entries still default to both adults and babies.
 
 ## Pacify Lines

@@ -279,6 +279,8 @@ trade_refresh.special_order_confirm_options
 trade_refresh.special_order_status_options
 ```
 
+Ready trade-refresh follow-ups can chain into a shared forced-dialogue group. If another nearby villager also has ready refreshes for the same player, the current locked screen can be replaced with an interjection from that villager using the dialogue message key `trade_refresh.ready_interjection`. If the player is already in a container confrontation, ready refreshes use `trade_refresh.ready_theft_interjection` instead. The second and third speakers try `.second` and `.third` message-key suffixes first, then fall back to the base key if a pack does not define them.
+
 `trade_refresh.ready_options` is used when queued refreshes or Special Orders become ready for the interacting player. It normally shows:
 
 ```text
@@ -330,6 +332,8 @@ The built-in data also uses:
 
 ```text
 trade_refresh.ready
+trade_refresh.ready_interjection
+trade_refresh.ready_theft_interjection
 trade_refresh.thanks
 trade_refresh.why_so_long
 trade_refresh.requirements
@@ -340,7 +344,7 @@ trade_refresh.special_order.status
 leave
 ```
 
-To replace the built-in wording, add a forced-dialogue file with entries using the same ids. The trade-refresh service keeps the actual opening line from the selected dialogue message and copies the options from the matching forced-dialogue entry. Special Order opening, unavailable, queued, active-limit, cooldown, payment, selection, confirmation, and order-status lines remain normal dialogue message keys under `data/villagerretaliation/dialogue/<locale>/`.
+To replace the built-in wording, add a forced-dialogue file with entries using the same ids. The trade-refresh service keeps the actual opening line from the selected dialogue message and copies the options from the matching forced-dialogue entry. Special Order opening, unavailable, queued, active-limit, cooldown, payment, selection, confirmation, order-status, and interjection lines remain normal dialogue message keys under `data/villagerretaliation/dialogue/<locale>/`.
 
 ```json
 {
@@ -457,6 +461,8 @@ Fires when a player opens a watched container. This trigger is used when the ser
 
 The built-in default pack gates opening prompts by reputation: neutral and suspicious players are stopped with the standard warning before they can continue browsing, hostile/despised/feared players get more severe warnings, and trusted or better players can open watched village containers without an opening prompt. Taking items still triggers `container_theft` for every rank.
 
+Additional nearby witnesses can join an active container confrontation. Theft backups use `container_theft.backup_interjection`; opening-only backups use `container_opened.backup_interjection`. Like trade-refresh interjections, second and third speakers try `.second` and `.third` message-key suffixes before falling back to the base key. Each additional theft witness applies the matching forced-dialogue definition's witness consequences, including reputation and theft memory.
+
 ### `container_broken`
 
 Fires when a player breaks a watched container, using the same watched-container eligibility as opening/theft checks. Like piglin guarded-container anger, the block break itself can provoke a response; unlike piglins, matching entries still use Villager Retaliation's witness filters and `requires_line_of_sight` rules.
@@ -526,8 +532,17 @@ Forced dialogue `line`, `lines`, option `response` / `responses`, `leave_option.
 {item_stack}
 {items}
 {loot_table}
+{previous_villager}
+{current_villager}
+{interrupted_villager}
+{interjection_index}
+{interjection_ordinal}
+{speaker_index}
+{speaker_ordinal}
 {prior_container_thefts}
 {container_theft_offense}
+{container_theft_again_phrase}
+{container_theft_time_word}
 {prior_retaliations}
 {retaliation_offense}
 {payment_count}
@@ -536,14 +551,20 @@ Forced dialogue `line`, `lines`, option `response` / `responses`, `leave_option.
 {stolen_item_id}
 {stolen_count}
 {stolen_item_count}
+{stolen_count_word}
+{stolen_item_pronoun}
+{stolen_item_reference}
 {stolen_stack}
 {stolen_items}
+{witnessed_container_thefts}
 {x}
 {y}
 {z}
 ```
 
-`{target}` / `{target_name}` is the retaliation target display name, `{target_kind}` is a lowercased entity description such as `player`, `{target_type}` is the entity id, `{container}` is the block display name, `{item}` / `{stolen_item}` is the representative removed item name or matched player item for `player_item_proximity`, `{item_stack}` / `{stolen_stack}` includes the representative item count, `{items}` / `{stolen_items}` lists all removed stacks, `{count}` / `{stolen_count}` is the representative removed stack count for `container_theft`, `{loot_table}` is the matched generated loot table id when one exists, `{player_item}` / `{held_item}` is the matched player item name for item-filtered entries, `{player_item_id}` / `{held_item_id}` is the matched item id, `{player_item_slot}` / `{held_item_slot}` is the matched slot, `{player_item_durability}` / `{held_item_durability}` is remaining durability, `{player_item_max_durability}` / `{held_item_max_durability}` is max durability, `{player_item_damage}` / `{held_item_damage}` is current damage, `{player_item_durability_percent}` / `{held_item_durability_percent}` is remaining durability percent, `{player_item_enchantment}` / `{held_item_enchantment}` is the matched enchantment name, `{player_item_enchantment_full}` / `{held_item_enchantment_full}` includes the level, `{player_item_enchantment_id}` / `{held_item_enchantment_id}` is the enchantment id, `{player_item_enchantment_level}` / `{held_item_enchantment_level}` is the matched level, `{prior_container_thefts}` is the number of remembered earlier container thefts by this player near the witness's village, `{container_theft_offense}` is that count plus the current theft, `{prior_retaliations}` is the number of earlier remembered retaliation starts for the same player near this village, `{retaliation_offense}` is that count plus the current retaliation, `{payment_count}` and `{payment_items}` describe a `take_items` option, and `{x}`, `{y}`, `{z}` are the container or villager position.
+`{target}` / `{target_name}` is the retaliation target display name, `{target_kind}` is a lowercased entity description such as `player`, `{target_type}` is the entity id, `{container}` is the block display name, `{item}` / `{stolen_item}` is the representative removed item name or matched player item for `player_item_proximity`, `{item_stack}` / `{stolen_stack}` includes the representative item count, `{items}` / `{stolen_items}` lists all removed stacks, `{count}` / `{stolen_count}` is the representative removed stack count for `container_theft`, `{stolen_count_word}` is `item` or `items`, `{stolen_item_pronoun}` and `{stolen_item_reference}` are readable theft references for backup witnesses, `{loot_table}` is the matched generated loot table id when one exists, `{previous_villager}`, `{current_villager}`, and `{interrupted_villager}` name forced-dialogue speakers during shared interjections, `{interjection_index}` / `{speaker_index}` and `{interjection_ordinal}` / `{speaker_ordinal}` describe the interjection order, `{player_item}` / `{held_item}` is the matched player item name for item-filtered entries, `{player_item_id}` / `{held_item_id}` is the matched item id, `{player_item_slot}` / `{held_item_slot}` is the matched slot, `{player_item_durability}` / `{held_item_durability}` is remaining durability, `{player_item_max_durability}` / `{held_item_max_durability}` is max durability, `{player_item_damage}` / `{held_item_damage}` is current damage, `{player_item_durability_percent}` / `{held_item_durability_percent}` is remaining durability percent, `{player_item_enchantment}` / `{held_item_enchantment}` is the matched enchantment name, `{player_item_enchantment_full}` / `{held_item_enchantment_full}` includes the level, `{player_item_enchantment_id}` / `{held_item_enchantment_id}` is the enchantment id, `{player_item_enchantment_level}` / `{held_item_enchantment_level}` is the matched level, `{prior_container_thefts}` is the number of remembered earlier container thefts by this player near the witness's village, `{container_theft_offense}` is that count plus the current theft, `{witnessed_container_thefts}`, `{container_theft_again_phrase}`, and `{container_theft_time_word}` describe repeat theft memories for backup witnesses, `{prior_retaliations}` is the number of earlier remembered retaliation starts for the same player near this village, `{retaliation_offense}` is that count plus the current retaliation, `{payment_count}` and `{payment_items}` describe a `take_items` option, and `{x}`, `{y}`, `{z}` are the container or villager position.
+
+Forced-dialogue responses also keep session-scoped replacements when a session advances. For example, a trade-refresh interjection option response can still use the `{restocked_summary}` replacements from the interjection that opened the current locked screen, while payment or return-specific replacements are layered on top.
 
 ## Example
 

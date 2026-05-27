@@ -23,6 +23,7 @@
 - Added trade-refresh ready follow-up dialogue with `trade_refresh.ready` message lines and `trade_refresh.ready_options` forced-dialogue options, including placeholders for restocked trade summaries.
 - Ready trade-refresh requests now trigger the ready follow-up when the player gets close to the villager, applying the refreshed trades before the player opens the trade menu so the order-status dialogue option does not linger after completion.
 - Multiple nearby villagers with ready trade-refresh requests can now step into the forced ready dialogue one at a time using `trade_refresh.ready_interjection`, keeping trade menus closed until the queued ready conversations resolve. Ready trade requests can also awkwardly interrupt container-theft confrontations with `trade_refresh.ready_theft_interjection`, and additional theft witnesses can back up the first accusation with `container_theft.backup_interjection`, including stolen-item quantity and repeat-theft placeholders.
+- Shared forced-dialogue interjections now support second/third speaker message-key fallbacks, `container_opened.backup_interjection` witness lines, session retargeting, and participant tracking so multi-villager interruptions replace the active locked conversation cleanly instead of closing and reopening it.
 - Added recruitment left-behind follow-up dialogue with a dedicated talk option and biome-aware memory filtering through `recruitment_memory_biome` / `recruitment_memory_biomes`.
 - Added selectable Skills-page detail cards with expanded localized skill descriptions and an in-tooltip click hint for deeper skill info.
 - Added persistent per-villager last-seen day memory for each player, plus absence-aware opening dialogue that can reference day gaps with `{days_since_seen}`, `{day_or_days}`, and `{days_since_seen_phrase}` placeholders.
@@ -47,12 +48,15 @@
 - Regular completed trades now add `0.5` primary profession skill progress by default instead of `0.1`, giving one visible skill point every two trades.
 - Special Orders now treat `min_rank` as the skill unlock and ignore `max_rank`, letting high-skill villagers fulfill earlier catalog requests and duplicate items they already stock.
 - Forced conversation request validation now keeps active forced-dialogue sessions attached to their villager target while forced-session distance and availability rules are still met.
+- Forced-dialogue response templates now merge session-scoped replacements with option/payment-specific replacements, so follow-up responses can keep trade-refresh, theft, and interjection placeholders after the active session advances.
+- The default diamond-sword proximity forced-dialogue witness radius was reduced from 8 blocks to 4 blocks.
 - Built-in container-theft leave outcomes now default to response arrays (`responses`, `success_responses`, `failure_responses`) for more varied short reactions.
 - Built-in normal dialogue lines now use beta.12 `conditions` for migrated memory, family, relationship, and recruitment filters.
 - Built-in family and relationship dialogue options now use beta.12 `conditions`.
 - Normal dialogue line selection now applies explicit `priority` tiers before weighted random selection. Existing packs keep the default `priority: 0`.
 - The schema docs and Datapack Generator now distinguish canonical field names from compatibility aliases across player-item filters, item hand-ins, equipment filters, notification world text style, and forced-dialogue triggers.
 - First-conversation opening lines now avoid replaying for villagers that already have persisted last-seen memory of the player, even after world leave/join cycles.
+- First-village opening lines now also respect persisted seen-memory, so villagers in the same village stop greeting returning players as brand-new arrivals after world leave/join cycles.
 
 ### Planned Beta.13 Deprecations
 
