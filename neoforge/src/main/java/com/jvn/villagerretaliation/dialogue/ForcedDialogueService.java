@@ -6,13 +6,11 @@ import com.jvn.villagerretaliation.config.ContainerWatchMode;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources.ForcedDialogueContext;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources.ForcedDialogueDefinition;
-import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources.ForcedDialogueItemDestination;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources.ForcedDialogueItemPayment;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources.ForcedDialogueOption;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources.ForcedDialogueOutputMode;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources.ForcedDialogueStolenItemReturn;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources.ForcedDialogueTrigger;
-import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.network.GeneratedContainerTooltipPayload;
@@ -40,14 +38,13 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
-import net.minecraft.world.Containers;
 import net.minecraft.world.RandomizableContainer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -1290,36 +1287,7 @@ public final class ForcedDialogueService {
             Villager villager,
             ForcedDialogueSession session,
             ForcedDialogueItemPayment itemPayment) {
-        List<ItemStack> previewStacks = itemPayment.removal().previewRemovedStacks(player);
-        if (previewStacks.isEmpty()) {
-            return false;
-        }
-
-        Optional<ItemTransferTarget> primaryTarget = transferTarget(player, villager, session, itemPayment.destination());
-        if (primaryTarget.isEmpty()) {
-            return false;
-        }
-
-        Optional<ItemTransferTarget> overflowTarget = Optional.ofNullable(itemPayment.overflowDestination())
-                .flatMap(destination -> transferTarget(player, villager, session, destination));
-        boolean primaryFits = primaryTarget.get().canAccept(previewStacks);
-        if (itemPayment.requireSpace() && !primaryFits && overflowTarget.isEmpty()) {
-            return false;
-        }
-        if (overflowTarget.isPresent() && !overflowTarget.get().canAccept(previewStacks)) {
-            return false;
-        }
-
-        Optional<List<ItemStack>> removedStacks = itemPayment.removal().removeStacks(player);
-        if (removedStacks.isEmpty()) {
-            return false;
-        }
-
-        List<ItemStack> remainder = primaryTarget.get().accept(removedStacks.get());
-        if (!remainder.isEmpty() && overflowTarget.isPresent()) {
-            remainder = overflowTarget.get().accept(remainder);
-        }
-        return !itemPayment.requireSpace() || remainder.isEmpty();
+        return ForcedDialogueItemTransfers.executeItemPayment(player, villager, transferSource(session), itemPayment);
     }
 
     private static Optional<List<ItemStack>> executeStolenItemReturn(
@@ -1327,219 +1295,16 @@ public final class ForcedDialogueService {
             Villager villager,
             ForcedDialogueSession session,
             ForcedDialogueStolenItemReturn stolenItemReturn) {
-        if (session.removedStacks().isEmpty()) {
-            return Optional.empty();
-        }
-
-        Optional<ItemTransferTarget> target = transferTarget(player, villager, session, stolenItemReturn.destination());
-        if (target.isEmpty()) {
-            return Optional.empty();
-        }
-
-        Optional<ItemTransferTarget> overflowTarget = Optional.ofNullable(stolenItemReturn.overflowDestination())
-                .flatMap(destination -> transferTarget(player, villager, session, destination));
-        boolean targetFits = target.get().canAccept(session.removedStacks());
-        if (stolenItemReturn.requireSpace() && !targetFits && overflowTarget.isEmpty()) {
-            return Optional.empty();
-        }
-        if (overflowTarget.isPresent() && !overflowTarget.get().canAccept(session.removedStacks())) {
-            return Optional.empty();
-        }
-
-        Optional<List<ItemStack>> removedStacks = removeSpecificStacks(player, session.removedStacks());
-        if (removedStacks.isEmpty()) {
-            return Optional.empty();
-        }
-
-        List<ItemStack> remainder = target.get().accept(removedStacks.get());
-        if (!remainder.isEmpty() && overflowTarget.isPresent()) {
-            remainder = overflowTarget.get().accept(remainder);
-        }
-        return !stolenItemReturn.requireSpace() || remainder.isEmpty()
-                ? Optional.of(removedStacks.get())
-                : Optional.empty();
+        return ForcedDialogueItemTransfers.executeStolenItemReturn(
+                player,
+                villager,
+                transferSource(session),
+                session.removedStacks(),
+                stolenItemReturn);
     }
 
-    private static Optional<List<ItemStack>> removeSpecificStacks(ServerPlayer player, List<ItemStack> targets) {
-        if (!canRemoveSpecificStacks(player, targets)) {
-            return Optional.empty();
-        }
-
-        List<ItemStack> removedStacks = new ArrayList<>();
-        for (ItemStack target : targets) {
-            int remaining = target.getCount();
-            for (ItemStack stack : removablePlayerStacks(player)) {
-                if (remaining <= 0) {
-                    break;
-                }
-                if (stack.isEmpty() || !ItemStack.isSameItemSameComponents(stack, target)) {
-                    continue;
-                }
-
-                int removed = Math.min(remaining, stack.getCount());
-                removedStacks.add(stack.copyWithCount(removed));
-                stack.shrink(removed);
-                remaining -= removed;
-            }
-        }
-        player.getInventory().setChanged();
-        return Optional.of(List.copyOf(removedStacks));
-    }
-
-    private static boolean canRemoveSpecificStacks(ServerPlayer player, List<ItemStack> targets) {
-        List<ItemStack> availableStacks = removablePlayerStacks(player).stream()
-                .map(ItemStack::copy)
-                .toList();
-        for (ItemStack target : targets) {
-            int remaining = target.getCount();
-            for (ItemStack stack : availableStacks) {
-                if (remaining <= 0) {
-                    break;
-                }
-                if (stack.isEmpty() || !ItemStack.isSameItemSameComponents(stack, target)) {
-                    continue;
-                }
-
-                int removed = Math.min(remaining, stack.getCount());
-                stack.shrink(removed);
-                remaining -= removed;
-            }
-            if (remaining > 0) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private static List<ItemStack> removablePlayerStacks(ServerPlayer player) {
-        List<ItemStack> stacks = new ArrayList<>(player.getInventory().items);
-        stacks.addAll(player.getInventory().offhand);
-        return stacks;
-    }
-
-    private static Optional<ItemTransferTarget> transferTarget(
-            ServerPlayer player,
-            Villager villager,
-            ForcedDialogueSession session,
-            ForcedDialogueItemDestination destination) {
-        return switch (destination) {
-            case DISCARD -> Optional.of(discardTransferTarget());
-            case VILLAGER_INVENTORY -> Optional.of(villagerInventoryTransferTarget(villager));
-            case VILLAGER_INVENTORY_THEN_SOURCE_CONTAINER -> sourceContainer(player, session)
-                    .map(container -> chainedTransferTarget(villagerInventoryTransferTarget(villager), containerTransferTarget(container)));
-            case SOURCE_CONTAINER -> sourceContainer(player, session).map(ForcedDialogueService::containerTransferTarget);
-            case DROP_AT_VILLAGER -> Optional.of(dropAtVillagerTransferTarget(villager));
-            case DROP_AT_CONTAINER -> sourceContainerLevel(player, session)
-                    .map(level -> dropAtContainerTransferTarget(level, session.sourceContainerPos()));
-        };
-    }
-
-    private static Optional<Container> sourceContainer(ServerPlayer player, ForcedDialogueSession session) {
-        Optional<ServerLevel> level = sourceContainerLevel(player, session);
-        if (level.isEmpty()) {
-            return Optional.empty();
-        }
-        BlockEntity blockEntity = level.get().getBlockEntity(session.sourceContainerPos());
-        return blockEntity instanceof Container container ? Optional.of(container) : Optional.empty();
-    }
-
-    private static Optional<ServerLevel> sourceContainerLevel(ServerPlayer player, ForcedDialogueSession session) {
-        ServerLevel level = player.getServer().getLevel(session.sourceContainerDimension());
-        return Optional.ofNullable(level);
-    }
-
-    private static ItemTransferTarget discardTransferTarget() {
-        return new ItemTransferTarget() {
-            @Override
-            public boolean canAccept(List<ItemStack> stacks) {
-                return true;
-            }
-
-            @Override
-            public List<ItemStack> accept(List<ItemStack> stacks) {
-                return List.of();
-            }
-        };
-    }
-
-    private static ItemTransferTarget villagerInventoryTransferTarget(Villager villager) {
-        return new ItemTransferTarget() {
-            @Override
-            public boolean canAccept(List<ItemStack> stacks) {
-                return VillagerInventoryAccess.canAddItems(villager, stacks);
-            }
-
-            @Override
-            public List<ItemStack> accept(List<ItemStack> stacks) {
-                return stacks.stream()
-                        .map(stack -> VillagerInventoryAccess.addItem(villager, stack))
-                        .filter(stack -> !stack.isEmpty())
-                        .toList();
-            }
-        };
-    }
-
-    private static ItemTransferTarget containerTransferTarget(Container container) {
-        return new ItemTransferTarget() {
-            @Override
-            public boolean canAccept(List<ItemStack> stacks) {
-                return canInsertAll(container, stacks);
-            }
-
-            @Override
-            public List<ItemStack> accept(List<ItemStack> stacks) {
-                return insertAll(container, stacks);
-            }
-        };
-    }
-
-    private static ItemTransferTarget chainedTransferTarget(ItemTransferTarget primary, ItemTransferTarget fallback) {
-        return new ItemTransferTarget() {
-            @Override
-            public boolean canAccept(List<ItemStack> stacks) {
-                return primary.canAccept(stacks) || fallback.canAccept(stacks);
-            }
-
-            @Override
-            public List<ItemStack> accept(List<ItemStack> stacks) {
-                List<ItemStack> remainder = primary.accept(stacks);
-                return remainder.isEmpty() ? List.of() : fallback.accept(remainder);
-            }
-        };
-    }
-
-    private static ItemTransferTarget dropAtVillagerTransferTarget(Villager villager) {
-        return new ItemTransferTarget() {
-            @Override
-            public boolean canAccept(List<ItemStack> stacks) {
-                return true;
-            }
-
-            @Override
-            public List<ItemStack> accept(List<ItemStack> stacks) {
-                for (ItemStack stack : stacks) {
-                    villager.spawnAtLocation(stack.copy());
-                }
-                return List.of();
-            }
-        };
-    }
-
-    private static ItemTransferTarget dropAtContainerTransferTarget(ServerLevel level, BlockPos pos) {
-        return new ItemTransferTarget() {
-            @Override
-            public boolean canAccept(List<ItemStack> stacks) {
-                return true;
-            }
-
-            @Override
-            public List<ItemStack> accept(List<ItemStack> stacks) {
-                for (ItemStack stack : stacks) {
-                    Containers.dropItemStack(level, pos.getX() + 0.5D, pos.getY() + 1.0D, pos.getZ() + 0.5D, stack.copy());
-                }
-                return List.of();
-            }
-        };
+    private static ForcedDialogueItemTransfers.SourceContainer transferSource(ForcedDialogueSession session) {
+        return new ForcedDialogueItemTransfers.SourceContainer(session.sourceContainerDimension(), session.sourceContainerPos());
     }
 
     public static void endForPlayer(ServerPlayer player) {
@@ -3105,105 +2870,6 @@ public final class ForcedDialogueService {
                 .orElse("items");
     }
 
-    private static boolean canInsertAll(Container container, List<ItemStack> stacks) {
-        List<ItemStack> simulatedSlots = new java.util.ArrayList<>();
-        for (int slot = 0; slot < container.getContainerSize(); slot++) {
-            simulatedSlots.add(container.getItem(slot).copy());
-        }
-
-        for (ItemStack stack : stacks) {
-            ItemStack remainder = insertIntoSimulatedSlots(container, simulatedSlots, stack.copy());
-            if (!remainder.isEmpty()) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private static List<ItemStack> insertAll(Container container, List<ItemStack> stacks) {
-        List<ItemStack> remainders = new java.util.ArrayList<>();
-        for (ItemStack stack : stacks) {
-            ItemStack remainder = insertIntoContainer(container, stack.copy());
-            if (!remainder.isEmpty()) {
-                remainders.add(remainder);
-            }
-        }
-        container.setChanged();
-        return List.copyOf(remainders);
-    }
-
-    private static ItemStack insertIntoContainer(Container container, ItemStack stack) {
-        ItemStack remainder = stack.copy();
-        for (int slot = 0; slot < container.getContainerSize(); slot++) {
-            if (remainder.isEmpty()) {
-                return ItemStack.EMPTY;
-            }
-            ItemStack existing = container.getItem(slot);
-            if (existing.isEmpty()
-                    || !ItemStack.isSameItemSameComponents(existing, remainder)
-                    || !container.canPlaceItem(slot, remainder)) {
-                continue;
-            }
-
-            int maxStackSize = Math.min(existing.getMaxStackSize(), container.getMaxStackSize());
-            int moveCount = Math.min(remainder.getCount(), maxStackSize - existing.getCount());
-            if (moveCount > 0) {
-                existing.grow(moveCount);
-                remainder.shrink(moveCount);
-            }
-        }
-
-        for (int slot = 0; slot < container.getContainerSize(); slot++) {
-            if (remainder.isEmpty()) {
-                return ItemStack.EMPTY;
-            }
-            if (!container.getItem(slot).isEmpty() || !container.canPlaceItem(slot, remainder)) {
-                continue;
-            }
-
-            int moveCount = Math.min(remainder.getCount(), Math.min(remainder.getMaxStackSize(), container.getMaxStackSize()));
-            container.setItem(slot, remainder.copyWithCount(moveCount));
-            remainder.shrink(moveCount);
-        }
-        return remainder;
-    }
-
-    private static ItemStack insertIntoSimulatedSlots(Container container, List<ItemStack> slots, ItemStack stack) {
-        ItemStack remainder = stack.copy();
-        for (int slot = 0; slot < slots.size(); slot++) {
-            if (remainder.isEmpty()) {
-                return ItemStack.EMPTY;
-            }
-            ItemStack existing = slots.get(slot);
-            if (existing.isEmpty()
-                    || !ItemStack.isSameItemSameComponents(existing, remainder)
-                    || !container.canPlaceItem(slot, remainder)) {
-                continue;
-            }
-
-            int maxStackSize = Math.min(existing.getMaxStackSize(), container.getMaxStackSize());
-            int moveCount = Math.min(remainder.getCount(), maxStackSize - existing.getCount());
-            if (moveCount > 0) {
-                existing.grow(moveCount);
-                remainder.shrink(moveCount);
-            }
-        }
-
-        for (int slot = 0; slot < slots.size(); slot++) {
-            if (remainder.isEmpty()) {
-                return ItemStack.EMPTY;
-            }
-            if (!slots.get(slot).isEmpty() || !container.canPlaceItem(slot, remainder)) {
-                continue;
-            }
-
-            int moveCount = Math.min(remainder.getCount(), Math.min(remainder.getMaxStackSize(), container.getMaxStackSize()));
-            slots.set(slot, remainder.copyWithCount(moveCount));
-            remainder.shrink(moveCount);
-        }
-        return remainder;
-    }
-
     private record RecentContainerClick(
             net.minecraft.resources.ResourceKey<Level> dimension,
             BlockPos pos,
@@ -3425,11 +3091,5 @@ public final class ForcedDialogueService {
             UUID villagerId,
             UUID playerId,
             String definitionId) {
-    }
-
-    private interface ItemTransferTarget {
-        boolean canAccept(List<ItemStack> stacks);
-
-        List<ItemStack> accept(List<ItemStack> stacks);
     }
 }

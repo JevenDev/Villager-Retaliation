@@ -5,12 +5,12 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
-import com.google.gson.JsonPrimitive;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.skill.VillagerSkillRank;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
+import com.jvn.villagerretaliation.util.DatapackJsonReader;
 import com.mojang.logging.LogUtils;
 import java.io.IOException;
 import java.io.Reader;
@@ -733,112 +733,51 @@ public final class SkillTradeResources {
     }
 
     private static JsonObject readObject(JsonObject entry, String key) {
-        JsonElement element = entry.get(key);
-        return element == null || !element.isJsonObject() ? null : element.getAsJsonObject();
+        return DatapackJsonReader.readObject(entry, key);
     }
 
     private static List<String> readStringList(JsonObject entry, String... keys) {
-        List<String> values = new ArrayList<>();
-        for (String key : keys) {
-            JsonElement element = entry.get(key);
-            if (element == null || element.isJsonNull()) {
-                continue;
-            }
-            if (element.isJsonPrimitive()) {
-                String value = element.getAsString().trim();
-                if (!value.isBlank()) {
-                    values.add(value);
-                }
-                continue;
-            }
-            if (!element.isJsonArray()) {
-                continue;
-            }
-
-            for (JsonElement child : element.getAsJsonArray()) {
-                if (!child.isJsonPrimitive()) {
-                    continue;
-                }
-                String value = child.getAsString().trim();
-                if (!value.isBlank()) {
-                    values.add(value);
-                }
-            }
-        }
-        return List.copyOf(values);
+        return DatapackJsonReader.readStringList(entry, keys);
     }
 
     private static String readString(JsonObject entry, String... keys) {
-        for (String key : keys) {
-            JsonElement element = entry.get(key);
-            if (element != null && element.isJsonPrimitive()) {
-                return element.getAsString().trim();
-            }
-        }
-        return "";
+        return DatapackJsonReader.readString(entry, keys);
     }
 
     private static int readInt(JsonObject entry, String key, int fallback) {
-        return readInt(entry.get(key), fallback);
+        return DatapackJsonReader.readInt(entry, key, fallback);
     }
 
     private static int readInt(JsonObject entry, String snakeKey, String camelKey, int fallback) {
-        JsonElement element = entry.has(snakeKey) ? entry.get(snakeKey) : entry.get(camelKey);
-        return readInt(element, fallback);
+        return DatapackJsonReader.readInt(entry, snakeKey, camelKey, fallback);
     }
 
     private static int readInt(JsonElement element, int fallback) {
-        if (element == null || !element.isJsonPrimitive()) {
-            return fallback;
-        }
-        try {
-            return element.getAsInt();
-        } catch (NumberFormatException | UnsupportedOperationException ignored) {
-            return fallback;
-        }
+        return DatapackJsonReader.readInt(element, fallback);
     }
 
     private static double readDouble(JsonObject entry, String key, double fallback) {
-        return readDouble(entry.get(key), fallback);
+        return DatapackJsonReader.readDouble(entry, key, fallback);
     }
 
     private static double readDouble(JsonObject entry, String snakeKey, String camelKey, double fallback) {
-        JsonElement element = entry.has(snakeKey) ? entry.get(snakeKey) : entry.get(camelKey);
-        return readDouble(element, fallback);
+        return DatapackJsonReader.readDouble(entry, snakeKey, camelKey, fallback);
     }
 
     private static double readDouble(JsonElement element, double fallback) {
-        if (element == null || !element.isJsonPrimitive()) {
-            return fallback;
-        }
-        try {
-            return element.getAsDouble();
-        } catch (NumberFormatException | UnsupportedOperationException ignored) {
-            return fallback;
-        }
+        return DatapackJsonReader.readDouble(element, fallback);
     }
 
     private static boolean readBoolean(JsonObject entry, String key, boolean fallback) {
-        return readBoolean(entry.get(key), fallback);
+        return DatapackJsonReader.readBoolean(entry, key, fallback);
     }
 
     private static boolean readBoolean(JsonObject entry, String snakeKey, String camelKey, boolean fallback) {
-        JsonElement element = entry.has(snakeKey) ? entry.get(snakeKey) : entry.get(camelKey);
-        return readBoolean(element, fallback);
+        return DatapackJsonReader.readBoolean(entry, snakeKey, camelKey, fallback);
     }
 
     private static boolean readBoolean(JsonElement element, boolean fallback) {
-        if (element == null || !element.isJsonPrimitive()) {
-            return fallback;
-        }
-        JsonPrimitive primitive = element.getAsJsonPrimitive();
-        if (primitive.isBoolean()) {
-            return primitive.getAsBoolean();
-        }
-        if (primitive.isString()) {
-            return Boolean.parseBoolean(primitive.getAsString());
-        }
-        return fallback;
+        return DatapackJsonReader.readBoolean(element, fallback);
     }
 
     private record SkillTradePoolData(List<SkillTradeDefinition> definitions) {

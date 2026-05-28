@@ -5,10 +5,10 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
+import com.jvn.villagerretaliation.util.DatapackJsonReader;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import java.io.IOException;
 import java.io.Reader;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -56,45 +56,14 @@ final class DialogueJsonResources {
     }
 
     static List<String> readStringList(JsonObject entry, String key) {
-        JsonElement element = entry.get(key);
-        if (element == null) {
-            return List.of();
-        }
-        if (element.isJsonPrimitive()) {
-            String value = element.getAsString().trim();
-            return value.isBlank() ? List.of() : List.of(value);
-        }
-        if (!element.isJsonArray()) {
-            return List.of();
-        }
-
-        List<String> values = new ArrayList<>();
-        for (JsonElement child : element.getAsJsonArray()) {
-            if (child.isJsonPrimitive()) {
-                String value = child.getAsString().trim();
-                if (!value.isBlank()) {
-                    values.add(value);
-                }
-            }
-        }
-        return values;
+        return DatapackJsonReader.readStringList(entry, key);
     }
 
     static String readString(JsonObject entry, String key) {
-        JsonElement element = entry.get(key);
-        return element == null || !element.isJsonPrimitive() ? "" : element.getAsString().trim();
+        return DatapackJsonReader.readString(entry, key);
     }
 
     static int readInt(JsonObject entry, String key, int fallback) {
-        JsonElement element = entry.get(key);
-        if (element == null || !element.isJsonPrimitive()) {
-            return fallback;
-        }
-
-        try {
-            return element.getAsInt();
-        } catch (NumberFormatException | UnsupportedOperationException ignored) {
-            return fallback;
-        }
+        return DatapackJsonReader.readInt(entry, key, fallback);
     }
 }

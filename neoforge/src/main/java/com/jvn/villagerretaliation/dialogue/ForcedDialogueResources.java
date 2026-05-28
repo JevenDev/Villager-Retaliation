@@ -8,6 +8,7 @@ import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
+import com.jvn.villagerretaliation.util.DatapackJsonReader;
 import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.util.VillagerInventoryItemRemoval;
@@ -568,90 +569,39 @@ public final class ForcedDialogueResources {
     }
 
     private static <E extends Enum<E>> Optional<E> readEnum(JsonObject entry, String key, Class<E> enumClass) {
-        String value = readString(entry, key);
-        if (value.isBlank()) {
-            return Optional.empty();
-        }
-        try {
-            return Optional.of(Enum.valueOf(enumClass, value.toUpperCase(Locale.ROOT)));
-        } catch (IllegalArgumentException ignored) {
-            return Optional.empty();
-        }
+        return DatapackJsonReader.readEnum(entry, key, enumClass);
     }
 
     private static String readString(JsonObject entry, String key) {
-        JsonElement element = entry.get(key);
-        return element == null || !element.isJsonPrimitive() ? "" : element.getAsString().trim();
+        return DatapackJsonReader.readString(entry, key);
     }
 
     private static List<String> readStringList(JsonObject entry, String key) {
-        JsonElement element = entry.get(key);
-        if (element == null) {
-            return List.of();
-        }
-        if (element.isJsonPrimitive()) {
-            String value = element.getAsString().trim();
-            return value.isBlank() ? List.of() : List.of(value);
-        }
-        if (!element.isJsonArray()) {
-            return List.of();
-        }
-
-        List<String> values = new ArrayList<>();
-        for (JsonElement child : element.getAsJsonArray()) {
-            if (child.isJsonPrimitive()) {
-                String value = child.getAsString().trim();
-                if (!value.isBlank()) {
-                    values.add(value);
-                }
-            }
-        }
-        return List.copyOf(values);
+        return DatapackJsonReader.readStringList(entry, key);
     }
 
     private static Optional<ResourceLocation> readResourceLocation(JsonObject entry, String key) {
-        return parseResourceLocation(readString(entry, key));
+        return DatapackJsonReader.readResourceLocation(entry, key);
     }
 
     private static Optional<ResourceLocation> parseResourceLocation(String value) {
-        if (value == null || value.isBlank()) {
-            return Optional.empty();
-        }
-        return Optional.ofNullable(ResourceLocation.tryParse(value.trim()));
+        return DatapackJsonReader.parseResourceLocation(value);
     }
 
     private static int readInt(JsonObject entry, String key, int fallback) {
-        JsonElement element = entry.get(key);
-        if (element == null || !element.isJsonPrimitive()) {
-            return fallback;
-        }
-        try {
-            return element.getAsInt();
-        } catch (NumberFormatException | UnsupportedOperationException ignored) {
-            return fallback;
-        }
+        return DatapackJsonReader.readInt(entry, key, fallback);
     }
 
     private static double readDouble(JsonObject entry, String key, double fallback) {
-        JsonElement element = entry.get(key);
-        if (element == null || !element.isJsonPrimitive()) {
-            return fallback;
-        }
-        try {
-            return element.getAsDouble();
-        } catch (NumberFormatException | UnsupportedOperationException ignored) {
-            return fallback;
-        }
+        return DatapackJsonReader.readDouble(entry, key, fallback);
     }
 
     private static boolean readBoolean(JsonObject entry, String key) {
-        JsonElement element = entry.get(key);
-        return element != null && element.isJsonPrimitive() && element.getAsBoolean();
+        return DatapackJsonReader.readBoolean(entry, key);
     }
 
     private static boolean readBoolean(JsonObject entry, String key, boolean fallback) {
-        JsonElement element = entry.get(key);
-        return element == null || !element.isJsonPrimitive() ? fallback : element.getAsBoolean();
+        return DatapackJsonReader.readBoolean(entry, key, fallback);
     }
 
     private static double clampChance(double value) {

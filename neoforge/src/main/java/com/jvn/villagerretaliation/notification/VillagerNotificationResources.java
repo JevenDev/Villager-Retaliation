@@ -9,6 +9,7 @@ import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.network.VillagerWorldTextIndicatorKind;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
+import com.jvn.villagerretaliation.util.DatapackJsonReader;
 import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
 import com.jvn.villagerretaliation.util.VillagerLocale;
 import com.jvn.villagerretaliation.util.VillagerPlayerItemCondition;
@@ -277,13 +278,7 @@ public final class VillagerNotificationResources {
     }
 
     private static Set<ResourceLocation> readResourceLocations(JsonObject entry, String... keys) {
-        Set<ResourceLocation> ids = new HashSet<>();
-        for (String key : keys) {
-            for (String value : readStringList(entry, key)) {
-                parseResourceLocation(value).ifPresent(ids::add);
-            }
-        }
-        return Set.copyOf(ids);
+        return DatapackJsonReader.readResourceLocations(entry, keys);
     }
 
     private static <E extends Enum<E>> Set<E> readEnumSet(JsonObject entry, String key, Class<E> enumClass) {
@@ -295,18 +290,11 @@ public final class VillagerNotificationResources {
     }
 
     private static <E extends Enum<E>> Optional<E> readEnum(JsonObject entry, String key, Class<E> enumClass) {
-        return readEnum(readString(entry, key), enumClass);
+        return DatapackJsonReader.readEnum(entry, key, enumClass);
     }
 
     private static <E extends Enum<E>> Optional<E> readEnum(String value, Class<E> enumClass) {
-        if (value.isBlank()) {
-            return Optional.empty();
-        }
-        try {
-            return Optional.of(Enum.valueOf(enumClass, value.toUpperCase(Locale.ROOT)));
-        } catch (IllegalArgumentException exception) {
-            return Optional.empty();
-        }
+        return DatapackJsonReader.readEnum(value, enumClass);
     }
 
     private static Optional<Integer> readColor(JsonObject entry, String key) {
@@ -359,71 +347,35 @@ public final class VillagerNotificationResources {
     }
 
     private static List<String> readStringList(JsonObject entry, String key) {
-        JsonElement element = entry.get(key);
-        if (element == null) {
-            return List.of();
-        }
-        if (element.isJsonPrimitive()) {
-            String value = element.getAsString().trim();
-            return value.isBlank() ? List.of() : List.of(value);
-        }
-        if (!element.isJsonArray()) {
-            return List.of();
-        }
-
-        List<String> values = new ArrayList<>();
-        for (JsonElement child : element.getAsJsonArray()) {
-            if (!child.isJsonPrimitive()) {
-                continue;
-            }
-            String value = child.getAsString().trim();
-            if (!value.isBlank()) {
-                values.add(value);
-            }
-        }
-        return values;
+        return DatapackJsonReader.readStringList(entry, key);
     }
 
     private static Optional<Integer> readOptionalInt(JsonObject entry, String key) {
-        JsonElement element = entry.get(key);
-        return element == null || !element.isJsonPrimitive() ? Optional.empty() : Optional.of(element.getAsInt());
+        return DatapackJsonReader.readOptionalInt(entry, key);
     }
 
     private static List<String> readLines(JsonObject entry) {
-        List<String> lines = readStringList(entry, "lines");
-        if (!lines.isEmpty()) {
-            return lines;
-        }
-        String text = readString(entry, "text");
-        return text.isBlank() ? List.of() : List.of(text);
+        return DatapackJsonReader.readLines(entry);
     }
 
     private static Optional<ResourceLocation> parseResourceLocation(String value) {
-        String normalized = value == null ? "" : value.trim();
-        if (normalized.isBlank()) {
-            return Optional.empty();
-        }
-        return Optional.ofNullable(ResourceLocation.tryParse(normalized));
+        return DatapackJsonReader.parseResourceLocation(value);
     }
 
     private static String readString(JsonObject entry, String key) {
-        JsonElement element = entry.get(key);
-        return element == null || !element.isJsonPrimitive() ? "" : element.getAsString().trim();
+        return DatapackJsonReader.readString(entry, key);
     }
 
     private static int readInt(JsonObject entry, String key, int fallback) {
-        JsonElement element = entry.get(key);
-        return element == null || !element.isJsonPrimitive() ? fallback : element.getAsInt();
+        return DatapackJsonReader.readInt(entry, key, fallback);
     }
 
     private static double readDouble(JsonObject entry, String key, double fallback) {
-        JsonElement element = entry.get(key);
-        return element == null || !element.isJsonPrimitive() ? fallback : element.getAsDouble();
+        return DatapackJsonReader.readDouble(entry, key, fallback);
     }
 
     private static boolean readBoolean(JsonObject entry, String key, boolean fallback) {
-        JsonElement element = entry.get(key);
-        return element == null || !element.isJsonPrimitive() ? fallback : element.getAsBoolean();
+        return DatapackJsonReader.readBoolean(entry, key, fallback);
     }
 
     private static String fallbackId(ResourceLocation location, int index) {

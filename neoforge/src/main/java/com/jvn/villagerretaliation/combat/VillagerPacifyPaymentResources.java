@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.VillagerRetaliation;
+import com.jvn.villagerretaliation.util.DatapackJsonReader;
 import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import java.io.IOException;
@@ -228,47 +229,15 @@ public final class VillagerPacifyPaymentResources {
     }
 
     private static List<String> readStringList(JsonObject entry, String key) {
-        JsonElement element = entry.get(key);
-        if (element == null) {
-            return List.of();
-        }
-        if (element.isJsonPrimitive()) {
-            String value = element.getAsString().trim();
-            return value.isBlank() ? List.of() : List.of(value);
-        }
-        if (!element.isJsonArray()) {
-            return List.of();
-        }
-
-        List<String> values = new ArrayList<>();
-        for (JsonElement child : element.getAsJsonArray()) {
-            if (!child.isJsonPrimitive()) {
-                continue;
-            }
-            String value = child.getAsString().trim();
-            if (!value.isBlank()) {
-                values.add(value);
-            }
-        }
-        return values;
+        return DatapackJsonReader.readStringList(entry, key);
     }
 
     private static String readString(JsonObject entry, String key) {
-        JsonElement element = entry.get(key);
-        return element == null || !element.isJsonPrimitive() ? "" : element.getAsString().trim();
+        return DatapackJsonReader.readString(entry, key);
     }
 
     private static int readInt(JsonObject entry, String key, int fallback) {
-        JsonElement element = entry.get(key);
-        if (element == null || !element.isJsonPrimitive()) {
-            return fallback;
-        }
-
-        try {
-            return element.getAsInt();
-        } catch (NumberFormatException | UnsupportedOperationException ignored) {
-            return fallback;
-        }
+        return DatapackJsonReader.readInt(entry, key, fallback);
     }
 
     private static String fallbackId(ResourceLocation location, String group, int index) {
