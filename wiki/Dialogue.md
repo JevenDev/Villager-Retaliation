@@ -334,6 +334,19 @@ See [Dialogue Requests](Dialogue-Requests.md) for simple and expanded dropdown e
 | `gift_advice` | enum | none | See gift advice kinds below. |
 | `show_for_adults` | boolean | `true` | Adult visibility. |
 | `show_for_babies` | boolean | `true` | Baby visibility. |
+| `italic` / `italics` | boolean | `false` | Renders the whole villager chat response in italics. Can also be placed inside `text_effects`. |
+| `bold` / `bolded` | boolean | `false` | Renders the whole villager chat response in bold. Can also be placed inside `text_effects`. |
+| `underlined` / `underline` | boolean | `false` | Underlines the whole villager chat response. Can also be placed inside `text_effects`. |
+| `strikethrough` | boolean | `false` | Strikes through the whole villager chat response. Can also be placed inside `text_effects`. |
+| `obfuscated` / `obfuscate` | boolean | `false` | Uses Minecraft's obfuscated/magic text style for the whole response. Can also be placed inside `text_effects`. |
+| `color` / `text_color` | string or integer | default chat color | Colors the whole villager chat response. Accepts vanilla color names, `#RRGGBB`, `0xRRGGBB`, or an integer. Can also be placed inside `text_effects`. |
+| `gradient_start` / `gradient_end` | string or integer | none | Applies a whole-line left-to-right gradient when both are set. Can also be placed inside `text_effects`. |
+| `rainbow` / `rainbow_text` | boolean | `false` | Applies a whole-line rainbow color treatment. In the interaction chat renderer, rainbow colors gently cycle over time. Can also be placed inside `text_effects`. |
+| `wavy` / `wave` | boolean | `false` | Adds the shader-backed wavy text treatment to the whole villager chat response in the interaction chat. Can also be placed inside `text_effects`. |
+| `shake` / `shaky` | boolean | `false` | Adds a jittery text treatment to the whole villager chat response in the interaction chat. Can also be placed inside `text_effects`. |
+| `pulse` / `pulsing` | boolean | `false` | Gently pulses the alpha/brightness of the whole villager chat response. Can also be placed inside `text_effects`. |
+| `jump` / `jumping` | boolean | `false` | Makes each character bounce upward in sequence across the whole villager chat response. Can also be placed inside `text_effects`. |
+| `text_effects` | object | none | Optional grouped text effects object. Supports all fields in this formatting/effects block. |
 | `priority` | integer | `0` | Beta.12+. Higher-priority normal dialogue lines are selected before weighted random choice. |
 | `category` | string | none | Beta.12+. Optional author/debug label shown by `/villagerretaliation dialogue explain`; does not affect matching. |
 | `weight` | integer | `10` | Weighted selection. |
@@ -345,6 +358,61 @@ Flat filters such as `professions`, `dispositions`, `reputation_levels`, `weathe
 Normal dialogue line selection is: matching filters, requested option or memory preference, recent-variant freshness, highest `priority`, then weighted random selection. The effective weight shown by `/villagerretaliation dialogue explain` is `weight + specificityScore * 8`, so more specific filters still get a small documented boost inside the same priority tier.
 
 Use `text_key` when one rule should resolve text from `messages` instead of carrying localized text directly. The message entry can provide `lines` variants and can be overridden per locale by id/key without copying the rule filters.
+
+Text effects are data-driven per dialogue line and affect the chat-style response text, not the separate in-world floating text indicators. Inline tags are the preferred format when only part of a sentence should be expressive:
+
+```json
+{
+  "id": "merchant_greeting",
+  "request": "question",
+  "text": "<wavy><italics>Hey Traveller!</italics></wavy> Care to see my wares?"
+}
+```
+
+Supported inline tags:
+
+```text
+<wavy> <wave> <shake> <shaky> <pulse> <pulsing> <jump> <jumping> <bounce> <rainbow>
+<italics> <italic> <i> <bold> <b> <underlined> <underline> <u>
+<strikethrough> <strike> <s> <obfuscated> <obfuscate> <magic>
+<red> <gold> <aqua> ... any vanilla color name
+<color:#ffcc66> <color:gold> <gradient:#ff7a7a:#7aa8ff>
+```
+
+Tags can be nested, and unknown or malformed tags are left harmlessly in the text instead of breaking datapack loading. Incoming chat messages that contain these tags are also styled client-side, so text such as `<aqua>You</aqua>` renders as colored chat instead of literal markup.
+
+The short field form still works when the whole line should use an effect:
+
+```json
+{
+  "id": "nervous_warning",
+  "request": "question",
+  "text": "Careful. The forest has been whispering all morning.",
+  "italics": true,
+  "wavy": true,
+  "rainbow": true,
+  "shake": true
+}
+```
+
+Use the grouped form when you expect to add more presentation metadata later:
+
+```json
+{
+  "id": "dreamy_story",
+  "request": "story",
+  "text": "I saw the old tower bend in the rain, like it was listening.",
+  "text_effects": {
+    "italic": true,
+    "bold": true,
+    "rainbow": true,
+    "wavy": true,
+    "pulse": true
+  }
+}
+```
+
+If `rainbow` is combined with `color` or `gradient_start` / `gradient_end`, the rainbow colors take precedence.
 
 ### Compound Conditions
 

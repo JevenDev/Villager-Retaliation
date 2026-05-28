@@ -5,7 +5,7 @@
       "request": "question",
       "lines": [
         "A smokehouse tells you fast who understands patience.",
-        "Empty hooks before supper can frighten a village more than thunder.",
+        "Empty hooks before supper can <shake>frighten</shake> a village more than thunder.",
         "Salt is patient. That is why it keeps food better than most people keep promises.",
         "Empty hooks tell a village to start worrying before anyone says it aloud.",
         "People think about courage until supper is late. Then they think about supper.",
@@ -28,7 +28,7 @@
       "request": "greeting",
       "weight": 26,
       "lines": [
-        "If you smell smoke, that is supper being planned properly.",
+        "If you smell <wavy>smoke</wavy>, that is supper being planned properly.",
         "Give the smokehouse room. Butchery works better without elbows in it.",
         "Step carefully near the smokehouse. I would rather greet you than patch you up."
       ]
@@ -38,7 +38,7 @@
       "request": "joke",
       "weight": 18,
       "lines": [
-        "My jokes are like my cuts: better when nobody rushes me.",
+        "My jokes are like my cuts: better when nobody <bold>rushes me</bold>.",
         "Butchery jokes need timing. Mine usually arrive with salt on them.",
         "I keep a spare joke near the smokehouse. It is not always ready for public use."
       ]

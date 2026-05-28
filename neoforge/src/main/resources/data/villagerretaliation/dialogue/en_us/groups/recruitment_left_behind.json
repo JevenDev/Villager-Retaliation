@@ -174,7 +174,7 @@
       "lines": [
         "Don't leave me in the Crimson Forest. Everything there looks alive in the worst possible way.",
         "The Crimson Forest is red, loud, and unsettling enough with company. Alone is worse.",
-        "I was stuck in the Crimson Forest watching every fungus patch like it might lunge.",
+        "I was stuck in the Crimson Forest watching every fungus patch like it might <jump>lunge</jump>.",
         "If you wander off in the Crimson Forest, do not expect me to enjoy waiting for you."
       ],
       "conditions": [
@@ -194,9 +194,9 @@
       "show_for_babies": false,
       "weight": 20,
       "lines": [
-        "Don't leave me in the Dark Forest. The shadows there feel like they are watching.",
+        "Don't leave me in the Dark Forest. The shadows there feel like they are <pulse>watching</pulse>.",
         "A Dark Forest is the wrong place to realize I cannot see where you went.",
-        "I waited in the Dark Forest listening to every twig snap like it was a warning.",
+        "I waited in the Dark Forest listening to every twig snap like it was a <shake>warning</shake>.",
         "If you vanish in a Dark Forest, I get darkness, roots, and far too much imagination."
       ],
       "conditions": [
@@ -217,7 +217,7 @@
       "weight": 20,
       "lines": [
         "Don't leave me by the Deep Cold Ocean. Cold water and deep water are both bad enough already.",
-        "The Deep Cold Ocean made every wave sound like a threat while I was waiting for you.",
+        "The Deep Cold Ocean made every <wavy>wave</wavy> sound like a threat while I was waiting for you.",
         "I was alone near the Deep Cold Ocean trying not to think about how little room I had for mistakes.",
         "If you are going to lose me, do not do it beside a Deep Cold Ocean where everything feels fatal."
       ],
@@ -238,9 +238,9 @@
       "show_for_babies": false,
       "weight": 20,
       "lines": [
-        "Don't leave me in the Deep Dark. I do not want to learn what hears me first down there.",
-        "The Deep Dark is not a place for patience. It is a place for panic whispered quietly.",
-        "I stood in the Deep Dark afraid even my breathing was too loud once you were gone.",
+        "Don't leave me in the Deep Dark. I do not want to learn what <pulse>hears me first</pulse> down there.",
+        "The Deep Dark is not a place for patience. It is a place for <shake>panic whispered quietly</shake>.",
+        "I stood in the Deep Dark afraid even my <pulse>breathing</pulse> was too loud once you were gone.",
         "If you disappear in the Deep Dark, I am left measuring every sound like it might be my last."
       ],
       "conditions": [
@@ -350,7 +350,7 @@
       "lines": [
         "Don't leave me in the Dripstone Caves. One wrong step and the cave does the rest.",
         "The Dripstone Caves are all sharp ceilings and sharper floors. I hated waiting there alone.",
-        "I was stuck in the Dripstone Caves watching every spike like it had chosen me personally.",
+        "I was stuck in the Dripstone Caves watching every spike like it had chosen me <italic>personally</italic>.",
         "If you vanish in the Dripstone Caves, I am left between falling stone and bad footing."
       ],
       "conditions": [
@@ -395,7 +395,7 @@
         "Don't leave me in the End Highlands. Everything there feels far away from safety.",
         "The End Highlands are no place to lose the one person I was following.",
         "I stood in the End Highlands trying not to think about how small one mistake could make me.",
-        "If you vanish in the End Highlands, I am left on strange stone hoping nothing notices me."
+        "If you vanish in the End Highlands, I am left on strange stone hoping <pulse>nothing notices me</pulse>."
       ],
       "conditions": [
         {
@@ -524,7 +524,7 @@
       "show_for_babies": false,
       "weight": 20,
       "lines": [
-        "Don't leave me on the Frozen Peaks. One slip up there and the mountain finishes the story.",
+        "Don't leave me on the Frozen Peaks. One slip up there and the mountain <shake>finishes the story</shake>.",
         "The Frozen Peaks are all wind, ice, and bad footing. I needed you back quickly.",
         "I was alone on the Frozen Peaks trying not to let the cold or the height get into my head.",
         "If you disappear on the Frozen Peaks, I am left freezing above a very long fall."
@@ -745,7 +745,7 @@
       "weight": 20,
       "lines": [
         "Don't leave me in the Mushroom Fields. Strange and harmless-looking is still strange.",
-        "The Mushroom Fields felt too quiet and too odd once I had to wait there alone.",
+        "The Mushroom Fields felt too <wavy>quiet and too odd</wavy> once I had to wait there alone.",
         "I stood in the Mushroom Fields wondering whether I was more bothered by the silence or the giant mushrooms.",
         "If you vanish in the Mushroom Fields, I am left surrounded by oddities and no reassurance at all."
       ],
@@ -1295,7 +1295,7 @@
       "weight": 20,
       "lines": [
         "Don't leave me in the Warped Forest. Nothing there looks like it belongs anywhere safe.",
-        "The Warped Forest is too strange to be deserted in with a steady mind.",
+        "The Warped Forest is too <wavy>strange</wavy> to be deserted in with a steady mind.",
         "I waited in the Warped Forest trying not to stare too long at anything around me.",
         "If you disappear in a Warped Forest, I am left alone in the sort of place that should stay imagined."
       ],

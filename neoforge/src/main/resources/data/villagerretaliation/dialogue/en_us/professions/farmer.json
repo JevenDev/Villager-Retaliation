@@ -6,7 +6,7 @@
       "lines": [
         "Dry rows and trampled crops teach a farmer to watch every footstep.",
         "The soil's been kind lately. That's more than I can say for some visitors.",
-        "Seeds are small, but they know how to make a person wait.",
+        "Seeds are small, but they know how to make a person <pulse>wait</pulse>.",
         "Good rain is a blessing. Too much rain is work wearing a blessing mask.",
         "A harvest is just a hundred small chores deciding to agree.",
         "Bread starts long before the oven. Most good things do."
@@ -19,7 +19,7 @@
       "lines": [
         "A good harvest keeps a village standing.",
         "I once fixed a scarecrow so well it scared me at dusk.",
-        "One frost took half the field and taught the whole village humility."
+        "One frost took half the field and taught the whole village <italic>humility</italic>."
       ],
       "weight": 74
     },
@@ -38,7 +38,7 @@
       "request": "joke",
       "weight": 18,
       "lines": [
-        "A carrot joke takes root slowly, if anyone lets it.",
+        "A carrot joke takes root <pulse>slowly</pulse>, if anyone lets it.",
         "Farming jokes need timing. Mine usually arrive with soil on them.",
         "I keep a spare joke near the fields. It is not always ready for public use."
       ]

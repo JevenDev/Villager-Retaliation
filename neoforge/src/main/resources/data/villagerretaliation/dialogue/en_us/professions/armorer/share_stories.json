@@ -6,11 +6,11 @@
       "option": "adult_share_story",
       "story_structure": "minecraft:ancient_city",
       "lines": [
-        "{target}? Sound itself can wake trouble. I would tighten a shield strap.",
-        "If anyone heads for Ancient City, tell them: Step softly and leave the shiny things alone. I will be at the forge.",
+        "{target}? Sound itself can <shake>wake trouble</shake>. I would tighten a shield strap.",
+        "If anyone heads for Ancient City, tell them: <pulse>Step softly</pulse> and leave the shiny things alone. I will be at the forge.",
         "Sculk does not need eyes to notice you. I will remember that when I check the shields.",
         "Ancient City is no small story. Good armor does not make a fool safe.",
-        "I will remember Ancient City as a city where silence matters more than armor. I will keep a shield by the door."
+        "I will remember Ancient City as a city where <pulse>silence matters</pulse> more than armor. I will keep a shield by the door."
       ],
       "weight": 120
     },
@@ -21,7 +21,7 @@
       "story_structure": "minecraft:bastion_remnant",
       "lines": [
         "{target}? Old gold still has guards. I would tighten a shield strap.",
-        "If anyone heads for Bastion Remnant, tell them: Do not touch gold unless you are ready for angry piglins. I will be at the forge.",
+        "If anyone heads for Bastion Remnant, tell them: Do not touch <color:gold>gold</color> unless you are ready for angry piglins. I will be at the forge.",
         "Blackstone halls do not forgive greed. I will remember that when I check the shields.",
         "Bastion Remnant is no small story. Good armor does not make a fool safe.",
         "I will remember Bastion Remnant as a broken stronghold where greed still has teeth. I will keep a shield by the door."
@@ -35,7 +35,7 @@
       "story_structure": "minecraft:buried_treasure",
       "lines": [
         "{target}? Treasure makes people dig past good sense. I would tighten a shield strap.",
-        "If anyone heads for Buried Treasure, tell them: Watch the tide and the shovel both. I will be at the forge.",
+        "If anyone heads for Buried Treasure, tell them: Watch the <wavy>tide</wavy> and the shovel both. I will be at the forge.",
         "Sand hides holes as well as chests. I will remember that when I check the shields.",
         "Buried Treasure is no small story. Good armor does not make a fool safe.",
         "I will remember Buried Treasure as a chest under sand that can make friends argue. I will keep a shield by the door."
@@ -63,7 +63,7 @@
       "story_structure": "minecraft:end_city",
       "lines": [
         "{target}? The sky is open and the ground is not always there. I would tighten a shield strap.",
-        "If anyone heads for End City, tell them: Watch every bridge and every shulker box. I will be at the forge.",
+        "If anyone heads for End City, tell them: Watch every <shake>bridge</shake> and every shulker box. I will be at the forge.",
         "Purple towers make falling feel too easy. I will remember that when I check the shields.",
         "End City is no small story. Good armor does not make a fool safe.",
         "I will remember End City as a tall city built where home feels very far away. I will keep a shield by the door."
@@ -77,7 +77,7 @@
       "story_structure": "minecraft:fortress",
       "lines": [
         "{target}? Bridges hang over lava and worse things patrol them. I would tighten a shield strap.",
-        "If anyone heads for Nether Fortress, tell them: Keep fire protection close and pride far away. I will be at the forge.",
+        "If anyone heads for Nether Fortress, tell them: Keep <color:red>fire protection</color> close and pride far away. I will be at the forge.",
         "Blazes turn hallways into ovens. I will remember that when I check the shields.",
         "Nether Fortress is no small story. Good armor does not make a fool safe.",
         "I will remember Nether Fortress as a black bridge where the air itself wants a fight. I will keep a shield by the door."
@@ -175,7 +175,7 @@
       "story_structure": "minecraft:ocean_ruin_cold",
       "lines": [
         "{target}? Cold water steals strength fast. I would tighten a shield strap.",
-        "If anyone heads for Cold Ocean Ruin, tell them: Watch for drowned hands below the stone. I will be at the forge.",
+        "If anyone heads for Cold Ocean Ruin, tell them: Watch for <shake>drowned hands</shake> below the stone. I will be at the forge.",
         "Ruined blocks under ice do not mean empty blocks. I will remember that when I check the shields.",
         "Cold Ocean Ruin is no small story. Good armor does not make a fool safe.",
         "I will remember Cold Ocean Ruin as a sunken ruin where the water bites first. I will keep a shield by the door."
@@ -202,7 +202,7 @@
       "option": "adult_share_story",
       "story_structure": "minecraft:pillager_outpost",
       "lines": [
-        "{target}? Banners mean crossbows are near. I would tighten a shield strap.",
+        "{target}? Banners mean <shake>crossbows</shake> are near. I would tighten a shield strap.",
         "If anyone heads for Pillager Outpost, tell them: Stay low and do not let patrols follow you home. I will be at the forge.",
         "A tower sees farther than a villager wants. I will remember that when I check the shields.",
         "Pillager Outpost is no small story. Good armor does not make a fool safe.",
@@ -525,7 +525,7 @@
       "story_biome": "minecraft:beach",
       "lines": [
         "{target}? Shorelines change under your feet. I would tighten a shield strap.",
-        "If anyone heads for Beach, tell them: Watch the tide, the turtles, and the drowned at dusk. I will be at the forge.",
+        "If anyone heads for Beach, tell them: Watch the <wavy>tide</wavy>, the turtles, and the drowned at dusk. I will be at the forge.",
         "Sand looks peaceful until it shifts. I will remember that when I check the shields.",
         "Beach is no small story. Good armor does not make a fool safe.",
         "I will remember Beach as the place where land starts losing to water. I will keep a shield by the door."

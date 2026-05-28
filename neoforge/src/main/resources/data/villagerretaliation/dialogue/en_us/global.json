@@ -271,9 +271,9 @@
       ],
       "weight": 24,
       "lines": [
-        "{parent} still checks in on me when the village gets loud. Family has a way of making even a crowded place feel anchored.",
-        "{parent} knows when the village gets too loud for me. That kind of care stays sturdy.",
-        "When trouble circles the square, {parent} is one of the voices I listen for."
+        "<aqua>{parent}</aqua> still checks in on me when the village gets <shake><i>loud</i></shake>. They have a way of making feel at home anywhere.",
+        "<aqua>{parent}</aqua> knows when the village gets too <shake><i>loud</i></shake> for me. That kind of care makes me feel good.",
+        "When there's trouble, <aqua>{parent}</aqua> is who I usually trust."
       ],
       "conditions": [
         {
@@ -294,9 +294,9 @@
       ],
       "weight": 24,
       "lines": [
-        "I keep an eye on {child}. Around here, every child learns quickly which footsteps mean help.",
-        "{child} is one reason I watch the paths more closely than I used to.",
-        "Children learn the village by watching us. I try to give {child} something good to copy."
+        "I keep an eye on <aqua>{child}</aqua>. Around here, every child learns quickly which footsteps mean help.",
+        "<aqua>{child}</aqua> is one reason I watch the paths more <i>closely</i> than I used to.",
+        "Children learn the village by watching us. I try to give <aqua>{child}</aqua> something good to copy."
       ],
       "conditions": [
         {
@@ -317,9 +317,9 @@
       ],
       "weight": 22,
       "lines": [
-        "{sibling} and I do not always agree, but I would still stand between them and trouble.",
-        "{sibling} can test my patience and still have my loyalty.",
-        "I know every way {sibling} can annoy me, and every reason I would defend them."
+        "<aqua>{sibling}</aqua> and I do not always agree, but I would still stand between them and trouble.",
+        "<aqua>{sibling}</aqua> can test my patience and still have my loyalty.",
+        "I know every way <aqua>{sibling}</aqua> can annoy me, and every reason I would defend them."
       ],
       "conditions": [
         {
@@ -341,9 +341,9 @@
       ],
       "weight": 18,
       "lines": [
-        "{grandparent} taught the family which paths are safe after dark. Some advice survives longer than the person who first said it.",
-        "{grandparent} remembers roads I only know as stories. I listen when they warn me.",
-        "{grandparent_possessive} old advice still keeps my feet out of trouble. {grandparent}"
+        "<aqua>{grandparent}</aqua> taught the family which paths are safe after dark. Some advice survives longer than the person who first said it.",
+        "<aqua>{grandparent}</aqua> remembers roads I only know as stories. I listen when they warn me.",
+        "<aqua>{grandparent_possessive} old advice still keeps my feet out of trouble. <aqua>{grandparent}</aqua>"
       ],
       "conditions": [
         {
@@ -364,9 +364,9 @@
       ],
       "weight": 18,
       "lines": [
-        "When I think about {descendant}, I try to leave the village a little kinder than I found it.",
-        "{descendant} makes the future feel like a real place, not just a word.",
-        "I want {descendant} to inherit more than locked doors and nervous bells."
+        "When I think about <aqua>{descendant}</aqua>, I try to leave the village a little kinder than I found it.",
+        "<aqua>{descendant}</aqua> makes the future feel like a real place, not just a word.",
+        "I want <aqua>{descendant}</aqua> to inherit more than locked doors and nervous bells."
       ],
       "conditions": [
         {
@@ -382,9 +382,9 @@
       "show_for_babies": false,
       "weight": 14,
       "lines": [
-        "{extended_relative} is not in my house every night, but family branches still share the same weather.",
-        "{extended_relative} may live under another roof, but kinship still knocks when trouble comes.",
-        "Family stretches farther than a doorstep. {extended_relative} proves that often enough."
+        "<aqua>{extended_relative}</aqua> is not in my house every night, but family branches still share the same weather.",
+        "<aqua>{extended_relative}</aqua> may live under another roof, but kinship still knocks when trouble comes.",
+        "Family stretches farther than a doorstep. <aqua>{extended_relative}</aqua> proves that often enough."
       ],
       "conditions": [
         {
@@ -400,9 +400,9 @@
       "show_for_babies": false,
       "weight": 16,
       "lines": [
-        "We still say {deceased_family_possessive} name when the village gathers. Remembering is a kind of shelter.",
-        "{deceased_family_possessive} memory still has a chair in this village.",
-        "We speak of {deceased_family} carefully. Grief is still part of the household. {deceased_family_possessive}"
+        "We still say <aqua>{deceased_family_possessive}</aqua> name when the village gathers. Remembering is a kind of shelter.",
+        "<aqua>{deceased_family_possessive}</aqua> memory still has a chair in this village.",
+        "We speak of <aqua>{deceased_family}</aqua> carefully. Grief is still part of the household. <aqua>{deceased_family_possessive}</aqua>"
       ],
       "conditions": [
         {
@@ -424,9 +424,9 @@
       ],
       "weight": 28,
       "lines": [
-        "{relative} is family. That is enough to make me careful about who asks.",
-        "Ask about {relative} with respect, and maybe I will answer.",
-        "Family names are not loose coins. {relative} matters to me."
+        "<aqua>{relative}</aqua> is family. That is enough to make me careful about who asks.",
+        "Ask about <aqua>{relative}</aqua> with respect, and maybe I will answer.",
+        "Family names are not loose coins. <aqua>{relative}</aqua> matters to me."
       ],
       "conditions": [
         {
@@ -447,9 +447,9 @@
       ],
       "weight": 18,
       "lines": [
-        "{partner} makes the village feel less like a place I survive and more like a place I choose.",
-        "With {partner}, even a hard day has somewhere softer to end.",
-        "{partner} makes the village feel less like walls and more like home."
+        "<aqua>{partner}</aqua> makes the village feel less like a place I survive and more like a place I choose.",
+        "With <aqua>{partner}</aqua>, even a hard day has somewhere softer to end.",
+        "<aqua>{partner}</aqua> makes the village feel less like walls and more like home."
       ],
       "conditions": [
         {
@@ -470,9 +470,9 @@
       ],
       "weight": 24,
       "lines": [
-        "I keep finding reasons to pass near {crush}. Maybe it is foolish. Maybe foolish things keep people kind.",
-        "I notice when {crush} crosses the square. I pretend not to, badly.",
-        "{crush} makes ordinary errands feel suspiciously important."
+        "I keep finding reasons to pass near <aqua>{crush}</aqua>. Maybe it is foolish. Maybe foolish things keep people kind.",
+        "I notice when <aqua>{crush}</aqua> crosses the square. I pretend not to, badly.",
+        "<aqua>{crush}</aqua> makes ordinary errands feel suspiciously important."
       ],
       "conditions": [
         {
@@ -493,9 +493,9 @@
       ],
       "weight": 24,
       "lines": [
-        "{dating_partner} and I are seeing where the road goes. Slowly is fine when the road matters.",
-        "{dating_partner} and I are taking it carefully. Careful things can still be brave.",
-        "I like walking beside {dating_partner}. The road feels less noisy that way."
+        "<aqua>{dating_partner}</aqua> and I are seeing where the road goes. Slowly is fine when the road matters.",
+        "<aqua>{dating_partner}</aqua> and I are taking it carefully. Careful things can still be brave.",
+        "I like walking beside <aqua>{dating_partner}</aqua>. The road feels less noisy that way."
       ],
       "conditions": [
         {
@@ -511,9 +511,9 @@
       "show_for_babies": false,
       "weight": 24,
       "lines": [
-        "{fiance} and I are trying to plan a future sturdy enough to survive this place.",
-        "{fiance} and I are planning more than a ceremony. We are planning a life that holds.",
-        "When I say {fiance_possessive} name, the future feels less theoretical. {fiance}"
+        "<aqua>{fiance}</aqua> and I are trying to plan a future sturdy enough to survive this place.",
+        "<aqua>{fiance}</aqua> and I are planning more than a ceremony. We are planning a life that holds.",
+        "When I say <aqua>{fiance_possessive}</aqua> name, the future feels less theoretical. <aqua>{fiance}</aqua>"
       ],
       "conditions": [
         {
@@ -529,9 +529,9 @@
       "show_for_babies": false,
       "weight": 24,
       "lines": [
-        "{romantic_spouse} knows which silences mean I am tired and which mean I need help. That is a rare comfort.",
-        "{romantic_spouse} knows my storms and still keeps a light on.",
-        "Home sounds different when {romantic_spouse} is there."
+        "<aqua>{romantic_spouse}</aqua> knows which silences mean I am tired and which mean I need help. That is a rare comfort.",
+        "<aqua>{romantic_spouse}</aqua> knows my storms and still keeps a light on.",
+        "Home sounds different when <aqua>{romantic_spouse}</aqua> is there."
       ],
       "conditions": [
         {
@@ -553,9 +553,9 @@
       ],
       "weight": 18,
       "lines": [
-        "{ex_partner} and I had our season. Some roads part before they turn cruel, and that can be mercy.",
-        "{ex_partner} and I learned what we could, then stopped before kindness ran out.",
-        "Some endings with {ex_partner} still deserve gentleness."
+        "<aqua>{ex_partner}</aqua> and I had our season. Some roads part before they turn cruel, and that can be mercy.",
+        "<aqua>{ex_partner}</aqua> and I learned what we could, then stopped before kindness ran out.",
+        "Some endings with <aqua>{ex_partner}</aqua> still deserve gentleness."
       ],
       "conditions": [
         {
@@ -571,9 +571,9 @@
       "show_for_babies": false,
       "weight": 18,
       "lines": [
-        "{late_partner} is gone, but some mornings I still make room for them in my thoughts.",
-        "{late_partner} is gone, but love leaves habits behind.",
-        "I still carry {late_partner_possessive} name carefully. {late_partner}"
+        "<aqua>{late_partner}</aqua> is gone, but some mornings I still make room for them in my thoughts.",
+        "<aqua>{late_partner}</aqua> is gone, but love leaves habits behind.",
+        "I still carry <aqua>{late_partner_possessive}</aqua> name carefully. <aqua>{late_partner}</aqua>"
       ],
       "conditions": [
         {
@@ -595,9 +595,9 @@
       ],
       "weight": 28,
       "lines": [
-        "{partner} is not a market rumor. Ask gently, or do not ask.",
-        "Do not turn {partner} into gossip. Some things deserve a closed door.",
-        "If you ask about {partner}, ask like the answer belongs to a person."
+        "<aqua>{partner}</aqua> is not a market rumor. Ask gently, or do not ask.",
+        "Do not turn <aqua>{partner}</aqua> into gossip. Some things deserve a closed door.",
+        "If you ask about <aqua>{partner}</aqua>, ask like the answer belongs to a person."
       ],
       "conditions": [
         {
@@ -613,9 +613,9 @@
       "show_for_adults": false,
       "weight": 28,
       "lines": [
-        "{parent} says I should stay where the bell can hear me.",
-        "{parent} says the safest place is where someone can see me.",
-        "{parent} can find me even when I am pretending very hard to hide."
+        "<aqua>{parent}</aqua> says I should stay where the bell can hear me.",
+        "<aqua>{parent}</aqua> says the safest place is where someone can see me.",
+        "<aqua>{parent}</aqua> can find me even when I am pretending very hard to hide."
       ],
       "conditions": [
         {
@@ -631,9 +631,9 @@
       "show_for_adults": false,
       "weight": 22,
       "lines": [
-        "{sibling} thinks they are faster than me. They are not always right.",
-        "{sibling} says I am little. I say I am compact.",
-        "{sibling} runs fast, but I know better shortcuts."
+        "<aqua>{sibling}</aqua> thinks they are faster than me. They are not always right.",
+        "<aqua>{sibling}</aqua> says I am little. I say I am compact.",
+        "<aqua>{sibling}</aqua> runs fast, but I know better shortcuts."
       ],
       "conditions": [
         {
@@ -649,9 +649,9 @@
       "show_for_adults": false,
       "weight": 16,
       "lines": [
-        "{grandparent} knows stories that start before my bed was even made.",
-        "{grandparent} tells stories with extra corners in them.",
-        "{grandparent} remembers when everything was somehow uphill."
+        "<aqua>{grandparent}</aqua> knows stories that start before my bed was even made.",
+        "<aqua>{grandparent}</aqua> tells stories with extra corners in them.",
+        "<aqua>{grandparent}</aqua> remembers when everything was somehow uphill."
       ],
       "conditions": [
         {
@@ -667,9 +667,9 @@
       "show_for_adults": false,
       "weight": 14,
       "lines": [
-        "{cousin} says we are related enough to share chores. I think that sounds suspicious.",
-        "{cousin} says chores are easier with two people. I think they mean me.",
-        "{cousin} knows games that suspiciously look like work."
+        "<aqua>{cousin}</aqua> says we are related enough to share chores. I think that sounds suspicious.",
+        "<aqua>{cousin}</aqua> says chores are easier with two people. I think they mean me.",
+        "<aqua>{cousin}</aqua> knows games that suspiciously look like work."
       ],
       "conditions": [
         {
@@ -688,9 +688,9 @@
       ],
       "weight": 36,
       "lines": [
-        "Thank you for bringing me back near home. A short road feels longer when the night has teeth.",
+        "Thank you for bringing me back near home. A short road feels longer when the night has <shake>teeth</shake>.",
         "You got me home. That turns a long road into a remembered kindness.",
-        "I am back near the bell, and that matters more than I can say neatly."
+        "I am back near the bell, and that matters more than I can say <pulse>neatly</pulse>."
       ],
       "conditions": [
         {
@@ -724,7 +724,7 @@
       ],
       "lines": [
         "I made it back, but not cleanly. Next time, we move slower or fight sooner.",
-        "I am glad to be home, but I am still feeling that road. Do not mistake thanks for forgetting.",
+        "I am glad to be home, but I am still feeling that road. Do not mistake thanks for <italic>forgetting</italic>.",
         "I returned, but the road left bruises in the story."
       ],
       "weight": 68,
@@ -745,7 +745,7 @@
       ],
       "lines": [
         "You asked me to follow, then turned your hand against me. That is not a small thing.",
-        "I followed because I thought you meant to protect me. Now I know to measure that promise twice.",
+        "I followed because I thought you meant to protect me. Now I know to measure that <bold>promise</bold> twice.",
         "Following you was trust. Being struck after that was a lesson I did not ask for."
       ],
       "weight": 82
@@ -782,7 +782,7 @@
       "weight": 50,
       "lines": [
         "Crossing ocean by boat was a better idea than swimming it. Thank you for keeping me dry.",
-        "The ocean looked less endless with a boat under us. Thank you for that much.",
+        "The ocean looked less <wavy>endless</wavy> with a boat under us. Thank you for that much.",
         "A boat between me and the deep water was the correct kind of wisdom."
       ],
       "conditions": [
@@ -869,7 +869,7 @@
       "lines": [
         "Swimming across ocean and coming home hurt is not an adventure I want repeated.",
         "Ocean swimming while hurt is a memory I would like to leave behind.",
-        "The waves did not help the bruises. Neither did the plan."
+        "The <wavy>waves</wavy> did not help the bruises. Neither did the plan."
       ],
       "conditions": [
         {
@@ -889,7 +889,7 @@
       "weight": 46,
       "lines": [
         "You put me in a boat, took me along, and then broke trust. Strange journey, worse ending.",
-        "Being carried over water did not make betrayal lighter.",
+        "Being carried over <wavy>water</wavy> did not make betrayal lighter.",
         "The boat brought us along. You broke the part that mattered."
       ],
       "conditions": [
@@ -1094,7 +1094,7 @@
       ],
       "lines": [
         "You helped. I know that. I am still hearing the horns in my head.",
-        "Maybe you saved us. Maybe I need another day before I can say that without shaking.",
+        "Maybe you saved us. Maybe I need another day before I can say that without <shake>shaking</shake>.",
         "You stood where many would have run. Villages remember that."
       ],
       "weight": 72
@@ -1105,7 +1105,7 @@
       "option": "apologize_for_harm",
       "lines": [
         "I hear you. I have not forgotten, but I hear you.",
-        "An apology is a start. Let your hands prove the rest.",
+        "An apology is a start. Let your hands <bold>prove the rest</bold>.",
         "I hear the apology. Trust will need more than hearing."
       ],
       "weight": 56
@@ -1163,7 +1163,7 @@
       "lines": [
         "I did. Still breathing, still standing. That counts for more than it sounds.",
         "Back to the village in one piece. I will remember who helped make that true.",
-        "I am here, breathing, and trying not to shake. That is enough for now."
+        "I am here, breathing, and trying not to <shake>shake</shake>. That is enough for now."
       ],
       "weight": 52
     },
@@ -1186,7 +1186,7 @@
       "show_for_adults": false,
       "weight": 25,
       "lines": [
-        "Hi again!",
+        "<jump>Hi again!</jump>",
         "Hi! I remember your face a little.",
         "Hello again! I was practicing saying hello first."
       ]
@@ -1206,7 +1206,7 @@
       "lines": [
         "I can say hello from here.",
         "Hello from this safe distance.",
-        "I can wave from here. That counts."
+        "I can <wavy>wave</wavy> from here. That counts."
       ]
     },
     {
@@ -1227,8 +1227,8 @@
       "option": "baby_story",
       "show_for_adults": false,
       "lines": [
-        "Once I ran all the way around the well and did not fall in. That is the whole story, but it was very exciting.",
-        "I had a dream I was tall enough to see over every fence.",
+        "Once I ran all the way around the well and did not fall in. That is the whole story, but it was <jump>very exciting</jump>.",
+        "I had a <wavy>dream</wavy> I was tall enough to see over every fence.",
         "I counted every door on this side of the square. Then I forgot the number and had to start over."
       ],
       "weight": 42
@@ -1239,7 +1239,7 @@
       "option": "baby_joke",
       "show_for_adults": false,
       "lines": [
-        "Why did the bell ring? Because it had something important to say!",
+        "Why did the bell ring? Because it had something <jump>important</jump> to say!",
         "If I stand very still, chores cannot see me.",
         "Why did the door close? Because the wind was bossy."
       ],
@@ -1253,7 +1253,7 @@
       "weight": 25,
       "lines": [
         "That was not nice.",
-        "That made my stomach feel small.",
+        "That made my stomach feel <shake>small</shake>.",
         "I do not like when people talk like that."
       ]
     },
@@ -1492,9 +1492,9 @@
       ],
       "weight": 34,
       "lines": [
-        "Word reached us about {cured_villager}. You brought one of ours back.",
-        "People are saying {cured_villager} came home because you stayed.",
-        "{cured_villager_possessive} cure changed the way people say your name. {cured_villager}"
+        "Word reached us about <aqua>{cured_villager}</aqua>. You brought one of ours back.",
+        "People are saying <aqua>{cured_villager}</aqua> came home because you stayed.",
+        "<aqua>{cured_villager_possessive}</aqua> cure changed the way people say your name. <aqua>{cured_villager}</aqua>"
       ]
     },
     {
@@ -1510,9 +1510,9 @@
       ],
       "weight": 34,
       "lines": [
-        "{cured_villager_possessive} cure matters here. People remember who stayed to help.",
-        "People are saying {cured_villager} came home because you stayed. {cured_villager_possessive}",
-        "{cured_villager_possessive} cure changed the way people say your name."
+        "<aqua>{cured_villager_possessive}</aqua> cure matters here. People remember who stayed to help.",
+        "People are saying <aqua>{cured_villager}</aqua> came home because you stayed. <aqua>{cured_villager_possessive}</aqua>",
+        "<aqua>{cured_villager_possessive}</aqua> cure changed the way people say your name."
       ]
     },
     {
@@ -1527,9 +1527,9 @@
       ],
       "weight": 32,
       "lines": [
-        "I heard you cured {cured_villager}. That is not a small thing.",
-        "People are saying {cured_villager} came home because you stayed.",
-        "{cured_villager_possessive} cure changed the way people say your name. {cured_villager}"
+        "I heard you cured <aqua>{cured_villager}</aqua>. That is not a small thing.",
+        "People are saying <aqua>{cured_villager}</aqua> came home because you stayed.",
+        "<aqua>{cured_villager_possessive}</aqua> cure changed the way people say your name. <aqua>{cured_villager}</aqua>"
       ]
     },
     {
@@ -1544,9 +1544,9 @@
       ],
       "weight": 32,
       "lines": [
-        "{cured_villager} is walking these paths again because of you. The village noticed.",
-        "People are saying {cured_villager} came home because you stayed.",
-        "{cured_villager_possessive} cure changed the way people say your name. {cured_villager}"
+        "<aqua>{cured_villager}</aqua> is walking these paths again because of you. The village noticed.",
+        "People are saying <aqua>{cured_villager}</aqua> came home because you stayed.",
+        "<aqua>{cured_villager_possessive}</aqua> cure changed the way people say your name. <aqua>{cured_villager}</aqua>"
       ]
     },
     {
@@ -1562,9 +1562,9 @@
       ],
       "weight": 34,
       "lines": [
-        "I heard what you did for {cured_villager}. I am still wary, but I will not pretend that meant nothing.",
-        "People are saying {cured_villager} came home because you stayed.",
-        "{cured_villager_possessive} cure changed the way people say your name. {cured_villager}"
+        "I heard what you did for <aqua>{cured_villager}</aqua>. I am still wary, but I will not pretend that meant nothing.",
+        "People are saying <aqua>{cured_villager}</aqua> came home because you stayed.",
+        "<aqua>{cured_villager_possessive}</aqua> cure changed the way people say your name. <aqua>{cured_villager}</aqua>"
       ]
     },
     {
@@ -1580,9 +1580,9 @@
       ],
       "weight": 34,
       "lines": [
-        "Helping {cured_villager} speaks well of you. It does not erase everything else.",
-        "People are saying {cured_villager} came home because you stayed.",
-        "{cured_villager_possessive} cure changed the way people say your name. {cured_villager}"
+        "Helping <aqua>{cured_villager}</aqua> speaks well of you. It does not erase everything else.",
+        "People are saying <aqua>{cured_villager}</aqua> came home because you stayed.",
+        "<aqua>{cured_villager_possessive}</aqua> cure changed the way people say your name. <aqua>{cured_villager}</aqua>"
       ]
     },
     {
@@ -1598,9 +1598,9 @@
       ],
       "weight": 34,
       "lines": [
-        "You saved {cured_villager}. I know. I just do not know what to do with both that and the rest.",
-        "People are saying {cured_villager} came home because you stayed.",
-        "{cured_villager_possessive} cure changed the way people say your name. {cured_villager}"
+        "You saved <aqua>{cured_villager}</aqua>. I know. I just do not know what to do with both that and the rest.",
+        "People are saying <aqua>{cured_villager}</aqua> came home because you stayed.",
+        "<aqua>{cured_villager_possessive}</aqua> cure changed the way people say your name. <aqua>{cured_villager}</aqua>"
       ]
     },
     {
@@ -1613,9 +1613,9 @@
       ],
       "weight": 38,
       "lines": [
-        "Are you the doctor who saved {cured_villager}?",
-        "Did you really help {cured_villager} come back?",
-        "{cured_villager} is better because of you, right?"
+        "Are you the doctor who saved <aqua>{cured_villager}</aqua>?",
+        "Did you really help <aqua>{cured_villager}</aqua> come back?",
+        "<aqua>{cured_villager}</aqua> is better because of you, right?"
       ]
     },
     {
@@ -1628,9 +1628,9 @@
       ],
       "weight": 38,
       "lines": [
-        "The grown-ups said you are the wizard that saved {cured_villager}. Are you really?",
-        "Did you really help {cured_villager} come back?",
-        "{cured_villager} is better because of you, right?"
+        "The grown-ups said you are the wizard that saved <aqua>{cured_villager}</aqua>. Are you really?",
+        "Did you really help <aqua>{cured_villager}</aqua> come back?",
+        "<aqua>{cured_villager}</aqua> is better because of you, right?"
       ]
     },
     {
@@ -1641,9 +1641,9 @@
         "thunderstorm"
       ],
       "lines": [
-        "The thunder shook everyone, but the village is still standing.",
+        "The thunder <shake>shook everyone</shake>, but the village is still standing.",
         "We are rattled, not broken. Count heads before counting damage.",
-        "The little ones jumped at every crack, but most doors held.",
+        "The little ones <jump>jumped</jump> at every crack, but most doors held.",
         "Lightning makes honest fear out of everyone. Thank you for asking.",
         "We are checking roofs, bells, and nerves after that thunder."
       ],
@@ -1658,7 +1658,7 @@
         "thunderstorm"
       ],
       "lines": [
-        "The sky was so loud. I stayed near the bed and did not like it.",
+        "The sky was <shake>so loud</shake>. I stayed near the bed and did not like it.",
         "I think everyone is okay, but the thunder made my knees feel funny.",
         "The grown-ups said stay inside. I stayed very inside.",
         "I counted the booms and lost count because I hid.",
@@ -1674,10 +1674,10 @@
         "village_fire"
       ],
       "lines": [
-        "The smoke has thinned, but everyone is still counting what was lost.",
+        "The <wavy>smoke</wavy> has thinned, but everyone is still counting what was lost.",
         "We put out what we could. Keep water close until the smell fades.",
-        "Fire leaves more than ash. People will be jumpy for a while.",
-        "No one wants to say they were scared first, so I will: we were scared.",
+        "Fire leaves more than ash. People will be <jump>jumpy</jump> for a while.",
+        "No one wants to say they were scared first, so I will: we were <shake>scared</shake>.",
         "Everyone is checking walls, beds, and each other after the flames."
       ],
       "weight": 140
@@ -1708,10 +1708,10 @@
         "player_defended_raid"
       ],
       "lines": [
-        "The raid is over for now. Some of us are still listening for horns.",
+        "The raid is over for now. Some of us are still <pulse>listening for horns</pulse>.",
         "Everyone alive is accounted for, but calm takes longer to return.",
         "We barred the doors, held our breath, and made it to the other side.",
-        "Ask again after the shaking stops. For now, yes, most are safe.",
+        "Ask again after the <shake>shaking</shake> stops. For now, yes, most are safe.",
         "The bell did its work. So did the brave ones. The rest of us remember."
       ],
       "weight": 140
@@ -1730,7 +1730,7 @@
         "I hid where I was told. I think that means I helped.",
         "The bad people are gone, right? Please say they are gone.",
         "I heard shouting outside and did not peek. Not even once.",
-        "My heart is still running even though my feet stopped."
+        "My heart is still <jump>running</jump> even though my feet stopped."
       ],
       "weight": 160
     },
@@ -1743,7 +1743,7 @@
       ],
       "lines": [
         "The night brought trouble, but dawn found us still here.",
-        "We are checking doors and wounds. Night makes every sound suspicious now.",
+        "We are checking doors and wounds. Night makes every sound <pulse>suspicious</pulse> now.",
         "Some slept through it. Some will not sleep well for a while.",
         "The attack passed, but people are keeping lamps lit anyway.",
         "Everyone is quieter after a bad night. Quiet can mean alive, at least."
@@ -1763,7 +1763,7 @@
         "Night was too noisy. I want morning to stay longer.",
         "Someone told me not to open the door, so I did not.",
         "I am okay, but I want the lamps left on.",
-        "The dark made bad sounds. The grown-ups made braver sounds."
+        "The dark made <shake>bad sounds</shake>. The grown-ups made braver sounds."
       ],
       "weight": 160
     },
@@ -1775,7 +1775,7 @@
         "sandstorm"
       ],
       "lines": [
-        "The wind came in hard enough to make the whole village taste like dust.",
+        "The wind came in <wavy>hard enough</wavy> to make the whole village taste like dust.",
         "No rain here, just grit in the shutters and everyone checking their eyes.",
         "The sand got everywhere, but people found their way indoors.",
         "Harsh wind can scare a village nearly as well as thunder. We are still here.",
@@ -1795,7 +1795,7 @@
         "The wind threw sand at the windows. I did not like the sound.",
         "I got dust in my mouth even inside. How does it do that?",
         "The grown-ups said cover my face, so I did.",
-        "It was like the ground tried to fly away.",
+        "It was like the ground tried to <wavy>fly away</wavy>.",
         "I am okay, but my hair feels crunchy."
       ],
       "weight": 160
@@ -1809,8 +1809,8 @@
       ],
       "lines": [
         "The snow came down hard, but the hearths held and the doors stayed shut.",
-        "Cold frightens slowly. We are checking fingers, roofs, and firewood.",
-        "The village went white and quiet for a while. Quiet is not always peace.",
+        "Cold frightens <pulse>slowly</pulse>. We are checking fingers, roofs, and firewood.",
+        "The village went white and quiet for a while. <italic>Quiet is not always peace.</italic>",
         "Everyone is chilled, but accounted for. Warmth matters now.",
         "We are clearing paths before the snow hides what people need."
       ],
@@ -1869,9 +1869,9 @@
       ],
       "weight": 32,
       "lines": [
-        "{theft_witness} told me about you stealing {stolen_stack}. Not cool.",
-        "{theft_witness} said you took {stolen_stack}. That story travels fast.",
-        "{theft_witness_possessive} account of the {stolen_stack} has reached plenty of ears. {theft_witness}"
+        "<aqua>{theft_witness}</aqua> told me about you stealing {stolen_stack}. Not cool.",
+        "<aqua>{theft_witness}</aqua> said you took {stolen_stack}. That story travels fast.",
+        "<aqua>{theft_witness_possessive}</aqua> account of the {stolen_stack} has reached plenty of ears. <aqua>{theft_witness}</aqua>"
       ],
       "conditions": [
         {
@@ -1893,9 +1893,9 @@
       ],
       "weight": 30,
       "lines": [
-        "I know what happened at the {stolen_container}. {theft_witness_possessive} story reached me.",
-        "The {stolen_container} has been part of more conversations since you touched it. {theft_witness_possessive}",
-        "{theft_witness} saw enough at the {stolen_container} for the village to remember. {theft_witness_possessive}"
+        "I know what happened at the {stolen_container}. <aqua>{theft_witness_possessive}</aqua> story reached me.",
+        "The {stolen_container} has been part of more conversations since you touched it. <aqua>{theft_witness_possessive}</aqua>",
+        "<aqua>{theft_witness}</aqua> saw enough at the {stolen_container} for the village to remember. <aqua>{theft_witness_possessive}</aqua>"
       ],
       "conditions": [
         {
@@ -2164,7 +2164,7 @@
       ],
       "lines": [
         "I saw everybody run, and then one voice was gone.",
-        "The bell sounded too loud after that. Everything did.",
+        "The bell sounded <shake>too loud</shake> after that. Everything did.",
         "I saw people stop talking all at once. That was scary."
       ],
       "weight": 56
@@ -2178,7 +2178,7 @@
       "weight": 32,
       "lines": [
         "A village is not just beds and bells. When one voice is gone, every room gets bigger.",
-        "A missing voice changes every room it used to fill.",
+        "A missing voice changes <pulse>every room</pulse> it used to fill.",
         "We count the living because one of us cannot answer anymore."
       ]
     },
@@ -2196,7 +2196,7 @@
       ],
       "weight": 34,
       "lines": [
-        "If you came to ask whether we forget death quickly, no.",
+        "If you came to ask whether we forget death quickly, <bold>no</bold>.",
         "A missing voice changes every room it used to fill.",
         "We count the living because one of us cannot answer anymore."
       ]
@@ -2216,7 +2216,7 @@
       ],
       "weight": 34,
       "lines": [
-        "You stood between trouble and our doors. That is the sort of thing people remember without needing a ledger.",
+        "You stood between trouble and our doors. That is the sort of thing people <pulse>remember</pulse> without needing a ledger.",
         "You helped when the village needed hands, not speeches.",
         "People noticed where you stood when danger came."
       ]
@@ -2259,7 +2259,7 @@
       "weight": 36,
       "lines": [
         "During the raid, you did not ask who owed you. You just moved. That matters.",
-        "Raid horns make truth simple. You chose to help.",
+        "Raid horns make truth simple. <bold>You chose to help.</bold>",
         "When the raid came, you moved toward danger. We saw that."
       ]
     },
@@ -2294,7 +2294,7 @@
       ],
       "weight": 26,
       "lines": [
-        "The iron one moved before panic could. That sound is ugly, but it means we get another morning.",
+        "The iron one moved before <shake>panic</shake> could. That sound is ugly, but it means we get another morning.",
         "The iron one bought us a quieter morning.",
         "Metal moved before fear could finish spreading."
       ]
@@ -2307,7 +2307,7 @@
       ],
       "weight": 30,
       "lines": [
-        "When iron falls, flesh starts counting windows.",
+        "When iron falls, flesh starts <pulse>counting windows</pulse>.",
         "When the iron one falls, every door feels thinner.",
         "The village sounds different without iron footsteps nearby."
       ]
@@ -2547,7 +2547,7 @@
       "key": "interaction.follow_stay",
       "lines": [
         "I'll stay here.",
-        "I will stay here.",
+        "I will <pulse>stay here</pulse>.",
         "This is where I am staying."
       ]
     },
@@ -2555,7 +2555,7 @@
       "key": "interaction.follow_start",
       "lines": [
         "All right. I'll follow you.",
-        "All right. I will come with you.",
+        "All right. I will <pulse>come with you</pulse>.",
         "Fine. I am following."
       ]
     },
@@ -2563,7 +2563,7 @@
       "key": "opening.return_after_absence",
       "show_for_babies": false,
       "lines": [
-        "Been {days_since_seen} {day_or_days} since I saw you. What brings you back?",
+        "Been {days_since_seen} {day_or_days} since I saw you. What brings you <pulse>back</pulse>?",
         "I have not seen you since {days_since_seen_phrase}. What do you need today?",
         "You have been gone a while. {days_since_seen} {day_or_days}, by my count."
       ],
@@ -2574,7 +2574,7 @@
       "show_for_adults": false,
       "lines": [
         "I have not seen you since {days_since_seen_phrase}. Were you exploring?",
-        "You were gone for {days_since_seen} {day_or_days}. Did you see anything neat?",
+        "You were gone for {days_since_seen} {day_or_days}. Did you see anything <jump>neat</jump>?",
         "Hey, you are back. It has been {days_since_seen} {day_or_days}."
       ],
       "weight": 34
@@ -2582,7 +2582,7 @@
     {
       "key": "interaction.follow_betrayal",
       "lines": [
-        "I trusted you.",
+        "I <shake>trusted</shake> you.",
         "You asked me to follow you, not fear you.",
         "You made following you feel foolish."
       ],
@@ -2592,7 +2592,7 @@
       "key": "interaction.refuse_despised",
       "lines": [
         "I'm done talking. Stay away.",
-        "No. Stay away from me.",
+        "<bold>No.</bold> Stay away from me.",
         "I am done talking to you."
       ]
     },
@@ -2600,7 +2600,7 @@
       "key": "interaction.refuse_angry",
       "lines": [
         "I'm too angry to talk.",
-        "I am too angry for words right now.",
+        "I am too <shake>angry</shake> for words right now.",
         "Not now. I am still angry."
       ]
     },
@@ -2648,7 +2648,7 @@
       "key": "interaction.refuse_trade",
       "lines": [
         "I refuse to trade with you.",
-        "No trade. Not with you.",
+        "<bold>No trade.</bold> Not with you.",
         "I will not trade with you."
       ]
     },
@@ -2696,7 +2696,7 @@
       "key": "trade_refresh.ready",
       "lines": [
         "Hey, I restocked {restocked_summary} for you.",
-        "I have {restocked_summary} ready for you now.",
+        "I have {restocked_summary} <pulse>ready</pulse> for you now.",
         "I stocked {restocked_summary} and left them waiting on my side of the counter.",
         "I finished restocking {restocked_summary}. Take a look.",
         "I have your requested stock ready. I restocked {restocked_summary}."
@@ -2705,30 +2705,30 @@
     {
       "key": "trade_refresh.ready_interjection",
       "lines": [
-        "Sorry to butt in, {interrupted_villager}, but {player}, I finished that request you wanted.",
+        "Sorry to butt in, <aqua>{interrupted_villager}</aqua>, but <purple>{player}</purple>, I finished that request you wanted.",
         "Oh, nice. I actually have a new trade ready for you too.",
-        "Before you go, {player}, I also have {restocked_summary} ready for you.",
-        "Quick thing, {player}. I finished restocking {restocked_summary} too.",
-        "I do not mean to interrupt, {interrupted_villager}, but {player}, your request is ready at my counter.",
-        "Since we are talking orders, {player}, I have {restocked_summary} ready as well."
+        "Before you go, <purple>{player}</purple>, I also have {restocked_summary} ready for you.",
+        "Quick thing, <purple>{player}</purple>. I finished restocking {restocked_summary} too.",
+        "I do not mean to interrupt, <aqua>{interrupted_villager}</aqua>, but <purple>{player}</purple>, your request is ready at my counter.",
+        "Since we are talking orders, <purple>{player}</purple>, I have {restocked_summary} ready as well."
       ]
     },
     {
       "key": "trade_refresh.ready_interjection.second",
       "lines": [
-        "Sorry, one more counter calling: {player}, I have {restocked_summary} ready too.",
-        "Let me squeeze in before everyone scatters: {player}, your request is ready at my counter.",
-        "Since everyone is already gathered, {player}, {restocked_summary} is ready.",
+        "Sorry, one more counter calling: <purple>{player}</purple>, I have {restocked_summary} ready too.",
+        "Let me squeeze in before everyone scatters: <purple>{player}</purple>, your request is ready at my counter.",
+        "Since everyone is already gathered, <purple>{player}</purple>, {restocked_summary} is ready.",
         "I hate to add to the noise, but I finished {restocked_summary} for you.",
-        "Before the crowd disperses, {player}, I have {restocked_summary} ready as well."
+        "Before the crowd disperses, <purple>{player}</purple>, I have {restocked_summary} ready as well."
       ]
     },
     {
       "key": "trade_refresh.ready_interjection.third",
       "lines": [
-        "And before you get pulled away, {player}, I also finished {restocked_summary}.",
+        "And before you get pulled away, <purple>{player}</purple>, I also finished {restocked_summary}.",
         "One more thing from my counter: {restocked_summary} is ready.",
-        "I waited my turn. {player}, your requested stock is ready too.",
+        "I waited my turn. <purple>{player}</purple>, your requested stock is ready too.",
         "I will keep this short. I have {restocked_summary} waiting.",
         "One last counter report: {restocked_summary} is ready."
       ]
@@ -2736,8 +2736,8 @@
     {
       "key": "trade_refresh.ready_theft_interjection",
       "lines": [
-        "Whoa... bad time? I just wanted to let you know those trades you asked for are ready.",
-        "This seems like a bad moment, but {player}, I finished that request you wanted.",
+        "<shake>Whoa...</shake> bad time? I just wanted to let you know those trades you asked for are ready.",
+        "This seems like a bad moment, but <purple>{player}</purple>, I finished that request you wanted.",
         "I do not want to step into whatever this is, but I have {restocked_summary} ready for you.",
         "Awkward timing. Your requested stock is ready at my counter.",
         "I will be quick: {restocked_summary} is ready when this is settled."
@@ -2747,9 +2747,9 @@
       "key": "trade_refresh.ready_theft_interjection.second",
       "lines": [
         "I know this is getting stranger, but {restocked_summary} is ready.",
-        "Bad timing twice over. {player}, I have {restocked_summary} ready too.",
+        "Bad timing twice over. <purple>{player}</purple>, I have {restocked_summary} ready too.",
         "I will make this quick while everyone is staring: {restocked_summary} is ready.",
-        "{previous_villager}, I know. Still, {player}, your request is finished."
+        "<aqua>{previous_villager}</aqua>, I know. Still, <purple>{player}</purple>, your request is finished."
       ]
     },
     {
@@ -2764,9 +2764,9 @@
     {
       "key": "container_theft.backup_interjection",
       "lines": [
-        "Yeah, {previous_villager} is right. I saw you take {stolen_item_reference} too.",
-        "I saw {stolen_item_pronoun} too, {player}. {stolen_count} {stolen_count_word} came from {stolen_container}.",
-        "{previous_villager} is not the only one who noticed. Put {stolen_stack} back.",
+        "Yeah, <aqua>{previous_villager}</aqua> is right. I saw you take {stolen_item_reference} too.",
+        "I saw {stolen_item_pronoun} too, <purple>{player}</purple>. {stolen_count} {stolen_count_word} came from {stolen_container}.",
+        "<aqua>{previous_villager}</aqua> is not the only one who noticed. Put {stolen_stack} <bold>back</bold>.",
         "I was there too. Do not pretend {stolen_items} walked out on their own.",
         "Back them up? Gladly. I saw you take {stolen_stack}.",
         "I have seen this {witnessed_container_thefts} {container_theft_time_word} now. Put {stolen_item_pronoun} back.",
@@ -2776,17 +2776,17 @@
     {
       "key": "container_theft.backup_interjection.second",
       "lines": [
-        "{previous_villager} is not exaggerating. I saw {stolen_stack} leave {stolen_container} too.",
+        "<aqua>{previous_villager}</aqua> is not exaggerating. I saw {stolen_stack} leave {stolen_container} too.",
         "I saw it too: {stolen_item_reference} came out of {stolen_container} in your hands.",
-        "I was close enough to see it. Return {stolen_stack}, {player}.",
+        "I was close enough to see it. <bold>Return</bold> {stolen_stack}, <purple>{player}</purple>.",
         "One voice is easy to argue with. Two of us saw what happened."
       ]
     },
     {
       "key": "container_theft.backup_interjection.third",
       "lines": [
-        "I saw it too, {player}. Put {stolen_item_pronoun} back.",
-        "More than one of us saw the same theft. Return {stolen_stack}.",
+        "I saw it too, <purple>{player}</purple>. Put {stolen_item_pronoun} back.",
+        "More than one of us saw the same <shake>theft</shake>. Return {stolen_stack}.",
         "I was watching as well. I saw {stolen_items} leave {stolen_container}.",
         "Nobody here is guessing. {stolen_count} {stolen_count_word} came out with you."
       ]
@@ -2794,19 +2794,19 @@
     {
       "key": "container_opened.backup_interjection",
       "lines": [
-        "{previous_villager} is right. That {container} is village property, {player}.",
-        "I saw the lid open too. Step back from {container} and ask first.",
-        "That is not just {previous_villager}'s concern. The {container} belongs to the village.",
+        "<aqua>{previous_villager}</aqua> is right. That {container} is village property, <purple>{player}</purple>.",
+        "I saw the lid open too. <pulse>Step back</pulse> from {container} and ask first.",
+        "That is not just <aqua>{previous_villager}</aqua>'s concern. The {container} belongs to the village.",
         "I am saying the same thing: close {container} and speak before touching village stores.",
-        "You have more than one witness, {player}. Step away from {container}."
+        "You have more than one witness, <purple>{player}</purple>. Step away from {container}."
       ]
     },
     {
       "key": "container_opened.backup_interjection.second",
       "lines": [
-        "{previous_villager} saw it, and so did I. Close {container}.",
+        "<aqua>{previous_villager}</aqua> saw it, and so did I. <bold>Close</bold> {container}.",
         "I saw it too. Village stores are not open shelves.",
-        "I was watching too, {player}. Step back from {container} and ask.",
+        "I was watching too, <purple>{player}</purple>. Step back from {container} and ask.",
         "It is not just one complaint. That {container} belongs to the village."
       ]
     },
@@ -2814,7 +2814,7 @@
       "key": "container_opened.backup_interjection.third",
       "lines": [
         "Same boundary from me: close {container} and ask first.",
-        "More than one of us is watching now, {player}. Step away from {container}.",
+        "More than one of us is <pulse>watching</pulse> now, <purple>{player}</purple>. Step away from {container}.",
         "I saw enough. That {container} still is not yours to search.",
         "No one is piling on for sport. Village stores need permission."
       ]
@@ -3025,14 +3025,14 @@
       "lines": [
         "I cannot show you that right now.",
         "I cannot show you my things right now.",
-        "My inventory is not yours to see right now."
+        "My inventory is <bold>not yours</bold> to see right now."
       ]
     },
     {
       "key": "interaction.not_trusted_enough",
       "lines": [
         "I don't know you well enough for that.",
-        "I do not trust you enough for that.",
+        "I do not <pulse>trust</pulse> you enough for that.",
         "We are not close enough for that."
       ]
     },
@@ -3048,7 +3048,7 @@
       "key": "interaction.keep_distance",
       "lines": [
         "Keep your distance.",
-        "Stay back.",
+        "<shake>Stay back.</shake>",
         "Do not come closer."
       ]
     },
@@ -3056,7 +3056,7 @@
       "key": "interaction.child_refuse_gift",
       "show_for_adults": false,
       "lines": [
-        "I should ask a grown-up before taking that.",
+        "I should ask a <pulse>grown-up</pulse> before taking that.",
         "I should ask someone older first.",
         "I am not supposed to take that without asking."
       ]
@@ -3073,7 +3073,7 @@
       "key": "interaction.gift_empty_slot",
       "lines": [
         "There is nothing there.",
-        "Your hand is empty.",
+        "Your hand is <wavy>empty</wavy>.",
         "There is nothing for me to take."
       ]
     },
@@ -3081,7 +3081,7 @@
       "key": "interaction.gift_inventory_full",
       "lines": [
         "Sorry, my pockets are a bit full.",
-        "I cannot carry anything else right now.",
+        "I cannot carry anything else right now. <italic>Really.</italic>",
         "My hands are full enough already.",
         "I do not have room for that right now.",
         "Keep that for now. I have nowhere to put it."
@@ -3109,7 +3109,7 @@
       "lines": [
         "I do not know how to trade yet.",
         "I am too young to trade.",
-        "I do not have trades. I am little."
+        "I do not have trades. I am <jump>little</jump>."
       ]
     },
     {
@@ -3131,7 +3131,7 @@
     {
       "key": "sleep.disturbance",
       "lines": [
-        "Mmph... let me sleep.",
+        "<wavy>Mmph...</wavy> let me sleep.",
         "Come back when the sun is up.",
         "Mmph... I was sleeping."
       ],
@@ -3141,7 +3141,7 @@
       "key": "sleep.repeated_disturbance",
       "lines": [
         "I already woke up once for you tonight.",
-        "You've bothered me enough for one night.",
+        "You've bothered me <shake>enough</shake> for one night.",
         "Again? I was sleeping again."
       ],
       "weight": 20
@@ -3149,7 +3149,7 @@
     {
       "key": "sleep.broken_bed",
       "lines": [
-        "My bed! What is wrong with you?",
+        "<shake>My bed!</shake> What is wrong with you?",
         "That was my bed. I will remember this.",
         "My bed! Why would you do that?"
       ],
@@ -3159,7 +3159,7 @@
       "key": "reputation.insult_child",
       "show_for_adults": false,
       "lines": [
-        "That was mean. I am telling someone.",
+        "That was <shake>mean</shake>. I am telling someone.",
         "That was mean. I am finding a grown-up.",
         "You should not say things like that."
       ]
@@ -3168,7 +3168,7 @@
       "key": "reputation.positive",
       "lines": [
         "You know, you're not so bad to talk to.",
-        "It's good to speak with someone who listens.",
+        "It's good to speak with someone who <pulse>listens</pulse>.",
         "Talking to you is better than I expected."
       ],
       "weight": 20
@@ -3177,7 +3177,7 @@
       "key": "reputation.angry",
       "lines": [
         "I should have known better than to speak with you.",
-        "Careful. Villages remember cruelty.",
+        "<pulse>Careful.</pulse> Villages remember cruelty.",
         "Speaking with you was a mistake."
       ],
       "weight": 20
@@ -3205,13 +3205,13 @@
       "lines": [
         "Hmph. Maybe don't quit your day job.",
         "I have heard better from a door hinge.",
-        "That joke needed more work before release."
+        "That joke needed more <jump>work</jump> before release."
       ]
     },
     {
       "key": "gift_memory.direct.loved",
       "lines": [
-        "Still thinking about the {gift_item} you gave me. That was a real kindness.",
+        "Still thinking about the {gift_item} you gave me. That was a <pulse>real kindness</pulse>.",
         "That {gift_item} you gave me still makes me smile.",
         "I remember the {gift_item}. That was thoughtful of you."
       ]
@@ -3244,14 +3244,14 @@
       "key": "gift_memory.direct.hated",
       "lines": [
         "I have not forgotten the {gift_item} you handed me.",
-        "That {gift_item} felt like an insult.",
+        "That {gift_item} felt like an <shake>insult</shake>.",
         "I have not forgotten what that {gift_item} meant."
       ]
     },
     {
       "key": "gift_memory.village.loved",
       "lines": [
-        "I heard you gave {villager_name} {gift_item}. That was kind of you.",
+        "I heard you gave {villager_name} {gift_item}. That was <pulse>kind</pulse> of you.",
         "That {gift_item} you gave me still makes me smile. {villager_name}",
         "I remember the {gift_item}. That was thoughtful of you. {villager_name}"
       ]
@@ -3283,7 +3283,7 @@
     {
       "key": "gift_memory.village.hated",
       "lines": [
-        "I heard what you gave {villager_name}. Do not bring that sort of thing here.",
+        "I heard what you gave {villager_name}. <bold>Do not</bold> bring that sort of thing here.",
         "That {gift_item} felt like an insult. {villager_name}",
         "I have not forgotten what that {gift_item} meant. {villager_name}"
       ]
@@ -3299,7 +3299,7 @@
     {
       "key": "gift_response.global.liked",
       "lines": [
-        "{gift_item} is a welcome gift.",
+        "{gift_item} is a <pulse>welcome</pulse> gift.",
         "Thank you. {gift_item} is a good gift.",
         "{gift_item} suits me better than you may know."
       ]
@@ -3323,7 +3323,7 @@
     {
       "key": "gift_response.global.hated",
       "lines": [
-        "That is an insult, not a gift.",
+        "That is an <shake>insult</shake>, not a gift.",
         "No. {gift_item} is a poor thing to hand someone.",
         "Do not call {gift_item} kindness."
       ]
@@ -3331,7 +3331,7 @@
     {
       "key": "gift_response.profession.loved",
       "lines": [
-        "{gift_item}? For my work? That is thoughtful.",
+        "{gift_item}? For my work? That is <rainbow>thoughtful</rainbow>.",
         "You chose carefully. This means a lot. {gift_item}",
         "{gift_item} is exactly the kind of gift I remember kindly."
       ]
@@ -3339,7 +3339,7 @@
     {
       "key": "gift_response.profession.liked",
       "lines": [
-        "I can make good use of {gift_item}.",
+        "I can make <pulse>good use</pulse> of {gift_item}.",
         "Thank you. {gift_item} is a good gift.",
         "{gift_item} suits me better than you may know."
       ]
@@ -3363,7 +3363,7 @@
     {
       "key": "gift_response.profession.hated",
       "lines": [
-        "Do not bring danger and call it a present.",
+        "<bold>Do not</bold> bring danger and call it a present.",
         "No. {gift_item} is a poor thing to hand someone.",
         "Do not call {gift_item} kindness."
       ]
@@ -3371,7 +3371,7 @@
     {
       "key": "gift_advice_followup.liked",
       "lines": [
-        "About that gift advice... good. {tested_villager} liked {gift_item}. Word gets around when a tip lands.",
+        "About that gift advice... <pulse>good</pulse>. {tested_villager} liked {gift_item}. Word gets around when a tip lands.",
         "So {gift_item} worked for {tested_villager}. I am glad my advice held up.",
         "So {tested_villager} liked {gift_item}. Good. Advice should survive being tested."
       ],
@@ -3381,7 +3381,7 @@
       "key": "gift_advice_followup.disliked",
       "lines": [
         "About that gift advice... hm. If {gift_item} did not suit {gift_subject}, try {alternative_gift} instead.",
-        "That one soured? Then bring {alternative_gift} next time. {gift_subject} should take that more kindly.",
+        "That one <wavy>soured</wavy>? Then bring {alternative_gift} next time. {gift_subject} should take that more kindly.",
         "Well, now you know. {gift_item} is not the way to win over {gift_subject}. Try {alternative_gift}.",
         "That advice turned sideways. Bring {alternative_gift} and you may get a kinder answer."
       ],
@@ -3454,7 +3454,7 @@
     {
       "key": "gift_given",
       "lines": [
-        "Here. Take {gift_item}. You have earned a little kindness back.",
+        "Here. Take {gift_item}. You have earned a little <pulse>kindness</pulse> back.",
         "I wanted you to have {gift_item}. Good neighbors share what they can.",
         "{gift_item} should serve you well. Consider it thanks from this village."
       ],
@@ -3464,7 +3464,7 @@
       "key": "gift_taken_back.returned",
       "lines": [
         "So the {gift_item} was only kindness on loan?",
-        "You gave me {gift_item}, then took it back. I will remember both parts.",
+        "You gave me {gift_item}, then took it back. I will <pulse>remember</pulse> both parts.",
         "A gift loses its warmth when it walks away in your hands."
       ],
       "weight": 50
@@ -3472,7 +3472,7 @@
     {
       "key": "gift_taken_back.stolen",
       "lines": [
-        "That {gift_item} was not yours to take.",
+        "That {gift_item} was <bold>not yours</bold> to take.",
         "Taking another person's gift from my keeping is a poor kind of bold.",
         "I know what was given to me. I also know who just took it."
       ],
@@ -3482,7 +3482,7 @@
       "key": "trade_payment_taken_back.returned",
       "lines": [
         "That {trade_item} was payment, not a pouch you left with me.",
-        "You traded {trade_item} fair and square. Taking it back makes the square crooked.",
+        "You traded {trade_item} fair and square. Taking it back makes the square <wavy>crooked</wavy>.",
         "A trade is finished when both hands let go. Yours just reached back."
       ],
       "weight": 50
@@ -3490,7 +3490,7 @@
     {
       "key": "trade_payment_taken_back.stolen",
       "lines": [
-        "That {trade_item} was paid to me. It was not yours to collect.",
+        "That {trade_item} was paid to me. It was <bold>not yours</bold> to collect.",
         "You are taking someone else's trade payment from my keeping.",
         "I know my accounts. That {trade_item} was not owed to you."
       ],
@@ -3499,7 +3499,7 @@
     {
       "key": "story_hint.biome.vague",
       "lines": [
-        "I caught wind of different land {vague_direction}. Could be worth a walk.",
+        "I caught <wavy>wind</wavy> of different land {vague_direction}. Could be worth a walk.",
         "There is talk of different land {vague_direction}. Worth checking, maybe.",
         "Someone mentioned strange terrain {vague_direction}. Could be nothing, could be a road."
       ]
@@ -3523,7 +3523,7 @@
     {
       "key": "story_hint.structure.rumor",
       "lines": [
-        "I keep hearing stories about {target_article} somewhere {vague_direction}{vertical}.",
+        "I keep hearing <wavy>stories</wavy> about {target_article} somewhere {vague_direction}{vertical}.",
         "Stories place {target_article} somewhere {vague_direction}{vertical}.",
         "I heard {target_article} might be {vague_direction}{vertical}."
       ]
@@ -3539,7 +3539,7 @@
     {
       "key": "story_hint.map",
       "lines": [
-        "Here. I marked {target_article} on this map. It should sit about {distance} {direction}{vertical}.",
+        "Here. I marked {target_article} on this <color:gold>map</color>. It should sit about {distance} {direction}{vertical}.",
         "I marked {target_article}; look about {distance} {direction}{vertical}.",
         "This map should lead toward {target_article}, about {distance} {direction}{vertical}."
       ]
@@ -3605,7 +3605,7 @@
     {
       "key": "story_hint_report.structure.monument",
       "lines": [
-        "{target_article}, beneath the water. I will believe the waves were telling the truth this once.",
+        "{target_article}, beneath the <wavy>water</wavy>. I will believe the waves were telling the truth this once.",
         "You found {target_article}? The sea hides things, but apparently not from you.",
         "{target_article}, confirmed. I do not trust water that keeps architecture.",
         "Then the rumor sank deep and stayed true. That is rare.",
@@ -3627,7 +3627,7 @@
     {
       "key": "story_hint_report.structure.ancient_city",
       "lines": [
-        "{target_article}. Keep that story quiet. Some places should not hear their own names.",
+        "{target_article}. Keep that story <pulse>quiet</pulse>. Some places should not hear their own names.",
         "You came back from {target_article}. Speak softly. Even memory might echo down there.",
         "{target_article}, confirmed. That is not a discovery I would celebrate loudly.",
         "So the deep rumor was true. Some truths are best carried carefully.",
@@ -3712,9 +3712,9 @@
     {
       "key": "container_theft_memory.direct",
       "lines": [
-        "I still remember you trying to take my {stolen_stack}.",
+        "I still <pulse>remember</pulse> you trying to take my {stolen_stack}.",
         "That {stolen_item} from the {stolen_container}? I have not forgotten.",
-        "You put your hands on village stores once. I am watching them now.",
+        "You put your hands on village stores once. I am <pulse>watching</pulse> them now.",
         "Trust is counted in small things. Last time, it was counted in {stolen_stack}.",
         "I remember the {stolen_container}, the missing {stolen_item}, and your face beside both.",
         "If you came to repay what happened with the {stolen_item}, start by keeping your hands visible."
@@ -3724,12 +3724,12 @@
     {
       "key": "container_theft_memory.village",
       "lines": [
-        "{theft_witness} told me about you stealing {stolen_stack}. Not cool.",
-        "Word travels faster than full pockets. {theft_witness} saw the {stolen_item}.",
+        "<aqua>{theft_witness}</aqua> told me about you stealing {stolen_stack}. Not cool.",
+        "Word travels faster than full pockets. <aqua>{theft_witness}</aqua> <pulse>saw</pulse> the {stolen_item}.",
         "Around here, a missing {stolen_item} becomes everybody's story.",
-        "{theft_witness_possessive} warning reached more doors than you opened.",
+        "<aqua>{theft_witness_possessive}</aqua> <shake>warning</shake> reached more doors than you opened.",
         "People here share bread, tools, and warnings. You became the warning after that {stolen_stack}.",
-        "I was not there, but {theft_witness} was. That is enough for me to watch the {stolen_container}."
+        "I was not there, but <aqua>{theft_witness}</aqua> was. That is enough for me to watch the {stolen_container}."
       ],
       "weight": 154
     }
@@ -3746,7 +3746,7 @@
         "cautious"
       ],
       "lines": [
-        "You must be new here. What brings you to our village?",
+        "You must be new here. What brings you to our <pulse>village</pulse>?",
         "I do not know your face yet. What brings you here?",
         "New footsteps in the village. What do you need?"
       ]
@@ -3764,7 +3764,7 @@
       "lines": [
         "I haven't seen you before. What brings you here?",
         "I do not know your face yet. What brings you here?",
-        "New footsteps in the village. What do you need?"
+        "New <pulse>footsteps</pulse> in the village. What do you need?"
       ]
     },
     {
@@ -3778,7 +3778,7 @@
         "cautious"
       ],
       "lines": [
-        "You must be new here. Are you visiting?",
+        "<jump>You must be new here.</jump> Are you visiting?",
         "I do not know your face yet. What brings you here?",
         "New footsteps in the village. What do you need?"
       ]
@@ -3794,7 +3794,7 @@
         "cautious"
       ],
       "lines": [
-        "I haven't seen you before. Are you new?",
+        "I haven't seen you before. Are you <jump>new</jump>?",
         "I do not know your face yet. What brings you here?",
         "New footsteps in the village. What do you need?"
       ]
@@ -3807,7 +3807,7 @@
         "friendly"
       ],
       "lines": [
-        "Good to see you. What can I do for you?",
+        "Good to <pulse>see you</pulse>. What can I do for you?",
         "Good to see you. What do you need?",
         "Hello again. How can I help?"
       ]
@@ -3836,7 +3836,7 @@
       "lines": [
         "You should make this quick.",
         "Say what you need and keep it brief.",
-        "Speak quickly. I am listening for now."
+        "Speak <shake>quickly</shake>. I am listening for now."
       ]
     },
     {
@@ -3847,7 +3847,7 @@
         "friendly"
       ],
       "lines": [
-        "Hi! Did you come to visit?",
+        "<jump>Hi!</jump> Did you come to visit?",
         "Hi! Are you here to say hello?",
         "Hello! Did you come to visit me?"
       ]
@@ -3861,7 +3861,7 @@
         "rude"
       ],
       "lines": [
-        "Um. Are you here to talk?",
+        "<wavy>Um.</wavy> Are you here to talk?",
         "Um. I can listen if you are nice.",
         "Are we talking safely?"
       ]
@@ -3876,7 +3876,7 @@
       "lines": [
         "I can listen, but then I am going back inside.",
         "I can talk for a little bit, but I am staying near the door.",
-        "You can say something, but I am keeping space."
+        "You can say something, but I am keeping <shake>space</shake>."
       ]
     }
   ],
@@ -3889,7 +3889,7 @@
         "friendly"
       ],
       "lines": [
-        "Safe travels. Come by again.",
+        "Safe <pulse>travels</pulse>. Come by again.",
         "Travel safely. We will talk again.",
         "Take care on the road."
       ]
@@ -3903,7 +3903,7 @@
       ],
       "lines": [
         "Until next time.",
-        "Until later.",
+        "Until <pulse>later</pulse>.",
         "That will do for now."
       ]
     },
@@ -3918,7 +3918,7 @@
       "lines": [
         "That is enough for now.",
         "We are finished here.",
-        "That is enough talking."
+        "That is <bold>enough</bold> talking."
       ]
     },
     {
@@ -3929,7 +3929,7 @@
         "friendly"
       ],
       "lines": [
-        "Bye! Come back later.",
+        "<jump>Bye!</jump> Come back later.",
         "Bye! Come visit again.",
         "Goodbye! I am going to play now."
       ]
@@ -3944,7 +3944,7 @@
       ],
       "lines": [
         "Okay. Goodbye.",
-        "Okay. I am done talking now.",
+        "Okay. I am <pulse>done</pulse> talking now.",
         "Goodbye. I am going over there."
       ]
     },
@@ -3956,7 +3956,7 @@
         "fearful"
       ],
       "lines": [
-        "I am going to find someone older.",
+        "I am going to find someone <pulse>older</pulse>.",
         "I am going back where it feels safer.",
         "I am finding someone older now."
       ]
@@ -3970,7 +3970,7 @@
       ],
       "lines": [
         "Fine. I will stand down, but peace takes more than payment.",
-        "I will let this pass for now. Do not make me regret it.",
+        "I will let this pass for now. Do not make me <shake>regret</shake> it.",
         "That is enough to cool my temper. Keep your hands peaceful."
       ],
       "weight": 60
@@ -3982,7 +3982,7 @@
       ],
       "lines": [
         "That is not enough. Bring {emerald_cost} {emeralds} if you want this settled.",
-        "You are short. Peace costs {emerald_cost} {emeralds} today.",
+        "You are short. Peace costs <color:green>{emerald_cost} {emeralds}</color> today.",
         "A small offer will not calm a large mistake. I need {emerald_cost} {emeralds}."
       ],
       "weight": 60
@@ -3997,7 +3997,7 @@
         "blocked_by_reputation"
       ],
       "lines": [
-        "No. Some things are not bought back with {payment_items}.",
+        "<bold>No.</bold> Some things are not bought back with {payment_items}.",
         "The village remembers too much for that to work.",
         "No. The offer does not reach the damage yet. {payment_items}"
       ],

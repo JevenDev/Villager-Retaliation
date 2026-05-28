@@ -12,7 +12,7 @@
       "show_for_babies": false,
       "lines": [
         "I came back to my work. That feels smaller than victory and better than a monument.",
-        "The village sounds normal again, which is how I know I am still shaking.",
+        "The village sounds normal again, which is how I know I am still <shake>shaking</shake>.",
         "I survived. Now I get to do chores, which is a strange kind of mercy."
       ],
       "weight": 26
@@ -53,7 +53,7 @@
       "lines": [
         "You helped keep tomorrow ordinary. That is not a small thing.",
         "The village still has chores because you helped it survive long enough to need them.",
-        "I heard the fighting. Then I heard doors opening again. Thank you."
+        "I heard the fighting. Then I heard doors opening again. <pulse>Thank you.</pulse>"
       ],
       "weight": 34
     },
@@ -70,7 +70,7 @@
       "show_for_babies": false,
       "lines": [
         "I woke up wanting to work again. That is how I knew I was back.",
-        "My hands remembered their trade before my thoughts stopped trembling.",
+        "My hands remembered their trade before my thoughts stopped <shake>trembling</shake>.",
         "You gave me a morning I did not think I would see."
       ],
       "weight": 30
@@ -89,7 +89,7 @@
       "lines": [
         "An apology is a repair. Do not hand me a tool you will not use.",
         "I can respect a crack that admits it is a crack. Now prove it will not spread.",
-        "Words are the first patch. Behavior is the stitching."
+        "Words are the first patch. <bold>Behavior</bold> is the stitching."
       ],
       "weight": 30
     },
@@ -107,7 +107,7 @@
       "show_for_babies": false,
       "lines": [
         "I hear you. The village will need more than hearing.",
-        "Apologies are seeds. We will see what grows.",
+        "Apologies are seeds. We will see what <pulse>grows</pulse>.",
         "I want to believe you. Help make that less foolish."
       ],
       "weight": 30
@@ -126,7 +126,7 @@
       "lines": [
         "A new little voice joined us. Even the work sounded softer for a while.",
         "There is a baby in the village now. Everyone pretends not to smile and fails.",
-        "New life makes the whole place count its blessings out loud."
+        "New life makes the whole place count its <pulse>blessings</pulse> out loud."
       ],
       "weight": 34
     },
@@ -145,7 +145,7 @@
       "lines": [
         "Night came too close. We will be checking latches before sunset for a while.",
         "The dark tested the village and found us awake enough.",
-        "I heard the thing outside before I saw it. That is the part sleep remembers."
+        "I heard the thing outside before I saw it. That is the part sleep <shake>remembers</shake>."
       ],
       "weight": 36
     },
@@ -168,7 +168,7 @@
       "lines": [
         "You helped chase danger from our doors. Ordinary work feels possible again.",
         "The village saw you stand with us. That sort of thing travels faster than gossip.",
-        "Because of you, today still has chores instead of funerals."
+        "Because of you, today still has chores instead of <italic>funerals</italic>."
       ],
       "weight": 40
     },
@@ -189,7 +189,7 @@
       ],
       "lines": [
         "You fought during the raid. Some debts are too large for emeralds.",
-        "I saw you answer the bell. That matters here.",
+        "I saw you answer the bell. <bold>That matters here.</bold>",
         "When raiders came, you did not treat us like someone else's problem."
       ],
       "weight": 42

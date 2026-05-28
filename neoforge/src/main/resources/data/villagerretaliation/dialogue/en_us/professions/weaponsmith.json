@@ -21,7 +21,7 @@
       "request": "question",
       "lines": [
         "Rust on a sword is just neglect learning to speak.",
-        "Trouble always finds villages. Best be ready.",
+        "Trouble always finds villages. <bold>Best be ready.</bold>",
         "A blade tells the truth about its owner sooner or later.",
         "Ready is not the same as eager. A village should know the difference.",
         "Keeping an edge honest is mostly knowing when to stop grinding.",
@@ -81,7 +81,7 @@
       ],
       "max_player_item_durability_percent": 24,
       "lines": [
-        "{held_item} has only {held_item_durability} durability left. That is a warning, not a weapon.",
+        "{held_item} has only {held_item_durability} durability left. That is a <shake>warning</shake>, not a weapon.",
         "{held_item} is at {held_item_durability_percent}%. Mend it before it chooses the worst possible moment to become scrap.",
         "{held_item} is at {held_item_durability} durability. That is nearly a plea for repair."
       ],
@@ -93,7 +93,7 @@
       "lines": [
         "The golem did good work last night. Still, I keep the blades sharp.",
         "I once polished rust off a sword and found three old mistakes underneath.",
-        "Some nights, the grindstone sounds like preparation instead of work."
+        "Some nights, the grindstone sounds like <pulse>preparation</pulse> instead of work."
       ],
       "weight": 74
     },

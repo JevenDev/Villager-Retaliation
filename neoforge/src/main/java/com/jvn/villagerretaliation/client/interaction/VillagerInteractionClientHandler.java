@@ -2,6 +2,8 @@ package com.jvn.villagerretaliation.client.interaction;
 
 import com.jvn.villagerretaliation.client.villager.VillagerNameClientCache;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.dialogue.DialogueTextEffects;
+import com.jvn.villagerretaliation.dialogue.DialogueTextSegment;
 import com.jvn.villagerretaliation.network.OpenVillagerInteractionPayload;
 import com.jvn.villagerretaliation.network.VillagerNameSyncPayload;
 import com.jvn.villagerretaliation.network.VillagerConversationEndedPayload;
@@ -9,6 +11,7 @@ import com.jvn.villagerretaliation.network.VillagerDialogueResponsePayload;
 import com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -126,7 +129,7 @@ public final class VillagerInteractionClientHandler {
     }
 
     public static void acceptNotice(VillagerInteractionNoticePayload payload) {
-        pushVillagerChatMessage(Minecraft.getInstance(), payload.entityId(), payload.text(), payload.speakerLabel());
+        pushVillagerChatMessage(Minecraft.getInstance(), payload.entityId(), payload.text(), payload.speakerLabel(), payload.textSegments());
     }
 
     public static void acceptConversationEnded(VillagerConversationEndedPayload payload) {
@@ -147,7 +150,12 @@ public final class VillagerInteractionClientHandler {
         return null;
     }
 
-    private static void pushVillagerChatMessage(Minecraft minecraft, int entityId, String text, String speakerLabel) {
+    private static void pushVillagerChatMessage(
+            Minecraft minecraft,
+            int entityId,
+            String text,
+            String speakerLabel,
+            List<DialogueTextSegment> textSegments) {
         if (minecraft.player == null || text == null || text.isBlank()) {
             return;
         }
@@ -163,17 +171,31 @@ public final class VillagerInteractionClientHandler {
         if (shouldSeparateVillagerChatMessage()) {
             addVillagerChatSeparator(minecraft, accentColor);
         }
+        String displayedSpeaker = startsChatGroup ? resolvedSpeaker : "";
+        List<DialogueTextSegment> displayedSegments = dialogueTextEffectsDisabled()
+                ? List.of()
+                : displayedChatSegments(text.strip(), displayedSpeaker, textSegments);
         addVillagerChatMessage(
                 minecraft,
-                formatVillagerChatMessage(text.strip(), currentChatGroupMessageIndex, startsChatGroup ? resolvedSpeaker : "", accentColor),
-                accentColor
+                formatVillagerChatMessage(text.strip(), currentChatGroupMessageIndex, displayedSpeaker, accentColor, textSegments),
+                accentColor,
+                displayedSegments
         );
         currentChatGroupMessageIndex++;
         rememberVillagerChatGroup(entityId, resolvedSpeaker);
     }
 
     private static void addVillagerChatMessage(Minecraft minecraft, Component message, int accentColor) {
+        addVillagerChatMessage(minecraft, message, accentColor, List.of());
+    }
+
+    private static void addVillagerChatMessage(
+            Minecraft minecraft,
+            Component message,
+            int accentColor,
+            List<DialogueTextSegment> textSegments) {
         minecraft.gui.getChat().addMessage(message, null, villagerChatTag(accentColor));
+        VillagerAnimatedChatText.remember(textSegments);
     }
 
     private static void addVillagerChatSeparator(Minecraft minecraft, int accentColor) {
@@ -227,14 +249,124 @@ public final class VillagerInteractionClientHandler {
         );
     }
 
-    private static Component formatVillagerChatMessage(String text, int lineIndex, String speakerLabel, int accentColor) {
+    private static Component formatVillagerChatMessage(
+            String text,
+            int lineIndex,
+            String speakerLabel,
+            int accentColor,
+            List<DialogueTextSegment> textSegments) {
         int color = lineIndex % 2 == 0 ? VILLAGER_CHAT_PRIMARY_TEXT_COLOR : VILLAGER_CHAT_SECONDARY_TEXT_COLOR;
         MutableComponent message = Component.empty();
         if (speakerLabel != null && !speakerLabel.isBlank()) {
             message.append(Component.literal(gui("chat.speaker_prefix", speakerLabel))
                     .withStyle(style -> style.withColor(accentColor)));
         }
-        return message.append(Component.literal(text).withStyle(style -> style.withColor(color)));
+        if (dialogueTextEffectsDisabled()) {
+            message.append(Component.literal(text).withStyle(style -> style.withColor(color)));
+            return message;
+        }
+        List<DialogueTextSegment> safeSegments = textSegments == null || textSegments.isEmpty()
+                ? DialogueTextSegment.plain(text, DialogueTextEffects.NONE)
+                : textSegments;
+        for (DialogueTextSegment segment : safeSegments) {
+            appendStyledSegment(message, segment, color);
+        }
+        return message;
+    }
+
+    private static void appendStyledSegment(MutableComponent message, DialogueTextSegment segment, int fallbackColor) {
+        DialogueTextEffects effects = segment.effects();
+        if (effects.rainbow()) {
+            int index = 0;
+            int length = Math.max(1, segment.text().codePointCount(0, segment.text().length()));
+            for (int offset = 0; offset < segment.text().length(); ) {
+                int codePoint = segment.text().codePointAt(offset);
+                String glyph = new String(Character.toChars(codePoint));
+                int color = rainbowColor(index / (float) length);
+                message.append(styledText(glyph, effects, color));
+                offset += Character.charCount(codePoint);
+                index++;
+            }
+            return;
+        }
+        if (effects.hasGradient()) {
+            int length = Math.max(1, segment.text().codePointCount(0, segment.text().length()) - 1);
+            int index = 0;
+            for (int offset = 0; offset < segment.text().length(); ) {
+                int codePoint = segment.text().codePointAt(offset);
+                String glyph = new String(Character.toChars(codePoint));
+                int color = lerpColor(effects.gradientStartColor(), effects.gradientEndColor(), length == 0 ? 0.0F : index / (float) length);
+                message.append(styledText(glyph, effects, color));
+                offset += Character.charCount(codePoint);
+                index++;
+            }
+            return;
+        }
+        message.append(styledText(segment.text(), effects, effects.color() == null ? fallbackColor : effects.color()));
+    }
+
+    private static Component styledText(String text, DialogueTextEffects effects, int color) {
+        return Component.literal(text).withStyle(style -> style
+                .withColor(VillagerChatEffectRenderer.usesAnimatedRenderer(effects)
+                        ? VillagerChatEffectRenderer.STATIC_EFFECT_TEXT_COLOR
+                        : color)
+                .withItalic(effects.italic())
+                .withBold(effects.bold())
+                .withUnderlined(effects.underlined())
+                .withStrikethrough(effects.strikethrough())
+                .withObfuscated(effects.obfuscated()));
+    }
+
+    private static int lerpColor(int start, int end, float progress) {
+        float clamped = Math.clamp(progress, 0.0F, 1.0F);
+        int red = Math.round(((start >> 16) & 0xFF) + (((end >> 16) & 0xFF) - ((start >> 16) & 0xFF)) * clamped);
+        int green = Math.round(((start >> 8) & 0xFF) + (((end >> 8) & 0xFF) - ((start >> 8) & 0xFF)) * clamped);
+        int blue = Math.round((start & 0xFF) + ((end & 0xFF) - (start & 0xFF)) * clamped);
+        return (red << 16) | (green << 8) | blue;
+    }
+
+    private static int rainbowColor(float progress) {
+        float hue = progress - (float) Math.floor(progress);
+        float scaled = hue * 6.0F;
+        int sector = (int) Math.floor(scaled);
+        float fraction = scaled - sector;
+        float saturation = 0.85F;
+        float value = 1.0F;
+        float p = value * (1.0F - saturation);
+        float q = value * (1.0F - saturation * fraction);
+        float t = value * (1.0F - saturation * (1.0F - fraction));
+        return switch (Math.floorMod(sector, 6)) {
+            case 0 -> rgb(value, t, p);
+            case 1 -> rgb(q, value, p);
+            case 2 -> rgb(p, value, t);
+            case 3 -> rgb(p, q, value);
+            case 4 -> rgb(t, p, value);
+            default -> rgb(value, p, q);
+        };
+    }
+
+    private static int rgb(float red, float green, float blue) {
+        return (Math.round(red * 255.0F) << 16)
+                | (Math.round(green * 255.0F) << 8)
+                | Math.round(blue * 255.0F);
+    }
+
+    private static List<DialogueTextSegment> displayedChatSegments(
+            String text,
+            String speakerLabel,
+            List<DialogueTextSegment> textSegments) {
+        List<DialogueTextSegment> displayedSegments = new java.util.ArrayList<>();
+        if (speakerLabel != null && !speakerLabel.isBlank()) {
+            displayedSegments.add(new DialogueTextSegment(gui("chat.speaker_prefix", speakerLabel), DialogueTextEffects.NONE));
+        }
+        displayedSegments.addAll(textSegments == null || textSegments.isEmpty()
+                ? DialogueTextSegment.plain(text, DialogueTextEffects.NONE)
+                : textSegments);
+        return List.copyOf(displayedSegments);
+    }
+
+    private static boolean dialogueTextEffectsDisabled() {
+        return VillagerRetaliationConfig.DISABLE_DIALOGUE_TEXT_EFFECTS.get();
     }
 
     private static int villagerChatAccentColor(Minecraft minecraft, int entityId) {

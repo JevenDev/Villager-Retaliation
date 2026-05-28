@@ -5,6 +5,7 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 
 public final class VillagerRetaliationConfig {
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
+    private static final ModConfigSpec.Builder CLIENT_BUILDER = new ModConfigSpec.Builder();
 
     public static final ModConfigSpec.BooleanValue ENABLE_VILLAGER_DROPS;
     public static final ModConfigSpec.BooleanValue ENABLE_WANDERING_TRADER_DROPS;
@@ -193,7 +194,10 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.BooleanValue WANDERER_DROP_RANDOM_CURRENT_TRADE;
     public static final ModConfigSpec.DoubleValue WANDERER_RANDOM_TRADE_DROP_CHANCE;
 
+    public static final ModConfigSpec.BooleanValue DISABLE_DIALOGUE_TEXT_EFFECTS;
+
     public static final ModConfigSpec SPEC;
+    public static final ModConfigSpec CLIENT_SPEC;
 
     static {
         BUILDER.push("general");
@@ -819,6 +823,15 @@ public final class VillagerRetaliationConfig {
         BUILDER.pop();
 
         SPEC = BUILDER.build();
+
+        CLIENT_BUILDER.push("dialogue");
+        DISABLE_DIALOGUE_TEXT_EFFECTS = CLIENT_BUILDER
+                .comment("When true, villager chat ignores animated and styled dialogue text effects and renders as normal chat text for this client.")
+                .translation("villagerretaliation.configuration.dialogue.disableDialogueTextEffects")
+                .define("disableDialogueTextEffects", false);
+        CLIENT_BUILDER.pop();
+
+        CLIENT_SPEC = CLIENT_BUILDER.build();
     }
 
     private VillagerRetaliationConfig() {

@@ -11,7 +11,7 @@
       "show_for_babies": false,
       "lines": [
         "I remember pieces. Your face is one of the pieces that does not hurt.",
-        "There was hunger, then noise, then a hand pulling me back toward my name.",
+        "There was hunger, then noise, then a hand pulling me back toward my <pulse>name</pulse>.",
         "I was far from myself. You left a trail I could follow home."
       ],
       "weight": 34
@@ -28,7 +28,7 @@
       ],
       "lines": [
         "I wrote the birth down. A village should know when its future arrives.",
-        "A new name belongs on our records and our maps, even if their feet cannot reach the road yet.",
+        "A new <pulse>name</pulse> belongs on our records and our maps, even if their feet cannot reach the road yet.",
         "The village grew by one heartbeat. That changes every calculation."
       ],
       "weight": 30
@@ -49,7 +49,7 @@
       ],
       "lines": [
         "You brought someone back from the hunger. The village will speak of that softly.",
-        "Curing is not just medicine. It is refusing to let a name be erased.",
+        "Curing is not just medicine. It is refusing to let a name be <italic>erased</italic>.",
         "I saw hope do practical work today."
       ],
       "weight": 38
@@ -68,7 +68,7 @@
       ],
       "lines": [
         "A peaceful place can still reach its limit.",
-        "The village remembers harm before it remembers courage.",
+        "The village remembers <shake>harm</shake> before it remembers courage.",
         "Nobody likes when anger becomes necessary. Necessary things rarely ask to be liked."
       ],
       "weight": 34
@@ -87,7 +87,7 @@
       "lines": [
         "Reputation is not a number to us. It is how quickly the room relaxes when you enter.",
         "The village has adjusted its memory of you. Try to deserve the better version.",
-        "People think trust changes loudly. Usually it moves one quiet inch at a time."
+        "People think trust changes loudly. Usually it moves one <pulse>quiet inch</pulse> at a time."
       ],
       "weight": 28
     },
@@ -103,7 +103,7 @@
       "lines": [
         "I will record that under humor, with a cautious footnote.",
         "The setup had a road. The ending wandered into a swamp.",
-        "I laughed internally. Very internally."
+        "I laughed internally. <italic>Very</italic> internally."
       ],
       "weight": 22
     }

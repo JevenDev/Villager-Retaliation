@@ -7,9 +7,9 @@
         "Some remedies need glass bottles. Some need time and a quieter voice.",
         "There are wounds that potions cannot mend.",
         "A good brew needs time, heat, and someone willing to wait quietly.",
-        "An omen is only useless if nobody changes course after seeing it.",
+        "An <color:dark_purple>omen</color> is only useless if nobody changes course after seeing it.",
         "Some hurts close cleanly. Some wait for a quieter day.",
-        "Prayer is not a trade. You do not put in words and pull out certainty."
+        "<italic>Prayer is not a trade.</italic> You do not put in words and pull out certainty."
       ],
       "weight": 172
     },
@@ -17,7 +17,7 @@
       "id": "cleric_story_omens_variants",
       "request": "story",
       "lines": [
-        "Bad omens linger longer than most people think.",
+        "Bad omens <pulse>linger</pulse> longer than most people think.",
         "I once made a remedy so bitter the patient got better out of spite.",
         "After a hard night, even the brewing stand sounds tired in the morning."
       ],
@@ -49,7 +49,7 @@
       "weight": 18,
       "lines": [
         "That was an empty bottle of a thought.",
-        "I have seen old curses with more sense than that.",
+        "I have seen old <color:dark_purple>curses</color> with more sense than that.",
         "Careful. Even breath looks softer than your manners right now."
       ]
     },
@@ -75,8 +75,8 @@
         "respectful"
       ],
       "lines": [
-        "I remember the cure like a bell under water. You were there when it rang clear.",
-        "Whatever mercy found me, it came through your hands.",
+        "I remember the cure like a bell under <wavy>water</wavy>. You were there when it rang clear.",
+        "Whatever <pulse>mercy</pulse> found me, it came through your hands.",
         "You helped pull me back when even my name felt far away."
       ],
       "weight": 60
@@ -90,7 +90,7 @@
       ],
       "lines": [
         "My memory kneels and trembles. I know you, but not cleanly.",
-        "I remember weakness, bitterness, gold, and then breath. The rest is prayer smoke.",
+        "I remember weakness, bitterness, gold, and then breath. The rest is <wavy>prayer smoke</wavy>.",
         "The memory is rough around the edges, but your face stayed in it."
       ],
       "weight": 60
@@ -105,9 +105,9 @@
       ],
       "weight": 30,
       "lines": [
-        "I remember you from the edge of a curse. Forgive me if my thanks sounds afraid.",
+        "I remember you from the edge of a <color:dark_purple>curse</color>. Forgive me if my thanks sounds afraid.",
         "I know you helped. I also remember why my hands still shake.",
-        "The cure left echoes behind. Stand where I can breathe around them."
+        "The cure left <wavy>echoes</wavy> behind. Stand where I can breathe around them."
       ]
     },
     {

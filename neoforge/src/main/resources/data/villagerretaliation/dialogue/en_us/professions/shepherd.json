@@ -5,7 +5,7 @@
       "request": "question",
       "lines": [
         "Scattered sheep make the whole day longer than it needs to be.",
-        "Wolves near the pens change how everyone listens after dark.",
+        "Wolves near the pens change how everyone <pulse>listens after dark</pulse>.",
         "Clean wool is quiet proof that somebody did the dull work well.",
         "Warmth is easy to praise after someone else made it.",
         "A good blanket is village peace you can fold.",
@@ -18,7 +18,7 @@
       "request": "story",
       "lines": [
         "Clean wool feels ordinary until winter reminds you it is not.",
-        "A spilled dye pot once made half the village look festive by mistake.",
+        "A spilled dye pot once made half the village look <gradient:#55ff55:#ff55ff>festive</gradient> by mistake.",
         "One late evening, the whole loom jammed because I trusted a knot."
       ],
       "weight": 74
@@ -38,7 +38,7 @@
       "request": "joke",
       "weight": 18,
       "lines": [
-        "My jokes have loose threads. Pull gently.",
+        "My jokes have <wavy>loose threads</wavy>. Pull gently.",
         "Woolwork jokes need timing. Mine usually arrive with wool on them.",
         "I keep a spare joke near the loom. It is not always ready for public use."
       ]

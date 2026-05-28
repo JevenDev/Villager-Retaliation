@@ -5,7 +5,7 @@
       "request": "question",
       "lines": [
         "Clean feathers and straight shafts make trouble keep its distance.",
-        "A good bow hears trouble before the bell does.",
+        "A good bow <pulse>hears trouble</pulse> before the bell does.",
         "A crooked feather makes a promise the arrow cannot keep.",
         "Distance changes everything. Trouble looks smaller until it arrives.",
         "The best warning is the one that reaches trouble before trouble reaches us.",
@@ -19,7 +19,7 @@
       "lines": [
         "Missed shots teach loudly, especially when everyone heard you brag first.",
         "I once threw away a whole bundle because one shaft taught me suspicion.",
-        "There are nights when the bell rings and every arrow feels too few."
+        "There are nights when the bell rings and every arrow feels <shake>too few</shake>."
       ],
       "weight": 74
     },
@@ -38,7 +38,7 @@
       "request": "joke",
       "weight": 18,
       "lines": [
-        "A fletcher joke should fly straight. Mine wobble honestly.",
+        "A fletcher joke should fly straight. Mine <wavy>wobble</wavy> honestly.",
         "Arrows jokes need timing. Mine usually arrive with feather on them.",
         "I keep a spare joke near the fletching table. It is not always ready for public use."
       ]

@@ -1007,7 +1007,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         graphics.enableScissor(layout.left(), layout.top(), layout.right(), layout.bottom());
         graphics.pose().pushPose();
         graphics.pose().translate(layout.xOffset(), layout.yOffset(), 0.0F);
-        minecraft.gui.getChat().render(graphics, minecraft.gui.getGuiTicks(), 0, 0, false);
+        VillagerChatEffectRenderer.render(graphics, minecraft);
         graphics.pose().popPose();
         graphics.disableScissor();
     }

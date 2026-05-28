@@ -15,7 +15,7 @@
       "requires_line_of_sight": true,
       "lines": [
         "That diamond blade is hard to miss, {player}. Keep it pointed elsewhere.",
-        "Walk softer with {held_item} in your hand.",
+        "Walk <pulse>softer</pulse> with {held_item} in your hand.",
         "A sword like that changes the shape of a conversation.",
         "Easy with {held_item}. This is a village, not a battlefield."
       ],
@@ -42,7 +42,7 @@
         "If I have to fight empty-handed, then I fight empty-handed.",
         "You will not find this village helpless.",
         "I have nothing in my hands and a whole village behind me.",
-        "Come closer, {target}. I have enough anger for both hands.",
+        "Come closer, {target}. I have enough <shake>anger</shake> for both hands.",
         "No weapon. Still not afraid."
       ],
       "output": {
@@ -81,7 +81,7 @@
       "witness_radius": 24,
       "requires_line_of_sight": true,
       "lines": [
-        "Help! {target} is at the village!",
+        "<shake>Help!</shake> {target} is at the village!",
         "Bell! Ring the bell! {target_article} is here!",
         "I need help over here!",
         "Someone armed, to me!",
@@ -108,7 +108,7 @@
       "lines": [
         "Die, {target}!",
         "You chose this, {target}.",
-        "The village remembers you, {target}.",
+        "The village <pulse>remembers</pulse> you, {target}.",
         "No more warnings, {target}.",
         "Back from my people, {target}!",
         "You should have left while words still mattered."
@@ -135,7 +135,7 @@
       "lines": [
         "Raid somewhere else, {target}!",
         "You picked the wrong village.",
-        "For the bell and every door behind it!",
+        "For the <pulse>bell</pulse> and every door behind it!",
         "Not one step farther.",
         "The village stands, {target}!",
         "You will not take another home."
@@ -158,7 +158,7 @@
       "lines": [
         "No more tricks, {target}!",
         "Keep your spells away from our doors.",
-        "Your fangs stop here.",
+        "Your <shake>fangs</shake> stop here.",
         "The village has heard enough magic for one day.",
         "Summon all you want. We still stand.",
         "You will not curse this place."
@@ -184,7 +184,7 @@
         "You missed your chance to run.",
         "Raiders leave empty-handed today.",
         "Aim at me, not the children.",
-        "Your banner means nothing here."
+        "Your <bold>banner</bold> means nothing here."
       ],
       "output": {
         "mode": "chat",
@@ -206,7 +206,7 @@
         "That blade does not enter another home.",
         "You will not chop through this village.",
         "Come closer and learn what farmers carry.",
-        "No more doors for you to break.",
+        "<bold>No more doors</bold> for you to break.",
         "Swing once more and answer for it."
       ],
       "output": {
@@ -235,7 +235,7 @@
       "lines": [
         "Back to the dark with you, {target}!",
         "Not this house. Not tonight.",
-        "You do not get another villager.",
+        "You do <bold>not</bold> get another villager.",
         "I hear your bones. I am not afraid.",
         "The dead can learn to run.",
         "Stay away from the living."
@@ -263,7 +263,7 @@
       "lines": [
         "Away from the village, {target}!",
         "You are too close to our doors.",
-        "No hissing near my home.",
+        "No <shake>hissing</shake> near my home.",
         "Not near the children.",
         "This path is ours.",
         "Try the fields. See what happens."
@@ -285,7 +285,7 @@
         "Back away, {target}!",
         "You picked a fight with the wrong village.",
         "I will not let you hurt us.",
-        "The village has teeth too.",
+        "The village has <shake>teeth</shake> too.",
         "Come on then.",
         "You are done here.",
         "For the village!"
@@ -307,9 +307,9 @@
       "min_recent_container_thefts": 2,
       "force_camera_towards_villager": true,
       "lines": [
-        "No. I already caught you in our belongings twice. This ends now.",
-        "Again? You were warned. The village is done asking.",
-        "Three times with your hands in village stores. No more words."
+        "<bold>No.</bold> I already caught you in our belongings twice. This ends now.",
+        "<shake>Again?</shake> You were warned. The village is done asking.",
+        "Three times with your hands in village stores. <bold>No more words.</bold>"
       ],
       "output": {
         "mode": "forced_dialogue"
@@ -330,9 +330,9 @@
         {
           "id": "return_repeat_theft",
           "label": "Give it back",
-          "response": "You already had your warning. Returning it is the smallest part of making this right.",
+          "response": "You already had your <color:gold>warning</color>. Returning it is the smallest part of making this right.",
           "responses": [
-            "Put it back now. Returned goods are easier to forgive than hidden ones."
+            "<bold>Put it back now.</bold> Returned goods are easier to forgive than hidden ones."
           ],
           "reputation": 2,
           "aggro": false,
@@ -340,13 +340,13 @@
           "order": 0,
           "take_stolen_items": {
             "destination": "villager_inventory_then_source_container",
-            "success_response": "You already had your warning. Returning it is the smallest part of making this right.",
+            "success_response": "You already had your <color:gold>warning</color>. Returning it is the smallest part of making this right.",
             "success_responses": [
               "That settles this moment. Let your next choice make it easier to trust you."
             ],
-            "failure_response": "You do not have {stolen_stack} to return. Then this was never about a mistake.",
+            "failure_response": "You do not have {stolen_stack} to return. Then this was <italic>never</italic> about a mistake.",
             "failure_responses": [
-              "Then you cannot settle this with payment or returns. Choose your next words carefully."
+              "Then you cannot settle this with payment or returns. Choose your next words <pulse>carefully</pulse>."
             ],
             "failure_reputation": -8,
             "failure_aggro": true,
@@ -356,7 +356,7 @@
         {
           "id": "pay_repeat_theft",
           "label": "Pay restitution",
-          "response": "That pays for the goods. It does not buy back the warning you wasted.",
+          "response": "That pays for the goods. It does not buy back the <color:gold>warning</color> you wasted.",
           "responses": [
             "Payment helps settle the moment. Permission still comes before the latch."
           ],
@@ -371,9 +371,9 @@
             "count": 25,
             "destination": "villager_inventory",
             "overflow_destination": "drop_at_villager",
-            "success_response": "Twenty-five emeralds. That pays for the goods. It does not buy back the warning you wasted.",
+            "success_response": "<gradient:#55ff55:#ffd34d>Twenty-five emeralds.</gradient> That pays for the goods. It does not buy back the warning you wasted.",
             "success_responses": [
-              "That payment covers the damage for now. The village will be watching what you do next."
+              "That payment covers the damage for now. The village will be <pulse>watching</pulse> what you do next."
             ],
             "failure_response": "You cannot pay the restitution either. Then you are out of excuses.",
             "failure_responses": [
@@ -387,7 +387,7 @@
         {
           "id": "threaten_repeat_witness",
           "label": "Threaten them",
-          "response": "I already let you walk once. I will not do it again.",
+          "response": "I already let you walk once. <shake>I will not do it again.</shake>",
           "responses": [
             "Then we are past warnings. Choose your next move carefully."
           ],
@@ -399,16 +399,16 @@
       ],
       "force_camera_towards_villager": true,
       "lines": [
-        "I already caught you putting your hands into our belongings once and let you off. Put {stolen_stack} back.",
-        "Again? I warned you once about village stores. This time you make it right.",
+        "I already caught you putting your hands into our belongings once and let you off. <bold>Put {stolen_stack} back.</bold>",
+        "<shake>Again?</shake> I warned you once about village stores. This time you make it right.",
         "You were given a warning for this once. Return {stolen_stack}, or pay for what you keep taking."
       ],
       "leave_option": {
         "label": "Leave",
         "responses": [
-          "Thief!",
-          "Hey! Thief!",
-          "Not yours!"
+          "<shake>Thief!</shake>",
+          "Hey! <shake>Thief!</shake>",
+          "<jump>Not yours!</jump>"
         ],
         "reputation": -10,
         "aggro_chance": 0.75,
@@ -416,12 +416,12 @@
         "take_stolen_items": {
           "destination": "villager_inventory_then_source_container",
           "success_responses": [
-            "Thief!",
-            "Hey! Thief!",
-            "Not yours!"
+            "<shake>Thief!</shake>",
+            "Hey! <shake>Thief!</shake>",
+            "<jump>Not yours!</jump>"
           ],
           "failure_responses": [
-            "Thief! Hand it over.",
+            "<shake>Thief!</shake> Hand it over.",
             "Where is it, thief?",
             "You stole from us!"
           ],
@@ -576,7 +576,7 @@
         "weaponsmith"
       ],
       "lines": [
-        "Put {stolen_stack} back. That stock belongs in the forge chest.",
+        "<bold>Put {stolen_stack} back.</bold> That stock belongs in the forge chest.",
         "I saw {stolen_stack} leave that {container}. Return it.",
         "Those supplies are counted for village work. Put {stolen_stack} back."
       ],
@@ -783,7 +783,7 @@
       "lines": [
         "Put {stolen_stack} back. That {container} holds offerings and remedies.",
         "I saw you take {stolen_stack} from the temple stores. Return it.",
-        "Those supplies are for the frightened and the sick. Put {stolen_stack} back."
+        "Those supplies are for the <pulse>frightened and the sick</pulse>. Put {stolen_stack} back."
       ],
       "leave_options": [
         {
@@ -1187,7 +1187,7 @@
       "lines": [
         "Put {stolen_stack} back. That {container} keeps the village protected.",
         "I saw {stolen_stack} leave the armory chest. Return it.",
-        "Protection starts with stocked supplies. Put {stolen_stack} back."
+        "<bold>Protection starts with stocked supplies.</bold> Put {stolen_stack} back."
       ],
       "leave_options": [
         {
@@ -1411,7 +1411,7 @@
       "lines": [
         "Put {stolen_stack} back. That food and stock are counted for village tables.",
         "I saw {stolen_stack} leave the butcher chest. Return it.",
-        "Those stores feed more than one mouth. Put {stolen_stack} back."
+        "Those stores feed <italic>more than one mouth</italic>. Put {stolen_stack} back."
       ],
       "leave_options": [
         {
@@ -1635,7 +1635,7 @@
       "lines": [
         "Put {stolen_stack} back. That {container} keeps our routes and records safe.",
         "I saw {stolen_stack} leave the cartography chest. Return it.",
-        "Maps, paper, tools, all of it matters here. Put {stolen_stack} back."
+        "Maps, paper, tools, <italic>all of it</italic> matters here. Put {stolen_stack} back."
       ],
       "leave_options": [
         {
@@ -1857,9 +1857,9 @@
         }
       ],
       "lines": [
-        "Put {stolen_stack} back. Those stores came from cold water and long patience.",
+        "Put {stolen_stack} back. Those stores came from <wavy>cold water</wavy> and long patience.",
         "I saw {stolen_stack} leave the fisher chest. Return it.",
-        "Nets, meals, bait, whatever you took, put {stolen_stack} back."
+        "Nets, meals, bait, whatever you took, <bold>put {stolen_stack} back.</bold>"
       ],
       "leave_options": [
         {
@@ -2083,7 +2083,7 @@
       "lines": [
         "Put {stolen_stack} back. That chest keeps the village ready.",
         "I saw {stolen_stack} leave the fletcher chest. Return it.",
-        "Those supplies are for work and defense. Put {stolen_stack} back."
+        "Those supplies are for <bold>work and defense</bold>. Put {stolen_stack} back."
       ],
       "leave_options": [
         {
@@ -2307,7 +2307,7 @@
       "lines": [
         "Put {stolen_stack} back. That material was set aside for village work.",
         "I saw {stolen_stack} leave the mason chest. Return it.",
-        "Walls do not stay standing when supplies vanish. Put {stolen_stack} back."
+        "Walls do not stay standing when supplies <shake>vanish</shake>. Put {stolen_stack} back."
       ],
       "leave_options": [
         {
@@ -2531,7 +2531,7 @@
       "lines": [
         "Put {stolen_stack} back. Those stores were gathered for the village.",
         "I saw {stolen_stack} leave the shepherd chest. Return it.",
-        "That work keeps people clothed and warm. Put {stolen_stack} back."
+        "That work keeps people <pulse>clothed and warm</pulse>. Put {stolen_stack} back."
       ],
       "leave_options": [
         {
@@ -2755,7 +2755,7 @@
       "lines": [
         "Put {stolen_stack} back. That stock took time and work to prepare.",
         "I saw {stolen_stack} leave the tannery chest. Return it.",
-        "Leatherwork, tools, scraps, all of it is accounted for. Put {stolen_stack} back."
+        "Leatherwork, tools, scraps, all of it is <italic>accounted for</italic>. Put {stolen_stack} back."
       ],
       "leave_options": [
         {
@@ -2979,7 +2979,7 @@
       "lines": [
         "Put {stolen_stack} back. Those stores keep the village working.",
         "I saw {stolen_stack} leave the toolsmith chest. Return it.",
-        "Every missing tool or supply costs someone a day of work. Put {stolen_stack} back."
+        "Every missing tool or supply costs someone a <pulse>day of work</pulse>. Put {stolen_stack} back."
       ],
       "leave_options": [
         {
@@ -3302,7 +3302,7 @@
       ],
       "force_camera_towards_villager": true,
       "lines": [
-        "Stop right there. I watched you take {stolen_stack} from that {container}.",
+        "<bold>Stop right there.</bold> I watched you take {stolen_stack} from that {container}.",
         "That {container} was stocked for the village. Put {stolen_stack} back.",
         "Village stores are not free supplies. Return {stolen_stack}."
       ],
@@ -3485,7 +3485,7 @@
       ],
       "force_camera_towards_villager": true,
       "lines": [
-        "Stop right there. {stolen_stack} from that {container} is not yours to carry away.",
+        "<bold>Stop right there.</bold> {stolen_stack} from that {container} is not yours to carry away.",
         "I saw what you took. Put {stolen_stack} back.",
         "That was not yours. Return {stolen_stack}."
       ],

@@ -5,7 +5,7 @@
       "request": "question",
       "lines": [
         "Empty nets at dusk make every rumor sound heavier.",
-        "Water keeps secrets until the weather shakes them loose.",
+        "<wavy>Water</wavy> keeps secrets until the weather shakes them loose.",
         "Water looks calm right up until it proves it was thinking.",
         "A good net catches food. A bad net catches excuses.",
         "Weather has more moods than any trader I have met.",
@@ -18,7 +18,7 @@
       "request": "story",
       "lines": [
         "A snapped line once saved me from hauling in something worse than nothing.",
-        "Once the fog came in so thick I trusted the dock by smell.",
+        "Once the <wavy>fog</wavy> came in so thick I trusted the dock by smell.",
         "An empty net can still bring home a lesson, though nobody cooks it."
       ],
       "weight": 74
@@ -38,7 +38,7 @@
       "request": "joke",
       "weight": 18,
       "lines": [
-        "A fishing joke needs a good line and someone patient enough to hear it.",
+        "A fishing joke needs a good <wavy>line</wavy> and someone patient enough to hear it.",
         "Fishing jokes need timing. Mine usually arrive with water on them.",
         "I keep a spare joke near the dock. It is not always ready for public use."
       ]

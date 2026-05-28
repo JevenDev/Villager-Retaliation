@@ -29,6 +29,7 @@ public class VillagerRetaliation {
 
     public VillagerRetaliation(IEventBus modEventBus, ModContainer modContainer) {
         modContainer.registerConfig(ModConfig.Type.COMMON, VillagerRetaliationConfig.SPEC);
+        modContainer.registerConfig(ModConfig.Type.CLIENT, VillagerRetaliationConfig.CLIENT_SPEC);
         VillagerRetaliationMenus.register(modEventBus);
         VillagerRetaliationDebugItems.register(modEventBus);
         ToucanEventBuses.on(modEventBus)

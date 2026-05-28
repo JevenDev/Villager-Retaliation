@@ -79,6 +79,7 @@ public record DialogueLine(
         boolean requiresKnownWidowedPartner,
         List<DialogueCondition> conditions,
         GiftAdviceKind giftAdviceKind,
+        DialogueTextEffects textEffects,
         int priority,
         String category,
         int weight
@@ -522,6 +523,7 @@ public record DialogueLine(
         private boolean requiresKnownWidowedPartner;
         private final List<DialogueCondition> conditions = new java.util.ArrayList<>();
         private GiftAdviceKind giftAdviceKind;
+        private DialogueTextEffects textEffects = DialogueTextEffects.NONE;
         private int priority;
         private String category = "";
         private int weight = 10;
@@ -883,6 +885,11 @@ public record DialogueLine(
             return this;
         }
 
+        public Builder textEffects(DialogueTextEffects textEffects) {
+            this.textEffects = textEffects == null ? DialogueTextEffects.NONE : textEffects;
+            return this;
+        }
+
         public Builder conditions(List<DialogueCondition> conditions) {
             if (conditions != null) {
                 this.conditions.addAll(conditions);
@@ -970,6 +977,7 @@ public record DialogueLine(
                     this.requiresKnownWidowedPartner,
                     List.copyOf(this.conditions),
                     this.giftAdviceKind,
+                    this.textEffects,
                     this.priority,
                     this.category,
                     this.weight

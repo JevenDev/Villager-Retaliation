@@ -6,7 +6,7 @@
       "lines": [
         "Bad stitching in the rain tells on itself quickly.",
         "Gear that lasts is mostly patience made visible.",
-        "A stitch done poorly waits for the worst time to confess.",
+        "A stitch done poorly waits for the <shake>worst time</shake> to confess.",
         "Good leather is patience you can wear.",
         "Rain tells the truth about gear faster than any seller will.",
         "A pack should carry weight without reminding you every step."
@@ -18,7 +18,7 @@
       "request": "story",
       "lines": [
         "A split seam can ruin a journey faster than a bad map.",
-        "I once made boots that outlasted three owners and four bad roads.",
+        "I once made boots that outlasted three owners and four <wavy>bad roads</wavy>.",
         "My apron has seen enough mistakes to deserve its own corner by the fire."
       ],
       "weight": 74
@@ -38,7 +38,7 @@
       "request": "joke",
       "weight": 18,
       "lines": [
-        "Leather jokes need a thick skin. I keep saying that until someone laughs.",
+        "Leather jokes need a <bold>thick skin</bold>. I keep saying that until someone laughs.",
         "Leatherwork jokes need timing. Mine usually arrive with hide on them.",
         "I keep a spare joke near the tannery. It is not always ready for public use."
       ]

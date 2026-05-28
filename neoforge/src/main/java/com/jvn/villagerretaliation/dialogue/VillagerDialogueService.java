@@ -758,10 +758,10 @@ public final class VillagerDialogueService {
     private static DialogueResult resolveText(DialogueLine line, DialogueContext context, List<String> recentDialogueIds) {
         Optional<String> textKeyResult = resolveTextKey(line, context);
         if (textKeyResult.isPresent() || line.lines().isEmpty()) {
-            return new DialogueResult(line.id(), textKeyResult.orElse(""));
+            return DialogueResult.fromText(line.id(), textKeyResult.orElse(""), line.textEffects());
         }
         DialogueLine.SelectedText selected = line.selectText(context.random(), recentDialogueIds);
-        return new DialogueResult(selected.id(), resolveText(selected.text(), line, context));
+        return DialogueResult.fromText(selected.id(), resolveText(selected.text(), line, context), line.textEffects());
     }
 
     private static Optional<String> resolveTextKey(DialogueLine line, DialogueContext context) {
@@ -869,7 +869,19 @@ public final class VillagerDialogueService {
         return resolveText(ToucanRandom.choose(context.random(), candidates), context);
     }
 
-    public record DialogueResult(String lineId, String text) {
+    public record DialogueResult(
+            String lineId,
+            String text,
+            DialogueTextEffects textEffects,
+            List<DialogueTextSegment> textSegments) {
+        public DialogueResult(String lineId, String text) {
+            this(lineId, text, DialogueTextEffects.NONE, DialogueTextSegment.parse(text, DialogueTextEffects.NONE));
+        }
+
+        public static DialogueResult fromText(String lineId, String text, DialogueTextEffects textEffects) {
+            List<DialogueTextSegment> segments = DialogueTextSegment.parse(text, textEffects);
+            return new DialogueResult(lineId, DialogueTextSegment.plainText(segments), textEffects, segments);
+        }
     }
 
     public record DialogueExplanation(

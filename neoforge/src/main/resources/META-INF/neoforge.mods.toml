@@ -3,6 +3,9 @@ loaderVersion="${loader_version_range}"
 license="${mod_license}"
 issueTrackerURL="${mod_issue_tracker}"
 
+[[mixins]]
+config="${mod_id}.mixins.json"
+
 [[mods]]
 modId="${mod_id}"
 version="${mod_version}"

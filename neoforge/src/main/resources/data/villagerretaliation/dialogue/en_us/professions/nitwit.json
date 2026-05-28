@@ -4,7 +4,7 @@
       "id": "nitwit_question_thought_variants",
       "request": "question",
       "lines": [
-        "I had a thought once. Left it somewhere safe, probably.",
+        "I had a <wavy>thought</wavy> once. Left it somewhere safe, probably.",
         "If you find my thought, tell it I was looking useful.",
         "I found a button once. No wall, just ambition.",
         "Where am I going? Usually somewhere nearby, once I remember why.",
@@ -38,7 +38,7 @@
       "request": "joke",
       "weight": 18,
       "lines": [
-        "My joke wandered off, but it promised to be funny if it returns.",
+        "My joke <wavy>wandered off</wavy>, but it promised to be funny if it returns.",
         "Odd jobs jokes need timing. Mine usually arrive with muddle on them.",
         "I keep a spare joke near the sunny corner. It is not always ready for public use."
       ]
@@ -62,7 +62,7 @@
       ],
       "weight": 30,
       "lines": [
-        "I can be silly from over here. Over here feels better.",
+        "I can be <jump>silly</jump> from over here. Over here feels better.",
         "Keep your voice even. I am measuring more than your words.",
         "Some questions are safer when they stand a little farther away."
       ]

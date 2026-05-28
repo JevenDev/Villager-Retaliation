@@ -28,7 +28,7 @@
       "show_for_babies": false,
       "lines": [
         "The gear changed how I stood. That matters more than it sounds.",
-        "I used it. It did not make me brave, but it gave bravery somewhere to put its hands.",
+        "I used it. It did not make me brave, but it gave <bold>bravery</bold> somewhere to put its hands.",
         "Tell whoever made this that the village noticed."
       ],
       "weight": 32
@@ -49,7 +49,7 @@
       ],
       "lines": [
         "I saw what you did when danger came close. That is the part of a weapon no forge can make.",
-        "You stood where fear wanted a gap. I will remember that.",
+        "You stood where <shake>fear</shake> wanted a gap. I will remember that.",
         "A village knows the difference between someone carrying steel and someone carrying responsibility."
       ],
       "weight": 36
@@ -68,7 +68,7 @@
       ],
       "lines": [
         "A child was hurt. I have no gentle way to store that memory.",
-        "The little one cried and every adult in earshot became sharper.",
+        "The little one cried and every adult in earshot became <bold>sharper</bold>.",
         "There are lines a village draws without needing a meeting. Hurting children is one of them."
       ],
       "weight": 40
@@ -88,7 +88,7 @@
       "lines": [
         "The golem did its work. I heard iron move like a closing gate.",
         "One less monster near our doors. Remind me to check the golem for cracks.",
-        "Iron stood between us and teeth. That sound stays with you."
+        "Iron stood between us and teeth. That sound <pulse>stays with you</pulse>."
       ],
       "weight": 34
     },
@@ -107,7 +107,7 @@
       ],
       "lines": [
         "The golem fell. Every door in the village feels thinner now.",
-        "When iron stops moving, everyone hears what silence costs.",
+        "When iron stops moving, everyone hears what <shake>silence</shake> costs.",
         "We lost more than a guard. We lost the confidence that stood in the square."
       ],
       "weight": 42
@@ -128,7 +128,7 @@
       "lines": [
         "Raiders came with banners and left us with repairs.",
         "A raid turns every profession into lookout work.",
-        "The bell did not sound like metal. It sounded like every name in the village at once."
+        "The bell did not sound like metal. It sounded like <pulse>every name</pulse> in the village at once."
       ],
       "weight": 40
     },
@@ -147,7 +147,7 @@
       "lines": [
         "When a villager decides to fight back, the whole square feels it.",
         "Retaliation is not clean. It is what happens after warnings run out.",
-        "Someone pushed too far, and now the village is answering in a harder language."
+        "Someone pushed too far, and now the village is answering in a <bold>harder language</bold>."
       ],
       "weight": 36
     },
@@ -162,7 +162,7 @@
       "show_for_babies": false,
       "lines": [
         "That joke needs tempering. Right now it would bend in a light breeze.",
-        "I have heard sharper things from a spoon.",
+        "I have heard <italic>sharper</italic> things from a spoon.",
         "Not bad. Needs a better edge and fewer dents."
       ],
       "weight": 22

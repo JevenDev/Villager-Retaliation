@@ -17,7 +17,7 @@
       "lines": [
         "Blank edges on a map make people braver than they should be.",
         "Every road looks safer when someone else drew it.",
-        "The edge of a map is not the edge of the world. It is the edge of our nerve.",
+        "The edge of a map is not the edge of the world. It is the edge of our <pulse>nerve</pulse>.",
         "Roads look straight until you have to walk them tired.",
         "Borders are lines people draw so fear has somewhere neat to stand.",
         "A compass helps with north. It says nothing about wisdom."
@@ -30,7 +30,7 @@
       "lines": [
         "A lost path can become a warning if enough people survive telling it.",
         "A wrong turn once taught me more than three careful maps.",
-        "Blank space on parchment has a way of daring people to be foolish."
+        "Blank space on parchment has a way of <wavy>daring</wavy> people to be foolish."
       ],
       "weight": 74
     },
@@ -49,7 +49,7 @@
       "request": "joke",
       "weight": 18,
       "lines": [
-        "Map jokes are easy to fold badly.",
+        "Map jokes are easy to <wavy>fold badly</wavy>.",
         "Mapping jokes need timing. Mine usually arrive with parchment on them.",
         "I keep a spare joke near the map table. It is not always ready for public use."
       ]
@@ -87,7 +87,7 @@
         "respectful"
       ],
       "lines": [
-        "I lost every road for a while. You marked the way back.",
+        "I lost every road for a while. You <pulse>marked the way back</pulse>.",
         "I remember your face like a landmark after a long, wrong journey.",
         "You helped pull me back when even my name felt far away."
       ],

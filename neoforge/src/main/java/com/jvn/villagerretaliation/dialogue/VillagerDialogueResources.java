@@ -100,6 +100,9 @@ public final class VillagerDialogueResources {
             "min_recruitment_follow_distance", "requires_recruitment_boat_trip", "requires_recruitment_ocean_crossing",
             "requires_recruitment_swim_trip", "excludes_recruitment_ocean_crossing",
             "first_conversation_only", "gift_advice", "show_for_adults", "show_for_babies", "priority", "category", "weight",
+            "italic", "italics", "bold", "bolded", "underlined", "underline", "strikethrough", "obfuscated", "obfuscate",
+            "wavy", "wave", "shake", "shaky", "pulse", "pulsing", "jump", "jumping",
+            "rainbow", "rainbow_text", "color", "text_color", "gradient_start", "gradientStart", "gradient_end", "gradientEnd", "text_effects",
             "requires_known_family", "requires_known_parent", "requires_known_sibling", "requires_known_spouse", "requires_known_child",
             "requires_known_grandparent", "requires_known_grandchild", "requires_known_descendant", "requires_known_aunt_uncle",
             "requires_known_cousin", "requires_known_niece_nephew", "requires_known_extended_family", "requires_known_deceased_family",
@@ -1028,6 +1031,7 @@ public final class VillagerDialogueResources {
         builder.showForAdults(readBoolean(entry, "show_for_adults", true));
         builder.showForBabies(readBoolean(entry, "show_for_babies", true));
         readEnum(entry, "gift_advice", GiftAdviceKind.class).ifPresent(builder::giftAdviceKind);
+        builder.textEffects(DialogueTextEffects.read(entry));
         List<String> optionIds = new ArrayList<>();
         optionIds.addAll(readStringList(entry, "option"));
         optionIds.addAll(readStringList(entry, "option_ids"));

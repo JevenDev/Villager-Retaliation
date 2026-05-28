@@ -9,33 +9,36 @@ public final class VillagerInteractionHudHider {
     }
 
     public static void onRenderGuiLayer(RenderGuiLayerEvent.Pre event) {
-        if (!ClientVillagerConversationState.active() && !VillagerInteractionExperimentalChrome.exitAnimationRunning()) {
-            return;
-        }
-
-        if (VanillaGuiLayers.CHAT.equals(event.getName())
-                && Minecraft.getInstance().screen instanceof VillagerInteractionScreen screen) {
-            screen.renderPositionedHudChat(event.getGuiGraphics());
-            event.setCanceled(true);
-            return;
-        }
-
-        if (VanillaGuiLayers.CHAT.equals(event.getName())
-                && VillagerInteractionExperimentalChrome.exitAnimationRunning()) {
+        boolean chatLayer = VanillaGuiLayers.CHAT.equals(event.getName());
+        boolean exitAnimationRunning = VillagerInteractionExperimentalChrome.exitAnimationRunning();
+        if (chatLayer) {
             Minecraft minecraft = Minecraft.getInstance();
-            int scaledMouseX = (int) Math.round(minecraft.mouseHandler.xpos()
-                    * minecraft.getWindow().getGuiScaledWidth()
-                    / minecraft.getWindow().getScreenWidth());
-            int scaledMouseY = (int) Math.round(minecraft.mouseHandler.ypos()
-                    * minecraft.getWindow().getGuiScaledHeight()
-                    / minecraft.getWindow().getScreenHeight());
-            VillagerInteractionExperimentalChrome.renderBackdrop(
-                    event.getGuiGraphics(),
-                    minecraft.getWindow().getGuiScaledWidth(),
-                    minecraft.getWindow().getGuiScaledHeight(),
-                    0.0F,
-                    scaledMouseX,
-                    scaledMouseY);
+            if (minecraft.screen instanceof VillagerInteractionScreen screen) {
+                screen.renderPositionedHudChat(event.getGuiGraphics());
+                event.setCanceled(true);
+                return;
+            }
+
+            if (exitAnimationRunning) {
+                int scaledMouseX = (int) Math.round(minecraft.mouseHandler.xpos()
+                        * minecraft.getWindow().getGuiScaledWidth()
+                        / minecraft.getWindow().getScreenWidth());
+                int scaledMouseY = (int) Math.round(minecraft.mouseHandler.ypos()
+                        * minecraft.getWindow().getGuiScaledHeight()
+                        / minecraft.getWindow().getScreenHeight());
+                VillagerInteractionExperimentalChrome.renderBackdrop(
+                        event.getGuiGraphics(),
+                        minecraft.getWindow().getGuiScaledWidth(),
+                        minecraft.getWindow().getGuiScaledHeight(),
+                        0.0F,
+                        scaledMouseX,
+                        scaledMouseY);
+            }
+
+        }
+
+        if (!ClientVillagerConversationState.active() && !exitAnimationRunning) {
+            return;
         }
 
         if (ClientVillagerConversationState.active() && VanillaGuiLayers.CROSSHAIR.equals(event.getName())) {

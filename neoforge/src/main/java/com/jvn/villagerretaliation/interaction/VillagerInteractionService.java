@@ -10,6 +10,8 @@ import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueService;
 import com.jvn.villagerretaliation.dialogue.DialogueReputationEffect;
 import com.jvn.villagerretaliation.dialogue.DialogueReputationService;
+import com.jvn.villagerretaliation.dialogue.DialogueTextEffects;
+import com.jvn.villagerretaliation.dialogue.DialogueTextSegment;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueService;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
@@ -685,6 +687,14 @@ public final class VillagerInteractionService {
         broadcastVillagerChat(level, villager, text, "");
     }
 
+    public static void broadcastVillagerChat(ServerLevel level, Villager villager, String text, DialogueTextEffects textEffects) {
+        broadcastVillagerChat(level, villager, text, DialogueTextSegment.parse(text, textEffects));
+    }
+
+    public static void broadcastVillagerChat(ServerLevel level, Villager villager, String text, List<DialogueTextSegment> textSegments) {
+        broadcastVillagerChat(level, villager, text, "", VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get(), textSegments);
+    }
+
     public static void broadcastVillagerChat(ServerLevel level, Villager villager, String text, String speakerLabel) {
         broadcastVillagerChat(level, villager, text, speakerLabel, VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get());
     }
@@ -702,6 +712,26 @@ public final class VillagerInteractionService {
     }
 
     private static void broadcastVillagerChat(ServerLevel level, Villager villager, String text, String speakerLabel, double radius) {
+        broadcastVillagerChat(level, villager, text, speakerLabel, radius, DialogueTextEffects.NONE);
+    }
+
+    private static void broadcastVillagerChat(
+            ServerLevel level,
+            Villager villager,
+            String text,
+            String speakerLabel,
+            double radius,
+            DialogueTextEffects textEffects) {
+        broadcastVillagerChat(level, villager, text, speakerLabel, radius, DialogueTextSegment.parse(text, textEffects));
+    }
+
+    private static void broadcastVillagerChat(
+            ServerLevel level,
+            Villager villager,
+            String text,
+            String speakerLabel,
+            double radius,
+            List<DialogueTextSegment> textSegments) {
         if (text == null || text.isBlank()) {
             return;
         }
@@ -710,7 +740,8 @@ public final class VillagerInteractionService {
         VillagerInteractionNoticePayload payload = new VillagerInteractionNoticePayload(
                 villager.getId(),
                 text,
-                speakerLabel == null ? "" : speakerLabel
+                speakerLabel == null ? "" : speakerLabel,
+                textSegments
         );
         for (ServerPlayer nearbyPlayer : level.players()) {
             if (!nearbyPlayer.isAlive()

@@ -4,7 +4,7 @@
       "id": "toolsmith_question_handles_variants",
       "request": "question",
       "lines": [
-        "Cracked handles are small warnings with expensive timing.",
+        "Cracked handles are small <shake>warnings</shake> with expensive timing.",
         "A dull edge makes every simple job into a bad plan.",
         "A handle should fit the hand, not argue with it.",
         "A sharp edge is useful. A careless one is just trouble with shine.",
@@ -17,7 +17,7 @@
       "id": "toolsmith_story_tool_variants",
       "request": "story",
       "lines": [
-        "A good tool is quiet proof that someone cared before trouble started.",
+        "A good tool is <pulse>quiet proof</pulse> that someone cared before trouble started.",
         "I once fixed a pick that had seen more stone than sense.",
         "A shovel broke on me once because I asked it to do axe work."
       ],
@@ -38,7 +38,7 @@
       "request": "joke",
       "weight": 18,
       "lines": [
-        "Tool jokes work better when they have a point. Mine sometimes have two.",
+        "Tool jokes work better when they have a <jump>point</jump>. Mine sometimes have two.",
         "Tools jokes need timing. Mine usually arrive with steel on them.",
         "I keep a spare joke near the smithing table. It is not always ready for public use."
       ]

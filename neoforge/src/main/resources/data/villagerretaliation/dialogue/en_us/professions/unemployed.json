@@ -6,7 +6,7 @@
       "lines": [
         "Finding the right work is harder when everyone asks if you found it yet.",
         "Work is work. Finding the right work is the tricky part.",
-        "Waiting for work is still work if you look worried enough.",
+        "Waiting for work is still work if you look <pulse>worried enough</pulse>.",
         "Where do I fit? Somewhere useful, I hope, preferably before supper.",
         "People with trades get tasks. People without trades get errands.",
         "A fair chance is easier to ask for than to recognize."
@@ -18,7 +18,7 @@
       "request": "story",
       "lines": [
         "A fair chance can look a lot like standing around until the right bell rings.",
-        "I once followed the bell hoping it meant opportunity. It meant hurry.",
+        "I once followed the bell hoping it meant opportunity. It meant <jump>hurry</jump>.",
         "I organized a barrel once. For a moment, everyone thought I had a calling."
       ],
       "weight": 74
@@ -38,7 +38,7 @@
       "request": "joke",
       "weight": 18,
       "lines": [
-        "Unemployed jokes are flexible. That is what I keep telling myself.",
+        "Unemployed jokes are <wavy>flexible</wavy>. That is what I keep telling myself.",
         "Looking useful jokes need timing. Mine usually arrive with time on them.",
         "I keep a spare joke near the job site I have not found yet. It is not always ready for public use."
       ]

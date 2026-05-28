@@ -8,6 +8,7 @@ import com.jvn.villagerretaliation.dialogue.ForcedDialogueService;
 import com.jvn.villagerretaliation.dialogue.GiftAdviceKind;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueService;
+import com.jvn.villagerretaliation.dialogue.DialogueTextSegment;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.dialogue.VillagerStoryHintService;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
@@ -90,16 +91,27 @@ public final class VillagerDialogueRequestHandler {
         VillagerInteractionService.playDialogueFeedback(level, villager, reputationEffect);
         VillagerAmbientIndicatorService.onDialogueResponse(level, villager, player, optionId, requestType, reputationEffect);
         String responseText = result.text();
+        List<DialogueTextSegment> responseSegments = result.textSegments();
+        boolean responseTextReplaced = false;
         if (!itemPayment.isEmpty()) {
             String successText = itemPayment.selectSuccessResponse(context.random());
             if (!successText.isBlank()) {
                 responseText = resolveDialogueItemPaymentResponse(context, successText, itemPaymentResult.replacements());
+                responseTextReplaced = true;
             }
         }
         if (reputationEffect.responseOverride() != null) {
             responseText = reputationEffect.responseOverride();
+            responseTextReplaced = true;
         }
-        responseText = VillagerDialogueResources.resolveTemplate(responseText, itemPaymentResult.replacements());
+        if (responseTextReplaced) {
+            responseText = VillagerDialogueResources.resolveTemplate(responseText, itemPaymentResult.replacements());
+            responseSegments = DialogueTextSegment.parse(responseText, result.textEffects());
+        } else if (!itemPaymentResult.replacements().isEmpty()) {
+            responseSegments = resolveTemplate(responseSegments, itemPaymentResult.replacements());
+            responseText = DialogueTextSegment.plainText(responseSegments);
+        }
+        responseText = DialogueTextSegment.plainText(responseSegments);
         VillagerInteractionTracker.rememberDialogue(level, villager, player, requestType, result.lineId());
         claimTrackerReports(level, villager, player, requestType);
         VillagerInteractionService.sendDialogueReputation(
@@ -110,7 +122,7 @@ public final class VillagerDialogueRequestHandler {
                 reputationEffect,
                 dialogueOption.forceCameraTowardsVillager()
         );
-        VillagerInteractionService.broadcastVillagerChat(level, villager, responseText);
+        VillagerInteractionService.broadcastVillagerChat(level, villager, responseText, responseSegments);
         if (VillagerAggressionPolicy.shouldAttackOnSight(villager, player)) {
             VillagerConversationService.endForPlayer(player, true);
         }
@@ -321,6 +333,19 @@ public final class VillagerDialogueRequestHandler {
             return "";
         }
         return VillagerDialogueResources.resolveTemplate(response, replacements);
+    }
+
+    private static List<DialogueTextSegment> resolveTemplate(
+            List<DialogueTextSegment> segments,
+            Map<String, String> replacements) {
+        if (segments == null || segments.isEmpty() || replacements.isEmpty()) {
+            return segments == null ? List.of() : segments;
+        }
+        return segments.stream()
+                .map(segment -> new DialogueTextSegment(
+                        VillagerDialogueResources.resolveTemplate(segment.text(), replacements),
+                        segment.effects()))
+                .toList();
     }
 
     private static String itemName(ItemStack stack) {

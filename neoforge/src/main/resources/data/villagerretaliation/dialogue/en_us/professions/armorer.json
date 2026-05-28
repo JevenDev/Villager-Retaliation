@@ -6,7 +6,7 @@
       "lines": [
         "Most of my day is fitting mail and shields. It sounds simple until everything depends on it.",
         "A cracked plate after a raid teaches more than a quiet week ever does.",
-        "A loose strap looks harmless until someone trusts it in a fight.",
+        "A loose strap looks harmless until someone <pulse>trusts it</pulse> in a fight.",
         "Good mail is not heavy. Bad mail reminds you of itself all day.",
         "Every plate I fit is a small promise that someone gets another chance.",
         "A shield is only useful if the arm behind it holds steady."
@@ -28,7 +28,7 @@
       "request": "greeting",
       "weight": 26,
       "lines": [
-        "Stand clear of the heat. A forge forgives less than I do.",
+        "Stand clear of the <wavy>heat</wavy>. A forge forgives less than I do.",
         "Give the forge room. Armor works better without elbows in it.",
         "Step carefully near the forge. I would rather greet you than patch you up."
       ]
@@ -38,7 +38,7 @@
       "request": "joke",
       "weight": 18,
       "lines": [
-        "Armor jokes need padding. Otherwise everyone feels the point too soon.",
+        "Armor jokes need padding. Otherwise everyone feels the <jump>point</jump> too soon.",
         "Armor jokes need timing. Mine usually arrive with iron on them.",
         "I keep a spare joke near the forge. It is not always ready for public use."
       ]

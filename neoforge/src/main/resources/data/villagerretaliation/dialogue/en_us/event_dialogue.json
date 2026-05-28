@@ -11,7 +11,7 @@
       ],
       "lines": [
         "You hurt one of ours. The village does not file that under misunderstanding.",
-        "People talk after harm. Doors talk too, in their own way.",
+        "People talk after harm. Doors talk too, <italic>in their own way</italic>.",
         "If you want this to become past tense, start acting like it."
       ],
       "weight": 44
@@ -60,7 +60,7 @@
       "lines": [
         "That gift missed its mark. It happens. Better to notice before repeating it.",
         "The thought may count, but the choice still made a face.",
-        "Next time, ask first. Pride is a poor wrapping paper."
+        "Next time, <bold>ask first</bold>. Pride is a poor wrapping paper."
       ],
       "weight": 26
     },
@@ -76,7 +76,7 @@
       "lines": [
         "That was the sort of gift people remember for the wrong reason.",
         "A bad gift can feel like an insult with ribbon on it.",
-        "You found a nerve and pressed it. Do not make that a habit."
+        "You found a nerve and pressed it. <bold>Do not make that a habit.</bold>"
       ],
       "weight": 34
     },
@@ -109,7 +109,7 @@
       ],
       "lines": [
         "Everyone got loud, then quiet, then loud again. I stayed near the safest grown-up.",
-        "I do not like when the bell sounds scared.",
+        "I do not like when the bell sounds <shake>scared</shake>.",
         "The adults keep checking doors. I keep checking the adults."
       ],
       "weight": 36
@@ -139,7 +139,7 @@
       ],
       "lines": [
         "You are spending your reputation faster than emeralds.",
-        "Careful. The village already knows how this version of you sounds.",
+        "<pulse>Careful.</pulse> The village already knows how this version of you sounds.",
         "That would hurt more from someone we trusted."
       ],
       "weight": 34
@@ -156,7 +156,7 @@
         "thunderstorm"
       ],
       "lines": [
-        "The danger was not random. It came from a direction, at a time, and that means we can prepare better next time.",
+        "The danger was not random. It came from a direction, at a time, and that means we can <bold>prepare</bold> better next time.",
         "I am trying to sort what happened into causes instead of panic. Causes can be answered.",
         "If we remember the pattern, the next alarm can be shorter."
       ],
@@ -184,7 +184,7 @@
       "min_mood_intensity": 25,
       "requires_high_kindness": true,
       "lines": [
-        "Kindness lands loudly when the world has been noisy. I noticed yours.",
+        "Kindness lands <pulse>loudly</pulse> when the world has been noisy. I noticed yours.",
         "Some help is practical. Some help reminds people they matter. Yours managed both.",
         "I am still carrying that kindness with me. Light things can do heavy work."
       ],
@@ -201,7 +201,7 @@
         "neutral"
       ],
       "lines": [
-        "That one nearly survived the landing. Try again and I may give it a proper funeral.",
+        "That one nearly survived the landing. <jump>Try again</jump> and I may give it a proper funeral.",
         "A brave attempt. Comedy is just archery with more witnesses.",
         "You aimed for laughter and hit the fence. Still, I admire the confidence."
       ],
@@ -215,7 +215,7 @@
       "min_mood_intensity": 25,
       "requires_high_proficiency": true,
       "lines": [
-        "I came through with steady hands. Fear is easier to carry when your tools answer properly.",
+        "I came through with <bold>steady hands</bold>. Fear is easier to carry when your tools answer properly.",
         "I was scared, yes, but I knew what to do with my hands. That matters.",
         "A clean grip, a clear path, and enough nerve to use both. I will remember that."
       ],

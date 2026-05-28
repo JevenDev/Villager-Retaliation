@@ -13,7 +13,7 @@
       "lines": [
         "The trip made the village feel larger and home feel more exact.",
         "I learned which roads look safe from here and which ones only pretend.",
-        "Next time, I pack lighter, listen faster, and trust the quiet less."
+        "Next time, I pack lighter, listen faster, and trust the quiet <pulse>less</pulse>."
       ],
       "weight": 30
     },
@@ -29,7 +29,7 @@
       "show_for_babies": false,
       "lines": [
         "Going out there reminded me why doors matter.",
-        "I brought back more than sore feet. I brought back a sharper idea of home.",
+        "I brought back more than sore feet. I brought back a sharper idea of <pulse>home</pulse>.",
         "A village looks different after you have had to find your way back to it."
       ],
       "weight": 30

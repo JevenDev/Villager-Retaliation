@@ -5,7 +5,7 @@
       "request": "question",
       "lines": [
         "Walls with weak corners teach humility before they teach repair.",
-        "Stone remembers pressure. People do too.",
+        "Stone remembers <pulse>pressure</pulse>. People do too.",
         "A wall is only as honest as its weakest corner.",
         "Foundations matter because everything else gets to pretend they do not.",
         "Good steps are noticed only by people who have climbed bad ones.",
@@ -19,7 +19,7 @@
       "lines": [
         "The best wall is boring. Boring means it held.",
         "One bad chip once made me redo a whole doorway. It was right to complain.",
-        "An arch looks impossible until the last stone proves everyone wrong."
+        "An arch looks impossible until the last stone <bold>proves everyone wrong</bold>."
       ],
       "weight": 74
     },
@@ -40,7 +40,7 @@
       "lines": [
         "Mason jokes are solid. Sometimes too solid to move.",
         "I tried a lighter mason joke once. It still landed like a brick.",
-        "My best jokes have foundations. The punchline usually needs scaffolding."
+        "My best jokes have foundations. The punchline usually needs <jump>scaffolding</jump>."
       ]
     },
     {

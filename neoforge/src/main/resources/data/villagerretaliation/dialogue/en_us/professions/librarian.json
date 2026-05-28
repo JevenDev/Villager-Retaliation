@@ -9,7 +9,7 @@
         "Ink is quiet until someone needs proof.",
         "Records do not care who feels embarrassed by them.",
         "A tidy shelf is proof that peace can be arranged, briefly.",
-        "Forgotten warnings do not become kinder. They become surprises."
+        "Forgotten warnings do not become kinder. They become <jump>surprises</jump>."
       ],
       "weight": 172
     },
@@ -17,7 +17,7 @@
       "id": "librarian_story_records_variants",
       "request": "story",
       "lines": [
-        "Every trade, every kindness, every cruelty. Someone writes it down.",
+        "Every trade, every kindness, every cruelty. Someone <bold>writes it down</bold>.",
         "The best clue I ever found was written in a margin by someone annoyed.",
         "Someone once returned a book cleaner than they borrowed it. We still discuss it."
       ],
@@ -38,7 +38,7 @@
       "request": "joke",
       "weight": 18,
       "lines": [
-        "I had a footnote for this joke, but mercy won.",
+        "I had a <italic>footnote</italic> for this joke, but mercy won.",
         "Records jokes need timing. Mine usually arrive with ink on them.",
         "I keep a spare joke near the lectern. It is not always ready for public use."
       ]
@@ -75,8 +75,8 @@
         "respectful"
       ],
       "lines": [
-        "I remember the page turning back from a very bad ending.",
-        "Your face is one of the first words I could read again.",
+        "I remember the page turning back from a <shake>very bad ending</shake>.",
+        "Your face is one of the first words I could <pulse>read again</pulse>.",
         "You helped pull me back when even my name felt far away."
       ],
       "weight": 60
@@ -89,7 +89,7 @@
         "cautious"
       ],
       "lines": [
-        "The chapter is damaged, but your name survived in the margin.",
+        "The chapter is damaged, but your name survived in the <italic>margin</italic>.",
         "I remember fragments: weakness, gold, a bitter draught, and you waiting.",
         "The memory is rough around the edges, but your face stayed in it."
       ],
@@ -105,7 +105,7 @@
       ],
       "weight": 30,
       "lines": [
-        "I remember you. Some books should be opened slowly after a curse.",
+        "I remember you. Some books should be opened <pulse>slowly</pulse> after a curse.",
         "I know you helped. I also remember why my hands still shake.",
         "The cure left echoes behind. Stand where I can breathe around them."
       ]

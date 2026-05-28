@@ -91,9 +91,9 @@
             "suspicious"
           ],
           "responses": [
-            "Trade, yes. I will be watching the counts closely.",
+            "Trade, yes. I will be <pulse>watching</pulse> the counts closely.",
             "Fine. The counter is open, but my eyes are too.",
-            "Back to business. Keep your hands where I can see them.",
+            "Back to business. Keep your hands where I can <pulse>see them</pulse>.",
             "We can trade. Do not give me a reason to regret it."
           ]
         },
@@ -106,9 +106,9 @@
             "hostile"
           ],
           "responses": [
-            "Trade if you must. Touch only what you pay for.",
+            "Trade if you must. <bold>Touch only what you pay for.</bold>",
             "Fine. Quick deals, clear hands, no nonsense.",
-            "The counter is open. My patience is not.",
+            "The counter is open. My <shake>patience</shake> is not.",
             "We can trade, but I am counting everything twice."
           ]
         },
@@ -121,7 +121,7 @@
             "despised"
           ],
           "responses": [
-            "Trade. Briefly. Do not make this worse.",
+            "Trade. Briefly. <bold>Do not make this worse.</bold>",
             "Fine. Buy, sell, and step back from my counter.",
             "The offers stand. My welcome does not.",
             "We can trade because business survives bad company."
@@ -138,7 +138,7 @@
           "responses": [
             "Trade, then. I would rather finish quickly.",
             "Fine. I will keep the counter between us.",
-            "The offers are open. Please be done with them.",
+            "The offers are open. Please be <pulse>done with them</pulse>.",
             "We can trade. I will not argue if you keep it short."
           ]
         },
