@@ -52,6 +52,8 @@ public final class VillagerRetaliationClientAssets {
 
     public static final ResourceLocation INTERACTION_VEIL_SHADER =
             VillagerRetaliation.id("interaction_veil");
+    public static final ResourceLocation EXPERIMENTAL_CHROME_SHADER =
+            VillagerRetaliation.id("experimental_chrome");
 
     private VillagerRetaliationClientAssets() {
     }

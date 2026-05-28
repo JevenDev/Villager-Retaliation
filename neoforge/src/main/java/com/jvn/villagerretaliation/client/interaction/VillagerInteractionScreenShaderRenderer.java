@@ -18,6 +18,7 @@ public final class VillagerInteractionScreenShaderRenderer {
     private static final float DITHER_ARC_DEPTH = 30.0F;
 
     private static ShaderInstance interactionVeilShader;
+    private static ShaderInstance experimentalChromeShader;
 
     private VillagerInteractionScreenShaderRenderer() {
     }
@@ -32,8 +33,16 @@ public final class VillagerInteractionScreenShaderRenderer {
                     ),
                     shader -> interactionVeilShader = shader
             );
+            event.registerShader(
+                    new ShaderInstance(
+                            event.getResourceProvider(),
+                            VillagerRetaliationClientAssets.EXPERIMENTAL_CHROME_SHADER,
+                            DefaultVertexFormat.POSITION
+                    ),
+                    shader -> experimentalChromeShader = shader
+            );
         } catch (IOException exception) {
-            throw new IllegalStateException("Failed to register interaction veil shader", exception);
+            throw new IllegalStateException("Failed to register interaction screen shaders", exception);
         }
     }
 
@@ -63,10 +72,46 @@ public final class VillagerInteractionScreenShaderRenderer {
         RenderSystem.disableBlend();
     }
 
+    public static boolean renderExperimentalChrome(
+            GuiGraphics graphics,
+            int width,
+            int height,
+            float elapsedMillis,
+            float exitElapsedMillis,
+            int mouseX,
+            int mouseY) {
+        if (experimentalChromeShader == null) {
+            return false;
+        }
+
+        setUniform(experimentalChromeShader, "ScreenWidth", (float) width);
+        setUniform(experimentalChromeShader, "ScreenHeight", (float) height);
+        setUniform(experimentalChromeShader, "MouseX", (float) mouseX);
+        setUniform(experimentalChromeShader, "MouseY", (float) mouseY);
+        setUniform(experimentalChromeShader, "ElapsedMillis", elapsedMillis);
+        setUniform(experimentalChromeShader, "ExitElapsedMillis", exitElapsedMillis);
+
+        Matrix4f pose = graphics.pose().last().pose();
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.setShader(() -> experimentalChromeShader);
+
+        BufferBuilder bufferBuilder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
+        bufferBuilder.addVertex(pose, 0.0F, height, 0.0F);
+        bufferBuilder.addVertex(pose, width, height, 0.0F);
+        bufferBuilder.addVertex(pose, width, 0.0F, 0.0F);
+        bufferBuilder.addVertex(pose, 0.0F, 0.0F, 0.0F);
+        BufferUploader.drawWithShader(bufferBuilder.buildOrThrow());
+
+        RenderSystem.disableBlend();
+        return true;
+    }
+
     private static void setUniform(ShaderInstance shader, String name, float value) {
         var uniform = shader.getUniform(name);
         if (uniform != null) {
             uniform.set(value);
         }
     }
+
 }
