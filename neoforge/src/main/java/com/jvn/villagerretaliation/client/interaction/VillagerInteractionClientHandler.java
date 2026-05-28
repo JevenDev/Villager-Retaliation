@@ -73,6 +73,9 @@ public final class VillagerInteractionClientHandler {
         );
         resetVillagerChatGroup();
         boolean replacingInteractionScreen = minecraft.screen instanceof VillagerInteractionSessionScreen;
+        if (!replacingInteractionScreen) {
+            VillagerInteractionChatVisibility.hidePreviousVillagerMessages(minecraft);
+        }
         if (replacingInteractionScreen) {
             VillagerInteractionSessionScreen interactionScreen = (VillagerInteractionSessionScreen) minecraft.screen;
             interactionScreen.replaceFromServer();

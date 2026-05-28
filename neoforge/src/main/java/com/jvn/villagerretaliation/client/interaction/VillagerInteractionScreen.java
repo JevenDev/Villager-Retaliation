@@ -251,6 +251,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.closingFromServer = true;
         if (Minecraft.getInstance().screen != this) {
             restoreChatWidthOverride();
+            VillagerInteractionChatVisibility.restoreHiddenVillagerMessages(Minecraft.getInstance());
             ClientVillagerConversationState.clear();
         }
         Minecraft.getInstance().setScreen(null);
@@ -400,6 +401,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
         restoreChatWidthOverride();
         if (!this.replacingFromServer) {
+            VillagerInteractionChatVisibility.restoreHiddenVillagerMessages(Minecraft.getInstance());
             ClientVillagerConversationState.clear();
         }
         if (!this.closingFromServer) {
