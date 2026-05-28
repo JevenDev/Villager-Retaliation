@@ -49,9 +49,11 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
     private final Player player;
     private final VillagerGiftReturnTracker.GiftSnapshot giftSnapshot;
     private final VillagerTradePaymentTracker.TradePaymentSnapshot tradePaymentSnapshot;
+    private final VillagerConfiscatedStolenItemTracker.StolenItemSnapshot stolenItemSnapshot;
     private final int initialGearStackCount;
     private boolean giftReturnsProcessed;
     private boolean tradePaymentReturnsProcessed;
+    private boolean stolenItemReturnsProcessed;
 
     public VillagerInventoryMenu(int containerId, Inventory playerInventory, RegistryFriendlyByteBuf data) {
         this(containerId, playerInventory, new SimpleContainer(VILLAGER_SLOT_COUNT), null, data == null ? -1 : data.readVarInt());
@@ -73,6 +75,9 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
                 : null;
         this.tradePaymentSnapshot = villager != null && playerInventory.player instanceof ServerPlayer serverPlayer
                 ? VillagerTradePaymentTracker.capture(serverPlayer, villager)
+                : null;
+        this.stolenItemSnapshot = villager != null && playerInventory.player instanceof ServerPlayer serverPlayer
+                ? VillagerConfiscatedStolenItemTracker.capture(serverPlayer, villager)
                 : null;
         this.initialGearStackCount = villager == null ? 0 : gearStackCount(villagerInventory);
         villagerInventory.startOpen(playerInventory.player);
@@ -129,6 +134,7 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
         super.removed(player);
         processTakenGifts(player);
         processTakenTradePayments(player);
+        processTakenStolenItems(player);
         rememberAddedGear(player);
         this.villagerInventory.stopOpen(player);
     }
@@ -249,6 +255,14 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
         }
         this.tradePaymentReturnsProcessed = true;
         VillagerTradePaymentTracker.applyTakenTradePaymentPenalties(serverPlayer, this.villager, this.tradePaymentSnapshot);
+    }
+
+    private void processTakenStolenItems(Player player) {
+        if (this.stolenItemReturnsProcessed || this.villager == null || !(player instanceof ServerPlayer serverPlayer)) {
+            return;
+        }
+        this.stolenItemReturnsProcessed = true;
+        VillagerConfiscatedStolenItemTracker.applyTakenStolenItemPenalties(serverPlayer, this.villager, this.stolenItemSnapshot);
     }
 
     private static void stripPlayerSideTradePaymentTracking(Player player) {

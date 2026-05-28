@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.client.inventory;
 
 import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
+import com.jvn.villagerretaliation.inventory.VillagerConfiscatedStolenItemTracker;
 import com.jvn.villagerretaliation.inventory.VillagerGiftReturnTracker;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryMenu;
 import com.jvn.villagerretaliation.inventory.VillagerTradePaymentTracker;
@@ -90,6 +91,9 @@ public class VillagerInventoryScreen extends AbstractContainerScreen<VillagerInv
             VillagerTradePaymentTracker.tradedBy(stack)
                     .map(name -> Component.literal("traded by " + name).withStyle(ChatFormatting.GRAY))
                     .ifPresent(tooltip::add);
+            if (VillagerConfiscatedStolenItemTracker.stolenItemBy(stack).isPresent()) {
+                tooltip.add(Component.translatable("villagerretaliation.tooltip.stolen_item").withStyle(ChatFormatting.RED));
+            }
         }
         return tooltip;
     }

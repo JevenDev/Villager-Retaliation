@@ -147,12 +147,19 @@ public final class VillagerInteractionService {
             return false;
         }
 
+        closeActiveContainer(player);
         VillagerInteractionScreenOpener.openForced(player, villager, dialogueOptions, forceCameraTowardsVillager);
         focusVillagerOnPlayer(villager, player);
         if (!openingText.isBlank()) {
             broadcastForcedVillagerChat(player.serverLevel(), villager, openingText);
         }
         return true;
+    }
+
+    private static void closeActiveContainer(ServerPlayer player) {
+        if (player.containerMenu != player.inventoryMenu) {
+            player.closeContainer();
+        }
     }
 
     public static void handleDialogueRequest(ServerPlayer player, int entityId, String optionId) {

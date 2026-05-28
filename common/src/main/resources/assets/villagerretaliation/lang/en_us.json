@@ -368,6 +368,7 @@
   "villagerretaliation.skill_growth.improved": "%s improved their %s skill.",
   "villagerretaliation.tooltip.world_generated": "village property",
   "villagerretaliation.tooltip.belongs_to": "belongs to %s",
+  "villagerretaliation.tooltip.stolen_item": "stolen item",
   "villagerretaliation.gui.title": "Villager Interaction",
   "villagerretaliation.gui.back": "Back",
   "villagerretaliation.gui.hint.back": "Esc: back",

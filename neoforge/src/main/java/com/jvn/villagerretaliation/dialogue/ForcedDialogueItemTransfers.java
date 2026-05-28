@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.dialogue;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources.ForcedDialogueItemDestination;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources.ForcedDialogueItemPayment;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueResources.ForcedDialogueStolenItemReturn;
+import com.jvn.villagerretaliation.inventory.VillagerConfiscatedStolenItemTracker;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import java.util.ArrayList;
 import java.util.List;
@@ -69,13 +70,13 @@ final class ForcedDialogueItemTransfers {
             return Optional.empty();
         }
 
-        Optional<ItemTransferTarget> target = transferTarget(player, villager, sourceContainer, stolenItemReturn.destination());
+        Optional<ItemTransferTarget> target = transferTarget(player, villager, sourceContainer, stolenItemReturn.destination(), true);
         if (target.isEmpty()) {
             return Optional.empty();
         }
 
         Optional<ItemTransferTarget> overflowTarget = Optional.ofNullable(stolenItemReturn.overflowDestination())
-                .flatMap(destination -> transferTarget(player, villager, sourceContainer, destination));
+                .flatMap(destination -> transferTarget(player, villager, sourceContainer, destination, true));
         boolean targetFits = target.get().canAccept(removedStacks);
         if (stolenItemReturn.requireSpace() && !targetFits && overflowTarget.isEmpty()) {
             return Optional.empty();
@@ -160,11 +161,22 @@ final class ForcedDialogueItemTransfers {
             Villager villager,
             SourceContainer sourceContainer,
             ForcedDialogueItemDestination destination) {
+        return transferTarget(player, villager, sourceContainer, destination, false);
+    }
+
+    private static Optional<ItemTransferTarget> transferTarget(
+            ServerPlayer player,
+            Villager villager,
+            SourceContainer sourceContainer,
+            ForcedDialogueItemDestination destination,
+            boolean markConfiscatedStolenItems) {
         return switch (destination) {
             case DISCARD -> Optional.of(discardTransferTarget());
-            case VILLAGER_INVENTORY -> Optional.of(villagerInventoryTransferTarget(villager));
+            case VILLAGER_INVENTORY -> Optional.of(villagerInventoryTransferTarget(player, villager, markConfiscatedStolenItems));
             case VILLAGER_INVENTORY_THEN_SOURCE_CONTAINER -> sourceContainer(player, sourceContainer)
-                    .map(container -> chainedTransferTarget(villagerInventoryTransferTarget(villager), containerTransferTarget(container)));
+                    .map(container -> chainedTransferTarget(
+                            villagerInventoryTransferTarget(player, villager, markConfiscatedStolenItems),
+                            containerTransferTarget(container)));
             case SOURCE_CONTAINER -> sourceContainer(player, sourceContainer).map(ForcedDialogueItemTransfers::containerTransferTarget);
             case DROP_AT_VILLAGER -> Optional.of(dropAtVillagerTransferTarget(villager));
             case DROP_AT_CONTAINER -> sourceContainerLevel(player, sourceContainer)
@@ -200,19 +212,52 @@ final class ForcedDialogueItemTransfers {
         };
     }
 
-    private static ItemTransferTarget villagerInventoryTransferTarget(Villager villager) {
+    private static ItemTransferTarget villagerInventoryTransferTarget(
+            ServerPlayer player,
+            Villager villager,
+            boolean markConfiscatedStolenItems) {
         return new ItemTransferTarget() {
             @Override
             public boolean canAccept(List<ItemStack> stacks) {
-                return VillagerInventoryAccess.canAddItems(villager, stacks);
+                return VillagerInventoryAccess.canAddItems(villager, villagerInventoryStacks(stacks));
             }
 
             @Override
             public List<ItemStack> accept(List<ItemStack> stacks) {
                 return stacks.stream()
-                        .map(stack -> VillagerInventoryAccess.addItem(villager, stack))
+                        .map(this::acceptOne)
                         .filter(stack -> !stack.isEmpty())
                         .toList();
+            }
+
+            private ItemStack acceptOne(ItemStack stack) {
+                ItemStack transferredStack = villagerInventoryStack(stack);
+                ItemStack remainder = VillagerInventoryAccess.addItem(villager, transferredStack);
+                int acceptedCount = stack.getCount() - remainder.getCount();
+                if (markConfiscatedStolenItems && acceptedCount > 0) {
+                    VillagerConfiscatedStolenItemTracker.recordConfiscatedStolenItem(
+                            player.serverLevel(),
+                            villager,
+                            player,
+                            stack,
+                            acceptedCount);
+                }
+                return markConfiscatedStolenItems && !remainder.isEmpty()
+                        ? stack.copyWithCount(remainder.getCount())
+                        : remainder;
+            }
+
+            private List<ItemStack> villagerInventoryStacks(List<ItemStack> stacks) {
+                if (!markConfiscatedStolenItems) {
+                    return stacks;
+                }
+                return stacks.stream().map(this::villagerInventoryStack).toList();
+            }
+
+            private ItemStack villagerInventoryStack(ItemStack stack) {
+                return markConfiscatedStolenItems
+                        ? VillagerConfiscatedStolenItemTracker.markConfiscatedStolenItem(stack.copy(), player)
+                        : stack;
             }
         };
     }

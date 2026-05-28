@@ -434,6 +434,27 @@ final class VillagerInventoryContainer implements Container {
         return count;
     }
 
+    static int countConfiscatedStolenItem(Villager villager, UUID playerId, ItemStack target) {
+        if (target.isEmpty()) {
+            return 0;
+        }
+
+        int count = 0;
+        for (EquipmentSlot slot : ARMOR_SLOTS) {
+            count += matchingConfiscatedStolenItemCount(villager.getItemBySlot(slot), playerId, target);
+        }
+        if (canAccessMainHand(villager)) {
+            count += matchingConfiscatedStolenItemCount(villager.getMainHandItem(), playerId, target);
+        }
+        count += matchingConfiscatedStolenItemCount(villager.getOffhandItem(), playerId, target);
+
+        NonNullList<ItemStack> inventory = loadFullInventory(villager);
+        for (ItemStack stack : inventory) {
+            count += matchingConfiscatedStolenItemCount(stack, playerId, target);
+        }
+        return count;
+    }
+
     static void dropAllInventoryAndEquipment(Villager villager, LivingDropsEvent event) {
         BorrowedCombatWeapon borrowedWeapon = borrowedCombatWeapon(villager);
         boolean borrowedWeaponInMainHand = borrowedWeapon != null
@@ -757,6 +778,13 @@ final class VillagerInventoryContainer implements Container {
     private static int matchingTradePaymentCount(ItemStack stack, UUID playerId, ItemStack target) {
         return VillagerTradePaymentTracker.isStoredTradePaymentFrom(stack, playerId)
                 && VillagerTradePaymentTracker.isSameTrackedTradePayment(stack, target)
+                ? stack.getCount()
+                : 0;
+    }
+
+    private static int matchingConfiscatedStolenItemCount(ItemStack stack, UUID playerId, ItemStack target) {
+        return VillagerConfiscatedStolenItemTracker.isConfiscatedStolenItemFrom(stack, playerId)
+                && VillagerConfiscatedStolenItemTracker.isSameConfiscatedStolenItem(stack, target)
                 ? stack.getCount()
                 : 0;
     }

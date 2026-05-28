@@ -112,7 +112,8 @@ final class VillagerInventoryOverflowService {
 
     private static boolean shouldKeepInInventory(ItemStack stack) {
         return VillagerGiftReturnTracker.giftedBy(stack).isPresent()
-                || VillagerTradePaymentTracker.tradedBy(stack).isPresent();
+                || VillagerTradePaymentTracker.tradedBy(stack).isPresent()
+                || VillagerConfiscatedStolenItemTracker.stolenItemBy(stack).isPresent();
     }
 
     private static List<ContainerCandidate> nearbyGeneratedVillageContainers(ServerLevel level, BlockPos center) {

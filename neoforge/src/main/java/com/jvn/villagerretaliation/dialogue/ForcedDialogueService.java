@@ -554,6 +554,11 @@ public final class ForcedDialogueService {
             return false;
         }
         Optional<ForcedDialogueOption> selected = selectLeaveOption(player, villager, session);
+        if (selected.isEmpty()) {
+            FORCED_SESSIONS.remove(player.getUUID());
+            VillagerConversationService.endForPlayer(player, true);
+            return true;
+        }
         return handleSelectedOption(player, villager, session, selected.get(), forceEndConversation, true);
     }
 
@@ -564,18 +569,27 @@ public final class ForcedDialogueService {
         VillagerReputationManager.ReputationSnapshot reputation =
                 VillagerReputationManager.getReputationSnapshot(player.serverLevel(), villager, player.getUUID());
         return session.definition().options().stream()
+                .filter(option -> shouldOfferStolenItemReturnOption(session, option))
                 .filter(option -> option.id().equals(LEAVE_OPTION_ID))
                 .filter(option -> option.reputationCondition().matches(reputation.value(), reputation.level()))
                 .sorted(Comparator.comparingInt(ForcedDialogueOption::order).thenComparing(ForcedDialogueOption::id))
                 .findFirst()
                 .or(() -> session.definition().leaveOptions().stream()
+                        .filter(option -> shouldOfferStolenItemReturnOption(session, option))
                         .filter(option -> option.reputationCondition().matches(reputation.value(), reputation.level()))
                         .sorted(Comparator.comparingInt(ForcedDialogueOption::order).thenComparing(ForcedDialogueOption::id))
                         .findFirst())
                 .or(() -> session.definition().options().stream()
+                        .filter(option -> shouldOfferStolenItemReturnOption(session, option))
                         .filter(option -> option.id().equals(LEAVE_OPTION_ID))
                         .findFirst())
-                .or(() -> Optional.of(session.definition().leaveOption()));
+                .or(() -> shouldOfferStolenItemReturnOption(session, session.definition().leaveOption())
+                        ? Optional.of(session.definition().leaveOption())
+                        : Optional.empty());
+    }
+
+    private static boolean shouldOfferStolenItemReturnOption(ForcedDialogueSession session, ForcedDialogueOption option) {
+        return !session.stolenItemsResolved() || option.stolenItemReturn().isEmpty();
     }
 
     private static boolean handleSelectedOption(
@@ -610,6 +624,8 @@ public final class ForcedDialogueService {
             if (stolenItemReturn.successReputationDelta() != 0 && VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()) {
                 VillagerReputationManager.addDialogueReputation(player.serverLevel(), villager, player, stolenItemReturn.successReputationDelta());
             }
+            session = withStolenItemsResolved(session);
+            FORCED_SESSIONS.put(player.getUUID(), session);
         }
         ForcedDialogueItemPayment itemPayment = option.itemPayment();
         if (!itemPayment.isEmpty() && !executeItemPayment(player, villager, session, itemPayment)) {
@@ -736,7 +752,7 @@ public final class ForcedDialogueService {
             VillagerInteractionService.sendForcedDialogueReputation(
                     player,
                     villager,
-                    forcedOptions(session.definition(), player.serverLevel(), villager, player),
+                    forcedOptions(session.definition(), player.serverLevel(), villager, player, session),
                     session.definition().forceCameraTowardsVillager());
         }
         if (aggro) {
@@ -1242,7 +1258,7 @@ public final class ForcedDialogueService {
             VillagerInteractionService.sendForcedDialogueReputation(
                     player,
                     villager,
-                    forcedOptions(session.definition(), player.serverLevel(), villager, player),
+                    forcedOptions(session.definition(), player.serverLevel(), villager, player, session),
                     session.definition().forceCameraTowardsVillager());
         }
         if (stolenItemReturn.failureAggro()) {
@@ -1280,7 +1296,7 @@ public final class ForcedDialogueService {
             VillagerInteractionService.sendForcedDialogueReputation(
                     player,
                     villager,
-                    forcedOptions(session.definition(), player.serverLevel(), villager, player),
+                    forcedOptions(session.definition(), player.serverLevel(), villager, player, session),
                     session.definition().forceCameraTowardsVillager());
         }
         if (itemPayment.failureAggro()) {
@@ -1589,7 +1605,7 @@ public final class ForcedDialogueService {
                 player,
                 witness,
                 line,
-                forcedOptions(definition, level, witness, player),
+                forcedOptions(definition, level, witness, player, session),
                 definition.forceCameraTowardsVillager())) {
             FORCED_SESSIONS.put(player.getUUID(), new ForcedDialogueSession(
                     witness.getUUID(),
@@ -1599,9 +1615,13 @@ public final class ForcedDialogueService {
                     session.sourceContainerPos(),
                     session.removedStacks(),
                     level.getGameTime(),
+                    -1,
+                    "",
                     false,
+                    Map.of(),
                     appendedParticipantIds(session, witness),
-                    appendedSpokenVillagerIds(session, witness)));
+                    appendedSpokenVillagerIds(session, witness),
+                    session.stolenItemsResolved()));
         } else if (!line.isBlank()) {
             VillagerInteractionService.sendVillagerNotice(player, witness, line);
         }
@@ -1929,7 +1949,29 @@ public final class ForcedDialogueService {
                 session.tradeRefreshReady(),
                 session.replacements(),
                 participantIds,
-                session.spokenVillagerIds());
+                session.spokenVillagerIds(),
+                session.stolenItemsResolved());
+    }
+
+    private static ForcedDialogueSession withStolenItemsResolved(ForcedDialogueSession session) {
+        if (session.stolenItemsResolved()) {
+            return session;
+        }
+        return new ForcedDialogueSession(
+                session.villagerId(),
+                session.definition(),
+                session.context(),
+                session.sourceContainerDimension(),
+                session.sourceContainerPos(),
+                session.removedStacks(),
+                session.startedGameTime(),
+                session.tradeRefreshOfferIndex(),
+                session.tradeRefreshDefinitionId(),
+                session.tradeRefreshReady(),
+                session.replacements(),
+                session.participantVillagerIds(),
+                session.spokenVillagerIds(),
+                true);
     }
 
     public static void maybeTriggerPlayerItemProximity(ServerLevel level, Villager villager) {
@@ -2602,9 +2644,19 @@ public final class ForcedDialogueService {
             ServerLevel level,
             Villager villager,
             ServerPlayer player) {
+        return forcedOptions(definition, level, villager, player, null);
+    }
+
+    private static List<DialogueOptionDefinition> forcedOptions(
+            ForcedDialogueDefinition definition,
+            ServerLevel level,
+            Villager villager,
+            ServerPlayer player,
+            ForcedDialogueSession session) {
         VillagerReputationManager.ReputationSnapshot reputation =
                 VillagerReputationManager.getReputationSnapshot(level, villager, player.getUUID());
         return definition.options().stream()
+                .filter(option -> session == null || shouldOfferStolenItemReturnOption(session, option))
                 .filter(option -> option.reputationCondition().matches(reputation.value(), reputation.level()))
                 .sorted(Comparator.comparingInt(ForcedDialogueOption::order).thenComparing(ForcedDialogueOption::id))
                 .map(option -> DialogueOptionDefinition.simple(option.id(), option.label(), DialogueRequestType.QUESTION, option.order()))
@@ -2896,7 +2948,8 @@ public final class ForcedDialogueService {
             boolean tradeRefreshReady,
             Map<String, String> replacements,
             List<UUID> participantVillagerIds,
-            List<UUID> spokenVillagerIds) {
+            List<UUID> spokenVillagerIds,
+            boolean stolenItemsResolved) {
         private ForcedDialogueSession(
                 UUID villagerId,
                 ForcedDialogueDefinition definition,
@@ -2918,7 +2971,8 @@ public final class ForcedDialogueService {
                     false,
                     Map.of(),
                     List.of(villagerId),
-                    List.of(villagerId));
+                    List.of(villagerId),
+                    false);
         }
 
         private ForcedDialogueSession(
@@ -2943,7 +2997,8 @@ public final class ForcedDialogueService {
                     tradeRefreshReady,
                     Map.of(),
                     List.of(villagerId),
-                    List.of(villagerId));
+                    List.of(villagerId),
+                    false);
         }
 
         private ForcedDialogueSession(
@@ -2969,7 +3024,8 @@ public final class ForcedDialogueService {
                     tradeRefreshReady,
                     Map.copyOf(replacements),
                     List.of(villagerId),
-                    List.of(villagerId));
+                    List.of(villagerId),
+                    false);
         }
 
         private ForcedDialogueSession(
@@ -2997,7 +3053,8 @@ public final class ForcedDialogueService {
                     tradeRefreshReady,
                     Map.copyOf(replacements),
                     List.copyOf(participantVillagerIds),
-                    List.copyOf(spokenVillagerIds));
+                    List.copyOf(spokenVillagerIds),
+                    false);
         }
 
         private ForcedDialogueSession(
@@ -3047,7 +3104,8 @@ public final class ForcedDialogueService {
                     tradeRefreshReady,
                     Map.of(),
                     List.copyOf(participantVillagerIds),
-                    List.copyOf(spokenVillagerIds));
+                    List.copyOf(spokenVillagerIds),
+                    false);
         }
 
         private ForcedDialogueSession(
@@ -3073,7 +3131,8 @@ public final class ForcedDialogueService {
                     false,
                     Map.of(),
                     List.of(villagerId),
-                    List.of(villagerId));
+                    List.of(villagerId),
+                    false);
         }
     }
 
