@@ -46,7 +46,7 @@ final class VillagerInteractionNavigationChrome {
                 graphics,
                 font,
                 hintText,
-                context.screenWidth() - width - 8,
+                context.hintRight() - width,
                 context.screenHeight() - height - 5,
                 withAlpha(0x66FFFFFF, alpha),
                 scale);
@@ -64,6 +64,8 @@ final class VillagerInteractionNavigationChrome {
         int screenWidth();
 
         int screenHeight();
+
+        int hintRight();
 
         boolean topBackButtonVisible();
 

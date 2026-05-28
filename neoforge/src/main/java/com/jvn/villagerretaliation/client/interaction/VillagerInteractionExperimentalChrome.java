@@ -356,6 +356,18 @@ final class VillagerInteractionExperimentalChrome {
         return smoothstep(textEntranceProgress(0.0F, TEXT_FADE_IN_DURATION_MILLIS));
     }
 
+    static float backdropElapsedMillis() {
+        long now = Util.getMillis();
+        if (backdropAnimationStartMillis < 0L) {
+            backdropAnimationStartMillis = now;
+        }
+        return now - backdropAnimationStartMillis;
+    }
+
+    static float backdropExitElapsedMillis() {
+        return backdropExitStartMillis < 0L ? -1.0F : Util.getMillis() - backdropExitStartMillis;
+    }
+
     static float chromeAlpha() {
         return textFadeInAlpha();
     }

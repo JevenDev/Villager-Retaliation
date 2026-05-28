@@ -5,7 +5,6 @@ import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
 import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
 import com.jvn.villagerretaliation.config.InteractionChatPosition;
 import com.jvn.villagerretaliation.config.InteractionScreenStyle;
-import com.jvn.villagerretaliation.config.InteractionSkillsPosition;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.DialogueDisposition;
 import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
@@ -30,6 +29,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import net.minecraft.ChatFormatting;
+import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -142,6 +142,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private int selectedInventorySlot = -1;
     private int lastMouseX;
     private int lastMouseY;
+    private long experimentalSkillsAnimationStartMillis = -1L;
+    private long experimentalSkillsExitStartMillis = -1L;
     private Button giftButton;
     private Double originalChatWidth;
     private final GiftPageContext giftPageContext = new GiftPageContext();
@@ -873,7 +875,16 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void openPage(DialoguePage page) {
+        DialoguePage previousPage = this.page;
         this.page = page;
+        if (isExperimentalUi()) {
+            if (page == DialoguePage.SKILLS && previousPage != DialoguePage.SKILLS) {
+                this.experimentalSkillsAnimationStartMillis = Util.getMillis();
+                this.experimentalSkillsExitStartMillis = -1L;
+            } else if (previousPage == DialoguePage.SKILLS && page != DialoguePage.SKILLS) {
+                this.experimentalSkillsExitStartMillis = Util.getMillis();
+            }
+        }
         rebuildOptions();
     }
 
@@ -946,10 +957,59 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     void renderBackdropBehindChat(GuiGraphics graphics) {
         int veilTop = interactionVeilTop();
         if (isExperimentalUi()) {
+            if (experimentalSkillsBackdropVisible()) {
+                renderExperimentalSkillsBackdrop(graphics);
+            }
             VillagerInteractionExperimentalChrome.renderBackdrop(graphics, this.width, this.height, veilTop, this.lastMouseX, this.lastMouseY);
             return;
         }
         VillagerInteractionScreenShaderRenderer.renderInteractionVeil(graphics, this.width, this.height, veilTop, VEIL_TOP_DITHER_HEIGHT);
+    }
+
+    private void renderExperimentalSkillsBackdrop(GuiGraphics graphics) {
+        int left = Math.max(0, skillsPanelLeft() - SKILLS_CONTAINER_PADDING_X - experimentalUnit(118));
+        int top = Math.max(0, skillsPanelTop() - experimentalUnit(26));
+        int right = Math.min(this.width, skillsPanelLeft() + skillsPanelWidth() + experimentalUnit(46));
+        int bottom = Math.min(this.height, skillsPanelTop() + skillsContainerHeight() + experimentalUnit(74));
+        VillagerInteractionScreenShaderRenderer.renderExperimentalSkillsPanel(
+                graphics,
+                left,
+                top,
+                right,
+                bottom,
+                VillagerInteractionExperimentalChrome.chromeAlpha(),
+                (Util.getMillis() % 1_000_000L) / 50.0F,
+                experimentalSkillsElapsedMillis(),
+                experimentalSkillsExitElapsedMillis(),
+                VillagerInteractionExperimentalChrome.backdropElapsedMillis(),
+                VillagerInteractionExperimentalChrome.backdropExitElapsedMillis(),
+                this.width,
+                this.height,
+                this.lastMouseX,
+                this.lastMouseY);
+    }
+
+    private boolean experimentalSkillsBackdropVisible() {
+        if (this.page == DialoguePage.SKILLS) {
+            return true;
+        }
+        return this.experimentalSkillsExitStartMillis >= 0L && Util.getMillis() - this.experimentalSkillsExitStartMillis < 860L;
+    }
+
+    private float experimentalSkillsElapsedMillis() {
+        long now = Util.getMillis();
+        if (this.experimentalSkillsAnimationStartMillis < 0L) {
+            this.experimentalSkillsAnimationStartMillis = now;
+        }
+        return now - this.experimentalSkillsAnimationStartMillis;
+    }
+
+    private float experimentalSkillsExitElapsedMillis() {
+        float chromeExitElapsedMillis = VillagerInteractionExperimentalChrome.backdropExitElapsedMillis();
+        if (chromeExitElapsedMillis >= 0.0F) {
+            return chromeExitElapsedMillis;
+        }
+        return this.experimentalSkillsExitStartMillis < 0L ? -1.0F : Util.getMillis() - this.experimentalSkillsExitStartMillis;
     }
 
     void renderPositionedHudChat(GuiGraphics graphics) {
@@ -1228,31 +1288,13 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private int skillsPanelTop() {
-        InteractionSkillsPosition position = VillagerRetaliationConfig.INTERACTION_SKILLS_POSITION.get();
         int containerHeight = skillsContainerHeight();
-        int targetTop;
-        if (position.anchorsBottom()) {
-            targetTop = this.height - containerHeight - SKILLS_EDGE_MARGIN;
-        } else if (position.anchorsMiddle()) {
-            targetTop = (this.height - containerHeight) / 2;
-        } else {
-            targetTop = SKILLS_EDGE_MARGIN;
-        }
-        return Mth.clamp(targetTop, SKILLS_EDGE_MARGIN, Math.max(SKILLS_EDGE_MARGIN, this.height - containerHeight - SKILLS_EDGE_MARGIN));
+        return Mth.clamp(SKILLS_EDGE_MARGIN, SKILLS_EDGE_MARGIN, Math.max(SKILLS_EDGE_MARGIN, this.height - containerHeight - SKILLS_EDGE_MARGIN));
     }
 
     private int skillsPanelLeft() {
-        InteractionSkillsPosition position = VillagerRetaliationConfig.INTERACTION_SKILLS_POSITION.get();
         int panelWidth = skillsPanelWidth();
-        int targetLeft;
-        if (position.anchorsRight()) {
-            targetLeft = this.width - panelWidth - SKILLS_EDGE_MARGIN;
-        } else if (position.anchorsCenter()) {
-            int containerWidth = panelWidth + SKILLS_CONTAINER_PADDING_X;
-            targetLeft = (this.width - containerWidth) / 2 + SKILLS_CONTAINER_PADDING_X;
-        } else {
-            targetLeft = SKILLS_EDGE_MARGIN + SKILLS_CONTAINER_PADDING_X;
-        }
+        int targetLeft = isExperimentalUi() ? scrollbarRight() - panelWidth : this.width - panelWidth - SKILLS_EDGE_MARGIN;
         return Mth.clamp(targetLeft, SKILLS_EDGE_MARGIN + SKILLS_CONTAINER_PADDING_X, Math.max(SKILLS_EDGE_MARGIN + SKILLS_CONTAINER_PADDING_X, this.width - panelWidth - SKILLS_EDGE_MARGIN));
     }
 
@@ -1663,6 +1705,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                     optionScrollbarWidth());
         }
         return optionsLeft() + optionWidth() + optionScrollbarOffset();
+    }
+
+    private int scrollbarRight() {
+        return optionsScrollbarLeft() + optionScrollbarWidth();
     }
 
     private boolean isExperimentalUi() {
@@ -2090,6 +2136,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
 
         @Override
+        public int hintRight() {
+            if (VillagerInteractionScreen.this.isExperimentalUi() && VillagerInteractionScreen.this.page == DialoguePage.SKILLS) {
+                return VillagerInteractionScreen.this.scrollbarRight();
+            }
+            return VillagerInteractionScreen.this.width - 8;
+        }
+
+        @Override
         public boolean topBackButtonVisible() {
             return VillagerInteractionScreen.this.isTopBackButtonVisible();
         }
@@ -2495,6 +2549,21 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         @Override
         public int profileSkillColumnGap() {
             return PROFILE_SKILL_COLUMN_GAP;
+        }
+
+        @Override
+        public boolean experimentalUi() {
+            return VillagerInteractionScreen.this.isExperimentalUi();
+        }
+
+        @Override
+        public float experimentalChromeAlpha() {
+            return VillagerInteractionScreen.this.isExperimentalUi() ? VillagerInteractionExperimentalChrome.chromeAlpha() : 1.0F;
+        }
+
+        @Override
+        public int experimentalUnit(int value) {
+            return VillagerInteractionScreen.this.isExperimentalUi() ? VillagerInteractionScreen.this.experimentalUnit(value) : value;
         }
 
         @Override

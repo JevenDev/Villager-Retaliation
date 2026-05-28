@@ -20,6 +20,7 @@ public final class VillagerInteractionScreenShaderRenderer {
     private static ShaderInstance interactionVeilShader;
     private static ShaderInstance experimentalChromeShader;
     private static ShaderInstance experimentalNotificationShader;
+    private static ShaderInstance experimentalSkillsShader;
 
     private VillagerInteractionScreenShaderRenderer() {
     }
@@ -49,6 +50,14 @@ public final class VillagerInteractionScreenShaderRenderer {
                             DefaultVertexFormat.POSITION
                     ),
                     shader -> experimentalNotificationShader = shader
+            );
+            event.registerShader(
+                    new ShaderInstance(
+                            event.getResourceProvider(),
+                            VillagerRetaliationClientAssets.EXPERIMENTAL_SKILLS_SHADER,
+                            DefaultVertexFormat.POSITION
+                    ),
+                    shader -> experimentalSkillsShader = shader
             );
         } catch (IOException exception) {
             throw new IllegalStateException("Failed to register interaction screen shaders", exception);
@@ -145,6 +154,117 @@ public final class VillagerInteractionScreenShaderRenderer {
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.setShader(() -> experimentalNotificationShader);
+
+        BufferBuilder bufferBuilder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
+        bufferBuilder.addVertex(pose, left, bottom, 0.0F);
+        bufferBuilder.addVertex(pose, right, bottom, 0.0F);
+        bufferBuilder.addVertex(pose, right, top, 0.0F);
+        bufferBuilder.addVertex(pose, left, top, 0.0F);
+        BufferUploader.drawWithShader(bufferBuilder.buildOrThrow());
+
+        RenderSystem.disableBlend();
+        return true;
+    }
+
+    public static boolean renderExperimentalSkillsPanel(
+            GuiGraphics graphics,
+            int left,
+            int top,
+            int right,
+            int bottom,
+            float alpha,
+            float elapsedTicks,
+            float elapsedMillis,
+            float exitElapsedMillis,
+            float chromeElapsedMillis,
+            float chromeExitElapsedMillis,
+            int screenWidth,
+            int screenHeight,
+            int mouseX,
+            int mouseY) {
+        return renderExperimentalSkills(
+                graphics,
+                left,
+                top,
+                right,
+                bottom,
+                0,
+                1.0F,
+                alpha,
+                elapsedTicks,
+                elapsedMillis,
+                exitElapsedMillis,
+                chromeElapsedMillis,
+                chromeExitElapsedMillis,
+                screenWidth,
+                screenHeight,
+                mouseX,
+                mouseY,
+                false);
+    }
+
+    public static boolean renderExperimentalSkillBar(
+            GuiGraphics graphics,
+            int left,
+            int top,
+            int right,
+            int bottom,
+            int accentColor,
+            float fillProgress,
+            float alpha,
+            float elapsedTicks,
+            boolean hovered) {
+        return renderExperimentalSkills(graphics, left, top, right, bottom, accentColor, fillProgress, alpha, elapsedTicks, 0.0F, -1.0F, 0.0F, -1.0F, 1, 1, 0, 0, hovered);
+    }
+
+    private static boolean renderExperimentalSkills(
+            GuiGraphics graphics,
+            int left,
+            int top,
+            int right,
+            int bottom,
+            int accentColor,
+            float fillProgress,
+            float alpha,
+            float elapsedTicks,
+            float elapsedMillis,
+            float exitElapsedMillis,
+            float chromeElapsedMillis,
+            float chromeExitElapsedMillis,
+            int screenWidth,
+            int screenHeight,
+            int mouseX,
+            int mouseY,
+            boolean hovered) {
+        if (experimentalSkillsShader == null) {
+            return false;
+        }
+
+        setUniform(experimentalSkillsShader, "RectLeft", (float) left);
+        setUniform(experimentalSkillsShader, "RectTop", (float) top);
+        setUniform(experimentalSkillsShader, "RectRight", (float) right);
+        setUniform(experimentalSkillsShader, "RectBottom", (float) bottom);
+        setUniform(experimentalSkillsShader, "AccentRed", ((accentColor >> 16) & 0xFF) / 255.0F);
+        setUniform(experimentalSkillsShader, "AccentGreen", ((accentColor >> 8) & 0xFF) / 255.0F);
+        setUniform(experimentalSkillsShader, "AccentBlue", (accentColor & 0xFF) / 255.0F);
+        setUniform(experimentalSkillsShader, "FillProgress", fillProgress);
+        setUniform(experimentalSkillsShader, "Alpha", alpha);
+        setUniform(experimentalSkillsShader, "ElapsedTicks", elapsedTicks);
+        setUniform(experimentalSkillsShader, "ElapsedMillis", elapsedMillis);
+        setUniform(experimentalSkillsShader, "ExitElapsedMillis", exitElapsedMillis);
+        setUniform(experimentalSkillsShader, "ChromeElapsedMillis", chromeElapsedMillis);
+        setUniform(experimentalSkillsShader, "ChromeExitElapsedMillis", chromeExitElapsedMillis);
+        setUniform(experimentalSkillsShader, "ScreenWidth", (float) screenWidth);
+        setUniform(experimentalSkillsShader, "ScreenHeight", (float) screenHeight);
+        setUniform(experimentalSkillsShader, "MouseX", (float) mouseX);
+        setUniform(experimentalSkillsShader, "MouseY", (float) mouseY);
+        setUniform(experimentalSkillsShader, "Hovered", hovered ? 1.0F : 0.0F);
+        setUniform(experimentalSkillsShader, "Mode", accentColor == 0 ? 0.0F : 1.0F);
+
+        Matrix4f pose = graphics.pose().last().pose();
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.setShader(() -> experimentalSkillsShader);
 
         BufferBuilder bufferBuilder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
         bufferBuilder.addVertex(pose, left, bottom, 0.0F);
