@@ -84,6 +84,7 @@ public final class VillagerRetaliationHandler {
     private static final String PERSISTENT_ARMORER_SHIELD_ROLLED_TAG = "VillagerRetaliationArmorerShieldRolled";
     private static final VillagerRetaliationRetaliationRuntime<Villager> RETALIATION =
             new VillagerRetaliationRetaliationRuntime<>(PERSISTENT_TAG_ROOT);
+    private static final RetaliationActorPolicy<Villager> ACTOR_POLICY = VillagerCombatRoles.policy();
     private static final Map<UUID, Long> NEXT_SPECIAL_TICKS = new HashMap<>();
     private static final Map<UUID, Long> NEXT_NATURAL_TARGET_SCAN_TICKS = new HashMap<>();
     private static final Map<UUID, Long> NEXT_CREEPER_AVOIDANCE_SCAN_TICKS = new HashMap<>();
@@ -347,7 +348,7 @@ public final class VillagerRetaliationHandler {
         ActiveRetaliationTarget retaliationTarget = VillagerRetaliationRetaliationUtil.resolveActiveRetaliationTarget(
                 villager,
                 RETALIATION,
-                VillagerCombatRoles::canFightBack,
+                ACTOR_POLICY::canFightBack,
                 () -> clearAnger(villager)
         );
         if (retaliationTarget == null) {
@@ -437,7 +438,7 @@ public final class VillagerRetaliationHandler {
             return;
         }
 
-        double movementSpeed = VillagerCombatRoles.movementSpeed(villager)
+        double movementSpeed = ACTOR_POLICY.movementSpeed(villager)
                 * (isArmorerActivelyBlocking(villager) ? ARMORER_BLOCKING_SPEED_FACTOR : 1.0D);
         boolean canUseMeleeCombat = VillagerRetaliationRetaliationUtil.canUseMeleeCombatMode(villager);
         boolean canMeleeHit = canUseMeleeCombat && VillagerRetaliationRetaliationUtil.canMeleeHit(villager, target);
@@ -457,7 +458,7 @@ public final class VillagerRetaliationHandler {
                     gameTime + VillagerSocialAttributeBehavior.adjustCombatCooldownTicks(
                             level,
                             villager,
-                            VillagerCombatRoles.attackCooldown(villager)
+                            ACTOR_POLICY.attackCooldown(villager)
                     )
             );
             onArmorerMeleeAttackCommitted(villager);
@@ -591,7 +592,7 @@ public final class VillagerRetaliationHandler {
                 || !villager.isAlive()
                 || !VillagerRetaliationConfig.VILLAGERS_TARGET_HOSTILE_MOBS.get()
                 || !VillagerRetaliationVillagerRules.shouldSuppressFleeingBehavior(villager)
-                || !VillagerCombatRoles.canFightBack(villager)) {
+                || !ACTOR_POLICY.canFightBack(villager)) {
             return;
         }
 
@@ -625,7 +626,7 @@ public final class VillagerRetaliationHandler {
 
     private static boolean canBravelyStandGroundAgainst(ServerLevel level, Villager villager, LivingEntity target) {
         return !(target instanceof Creeper)
-                && VillagerCombatRoles.canFightBack(villager)
+                && ACTOR_POLICY.canFightBack(villager)
                 && VillagerSocialAttributeBehavior.canBravelyStandGround(level, villager);
     }
 
@@ -667,7 +668,7 @@ public final class VillagerRetaliationHandler {
 
     private static boolean tryAcquireGroundWeapon(Villager villager, long gameTime) {
         if (!villager.isAlive()
-                || !VillagerCombatRoles.canScavengeGroundWeapons(villager)
+                || !ACTOR_POLICY.canScavengeGroundWeapons(villager)
                 || VillagerInventoryAccess.hasOpenInventory(villager)
                 || !VillagerRetaliationVillagerCombatUtil.isThreatened(villager)) {
             return false;
@@ -675,7 +676,7 @@ public final class VillagerRetaliationHandler {
 
         return RETALIATION.tryAcquireGroundWeapon(
                 villager,
-                VillagerCombatRoles.movementSpeed(villager),
+                ACTOR_POLICY.movementSpeed(villager),
                 () -> RETALIATION.discardTemporaryWeapon(villager),
                 gameTime
         );
@@ -754,7 +755,7 @@ public final class VillagerRetaliationHandler {
     }
 
     private static boolean shouldSuppressFleeingForRetaliation(Villager villager) {
-        if (!RETALIATION.hasAnger(villager) || !VillagerCombatRoles.canFightBack(villager)) {
+        if (!RETALIATION.hasAnger(villager) || !ACTOR_POLICY.canFightBack(villager)) {
             return false;
         }
         if (!(villager.level() instanceof ServerLevel level)) {
@@ -782,7 +783,7 @@ public final class VillagerRetaliationHandler {
             return;
         }
 
-        double desiredBaseDamage = VillagerCombatRoles.meleeAttackDamageBase(villager);
+        double desiredBaseDamage = ACTOR_POLICY.meleeAttackDamageBase(villager);
         if (attackDamage.getBaseValue() != desiredBaseDamage) {
             attackDamage.setBaseValue(desiredBaseDamage);
         }
@@ -1268,7 +1269,7 @@ public final class VillagerRetaliationHandler {
         if (!villager.hasLineOfSight(ironGolem)
                 || villager.distanceToSqr(ironGolem) > SMITH_IRON_GOLEM_REPAIR_REACH_SQR) {
             NEXT_IRON_GOLEM_REPAIR_TICKS.put(villager.getUUID(), gameTime + 20L);
-            villager.getNavigation().moveTo(ironGolem, VillagerCombatRoles.movementSpeed(villager) * 0.6D);
+            villager.getNavigation().moveTo(ironGolem, ACTOR_POLICY.movementSpeed(villager) * 0.6D);
             return true;
         }
 

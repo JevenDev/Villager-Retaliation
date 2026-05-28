@@ -123,8 +123,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private final List<String> knownDislikedGiftNames = new ArrayList<>();
     private final VillagerFamilyTreeSnapshot familyTree;
     private final VillagerRelationshipSnapshot relationships;
+    private final VillagerInteractionScreenState state = new VillagerInteractionScreenState();
     private DialoguePage page = DialoguePage.ROOT;
-    private int selectedOption;
     private boolean closingFromServer;
     private boolean replacingFromServer;
     private boolean openingChat;
@@ -134,8 +134,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private boolean draggingSkillScrollbar;
     private float scrollbarDragOffset;
     private float skillScrollbarDragOffset;
-    private float optionScroll;
-    private float targetOptionScroll;
     private float skillScroll;
     private float targetSkillScroll;
     private VillagerSkill selectedSkillDetails;
@@ -366,7 +364,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
         }
 
-        setTargetOptionScroll(this.targetOptionScroll - (float) scrollY * OPTION_SCROLL_STEP);
+        setTargetOptionScroll(this.state.targetOptionScroll() - (float) scrollY * OPTION_SCROLL_STEP);
         return true;
     }
 
@@ -460,24 +458,16 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 addRootOptions();
             }
         }
-        this.selectedOption = this.options.isEmpty() ? -1 : 0;
-        this.optionScroll = 0.0F;
-        this.targetOptionScroll = 0.0F;
+        this.state.resetOptions(!this.options.isEmpty());
         ensureSelectedVisible();
     }
 
     private void rebuildOptionsKeepingListPosition() {
-        int previousSelectedOption = this.selectedOption;
-        float previousOptionScroll = this.optionScroll;
-        float previousTargetOptionScroll = this.targetOptionScroll;
+        VillagerInteractionScreenState.OptionListPosition previousPosition = this.state.captureOptionListPosition();
 
         rebuildOptions();
 
-        if (!this.options.isEmpty()) {
-            this.selectedOption = Mth.clamp(previousSelectedOption, 0, this.options.size() - 1);
-        }
-        this.optionScroll = Mth.clamp(previousOptionScroll, 0.0F, maxOptionScroll());
-        this.targetOptionScroll = Mth.clamp(previousTargetOptionScroll, 0.0F, maxOptionScroll());
+        this.state.restoreOptionListPosition(previousPosition, this.options.size(), maxOptionScroll());
         ensureSelectedVisible();
     }
 
@@ -773,12 +763,12 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         int viewportTop = top;
         int viewportBottom = top + optionViewportHeight();
         for (int index = 0; index < this.options.size(); index++) {
-            float y = top + index * optionStride() - this.optionScroll;
+            float y = top + index * optionStride() - this.state.optionScroll();
             if (y + optionHeight() < viewportTop || y > viewportBottom) {
                 continue;
             }
 
-            boolean selected = index == this.selectedOption;
+            boolean selected = index == this.state.selectedOption();
             int color = selected ? 0xFFF8F8F4 : 0xCFC7C8C5;
             float scale = (1.48F + (selected ? OPTION_SELECTED_SCALE : 0.0F)) * textScale;
             float delay = 120.0F + index * 28.0F;
@@ -818,7 +808,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private List<VillagerInteractionExperimentalChrome.ExitFadeRectElement> buildExperimentalExitFadeRectElements() {
         List<VillagerInteractionExperimentalChrome.ExitFadeRectElement> rectElements = new ArrayList<>();
-        addScrollbarExitFadeRects(rectElements, scrollbarThumb(), this.optionScroll, maxOptionScroll());
+        addScrollbarExitFadeRects(rectElements, scrollbarThumb(), this.state.optionScroll(), maxOptionScroll());
         if (this.page == DialoguePage.SKILLS) {
             addScrollbarExitFadeRects(rectElements, skillInfoScrollbarThumb(), this.skillScroll, maxSkillScroll());
         }
@@ -856,10 +846,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void activateSelected() {
-        if (this.selectedOption < 0 || this.selectedOption >= this.options.size()) {
+        if (this.state.selectedOption() < 0 || this.state.selectedOption() >= this.options.size()) {
             return;
         }
-        DialogueOption option = this.options.get(this.selectedOption);
+        DialogueOption option = this.options.get(this.state.selectedOption());
         option.action().run();
     }
 
@@ -902,15 +892,12 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if (this.options.isEmpty()) {
             return;
         }
-        this.selectedOption = Mth.positiveModulo(this.selectedOption + direction, this.options.size());
+        this.state.moveSelectedOption(direction, this.options.size());
         ensureSelectedVisible();
     }
 
     private void updateOptionScroll() {
-        this.optionScroll = Mth.lerp(OPTION_SCROLL_LERP, this.optionScroll, this.targetOptionScroll);
-        if (Math.abs(this.optionScroll - this.targetOptionScroll) < 0.15F) {
-            this.optionScroll = this.targetOptionScroll;
-        }
+        this.state.tickOptionScroll(OPTION_SCROLL_LERP);
     }
 
     private void updateSkillScroll() {
@@ -1075,7 +1062,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private void updateMouseSelection(int mouseX, int mouseY) {
         int hovered = VillagerInteractionOptionList.optionAt(this.optionListContext, mouseX, mouseY);
         if (hovered >= 0) {
-            this.selectedOption = hovered;
+            this.state.setSelectedOption(hovered);
         }
     }
 
@@ -1176,7 +1163,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             float ratio = Mth.clamp((thumbTop - scrollbarThumb.viewportTop()) / trackTravel, 0.0F, 1.0F);
             setTargetOptionScroll(maxOptionScroll() * ratio);
         }
-        this.optionScroll = this.targetOptionScroll;
+        this.state.jumpOptionScrollToTarget();
         return true;
     }
 
@@ -1205,7 +1192,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             return false;
         }
 
-        this.selectedOption = hovered;
+        this.state.setSelectedOption(hovered);
         ensureSelectedVisible();
         activateSelected();
         return true;
@@ -1289,13 +1276,13 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private int skillsPanelTop() {
         int containerHeight = skillsContainerHeight();
-        return Mth.clamp(SKILLS_EDGE_MARGIN, SKILLS_EDGE_MARGIN, Math.max(SKILLS_EDGE_MARGIN, this.height - containerHeight - SKILLS_EDGE_MARGIN));
+        return VillagerInteractionLayoutMetrics.skillsPanelTop(this.height, containerHeight);
     }
 
     private int skillsPanelLeft() {
         int panelWidth = skillsPanelWidth();
         int targetLeft = isExperimentalUi() ? scrollbarRight() - panelWidth : this.width - panelWidth - SKILLS_EDGE_MARGIN;
-        return Mth.clamp(targetLeft, SKILLS_EDGE_MARGIN + SKILLS_CONTAINER_PADDING_X, Math.max(SKILLS_EDGE_MARGIN + SKILLS_CONTAINER_PADDING_X, this.width - panelWidth - SKILLS_EDGE_MARGIN));
+        return VillagerInteractionLayoutMetrics.skillsPanelLeft(this.width, panelWidth, targetLeft);
     }
 
     private int skillsPanelWidth() {
@@ -1303,14 +1290,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private int skillsContainerHeight() {
-        return skillsPanelHeight() + SKILLS_CONTAINER_PADDING_Y * 2;
+        return VillagerInteractionLayoutMetrics.skillsContainerHeight(skillsPanelHeight());
     }
 
     private int skillsPanelHeight() {
-        int rows = (VillagerSkill.values().length + PROFILE_SKILL_COLUMNS - 1) / PROFILE_SKILL_COLUMNS;
-        return this.font.lineHeight + 4
-                + rows * PROFILE_SKILL_ROW_HEIGHT
-                + Math.max(0, rows - 1) * PROFILE_SKILL_ROW_GAP;
+        return VillagerInteractionLayoutMetrics.skillsPanelHeight(this.font);
     }
 
     private float maxSkillScroll() {
@@ -1508,39 +1492,39 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private int focusCenterY() {
-        return Math.max(72, this.height - SCREEN_BOTTOM_MARGIN);
+        return VillagerInteractionLayoutMetrics.focusCenterY(this.height);
     }
 
     private int optionWidth() {
-        return isExperimentalUi() ? experimentalUnit(OPTION_WIDTH) : OPTION_WIDTH;
+        return VillagerInteractionLayoutMetrics.optionWidth(isExperimentalUi());
     }
 
     private int optionHeight() {
-        return isExperimentalUi() ? experimentalUnit(OPTION_HEIGHT) : OPTION_HEIGHT;
+        return VillagerInteractionLayoutMetrics.optionHeight(isExperimentalUi());
     }
 
     private int optionTextInset() {
-        return isExperimentalUi() ? experimentalUnit(OPTION_TEXT_INSET) : OPTION_TEXT_INSET;
+        return VillagerInteractionLayoutMetrics.optionTextInset(isExperimentalUi());
     }
 
     private float optionTextYOffset() {
-        return optionHeight() * (5.0F / 18.0F);
+        return VillagerInteractionLayoutMetrics.optionTextYOffset(optionHeight());
     }
 
     private int optionScrollbarOffset() {
-        return isExperimentalUi() ? experimentalUnit(OPTION_SCROLLBAR_OFFSET) : OPTION_SCROLLBAR_OFFSET;
+        return VillagerInteractionLayoutMetrics.optionScrollbarOffset(isExperimentalUi());
     }
 
     private int optionScrollbarWidth() {
-        return isExperimentalUi() ? experimentalUnitAtLeast(OPTION_SCROLLBAR_WIDTH, 1) : OPTION_SCROLLBAR_WIDTH;
+        return VillagerInteractionLayoutMetrics.optionScrollbarWidth(isExperimentalUi());
     }
 
     private int optionScrollbarHitWidth() {
-        return isExperimentalUi() ? experimentalUnitAtLeast(OPTION_SCROLLBAR_HIT_WIDTH, 1) : OPTION_SCROLLBAR_HIT_WIDTH;
+        return VillagerInteractionLayoutMetrics.optionScrollbarHitWidth(isExperimentalUi());
     }
 
     private int topBackButtonGap() {
-        return isExperimentalUi() ? experimentalUnit(TOP_BACK_BUTTON_GAP) : TOP_BACK_BUTTON_GAP;
+        return VillagerInteractionLayoutMetrics.topBackButtonGap(isExperimentalUi());
     }
 
     private float experimentalScaleFactor() {
@@ -1556,41 +1540,37 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private int optionViewportHeight() {
-        int visibleRows = Math.min(OPTION_VIEWPORT_ROWS, Math.max(1, this.options.size()));
-        return visibleRows * optionHeight() + Math.max(0, visibleRows - 1) * OPTION_GAP;
+        return VillagerInteractionLayoutMetrics.optionViewportHeight(isExperimentalUi(), this.options.size());
     }
 
     private int experimentalFullOptionViewportHeight() {
-        return OPTION_VIEWPORT_ROWS * optionHeight() + Math.max(0, OPTION_VIEWPORT_ROWS - 1) * OPTION_GAP;
+        return VillagerInteractionLayoutMetrics.fullOptionViewportHeight(isExperimentalUi());
     }
 
     private int rootOptionViewportHeight() {
-        return INFO_PANEL_ROWS * optionHeight() + Math.max(0, INFO_PANEL_ROWS - 1) * OPTION_GAP;
+        return VillagerInteractionLayoutMetrics.rootOptionViewportHeight(isExperimentalUi());
     }
 
     private float maxOptionScroll() {
-        return Math.max(0.0F, optionContentHeight() - optionViewportHeight());
+        return VillagerInteractionLayoutMetrics.maxOptionScroll(optionContentHeight(), optionViewportHeight());
     }
 
     private float optionContentHeight() {
-        if (this.options.isEmpty()) {
-            return 0.0F;
-        }
-        return this.options.size() * optionHeight() + Math.max(0, this.options.size() - 1) * OPTION_GAP;
+        return VillagerInteractionLayoutMetrics.optionContentHeight(isExperimentalUi(), this.options.size());
     }
 
     private int optionStride() {
-        return optionHeight() + OPTION_GAP;
+        return VillagerInteractionLayoutMetrics.optionStride(isExperimentalUi());
     }
 
     private void ensureSelectedVisible() {
-        if (this.selectedOption < 0 || this.selectedOption >= this.options.size()) {
+        if (this.state.selectedOption() < 0 || this.state.selectedOption() >= this.options.size()) {
             return;
         }
 
-        float optionTop = this.selectedOption * optionStride();
+        float optionTop = this.state.selectedOption() * optionStride();
         float optionBottom = optionTop + optionHeight();
-        float viewportTop = this.targetOptionScroll;
+        float viewportTop = this.state.targetOptionScroll();
         float viewportBottom = viewportTop + optionViewportHeight();
         int padding = 6;
         if (optionTop < viewportTop + padding) {
@@ -1598,17 +1578,17 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         } else if (optionBottom > viewportBottom - padding) {
             setTargetOptionScroll(optionBottom - optionViewportHeight() + padding);
         } else {
-            setTargetOptionScroll(this.targetOptionScroll);
+            setTargetOptionScroll(this.state.targetOptionScroll());
         }
     }
 
     private void setTargetOptionScroll(float scroll) {
-        this.targetOptionScroll = Mth.clamp(scroll, 0.0F, maxOptionScroll());
+        this.state.setTargetOptionScroll(scroll, maxOptionScroll());
     }
 
     private float edgeFadeAlpha(float optionY, int viewportTop, int viewportBottom) {
         return VillagerInteractionUiUtil.edgeFadeAlpha(
-                this.optionScroll,
+                this.state.optionScroll(),
                 maxOptionScroll(),
                 optionY,
                 optionY + optionHeight(),
@@ -1632,7 +1612,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private void renderScrollbar(GuiGraphics graphics) {
         VillagerInteractionUiUtil.ScrollbarThumb scrollbarThumb = scrollbarThumb();
-        renderScrollbar(graphics, scrollbarThumb, this.optionScroll, maxOptionScroll());
+        renderScrollbar(graphics, scrollbarThumb, this.state.optionScroll(), maxOptionScroll());
     }
 
     private void renderScrollbar(
@@ -1672,7 +1652,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 optionScrollbarWidth(),
                 optionScrollbarHitWidth(),
                 optionHeight(),
-                this.optionScroll,
+                this.state.optionScroll(),
                 maxScroll,
                 optionContentHeight()
         );
@@ -1978,12 +1958,12 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
         @Override
         public int selectedOption() {
-            return VillagerInteractionScreen.this.selectedOption;
+            return VillagerInteractionScreen.this.state.selectedOption();
         }
 
         @Override
         public float optionScroll() {
-            return VillagerInteractionScreen.this.optionScroll;
+            return VillagerInteractionScreen.this.state.optionScroll();
         }
 
         @Override
@@ -2242,12 +2222,12 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
         @Override
         public int selectedOption() {
-            return VillagerInteractionScreen.this.selectedOption;
+            return VillagerInteractionScreen.this.state.selectedOption();
         }
 
         @Override
         public float optionScroll() {
-            return VillagerInteractionScreen.this.optionScroll;
+            return VillagerInteractionScreen.this.state.optionScroll();
         }
 
         @Override

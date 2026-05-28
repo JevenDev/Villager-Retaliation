@@ -8,8 +8,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
-import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.item.ItemStack;
@@ -18,10 +16,9 @@ import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.alchemy.Potions;
 
 public final class VillagerCombatRoles {
-    private static final double PIGLIN_ALIGNED_COMBAT_SPEED_MODIFIER = 0.7D;
-    public static final double PLAYER_FIST_DAMAGE = 1.0D;
-    private static final double VINDICATOR_STYLE_WEAPON_BASE_DAMAGE = 5.0D;
+    public static final double PLAYER_FIST_DAMAGE = RetaliationCombatStats.PLAYER_FIST_DAMAGE;
     private static final float FARMER_BREAD_WEAPON_CHANCE = 0.12F;
+    private static final RetaliationActorPolicy<Villager> POLICY = new VillagerActorPolicy();
     private static final Map<VillagerProfession, BooleanSupplier> FIGHT_BACK_RULES = createFightBackRules();
     private static final Map<VillagerProfession, Function<Villager, ItemStack>> PREFERRED_WEAPON_RULES = createPreferredWeaponRules();
     private static final Set<VillagerProfession> LOOT_WEAPON_PROFESSIONS = Set.of(
@@ -35,6 +32,10 @@ public final class VillagerCombatRoles {
     );
 
     private VillagerCombatRoles() {
+    }
+
+    static RetaliationActorPolicy<Villager> policy() {
+        return POLICY;
     }
 
     public static boolean canFightBack(Villager villager) {
@@ -66,16 +67,7 @@ public final class VillagerCombatRoles {
     }
 
     public static double meleeAttackDamageBase(Villager villager) {
-        ItemStack weapon = villager.getMainHandItem();
-        if (weapon.isEmpty()) {
-            return PLAYER_FIST_DAMAGE;
-        }
-
-        if (!hasAttackDamageModifier(weapon)) {
-            return PLAYER_FIST_DAMAGE;
-        }
-
-        return VINDICATOR_STYLE_WEAPON_BASE_DAMAGE;
+        return RetaliationCombatStats.meleeAttackDamageBase(villager.getMainHandItem());
     }
 
     public static ItemStack preferredWeapon(Villager villager) {
@@ -111,7 +103,7 @@ public final class VillagerCombatRoles {
     }
 
     public static double movementSpeed(Villager villager) {
-        return PIGLIN_ALIGNED_COMBAT_SPEED_MODIFIER;
+        return RetaliationCombatStats.PIGLIN_ALIGNED_COMBAT_SPEED_MODIFIER;
     }
 
     public static int attackCooldown(Villager villager) {
@@ -196,13 +188,40 @@ public final class VillagerCombatRoles {
         return new ItemStack(usesCrossbow ? Items.CROSSBOW : Items.BOW);
     }
 
-    private static boolean hasAttackDamageModifier(ItemStack stack) {
-        boolean[] hasAttackDamageModifier = new boolean[]{false};
-        stack.forEachModifier(EquipmentSlot.MAINHAND, (attribute, modifier) -> {
-            if (attribute.equals(Attributes.ATTACK_DAMAGE)) {
-                hasAttackDamageModifier[0] = true;
-            }
-        });
-        return hasAttackDamageModifier[0];
+    private static final class VillagerActorPolicy implements RetaliationActorPolicy<Villager> {
+        @Override
+        public boolean canFightBack(Villager villager) {
+            return VillagerCombatRoles.canFightBack(villager);
+        }
+
+        @Override
+        public boolean canUseTemporaryCombatLoadout(Villager villager) {
+            return VillagerCombatRoles.canUseTemporaryCombatLoadout(villager);
+        }
+
+        @Override
+        public boolean canScavengeGroundWeapons(Villager villager) {
+            return VillagerCombatRoles.canScavengeGroundWeapons(villager);
+        }
+
+        @Override
+        public ItemStack preferredWeapon(Villager villager) {
+            return VillagerCombatRoles.preferredWeapon(villager);
+        }
+
+        @Override
+        public double meleeAttackDamageBase(Villager villager) {
+            return VillagerCombatRoles.meleeAttackDamageBase(villager);
+        }
+
+        @Override
+        public double movementSpeed(Villager villager) {
+            return VillagerCombatRoles.movementSpeed(villager);
+        }
+
+        @Override
+        public int attackCooldown(Villager villager) {
+            return VillagerCombatRoles.attackCooldown(villager);
+        }
     }
 }

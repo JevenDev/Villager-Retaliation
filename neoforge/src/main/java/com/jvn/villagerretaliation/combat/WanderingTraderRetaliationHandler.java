@@ -35,6 +35,7 @@ public final class WanderingTraderRetaliationHandler {
     private static final String PERSISTENT_TAG_ROOT = "VillagerRetaliationPersistentTraderHostility";
     private static final VillagerRetaliationRetaliationRuntime<WanderingTrader> RETALIATION =
             new VillagerRetaliationRetaliationRuntime<>(PERSISTENT_TAG_ROOT);
+    private static final RetaliationActorPolicy<WanderingTrader> ACTOR_POLICY = WanderingTraderCombatRoles.policy();
     private static final Map<UUID, Long> NEXT_NATURAL_TARGET_SCAN_TICKS = new HashMap<>();
 
     private WanderingTraderRetaliationHandler() {
@@ -130,7 +131,7 @@ public final class WanderingTraderRetaliationHandler {
         ActiveRetaliationTarget retaliationTarget = VillagerRetaliationRetaliationUtil.resolveActiveRetaliationTarget(
                 trader,
                 RETALIATION,
-                WanderingTraderCombatRoles::canFightBack,
+                ACTOR_POLICY::canFightBack,
                 () -> clearAnger(trader)
         );
         if (retaliationTarget == null) {
@@ -182,14 +183,14 @@ public final class WanderingTraderRetaliationHandler {
             trader.getNavigation().stop();
             VillagerRetaliationRetaliationUtil.clearPathingState(trader);
         } else {
-            VillagerRetaliationRetaliationUtil.moveTowardMeleeRetaliationTarget(trader, target, WanderingTraderCombatRoles.movementSpeed(trader));
+            VillagerRetaliationRetaliationUtil.moveTowardMeleeRetaliationTarget(trader, target, ACTOR_POLICY.movementSpeed(trader));
         }
         if (canMeleeHit && RETALIATION.isAttackReady(trader, gameTime)) {
             var attackHand = VillagerRetaliationVillagerCombatUtil.selectAttackHand(trader);
             trader.swing(attackHand, true);
             syncMeleeAttackAttributes(trader);
             trader.doHurtTarget(target);
-            RETALIATION.setNextAttackTick(trader, gameTime + WanderingTraderCombatRoles.attackCooldown(trader));
+            RETALIATION.setNextAttackTick(trader, gameTime + ACTOR_POLICY.attackCooldown(trader));
         }
     }
 
@@ -271,7 +272,7 @@ public final class WanderingTraderRetaliationHandler {
     private static void tryAcquireHostileTarget(WanderingTrader trader) {
         if (RETALIATION.hasAnger(trader)
                 || !trader.isAlive()
-                || !WanderingTraderCombatRoles.canFightBack(trader)) {
+                || !ACTOR_POLICY.canFightBack(trader)) {
             return;
         }
 
@@ -325,7 +326,7 @@ public final class WanderingTraderRetaliationHandler {
 
     private static boolean tryAcquireGroundWeapon(WanderingTrader trader, long gameTime) {
         if (!trader.isAlive()
-                || !WanderingTraderCombatRoles.canScavengeGroundWeapons(trader)
+                || !ACTOR_POLICY.canScavengeGroundWeapons(trader)
                 || VillagerRetaliationVillagerEquipment.isPlayerManagedMainHand(trader)
                 || !VillagerRetaliationVillagerCombatUtil.isThreatened(trader)) {
             return false;
@@ -333,7 +334,7 @@ public final class WanderingTraderRetaliationHandler {
 
         return RETALIATION.tryAcquireGroundWeapon(
                 trader,
-                WanderingTraderCombatRoles.movementSpeed(trader),
+                ACTOR_POLICY.movementSpeed(trader),
                 () -> RETALIATION.discardTemporaryWeapon(trader),
                 gameTime
         );
@@ -376,7 +377,7 @@ public final class WanderingTraderRetaliationHandler {
             return;
         }
 
-        double desiredBaseDamage = WanderingTraderCombatRoles.meleeAttackDamageBase(trader);
+        double desiredBaseDamage = ACTOR_POLICY.meleeAttackDamageBase(trader);
         if (attackDamage.getBaseValue() != desiredBaseDamage) {
             attackDamage.setBaseValue(desiredBaseDamage);
         }
@@ -417,11 +418,11 @@ public final class WanderingTraderRetaliationHandler {
         }
 
         if (VillagerRetaliationVillagerWeapons.hasUsableWeapon(trader)
-                || !WanderingTraderCombatRoles.canUseTemporaryCombatLoadout(trader)) {
+                || !ACTOR_POLICY.canUseTemporaryCombatLoadout(trader)) {
             return;
         }
 
-        ItemStack weapon = WanderingTraderCombatRoles.preferredWeapon(trader);
+        ItemStack weapon = ACTOR_POLICY.preferredWeapon(trader);
         if (weapon.isEmpty()) {
             return;
         }

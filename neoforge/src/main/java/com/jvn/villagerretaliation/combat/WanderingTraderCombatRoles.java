@@ -2,15 +2,13 @@ package com.jvn.villagerretaliation.combat;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import java.util.List;
-import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.npc.WanderingTrader;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 public final class WanderingTraderCombatRoles {
-    private static final double PIGLIN_ALIGNED_COMBAT_SPEED_MODIFIER = 0.7D;
+    private static final RetaliationActorPolicy<WanderingTrader> POLICY = new WanderingTraderActorPolicy();
     private static final List<Item> PREFERRED_WEAPON_POOL = List.of(
             Items.IRON_SWORD,
             Items.IRON_AXE,
@@ -20,9 +18,12 @@ public final class WanderingTraderCombatRoles {
             Items.CROSSBOW,
             Items.TRIDENT
     );
-    private static final double VINDICATOR_STYLE_WEAPON_BASE_DAMAGE = 5.0D;
 
     private WanderingTraderCombatRoles() {
+    }
+
+    static RetaliationActorPolicy<WanderingTrader> policy() {
+        return POLICY;
     }
 
     public static boolean canFightBack(WanderingTrader trader) {
@@ -43,33 +44,51 @@ public final class WanderingTraderCombatRoles {
     }
 
     public static double meleeAttackDamageBase(WanderingTrader trader) {
-        ItemStack weapon = trader.getMainHandItem();
-        if (weapon.isEmpty()) {
-            return VillagerCombatRoles.PLAYER_FIST_DAMAGE;
-        }
-
-        if (!hasAttackDamageModifier(weapon)) {
-            return VillagerCombatRoles.PLAYER_FIST_DAMAGE;
-        }
-
-        return VINDICATOR_STYLE_WEAPON_BASE_DAMAGE;
+        return RetaliationCombatStats.meleeAttackDamageBase(trader.getMainHandItem());
     }
 
     public static double movementSpeed(WanderingTrader trader) {
-        return PIGLIN_ALIGNED_COMBAT_SPEED_MODIFIER;
+        return RetaliationCombatStats.PIGLIN_ALIGNED_COMBAT_SPEED_MODIFIER;
     }
 
     public static int attackCooldown(WanderingTrader trader) {
         return 20;
     }
 
-    private static boolean hasAttackDamageModifier(ItemStack stack) {
-        boolean[] hasAttackDamageModifier = new boolean[]{false};
-        stack.forEachModifier(EquipmentSlot.MAINHAND, (attribute, modifier) -> {
-            if (attribute.equals(Attributes.ATTACK_DAMAGE)) {
-                hasAttackDamageModifier[0] = true;
-            }
-        });
-        return hasAttackDamageModifier[0];
+    private static final class WanderingTraderActorPolicy implements RetaliationActorPolicy<WanderingTrader> {
+        @Override
+        public boolean canFightBack(WanderingTrader trader) {
+            return WanderingTraderCombatRoles.canFightBack(trader);
+        }
+
+        @Override
+        public boolean canUseTemporaryCombatLoadout(WanderingTrader trader) {
+            return WanderingTraderCombatRoles.canUseTemporaryCombatLoadout(trader);
+        }
+
+        @Override
+        public boolean canScavengeGroundWeapons(WanderingTrader trader) {
+            return WanderingTraderCombatRoles.canScavengeGroundWeapons(trader);
+        }
+
+        @Override
+        public ItemStack preferredWeapon(WanderingTrader trader) {
+            return WanderingTraderCombatRoles.preferredWeapon(trader);
+        }
+
+        @Override
+        public double meleeAttackDamageBase(WanderingTrader trader) {
+            return WanderingTraderCombatRoles.meleeAttackDamageBase(trader);
+        }
+
+        @Override
+        public double movementSpeed(WanderingTrader trader) {
+            return WanderingTraderCombatRoles.movementSpeed(trader);
+        }
+
+        @Override
+        public int attackCooldown(WanderingTrader trader) {
+            return WanderingTraderCombatRoles.attackCooldown(trader);
+        }
     }
 }

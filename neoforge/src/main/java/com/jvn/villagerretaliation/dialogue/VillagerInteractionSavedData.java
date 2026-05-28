@@ -49,11 +49,6 @@ public class VillagerInteractionSavedData extends SavedData {
     private static final String TAG_WINDOW_START_GAME_TIME = "WindowStartGameTime";
     private static final String TAG_WINDOW_DAY = "WindowDay";
     private static final String TAG_BAD_FIRST_IMPRESSION = "BadFirstImpression";
-    private static final String TAG_GIFT_KNOWLEDGE = "GiftKnowledge";
-    private static final String TAG_PROFESSIONS = "Professions";
-    private static final String TAG_PROFESSION = "Profession";
-    private static final String TAG_LIKED_GIFTS = "LikedGifts";
-    private static final String TAG_DISLIKED_GIFTS = "DislikedGifts";
     private static final String TAG_CARTOGRAPHER_MAPS = "CartographerMaps";
     private static final String TAG_STORY_HINTS = "StoryHints";
     private static final String TAG_DIMENSION = "Dimension";
@@ -114,7 +109,7 @@ public class VillagerInteractionSavedData extends SavedData {
 
     private final Map<UUID, Map<UUID, InteractionEntry>> entries = new HashMap<>();
     private final Map<UUID, Set<UUID>> villagerIdsByPlayer = new HashMap<>();
-    private final Map<UUID, GiftKnowledgeBook> giftKnowledge = new HashMap<>();
+    private final GiftKnowledgeStore giftKnowledge = new GiftKnowledgeStore();
     private final Map<UUID, LinkedHashMap<String, Long>> sharedStoryCooldownsByPlayer = new HashMap<>();
     private final Map<UUID, Integer> sharedStoryCountsByPlayer = new HashMap<>();
 
@@ -307,25 +302,7 @@ public class VillagerInteractionSavedData extends SavedData {
             }
             data.putEntry(entryTag.getUUID(TAG_VILLAGER), entryTag.getUUID(TAG_PLAYER), entry);
         }
-        ListTag giftKnowledgeTag = tag.getList(TAG_GIFT_KNOWLEDGE, Tag.TAG_COMPOUND);
-        for (Tag rawBook : giftKnowledgeTag) {
-            if (!(rawBook instanceof CompoundTag bookTag) || !bookTag.hasUUID(TAG_PLAYER)) {
-                continue;
-            }
-            GiftKnowledgeBook book = new GiftKnowledgeBook();
-            ListTag professionsTag = bookTag.getList(TAG_PROFESSIONS, Tag.TAG_COMPOUND);
-            for (Tag rawProfession : professionsTag) {
-                if (!(rawProfession instanceof CompoundTag professionTag)
-                        || !professionTag.contains(TAG_PROFESSION, Tag.TAG_STRING)) {
-                    continue;
-                }
-                GiftKnowledgeEntry knowledgeEntry = new GiftKnowledgeEntry();
-                readStringSet(professionTag.getList(TAG_LIKED_GIFTS, Tag.TAG_STRING), knowledgeEntry.likedGifts);
-                readStringSet(professionTag.getList(TAG_DISLIKED_GIFTS, Tag.TAG_STRING), knowledgeEntry.dislikedGifts);
-                book.byProfession.put(professionTag.getString(TAG_PROFESSION), knowledgeEntry);
-            }
-            data.giftKnowledge.put(bookTag.getUUID(TAG_PLAYER), book);
-        }
+        data.giftKnowledge.load(tag);
         ListTag sharedStoryCooldownsTag = tag.getList(TAG_SHARED_STORY_COOLDOWNS, Tag.TAG_COMPOUND);
         for (Tag rawCooldowns : sharedStoryCooldownsTag) {
             if (!(rawCooldowns instanceof CompoundTag cooldownsTag) || !cooldownsTag.hasUUID(TAG_PLAYER)) {
@@ -530,22 +507,7 @@ public class VillagerInteractionSavedData extends SavedData {
             }
         }
         tag.put(TAG_ENTRIES, entriesTag);
-        ListTag giftKnowledgeTag = new ListTag();
-        for (Map.Entry<UUID, GiftKnowledgeBook> bookEntry : this.giftKnowledge.entrySet()) {
-            CompoundTag bookTag = new CompoundTag();
-            bookTag.putUUID(TAG_PLAYER, bookEntry.getKey());
-            ListTag professionsTag = new ListTag();
-            for (Map.Entry<String, GiftKnowledgeEntry> professionEntry : bookEntry.getValue().byProfession.entrySet()) {
-                CompoundTag professionTag = new CompoundTag();
-                professionTag.putString(TAG_PROFESSION, professionEntry.getKey());
-                professionTag.put(TAG_LIKED_GIFTS, writeStringSet(professionEntry.getValue().likedGifts));
-                professionTag.put(TAG_DISLIKED_GIFTS, writeStringSet(professionEntry.getValue().dislikedGifts));
-                professionsTag.add(professionTag);
-            }
-            bookTag.put(TAG_PROFESSIONS, professionsTag);
-            giftKnowledgeTag.add(bookTag);
-        }
-        tag.put(TAG_GIFT_KNOWLEDGE, giftKnowledgeTag);
+        this.giftKnowledge.save(tag);
         ListTag sharedStoryCooldownsTag = new ListTag();
         for (Map.Entry<UUID, LinkedHashMap<String, Long>> cooldownsEntry : this.sharedStoryCooldownsByPlayer.entrySet()) {
             if (cooldownsEntry.getValue().isEmpty()) {
@@ -629,37 +591,15 @@ public class VillagerInteractionSavedData extends SavedData {
     }
 
     public boolean knowsGift(UUID playerId, String professionKey, String itemId, boolean liked) {
-        GiftKnowledgeEntry entry = giftKnowledgeEntry(playerId, professionKey, false);
-        if (entry == null) {
-            return false;
-        }
-        return liked ? entry.likedGifts.contains(itemId) : entry.dislikedGifts.contains(itemId);
+        return this.giftKnowledge.knowsGift(playerId, professionKey, itemId, liked);
     }
 
     public boolean hasGiftKnowledge(UUID playerId, String... professionKeys) {
-        GiftKnowledgeBook book = this.giftKnowledge.get(playerId);
-        if (book == null || professionKeys == null || professionKeys.length == 0) {
-            return false;
-        }
-        for (String professionKey : professionKeys) {
-            if (book.hasKnownGifts(professionKey)) {
-                return true;
-            }
-        }
-        return false;
+        return this.giftKnowledge.hasGiftKnowledge(playerId, professionKeys);
     }
 
     public boolean rememberGiftKnowledge(UUID playerId, String professionKey, String itemId, boolean liked) {
-        GiftKnowledgeEntry entry = giftKnowledgeEntry(playerId, professionKey, true);
-        boolean changed;
-        if (liked) {
-            changed = entry.likedGifts.add(itemId);
-            changed |= entry.dislikedGifts.remove(itemId);
-        } else {
-            changed = entry.dislikedGifts.add(itemId);
-            changed |= entry.likedGifts.remove(itemId);
-        }
-        return changed;
+        return this.giftKnowledge.rememberGiftKnowledge(playerId, professionKey, itemId, liked);
     }
 
     public void rememberCartographerMap(
@@ -1118,21 +1058,6 @@ public class VillagerInteractionSavedData extends SavedData {
     public VillagerInteractionTracker.GiftAdviceResultReport claimUnreportedGiftAdviceResult(UUID villagerId, UUID playerId) {
         InteractionEntry entry = getIndexedEntry(villagerId, playerId);
         return entry == null ? null : entry.claimUnreportedGiftAdviceResult(villagerId);
-    }
-
-    private GiftKnowledgeEntry giftKnowledgeEntry(UUID playerId, String professionKey, boolean create) {
-        GiftKnowledgeBook book = this.giftKnowledge.get(playerId);
-        if (book == null) {
-            if (!create) {
-                return null;
-            }
-            book = new GiftKnowledgeBook();
-            this.giftKnowledge.put(playerId, book);
-        }
-        if (create) {
-            return book.byProfession.computeIfAbsent(professionKey, ignored -> new GiftKnowledgeEntry());
-        }
-        return book.byProfession.get(professionKey);
     }
 
     public static class InteractionEntry {
@@ -2008,21 +1933,4 @@ public class VillagerInteractionSavedData extends SavedData {
         }
     }
 
-    private static class GiftKnowledgeBook {
-        private final Map<String, GiftKnowledgeEntry> byProfession = new HashMap<>();
-
-        private boolean hasKnownGifts(String professionKey) {
-            GiftKnowledgeEntry entry = this.byProfession.get(professionKey);
-            return entry != null && entry.hasKnownGifts();
-        }
-    }
-
-    private static class GiftKnowledgeEntry {
-        private final Set<String> likedGifts = new LinkedHashSet<>();
-        private final Set<String> dislikedGifts = new LinkedHashSet<>();
-
-        private boolean hasKnownGifts() {
-            return !this.likedGifts.isEmpty() || !this.dislikedGifts.isEmpty();
-        }
-    }
 }
