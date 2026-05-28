@@ -672,6 +672,19 @@ public final class ForcedDialogueService {
                 return true;
             }
         }
+        boolean aggro = option.aggro() || rollChance(player.serverLevel(), option.aggroChance());
+        Optional<Integer> selectedSpecialOrderStatus = VillagerSpecialOrderService.selectedStatusOfferIndex(option.id());
+        Optional<ResourceLocation> selectedSpecialOrder = VillagerSpecialOrderService.selectedDefinitionId(option.id());
+        boolean opensFollowUpTradeRefreshDialogue = isTradeRefreshSurpriseOption(session, option)
+                || isTradeRefreshSpecialOrderOption(session, option)
+                || selectedSpecialOrderStatus.isPresent()
+                || (selectedSpecialOrder.isPresent() && isTradeRefreshDefinition(session));
+        if (!opensFollowUpTradeRefreshDialogue
+                && !leaveRequest
+                && !aggro
+                && tryAdvanceDynamicForcedDialogueGroup(player, villager, session)) {
+            return true;
+        }
         String responseText = option.selectResponse(player.serverLevel().getRandom());
         String stolenItemReturnResponse = stolenItemReturn.selectSuccessResponse(player.serverLevel().getRandom());
         if (returnedStolenItems && !stolenItemReturnResponse.isBlank()) {
@@ -693,7 +706,6 @@ public final class ForcedDialogueService {
                     VillagerInteractionService.villagerSpeakerLabel(villager)
             );
         }
-        boolean aggro = option.aggro() || rollChance(player.serverLevel(), option.aggroChance());
         if (isTradeRefreshSurpriseOption(session, option)) {
             FORCED_SESSIONS.remove(player.getUUID());
             VillagerConversationService.endForPlayer(player, true);
@@ -704,17 +716,12 @@ public final class ForcedDialogueService {
             openSpecialOrderSelectionDialogue(player, villager, session);
             return true;
         }
-        Optional<Integer> selectedSpecialOrderStatus = VillagerSpecialOrderService.selectedStatusOfferIndex(option.id());
         if (selectedSpecialOrderStatus.isPresent()) {
             openSpecialOrderStatusResponseDialogue(player, villager, selectedSpecialOrderStatus.get());
             return true;
         }
-        Optional<ResourceLocation> selectedSpecialOrder = VillagerSpecialOrderService.selectedDefinitionId(option.id());
         if (selectedSpecialOrder.isPresent() && isTradeRefreshDefinition(session)) {
             openSpecialOrderConfirmDialogue(player, villager, session, selectedSpecialOrder.get());
-            return true;
-        }
-        if (!leaveRequest && !aggro && tryAdvanceDynamicForcedDialogueGroup(player, villager, session)) {
             return true;
         }
         if (isTradeRefreshTradeOption(session, option)) {
