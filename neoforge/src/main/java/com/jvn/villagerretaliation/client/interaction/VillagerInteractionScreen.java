@@ -137,6 +137,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private float targetSkillScroll;
     private VillagerSkill selectedSkillDetails;
     private int selectedInventorySlot = -1;
+    private int lastMouseX;
+    private int lastMouseY;
     private Button giftButton;
     private Double originalChatWidth;
     private final GiftPageContext giftPageContext = new GiftPageContext();
@@ -185,6 +187,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if (forcedDialogue) {
             this.page = DialoguePage.TALK;
         }
+        VillagerInteractionExperimentalChrome.resetAnimation();
     }
 
     @Override
@@ -254,6 +257,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        this.lastMouseX = mouseX;
+        this.lastMouseY = mouseY;
         focusVillagerOnPlayer();
         updateMouseSelection(mouseX, mouseY);
         updateOptionScroll();
@@ -827,7 +832,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     void renderBackdropBehindChat(GuiGraphics graphics) {
         int veilTop = interactionVeilTop();
         if (isExperimentalUi()) {
-            VillagerInteractionExperimentalChrome.renderBackdrop(graphics, this.width, this.height, veilTop);
+            VillagerInteractionExperimentalChrome.renderBackdrop(graphics, this.width, this.height, veilTop, this.lastMouseX, this.lastMouseY);
             return;
         }
         VillagerInteractionScreenShaderRenderer.renderInteractionVeil(graphics, this.width, this.height, veilTop, VEIL_TOP_DITHER_HEIGHT);

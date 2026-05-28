@@ -5,9 +5,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import net.minecraft.ChatFormatting;
+import net.minecraft.Util;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.Mth;
 
 final class VillagerInteractionExperimentalChrome {
     private static final float NAME_TEXT_SCALE = 1.85F;
@@ -16,49 +18,60 @@ final class VillagerInteractionExperimentalChrome {
     private static final float OVERLAY_SOURCE_WIDTH = 1920.0F;
     private static final float OVERLAY_SOURCE_HEIGHT = 1080.0F;
     private static final OverlayLayer[] BACKDROP_LAYERS = {
-            new OverlayLayer("lower-veil", new OverlayShape[] {
+            new OverlayLayer("lower-veil", 0, 260, -0.04F, 0.16F, 1.025F, new OverlayShape[] {
                     OverlayShape.quad(
                             0x63000000,
-                            0.0F, 816.0F,
-                            1920.0F, 641.0F,
-                            1920.0F, 1080.0F,
-                            0.0F, 1080.0F)
+                            -560.0F, 867.0F,
+                            2480.0F, 590.0F,
+                            2480.0F, 1360.0F,
+                            -560.0F, 1360.0F)
             }),
-            new OverlayLayer("lower-shadow", new OverlayShape[] {
+            new OverlayLayer("lower-shadow", 90, 240, -0.06F, 0.30F, 1.04F, new OverlayShape[] {
                     OverlayShape.quad(
                             0xFF000000,
-                            0.0F, 960.0F,
-                            1920.0F, 640.0F,
-                            1920.0F, 1080.0F,
-                            0.0F, 1080.0F)
+                            -560.0F, 1053.0F,
+                            2480.0F, 547.0F,
+                            2480.0F, 1360.0F,
+                            -560.0F, 1360.0F)
             }),
-            new OverlayLayer("right-shadow", new OverlayShape[] {
-                    OverlayShape.quad(
+            new OverlayLayer("right-shadow", 210, 250, 0.34F, -0.05F, 1.03F, new OverlayShape[] {
+                    OverlayShape.triangle(
                             0xFF101010,
-                            1920.0F, 448.0F,
-                            1920.0F, 1080.0F,
-                            1062.0F, 1080.0F,
-                            1920.0F, 448.0F)
+                            2280.0F, 183.0F,
+                            2280.0F, 1360.0F,
+                            682.0F, 1360.0F)
             }),
-            new OverlayLayer("right-highlight", new OverlayShape[] {
-                    OverlayShape.quad(
+            new OverlayLayer("right-highlight", 340, 180, 0.22F, 0.02F, 0.98F, new OverlayShape[] {
+                    OverlayShape.triangle(
                             0xFF323232,
-                            1920.0F, 683.0F,
-                            1920.0F, 1080.0F,
-                            1658.0F, 1080.0F,
-                            1920.0F, 683.0F)
+                            2280.0F, 138.0F,
+                            2280.0F, 1360.0F,
+                            1473.0F, 1360.0F)
             })
     };
+    private static final long BACKDROP_IDLE_AFTER_MILLIS = 900L;
+
+    private static long backdropAnimationStartMillis = -1L;
 
     private VillagerInteractionExperimentalChrome() {
     }
 
-    static void renderBackdrop(GuiGraphics graphics, int width, int height, float veilTop) {
+    static void resetAnimation() {
+        backdropAnimationStartMillis = Util.getMillis();
+    }
+
+    static void renderBackdrop(GuiGraphics graphics, int width, int height, float veilTop, int mouseX, int mouseY) {
+        long now = Util.getMillis();
+        if (backdropAnimationStartMillis < 0L) {
+            backdropAnimationStartMillis = now;
+        }
+        float elapsedMillis = now - backdropAnimationStartMillis;
+
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         for (OverlayLayer layer : BACKDROP_LAYERS) {
-            layer.render(graphics, width, height, 1.0F, 0.0F, 0.0F, 1.0F);
+            layer.render(graphics, width, height, elapsedMillis, mouseX, mouseY);
         }
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         RenderSystem.disableBlend();
@@ -117,16 +130,64 @@ final class VillagerInteractionExperimentalChrome {
         graphics.pose().popPose();
     }
 
-    private record OverlayLayer(String name, OverlayShape[] shapes) {
-        private void render(GuiGraphics graphics, int width, int height, float alpha, float offsetX, float offsetY, float scale) {
-            if (alpha <= 0.0F) {
+    private record OverlayLayer(
+            String name,
+            float delayMillis,
+            float durationMillis,
+            float startXRatio,
+            float startYRatio,
+            float startScale,
+            OverlayShape[] shapes) {
+        private void render(GuiGraphics graphics, int width, int height, float elapsedMillis, int mouseX, int mouseY) {
+            float progress = normalizedProgress(elapsedMillis, this.delayMillis, this.durationMillis);
+            if (progress <= 0.0F) {
                 return;
             }
+
+            float easedProgress = easeOutBack(progress);
+            float settle = easeOutCubic(progress);
+            float alpha = Mth.clamp(progress * 1.35F, 0.0F, 1.0F);
+            float offsetX = this.startXRatio * width * (1.0F - easedProgress);
+            float offsetY = this.startYRatio * height * (1.0F - easedProgress);
+            float scale = 1.0F + (this.startScale - 1.0F) * (1.0F - settle);
+            float idlePulse = idlePulse(elapsedMillis);
+            if (idlePulse > 0.0F) {
+                offsetX += this.startXRatio * width * 0.012F * idlePulse;
+                offsetY += this.startYRatio * height * 0.012F * idlePulse;
+            }
+            float mouseSettle = easeOutCubic(normalizedProgress(elapsedMillis, this.delayMillis + this.durationMillis, 280.0F));
+            float mouseXRatio = width <= 0 ? 0.0F : Mth.clamp(mouseX / (float) width, 0.0F, 1.0F) * 2.0F - 1.0F;
+            float mouseYRatio = height <= 0 ? 0.0F : Mth.clamp(mouseY / (float) height, 0.0F, 1.0F) * 2.0F - 1.0F;
+            float layerDepth = Math.max(0.45F, Math.abs(this.startXRatio) + Math.abs(this.startYRatio));
+            offsetX += mouseXRatio * layerDepth * 5.0F * mouseSettle;
+            offsetY += mouseYRatio * layerDepth * 3.0F * mouseSettle;
 
             for (OverlayShape shape : this.shapes) {
                 shape.render(graphics, width, height, alpha, offsetX, offsetY, scale);
             }
         }
+    }
+
+    private static float normalizedProgress(float elapsedMillis, float delayMillis, float durationMillis) {
+        return Mth.clamp((elapsedMillis - delayMillis) / durationMillis, 0.0F, 1.0F);
+    }
+
+    private static float easeOutCubic(float progress) {
+        float inverse = 1.0F - progress;
+        return 1.0F - inverse * inverse * inverse;
+    }
+
+    private static float easeOutBack(float progress) {
+        float inverseProgress = progress - 1.0F;
+        float overshoot = 1.45F;
+        return 1.0F + inverseProgress * inverseProgress * ((overshoot + 1.0F) * inverseProgress + overshoot);
+    }
+
+    private static float idlePulse(float elapsedMillis) {
+        if (elapsedMillis < BACKDROP_IDLE_AFTER_MILLIS) {
+            return 0.0F;
+        }
+        return Mth.sin((elapsedMillis - BACKDROP_IDLE_AFTER_MILLIS) * 0.003F) * 0.5F + 0.5F;
     }
 
     private record OverlayShape(int color, float[] vertices) {
@@ -141,6 +202,17 @@ final class VillagerInteractionExperimentalChrome {
                 float x4,
                 float y4) {
             return new OverlayShape(color, new float[] {x1, y1, x2, y2, x3, y3, x4, y4});
+        }
+
+        private static OverlayShape triangle(
+                int color,
+                float x1,
+                float y1,
+                float x2,
+                float y2,
+                float x3,
+                float y3) {
+            return new OverlayShape(color, new float[] {x1, y1, x2, y2, x3, y3});
         }
 
         private void render(
