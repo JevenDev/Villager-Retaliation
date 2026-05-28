@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
+import com.jvn.villagerretaliation.inventory.VillagerTakenItemTracker;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.mood.VillagerMoodService;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
@@ -19,6 +20,7 @@ import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -68,7 +70,10 @@ public final class VillagerGiftRequestHandler {
         }
 
         ServerLevel level = target.level();
+        Optional<VillagerTakenItemTracker.TakenItemOwner> takenItemOwner =
+                VillagerTakenItemTracker.owner(selectedStack);
         ItemStack giftedStack = player.getInventory().removeItem(inventorySlot, selectedStack.getCount());
+        VillagerTakenItemTracker.clear(giftedStack);
         player.getInventory().setChanged();
         VillagerProfession profession = villager.getVillagerData().getProfession();
         VillagerGiftPreferences.GiftPreference giftPreference = VillagerGiftPreferences.evaluate(level, villager, giftedStack);
@@ -109,7 +114,7 @@ public final class VillagerGiftRequestHandler {
         VillagerAmbientIndicatorService.onGiftReceived(villager, reputationValue);
 
         DialogueContext giftContext = VillagerInteractionService.createDialogueContext(level, player, villager);
-        String responseText = giftResponseText(giftContext, giftPreference, giftedStack);
+        String responseText = giftResponseText(giftContext, giftPreference, giftedStack, takenItemOwner, villager);
         VillagerInteractionService.sendDialogueReputation(player, villager, level);
         VillagerInteractionService.broadcastVillagerChat(level, villager, responseText);
     }
@@ -132,13 +137,26 @@ public final class VillagerGiftRequestHandler {
     private static String giftResponseText(
             DialogueContext context,
             VillagerGiftPreferences.GiftPreference giftPreference,
-            ItemStack giftedStack) {
-        Map<String, String> replacements = Map.of(
+            ItemStack giftedStack,
+            Optional<VillagerTakenItemTracker.TakenItemOwner> takenItemOwner,
+            Villager villager) {
+        Map<String, String> replacements = new java.util.HashMap<>(Map.of(
                 "gift_item", giftedStack.getHoverName().getString(),
                 "item", itemName(giftedStack),
                 "gift_item_id", itemId(giftedStack),
                 "item_id", itemId(giftedStack)
-        );
+        ));
+        if (takenItemOwner.isPresent()) {
+            VillagerTakenItemTracker.TakenItemOwner owner = takenItemOwner.get();
+            replacements.put("owner_villager", owner.villagerName());
+            String ownershipKey = owner.villagerId().equals(villager.getUUID())
+                    ? "gift_response.owned.self"
+                    : "gift_response.owned.other";
+            String ownershipResponse = VillagerDialogueResources.message(context, ownershipKey, replacements).orElse("");
+            if (!ownershipResponse.isBlank()) {
+                return ownershipResponse;
+            }
+        }
         String responseKey = giftPreference.responseKey();
         if (responseKey != null && !responseKey.isBlank()) {
             String customResponse = VillagerDialogueResources.message(context, responseKey, replacements).orElse("");

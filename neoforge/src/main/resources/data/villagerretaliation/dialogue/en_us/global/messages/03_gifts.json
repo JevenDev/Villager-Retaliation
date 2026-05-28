@@ -161,6 +161,22 @@
       ]
     },
     {
+      "key": "gift_response.owned.self",
+      "lines": [
+        "This was already mine, {player}. Returning it as a gift does not make it new kindness.",
+        "I recognize {gift_item}. If you meant to return it, say that plainly.",
+        "You are handing me my own {gift_item} and calling it a gift. I will remember the honesty of the return, not the wrapping."
+      ]
+    },
+    {
+      "key": "gift_response.owned.other",
+      "lines": [
+        "This looks like {owner_villager}'s {gift_item}. Gifts should not arrive with someone else's name still on them.",
+        "I know that {gift_item} did not begin with you. Return things before you call them presents.",
+        "{owner_villager} may want {gift_item} back. Do not make me the middle of your mistake."
+      ]
+    },
+    {
       "key": "gift_advice_followup.liked",
       "lines": [
         "About that gift advice... <pulse>good</pulse>. {tested_villager} liked {gift_item}. Word gets around when a tip lands.",

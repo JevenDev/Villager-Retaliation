@@ -43,6 +43,10 @@ public final class VillagerGiftReturnTracker {
         return LEDGER.mark(stack, player);
     }
 
+    public static ItemStack markStoredGift(ItemStack stack, ServerPlayer player, Villager owner) {
+        return LEDGER.mark(stack, player, owner);
+    }
+
     public static Optional<String> giftedBy(ItemStack stack) {
         return LEDGER.trackedBy(stack);
     }
@@ -53,6 +57,10 @@ public final class VillagerGiftReturnTracker {
 
     public static void stripGiftTracking(ItemStack stack) {
         LEDGER.stripTracking(stack);
+    }
+
+    private static void stripGiftTracking(ItemStack stack, String sourceKind) {
+        LEDGER.stripTracking(stack, sourceKind);
     }
 
     static boolean isSameTrackedGiftItem(ItemStack stack, ItemStack target) {
@@ -184,9 +192,9 @@ public final class VillagerGiftReturnTracker {
     private static void stripGiftTrackingFromPlayerInventory(ServerPlayer player) {
         Inventory inventory = player.getInventory();
         for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
-            stripGiftTracking(inventory.getItem(slot));
+            stripGiftTracking(inventory.getItem(slot), "gift");
         }
-        stripGiftTracking(player.containerMenu.getCarried());
+        stripGiftTracking(player.containerMenu.getCarried(), "gift");
         inventory.setChanged();
     }
 

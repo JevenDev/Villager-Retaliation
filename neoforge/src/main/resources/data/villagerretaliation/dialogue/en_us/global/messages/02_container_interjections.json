@@ -1,6 +1,22 @@
 {
   "messages": [
     {
+      "key": "container_opened.vouch.allow",
+      "lines": [
+        "I can vouch for {player}. Keep the {container} tidy and take only what you truly need.",
+        "{player} has earned some trust here. I will allow it this time.",
+        "Let them look. They have helped this village enough to be asked for care, not suspicion."
+      ]
+    },
+    {
+      "key": "container_opened.vouch.deny",
+      "lines": [
+        "Not this time, {player}. Close the {container} and ask before reaching.",
+        "I trust you more than most, but not with this chest today.",
+        "No. Even friends ask before opening village stores."
+      ]
+    },
+    {
       "key": "container_theft.backup_interjection",
       "lines": [
         "Yeah, <aqua>{previous_villager}</aqua> is right. I saw you take {stolen_item_reference} too.",

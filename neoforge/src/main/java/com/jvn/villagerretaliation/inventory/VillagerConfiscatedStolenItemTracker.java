@@ -60,6 +60,10 @@ public final class VillagerConfiscatedStolenItemTracker {
         return LEDGER.mark(stack, player);
     }
 
+    public static ItemStack markConfiscatedStolenItem(ItemStack stack, ServerPlayer player, Villager owner) {
+        return LEDGER.mark(stack, player, owner);
+    }
+
     public static void recordConfiscatedStolenItem(ServerLevel level, Villager villager, ServerPlayer player, ItemStack stack, int count) {
         if (stack.isEmpty() || count <= 0) {
             return;
@@ -283,14 +287,18 @@ public final class VillagerConfiscatedStolenItemTracker {
     private static void stripStolenItemTrackingFromPlayerInventory(ServerPlayer player) {
         Inventory inventory = player.getInventory();
         for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
-            stripStolenItemTracking(inventory.getItem(slot));
+            stripStolenItemTracking(inventory.getItem(slot), "confiscated_stolen_item");
         }
-        stripStolenItemTracking(player.containerMenu.getCarried());
+        stripStolenItemTracking(player.containerMenu.getCarried(), "confiscated_stolen_item");
         inventory.setChanged();
     }
 
     private static void stripStolenItemTracking(ItemStack stack) {
         LEDGER.stripTracking(stack);
+    }
+
+    private static void stripStolenItemTracking(ItemStack stack, String sourceKind) {
+        LEDGER.stripTracking(stack, sourceKind);
     }
 
     private static String itemName(ItemStack stack) {

@@ -12,10 +12,13 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
+import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 
 final class TrackedVillagerItemLedger {
     private static final String PLAYER_TAG = "Player";
     private static final String PLAYER_NAME_TAG = "PlayerName";
+    private static final String OWNER_VILLAGER_TAG = "OwnerVillager";
+    private static final String OWNER_VILLAGER_NAME_TAG = "OwnerVillagerName";
     private static final String STACK_TAG = "Stack";
     private static final String COUNT_TAG = "Count";
     private static final String REPUTATION_TAG = "Reputation";
@@ -31,6 +34,10 @@ final class TrackedVillagerItemLedger {
     }
 
     ItemStack mark(ItemStack stack, ServerPlayer player) {
+        return mark(stack, player, null);
+    }
+
+    ItemStack mark(ItemStack stack, ServerPlayer player, Villager owner) {
         if (stack.isEmpty()) {
             return stack;
         }
@@ -38,6 +45,10 @@ final class TrackedVillagerItemLedger {
         CompoundTag trackingTag = new CompoundTag();
         trackingTag.putUUID(PLAYER_TAG, player.getUUID());
         trackingTag.putString(PLAYER_NAME_TAG, player.getGameProfile().getName());
+        if (owner != null) {
+            trackingTag.putUUID(OWNER_VILLAGER_TAG, owner.getUUID());
+            trackingTag.putString(OWNER_VILLAGER_NAME_TAG, VillagerPresetNameRegistry.resolveDisplayName(owner).getString());
+        }
         CustomData.update(DataComponents.CUSTOM_DATA, stack, tag -> tag.put(this.itemTag, trackingTag));
         return stack;
     }
@@ -60,6 +71,10 @@ final class TrackedVillagerItemLedger {
     }
 
     void stripTracking(ItemStack stack) {
+        stripTracking(stack, "");
+    }
+
+    void stripTracking(ItemStack stack, String sourceKind) {
         if (stack.isEmpty()) {
             return;
         }
@@ -70,6 +85,11 @@ final class TrackedVillagerItemLedger {
         }
 
         CompoundTag tag = customData.copyTag();
+        if (sourceKind != null && !sourceKind.isBlank()) {
+            VillagerTakenItemTracker.markTakenFromVillager(stack, tag.getCompound(this.itemTag), sourceKind);
+            customData = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
+            tag = customData.copyTag();
+        }
         tag.remove(this.itemTag);
         if (tag.isEmpty()) {
             stack.remove(DataComponents.CUSTOM_DATA);

@@ -256,7 +256,7 @@ final class ForcedDialogueItemTransfers {
 
             private ItemStack villagerInventoryStack(ItemStack stack) {
                 return markConfiscatedStolenItems
-                        ? VillagerConfiscatedStolenItemTracker.markConfiscatedStolenItem(stack.copy(), player)
+                        ? VillagerConfiscatedStolenItemTracker.markConfiscatedStolenItem(stack.copy(), player, villager)
                         : stack;
             }
         };

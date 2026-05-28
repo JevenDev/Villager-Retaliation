@@ -1,0 +1,92 @@
+{
+  "messages": [
+    {
+      "key": "forced.restitution.prompt",
+      "lines": [
+        "Restitution is not a word. It is what you do next.",
+        "Then settle it plainly. Pay, bargain honestly, walk away worse, or make a threat you cannot take back.",
+        "If you want this repaired, choose how you mean to repair it."
+      ]
+    },
+    {
+      "key": "forced.restitution.haggle.accept",
+      "lines": [
+        "Fine. Not free, but less. Pay {payment_count} {payment_items} and this can end cleanly.",
+        "I will lower it this once: {payment_count} {payment_items}. Do not make me regret the mercy.",
+        "That is as far as I bend. {payment_count} {payment_items}, and the matter rests."
+      ]
+    },
+    {
+      "key": "forced.restitution.haggle.deny",
+      "lines": [
+        "No. The amount stands. Do not spend trust you have not earned.",
+        "No bargain. Pay what was asked or choose another answer.",
+        "You opened the problem. You do not get to name its whole price."
+      ]
+    },
+    {
+      "key": "forced.restitution.option.pay.label",
+      "lines": [
+        "Fine, here's {payment_count} {payment_items}"
+      ]
+    },
+    {
+      "key": "forced.restitution.option.haggle.label",
+      "lines": [
+        "That's far too much"
+      ]
+    },
+    {
+      "key": "forced.restitution.option.refuse.label",
+      "lines": [
+        "No way!"
+      ]
+    },
+    {
+      "key": "forced.restitution.option.threaten.label",
+      "lines": [
+        "Threaten"
+      ]
+    },
+    {
+      "key": "forced.restitution.pay.success",
+      "lines": [
+        "That settles this for now.",
+        "Payment accepted. Next time, permission comes first.",
+        "That covers the damage. It does not erase the lesson."
+      ]
+    },
+    {
+      "key": "forced.restitution.pay.failure",
+      "lines": [
+        "You do not have {payment_count} {payment_items}. Then choose another answer.",
+        "That is not enough to pay what you offered. Try another answer.",
+        "Empty hands cannot settle this payment. Choose again."
+      ]
+    },
+    {
+      "key": "forced.restitution.refuse.response",
+      "lines": [
+        "Then you choose the harder memory.",
+        "Refusal is an answer. The village will remember it.",
+        "So be it. You leave this worse than you found it."
+      ]
+    },
+    {
+      "key": "forced.restitution.threaten.response",
+      "lines": [
+        "Then we are past words.",
+        "A threat answers the question clearly enough.",
+        "You chose force. The village heard you."
+      ]
+    },
+    {
+      "key": "forced.restitution.reduced_pay.success",
+      "lines": [
+        "That is enough. Next time, ask before reaching.",
+        "Reduced or not, the payment is accepted. Do better next time.",
+        "That settles the bargain. Do not make us bargain over trust again."
+      ]
+    }
+  ]
+}

@@ -33,7 +33,7 @@ public final class VillagerTradePaymentTracker {
             return;
         }
 
-        ItemStack storedPayment = markTradePayment(payment.copy(), player);
+        ItemStack storedPayment = markTradePayment(payment.copy(), player, villager);
         ItemStack remainder = VillagerInventoryContainer.addItem(villager, storedPayment);
         int storedCount = payment.getCount() - remainder.getCount();
         if (storedCount <= 0) {
@@ -107,9 +107,9 @@ public final class VillagerTradePaymentTracker {
     public static void stripTradePaymentTrackingFromPlayerInventory(ServerPlayer player) {
         Inventory inventory = player.getInventory();
         for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
-            stripTradePaymentTracking(inventory.getItem(slot));
+            stripTradePaymentTracking(inventory.getItem(slot), "trade_payment");
         }
-        stripTradePaymentTracking(player.containerMenu.getCarried());
+        stripTradePaymentTracking(player.containerMenu.getCarried(), "trade_payment");
         inventory.setChanged();
     }
 
@@ -202,6 +202,10 @@ public final class VillagerTradePaymentTracker {
         return LEDGER.mark(stack, player);
     }
 
+    private static ItemStack markTradePayment(ItemStack stack, ServerPlayer player, Villager owner) {
+        return LEDGER.mark(stack, player, owner);
+    }
+
     private static boolean isStorableTradePayment(ItemStack stack) {
         return !stack.isEmpty() && stack.is(Items.EMERALD);
     }
@@ -212,6 +216,14 @@ public final class VillagerTradePaymentTracker {
         }
 
         LEDGER.stripTracking(stack);
+    }
+
+    private static void stripTradePaymentTracking(ItemStack stack, String sourceKind) {
+        if (stack.isEmpty()) {
+            return;
+        }
+
+        LEDGER.stripTracking(stack, sourceKind);
     }
 
     record TradePaymentSnapshot(List<TrackedVillagerItemLedger.StackCount> counts) {

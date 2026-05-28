@@ -34,7 +34,7 @@ public final class VillagerGiftKeepsakes {
 
         ItemStack remainder = VillagerInventoryAccess.addItem(
                 villager,
-                VillagerGiftReturnTracker.markStoredGift(giftedStack.copy(), player)
+                VillagerGiftReturnTracker.markStoredGift(giftedStack.copy(), player, villager)
         );
         int storedCount = giftedStack.getCount() - remainder.getCount();
         if (storedCount > 0) {
@@ -74,7 +74,7 @@ public final class VillagerGiftKeepsakes {
             return false;
         }
 
-        ItemStack keepsake = VillagerGiftReturnTracker.markStoredGift(giftedStack.copy(), player);
+        ItemStack keepsake = VillagerGiftReturnTracker.markStoredGift(giftedStack.copy(), player, villager);
         EquipmentSlot preferredSlot = equipmentSlotFor(keepsake);
         if (preferredSlot != null && tryEquip(villager, preferredSlot, keepsake)) {
             return true;

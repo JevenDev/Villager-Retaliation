@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.VillagerRetaliation;
+import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.DatapackJsonReader;
@@ -55,7 +56,10 @@ public final class ForcedDialogueResources {
     private static final Set<String> ENTRY_KEYS = ROOT_KEYS;
     private static final Set<String> OPTION_KEYS = Set.of(
             "id", "label", "response", "responses", "reputation", "aggro", "aggro_chance", "end_conversation", "order",
-            "reputation_level", "reputation_levels", "min_reputation", "max_reputation", "take_items", "take_stolen_items");
+            "reputation_level", "reputation_levels", "min_reputation", "max_reputation", "take_items", "take_stolen_items",
+            "follow_up", "requires_high_knowledge", "requires_high_guts", "requires_high_proficiency", "requires_high_kindness", "requires_high_charm",
+            "min_knowledge", "max_knowledge", "min_guts", "max_guts", "min_proficiency", "max_proficiency",
+            "min_kindness", "max_kindness", "min_charm", "max_charm");
     private static final Set<String> NOTIFICATION_TRIGGER_PREFIXES = Set.of(
             "ambient.", "alert.", "combat.", "dialogue.", "gift.", "recruitment.", "reputation.", "trade.");
     private static final Comparator<ForcedDialogueDefinition> CANDIDATE_ORDER =
@@ -346,7 +350,9 @@ public final class ForcedDialogueResources {
                 continue;
             }
             JsonObject option = element.getAsJsonObject();
-            DatapackDiagnostics.warnUnknownKeys(location, "forced dialogue option", optionContext(option, index), option, OPTION_KEYS);
+            if (location != null) {
+                DatapackDiagnostics.warnUnknownKeys(location, "forced dialogue option", optionContext(option, index), option, OPTION_KEYS);
+            }
             String id = readString(option, "id");
             String label = readString(option, "label");
             if (id.isBlank() || label.isBlank()) {
@@ -370,7 +376,9 @@ public final class ForcedDialogueResources {
             for (JsonElement element : options) {
                 if (element.isJsonObject()) {
                     JsonObject option = element.getAsJsonObject();
-                    DatapackDiagnostics.warnUnknownKeys(location, "forced dialogue leave option", optionContext(option, index), option, OPTION_KEYS);
+                    if (location != null) {
+                        DatapackDiagnostics.warnUnknownKeys(location, "forced dialogue leave option", optionContext(option, index), option, OPTION_KEYS);
+                    }
                     String label = readString(option, "label");
                     leaveOptions.add(readOption(option, LEAVE_OPTION_ID, label.isBlank() ? "Leave" : label, 1000 + index));
                 }
@@ -469,8 +477,30 @@ public final class ForcedDialogueResources {
                 readInt(option, "order", fallbackOrder),
                 readStolenItemReturn(option),
                 readItemPayment(option),
-                VillagerReputationCondition.read(option)
+                VillagerReputationCondition.read(option),
+                readSocialAttributeCondition(option),
+                readFollowUp(option)
         );
+    }
+
+    private static ForcedDialogueFollowUp readFollowUp(JsonObject option) {
+        JsonElement element = option.get("follow_up");
+        if (element == null || !element.isJsonObject()) {
+            return ForcedDialogueFollowUp.empty();
+        }
+
+        JsonObject followUp = element.getAsJsonObject();
+        ForcedDialogueOption leaveOption = readLeaveOptions(null, followUp, ForcedDialogueTrigger.CONTAINER_OPENED)
+                .stream()
+                .findFirst()
+                .orElse(defaultLeaveOption());
+        List<ForcedDialogueOption> options = readOptions(null, followUp, leaveOption);
+        String leaveOptionId = leaveOption.id();
+        leaveOption = options.stream()
+                .filter(candidate -> candidate.id().equals(leaveOptionId))
+                .findFirst()
+                .orElse(leaveOption);
+        return new ForcedDialogueFollowUp(readLines(followUp), options, leaveOption, List.of(leaveOption));
     }
 
     private static ForcedDialogueStolenItemReturn readStolenItemReturn(JsonObject option) {
@@ -602,6 +632,25 @@ public final class ForcedDialogueResources {
 
     private static boolean readBoolean(JsonObject entry, String key, boolean fallback) {
         return DatapackJsonReader.readBoolean(entry, key, fallback);
+    }
+
+    private static SocialAttributeCondition readSocialAttributeCondition(JsonObject entry) {
+        SocialAttributeCondition.Builder builder = SocialAttributeCondition.builder();
+        for (VillagerSocialAttribute attribute : VillagerSocialAttribute.values()) {
+            String key = attribute.serializedName();
+            if (readBoolean(entry, "requires_high_" + key)) {
+                builder.min(attribute, 60);
+            }
+            int minValue = readInt(entry, "min_" + key, Integer.MIN_VALUE);
+            if (minValue != Integer.MIN_VALUE) {
+                builder.min(attribute, minValue);
+            }
+            int maxValue = readInt(entry, "max_" + key, Integer.MIN_VALUE);
+            if (maxValue != Integer.MIN_VALUE) {
+                builder.max(attribute, maxValue);
+            }
+        }
+        return builder.build();
     }
 
     private static double clampChance(double value) {
@@ -800,12 +849,35 @@ public final class ForcedDialogueResources {
             int order,
             ForcedDialogueStolenItemReturn stolenItemReturn,
             ForcedDialogueItemPayment itemPayment,
-            VillagerReputationCondition reputationCondition) {
+            VillagerReputationCondition reputationCondition,
+            SocialAttributeCondition socialAttributeCondition,
+            ForcedDialogueFollowUp followUp) {
         public String selectResponse(RandomSource random) {
             if (this.responses.isEmpty()) {
                 return "";
             }
             return this.responses.get(random.nextInt(this.responses.size()));
+        }
+    }
+
+    public record ForcedDialogueFollowUp(
+            List<String> lines,
+            List<ForcedDialogueOption> options,
+            ForcedDialogueOption leaveOption,
+            List<ForcedDialogueOption> leaveOptions) {
+        private static final ForcedDialogueFollowUp EMPTY =
+                new ForcedDialogueFollowUp(List.of(), List.of(), null, List.of());
+
+        static ForcedDialogueFollowUp empty() {
+            return EMPTY;
+        }
+
+        public boolean isEmpty() {
+            return this == EMPTY || this.options.isEmpty();
+        }
+
+        public String selectLine(RandomSource random) {
+            return selectResponse(this.lines, random);
         }
     }
 

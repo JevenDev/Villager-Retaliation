@@ -251,6 +251,7 @@ const knownPlaceholders = new Set([
   "follow_distance",
   "gear_kind",
   "gift_item",
+  "owner_villager",
   "gift_subject",
   "given_count",
   "given_item",
