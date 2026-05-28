@@ -1,8 +1,10 @@
 package com.jvn.villagerretaliation.client.reputation;
 
+import com.jvn.villagerretaliation.client.interaction.VillagerInteractionScreenShaderRenderer;
 import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
 import com.jvn.villagerretaliation.config.ReputationChangeDisplayMode;
 import com.jvn.villagerretaliation.config.ReputationChangeHudPosition;
+import com.jvn.villagerretaliation.config.ReputationChangeNotificationStyle;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.network.VillagerReputationTierNoticePayload;
@@ -25,6 +27,10 @@ public final class VillagerReputationNotificationOverlay {
     private static final int PADDING_Y = 10;
     private static final int ENTRY_HEIGHT = 14;
     private static final int ENTRY_GAP = 4;
+    private static final int EXPERIMENTAL_ENTRY_HEIGHT = 18;
+    private static final int EXPERIMENTAL_TEXT_PADDING_X = 12;
+    private static final int EXPERIMENTAL_TEXT_PADDING_Y = 5;
+    private static final int EXPERIMENTAL_EXTRA_WIDTH = 20;
     private static final int TEXT_PADDING_X = 8;
     private static final int TEXT_PADDING_Y = 3;
     private static final int BACKGROUND_COLOR = 0xA0101010;
@@ -112,6 +118,8 @@ public final class VillagerReputationNotificationOverlay {
         int screenWidth = minecraft.getWindow().getGuiScaledWidth();
         int screenHeight = minecraft.getWindow().getGuiScaledHeight();
         ReputationChangeHudPosition position = VillagerRetaliationConfig.REPUTATION_CHANGE_HUD_POSITION.get();
+        ReputationChangeNotificationStyle style = VillagerRetaliationConfig.REPUTATION_CHANGE_NOTIFICATION_STYLE.get();
+        int entryHeight = entryHeight(style);
         for (NotificationEntry entry : ACTIVE_ENTRIES) {
             float alpha = entry.alpha(partialTick);
             if (alpha <= 0.01F) {
@@ -121,16 +129,20 @@ public final class VillagerReputationNotificationOverlay {
 
             String text = entry.text;
             int textWidth = font.width(text);
-            int width = textWidth + TEXT_PADDING_X * 2 + 4;
-            Anchor anchor = anchor(position, screenWidth, screenHeight, width);
+            int width = entryWidth(style, textWidth);
+            Anchor anchor = anchor(position, screenWidth, screenHeight, width, entryHeight);
             int horizontalSlide = Math.round((1.0F - alpha) * SLIDE_DISTANCE);
             int x = switch (position) {
                 case TOP_LEFT, MID_LEFT -> anchor.x() - horizontalSlide;
                 case TOP_RIGHT, MID_RIGHT -> anchor.x() + horizontalSlide;
                 case MID_TOP -> anchor.x();
             };
-            int y = anchor.y() + index * (ENTRY_HEIGHT + ENTRY_GAP);
-            renderEntry(graphics, font, entry, x, y, width, alpha);
+            int y = anchor.y() + index * (entryHeight + ENTRY_GAP);
+            if (style.experimental()) {
+                renderExperimentalEntry(graphics, font, entry, x, y, width, entryHeight, alpha, entry.age + partialTick, position);
+            } else {
+                renderEntry(graphics, font, entry, x, y, width, alpha);
+            }
             index++;
         }
     }
@@ -156,8 +168,19 @@ public final class VillagerReputationNotificationOverlay {
         }
     }
 
-    private static Anchor anchor(ReputationChangeHudPosition position, int screenWidth, int screenHeight, int width) {
-        int totalHeight = MAX_ENTRIES * ENTRY_HEIGHT + (MAX_ENTRIES - 1) * ENTRY_GAP;
+    private static int entryHeight(ReputationChangeNotificationStyle style) {
+        return style.experimental() ? EXPERIMENTAL_ENTRY_HEIGHT : ENTRY_HEIGHT;
+    }
+
+    private static int entryWidth(ReputationChangeNotificationStyle style, int textWidth) {
+        if (style.experimental()) {
+            return textWidth + EXPERIMENTAL_TEXT_PADDING_X * 2 + EXPERIMENTAL_EXTRA_WIDTH;
+        }
+        return textWidth + TEXT_PADDING_X * 2 + 4;
+    }
+
+    private static Anchor anchor(ReputationChangeHudPosition position, int screenWidth, int screenHeight, int width, int entryHeight) {
+        int totalHeight = MAX_ENTRIES * entryHeight + (MAX_ENTRIES - 1) * ENTRY_GAP;
         return switch (position) {
             case TOP_LEFT -> new Anchor(PADDING_X, PADDING_Y);
             case MID_LEFT -> new Anchor(PADDING_X, Math.max(PADDING_Y, (screenHeight - totalHeight) / 2));
@@ -165,6 +188,46 @@ public final class VillagerReputationNotificationOverlay {
             case TOP_RIGHT -> new Anchor(screenWidth - width - PADDING_X, PADDING_Y);
             case MID_RIGHT -> new Anchor(screenWidth - width - PADDING_X, Math.max(PADDING_Y, (screenHeight - totalHeight) / 2));
         };
+    }
+
+    private static void renderExperimentalEntry(
+            GuiGraphics graphics,
+            Font font,
+            NotificationEntry entry,
+            int x,
+            int y,
+            int width,
+            int height,
+            float alpha,
+            float elapsedTicks,
+            ReputationChangeHudPosition position) {
+        int accentColor = textColor(entry);
+        float direction = switch (position) {
+            case TOP_RIGHT, MID_RIGHT -> -1.0F;
+            default -> 1.0F;
+        };
+        boolean rendered = VillagerInteractionScreenShaderRenderer.renderExperimentalNotification(
+                graphics,
+                x,
+                y,
+                x + width,
+                y + height,
+                accentColor,
+                alpha,
+                elapsedTicks,
+                direction);
+        if (!rendered) {
+            renderEntry(graphics, font, entry, x, y, width, alpha);
+            return;
+        }
+
+        int textColor = VillagerClientUiUtil.withAlphaRound(textColor(entry), alpha);
+        graphics.pose().pushPose();
+        graphics.pose().translate(0.0F, 0.0F, 200.0F);
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        graphics.drawString(font, entry.text, x + EXPERIMENTAL_TEXT_PADDING_X, y + EXPERIMENTAL_TEXT_PADDING_Y, textColor, true);
+        graphics.pose().popPose();
     }
 
     private static void renderEntry(GuiGraphics graphics, Font font, NotificationEntry entry, int x, int y, int width, float alpha) {

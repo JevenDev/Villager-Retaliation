@@ -28,6 +28,7 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.DoubleValue DIALOGUE_CAMERA_ZOOM_AMOUNT;
     public static final ModConfigSpec.IntValue DIALOGUE_CAMERA_TRANSITION_TICKS;
     public static final ModConfigSpec.EnumValue<ReputationChangeDisplayMode> REPUTATION_CHANGE_DISPLAY_MODE;
+    public static final ModConfigSpec.EnumValue<ReputationChangeNotificationStyle> REPUTATION_CHANGE_NOTIFICATION_STYLE;
     public static final ModConfigSpec.EnumValue<ReputationChangeHudPosition> REPUTATION_CHANGE_HUD_POSITION;
     public static final ModConfigSpec.BooleanValue COLLAPSE_REPUTATION_CHANGE_NOTIFICATIONS;
     public static final ModConfigSpec.BooleanValue FREEZE_VILLAGER_DURING_DIALOGUE;
@@ -224,6 +225,10 @@ public final class VillagerRetaliationConfig {
                 .comment("Where villager reputation tier change messages appear: HUD, Chat, or Off.")
                 .translation("villagerretaliation.configuration.general.reputationChangeDisplayMode")
                 .defineEnum("reputationChangeDisplayMode", ReputationChangeDisplayMode.HUD);
+        REPUTATION_CHANGE_NOTIFICATION_STYLE = BUILDER
+                .comment("Visual style used by HUD reputation change notifications.")
+                .translation("villagerretaliation.configuration.general.reputationChangeNotificationStyle")
+                .defineEnum("reputationChangeNotificationStyle", ReputationChangeNotificationStyle.DEFAULT);
         REPUTATION_CHANGE_HUD_POSITION = BUILDER
                 .comment("Where the HUD reputation change feed is anchored on screen.")
                 .translation("villagerretaliation.configuration.general.reputationChangeHudPosition")

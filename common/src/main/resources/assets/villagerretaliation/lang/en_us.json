@@ -24,6 +24,7 @@
   "villagerretaliation.configuration.general.enableVanillaGossipIntegration": "Enable Vanilla Gossip Integration",
   "villagerretaliation.configuration.general.enableDespisedKillOnSight": "Enable Despised Kill On Sight",
   "villagerretaliation.configuration.general.reputationChangeDisplayMode": "Reputation Change Display Mode",
+  "villagerretaliation.configuration.general.reputationChangeNotificationStyle": "Reputation Change Notification Style",
   "villagerretaliation.configuration.general.reputationChangeHudPosition": "Reputation Change HUD Position",
   "villagerretaliation.configuration.general.collapseReputationChangeNotifications": "Collapse Reputation Change Notifications",
   "villagerretaliation.configuration.general.villagerReputationHoverTooltipRequiresEmerald": "Villager Reputation Hover Tooltip Requires Emerald",
