@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil.Act
 import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil.AngerTarget;
 import com.jvn.villagerretaliation.dialogue.ForcedDialogueService;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
+import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.mood.VillagerMoodService;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttributeBehavior;
@@ -25,6 +26,7 @@ import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.Difficulty;
@@ -80,6 +82,8 @@ public final class VillagerRetaliationHandler {
     private static final double SMITH_IRON_GOLEM_REPAIR_SEARCH_RADIUS = 12.0D;
     private static final double SMITH_IRON_GOLEM_REPAIR_REACH_SQR = 9.0D;
     private static final float SMITH_IRON_GOLEM_REPAIR_HEAL_AMOUNT = 25.0F;
+    private static final long ROYALTY_AGGRO_BYPASS_NOTICE_COOLDOWN_TICKS = 20L * 5L;
+    private static final String ROYALTY_AGGRO_BYPASS_MESSAGE_KEY = "retaliation.royalty_aggro_bypass";
     private static final String PERSISTENT_TAG_ROOT = "VillagerRetaliationPersistentHostility";
     private static final String PERSISTENT_ARMORER_SHIELD_ROLLED_TAG = "VillagerRetaliationArmorerShieldRolled";
     private static final VillagerRetaliationRetaliationRuntime<Villager> RETALIATION =
@@ -93,6 +97,7 @@ public final class VillagerRetaliationHandler {
     private static final Map<UUID, Integer> ARMORER_PENDING_COUNTER_SWINGS = new HashMap<>();
     private static final Map<UUID, Long> ARMORER_COUNTER_ATTACK_READY_TICKS = new HashMap<>();
     private static final Map<UUID, Long> NEXT_IRON_GOLEM_REPAIR_TICKS = new HashMap<>();
+    private static final Map<PlayerVillagerKey, Long> NEXT_ROYALTY_AGGRO_BYPASS_NOTICE_TICKS = new HashMap<>();
 
     private VillagerRetaliationHandler() {
     }
@@ -483,6 +488,11 @@ public final class VillagerRetaliationHandler {
             return false;
         }
 
+        if (isRoyaltyFor(villager, player)) {
+            clearAnger(villager);
+            return false;
+        }
+
         return RETALIATION.isHostileTowards(villager, player, () -> clearAnger(villager))
                 || isDespisedBy(villager, player);
     }
@@ -536,6 +546,12 @@ public final class VillagerRetaliationHandler {
                 && VillagerReputationManager.isDespised(level, villager, player);
     }
 
+    private static boolean isRoyaltyFor(Villager villager, Player player) {
+        return VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()
+                && villager.level() instanceof ServerLevel level
+                && VillagerReputationManager.isRoyalty(level, villager, player);
+    }
+
     private static boolean isPacificationBlockedByReputation(Villager villager, Player player) {
         return VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()
                 && villager.level() instanceof ServerLevel level
@@ -571,6 +587,12 @@ public final class VillagerRetaliationHandler {
             }
             return;
         }
+        if (attacker instanceof ServerPlayer player
+                && VillagerAggressionPolicy.shouldBypassAggroForRoyalty(villager, player)) {
+            clearAnger(villager);
+            sendRoyaltyAggroBypassNotice(villager, player);
+            return;
+        }
         if (allowForcedDialogue
                 && attacker instanceof net.minecraft.server.level.ServerPlayer player
                 && villager.level() instanceof ServerLevel level
@@ -585,6 +607,19 @@ public final class VillagerRetaliationHandler {
                 VillagerAmbientIndicatorService.onRetaliationStarted(level, villager, attacker);
             }
         }
+    }
+
+    private static void sendRoyaltyAggroBypassNotice(Villager villager, ServerPlayer player) {
+        if (!(villager.level() instanceof ServerLevel level)) {
+            return;
+        }
+        long gameTime = level.getGameTime();
+        PlayerVillagerKey key = new PlayerVillagerKey(player.getUUID(), villager.getUUID());
+        if (gameTime < NEXT_ROYALTY_AGGRO_BYPASS_NOTICE_TICKS.getOrDefault(key, 0L)) {
+            return;
+        }
+        NEXT_ROYALTY_AGGRO_BYPASS_NOTICE_TICKS.put(key, gameTime + ROYALTY_AGGRO_BYPASS_NOTICE_COOLDOWN_TICKS);
+        VillagerInteractionService.sendVillagerNotice(player, villager, ROYALTY_AGGRO_BYPASS_MESSAGE_KEY);
     }
 
     private static void tryAcquireHostileTarget(Villager villager) {
@@ -1390,5 +1425,8 @@ public final class VillagerRetaliationHandler {
             return 0L;
         }
         return Math.floorMod(villagerId.getMostSignificantBits() ^ villagerId.getLeastSignificantBits(), intervalTicks);
+    }
+
+    private record PlayerVillagerKey(UUID playerId, UUID villagerId) {
     }
 }

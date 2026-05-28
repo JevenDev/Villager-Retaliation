@@ -15,7 +15,7 @@ public final class VillagerAggressionPolicy {
     }
 
     public static boolean shouldRetaliateDirectly(Villager villager, Player player) {
-        return true;
+        return !shouldBypassAggroForRoyalty(villager, player);
     }
 
     public static boolean shouldNearbyVillagerAssist(AbstractVillager witness, Player player, ReputationEventType eventType) {
@@ -31,7 +31,16 @@ public final class VillagerAggressionPolicy {
             return false;
         }
         int reputation = VillagerReputationManager.getReputation(level, witness, player.getUUID());
+        if (VillagerReputationLevel.fromReputation(reputation) == VillagerReputationLevel.ROYALTY) {
+            return false;
+        }
         return VillagerReputationLevel.fromReputation(reputation + pendingReputationChange) != VillagerReputationLevel.FEARED;
+    }
+
+    public static boolean shouldBypassAggroForRoyalty(AbstractVillager villager, Player player) {
+        return VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()
+                && villager.level() instanceof ServerLevel level
+                && VillagerReputationManager.isRoyalty(level, villager, player);
     }
 
     public static boolean shouldAttackOnSight(Villager villager, Player player) {

@@ -20,7 +20,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.SectionPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BiomeTags;
@@ -112,9 +111,7 @@ public final class VillagerRecruitmentService {
         if (isFollowing(villager, player)) {
             String scenario = wasFollowerInjured(villager) ? "injured" : "safe";
             rememberRecruitmentMemory(level, villager, player, scenario);
-            if (isNearVillage(level, villager)) {
-                VillagerInteractionTracker.rememberRecruitmentFollowup(level, villager, player, scenario);
-            }
+            VillagerInteractionTracker.rememberRecruitmentFollowup(level, villager, player, scenario);
         }
         clearFollowTarget(villager);
     }
@@ -610,10 +607,6 @@ public final class VillagerRecruitmentService {
                 : villager.getHealth();
         minHealth = Math.min(minHealth, villager.getHealth());
         return minHealth + 0.5F < startHealth;
-    }
-
-    private static boolean isNearVillage(ServerLevel level, Villager villager) {
-        return level.sectionsToVillage(SectionPos.of(villager.blockPosition())) <= 2;
     }
 
     private static void rememberBetrayedFollower(Villager villager, Player attacker) {

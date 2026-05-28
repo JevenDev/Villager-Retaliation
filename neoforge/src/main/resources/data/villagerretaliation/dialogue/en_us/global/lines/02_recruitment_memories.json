@@ -10,9 +10,9 @@
       ],
       "weight": 36,
       "lines": [
-        "Thank you for bringing me back near home. A short road feels longer when the night has <shake>teeth</shake>.",
-        "You got me home. That turns a long road into a remembered kindness.",
-        "I am back near the bell, and that matters more than I can say <pulse>neatly</pulse>."
+        "Thank you for keeping me with you. A short road feels longer when the night has <shake>teeth</shake>.",
+        "You brought me through that trip safely. That turns a long road into a remembered kindness.",
+        "I am still here in one piece, and that matters more than I can say <pulse>neatly</pulse>."
       ],
       "conditions": [
         {
@@ -32,8 +32,8 @@
       "weight": 34,
       "lines": [
         "I came back in one piece. That is the kind of help people remember.",
-        "You got me home. That turns a long road into a remembered kindness.",
-        "I am back near the bell, and that matters more than I can say neatly."
+        "You brought me through that trip safely. That turns a long road into a remembered kindness.",
+        "I am still here in one piece, and that matters more than I can say neatly."
       ]
     },
     {
@@ -46,7 +46,7 @@
       ],
       "lines": [
         "I made it back, but not cleanly. Next time, we move slower or fight sooner.",
-        "I am glad to be home, but I am still feeling that road. Do not mistake thanks for <italic>forgetting</italic>.",
+        "I am still feeling that road. Do not mistake thanks for <italic>forgetting</italic>.",
         "I returned, but the road left bruises in the story."
       ],
       "weight": 68,
@@ -83,8 +83,8 @@
       "weight": 44,
       "lines": [
         "The boat helped. I will admit, being carried home by water is easier on the knees.",
-        "Floating home beat walking the whole way. I will admit that.",
-        "The boat did honest work carrying us back."
+        "Floating beat walking the whole way. I will admit that.",
+        "The boat did honest work carrying us along."
       ],
       "conditions": [
         {
@@ -125,7 +125,7 @@
       ],
       "weight": 50,
       "lines": [
-        "I crossed ocean water without a boat and still made it home. Next time, please find wood before waves.",
+        "I crossed ocean water without a boat and still made it through. Next time, please find wood before waves.",
         "I made it across, but my bones still vote for boats next time.",
         "Swimming the ocean was not bravery. It was a shortage of better planning."
       ],

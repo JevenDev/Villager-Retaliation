@@ -59,7 +59,7 @@ Default tiers:
 
 | Tier | Default threshold |
 | --- | ---: |
-| Royalty | 750 |
+| Royalty | 1000 |
 | Revered | 400 |
 | Respected | 250 |
 | Trusted | 75 |

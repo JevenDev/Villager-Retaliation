@@ -123,6 +123,10 @@ public final class VillagerReputationManager {
                 || levelForPlayer == VillagerReputationLevel.ROYALTY;
     }
 
+    public static boolean isRoyalty(ServerLevel level, AbstractVillager villager, Player player) {
+        return getReputationLevel(level, villager, player.getUUID()) == VillagerReputationLevel.ROYALTY;
+    }
+
     public static boolean canGiveHighReputationGift(ServerLevel level, AbstractVillager villager, Player player) {
         if (!VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()) {
             return false;

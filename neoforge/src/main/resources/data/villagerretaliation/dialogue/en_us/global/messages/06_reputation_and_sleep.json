@@ -37,6 +37,16 @@
       ]
     },
     {
+      "key": "retaliation.royalty_aggro_bypass",
+      "lines": [
+        "My liege... how could you?",
+        "But why? After all the trust we placed in you?",
+        "I will not raise a hand against you, my liege. Please do not make me regret that.",
+        "You are still our royalty, but this hurts.",
+        "If anyone else had done that, I would fight. For you, I can only ask why."
+      ]
+    },
+    {
       "key": "reputation.positive",
       "lines": [
         "You know, you're not so bad to talk to.",

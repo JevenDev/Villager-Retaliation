@@ -17,6 +17,15 @@
       ]
     },
     {
+      "key": "container_opened.vouch.royalty",
+      "lines": [
+        "Do not disrespect our ruler. If {player} needs the {container}, they can take from it.",
+        "Stand down. {player} has carried this village farther than any chest ever could.",
+        "If our liege opens the {container}, then the village has already given its trust.",
+        "Let them look. Royal hands have earned more than suspicion at a village chest."
+      ]
+    },
+    {
       "key": "container_theft.backup_interjection",
       "lines": [
         "Yeah, <aqua>{previous_villager}</aqua> is right. I saw you take {stolen_item_reference} too.",

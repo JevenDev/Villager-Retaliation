@@ -90,6 +90,7 @@ public final class ForcedDialogueService {
     private static final String CONTAINER_OPENED_BACKUP_DEFINITION_ID = "container_opened.backup_interjection";
     private static final String CONTAINER_OPENED_VOUCH_ALLOW_MESSAGE_KEY = "container_opened.vouch.allow";
     private static final String CONTAINER_OPENED_VOUCH_DENY_MESSAGE_KEY = "container_opened.vouch.deny";
+    private static final String CONTAINER_OPENED_VOUCH_ROYALTY_MESSAGE_KEY = "container_opened.vouch.royalty";
     private static final String RESTITUTION_DEFINITION_SUFFIX = ".restitution_options";
     private static final String RESTITUTION_PAY_SUFFIX = ".pay";
     private static final String RESTITUTION_HAGGLE_SUFFIX = ".haggle";
@@ -107,6 +108,7 @@ public final class ForcedDialogueService {
     private static final String RESTITUTION_REFUSE_RESPONSE_MESSAGE_KEY = "forced.restitution.refuse.response";
     private static final String RESTITUTION_THREATEN_RESPONSE_MESSAGE_KEY = "forced.restitution.threaten.response";
     private static final String RESTITUTION_REDUCED_PAY_SUCCESS_MESSAGE_KEY = "forced.restitution.reduced_pay.success";
+    private static final String ROYALTY_AGGRO_BYPASS_MESSAGE_KEY = "retaliation.royalty_aggro_bypass";
     public static final String SPECIAL_ORDER_STATUS_ROOT_OPTION_ID = "trade_refresh.special_order.status";
     private static final long RECENT_CONTAINER_CLICK_TICKS = 8L;
     private static final long FORCED_SESSION_TIMEOUT_TICKS = 20L * 60L;
@@ -720,7 +722,8 @@ public final class ForcedDialogueService {
                 return true;
             }
         }
-        boolean aggro = option.aggro() || rollChance(player.serverLevel(), option.aggroChance());
+        boolean requestedAggro = option.aggro() || rollChance(player.serverLevel(), option.aggroChance());
+        boolean aggro = requestedAggro && !session.royaltyAggroBypass();
         Optional<Integer> selectedSpecialOrderStatus = VillagerSpecialOrderService.selectedStatusOfferIndex(option.id());
         Optional<ResourceLocation> selectedSpecialOrder = VillagerSpecialOrderService.selectedDefinitionId(option.id());
         boolean opensFollowUpTradeRefreshDialogue = isTradeRefreshSurpriseOption(session, option)
@@ -796,6 +799,8 @@ public final class ForcedDialogueService {
             FORCED_SESSIONS.remove(player.getUUID());
             VillagerConversationService.endForPlayer(player, true);
             forceAngerParticipants(player, villager, session);
+        } else if (requestedAggro && session.royaltyAggroBypass()) {
+            sendRoyaltyAggroBypassNotice(player, villager);
         }
         return true;
     }
@@ -1668,7 +1673,9 @@ public final class ForcedDialogueService {
                     forcedOptions(session.definition(), player.serverLevel(), villager, player, session),
                     session.definition().forceCameraTowardsVillager());
         }
-        if (stolenItemReturn.failureAggro()) {
+        if (stolenItemReturn.failureAggro() && session.royaltyAggroBypass()) {
+            sendRoyaltyAggroBypassNotice(player, villager);
+        } else if (stolenItemReturn.failureAggro()) {
             VillagerRetaliationHandler.forceAnger(villager, player);
         }
     }
@@ -1709,7 +1716,9 @@ public final class ForcedDialogueService {
                     forcedOptions(session.definition(), player.serverLevel(), villager, player, session),
                     session.definition().forceCameraTowardsVillager());
         }
-        if (itemPayment.failureAggro()) {
+        if (itemPayment.failureAggro() && session.royaltyAggroBypass()) {
+            sendRoyaltyAggroBypassNotice(player, villager);
+        } else if (itemPayment.failureAggro()) {
             VillagerRetaliationHandler.forceAnger(villager, player);
         }
     }
@@ -2032,7 +2041,8 @@ public final class ForcedDialogueService {
                     appendedParticipantIds(session, witness),
                     appendedSpokenVillagerIds(session, witness),
                     session.stolenItemsResolved(),
-                    session.disabledOptionIds()));
+                    session.disabledOptionIds(),
+                    session.royaltyAggroBypass()));
         } else if (!line.isBlank()) {
             VillagerInteractionService.sendVillagerNotice(player, witness, line);
         }
@@ -2362,7 +2372,8 @@ public final class ForcedDialogueService {
                 participantIds,
                 session.spokenVillagerIds(),
                 session.stolenItemsResolved(),
-                session.disabledOptionIds());
+                session.disabledOptionIds(),
+                session.royaltyAggroBypass());
     }
 
     private static ForcedDialogueSession withStolenItemsResolved(ForcedDialogueSession session) {
@@ -2384,7 +2395,8 @@ public final class ForcedDialogueService {
                 session.participantVillagerIds(),
                 session.spokenVillagerIds(),
                 true,
-                session.disabledOptionIds());
+                session.disabledOptionIds(),
+                session.royaltyAggroBypass());
     }
 
     private static ForcedDialogueSession withDefinition(ForcedDialogueSession session, ForcedDialogueDefinition definition) {
@@ -2403,7 +2415,8 @@ public final class ForcedDialogueService {
                 session.participantVillagerIds(),
                 session.spokenVillagerIds(),
                 session.stolenItemsResolved(),
-                List.of());
+                List.of(),
+                session.royaltyAggroBypass());
     }
 
     private static ForcedDialogueSession withDisabledOption(ForcedDialogueSession session, String optionId) {
@@ -2427,10 +2440,15 @@ public final class ForcedDialogueService {
                 session.participantVillagerIds(),
                 session.spokenVillagerIds(),
                 session.stolenItemsResolved(),
-                List.copyOf(disabled));
+                List.copyOf(disabled),
+                session.royaltyAggroBypass());
     }
 
     private static void forceAngerParticipants(ServerPlayer player, Villager currentVillager, ForcedDialogueSession session) {
+        if (session.royaltyAggroBypass()) {
+            sendRoyaltyAggroBypassNotice(player, currentVillager);
+            return;
+        }
         ServerLevel level = player.serverLevel();
         boolean angeredCurrent = false;
         for (UUID villagerId : session.participantVillagerIds()) {
@@ -2686,8 +2704,11 @@ public final class ForcedDialogueService {
         Villager villager = voucher.get().villager();
         ReputationSnapshot reputation = voucher.get().reputation();
         double vouchChance = containerVouchChance(reputation);
-        boolean allowed = rollChance(level, vouchChance);
-        String messageKey = allowed
+        boolean royalty = reputation.level() == VillagerReputationLevel.ROYALTY;
+        boolean allowed = royalty || rollChance(level, vouchChance);
+        String messageKey = royalty
+                ? CONTAINER_OPENED_VOUCH_ROYALTY_MESSAGE_KEY
+                : allowed
                 ? CONTAINER_OPENED_VOUCH_ALLOW_MESSAGE_KEY
                 : CONTAINER_OPENED_VOUCH_DENY_MESSAGE_KEY;
         DialogueContext context = VillagerInteractionService.createDialogueContext(level, player, villager);
@@ -2885,6 +2906,7 @@ public final class ForcedDialogueService {
                 snapshot.pos().getY(),
                 snapshot.pos().getZ()
         );
+        boolean royaltyAggroBypass = isRoyaltyFor(level, witness, player);
         int reputationDelta = definition.reputationDelta();
         if (definition.trigger() == ForcedDialogueTrigger.CONTAINER_BROKEN) {
             reputationDelta += containerBreakReputationDelta(snapshot);
@@ -2905,6 +2927,10 @@ public final class ForcedDialogueService {
         if (definition.aggroImmediately()) {
             if (!line.isBlank()) {
                 VillagerInteractionService.sendVillagerNotice(player, witness, line);
+            }
+            if (royaltyAggroBypass) {
+                sendRoyaltyAggroBypassNotice(player, witness);
+                return true;
             }
             VillagerRetaliationHandler.forceAnger(witness, player);
             return true;
@@ -2930,7 +2956,16 @@ public final class ForcedDialogueService {
                     snapshot.dimension(),
                     snapshot.pos(),
                     removedStacks,
-                    level.getGameTime()
+                    level.getGameTime(),
+                    -1,
+                    "",
+                    false,
+                    Map.of(),
+                    List.of(witness.getUUID()),
+                    List.of(witness.getUUID()),
+                    false,
+                    List.of(),
+                    royaltyAggroBypass
             ));
         } else if (!line.isBlank()) {
             VillagerInteractionService.sendVillagerNotice(player, witness, line);
@@ -2985,6 +3020,10 @@ public final class ForcedDialogueService {
             if (!line.isBlank()) {
                 VillagerInteractionService.sendVillagerNotice(player, villager, line);
             }
+            if (isRoyaltyFor(level, villager, player)) {
+                sendRoyaltyAggroBypassNotice(player, villager);
+                return true;
+            }
             VillagerRetaliationHandler.forceAnger(villager, player);
             return true;
         }
@@ -3009,7 +3048,16 @@ public final class ForcedDialogueService {
                     level.dimension(),
                     villager.blockPosition().immutable(),
                     List.of(),
-                    level.getGameTime()
+                    level.getGameTime(),
+                    -1,
+                    "",
+                    false,
+                    Map.of(),
+                    List.of(villager.getUUID()),
+                    List.of(villager.getUUID()),
+                    false,
+                    List.of(),
+                    isRoyaltyFor(level, villager, player)
             ));
         } else if (!line.isBlank()) {
             VillagerInteractionService.sendVillagerNotice(player, villager, line);
@@ -3081,6 +3129,15 @@ public final class ForcedDialogueService {
         }
         ReputationSnapshot reputation = VillagerReputationManager.getReputationSnapshot(level, witness, player.getUUID());
         return definition.matchesReputation(reputation.value(), reputation.level());
+    }
+
+    private static boolean isRoyaltyFor(ServerLevel level, Villager villager, ServerPlayer player) {
+        return VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()
+                && VillagerReputationManager.isRoyalty(level, villager, player);
+    }
+
+    private static void sendRoyaltyAggroBypassNotice(ServerPlayer player, Villager villager) {
+        VillagerInteractionService.sendVillagerNotice(player, villager, ROYALTY_AGGRO_BYPASS_MESSAGE_KEY);
     }
 
     private static boolean triggerRetaliation(
@@ -3552,7 +3609,8 @@ public final class ForcedDialogueService {
             List<UUID> participantVillagerIds,
             List<UUID> spokenVillagerIds,
             boolean stolenItemsResolved,
-            List<String> disabledOptionIds) {
+            List<String> disabledOptionIds,
+            boolean royaltyAggroBypass) {
         private ForcedDialogueSession(
                 UUID villagerId,
                 ForcedDialogueDefinition definition,
@@ -3576,7 +3634,8 @@ public final class ForcedDialogueService {
                     List.of(villagerId),
                     List.of(villagerId),
                     false,
-                    List.of());
+                    List.of(),
+                    false);
         }
 
         private ForcedDialogueSession(
@@ -3603,7 +3662,8 @@ public final class ForcedDialogueService {
                     List.of(villagerId),
                     List.of(villagerId),
                     false,
-                    List.of());
+                    List.of(),
+                    false);
         }
 
         private ForcedDialogueSession(
@@ -3631,7 +3691,8 @@ public final class ForcedDialogueService {
                     List.of(villagerId),
                     List.of(villagerId),
                     false,
-                    List.of());
+                    List.of(),
+                    false);
         }
 
         private ForcedDialogueSession(
@@ -3661,7 +3722,8 @@ public final class ForcedDialogueService {
                     List.copyOf(participantVillagerIds),
                     List.copyOf(spokenVillagerIds),
                     false,
-                    List.of());
+                    List.of(),
+                    false);
         }
 
         private ForcedDialogueSession(
@@ -3713,7 +3775,8 @@ public final class ForcedDialogueService {
                     List.copyOf(participantVillagerIds),
                     List.copyOf(spokenVillagerIds),
                     false,
-                    List.of());
+                    List.of(),
+                    false);
         }
 
         private ForcedDialogueSession(
@@ -3741,7 +3804,8 @@ public final class ForcedDialogueService {
                     List.of(villagerId),
                     List.of(villagerId),
                     false,
-                    List.of());
+                    List.of(),
+                    false);
         }
     }
 

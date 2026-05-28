@@ -560,7 +560,7 @@ public final class VillagerRetaliationConfig {
                 .defineInRange("gossipReputationMultiplier", 0.25D, 0.0D, 1.0D);
         ROYALTY_THRESHOLD = BUILDER.comment("Reputation at or above this value is ROYALTY.")
                 .translation("villagerretaliation.configuration.reputation.royaltyThreshold")
-                .defineInRange("royaltyThreshold", 750, -10000, 10000);
+                .defineInRange("royaltyThreshold", 1000, -10000, 10000);
         REVERED_THRESHOLD = BUILDER.comment("Reputation at or above this value is REVERED unless ROYALTY.")
                 .translation("villagerretaliation.configuration.reputation.reveredThreshold")
                 .defineInRange("reveredThreshold", 400, -10000, 10000);
