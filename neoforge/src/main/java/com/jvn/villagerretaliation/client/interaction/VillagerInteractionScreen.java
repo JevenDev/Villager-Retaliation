@@ -4,6 +4,7 @@ import com.jvn.toucanlib.client.ToucanScrollbarThumb;
 import com.jvn.toucanlib.client.ToucanScrollState;
 import com.jvn.toucanlib.client.ToucanScrollbars;
 import com.jvn.villagerretaliation.client.profile.VillagerProfileClientCache;
+import com.jvn.villagerretaliation.client.reputation.VillagerReputationIconSet;
 import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
 import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
 import com.jvn.villagerretaliation.config.InteractionChatPosition;
@@ -752,7 +753,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         textElements.add(new VillagerInteractionExperimentalChrome.ExitTextElement(
                 this.professionName, right, professionY, INFO_SECONDARY_COLOR, detailScale, 45.0F, -10.0F, this.height + 82.0F, true));
         textElements.add(new VillagerInteractionExperimentalChrome.ExitTextElement(
-                reputationText(), right, reputationY, INFO_LABEL_COLOR, detailScale, 90.0F, -6.0F, this.height + 74.0F, true));
+                reputationText(), right, reputationY, reputationColor(), detailScale, 90.0F, -6.0F, this.height + 74.0F, true));
 
         int optionLeft = experimentalOptionsLeft();
         int textLeft = optionLeft + optionTextInset();
@@ -1408,6 +1409,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         return translate("info.reputation", this.reputation);
     }
 
+    private int reputationColor() {
+        Integer color = VillagerReputationIconSet.colorFor(this.reputationLevel).getColor();
+        return color == null ? INFO_LABEL_COLOR : 0xFF000000 | color;
+    }
+
     private String familyButtonText() {
         int count = this.familyTree.relationshipCount();
         return count <= 0 ? translate("family.tree") : translate("family.tree_count", count);
@@ -2059,6 +2065,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         @Override
         public int moodColor() {
             return VillagerInteractionScreen.moodColor(VillagerInteractionScreen.this.primaryMood);
+        }
+
+        @Override
+        public int reputationColor() {
+            return VillagerInteractionScreen.this.reputationColor();
         }
 
         @Override

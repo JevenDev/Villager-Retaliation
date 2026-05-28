@@ -524,7 +524,7 @@ final class VillagerInventoryContainer implements Container {
         return inventory;
     }
 
-    private static NonNullList<ItemStack> loadFullInventory(Villager villager) {
+    static NonNullList<ItemStack> loadFullInventory(Villager villager) {
         NonNullList<ItemStack> inventory = NonNullList.withSize(INVENTORY_SLOT_COUNT, ItemStack.EMPTY);
         int vanillaSlots = vanillaInventorySlots(villager);
         for (int slot = 0; slot < vanillaSlots; slot++) {
@@ -539,7 +539,7 @@ final class VillagerInventoryContainer implements Container {
         return inventory;
     }
 
-    private static void saveFullInventory(Villager villager, NonNullList<ItemStack> inventory) {
+    static void saveFullInventory(Villager villager, NonNullList<ItemStack> inventory) {
         int vanillaSlots = vanillaInventorySlots(villager);
         for (int slot = 0; slot < vanillaSlots; slot++) {
             villager.getInventory().setItem(slot, inventory.get(slot).copy());

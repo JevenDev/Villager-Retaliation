@@ -35,6 +35,7 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.DoubleValue MAX_FORCED_DIALOGUE_DISTANCE;
     public static final ModConfigSpec.EnumValue<ContainerForcedDialogueTrigger> CONTAINER_FORCED_DIALOGUE_TRIGGER;
     public static final ModConfigSpec.EnumValue<ContainerWatchMode> CONTAINER_WATCH_MODE;
+    public static final ModConfigSpec.BooleanValue SHOW_VILLAGER_NAME_TAGS;
     public static final ModConfigSpec.BooleanValue VILLAGER_REPUTATION_HOVER_TOOLTIP_REQUIRES_EMERALD;
     public static final ModConfigSpec.BooleanValue ENABLE_VILLAGER_DEATH_MESSAGES;
     public static final ModConfigSpec.BooleanValue ENABLE_WORLD_TEXT_NOTIFICATIONS;
@@ -236,6 +237,10 @@ public final class VillagerRetaliationConfig {
                 .comment("Combines same-type villager reputation tier notifications into one counted line.")
                 .translation("villagerretaliation.configuration.general.collapseReputationChangeNotifications")
                 .define("collapseReputationChangeNotifications", true);
+        SHOW_VILLAGER_NAME_TAGS = BUILDER
+                .comment("Renders generated villager names above their heads.")
+                .translation("villagerretaliation.configuration.general.showVillagerNameTags")
+                .define("showVillagerNameTags", true);
         VILLAGER_REPUTATION_HOVER_TOOLTIP_REQUIRES_EMERALD = BUILDER
                 .comment("Requires the player to hold an emerald before the villager reputation hover tooltip appears.")
                 .translation("villagerretaliation.configuration.general.villagerReputationHoverTooltipRequiresEmerald")

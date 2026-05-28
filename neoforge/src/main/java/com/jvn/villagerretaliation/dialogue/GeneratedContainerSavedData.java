@@ -12,8 +12,11 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.RandomizableContainer;
 import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.saveddata.SavedData;
 
 public class GeneratedContainerSavedData extends SavedData {
@@ -30,6 +33,15 @@ public class GeneratedContainerSavedData extends SavedData {
                 new SavedData.Factory<>(GeneratedContainerSavedData::new, GeneratedContainerSavedData::load, DataFixTypes.LEVEL),
                 DATA_NAME
         );
+    }
+
+    public static Optional<ResourceLocation> generatedContainerLootTable(ServerLevel level, BlockPos pos) {
+        ResourceLocation liveLootTable = liveContainerLootTable(level, pos);
+        if (liveLootTable != null) {
+            get(level).remember(level.dimension(), pos, liveLootTable);
+            return Optional.of(liveLootTable);
+        }
+        return get(level).lootTable(level.dimension(), pos);
     }
 
     public static GeneratedContainerSavedData load(CompoundTag tag, HolderLookup.Provider provider) {
@@ -78,6 +90,15 @@ public class GeneratedContainerSavedData extends SavedData {
         }
         this.lootTables.put(new GeneratedContainerKey(dimension, pos.immutable()), lootTable);
         setDirty();
+    }
+
+    private static ResourceLocation liveContainerLootTable(ServerLevel level, BlockPos pos) {
+        BlockEntity blockEntity = level.getBlockEntity(pos);
+        if (blockEntity instanceof RandomizableContainer container) {
+            ResourceKey<LootTable> lootTable = container.getLootTable();
+            return lootTable == null ? null : lootTable.location();
+        }
+        return null;
     }
 
     private record GeneratedContainerKey(ResourceKey<Level> dimension, BlockPos pos) {

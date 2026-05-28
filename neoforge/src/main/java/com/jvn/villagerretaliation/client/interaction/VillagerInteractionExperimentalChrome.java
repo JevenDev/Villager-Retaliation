@@ -227,7 +227,7 @@ final class VillagerInteractionExperimentalChrome {
                 context.reputationText(),
                 right,
                 reputationY,
-                context.infoLabelColor(),
+                context.reputationColor(),
                 detailScale,
                 textFadeInAlpha());
     }
@@ -512,6 +512,8 @@ final class VillagerInteractionExperimentalChrome {
         String reputationText();
 
         int moodColor();
+
+        int reputationColor();
 
         int infoSecondaryColor();
 

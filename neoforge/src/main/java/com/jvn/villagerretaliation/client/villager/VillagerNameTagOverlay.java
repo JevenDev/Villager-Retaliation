@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.client.villager;
 
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
@@ -14,7 +15,9 @@ public final class VillagerNameTagOverlay {
     }
 
     public static void onRenderNameTag(RenderNameTagEvent event) {
-        if (!(event.getEntity() instanceof AbstractVillager villager) || villager.hasCustomName()) {
+        if (!VillagerRetaliationConfig.SHOW_VILLAGER_NAME_TAGS.get()
+                || !(event.getEntity() instanceof AbstractVillager villager)
+                || villager.hasCustomName()) {
             return;
         }
 

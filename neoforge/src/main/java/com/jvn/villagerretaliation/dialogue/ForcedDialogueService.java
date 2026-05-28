@@ -52,7 +52,6 @@ import net.minecraft.world.level.block.AbstractChestBlock;
 import net.minecraft.world.level.block.BarrelBlock;
 import net.minecraft.world.level.block.ShulkerBoxBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -2678,23 +2677,7 @@ public final class ForcedDialogueService {
     }
 
     private static ResourceLocation generatedContainerLootTable(ServerLevel level, BlockPos pos) {
-        ResourceLocation liveLootTable = liveContainerLootTable(level, pos);
-        if (liveLootTable != null) {
-            GeneratedContainerSavedData.get(level).remember(level.dimension(), pos, liveLootTable);
-            return liveLootTable;
-        }
-        return GeneratedContainerSavedData.get(level)
-                .lootTable(level.dimension(), pos)
-                .orElse(null);
-    }
-
-    private static ResourceLocation liveContainerLootTable(ServerLevel level, BlockPos pos) {
-        BlockEntity blockEntity = level.getBlockEntity(pos);
-        if (blockEntity instanceof RandomizableContainer container) {
-            ResourceKey<LootTable> lootTable = container.getLootTable();
-            return lootTable == null ? null : lootTable.location();
-        }
-        return null;
+        return GeneratedContainerSavedData.generatedContainerLootTable(level, pos).orElse(null);
     }
 
     private static void unpackContainerLootTable(ServerLevel level, BlockPos pos, ServerPlayer player) {

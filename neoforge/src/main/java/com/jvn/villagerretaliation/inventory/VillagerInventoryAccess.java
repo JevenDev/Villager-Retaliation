@@ -76,4 +76,8 @@ public final class VillagerInventoryAccess {
     public static boolean hasOpenInventory(Villager villager) {
         return VillagerInventoryContainer.hasOpenInventory(villager);
     }
+
+    public static void maybeOffloadInventoryOverflow(Villager villager) {
+        VillagerInventoryOverflowService.maybeOffloadInventoryOverflow(villager);
+    }
 }
