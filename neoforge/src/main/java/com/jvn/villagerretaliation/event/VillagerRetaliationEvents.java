@@ -58,6 +58,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameRules;
+import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent;
@@ -474,6 +475,7 @@ public final class VillagerRetaliationEvents {
         Entity attacker = event.getSource().getEntity();
         if (deceased instanceof AbstractVillager villager) {
             VillageEventMemory.remember(level, VillageEventMemory.EventTag.VILLAGER_DEATH, villager.blockPosition(), villager, attacker);
+            rememberWitnessedPlayerVillagerKill(level, villager, event);
         } else if (deceased instanceof IronGolem golem) {
             VillageEventMemory.remember(level, VillageEventMemory.EventTag.GOLEM_KILLED, golem.blockPosition(), golem, attacker);
         } else if (deceased instanceof Enemy) {
@@ -490,6 +492,42 @@ public final class VillagerRetaliationEvents {
                 }
             }
         }
+    }
+
+    private static void rememberWitnessedPlayerVillagerKill(
+            ServerLevel level,
+            AbstractVillager killed,
+            LivingDeathEvent event) {
+        Player player = playerResponsibleForVillagerDeath(killed, event);
+        if (player == null) {
+            return;
+        }
+        AABB area = killed.getBoundingBox().inflate(VillagerRetaliationConfig.WITNESS_RADIUS.get());
+        for (AbstractVillager witness : level.getEntitiesOfClass(AbstractVillager.class, area)) {
+            if (witness == killed || !witness.isAlive()) {
+                continue;
+            }
+            if (VillagerRetaliationConfig.VANILLA_GOSSIP_REQUIRES_LINE_OF_SIGHT.get()
+                    && !witness.hasLineOfSight(killed)) {
+                continue;
+            }
+            VillageEventMemory.rememberPlayerKilledVillager(
+                    level,
+                    killed.blockPosition(),
+                    witness,
+                    player,
+                    VillagerPresetNameRegistry.resolveDisplayName(killed).getString());
+        }
+    }
+
+    private static Player playerResponsibleForVillagerDeath(AbstractVillager killed, LivingDeathEvent event) {
+        if (event.getSource().getEntity() instanceof Player player) {
+            return player;
+        }
+        if (ToucanHazardAttribution.resolveVanillaHazardOwner(killed, event.getSource()).orElse(null) instanceof Player player) {
+            return player;
+        }
+        return killed.getKillCredit() instanceof Player player ? player : null;
     }
 
     private static void rememberWeatherEventNearVillager(Villager villager) {

@@ -531,14 +531,25 @@ public record DialogueContext(
             latest = Math.max(latest, this.lastBrokenBedGameTime);
         }
         UUID playerId = this.player.getUUID();
+        UUID villagerId = this.villager.getUUID();
         for (VillageEventMemory.MemoryEvent event : this.recentEvents) {
-            if ((event.tag() == VillageEventMemory.EventTag.PLAYER_ATTACKED_VILLAGER
-                    || event.tag() == VillageEventMemory.EventTag.PLAYER_CONTAINER_THEFT)
-                    && playerId.equals(event.playerId())) {
+            if (!playerId.equals(event.playerId())) {
+                continue;
+            }
+            if (event.tag() == VillageEventMemory.EventTag.PLAYER_CONTAINER_THEFT
+                    && villagerId.equals(event.sourceId())) {
+                latest = Math.max(latest, event.gameTime());
+            } else if (event.tag() == VillageEventMemory.EventTag.PLAYER_KILLED_VILLAGER
+                    && (villagerId.equals(event.sourceId()) || isFamilyKillMemory(event))) {
                 latest = Math.max(latest, event.gameTime());
             }
         }
         return latest;
+    }
+
+    private boolean isFamilyKillMemory(VillageEventMemory.MemoryEvent event) {
+        return event.killedVillager() != null
+                && this.familyTree.hasDeceasedFamilyNamed(event.killedVillager().villagerName());
     }
 
     public boolean hasRecentPositiveDialogueMoodMemory() {

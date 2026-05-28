@@ -599,6 +599,7 @@ village_fire
 night_attack
 raid
 villager_death
+player_killed_villager
 villager_attacked
 player_attacked_villager
 player_defended_village

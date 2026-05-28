@@ -45,6 +45,7 @@ public final class VillageEventMemory {
                 null,
                 null,
                 null,
+                null,
                 null
         ));
     }
@@ -67,6 +68,7 @@ public final class VillageEventMemory {
                 new GiftMemory(villagerName, itemName, reaction, reputationValue),
                 null,
                 null,
+                null,
                 null
         ));
     }
@@ -86,7 +88,8 @@ public final class VillageEventMemory {
                 null,
                 null,
                 null,
-                new CuredVillagerMemory(villagerName)
+                new CuredVillagerMemory(villagerName),
+                null
         ));
     }
 
@@ -110,7 +113,28 @@ public final class VillageEventMemory {
                 null,
                 new ContainerTheftMemory(villagerName, itemName, itemId, itemCount, containerName, lootTable),
                 null,
+                null,
                 null
+        ));
+    }
+
+    public static void rememberPlayerKilledVillager(
+            ServerLevel level,
+            BlockPos pos,
+            Entity witness,
+            Entity player,
+            String killedVillagerName) {
+        remember(level, new MemoryEvent(
+                EventTag.PLAYER_KILLED_VILLAGER,
+                level.getGameTime(),
+                pos.immutable(),
+                witness == null ? null : witness.getUUID(),
+                player == null ? null : player.getUUID(),
+                null,
+                null,
+                null,
+                null,
+                new KilledVillagerMemory(killedVillagerName)
         ));
     }
 
@@ -138,6 +162,7 @@ public final class VillageEventMemory {
                                 ? ""
                                 : BuiltInRegistries.ENTITY_TYPE.getKey(target.getType()).toString()
                 ),
+                null,
                 null
         ));
     }
@@ -410,6 +435,7 @@ public final class VillageEventMemory {
         NIGHT_ATTACK,
         RAID,
         VILLAGER_DEATH,
+        PLAYER_KILLED_VILLAGER,
         VILLAGER_ATTACKED,
         BABY_VILLAGER_ATTACKED,
         PLAYER_ATTACKED_VILLAGER,
@@ -448,7 +474,8 @@ public final class VillageEventMemory {
             GiftMemory gift,
             ContainerTheftMemory containerTheft,
             RetaliationMemory retaliation,
-            CuredVillagerMemory curedVillager) {
+            CuredVillagerMemory curedVillager,
+            KilledVillagerMemory killedVillager) {
     }
 
     public record GiftMemory(String villagerName, String itemName, VillagerGiftPreferences.GiftReaction reaction, int reputationValue) {
@@ -470,6 +497,9 @@ public final class VillageEventMemory {
     }
 
     public record CuredVillagerMemory(String villagerName) {
+    }
+
+    public record KilledVillagerMemory(String villagerName) {
     }
 
     private record RecentQueryKey(

@@ -107,6 +107,15 @@ public record VillagerFamilyTreeSnapshot(
         return allKnownMembers().stream().anyMatch(member -> !member.alive());
     }
 
+    public boolean hasDeceasedFamilyNamed(String name) {
+        if (name == null || name.isBlank()) {
+            return hasDeceasedFamily();
+        }
+        String normalized = name.trim();
+        return allKnownMembers().stream()
+                .anyMatch(member -> !member.alive() && member.name().equalsIgnoreCase(normalized));
+    }
+
     public int relationshipCount() {
         int count = this.parents.size()
                 + this.stepParents.size()

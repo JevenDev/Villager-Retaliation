@@ -31,6 +31,7 @@ Enum values are case-insensitive in code, but lowercase snake case is the recomm
 | `night_attack` | A hostile mob attacks a villager at night, or a hostile mob dies at night nearby. | Night-safety comments. |
 | `raid` | A raider hurts a villager during an active raid, or a raider dies during an active raid. | Raid fear, aftermath, warnings. |
 | `villager_death` | A villager or wandering trader dies. | Mourning, blame, shock. |
+| `player_killed_villager` | A player kills a villager and another villager witnesses it. | Witness-specific blame, family apology hooks, and gossip after player-caused death. |
 | `villager_attacked` | A villager or wandering trader takes damage. | Recent harm reports. |
 | `player_attacked_villager` | A player damages a villager or wandering trader. | Direct accusations and apology hooks. |
 | `player_defended_village` | A player kills a hostile mob. | Thanks after general defense. |
