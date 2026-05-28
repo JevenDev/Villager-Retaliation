@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.client.interaction;
 
+import com.jvn.toucanlib.client.ToucanScrollState;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import net.minecraft.client.gui.Font;
 import net.minecraft.util.Mth;
@@ -87,7 +88,7 @@ final class VillagerInteractionLayoutMetrics {
     }
 
     static float maxOptionScroll(float optionContentHeight, int optionViewportHeight) {
-        return Math.max(0.0F, optionContentHeight - optionViewportHeight);
+        return ToucanScrollState.maxScroll(optionContentHeight, optionViewportHeight);
     }
 
     static int skillsPanelHeight(Font font) {

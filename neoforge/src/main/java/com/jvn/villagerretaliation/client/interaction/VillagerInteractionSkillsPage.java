@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.client.interaction;
 
+import com.jvn.toucanlib.client.ToucanGuiText;
 import com.jvn.villagerretaliation.client.profile.VillagerProfileClientCache;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.skill.VillagerSkillRank;
@@ -213,7 +214,7 @@ final class VillagerInteractionSkillsPage {
                 }
             }
 
-            String label = fitText(context.font(), context.localizedSkill(skill), columnWidth);
+            String label = ToucanGuiText.fitText(context.font(), context.localizedSkill(skill), columnWidth);
             graphics.drawString(context.font(), label, rowLeft, y, context.infoSecondaryColor(), false);
             renderSkillBar(context, graphics, rowLeft, y + context.font().lineHeight + 1, columnWidth, skillValue.value(), skillValue.rank(), rowHovered);
         }
@@ -273,19 +274,6 @@ final class VillagerInteractionSkillsPage {
             case EXPERT -> 0xFFFFD21F;
             case MASTER -> 0xFFFF3FEA;
         };
-    }
-
-    private static String fitText(Font font, String text, int maxWidth) {
-        if (font.width(text) <= maxWidth) {
-            return text;
-        }
-
-        String suffix = "...";
-        int suffixWidth = font.width(suffix);
-        if (maxWidth <= suffixWidth) {
-            return font.plainSubstrByWidth(text, maxWidth);
-        }
-        return font.plainSubstrByWidth(text, maxWidth - suffixWidth) + suffix;
     }
 
     private static int wrappedInfoLineBottom(Font font, Component component, int top, int width, float scale) {

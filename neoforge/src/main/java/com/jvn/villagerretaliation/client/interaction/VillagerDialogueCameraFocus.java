@@ -1,10 +1,12 @@
 package com.jvn.villagerretaliation.client.interaction;
 
+import com.jvn.toucanlib.client.camera.ToucanCameraBasis;
+import com.jvn.toucanlib.client.camera.ToucanCameraFov;
+import com.jvn.toucanlib.client.camera.ToucanCameraTargetPoints;
+import com.jvn.toucanlib.client.camera.ToucanCameraTurnSmoother;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import net.minecraft.client.Minecraft;
-import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.ViewportEvent;
@@ -18,10 +20,7 @@ public final class VillagerDialogueCameraFocus {
     private static final double CAMERA_DISTANCE_ZOOM_BONUS = 0.10D;
     private static final double CAMERA_MAX_ZOOM_AMOUNT = 0.45D;
 
-    private static boolean cameraTurnInitialized;
-    private static float cameraTurnYaw;
-    private static float cameraTurnPitch;
-    private static double lastCameraTurnPartialTick;
+    private static final ToucanCameraTurnSmoother TURN_SMOOTHER = new ToucanCameraTurnSmoother(CAMERA_TURN_FIRST_FRAME_DELTA_TICKS);
 
     private VillagerDialogueCameraFocus() {
     }
@@ -39,12 +38,10 @@ public final class VillagerDialogueCameraFocus {
 
         int transitionTicks = Math.max(1, VillagerRetaliationConfig.DIALOGUE_CAMERA_TRANSITION_TICKS.get());
         float activeProgress = (ClientVillagerConversationState.cameraFocusTicks() + (float) event.getPartialTick()) / transitionTicks;
-        double progress = Minecraft.getInstance().screen instanceof VillagerInteractionScreen
+        double progress = Minecraft.getInstance().screen instanceof VillagerInteractionSessionScreen
                 ? activeProgress
                 : ClientVillagerConversationState.cameraReleaseProgress((float) event.getPartialTick());
-        double easedProgress = smoothstep(Mth.clamp(progress, 0.0D, 1.0D));
-        double zoomMultiplier = 1.0D - zoomAmount * easedProgress;
-        event.setFOV(event.getFOV() * zoomMultiplier);
+        event.setFOV(ToucanCameraFov.zoomedFov(event.getFOV(), zoomAmount, progress));
     }
 
     private static double distanceAdjustedZoomAmount(ViewportEvent event) {
@@ -59,12 +56,15 @@ public final class VillagerDialogueCameraFocus {
             return zoomAmount;
         }
 
-        double distance = event.getCamera().getPosition().distanceTo(targetPosition(villager));
-        double distanceProgress = Mth.clamp(
-                (distance - CAMERA_DISTANCE_ZOOM_START) / (CAMERA_DISTANCE_ZOOM_END - CAMERA_DISTANCE_ZOOM_START),
-                0.0D,
-                1.0D);
-        return Mth.clamp(zoomAmount + CAMERA_DISTANCE_ZOOM_BONUS * smoothstep(distanceProgress), 0.0D, CAMERA_MAX_ZOOM_AMOUNT);
+        double distance = event.getCamera().getPosition().distanceTo(
+                ToucanCameraTargetPoints.focusPoint(villager, (float) event.getPartialTick()));
+        return ToucanCameraFov.distanceAdjustedZoomAmount(
+                zoomAmount,
+                distance,
+                CAMERA_DISTANCE_ZOOM_START,
+                CAMERA_DISTANCE_ZOOM_END,
+                CAMERA_DISTANCE_ZOOM_BONUS,
+                CAMERA_MAX_ZOOM_AMOUNT);
     }
 
     public static void onClientTick(ClientTickEvent.Post event) {
@@ -91,60 +91,29 @@ public final class VillagerDialogueCameraFocus {
         }
 
         Vec3 from = event.getCamera().getPosition();
-        Vec3 to = targetPosition(villager);
-        Vec3 delta = to.subtract(from);
-        double horizontalDistance = Math.sqrt(delta.x * delta.x + delta.z * delta.z);
-        if (horizontalDistance < 1.0E-4D) {
-            resetCameraTurn();
-            return;
-        }
-
-        float targetYaw = (float) (Mth.atan2(delta.z, delta.x) * Mth.RAD_TO_DEG) - 90.0F;
-        float targetPitch = (float) -(Mth.atan2(delta.y, horizontalDistance) * Mth.RAD_TO_DEG);
-        updateCameraTurn(event, targetYaw, targetPitch);
-        event.setYaw(cameraTurnYaw);
-        event.setPitch(cameraTurnPitch);
-        minecraft.player.setYRot(cameraTurnYaw);
-        minecraft.player.setXRot(cameraTurnPitch);
-    }
-
-    private static void updateCameraTurn(ViewportEvent.ComputeCameraAngles event, float targetYaw, float targetPitch) {
-        boolean firstFrame = !cameraTurnInitialized;
-        if (!cameraTurnInitialized) {
-            cameraTurnYaw = event.getYaw();
-            cameraTurnPitch = event.getPitch();
-            lastCameraTurnPartialTick = event.getPartialTick();
-            cameraTurnInitialized = true;
-        }
-
-        double deltaTicks = firstFrame
-                ? CAMERA_TURN_FIRST_FRAME_DELTA_TICKS
-                : event.getPartialTick() - lastCameraTurnPartialTick;
-        if (!firstFrame && deltaTicks < 0.0D) {
-            deltaTicks += 1.0D;
-        }
-        deltaTicks = Mth.clamp(deltaTicks, 0.0D, 1.0D);
-        lastCameraTurnPartialTick = event.getPartialTick();
-
+        Vec3 to = ToucanCameraTargetPoints.focusPoint(villager, (float) event.getPartialTick());
+        ToucanCameraBasis.Rotation targetRotation = ToucanCameraBasis.rotationToTarget(
+                from,
+                to,
+                event.getYaw(),
+                event.getPitch());
         int transitionTicks = Math.max(1, VillagerRetaliationConfig.DIALOGUE_CAMERA_TRANSITION_TICKS.get());
-        float tickLerp = Mth.clamp(1.0F / (transitionTicks * 2.0F), CAMERA_TURN_MIN_TICK_LERP, CAMERA_TURN_MAX_TICK_LERP);
-        float frameLerp = (float) (1.0D - Math.pow(1.0D - tickLerp, deltaTicks));
-        cameraTurnYaw = Mth.rotLerp(frameLerp, cameraTurnYaw, targetYaw);
-        cameraTurnPitch = Mth.rotLerp(frameLerp, cameraTurnPitch, targetPitch);
+        ToucanCameraBasis.Rotation rotation = TURN_SMOOTHER.update(
+                event.getYaw(),
+                event.getPitch(),
+                targetRotation.yaw(),
+                targetRotation.pitch(),
+                event.getPartialTick(),
+                transitionTicks,
+                CAMERA_TURN_MIN_TICK_LERP,
+                CAMERA_TURN_MAX_TICK_LERP);
+        event.setYaw(rotation.yaw());
+        event.setPitch(rotation.pitch());
+        minecraft.player.setYRot(rotation.yaw());
+        minecraft.player.setXRot(rotation.pitch());
     }
 
     private static void resetCameraTurn() {
-        cameraTurnInitialized = false;
-    }
-
-    private static Vec3 targetPosition(Entity entity) {
-        if (entity instanceof LivingEntity livingEntity) {
-            return livingEntity.getEyePosition();
-        }
-        return entity.position().add(0.0D, entity.getBbHeight() * 0.65D, 0.0D);
-    }
-
-    private static double smoothstep(double value) {
-        return value * value * (3.0D - 2.0D * value);
+        TURN_SMOOTHER.reset();
     }
 }

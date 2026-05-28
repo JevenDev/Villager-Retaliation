@@ -1,5 +1,8 @@
 package com.jvn.villagerretaliation.client.interaction;
 
+import com.jvn.toucanlib.client.ToucanScrollbarThumb;
+import com.jvn.toucanlib.client.ToucanScrollState;
+import com.jvn.toucanlib.client.ToucanScrollbars;
 import com.jvn.villagerretaliation.client.profile.VillagerProfileClientCache;
 import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
 import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
@@ -106,6 +109,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private VillagerMood primaryMood;
     private boolean followingPlayer;
     private final boolean forcedDialogue;
+    private boolean forceCameraTowardsVillager;
     private final List<DialogueOption> options = new ArrayList<>();
     private final List<DialogueOptionDefinition> dialogueOptions = new ArrayList<>();
     private final List<String> knownLikedGiftNames = new ArrayList<>();
@@ -171,6 +175,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.primaryMood = primaryMood == null ? VillagerMood.NEUTRAL : primaryMood;
         this.followingPlayer = followingPlayer;
         this.forcedDialogue = forcedDialogue;
+        this.forceCameraTowardsVillager = forceCameraTowardsVillager;
         this.dialogueOptions.addAll(dialogueOptions);
         this.knownLikedGiftNames.addAll(knownLikedGiftNames);
         this.knownDislikedGiftNames.addAll(knownDislikedGiftNames);
@@ -179,6 +184,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if (forcedDialogue) {
             this.page = DialoguePage.TALK;
         }
+        syncCameraFocusState();
         VillagerInteractionExperimentalChrome.resetAnimation();
     }
 
@@ -194,6 +200,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     @Override
     public void tick() {
+        syncCameraFocusState();
         ClientVillagerConversationState.tickCameraFocus();
         applyChatWidthOverride();
     }
@@ -219,7 +226,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.reputationLevel = reputationLevel;
         this.mood = mood;
         this.primaryMood = primaryMood == null ? VillagerMood.NEUTRAL : primaryMood;
-        ClientVillagerConversationState.setForceCameraTowardsVillager(forceCameraTowardsVillager);
+        this.forceCameraTowardsVillager = forceCameraTowardsVillager;
+        syncCameraFocusState();
         this.dialogueOptions.clear();
         this.dialogueOptions.addAll(dialogueOptions);
         this.knownLikedGiftNames.clear();
@@ -806,7 +814,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private void addScrollbarExitFadeRects(
             List<VillagerInteractionExperimentalChrome.ExitFadeRectElement> rectElements,
-            VillagerInteractionUiUtil.ScrollbarThumb scrollbarThumb,
+            ToucanScrollbarThumb scrollbarThumb,
             float currentScroll,
             float maxScroll) {
         if (scrollbarThumb == null) {
@@ -1092,13 +1100,13 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private boolean tryBeginScrollbarDrag(double mouseX, double mouseY) {
-        VillagerInteractionUiUtil.ScrollbarThumb scrollbarThumb = scrollbarThumb();
+        ToucanScrollbarThumb scrollbarThumb = scrollbarThumb();
         if (scrollbarThumb == null || !scrollbarThumb.contains(mouseX, mouseY)) {
             return false;
         }
 
         this.draggingScrollbar = true;
-        this.scrollbarDragOffset = (float) mouseY - scrollbarThumb.top();
+        this.scrollbarDragOffset = ToucanScrollbars.dragOffset(mouseY, scrollbarThumb);
         return true;
     }
 
@@ -1107,13 +1115,13 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             return false;
         }
 
-        VillagerInteractionUiUtil.ScrollbarThumb scrollbarThumb = skillInfoScrollbarThumb();
+        ToucanScrollbarThumb scrollbarThumb = skillInfoScrollbarThumb();
         if (scrollbarThumb == null || !scrollbarThumb.contains(mouseX, mouseY)) {
             return false;
         }
 
         this.draggingSkillScrollbar = true;
-        this.skillScrollbarDragOffset = (float) mouseY - scrollbarThumb.top();
+        this.skillScrollbarDragOffset = ToucanScrollbars.dragOffset(mouseY, scrollbarThumb);
         return true;
     }
 
@@ -1138,39 +1146,25 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private boolean dragScrollbar(double mouseY) {
-        VillagerInteractionUiUtil.ScrollbarThumb scrollbarThumb = scrollbarThumb();
+        ToucanScrollbarThumb scrollbarThumb = scrollbarThumb();
         if (scrollbarThumb == null) {
             this.draggingScrollbar = false;
             return false;
         }
 
-        float trackTravel = scrollbarThumb.trackTravel();
-        if (trackTravel <= 0.0F) {
-            setTargetOptionScroll(0.0F);
-        } else {
-            float thumbTop = (float) mouseY - this.scrollbarDragOffset;
-            float ratio = Mth.clamp((thumbTop - scrollbarThumb.viewportTop()) / trackTravel, 0.0F, 1.0F);
-            setTargetOptionScroll(maxOptionScroll() * ratio);
-        }
+        setTargetOptionScroll(ToucanScrollbars.scrollFromThumbDrag(mouseY, this.scrollbarDragOffset, scrollbarThumb, maxOptionScroll()));
         this.state.jumpOptionScrollToTarget();
         return true;
     }
 
     private boolean dragSkillScrollbar(double mouseY) {
-        VillagerInteractionUiUtil.ScrollbarThumb scrollbarThumb = skillInfoScrollbarThumb();
+        ToucanScrollbarThumb scrollbarThumb = skillInfoScrollbarThumb();
         if (scrollbarThumb == null) {
             this.draggingSkillScrollbar = false;
             return false;
         }
 
-        float trackTravel = scrollbarThumb.trackTravel();
-        if (trackTravel <= 0.0F) {
-            setTargetSkillScroll(0.0F);
-        } else {
-            float thumbTop = (float) mouseY - this.skillScrollbarDragOffset;
-            float ratio = Mth.clamp((thumbTop - scrollbarThumb.viewportTop()) / trackTravel, 0.0F, 1.0F);
-            setTargetSkillScroll(maxSkillScroll() * ratio);
-        }
+        setTargetSkillScroll(ToucanScrollbars.scrollFromThumbDrag(mouseY, this.skillScrollbarDragOffset, scrollbarThumb, maxSkillScroll()));
         this.skillScroll = this.targetSkillScroll;
         return true;
     }
@@ -1287,7 +1281,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private float maxSkillScroll() {
-        return Math.max(0.0F, Mth.floor(optionTextYOffset()) + skillsInfoContentHeight() - skillInfoViewportHeight());
+        return ToucanScrollState.maxScroll(Mth.floor(optionTextYOffset()) + skillsInfoContentHeight(), skillInfoViewportHeight());
     }
 
     private void setTargetSkillScroll(float scroll) {
@@ -1600,37 +1594,20 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void renderScrollbar(GuiGraphics graphics) {
-        VillagerInteractionUiUtil.ScrollbarThumb scrollbarThumb = scrollbarThumb();
+        ToucanScrollbarThumb scrollbarThumb = scrollbarThumb();
         renderScrollbar(graphics, scrollbarThumb, this.state.optionScroll(), maxOptionScroll());
     }
 
     private void renderScrollbar(
             GuiGraphics graphics,
-            VillagerInteractionUiUtil.ScrollbarThumb scrollbarThumb,
+            ToucanScrollbarThumb scrollbarThumb,
             float currentScroll,
             float maxScroll) {
-        if (scrollbarThumb == null) {
-            return;
-        }
-
-        boolean canScrollUp = currentScroll > 0.75F;
-        boolean canScrollDown = currentScroll < maxScroll - 0.75F;
-        int fadeLength = Math.min(8, Math.max(3, scrollbarThumb.height() / 3));
-
-        for (int y = scrollbarThumb.top(); y < scrollbarThumb.bottom(); y++) {
-            float alphaFactor = 1.0F;
-            if (canScrollUp && y < scrollbarThumb.top() + fadeLength) {
-                alphaFactor = Math.min(alphaFactor, (y - scrollbarThumb.top() + 1.0F) / fadeLength);
-            }
-            if (canScrollDown && y >= scrollbarThumb.bottom() - fadeLength) {
-                alphaFactor = Math.min(alphaFactor, (scrollbarThumb.bottom() - y) / (float) fadeLength);
-            }
-            float chromeAlpha = isExperimentalUi() ? VillagerInteractionExperimentalChrome.chromeAlpha() : 1.0F;
-            graphics.fill(scrollbarThumb.left(), y, scrollbarThumb.right(), y + 1, VillagerInteractionUiUtil.withAlpha(0xBFFFFFFF, alphaFactor * chromeAlpha));
-        }
+        float chromeAlpha = isExperimentalUi() ? VillagerInteractionExperimentalChrome.chromeAlpha() : 1.0F;
+        ToucanScrollbars.renderFadedThumb(graphics, scrollbarThumb, currentScroll, maxScroll, 0xBFFFFFFF, chromeAlpha);
     }
 
-    private VillagerInteractionUiUtil.ScrollbarThumb scrollbarThumb() {
+    private ToucanScrollbarThumb scrollbarThumb() {
         float maxScroll = maxOptionScroll();
         int viewportTop = optionsTop();
         int viewportHeight = optionViewportHeight();
@@ -1647,7 +1624,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         );
     }
 
-    private VillagerInteractionUiUtil.ScrollbarThumb skillInfoScrollbarThumb() {
+    private ToucanScrollbarThumb skillInfoScrollbarThumb() {
         float maxScroll = maxSkillScroll();
         int viewportTop = skillInfoViewportTop();
         int viewportHeight = skillInfoViewportHeight();
@@ -1705,6 +1682,23 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if (entity instanceof Villager villager) {
             villager.getLookControl().setLookAt(minecraft.player, 30.0F, 30.0F);
         }
+    }
+
+    private void syncCameraFocusState() {
+        boolean forceCamera = cameraShouldForceTowardsVillager();
+        if (!ClientVillagerConversationState.active()) {
+            ClientVillagerConversationState.start(this.villagerEntityId, forceCamera);
+            return;
+        }
+        if (ClientVillagerConversationState.focusedVillagerEntityId() != this.villagerEntityId) {
+            ClientVillagerConversationState.retarget(this.villagerEntityId, forceCamera);
+            return;
+        }
+        ClientVillagerConversationState.setForceCameraTowardsVillager(forceCamera);
+    }
+
+    private boolean cameraShouldForceTowardsVillager() {
+        return this.forcedDialogue || this.forceCameraTowardsVillager;
     }
 
     private static int moodColor(VillagerMood mood) {

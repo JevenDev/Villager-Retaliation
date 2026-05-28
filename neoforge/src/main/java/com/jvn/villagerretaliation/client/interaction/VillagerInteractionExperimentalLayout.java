@@ -1,6 +1,6 @@
 package com.jvn.villagerretaliation.client.interaction;
 
-import net.minecraft.client.Minecraft;
+import com.jvn.toucanlib.client.ToucanGuiScale;
 import net.minecraft.util.Mth;
 
 final class VillagerInteractionExperimentalLayout {
@@ -19,16 +19,15 @@ final class VillagerInteractionExperimentalLayout {
     }
 
     static float scaleFactor() {
-        double guiScale = Minecraft.getInstance().getWindow().getGuiScale();
-        return (float) (guiScale <= 0.0D ? 1.0D : BASE_GUI_SCALE / guiScale);
+        return ToucanGuiScale.scaleFactor(BASE_GUI_SCALE);
     }
 
     static int unit(int guiScaleThreeValue) {
-        return unitAtLeast(guiScaleThreeValue, 0);
+        return ToucanGuiScale.unit(guiScaleThreeValue, BASE_GUI_SCALE);
     }
 
     static int unitAtLeast(int guiScaleThreeValue, int minimum) {
-        return Math.max(minimum, Math.round(guiScaleThreeValue * scaleFactor()));
+        return ToucanGuiScale.unitAtLeast(guiScaleThreeValue, minimum, BASE_GUI_SCALE);
     }
 
     static int optionsLeft(int screenWidth, int optionWidth) {

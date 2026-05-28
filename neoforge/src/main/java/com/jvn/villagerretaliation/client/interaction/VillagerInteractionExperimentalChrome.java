@@ -1,5 +1,8 @@
 package com.jvn.villagerretaliation.client.interaction;
 
+import com.jvn.toucanlib.client.ToucanColors;
+import com.jvn.toucanlib.client.ToucanEasing;
+import com.jvn.toucanlib.client.ToucanGuiText;
 import com.mojang.blaze3d.systems.RenderSystem;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -123,7 +126,7 @@ final class VillagerInteractionExperimentalChrome {
                 continue;
             }
 
-            int color = multiplyAlpha(layer.color(), state.alpha());
+            int color = ToucanColors.multiplyAlpha(layer.color(), state.alpha());
             float[] vertices = transformedVertices(layer.vertices(), width, height, state.offsetX(), state.offsetY(), state.scale());
             if (vertices.length == 8) {
                 fillTriangle(graphics, width, height, vertices[0], vertices[1], vertices[2], vertices[3], vertices[4], vertices[5], color);
@@ -271,13 +274,7 @@ final class VillagerInteractionExperimentalChrome {
             return;
         }
 
-        int animatedColor = multiplyAlpha(color, alpha);
-        float scaledWidth = font.width(text) * scale;
-        graphics.pose().pushPose();
-        graphics.pose().translate(right - scaledWidth, y, 0.0F);
-        graphics.pose().scale(scale, scale, 1.0F);
-        graphics.drawString(font, text, 0, 0, animatedColor, false);
-        graphics.pose().popPose();
+        ToucanGuiText.drawRightAlignedScaledString(graphics, font, text, right, y, ToucanColors.multiplyAlpha(color, alpha), scale);
     }
 
     private static void renderExitText(GuiGraphics graphics, float exitElapsedMillis) {
@@ -298,7 +295,7 @@ final class VillagerInteractionExperimentalChrome {
         }
 
         for (ExitTextElement element : exitTextElements) {
-            int color = multiplyAlpha(element.color(), fade);
+            int color = ToucanColors.multiplyAlpha(element.color(), fade);
             float x = element.x();
             if (element.rightAligned()) {
                 x -= font.width(element.text()) * element.scale();
@@ -326,7 +323,7 @@ final class VillagerInteractionExperimentalChrome {
                     element.top(),
                     element.right(),
                     element.bottom(),
-                    multiplyAlpha(element.color(), alpha * element.alpha()));
+                    ToucanColors.multiplyAlpha(element.color(), alpha * element.alpha()));
         }
         for (ExitFadeTextElement element : exitFadeTextElements) {
             if (!shouldDrawText(alpha)) {
@@ -335,7 +332,7 @@ final class VillagerInteractionExperimentalChrome {
             graphics.pose().pushPose();
             graphics.pose().translate(element.x(), element.y(), 0.0F);
             graphics.pose().scale(element.scale(), element.scale(), 1.0F);
-            graphics.drawString(font, element.text(), 0, 0, multiplyAlpha(element.color(), alpha), false);
+            graphics.drawString(font, element.text(), 0, 0, ToucanColors.multiplyAlpha(element.color(), alpha), false);
             graphics.pose().popPose();
         }
     }
@@ -353,7 +350,7 @@ final class VillagerInteractionExperimentalChrome {
     }
 
     static float textFadeInAlpha() {
-        return smoothstep(textEntranceProgress(0.0F, TEXT_FADE_IN_DURATION_MILLIS));
+        return ToucanEasing.smoothstep(textEntranceProgress(0.0F, TEXT_FADE_IN_DURATION_MILLIS));
     }
 
     static float backdropElapsedMillis() {
@@ -418,8 +415,8 @@ final class VillagerInteractionExperimentalChrome {
                 return LayerState.EMPTY;
             }
 
-            float easedProgress = easeOutBack(progress);
-            float settle = easeOutCubic(progress);
+            float easedProgress = ToucanEasing.easeOutBack(progress, 1.45F);
+            float settle = ToucanEasing.easeOutCubic(progress);
             float alpha = Mth.clamp(progress * 1.35F, 0.0F, 1.0F);
             float offsetX = this.startXRatio * width * (1.0F - easedProgress);
             float offsetY = this.startYRatio * height * (1.0F - easedProgress);
@@ -429,7 +426,7 @@ final class VillagerInteractionExperimentalChrome {
                 offsetX += this.startXRatio * width * 0.012F * idlePulse;
                 offsetY += this.startYRatio * height * 0.012F * idlePulse;
             }
-            float mouseSettle = easeOutCubic(normalizedProgress(elapsedMillis, this.delayMillis + this.durationMillis, 280.0F));
+            float mouseSettle = ToucanEasing.easeOutCubic(normalizedProgress(elapsedMillis, this.delayMillis + this.durationMillis, 280.0F));
             float mouseXRatio = width <= 0 ? 0.0F : Mth.clamp(mouseX / (float) width, 0.0F, 1.0F) * 2.0F - 1.0F;
             float mouseYRatio = height <= 0 ? 0.0F : Mth.clamp(mouseY / (float) height, 0.0F, 1.0F) * 2.0F - 1.0F;
             float layerDepth = Math.max(0.45F, Math.abs(this.startXRatio) + Math.abs(this.startYRatio));
@@ -439,7 +436,7 @@ final class VillagerInteractionExperimentalChrome {
             if (exitElapsedMillis >= 0.0F) {
                 float exitProgress = normalizedProgress(exitElapsedMillis, this.exitDelayMillis, 290.0F);
                 float fall = easeInBack(exitProgress);
-                float fade = 1.0F - smoothstep(normalizedProgress(exitElapsedMillis, this.exitDelayMillis + 120.0F, 180.0F));
+                float fade = 1.0F - ToucanEasing.smoothstep(normalizedProgress(exitElapsedMillis, this.exitDelayMillis + 120.0F, 180.0F));
                 alpha *= fade;
                 offsetX += this.exitXRatio * width * fall;
                 offsetY += this.exitFallRatio * height * fall;
@@ -458,24 +455,13 @@ final class VillagerInteractionExperimentalChrome {
         return progress * progress * progress;
     }
 
-    private static float easeOutCubic(float progress) {
-        float inverse = 1.0F - progress;
-        return 1.0F - inverse * inverse * inverse;
-    }
-
-    private static float easeOutBack(float progress) {
-        float inverseProgress = progress - 1.0F;
-        float overshoot = 1.45F;
-        return 1.0F + inverseProgress * inverseProgress * ((overshoot + 1.0F) * inverseProgress + overshoot);
-    }
-
     private static float easeInBack(float progress) {
         float overshoot = 1.25F;
         return progress * progress * ((overshoot + 1.0F) * progress - overshoot);
     }
 
     static float smoothstep(float progress) {
-        return progress * progress * (3.0F - 2.0F * progress);
+        return ToucanEasing.smoothstep(progress);
     }
 
     private static float idlePulse(float elapsedMillis) {
@@ -502,12 +488,6 @@ final class VillagerInteractionExperimentalChrome {
     private static float transformY(float sourceY, int height, float offsetY, float scale) {
         float screenY = sourceY * height / OVERLAY_SOURCE_HEIGHT;
         return (screenY - height * 0.5F) * scale + height * 0.5F + offsetY;
-    }
-
-    private static int multiplyAlpha(int color, float alphaMultiplier) {
-        int alpha = Math.round(((color >>> 24) & 0xFF) * alphaMultiplier);
-        alpha = Math.max(0, Math.min(255, alpha));
-        return (color & 0x00FFFFFF) | (alpha << 24);
     }
 
     interface Context {

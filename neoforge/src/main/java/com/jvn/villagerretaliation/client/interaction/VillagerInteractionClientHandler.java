@@ -97,10 +97,11 @@ public final class VillagerInteractionClientHandler {
                 payload.relationships()
         );
         minecraft.setScreen(screen);
+        boolean forceCamera = payload.forcedDialogue() || payload.forceCameraTowardsVillager();
         if (replacingInteractionScreen && ClientVillagerConversationState.active()) {
-            ClientVillagerConversationState.retarget(payload.entityId(), payload.forceCameraTowardsVillager());
+            ClientVillagerConversationState.retarget(payload.entityId(), forceCamera);
         } else {
-            ClientVillagerConversationState.start(payload.entityId(), payload.forceCameraTowardsVillager());
+            ClientVillagerConversationState.start(payload.entityId(), forceCamera);
         }
     }
 
