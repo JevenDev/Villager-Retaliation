@@ -66,10 +66,10 @@ public record DialogueOptionDefinition(
     }
 
     public boolean matches(DialogueContext context, DialogueDisposition disposition) {
-        if (LEFT_BEHIND_OPTION_ID.equals(this.id) && !context.hasRecruitmentMemoryScenario(LEFT_BEHIND_SCENARIO)) {
+        if (LEFT_BEHIND_OPTION_ID.equals(this.id) && !context.hasRecruitmentFollowupScenario(LEFT_BEHIND_SCENARIO)) {
             return false;
         }
-        if (DEFAULT_FOLLOWUP_OPTION_ID.equals(this.id) && context.hasRecruitmentMemoryScenario(LEFT_BEHIND_SCENARIO)) {
+        if (DEFAULT_FOLLOWUP_OPTION_ID.equals(this.id) && context.hasRecruitmentFollowupScenario(LEFT_BEHIND_SCENARIO)) {
             return false;
         }
         if (context.villager().isBaby()) {

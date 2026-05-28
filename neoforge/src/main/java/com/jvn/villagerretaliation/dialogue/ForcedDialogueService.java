@@ -978,6 +978,7 @@ public final class ForcedDialogueService {
                 itemPayment,
                 reputationCondition,
                 SocialAttributeCondition.EMPTY,
+                List.of(),
                 ForcedDialogueFollowUp.empty());
     }
 
@@ -1184,9 +1185,24 @@ public final class ForcedDialogueService {
         if (!option.reputationCondition().matches(reputation.value(), reputation.level())) {
             return false;
         }
-        return option.socialAttributeCondition().isEmpty()
-                || (VillagerSocialAttributeBehavior.enabled(VillagerRetaliationConfig.ENABLE_SOCIAL_ATTRIBUTE_DIALOGUE_EFFECTS)
-                && option.socialAttributeCondition().matches(VillagerInteractionService.createDialogueContext(level, player, villager)));
+        return optionConditionsMatch(level, villager, player, option);
+    }
+
+    private static boolean optionConditionsMatch(
+            ServerLevel level,
+            Villager villager,
+            ServerPlayer player,
+            ForcedDialogueResources.ForcedDialogueOption option) {
+        if (option.socialAttributeCondition().isEmpty() && option.conditions().isEmpty()) {
+            return true;
+        }
+        DialogueContext context = VillagerInteractionService.createDialogueContext(level, player, villager);
+        if (!option.socialAttributeCondition().isEmpty()
+                && (!VillagerSocialAttributeBehavior.enabled(VillagerRetaliationConfig.ENABLE_SOCIAL_ATTRIBUTE_DIALOGUE_EFFECTS)
+                || !option.socialAttributeCondition().matches(context))) {
+            return false;
+        }
+        return option.conditions().stream().allMatch(condition -> condition.matches(context));
     }
 
     private static ForcedDialogueDefinition tradeRefreshDefinition(String line, ForcedDialogueDefinition optionDefinition) {
@@ -1302,6 +1318,7 @@ public final class ForcedDialogueService {
                 option.itemPayment(),
                 option.reputationCondition(),
                 option.socialAttributeCondition(),
+                option.conditions(),
                 option.followUp());
     }
 
@@ -1483,6 +1500,7 @@ public final class ForcedDialogueService {
                 ForcedDialogueItemPayment.empty(),
                 VillagerReputationCondition.empty(),
                 SocialAttributeCondition.EMPTY,
+                List.of(),
                 ForcedDialogueFollowUp.empty());
     }
 
@@ -3181,9 +3199,7 @@ public final class ForcedDialogueService {
                 .filter(option -> session == null || shouldOfferStolenItemReturnOption(session, option))
                 .filter(option -> session == null || !session.disabledOptionIds().contains(option.id()))
                 .filter(option -> option.reputationCondition().matches(reputation.value(), reputation.level()))
-                .filter(option -> option.socialAttributeCondition().isEmpty()
-                        || (VillagerSocialAttributeBehavior.enabled(VillagerRetaliationConfig.ENABLE_SOCIAL_ATTRIBUTE_DIALOGUE_EFFECTS)
-                        && option.socialAttributeCondition().matches(VillagerInteractionService.createDialogueContext(level, player, villager))))
+                .filter(option -> optionConditionsMatch(level, villager, player, option))
                 .sorted(Comparator.comparingInt(ForcedDialogueOption::order).thenComparing(ForcedDialogueOption::id))
                 .map(option -> DialogueOptionDefinition.simple(
                         option.id(),

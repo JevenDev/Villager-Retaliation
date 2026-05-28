@@ -88,6 +88,10 @@ const conditionTypes = new Set([
   "relationship",
   "recruitment_memory",
   "villager_age",
+  "social_attribute",
+  "attribute",
+  "stat",
+  "skill",
   "weather",
   "time",
   "time_of_day"
@@ -119,12 +123,38 @@ const conditionKeys = {
     "excludes_ocean_crossing"
   ]),
   villager_age: new Set(["type", "baby", "adult"]),
+  social_attribute: new Set(["type", "attribute", "attributes", "stat", "stats", "min", "max"]),
+  attribute: new Set(["type", "attribute", "attributes", "stat", "stats", "min", "max"]),
+  stat: new Set(["type", "attribute", "attributes", "stat", "stats", "min", "max"]),
+  skill: new Set(["type", "skill", "skills", "min", "max", "min_rank", "max_rank"]),
   weather: new Set(["type", "state", "states"]),
   time: new Set(["type", "value", "values"]),
   time_of_day: new Set(["type", "value", "values"])
 };
 
 const reputationLevels = new Set(["royalty", "revered", "respected", "trusted", "neutral", "suspicious", "hostile", "despised", "feared"]);
+const socialAttributes = new Set(["knowledge", "intellect", "intelligence", "guts", "proficiency", "kindness", "charm"]);
+const villagerSkills = new Set([
+  "farming",
+  "fishing",
+  "smithing",
+  "crafting",
+  "trading",
+  "medicine",
+  "archery",
+  "guarding",
+  "cooking",
+  "animal_handling",
+  "cartography",
+  "scholarship",
+  "gathering",
+  "masonry",
+  "mining",
+  "leatherworking",
+  "diplomacy",
+  "survival"
+]);
+const skillRanks = new Set(["novice", "apprentice", "skilled", "expert", "master"]);
 const memoryKinds = new Set([
   "recent_broken_bed",
   "recent_direct_hit",
@@ -384,7 +414,7 @@ for (const [kind, relativeRoot] of Object.entries(roots)) {
     if (kind === "dialogue") {
       checkDialogue(file, data);
     } else if (kind === "forcedDialogue") {
-      checkIds(file, entriesFor(data), "forced dialogue entry");
+      checkForcedDialogue(file, data);
     } else if (kind === "notifications") {
       checkIds(file, data.notifications ?? [], "notification");
     }
@@ -451,6 +481,37 @@ function checkDialogue(file, data) {
       }
     }
     checkConditions(file, line, `lines[${index}]`);
+  }
+}
+
+function checkForcedDialogue(file, data) {
+  const entries = entriesFor(data);
+  checkIds(file, entries, "forced dialogue entry");
+  for (const [entryIndex, entry] of entries.entries()) {
+    checkForcedDialogueOptions(file, entry.options, `entries[${entryIndex}].options`);
+    checkForcedDialogueOptions(file, entry.leave_options, `entries[${entryIndex}].leave_options`);
+    checkForcedDialogueOption(file, entry.leave_option, `entries[${entryIndex}].leave_option`);
+  }
+}
+
+function checkForcedDialogueOptions(file, options, location) {
+  if (!Array.isArray(options)) {
+    return;
+  }
+  for (const [index, option] of options.entries()) {
+    checkForcedDialogueOption(file, option, `${location}[${index}]`);
+  }
+}
+
+function checkForcedDialogueOption(file, option, location) {
+  if (!option || typeof option !== "object" || Array.isArray(option)) {
+    return;
+  }
+  checkConditions(file, option, location);
+  if (option.follow_up && typeof option.follow_up === "object" && !Array.isArray(option.follow_up)) {
+    checkForcedDialogueOptions(file, option.follow_up.options, `${location}.follow_up.options`);
+    checkForcedDialogueOptions(file, option.follow_up.leave_options, `${location}.follow_up.leave_options`);
+    checkForcedDialogueOption(file, option.follow_up.leave_option, `${location}.follow_up.leave_option`);
   }
 }
 
@@ -606,6 +667,15 @@ function checkCondition(file, condition, location) {
   } else if (type === "villager_age") {
     checkOptionalBoolean(file, condition, location, "baby");
     checkOptionalBoolean(file, condition, location, "adult");
+  } else if (type === "social_attribute" || type === "attribute" || type === "stat") {
+    checkStringValues(file, condition, location, ["attribute", "attributes", "stat", "stats"], socialAttributes, "social attribute", { requireAny: true });
+    checkOptionalInteger(file, condition, location, "min", { min: 1, max: 100 });
+    checkOptionalInteger(file, condition, location, "max", { min: 1, max: 100 });
+  } else if (type === "skill") {
+    checkStringValues(file, condition, location, ["skill", "skills"], villagerSkills, "villager skill", { requireAny: true });
+    checkOptionalInteger(file, condition, location, "min", { min: 1, max: 100 });
+    checkOptionalInteger(file, condition, location, "max", { min: 1, max: 100 });
+    checkStringValues(file, condition, location, ["min_rank", "max_rank"], skillRanks, "villager skill rank");
   } else if (type === "weather") {
     checkStringValues(file, condition, location, ["state", "states"], weatherStates, "weather state", { requireAny: true });
   } else if (type === "time" || type === "time_of_day") {

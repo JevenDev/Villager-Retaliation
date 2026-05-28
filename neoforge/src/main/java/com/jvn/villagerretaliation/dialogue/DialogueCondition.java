@@ -2,7 +2,10 @@ package com.jvn.villagerretaliation.dialogue;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
+import com.jvn.villagerretaliation.skill.VillagerSkill;
+import com.jvn.villagerretaliation.skill.VillagerSkillRank;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import java.util.ArrayList;
@@ -18,7 +21,8 @@ import net.minecraft.resources.ResourceLocation;
 public sealed interface DialogueCondition permits DialogueCondition.AllOf, DialogueCondition.AnyOf,
         DialogueCondition.Not, DialogueCondition.Reputation, DialogueCondition.Memory,
         DialogueCondition.Family, DialogueCondition.Relationship, DialogueCondition.RecruitmentMemory,
-        DialogueCondition.VillagerAge, DialogueCondition.Weather, DialogueCondition.Time {
+        DialogueCondition.VillagerAge, DialogueCondition.SocialAttribute, DialogueCondition.Skill,
+        DialogueCondition.Weather, DialogueCondition.Time {
 
     boolean matches(DialogueContext context);
 
@@ -61,6 +65,8 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
             case "relationship" -> Optional.of(readRelationship(condition));
             case "recruitment_memory" -> Optional.of(readRecruitmentMemory(condition));
             case "villager_age" -> Optional.of(readVillagerAge(condition));
+            case "social_attribute", "attribute", "stat" -> readSocialAttribute(location, context, condition);
+            case "skill" -> readSkill(location, context, condition);
             case "weather" -> readWeather(condition);
             case "time", "time_of_day" -> readTime(condition);
             default -> {
@@ -176,6 +182,67 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
         Boolean baby = readNullableBoolean(condition, "baby");
         Boolean adult = readNullableBoolean(condition, "adult");
         return new VillagerAge(baby, adult);
+    }
+
+    private static Optional<DialogueCondition> readSocialAttribute(ResourceLocation location, String context, JsonObject condition) {
+        EnumSet<VillagerSocialAttribute> attributes = EnumSet.noneOf(VillagerSocialAttribute.class);
+        for (String value : readStringList(condition, "attribute")) {
+            VillagerSocialAttribute attribute = VillagerSocialAttribute.bySerializedName(value);
+            if (attribute != null) {
+                attributes.add(attribute);
+            }
+        }
+        for (String value : readStringList(condition, "attributes")) {
+            VillagerSocialAttribute attribute = VillagerSocialAttribute.bySerializedName(value);
+            if (attribute != null) {
+                attributes.add(attribute);
+            }
+        }
+        for (String value : readStringList(condition, "stat")) {
+            VillagerSocialAttribute attribute = VillagerSocialAttribute.bySerializedName(value);
+            if (attribute != null) {
+                attributes.add(attribute);
+            }
+        }
+        for (String value : readStringList(condition, "stats")) {
+            VillagerSocialAttribute attribute = VillagerSocialAttribute.bySerializedName(value);
+            if (attribute != null) {
+                attributes.add(attribute);
+            }
+        }
+        if (attributes.isEmpty()) {
+            warnInvalid(location, context, "social_attribute condition must define attribute, attributes, stat, or stats.");
+            return Optional.empty();
+        }
+        return Optional.of(new SocialAttribute(Set.copyOf(attributes), readNullableInt(condition, "min"), readNullableInt(condition, "max")));
+    }
+
+    private static Optional<DialogueCondition> readSkill(ResourceLocation location, String context, JsonObject condition) {
+        EnumSet<VillagerSkill> skills = EnumSet.noneOf(VillagerSkill.class);
+        for (String value : readStringList(condition, "skill")) {
+            VillagerSkill skill = VillagerSkill.bySerializedName(value);
+            if (skill != null) {
+                skills.add(skill);
+            }
+        }
+        for (String value : readStringList(condition, "skills")) {
+            VillagerSkill skill = VillagerSkill.bySerializedName(value);
+            if (skill != null) {
+                skills.add(skill);
+            }
+        }
+        if (skills.isEmpty()) {
+            warnInvalid(location, context, "skill condition must define skill or skills.");
+            return Optional.empty();
+        }
+        VillagerSkillRank minRank = VillagerSkillRank.bySerializedName(readString(condition, "min_rank"));
+        VillagerSkillRank maxRank = VillagerSkillRank.bySerializedName(readString(condition, "max_rank"));
+        return Optional.of(new Skill(
+                Set.copyOf(skills),
+                readNullableInt(condition, "min"),
+                readNullableInt(condition, "max"),
+                minRank,
+                maxRank));
     }
 
     private static Optional<DialogueCondition> readWeather(JsonObject condition) {
@@ -534,6 +601,61 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
         @Override
         public int specificityScore() {
             return 2;
+        }
+    }
+
+    record SocialAttribute(Set<VillagerSocialAttribute> attributes, Integer minValue, Integer maxValue) implements DialogueCondition {
+        @Override
+        public boolean matches(DialogueContext context) {
+            for (VillagerSocialAttribute attribute : this.attributes) {
+                int value = context.socialAttributeValue(attribute);
+                if (this.minValue != null && value < this.minValue) {
+                    continue;
+                }
+                if (this.maxValue != null && value > this.maxValue) {
+                    continue;
+                }
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        public int specificityScore() {
+            return 4;
+        }
+    }
+
+    record Skill(
+            Set<VillagerSkill> skills,
+            Integer minValue,
+            Integer maxValue,
+            VillagerSkillRank minRank,
+            VillagerSkillRank maxRank) implements DialogueCondition {
+        @Override
+        public boolean matches(DialogueContext context) {
+            for (VillagerSkill skill : this.skills) {
+                int value = context.skillValue(skill);
+                if (this.minValue != null && value < this.minValue) {
+                    continue;
+                }
+                if (this.maxValue != null && value > this.maxValue) {
+                    continue;
+                }
+                if (this.minRank != null && value < this.minRank.minInclusive()) {
+                    continue;
+                }
+                if (this.maxRank != null && value > this.maxRank.maxInclusive()) {
+                    continue;
+                }
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        public int specificityScore() {
+            return 4;
         }
     }
 

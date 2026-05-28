@@ -3264,6 +3264,26 @@
           "order": 6
         },
         {
+          "id": "low_intellect_confuse_theft",
+          "label": "What chest?",
+          "responses": [
+            "What chest? Wait. Was there another chest? I... may have shouted before I understood.",
+            "No chest? But I saw... hm. Maybe I should sit down before accusing anyone else.",
+            "If there was no chest, then I have made a very loud mistake."
+          ],
+          "reputation": 0,
+          "aggro": false,
+          "end_conversation": true,
+          "conditions": [
+            {
+              "type": "social_attribute",
+              "attribute": "intellect",
+              "max": 35
+            }
+          ],
+          "order": 8
+        },
+        {
           "id": "only_borrowing",
           "label": "I was only borrowing it",
           "response": "Borrowing has a witness before and a return after. You skipped the first half.",
@@ -3273,7 +3293,7 @@
           "reputation": -3,
           "aggro": false,
           "end_conversation": true,
-          "order": 7
+          "order": 9
         },
         {
           "id": "deny",
@@ -3285,7 +3305,7 @@
           "reputation": -5,
           "aggro": true,
           "end_conversation": true,
-          "order": 8
+          "order": 10
         },
         {
           "id": "threaten",
@@ -3297,7 +3317,7 @@
           "reputation": -9,
           "aggro": true,
           "end_conversation": true,
-          "order": 9
+          "order": 11
         }
       ],
       "force_camera_towards_villager": true,
@@ -5249,6 +5269,26 @@
           "order": 5
         },
         {
+          "id": "low_intellect_confuse_opened",
+          "label": "What chest?",
+          "responses": [
+            "No chest? But I heard the latch. Maybe the echo came from another house.",
+            "What chest indeed. I may have accused the wrong moment.",
+            "If there was no chest, then I should stop arguing with shadows."
+          ],
+          "reputation": 0,
+          "aggro": false,
+          "end_conversation": true,
+          "conditions": [
+            {
+              "type": "social_attribute",
+              "attribute": "intellect",
+              "max": 35
+            }
+          ],
+          "order": 6
+        },
+        {
           "id": "deny",
           "label": "Deny it",
           "response": "The lid opened under your hand. Do not ask me to mistrust my own eyes.",
@@ -5258,7 +5298,7 @@
           "reputation": -4,
           "aggro": true,
           "end_conversation": true,
-          "order": 6
+          "order": 7
         },
         {
           "id": "threaten",
@@ -5270,7 +5310,7 @@
           "reputation": -7,
           "aggro": true,
           "end_conversation": true,
-          "order": 7
+          "order": 8
         }
       ],
       "force_camera_towards_villager": true,

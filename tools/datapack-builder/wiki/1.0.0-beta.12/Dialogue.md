@@ -521,6 +521,8 @@ Condition blocks support:
 | `relationship` | `state`, `states` | Matches known romantic relationship data. Values include `relationship`, `current_relationship`, `past_relationship`, `crush`, `dating_partner`, `fiance`, `romantic_spouse`, `separated_partner`, and `widowed_partner`. |
 | `recruitment_memory` | `scenario`, `scenarios`, `biome`, `biomes`, `min_follow_distance`, `boat_trip`, `ocean_crossing`, `swim_trip`, `excludes_ocean_crossing` | Matches stored recruitment travel memory. `biome` values are normalized the same way as legacy `recruitment_memory_biome`. |
 | `villager_age` | `baby`, `adult` | Matches the speaker's age. |
+| `social_attribute` / `stat` | `attribute`, `attributes`, `stat`, `stats`, `min`, `max` | Matches villager profile Social Attribute scores from 1-100. Attribute values are `knowledge`, `guts`, `proficiency`, `kindness`, and `charm`; `intellect` and `intelligence` are aliases for `knowledge`. If several attributes are listed, any one matching attribute passes. |
+| `skill` | `skill`, `skills`, `min`, `max`, `min_rank`, `max_rank` | Matches villager skill scores from 1-100 or ranks `novice`, `apprentice`, `skilled`, `expert`, and `master`. If several skills are listed, any one matching skill passes. Use `all_of` if several skills must match at once. |
 | `weather` | `state`, `states` | Uses `clear`, `rain`, or `thunder`. |
 | `time` / `time_of_day` | `value`, `values` | Uses `morning`, `afternoon`, `evening`, or `night`. |
 

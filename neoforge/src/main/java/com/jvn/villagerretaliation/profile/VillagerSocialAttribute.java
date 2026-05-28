@@ -29,6 +29,9 @@ public enum VillagerSocialAttribute {
         }
 
         String normalized = value.trim().toLowerCase(Locale.ROOT);
+        if (normalized.equals("intellect") || normalized.equals("intelligence")) {
+            return KNOWLEDGE;
+        }
         for (VillagerSocialAttribute attribute : values()) {
             if (attribute.serializedName.equals(normalized)
                     || attribute.name().equalsIgnoreCase(normalized)) {

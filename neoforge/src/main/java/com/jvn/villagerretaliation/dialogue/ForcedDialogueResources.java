@@ -57,6 +57,7 @@ public final class ForcedDialogueResources {
     private static final Set<String> OPTION_KEYS = Set.of(
             "id", "label", "response", "responses", "reputation", "aggro", "aggro_chance", "end_conversation", "order",
             "reputation_level", "reputation_levels", "min_reputation", "max_reputation", "take_items", "take_stolen_items",
+            "conditions",
             "follow_up", "requires_high_knowledge", "requires_high_guts", "requires_high_proficiency", "requires_high_kindness", "requires_high_charm",
             "min_knowledge", "max_knowledge", "min_guts", "max_guts", "min_proficiency", "max_proficiency",
             "min_kindness", "max_kindness", "min_charm", "max_charm");
@@ -359,7 +360,7 @@ public final class ForcedDialogueResources {
                 index++;
                 continue;
             }
-            options.add(readOption(option, id, label, index));
+            options.add(readOption(location, optionContext(option, index), option, id, label, index));
             index++;
         }
         if (options.stream().noneMatch(option -> option.id().equals(leaveOption.id()))) {
@@ -380,7 +381,7 @@ public final class ForcedDialogueResources {
                         DatapackDiagnostics.warnUnknownKeys(location, "forced dialogue leave option", optionContext(option, index), option, OPTION_KEYS);
                     }
                     String label = readString(option, "label");
-                    leaveOptions.add(readOption(option, LEAVE_OPTION_ID, label.isBlank() ? "Leave" : label, 1000 + index));
+                    leaveOptions.add(readOption(location, optionContext(option, index), option, LEAVE_OPTION_ID, label.isBlank() ? "Leave" : label, 1000 + index));
                 }
                 index++;
             }
@@ -398,7 +399,7 @@ public final class ForcedDialogueResources {
         }
         JsonObject option = element != null && element.isJsonObject() ? element.getAsJsonObject() : new JsonObject();
         String label = readString(option, "label");
-        return List.of(readOption(option, LEAVE_OPTION_ID, label.isBlank() ? "Leave" : label, 1000));
+        return List.of(readOption(location, optionContext(option, 0), option, LEAVE_OPTION_ID, label.isBlank() ? "Leave" : label, 1000));
     }
 
     static ForcedDialogueOption defaultLeaveOption() {
@@ -466,6 +467,16 @@ public final class ForcedDialogueResources {
     }
 
     private static ForcedDialogueOption readOption(JsonObject option, String id, String label, int fallbackOrder) {
+        return readOption(null, optionContext(option, fallbackOrder), option, id, label, fallbackOrder);
+    }
+
+    private static ForcedDialogueOption readOption(
+            ResourceLocation location,
+            String context,
+            JsonObject option,
+            String id,
+            String label,
+            int fallbackOrder) {
         return new ForcedDialogueOption(
                 id,
                 label,
@@ -479,6 +490,7 @@ public final class ForcedDialogueResources {
                 readItemPayment(option),
                 VillagerReputationCondition.read(option),
                 readSocialAttributeCondition(option),
+                DialogueCondition.readList(location, context, option),
                 readFollowUp(option)
         );
     }
@@ -851,6 +863,7 @@ public final class ForcedDialogueResources {
             ForcedDialogueItemPayment itemPayment,
             VillagerReputationCondition reputationCondition,
             SocialAttributeCondition socialAttributeCondition,
+            List<DialogueCondition> conditions,
             ForcedDialogueFollowUp followUp) {
         public String selectResponse(RandomSource random) {
             if (this.responses.isEmpty()) {

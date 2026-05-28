@@ -24,14 +24,6 @@ public final class VillagerRetaliationClientAssets {
             texture("gui/villager_interaction_screen/info_icon");
     public static final ResourceLocation VILLAGER_INVENTORY_TEXTURE =
             texture("gui/villager_interaction_screen/villager_inventory");
-    public static final ResourceLocation EXPERIMENTAL_OVERLAY_1_TEXTURE =
-            texture("gui/villager_interaction_screen/experimental_overlay_1");
-    public static final ResourceLocation EXPERIMENTAL_OVERLAY_2_TEXTURE =
-            texture("gui/villager_interaction_screen/experimental_overlay_2");
-    public static final ResourceLocation EXPERIMENTAL_OVERLAY_3_TEXTURE =
-            texture("gui/villager_interaction_screen/experimental_overlay_3");
-    public static final ResourceLocation EXPERIMENTAL_OVERLAY_4_TEXTURE =
-            texture("gui/villager_interaction_screen/experimental_overlay_4");
     public static final ResourceLocation TRADE_REROLL_BUTTON_TEXTURE =
             texture("gui/trade/reroll_button");
     public static final ResourceLocation TRADE_REROLL_BUTTON_HIGHLIGHTED_TEXTURE =
@@ -58,9 +50,6 @@ public final class VillagerRetaliationClientAssets {
             VillagerRetaliation.id("experimental_notification");
     public static final ResourceLocation EXPERIMENTAL_SKILLS_SHADER =
             VillagerRetaliation.id("experimental_skills");
-
-    private VillagerRetaliationClientAssets() {
-    }
 
     public static ResourceLocation reputationIcon(VillagerReputationLevel level) {
         return switch (level) {

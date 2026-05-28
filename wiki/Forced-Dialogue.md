@@ -256,10 +256,30 @@ If a `container_theft` entry does not define `leave_option` or `leave_options`, 
 | `reputation_levels` | string or array | any | Shows this option only for the player's current reputation tier with the witnessing villager. |
 | `min_reputation` | integer | none | Minimum exact reputation value with the witnessing villager. |
 | `max_reputation` | integer | none | Maximum exact reputation value with the witnessing villager. |
+| `conditions` | array | none | Shows this option only when all dialogue condition blocks match. Supports the same `conditions` block types as normal dialogue, including `social_attribute` and `skill`. |
 | `take_items` | object | none | Removes a configured payment from the player's inventory before the option succeeds. |
 | `take_stolen_items` | boolean or object | none | For `container_theft`, removes the specific item stacks stolen from the source container before the option succeeds. |
 
 Use reputation filters on entries to swap the whole event by rank, or on options to change the choices available inside one event. For example, the built-in container opening prompts only catch neutral and suspicious players on opening, hostile/despised/feared players get harsher opening responses, and trusted or better players can open watched containers until they actually remove items.
+
+Use `conditions` on options for personality-aware or skill-aware choices. For example, a deception option can require a low-intellect witness:
+
+```json
+{
+  "id": "my_pack.confuse_theft_witness",
+  "label": "What chest?",
+  "responses": [
+    "No chest? Hm. I may have accused the wrong moment."
+  ],
+  "conditions": [
+    {
+      "type": "social_attribute",
+      "attribute": "intellect",
+      "max": 35
+    }
+  ]
+}
+```
 
 Escape does not bypass forced dialogue. Pressing Escape activates the entry's matching `leave_option` / `leave_options` outcome, so pack makers can attach response text, reputation changes, stolen-item returns, aggro chance, or other outcomes to leaving.
 
