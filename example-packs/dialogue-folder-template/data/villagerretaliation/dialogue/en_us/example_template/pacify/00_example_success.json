@@ -1,0 +1,8 @@
+{
+  "id": "example_template.pacify.success",
+  "outcomes": [
+    "success"
+  ],
+  "text": "example",
+  "weight": 10
+}

@@ -1,0 +1,63 @@
+{
+  "lines": [
+    {
+      "id": "armorer_question_work_variants",
+      "request": "question",
+      "lines": [
+        "Most of my day is fitting mail and shields. It sounds simple until everything depends on it.",
+        "A cracked plate after a raid teaches more than a quiet week ever does.",
+        "A loose strap looks harmless until someone <pulse>trusts it</pulse> in a fight.",
+        "Good mail is not heavy. Bad mail reminds you of itself all day.",
+        "Every plate I fit is a small promise that someone gets another chance.",
+        "A shield is only useful if the arm behind it holds steady."
+      ],
+      "weight": 172
+    },
+    {
+      "id": "question_follow_memory_armorer",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "weight": 3,
+      "lines": [
+        "That trip through {follow_biome} tested my buckles more than most customers do.",
+        "I remember following you through {follow_biome}. My feet remember it even better.",
+        "That trip across {follow_biome} taught me to ask more questions before walking."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory"
+        }
+      ]
+    },
+    {
+      "id": "question_follow_memory_armorer_boat",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "weight": 3,
+      "lines": [
+        "Armor is not made for sitting in a boat. I learned that while following you.",
+        "That boat trip still sits oddly in my memory, but at least it floated.",
+        "A boat can make a bad plan quieter. It cannot make me forget it."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "boat_trip": true
+        }
+      ]
+    },
+    {
+      "id": "default_profession_armorer_workbench_pressure",
+      "request": "question",
+      "show_for_babies": false,
+      "lines": [
+        "Armor is promises hammered into shape. Mine had better hold when the bell starts shouting.",
+        "A quiet forge is not always peace. Sometimes it is me listening for the next dent.",
+        "Good armor should feel boring until the hour it saves your ribs."
+      ],
+      "weight": 18
+    }
+  ]
+}

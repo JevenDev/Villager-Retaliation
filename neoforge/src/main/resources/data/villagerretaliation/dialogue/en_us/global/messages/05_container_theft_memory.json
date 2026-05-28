@@ -1,0 +1,28 @@
+{
+  "messages": [
+    {
+      "key": "container_theft_memory.direct",
+      "lines": [
+        "I still <pulse>remember</pulse> you trying to take my {stolen_stack}.",
+        "That {stolen_item} from the {stolen_container}? I have not forgotten.",
+        "You put your hands on village stores once. I am <pulse>watching</pulse> them now.",
+        "Trust is counted in small things. Last time, it was counted in {stolen_stack}.",
+        "I remember the {stolen_container}, the missing {stolen_item}, and your face beside both.",
+        "If you came to repay what happened with the {stolen_item}, start by keeping your hands visible."
+      ],
+      "weight": 155
+    },
+    {
+      "key": "container_theft_memory.village",
+      "lines": [
+        "<aqua>{theft_witness}</aqua> told me about you stealing {stolen_stack}. Not cool.",
+        "Word travels faster than full pockets. <aqua>{theft_witness}</aqua> <pulse>saw</pulse> the {stolen_item}.",
+        "Around here, a missing {stolen_item} becomes everybody's story.",
+        "<aqua>{theft_witness_possessive}</aqua> <shake>warning</shake> reached more doors than you opened.",
+        "People here share bread, tools, and warnings. You became the warning after that {stolen_stack}.",
+        "I was not there, but <aqua>{theft_witness}</aqua> was. That is enough for me to watch the {stolen_container}."
+      ],
+      "weight": 154
+    }
+  ]
+}

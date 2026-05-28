@@ -1,0 +1,25 @@
+{
+  "preferences": [
+    {
+      "id": "example_template.gift.preference",
+      "reaction": "liked",
+      "items": [
+        "minecraft:emerald"
+      ],
+      "response_key": "example_template.message.example",
+      "priority": 10
+    }
+  ],
+  "rewards": [
+    {
+      "id": "example_template.gift.reward",
+      "reputation_levels": [
+        "trusted"
+      ],
+      "item": "minecraft:bread",
+      "min_count": 1,
+      "max_count": 1,
+      "weight": 10
+    }
+  ]
+}

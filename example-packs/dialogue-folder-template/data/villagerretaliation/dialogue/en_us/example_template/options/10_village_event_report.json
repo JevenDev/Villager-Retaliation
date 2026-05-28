@@ -1,0 +1,6 @@
+{
+  "id": "example_template.option.village_event_report",
+  "label": "Example Village Event Report",
+  "request": "village_event_report",
+  "order": 10
+}

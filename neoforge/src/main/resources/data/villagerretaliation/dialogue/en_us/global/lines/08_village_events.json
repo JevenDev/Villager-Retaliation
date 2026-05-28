@@ -1,0 +1,204 @@
+{
+  "lines": [
+    {
+      "id": "village_cure_acknowledgement_wary_2",
+      "request": "question",
+      "show_for_babies": false,
+      "dispositions": [
+        "cautious",
+        "rude"
+      ],
+      "player_event_tags": [
+        "player_cured_villager"
+      ],
+      "weight": 34,
+      "lines": [
+        "Helping <aqua>{cured_villager}</aqua> speaks well of you. It does not erase everything else.",
+        "People are saying <aqua>{cured_villager}</aqua> came home because you stayed.",
+        "<aqua>{cured_villager_possessive}</aqua> cure changed the way people say your name. <aqua>{cured_villager}</aqua>"
+      ]
+    },
+    {
+      "id": "village_cure_acknowledgement_fearful_1",
+      "request": "greeting",
+      "show_for_babies": false,
+      "dispositions": [
+        "hostile",
+        "fearful"
+      ],
+      "player_event_tags": [
+        "player_cured_villager"
+      ],
+      "weight": 34,
+      "lines": [
+        "You saved <aqua>{cured_villager}</aqua>. I know. I just do not know what to do with both that and the rest.",
+        "People are saying <aqua>{cured_villager}</aqua> came home because you stayed.",
+        "<aqua>{cured_villager_possessive}</aqua> cure changed the way people say your name. <aqua>{cured_villager}</aqua>"
+      ]
+    },
+    {
+      "id": "village_cure_acknowledgement_baby_1",
+      "request": "greeting",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "player_event_tags": [
+        "player_cured_villager"
+      ],
+      "weight": 38,
+      "lines": [
+        "Are you the doctor who saved <aqua>{cured_villager}</aqua>?",
+        "Did you really help <aqua>{cured_villager}</aqua> come back?",
+        "<aqua>{cured_villager}</aqua> is better because of you, right?"
+      ]
+    },
+    {
+      "id": "village_cure_acknowledgement_baby_2",
+      "request": "question",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "player_event_tags": [
+        "player_cured_villager"
+      ],
+      "weight": 38,
+      "lines": [
+        "The grown-ups said you are the wizard that saved <aqua>{cured_villager}</aqua>. Are you really?",
+        "Did you really help <aqua>{cured_villager}</aqua> come back?",
+        "<aqua>{cured_villager}</aqua> is better because of you, right?"
+      ]
+    },
+    {
+      "id": "village_event_thunderstorm_shared_1",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "lines": [
+        "The thunder <shake>shook everyone</shake>, but the village is still standing.",
+        "We are rattled, not broken. Count heads before counting damage.",
+        "The little ones <jump>jumped</jump> at every crack, but most doors held.",
+        "Lightning makes honest fear out of everyone. Thank you for asking.",
+        "We are checking roofs, bells, and nerves after that thunder."
+      ],
+      "weight": 140
+    },
+    {
+      "id": "village_event_thunderstorm_baby_1",
+      "request": "village_event_report",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "lines": [
+        "The sky was <shake>so loud</shake>. I stayed near the bed and did not like it.",
+        "I think everyone is okay, but the thunder made my knees feel funny.",
+        "The grown-ups said stay inside. I stayed very inside.",
+        "I counted the booms and lost count because I hid.",
+        "Nobody should let the sky shout that much."
+      ],
+      "weight": 160
+    },
+    {
+      "id": "village_event_fire_shared_1",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "village_fire"
+      ],
+      "lines": [
+        "The <wavy>smoke</wavy> has thinned, but everyone is still counting what was lost.",
+        "We put out what we could. Keep water close until the smell fades.",
+        "Fire leaves more than ash. People will be <jump>jumpy</jump> for a while.",
+        "No one wants to say they were scared first, so I will: we were <shake>scared</shake>.",
+        "Everyone is checking walls, beds, and each other after the flames."
+      ],
+      "weight": 140
+    },
+    {
+      "id": "village_event_fire_baby_1",
+      "request": "village_event_report",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "event_tags": [
+        "village_fire"
+      ],
+      "lines": [
+        "There was smoke and grown-ups yelling. I stayed low like they said.",
+        "I do not like fire when it runs around loose.",
+        "Someone carried water very fast. I tried to help by not being in the way.",
+        "The air tasted bad, but I think everyone found a safe place.",
+        "I am okay. My blanket smells smoky though."
+      ],
+      "weight": 160
+    },
+    {
+      "id": "village_event_raid_shared_1",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "lines": [
+        "The raid is over for now. Some of us are still <pulse>listening for horns</pulse>.",
+        "Everyone alive is accounted for, but calm takes longer to return.",
+        "We barred the doors, held our breath, and made it to the other side.",
+        "Ask again after the <shake>shaking</shake> stops. For now, yes, most are safe.",
+        "The bell did its work. So did the brave ones. The rest of us remember."
+      ],
+      "weight": 140
+    },
+    {
+      "id": "village_event_raid_baby_1",
+      "request": "village_event_report",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "lines": [
+        "The bell was loud and everyone ran. I ran too.",
+        "I hid where I was told. I think that means I helped.",
+        "The bad people are gone, right? Please say they are gone.",
+        "I heard shouting outside and did not peek. Not even once.",
+        "My heart is still <jump>running</jump> even though my feet stopped."
+      ],
+      "weight": 160
+    },
+    {
+      "id": "village_event_night_attack_shared_1",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "night_attack"
+      ],
+      "lines": [
+        "The night brought trouble, but dawn found us still here.",
+        "We are checking doors and wounds. Night makes every sound <pulse>suspicious</pulse> now.",
+        "Some slept through it. Some will not sleep well for a while.",
+        "The attack passed, but people are keeping lamps lit anyway.",
+        "Everyone is quieter after a bad night. Quiet can mean alive, at least."
+      ],
+      "weight": 140
+    },
+    {
+      "id": "village_event_night_attack_baby_1",
+      "request": "village_event_report",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "event_tags": [
+        "night_attack"
+      ],
+      "lines": [
+        "I heard monsters and pulled the blanket over my head.",
+        "Night was too noisy. I want morning to stay longer.",
+        "Someone told me not to open the door, so I did not.",
+        "I am okay, but I want the lamps left on.",
+        "The dark made <shake>bad sounds</shake>. The grown-ups made braver sounds."
+      ],
+      "weight": 160
+    }
+  ]
+}

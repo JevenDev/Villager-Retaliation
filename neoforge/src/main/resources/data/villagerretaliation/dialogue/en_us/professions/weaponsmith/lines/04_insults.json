@@ -1,0 +1,28 @@
+{
+  "lines": [
+    {
+      "id": "weaponsmith_new_insult_dull",
+      "request": "insult",
+      "weight": 18,
+      "lines": [
+        "That was dull enough to be safe, at least.",
+        "I have seen careless steel with more sense than that.",
+        "Careful. Even steel looks softer than your manners right now."
+      ]
+    },
+    {
+      "id": "weaponsmith_new_hostile_distance",
+      "request": "insult",
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
+      "weight": 30,
+      "lines": [
+        "Stand back. I know the sound trouble makes when it wants to be casual.",
+        "I have seen careless steel with more sense than that.",
+        "Careful. Even steel looks softer than your manners right now."
+      ]
+    }
+  ]
+}

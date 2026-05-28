@@ -1,0 +1,7 @@
+{
+  "id": "example_template.farmer.line.question",
+  "request": "question",
+  "option": "example_template.farmer.option.question",
+  "text": "example",
+  "weight": 10
+}

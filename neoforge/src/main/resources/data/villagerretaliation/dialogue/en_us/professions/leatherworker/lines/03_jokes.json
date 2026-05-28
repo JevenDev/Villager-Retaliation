@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "leatherworker_new_joke_skin",
+      "request": "joke",
+      "weight": 18,
+      "lines": [
+        "Leather jokes need a <bold>thick skin</bold>. I keep saying that until someone laughs.",
+        "Leatherwork jokes need timing. Mine usually arrive with hide on them.",
+        "I keep a spare joke near the tannery. It is not always ready for public use."
+      ]
+    }
+  ]
+}

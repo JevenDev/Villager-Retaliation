@@ -1,0 +1,114 @@
+{
+  "lines": [
+    {
+      "id": "recruitment_left_behind_basalt_deltas",
+      "request": "recruitment_followup",
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20,
+      "lines": [
+        "Don't leave me in the Basalt Deltas. The ground looks sharp enough to cut through courage.",
+        "The Basalt Deltas are ash, basalt, and misery. I needed you back a lot sooner.",
+        "I stood in the Basalt Deltas trying not to think about lava finding a path to my feet.",
+        "If you must wander off, do not do it in the Basalt Deltas where everything feels broken and hot."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "scenarios": [
+            "left_behind"
+          ],
+          "biome": "minecraft:basalt_deltas"
+        }
+      ]
+    },
+    {
+      "id": "recruitment_left_behind_crimson_forest",
+      "request": "recruitment_followup",
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20,
+      "lines": [
+        "Don't leave me in the Crimson Forest. Everything there looks alive in the worst possible way.",
+        "The Crimson Forest is red, loud, and unsettling enough with company. Alone is worse.",
+        "I was stuck in the Crimson Forest watching every fungus patch like it might <jump>lunge</jump>.",
+        "If you wander off in the Crimson Forest, do not expect me to enjoy waiting for you."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "scenarios": [
+            "left_behind"
+          ],
+          "biome": "minecraft:crimson_forest"
+        }
+      ]
+    },
+    {
+      "id": "recruitment_left_behind_nether_wastes",
+      "request": "recruitment_followup",
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20,
+      "lines": [
+        "Don't leave me in the Nether Wastes. Heat, ash, and open lava are not fair company.",
+        "The Nether Wastes are exactly where I never want to be abandoned.",
+        "I waited in the Nether Wastes trying not to look at every lava pool like it was leaning closer.",
+        "If you disappear in the Nether Wastes, I am left in the middle of fire and bad choices."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "scenarios": [
+            "left_behind"
+          ],
+          "biome": "minecraft:nether_wastes"
+        }
+      ]
+    },
+    {
+      "id": "recruitment_left_behind_soul_sand_valley",
+      "request": "recruitment_followup",
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20,
+      "lines": [
+        "Don't leave me in the Soul Sand Valley. Even the ground there fights every step.",
+        "The Soul Sand Valley is bad enough when I can move quickly. Alone, I cannot.",
+        "I waited in the Soul Sand Valley trying not to panic while the ground slowed me down.",
+        "If you vanish in a Soul Sand Valley, I am left trudging through fear one heavy step at a time."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "scenarios": [
+            "left_behind"
+          ],
+          "biome": "minecraft:soul_sand_valley"
+        }
+      ]
+    },
+    {
+      "id": "recruitment_left_behind_warped_forest",
+      "request": "recruitment_followup",
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20,
+      "lines": [
+        "Don't leave me in the Warped Forest. Nothing there looks like it belongs anywhere safe.",
+        "The Warped Forest is too <wavy>strange</wavy> to be deserted in with a steady mind.",
+        "I waited in the Warped Forest trying not to stare too long at anything around me.",
+        "If you disappear in a Warped Forest, I am left alone in the sort of place that should stay imagined."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "scenarios": [
+            "left_behind"
+          ],
+          "biome": "minecraft:warped_forest"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "lines": [
+    {
+      "id": "fletcher_question_feathers_variants",
+      "request": "question",
+      "lines": [
+        "Clean feathers and straight shafts make trouble keep its distance.",
+        "A good bow <pulse>hears trouble</pulse> before the bell does.",
+        "A crooked feather makes a promise the arrow cannot keep.",
+        "Distance changes everything. Trouble looks smaller until it arrives.",
+        "The best warning is the one that reaches trouble before trouble reaches us.",
+        "Aim is not just the hand. It is patience deciding not to flinch."
+      ],
+      "weight": 172
+    },
+    {
+      "id": "question_follow_memory_fletcher",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "weight": 3,
+      "lines": [
+        "That route you took me on flew about as straight as a warped arrow.",
+        "I remember following you through that road. My feet remember it even better.",
+        "That trip across that road taught me to ask more questions before walking."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory"
+        }
+      ]
+    },
+    {
+      "id": "question_follow_memory_fletcher_boat",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "weight": 3,
+      "lines": [
+        "That boat did not fly straight, but at least it floated straight enough.",
+        "That boat trip still sits oddly in my memory, but at least it floated.",
+        "A boat can make a bad plan quieter. It cannot make me forget it."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "boat_trip": true
+        }
+      ]
+    },
+    {
+      "id": "default_profession_fletcher_string_sense",
+      "request": "question",
+      "show_for_babies": false,
+      "lines": [
+        "A bowstring complains before it betrays you. Most people do the opposite.",
+        "Straight arrows are made from crooked material and stubborn hands.",
+        "When the bell rings, I learn which arrows were practice and which were promises."
+      ],
+      "weight": 18
+    }
+  ]
+}

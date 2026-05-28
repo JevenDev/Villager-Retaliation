@@ -1,0 +1,423 @@
+{
+  "lines": [
+    {
+      "id": "adult_family_parent_warm",
+      "request": "question",
+      "option": "adult_family",
+      "show_for_babies": false,
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral"
+      ],
+      "weight": 24,
+      "lines": [
+        "<aqua>{parent}</aqua> still checks in on me when the village gets <shake><i>loud</i></shake>. They have a way of making feel at home anywhere.",
+        "<aqua>{parent}</aqua> knows when the village gets too <shake><i>loud</i></shake> for me. That kind of care makes me feel good.",
+        "When there's trouble, <aqua>{parent}</aqua> is who I usually trust."
+      ],
+      "conditions": [
+        {
+          "type": "family",
+          "relation": "parent"
+        }
+      ]
+    },
+    {
+      "id": "adult_family_child_warm",
+      "request": "question",
+      "option": "adult_family",
+      "show_for_babies": false,
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral"
+      ],
+      "weight": 24,
+      "lines": [
+        "I keep an eye on <aqua>{child}</aqua>. Around here, every child learns quickly which footsteps mean help.",
+        "<aqua>{child}</aqua> is one reason I watch the paths more <i>closely</i> than I used to.",
+        "Children learn the village by watching us. I try to give <aqua>{child}</aqua> something good to copy."
+      ],
+      "conditions": [
+        {
+          "type": "family",
+          "relation": "child"
+        }
+      ]
+    },
+    {
+      "id": "adult_family_sibling_warm",
+      "request": "question",
+      "option": "adult_family",
+      "show_for_babies": false,
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral"
+      ],
+      "weight": 22,
+      "lines": [
+        "<aqua>{sibling}</aqua> and I do not always agree, but I would still stand between them and trouble.",
+        "<aqua>{sibling}</aqua> can test my patience and still have my loyalty.",
+        "I know every way <aqua>{sibling}</aqua> can annoy me, and every reason I would defend them."
+      ],
+      "conditions": [
+        {
+          "type": "family",
+          "relation": "sibling"
+        }
+      ]
+    },
+    {
+      "id": "adult_family_grandparent",
+      "request": "question",
+      "option": "adult_family",
+      "show_for_babies": false,
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral",
+        "cautious"
+      ],
+      "weight": 18,
+      "lines": [
+        "<aqua>{grandparent}</aqua> taught the family which paths are safe after dark. Some advice survives longer than the person who first said it.",
+        "<aqua>{grandparent}</aqua> remembers roads I only know as stories. I listen when they warn me.",
+        "<aqua>{grandparent_possessive} old advice still keeps my feet out of trouble. <aqua>{grandparent}</aqua>"
+      ],
+      "conditions": [
+        {
+          "type": "family",
+          "relation": "grandparent"
+        }
+      ]
+    },
+    {
+      "id": "adult_family_descendant",
+      "request": "question",
+      "option": "adult_family",
+      "show_for_babies": false,
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral"
+      ],
+      "weight": 18,
+      "lines": [
+        "When I think about <aqua>{descendant}</aqua>, I try to leave the village a little kinder than I found it.",
+        "<aqua>{descendant}</aqua> makes the future feel like a real place, not just a word.",
+        "I want <aqua>{descendant}</aqua> to inherit more than locked doors and nervous bells."
+      ],
+      "conditions": [
+        {
+          "type": "family",
+          "relation": "descendant"
+        }
+      ]
+    },
+    {
+      "id": "adult_family_extended",
+      "request": "question",
+      "option": "adult_family",
+      "show_for_babies": false,
+      "weight": 14,
+      "lines": [
+        "<aqua>{extended_relative}</aqua> is not in my house every night, but family branches still share the same weather.",
+        "<aqua>{extended_relative}</aqua> may live under another roof, but kinship still knocks when trouble comes.",
+        "Family stretches farther than a doorstep. <aqua>{extended_relative}</aqua> proves that often enough."
+      ],
+      "conditions": [
+        {
+          "type": "family",
+          "relation": "extended_family"
+        }
+      ]
+    },
+    {
+      "id": "adult_family_deceased",
+      "request": "question",
+      "option": "adult_family",
+      "show_for_babies": false,
+      "weight": 16,
+      "lines": [
+        "We still say <aqua>{deceased_family_possessive}</aqua> name when the village gathers. Remembering is a kind of shelter.",
+        "<aqua>{deceased_family_possessive}</aqua> memory still has a chair in this village.",
+        "We speak of <aqua>{deceased_family}</aqua> carefully. Grief is still part of the household. <aqua>{deceased_family_possessive}</aqua>"
+      ],
+      "conditions": [
+        {
+          "type": "family",
+          "relation": "deceased_family"
+        }
+      ]
+    },
+    {
+      "id": "adult_family_guarded",
+      "request": "question",
+      "option": "adult_family",
+      "show_for_babies": false,
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 28,
+      "lines": [
+        "<aqua>{relative}</aqua> is family. That is enough to make me careful about who asks.",
+        "Ask about <aqua>{relative}</aqua> with respect, and maybe I will answer.",
+        "Family names are not loose coins. <aqua>{relative}</aqua> matters to me."
+      ],
+      "conditions": [
+        {
+          "type": "family",
+          "relation": "family"
+        }
+      ]
+    },
+    {
+      "id": "adult_relationship_current_soft",
+      "request": "question",
+      "option": "adult_relationships",
+      "show_for_babies": false,
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral"
+      ],
+      "weight": 18,
+      "lines": [
+        "<aqua>{partner}</aqua> makes the village feel less like a place I survive and more like a place I choose.",
+        "With <aqua>{partner}</aqua>, even a hard day has somewhere softer to end.",
+        "<aqua>{partner}</aqua> makes the village feel less like walls and more like home."
+      ],
+      "conditions": [
+        {
+          "type": "relationship",
+          "state": "current_relationship"
+        }
+      ]
+    },
+    {
+      "id": "adult_relationship_crush_shy",
+      "request": "question",
+      "option": "adult_relationships",
+      "show_for_babies": false,
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral"
+      ],
+      "weight": 24,
+      "lines": [
+        "I keep finding reasons to pass near <aqua>{crush}</aqua>. Maybe it is foolish. Maybe foolish things keep people kind.",
+        "I notice when <aqua>{crush}</aqua> crosses the square. I pretend not to, badly.",
+        "<aqua>{crush}</aqua> makes ordinary errands feel suspiciously important."
+      ],
+      "conditions": [
+        {
+          "type": "relationship",
+          "state": "crush"
+        }
+      ]
+    },
+    {
+      "id": "adult_relationship_dating_warm",
+      "request": "question",
+      "option": "adult_relationships",
+      "show_for_babies": false,
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral"
+      ],
+      "weight": 24,
+      "lines": [
+        "<aqua>{dating_partner}</aqua> and I are seeing where the road goes. Slowly is fine when the road matters.",
+        "<aqua>{dating_partner}</aqua> and I are taking it carefully. Careful things can still be brave.",
+        "I like walking beside <aqua>{dating_partner}</aqua>. The road feels less noisy that way."
+      ],
+      "conditions": [
+        {
+          "type": "relationship",
+          "state": "dating_partner"
+        }
+      ]
+    },
+    {
+      "id": "adult_relationship_engaged",
+      "request": "question",
+      "option": "adult_relationships",
+      "show_for_babies": false,
+      "weight": 24,
+      "lines": [
+        "<aqua>{fiance}</aqua> and I are trying to plan a future sturdy enough to survive this place.",
+        "<aqua>{fiance}</aqua> and I are planning more than a ceremony. We are planning a life that holds.",
+        "When I say <aqua>{fiance_possessive}</aqua> name, the future feels less theoretical. <aqua>{fiance}</aqua>"
+      ],
+      "conditions": [
+        {
+          "type": "relationship",
+          "state": "fiance"
+        }
+      ]
+    },
+    {
+      "id": "adult_relationship_married",
+      "request": "question",
+      "option": "adult_relationships",
+      "show_for_babies": false,
+      "weight": 24,
+      "lines": [
+        "<aqua>{romantic_spouse}</aqua> knows which silences mean I am tired and which mean I need help. That is a rare comfort.",
+        "<aqua>{romantic_spouse}</aqua> knows my storms and still keeps a light on.",
+        "Home sounds different when <aqua>{romantic_spouse}</aqua> is there."
+      ],
+      "conditions": [
+        {
+          "type": "relationship",
+          "state": "romantic_spouse"
+        }
+      ]
+    },
+    {
+      "id": "adult_relationship_separated",
+      "request": "question",
+      "option": "adult_relationships",
+      "show_for_babies": false,
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral",
+        "cautious"
+      ],
+      "weight": 18,
+      "lines": [
+        "<aqua>{ex_partner}</aqua> and I had our season. Some roads part before they turn cruel, and that can be mercy.",
+        "<aqua>{ex_partner}</aqua> and I learned what we could, then stopped before kindness ran out.",
+        "Some endings with <aqua>{ex_partner}</aqua> still deserve gentleness."
+      ],
+      "conditions": [
+        {
+          "type": "relationship",
+          "state": "separated_partner"
+        }
+      ]
+    },
+    {
+      "id": "adult_relationship_widowed",
+      "request": "question",
+      "option": "adult_relationships",
+      "show_for_babies": false,
+      "weight": 18,
+      "lines": [
+        "<aqua>{late_partner}</aqua> is gone, but some mornings I still make room for them in my thoughts.",
+        "<aqua>{late_partner}</aqua> is gone, but love leaves habits behind.",
+        "I still carry <aqua>{late_partner_possessive}</aqua> name carefully. <aqua>{late_partner}</aqua>"
+      ],
+      "conditions": [
+        {
+          "type": "relationship",
+          "state": "widowed_partner"
+        }
+      ]
+    },
+    {
+      "id": "adult_relationship_guarded",
+      "request": "question",
+      "option": "adult_relationships",
+      "show_for_babies": false,
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 28,
+      "lines": [
+        "<aqua>{partner}</aqua> is not a market rumor. Ask gently, or do not ask.",
+        "Do not turn <aqua>{partner}</aqua> into gossip. Some things deserve a closed door.",
+        "If you ask about <aqua>{partner}</aqua>, ask like the answer belongs to a person."
+      ],
+      "conditions": [
+        {
+          "type": "relationship",
+          "state": "relationship"
+        }
+      ]
+    },
+    {
+      "id": "baby_family_parent",
+      "request": "question",
+      "option": "baby_family",
+      "show_for_adults": false,
+      "weight": 28,
+      "lines": [
+        "<aqua>{parent}</aqua> says I should stay where the bell can hear me.",
+        "<aqua>{parent}</aqua> says the safest place is where someone can see me.",
+        "<aqua>{parent}</aqua> can find me even when I am pretending very hard to hide."
+      ],
+      "conditions": [
+        {
+          "type": "family",
+          "relation": "parent"
+        }
+      ]
+    },
+    {
+      "id": "baby_family_sibling",
+      "request": "question",
+      "option": "baby_family",
+      "show_for_adults": false,
+      "weight": 22,
+      "lines": [
+        "<aqua>{sibling}</aqua> thinks they are faster than me. They are not always right.",
+        "<aqua>{sibling}</aqua> says I am little. I say I am compact.",
+        "<aqua>{sibling}</aqua> runs fast, but I know better shortcuts."
+      ],
+      "conditions": [
+        {
+          "type": "family",
+          "relation": "sibling"
+        }
+      ]
+    },
+    {
+      "id": "baby_family_grandparent",
+      "request": "question",
+      "option": "baby_family",
+      "show_for_adults": false,
+      "weight": 16,
+      "lines": [
+        "<aqua>{grandparent}</aqua> knows stories that start before my bed was even made.",
+        "<aqua>{grandparent}</aqua> tells stories with extra corners in them.",
+        "<aqua>{grandparent}</aqua> remembers when everything was somehow uphill."
+      ],
+      "conditions": [
+        {
+          "type": "family",
+          "relation": "grandparent"
+        }
+      ]
+    },
+    {
+      "id": "baby_family_cousin",
+      "request": "question",
+      "option": "baby_family",
+      "show_for_adults": false,
+      "weight": 14,
+      "lines": [
+        "<aqua>{cousin}</aqua> says we are related enough to share chores. I think that sounds suspicious.",
+        "<aqua>{cousin}</aqua> says chores are easier with two people. I think they mean me.",
+        "<aqua>{cousin}</aqua> knows games that suspiciously look like work."
+      ],
+      "conditions": [
+        {
+          "type": "family",
+          "relation": "cousin"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "messages": [
+    {
+      "id": "toolsmith_gift_given_variants",
+      "key": "gift_given",
+      "lines": [
+        "Here, {gift_item}. The right tool in the right hand saves a lot of trouble.",
+        "Take {gift_item}. Keep it useful and it will repay you twice.",
+        "Take {gift_item}. It is not much, but it is given with care."
+      ],
+      "weight": 48
+    },
+    {
+      "id": "toolsmith_gift_advice_followup_liked_variants",
+      "key": "gift_advice_followup.liked",
+      "lines": [
+        "Good. {gift_item} did the job for {tested_villager}.",
+        "Then the advice had a good edge. {tested_villager} liked {gift_item}.",
+        "Good. {gift_item} suited {tested_villager}; I like advice that holds up."
+      ],
+      "weight": 44
+    },
+    {
+      "id": "toolsmith_gift_advice_followup_disliked_variants",
+      "key": "gift_advice_followup.disliked",
+      "lines": [
+        "Wrong tool for the work. For {gift_subject}, use {alternative_gift} instead.",
+        "{gift_item} slipped in the hand? Try {alternative_gift}; cleaner work.",
+        "{gift_item} missed the mark for {gift_subject}. Try {alternative_gift} instead."
+      ],
+      "weight": 44
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 20,
+      "lines": [
+        "Wrong tool, wrong job. Pick up {alternative_gift} next time.",
+        "Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
+        "Then we correct the guess: {alternative_gift} next time."
+      ]
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
+      "weight": 20,
+      "lines": [
+        "You used the advice as-is? Hm. Sharpen your judgment and bring {alternative_gift}.",
+        "Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
+        "Then we correct the guess: {alternative_gift} next time."
+      ]
+    }
+  ]
+}

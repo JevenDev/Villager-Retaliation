@@ -1,0 +1,67 @@
+{
+  "lines": [
+    {
+      "id": "recruitment_followup_toolsmith_safe",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
+      "weight": 38,
+      "lines": [
+        "Good work has a clean finish. Getting me home counts.",
+        "Home again, whole enough to thank you properly. That matters.",
+        "We came back with the village still ahead of us. I will count that as good work."
+      ]
+    },
+    {
+      "id": "recruitment_followup_toolsmith_injured",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "injured"
+      ],
+      "weight": 38,
+      "lines": [
+        "That trip handled poorly. I felt every bad grip on the way back.",
+        "I made it home, but the road took more from me than it should have.",
+        "Next time, let us return with fewer marks and better choices."
+      ]
+    },
+    {
+      "id": "recruitment_followup_toolsmith_betrayed",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "betrayed"
+      ],
+      "weight": 42,
+      "lines": [
+        "A tool used wrong can still be repaired. Trust is less forgiving.",
+        "Following you was trust. What happened after was something else.",
+        "A guide who strikes from close by leaves the longest mark."
+      ]
+    },
+    {
+      "id": "recruitment_followup_toolsmith_boat",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "weight": 42,
+      "lines": [
+        "That boat was the right tool for the crossing. I will give you that.",
+        "The boat did its part. I am still deciding whether the rest of the plan did.",
+        "Water carried us home, which is more than I expected from that journey."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "boat_trip": true
+        }
+      ]
+    }
+  ]
+}

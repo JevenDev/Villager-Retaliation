@@ -1,0 +1,6 @@
+{
+  "id": "example_template.farmer.option.question",
+  "label": "Example Farmer Question",
+  "request": "question",
+  "order": 20
+}

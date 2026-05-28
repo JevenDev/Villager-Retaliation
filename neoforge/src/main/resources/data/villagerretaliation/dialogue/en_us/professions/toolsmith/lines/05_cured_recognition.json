@@ -1,0 +1,47 @@
+{
+  "lines": [
+    {
+      "id": "toolsmith_cured_recognition_warm",
+      "request": "cured_recognition",
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ],
+      "lines": [
+        "I remember my mind working again, like a tool freed from rust.",
+        "You put a handle back on my life when I could not grip it myself.",
+        "You helped pull me back when even my name felt far away."
+      ],
+      "weight": 60
+    },
+    {
+      "id": "toolsmith_cured_recognition_confused",
+      "request": "cured_recognition",
+      "dispositions": [
+        "neutral",
+        "cautious"
+      ],
+      "lines": [
+        "Your face fits the memory, though the memory is still badly forged.",
+        "I remember a cure biting harder than a dull saw, then sense returning.",
+        "The memory is rough around the edges, but your face stayed in it."
+      ],
+      "weight": 60
+    },
+    {
+      "id": "toolsmith_cured_recognition_uneasy_1",
+      "request": "cured_recognition",
+      "dispositions": [
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 30,
+      "lines": [
+        "I remember you. The old fear still catches like a nicked blade.",
+        "I know you helped. I also remember why my hands still shake.",
+        "The cure left echoes behind. Stand where I can breathe around them."
+      ]
+    }
+  ]
+}

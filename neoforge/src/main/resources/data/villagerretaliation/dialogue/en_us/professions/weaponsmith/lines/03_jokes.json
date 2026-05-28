@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "weaponsmith_new_joke_sharp",
+      "request": "joke",
+      "weight": 18,
+      "lines": [
+        "Weapon jokes are sharp. I keep the dull ones for people who lean too close.",
+        "Weapons jokes need timing. Mine usually arrive with steel on them.",
+        "I keep a spare joke near the grindstone. It is not always ready for public use."
+      ]
+    }
+  ]
+}

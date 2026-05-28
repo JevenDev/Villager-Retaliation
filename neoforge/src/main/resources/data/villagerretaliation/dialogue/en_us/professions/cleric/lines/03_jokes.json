@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "cleric_new_joke_bitter",
+      "request": "joke",
+      "weight": 18,
+      "lines": [
+        "A cleric joke is like medicine: if it tastes pleasant, check it twice.",
+        "Remedies jokes need timing. Mine usually arrive with breath on them.",
+        "I keep a spare joke near the brewing stand. It is not always ready for public use."
+      ]
+    }
+  ]
+}

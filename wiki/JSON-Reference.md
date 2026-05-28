@@ -2,7 +2,7 @@
 
 This page lists shared JSON conventions used across Villager Retaliation's data-driven systems.
 
-For migration notes between versions, see [Pack Format Changes](Pack-Format-Changes.md).
+For version-specific breaking changes and manual retargeting notes, see [Pack Format Changes](Pack-Format-Changes.md).
 
 ## Resource Location Shortcuts
 

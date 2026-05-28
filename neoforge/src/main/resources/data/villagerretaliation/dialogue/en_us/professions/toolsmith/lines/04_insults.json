@@ -1,0 +1,28 @@
+{
+  "lines": [
+    {
+      "id": "toolsmith_new_insult_bent",
+      "request": "insult",
+      "weight": 18,
+      "lines": [
+        "That idea is bent past repair.",
+        "I have seen bad grips with more sense than that.",
+        "Careful. Even steel looks softer than your manners right now."
+      ]
+    },
+    {
+      "id": "toolsmith_new_hostile_tool",
+      "request": "insult",
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
+      "weight": 30,
+      "lines": [
+        "You are using your manners like the wrong tool for the job.",
+        "I have seen bad grips with more sense than that.",
+        "Careful. Even steel looks softer than your manners right now."
+      ]
+    }
+  ]
+}

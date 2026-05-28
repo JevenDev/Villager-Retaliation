@@ -1,0 +1,40 @@
+{
+  "lines": [
+    {
+      "id": "gear_report_fletcher_used",
+      "request": "gear_report",
+      "option": "gear_report",
+      "show_for_babies": false,
+      "weight": 32,
+      "lines": [
+        "It kept its line under pressure. A steady hand is easier with proper tools.",
+        "It did the job when fear was loud. That is praise enough.",
+        "Good gear earns trust the moment trouble tests it."
+      ],
+      "conditions": [
+        {
+          "type": "memory",
+          "kind": "gear_report_used_in_combat"
+        }
+      ]
+    },
+    {
+      "id": "gear_report_fletcher_unused",
+      "request": "gear_report",
+      "option": "gear_report",
+      "show_for_babies": false,
+      "weight": 32,
+      "lines": [
+        "Still unused. A ready shot is not wasted just because it stays in the quiver.",
+        "It did the job when fear was loud. That is praise enough.",
+        "Good gear earns trust the moment trouble tests it."
+      ],
+      "conditions": [
+        {
+          "type": "memory",
+          "kind": "gear_report_unused_in_combat"
+        }
+      ]
+    }
+  ]
+}

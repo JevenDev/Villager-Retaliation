@@ -1,0 +1,40 @@
+{
+  "lines": [
+    {
+      "id": "gear_report_weaponsmith_used",
+      "request": "gear_report",
+      "option": "gear_report",
+      "show_for_babies": false,
+      "weight": 34,
+      "lines": [
+        "It found its purpose. I prefer tools that know when to stop.",
+        "It did the job when fear was loud. That is praise enough.",
+        "Good gear earns trust the moment trouble tests it."
+      ],
+      "conditions": [
+        {
+          "type": "memory",
+          "kind": "gear_report_used_in_combat"
+        }
+      ]
+    },
+    {
+      "id": "gear_report_weaponsmith_unused",
+      "request": "gear_report",
+      "option": "gear_report",
+      "show_for_babies": false,
+      "weight": 34,
+      "lines": [
+        "Still sharp, still waiting. That is better than needing it twice.",
+        "It did the job when fear was loud. That is praise enough.",
+        "Good gear earns trust the moment trouble tests it."
+      ],
+      "conditions": [
+        {
+          "type": "memory",
+          "kind": "gear_report_unused_in_combat"
+        }
+      ]
+    }
+  ]
+}

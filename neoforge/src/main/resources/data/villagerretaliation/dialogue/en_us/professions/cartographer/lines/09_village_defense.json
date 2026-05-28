@@ -1,0 +1,21 @@
+{
+  "lines": [
+    {
+      "id": "village_defense_cartographer_marked",
+      "request": "village_defense_report",
+      "option": "village_defense_report",
+      "show_for_babies": false,
+      "lines": [
+        "I marked where the raiders came through. I also marked where you turned them back.",
+        "Maps make borders look calm. You reminded me borders have to be defended.",
+        "I can point to where you met them. That spot feels different now.",
+        "A village border is not ink. Yesterday, you made that clear.",
+        "You changed the shape of the danger before it reached the center.",
+        "I marked the raid path. I also marked where it stopped.",
+        "The map of this place has one more reason to keep its name.",
+        "You made the distance between raiders and homes matter."
+      ],
+      "weight": 246
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "lines": [
+    {
+      "id": "farmer_new_insult_mud",
+      "request": "insult",
+      "weight": 18,
+      "lines": [
+        "That thought came in muddy and left tracks.",
+        "I have seen trampled crops with more sense than that.",
+        "Careful. Even soil looks softer than your manners right now."
+      ]
+    },
+    {
+      "id": "farmer_new_rude_field",
+      "request": "insult",
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
+      "weight": 30,
+      "lines": [
+        "I would not plant that opinion in poor soil.",
+        "I have seen trampled crops with more sense than that.",
+        "Careful. Even soil looks softer than your manners right now."
+      ]
+    }
+  ]
+}

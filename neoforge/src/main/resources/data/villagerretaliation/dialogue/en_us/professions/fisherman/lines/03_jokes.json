@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "fisherman_new_joke_line",
+      "request": "joke",
+      "weight": 18,
+      "lines": [
+        "A fishing joke needs a good <wavy>line</wavy> and someone patient enough to hear it.",
+        "Fishing jokes need timing. Mine usually arrive with water on them.",
+        "I keep a spare joke near the dock. It is not always ready for public use."
+      ]
+    }
+  ]
+}

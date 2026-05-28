@@ -1,0 +1,67 @@
+{
+  "lines": [
+    {
+      "id": "recruitment_followup_nitwit_safe",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
+      "weight": 38,
+      "lines": [
+        "We went there, then we came back here. I liked the back here part best.",
+        "Home again, whole enough to thank you properly. That matters.",
+        "We came back with the village still ahead of us. I will count that as good work."
+      ]
+    },
+    {
+      "id": "recruitment_followup_nitwit_injured",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "injured"
+      ],
+      "weight": 38,
+      "lines": [
+        "I got bonked on the trip. Home is better when fewer things bonk me.",
+        "I made it home, but the road took more from me than it should have.",
+        "Next time, let us return with fewer marks and better choices."
+      ]
+    },
+    {
+      "id": "recruitment_followup_nitwit_betrayed",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "betrayed"
+      ],
+      "weight": 42,
+      "lines": [
+        "I thought following meant you were on my side. That was the important bit.",
+        "Following you was trust. What happened after was something else.",
+        "A guide who strikes from close by leaves the longest mark."
+      ]
+    },
+    {
+      "id": "recruitment_followup_nitwit_boat",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "weight": 42,
+      "lines": [
+        "The boat moved and I did not have to. I liked that part.",
+        "The boat did its part. I am still deciding whether the rest of the plan did.",
+        "Water carried us home, which is more than I expected from that journey."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "boat_trip": true
+        }
+      ]
+    }
+  ]
+}

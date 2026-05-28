@@ -1,0 +1,12 @@
+{
+  "tables": [
+    {
+      "id": "example_template.farmer.common",
+      "professions": [
+        "farmer"
+      ],
+      "loot_table": "example_template:villager/profession/farmer/common",
+      "chance": "always"
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "pacify": [
+    {
+      "id": "mason_pacify_success",
+      "outcomes": [
+        "success"
+      ],
+      "weight": 26,
+      "lines": [
+        "Fine. I will set this stone down carefully.",
+        "Fine. I will lower this like a heavy block.",
+        "Fine. I can set the anger down, but not forget where it was."
+      ]
+    },
+    {
+      "id": "mason_pacify_short",
+      "outcomes": [
+        "not_enough_emeralds"
+      ],
+      "weight": 26,
+      "lines": [
+        "That foundation will not hold. Bring {emerald_cost} {emeralds}.",
+        "That offer is short by enough to crack. Bring {emerald_cost} {emeralds}.",
+        "Not enough mortar for this repair. Bring {emerald_cost} {emeralds}."
+      ]
+    },
+    {
+      "id": "mason_pacify_blocked",
+      "outcomes": [
+        "blocked_by_reputation"
+      ],
+      "weight": 26,
+      "lines": [
+        "No. Some cracks keep spreading after the offer is made.",
+        "No. This crack is still moving, and I am not building on it.",
+        "No. Some damage has to stop spreading before payment matters."
+      ]
+    }
+  ]
+}

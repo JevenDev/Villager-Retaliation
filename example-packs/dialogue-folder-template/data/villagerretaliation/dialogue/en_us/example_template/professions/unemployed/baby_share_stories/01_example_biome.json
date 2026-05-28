@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "example_template.baby.share_story.biome",
+      "request": "share_story",
+      "option": "baby_share_story",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "story_biome": "minecraft:plains",
+      "text": "example",
+      "weight": 10
+    }
+  ]
+}

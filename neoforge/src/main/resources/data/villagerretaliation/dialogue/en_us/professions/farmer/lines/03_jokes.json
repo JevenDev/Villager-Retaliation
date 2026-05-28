@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "farmer_new_joke_carrot",
+      "request": "joke",
+      "weight": 18,
+      "lines": [
+        "A carrot joke takes root <pulse>slowly</pulse>, if anyone lets it.",
+        "Farming jokes need timing. Mine usually arrive with soil on them.",
+        "I keep a spare joke near the fields. It is not always ready for public use."
+      ]
+    }
+  ]
+}

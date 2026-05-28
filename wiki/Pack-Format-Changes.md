@@ -2,7 +2,7 @@
 
 This page tracks JSON, tag, trigger, path, placeholder, and pack-behavior changes that matter to datapack and resource-pack authors.
 
-This is a migration log rather than a full release changelog. Player-facing features can stay in release notes; this page focuses on the pack author question: "Will my pack still work, and what changed?"
+This is a pack-format change log rather than a full release changelog. Player-facing features can stay in release notes; this page focuses on the pack author question: "What changed, what target should my pack use, and what do I need to review manually?"
 
 ## How To Read This Page
 
@@ -12,9 +12,9 @@ Each version section uses the same categories so changes stay easy to scan:
 - **Modified** - Existing behavior that changed but still exists.
 - **Deprecated** - Still supported for now, but pack authors should move away from it.
 - **Removed** - No longer supported.
-- **Migration Notes** - Practical steps for updating existing packs.
+- **Migration Notes** - Practical manual steps for updating existing packs when a version supports a clear path.
 
-Breaking changes should call out the old form, the new form, and the practical migration path.
+Breaking changes should call out the old form, the new form, and whether the update has a supported migration path. Some releases, including beta.12, are intentionally treated as manual retargeting work instead of site-supported conversion.
 
 ## Current Pack Surface
 
@@ -37,7 +37,9 @@ These pages describe the current supported format:
 
 ## 1.0.0-beta.12 - Unreleased
 
-Pack-facing beta.12 changes introduce persistent Social Attributes and temporary villager moods as optional dialogue filters. Beta.11 datapacks continue to target the beta.11 wiki snapshot and should not use these fields.
+Beta.12 is a major pack authoring reset. It introduces persistent Social Attributes, temporary villager moods, richer dialogue conditions, and a folderized path-aware dialogue layout designed to replace thousand-line monolithic dialogue files. Beta.11 packs should continue to target the beta.11 wiki snapshot until a pack author manually reviews and retargets them for beta.12.
+
+The website and Datapack Generator do not provide beta.11 to beta.12 migration support. Do not treat beta.12 as a marker-only update.
 
 ### Added
 
@@ -61,11 +63,17 @@ Pack-facing beta.12 changes introduce persistent Social Attributes and temporary
 - Added shared forced-dialogue interjection message keys `trade_refresh.ready_interjection`, `trade_refresh.ready_theft_interjection`, `container_theft.backup_interjection`, and `container_opened.backup_interjection`, including `.second` / `.third` variants and interjection-order placeholders for multi-villager forced-dialogue chains.
 - Added a `1.0.0-beta.12` target to the Datapack Generator and built-in website wiki. The beta.11 snapshot remains separate.
 - Added persisted per-villager last-seen memory and built-in absence-aware opening message key `opening.return_after_absence` with placeholders `{days_since_seen}`, `{day_or_days}`, and `{days_since_seen_phrase}`.
+- Added path-aware dialogue files. Files under typed folders named `options`, `lines`, `messages`, `openings`, `closings`, or `pacify` can now be authored as one focused JSON entry instead of a top-level array bundle.
+- Added optional `type` for dialogue options. New files under an `options` folder can omit `type: "dialogue_option"`; if `type` is present, it must still be `dialogue_option`.
+- Added profession defaults from folder paths such as `dialogue/<locale>/professions/farmer/lines/...json` and namespaced custom profession paths such as `professions/examplemod/alchemist/lines/...json`.
+- Added a downloadable beta.12 dialogue folder template at `example-packs/dialogue-folder-template/`, and added it to the Datapack Generator `Preset` picker alongside the editable starter pack.
 
 ### Modified
 
 - The Datapack Generator now exposes beta.12 mood and Social Attribute line filters only when the selected VR version is `1.0.0-beta.12`.
-- The generator's Convert flow can move beta.11 packs to beta.12 by updating `pack.mcmeta` with the beta.12 VR version marker. Existing beta.11 JSON fields are not renamed or removed.
+- The Datapack Generator can now author, import, preserve, preview, and export typed beta.12 dialogue files such as `options/00_greeting.json` and `lines/00_greeting.json`. New beta.12 dialogue entries default to typed folders unless the `Single bundle file` layout is selected.
+- The Datapack Generator now infers namespaced custom profession defaults from typed profession paths such as `professions/examplemod/alchemist/lines/...json`, matching the runtime path behavior.
+- The Datapack Generator's version selector is now a target selector only. It restores the saved target from `pack.mcmeta`, but it does not convert beta.11 packs to beta.12.
 - Documentation now distinguishes dialogue `dispositions` from beta.12 temporary `mood` / `moods` filters.
 - Documentation now separates canonical field names from compatibility aliases, including `trigger`, `player_items`, `give_items`, `requires_villager_*`, `requires_witness_*`, and `world_text_kind`.
 - Normal dialogue line selection now has an explicit priority tier before weighted random selection. Existing packs keep the default `priority: 0`.
@@ -76,20 +84,28 @@ Pack-facing beta.12 changes introduce persistent Social Attributes and temporary
 - `first_conversation_only` opening behavior now respects persisted seen-memory, so first-time intros do not replay for villagers that already remember the player after leave/join.
 - `first_village_interaction_only` opening behavior now also respects persisted seen-memory from any villager in the same resolved village, so "new here" openings do not replay for returning players after leave/join.
 - Forced-dialogue option and leave responses now keep session-scoped replacements when a forced session advances, so interjection and ready-trade placeholders stay available to follow-up responses.
+- Built-in dialogue resources are now split into folderized topic files under `dialogue/<locale>/global`, `groups`, and `professions/<profession>`, with profession files further separated into `lines`, `messages`, `openings`, `closings`, `pacify`, `share_stories`, and baby-specific story folders. Profession story biome dialogue and recruitment-left-behind biome follow-ups are grouped by biome type, such as cold, hot/dry, ocean/river, Nether, and End files.
 
 ### Planned Beta.13 Deprecations
 
-- The flat normal dialogue line memory/family/relationship helper fields still load in beta.12, but are planned for beta.13 deprecation in favor of `conditions`: `requires_known_family`, `requires_known_parent`, `requires_known_sibling`, `requires_known_spouse`, `requires_known_child`, `requires_known_grandparent`, `requires_known_grandchild`, `requires_known_descendant`, `requires_known_aunt_uncle`, `requires_known_cousin`, `requires_known_niece_nephew`, `requires_known_extended_family`, `requires_known_deceased_family`, `requires_known_relationship`, `requires_known_current_relationship`, `requires_known_past_relationship`, `requires_known_crush`, `requires_known_dating_partner`, `requires_known_fiance`, `requires_known_romantic_spouse`, `requires_known_separated_partner`, `requires_known_widowed_partner`, `requires_recent_broken_bed_memory`, `requires_recent_direct_hit_memory`, `requires_gear_report_used_in_combat`, `requires_gear_report_unused_in_combat`, `requires_recruitment_memory`, `requires_recruitment_boat_trip`, `requires_recruitment_ocean_crossing`, `requires_recruitment_swim_trip`, `excludes_recruitment_ocean_crossing`, `requires_container_theft_to_self`, `requires_container_theft_from_other`, `requires_retaliation_to_self`, and `requires_retaliation_from_other`.
-- The flat dialogue option family and relationship helper fields still load in beta.12, but are planned for beta.13 deprecation in favor of `conditions`: `requires_known_family`, `requires_known_parent`, `requires_known_sibling`, `requires_known_spouse`, `requires_known_child`, `requires_known_grandparent`, `requires_known_grandchild`, `requires_known_descendant`, `requires_known_aunt_uncle`, `requires_known_cousin`, `requires_known_niece_nephew`, `requires_known_extended_family`, `requires_known_deceased_family`, `requires_known_relationship`, `requires_known_current_relationship`, `requires_known_past_relationship`, `requires_known_crush`, `requires_known_dating_partner`, `requires_known_fiance`, `requires_known_romantic_spouse`, `requires_known_separated_partner`, and `requires_known_widowed_partner`.
+- The flat normal dialogue line memory/family/relationship helper fields still load in beta.12 as compatibility inputs, but are planned for beta.13 deprecation in favor of `conditions`. The beta.12 folderized dialogue rewrite does not remove these fields; it makes `conditions` the maintained authoring shape. Affected line fields: `requires_known_family`, `requires_known_parent`, `requires_known_sibling`, `requires_known_spouse`, `requires_known_child`, `requires_known_grandparent`, `requires_known_grandchild`, `requires_known_descendant`, `requires_known_aunt_uncle`, `requires_known_cousin`, `requires_known_niece_nephew`, `requires_known_extended_family`, `requires_known_deceased_family`, `requires_known_relationship`, `requires_known_current_relationship`, `requires_known_past_relationship`, `requires_known_crush`, `requires_known_dating_partner`, `requires_known_fiance`, `requires_known_romantic_spouse`, `requires_known_separated_partner`, `requires_known_widowed_partner`, `requires_recent_broken_bed_memory`, `requires_recent_direct_hit_memory`, `requires_gear_report_used_in_combat`, `requires_gear_report_unused_in_combat`, `requires_recruitment_memory`, `requires_recruitment_boat_trip`, `requires_recruitment_ocean_crossing`, `requires_recruitment_swim_trip`, `excludes_recruitment_ocean_crossing`, `requires_container_theft_to_self`, `requires_container_theft_from_other`, `requires_retaliation_to_self`, and `requires_retaliation_from_other`.
+- The flat dialogue option family and relationship helper fields still load in beta.12 as compatibility inputs, but are planned for beta.13 deprecation in favor of `conditions`: `requires_known_family`, `requires_known_parent`, `requires_known_sibling`, `requires_known_spouse`, `requires_known_child`, `requires_known_grandparent`, `requires_known_grandchild`, `requires_known_descendant`, `requires_known_aunt_uncle`, `requires_known_cousin`, `requires_known_niece_nephew`, `requires_known_extended_family`, `requires_known_deceased_family`, `requires_known_relationship`, `requires_known_current_relationship`, `requires_known_past_relationship`, `requires_known_crush`, `requires_known_dating_partner`, `requires_known_fiance`, `requires_known_romantic_spouse`, `requires_known_separated_partner`, and `requires_known_widowed_partner`.
 
 ### Removed
 
-- No beta.12 pack-facing fields, triggers, paths, or placeholders are removed.
+- Removed the Datapack Generator's beta.11 to beta.12 Convert workflow. The site no longer offers automated pack-version migration for this boundary.
+- No beta.12 runtime JSON fields, triggers, or placeholders are removed solely because of the folderized dialogue layout.
 
 ### Migration Notes
 
-- Existing beta.11 datapacks do not need JSON changes to load under beta.12.
-- Packs that want to use mood or Social Attribute line filters should set the builder target to `1.0.0-beta.12` or add `villagerretaliation.pack_version: "1.0.0-beta.12"` in `pack.mcmeta`.
+- Treat beta.12 as a manual retargeting release. Keep existing beta.11 datapacks on `1.0.0-beta.11` until you have reviewed their dialogue, forced-dialogue, notification, and skill-trade assumptions against the beta.12 wiki.
+- Do not migrate a beta.11 pack by only changing `villagerretaliation.pack_version` to `1.0.0-beta.12`. That marker selects the editor/runtime target; it does not reorganize dialogue, audit ids, update deprecated helper fields, or validate new beta.12 behavior.
+- New beta.12 dialogue packs should prefer folderized files under `data/villagerretaliation/dialogue/<locale>/global`, `groups`, or `professions/<profession>`, with typed folders such as `options`, `lines`, `messages`, `openings`, `closings`, and `pacify`.
+- Treat `options`, `lines`, `messages`, `openings`, `closings`, and `pacify` as reserved section folder names anywhere below `dialogue/<locale>/`. Use names like `topics`, `groups`, `share_stories`, or `profession_notes` for normal organizational folders.
+- Split large beta.11 dialogue files by ownership and purpose. For example, move farmer replies to `professions/farmer/lines/...json`, shared smithing replies to `groups/smiths/lines/...json`, keyed trade refresh text to `global/messages/...json`, and menu options to `global/options/...json`.
+- Use single-entry files under typed folders when one file represents one option, line group, message, opening, closing, or pacify entry. Keep bundle files only when several entries are easier to review together.
+- Check every intentional override. Minecraft still overrides by exact resource path before Villager Retaliation merges entries, so copying an old built-in monolith path can replace more beta.12 content than intended.
+- If you choose beta.12 in the builder, the pack is now your beta.12 source of truth. The website will not provide a beta.11 rollback or forward migration report.
 - Packs that customize skill trades can make better refresh results available by adding eligible higher-rank entries. A villager cannot refresh into a result item they already offer.
 - Packs that customize skill trades can add `request.targetable: true` to make an entry directly requestable as a Special Order. The queued request stores the trade definition id, so cost, result, enchantment, skill gates, level gates, and config flags remain tied to the original entry.
 - Packs that customize trade-refresh dialogue should override the `trade_refresh.*` dialogue message keys for opening lines and follow-ups, including `trade_refresh.ready_interjection` and `trade_refresh.ready_theft_interjection` for shared ready-request interruptions, and the `trade_refresh.ready_options`, `trade_refresh.available_options`, `trade_refresh.unavailable_options`, `trade_refresh.revered_options`, `trade_refresh.special_order_select_options`, and `trade_refresh.special_order_confirm_options` forced-dialogue entries for button responses.
@@ -101,6 +117,8 @@ Pack-facing beta.12 changes introduce persistent Social Attributes and temporary
 - Prefer canonical field names from [JSON Reference](JSON-Reference.md). Aliases remain compatibility inputs, not the recommended names for new examples.
 - Use `requires_high_*` when a simple score of 60+ is enough. Use `min_*` and `max_*` score ranges when a line needs exact attribute bands.
 - Packs that customize opening greetings can override `opening.return_after_absence` to control how villagers mention long gaps between visits.
+- Prefer the folderized dialogue layout for new packs: put single-purpose files under typed folders, and use bundle files only when several related entries are easier to maintain together.
+- Existing top-level dialogue bundle files with `options`, `lines`, `messages`, `openings`, `closings`, or `pacify` arrays still load, but the built-in pack no longer uses giant `global.json` or all-in-one profession files as the primary authoring shape.
 
 ## 1.0.0-beta.11 - 2026-05-26
 

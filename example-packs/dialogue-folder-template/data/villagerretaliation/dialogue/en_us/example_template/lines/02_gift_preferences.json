@@ -1,0 +1,7 @@
+{
+  "id": "example_template.line.gift_preferences",
+  "request": "gift_preferences",
+  "option": "example_template.option.gift_preferences",
+  "text": "example",
+  "weight": 10
+}

@@ -1,0 +1,12 @@
+{
+  "openings": [
+    {
+      "id": "mason_opening",
+      "lines": [
+        "Mind the stonecutter. What do you need?",
+        "Step clear of the stonecutter. What do you need?",
+        "Keep your hands back from the blade. What do you need?"
+      ]
+    }
+  ]
+}

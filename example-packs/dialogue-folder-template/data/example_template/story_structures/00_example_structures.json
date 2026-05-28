@@ -1,0 +1,9 @@
+{
+  "radius": 96,
+  "entries": [
+    {
+      "structure": "minecraft:village_plains",
+      "name": "Example Structure"
+    }
+  ]
+}

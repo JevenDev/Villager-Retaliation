@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "shepherd_new_joke_thread",
+      "request": "joke",
+      "weight": 18,
+      "lines": [
+        "My jokes have <wavy>loose threads</wavy>. Pull gently.",
+        "Woolwork jokes need timing. Mine usually arrive with wool on them.",
+        "I keep a spare joke near the loom. It is not always ready for public use."
+      ]
+    }
+  ]
+}

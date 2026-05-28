@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "toolsmith_new_greeting_table",
+      "request": "greeting",
+      "weight": 26,
+      "lines": [
+        "Mind the table. Good tools begin with nobody bumping my elbow.",
+        "Give the smithing table room. Tools works better without elbows in it.",
+        "Step carefully near the smithing table. I would rather greet you than patch you up."
+      ]
+    }
+  ]
+}

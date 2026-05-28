@@ -1,0 +1,21 @@
+{
+  "lines": [
+    {
+      "id": "village_defense_unemployed_place",
+      "request": "village_defense_report",
+      "option": "village_defense_report",
+      "show_for_babies": false,
+      "lines": [
+        "I am still finding my place here. You made sure there was a here to find it in.",
+        "I had no station, no trade, just a door to hide behind. You kept that door standing.",
+        "I do not have much here yet, but you helped keep what I might become part of.",
+        "The village still has room for me because people like you fought for it.",
+        "I had nowhere important to stand, so I watched. You stood somewhere important.",
+        "You protected more than houses. You protected chances.",
+        "I saw a future here look less certain, then you pushed back.",
+        "Maybe I will find work tomorrow because there is still a village tomorrow."
+      ],
+      "weight": 246
+    }
+  ]
+}

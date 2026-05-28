@@ -1,0 +1,40 @@
+{
+  "lines": [
+    {
+      "id": "gear_report_butcher_used",
+      "request": "gear_report",
+      "option": "gear_report",
+      "show_for_babies": false,
+      "weight": 32,
+      "lines": [
+        "It handled ugly work without making a mess of me. I count that as fine quality.",
+        "It did the job when fear was loud. That is praise enough.",
+        "Good gear earns trust the moment trouble tests it."
+      ],
+      "conditions": [
+        {
+          "type": "memory",
+          "kind": "gear_report_used_in_combat"
+        }
+      ]
+    },
+    {
+      "id": "gear_report_butcher_unused",
+      "request": "gear_report",
+      "option": "gear_report",
+      "show_for_babies": false,
+      "weight": 32,
+      "lines": [
+        "Still clean. That is how I prefer tools before the hard work starts.",
+        "It did the job when fear was loud. That is praise enough.",
+        "Good gear earns trust the moment trouble tests it."
+      ],
+      "conditions": [
+        {
+          "type": "memory",
+          "kind": "gear_report_unused_in_combat"
+        }
+      ]
+    }
+  ]
+}

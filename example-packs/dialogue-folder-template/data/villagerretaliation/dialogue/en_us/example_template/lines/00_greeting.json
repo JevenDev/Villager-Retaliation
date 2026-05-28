@@ -1,0 +1,7 @@
+{
+  "id": "example_template.line.greeting",
+  "request": "greeting",
+  "option": "example_template.option.greeting",
+  "text": "example",
+  "weight": 10
+}

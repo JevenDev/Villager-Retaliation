@@ -2,7 +2,7 @@
 
 This guide covers how to build packs that target Villager Retaliation JSON and assets.
 
-For version-to-version pack migrations, see [Pack Format Changes](Pack-Format-Changes.md).
+For version-specific breaking changes and manual retargeting notes, see [Pack Format Changes](Pack-Format-Changes.md).
 
 For a guided browser tool that creates, imports, previews, validates, and exports Villager Retaliation datapacks, see the [Datapack Generator](Datapack-Generator.md).
 
@@ -84,7 +84,7 @@ Minecraft resources are loaded from all active packs. Villager Retaliation then 
 The folder path decides which loader reads a file. A `notifications` array inside `data/villagerretaliation/dialogue/<locale>/...json` is still in a dialogue file, not a notification file, and forced-dialogue `entries` inside a dialogue or notification folder are not routed to the forced-dialogue loader. Keep related ideas split across the documented folders:
 
 ```text
-data/villagerretaliation/dialogue/en_us/my_pack_dialogue.json
+data/villagerretaliation/dialogue/en_us/my_pack/lines/rumors.json
 data/villagerretaliation/forced_dialogue/my_pack_events.json
 data/villagerretaliation/notifications/en_us/my_pack_notifications.json
 ```
@@ -94,12 +94,12 @@ On reload, the mod logs warnings for common path mistakes, unsupported fields th
 For additive dialogue, forced dialogue, and notification packs, use your own file names, such as:
 
 ```text
-data/villagerretaliation/dialogue/en_us/my_pack_dialogue.json
+data/villagerretaliation/dialogue/en_us/my_pack/lines/rumors.json
 data/villagerretaliation/forced_dialogue/my_pack_events.json
 data/villagerretaliation/notifications/en_us/my_pack_notifications.json
 ```
 
-Do not put addon content in `data/villagerretaliation/dialogue/en_us/global.json`, `data/villagerretaliation/forced_dialogue/default.json`, or `data/villagerretaliation/notifications/en_us/global.json` unless you mean to replace the mod's built-in file. Same-path datapack files replace the built-in file before Villager Retaliation reads entries, so a pack at those paths can hide default interaction-menu options, keyed messages, openings, closings, forced event entries, notification text, and other built-in data.
+Do not put addon content at the same resource path as a built-in file unless you mean to replace that built-in file. Same-path datapack files replace the built-in file before Villager Retaliation reads entries, so a pack at those paths can hide default interaction-menu options, keyed messages, openings, closings, forced event entries, notification text, and other built-in data. For dialogue, prefer your own subfolder under `data/villagerretaliation/dialogue/<locale>/`.
 
 Dialogue, forced dialogue, notification, gift, and profession loot entries support stable `id` values. When a later locale layer or later file defines the same `id`, it replaces the previous entry in that loaded pool. This is the cleanest way to translate or override one specific line or rule without copying a full built-in file.
 
@@ -122,8 +122,8 @@ Dialogue and notifications are locale-aware. The mod always loads `en_us` first,
 Example:
 
 ```text
-data/villagerretaliation/dialogue/en_us/my_pack_dialogue.json
-data/villagerretaliation/dialogue/fr_fr/my_pack_dialogue.json
+data/villagerretaliation/dialogue/en_us/my_pack/lines/weather.json
+data/villagerretaliation/dialogue/fr_fr/my_pack/lines/weather.json
 ```
 
 If both files define an entry with the same `id`, the `fr_fr` entry replaces the `en_us` entry for French players. Players using other languages keep the English fallback.

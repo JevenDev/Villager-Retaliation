@@ -1,0 +1,67 @@
+{
+  "lines": [
+    {
+      "id": "recruitment_followup_mason_safe",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
+      "weight": 38,
+      "lines": [
+        "Solid trip, solid return. Foundations matter.",
+        "We left, returned, and nothing load-bearing failed. I will take that.",
+        "Home is still standing, and so am I. That is a proper finish."
+      ]
+    },
+    {
+      "id": "recruitment_followup_mason_injured",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "injured"
+      ],
+      "weight": 38,
+      "lines": [
+        "I came back chipped. A wall can take that. A person should not have to.",
+        "I made it home with damage that no chisel can smooth.",
+        "There are cracks in me that the road had no right to make."
+      ]
+    },
+    {
+      "id": "recruitment_followup_mason_betrayed",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "betrayed"
+      ],
+      "weight": 42,
+      "lines": [
+        "You cracked something load-bearing between us.",
+        "A careless blow can split more than stone.",
+        "Trust was holding weight. Then you struck it."
+      ]
+    },
+    {
+      "id": "recruitment_followup_mason_boat",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "weight": 42,
+      "lines": [
+        "No foundation under a boat, yet somehow it held. I respect the craft.",
+        "A boat has no proper base, but I cannot argue with arriving alive.",
+        "The water carried us better than I expected. I still prefer roads."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "boat_trip": true
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "lines": [
+    {
+      "id": "village_defense_cleric_prayer",
+      "request": "village_defense_report",
+      "option": "village_defense_report",
+      "show_for_babies": false,
+      "lines": [
+        "I prayed for courage in the village. It seems some of it found you.",
+        "Every life still here is a quieter bell than the one that rang. Thank you.",
+        "I prayed for protection and saw someone answer with action.",
+        "You gave fear less room inside these walls.",
+        "The bell called for help, and you came before the echo faded.",
+        "There are blessings spoken and blessings done. Yours was done.",
+        "I will remember the courage, even while I tend the frightened.",
+        "The village is quieter because you helped end the noise."
+      ],
+      "weight": 246
+    }
+  ]
+}

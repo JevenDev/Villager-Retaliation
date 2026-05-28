@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "cleric_story_omens_variants",
+      "request": "story",
+      "lines": [
+        "Bad omens <pulse>linger</pulse> longer than most people think.",
+        "I once made a remedy so bitter the patient got better out of spite.",
+        "After a hard night, even the brewing stand sounds tired in the morning."
+      ],
+      "weight": 74
+    }
+  ]
+}

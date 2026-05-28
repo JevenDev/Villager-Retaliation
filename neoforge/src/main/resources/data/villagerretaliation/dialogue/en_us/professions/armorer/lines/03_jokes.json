@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "armorer_new_joke_padding",
+      "request": "joke",
+      "weight": 18,
+      "lines": [
+        "Armor jokes need padding. Otherwise everyone feels the <jump>point</jump> too soon.",
+        "Armor jokes need timing. Mine usually arrive with iron on them.",
+        "I keep a spare joke near the forge. It is not always ready for public use."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,101 @@
+{
+  "lines": [
+    {
+      "id": "cartographer_village_event_thunderstorm",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "lines": [
+        "Thunder shook the map table so hard loose maps tried to fly, but everyone near me is still standing.",
+        "I checked maps, compasses, and road marks after the lightning, then counted heads. No one should be alone after a sky like that.",
+        "Near the map table, the bell sounded small under that thunder. We stayed inside and kept the doors watched.",
+        "That thunder made everyone quiet. I checked the maps twice.",
+        "The sky can keep its lightning. I have maps to set right."
+      ],
+      "weight": 170
+    },
+    {
+      "id": "cartographer_village_event_fire",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "village_fire"
+      ],
+      "lines": [
+        "I checked dry parchment and map frames for sparks first, then checked faces for smoke and fear.",
+        "We passed water hand to hand and kept people away from the smoke. I checked the map table after.",
+        "The maps can wait. People come first.",
+        "We saved what we could reach around the map table, then stopped pretending things matter more than neighbors.",
+        "The smoke is thinning near the map table, but everyone is still sniffing the air like it might lie."
+      ],
+      "weight": 170
+    },
+    {
+      "id": "cartographer_village_event_raid",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "lines": [
+        "During a raid, maps can wait flat on the table; who makes it behind a door matters more.",
+        "The horns stopped, but my hands near the map table still expect another wave from the road.",
+        "We counted living neighbors before maps, compasses, and road marks. That is the only count worth starting with.",
+        "Raiders came looking for easy emeralds. They found barred doors near the map table and a bell that would not stop ringing.",
+        "From the map table, I saw fear cross the square; then I saw courage get there first."
+      ],
+      "weight": 170
+    },
+    {
+      "id": "cartographer_village_event_night_attack",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "night_attack"
+      ],
+      "lines": [
+        "Night trouble tests the loose latch by the map table first. We are fixing those before sunset.",
+        "I stayed near the road past the last torch and listened for anyone calling from the dark.",
+        "Dawn gave the map table enough light to count wounds, missing blocks, and who made it home.",
+        "The dark tested everyone. Most of us passed by keeping a fresh mark on the map between us and teeth.",
+        "We are safe enough near the map table, though every shadow is being inspected twice."
+      ],
+      "weight": 170
+    },
+    {
+      "id": "cartographer_village_event_sandstorm",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "sandstorm"
+      ],
+      "lines": [
+        "The wind threw sand through every crack. I am still cleaning sand out of the compass case.",
+        "I checked maps, compasses, and road marks, then checked who was coughing too hard to answer.",
+        "Sand reached the map table, the hinges, and half our eyes, but no one has been reported missing.",
+        "A hard wind teaches a cartographer which doors actually close and which ones only pretend.",
+        "We are safe enough near the map table, though the whole village sounds like it is chewing gravel."
+      ],
+      "weight": 170
+    },
+    {
+      "id": "cartographer_village_event_snowstorm",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "snowstorm"
+      ],
+      "lines": [
+        "Maps can wait flat on the table. Warm hands, clear paths, and full hearths come first.",
+        "Snow piled against the doors, but everyone near the map table found shelter.",
+        "Cold works quietly around the map table. We are checking on anyone who stayed quiet too long.",
+        "I am clearing snow off the road signs and watching for footprints that stop too soon.",
+        "We are alright for now near the map table. Keep the fires fed and the paths open."
+      ],
+      "weight": 170
+    }
+  ]
+}

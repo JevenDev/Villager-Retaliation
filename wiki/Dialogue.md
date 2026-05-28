@@ -9,23 +9,71 @@ For event-driven locked conversations such as a villager catching the player ste
 Dialogue files must be in the `villagerretaliation` namespace:
 
 ```text
-data/villagerretaliation/dialogue/en_us/my_pack_dialogue.json
-data/villagerretaliation/dialogue/en_us/groups/smiths.json
-data/villagerretaliation/dialogue/en_us/professions/farmer.json
-data/villagerretaliation/dialogue/en_us/professions/farmer/share_stories.json
-data/villagerretaliation/dialogue/en_us/professions/examplemod/alchemist.json
+data/villagerretaliation/dialogue/en_us/global/options/menu.json
+data/villagerretaliation/dialogue/en_us/global/lines/small_talk.json
+data/villagerretaliation/dialogue/en_us/global/messages/trade_refresh.json
+data/villagerretaliation/dialogue/en_us/groups/smiths/lines/repairs.json
+data/villagerretaliation/dialogue/en_us/professions/farmer/lines/greetings.json
+data/villagerretaliation/dialogue/en_us/professions/farmer/share_stories/ancient_city.json
+data/villagerretaliation/dialogue/en_us/professions/examplemod/alchemist/lines/reagents.json
 data/villagerretaliation/dialogue/fr_fr/my_pack_dialogue.json
 ```
 
-Files under `professions/<profession>.json` and `professions/<profession>/...json` automatically default entries to that profession unless the entry supplies its own `professions` filter. For custom professions, use `professions/<namespace>/<path>.json`; for example, `professions/examplemod/alchemist.json` defaults to `examplemod:alchemist`.
+Files under `professions/<profession>/...json` automatically default entries to that profession unless the entry supplies its own `professions` filter. For custom professions, use `professions/<namespace>/<path>/...json`; for example, `professions/examplemod/alchemist/lines/reagents.json` defaults to `examplemod:alchemist`.
 
-Shared group files, such as `groups/smiths.json`, are just normal dialogue files. Use them when one entry should apply to several professions, and keep the explicit `professions` filter on those entries.
+Shared group files, such as `groups/smiths/lines/repairs.json`, are just normal dialogue files. Use them when one entry should apply to several professions, and keep the explicit `professions` filter on those entries.
 
-Use a unique file name for addon dialogue. A datapack file at `data/villagerretaliation/dialogue/en_us/global.json` replaces the mod's built-in `global.json`, which can hide default interaction-menu options, keyed messages, openings, closings, and other built-in dialogue data. Only use that exact path when you intentionally want a full-file override.
+Use your own folders and file names for addon dialogue. Minecraft still replaces resources by exact path before Villager Retaliation reads them, so a datapack file with the same path as a built-in file overrides that built-in file. Prefer adding a new file with stable entry ids, or overriding one entry by reusing its `id`, instead of copying a whole built-in file.
 
 Dialogue files translate villager speech and keyed dialogue messages. They do not translate the client GUI around the conversation, such as Talk, Trade, Gift, Gender, Mood, Family Tree, or generated relationship rows. Put those strings in a resource-pack language file; see [Localization Guide](Localization.md).
 
 Files are read in sorted resource-location order. A file with top-level `"replace": true` clears previously loaded dialogue options, lines, messages, openings, closings, and pacify lines for that locale pool, then adds its own entries. Use this only when a pack intentionally wants to replace the loaded dialogue pool instead of adding to it.
+
+## Beta.12 Layout Note
+
+Beta.12 changes the recommended dialogue authoring shape. New packs should use small folderized files under typed folders instead of one locale-wide `global.json`, one all-in-one profession file, or copied built-in monoliths.
+
+The loader still accepts bundle files with top-level `options`, `lines`, `messages`, `openings`, `closings`, and `pacify` arrays, so closely related entries can stay together. The beta.12 wiki and built-in data treat those bundles as an option, not the default structure for large packs.
+
+There is no website-supported beta.11 to beta.12 dialogue migration. If you retarget a beta.11 pack, split large files manually, check intentional overrides by exact path and stable `id`, and review deprecated helper fields against the `conditions` examples below.
+
+## File Styles
+
+Dialogue supports two authoring styles.
+
+Use a focused single-entry file under a typed folder when one JSON file should represent one thing:
+
+```json
+{
+  "id": "examplepack.ask_weather",
+  "label": "Ask About Weather",
+  "request": "question",
+  "order": 40
+}
+```
+
+That example works in an `options/` folder. The folder tells the loader it is a dialogue option, so `type: "dialogue_option"` is optional for new packs.
+
+Use a bundle file when several related entries belong together:
+
+```json
+{
+  "lines": [
+    {
+      "id": "examplepack.weather_rain_farmer",
+      "option": "examplepack.ask_weather",
+      "request": "question",
+      "weather": "rain",
+      "text": "Good for wheat, bad for boots.",
+      "weight": 20
+    }
+  ]
+}
+```
+
+Typed folders are `options`, `lines`, `messages`, `openings`, `closings`, and `pacify`. They can be nested anywhere below the locale folder, including below profession and group folders.
+
+Those six names are reserved as section folders anywhere below `dialogue/<locale>/`. Do not use `options`, `lines`, `messages`, `openings`, `closings`, or `pacify` as a normal topic folder name unless you intend that path to define the file's dialogue section.
 
 ## Top-Level Sections
 
@@ -137,7 +185,7 @@ Quick choices:
 
 ## Text And Line Variations
 
-Dialogue entries that output speech can use either `text` for one line or `lines` for several equal line variations. This applies to `lines`, `messages`, `openings`, `closings`, and `pacify` entries. After an entry wins selection, one value from `lines` is selected at random. Built-in beta.11 and newer dialogue uses `lines` with at least three variants for most spoken entries to keep repeated conversations fresher.
+Dialogue entries that output speech can use either `text` for one line or `lines` for several equal line variations. This applies to `lines`, `messages`, `openings`, `closings`, and `pacify` entries. After an entry wins selection, one value from `lines` is selected at random. Built-in beta.12 dialogue uses `lines` with at least three variants for most spoken entries to keep repeated conversations fresher.
 
 Use `lines` when several entries would otherwise have the same filters and weight:
 
@@ -198,7 +246,7 @@ See [Dialogue Requests](Dialogue-Requests.md) for simple and expanded dropdown e
 | --- | --- | --- | --- |
 | `id` | string | required | Stable option id. |
 | `label` | string | required | Text shown in the talk menu. |
-| `type` | string | required | Must be `dialogue_option`. |
+| `type` | string | optional | If supplied, must be `dialogue_option`. Typed `options/` files can omit it. |
 | `request` | enum | required | Dialogue request sent when selected. |
 | `order` | integer | array index | Lower values appear earlier. |
 | `professions` | string or array | any | Filters by villager profession. |
@@ -416,7 +464,7 @@ If `rainbow` is combined with `color` or `gradient_start` / `gradient_end`, the 
 
 ### Compound Conditions
 
-`conditions` is the preferred path for new normal dialogue line rules and for new family or relationship option visibility. The flat legacy fields below still work in beta.12, but are planned for beta.13 deprecation. Migrate them to `conditions` before targeting beta.13.
+`conditions` is the preferred path for new normal dialogue line rules and for new family or relationship option visibility. The flat legacy fields below still work in beta.12 as compatibility inputs, but are planned for beta.13 deprecation. Rewrite them as `conditions` before targeting beta.13.
 
 Beta.13 deprecation candidates:
 
@@ -847,7 +895,7 @@ blocked_by_reputation
 English fallback:
 
 ```text
-data/villagerretaliation/dialogue/en_us/my_pack_dialogue.json
+data/villagerretaliation/dialogue/en_us/my_pack/lines/weather.json
 ```
 
 ```json
@@ -865,7 +913,7 @@ data/villagerretaliation/dialogue/en_us/my_pack_dialogue.json
 French replacement:
 
 ```text
-data/villagerretaliation/dialogue/fr_fr/my_pack_dialogue.json
+data/villagerretaliation/dialogue/fr_fr/my_pack/lines/weather.json
 ```
 
 ```json

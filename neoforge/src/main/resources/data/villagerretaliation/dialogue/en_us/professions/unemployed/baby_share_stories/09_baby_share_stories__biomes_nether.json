@@ -1,0 +1,84 @@
+{
+  "lines": [
+    {
+      "id": "baby_share_story_basalt_deltas",
+      "request": "share_story",
+      "option": "baby_share_story",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "story_biome": "minecraft:basalt_deltas",
+      "lines": [
+        "You went to {target}? I am glad you came back. Basalt Deltas sounds too big for me.",
+        "Basalt Deltas sounds scary because black stone and lava leave little mercy. I would stay near a grown-up.",
+        "If I saw Basalt Deltas, I would hold my bread tight and keep the village bell in mind.",
+        "Please tell the story of Basalt Deltas from the safe part, where you got home.",
+        "I am not going to Basalt Deltas. I am very good at not going there."
+      ],
+      "weight": 140
+    },
+    {
+      "id": "baby_share_story_crimson_forest",
+      "request": "share_story",
+      "option": "baby_share_story",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "story_biome": "minecraft:crimson_forest",
+      "lines": [
+        "You went to {target}? I am glad you came back. Crimson Forest sounds too big for me.",
+        "Crimson Forest sounds scary because red Nether trees grow among hoglins and worse. I would stay near a grown-up.",
+        "If I saw Crimson Forest, I would hold my bread tight and keep the village bell in mind.",
+        "Please tell the story of Crimson Forest from the safe part, where you got home.",
+        "I am not going to Crimson Forest. I am very good at not going there."
+      ],
+      "weight": 140
+    },
+    {
+      "id": "baby_share_story_nether_wastes",
+      "request": "share_story",
+      "option": "baby_share_story",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "story_biome": "minecraft:nether_wastes",
+      "lines": [
+        "You went to {target}? I am glad you came back. Nether Wastes sounds too big for me.",
+        "Nether Wastes sounds scary because the Nether wastes neither heat nor cruelty. I would stay near a grown-up.",
+        "If I saw Nether Wastes, I would hold my bread tight and keep the village bell in mind.",
+        "Please tell the story of Nether Wastes from the safe part, where you got home.",
+        "I am not going to Nether Wastes. I am very good at not going there."
+      ],
+      "weight": 140
+    },
+    {
+      "id": "baby_share_story_soul_sand_valley",
+      "request": "share_story",
+      "option": "baby_share_story",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "story_biome": "minecraft:soul_sand_valley",
+      "lines": [
+        "You went to {target}? I am glad you came back. Soul Sand Valley sounds too big for me.",
+        "Soul Sand Valley sounds scary because the ground pulls back when you try to leave. I would stay near a grown-up.",
+        "If I saw Soul Sand Valley, I would hold my bread tight and keep the village bell in mind.",
+        "Please tell the story of Soul Sand Valley from the safe part, where you got home.",
+        "I am not going to Soul Sand Valley. I am very good at not going there."
+      ],
+      "weight": 140
+    },
+    {
+      "id": "baby_share_story_warped_forest",
+      "request": "share_story",
+      "option": "baby_share_story",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "story_biome": "minecraft:warped_forest",
+      "lines": [
+        "You went to {target}? I am glad you came back. Warped Forest sounds too big for me.",
+        "Warped Forest sounds scary because blue Nether trees make sense feel optional. I would stay near a grown-up.",
+        "If I saw Warped Forest, I would hold my bread tight and keep the village bell in mind.",
+        "Please tell the story of Warped Forest from the safe part, where you got home.",
+        "I am not going to Warped Forest. I am very good at not going there."
+      ],
+      "weight": 140
+    }
+  ]
+}

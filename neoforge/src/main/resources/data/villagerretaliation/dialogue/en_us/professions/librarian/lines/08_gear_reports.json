@@ -1,0 +1,40 @@
+{
+  "lines": [
+    {
+      "id": "gear_report_librarian_used",
+      "request": "gear_report",
+      "option": "gear_report",
+      "show_for_babies": false,
+      "weight": 32,
+      "lines": [
+        "It performed as promised. I may need to revise my opinion of practical gifts upward.",
+        "It did the job when fear was loud. That is praise enough.",
+        "Good gear earns trust the moment trouble tests it."
+      ],
+      "conditions": [
+        {
+          "type": "memory",
+          "kind": "gear_report_used_in_combat"
+        }
+      ]
+    },
+    {
+      "id": "gear_report_librarian_unused",
+      "request": "gear_report",
+      "option": "gear_report",
+      "show_for_babies": false,
+      "weight": 32,
+      "lines": [
+        "Untested. I have filed it under things I hope remain theoretical.",
+        "It did the job when fear was loud. That is praise enough.",
+        "Good gear earns trust the moment trouble tests it."
+      ],
+      "conditions": [
+        {
+          "type": "memory",
+          "kind": "gear_report_unused_in_combat"
+        }
+      ]
+    }
+  ]
+}

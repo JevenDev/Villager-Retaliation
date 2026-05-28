@@ -1,0 +1,8 @@
+{
+  "id": "example_template.line.share_story",
+  "request": "share_story",
+  "option": "example_template.option.share_story",
+  "text": "example",
+  "weight": 10,
+  "story_biome": "minecraft:plains"
+}

@@ -1,0 +1,52 @@
+{
+  "lines": [
+    {
+      "id": "baby_share_story_deep_dark",
+      "request": "share_story",
+      "option": "baby_share_story",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "story_biome": "minecraft:deep_dark",
+      "lines": [
+        "You went to {target}? I am glad you came back. Deep Dark sounds too big for me.",
+        "Deep Dark sounds scary because sound travels farther than sense. I would stay near a grown-up.",
+        "If I saw Deep Dark, I would hold my bread tight and keep the village bell in mind.",
+        "Please tell the story of Deep Dark from the safe part, where you got home.",
+        "I am not going to Deep Dark. I am very good at not going there."
+      ],
+      "weight": 140
+    },
+    {
+      "id": "baby_share_story_dripstone_caves",
+      "request": "share_story",
+      "option": "baby_share_story",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "story_biome": "minecraft:dripstone_caves",
+      "lines": [
+        "You went to {target}? I am glad you came back. Dripstone Caves sounds too big for me.",
+        "Dripstone Caves sounds scary because stone teeth hang above and wait below. I would stay near a grown-up.",
+        "If I saw Dripstone Caves, I would hold my bread tight and keep the village bell in mind.",
+        "Please tell the story of Dripstone Caves from the safe part, where you got home.",
+        "I am not going to Dripstone Caves. I am very good at not going there."
+      ],
+      "weight": 140
+    },
+    {
+      "id": "baby_share_story_lush_caves",
+      "request": "share_story",
+      "option": "baby_share_story",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "story_biome": "minecraft:lush_caves",
+      "lines": [
+        "You went to {target}? I am glad you came back. Lush Caves sounds too big for me.",
+        "Lush Caves sounds scary because pretty caves still have long drops. I would stay near a grown-up.",
+        "If I saw Lush Caves, I would hold my bread tight and keep the village bell in mind.",
+        "Please tell the story of Lush Caves from the safe part, where you got home.",
+        "I am not going to Lush Caves. I am very good at not going there."
+      ],
+      "weight": 140
+    }
+  ]
+}

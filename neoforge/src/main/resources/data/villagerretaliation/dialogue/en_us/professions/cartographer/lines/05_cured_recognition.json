@@ -1,0 +1,47 @@
+{
+  "lines": [
+    {
+      "id": "cartographer_cured_recognition_warm",
+      "request": "cured_recognition",
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ],
+      "lines": [
+        "I lost every road for a while. You <pulse>marked the way back</pulse>.",
+        "I remember your face like a landmark after a long, wrong journey.",
+        "You helped pull me back when even my name felt far away."
+      ],
+      "weight": 60
+    },
+    {
+      "id": "cartographer_cured_recognition_confused",
+      "request": "cured_recognition",
+      "dispositions": [
+        "neutral",
+        "cautious"
+      ],
+      "lines": [
+        "The map of that memory is torn, but your name sits near the center.",
+        "I remember wandering inside myself. Then a path opened, and you were beside it.",
+        "The memory is rough around the edges, but your face stayed in it."
+      ],
+      "weight": 60
+    },
+    {
+      "id": "cartographer_cured_recognition_uneasy_1",
+      "request": "cured_recognition",
+      "dispositions": [
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 30,
+      "lines": [
+        "I remember you, yes. Some routes back home still pass through frightening country.",
+        "I know you helped. I also remember why my hands still shake.",
+        "The cure left echoes behind. Stand where I can breathe around them."
+      ]
+    }
+  ]
+}

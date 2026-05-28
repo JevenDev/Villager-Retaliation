@@ -1,0 +1,21 @@
+{
+  "lines": [
+    {
+      "id": "combat_survival_cartographer",
+      "request": "combat_survival_report",
+      "option": "combat_survival_report",
+      "show_for_babies": false,
+      "lines": [
+        "I could draw the route back with my eyes closed. I would rather not walk it again tonight.",
+        "For a moment, every direction looked wrong. Then home looked possible again.",
+        "I know the way home on paper. Knowing it while scared is different.",
+        "Every landmark looked strange in the dark. Then the village lights found me.",
+        "I would mark that route in red if I ever had to draw it.",
+        "The map says the road is short. My feet disagree.",
+        "I came back with no new map, only a better respect for old paths.",
+        "For once, I was glad the village was exactly where I left it."
+      ],
+      "weight": 234
+    }
+  ]
+}

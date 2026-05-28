@@ -1,0 +1,21 @@
+{
+  "lines": [
+    {
+      "id": "village_defense_weaponsmith_respect",
+      "request": "village_defense_report",
+      "option": "village_defense_report",
+      "show_for_babies": false,
+      "lines": [
+        "A weapon means little without the nerve to use it at the gate. You had that nerve.",
+        "You kept your edge when the village lost its breath. That deserves respect.",
+        "You used force for the village, not against it. That distinction matters.",
+        "I saw discipline in that fight. Not just fury.",
+        "Raiders understand strength. Yesterday, so did you.",
+        "You met danger at the edge and kept it from cutting deeper.",
+        "A blade is judged by what it protects. People are too.",
+        "You fought clean enough for me to respect the work."
+      ],
+      "weight": 252
+    }
+  ]
+}

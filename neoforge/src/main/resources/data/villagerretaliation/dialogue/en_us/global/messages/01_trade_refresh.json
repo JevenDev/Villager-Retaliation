@@ -1,0 +1,314 @@
+{
+  "messages": [
+    {
+      "key": "trade_refresh.accept",
+      "lines": [
+        "I'll look into replacing my {trade_item} trade. Come back tomorrow to see what I have to offer.",
+        "I can reconsider the {trade_item} trade. Give me until tomorrow and I may have something different.",
+        "The {trade_item} trade could use another look. Come back tomorrow and we will see what I can offer."
+      ]
+    },
+    {
+      "key": "trade_refresh.already_pending",
+      "lines": [
+        "I am already looking into that trade. Come back tomorrow.",
+        "That trade is already under review. Give me until tomorrow.",
+        "I have not forgotten. Check with me tomorrow."
+      ]
+    },
+    {
+      "key": "trade_refresh.not_ready",
+      "lines": [
+        "I do not know a better trade for that yet.",
+        "My skills are not ready to replace that trade with anything better.",
+        "Ask again when I have learned enough to offer something worthwhile."
+      ]
+    },
+    {
+      "key": "trade_refresh.unavailable",
+      "lines": [
+        "I cannot change that trade right now.",
+        "That trade cannot be refreshed right now.",
+        "Now is not the time to change that offer."
+      ]
+    },
+    {
+      "key": "trade_refresh.revered_prompt",
+      "lines": [
+        "I can reconsider the {trade_item} trade, or I can take a Special Order if you know what you want.",
+        "For you, I can either surprise you tomorrow or arrange something specific with more time.",
+        "That {trade_item} trade can change. Do you want my judgment, or a Special Order?"
+      ]
+    },
+    {
+      "key": "trade_refresh.ready",
+      "lines": [
+        "Hey, I restocked {restocked_summary} for you.",
+        "I have {restocked_summary} <pulse>ready</pulse> for you now.",
+        "I stocked {restocked_summary} and left them waiting on my side of the counter.",
+        "I finished restocking {restocked_summary}. Take a look.",
+        "I have your requested stock ready. I restocked {restocked_summary}."
+      ]
+    },
+    {
+      "key": "trade_refresh.ready_interjection",
+      "lines": [
+        "Sorry to butt in, <aqua>{interrupted_villager}</aqua>, but <purple>{player}</purple>, I finished that request you wanted.",
+        "Oh, nice. I actually have a new trade ready for you too.",
+        "Before you go, <purple>{player}</purple>, I also have {restocked_summary} ready for you.",
+        "Quick thing, <purple>{player}</purple>. I finished restocking {restocked_summary} too.",
+        "I do not mean to interrupt, <aqua>{interrupted_villager}</aqua>, but <purple>{player}</purple>, your request is ready at my counter.",
+        "Since we are talking orders, <purple>{player}</purple>, I have {restocked_summary} ready as well."
+      ]
+    },
+    {
+      "key": "trade_refresh.ready_interjection.second",
+      "lines": [
+        "Sorry, one more counter calling: <purple>{player}</purple>, I have {restocked_summary} ready too.",
+        "Let me squeeze in before everyone scatters: <purple>{player}</purple>, your request is ready at my counter.",
+        "Since everyone is already gathered, <purple>{player}</purple>, {restocked_summary} is ready.",
+        "I hate to add to the noise, but I finished {restocked_summary} for you.",
+        "Before the crowd disperses, <purple>{player}</purple>, I have {restocked_summary} ready as well."
+      ]
+    },
+    {
+      "key": "trade_refresh.ready_interjection.third",
+      "lines": [
+        "And before you get pulled away, <purple>{player}</purple>, I also finished {restocked_summary}.",
+        "One more thing from my counter: {restocked_summary} is ready.",
+        "I waited my turn. <purple>{player}</purple>, your requested stock is ready too.",
+        "I will keep this short. I have {restocked_summary} waiting.",
+        "One last counter report: {restocked_summary} is ready."
+      ]
+    },
+    {
+      "key": "trade_refresh.ready_theft_interjection",
+      "lines": [
+        "<shake>Whoa...</shake> bad time? I just wanted to let you know those trades you asked for are ready.",
+        "This seems like a bad moment, but <purple>{player}</purple>, I finished that request you wanted.",
+        "I do not want to step into whatever this is, but I have {restocked_summary} ready for you.",
+        "Awkward timing. Your requested stock is ready at my counter.",
+        "I will be quick: {restocked_summary} is ready when this is settled."
+      ]
+    },
+    {
+      "key": "trade_refresh.ready_theft_interjection.second",
+      "lines": [
+        "I know this is getting stranger, but {restocked_summary} is ready.",
+        "Bad timing twice over. <purple>{player}</purple>, I have {restocked_summary} ready too.",
+        "I will make this quick while everyone is staring: {restocked_summary} is ready.",
+        "<aqua>{previous_villager}</aqua>, I know. Still, <purple>{player}</purple>, your request is finished."
+      ]
+    },
+    {
+      "key": "trade_refresh.ready_theft_interjection.third",
+      "lines": [
+        "This is a terrible moment to speak up, but {restocked_summary} is ready.",
+        "I waited because this looked serious. Your stock is ready too.",
+        "Last thing from me: {restocked_summary} is ready when this settles.",
+        "No pressure, except all of this pressure. I have {restocked_summary} ready."
+      ]
+    },
+    {
+      "key": "trade_refresh.special_order_select",
+      "lines": [
+        "These are the Special Orders I can realistically arrange right now.",
+        "Here is what my skills and suppliers can support.",
+        "Choose carefully. Specific stock takes longer to prepare."
+      ]
+    },
+    {
+      "key": "trade_refresh.special_order_confirm",
+      "lines": [
+        "A Special Order for {trade_item} will take {wait_days} {wait_day_word}. I need {cooldown_days} {cooldown_day_word} before another order from you.",
+        "I can arrange {trade_item}. It will take {wait_days} {wait_day_word}, and I will need {cooldown_days} {cooldown_day_word} before taking another order from you.",
+        "{trade_item} is possible. Give me {wait_days} {wait_day_word}, then wait {cooldown_days} {cooldown_day_word} before asking me for another order."
+      ]
+    },
+    {
+      "key": "trade_refresh.special_order_queued",
+      "lines": [
+        "Your Special Order for {trade_item} is set. Come back after {wait_days} {wait_day_word}, then give me {cooldown_days} {cooldown_day_word} before another order.",
+        "I have marked the Special Order for {trade_item}. It will be ready after {wait_days} {wait_day_word}, and I need {cooldown_days} {cooldown_day_word} before another request.",
+        "{trade_item} is ordered. Give me {wait_days} {wait_day_word} to prepare it properly, then {cooldown_days} {cooldown_day_word} before the next request."
+      ]
+    },
+    {
+      "key": "trade_refresh.special_order_queued_first",
+      "lines": [
+        "Your first Special Order is on the ledger: {trade_item}. Give me {wait_days} {wait_day_word}, then {cooldown_days} {cooldown_day_word} before another order.",
+        "I have room for that. {trade_item} will be ready after {wait_days} {wait_day_word}, and I need {cooldown_days} {cooldown_day_word} before another request.",
+        "{trade_item} is marked as your first active order. I will prepare it in {wait_days} {wait_day_word}, then need {cooldown_days} {cooldown_day_word} before another."
+      ]
+    },
+    {
+      "key": "trade_refresh.special_order_queued_second",
+      "lines": [
+        "That makes two active Special Orders. I will add {trade_item} to the list for {wait_days} {wait_day_word} from now.",
+        "I can manage a second request. {trade_item} will take {wait_days} {wait_day_word}, then {cooldown_days} {cooldown_day_word} before another order.",
+        "{trade_item} is now your second open order. I still have one more slot after this, and a {cooldown_days} {cooldown_day_word} cooldown before another request."
+      ]
+    },
+    {
+      "key": "trade_refresh.special_order_queued_third",
+      "lines": [
+        "{trade_item} is accepted, but that fills your third Special Order slot. It will take {wait_days} {wait_day_word}.",
+        "I will take this third request for {trade_item}. Let me finish one before you add more, then wait {cooldown_days} {cooldown_day_word}.",
+        "Three orders is my limit. {trade_item} is on the ledger, and the queue is full until something is ready."
+      ]
+    },
+    {
+      "key": "trade_refresh.special_order_unavailable",
+      "lines": [
+        "I cannot arrange that Special Order right now.",
+        "That specific order is beyond what I can offer today.",
+        "I do not have a realistic way to prepare that order yet."
+      ]
+    },
+    {
+      "key": "trade_refresh.special_order_pending",
+      "lines": [
+        "I am already preparing a Special Order for that trade.",
+        "That slot is already marked on my ledger.",
+        "Let me finish the current order for that trade first."
+      ]
+    },
+    {
+      "key": "trade_refresh.special_order_limit_reached",
+      "lines": [
+        "I already have {active_orders} active {active_order_word} for you. {max_orders} {max_order_word} {max_order_count_word} all I can manage at once.",
+        "Your ledger is full at {active_orders} {active_order_word}. Let me finish one before adding another.",
+        "No more than {max_orders} Special {max_order_word} at a time. Come back when one is ready.",
+        "I cannot open another request until one of your {active_order_word} is complete.",
+        "{max_orders} active {max_order_word} is my cap. Let one resolve first."
+      ]
+    },
+    {
+      "key": "trade_refresh.request_limit_reached",
+      "lines": [
+        "I already have {active_orders} active {active_order_word} for you. {max_orders} {max_order_word} {max_order_count_word} all I can manage at once.",
+        "Your request ledger is full at {active_orders} {active_order_word}. Let me finish one before adding another.",
+        "No more than {max_orders} active {max_order_word} at a time. Come back when one is ready."
+      ]
+    },
+    {
+      "key": "trade_refresh.special_order_cooldown",
+      "lines": [
+        "I need {cooldown_days} more {cooldown_day_word} before taking another Special Order from you.",
+        "Ask me again after {cooldown_days} {cooldown_day_word}. Specific stock takes recovery time.",
+        "Not yet. I need {cooldown_days} {cooldown_day_word} before another Special Order from you."
+      ]
+    },
+    {
+      "key": "trade_refresh.special_order_payment_missing",
+      "lines": [
+        "I need {extra_cost} before I can accept that Special Order.",
+        "Bring {extra_cost}, and I can put that order on the ledger.",
+        "That order has an extra cost: {extra_cost}."
+      ]
+    },
+    {
+      "key": "trade_refresh.special_order_status_select",
+      "lines": [
+        "Which Special Order do you want to check?",
+        "I have your orders here. Which one?",
+        "The ledger is open. Point to the order you mean."
+      ]
+    },
+    {
+      "key": "trade_refresh.special_order_status",
+      "lines": [
+        "{trade_item} should be stocked in {time_remaining}.",
+        "For {trade_item}, I need {time_remaining} before it is ready.",
+        "That order is still moving. {trade_item} has {time_remaining} left.",
+        "{trade_item} is marked for slot {offer_slot}. Give it {time_remaining}.",
+        "I have not forgotten {trade_item}. It needs {time_remaining}.",
+        "The {trade_item} order is on schedule: {time_remaining}.",
+        "For that {trade_item} request, expect {time_remaining} before I can stock it.",
+        "{trade_item} is still being prepared. Check back in {time_remaining}."
+      ]
+    },
+    {
+      "key": "trade_refresh.special_order_status_empty",
+      "lines": [
+        "I do not have any active Special Orders for you right now.",
+        "There is nothing open for you on my order ledger.",
+        "No Special Orders are waiting under your name."
+      ]
+    },
+    {
+      "key": "trade_refresh.requirements.not_ready",
+      "lines": [
+        "I need to know a valid replacement for that trade first. My current stock cannot support one.",
+        "That trade has no better replacement I can source at my current skill.",
+        "I need a real replacement option for that slot. Right now, I do not have one."
+      ]
+    },
+    {
+      "key": "trade_refresh.requirements.unavailable",
+      "lines": [
+        "I need an actual trade slot I can change. That one is not available for refresh.",
+        "That offer cannot be changed from here. I need a valid, stocked trade slot.",
+        "I need the trade to be open and refreshable first. This one is not."
+      ]
+    },
+    {
+      "key": "trade_refresh.requirements.special_order_unavailable",
+      "lines": [
+        "I need a Special Order that matches what I can source for this profession and skill.",
+        "That order is outside my current catalog. I cannot promise stock I cannot source.",
+        "I need that item to be one of the Special Orders I can actually arrange."
+      ]
+    },
+    {
+      "key": "trade_refresh.requirements.special_order_pending",
+      "lines": [
+        "I need to finish the current order for that trade before taking another one.",
+        "That trade is already on my ledger. Let me complete it first.",
+        "I cannot double-book the same trade. I need the current order cleared first."
+      ]
+    },
+    {
+      "key": "trade_refresh.requirements.special_order_limit_reached",
+      "lines": [
+        "I need a free order slot. You already have {active_orders} active {active_order_word}, and {max_orders} {max_order_word} is my limit.",
+        "Your ledger is full. I need one of your {active_orders} active {active_order_word} to finish first.",
+        "I cannot take more than {max_orders} Special {max_order_word} at once. Let one clear, then ask again.",
+        "My order ledger has no open slot right now. Wait for one of your active requests to complete.",
+        "I can queue this after one of your current {active_order_word} is done."
+      ]
+    },
+    {
+      "key": "trade_refresh.requirements.request_limit_reached",
+      "lines": [
+        "I need a free request slot. You already have {active_orders} active {active_order_word}, and {max_orders} {max_order_word} is my limit.",
+        "Your request ledger is full. I need one of your {active_orders} active {active_order_word} to finish first.",
+        "I cannot manage more than {max_orders} active {max_order_word} for you at once."
+      ]
+    },
+    {
+      "key": "trade_refresh.requirements.special_order_cooldown",
+      "lines": [
+        "I need {cooldown_days} more {cooldown_day_word} before I can take another Special Order from you.",
+        "The only blocker is recovery time. Ask me again after {cooldown_days} {cooldown_day_word}.",
+        "I can talk orders again after {cooldown_days} {cooldown_day_word}."
+      ]
+    },
+    {
+      "key": "trade_refresh.requirements.special_order_payment_missing",
+      "lines": [
+        "I need the extra cost first: {extra_cost}.",
+        "Bring {extra_cost}, and I can accept that order.",
+        "The order is possible, but I need {extra_cost} before I put it on the ledger."
+      ]
+    },
+    {
+      "key": "trade_refresh.requirements.special_order_status_empty",
+      "lines": [
+        "I need an active Special Order to check. You do not have one with me right now.",
+        "There is no order status to explain because your ledger is empty.",
+        "I can check an order once you have one open."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,77 @@
+{
+  "lines": [
+    {
+      "id": "librarian_question_pages_variants",
+      "request": "question",
+      "lines": [
+        "Missing pages worry me less than people who never read warnings.",
+        "Villages remember more than people expect.",
+        "Ink is quiet until someone needs proof.",
+        "Records do not care who feels embarrassed by them.",
+        "A tidy shelf is proof that peace can be arranged, briefly.",
+        "Forgotten warnings do not become kinder. They become <jump>surprises</jump>."
+      ],
+      "weight": 172
+    },
+    {
+      "id": "librarian_new_hostile_memory",
+      "request": "question",
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
+      "weight": 30,
+      "lines": [
+        "You may prefer I forget. I have chosen a profession that argues otherwise.",
+        "I have seen bad sources with more sense than that.",
+        "Careful. Even ink looks softer than your manners right now."
+      ]
+    },
+    {
+      "id": "question_follow_memory_librarian",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "weight": 3,
+      "lines": [
+        "The story of me following you needs editing. Mostly shorter chapters and fewer hazards.",
+        "I remember following you through that road. My feet remember it even better.",
+        "That trip across that road taught me to ask more questions before walking."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory"
+        }
+      ]
+    },
+    {
+      "id": "question_follow_memory_librarian_boat",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "weight": 3,
+      "lines": [
+        "The boat chapter of our journey was damp, brief, and badly footnoted.",
+        "That boat trip still sits oddly in my memory, but at least it floated.",
+        "A boat can make a bad plan quieter. It cannot make me forget it."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "boat_trip": true
+        }
+      ]
+    },
+    {
+      "id": "default_profession_librarian_margin_notes",
+      "request": "question",
+      "show_for_babies": false,
+      "lines": [
+        "Every village has a history. Some of it even waits politely on shelves.",
+        "Books are quiet until you need them. Then they become everyone who wrote before you.",
+        "I keep records because memory without witnesses starts bargaining with itself."
+      ],
+      "weight": 18
+    }
+  ]
+}

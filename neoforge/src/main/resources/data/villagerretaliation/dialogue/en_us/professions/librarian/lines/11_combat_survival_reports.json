@@ -1,0 +1,21 @@
+{
+  "lines": [
+    {
+      "id": "combat_survival_librarian",
+      "request": "combat_survival_report",
+      "option": "combat_survival_report",
+      "show_for_babies": false,
+      "lines": [
+        "I prefer danger in books. Books usually stay on the correct side of the shelf.",
+        "There were several endings I disliked. I am glad we reached this chapter.",
+        "I made it back with several new reasons to prefer quiet shelves.",
+        "That chapter had too much running and not enough punctuation.",
+        "I survived, though my notes from the event are mostly shaking lines.",
+        "The village door has never looked so beautifully constructed.",
+        "I would shelve that experience under never again.",
+        "Home is a short word. It felt very large when I reached it."
+      ],
+      "weight": 234
+    }
+  ]
+}

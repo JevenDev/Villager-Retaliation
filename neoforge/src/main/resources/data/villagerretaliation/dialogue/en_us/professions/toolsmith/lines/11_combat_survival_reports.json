@@ -1,0 +1,21 @@
+{
+  "lines": [
+    {
+      "id": "combat_survival_toolsmith",
+      "request": "combat_survival_report",
+      "option": "combat_survival_report",
+      "show_for_babies": false,
+      "lines": [
+        "Good tools held. So did I. I will inspect both before sleeping.",
+        "My grip held when it had to. I will think about that for a while.",
+        "The handle held, the edge held, and I held on behind them.",
+        "I will inspect every tool I carried. I may inspect my knees too.",
+        "A good grip saved me more than once tonight.",
+        "I made it back with work to do and hands still able to do it.",
+        "Nothing tests a tool like fear. Nothing tests a person faster.",
+        "I know what stress does to metal now. I know what it does to me too."
+      ],
+      "weight": 234
+    }
+  ]
+}

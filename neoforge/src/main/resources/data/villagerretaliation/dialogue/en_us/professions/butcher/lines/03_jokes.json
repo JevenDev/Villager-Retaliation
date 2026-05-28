@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "butcher_new_joke_cuts",
+      "request": "joke",
+      "weight": 18,
+      "lines": [
+        "My jokes are like my cuts: better when nobody <bold>rushes me</bold>.",
+        "Butchery jokes need timing. Mine usually arrive with salt on them.",
+        "I keep a spare joke near the smokehouse. It is not always ready for public use."
+      ]
+    }
+  ]
+}

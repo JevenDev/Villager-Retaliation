@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "shepherd_story_wool_variants",
+      "request": "story",
+      "lines": [
+        "Clean wool feels ordinary until winter reminds you it is not.",
+        "A spilled dye pot once made half the village look <gradient:#55ff55:#ff55ff>festive</gradient> by mistake.",
+        "One late evening, the whole loom jammed because I trusted a knot."
+      ],
+      "weight": 74
+    }
+  ]
+}

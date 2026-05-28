@@ -1,0 +1,64 @@
+{
+  "lines": [
+    {
+      "id": "butcher_question_work_variants",
+      "request": "question",
+      "lines": [
+        "A smokehouse tells you fast who understands patience.",
+        "Empty hooks before supper can <shake>frighten</shake> a village more than thunder.",
+        "Salt is patient. That is why it keeps food better than most people keep promises.",
+        "Empty hooks tell a village to start worrying before anyone says it aloud.",
+        "People think about courage until supper is late. Then they think about supper.",
+        "A village with good stores can make careful choices instead of desperate ones."
+      ],
+      "weight": 172
+    },
+    {
+      "id": "question_follow_memory_butcher",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "weight": 3,
+      "lines": [
+        "When you had me follow you, I kept thinking the whole walk needed a sharper plan.",
+        "I remember following you through that road. My feet remember it even better.",
+        "That trip across that road taught me to ask more questions before walking."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "excludes_ocean_crossing": true
+        }
+      ]
+    },
+    {
+      "id": "question_follow_memory_butcher_boat",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "weight": 3,
+      "lines": [
+        "A boat ride is better than being dragged over rough ground. Still, I prefer cutting across town, not water.",
+        "That boat trip still sits oddly in my memory, but at least it floated.",
+        "A boat can make a bad plan quieter. It cannot make me forget it."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "boat_trip": true
+        }
+      ]
+    },
+    {
+      "id": "default_profession_butcher_careful_work",
+      "request": "question",
+      "show_for_babies": false,
+      "lines": [
+        "Sharp knives are not angry knives. That is the first lesson.",
+        "A village eats better when nobody mistakes haste for skill.",
+        "I know every sound a clean cut should make. I also know when the street sounds wrong."
+      ],
+      "weight": 18
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "openings": [
+    {
+      "id": "armorer_opening",
+      "lines": [
+        "Mind the forge. What do you need?",
+        "Step clear of the forge. What do you need?",
+        "Mind the forge; I am listening."
+      ]
+    }
+  ]
+}

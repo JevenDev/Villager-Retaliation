@@ -1,0 +1,84 @@
+{
+  "closings": [
+    {
+      "id": "global_friendly_closing",
+      "show_for_babies": false,
+      "dispositions": [
+        "respectful",
+        "friendly"
+      ],
+      "lines": [
+        "Safe <pulse>travels</pulse>. Come by again.",
+        "Travel safely. We will talk again.",
+        "Take care on the road."
+      ]
+    },
+    {
+      "id": "global_neutral_closing",
+      "show_for_babies": false,
+      "dispositions": [
+        "neutral",
+        "cautious"
+      ],
+      "lines": [
+        "Until next time.",
+        "Until <pulse>later</pulse>.",
+        "That will do for now."
+      ]
+    },
+    {
+      "id": "global_hostile_closing",
+      "show_for_babies": false,
+      "dispositions": [
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "lines": [
+        "That is enough for now.",
+        "We are finished here.",
+        "That is <bold>enough</bold> talking."
+      ]
+    },
+    {
+      "id": "baby_friendly_closing",
+      "show_for_adults": false,
+      "dispositions": [
+        "respectful",
+        "friendly"
+      ],
+      "lines": [
+        "<jump>Bye!</jump> Come back later.",
+        "Bye! Come visit again.",
+        "Goodbye! I am going to play now."
+      ]
+    },
+    {
+      "id": "baby_cautious_closing",
+      "show_for_adults": false,
+      "dispositions": [
+        "neutral",
+        "cautious",
+        "rude"
+      ],
+      "lines": [
+        "Okay. Goodbye.",
+        "Okay. I am <pulse>done</pulse> talking now.",
+        "Goodbye. I am going over there."
+      ]
+    },
+    {
+      "id": "baby_afraid_closing",
+      "show_for_adults": false,
+      "dispositions": [
+        "hostile",
+        "fearful"
+      ],
+      "lines": [
+        "I am going to find someone <pulse>older</pulse>.",
+        "I am going back where it feels safer.",
+        "I am finding someone older now."
+      ]
+    }
+  ]
+}

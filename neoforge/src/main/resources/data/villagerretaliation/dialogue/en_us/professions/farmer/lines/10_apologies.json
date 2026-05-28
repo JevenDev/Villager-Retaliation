@@ -1,0 +1,21 @@
+{
+  "lines": [
+    {
+      "id": "apology_farmer_seed",
+      "request": "apology",
+      "option": "apologize_for_harm",
+      "show_for_babies": false,
+      "lines": [
+        "An apology is a seed. It still needs watering, and I will be watching the crop.",
+        "Break a fence and you mend it before night. Trust works much the same.",
+        "You stepped on trust like young shoots. It can grow back if you stop trampling it.",
+        "Fine. Plant better behavior where that harm was.",
+        "I will not pull up the apology before it sprouts. Do not let it wither.",
+        "A fence mended poorly breaks again. Mend this properly.",
+        "Words are rain. Useful, but not enough by themselves.",
+        "I have seen hard ground soften. Maybe you can too."
+      ],
+      "weight": 234
+    }
+  ]
+}

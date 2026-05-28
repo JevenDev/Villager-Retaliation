@@ -1,0 +1,292 @@
+{
+  "messages": [
+    {
+      "key": "gift_memory.direct.loved",
+      "lines": [
+        "Still thinking about the {gift_item} you gave me. That was a <pulse>real kindness</pulse>.",
+        "That {gift_item} you gave me still makes me smile.",
+        "I remember the {gift_item}. That was thoughtful of you."
+      ]
+    },
+    {
+      "key": "gift_memory.direct.liked",
+      "lines": [
+        "That {gift_item} you gave me was useful. Thank you again.",
+        "I have made good use of that {gift_item}.",
+        "The {gift_item} was a kind choice. Thank you."
+      ]
+    },
+    {
+      "key": "gift_memory.direct.neutral",
+      "lines": [
+        "I am still deciding what to do with that {gift_item} you gave me.",
+        "The {gift_item} was unexpected. I am still considering it.",
+        "I remember the {gift_item}. It gave me something to think about."
+      ]
+    },
+    {
+      "key": "gift_memory.direct.disliked",
+      "lines": [
+        "I remember that {gift_item}. Not fondly.",
+        "That {gift_item} did not sit well with me.",
+        "I remember the {gift_item}, and not in the way you might hope."
+      ]
+    },
+    {
+      "key": "gift_memory.direct.hated",
+      "lines": [
+        "I have not forgotten the {gift_item} you handed me.",
+        "That {gift_item} felt like an <shake>insult</shake>.",
+        "I have not forgotten what that {gift_item} meant."
+      ]
+    },
+    {
+      "key": "gift_memory.village.loved",
+      "lines": [
+        "I heard you gave {villager_name} {gift_item}. That was <pulse>kind</pulse> of you.",
+        "That {gift_item} you gave me still makes me smile. {villager_name}",
+        "I remember the {gift_item}. That was thoughtful of you. {villager_name}"
+      ]
+    },
+    {
+      "key": "gift_memory.village.liked",
+      "lines": [
+        "{villager_name} seemed pleased with that {gift_item}.",
+        "I have made good use of that {gift_item}. {villager_name}",
+        "The {gift_item} was a kind choice. Thank you. {villager_name}"
+      ]
+    },
+    {
+      "key": "gift_memory.village.neutral",
+      "lines": [
+        "I heard about the {gift_item} you gave {villager_name}. Interesting choice.",
+        "The {gift_item} was unexpected. I am still considering it. {villager_name}",
+        "I remember the {gift_item}. It gave me something to think about. {villager_name}"
+      ]
+    },
+    {
+      "key": "gift_memory.village.disliked",
+      "lines": [
+        "{villager_name} did not sound pleased about that {gift_item}.",
+        "That {gift_item} did not sit well with me. {villager_name}",
+        "I remember the {gift_item}, and not in the way you might hope. {villager_name}"
+      ]
+    },
+    {
+      "key": "gift_memory.village.hated",
+      "lines": [
+        "I heard what you gave {villager_name}. <bold>Do not</bold> bring that sort of thing here.",
+        "That {gift_item} felt like an insult. {villager_name}",
+        "I have not forgotten what that {gift_item} meant. {villager_name}"
+      ]
+    },
+    {
+      "key": "gift_response.global.loved",
+      "lines": [
+        "This is wonderful. You chose like someone who knows me.",
+        "You chose carefully. This means a lot.",
+        "{gift_item} is exactly the kind of gift I remember kindly."
+      ]
+    },
+    {
+      "key": "gift_response.global.liked",
+      "lines": [
+        "{gift_item} is a <pulse>welcome</pulse> gift.",
+        "Thank you. {gift_item} is a good gift.",
+        "{gift_item} suits me better than you may know."
+      ]
+    },
+    {
+      "key": "gift_response.global.neutral",
+      "lines": [
+        "A curious gift. I will think about it.",
+        "Thank you. I will find a place for {gift_item}.",
+        "{gift_item} is unexpected, but not unwelcome."
+      ]
+    },
+    {
+      "key": "gift_response.global.disliked",
+      "lines": [
+        "I do not have much use for {gift_item}.",
+        "I would not have chosen {gift_item}.",
+        "{gift_item} is not much use to me."
+      ]
+    },
+    {
+      "key": "gift_response.global.hated",
+      "lines": [
+        "That is an <shake>insult</shake>, not a gift.",
+        "No. {gift_item} is a poor thing to hand someone.",
+        "Do not call {gift_item} kindness."
+      ]
+    },
+    {
+      "key": "gift_response.profession.loved",
+      "lines": [
+        "{gift_item}? For my work? That is <rainbow>thoughtful</rainbow>.",
+        "You chose carefully. This means a lot. {gift_item}",
+        "{gift_item} is exactly the kind of gift I remember kindly."
+      ]
+    },
+    {
+      "key": "gift_response.profession.liked",
+      "lines": [
+        "I can make <pulse>good use</pulse> of {gift_item}.",
+        "Thank you. {gift_item} is a good gift.",
+        "{gift_item} suits me better than you may know."
+      ]
+    },
+    {
+      "key": "gift_response.profession.neutral",
+      "lines": [
+        "Thank you. I suppose this has its uses.",
+        "Thank you. I will find a place for {gift_item}.",
+        "{gift_item} is unexpected, but not unwelcome."
+      ]
+    },
+    {
+      "key": "gift_response.profession.disliked",
+      "lines": [
+        "{gift_item} is a poor match for my trade.",
+        "I would not have chosen {gift_item}.",
+        "{gift_item} is not much use to me."
+      ]
+    },
+    {
+      "key": "gift_response.profession.hated",
+      "lines": [
+        "<bold>Do not</bold> bring danger and call it a present.",
+        "No. {gift_item} is a poor thing to hand someone.",
+        "Do not call {gift_item} kindness."
+      ]
+    },
+    {
+      "key": "gift_advice_followup.liked",
+      "lines": [
+        "About that gift advice... <pulse>good</pulse>. {tested_villager} liked {gift_item}. Word gets around when a tip lands.",
+        "So {gift_item} worked for {tested_villager}. I am glad my advice held up.",
+        "So {tested_villager} liked {gift_item}. Good. Advice should survive being tested."
+      ],
+      "weight": 20
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "lines": [
+        "About that gift advice... hm. If {gift_item} did not suit {gift_subject}, try {alternative_gift} instead.",
+        "That one <wavy>soured</wavy>? Then bring {alternative_gift} next time. {gift_subject} should take that more kindly.",
+        "Well, now you know. {gift_item} is not the way to win over {gift_subject}. Try {alternative_gift}.",
+        "That advice turned sideways. Bring {alternative_gift} and you may get a kinder answer."
+      ],
+      "weight": 52
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "lines": [
+        "Did they? Hm. Maybe {gift_subject} would prefer {alternative_gift}. Or maybe they were in a mood.",
+        "Advice is not a promise. Still, {alternative_gift} should go over better with {gift_subject}.",
+        "Then try {alternative_gift} for {gift_subject}. Let us improve the guess."
+      ],
+      "weight": 36
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "dispositions": [
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 18,
+      "lines": [
+        "So {gift_item} went badly. Try {alternative_gift} if you want my better guess.",
+        "Then try {alternative_gift} for {gift_subject}. Let us improve the guess. {gift_item}",
+        "{gift_item} missed, then. {alternative_gift} should be safer."
+      ]
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
+      "weight": 18,
+      "lines": [
+        "You came back to blame me? Try {alternative_gift} next time and call it even.",
+        "Then try {alternative_gift} for {gift_subject}. Let us improve the guess.",
+        "{gift_item} missed, then. {alternative_gift} should be safer."
+      ]
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "dispositions": [
+        "cautious",
+        "rude",
+        "fearful"
+      ],
+      "weight": 18,
+      "lines": [
+        "Maybe I misremembered. Maybe you asked the wrong person. Either way, {alternative_gift} is safer.",
+        "Then try {alternative_gift} for {gift_subject}. Let us improve the guess.",
+        "{gift_item} missed, then. {alternative_gift} should be safer."
+      ]
+    },
+    {
+      "key": "gift_advice_followup.missing",
+      "lines": [
+        "I lost the thread of that gift advice.",
+        "I cannot find that gift advice in my head anymore.",
+        "That advice has slipped away from me."
+      ]
+    },
+    {
+      "key": "gift_given",
+      "lines": [
+        "Here. Take {gift_item}. You have earned a little <pulse>kindness</pulse> back.",
+        "I wanted you to have {gift_item}. Good neighbors share what they can.",
+        "{gift_item} should serve you well. Consider it thanks from this village."
+      ],
+      "weight": 54
+    },
+    {
+      "key": "gift_taken_back.returned",
+      "lines": [
+        "So the {gift_item} was only kindness on loan?",
+        "You gave me {gift_item}, then took it back. I will <pulse>remember</pulse> both parts.",
+        "A gift loses its warmth when it walks away in your hands."
+      ],
+      "weight": 50
+    },
+    {
+      "key": "gift_taken_back.stolen",
+      "lines": [
+        "That {gift_item} was <bold>not yours</bold> to take.",
+        "Taking another person's gift from my keeping is a poor kind of bold.",
+        "I know what was given to me. I also know who just took it."
+      ],
+      "weight": 50
+    },
+    {
+      "key": "trade_payment_taken_back.returned",
+      "lines": [
+        "That {trade_item} was payment, not a pouch you left with me.",
+        "You traded {trade_item} fair and square. Taking it back makes the square <wavy>crooked</wavy>.",
+        "A trade is finished when both hands let go. Yours just reached back."
+      ],
+      "weight": 50
+    },
+    {
+      "key": "trade_payment_taken_back.stolen",
+      "lines": [
+        "That {trade_item} was paid to me. It was <bold>not yours</bold> to collect.",
+        "You are taking someone else's trade payment from my keeping.",
+        "I know my accounts. That {trade_item} was not owed to you."
+      ],
+      "weight": 50
+    }
+  ]
+}

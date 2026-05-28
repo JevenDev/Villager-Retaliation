@@ -364,6 +364,14 @@ const knownPlaceholders = new Set([
 ]);
 
 const errors = [];
+const dialogueIdScopes = {
+  options: new Map(),
+  lines: new Map(),
+  messages: new Map(),
+  openings: new Map(),
+  closings: new Map(),
+  pacify: new Map()
+};
 
 for (const [kind, relativeRoot] of Object.entries(roots)) {
   for (const file of await jsonFiles(path.join(root, relativeRoot))) {
@@ -418,14 +426,15 @@ function stripBom(text) {
 }
 
 function checkDialogue(file, data) {
-  checkIds(file, data.options ?? [], "dialogue option");
-  checkIds(file, data.lines ?? [], "dialogue line");
-  checkIds(file, data.messages ?? [], "dialogue message");
-  checkIds(file, data.openings ?? [], "opening");
-  checkIds(file, data.closings ?? [], "closing");
-  checkIds(file, data.pacify ?? [], "pacify line");
+  const sections = dialogueSectionsFor(file, data);
+  checkDialogueIds(file, sections.options, "dialogue option", dialogueIdScopes.options);
+  checkDialogueIds(file, sections.lines, "dialogue line", dialogueIdScopes.lines);
+  checkDialogueIds(file, sections.messages, "dialogue message", dialogueIdScopes.messages);
+  checkDialogueIds(file, sections.openings, "opening", dialogueIdScopes.openings);
+  checkDialogueIds(file, sections.closings, "closing", dialogueIdScopes.closings);
+  checkDialogueIds(file, sections.pacify, "pacify line", dialogueIdScopes.pacify);
 
-  for (const [index, option] of (data.options ?? []).entries()) {
+  for (const [index, option] of sections.options.entries()) {
     for (const field of legacyOptionFields) {
       if (Object.hasOwn(option, field)) {
         errors.push(`${relative(file)}: options[${index}] uses legacy migrated field "${field}"; use conditions instead for built-in data.`);
@@ -434,7 +443,7 @@ function checkDialogue(file, data) {
     checkConditions(file, option, `options[${index}]`);
   }
 
-  for (const [index, line] of (data.lines ?? []).entries()) {
+  for (const [index, line] of sections.lines.entries()) {
     for (const field of legacyLineFields) {
       if (Object.hasOwn(line, field)) {
         errors.push(`${relative(file)}: lines[${index}] uses legacy migrated field "${field}"; use conditions instead for built-in data.`);
@@ -442,6 +451,92 @@ function checkDialogue(file, data) {
     }
     checkConditions(file, line, `lines[${index}]`);
   }
+}
+
+function dialogueSectionsFor(file, data) {
+  const sections = {
+    options: [],
+    lines: [],
+    messages: [],
+    openings: [],
+    closings: [],
+    pacify: []
+  };
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    return sections;
+  }
+
+  if (hasDialogueBundle(data)) {
+    for (const key of Object.keys(sections)) {
+      if (Array.isArray(data[key]) && (key !== "lines" || isBundledLinesSection(data))) {
+        sections[key] = data[key].filter((entry) => entry && typeof entry === "object" && !Array.isArray(entry));
+      }
+    }
+    return sections;
+  }
+
+  const section = dialogueSectionFromPath(file) ?? inferDialogueSection(data);
+  if (section) {
+    sections[section] = [data];
+  }
+  return sections;
+}
+
+function hasDialogueBundle(data) {
+  for (const key of ["options", "messages", "openings", "closings", "pacify"]) {
+    if (Array.isArray(data[key])) {
+      return true;
+    }
+  }
+  return Array.isArray(data.lines) && isBundledLinesSection(data);
+}
+
+function isBundledLinesSection(data) {
+  if (Object.hasOwn(data, "request") || Object.hasOwn(data, "key") || Object.hasOwn(data, "label") || Object.hasOwn(data, "outcomes")) {
+    return false;
+  }
+  return data.lines.length === 0 || (data.lines[0] && typeof data.lines[0] === "object" && !Array.isArray(data.lines[0]));
+}
+
+function dialogueSectionFromPath(file) {
+  const segments = relative(file).split("/");
+  for (const segment of segments) {
+    if (segment === "option" || segment === "options") {
+      return "options";
+    }
+    if (segment === "line" || segment === "lines") {
+      return "lines";
+    }
+    if (segment === "message" || segment === "messages") {
+      return "messages";
+    }
+    if (segment === "opening" || segment === "openings") {
+      return "openings";
+    }
+    if (segment === "closing" || segment === "closings") {
+      return "closings";
+    }
+    if (segment === "pacify" || segment === "pacification") {
+      return "pacify";
+    }
+  }
+  return undefined;
+}
+
+function inferDialogueSection(data) {
+  if (data.type === "dialogue_option" || Object.hasOwn(data, "label")) {
+    return "options";
+  }
+  if (Object.hasOwn(data, "key")) {
+    return "messages";
+  }
+  if (Object.hasOwn(data, "request")) {
+    return "lines";
+  }
+  if (Object.hasOwn(data, "outcomes")) {
+    return "pacify";
+  }
+  return undefined;
 }
 
 function checkConditions(file, entry, location) {
@@ -638,6 +733,20 @@ function checkIds(file, entries, label) {
       errors.push(`${relative(file)}: duplicate ${label} id "${entry.id}" at entries ${previous} and ${index}.`);
     }
     seen.set(entry.id, index);
+  }
+}
+
+function checkDialogueIds(file, entries, label, globalSeen) {
+  checkIds(file, entries, label);
+  for (const [index, entry] of entries.entries()) {
+    if (!entry || typeof entry !== "object" || Array.isArray(entry) || !entry.id) {
+      continue;
+    }
+    const previous = globalSeen.get(entry.id);
+    if (previous !== undefined) {
+      errors.push(`${relative(file)}: duplicate ${label} id "${entry.id}" also defined in ${previous.file} entry ${previous.index}.`);
+    }
+    globalSeen.set(entry.id, { file: relative(file), index });
   }
 }
 

@@ -1,0 +1,21 @@
+{
+  "lines": [
+    {
+      "id": "apology_fisherman_line",
+      "request": "apology",
+      "option": "apologize_for_harm",
+      "show_for_babies": false,
+      "lines": [
+        "You cast trouble into the water. Fine. Now reel back something better.",
+        "Bad tides pass. I will see whether you bring the same storm again.",
+        "You tangled the line. Fine. Untangle it slowly and do not cut it again.",
+        "An apology floats. Trust sinks or holds by what follows.",
+        "I will hear you out. I have waited longer for worse catches.",
+        "Bad waters calm if the wind changes. Let us see whether yours does.",
+        "You hooked harm and brought it here. Now bring something decent.",
+        "Fine. I will not throw the words back, but I will inspect them."
+      ],
+      "weight": 234
+    }
+  ]
+}

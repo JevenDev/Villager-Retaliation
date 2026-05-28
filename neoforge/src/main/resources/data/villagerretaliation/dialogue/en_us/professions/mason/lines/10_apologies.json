@@ -1,0 +1,21 @@
+{
+  "lines": [
+    {
+      "id": "apology_mason_crack",
+      "request": "apology",
+      "option": "apologize_for_harm",
+      "show_for_babies": false,
+      "lines": [
+        "Cracks spread if ignored. You noticed this one. Now prove you can patch it.",
+        "Mortar takes time to set. So does forgiveness.",
+        "You made a crack. You named it. That is the first proper repair.",
+        "Do not plaster over this and call it fixed.",
+        "Fine. A foundation can be reset, but it takes honest work.",
+        "I hear the apology. Now bring mortar, not dust.",
+        "Damage hidden inside stone still spreads. Keep this in the open.",
+        "Trust can stand again if the base is not shaken twice."
+      ],
+      "weight": 234
+    }
+  ]
+}

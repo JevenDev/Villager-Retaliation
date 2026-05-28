@@ -1,0 +1,47 @@
+{
+  "lines": [
+    {
+      "id": "librarian_cured_recognition_warm",
+      "request": "cured_recognition",
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ],
+      "lines": [
+        "I remember the page turning back from a <shake>very bad ending</shake>.",
+        "Your face is one of the first words I could <pulse>read again</pulse>.",
+        "You helped pull me back when even my name felt far away."
+      ],
+      "weight": 60
+    },
+    {
+      "id": "librarian_cured_recognition_confused",
+      "request": "cured_recognition",
+      "dispositions": [
+        "neutral",
+        "cautious"
+      ],
+      "lines": [
+        "The chapter is damaged, but your name survived in the <italic>margin</italic>.",
+        "I remember fragments: weakness, gold, a bitter draught, and you waiting.",
+        "The memory is rough around the edges, but your face stayed in it."
+      ],
+      "weight": 60
+    },
+    {
+      "id": "librarian_cured_recognition_uneasy_1",
+      "request": "cured_recognition",
+      "dispositions": [
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 30,
+      "lines": [
+        "I remember you. Some books should be opened <pulse>slowly</pulse> after a curse.",
+        "I know you helped. I also remember why my hands still shake.",
+        "The cure left echoes behind. Stand where I can breathe around them."
+      ]
+    }
+  ]
+}

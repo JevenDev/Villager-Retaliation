@@ -1,0 +1,92 @@
+{
+  "lines": [
+    {
+      "id": "recruitment_left_behind_meadow",
+      "request": "recruitment_followup",
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20,
+      "lines": [
+        "Don't leave me in the Meadow. Open ground on a mountain is still open ground.",
+        "The Meadow looked gentle until I noticed how exposed I was standing there alone.",
+        "I waited in the Meadow with wind all around and nowhere proper to hide.",
+        "If you wander off in a Meadow, I am left out in the open hoping nothing spots me first."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "scenarios": [
+            "left_behind"
+          ],
+          "biome": "minecraft:meadow"
+        }
+      ]
+    },
+    {
+      "id": "recruitment_left_behind_stony_peaks",
+      "request": "recruitment_followup",
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20,
+      "lines": [
+        "Don't leave me on the Stony Peaks. Rocks and height are enough danger without being alone.",
+        "The Stony Peaks made every path feel like it wanted a wrong step from me.",
+        "I waited on the Stony Peaks with wind in my ears and loose stone underfoot.",
+        "If you wander off on the Stony Peaks, I am left balancing fear and bad footing."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "scenarios": [
+            "left_behind"
+          ],
+          "biome": "minecraft:stony_peaks"
+        }
+      ]
+    },
+    {
+      "id": "recruitment_left_behind_windswept_gravelly_hills",
+      "request": "recruitment_followup",
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20,
+      "lines": [
+        "Don't leave me in the Windswept Gravelly Hills. Loose gravel and strong wind are cruel company.",
+        "The Windswept Gravelly Hills feel one bad step away from sliding apart under me.",
+        "I waited in the Windswept Gravelly Hills trying not to trust the ground too much.",
+        "If you disappear in the Windswept Gravelly Hills, I am left bracing against wind on unstable stone."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "scenarios": [
+            "left_behind"
+          ],
+          "biome": "minecraft:windswept_gravelly_hills"
+        }
+      ]
+    },
+    {
+      "id": "recruitment_left_behind_windswept_hills",
+      "request": "recruitment_followup",
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20,
+      "lines": [
+        "Don't leave me in the Windswept Hills. Every gust up there feels like a shove.",
+        "The Windswept Hills are too exposed to stand alone on for long.",
+        "I waited in the Windswept Hills with wind in my face and no shelter worth the name.",
+        "If you wander off in the Windswept Hills, I am left fighting the weather and my nerves together."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "scenarios": [
+            "left_behind"
+          ],
+          "biome": "minecraft:windswept_hills"
+        }
+      ]
+    }
+  ]
+}

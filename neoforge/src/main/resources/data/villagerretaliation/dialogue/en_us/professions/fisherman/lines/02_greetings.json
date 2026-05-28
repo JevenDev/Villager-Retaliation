@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "fisherman_new_greeting_dock",
+      "request": "greeting",
+      "weight": 26,
+      "lines": [
+        "Step lightly on the dock. Loose boards like to announce strangers.",
+        "Give the dock room. Fishing works better without elbows in it.",
+        "Step carefully near the dock. I would rather greet you than patch you up."
+      ]
+    }
+  ]
+}

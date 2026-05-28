@@ -1,0 +1,186 @@
+{
+  "lines": [
+    {
+      "id": "nitwit_share_story_cold_ocean",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_biome": "minecraft:cold_ocean",
+      "lines": [
+        "{target}? Cold water steals strength quickly. I would stay close enough to hear the bell.",
+        "If anyone heads for Cold Ocean, tell them: Bring a boat and do not swim for pride. I will be at the bell.",
+        "Gray waves make distance feel heavier. I will remember that from near the bell.",
+        "Cold Ocean is no small story. Running the wrong way is still running.",
+        "I will remember Cold Ocean as water that chills courage out of the bones. I will stay where I can hear the bell."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "nitwit_share_story_deep_cold_ocean",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_biome": "minecraft:deep_cold_ocean",
+      "lines": [
+        "{target}? Deep cold leaves little room for mistakes. I would stay close enough to hear the bell.",
+        "If anyone heads for Deep Cold Ocean, tell them: Use a boat and save your breath. I will be at the bell.",
+        "The bottom waits farther down than courage wants. I will remember that from near the bell.",
+        "Deep Cold Ocean is no small story. Running the wrong way is still running.",
+        "I will remember Deep Cold Ocean as cold water with too much room beneath it. I will stay where I can hear the bell."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "nitwit_share_story_deep_frozen_ocean",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_biome": "minecraft:deep_frozen_ocean",
+      "lines": [
+        "{target}? Ice above and depth below make a cruel pair. I would stay close enough to hear the bell.",
+        "If anyone heads for Deep Frozen Ocean, tell them: Mind cracks and keep a boat near. I will be at the bell.",
+        "Blue ice can make the sea look solid enough to trust. I will remember that from near the bell.",
+        "Deep Frozen Ocean is no small story. Running the wrong way is still running.",
+        "I will remember Deep Frozen Ocean as a frozen roof over water that still wants you. I will stay where I can hear the bell."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "nitwit_share_story_frozen_ocean",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_biome": "minecraft:frozen_ocean",
+      "lines": [
+        "{target}? Ice over water is a promise with cracks. I would stay close enough to hear the bell.",
+        "If anyone heads for Frozen Ocean, tell them: Test the way and keep a boat ready. I will be at the bell.",
+        "Frozen waves still have depth beneath them. I will remember that from near the bell.",
+        "Frozen Ocean is no small story. Running the wrong way is still running.",
+        "I will remember Frozen Ocean as a white sea pretending to be ground. I will stay where I can hear the bell."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "nitwit_share_story_frozen_peaks",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_biome": "minecraft:frozen_peaks",
+      "lines": [
+        "{target}? Mountain cold sharpens every mistake. I would stay close enough to hear the bell.",
+        "If anyone heads for Frozen Peaks, tell them: Climb slowly and turn back before pride freezes. I will be at the bell.",
+        "Powder snow can swallow a sure step. I will remember that from near the bell.",
+        "Frozen Peaks is no small story. Running the wrong way is still running.",
+        "I will remember Frozen Peaks as high white stone with thin air around it. I will stay where I can hear the bell."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "nitwit_share_story_frozen_river",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_biome": "minecraft:frozen_river",
+      "lines": [
+        "{target}? A frozen crossing can betray a heavy foot. I would stay close enough to hear the bell.",
+        "If anyone heads for Frozen River, tell them: Cross where the banks are kind. I will be at the bell.",
+        "Ice speaks in cracks before it opens. I will remember that from near the bell.",
+        "Frozen River is no small story. Running the wrong way is still running.",
+        "I will remember Frozen River as a road of ice over moving water. I will stay where I can hear the bell."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "nitwit_share_story_grove",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_biome": "minecraft:grove",
+      "lines": [
+        "{target}? Snowy trees make quiet steps too easy. I would stay close enough to hear the bell.",
+        "If anyone heads for Grove, tell them: Watch for powder snow and things hiding behind trunks. I will be at the bell.",
+        "Spruce shade keeps winter close. I will remember that from near the bell.",
+        "Grove is no small story. Running the wrong way is still running.",
+        "I will remember Grove as a white wood where sound gets swallowed. I will stay where I can hear the bell."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "nitwit_share_story_ice_spikes",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_biome": "minecraft:ice_spikes",
+      "lines": [
+        "{target}? Ice stands tall enough to turn wind mean. I would stay close enough to hear the bell.",
+        "If anyone heads for Ice Spikes, tell them: Keep low and do not trust smooth footing. I will be at the bell.",
+        "Packed ice shines like it wants you careless. I will remember that from near the bell.",
+        "Ice Spikes is no small story. Running the wrong way is still running.",
+        "I will remember Ice Spikes as frozen spears under a hard sky. I will stay where I can hear the bell."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "nitwit_share_story_jagged_peaks",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_biome": "minecraft:jagged_peaks",
+      "lines": [
+        "{target}? Sharp mountains punish tired feet. I would stay close enough to hear the bell.",
+        "If anyone heads for Jagged Peaks, tell them: Climb with blocks ready and pride asleep. I will be at the bell.",
+        "One loose step can travel all the way down. I will remember that from near the bell.",
+        "Jagged Peaks is no small story. Running the wrong way is still running.",
+        "I will remember Jagged Peaks as peaks that look cut by a giant axe. I will stay where I can hear the bell."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "nitwit_share_story_snowy_beach",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_biome": "minecraft:snowy_beach",
+      "lines": [
+        "{target}? Snow and surf make cold from both sides. I would stay close enough to hear the bell.",
+        "If anyone heads for Snowy Beach, tell them: Keep dry and leave before the wind turns. I will be at the bell.",
+        "Sand under snow hides the shore badly. I will remember that from near the bell.",
+        "Snowy Beach is no small story. Running the wrong way is still running.",
+        "I will remember Snowy Beach as a cold edge where land meets colder water. I will stay where I can hear the bell."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "nitwit_share_story_snowy_plains",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_biome": "minecraft:snowy_plains",
+      "lines": [
+        "{target}? White ground shows tracks and hides holes. I would stay close enough to hear the bell.",
+        "If anyone heads for Snowy Plains, tell them: Follow footprints only if you trust who made them. I will be at the bell.",
+        "Snow makes distance look shorter than it is. I will remember that from near the bell.",
+        "Snowy Plains is no small story. Running the wrong way is still running.",
+        "I will remember Snowy Plains as flat winter with every sound laid bare. I will stay where I can hear the bell."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "nitwit_share_story_snowy_slopes",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_biome": "minecraft:snowy_slopes",
+      "lines": [
+        "{target}? Powder snow can swallow a careless step. I would stay close enough to hear the bell.",
+        "If anyone heads for Snowy Slopes, tell them: Wear leather boots and test the white ground. I will be at the bell.",
+        "The hill looks soft until it takes your knees. I will remember that from near the bell.",
+        "Snowy Slopes is no small story. Running the wrong way is still running.",
+        "I will remember Snowy Slopes as a slope where snow pretends to be stone. I will stay where I can hear the bell."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "nitwit_share_story_snowy_taiga",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_biome": "minecraft:snowy_taiga",
+      "lines": [
+        "{target}? Cold trees make long watches longer. I would stay close enough to hear the bell.",
+        "If anyone heads for Snowy Taiga, tell them: Keep torches dry and listen for wolves. I will be at the bell.",
+        "Spruce and snow muffle bad sounds. I will remember that from near the bell.",
+        "Snowy Taiga is no small story. Running the wrong way is still running.",
+        "I will remember Snowy Taiga as winter trees with shadows under every branch. I will stay where I can hear the bell."
+      ],
+      "weight": 120
+    }
+  ]
+}

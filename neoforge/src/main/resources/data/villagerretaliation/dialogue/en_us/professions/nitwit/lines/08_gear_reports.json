@@ -1,0 +1,40 @@
+{
+  "lines": [
+    {
+      "id": "gear_report_nitwit_used",
+      "request": "gear_report",
+      "option": "gear_report",
+      "show_for_babies": false,
+      "weight": 32,
+      "lines": [
+        "I used it and did not drop it. That is two victories, if you ask me.",
+        "It did the job when fear was loud. That is praise enough.",
+        "Good gear earns trust the moment trouble tests it."
+      ],
+      "conditions": [
+        {
+          "type": "memory",
+          "kind": "gear_report_used_in_combat"
+        }
+      ]
+    },
+    {
+      "id": "gear_report_nitwit_unused",
+      "request": "gear_report",
+      "option": "gear_report",
+      "show_for_babies": false,
+      "weight": 32,
+      "lines": [
+        "I have not used it. I have practiced looking brave with it, which is almost something.",
+        "It did the job when fear was loud. That is praise enough.",
+        "Good gear earns trust the moment trouble tests it."
+      ],
+      "conditions": [
+        {
+          "type": "memory",
+          "kind": "gear_report_unused_in_combat"
+        }
+      ]
+    }
+  ]
+}

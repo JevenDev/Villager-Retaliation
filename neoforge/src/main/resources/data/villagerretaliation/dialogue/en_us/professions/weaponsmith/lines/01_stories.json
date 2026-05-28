@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "weaponsmith_story_golem_variants",
+      "request": "story",
+      "lines": [
+        "The golem did good work last night. Still, I keep the blades sharp.",
+        "I once polished rust off a sword and found three old mistakes underneath.",
+        "Some nights, the grindstone sounds like <pulse>preparation</pulse> instead of work."
+      ],
+      "weight": 74
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "id": "example_template.line.cured_recognition",
+  "request": "cured_recognition",
+  "option": "example_template.option.cured_recognition",
+  "text": "example",
+  "weight": 10
+}

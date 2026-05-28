@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "weaponsmith_new_greeting_grindstone",
+      "request": "greeting",
+      "weight": 26,
+      "lines": [
+        "Mind the grindstone. It has no patience for wandering fingers.",
+        "Give the grindstone room. Weapons works better without elbows in it.",
+        "Step carefully near the grindstone. I would rather greet you than patch you up."
+      ]
+    }
+  ]
+}

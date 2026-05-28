@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "butcher_new_greeting_smoke",
+      "request": "greeting",
+      "weight": 26,
+      "lines": [
+        "If you smell <wavy>smoke</wavy>, that is supper being planned properly.",
+        "Give the smokehouse room. Butchery works better without elbows in it.",
+        "Step carefully near the smokehouse. I would rather greet you than patch you up."
+      ]
+    }
+  ]
+}

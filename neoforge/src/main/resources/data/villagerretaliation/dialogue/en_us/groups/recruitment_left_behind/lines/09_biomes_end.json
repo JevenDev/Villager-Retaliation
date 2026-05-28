@@ -1,0 +1,136 @@
+{
+  "lines": [
+    {
+      "id": "recruitment_left_behind_end_barrens",
+      "request": "recruitment_followup",
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20,
+      "lines": [
+        "Don't leave me in the End Barrens. Empty places are worse when the fall never really ends.",
+        "The End Barrens felt like being forgotten at the edge of the world.",
+        "I waited in the End Barrens trying not to look too hard at how little was beneath me.",
+        "If you disappear in the End Barrens, I am left with silence, void, and nerves."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "scenarios": [
+            "left_behind"
+          ],
+          "biome": "minecraft:end_barrens"
+        }
+      ]
+    },
+    {
+      "id": "recruitment_left_behind_end_highlands",
+      "request": "recruitment_followup",
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20,
+      "lines": [
+        "Don't leave me in the End Highlands. Everything there feels far away from safety.",
+        "The End Highlands are no place to lose the one person I was following.",
+        "I stood in the End Highlands trying not to think about how small one mistake could make me.",
+        "If you vanish in the End Highlands, I am left on strange stone hoping <pulse>nothing notices me</pulse>."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "scenarios": [
+            "left_behind"
+          ],
+          "biome": "minecraft:end_highlands"
+        }
+      ]
+    },
+    {
+      "id": "recruitment_left_behind_end_midlands",
+      "request": "recruitment_followup",
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20,
+      "lines": [
+        "Don't leave me in the End Midlands. That place has a way of making every path feel temporary.",
+        "The End Midlands were unsettling enough before I realized I was alone there.",
+        "I waited in the End Midlands with nothing familiar in sight and far too much empty air nearby.",
+        "If you disappear in the End Midlands, I am left feeling one bad step from nowhere."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "scenarios": [
+            "left_behind"
+          ],
+          "biome": "minecraft:end_midlands"
+        }
+      ]
+    },
+    {
+      "id": "recruitment_left_behind_small_end_islands",
+      "request": "recruitment_followup",
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20,
+      "lines": [
+        "Don't leave me on the Small End Islands. There is barely enough world there to stand on.",
+        "The Small End Islands are no place to be abandoned unless you want me panicking at the edge.",
+        "I waited on the Small End Islands trying not to look down into all that nothing.",
+        "If you disappear on the Small End Islands, I am left counting every step like it might be my last."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "scenarios": [
+            "left_behind"
+          ],
+          "biome": "minecraft:small_end_islands"
+        }
+      ]
+    },
+    {
+      "id": "recruitment_left_behind_the_end",
+      "request": "recruitment_followup",
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20,
+      "lines": [
+        "Don't leave me in the End. I would rather not be abandoned on alien stone over a void.",
+        "The End is already wrong enough without being left alone there.",
+        "I stood in the End trying not to think about how far from normal everything was.",
+        "If you disappear in the End, I am left somewhere that barely feels meant for living things."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "scenarios": [
+            "left_behind"
+          ],
+          "biome": "minecraft:the_end"
+        }
+      ]
+    },
+    {
+      "id": "recruitment_left_behind_the_void",
+      "request": "recruitment_followup",
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20,
+      "lines": [
+        "Don't leave me by the Void. There is not exactly a second chance if I slip there.",
+        "The Void is the sort of place where being alone feels like a direct threat.",
+        "I waited near the Void trying very hard not to think about what was under me.",
+        "If you vanish by the Void, I am left one mistake away from not coming back."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "scenarios": [
+            "left_behind"
+          ],
+          "biome": "minecraft:the_void"
+        }
+      ]
+    }
+  ]
+}

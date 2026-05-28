@@ -1,0 +1,7 @@
+{
+  "id": "example_template.line.village_defense_report",
+  "request": "village_defense_report",
+  "option": "example_template.option.village_defense_report",
+  "text": "example",
+  "weight": 10
+}

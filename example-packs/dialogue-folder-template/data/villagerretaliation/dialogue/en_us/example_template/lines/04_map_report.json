@@ -1,0 +1,7 @@
+{
+  "id": "example_template.line.map_report",
+  "request": "map_report",
+  "option": "example_template.option.map_report",
+  "text": "example",
+  "weight": 10
+}

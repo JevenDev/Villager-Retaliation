@@ -1,0 +1,205 @@
+{
+  "lines": [
+    {
+      "id": "gift_global_disliked_poor",
+      "request": "gift_preferences",
+      "gift_advice": "global_disliked",
+      "lines": [
+        "{gift_item} makes a poor gift. Most villagers would rather not handle it.",
+        "{gift_item} sends the wrong message.",
+        "If you are trying to be kind, avoid {gift_item}.",
+        "{gift_item} is more warning than present.",
+        "Handing someone {gift_item} is a quick way to sour the room.",
+        "{gift_item} belongs somewhere else, not in someone's hands as a gift.",
+        "Most people here would call {gift_item} a bad offering.",
+        "Better to arrive empty-handed than with {gift_item}.",
+        "Do not wrap {gift_item} and call it kindness.",
+        "{gift_item} is the kind of gift people remember for the wrong reason."
+      ],
+      "weight": 186
+    },
+    {
+      "id": "gift_profession_liked_thoughtful",
+      "request": "gift_preferences",
+      "gift_advice": "profession_liked",
+      "lines": [
+        "If you are choosing for {gift_subject}, {gift_item} is a thoughtful pick.",
+        "For {gift_subject}, {gift_item} shows you paid attention.",
+        "{gift_subject} can make good use of {gift_item}.",
+        "{gift_item} suits {gift_subject} better than most gifts.",
+        "You can tell someone knows the trade when they bring {gift_item}.",
+        "That work gives {gift_item} real value.",
+        "{gift_item} is the kind of thing {gift_subject} remembers kindly.",
+        "A careful gift for {gift_subject}? {gift_item}.",
+        "{gift_subject} tends to respect a gift like {gift_item}.",
+        "{gift_item} feels personal to {gift_subject}."
+      ],
+      "weight": 186
+    },
+    {
+      "id": "gift_profession_disliked_avoid",
+      "request": "gift_preferences",
+      "gift_advice": "profession_disliked",
+      "lines": [
+        "If you are choosing for {gift_subject}, I would avoid {gift_item}.",
+        "For {gift_subject}, {gift_item} feels careless.",
+        "Do not bring {gift_item} to {gift_subject} and expect gratitude.",
+        "{gift_subject} has little use for {gift_item}.",
+        "{gift_item} is a poor match for {gift_subject}.",
+        "If I were gifting {gift_subject}, I would leave {gift_item} at home.",
+        "{gift_subject} may take {gift_item} the wrong way.",
+        "For that profession, {gift_item} is more nuisance than gift.",
+        "You can insult the trade without meaning to. {gift_item} may do it.",
+        "{gift_item} is the kind of thing {gift_subject} remembers sourly."
+      ],
+      "weight": 186
+    },
+    {
+      "id": "gift_already_known_all",
+      "request": "gift_preferences",
+      "gift_advice": "already_known",
+      "lines": [
+        "I think you already know what I can tell you about gifts.",
+        "You've picked my memory clean on gifts, I'm afraid.",
+        "No fresh advice. Try another villager if you want more gift gossip.",
+        "I would rather not pretend I know more than I do.",
+        "No new gift advice from me today. Ask someone else and you may hear more.",
+        "That is the end of my gift wisdom for the moment.",
+        "Nothing new comes to mind. Gifts are personal, even when villagers gossip.",
+        "I do not have another gift tip ready for you."
+      ],
+      "weight": 150
+    },
+    {
+      "id": "cured_recognition_generic_warm_1",
+      "request": "cured_recognition",
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ],
+      "lines": [
+        "I remember pieces. Your face came back before my voice did. Thank you for waiting on the other side.",
+        "I remember enough to know you pulled me out of something dark.",
+        "I remember waking back into myself, and you were part of that morning."
+      ],
+      "weight": 60
+    },
+    {
+      "id": "cured_recognition_generic_confused_1",
+      "request": "cured_recognition",
+      "dispositions": [
+        "neutral",
+        "cautious"
+      ],
+      "lines": [
+        "I know you, I think. The memory has teeth marks around the edges.",
+        "Your voice sounds familiar, but everything before the cure is fog and hunger.",
+        "I know your face, but the memory still limps when it reaches you."
+      ],
+      "weight": 60
+    },
+    {
+      "id": "cured_recognition_generic_uneasy_1",
+      "request": "cured_recognition",
+      "dispositions": [
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 30,
+      "lines": [
+        "I remember you. That does not make the remembering easy.",
+        "I know you helped. I also know remembering still hurts.",
+        "The gratitude is real. So is the fear around it."
+      ]
+    },
+    {
+      "id": "village_cure_acknowledgement_respectful_1",
+      "request": "greeting",
+      "show_for_babies": false,
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ],
+      "player_event_tags": [
+        "player_cured_villager"
+      ],
+      "weight": 34,
+      "lines": [
+        "Word reached us about <aqua>{cured_villager}</aqua>. You brought one of ours back.",
+        "People are saying <aqua>{cured_villager}</aqua> came home because you stayed.",
+        "<aqua>{cured_villager_possessive}</aqua> cure changed the way people say your name. <aqua>{cured_villager}</aqua>"
+      ]
+    },
+    {
+      "id": "village_cure_acknowledgement_respectful_2",
+      "request": "question",
+      "show_for_babies": false,
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ],
+      "player_event_tags": [
+        "player_cured_villager"
+      ],
+      "weight": 34,
+      "lines": [
+        "<aqua>{cured_villager_possessive}</aqua> cure matters here. People remember who stayed to help.",
+        "People are saying <aqua>{cured_villager}</aqua> came home because you stayed. <aqua>{cured_villager_possessive}</aqua>",
+        "<aqua>{cured_villager_possessive}</aqua> cure changed the way people say your name."
+      ]
+    },
+    {
+      "id": "village_cure_acknowledgement_neutral_1",
+      "request": "greeting",
+      "show_for_babies": false,
+      "dispositions": [
+        "neutral"
+      ],
+      "player_event_tags": [
+        "player_cured_villager"
+      ],
+      "weight": 32,
+      "lines": [
+        "I heard you cured <aqua>{cured_villager}</aqua>. That is not a small thing.",
+        "People are saying <aqua>{cured_villager}</aqua> came home because you stayed.",
+        "<aqua>{cured_villager_possessive}</aqua> cure changed the way people say your name. <aqua>{cured_villager}</aqua>"
+      ]
+    },
+    {
+      "id": "village_cure_acknowledgement_neutral_2",
+      "request": "question",
+      "show_for_babies": false,
+      "dispositions": [
+        "neutral"
+      ],
+      "player_event_tags": [
+        "player_cured_villager"
+      ],
+      "weight": 32,
+      "lines": [
+        "<aqua>{cured_villager}</aqua> is walking these paths again because of you. The village noticed.",
+        "People are saying <aqua>{cured_villager}</aqua> came home because you stayed.",
+        "<aqua>{cured_villager_possessive}</aqua> cure changed the way people say your name. <aqua>{cured_villager}</aqua>"
+      ]
+    },
+    {
+      "id": "village_cure_acknowledgement_wary_1",
+      "request": "greeting",
+      "show_for_babies": false,
+      "dispositions": [
+        "cautious",
+        "rude"
+      ],
+      "player_event_tags": [
+        "player_cured_villager"
+      ],
+      "weight": 34,
+      "lines": [
+        "I heard what you did for <aqua>{cured_villager}</aqua>. I am still wary, but I will not pretend that meant nothing.",
+        "People are saying <aqua>{cured_villager}</aqua> came home because you stayed.",
+        "<aqua>{cured_villager_possessive}</aqua> cure changed the way people say your name. <aqua>{cured_villager}</aqua>"
+      ]
+    }
+  ]
+}

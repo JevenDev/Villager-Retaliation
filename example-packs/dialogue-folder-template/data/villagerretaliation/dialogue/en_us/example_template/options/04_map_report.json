@@ -1,0 +1,6 @@
+{
+  "id": "example_template.option.map_report",
+  "label": "Example Map Report",
+  "request": "map_report",
+  "order": 4
+}

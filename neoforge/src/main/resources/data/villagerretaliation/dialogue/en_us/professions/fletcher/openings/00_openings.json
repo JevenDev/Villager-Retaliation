@@ -1,0 +1,12 @@
+{
+  "openings": [
+    {
+      "id": "fletcher_opening",
+      "lines": [
+        "Mind the fletching table. What do you need?",
+        "Step clear of the fletching table. What do you need?",
+        "Mind the fletching table; I am listening."
+      ]
+    }
+  ]
+}

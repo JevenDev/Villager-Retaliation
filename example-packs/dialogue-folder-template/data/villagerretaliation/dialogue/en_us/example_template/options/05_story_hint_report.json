@@ -1,0 +1,6 @@
+{
+  "id": "example_template.option.story_hint_report",
+  "label": "Example Story Hint Report",
+  "request": "story_hint_report",
+  "order": 5
+}

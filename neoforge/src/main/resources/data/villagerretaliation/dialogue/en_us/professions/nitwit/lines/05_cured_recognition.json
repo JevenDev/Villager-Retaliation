@@ -1,0 +1,47 @@
+{
+  "lines": [
+    {
+      "id": "nitwit_cured_recognition_warm",
+      "request": "cured_recognition",
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ],
+      "lines": [
+        "I remember you! Mostly. You were the not-scary part of the scary bit.",
+        "You helped me be me again. I am very attached to being me.",
+        "You helped pull me back when even my name felt far away."
+      ],
+      "weight": 60
+    },
+    {
+      "id": "nitwit_cured_recognition_confused",
+      "request": "cured_recognition",
+      "dispositions": [
+        "neutral",
+        "cautious"
+      ],
+      "lines": [
+        "I know your face. Did we meet before or after I stopped groaning?",
+        "There was an apple, but not the normal apple kind of day.",
+        "The memory is rough around the edges, but your face stayed in it."
+      ],
+      "weight": 60
+    },
+    {
+      "id": "nitwit_cured_recognition_uneasy_1",
+      "request": "cured_recognition",
+      "dispositions": [
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 30,
+      "lines": [
+        "I remember some of it, and I would like to remember less of it.",
+        "I know you helped. I also remember why my hands still shake.",
+        "The cure left echoes behind. Stand where I can breathe around them."
+      ]
+    }
+  ]
+}

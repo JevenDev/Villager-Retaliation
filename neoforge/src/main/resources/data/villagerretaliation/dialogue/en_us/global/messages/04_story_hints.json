@@ -1,0 +1,217 @@
+{
+  "messages": [
+    {
+      "key": "story_hint.biome.vague",
+      "lines": [
+        "I caught <wavy>wind</wavy> of different land {vague_direction}. Could be worth a walk.",
+        "There is talk of different land {vague_direction}. Worth checking, maybe.",
+        "Someone mentioned strange terrain {vague_direction}. Could be nothing, could be a road."
+      ]
+    },
+    {
+      "key": "story_hint.biome.named",
+      "lines": [
+        "I caught wind of {target_article} {vague_direction}.",
+        "I heard about {target_article} {vague_direction}.",
+        "There may be {target_article} somewhere {vague_direction}."
+      ]
+    },
+    {
+      "key": "story_hint.biome.precise",
+      "lines": [
+        "I caught wind of {target_article} about {distance} {direction}.",
+        "{target_article} should be about {distance} {direction}, if the rumor is honest.",
+        "Try looking about {distance} {direction} for {target_article}."
+      ]
+    },
+    {
+      "key": "story_hint.structure.rumor",
+      "lines": [
+        "I keep hearing <wavy>stories</wavy> about {target_article} somewhere {vague_direction}{vertical}.",
+        "Stories place {target_article} somewhere {vague_direction}{vertical}.",
+        "I heard {target_article} might be {vague_direction}{vertical}."
+      ]
+    },
+    {
+      "key": "story_hint.structure.precise",
+      "lines": [
+        "I keep hearing about {target_article} around {distance} {direction}{vertical}.",
+        "{target_article} should sit around {distance} {direction}{vertical}.",
+        "If the story is right, {target_article} is about {distance} {direction}{vertical}."
+      ]
+    },
+    {
+      "key": "story_hint.map",
+      "lines": [
+        "Here. I marked {target_article} on this <color:gold>map</color>. It should sit about {distance} {direction}{vertical}.",
+        "I marked {target_article}; look about {distance} {direction}{vertical}.",
+        "This map should lead toward {target_article}, about {distance} {direction}{vertical}."
+      ]
+    },
+    {
+      "key": "story_hint_report.missing",
+      "lines": [
+        "Bring me news after you walk the place I mentioned.",
+        "Walk the place first. Then bring me the story.",
+        "Find the mark, then we will talk about what it means."
+      ]
+    },
+    {
+      "key": "share_story.missing",
+      "lines": [
+        "I am not sure which story you mean.",
+        "That story is not clear enough for me to follow.",
+        "I cannot place that story yet."
+      ]
+    },
+    {
+      "key": "story_hint_report.biome",
+      "lines": [
+        "So {target_article} was really there. Good. A rumor is lighter once it has footprints under it.",
+        "You reached {target_article}? Then the old talk had a road in it after all.",
+        "Good. {target_article} is more than rumor now."
+      ],
+      "weight": 46
+    },
+    {
+      "key": "story_hint_report.structure.village",
+      "lines": [
+        "You found {target_article}. Then there are neighbors beyond the story, not just smoke and guessing.",
+        "{target_article}, truly? Then the road between here and there matters now.",
+        "Another village at {target_article}. That is not a landmark, that is people.",
+        "Good. If {target_article} is real, then so are its doors, its fields, and its worries.",
+        "You reached {target_article}. I hope they greeted you better than the wilderness did."
+      ],
+      "weight": 108
+    },
+    {
+      "key": "story_hint_report.structure.temple",
+      "lines": [
+        "{target_article}, confirmed. Old stone is easier to respect when someone comes back from it.",
+        "So {target_article} was not just campfire talk. Careful with places that outlive their builders.",
+        "You found {target_article}. I suppose old stone still knows how to call travelers in.",
+        "{target_article}. Hm. Some thresholds should be crossed with one foot ready to leave.",
+        "Then the tale about {target_article} had teeth after all. I am glad they did not close on you."
+      ],
+      "weight": 108
+    },
+    {
+      "key": "story_hint_report.structure.mansion",
+      "lines": [
+        "You reached {target_article} and returned. Some rumors are warnings wearing roofs.",
+        "{target_article}, found. There are houses that shelter folk, and houses that watch them.",
+        "You came back from {target_article}. That alone says the rumor deserved respect.",
+        "So {target_article} stands where they said. Some doors are better confirmed from outside.",
+        "{target_article}. I will remember that name with the kind of caution it deserves."
+      ],
+      "weight": 108
+    },
+    {
+      "key": "story_hint_report.structure.monument",
+      "lines": [
+        "{target_article}, beneath the <wavy>water</wavy>. I will believe the waves were telling the truth this once.",
+        "You found {target_article}? The sea hides things, but apparently not from you.",
+        "{target_article}, confirmed. I do not trust water that keeps architecture.",
+        "Then the rumor sank deep and stayed true. That is rare.",
+        "You reached {target_article}. I hope the water let you leave with all your thoughts intact."
+      ],
+      "weight": 108
+    },
+    {
+      "key": "story_hint_report.structure.mineshaft",
+      "lines": [
+        "You found {target_article}. Timber below ground always means a story went too deep.",
+        "{target_article}, then. The ground remembers every hand that tried to hollow it out.",
+        "You found {target_article}. Listen twice before trusting old supports.",
+        "So the beams were real. Places like {target_article} always sound tired.",
+        "{target_article}. That is a road made by people who forgot roads should see daylight."
+      ],
+      "weight": 108
+    },
+    {
+      "key": "story_hint_report.structure.ancient_city",
+      "lines": [
+        "{target_article}. Keep that story <pulse>quiet</pulse>. Some places should not hear their own names.",
+        "You came back from {target_article}. Speak softly. Even memory might echo down there.",
+        "{target_article}, confirmed. That is not a discovery I would celebrate loudly.",
+        "So the deep rumor was true. Some truths are best carried carefully.",
+        "You found {target_article}. I hope you left more silence there than you took."
+      ],
+      "weight": 108
+    },
+    {
+      "key": "story_hint_report.structure.stronghold",
+      "lines": [
+        "{target_article}, then. That is not just a rumor. That is a door waiting under the world.",
+        "You found {target_article}. Some stone does not mark a place; it marks a question.",
+        "{target_article}, confirmed. I wonder how long it has been waiting for footsteps.",
+        "So the path led to {target_article}. That sounds less like a destination than a warning.",
+        "You reached {target_article}. Some roads go outward. That one pulls down."
+      ],
+      "weight": 108
+    },
+    {
+      "key": "story_hint_report.structure.nether",
+      "lines": [
+        "You found {target_article} and came back. I will not ask what the heat sounded like.",
+        "{target_article}, real enough to find and harsh enough to remember.",
+        "You confirmed {target_article}. Some places make even a rumor smell of smoke.",
+        "So {target_article} was there. Good. I prefer knowing where the dangerous roads start.",
+        "You came back from {target_article}. I would call that lucky, skilled, or both."
+      ],
+      "weight": 108
+    },
+    {
+      "key": "story_hint_report.structure.outpost",
+      "lines": [
+        "{target_article}. Good to know. A warned road is kinder than an unwarned one.",
+        "You found {target_article}. Then we know which horizon to mistrust.",
+        "{target_article}, confirmed. Towers are louder than they look.",
+        "So the patrol stories were true. Best to know where trouble keeps a roof.",
+        "You reached {target_article}. I hope they saw less of you than you saw of them."
+      ],
+      "weight": 108
+    },
+    {
+      "key": "story_hint_report.structure.ruins",
+      "lines": [
+        "You found {target_article}. Ruins always have more memory than walls.",
+        "{target_article}, then. Broken places still know how to keep secrets.",
+        "You confirmed {target_article}. The past is never quite as empty as it pretends.",
+        "So {target_article} was real. I wonder what story broke there first.",
+        "You reached {target_article}. Some places are leftovers, but not harmless ones."
+      ],
+      "weight": 108
+    },
+    {
+      "key": "story_hint_report.structure.trial_chambers",
+      "lines": [
+        "{target_article}. Sounds like the rumor was testing your judgment before the place did.",
+        "You found {target_article}. Whoever built it trusted challenge more than comfort.",
+        "{target_article}, confirmed. A place like that does not invite travelers. It measures them.",
+        "So the tale of {target_article} was true. I hope you brought back more than bruises.",
+        "You reached {target_article}. I would call that brave, but brave and foolish share a fence."
+      ],
+      "weight": 108
+    },
+    {
+      "key": "story_hint_report.structure.generic",
+      "lines": [
+        "You found {target_article}. Good. The story has somewhere solid to stand now.",
+        "{target_article}, confirmed. I will pass that along with fewer maybes.",
+        "You reached {target_article}. A place is different once someone here has seen it.",
+        "So the rumor had bones under it. Good to know.",
+        "{target_article}. I will remember the name with a little more certainty now."
+      ],
+      "weight": 108
+    },
+    {
+      "key": "story_hint_report.generic",
+      "lines": [
+        "You found the place I mentioned. Good. I will remember that.",
+        "Good. {target_article} is more than rumor now.",
+        "So {target_article} was real. That makes the story heavier."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "id": "example_template.line.combat_survival_report",
+  "request": "combat_survival_report",
+  "option": "example_template.option.combat_survival_report",
+  "text": "example",
+  "weight": 10
+}

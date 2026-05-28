@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "shepherd_new_greeting_loom",
+      "request": "greeting",
+      "weight": 26,
+      "lines": [
+        "Mind the loom. Threads tangle faster when people crowd them.",
+        "Give the loom room. Woolwork works better without elbows in it.",
+        "Step carefully near the loom. I would rather greet you than patch you up."
+      ]
+    }
+  ]
+}

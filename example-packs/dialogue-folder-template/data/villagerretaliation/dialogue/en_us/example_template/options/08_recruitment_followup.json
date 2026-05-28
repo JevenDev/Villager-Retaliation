@@ -1,0 +1,6 @@
+{
+  "id": "example_template.option.recruitment_followup",
+  "label": "Example Recruitment Followup",
+  "request": "recruitment_followup",
+  "order": 8
+}

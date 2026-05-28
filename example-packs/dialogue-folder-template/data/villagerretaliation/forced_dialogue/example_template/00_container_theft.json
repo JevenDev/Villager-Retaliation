@@ -1,0 +1,24 @@
+{
+  "entries": [
+    {
+      "id": "example_template.forced.container_theft",
+      "trigger": "container_theft",
+      "output": {
+        "mode": "forced_dialogue"
+      },
+      "line": "example",
+      "witness_radius": 10,
+      "requires_line_of_sight": true,
+      "initiate_dialogue": true,
+      "options": [
+        {
+          "id": "example_template.forced.option.example",
+          "label": "Example",
+          "response": "example",
+          "end_conversation": true,
+          "order": 0
+        }
+      ]
+    }
+  ]
+}

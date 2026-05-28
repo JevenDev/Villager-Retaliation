@@ -1,0 +1,6 @@
+{
+  "id": "example_template.option.village_defense_report",
+  "label": "Example Village Defense Report",
+  "request": "village_defense_report",
+  "order": 12
+}

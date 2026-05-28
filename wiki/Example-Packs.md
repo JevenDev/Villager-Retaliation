@@ -2,6 +2,18 @@
 
 These examples are intentionally small. Use them as starter files, then add filters and entries as needed.
 
+## Downloadable Templates
+
+The repo includes a folderized beta.12 starter at:
+
+```text
+example-packs/dialogue-folder-template/
+```
+
+It contains one focused file per dialogue request under `data/villagerretaliation/dialogue/en_us/example_template/options/` and `lines/`. Each request has one custom option and one matching response with `text: "example"`, plus starter files for messages, openings, closings, pacify lines, profession folders, groups, share-story folders, forced dialogue, notifications, gifts, pacification, names, profession loot, story structures, and story biomes.
+
+On the Datapack Generator site, the `Preset` button opens a template picker. Choose `Starter Pack` for a small editable beta.12 example, or `Dialogue Folder Template` for the full folder layout, then click `Export` to download it as a datapack zip.
+
 ## Minimal Datapack Layout
 
 ```text

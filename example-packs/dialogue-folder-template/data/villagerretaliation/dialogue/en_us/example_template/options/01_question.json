@@ -1,0 +1,6 @@
+{
+  "id": "example_template.option.question",
+  "label": "Example Question",
+  "request": "question",
+  "order": 1
+}

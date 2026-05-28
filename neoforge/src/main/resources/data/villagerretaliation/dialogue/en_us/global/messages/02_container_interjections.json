@@ -1,0 +1,62 @@
+{
+  "messages": [
+    {
+      "key": "container_theft.backup_interjection",
+      "lines": [
+        "Yeah, <aqua>{previous_villager}</aqua> is right. I saw you take {stolen_item_reference} too.",
+        "I saw {stolen_item_pronoun} too, <purple>{player}</purple>. {stolen_count} {stolen_count_word} came from {stolen_container}.",
+        "<aqua>{previous_villager}</aqua> is not the only one who noticed. Put {stolen_stack} <bold>back</bold>.",
+        "I was there too. Do not pretend {stolen_items} walked out on their own.",
+        "Back them up? Gladly. I saw you take {stolen_stack}.",
+        "I have seen this {witnessed_container_thefts} {container_theft_time_word} now. Put {stolen_item_pronoun} back.",
+        "You were caught {container_theft_again_phrase}, and this time I saw {stolen_count} {stolen_count_word} leave {stolen_container}."
+      ]
+    },
+    {
+      "key": "container_theft.backup_interjection.second",
+      "lines": [
+        "<aqua>{previous_villager}</aqua> is not exaggerating. I saw {stolen_stack} leave {stolen_container} too.",
+        "I saw it too: {stolen_item_reference} came out of {stolen_container} in your hands.",
+        "I was close enough to see it. <bold>Return</bold> {stolen_stack}, <purple>{player}</purple>.",
+        "One voice is easy to argue with. Two of us saw what happened."
+      ]
+    },
+    {
+      "key": "container_theft.backup_interjection.third",
+      "lines": [
+        "I saw it too, <purple>{player}</purple>. Put {stolen_item_pronoun} back.",
+        "More than one of us saw the same <shake>theft</shake>. Return {stolen_stack}.",
+        "I was watching as well. I saw {stolen_items} leave {stolen_container}.",
+        "Nobody here is guessing. {stolen_count} {stolen_count_word} came out with you."
+      ]
+    },
+    {
+      "key": "container_opened.backup_interjection",
+      "lines": [
+        "<aqua>{previous_villager}</aqua> is right. That {container} is village property, <purple>{player}</purple>.",
+        "I saw the lid open too. <pulse>Step back</pulse> from {container} and ask first.",
+        "That is not just <aqua>{previous_villager}</aqua>'s concern. The {container} belongs to the village.",
+        "I am saying the same thing: close {container} and speak before touching village stores.",
+        "You have more than one witness, <purple>{player}</purple>. Step away from {container}."
+      ]
+    },
+    {
+      "key": "container_opened.backup_interjection.second",
+      "lines": [
+        "<aqua>{previous_villager}</aqua> saw it, and so did I. <bold>Close</bold> {container}.",
+        "I saw it too. Village stores are not open shelves.",
+        "I was watching too, <purple>{player}</purple>. Step back from {container} and ask.",
+        "It is not just one complaint. That {container} belongs to the village."
+      ]
+    },
+    {
+      "key": "container_opened.backup_interjection.third",
+      "lines": [
+        "Same boundary from me: close {container} and ask first.",
+        "More than one of us is <pulse>watching</pulse> now, <purple>{player}</purple>. Step away from {container}.",
+        "I saw enough. That {container} still is not yours to search.",
+        "No one is piling on for sport. Village stores need permission."
+      ]
+    }
+  ]
+}

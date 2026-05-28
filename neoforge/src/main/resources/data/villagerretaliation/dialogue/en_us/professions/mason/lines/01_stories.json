@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "mason_story_wall_variants",
+      "request": "story",
+      "lines": [
+        "The best wall is boring. Boring means it held.",
+        "One bad chip once made me redo a whole doorway. It was right to complain.",
+        "An arch looks impossible until the last stone <bold>proves everyone wrong</bold>."
+      ],
+      "weight": 74
+    }
+  ]
+}

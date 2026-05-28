@@ -1,0 +1,21 @@
+{
+  "lines": [
+    {
+      "id": "village_defense_fletcher_arrows",
+      "request": "village_defense_report",
+      "option": "village_defense_report",
+      "show_for_babies": false,
+      "lines": [
+        "I heard arrows, axes, shouting. Then I saw you still standing for us.",
+        "Good aim is choosing what matters under pressure. You chose the village.",
+        "You picked the right target when the raid pressed in.",
+        "I saw you move where the arrows were pointing. That takes nerve.",
+        "The village needed steady aim, and you gave it more than words.",
+        "Every raider stopped early is a home spared late.",
+        "You helped turn the fight before it reached the center.",
+        "I respect anyone who can choose clearly while the air is full of panic."
+      ],
+      "weight": 246
+    }
+  ]
+}

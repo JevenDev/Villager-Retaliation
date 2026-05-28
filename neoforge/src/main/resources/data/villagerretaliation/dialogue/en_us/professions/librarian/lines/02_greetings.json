@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "librarian_new_greeting_lectern",
+      "request": "greeting",
+      "weight": 26,
+      "lines": [
+        "Mind the lectern. It has heard better questions than most people ask.",
+        "Give the lectern room. Records works better without elbows in it.",
+        "Step carefully near the lectern. I would rather greet you than patch you up."
+      ]
+    }
+  ]
+}

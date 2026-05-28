@@ -1,0 +1,101 @@
+{
+  "lines": [
+    {
+      "id": "unemployed_village_event_thunderstorm",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "lines": [
+        "Thunder shook the village square so hard every loose shutter complained, but everyone near me is still standing.",
+        "I checked beds, doors, and loose chores after the lightning, then counted heads. No one should be alone after a sky like that.",
+        "Near the village square, the bell sounded small under that thunder. We stayed inside and kept the doors watched.",
+        "That thunder made everyone quiet. I checked who still needed help.",
+        "The sky can keep its lightning. I have neighbors to check on."
+      ],
+      "weight": 170
+    },
+    {
+      "id": "unemployed_village_event_fire",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "village_fire"
+      ],
+      "lines": [
+        "I checked roofs, beds, and unlucky fences for sparks first, then checked faces for smoke and fear.",
+        "We passed water hand to hand and kept people away from the smoke. I checked the water bucket after.",
+        "Odd jobs can wait. People come first.",
+        "We saved what we could reach around the village square, then stopped pretending things matter more than neighbors.",
+        "The smoke is thinning near the village square, but everyone is still sniffing the air like it might lie."
+      ],
+      "weight": 170
+    },
+    {
+      "id": "unemployed_village_event_raid",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "lines": [
+        "During a raid, odd jobs can wait; who makes it behind a door matters more.",
+        "The horns stopped, but my hands near the village square still expect another wave from the road.",
+        "We counted living neighbors before beds, doors, and loose chores. That is the only count worth starting with.",
+        "Raiders came looking for easy emeralds. They found barred doors near the village square and a bell that would not stop ringing.",
+        "From the edge of the square, I saw fear run through the village; then I saw courage catch up."
+      ],
+      "weight": 170
+    },
+    {
+      "id": "unemployed_village_event_night_attack",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "night_attack"
+      ],
+      "lines": [
+        "Night trouble tests the loose latch by the village square first. We are fixing those before sunset.",
+        "I stayed near the gap between torches and listened for anyone calling from the dark.",
+        "Dawn gave the village square enough light to count wounds, missing blocks, and who made it home.",
+        "The dark tested everyone. Most of us passed by keeping a ready pair of hands between us and teeth.",
+        "We are safe enough near the village square, though every shadow is being inspected twice."
+      ],
+      "weight": 170
+    },
+    {
+      "id": "unemployed_village_event_sandstorm",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "sandstorm"
+      ],
+      "lines": [
+        "The wind threw sand through every crack. I am still cleaning dust from the doorways.",
+        "I checked beds, doors, and loose chores, then checked who was coughing too hard to answer.",
+        "Sand reached the village square, the hinges, and half our eyes, but no one has been reported missing.",
+        "A hard wind teaches a villager which doors actually close and which ones only pretend.",
+        "We are safe enough near the village square, though the whole village sounds like it is chewing gravel."
+      ],
+      "weight": 170
+    },
+    {
+      "id": "unemployed_village_event_snowstorm",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "snowstorm"
+      ],
+      "lines": [
+        "Odd jobs can wait. Warm hands, clear paths, and full hearths come first.",
+        "Snow piled against the doors, but everyone near the village square found shelter.",
+        "Cold works quietly around the village square. We are checking on anyone who stayed quiet too long.",
+        "I am clearing snow from the meeting path and watching for footprints that stop too soon.",
+        "We are alright for now near the village square. Keep the fires fed and the paths open."
+      ],
+      "weight": 170
+    }
+  ]
+}

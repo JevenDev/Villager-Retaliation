@@ -1,0 +1,64 @@
+{
+  "lines": [
+    {
+      "id": "farmer_question_rows_variants",
+      "request": "question",
+      "lines": [
+        "Dry rows and trampled crops teach a farmer to watch every footstep.",
+        "The soil's been kind lately. That's more than I can say for some visitors.",
+        "Seeds are small, but they know how to make a person <pulse>wait</pulse>.",
+        "Good rain is a blessing. Too much rain is work wearing a blessing mask.",
+        "A harvest is just a hundred small chores deciding to agree.",
+        "Bread starts long before the oven. Most good things do."
+      ],
+      "weight": 172
+    },
+    {
+      "id": "question_follow_memory_farmer",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "weight": 3,
+      "lines": [
+        "You remember that walk through {follow_biome}? I have tilled softer ground than that road.",
+        "I remember following you through {follow_biome}. My feet remember it even better.",
+        "That trip across {follow_biome} taught me to ask more questions before walking."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "excludes_ocean_crossing": true
+        }
+      ]
+    },
+    {
+      "id": "question_follow_memory_farmer_boat",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "weight": 3,
+      "lines": [
+        "Boats are not much like fields. No furrows, no rows, just water deciding if it likes you.",
+        "That boat trip still sits oddly in my memory, but at least it floated.",
+        "A boat can make a bad plan quieter. It cannot make me forget it."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "boat_trip": true
+        }
+      ]
+    },
+    {
+      "id": "default_profession_farmer_weather_memory",
+      "request": "question",
+      "show_for_babies": false,
+      "lines": [
+        "Soil remembers boots, rain, and kindness. It is not as quiet as people think.",
+        "Good fields are made of patience, fences, and someone awake before the sun.",
+        "A harvest is just a village keeping its promise to tomorrow."
+      ],
+      "weight": 18
+    }
+  ]
+}

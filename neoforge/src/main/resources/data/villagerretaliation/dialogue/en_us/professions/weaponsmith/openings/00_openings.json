@@ -1,0 +1,12 @@
+{
+  "openings": [
+    {
+      "id": "weaponsmith_opening",
+      "lines": [
+        "Mind the grindstone. What do you need?",
+        "Step clear of the grindstone. What do you need?",
+        "Mind the grindstone; I am listening."
+      ]
+    }
+  ]
+}

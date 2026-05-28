@@ -1,0 +1,97 @@
+{
+  "lines": [
+    {
+      "id": "cartographer_question_edges_variants",
+      "request": "question",
+      "lines": [
+        "Blank edges on a map make people braver than they should be.",
+        "Every road looks safer when someone else drew it.",
+        "The edge of a map is not the edge of the world. It is the edge of our <pulse>nerve</pulse>.",
+        "Roads look straight until you have to walk them tired.",
+        "Borders are lines people draw so fear has somewhere neat to stand.",
+        "A compass helps with north. It says nothing about wisdom."
+      ],
+      "weight": 172
+    },
+    {
+      "id": "cartographer_new_cautious_path",
+      "request": "question",
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile"
+      ],
+      "weight": 30,
+      "lines": [
+        "I do not mark every path for every traveler. Some maps are earned.",
+        "Keep your voice even. I am measuring more than your words.",
+        "Some questions are safer when they stand a little farther away."
+      ]
+    },
+    {
+      "id": "question_follow_memory_cartographer_boat",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "weight": 3,
+      "lines": [
+        "That boat route would look peaceful on a map. The lived version was wetter.",
+        "That boat trip still sits oddly in my memory, but at least it floated.",
+        "A boat can make a bad plan quieter. It cannot make me forget it."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "boat_trip": true
+        }
+      ]
+    },
+    {
+      "id": "question_follow_memory_cartographer",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "weight": 3,
+      "lines": [
+        "I could map the route you dragged me along, but I would mark several parts as questionable.",
+        "I remember following you through that road. My feet remember it even better.",
+        "That trip across that road taught me to ask more questions before walking."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory"
+        }
+      ]
+    },
+    {
+      "id": "question_follow_memory_cartographer_ocean_boat",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "weight": 4,
+      "lines": [
+        "The ocean crossing by boat would make a fine blue line on a map. I would label it 'questionable judgment.'",
+        "That ocean crossing worked because the boat did. I noticed.",
+        "The sea made the route look simple. My nerves disagreed."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "boat_trip": true,
+          "ocean_crossing": true
+        }
+      ]
+    },
+    {
+      "id": "default_profession_cartographer_edge_notes",
+      "request": "question",
+      "show_for_babies": false,
+      "lines": [
+        "Maps have edges because paper gives up. The world rarely does.",
+        "I mark roads, ruins, and the little places where people decided not to be lost.",
+        "A good map tells you where to go. A better one tells you when to turn back."
+      ],
+      "weight": 18
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "armorer_new_greeting_heat",
+      "request": "greeting",
+      "weight": 26,
+      "lines": [
+        "Stand clear of the <wavy>heat</wavy>. A forge forgives less than I do.",
+        "Give the forge room. Armor works better without elbows in it.",
+        "Step carefully near the forge. I would rather greet you than patch you up."
+      ]
+    }
+  ]
+}

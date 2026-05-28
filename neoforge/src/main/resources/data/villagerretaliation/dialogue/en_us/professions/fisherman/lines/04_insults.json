@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "fisherman_new_insult_soggy",
+      "request": "insult",
+      "weight": 18,
+      "lines": [
+        "That insult was damp before it reached me.",
+        "I have seen snagged lines with more sense than that.",
+        "Careful. Even water looks softer than your manners right now."
+      ]
+    }
+  ]
+}

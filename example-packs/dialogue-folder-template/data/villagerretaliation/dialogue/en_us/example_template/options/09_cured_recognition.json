@@ -1,0 +1,6 @@
+{
+  "id": "example_template.option.cured_recognition",
+  "label": "Example Cured Recognition",
+  "request": "cured_recognition",
+  "order": 9
+}

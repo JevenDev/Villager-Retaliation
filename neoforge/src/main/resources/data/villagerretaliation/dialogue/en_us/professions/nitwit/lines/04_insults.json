@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "nitwit_new_insult_hat",
+      "request": "insult",
+      "weight": 18,
+      "lines": [
+        "Your hat looks like it is thinking harder than you.",
+        "I have seen bad guesses with more sense than that.",
+        "Careful. Even muddle looks softer than your manners right now."
+      ]
+    }
+  ]
+}

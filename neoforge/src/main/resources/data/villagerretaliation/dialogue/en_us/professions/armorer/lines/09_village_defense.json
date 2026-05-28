@@ -1,0 +1,21 @@
+{
+  "lines": [
+    {
+      "id": "village_defense_armorer_respect",
+      "request": "village_defense_report",
+      "option": "village_defense_report",
+      "show_for_babies": false,
+      "lines": [
+        "You stood where armor matters most. I respect that more than clean talk.",
+        "You held when the gate needed holding. Armor is easier to trust after seeing that.",
+        "You fought like someone who understands what a door is worth.",
+        "I saw you stand between iron and panic. That stays with me.",
+        "The village needed a shield before the walls did. You were one.",
+        "Good armor is not only worn. Sometimes it arrives carrying a weapon.",
+        "When the shouting started, you did not fold. I respect that.",
+        "You gave the village time to breathe. Every guard knows the value of time."
+      ],
+      "weight": 250
+    }
+  ]
+}

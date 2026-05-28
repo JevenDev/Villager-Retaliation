@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "farmer_story_harvest_variants",
+      "request": "story",
+      "lines": [
+        "A good harvest keeps a village standing.",
+        "I once fixed a scarecrow so well it scared me at dusk.",
+        "One frost took half the field and taught the whole village <italic>humility</italic>."
+      ],
+      "weight": 74
+    }
+  ]
+}

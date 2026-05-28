@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "librarian_new_joke_footnote",
+      "request": "joke",
+      "weight": 18,
+      "lines": [
+        "I had a <italic>footnote</italic> for this joke, but mercy won.",
+        "Records jokes need timing. Mine usually arrive with ink on them.",
+        "I keep a spare joke near the lectern. It is not always ready for public use."
+      ]
+    }
+  ]
+}

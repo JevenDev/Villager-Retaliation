@@ -1,0 +1,12 @@
+{
+  "lines": [
+    {
+      "id": "example_template.farmer.share_story.biome",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_biome": "minecraft:plains",
+      "text": "example",
+      "weight": 10
+    }
+  ]
+}

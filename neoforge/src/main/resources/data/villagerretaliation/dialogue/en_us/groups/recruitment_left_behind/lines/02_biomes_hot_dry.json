@@ -1,0 +1,158 @@
+{
+  "lines": [
+    {
+      "id": "recruitment_left_behind_badlands",
+      "request": "recruitment_followup",
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20,
+      "lines": [
+        "Don't leave me baking out in the Badlands. The sun and those cliffs make trouble feel endless.",
+        "The Badlands are all heat, stone, and nowhere to hide. Come back before something finds me first.",
+        "If you are going to wander off, don't do it in the Badlands where every step feels exposed.",
+        "I waited in the Badlands wondering whether the heat or the drop-offs would get me first."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "scenarios": [
+            "left_behind"
+          ],
+          "biome": "minecraft:badlands"
+        }
+      ]
+    },
+    {
+      "id": "recruitment_left_behind_desert",
+      "request": "recruitment_followup",
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20,
+      "lines": [
+        "Don't leave me in the Desert. Sun, sand, and no shade make poor company.",
+        "The Desert is too wide and too hot to be abandoned in.",
+        "I stood in the Desert with heat in my eyes and no idea when you were coming back.",
+        "If you wander off in a Desert, I am left roasting and scanning every dune for danger."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "scenarios": [
+            "left_behind"
+          ],
+          "biome": "minecraft:desert"
+        }
+      ]
+    },
+    {
+      "id": "recruitment_left_behind_eroded_badlands",
+      "request": "recruitment_followup",
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20,
+      "lines": [
+        "Don't leave me in the Eroded Badlands. Those spires make every route feel like a trap.",
+        "The Eroded Badlands are heat and stone towers and too many places to get cornered.",
+        "I was stuck in the Eroded Badlands trying to pick a safe path between all those ridges.",
+        "If you wander off in the Eroded Badlands, I am the one left sweating beside sheer drops."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "scenarios": [
+            "left_behind"
+          ],
+          "biome": "minecraft:eroded_badlands"
+        }
+      ]
+    },
+    {
+      "id": "recruitment_left_behind_savanna",
+      "request": "recruitment_followup",
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20,
+      "lines": [
+        "Don't leave me in the Savanna. Tall grass and open ground make terrible cover.",
+        "The Savanna is too dry and too exposed to lose each other in.",
+        "I waited in the Savanna with the sun overhead and nowhere solid to hide.",
+        "If you disappear in a Savanna, I am left in grass that hides danger better than it hides me."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "scenarios": [
+            "left_behind"
+          ],
+          "biome": "minecraft:savanna"
+        }
+      ]
+    },
+    {
+      "id": "recruitment_left_behind_savanna_plateau",
+      "request": "recruitment_followup",
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20,
+      "lines": [
+        "Don't leave me on the Savanna Plateau. High ground only helps if I am not alone on it.",
+        "The Savanna Plateau felt far too exposed once I lost sight of you.",
+        "I was stuck on the Savanna Plateau with wind, cliffs, and no good cover.",
+        "If you wander off on a Savanna Plateau, I am left out in the open above a long drop."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "scenarios": [
+            "left_behind"
+          ],
+          "biome": "minecraft:savanna_plateau"
+        }
+      ]
+    },
+    {
+      "id": "recruitment_left_behind_windswept_savanna",
+      "request": "recruitment_followup",
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20,
+      "lines": [
+        "Don't leave me in the Windswept Savanna. Open cliffs and hard gusts are a bad mix.",
+        "The Windswept Savanna is far too exposed to be stranded in without warning.",
+        "I waited in the Windswept Savanna with the wind tugging at me and too much empty space around.",
+        "If you disappear in a Windswept Savanna, I am left alone on rough ground with nowhere proper to hide."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "scenarios": [
+            "left_behind"
+          ],
+          "biome": "minecraft:windswept_savanna"
+        }
+      ]
+    },
+    {
+      "id": "recruitment_left_behind_wooded_badlands",
+      "request": "recruitment_followup",
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20,
+      "lines": [
+        "Don't leave me in the Wooded Badlands. Heat, steep stone, and scrubby cover are not enough.",
+        "The Wooded Badlands still feel harsh even with trees scattered around.",
+        "I waited in the Wooded Badlands trying to watch the ledges and the gaps at the same time.",
+        "If you wander off in the Wooded Badlands, I am left baking beside cliffs with too few safe routes."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "scenarios": [
+            "left_behind"
+          ],
+          "biome": "minecraft:wooded_badlands"
+        }
+      ]
+    }
+  ]
+}

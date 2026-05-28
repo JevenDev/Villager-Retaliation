@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "cartographer_new_insult_lost",
+      "request": "insult",
+      "weight": 18,
+      "lines": [
+        "You could get lost standing still.",
+        "I have seen wrong turns with more sense than that.",
+        "Careful. Even parchment looks softer than your manners right now."
+      ]
+    }
+  ]
+}

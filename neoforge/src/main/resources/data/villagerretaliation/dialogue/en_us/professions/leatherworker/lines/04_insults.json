@@ -1,0 +1,28 @@
+{
+  "lines": [
+    {
+      "id": "leatherworker_new_insult_split",
+      "request": "insult",
+      "weight": 18,
+      "lines": [
+        "That sentence split like cheap stitching.",
+        "I have seen split stitching with more sense than that.",
+        "Careful. Even hide looks softer than your manners right now."
+      ]
+    },
+    {
+      "id": "leatherworker_new_rude_work",
+      "request": "insult",
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
+      "weight": 30,
+      "lines": [
+        "Do not mock work that lasts longer than your manners.",
+        "I have seen split stitching with more sense than that.",
+        "Careful. Even hide looks softer than your manners right now."
+      ]
+    }
+  ]
+}

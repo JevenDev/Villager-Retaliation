@@ -1,0 +1,84 @@
+{
+  "messages": [
+    {
+      "key": "sleep.disturbance",
+      "lines": [
+        "<wavy>Mmph...</wavy> let me sleep.",
+        "Come back when the sun is up.",
+        "Mmph... I was sleeping."
+      ],
+      "weight": 20
+    },
+    {
+      "key": "sleep.repeated_disturbance",
+      "lines": [
+        "I already woke up once for you tonight.",
+        "You've bothered me <shake>enough</shake> for one night.",
+        "Again? I was sleeping again."
+      ],
+      "weight": 20
+    },
+    {
+      "key": "sleep.broken_bed",
+      "lines": [
+        "<shake>My bed!</shake> What is wrong with you?",
+        "That was my bed. I will remember this.",
+        "My bed! Why would you do that?"
+      ],
+      "weight": 20
+    },
+    {
+      "key": "reputation.insult_child",
+      "show_for_adults": false,
+      "lines": [
+        "That was <shake>mean</shake>. I am telling someone.",
+        "That was mean. I am finding a grown-up.",
+        "You should not say things like that."
+      ]
+    },
+    {
+      "key": "reputation.positive",
+      "lines": [
+        "You know, you're not so bad to talk to.",
+        "It's good to speak with someone who <pulse>listens</pulse>.",
+        "Talking to you is better than I expected."
+      ],
+      "weight": 20
+    },
+    {
+      "key": "reputation.angry",
+      "lines": [
+        "I should have known better than to speak with you.",
+        "<pulse>Careful.</pulse> Villages remember cruelty.",
+        "Speaking with you was a mistake."
+      ],
+      "weight": 20
+    },
+    {
+      "key": "reputation.repeated_question",
+      "lines": [
+        "You've asked enough questions for one day.",
+        "I have work to do. Ask something else.",
+        "That is enough questions for now."
+      ],
+      "weight": 20
+    },
+    {
+      "key": "reputation.repeated_dialogue",
+      "lines": [
+        "Enough of that for now.",
+        "Try something else. My patience has limits.",
+        "Enough talking for now."
+      ],
+      "weight": 20
+    },
+    {
+      "key": "reputation.joke_missed",
+      "lines": [
+        "Hmph. Maybe don't quit your day job.",
+        "I have heard better from a door hinge.",
+        "That joke needed more <jump>work</jump> before release."
+      ]
+    }
+  ]
+}

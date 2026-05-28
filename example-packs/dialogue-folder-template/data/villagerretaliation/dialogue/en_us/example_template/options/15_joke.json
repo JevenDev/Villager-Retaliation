@@ -1,0 +1,6 @@
+{
+  "id": "example_template.option.joke",
+  "label": "Example Joke",
+  "request": "joke",
+  "order": 15
+}

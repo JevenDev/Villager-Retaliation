@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "fletcher_new_greeting_table",
+      "request": "greeting",
+      "weight": 26,
+      "lines": [
+        "Mind the fletching table. Straight arrows do not happen by accident.",
+        "Give the fletching table room. Arrows works better without elbows in it.",
+        "Step carefully near the fletching table. I would rather greet you than patch you up."
+      ]
+    }
+  ]
+}

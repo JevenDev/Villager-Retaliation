@@ -1,0 +1,7 @@
+{
+  "id": "example_template.line.gift_advice_followup",
+  "request": "gift_advice_followup",
+  "option": "example_template.option.gift_advice_followup",
+  "text": "example",
+  "weight": 10
+}

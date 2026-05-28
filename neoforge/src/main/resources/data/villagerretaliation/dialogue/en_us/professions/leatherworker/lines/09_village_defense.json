@@ -1,0 +1,21 @@
+{
+  "lines": [
+    {
+      "id": "village_defense_leatherworker_straps",
+      "request": "village_defense_report",
+      "option": "village_defense_report",
+      "show_for_babies": false,
+      "lines": [
+        "A few straps snapped and a few nerves did too, but the village held.",
+        "Leather remembers every cut. So do people. This one may be remembered kindly.",
+        "You helped keep more than roofs intact. People held together because of it.",
+        "The village came through worn, but not torn apart.",
+        "I saw courage stretched tight and not snapping. Yours included.",
+        "Raiders test every weak point. You became a strong one.",
+        "I can repair gear. You helped spare things that cannot be repaired as easily.",
+        "The doors, straps, and nerves all held better because you fought."
+      ],
+      "weight": 246
+    }
+  ]
+}

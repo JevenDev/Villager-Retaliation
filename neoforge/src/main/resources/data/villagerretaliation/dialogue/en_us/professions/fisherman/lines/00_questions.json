@@ -1,0 +1,115 @@
+{
+  "lines": [
+    {
+      "id": "fisherman_question_nets_variants",
+      "request": "question",
+      "lines": [
+        "Empty nets at dusk make every rumor sound heavier.",
+        "<wavy>Water</wavy> keeps secrets until the weather shakes them loose.",
+        "Water looks calm right up until it proves it was thinking.",
+        "A good net catches food. A bad net catches excuses.",
+        "Weather has more moods than any trader I have met.",
+        "Good twine matters. Small failures love important moments."
+      ],
+      "weight": 172
+    },
+    {
+      "id": "fisherman_new_cautious_distance",
+      "request": "question",
+      "dispositions": [
+        "cautious",
+        "rude"
+      ],
+      "weight": 30,
+      "lines": [
+        "I keep space between myself and uncertain weather. People are no different.",
+        "Keep your voice even. I am measuring more than your words.",
+        "Some questions are safer when they stand a little farther away."
+      ]
+    },
+    {
+      "id": "question_follow_memory_fisherman_boat",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "weight": 4,
+      "lines": [
+        "You taking me by boat was almost sensible. Almost.",
+        "That boat trip still sits oddly in my memory, but at least it floated.",
+        "A boat can make a bad plan quieter. It cannot make me forget it."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "boat_trip": true
+        }
+      ]
+    },
+    {
+      "id": "question_follow_memory_fisherman",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "weight": 4,
+      "lines": [
+        "Following you over {follow_distance} blocks felt like reeling in a boot with opinions.",
+        "I remember following you through {follow_distance} blocks. My feet remember it even better.",
+        "That trip across {follow_distance} blocks taught me to ask more questions before walking."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "min_follow_distance": 500
+        }
+      ]
+    },
+    {
+      "id": "question_follow_memory_fisherman_ocean_boat",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "weight": 5,
+      "lines": [
+        "If we had to cross ocean, at least you used a boat. That is the first sensible part of the story.",
+        "That ocean crossing worked because the boat did. I noticed.",
+        "The sea made the route look simple. My nerves disagreed."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "boat_trip": true,
+          "ocean_crossing": true
+        }
+      ]
+    },
+    {
+      "id": "question_follow_memory_fisherman_ocean_swim",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "weight": 5,
+      "lines": [
+        "Swimming across ocean with you was not fishing. It was being the catch.",
+        "Crossing ocean water without a boat is not a memory I recommend keeping.",
+        "I remember every wave from that crossing, and none of them kindly."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "swim_trip": true
+        }
+      ]
+    },
+    {
+      "id": "default_profession_fisherman_water_warning",
+      "request": "question",
+      "show_for_babies": false,
+      "lines": [
+        "Water tells the truth slowly. Trouble splashes faster.",
+        "A net catches fish, weeds, secrets, and the occasional reason to stay near shore.",
+        "The river is generous if you respect what lives under the shine."
+      ],
+      "weight": 18
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "lines": [
+    {
+      "id": "butcher_cured_recognition_warm",
+      "request": "cured_recognition",
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ],
+      "lines": [
+        "I remember hunger without a name. You brought me back before it swallowed everything.",
+        "The cure left me shaking, but alive. That counts for more than a full smokehouse.",
+        "You helped pull me back when even my name felt far away."
+      ],
+      "weight": 60
+    },
+    {
+      "id": "butcher_cured_recognition_confused",
+      "request": "cured_recognition",
+      "dispositions": [
+        "neutral",
+        "cautious"
+      ],
+      "lines": [
+        "Your face stirs something. Not appetite. Memory, I hope.",
+        "I remember a sour potion, an apple, and trying not to bite the hand near me.",
+        "The memory is rough around the edges, but your face stayed in it."
+      ],
+      "weight": 60
+    },
+    {
+      "id": "butcher_cured_recognition_uneasy_1",
+      "request": "cured_recognition",
+      "dispositions": [
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 30,
+      "lines": [
+        "I remember enough to be grateful, and enough to be ashamed. Give me room.",
+        "I know you helped. I also remember why my hands still shake.",
+        "The cure left echoes behind. Stand where I can breathe around them."
+      ]
+    }
+  ]
+}

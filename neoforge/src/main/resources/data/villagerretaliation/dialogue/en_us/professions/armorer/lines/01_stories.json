@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "armorer_story_shield_variants",
+      "request": "story",
+      "lines": [
+        "A good shield is a promise you test before anyone needs it.",
+        "I once fixed a helmet so dented it looked like it had argued with the ground.",
+        "After a raid, you learn which buckles were honest and which only looked brave."
+      ],
+      "weight": 74
+    }
+  ]
+}

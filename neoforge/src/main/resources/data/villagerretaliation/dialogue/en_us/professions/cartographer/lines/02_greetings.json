@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "cartographer_new_greeting_table",
+      "request": "greeting",
+      "weight": 26,
+      "lines": [
+        "Keep your hands off the map table unless you know where they are going.",
+        "Give the map table room. Mapping works better without elbows in it.",
+        "Step carefully near the map table. I would rather greet you than patch you up."
+      ]
+    }
+  ]
+}

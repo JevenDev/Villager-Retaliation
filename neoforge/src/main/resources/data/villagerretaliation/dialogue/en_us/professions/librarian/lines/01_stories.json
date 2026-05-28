@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "librarian_story_records_variants",
+      "request": "story",
+      "lines": [
+        "Every trade, every kindness, every cruelty. Someone <bold>writes it down</bold>.",
+        "The best clue I ever found was written in a margin by someone annoyed.",
+        "Someone once returned a book cleaner than they borrowed it. We still discuss it."
+      ],
+      "weight": 74
+    }
+  ]
+}

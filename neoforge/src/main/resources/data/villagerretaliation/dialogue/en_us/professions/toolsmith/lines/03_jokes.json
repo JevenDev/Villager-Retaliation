@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "toolsmith_new_joke_point",
+      "request": "joke",
+      "weight": 18,
+      "lines": [
+        "Tool jokes work better when they have a <jump>point</jump>. Mine sometimes have two.",
+        "Tools jokes need timing. Mine usually arrive with steel on them.",
+        "I keep a spare joke near the smithing table. It is not always ready for public use."
+      ]
+    }
+  ]
+}

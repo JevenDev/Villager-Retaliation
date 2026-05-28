@@ -12,39 +12,58 @@ Use both layers when translating the whole experience. A datapack can translate 
 Dialogue and notifications are locale-aware datapack systems. The mod loads `en_us` first, then overlays the player's normalized client locale when the server knows it.
 
 ```text
-data/villagerretaliation/dialogue/en_us/my_pack_dialogue.json
-data/villagerretaliation/dialogue/fr_fr/my_pack_dialogue.json
+data/villagerretaliation/dialogue/en_us/my_pack/lines/weather.json
+data/villagerretaliation/dialogue/fr_fr/my_pack/lines/weather.json
 data/villagerretaliation/notifications/en_us/my_pack_notifications.json
 data/villagerretaliation/notifications/fr_fr/my_pack_notifications.json
 ```
 
-Use the same `id` in the fallback entry and the translated entry. The translated entry replaces the fallback only for players using that locale.
+Use the same folder shape and the same `id` in the fallback entry and the translated entry. The translated entry replaces the fallback only for players using that locale. In beta.12, folderized dialogue makes this easier to review because translators can work on focused files such as `global/messages/trade_refresh.json`, `professions/farmer/lines/greetings.json`, or `professions/farmer/share_stories/02_share_stories__biomes_cold.json` instead of one giant dialogue bundle.
+
+Typed dialogue folders such as `options`, `lines`, `messages`, `openings`, `closings`, and `pacify` can contain single-entry files. Translators usually only need to mirror files that contain visible text; rule-heavy files can stay in `en_us` if their text is pulled from keyed `messages`.
 
 ```json
 {
-  "messages": [
-    {
-      "id": "my_pack.follow_start",
-      "key": "interaction.follow_start",
-      "text": "All right. I will follow you."
-    }
-  ]
+  "id": "my_pack.follow_start",
+  "key": "interaction.follow_start",
+  "text": "All right. I will follow you."
 }
 ```
 
 ```json
 {
-  "messages": [
-    {
-      "id": "my_pack.follow_start",
-      "key": "interaction.follow_start",
-      "text": "D'accord. Je vais te suivre."
-    }
-  ]
+  "id": "my_pack.follow_start",
+  "key": "interaction.follow_start",
+  "text": "D'accord. Je vais te suivre."
 }
 ```
 
 Players using `fr_fr` see the French line. Players using any other language keep the `en_us` fallback.
+
+For lines with complex filters, keep the filters in a `lines` file and point the spoken text at a keyed message:
+
+```json
+{
+  "id": "my_pack.weather_rain_farmer",
+  "request": "question",
+  "option": "my_pack.ask_weather",
+  "weather": "rain",
+  "text_key": "my_pack.weather.rain.farmer"
+}
+```
+
+Then translate only the message entry in each locale:
+
+```json
+{
+  "id": "my_pack.weather_rain_farmer_text",
+  "key": "my_pack.weather.rain.farmer",
+  "lines": [
+    "Good for wheat, bad for boots.",
+    "Rain keeps the fields honest."
+  ]
+}
+```
 
 Forced dialogue files under `data/villagerretaliation/forced_dialogue/` are datapack text too, but they are not locale-folder based. Put forced-dialogue wording directly in the forced-dialogue entry that should be active for that pack.
 
@@ -210,8 +229,10 @@ Put those in `assets/villagerretaliation/lang/<locale>.json` or, for vanilla pro
 ## Pack Developer Checklist
 
 - Put fallback text in `en_us`.
+- Mirror the `en_us` folder path in each translated locale when replacing dialogue or notification entries.
 - Give every translated dialogue and notification entry a stable `id`.
 - Use the same `id` in translated locale files to replace only that entry.
+- Prefer `text_key` plus keyed `messages` when translators should change wording without copying rule filters.
 - Keep placeholders such as `{villager}`, `{item}`, and `%s` intact.
 - Test once with `en_us` and once with the target language selected in the client.
 - Ship a resource pack alongside your datapack if you translate the interaction GUI or reputation UI.

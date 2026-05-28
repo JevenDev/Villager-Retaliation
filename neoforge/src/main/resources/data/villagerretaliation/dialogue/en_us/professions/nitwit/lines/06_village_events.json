@@ -1,0 +1,101 @@
+{
+  "lines": [
+    {
+      "id": "nitwit_village_event_thunderstorm",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "lines": [
+        "Thunder shook the village square so hard I jumped before the bell did, but everyone near me is still standing.",
+        "I checked doors, beds, and hiding places after the lightning, then counted heads. No one should be alone after a sky like that.",
+        "By the bell, the thunder made the whole square flinch. I stayed inside and kept away from windows.",
+        "That thunder made everyone quiet. I checked my hiding spot twice.",
+        "The sky can keep its lightning. I have a safe corner to find."
+      ],
+      "weight": 170
+    },
+    {
+      "id": "nitwit_village_event_fire",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "village_fire"
+      ],
+      "lines": [
+        "I checked roofs and fences for sparks, then checked faces for smoke and fear.",
+        "We passed water hand to hand and kept people away from the smoke. I carried the bucket after.",
+        "My chores can wait. People come first.",
+        "We saved what we could near the bell, then made sure no one was still coughing alone.",
+        "The smoke is thinner now, but I keep smelling my sleeves to make sure it is really gone."
+      ],
+      "weight": 170
+    },
+    {
+      "id": "nitwit_village_event_raid",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "lines": [
+        "During a raid, whatever i was doing can wait; who makes it behind a door matters more.",
+        "The horns stopped, but I still keep looking at the road like it might shout again.",
+        "We counted living neighbors before doors, beds, and hiding places. That is the only count worth starting with.",
+        "Raiders came looking for easy emeralds. They found barred doors near the bell and a bell that would not stop ringing.",
+        "From the bell, I saw fear cross the square; then I saw courage get there first."
+      ],
+      "weight": 170
+    },
+    {
+      "id": "nitwit_village_event_night_attack",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "night_attack"
+      ],
+      "lines": [
+        "Night trouble found the door everyone meant to fix tomorrow. It is getting fixed today.",
+        "I stayed near the dark between houses and listened for anyone calling from the dark.",
+        "Dawn made it easier to see who was missing, which is not the same as making it easier.",
+        "The dark tested everyone. Most of us passed by keeping both hands free between us and teeth.",
+        "We are safe enough, but I still look twice at anything shaped like a monster."
+      ],
+      "weight": 170
+    },
+    {
+      "id": "nitwit_village_event_sandstorm",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "sandstorm"
+      ],
+      "lines": [
+        "The wind threw sand through every crack. I am still cleaning sand from my sleeves.",
+        "I checked doors, beds, and hiding places, then checked who was coughing too hard to answer.",
+        "Sand got in my sleeves, my mouth, and places sand should not know about. No one is missing, though.",
+        "A hard wind teaches a nitwit which doors actually close and which ones only pretend.",
+        "We are safe enough, but every step sounds crunchy and everyone is blinking too much."
+      ],
+      "weight": 170
+    },
+    {
+      "id": "nitwit_village_event_snowstorm",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "snowstorm"
+      ],
+      "lines": [
+        "Whatever I was doing can wait. Warm hands, clear paths, and full hearths come first.",
+        "Snow piled against the doors, but everyone near the bell found shelter.",
+        "Cold is sneaky. I am checking on anyone who stopped complaining about it.",
+        "I am clearing snow out of my shoes and watching for footprints that stop too soon.",
+        "We are alright for now. I am keeping close to smoke, soup, and shoveled paths."
+      ],
+      "weight": 170
+    }
+  ]
+}

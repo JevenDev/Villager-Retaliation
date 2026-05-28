@@ -1,0 +1,46 @@
+{
+  "lines": [
+    {
+      "id": "mason_share_story_deep_dark",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_biome": "minecraft:deep_dark",
+      "lines": [
+        "{target}? Sound travels farther than sense. I would trust solid blocks more than brave words.",
+        "If anyone heads for Deep Dark, tell them: Walk soft and do not open every chest. I will be at the stonecutter.",
+        "Sculk hears what pride forgets. I will remember that when I check the walls.",
+        "Deep Dark is no small story. Stone remembers every bad step.",
+        "I will remember Deep Dark as darkness that listens back. I will keep spare blocks close."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "mason_share_story_dripstone_caves",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_biome": "minecraft:dripstone_caves",
+      "lines": [
+        "{target}? Stone teeth hang above and wait below. I would trust solid blocks more than brave words.",
+        "If anyone heads for Dripstone Caves, tell them: Look up as often as you look down. I will be at the stonecutter.",
+        "Pointed stone makes every stumble serious. I will remember that when I check the walls.",
+        "Dripstone Caves is no small story. Stone remembers every bad step.",
+        "I will remember Dripstone Caves as a cave that bites from both directions. I will keep spare blocks close."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "mason_share_story_lush_caves",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_biome": "minecraft:lush_caves",
+      "lines": [
+        "{target}? Pretty caves still have long drops. I would trust solid blocks more than brave words.",
+        "If anyone heads for Lush Caves, tell them: Watch the vines and the holes between them. I will be at the stonecutter.",
+        "Glow berries light paths that may not be safe. I will remember that when I check the walls.",
+        "Lush Caves is no small story. Stone remembers every bad step.",
+        "I will remember Lush Caves as a cave trying very hard to look harmless. I will keep spare blocks close."
+      ],
+      "weight": 120
+    }
+  ]
+}

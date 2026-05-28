@@ -1,0 +1,12 @@
+{
+  "openings": [
+    {
+      "id": "farmer_opening",
+      "lines": [
+        "Mind the fields. What do you need?",
+        "Step clear of the fields. What do you need?",
+        "Mind the fields; I am listening."
+      ]
+    }
+  ]
+}

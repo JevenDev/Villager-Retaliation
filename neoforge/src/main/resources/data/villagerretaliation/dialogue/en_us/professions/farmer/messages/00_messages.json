@@ -1,0 +1,62 @@
+{
+  "messages": [
+    {
+      "id": "farmer_gift_given_variants",
+      "key": "gift_given",
+      "lines": [
+        "Here, {gift_item}. Good things grow better when they are shared.",
+        "Take {gift_item}. Consider it a small harvest for the kindness you planted.",
+        "Take {gift_item}. It is not much, but it is given with care."
+      ],
+      "weight": 48
+    },
+    {
+      "id": "farmer_gift_advice_followup_liked_variants",
+      "key": "gift_advice_followup.liked",
+      "lines": [
+        "Good. {gift_item} took root with {tested_villager}. That is a healthy sign.",
+        "Then the advice sprouted. If {tested_villager} liked {gift_item}, that is a fair harvest.",
+        "Good. {gift_item} suited {tested_villager}; I like advice that holds up."
+      ],
+      "weight": 44
+    },
+    {
+      "id": "farmer_gift_advice_followup_disliked_variants",
+      "key": "gift_advice_followup.disliked",
+      "lines": [
+        "Wrong soil for that seed. For {gift_subject}, plant {alternative_gift} instead.",
+        "{gift_item} did not grow there? Try {alternative_gift}. Some rows need different seed.",
+        "{gift_item} missed the mark for {gift_subject}. Try {alternative_gift} instead."
+      ],
+      "weight": 44
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 20,
+      "lines": [
+        "Bad seed, bad soil, or bad advice. Hard to say. Plant {alternative_gift} next.",
+        "Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
+        "Then we correct the guess: {alternative_gift} next time."
+      ]
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
+      "weight": 20,
+      "lines": [
+        "You harvested a frown from {gift_item}? Then sow {alternative_gift} and move on.",
+        "Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
+        "Then we correct the guess: {alternative_gift} next time. {gift_item}"
+      ]
+    }
+  ]
+}

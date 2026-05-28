@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "cartographer_new_joke_fold",
+      "request": "joke",
+      "weight": 18,
+      "lines": [
+        "Map jokes are easy to <wavy>fold badly</wavy>.",
+        "Mapping jokes need timing. Mine usually arrive with parchment on them.",
+        "I keep a spare joke near the map table. It is not always ready for public use."
+      ]
+    }
+  ]
+}

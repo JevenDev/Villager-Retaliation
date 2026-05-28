@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "leatherworker_new_greeting_tannery",
+      "request": "greeting",
+      "weight": 26,
+      "lines": [
+        "Mind the tannery. The smell is honest, at least.",
+        "Give the tannery room. Leatherwork works better without elbows in it.",
+        "Step carefully near the tannery. I would rather greet you than patch you up."
+      ]
+    }
+  ]
+}

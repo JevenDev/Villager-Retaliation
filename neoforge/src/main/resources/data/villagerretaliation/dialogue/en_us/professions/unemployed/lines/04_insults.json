@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "unemployed_new_insult_idle",
+      "request": "insult",
+      "weight": 18,
+      "lines": [
+        "That was idle talk, and I would know.",
+        "I have seen wrong turns with more sense than that.",
+        "Careful. Even time looks softer than your manners right now."
+      ]
+    }
+  ]
+}

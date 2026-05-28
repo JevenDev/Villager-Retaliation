@@ -1,0 +1,21 @@
+{
+  "lines": [
+    {
+      "id": "apology_cleric",
+      "request": "apology",
+      "option": "apologize_for_harm",
+      "show_for_babies": false,
+      "lines": [
+        "Remorse is useful only if it changes the next choice. I hope yours does.",
+        "Repentance is not a speech. It is a repair repeated until trust returns.",
+        "Contrition is a door. Walk through it, do not stand in front of it.",
+        "I accept the words. Make the next act worthy of them.",
+        "Mercy is not forgetfulness. It is a chance to choose better.",
+        "A wounded trust heals slowly. Still, healing can begin here.",
+        "If remorse has roots, we will see fruit.",
+        "I will hold this apology with care. Do not make it lonely."
+      ],
+      "weight": 234
+    }
+  ]
+}

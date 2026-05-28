@@ -1,0 +1,12 @@
+{
+  "lines": [
+    {
+      "id": "example_template.farmer.share_story.structure",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_structure": "minecraft:village_plains",
+      "text": "example",
+      "weight": 10
+    }
+  ]
+}

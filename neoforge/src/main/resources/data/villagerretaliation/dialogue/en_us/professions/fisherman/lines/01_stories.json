@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "fisherman_story_line_variants",
+      "request": "story",
+      "lines": [
+        "A snapped line once saved me from hauling in something worse than nothing.",
+        "Once the <wavy>fog</wavy> came in so thick I trusted the dock by smell.",
+        "An empty net can still bring home a lesson, though nobody cooks it."
+      ],
+      "weight": 74
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "id": "example_template.option.apology",
+  "label": "Example Apology",
+  "request": "apology",
+  "order": 11
+}

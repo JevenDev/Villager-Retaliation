@@ -1,0 +1,10 @@
+{
+  "id": "example_template.group.example",
+  "request": "question",
+  "professions": [
+    "farmer",
+    "librarian"
+  ],
+  "text": "example",
+  "weight": 10
+}

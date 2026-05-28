@@ -1,0 +1,74 @@
+{
+  "lines": [
+    {
+      "id": "toolsmith_share_story_bamboo_jungle",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_biome": "minecraft:bamboo_jungle",
+      "lines": [
+        "{target}? Green stalks can hide quick trouble. I would bring the right tool and leave pride behind.",
+        "If anyone heads for Bamboo Jungle, tell them: Keep a path cut behind you. I will be at the smithing table.",
+        "Bamboo crowds the eye and the feet. I will remember that when I tighten the handles.",
+        "Bamboo Jungle is no small story. Broken tools are easier to mend than broken people.",
+        "I will remember Bamboo Jungle as a green wall that rustles like whispers. I will tighten the handles before trouble starts."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "toolsmith_share_story_jungle",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_biome": "minecraft:jungle",
+      "lines": [
+        "{target}? Leaves crowd close enough to hide anything. I would bring the right tool and leave pride behind.",
+        "If anyone heads for Jungle, tell them: Cut a path and remember which vines you passed. I will be at the smithing table.",
+        "The green is loud even when nothing moves. I will remember that when I tighten the handles.",
+        "Jungle is no small story. Broken tools are easier to mend than broken people.",
+        "I will remember Jungle as a hot forest that keeps secrets well. I will tighten the handles before trouble starts."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "toolsmith_share_story_mangrove_swamp",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_biome": "minecraft:mangrove_swamp",
+      "lines": [
+        "{target}? Mud holds boots longer than plans. I would bring the right tool and leave pride behind.",
+        "If anyone heads for Mangrove Swamp, tell them: Step on roots and keep slime in mind. I will be at the smithing table.",
+        "Thick roots make every hurry foolish. I will remember that when I tighten the handles.",
+        "Mangrove Swamp is no small story. Broken tools are easier to mend than broken people.",
+        "I will remember Mangrove Swamp as muddy water with a grip on your ankles. I will tighten the handles before trouble starts."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "toolsmith_share_story_sparse_jungle",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_biome": "minecraft:sparse_jungle",
+      "lines": [
+        "{target}? Thin jungle still keeps thick surprises. I would bring the right tool and leave pride behind.",
+        "If anyone heads for Sparse Jungle, tell them: Do not trust open patches too quickly. I will be at the smithing table.",
+        "Vines and shadows take turns hiding things. I will remember that when I tighten the handles.",
+        "Sparse Jungle is no small story. Broken tools are easier to mend than broken people.",
+        "I will remember Sparse Jungle as green country pretending to be easier than it is. I will tighten the handles before trouble starts."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "toolsmith_share_story_swamp",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_biome": "minecraft:swamp",
+      "lines": [
+        "{target}? Mud and water both remember footsteps. I would bring the right tool and leave pride behind.",
+        "If anyone heads for Swamp, tell them: Watch slimes, witches, and the slow ground. I will be at the smithing table.",
+        "Fog makes close things feel far. I will remember that when I tighten the handles.",
+        "Swamp is no small story. Broken tools are easier to mend than broken people.",
+        "I will remember Swamp as wet land that grabs at ankles and plans. I will tighten the handles before trouble starts."
+      ],
+      "weight": 120
+    }
+  ]
+}

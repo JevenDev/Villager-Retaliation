@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "fletcher_new_joke_flight",
+      "request": "joke",
+      "weight": 18,
+      "lines": [
+        "A fletcher joke should fly straight. Mine <wavy>wobble</wavy> honestly.",
+        "Arrows jokes need timing. Mine usually arrive with feather on them.",
+        "I keep a spare joke near the fletching table. It is not always ready for public use."
+      ]
+    }
+  ]
+}

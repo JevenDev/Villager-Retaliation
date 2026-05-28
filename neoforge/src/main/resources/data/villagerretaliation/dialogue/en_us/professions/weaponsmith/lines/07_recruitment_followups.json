@@ -1,0 +1,67 @@
+{
+  "lines": [
+    {
+      "id": "recruitment_followup_weaponsmith_safe",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
+      "weight": 38,
+      "lines": [
+        "You brought me back without needing the worst of it. Restraint is a weapon too.",
+        "Home again, whole enough to thank you properly. That matters.",
+        "We came back with the village still ahead of us. I will count that as good work."
+      ]
+    },
+    {
+      "id": "recruitment_followup_weaponsmith_injured",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "injured"
+      ],
+      "weight": 38,
+      "lines": [
+        "I came back marked. Next time, keep the edge between us and danger.",
+        "I made it home, but the road took more from me than it should have.",
+        "Next time, let us return with fewer marks and better choices."
+      ]
+    },
+    {
+      "id": "recruitment_followup_weaponsmith_betrayed",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "betrayed"
+      ],
+      "weight": 42,
+      "lines": [
+        "I respect sharp steel. I do not respect turning it on someone who followed you.",
+        "Following you was trust. What happened after was something else.",
+        "A guide who strikes from close by leaves the longest mark."
+      ]
+    },
+    {
+      "id": "recruitment_followup_weaponsmith_boat",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "weight": 42,
+      "lines": [
+        "A boat is not armor, but it kept danger at a decent distance.",
+        "The boat did its part. I am still deciding whether the rest of the plan did.",
+        "Water carried us home, which is more than I expected from that journey."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "boat_trip": true
+        }
+      ]
+    }
+  ]
+}

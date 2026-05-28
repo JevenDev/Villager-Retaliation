@@ -12,7 +12,9 @@ The generator is a static page. It does not need a server, does not upload pack 
 
 Use the VR version selector in Pack Setup when creating a pack. Exported beta.11 and newer packs include `villagerretaliation.pack_version` in `pack.mcmeta`, so importing them later restores the matching generator target automatically. Older or hand-written packs may not have that marker; select the intended VR version manually before continuing.
 
-Choose `VR 1.0.0-beta.12` when using beta.12 Social Attribute or temporary mood dialogue filters. Choose `VR 1.0.0-beta.11` when maintaining a beta.11-compatible pack; the built-in Wiki button keeps a separate beta.11 snapshot so beta.11 authors do not see beta.12-only fields as current for their target.
+Choose `VR 1.0.0-beta.12` only for packs authored against the beta.12 wiki. Choose `VR 1.0.0-beta.11` when maintaining a beta.11-compatible pack; the built-in Wiki button keeps a separate beta.11 snapshot so beta.11 authors do not see beta.12-only fields as current for their target.
+
+The generator does not convert beta.11 packs to beta.12. Importing a beta.11 pack lets you keep editing that pack as beta.11; moving it to beta.12 is a manual retargeting pass that should be done with [Pack Format Changes](Pack-Format-Changes.md) and the beta.12 system pages open.
 
 ## What It Builds
 
@@ -21,7 +23,7 @@ The generator writes these datapack paths:
 | Tab | Generated path |
 | --- | --- |
 | Overview | `pack.mcmeta` |
-| Dialogue | `data/villagerretaliation/dialogue/<locale>/<file>.json` |
+| Dialogue | beta.12 typed folders: `data/villagerretaliation/dialogue/<locale>/<folder>/<section>/<file>.json`; bundle layout: `data/villagerretaliation/dialogue/<locale>/<file>.json` |
 | Forced | `data/villagerretaliation/forced_dialogue/<file>.json` |
 | Notifications | `data/villagerretaliation/notifications/<locale>/<file>.json` |
 | Gifts | `data/villagerretaliation/gifts/<file>.json` |
@@ -29,6 +31,10 @@ The generator writes these datapack paths:
 | Stories - Structures | `data/<namespace>/story_structures/<file>.json` |
 | Stories - Biomes | `data/<namespace>/story_biomes/<file>.json` |
 | Names | `data/villagerretaliation/villager_names/preset_names.json` |
+
+The Dialogue tab has a Layout selector. For beta.12, `Typed folders` is the recommended default and writes focused files under section folders such as `my_pack/options`, `my_pack/lines`, `my_pack/messages`, `groups/<topic>/lines`, or `professions/<profession>/lines`. `Single bundle file` remains available for compact packs or for maintaining beta.11-style files.
+
+Typed section folder names are reserved: `options`, `lines`, `messages`, `openings`, `closings`, and `pacify`. The builder adds the section folder for generated typed output, so the Dialogue folder field should not include one of those names itself.
 
 Forced dialogue entries use the Forced tab. Use it for event-driven conversations such as witnessed container opening, breaking, or theft, for nearby player item callouts through `player_item_proximity`, and for chat event lines through `output.mode: "chat"` on triggers such as `retaliation_started`. It supports line variations, witness profession filters, line-of-sight checks, generated-container loot-table targeting, player item and slot filters, chat-event chance, forced camera focus, immediate aggro, dialogue options, custom Leave/Escape outcomes, reputation changes, stolen-item returns, item payments, and aggro or aggro chance after specific responses. See [Forced Dialogue JSON](Forced-Dialogue.md) for the raw schema.
 
@@ -54,7 +60,7 @@ The generator is meant for datapacks. Use a resource pack separately for GUI lan
 6. Click Export to download the datapack zip.
 7. Put the zip in the world's `datapacks` folder, then run `/reload`.
 
-For a fast starting point, use the generator's starter pack action, then edit or delete entries that do not fit your pack.
+For a fast starting point, use the generator's `Preset` button. `Starter Pack` loads a small editable example using the beta.12 folder layout, while `Dialogue Folder Template` loads the full folderized skeleton with one `example` option and line for every dialogue request. After choosing either template, click `Export` to download it as a datapack zip.
 
 ## Importing Existing Work
 
@@ -62,9 +68,11 @@ Use Import to load an existing datapack zip or one or more JSON files. Use Impor
 
 The generator recognizes Villager Retaliation dialogue, forced dialogue, notifications, gifts, pacification, story discovery, preset names, and `pack.mcmeta`. Unknown files are preserved as extra files when possible, so imported datapacks can usually be exported again without losing unrelated datapack content.
 
+Import preserves the pack's declared target version when `pack.mcmeta` includes it. It does not migrate beta.11 JSON into beta.12 JSON, split large dialogue files into the new folder layout, or produce a beta.12 compatibility report.
+
 For files under known Villager Retaliation roots, import follows the same folder rules as the game. A file in `dialogue/<locale>/` is imported only as dialogue, a file in `notifications/<locale>/` is imported only as notifications, and a file in `forced_dialogue/` is imported only as forced dialogue. If an old hand-written pack mixed notification or forced-dialogue sections into a dialogue file, move those sections to the documented folders before importing or exporting.
 
-When importing dialogue, the generator can merge files from normal locale folders and profession subfolders. Check the preview paths after import, especially if the original pack used several files for the same system.
+When importing dialogue, the generator can merge bundle files, typed beta.12 folders such as `options/` and `lines/`, normal locale folders, and profession subfolders. Profession defaults are inferred from vanilla paths such as `professions/farmer/lines/...json` and namespaced custom paths such as `professions/examplemod/alchemist/lines/...json`, so those files do not need to repeat `professions: ["examplemod:alchemist"]` unless they intentionally override the folder default. Check the preview paths after import, especially if the original pack used several files for the same system.
 
 ## Working With The Preview
 

@@ -1,0 +1,242 @@
+{
+  "lines": [
+    {
+      "id": "farmer_share_story_ancient_city",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_structure": "minecraft:ancient_city",
+      "lines": [
+        "{target}? Sound itself can <shake>wake trouble</shake>. I would save bread for the road home.",
+        "If anyone heads for Ancient City, tell them: <pulse>Step softly</pulse> and leave the shiny things alone. I will be at the fields.",
+        "Sculk does not need eyes to notice you. I will remember that when I put bread aside.",
+        "Ancient City is no small story. A full belly is not the same as safety.",
+        "I will remember Ancient City as a city where <pulse>silence matters</pulse> more than armor. I will keep bread aside for the road."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "farmer_share_story_bastion_remnant",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_structure": "minecraft:bastion_remnant",
+      "lines": [
+        "{target}? Old gold still has guards. I would save bread for the road home.",
+        "If anyone heads for Bastion Remnant, tell them: Do not touch <color:gold>gold</color> unless you are ready for angry piglins. I will be at the fields.",
+        "Blackstone halls do not forgive greed. I will remember that when I put bread aside.",
+        "Bastion Remnant is no small story. A full belly is not the same as safety.",
+        "I will remember Bastion Remnant as a broken stronghold where greed still has teeth. I will keep bread aside for the road."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "farmer_share_story_buried_treasure",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_structure": "minecraft:buried_treasure",
+      "lines": [
+        "{target}? Treasure makes people dig past good sense. I would save bread for the road home.",
+        "If anyone heads for Buried Treasure, tell them: Watch the <wavy>tide</wavy> and the shovel both. I will be at the fields.",
+        "Sand hides holes as well as chests. I will remember that when I put bread aside.",
+        "Buried Treasure is no small story. A full belly is not the same as safety.",
+        "I will remember Buried Treasure as a chest under sand that can make friends argue. I will keep bread aside for the road."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "farmer_share_story_desert_pyramid",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_structure": "minecraft:desert_pyramid",
+      "lines": [
+        "{target}? Sandstone can hide a trap under your feet. I would save bread for the road home.",
+        "If anyone heads for Desert Pyramid, tell them: Break floors carefully and listen before stepping down. I will be at the fields.",
+        "Old pressure plates wait patiently. I will remember that when I put bread aside.",
+        "Desert Pyramid is no small story. A full belly is not the same as safety.",
+        "I will remember Desert Pyramid as a quiet pyramid with a loud mistake under it. I will keep bread aside for the road."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "farmer_share_story_end_city",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_structure": "minecraft:end_city",
+      "lines": [
+        "{target}? The sky is open and the ground is not always there. I would save bread for the road home.",
+        "If anyone heads for End City, tell them: Watch every <shake>bridge</shake> and every shulker box. I will be at the fields.",
+        "Purple towers make falling feel too easy. I will remember that when I put bread aside.",
+        "End City is no small story. A full belly is not the same as safety.",
+        "I will remember End City as a tall city built where home feels very far away. I will keep bread aside for the road."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "farmer_share_story_fortress",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_structure": "minecraft:fortress",
+      "lines": [
+        "{target}? Bridges hang over lava and worse things patrol them. I would save bread for the road home.",
+        "If anyone heads for Nether Fortress, tell them: Keep <color:red>fire protection</color> close and pride far away. I will be at the fields.",
+        "Blazes turn hallways into ovens. I will remember that when I put bread aside.",
+        "Nether Fortress is no small story. A full belly is not the same as safety.",
+        "I will remember Nether Fortress as a black bridge where the air itself wants a fight. I will keep bread aside for the road."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "farmer_share_story_igloo",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_structure": "minecraft:igloo",
+      "lines": [
+        "{target}? A little shelter can keep a strange secret below. I would save bread for the road home.",
+        "If anyone heads for Igloo, tell them: Check the trapdoor before trusting the bed. I will be at the fields.",
+        "Snow can cover kindness and trouble both. I will remember that when I put bread aside.",
+        "Igloo is no small story. A full belly is not the same as safety.",
+        "I will remember Igloo as a small white house with more beneath it than above it. I will keep bread aside for the road."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "farmer_share_story_jungle_pyramid",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_structure": "minecraft:jungle_pyramid",
+      "lines": [
+        "{target}? Vines and stone hide tripwires well. I would save bread for the road home.",
+        "If anyone heads for Jungle Pyramid, tell them: Move slow and keep hands off strange levers. I will be at the fields.",
+        "Mossy stone is good at pretending nothing happened. I will remember that when I put bread aside.",
+        "Jungle Pyramid is no small story. A full belly is not the same as safety.",
+        "I will remember Jungle Pyramid as a jungle ruin that waits with string pulled tight. I will keep bread aside for the road."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "farmer_share_story_mineshaft",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_structure": "minecraft:mineshaft",
+      "lines": [
+        "{target}? Old supports and cave spiders both like the dark. I would save bread for the road home.",
+        "If anyone heads for Mineshaft, tell them: Mind the webs and never trust quiet rails. I will be at the fields.",
+        "Wood below ground means someone left in a hurry. I will remember that when I put bread aside.",
+        "Mineshaft is no small story. A full belly is not the same as safety.",
+        "I will remember Mineshaft as a tunnel where every beam sounds tired. I will keep bread aside for the road."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "farmer_share_story_mineshaft_mesa",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_structure": "minecraft:mineshaft_mesa",
+      "lines": [
+        "{target}? Gold country draws danger underground. I would save bread for the road home.",
+        "If anyone heads for Mesa Mineshaft, tell them: Watch the rails and the drops between red stone walls. I will be at the fields.",
+        "Badlands dust follows you into every tunnel. I will remember that when I put bread aside.",
+        "Mesa Mineshaft is no small story. A full belly is not the same as safety.",
+        "I will remember Mesa Mineshaft as a red-earth mine where greed dug too deep. I will keep bread aside for the road."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "farmer_share_story_monument",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_structure": "minecraft:monument",
+      "lines": [
+        "{target}? Guardians watch the water from every side. I would save bread for the road home.",
+        "If anyone heads for Ocean Monument, tell them: Bring milk, doors, and enough air to regret nothing. I will be at the fields.",
+        "Prismarine looks pretty until the beams start. I will remember that when I put bread aside.",
+        "Ocean Monument is no small story. A full belly is not the same as safety.",
+        "I will remember Ocean Monument as a drowned temple with eyes in the walls. I will keep bread aside for the road."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "farmer_share_story_nether_fossil",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_structure": "minecraft:nether_fossil",
+      "lines": [
+        "{target}? Even old bones can sit in bad air. I would save bread for the road home.",
+        "If anyone heads for Nether Fossil, tell them: Mind the soul sand and anything burning nearby. I will be at the fields.",
+        "White bone in the Nether never feels peaceful. I will remember that when I put bread aside.",
+        "Nether Fossil is no small story. A full belly is not the same as safety.",
+        "I will remember Nether Fossil as a dead thing the Nether refused to bury kindly. I will keep bread aside for the road."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "farmer_share_story_ocean_ruin_cold",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_structure": "minecraft:ocean_ruin_cold",
+      "lines": [
+        "{target}? Cold water steals strength fast. I would save bread for the road home.",
+        "If anyone heads for Cold Ocean Ruin, tell them: Watch for <shake>drowned hands</shake> below the stone. I will be at the fields.",
+        "Ruined blocks under ice do not mean empty blocks. I will remember that when I put bread aside.",
+        "Cold Ocean Ruin is no small story. A full belly is not the same as safety.",
+        "I will remember Cold Ocean Ruin as a sunken ruin where the water bites first. I will keep bread aside for the road."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "farmer_share_story_ocean_ruin_warm",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_structure": "minecraft:ocean_ruin_warm",
+      "lines": [
+        "{target}? Warm water can still hide drowned trouble. I would save bread for the road home.",
+        "If anyone heads for Warm Ocean Ruin, tell them: Do not mistake coral colors for safety. I will be at the fields.",
+        "Bright water makes danger look inviting. I will remember that when I put bread aside.",
+        "Warm Ocean Ruin is no small story. A full belly is not the same as safety.",
+        "I will remember Warm Ocean Ruin as a pretty ruin with lungs full of warning. I will keep bread aside for the road."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "farmer_share_story_pillager_outpost",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_structure": "minecraft:pillager_outpost",
+      "lines": [
+        "{target}? Banners mean <shake>crossbows</shake> are near. I would save bread for the road home.",
+        "If anyone heads for Pillager Outpost, tell them: Stay low and do not let patrols follow you home. I will be at the fields.",
+        "A tower sees farther than a villager wants. I will remember that when I put bread aside.",
+        "Pillager Outpost is no small story. A full belly is not the same as safety.",
+        "I will remember Pillager Outpost as a wooden tower that points trouble at villages. I will keep bread aside for the road."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "farmer_share_story_ruined_portal",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_structure": "minecraft:ruined_portal",
+      "lines": [
+        "{target}? Broken obsidian still remembers the Nether. I would save bread for the road home.",
+        "If anyone heads for Ruined Portal, tell them: Keep clear of lava and do not rebuild it casually. I will be at the fields.",
+        "Even cold portal stones make the air feel warmer. I will remember that when I put bread aside.",
+        "Ruined Portal is no small story. A full belly is not the same as safety.",
+        "I will remember Ruined Portal as a broken doorway that still points somewhere bad. I will keep bread aside for the road."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "farmer_share_story_ruined_portal_desert",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_structure": "minecraft:ruined_portal_desert",
+      "lines": [
+        "{target}? Nether heat and desert heat make poor company. I would save bread for the road home.",
+        "If anyone heads for Desert Ruined Portal, tell them: Watch lava pockets and broken obsidian. I will be at the fields.",
+        "Sand around a portal never feels innocent. I will remember that when I put bread aside.",
+        "Desert Ruined Portal is no small story. A full belly is not the same as safety.",
+        "I will remember Desert Ruined Portal as a hot ruin with one foot in a worse world. I will keep bread aside for the road."
+      ],
+      "weight": 120
+    }
+  ]
+}

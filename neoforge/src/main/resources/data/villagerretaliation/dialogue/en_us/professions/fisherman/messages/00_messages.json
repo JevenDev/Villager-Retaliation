@@ -1,0 +1,62 @@
+{
+  "messages": [
+    {
+      "id": "fisherman_gift_given_variants",
+      "key": "gift_given",
+      "lines": [
+        "Take {gift_item}. A useful catch should not sit in one pair of hands.",
+        "Here, {gift_item}. The water was generous, so I can be too.",
+        "Take {gift_item}. It is not much, but it is given with care."
+      ],
+      "weight": 48
+    },
+    {
+      "id": "fisherman_gift_advice_followup_liked_variants",
+      "key": "gift_advice_followup.liked",
+      "lines": [
+        "Good. {tested_villager} took {gift_item}; that advice had a clean hook.",
+        "Then {gift_item} was the right bait for {tested_villager}. Glad it landed.",
+        "Good. {gift_item} suited {tested_villager}; I like advice that holds up."
+      ],
+      "weight": 44
+    },
+    {
+      "id": "fisherman_gift_advice_followup_disliked_variants",
+      "key": "gift_advice_followup.disliked",
+      "lines": [
+        "That line came back empty. For {gift_subject}, cast {alternative_gift} instead.",
+        "Some fish spit the hook. Leave {gift_item} and try {alternative_gift} next time.",
+        "{gift_item} missed the mark for {gift_subject}. Try {alternative_gift} instead."
+      ],
+      "weight": 44
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 20,
+      "lines": [
+        "Bad bait. It happens. Cast {alternative_gift} if you want a better chance.",
+        "Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
+        "Then we correct the guess: {alternative_gift} next time."
+      ]
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
+      "weight": 20,
+      "lines": [
+        "You took the line, not me. Still, {alternative_gift} should catch better.",
+        "Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
+        "Then we correct the guess: {alternative_gift} next time."
+      ]
+    }
+  ]
+}

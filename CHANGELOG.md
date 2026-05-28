@@ -15,9 +15,10 @@
 - Added beta.12 normal-dialogue `conditions` blocks for compound line logic, including memory, family, relationship, and recruitment-memory checks.
 - Added `conditions` support to dialogue options, so option visibility can use the same compound family and relationship checks as normal dialogue lines.
 - Added normal dialogue line `priority`, `category`, and `text_key` fields for explicit selection tiers, debug grouping, and localized text indirection.
-- Added `/villagerretaliation dialogue explain` and `/villagerretaliation datapack diagnostics` to make dialogue selection and datapack reload warnings, including invalid condition schemas, easier to inspect in-game.
+- Added `/villagerretaliation dialogue explain` and `/villagerretaliation datapack diagnostics` to make dialogue selection and datapack reload warnings, including invalid condition schemas and planned beta.13 dialogue-field deprecations, easier to inspect in-game.
 - Added built-in dialogue data validation and datapack-builder wiki snapshot checks to catch schema/docs drift during development, including deep validation for beta.12 `conditions` blocks.
 - Added beta.12 datapack builder and website wiki support while keeping the beta.11 wiki snapshot separate for beta.11 pack authors.
+- Added a downloadable beta.12 dialogue folder template at `example-packs/dialogue-folder-template/`, plus a Datapack Generator `Preset` picker for choosing between the editable starter pack and the full folderized template.
 - Added trade-refresh buttons to villager trade slots so players can ask a villager to replace a specific trade on the next Minecraft day when an eligible skill-trade replacement exists.
 - Added data-driven forced dialogue for trade-refresh results, including accepted, already-pending, unavailable, and not-ready responses with reputation-specific option replies.
 - Added trade-refresh ready follow-up dialogue with `trade_refresh.ready` message lines and `trade_refresh.ready_options` forced-dialogue options, including placeholders for restocked trade summaries.
@@ -32,7 +33,7 @@
 
 - Promoted the development version from `1.0.0-beta.11` to `1.0.0-beta.12`.
 - Social Attributes now lightly affect mood transitions, reputation recovery, retaliation decisions, and gossip spread when the matching config toggles are enabled.
-- The datapack builder Convert flow can retarget beta.11 packs to beta.12 without renaming or removing existing beta.11 JSON fields.
+- The datapack builder no longer offers beta.11 to beta.12 conversion. The beta.12 target is a manual retargeting boundary, not a marker-only migration.
 - Trade refresh replacement selection compares full result stacks instead of only item types, so variants such as different enchanted books can appear while exact duplicate refreshed trades are still avoided when possible.
 - Special Order selection rows now show concise trade names while wait and cooldown details are delivered through the data-driven confirmation and queued dialogue lines.
 - Special Order selection rows now include result counts when greater than one, distinguishing entries such as Empty Map from 2x Empty Map.
@@ -53,6 +54,9 @@
 - Built-in container-theft leave outcomes now default to response arrays (`responses`, `success_responses`, `failure_responses`) for more varied short reactions.
 - Built-in normal dialogue lines now use beta.12 `conditions` for migrated memory, family, relationship, and recruitment filters.
 - Built-in family and relationship dialogue options now use beta.12 `conditions`.
+- Built-in dialogue resources are now split into folderized topic files under `dialogue/<locale>/global`, `groups`, and `professions/<profession>`. Profession story biome dialogue and recruitment-left-behind biome follow-ups are grouped by biome type, such as cold, hot/dry, ocean/river, Nether, and End files.
+- The datapack builder can now author, import, preserve, preview, and export typed beta.12 dialogue files such as `options/00_greeting.json` and `lines/00_greeting.json`, including typed option files that omit `type: "dialogue_option"`.
+- The datapack builder now infers namespaced custom profession defaults from typed dialogue paths such as `professions/examplemod/alchemist/lines/...json`, matching the runtime path behavior.
 - Normal dialogue line selection now applies explicit `priority` tiers before weighted random selection. Existing packs keep the default `priority: 0`.
 - The schema docs and Datapack Generator now distinguish canonical field names from compatibility aliases across player-item filters, item hand-ins, equipment filters, notification world text style, and forced-dialogue triggers.
 - First-conversation opening lines now avoid replaying for villagers that already have persisted last-seen memory of the player, even after world leave/join cycles.
@@ -60,8 +64,8 @@
 
 ### Planned Beta.13 Deprecations
 
-- Flat normal dialogue line memory, family, relationship, recruitment, container-theft, gear-report, and retaliation helper fields still load in beta.12, but are planned for beta.13 deprecation in favor of `conditions`: `requires_known_family`, `requires_known_parent`, `requires_known_sibling`, `requires_known_spouse`, `requires_known_child`, `requires_known_grandparent`, `requires_known_grandchild`, `requires_known_descendant`, `requires_known_aunt_uncle`, `requires_known_cousin`, `requires_known_niece_nephew`, `requires_known_extended_family`, `requires_known_deceased_family`, `requires_known_relationship`, `requires_known_current_relationship`, `requires_known_past_relationship`, `requires_known_crush`, `requires_known_dating_partner`, `requires_known_fiance`, `requires_known_romantic_spouse`, `requires_known_separated_partner`, `requires_known_widowed_partner`, `requires_recent_broken_bed_memory`, `requires_recent_direct_hit_memory`, `requires_gear_report_used_in_combat`, `requires_gear_report_unused_in_combat`, `requires_recruitment_memory`, `requires_recruitment_boat_trip`, `requires_recruitment_ocean_crossing`, `requires_recruitment_swim_trip`, `excludes_recruitment_ocean_crossing`, `requires_container_theft_to_self`, `requires_container_theft_from_other`, `requires_retaliation_to_self`, and `requires_retaliation_from_other`.
-- Flat dialogue option family and relationship helper fields still load in beta.12, but are planned for beta.13 deprecation in favor of `conditions`.
+- Flat normal dialogue line memory, family, relationship, recruitment, container-theft, gear-report, and retaliation helper fields still load in beta.12 as compatibility inputs, but are planned for beta.13 deprecation in favor of `conditions`. The beta.12 folderized dialogue rewrite does not remove these fields; it makes `conditions` the maintained authoring shape. Affected line fields: `requires_known_family`, `requires_known_parent`, `requires_known_sibling`, `requires_known_spouse`, `requires_known_child`, `requires_known_grandparent`, `requires_known_grandchild`, `requires_known_descendant`, `requires_known_aunt_uncle`, `requires_known_cousin`, `requires_known_niece_nephew`, `requires_known_extended_family`, `requires_known_deceased_family`, `requires_known_relationship`, `requires_known_current_relationship`, `requires_known_past_relationship`, `requires_known_crush`, `requires_known_dating_partner`, `requires_known_fiance`, `requires_known_romantic_spouse`, `requires_known_separated_partner`, `requires_known_widowed_partner`, `requires_recent_broken_bed_memory`, `requires_recent_direct_hit_memory`, `requires_gear_report_used_in_combat`, `requires_gear_report_unused_in_combat`, `requires_recruitment_memory`, `requires_recruitment_boat_trip`, `requires_recruitment_ocean_crossing`, `requires_recruitment_swim_trip`, `excludes_recruitment_ocean_crossing`, `requires_container_theft_to_self`, `requires_container_theft_from_other`, `requires_retaliation_to_self`, and `requires_retaliation_from_other`.
+- Flat dialogue option family and relationship helper fields still load in beta.12 as compatibility inputs, but are planned for beta.13 deprecation in favor of `conditions`. Built-in beta.12 options now use `conditions`, and the builder/runtime diagnostics mark these helper fields when imported packs still use them.
 
 ### Fixed
 

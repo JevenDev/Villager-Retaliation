@@ -1,0 +1,6 @@
+{
+  "id": "example_template.option.greeting",
+  "label": "Example Greeting",
+  "request": "greeting",
+  "order": 0
+}

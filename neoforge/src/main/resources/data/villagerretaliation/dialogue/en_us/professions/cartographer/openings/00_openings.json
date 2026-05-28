@@ -1,0 +1,12 @@
+{
+  "openings": [
+    {
+      "id": "cartographer_opening",
+      "lines": [
+        "Mind the map table. What do you need?",
+        "Step clear of the map table. What do you need?",
+        "Mind the map table; I am listening."
+      ]
+    }
+  ]
+}

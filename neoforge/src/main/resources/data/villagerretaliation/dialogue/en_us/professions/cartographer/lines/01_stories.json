@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "cartographer_story_path_variants",
+      "request": "story",
+      "lines": [
+        "A lost path can become a warning if enough people survive telling it.",
+        "A wrong turn once taught me more than three careful maps.",
+        "Blank space on parchment has a way of <wavy>daring</wavy> people to be foolish."
+      ],
+      "weight": 74
+    }
+  ]
+}

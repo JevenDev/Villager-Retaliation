@@ -1,0 +1,224 @@
+{
+  "lines": [
+    {
+      "id": "recruitment_left_behind_birch_forest",
+      "request": "recruitment_followup",
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20,
+      "lines": [
+        "Don't leave me alone in the Birch Forest. It is too easy to lose you between all those pale trunks.",
+        "The Birch Forest looked calm right up until I realized I was standing there by myself.",
+        "I waited in the Birch Forest listening for your steps and hearing everything except you.",
+        "A Birch Forest feels much less friendly when I am the one left behind in it."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "scenarios": [
+            "left_behind"
+          ],
+          "biome": "minecraft:birch_forest"
+        }
+      ]
+    },
+    {
+      "id": "recruitment_left_behind_cherry_grove",
+      "request": "recruitment_followup",
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20,
+      "lines": [
+        "Don't leave me in the Cherry Grove. Pretty blossoms do not stop bad things from happening.",
+        "The Cherry Grove looked lovely until I noticed I was alone under all that pink.",
+        "I was stuck in the Cherry Grove trying not to let the quiet make me nervous.",
+        "Even a Cherry Grove feels dangerous when you vanish and leave me there by myself."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "scenarios": [
+            "left_behind"
+          ],
+          "biome": "minecraft:cherry_grove"
+        }
+      ]
+    },
+    {
+      "id": "recruitment_left_behind_dark_forest",
+      "request": "recruitment_followup",
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20,
+      "lines": [
+        "Don't leave me in the Dark Forest. The shadows there feel like they are <pulse>watching</pulse>.",
+        "A Dark Forest is the wrong place to realize I cannot see where you went.",
+        "I waited in the Dark Forest listening to every twig snap like it was a <shake>warning</shake>.",
+        "If you vanish in a Dark Forest, I get darkness, roots, and far too much imagination."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "scenarios": [
+            "left_behind"
+          ],
+          "biome": "minecraft:dark_forest"
+        }
+      ]
+    },
+    {
+      "id": "recruitment_left_behind_flower_forest",
+      "request": "recruitment_followup",
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20,
+      "lines": [
+        "Don't leave me in the Flower Forest. It looks peaceful until you are the only one there.",
+        "A Flower Forest feels a lot less charming when I am abandoned in the middle of it.",
+        "I waited in the Flower Forest listening for you and hearing bees, wind, and not much else.",
+        "Even a Flower Forest makes my nerves climb once I realize I am alone in it."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "scenarios": [
+            "left_behind"
+          ],
+          "biome": "minecraft:flower_forest"
+        }
+      ]
+    },
+    {
+      "id": "recruitment_left_behind_forest",
+      "request": "recruitment_followup",
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20,
+      "lines": [
+        "Don't leave me alone in the Forest. Trees are comforting right up until they hide everything.",
+        "The Forest looked ordinary until you were gone and every shadow seemed important.",
+        "I waited in the Forest trying to tell the difference between harmless noise and danger.",
+        "If you vanish in a Forest, I am left guessing which direction counts as safe."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "scenarios": [
+            "left_behind"
+          ],
+          "biome": "minecraft:forest"
+        }
+      ]
+    },
+    {
+      "id": "recruitment_left_behind_old_growth_birch_forest",
+      "request": "recruitment_followup",
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20,
+      "lines": [
+        "Don't leave me in the Old Growth Birch Forest. Bigger trees only mean bigger shadows.",
+        "The Old Growth Birch Forest felt too wide to search once I lost sight of you.",
+        "I was stuck in the Old Growth Birch Forest listening for your footsteps under all that canopy.",
+        "If you vanish in an Old Growth Birch Forest, I am left between trunks that all look the same."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "scenarios": [
+            "left_behind"
+          ],
+          "biome": "minecraft:old_growth_birch_forest"
+        }
+      ]
+    },
+    {
+      "id": "recruitment_left_behind_old_growth_pine_taiga",
+      "request": "recruitment_followup",
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20,
+      "lines": [
+        "Don't leave me in the Old Growth Pine Taiga. Those towering pines make it feel colder than it already is.",
+        "The Old Growth Pine Taiga is too dense and too dim to be stranded in.",
+        "I waited in the Old Growth Pine Taiga with needles underfoot and too little sky above.",
+        "If you disappear in an Old Growth Pine Taiga, I am left cold under trees that swallow sound."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "scenarios": [
+            "left_behind"
+          ],
+          "biome": "minecraft:old_growth_pine_taiga"
+        }
+      ]
+    },
+    {
+      "id": "recruitment_left_behind_old_growth_spruce_taiga",
+      "request": "recruitment_followup",
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20,
+      "lines": [
+        "Don't leave me in the Old Growth Spruce Taiga. Those trees make every shadow feel heavier.",
+        "The Old Growth Spruce Taiga was dark and cold enough before I had to face it alone.",
+        "I waited in the Old Growth Spruce Taiga trying not to let the silence get into my head.",
+        "If you wander off in an Old Growth Spruce Taiga, I am left surrounded by towering trunks and nerves."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "scenarios": [
+            "left_behind"
+          ],
+          "biome": "minecraft:old_growth_spruce_taiga"
+        }
+      ]
+    },
+    {
+      "id": "recruitment_left_behind_taiga",
+      "request": "recruitment_followup",
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20,
+      "lines": [
+        "Don't leave me in the Taiga. The cold and the trees make every sound feel farther away.",
+        "The Taiga was dim enough that losing sight of you felt immediate and permanent.",
+        "I waited in the Taiga with needles underfoot and cold air in my lungs.",
+        "If you wander off in a Taiga, I am left under dark branches hoping you remember me quickly."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "scenarios": [
+            "left_behind"
+          ],
+          "biome": "minecraft:taiga"
+        }
+      ]
+    },
+    {
+      "id": "recruitment_left_behind_windswept_forest",
+      "request": "recruitment_followup",
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20,
+      "lines": [
+        "Don't leave me in the Windswept Forest. The gusts there make every tree sound angry.",
+        "The Windswept Forest is too loud and too uneven to lose your guide in.",
+        "I waited in the Windswept Forest with the wind pushing at me from every side.",
+        "If you vanish in a Windswept Forest, I am left listening to branches thrash and hoping none fall."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "scenarios": [
+            "left_behind"
+          ],
+          "biome": "minecraft:windswept_forest"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "pacify": [
+    {
+      "id": "nitwit_pacify_success",
+      "outcomes": [
+        "success"
+      ],
+      "weight": 26,
+      "lines": [
+        "Fine. I was getting tired of being angry anyway.",
+        "Fine. I will set this down before it gets heavier.",
+        "Fine. I can step back, but do not make me regret it."
+      ]
+    },
+    {
+      "id": "nitwit_pacify_short",
+      "outcomes": [
+        "not_enough_emeralds"
+      ],
+      "weight": 26,
+      "lines": [
+        "I counted, then forgot, then counted again. It should be {emerald_cost} {emeralds}.",
+        "That is short of the full repair. Bring {emerald_cost} {emeralds}.",
+        "Not enough. It takes {emerald_cost} {emeralds} to settle this."
+      ]
+    },
+    {
+      "id": "nitwit_pacify_blocked",
+      "outcomes": [
+        "blocked_by_reputation"
+      ],
+      "weight": 26,
+      "lines": [
+        "No. Even I know this is not fixed.",
+        "No. Some damage has to cool before payment matters.",
+        "No. Keep {payment_items}; trust is not ready to trade."
+      ]
+    }
+  ]
+}

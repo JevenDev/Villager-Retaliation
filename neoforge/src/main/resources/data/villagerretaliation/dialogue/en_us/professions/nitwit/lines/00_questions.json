@@ -1,0 +1,66 @@
+{
+  "lines": [
+    {
+      "id": "nitwit_question_thought_variants",
+      "request": "question",
+      "lines": [
+        "I had a <wavy>thought</wavy> once. Left it somewhere safe, probably.",
+        "If you find my thought, tell it I was looking useful.",
+        "I found a button once. No wall, just ambition.",
+        "Where am I going? Usually somewhere nearby, once I remember why.",
+        "I tried following my shadow, but it got behind me somehow.",
+        "A job sounds useful. I am saving usefulness for the right moment."
+      ],
+      "weight": 172
+    },
+    {
+      "id": "nitwit_new_cautious_simple",
+      "request": "question",
+      "dispositions": [
+        "cautious",
+        "fearful"
+      ],
+      "weight": 30,
+      "lines": [
+        "I can be <jump>silly</jump> from over here. Over here feels better.",
+        "Keep your voice even. I am measuring more than your words.",
+        "Some questions are safer when they stand a little farther away."
+      ]
+    },
+    {
+      "id": "question_follow_memory_nitwit",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "weight": 3,
+      "lines": [
+        "Remember when I followed you? I thought we were going somewhere. We sure did.",
+        "I remember following you through that road. My feet remember it even better.",
+        "That trip across that road taught me to ask more questions before walking."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory"
+        }
+      ]
+    },
+    {
+      "id": "question_follow_memory_nitwit_boat",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "weight": 3,
+      "lines": [
+        "Remember the boat? I sat down and the world moved. Very clever.",
+        "That boat trip still sits oddly in my memory, but at least it floated.",
+        "A boat can make a bad plan quieter. It cannot make me forget it."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "boat_trip": true
+        }
+      ]
+    }
+  ]
+}

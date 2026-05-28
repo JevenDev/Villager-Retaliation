@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "mason_new_joke_dense",
+      "request": "joke",
+      "weight": 18,
+      "lines": [
+        "Mason jokes are solid. Sometimes too solid to move.",
+        "I tried a lighter mason joke once. It still landed like a brick.",
+        "My best jokes have foundations. The punchline usually needs <jump>scaffolding</jump>."
+      ]
+    }
+  ]
+}

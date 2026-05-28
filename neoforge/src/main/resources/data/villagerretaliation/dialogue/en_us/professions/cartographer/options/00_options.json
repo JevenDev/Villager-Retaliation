@@ -1,0 +1,13 @@
+{
+  "options": [
+    {
+      "id": "cartographer_map_report",
+      "label": "Report Discovery",
+      "type": "dialogue_option",
+      "request": "map_report",
+      "order": 4,
+      "show_for_babies": false,
+      "requires_unreported_cartographer_map_discovery": true
+    }
+  ]
+}

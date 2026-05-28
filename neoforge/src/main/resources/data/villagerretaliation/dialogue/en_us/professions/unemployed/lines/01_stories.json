@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "unemployed_story_chance_variants",
+      "request": "story",
+      "lines": [
+        "A fair chance can look a lot like standing around until the right bell rings.",
+        "I once followed the bell hoping it meant opportunity. It meant <jump>hurry</jump>.",
+        "I organized a barrel once. For a moment, everyone thought I had a calling."
+      ],
+      "weight": 74
+    }
+  ]
+}

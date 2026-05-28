@@ -1,0 +1,52 @@
+{
+  "lines": [
+    {
+      "id": "baby_share_story_mushroom_fields",
+      "request": "share_story",
+      "option": "baby_share_story",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "story_biome": "minecraft:mushroom_fields",
+      "lines": [
+        "You went to {target}? I am glad you came back. Mushroom Fields sounds too big for me.",
+        "Mushroom Fields sounds scary because strange quiet can make a place feel too safe. I would stay near a grown-up.",
+        "If I saw Mushroom Fields, I would hold my bread tight and keep the village bell in mind.",
+        "Please tell the story of Mushroom Fields from the safe part, where you got home.",
+        "I am not going to Mushroom Fields. I am very good at not going there."
+      ],
+      "weight": 140
+    },
+    {
+      "id": "baby_share_story_plains",
+      "request": "share_story",
+      "option": "baby_share_story",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "story_biome": "minecraft:plains",
+      "lines": [
+        "You went to {target}? I am glad you came back. Plains sounds too big for me.",
+        "Plains sounds scary because open ground shows you to everything else. I would stay near a grown-up.",
+        "If I saw Plains, I would hold my bread tight and keep the village bell in mind.",
+        "Please tell the story of Plains from the safe part, where you got home.",
+        "I am not going to Plains. I am very good at not going there."
+      ],
+      "weight": 140
+    },
+    {
+      "id": "baby_share_story_sunflower_plains",
+      "request": "share_story",
+      "option": "baby_share_story",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "story_biome": "minecraft:sunflower_plains",
+      "lines": [
+        "You went to {target}? I am glad you came back. Sunflower Plains sounds too big for me.",
+        "Sunflower Plains sounds scary because sunny fields can still point toward trouble. I would stay near a grown-up.",
+        "If I saw Sunflower Plains, I would hold my bread tight and keep the village bell in mind.",
+        "Please tell the story of Sunflower Plains from the safe part, where you got home.",
+        "I am not going to Sunflower Plains. I am very good at not going there."
+      ],
+      "weight": 140
+    }
+  ]
+}

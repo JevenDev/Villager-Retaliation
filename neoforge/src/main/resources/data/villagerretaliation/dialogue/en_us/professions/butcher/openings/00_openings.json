@@ -1,0 +1,12 @@
+{
+  "openings": [
+    {
+      "id": "butcher_opening",
+      "lines": [
+        "Mind the smokehouse. What do you need?",
+        "Step clear of the smokehouse. What do you need?",
+        "Mind the smokehouse; I am listening."
+      ]
+    }
+  ]
+}

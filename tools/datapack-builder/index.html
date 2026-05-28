@@ -36,11 +36,7 @@
             <i data-lucide="folder-open" class="button-icon" aria-hidden="true"></i>
             Folder
           </label>
-          <button class="button button-secondary has-tooltip" id="migration-button" type="button" data-tooltip="Convert the current pack through registered version migrations.">
-            <i data-lucide="replace" class="button-icon" aria-hidden="true"></i>
-            Convert
-          </button>
-          <button class="button button-secondary has-tooltip" id="starter-button" type="button" data-tooltip="Load a small working example.">
+          <button class="button button-secondary has-tooltip" id="starter-button" type="button" data-tooltip="Choose a starter template.">
             <i data-lucide="package-plus" class="button-icon" aria-hidden="true"></i>
             Preset
           </button>
@@ -56,7 +52,7 @@
       </header>
 
       <main class="workspace">
-        <aside class="left-rail" aria-label="Generator sections">
+        <aside class="left-rail is-compact" aria-label="Generator sections">
           <button class="rail-toggle rail-toggle-left is-on" id="left-panel-toggle-button" type="button" aria-pressed="true" aria-label="Hide sections">
             <i data-lucide="panel-left-close" class="button-icon" aria-hidden="true"></i>
           </button>
@@ -129,7 +125,22 @@
           </nav>
         </aside>
 
-        <div class="panel-resizer panel-resizer-column has-tooltip" data-resize-target="left" role="separator" tabindex="0" aria-orientation="vertical" aria-label="Resize sections panel" data-tooltip="Drag to resize the sections panel. Middle-click to reset."></div>
+        <aside class="file-explorer" aria-label="File explorer">
+          <section class="panel files-panel">
+            <div class="panel-title">
+              <div class="panel-title-main">
+                <i data-lucide="files" class="section-icon" aria-hidden="true"></i>
+                <h2>Files</h2>
+              </div>
+              <span id="file-count">0</span>
+            </div>
+            <div id="file-tree" class="file-tree"></div>
+          </section>
+          <span id="entry-count" class="visually-hidden">0</span>
+          <div id="entry-directory" class="visually-hidden"></div>
+        </aside>
+
+        <div class="panel-resizer panel-resizer-column has-tooltip" data-resize-target="left" role="separator" tabindex="0" aria-orientation="vertical" aria-label="Resize file explorer" data-tooltip="Drag to resize the file explorer. Middle-click to reset."></div>
 
         <section class="builder" aria-label="Datapack builder">
           <div id="builder-panel" class="builder-panel"></div>
@@ -154,19 +165,6 @@
           </section>
 
           <div class="panel-resizer panel-resizer-row has-tooltip" data-resize-target="checks" role="separator" tabindex="0" aria-orientation="horizontal" aria-label="Resize checks panel" data-tooltip="Drag to resize the checks panel. Middle-click to reset."></div>
-
-          <section class="panel files-panel">
-            <div class="panel-title panel-title-snap has-tooltip" data-panel-snap-target="files" role="button" tabindex="0" data-tooltip="Collapse or restore the files panel.">
-              <div class="panel-title-main">
-                <i data-lucide="files" class="section-icon" aria-hidden="true"></i>
-                <h2>Files</h2>
-              </div>
-              <span id="file-count">0</span>
-            </div>
-            <div id="file-tree" class="file-tree"></div>
-          </section>
-
-          <div class="panel-resizer panel-resizer-row has-tooltip" data-resize-target="files" role="separator" tabindex="0" aria-orientation="horizontal" aria-label="Resize files panel" data-tooltip="Drag to resize the files panel. Middle-click to reset."></div>
 
           <section class="preview" aria-label="Generated JSON preview">
             <div class="preview-header">
@@ -219,6 +217,19 @@
       </section>
     </div>
 
+    <div id="template-dialog" class="modal-overlay" aria-hidden="true">
+      <section class="modal-window template-window" role="dialog" aria-modal="true" aria-labelledby="template-title">
+        <div class="modal-title">
+          <i data-lucide="package-plus" class="section-icon" aria-hidden="true"></i>
+          <h2 id="template-title">Choose Template</h2>
+        </div>
+        <div class="template-list" id="template-list" aria-label="Template choices"></div>
+        <div class="modal-actions">
+          <button class="button button-secondary" id="template-cancel" type="button">Cancel</button>
+        </div>
+      </section>
+    </div>
+
     <div id="export-issue-dialog" class="modal-overlay" aria-hidden="true">
       <section class="modal-window" role="dialog" aria-modal="true" aria-labelledby="export-issue-title">
         <div class="modal-title">
@@ -230,32 +241,6 @@
         <div class="modal-actions">
           <button class="button button-secondary" id="export-issue-cancel" type="button">Cancel</button>
           <button class="button button-primary" id="export-issue-confirm" type="button">Export Anyway</button>
-        </div>
-      </section>
-    </div>
-
-    <div id="migration-dialog" class="modal-overlay" aria-hidden="true">
-      <section class="modal-window migration-window" role="dialog" aria-modal="true" aria-labelledby="migration-title">
-        <div class="modal-title">
-          <i data-lucide="replace" class="section-icon" aria-hidden="true"></i>
-          <h2 id="migration-title">Convert Pack</h2>
-        </div>
-        <p class="modal-copy" id="migration-copy">Choose a target version. Conversions run one registered version step at a time.</p>
-        <div class="migration-grid">
-          <div class="field">
-            <label for="migration-source">Current version</label>
-            <select id="migration-source" disabled></select>
-          </div>
-          <div class="field">
-            <label for="migration-target">Target version</label>
-            <select id="migration-target"></select>
-          </div>
-        </div>
-        <div class="migration-route" id="migration-route"></div>
-        <div class="modal-issues" id="migration-report"></div>
-        <div class="modal-actions">
-          <button class="button button-secondary" id="migration-cancel" type="button">Cancel</button>
-          <button class="button button-primary" id="migration-confirm" type="button">Convert</button>
         </div>
       </section>
     </div>

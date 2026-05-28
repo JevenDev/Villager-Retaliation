@@ -1,0 +1,62 @@
+{
+  "messages": [
+    {
+      "id": "butcher_gift_given_variants",
+      "key": "gift_given",
+      "lines": [
+        "Take {gift_item}. A good village keeps its friends fed and standing.",
+        "Here, {gift_item}. It is honest work to send someone off with provisions.",
+        "Take {gift_item}. It is not much, but it is given with care."
+      ],
+      "weight": 48
+    },
+    {
+      "id": "butcher_gift_advice_followup_liked_variants",
+      "key": "gift_advice_followup.liked",
+      "lines": [
+        "Good. {tested_villager} has a sound nose for {gift_item}. Fresh advice, clean cut.",
+        "If {tested_villager} liked {gift_item}, then the cut was right.",
+        "Good. {gift_item} suited {tested_villager}; I like advice that holds up."
+      ],
+      "weight": 44
+    },
+    {
+      "id": "butcher_gift_advice_followup_disliked_variants",
+      "key": "gift_advice_followup.disliked",
+      "lines": [
+        "Bad cut, then. For {gift_subject}, I would set down {gift_item} and bring {alternative_gift}.",
+        "Some gifts spoil in the telling. Try {alternative_gift}; that should suit {gift_subject} better.",
+        "{gift_item} missed the mark for {gift_subject}. Try {alternative_gift} instead."
+      ],
+      "weight": 44
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 20,
+      "lines": [
+        "You got a tough cut of advice. Next time, bring {alternative_gift}.",
+        "Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
+        "Then we correct the guess: {alternative_gift} next time."
+      ]
+    },
+    {
+      "key": "gift_advice_followup.disliked",
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
+      "weight": 20,
+      "lines": [
+        "{gift_item} went over badly? Then trim your losses and try {alternative_gift}.",
+        "Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
+        "Then we correct the guess: {alternative_gift} next time. {gift_item}"
+      ]
+    }
+  ]
+}

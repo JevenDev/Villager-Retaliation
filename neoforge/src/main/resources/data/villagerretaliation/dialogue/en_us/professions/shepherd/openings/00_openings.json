@@ -1,0 +1,12 @@
+{
+  "openings": [
+    {
+      "id": "shepherd_opening",
+      "lines": [
+        "Mind the loom. What do you need?",
+        "Step clear of the loom. What do you need?",
+        "Mind the loom; I am listening."
+      ]
+    }
+  ]
+}

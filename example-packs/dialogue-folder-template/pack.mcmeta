@@ -1,0 +1,9 @@
+{
+  "pack": {
+    "pack_format": 34,
+    "description": "Folderized Villager Retaliation beta.12 dialogue template"
+  },
+  "villagerretaliation": {
+    "pack_version": "1.0.0-beta.12"
+  }
+}

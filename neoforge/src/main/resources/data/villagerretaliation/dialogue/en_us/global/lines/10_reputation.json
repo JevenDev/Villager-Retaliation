@@ -1,0 +1,211 @@
+{
+  "lines": [
+    {
+      "id": "village_event_snowstorm_baby_1",
+      "request": "village_event_report",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "event_tags": [
+        "snowstorm"
+      ],
+      "lines": [
+        "The snow made everything disappear. I stayed where I could see a lantern.",
+        "My toes got cold just looking outside.",
+        "The wind pushed snow at the door like it wanted in.",
+        "I am okay. I want soup though.",
+        "The whole village looked like a blanket, but a scary blanket."
+      ],
+      "weight": 160
+    },
+    {
+      "id": "container_theft_memory_direct_question",
+      "request": "question",
+      "show_for_babies": false,
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "lines": [
+        "I still remember you trying to take my {stolen_item}.",
+        "You want an answer after the {stolen_stack} from the {stolen_container}? Fine. Ask, but ask honestly.",
+        "I remember the {stolen_item}. I remember who reached for it too."
+      ],
+      "weight": 64,
+      "conditions": [
+        {
+          "type": "memory",
+          "tag": "player_container_theft",
+          "source": "this_villager"
+        }
+      ]
+    },
+    {
+      "id": "container_theft_memory_village_question_1",
+      "request": "question",
+      "show_for_babies": false,
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 32,
+      "lines": [
+        "<aqua>{theft_witness}</aqua> told me about you stealing {stolen_stack}. Not cool.",
+        "<aqua>{theft_witness}</aqua> said you took {stolen_stack}. That story travels fast.",
+        "<aqua>{theft_witness_possessive}</aqua> account of the {stolen_stack} has reached plenty of ears. <aqua>{theft_witness}</aqua>"
+      ],
+      "conditions": [
+        {
+          "type": "memory",
+          "tag": "player_container_theft",
+          "source": "other_villager"
+        }
+      ]
+    },
+    {
+      "id": "container_theft_memory_village_greeting_1",
+      "request": "greeting",
+      "show_for_babies": false,
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 30,
+      "lines": [
+        "I know what happened at the {stolen_container}. <aqua>{theft_witness_possessive}</aqua> story reached me.",
+        "The {stolen_container} has been part of more conversations since you touched it. <aqua>{theft_witness_possessive}</aqua>",
+        "<aqua>{theft_witness}</aqua> saw enough at the {stolen_container} for the village to remember. <aqua>{theft_witness_possessive}</aqua>"
+      ],
+      "conditions": [
+        {
+          "type": "memory",
+          "tag": "player_container_theft",
+          "source": "other_villager"
+        }
+      ]
+    },
+    {
+      "id": "reputation_royalty_greeting_1",
+      "request": "greeting",
+      "show_for_babies": false,
+      "reputation_levels": [
+        "royalty"
+      ],
+      "weight": 28,
+      "lines": [
+        "When you arrive, people stand a little straighter. That is not fear. That is what trust looks like after it has survived trouble.",
+        "Your name opens doors here because people believe it should.",
+        "People relax when you arrive. That is rare power; carry it gently."
+      ]
+    },
+    {
+      "id": "reputation_revered_question_1",
+      "request": "question",
+      "show_for_babies": false,
+      "reputation_levels": [
+        "revered",
+        "royalty"
+      ],
+      "weight": 26,
+      "lines": [
+        "Some players pass through villages like weather. You left roots.",
+        "You made yourself part of the village instead of passing through it.",
+        "People speak of you like someone whose footsteps belong here."
+      ]
+    },
+    {
+      "id": "reputation_respected_question_1",
+      "request": "question",
+      "show_for_babies": false,
+      "reputation_levels": [
+        "respected",
+        "revered",
+        "royalty"
+      ],
+      "weight": 24,
+      "lines": [
+        "People listen when you speak here. That is useful. It is also a responsibility.",
+        "Respect is useful. Be careful not to spend it carelessly.",
+        "People weigh your words because your actions gave them reason to."
+      ]
+    },
+    {
+      "id": "reputation_trusted_greeting_1",
+      "request": "greeting",
+      "show_for_babies": false,
+      "reputation_levels": [
+        "trusted",
+        "respected",
+        "revered",
+        "royalty"
+      ],
+      "weight": 28,
+      "lines": [
+        "Good to see you. The village keeps its doors easier when your footsteps are nearby.",
+        "Good to have you nearby. The village breathes easier.",
+        "Your footsteps sound familiar in a good way now."
+      ]
+    },
+    {
+      "id": "reputation_neutral_question_1",
+      "request": "question",
+      "show_for_babies": false,
+      "reputation_levels": [
+        "neutral"
+      ],
+      "weight": 22,
+      "lines": [
+        "We do not know what kind of neighbor you are yet. Villages learn quickly.",
+        "We will see what kind of neighbor you choose to be.",
+        "Neutral is not empty. It is the village still watching."
+      ]
+    },
+    {
+      "id": "reputation_suspicious_greeting_1",
+      "request": "greeting",
+      "show_for_babies": false,
+      "reputation_levels": [
+        "suspicious"
+      ],
+      "weight": 26,
+      "lines": [
+        "Hello. That is all I am ready to offer for now.",
+        "Hello. I am listening, but not leaning closer.",
+        "You may speak. I am keeping my caution where I can reach it."
+      ]
+    },
+    {
+      "id": "reputation_hostile_question_1",
+      "request": "question",
+      "show_for_babies": false,
+      "reputation_levels": [
+        "hostile"
+      ],
+      "weight": 28,
+      "lines": [
+        "You have a talent for making people check where the exits are.",
+        "Every door seems to notice you before I do.",
+        "You make the square feel smaller when you enter it."
+      ]
+    },
+    {
+      "id": "reputation_despised_question_1",
+      "request": "question",
+      "show_for_babies": false,
+      "reputation_levels": [
+        "despised"
+      ],
+      "weight": 30,
+      "lines": [
+        "You want answers? Start with why anyone here should give you one.",
+        "Answers are for people who have not made questions dangerous.",
+        "You have spent every benefit of the doubt here."
+      ]
+    }
+  ]
+}

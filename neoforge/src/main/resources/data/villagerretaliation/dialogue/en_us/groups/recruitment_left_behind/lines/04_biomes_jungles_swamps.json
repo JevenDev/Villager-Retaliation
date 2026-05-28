@@ -1,0 +1,114 @@
+{
+  "lines": [
+    {
+      "id": "recruitment_left_behind_bamboo_jungle",
+      "request": "recruitment_followup",
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20,
+      "lines": [
+        "Don't leave me alone in the Bamboo Jungle. Everything rustles like it is sneaking up on me.",
+        "The Bamboo Jungle is too dense to lose sight of you in. I could barely tell which way was safe.",
+        "I was stuck in the Bamboo Jungle listening to every stalk creak and every branch snap.",
+        "If you disappear in a Bamboo Jungle, all I have left is noise and bad guesses."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "scenarios": [
+            "left_behind"
+          ],
+          "biome": "minecraft:bamboo_jungle"
+        }
+      ]
+    },
+    {
+      "id": "recruitment_left_behind_jungle",
+      "request": "recruitment_followup",
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20,
+      "lines": [
+        "Don't leave me in the Jungle. I cannot tell whether the next sound is leaves or teeth.",
+        "The Jungle is too thick to lose your guide in. I could barely see a safe way forward.",
+        "I was stranded in the Jungle with vines everywhere and no clear line back to you.",
+        "If you disappear in a Jungle, I am left with heat, noise, and no honest path."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "scenarios": [
+            "left_behind"
+          ],
+          "biome": "minecraft:jungle"
+        }
+      ]
+    },
+    {
+      "id": "recruitment_left_behind_mangrove_swamp",
+      "request": "recruitment_followup",
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20,
+      "lines": [
+        "Don't leave me in the Mangrove Swamp. Mud, roots, and shallow water slow everything down.",
+        "The Mangrove Swamp is too tangled to stand alone in with any confidence.",
+        "I waited in the Mangrove Swamp trying not to trip over roots while listening for danger.",
+        "If you disappear in a Mangrove Swamp, I am left ankle-deep in worry and swamp water."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "scenarios": [
+            "left_behind"
+          ],
+          "biome": "minecraft:mangrove_swamp"
+        }
+      ]
+    },
+    {
+      "id": "recruitment_left_behind_sparse_jungle",
+      "request": "recruitment_followup",
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20,
+      "lines": [
+        "Don't leave me in the Sparse Jungle. Fewer trees do not make it feel much safer.",
+        "The Sparse Jungle still has enough brush to hide trouble while I wait for you.",
+        "I stood in the Sparse Jungle trying to decide which rustle mattered most.",
+        "If you disappear in a Sparse Jungle, I am left with heat, brush, and too many maybes."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "scenarios": [
+            "left_behind"
+          ],
+          "biome": "minecraft:sparse_jungle"
+        }
+      ]
+    },
+    {
+      "id": "recruitment_left_behind_swamp",
+      "request": "recruitment_followup",
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20,
+      "lines": [
+        "Don't leave me in the Swamp. Mud, water, and gloom make a miserable watch post.",
+        "The Swamp is too soggy and too murky to be standing alone in.",
+        "I waited in the Swamp trying not to trip into the water while I looked for you.",
+        "If you disappear in a Swamp, I am left wading through mud and bad feelings."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "scenarios": [
+            "left_behind"
+          ],
+          "biome": "minecraft:swamp"
+        }
+      ]
+    }
+  ]
+}

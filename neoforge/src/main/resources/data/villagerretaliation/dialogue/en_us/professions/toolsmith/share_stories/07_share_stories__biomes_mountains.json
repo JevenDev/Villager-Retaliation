@@ -1,0 +1,60 @@
+{
+  "lines": [
+    {
+      "id": "toolsmith_share_story_meadow",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_biome": "minecraft:meadow",
+      "lines": [
+        "{target}? Gentle ground can make travelers careless. I would bring the right tool and leave pride behind.",
+        "If anyone heads for Meadow, tell them: Rest there, but do not forget night comes. I will be at the smithing table.",
+        "Flowers and bees do not bar the dark. I will remember that when I tighten the handles.",
+        "Meadow is no small story. Broken tools are easier to mend than broken people.",
+        "I will remember Meadow as soft grass that still needs a lantern. I will tighten the handles before trouble starts."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "toolsmith_share_story_stony_peaks",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_biome": "minecraft:stony_peaks",
+      "lines": [
+        "{target}? Stone peaks make every fall honest. I would bring the right tool and leave pride behind.",
+        "If anyone heads for Stony Peaks, tell them: Bring blocks and stop before your legs shake. I will be at the smithing table.",
+        "Bare rock gives little cover and no softness. I will remember that when I tighten the handles.",
+        "Stony Peaks is no small story. Broken tools are easier to mend than broken people.",
+        "I will remember Stony Peaks as high stone with hard answers. I will tighten the handles before trouble starts."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "toolsmith_share_story_windswept_gravelly_hills",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_biome": "minecraft:windswept_gravelly_hills",
+      "lines": [
+        "{target}? Gravel moves when you most need it still. I would bring the right tool and leave pride behind.",
+        "If anyone heads for Windswept Gravelly Hills, tell them: Test every slope before trusting it. I will be at the smithing table.",
+        "Loose stone tells lies under boots. I will remember that when I tighten the handles.",
+        "Windswept Gravelly Hills is no small story. Broken tools are easier to mend than broken people.",
+        "I will remember Windswept Gravelly Hills as windy hills that slide under pressure. I will tighten the handles before trouble starts."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "toolsmith_share_story_windswept_hills",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_biome": "minecraft:windswept_hills",
+      "lines": [
+        "{target}? Hard wind turns every edge into advice. I would bring the right tool and leave pride behind.",
+        "If anyone heads for Windswept Hills, tell them: Keep low and do not race the mountain. I will be at the smithing table.",
+        "Clouds move fast up there and so can mistakes. I will remember that when I tighten the handles.",
+        "Windswept Hills is no small story. Broken tools are easier to mend than broken people.",
+        "I will remember Windswept Hills as high rough land that talks in gusts. I will tighten the handles before trouble starts."
+      ],
+      "weight": 120
+    }
+  ]
+}

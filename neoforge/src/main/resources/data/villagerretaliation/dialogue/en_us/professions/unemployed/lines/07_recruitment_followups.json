@@ -1,0 +1,73 @@
+{
+  "lines": [
+    {
+      "id": "recruitment_followup_unemployed_safe",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "safe"
+      ],
+      "weight": 38,
+      "lines": [
+        "I do not have a trade for it yet, but coming home safely feels like honest work.",
+        "Home again, whole enough to thank you properly. That matters.",
+        "We came back with the village still ahead of us. I will count that as good work."
+      ]
+    },
+    {
+      "id": "recruitment_followup_unemployed_injured",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "injured"
+      ],
+      "weight": 38,
+      "lines": [
+        "I was looking for direction, not bruises. Still, I made it back.",
+        "I made it home, but the road took more from me than it should have.",
+        "Next time, let us return with fewer marks and better choices."
+      ]
+    },
+    {
+      "id": "recruitment_followup_unemployed_betrayed",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "recruitment_followup_scenarios": [
+        "betrayed"
+      ],
+      "weight": 42,
+      "lines": [
+        "I followed because I thought you knew where we were going. I was wrong about more than the road.",
+        "Following you was trust. What happened after was something else.",
+        "A guide who strikes from close by leaves the longest mark."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "excludes_ocean_crossing": true
+        }
+      ]
+    },
+    {
+      "id": "recruitment_followup_unemployed_boat",
+      "request": "recruitment_followup",
+      "option": "recruitment_followup",
+      "show_for_babies": false,
+      "weight": 42,
+      "lines": [
+        "I learned I am not ready for a career in boating. But I survived the lesson.",
+        "The boat did its part. I am still deciding whether the rest of the plan did.",
+        "Water carried us home, which is more than I expected from that journey."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "boat_trip": true
+        }
+      ]
+    }
+  ]
+}

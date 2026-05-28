@@ -1,0 +1,12 @@
+{
+  "openings": [
+    {
+      "id": "librarian_opening",
+      "lines": [
+        "Mind the lectern. What do you need?",
+        "Step clear of the lectern. What do you need?",
+        "Mind the lectern; I am listening."
+      ]
+    }
+  ]
+}

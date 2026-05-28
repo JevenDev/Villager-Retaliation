@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "nitwit_new_joke_thought",
+      "request": "joke",
+      "weight": 18,
+      "lines": [
+        "My joke <wavy>wandered off</wavy>, but it promised to be funny if it returns.",
+        "Odd jobs jokes need timing. Mine usually arrive with muddle on them.",
+        "I keep a spare joke near the sunny corner. It is not always ready for public use."
+      ]
+    }
+  ]
+}

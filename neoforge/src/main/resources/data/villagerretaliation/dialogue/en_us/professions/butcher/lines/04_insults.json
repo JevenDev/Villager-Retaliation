@@ -1,0 +1,28 @@
+{
+  "lines": [
+    {
+      "id": "butcher_new_insult_stale",
+      "request": "insult",
+      "weight": 18,
+      "lines": [
+        "That was stale enough to leave on the shelf.",
+        "I have seen bad meat with more sense than that.",
+        "Careful. Even salt looks softer than your manners right now."
+      ]
+    },
+    {
+      "id": "butcher_new_rude_manners",
+      "request": "insult",
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
+      "weight": 30,
+      "lines": [
+        "I have carved gristle with more grace than you brought here.",
+        "I have seen bad meat with more sense than that.",
+        "Careful. Even salt looks softer than your manners right now."
+      ]
+    }
+  ]
+}

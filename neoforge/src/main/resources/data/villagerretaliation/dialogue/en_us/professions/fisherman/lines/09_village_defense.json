@@ -1,0 +1,21 @@
+{
+  "lines": [
+    {
+      "id": "village_defense_fisherman_nets",
+      "request": "village_defense_report",
+      "option": "village_defense_report",
+      "show_for_babies": false,
+      "lines": [
+        "When trouble came in like a bad tide, you helped drag it back out.",
+        "A village is a harbor in its own way. You kept ours from burning.",
+        "The raid came in rough, and you helped break the current.",
+        "You kept the danger from dragging more of us under.",
+        "I saw you stand where the tide was meanest.",
+        "A safe harbor takes work. Yesterday, you did some.",
+        "The village rode out the storm because people held fast.",
+        "You helped haul the worst of that night away from our doors."
+      ],
+      "weight": 246
+    }
+  ]
+}

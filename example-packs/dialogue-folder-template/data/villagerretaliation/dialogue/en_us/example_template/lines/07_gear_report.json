@@ -1,0 +1,7 @@
+{
+  "id": "example_template.line.gear_report",
+  "request": "gear_report",
+  "option": "example_template.option.gear_report",
+  "text": "example",
+  "weight": 10
+}

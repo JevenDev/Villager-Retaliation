@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "nitwit_new_greeting_corner",
+      "request": "greeting",
+      "weight": 26,
+      "lines": [
+        "Hello. I was keeping this corner company.",
+        "Give the sunny corner room. Odd jobs works better without elbows in it.",
+        "Step carefully near the sunny corner. I would rather greet you than patch you up."
+      ]
+    }
+  ]
+}

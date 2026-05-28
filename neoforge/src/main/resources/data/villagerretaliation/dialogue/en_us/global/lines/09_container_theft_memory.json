@@ -1,0 +1,53 @@
+{
+  "lines": [
+    {
+      "id": "village_event_sandstorm_shared_1",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "sandstorm"
+      ],
+      "lines": [
+        "The wind came in <wavy>hard enough</wavy> to make the whole village taste like dust.",
+        "No rain here, just grit in the shutters and everyone checking their eyes.",
+        "The sand got everywhere, but people found their way indoors.",
+        "Harsh wind can scare a village nearly as well as thunder. We are still here.",
+        "We are sweeping doorways and counting heads after that wall of dust."
+      ],
+      "weight": 140
+    },
+    {
+      "id": "village_event_sandstorm_baby_1",
+      "request": "village_event_report",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "event_tags": [
+        "sandstorm"
+      ],
+      "lines": [
+        "The wind threw sand at the windows. I did not like the sound.",
+        "I got dust in my mouth even inside. How does it do that?",
+        "The grown-ups said cover my face, so I did.",
+        "It was like the ground tried to <wavy>fly away</wavy>.",
+        "I am okay, but my hair feels crunchy."
+      ],
+      "weight": 160
+    },
+    {
+      "id": "village_event_snowstorm_shared_1",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "snowstorm"
+      ],
+      "lines": [
+        "The snow came down hard, but the hearths held and the doors stayed shut.",
+        "Cold frightens <pulse>slowly</pulse>. We are checking fingers, roofs, and firewood.",
+        "The village went white and quiet for a while. <italic>Quiet is not always peace.</italic>",
+        "Everyone is chilled, but accounted for. Warmth matters now.",
+        "We are clearing paths before the snow hides what people need."
+      ],
+      "weight": 140
+    }
+  ]
+}

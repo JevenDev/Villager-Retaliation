@@ -1,0 +1,148 @@
+{
+  "openings": [
+    {
+      "id": "global_new_village_opening",
+      "show_for_babies": false,
+      "first_village_interaction_only": true,
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral",
+        "cautious"
+      ],
+      "lines": [
+        "You must be new here. What brings you to our <pulse>village</pulse>?",
+        "I do not know your face yet. What brings you here?",
+        "New footsteps in the village. What do you need?"
+      ]
+    },
+    {
+      "id": "global_new_villager_opening",
+      "show_for_babies": false,
+      "first_conversation_only": true,
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral",
+        "cautious"
+      ],
+      "lines": [
+        "I haven't seen you before. What brings you here?",
+        "I do not know your face yet. What brings you here?",
+        "New <pulse>footsteps</pulse> in the village. What do you need?"
+      ]
+    },
+    {
+      "id": "baby_new_village_opening",
+      "show_for_adults": false,
+      "first_village_interaction_only": true,
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral",
+        "cautious"
+      ],
+      "lines": [
+        "<jump>You must be new here.</jump> Are you visiting?",
+        "I do not know your face yet. What brings you here?",
+        "New footsteps in the village. What do you need?"
+      ]
+    },
+    {
+      "id": "baby_new_villager_opening",
+      "show_for_adults": false,
+      "first_conversation_only": true,
+      "dispositions": [
+        "respectful",
+        "friendly",
+        "neutral",
+        "cautious"
+      ],
+      "lines": [
+        "I haven't seen you before. Are you <jump>new</jump>?",
+        "I do not know your face yet. What brings you here?",
+        "New footsteps in the village. What do you need?"
+      ]
+    },
+    {
+      "id": "global_friendly_opening",
+      "show_for_babies": false,
+      "dispositions": [
+        "respectful",
+        "friendly"
+      ],
+      "lines": [
+        "Good to <pulse>see you</pulse>. What can I do for you?",
+        "Good to see you. What do you need?",
+        "Hello again. How can I help?"
+      ]
+    },
+    {
+      "id": "global_neutral_opening",
+      "show_for_babies": false,
+      "dispositions": [
+        "neutral",
+        "cautious"
+      ],
+      "lines": [
+        "Hello. What brings you here?",
+        "Hello. What do you need?",
+        "You have my attention for a moment."
+      ]
+    },
+    {
+      "id": "global_hostile_opening",
+      "show_for_babies": false,
+      "dispositions": [
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "lines": [
+        "You should make this quick.",
+        "Say what you need and keep it brief.",
+        "Speak <shake>quickly</shake>. I am listening for now."
+      ]
+    },
+    {
+      "id": "baby_friendly_opening",
+      "show_for_adults": false,
+      "dispositions": [
+        "respectful",
+        "friendly"
+      ],
+      "lines": [
+        "<jump>Hi!</jump> Did you come to visit?",
+        "Hi! Are you here to say hello?",
+        "Hello! Did you come to visit me?"
+      ]
+    },
+    {
+      "id": "baby_cautious_opening",
+      "show_for_adults": false,
+      "dispositions": [
+        "neutral",
+        "cautious",
+        "rude"
+      ],
+      "lines": [
+        "<wavy>Um.</wavy> Are you here to talk?",
+        "Um. I can listen if you are nice.",
+        "Are we talking safely?"
+      ]
+    },
+    {
+      "id": "baby_afraid_opening",
+      "show_for_adults": false,
+      "dispositions": [
+        "hostile",
+        "fearful"
+      ],
+      "lines": [
+        "I can listen, but then I am going back inside.",
+        "I can talk for a little bit, but I am staying near the door.",
+        "You can say something, but I am keeping <shake>space</shake>."
+      ]
+    }
+  ]
+}

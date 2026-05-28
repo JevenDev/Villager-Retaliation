@@ -1,0 +1,7 @@
+{
+  "id": "example_template.line.village_event_report",
+  "request": "village_event_report",
+  "option": "example_template.option.village_event_report",
+  "text": "example",
+  "weight": 10
+}

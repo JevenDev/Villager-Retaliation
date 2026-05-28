@@ -1,0 +1,7 @@
+{
+  "id": "example_template.line.story_hint_report",
+  "request": "story_hint_report",
+  "option": "example_template.option.story_hint_report",
+  "text": "example",
+  "weight": 10
+}

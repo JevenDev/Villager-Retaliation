@@ -1,0 +1,101 @@
+{
+  "lines": [
+    {
+      "id": "butcher_village_event_thunderstorm",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "thunderstorm"
+      ],
+      "lines": [
+        "Thunder shook the smoker so hard the smoker coughed smoke sideways, but everyone near me is still standing.",
+        "I checked the smoker, hooks, and food barrels after the lightning, then counted heads. No one should be alone after a sky like that.",
+        "Near the smoker, the bell sounded small under that thunder. We stayed inside and kept the doors watched.",
+        "That thunder made everyone quiet. I checked the food barrels twice.",
+        "The sky can keep its lightning. I have food barrels to set right."
+      ],
+      "weight": 170
+    },
+    {
+      "id": "butcher_village_event_fire",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "village_fire"
+      ],
+      "lines": [
+        "I checked grease, wood, and hanging meat for sparks first, then checked faces for smoke and fear.",
+        "We passed water hand to hand and kept people away from the smoke. I checked the smoker after.",
+        "The smoker can wait. People come first.",
+        "We saved what we could reach around the smoker, then stopped pretending things matter more than neighbors.",
+        "The smoke is thinning near the smoker, but everyone is still sniffing the air like it might lie."
+      ],
+      "weight": 170
+    },
+    {
+      "id": "butcher_village_event_raid",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "raid",
+        "player_defended_raid"
+      ],
+      "lines": [
+        "During a raid, the smoker can go cold; who makes it behind a door matters more.",
+        "The horns stopped, but my hands near the smoker still expect another wave from the road.",
+        "We counted living neighbors before the smoker, hooks, and food barrels. That is the only count worth starting with.",
+        "Raiders came looking for easy emeralds. They found barred doors near the smoker and a bell that would not stop ringing.",
+        "From the smoker, I saw fear cross the square; then I saw courage get there first."
+      ],
+      "weight": 170
+    },
+    {
+      "id": "butcher_village_event_night_attack",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "night_attack"
+      ],
+      "lines": [
+        "Night trouble tests the loose latch by the smoker first. We are fixing those before sunset.",
+        "I stayed near the back door by the smoker and listened for anyone calling from the dark.",
+        "Dawn gave the smoker enough light to count wounds, missing blocks, and who made it home.",
+        "The dark tested everyone. Most of us passed by keeping salted meat for the watch between us and teeth.",
+        "We are safe enough near the smoker, though every shadow is being inspected twice."
+      ],
+      "weight": 170
+    },
+    {
+      "id": "butcher_village_event_sandstorm",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "sandstorm"
+      ],
+      "lines": [
+        "The wind threw sand through every crack. I am still cleaning dust out of the meat barrels.",
+        "I checked the smoker, hooks, and food barrels, then checked who was coughing too hard to answer.",
+        "Sand reached the smoker, the hinges, and half our eyes, but no one has been reported missing.",
+        "A hard wind teaches a butcher which doors actually close and which ones only pretend.",
+        "We are safe enough near the smoker, though the whole village sounds like it is chewing gravel."
+      ],
+      "weight": 170
+    },
+    {
+      "id": "butcher_village_event_snowstorm",
+      "request": "village_event_report",
+      "show_for_babies": false,
+      "event_tags": [
+        "snowstorm"
+      ],
+      "lines": [
+        "The smoker can go cold. Warm hands, clear paths, and full hearths come first.",
+        "Snow piled against the doors, but everyone near the smoker found shelter.",
+        "Cold works quietly around the smoker. We are checking on anyone who stayed quiet too long.",
+        "I am clearing snow off the smoker roof and watching for footprints that stop too soon.",
+        "We are alright for now near the smoker. Keep the fires fed and the paths open."
+      ],
+      "weight": 170
+    }
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "lines": [
+    {
+      "id": "unemployed_question_work_variants",
+      "request": "question",
+      "lines": [
+        "Finding the right work is harder when everyone asks if you found it yet.",
+        "Work is work. Finding the right work is the tricky part.",
+        "Waiting for work is still work if you look <pulse>worried enough</pulse>.",
+        "Where do I fit? Somewhere useful, I hope, preferably before supper.",
+        "People with trades get tasks. People without trades get errands.",
+        "A fair chance is easier to ask for than to recognize."
+      ],
+      "weight": 172
+    },
+    {
+      "id": "unemployed_new_cautious_useful",
+      "request": "question",
+      "dispositions": [
+        "cautious",
+        "fearful"
+      ],
+      "weight": 30,
+      "lines": [
+        "I am trying to look useful, not involved.",
+        "Keep your voice even. I am measuring more than your words.",
+        "Some questions are safer when they stand a little farther away."
+      ]
+    },
+    {
+      "id": "question_follow_memory_unemployed",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "weight": 3,
+      "lines": [
+        "I followed you once and learned something: I need better shoes before I choose a trade.",
+        "I remember following you through that road. My feet remember it even better.",
+        "That trip across that road taught me to ask more questions before walking."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "excludes_ocean_crossing": true
+        }
+      ]
+    },
+    {
+      "id": "question_follow_memory_unemployed_boat",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "weight": 3,
+      "lines": [
+        "I followed you into a boat once. Not a trade, apparently, but it felt like training.",
+        "That boat trip still sits oddly in my memory, but at least it floated.",
+        "A boat can make a bad plan quieter. It cannot make me forget it."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "boat_trip": true
+        }
+      ]
+    }
+  ]
+}

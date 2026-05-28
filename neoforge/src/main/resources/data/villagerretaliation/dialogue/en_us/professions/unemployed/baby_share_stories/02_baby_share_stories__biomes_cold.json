@@ -1,0 +1,212 @@
+{
+  "lines": [
+    {
+      "id": "baby_share_story_cold_ocean",
+      "request": "share_story",
+      "option": "baby_share_story",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "story_biome": "minecraft:cold_ocean",
+      "lines": [
+        "You went to {target}? I am glad you came back. Cold Ocean sounds too big for me.",
+        "Cold Ocean sounds scary because cold water steals strength quickly. I would stay near a grown-up.",
+        "If I saw Cold Ocean, I would hold my bread tight and keep the village bell in mind.",
+        "Please tell the story of Cold Ocean from the safe part, where you got home.",
+        "I am not going to Cold Ocean. I am very good at not going there."
+      ],
+      "weight": 140
+    },
+    {
+      "id": "baby_share_story_deep_cold_ocean",
+      "request": "share_story",
+      "option": "baby_share_story",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "story_biome": "minecraft:deep_cold_ocean",
+      "lines": [
+        "You went to {target}? I am glad you came back. Deep Cold Ocean sounds too big for me.",
+        "Deep Cold Ocean sounds scary because deep cold leaves little room for mistakes. I would stay near a grown-up.",
+        "If I saw Deep Cold Ocean, I would hold my bread tight and keep the village bell in mind.",
+        "Please tell the story of Deep Cold Ocean from the safe part, where you got home.",
+        "I am not going to Deep Cold Ocean. I am very good at not going there."
+      ],
+      "weight": 140
+    },
+    {
+      "id": "baby_share_story_deep_frozen_ocean",
+      "request": "share_story",
+      "option": "baby_share_story",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "story_biome": "minecraft:deep_frozen_ocean",
+      "lines": [
+        "You went to {target}? I am glad you came back. Deep Frozen Ocean sounds too big for me.",
+        "Deep Frozen Ocean sounds scary because ice above and depth below make a cruel pair. I would stay near a grown-up.",
+        "If I saw Deep Frozen Ocean, I would hold my bread tight and keep the village bell in mind.",
+        "Please tell the story of Deep Frozen Ocean from the safe part, where you got home.",
+        "I am not going to Deep Frozen Ocean. I am very good at not going there."
+      ],
+      "weight": 140
+    },
+    {
+      "id": "baby_share_story_frozen_ocean",
+      "request": "share_story",
+      "option": "baby_share_story",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "story_biome": "minecraft:frozen_ocean",
+      "lines": [
+        "You went to {target}? I am glad you came back. Frozen Ocean sounds too big for me.",
+        "Frozen Ocean sounds scary because ice over water is a promise with cracks. I would stay near a grown-up.",
+        "If I saw Frozen Ocean, I would hold my bread tight and keep the village bell in mind.",
+        "Please tell the story of Frozen Ocean from the safe part, where you got home.",
+        "I am not going to Frozen Ocean. I am very good at not going there."
+      ],
+      "weight": 140
+    },
+    {
+      "id": "baby_share_story_frozen_peaks",
+      "request": "share_story",
+      "option": "baby_share_story",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "story_biome": "minecraft:frozen_peaks",
+      "lines": [
+        "You went to {target}? I am glad you came back. Frozen Peaks sounds too big for me.",
+        "Frozen Peaks sounds scary because mountain cold sharpens every mistake. I would stay near a grown-up.",
+        "If I saw Frozen Peaks, I would hold my bread tight and keep the village bell in mind.",
+        "Please tell the story of Frozen Peaks from the safe part, where you got home.",
+        "I am not going to Frozen Peaks. I am very good at not going there."
+      ],
+      "weight": 140
+    },
+    {
+      "id": "baby_share_story_frozen_river",
+      "request": "share_story",
+      "option": "baby_share_story",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "story_biome": "minecraft:frozen_river",
+      "lines": [
+        "You went to {target}? I am glad you came back. Frozen River sounds too big for me.",
+        "Frozen River sounds scary because a frozen crossing can betray a heavy foot. I would stay near a grown-up.",
+        "If I saw Frozen River, I would hold my bread tight and keep the village bell in mind.",
+        "Please tell the story of Frozen River from the safe part, where you got home.",
+        "I am not going to Frozen River. I am very good at not going there."
+      ],
+      "weight": 140
+    },
+    {
+      "id": "baby_share_story_grove",
+      "request": "share_story",
+      "option": "baby_share_story",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "story_biome": "minecraft:grove",
+      "lines": [
+        "You went to {target}? I am glad you came back. Grove sounds too big for me.",
+        "Grove sounds scary because snowy trees make quiet steps too easy. I would stay near a grown-up.",
+        "If I saw Grove, I would hold my bread tight and keep the village bell in mind.",
+        "Please tell the story of Grove from the safe part, where you got home.",
+        "I am not going to Grove. I am very good at not going there."
+      ],
+      "weight": 140
+    },
+    {
+      "id": "baby_share_story_ice_spikes",
+      "request": "share_story",
+      "option": "baby_share_story",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "story_biome": "minecraft:ice_spikes",
+      "lines": [
+        "You went to {target}? I am glad you came back. Ice Spikes sounds too big for me.",
+        "Ice Spikes sounds scary because ice stands tall enough to turn wind mean. I would stay near a grown-up.",
+        "If I saw Ice Spikes, I would hold my bread tight and keep the village bell in mind.",
+        "Please tell the story of Ice Spikes from the safe part, where you got home.",
+        "I am not going to Ice Spikes. I am very good at not going there."
+      ],
+      "weight": 140
+    },
+    {
+      "id": "baby_share_story_jagged_peaks",
+      "request": "share_story",
+      "option": "baby_share_story",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "story_biome": "minecraft:jagged_peaks",
+      "lines": [
+        "You went to {target}? I am glad you came back. Jagged Peaks sounds too big for me.",
+        "Jagged Peaks sounds scary because sharp mountains punish tired feet. I would stay near a grown-up.",
+        "If I saw Jagged Peaks, I would hold my bread tight and keep the village bell in mind.",
+        "Please tell the story of Jagged Peaks from the safe part, where you got home.",
+        "I am not going to Jagged Peaks. I am very good at not going there."
+      ],
+      "weight": 140
+    },
+    {
+      "id": "baby_share_story_snowy_beach",
+      "request": "share_story",
+      "option": "baby_share_story",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "story_biome": "minecraft:snowy_beach",
+      "lines": [
+        "You went to {target}? I am glad you came back. Snowy Beach sounds too big for me.",
+        "Snowy Beach sounds scary because snow and surf make cold from both sides. I would stay near a grown-up.",
+        "If I saw Snowy Beach, I would hold my bread tight and keep the village bell in mind.",
+        "Please tell the story of Snowy Beach from the safe part, where you got home.",
+        "I am not going to Snowy Beach. I am very good at not going there."
+      ],
+      "weight": 140
+    },
+    {
+      "id": "baby_share_story_snowy_plains",
+      "request": "share_story",
+      "option": "baby_share_story",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "story_biome": "minecraft:snowy_plains",
+      "lines": [
+        "You went to {target}? I am glad you came back. Snowy Plains sounds too big for me.",
+        "Snowy Plains sounds scary because white ground shows tracks and hides holes. I would stay near a grown-up.",
+        "If I saw Snowy Plains, I would hold my bread tight and keep the village bell in mind.",
+        "Please tell the story of Snowy Plains from the safe part, where you got home.",
+        "I am not going to Snowy Plains. I am very good at not going there."
+      ],
+      "weight": 140
+    },
+    {
+      "id": "baby_share_story_snowy_slopes",
+      "request": "share_story",
+      "option": "baby_share_story",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "story_biome": "minecraft:snowy_slopes",
+      "lines": [
+        "You went to {target}? I am glad you came back. Snowy Slopes sounds too big for me.",
+        "Snowy Slopes sounds scary because powder snow can swallow a careless step. I would stay near a grown-up.",
+        "If I saw Snowy Slopes, I would hold my bread tight and keep the village bell in mind.",
+        "Please tell the story of Snowy Slopes from the safe part, where you got home.",
+        "I am not going to Snowy Slopes. I am very good at not going there."
+      ],
+      "weight": 140
+    },
+    {
+      "id": "baby_share_story_snowy_taiga",
+      "request": "share_story",
+      "option": "baby_share_story",
+      "show_for_adults": false,
+      "show_for_babies": true,
+      "story_biome": "minecraft:snowy_taiga",
+      "lines": [
+        "You went to {target}? I am glad you came back. Snowy Taiga sounds too big for me.",
+        "Snowy Taiga sounds scary because cold trees make long watches longer. I would stay near a grown-up.",
+        "If I saw Snowy Taiga, I would hold my bread tight and keep the village bell in mind.",
+        "Please tell the story of Snowy Taiga from the safe part, where you got home.",
+        "I am not going to Snowy Taiga. I am very good at not going there."
+      ],
+      "weight": 140
+    }
+  ]
+}

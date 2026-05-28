@@ -1,0 +1,21 @@
+{
+  "lines": [
+    {
+      "id": "combat_survival_farmer",
+      "request": "combat_survival_report",
+      "option": "combat_survival_report",
+      "show_for_babies": false,
+      "lines": [
+        "Fields teach patience. Fights teach exactly when patience has run out.",
+        "Mud on my boots, fear in my throat, and home still ahead. I made it.",
+        "I made it back with mud on my knees and luck in both pockets.",
+        "The field path never felt so long. The village never looked so good.",
+        "I kept thinking about sunrise. That helped me keep moving.",
+        "I have weathered storms, but storms do not usually carry axes.",
+        "Home was the only crop I cared about reaching.",
+        "My boots are ruined. I am not. Good trade."
+      ],
+      "weight": 234
+    }
+  ]
+}

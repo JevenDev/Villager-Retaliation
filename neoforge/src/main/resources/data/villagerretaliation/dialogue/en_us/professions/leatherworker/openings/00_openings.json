@@ -1,0 +1,12 @@
+{
+  "openings": [
+    {
+      "id": "leatherworker_opening",
+      "lines": [
+        "Mind the tannery. What do you need?",
+        "Step clear of the tannery. What do you need?",
+        "Mind the tannery; I am listening."
+      ]
+    }
+  ]
+}

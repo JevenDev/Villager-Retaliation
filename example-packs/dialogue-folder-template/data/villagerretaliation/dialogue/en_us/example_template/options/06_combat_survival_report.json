@@ -1,0 +1,6 @@
+{
+  "id": "example_template.option.combat_survival_report",
+  "label": "Example Combat Survival Report",
+  "request": "combat_survival_report",
+  "order": 6
+}

@@ -1,0 +1,94 @@
+{
+  "lines": [
+    {
+      "id": "combat_survival_global_breath",
+      "request": "combat_survival_report",
+      "option": "combat_survival_report",
+      "show_for_babies": false,
+      "lines": [
+        "I did. Still breathing, still standing. That counts for more than it sounds.",
+        "Back to the village in one piece. I will remember who helped make that true.",
+        "I am here, breathing, and trying not to <shake>shake</shake>. That is enough for now."
+      ],
+      "weight": 52
+    },
+    {
+      "id": "baby_today_question_hiding_place",
+      "request": "question",
+      "option": "baby_today_question",
+      "show_for_adults": false,
+      "lines": [
+        "I found a really good hiding place, but I cannot tell you or it stops being good.",
+        "The bell is loud up close. I learned that by mistake.",
+        "Today I found a place where grown-ups forget to look down."
+      ],
+      "weight": 47
+    },
+    {
+      "id": "baby_greeting_hi_again",
+      "request": "greeting",
+      "option": "baby_greeting",
+      "show_for_adults": false,
+      "weight": 25,
+      "lines": [
+        "<jump>Hi again!</jump>",
+        "Hi! I remember your face a little.",
+        "Hello again! I was practicing saying hello first."
+      ]
+    },
+    {
+      "id": "baby_greeting_from_here",
+      "request": "greeting",
+      "option": "baby_greeting",
+      "show_for_adults": false,
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 24,
+      "lines": [
+        "I can say hello from here.",
+        "Hello from this safe distance.",
+        "I can <wavy>wave</wavy> from here. That counts."
+      ]
+    },
+    {
+      "id": "baby_question_doors_bells",
+      "request": "question",
+      "option": "baby_question",
+      "show_for_adults": false,
+      "lines": [
+        "A question? I know three things: doors, bells, and which path has puddles.",
+        "Ask a grown-up. They like sounding certain.",
+        "I know where the puddles are and which door creaks loudest."
+      ],
+      "weight": 46
+    },
+    {
+      "id": "baby_story_well",
+      "request": "story",
+      "option": "baby_story",
+      "show_for_adults": false,
+      "lines": [
+        "Once I ran all the way around the well and did not fall in. That is the whole story, but it was <jump>very exciting</jump>.",
+        "I had a <wavy>dream</wavy> I was tall enough to see over every fence.",
+        "I counted every door on this side of the square. Then I forgot the number and had to start over."
+      ],
+      "weight": 42
+    },
+    {
+      "id": "baby_joke_bell",
+      "request": "joke",
+      "option": "baby_joke",
+      "show_for_adults": false,
+      "lines": [
+        "Why did the bell ring? Because it had something <jump>important</jump> to say!",
+        "If I stand very still, chores cannot see me.",
+        "Why did the door close? Because the wind was bossy."
+      ],
+      "weight": 44
+    }
+  ]
+}

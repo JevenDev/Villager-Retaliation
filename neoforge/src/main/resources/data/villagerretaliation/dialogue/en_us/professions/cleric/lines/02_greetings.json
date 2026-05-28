@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "cleric_new_greeting_bottles",
+      "request": "greeting",
+      "weight": 26,
+      "lines": [
+        "Mind the bottles. Some are medicine, some are mistakes I have not named yet.",
+        "Give the brewing stand room. Remedies works better without elbows in it.",
+        "Step carefully near the brewing stand. I would rather greet you than patch you up."
+      ]
+    }
+  ]
+}

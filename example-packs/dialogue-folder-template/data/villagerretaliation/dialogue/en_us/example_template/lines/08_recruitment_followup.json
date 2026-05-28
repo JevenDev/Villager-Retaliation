@@ -1,0 +1,7 @@
+{
+  "id": "example_template.line.recruitment_followup",
+  "request": "recruitment_followup",
+  "option": "example_template.option.recruitment_followup",
+  "text": "example",
+  "weight": 10
+}

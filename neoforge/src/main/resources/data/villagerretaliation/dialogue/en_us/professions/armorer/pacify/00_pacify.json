@@ -1,0 +1,40 @@
+{
+  "pacify": [
+    {
+      "id": "armorer_pacify_success",
+      "outcomes": [
+        "success"
+      ],
+      "weight": 26,
+      "lines": [
+        "Fine. I will lower my guard, but I am keeping the straps tight.",
+        "Fine. I will set this down before it gets heavier.",
+        "Fine. I can step back, but do not make me regret it."
+      ]
+    },
+    {
+      "id": "armorer_pacify_short",
+      "outcomes": [
+        "not_enough_emeralds"
+      ],
+      "weight": 26,
+      "lines": [
+        "That will not cover the dent you put in my patience. It takes {emerald_cost} {emeralds}.",
+        "That is short of the full repair. Bring {emerald_cost} {emeralds}.",
+        "Not enough. It takes {emerald_cost} {emeralds} to settle this."
+      ]
+    },
+    {
+      "id": "armorer_pacify_blocked",
+      "outcomes": [
+        "blocked_by_reputation"
+      ],
+      "weight": 26,
+      "lines": [
+        "No. Armor is for people I mean to protect, and that is not you right now.",
+        "No. Some damage has to cool before payment matters.",
+        "No. Keep {payment_items}; trust is not ready to trade."
+      ]
+    }
+  ]
+}

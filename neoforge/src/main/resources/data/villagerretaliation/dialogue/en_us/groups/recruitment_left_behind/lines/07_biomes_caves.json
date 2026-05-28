@@ -1,0 +1,70 @@
+{
+  "lines": [
+    {
+      "id": "recruitment_left_behind_deep_dark",
+      "request": "recruitment_followup",
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20,
+      "lines": [
+        "Don't leave me in the Deep Dark. I do not want to learn what <pulse>hears me first</pulse> down there.",
+        "The Deep Dark is not a place for patience. It is a place for <shake>panic whispered quietly</shake>.",
+        "I stood in the Deep Dark afraid even my <pulse>breathing</pulse> was too loud once you were gone.",
+        "If you disappear in the Deep Dark, I am left measuring every sound like it might be my last."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "scenarios": [
+            "left_behind"
+          ],
+          "biome": "minecraft:deep_dark"
+        }
+      ]
+    },
+    {
+      "id": "recruitment_left_behind_dripstone_caves",
+      "request": "recruitment_followup",
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20,
+      "lines": [
+        "Don't leave me in the Dripstone Caves. One wrong step and the cave does the rest.",
+        "The Dripstone Caves are all sharp ceilings and sharper floors. I hated waiting there alone.",
+        "I was stuck in the Dripstone Caves watching every spike like it had chosen me <italic>personally</italic>.",
+        "If you vanish in the Dripstone Caves, I am left between falling stone and bad footing."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "scenarios": [
+            "left_behind"
+          ],
+          "biome": "minecraft:dripstone_caves"
+        }
+      ]
+    },
+    {
+      "id": "recruitment_left_behind_lush_caves",
+      "request": "recruitment_followup",
+      "option": "recruitment_left_behind",
+      "show_for_babies": false,
+      "weight": 20,
+      "lines": [
+        "Don't leave me in the Lush Caves. Pretty moss does not make caves any safer.",
+        "The Lush Caves are beautiful until you remember how easy it is to get lost underground.",
+        "I was waiting in the Lush Caves with dripping water and too many unseen corners.",
+        "If you vanish in the Lush Caves, I am left admiring plants while worrying about monsters."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "scenarios": [
+            "left_behind"
+          ],
+          "biome": "minecraft:lush_caves"
+        }
+      ]
+    }
+  ]
+}

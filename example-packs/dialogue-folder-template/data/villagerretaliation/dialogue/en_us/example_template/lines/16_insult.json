@@ -1,0 +1,7 @@
+{
+  "id": "example_template.line.insult",
+  "request": "insult",
+  "option": "example_template.option.insult",
+  "text": "example",
+  "weight": 10
+}

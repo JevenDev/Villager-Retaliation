@@ -1,0 +1,28 @@
+{
+  "lines": [
+    {
+      "id": "shepherd_new_insult_tangle",
+      "request": "insult",
+      "weight": 18,
+      "lines": [
+        "That thought tangled itself before it reached the loom.",
+        "I have seen tangled threads with more sense than that.",
+        "Careful. Even wool looks softer than your manners right now."
+      ]
+    },
+    {
+      "id": "shepherd_new_rude_work",
+      "request": "insult",
+      "dispositions": [
+        "rude",
+        "hostile"
+      ],
+      "weight": 30,
+      "lines": [
+        "Do not pull at work you do not understand.",
+        "I have seen tangled threads with more sense than that.",
+        "Careful. Even wool looks softer than your manners right now."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "lines": [
+    {
+      "id": "fisherman_share_story_mushroom_fields",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_biome": "minecraft:mushroom_fields",
+      "lines": [
+        "{target}? Strange quiet can make a place feel too safe. I would keep rope dry and a boat tied.",
+        "If anyone heads for Mushroom Fields, tell them: Eat only what you know and keep your boat close. I will be at the barrel.",
+        "Mycelium underfoot is not village dirt. I will remember that when I coil the rope.",
+        "Mushroom Fields is no small story. Deep trouble does not always look deep.",
+        "I will remember Mushroom Fields as odd land where even the grass changed its mind. I will keep a rope ready."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "fisherman_share_story_plains",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_biome": "minecraft:plains",
+      "lines": [
+        "{target}? Open ground shows you to everything else. I would keep rope dry and a boat tied.",
+        "If anyone heads for Plains, tell them: Keep moving and watch the horizon. I will be at the barrel.",
+        "Grass bends before trouble arrives if you look. I will remember that when I coil the rope.",
+        "Plains is no small story. Deep trouble does not always look deep.",
+        "I will remember Plains as wide land with nowhere to hide after dark. I will keep a rope ready."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "fisherman_share_story_sunflower_plains",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_biome": "minecraft:sunflower_plains",
+      "lines": [
+        "{target}? Sunny fields can still point toward trouble. I would keep rope dry and a boat tied.",
+        "If anyone heads for Sunflower Plains, tell them: Enjoy the flowers with a torch ready. I will be at the barrel.",
+        "Sunflowers face light, not safety. I will remember that when I coil the rope.",
+        "Sunflower Plains is no small story. Deep trouble does not always look deep.",
+        "I will remember Sunflower Plains as bright fields that still grow dark at night. I will keep a rope ready."
+      ],
+      "weight": 120
+    }
+  ]
+}

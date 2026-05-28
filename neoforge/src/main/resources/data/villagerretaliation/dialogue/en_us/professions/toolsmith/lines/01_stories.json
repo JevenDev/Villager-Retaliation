@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "toolsmith_story_tool_variants",
+      "request": "story",
+      "lines": [
+        "A good tool is <pulse>quiet proof</pulse> that someone cared before trouble started.",
+        "I once fixed a pick that had seen more stone than sense.",
+        "A shovel broke on me once because I asked it to do axe work."
+      ],
+      "weight": 74
+    }
+  ]
+}

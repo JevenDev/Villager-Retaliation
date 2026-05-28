@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "unemployed_new_joke_flexible",
+      "request": "joke",
+      "weight": 18,
+      "lines": [
+        "Unemployed jokes are <wavy>flexible</wavy>. That is what I keep telling myself.",
+        "Looking useful jokes need timing. Mine usually arrive with time on them.",
+        "I keep a spare joke near the job site I have not found yet. It is not always ready for public use."
+      ]
+    }
+  ]
+}

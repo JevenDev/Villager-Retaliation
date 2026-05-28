@@ -1,0 +1,11 @@
+{
+  "notifications": [
+    {
+      "id": "example_template.notification.ambient",
+      "trigger": "ambient.murmur",
+      "text": "example",
+      "world_text_kind": "murmur",
+      "weight": 10
+    }
+  ]
+}

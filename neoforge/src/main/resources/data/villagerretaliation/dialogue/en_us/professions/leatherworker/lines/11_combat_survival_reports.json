@@ -1,0 +1,21 @@
+{
+  "lines": [
+    {
+      "id": "combat_survival_leatherworker",
+      "request": "combat_survival_report",
+      "option": "combat_survival_report",
+      "show_for_babies": false,
+      "lines": [
+        "Scratches, scuffs, and one strap I do not trust anymore. Nothing I cannot mend.",
+        "Wore half the sole off one boot getting back. Worth it.",
+        "My boots earned every scuff getting back here.",
+        "I will be stitching straps until sunrise, but I am here to stitch them.",
+        "The night pulled hard. Good seams held.",
+        "I came home with scratches, not silence. I prefer scratches.",
+        "One sole nearly split and my courage nearly followed. Both held.",
+        "I can mend the gear. The shaking may take longer."
+      ],
+      "weight": 234
+    }
+  ]
+}

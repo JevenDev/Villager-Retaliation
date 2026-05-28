@@ -1,0 +1,7 @@
+{
+  "id": "example_template.line.story",
+  "request": "story",
+  "option": "example_template.option.story",
+  "text": "example",
+  "weight": 10
+}

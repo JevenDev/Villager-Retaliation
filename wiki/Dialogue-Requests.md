@@ -2,7 +2,7 @@
 
 Dialogue options and response lines use separate fields so author intent stays clear:
 
-- `options[].type` must be `dialogue_option`, which means the entry appears as a selectable talk-menu choice.
+- `options[].type`, when present, must be `dialogue_option`. New files under an `options/` folder can omit it.
 - `options[].request` chooses the response pool or built-in system request sent when the player clicks that option.
 - `lines[].request` chooses which response pool a line belongs to.
 

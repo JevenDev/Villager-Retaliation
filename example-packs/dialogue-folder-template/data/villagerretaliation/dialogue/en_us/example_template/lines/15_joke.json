@@ -1,0 +1,7 @@
+{
+  "id": "example_template.line.joke",
+  "request": "joke",
+  "option": "example_template.option.joke",
+  "text": "example",
+  "weight": 10
+}

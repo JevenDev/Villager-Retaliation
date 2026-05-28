@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "unemployed_new_greeting_site",
+      "request": "greeting",
+      "weight": 26,
+      "lines": [
+        "If you see a spare job site, do mention it kindly.",
+        "Give the job site I have not found yet room. Looking useful works better without elbows in it.",
+        "Step carefully near the job site I have not found yet. I would rather greet you than patch you up."
+      ]
+    }
+  ]
+}

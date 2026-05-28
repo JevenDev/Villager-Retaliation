@@ -1,0 +1,6 @@
+{
+  "id": "example_template.option.insult",
+  "label": "Example Insult",
+  "request": "insult",
+  "order": 16
+}

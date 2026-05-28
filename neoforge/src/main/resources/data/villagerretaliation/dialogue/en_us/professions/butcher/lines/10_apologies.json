@@ -1,0 +1,21 @@
+{
+  "lines": [
+    {
+      "id": "apology_butcher_blunt",
+      "request": "apology",
+      "option": "apologize_for_harm",
+      "show_for_babies": false,
+      "lines": [
+        "That was bluntly said. Good. Blunt is better than pretending nothing happened.",
+        "I clean up messes for a living. This one is yours to clean properly.",
+        "I prefer clean cuts to messy words. That was clean enough to hear.",
+        "You made a mess. Start by not making another one.",
+        "An apology does not put things back on the hook, but it is a beginning.",
+        "I will take the words. I will judge the hands.",
+        "Fine. Say it once, then prove it every time after.",
+        "I know when something has gone bad. This does not have to."
+      ],
+      "weight": 234
+    }
+  ]
+}

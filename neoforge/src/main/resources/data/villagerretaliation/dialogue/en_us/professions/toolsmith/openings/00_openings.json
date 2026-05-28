@@ -1,0 +1,12 @@
+{
+  "openings": [
+    {
+      "id": "toolsmith_opening",
+      "lines": [
+        "Mind the smithing table. What do you need?",
+        "Step clear of the smithing table. What do you need?",
+        "Mind the smithing table; I am listening."
+      ]
+    }
+  ]
+}

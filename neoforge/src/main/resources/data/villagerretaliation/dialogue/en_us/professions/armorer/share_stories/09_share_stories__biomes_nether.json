@@ -1,0 +1,74 @@
+{
+  "lines": [
+    {
+      "id": "armorer_share_story_basalt_deltas",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_biome": "minecraft:basalt_deltas",
+      "lines": [
+        "{target}? Black stone and lava leave little mercy. I would tighten a shield strap.",
+        "If anyone heads for Basalt Deltas, tell them: Step like every block wants an argument. I will be at the forge.",
+        "Ash and basalt make the Nether feel broken twice. I will remember that when I check the shields.",
+        "Basalt Deltas is no small story. Good armor does not make a fool safe.",
+        "I will remember Basalt Deltas as as jagged black country with heat in its cracks. I will keep a shield by the door."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "armorer_share_story_crimson_forest",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_biome": "minecraft:crimson_forest",
+      "lines": [
+        "{target}? Red Nether trees grow among hoglins and worse. I would tighten a shield strap.",
+        "If anyone heads for Crimson Forest, tell them: Keep gold on and eyes open. I will be at the forge.",
+        "The whole forest looks like it has a pulse. I will remember that when I check the shields.",
+        "Crimson Forest is no small story. Good armor does not make a fool safe.",
+        "I will remember Crimson Forest as a red forest that feels too alive. I will keep a shield by the door."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "armorer_share_story_nether_wastes",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_biome": "minecraft:nether_wastes",
+      "lines": [
+        "{target}? The Nether wastes neither heat nor cruelty. I would tighten a shield strap.",
+        "If anyone heads for Nether Wastes, tell them: Watch ghasts, cliffs, and every pool of lava. I will be at the forge.",
+        "Netherrack crumbles like it enjoys the fall. I will remember that when I check the shields.",
+        "Nether Wastes is no small story. Good armor does not make a fool safe.",
+        "I will remember Nether Wastes as red stone and fire with no decent sky. I will keep a shield by the door."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "armorer_share_story_soul_sand_valley",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_biome": "minecraft:soul_sand_valley",
+      "lines": [
+        "{target}? The ground pulls back when you try to leave. I would tighten a shield strap.",
+        "If anyone heads for Soul Sand Valley, tell them: Wear good boots and keep ghasts in mind. I will be at the forge.",
+        "Soul sand makes every step feel watched. I will remember that when I check the shields.",
+        "Soul Sand Valley is no small story. Good armor does not make a fool safe.",
+        "I will remember Soul Sand Valley as a valley where the floor does not want guests. I will keep a shield by the door."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "armorer_share_story_warped_forest",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_biome": "minecraft:warped_forest",
+      "lines": [
+        "{target}? Blue Nether trees make sense feel optional. I would tighten a shield strap.",
+        "If anyone heads for Warped Forest, tell them: Keep gold on and eyes off trouble. I will be at the forge.",
+        "Warped wood looks wrong even before it moves. I will remember that when I check the shields.",
+        "Warped Forest is no small story. Good armor does not make a fool safe.",
+        "I will remember Warped Forest as a blue forest that forgot what forests are for. I will keep a shield by the door."
+      ],
+      "weight": 120
+    }
+  ]
+}

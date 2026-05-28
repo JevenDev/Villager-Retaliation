@@ -1,0 +1,60 @@
+{
+  "lines": [
+    {
+      "id": "nitwit_share_story_meadow",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_biome": "minecraft:meadow",
+      "lines": [
+        "{target}? Gentle ground can make travelers careless. I would stay close enough to hear the bell.",
+        "If anyone heads for Meadow, tell them: Rest there, but do not forget night comes. I will be at the bell.",
+        "Flowers and bees do not bar the dark. I will remember that from near the bell.",
+        "Meadow is no small story. Running the wrong way is still running.",
+        "I will remember Meadow as soft grass that still needs a lantern. I will stay where I can hear the bell."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "nitwit_share_story_stony_peaks",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_biome": "minecraft:stony_peaks",
+      "lines": [
+        "{target}? Stone peaks make every fall honest. I would stay close enough to hear the bell.",
+        "If anyone heads for Stony Peaks, tell them: Bring blocks and stop before your legs shake. I will be at the bell.",
+        "Bare rock gives little cover and no softness. I will remember that from near the bell.",
+        "Stony Peaks is no small story. Running the wrong way is still running.",
+        "I will remember Stony Peaks as high stone with hard answers. I will stay where I can hear the bell."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "nitwit_share_story_windswept_gravelly_hills",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_biome": "minecraft:windswept_gravelly_hills",
+      "lines": [
+        "{target}? Gravel moves when you most need it still. I would stay close enough to hear the bell.",
+        "If anyone heads for Windswept Gravelly Hills, tell them: Test every slope before trusting it. I will be at the bell.",
+        "Loose stone tells lies under boots. I will remember that from near the bell.",
+        "Windswept Gravelly Hills is no small story. Running the wrong way is still running.",
+        "I will remember Windswept Gravelly Hills as windy hills that slide under pressure. I will stay where I can hear the bell."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "nitwit_share_story_windswept_hills",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_biome": "minecraft:windswept_hills",
+      "lines": [
+        "{target}? Hard wind turns every edge into advice. I would stay close enough to hear the bell.",
+        "If anyone heads for Windswept Hills, tell them: Keep low and do not race the mountain. I will be at the bell.",
+        "Clouds move fast up there and so can mistakes. I will remember that from near the bell.",
+        "Windswept Hills is no small story. Running the wrong way is still running.",
+        "I will remember Windswept Hills as high rough land that talks in gusts. I will stay where I can hear the bell."
+      ],
+      "weight": 120
+    }
+  ]
+}

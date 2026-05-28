@@ -1,0 +1,21 @@
+{
+  "lines": [
+    {
+      "id": "combat_survival_armorer",
+      "request": "combat_survival_report",
+      "option": "combat_survival_report",
+      "show_for_babies": false,
+      "lines": [
+        "A few new dents, no missing plates. That is a victory I can repair.",
+        "Every buckle held except the one in my knees. I will forgive that one.",
+        "My hands still keep checking straps that are already there. I made it back, though.",
+        "The plates held, the straps held, and somehow I held too.",
+        "I will hammer out the dents tomorrow. Tonight I am grateful there is a tomorrow.",
+        "Armor can turn a blow, but it cannot quiet the heart after. I am home, at least.",
+        "I counted every buckle at the door. All present. That felt like a blessing.",
+        "A few marks on the metal, a few in my memory. Nothing missing."
+      ],
+      "weight": 234
+    }
+  ]
+}

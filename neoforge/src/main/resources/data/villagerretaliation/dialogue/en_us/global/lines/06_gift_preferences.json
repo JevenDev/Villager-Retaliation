@@ -1,0 +1,74 @@
+{
+  "lines": [
+    {
+      "id": "global_hit_memory",
+      "request": "question",
+      "dispositions": [
+        "cautious",
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "lines": [
+        "I still remember that {attack_weapon}. Conversations get colder after that.",
+        "It is hard to speak plainly while remembering that {attack_weapon}.",
+        "That {attack_weapon} stayed in my memory longer than the bruise did."
+      ],
+      "weight": 96,
+      "conditions": [
+        {
+          "type": "memory",
+          "kind": "recent_direct_hit"
+        }
+      ]
+    },
+    {
+      "id": "global_new_greeting_bell",
+      "request": "greeting",
+      "weight": 22,
+      "lines": [
+        "The bell has been quiet today. I would like to keep it that way.",
+        "Quiet bells are good bells. Let us not give this one a reason.",
+        "Today has been calm so far. I am protective of that."
+      ]
+    },
+    {
+      "id": "global_new_joke_emerald",
+      "request": "joke",
+      "weight": 18,
+      "lines": [
+        "I know an emerald joke, but it costs extra if you want the good part.",
+        "My emerald joke has a discount if you laugh quickly.",
+        "I know a joke about emeralds, but the punchline appreciates payment plans."
+      ]
+    },
+    {
+      "id": "global_new_insult_path",
+      "request": "insult",
+      "weight": 18,
+      "lines": [
+        "You walk like the path owes you an apology.",
+        "You move like even the road is tired of you.",
+        "The path did nothing wrong, yet you still walk like it owes you."
+      ]
+    },
+    {
+      "id": "gift_global_liked_useful",
+      "request": "gift_preferences",
+      "gift_advice": "global_liked",
+      "lines": [
+        "{gift_item} is usually welcome. Simple, useful gifts travel well.",
+        "Most villagers would be glad to receive {gift_item}.",
+        "If you are unsure, {gift_item} is a kind choice.",
+        "A gift like {gift_item} says you came with good intentions.",
+        "Villagers remember practical kindness. {gift_item} counts.",
+        "A village can usually find room for {gift_item}.",
+        "For most villagers, {gift_item} is worth a smile.",
+        "{gift_item} makes a good peaceable gift.",
+        "Bring {gift_item} and most villagers will understand the gesture.",
+        "{gift_item} is welcome more often than not."
+      ],
+      "weight": 186
+    }
+  ]
+}

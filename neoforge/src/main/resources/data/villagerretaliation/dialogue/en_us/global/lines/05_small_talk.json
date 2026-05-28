@@ -1,0 +1,55 @@
+{
+  "lines": [
+    {
+      "id": "baby_insult_not_nice",
+      "request": "insult",
+      "option": "baby_insult",
+      "show_for_adults": false,
+      "weight": 25,
+      "lines": [
+        "That was not nice.",
+        "That made my stomach feel <shake>small</shake>.",
+        "I do not like when people talk like that."
+      ]
+    },
+    {
+      "id": "baby_insult_scary",
+      "request": "insult",
+      "option": "baby_insult",
+      "show_for_adults": false,
+      "dispositions": [
+        "hostile",
+        "fearful"
+      ],
+      "weight": 24,
+      "lines": [
+        "You are being scary.",
+        "Please stop. I do not like scary voices.",
+        "I am going to stand over there now."
+      ]
+    },
+    {
+      "id": "global_question_village_life",
+      "request": "question",
+      "lines": [
+        "The paths tell you plenty if you watch who hurries and who lingers.",
+        "The square tells you who is busy, who is worried, and who is pretending not to be either.",
+        "Most village work is simple until everyone depends on it being done right.",
+        "Trust is built from small things. Villages are very good at counting small things.",
+        "Why do we shut doors early? Because night makes ordinary mistakes harder to fix.",
+        "What do villagers remember? More than visitors hope, less than rumors claim."
+      ],
+      "weight": 134
+    },
+    {
+      "id": "global_story_bell",
+      "request": "story",
+      "lines": [
+        "Once the bell rang for a shadow at the edge of the square. Everyone still claims they were not scared.",
+        "One season, half the village learned roofing because the rain would not stop teaching.",
+        "The well once went dry for a morning, and suddenly every bucket had a reputation."
+      ],
+      "weight": 60
+    }
+  ]
+}

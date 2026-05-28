@@ -1,0 +1,47 @@
+{
+  "lines": [
+    {
+      "id": "mason_cured_recognition_warm",
+      "request": "cured_recognition",
+      "dispositions": [
+        "friendly",
+        "respectful"
+      ],
+      "lines": [
+        "I remember being rubble. You helped set the first stone back in place.",
+        "The cure cracked the old dark apart. You were there when the wall held.",
+        "You set me back into myself one careful piece at a time."
+      ],
+      "weight": 60
+    },
+    {
+      "id": "mason_cured_recognition_confused",
+      "request": "cured_recognition",
+      "dispositions": [
+        "neutral",
+        "cautious"
+      ],
+      "lines": [
+        "Your face is carved into that memory, but weather has worn it strange.",
+        "I remember stone-cold hands, a golden taste, and standing upright again.",
+        "The memory is worn smooth in places, but your hands are still carved into it."
+      ],
+      "weight": 60
+    },
+    {
+      "id": "mason_cured_recognition_uneasy_1",
+      "request": "cured_recognition",
+      "dispositions": [
+        "rude",
+        "hostile",
+        "fearful"
+      ],
+      "weight": 30,
+      "lines": [
+        "I remember you from beneath a collapsed roof of thoughts. Speak gently.",
+        "That cure left dust in the corners of my mind. Move carefully around it.",
+        "I know you helped, but the memory still sounds like falling stone."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "id": "example_template.option.share_story",
+  "label": "Example Share Story",
+  "request": "share_story",
+  "order": 14
+}

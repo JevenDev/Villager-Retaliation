@@ -1,0 +1,63 @@
+{
+  "lines": [
+    {
+      "id": "toolsmith_question_handles_variants",
+      "request": "question",
+      "lines": [
+        "Cracked handles are small <shake>warnings</shake> with expensive timing.",
+        "A dull edge makes every simple job into a bad plan.",
+        "A handle should fit the hand, not argue with it.",
+        "A sharp edge is useful. A careless one is just trouble with shine.",
+        "The bench hears every complaint before the finished tool gets praised.",
+        "Cracked handles are warnings. Ignore them and they become stories."
+      ],
+      "weight": 172
+    },
+    {
+      "id": "question_follow_memory_toolsmith",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "weight": 3,
+      "lines": [
+        "That time I followed you, the whole plan could have used a better handle.",
+        "I remember following you through that road. My feet remember it even better.",
+        "That trip across that road taught me to ask more questions before walking."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory"
+        }
+      ]
+    },
+    {
+      "id": "question_follow_memory_toolsmith_boat",
+      "request": "question",
+      "option": "adult_general_question",
+      "show_for_babies": false,
+      "weight": 3,
+      "lines": [
+        "A boat is just a tool with a nervous floor. Yours worked, mostly.",
+        "That boat trip still sits oddly in my memory, but at least it floated.",
+        "A boat can make a bad plan quieter. It cannot make me forget it."
+      ],
+      "conditions": [
+        {
+          "type": "recruitment_memory",
+          "boat_trip": true
+        }
+      ]
+    },
+    {
+      "id": "default_profession_toolsmith_repair_logic",
+      "request": "question",
+      "show_for_babies": false,
+      "lines": [
+        "A tool breaks loudly only after whispering for days.",
+        "Good tools make hard work honest. Bad tools make honest work dangerous.",
+        "I can fix a cracked handle. A cracked habit takes longer."
+      ],
+      "weight": 18
+    }
+  ]
+}

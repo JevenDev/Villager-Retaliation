@@ -1,0 +1,7 @@
+{
+  "id": "example_template.line.apology",
+  "request": "apology",
+  "option": "example_template.option.apology",
+  "text": "example",
+  "weight": 10
+}

@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "farmer_new_greeting_rows",
+      "request": "greeting",
+      "weight": 26,
+      "lines": [
+        "Stay off the rows if you can. The crops remember boots.",
+        "Give the fields room. Farming works better without elbows in it.",
+        "Step carefully near the fields. I would rather greet you than patch you up."
+      ]
+    }
+  ]
+}

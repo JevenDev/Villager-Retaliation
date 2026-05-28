@@ -1,0 +1,18 @@
+{
+  "options": [
+    {
+      "id": "weaponsmith_inspect_weapon",
+      "label": "Check my weapon",
+      "type": "dialogue_option",
+      "request": "question",
+      "player_items": [
+        "#minecraft:swords",
+        "#minecraft:axes"
+      ],
+      "player_item_slots": [
+        "main_hand"
+      ],
+      "order": 28
+    }
+  ]
+}

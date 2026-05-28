@@ -2,7 +2,7 @@
 
 This page lists shared JSON conventions used across Villager Retaliation's data-driven systems.
 
-For migration notes between versions, see [Pack Format Changes](Pack-Format-Changes.md).
+For version-specific breaking changes and manual retargeting notes, see [Pack Format Changes](Pack-Format-Changes.md).
 
 ## Resource Location Shortcuts
 
@@ -408,6 +408,49 @@ Both default to `true`.
 For keyed dialogue `messages`, `openings`, and `closings`, entries with a profession filter default to adult-only unless they explicitly set `show_for_babies: true`. This prevents profession/job-site lines from appearing on baby villagers unless a pack opts in.
 
 Baby villagers can flee from witnessed villager deaths when `retaliation.babyVillagersFleeWitnessedDeaths` is enabled. Built-in notification data separates adult and baby witness-death alert text with `show_for_adults` and `show_for_babies`, and baby-hit alerts use the same age filters on `alert.player_attacked_villager` / `alert.villager_damaged`.
+
+Dialogue `lines` may include expressive chat text effects. Inline tags are the preferred format for partial emphasis:
+
+```json
+{
+  "id": "expressive_line",
+  "request": "question",
+  "text": "<wavy><italics>Hey Traveller!</italics></wavy> Care to see my wares?"
+}
+```
+
+Supported tags: `<wavy>` / `<wave>`, `<shake>` / `<shaky>`, `<pulse>` / `<pulsing>`, `<jump>` / `<jumping>` / `<bounce>`, `<rainbow>`, `<italics>` / `<italic>` / `<i>`, `<bold>` / `<b>`, `<underlined>` / `<underline>` / `<u>`, `<strikethrough>` / `<strike>` / `<s>`, `<obfuscated>` / `<obfuscate>` / `<magic>`, vanilla color names like `<red>`, `<color:#ffcc66>`, and `<gradient:#ff7a7a:#7aa8ff>`. Incoming chat messages containing these tags are styled client-side too, so raw markup is converted before it appears in chat.
+
+Whole-line shorthand fields are also accepted:
+
+```json
+{
+  "id": "expressive_line",
+  "request": "question",
+  "text": "That is... not a normal cave sound.",
+  "italics": true,
+  "wavy": true,
+  "rainbow": true,
+  "shake": true
+}
+```
+
+The grouped form is also accepted:
+
+```json
+"text_effects": {
+  "italic": true,
+  "bold": true,
+  "underlined": true,
+  "rainbow": true,
+  "wavy": true,
+  "pulse": true
+}
+```
+
+If `rainbow` is combined with `color` or `gradient_start` / `gradient_end`, the rainbow colors take precedence.
+
+These effects apply to villager chat response text only, not in-world text indicators.
 
 ## Stable IDs
 

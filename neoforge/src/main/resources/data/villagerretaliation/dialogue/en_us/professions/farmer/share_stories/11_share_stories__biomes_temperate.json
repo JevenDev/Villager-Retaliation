@@ -1,0 +1,46 @@
+{
+  "lines": [
+    {
+      "id": "farmer_share_story_mushroom_fields",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_biome": "minecraft:mushroom_fields",
+      "lines": [
+        "{target}? Strange quiet can make a place feel too safe. I would save bread for the road home.",
+        "If anyone heads for Mushroom Fields, tell them: Eat only what you know and keep your boat close. I will be at the fields.",
+        "Mycelium underfoot is not village dirt. I will remember that when I put bread aside.",
+        "Mushroom Fields is no small story. A full belly is not the same as safety.",
+        "I will remember Mushroom Fields as odd land where even the grass changed its mind. I will keep bread aside for the road."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "farmer_share_story_plains",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_biome": "minecraft:plains",
+      "lines": [
+        "{target}? Open ground shows you to everything else. I would save bread for the road home.",
+        "If anyone heads for Plains, tell them: Keep moving and watch the horizon. I will be at the fields.",
+        "Grass bends before trouble arrives if you look. I will remember that when I put bread aside.",
+        "Plains is no small story. A full belly is not the same as safety.",
+        "I will remember Plains as wide land with nowhere to hide after dark. I will keep bread aside for the road."
+      ],
+      "weight": 120
+    },
+    {
+      "id": "farmer_share_story_sunflower_plains",
+      "request": "share_story",
+      "option": "adult_share_story",
+      "story_biome": "minecraft:sunflower_plains",
+      "lines": [
+        "{target}? Sunny fields can still point toward trouble. I would save bread for the road home.",
+        "If anyone heads for Sunflower Plains, tell them: Enjoy the flowers with a torch ready. I will be at the fields.",
+        "Sunflowers face light, not safety. I will remember that when I put bread aside.",
+        "Sunflower Plains is no small story. A full belly is not the same as safety.",
+        "I will remember Sunflower Plains as bright fields that still grow dark at night. I will keep bread aside for the road."
+      ],
+      "weight": 120
+    }
+  ]
+}

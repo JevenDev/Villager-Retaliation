@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "leatherworker_story_hide_variants",
+      "request": "story",
+      "lines": [
+        "A split seam can ruin a journey faster than a bad map.",
+        "I once made boots that outlasted three owners and four <wavy>bad roads</wavy>.",
+        "My apron has seen enough mistakes to deserve its own corner by the fire."
+      ],
+      "weight": 74
+    }
+  ]
+}

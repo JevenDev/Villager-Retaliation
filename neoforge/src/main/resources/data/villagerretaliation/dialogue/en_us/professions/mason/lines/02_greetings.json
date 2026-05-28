@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "id": "mason_new_greeting_stonecutter",
+      "request": "greeting",
+      "weight": 26,
+      "lines": [
+        "Keep clear of the stonecutter. It does not care who started the conversation.",
+        "Give the stonecutter room. It is sharper than this conversation needs to be.",
+        "Stand wide of the stonecutter. It never asks who leaned in first."
+      ]
+    }
+  ]
+}

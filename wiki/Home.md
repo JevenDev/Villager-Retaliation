@@ -6,7 +6,7 @@ Villager Retaliation is data-driven in the places pack makers usually want to to
 
 - [Pack Development Guide](Pack-Development.md) - folder layout, namespaces, reload behavior, override strategy, and testing workflow.
 - [Datapack Generator](Datapack-Generator.md) - browser-based builder for creating, importing, previewing, and exporting Villager Retaliation datapacks.
-- [Pack Format Changes](Pack-Format-Changes.md) - pack-facing added, modified, deprecated, and removed fields, tags, triggers, paths, and migration notes.
+- [Pack Format Changes](Pack-Format-Changes.md) - pack-facing added, modified, deprecated, and removed fields, tags, triggers, paths, and manual retargeting notes.
 - [JSON Reference](JSON-Reference.md) - shared conventions, text/line variation rules, enum values, filters, ids, weights, colors, and common pitfalls.
 - [Dialogue JSON](Dialogue.md) - conversation options, dialogue lines, line variations, openings, closings, pacify lines, keyed messages, localization overlays, and story placeholders.
 - [Forced Dialogue JSON](Forced-Dialogue.md) - event-driven locked dialogue moments, including witnessed container theft outcomes and aggro choices.

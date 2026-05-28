@@ -109,7 +109,56 @@ public final class VillagerDialogueResources {
             "requires_known_relationship", "requires_known_current_relationship", "requires_known_past_relationship", "requires_known_crush",
             "requires_known_dating_partner", "requires_known_fiance", "requires_known_romantic_spouse", "requires_known_separated_partner",
             "requires_known_widowed_partner");
+    private static final Set<String> PLANNED_BETA13_LINE_DEPRECATED_KEYS = Set.of(
+            "requires_known_family", "requires_known_parent", "requires_known_sibling", "requires_known_spouse", "requires_known_child",
+            "requires_known_grandparent", "requires_known_grandchild", "requires_known_descendant", "requires_known_aunt_uncle",
+            "requires_known_cousin", "requires_known_niece_nephew", "requires_known_extended_family", "requires_known_deceased_family",
+            "requires_known_relationship", "requires_known_current_relationship", "requires_known_past_relationship", "requires_known_crush",
+            "requires_known_dating_partner", "requires_known_fiance", "requires_known_romantic_spouse", "requires_known_separated_partner",
+            "requires_known_widowed_partner",
+            "requires_recent_broken_bed_memory", "requires_recent_direct_hit_memory",
+            "requires_gear_report_used_in_combat", "requires_gear_report_unused_in_combat",
+            "requires_recruitment_memory", "requires_recruitment_boat_trip", "requires_recruitment_ocean_crossing",
+            "requires_recruitment_swim_trip", "excludes_recruitment_ocean_crossing",
+            "requires_container_theft_to_self", "requires_container_theft_from_other",
+            "requires_retaliation_to_self", "requires_retaliation_from_other");
+    private static final Set<String> PLANNED_BETA13_OPTION_DEPRECATED_KEYS = Set.of(
+            "requires_known_family", "requires_known_parent", "requires_known_sibling", "requires_known_spouse", "requires_known_child",
+            "requires_known_grandparent", "requires_known_grandchild", "requires_known_descendant", "requires_known_aunt_uncle",
+            "requires_known_cousin", "requires_known_niece_nephew", "requires_known_extended_family", "requires_known_deceased_family",
+            "requires_known_relationship", "requires_known_current_relationship", "requires_known_past_relationship", "requires_known_crush",
+            "requires_known_dating_partner", "requires_known_fiance", "requires_known_romantic_spouse", "requires_known_separated_partner",
+            "requires_known_widowed_partner");
+    private static final String PLANNED_BETA13_DEPRECATION_VERSION = "1.0.0-beta.13";
+    private static final String PLANNED_BETA13_DEPRECATION_REPLACEMENT = "Use beta.12 conditions blocks instead.";
     private static volatile CachedDialoguePools cachedDialoguePools = CachedDialoguePools.empty();
+
+    private enum DialogueFileSection {
+        OPTIONS("options"),
+        LINES("lines"),
+        MESSAGES("messages"),
+        OPENINGS("openings"),
+        CLOSINGS("closings"),
+        PACIFY("pacify");
+
+        private final String key;
+
+        DialogueFileSection(String key) {
+            this.key = key;
+        }
+
+        private static Optional<DialogueFileSection> fromPathSegment(String segment) {
+            return switch (segment) {
+                case "option", "options" -> Optional.of(OPTIONS);
+                case "line", "lines" -> Optional.of(LINES);
+                case "message", "messages" -> Optional.of(MESSAGES);
+                case "opening", "openings" -> Optional.of(OPENINGS);
+                case "closing", "closings" -> Optional.of(CLOSINGS);
+                case "pacify", "pacification" -> Optional.of(PACIFY);
+                default -> Optional.empty();
+            };
+        }
+    }
 
     private VillagerDialogueResources() {
     }
@@ -390,6 +439,30 @@ public final class VillagerDialogueResources {
                 optionSources.clear();
                 messageSources.clear();
             }
+            if (!containsBundledSections(root)) {
+                Optional<DialogueFileSection> singleSection = sectionFromPath(location, locale)
+                        .or(() -> inferSection(root));
+                if (singleSection.isPresent()) {
+                    readSingleSectionFile(
+                            location,
+                            root,
+                            singleSection.get(),
+                            defaultProfessionsFor(location, locale),
+                            lines,
+                            openings,
+                            closings,
+                            pacifyLines,
+                            options,
+                            messages,
+                            lineSources,
+                            openingSources,
+                            closingSources,
+                            pacifySources,
+                            optionSources,
+                            messageSources);
+                    return;
+                }
+            }
             DatapackDiagnostics.warnMisplacedRootKeys(location, "dialogue", root, Map.of(
                     "notifications", "data/villagerretaliation/notifications/<locale>/<file>.json",
                     "entries", "data/villagerretaliation/forced_dialogue/<file>.json",
@@ -407,6 +480,101 @@ public final class VillagerDialogueResources {
         } catch (IOException | IllegalStateException | JsonParseException exception) {
             DatapackDiagnostics.warnSkippedFile(location, "dialogue", exception);
         }
+    }
+
+    private static void readSingleSectionFile(
+            ResourceLocation location,
+            JsonObject root,
+            DialogueFileSection section,
+            Set<VillagerProfession> defaultProfessions,
+            Map<String, DialogueLine> lines,
+            Map<String, ConversationLine> openings,
+            Map<String, ConversationLine> closings,
+            Map<String, PacifyLine> pacifyLines,
+            Map<String, DialogueOptionDefinition> options,
+            Map<String, KeyedMessageLine> messages,
+            Map<String, ResourceLocation> lineSources,
+            Map<String, ResourceLocation> openingSources,
+            Map<String, ResourceLocation> closingSources,
+            Map<String, ResourceLocation> pacifySources,
+            Map<String, ResourceLocation> optionSources,
+            Map<String, ResourceLocation> messageSources) {
+        JsonObject entry = root.deepCopy();
+        entry.remove("replace");
+        if (section == DialogueFileSection.OPTIONS && !entry.has("type")) {
+            entry.addProperty("type", "dialogue_option");
+        }
+
+        JsonObject syntheticRoot = new JsonObject();
+        JsonArray entries = new JsonArray();
+        entries.add(entry);
+        syntheticRoot.add(section.key, entries);
+
+        switch (section) {
+            case OPTIONS -> readDialogueOptions(location, syntheticRoot, defaultProfessions, options, optionSources);
+            case LINES -> readDialogueLines(location, syntheticRoot, defaultProfessions, lines, lineSources);
+            case MESSAGES -> readKeyedMessages(location, syntheticRoot, defaultProfessions, messages, messageSources);
+            case OPENINGS -> readConversationLines(location, syntheticRoot, "openings", defaultProfessions, openings, openingSources);
+            case CLOSINGS -> readConversationLines(location, syntheticRoot, "closings", defaultProfessions, closings, closingSources);
+            case PACIFY -> readPacifyLines(location, syntheticRoot, defaultProfessions, pacifyLines, pacifySources);
+        }
+    }
+
+    private static boolean containsBundledSections(JsonObject root) {
+        for (DialogueFileSection section : DialogueFileSection.values()) {
+            JsonElement element = root.get(section.key);
+            if (element == null || !element.isJsonArray()) {
+                continue;
+            }
+            if (section != DialogueFileSection.LINES) {
+                return true;
+            }
+            if (isBundledLinesSection(root, element.getAsJsonArray())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isBundledLinesSection(JsonObject root, JsonArray linesElement) {
+        if (root.has("request") || root.has("key") || root.has("label") || root.has("outcomes")) {
+            return false;
+        }
+        return linesElement.size() == 0 || linesElement.get(0).isJsonObject();
+    }
+
+    private static Optional<DialogueFileSection> sectionFromPath(ResourceLocation location, String locale) {
+        String path = location.getPath();
+        String root = DIALOGUE_ROOT + locale + "/";
+        if (!path.startsWith(root) || !path.endsWith(".json")) {
+            return Optional.empty();
+        }
+
+        String relativePath = path.substring(root.length(), path.length() - ".json".length());
+        for (String segment : relativePath.split("/")) {
+            Optional<DialogueFileSection> section = DialogueFileSection.fromPathSegment(segment);
+            if (section.isPresent()) {
+                return section;
+            }
+        }
+        return Optional.empty();
+    }
+
+    private static Optional<DialogueFileSection> inferSection(JsonObject root) {
+        String type = readString(root, "type");
+        if ("dialogue_option".equals(type) || root.has("label")) {
+            return Optional.of(DialogueFileSection.OPTIONS);
+        }
+        if (root.has("key")) {
+            return Optional.of(DialogueFileSection.MESSAGES);
+        }
+        if (root.has("request")) {
+            return Optional.of(DialogueFileSection.LINES);
+        }
+        if (root.has("outcomes")) {
+            return Optional.of(DialogueFileSection.PACIFY);
+        }
+        return Optional.empty();
     }
 
     private static void readKeyedMessages(
@@ -477,15 +645,23 @@ public final class VillagerDialogueResources {
             }
 
             JsonObject entry = element.getAsJsonObject();
-            DatapackDiagnostics.warnUnknownKeys(location, "dialogue option", entryContext("option", entry, index), entry, OPTION_KEYS);
-            DatapackDiagnostics.warnInertPlayerItemSlots(location, entryContext("option", entry, index), entry);
+            String context = entryContext("option", entry, index);
+            DatapackDiagnostics.warnUnknownKeys(location, "dialogue option", context, entry, OPTION_KEYS);
+            DatapackDiagnostics.warnDeprecatedKeys(
+                    location,
+                    "dialogue option",
+                    context,
+                    entry,
+                    PLANNED_BETA13_OPTION_DEPRECATED_KEYS,
+                    PLANNED_BETA13_DEPRECATION_VERSION,
+                    PLANNED_BETA13_DEPRECATION_REPLACEMENT);
+            DatapackDiagnostics.warnInertPlayerItemSlots(location, context, entry);
             String id = readString(entry, "id");
             String label = readString(entry, "label");
             String entryType = readString(entry, "type");
             Optional<DialogueRequestType> requestType = readEnum(entry, "request", DialogueRequestType.class);
-            if (id.isBlank()
-                    || label.isBlank()
-                    || !"dialogue_option".equals(entryType)
+            if (label.isBlank()
+                    || (!entryType.isBlank() && !"dialogue_option".equals(entryType))
                     || requestType.isEmpty()) {
                 index++;
                 continue;
@@ -535,8 +711,9 @@ public final class VillagerDialogueResources {
             boolean requiresKnownWidowedPartner = readBoolean(entry, "requires_known_widowed_partner");
             boolean requiresActiveSpecialOrders = readBoolean(entry, "requires_active_special_orders");
             int order = readInt(entry, "order", index);
-            putEntry(location, "dialogue option", id, new DialogueOptionDefinition(
-                    id,
+            String resolvedId = id.isBlank() ? fallbackId(location, "option", index) : id;
+            putEntry(location, "dialogue option", resolvedId, new DialogueOptionDefinition(
+                    resolvedId,
                     label,
                     requestType.get(),
                     showForAdults,
@@ -665,8 +842,17 @@ public final class VillagerDialogueResources {
             }
 
             JsonObject entry = element.getAsJsonObject();
-            DatapackDiagnostics.warnUnknownKeys(location, "dialogue line", entryContext("line", entry, index), entry, LINE_KEYS);
-            DatapackDiagnostics.warnInertPlayerItemSlots(location, entryContext("line", entry, index), entry);
+            String context = entryContext("line", entry, index);
+            DatapackDiagnostics.warnUnknownKeys(location, "dialogue line", context, entry, LINE_KEYS);
+            DatapackDiagnostics.warnDeprecatedKeys(
+                    location,
+                    "dialogue line",
+                    context,
+                    entry,
+                    PLANNED_BETA13_LINE_DEPRECATED_KEYS,
+                    PLANNED_BETA13_DEPRECATION_VERSION,
+                    PLANNED_BETA13_DEPRECATION_REPLACEMENT);
+            DatapackDiagnostics.warnInertPlayerItemSlots(location, context, entry);
             Optional<DialogueRequestType> requestType = readEnum(entry, "request", DialogueRequestType.class);
             List<String> entryLines = readLines(entry);
             String textKey = readString(entry, "text_key");
@@ -683,7 +869,7 @@ public final class VillagerDialogueResources {
                     entryLines
             );
             builder.textKey(textKey);
-            applyDialogueOptions(location, entryContext("line", entry, index), builder, entry, defaultProfessions);
+            applyDialogueOptions(location, context, builder, entry, defaultProfessions);
             putEntry(location, "dialogue line", resolvedId, builder.build(), lines, lineSources);
             index++;
         }
