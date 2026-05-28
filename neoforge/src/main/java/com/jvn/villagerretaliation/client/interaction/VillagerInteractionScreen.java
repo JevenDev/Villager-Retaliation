@@ -67,6 +67,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final int VEIL_DITHER_START_OFFSET = OPTION_HEIGHT - 81;
     private static final int SCREEN_BOTTOM_MARGIN = 48;
     private static final int VEIL_TOP_DITHER_HEIGHT = 64;
+    private static final float EXPERIMENTAL_INFO_NAME_SCALE = 1.85F;
+    private static final float EXPERIMENTAL_INFO_DETAIL_SCALE = 1.4F;
     private static final int SKILLS_EDGE_MARGIN = 10;
     private static final int SKILLS_CONTAINER_PADDING_X = 8;
     private static final int SKILLS_CONTAINER_PADDING_Y = 6;
@@ -1352,6 +1354,15 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         return VillagerInteractionExperimentalLayout.infoRight(this.width, experimentalOptionsLeft());
     }
 
+    private int experimentalInfoLeft() {
+        float scale = experimentalScaleFactor();
+        int nameWidth = Math.round(this.font.width(this.villagerName) * EXPERIMENTAL_INFO_NAME_SCALE * scale);
+        int professionWidth = Math.round(this.font.width(this.professionName) * EXPERIMENTAL_INFO_DETAIL_SCALE * scale);
+        int reputationWidth = Math.round(this.font.width(reputationText()) * EXPERIMENTAL_INFO_DETAIL_SCALE * scale);
+        int infoWidth = Math.max(nameWidth, Math.max(professionWidth, reputationWidth));
+        return experimentalInfoRight() - infoWidth;
+    }
+
     private int experimentalInfoBottom() {
         return optionsTop() + optionViewportHeight();
     }
@@ -1426,8 +1437,15 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private int interactionChatTargetPixelWidth() {
         InteractionChatPosition position = VillagerRetaliationConfig.INTERACTION_CHAT_POSITION.get();
-        if (isExperimentalUi() && position.anchorsRight()) {
-            return Math.max(40, optionsLeft() - experimentalUnit(INFO_PANEL_CHAT_PADDING));
+        if (isExperimentalUi()) {
+            int padding = experimentalUnit(INFO_PANEL_CHAT_PADDING);
+            if (position.anchorsCenter()) {
+                return this.width - CHAT_EDGE_MARGIN * 2;
+            }
+            if (position.anchorsRight()) {
+                return Math.max(40, optionsLeft() - padding);
+            }
+            return Math.max(40, experimentalInfoLeft() - padding);
         }
         if (position.anchorsCenter()) {
             return this.width - CHAT_EDGE_MARGIN * 2;
