@@ -260,7 +260,7 @@ If a `container_theft` entry does not define `leave_option` or `leave_options`, 
 | `take_items` | object | none | Removes a configured payment from the player's inventory before the option succeeds. |
 | `take_stolen_items` | boolean or object | none | For `container_theft`, removes the specific item stacks stolen from the source container before the option succeeds. |
 
-Use reputation filters on entries to swap the whole event by rank, or on options to change the choices available inside one event. For example, the built-in container opening prompts only catch neutral and suspicious players on opening, hostile/despised/feared players get harsher opening responses, and trusted or better players can open watched containers until they actually remove items.
+Use reputation filters on entries to swap the whole event by rank, or on options to change the choices available inside one event. For example, the built-in container opening prompts only catch neutral and suspicious players on opening, hostile/despised/feared players get harsher opening responses, and trusted or better players can get a nearby trusted villager to vouch for them instead of starting a locked confrontation.
 
 Use `conditions` on options for personality-aware or skill-aware choices. For example, a deception option can require a low-intellect witness:
 
@@ -479,7 +479,7 @@ Fires when a player opens a watched container and closes it with fewer items tha
 
 Fires when a player opens a watched container. This trigger is used when the server config's container forced-dialogue trigger is set to `OPENING`.
 
-The built-in default pack gates opening prompts by reputation: neutral and suspicious players are stopped with the standard warning before they can continue browsing, hostile/despised/feared players get more severe warnings, and trusted or better players can open watched village containers without an opening prompt. Taking items still triggers `container_theft` for every rank.
+The built-in default pack gates opening prompts by reputation: neutral and suspicious players are stopped with the standard warning before they can continue browsing, hostile/despised/feared players get more severe warnings, and trusted or better players can have a nearby trusted villager vouch for them. The vouch roll scales with exact reputation: an allowed vouch leaves the chest open, while a denied vouch closes it with a short chat line and no locked forced-dialogue prompt. Taking items still triggers `container_theft` for every rank.
 
 Additional nearby witnesses can join an active container confrontation. Theft backups use `container_theft.backup_interjection`; opening-only backups use `container_opened.backup_interjection`. Like trade-refresh interjections, second and third speakers try `.second` and `.third` message-key suffixes before falling back to the base key. Each additional theft witness applies the matching forced-dialogue definition's witness consequences, including reputation and theft memory.
 

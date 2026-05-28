@@ -2667,27 +2667,27 @@ public final class ForcedDialogueService {
         double radius = 12.0D;
         double radiusSqr = radius * radius;
         AABB area = AABB.ofSize(Vec3.atCenterOf(snapshot.pos()), radius * 2.0D, radius * 2.0D, radius * 2.0D);
-        Optional<Villager> voucher = level.getEntitiesOfClass(Villager.class, area, villager -> villager.isAlive() && !villager.isBaby()).stream()
+        Optional<ContainerVouchCandidate> voucher = level.getEntitiesOfClass(Villager.class, area, villager -> villager.isAlive() && !villager.isBaby()).stream()
                 .filter(villager -> villager.distanceToSqr(player) <= radiusSqr || villager.blockPosition().distSqr(snapshot.pos()) <= radiusSqr)
                 .filter(villager -> VillagerInteractionService.canUseForcedInteractionSystem(player, villager))
                 .filter(villager -> hasTheftLineOfSight(level, villager, player, snapshot.pos()))
-                .filter(villager -> {
-                    ReputationSnapshot reputation = VillagerReputationManager.getReputationSnapshot(level, villager, player.getUUID());
-                    return reputation.level().trustRank() >= VillagerReputationLevel.TRUSTED.trustRank();
-                })
+                .map(villager -> new ContainerVouchCandidate(
+                        villager,
+                        VillagerReputationManager.getReputationSnapshot(level, villager, player.getUUID())))
+                .filter(candidate -> candidate.reputation().level().trustRank() >= VillagerReputationLevel.TRUSTED.trustRank())
                 .max(Comparator
-                        .comparingInt((Villager villager) -> VillagerReputationManager
-                                .getReputationSnapshot(level, villager, player.getUUID())
-                                .level()
-                                .trustRank())
-                        .thenComparingDouble(villager -> -villager.distanceToSqr(player)));
+                        .comparingInt((ContainerVouchCandidate candidate) -> candidate.reputation().value())
+                        .thenComparingInt(candidate -> candidate.reputation().level().trustRank())
+                        .thenComparingDouble(candidate -> -candidate.villager().distanceToSqr(player)));
         if (voucher.isEmpty()) {
             return false;
         }
 
-        Villager villager = voucher.get();
-        ReputationSnapshot reputation = VillagerReputationManager.getReputationSnapshot(level, villager, player.getUUID());
-        String messageKey = rollChance(level, containerVouchChance(reputation.level()))
+        Villager villager = voucher.get().villager();
+        ReputationSnapshot reputation = voucher.get().reputation();
+        double vouchChance = containerVouchChance(reputation);
+        boolean allowed = rollChance(level, vouchChance);
+        String messageKey = allowed
                 ? CONTAINER_OPENED_VOUCH_ALLOW_MESSAGE_KEY
                 : CONTAINER_OPENED_VOUCH_DENY_MESSAGE_KEY;
         DialogueContext context = VillagerInteractionService.createDialogueContext(level, player, villager);
@@ -2695,7 +2695,11 @@ public final class ForcedDialogueService {
                 "container", snapshot.containerName().getString(),
                 "loot_table", snapshot.lootTable().toString(),
                 "player", player.getDisplayName().getString(),
-                "villager", VillagerPresetNameRegistry.resolveDisplayName(villager).getString());
+                "villager", VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
+                "vouch_chance", Integer.toString((int) Math.round(vouchChance * 100.0D)),
+                "vouch_outcome", allowed ? "allow" : "deny",
+                "reputation", Integer.toString(reputation.value()),
+                "reputation_level", reputation.level().name().toLowerCase(Locale.ROOT));
         String line = VillagerDialogueResources.message(context, messageKey, replacements)
                 .orElse(messageKey);
         line = VillagerDialogueResources.resolveTemplate(line, replacements);
@@ -2704,18 +2708,55 @@ public final class ForcedDialogueService {
                 villager,
                 line,
                 VillagerInteractionService.villagerSpeakerLabel(villager));
+        if (!allowed) {
+            player.closeContainer();
+        }
         return true;
     }
 
-    private static double containerVouchChance(VillagerReputationLevel level) {
-        int chance = switch (level) {
-            case ROYALTY -> 95;
-            case REVERED -> 84;
-            case RESPECTED -> 68;
-            case TRUSTED -> 48;
-            default -> 0;
+    private static double containerVouchChance(ReputationSnapshot reputation) {
+        return switch (reputation.level()) {
+            case ROYALTY -> reputationScaledChance(
+                    reputation.value(),
+                    VillagerRetaliationConfig.ROYALTY_THRESHOLD.get(),
+                    VillagerRetaliationConfig.ROYALTY_THRESHOLD.get()
+                            + Math.max(1, VillagerRetaliationConfig.ROYALTY_THRESHOLD.get() - VillagerRetaliationConfig.REVERED_THRESHOLD.get()),
+                    0.90D,
+                    0.98D);
+            case REVERED -> reputationScaledChance(
+                    reputation.value(),
+                    VillagerRetaliationConfig.REVERED_THRESHOLD.get(),
+                    VillagerRetaliationConfig.ROYALTY_THRESHOLD.get(),
+                    0.78D,
+                    0.90D);
+            case RESPECTED -> reputationScaledChance(
+                    reputation.value(),
+                    VillagerRetaliationConfig.RESPECTED_THRESHOLD.get(),
+                    VillagerRetaliationConfig.REVERED_THRESHOLD.get(),
+                    0.62D,
+                    0.78D);
+            case TRUSTED -> reputationScaledChance(
+                    reputation.value(),
+                    VillagerRetaliationConfig.TRUSTED_THRESHOLD.get(),
+                    VillagerRetaliationConfig.RESPECTED_THRESHOLD.get(),
+                    0.45D,
+                    0.62D);
+            default -> 0.0D;
         };
-        return chance / 100.0D;
+    }
+
+    private static double reputationScaledChance(
+            int reputation,
+            int minReputation,
+            int maxReputation,
+            double minChance,
+            double maxChance) {
+        if (maxReputation <= minReputation) {
+            return maxChance;
+        }
+        double progress = (reputation - minReputation) / (double) (maxReputation - minReputation);
+        progress = Math.max(0.0D, Math.min(1.0D, progress));
+        return minChance + (maxChance - minChance) * progress;
     }
 
     private static void triggerContainerBroken(
@@ -3489,6 +3530,11 @@ public final class ForcedDialogueService {
     private record ContainerWitnessCandidate(
             Villager villager,
             ForcedDialogueDefinition definition) {
+    }
+
+    private record ContainerVouchCandidate(
+            Villager villager,
+            ReputationSnapshot reputation) {
     }
 
     private record ForcedDialogueSession(
