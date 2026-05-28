@@ -5,10 +5,17 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.util.Mth;
 
 final class VillagerInteractionOptionList {
+    private static final float EXPERIMENTAL_OPTION_BASE_SCALE = 1.48F;
+
     private VillagerInteractionOptionList() {
     }
 
     static void render(Context context, GuiGraphics graphics, int mouseX, int mouseY) {
+        if (context.experimentalStyle()) {
+            renderExperimental(context, graphics, mouseX, mouseY);
+            return;
+        }
+
         int left = context.optionsLeft();
         int top = context.optionsTop();
         int viewportHeight = context.optionViewportHeight();
@@ -22,6 +29,25 @@ final class VillagerInteractionOptionList {
                 continue;
             }
             renderOption(context, graphics, index, hovered, mouseX, mouseY, left, y, top, viewportBottom);
+        }
+        graphics.disableScissor();
+        context.renderScrollbar(graphics);
+    }
+
+    private static void renderExperimental(Context context, GuiGraphics graphics, int mouseX, int mouseY) {
+        int left = context.optionsLeft();
+        int top = context.optionsTop();
+        int viewportHeight = context.optionViewportHeight();
+        int viewportBottom = top + viewportHeight;
+        int hovered = optionAt(context, mouseX, mouseY);
+
+        graphics.enableScissor(Math.max(0, left - context.optionWidth()), top, context.optionsScrollbarLeft() - 4, viewportBottom);
+        for (int index = 0; index < context.optionCount(); index++) {
+            float y = top + index * context.optionStride() - context.optionScroll();
+            if (y + context.optionHeight() < top || y > viewportBottom) {
+                continue;
+            }
+            renderExperimentalOption(context, graphics, index, hovered, mouseX, mouseY, left, y, top, viewportBottom);
         }
         graphics.disableScissor();
         context.renderScrollbar(graphics);
@@ -71,13 +97,53 @@ final class VillagerInteractionOptionList {
         applyOptionTransform(context, graphics, left, y, scale, cursorShiftX, cursorShiftY);
         renderOptionBackground(context, graphics, isHovered, left, y, edgeAlpha);
         if (selected) {
-            graphics.drawString(context.font(), ">", left - 7, Mth.floor(y + 5.0F), VillagerInteractionUiUtil.withAlpha(0xFFFFFFFF, edgeAlpha), false);
+            graphics.drawString(context.font(), ">", left - 7, Mth.floor(y + optionTextYOffset(context)), VillagerInteractionUiUtil.withAlpha(0xFFFFFFFF, edgeAlpha), false);
         }
         graphics.drawString(
                 context.font(),
                 context.optionLabel(index),
                 left + context.optionTextInset(),
-                Mth.floor(y + 5.0F),
+                Mth.floor(y + optionTextYOffset(context)),
+                VillagerInteractionUiUtil.withAlpha(textColor, edgeAlpha),
+                false);
+        graphics.pose().popPose();
+    }
+
+    private static void renderExperimentalOption(
+            Context context,
+            GuiGraphics graphics,
+            int index,
+            int hovered,
+            int mouseX,
+            int mouseY,
+            int left,
+            float y,
+            int viewportTop,
+            int viewportBottom
+    ) {
+        boolean selected = index == context.selectedOption();
+        boolean isHovered = hovered == index;
+        float hoverMix = isHovered ? context.hoverIntensity(mouseX, mouseY, left, y) : 0.0F;
+        float textScale = context.experimentalTextScale();
+        float scale = (EXPERIMENTAL_OPTION_BASE_SCALE
+                + (selected ? context.optionSelectedScale() : 0.0F)
+                + hoverMix * context.optionHoverScale()) * textScale;
+        float cursorShiftX = isHovered ? context.hoverShift(mouseX, left, context.optionWidth(), 3.2F * textScale) * hoverMix : 0.0F;
+        float cursorShiftY = isHovered ? context.hoverShift(mouseY, y, context.optionHeight(), 1.6F * textScale) * hoverMix : 0.0F;
+        float edgeAlpha = context.edgeFadeAlpha(y, viewportTop, viewportBottom);
+        int textColor = optionTextColor(selected, isHovered);
+
+        renderExperimentalOptionBackground(context, graphics, isHovered, left, y, edgeAlpha);
+        graphics.pose().pushPose();
+        applyExperimentalOptionTransform(context, graphics, left, y, scale, cursorShiftX, cursorShiftY);
+        if (selected) {
+            graphics.drawString(context.font(), ">", left - 7, Mth.floor(y + optionTextYOffset(context)), VillagerInteractionUiUtil.withAlpha(0xFFFFFFFF, edgeAlpha), false);
+        }
+        graphics.drawString(
+                context.font(),
+                context.optionLabel(index),
+                left + context.optionTextInset(),
+                Mth.floor(y + optionTextYOffset(context)),
                 VillagerInteractionUiUtil.withAlpha(textColor, edgeAlpha),
                 false);
         graphics.pose().popPose();
@@ -89,6 +155,32 @@ final class VillagerInteractionOptionList {
         graphics.pose().translate(pivotX + shiftX, pivotY + shiftY, 0.0F);
         graphics.pose().scale(scale, scale, 1.0F);
         graphics.pose().translate(-pivotX, -pivotY, 0.0F);
+    }
+
+    private static void applyExperimentalOptionTransform(Context context, GuiGraphics graphics, int left, float top, float scale, float shiftX, float shiftY) {
+        float pivotX = left + context.optionTextInset();
+        float pivotY = top + optionTextYOffset(context);
+        graphics.pose().translate(pivotX + shiftX, pivotY + shiftY, 0.0F);
+        graphics.pose().scale(scale, scale, 1.0F);
+        graphics.pose().translate(-pivotX, -pivotY, 0.0F);
+    }
+
+    private static float optionTextYOffset(Context context) {
+        return context.optionHeight() * (5.0F / 18.0F);
+    }
+
+    private static void renderExperimentalOptionBackground(Context context, GuiGraphics graphics, boolean hovered, int left, float top, float edgeAlpha) {
+        if (!hovered) {
+            return;
+        }
+
+        int bgLeft = left - 12;
+        int bgTop = Mth.floor(top + 1.0F);
+        int bgRight = Math.min(context.optionsScrollbarLeft() - 8, left + context.optionWidth() - 8);
+        int bgBottom = bgTop + context.optionHeight() - 1;
+        if (bgRight > bgLeft) {
+            graphics.fill(bgLeft, bgTop, bgRight, bgBottom, VillagerInteractionUiUtil.withAlpha(0xFF000000, edgeAlpha * 0.16F));
+        }
     }
 
     private static void renderOptionBackground(Context context, GuiGraphics graphics, boolean hovered, int left, float top, float edgeAlpha) {
@@ -148,6 +240,12 @@ final class VillagerInteractionOptionList {
         float optionHoverScale();
 
         float optionSelectedScale();
+
+        boolean experimentalStyle();
+
+        float experimentalTextScale();
+
+        int optionsScrollbarLeft();
 
         void renderScrollbar(GuiGraphics graphics);
     }

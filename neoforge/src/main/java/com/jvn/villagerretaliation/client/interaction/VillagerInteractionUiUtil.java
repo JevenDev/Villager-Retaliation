@@ -1,6 +1,9 @@
 package com.jvn.villagerretaliation.client.interaction;
 
 import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 
 final class VillagerInteractionUiUtil {
@@ -63,6 +66,30 @@ final class VillagerInteractionUiUtil {
 
     static int withAlpha(int color, float alphaFactor) {
         return VillagerClientUiUtil.withAlphaFloor(color, alphaFactor);
+    }
+
+    static int scaledWrapWidth(int width, float scale) {
+        return Math.max(1, Math.round(width / scale));
+    }
+
+    static int scaledLineStep(Font font, float scale) {
+        return Math.round((font.lineHeight + 2) * scale);
+    }
+
+    static void drawScaledString(GuiGraphics graphics, Font font, String text, int left, int top, int color, float scale) {
+        graphics.pose().pushPose();
+        graphics.pose().translate(left, top, 0.0F);
+        graphics.pose().scale(scale, scale, 1.0F);
+        graphics.drawString(font, text, 0, 0, color, false);
+        graphics.pose().popPose();
+    }
+
+    static void drawScaledString(GuiGraphics graphics, Font font, FormattedCharSequence text, int left, int top, int color, float scale) {
+        graphics.pose().pushPose();
+        graphics.pose().translate(left, top, 0.0F);
+        graphics.pose().scale(scale, scale, 1.0F);
+        graphics.drawString(font, text, 0, 0, color, false);
+        graphics.pose().popPose();
     }
 
     record ScrollbarThumb(

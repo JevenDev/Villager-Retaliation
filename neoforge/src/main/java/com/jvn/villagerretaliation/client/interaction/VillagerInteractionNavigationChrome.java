@@ -16,18 +16,25 @@ final class VillagerInteractionNavigationChrome {
         int right = context.topBackRight();
         int top = context.topBackTop();
         int bottom = context.topBackBottom();
+        float scale = context.textScale();
         boolean hovered = context.topBackButtonHovered(mouseX, mouseY);
         int textColor = hovered ? 0xFFF8F8F4 : 0xCFC7C8C5;
         int backgroundColor = hovered ? 0x30000000 : 0x18000000;
+        int horizontalPad = Math.round(6.0F * scale);
+        int rightPad = Math.round(4.0F * scale);
+        int verticalPad = Math.round(2.0F * scale);
 
-        graphics.fill(left - 6, top - 2, right + 4, bottom + 2, backgroundColor);
-        graphics.drawString(context.font(), context.backLabel(), left, top, textColor, false);
+        graphics.fill(left - horizontalPad, top - verticalPad, right + rightPad, bottom + verticalPad, backgroundColor);
+        VillagerInteractionUiUtil.drawScaledString(graphics, context.font(), context.backLabel(), left, top, textColor, scale);
     }
 
     static void renderHint(Context context, GuiGraphics graphics) {
         String hintText = context.hintText();
         Font font = context.font();
-        graphics.drawString(font, hintText, context.screenWidth() - font.width(hintText) - 8, context.screenHeight() - 14, 0x66FFFFFF, false);
+        float scale = context.textScale();
+        int width = Math.round(font.width(hintText) * scale);
+        int height = Math.round(font.lineHeight * scale);
+        VillagerInteractionUiUtil.drawScaledString(graphics, font, hintText, context.screenWidth() - width - 8, context.screenHeight() - height - 5, 0x66FFFFFF, scale);
     }
 
     interface Context {
@@ -52,5 +59,7 @@ final class VillagerInteractionNavigationChrome {
         String backLabel();
 
         String hintText();
+
+        float textScale();
     }
 }
