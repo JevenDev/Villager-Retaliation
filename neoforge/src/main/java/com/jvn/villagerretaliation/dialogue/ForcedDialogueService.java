@@ -43,6 +43,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
+import net.minecraft.world.MenuProvider;
 import net.minecraft.world.RandomizableContainer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -91,6 +92,13 @@ public final class ForcedDialogueService {
     private static final String CONTAINER_OPENED_VOUCH_ALLOW_MESSAGE_KEY = "container_opened.vouch.allow";
     private static final String CONTAINER_OPENED_VOUCH_DENY_MESSAGE_KEY = "container_opened.vouch.deny";
     private static final String CONTAINER_OPENED_VOUCH_ROYALTY_MESSAGE_KEY = "container_opened.vouch.royalty";
+    private static final String CONTAINER_OPENED_VOUCH_ORIGINAL_RESPONSE_MESSAGE_KEY = "container_opened.vouch.original_response";
+    private static final String CONTAINER_OPENED_VOUCH_ORIGINAL_ROYALTY_RESPONSE_MESSAGE_KEY = "container_opened.vouch.original_response.royalty";
+    private static final String CONTAINER_OPENED_VOUCH_DEFINITION_ID = "container_opened.vouch";
+    private static final String CONTAINER_OPENED_VOUCH_ALLOW_DEFINITION_ID = "container_opened.vouch.allow";
+    private static final String CONTAINER_OPENED_VOUCH_ACCEPT_OPTION_ID = "container_opened.vouch.accept";
+    private static final String CONTAINER_OPENED_VOUCH_RESPONDER_ID_KEY = "container_opened.vouch.responder_id";
+    private static final String CONTAINER_OPENED_VOUCH_ROYALTY_KEY = "container_opened.vouch.royalty_flag";
     private static final String RESTITUTION_DEFINITION_SUFFIX = ".restitution_options";
     private static final String RESTITUTION_PAY_SUFFIX = ".pay";
     private static final String RESTITUTION_HAGGLE_SUFFIX = ".haggle";
@@ -284,6 +292,10 @@ public final class ForcedDialogueService {
             FORCED_SESSIONS.remove(player.getUUID());
             VillagerConversationService.endForPlayer(player, true);
             return true;
+        }
+
+        if (isAllowedContainerVouchResponse(session, selected.get())) {
+            return handleAllowedContainerVouchResponse(player, villager, session);
         }
 
         return handleSelectedOption(player, villager, session, selected.get(), false, false);
@@ -617,6 +629,19 @@ public final class ForcedDialogueService {
 
     private static boolean shouldOfferStolenItemReturnOption(ForcedDialogueSession session, ForcedDialogueOption option) {
         return !session.stolenItemsResolved() || option.stolenItemReturn().isEmpty();
+    }
+
+    private static boolean isAllowedContainerVouchResponse(ForcedDialogueSession session, ForcedDialogueOption option) {
+        return CONTAINER_OPENED_VOUCH_ALLOW_DEFINITION_ID.equals(session.definition().id())
+                && CONTAINER_OPENED_VOUCH_ACCEPT_OPTION_ID.equals(option.id());
+    }
+
+    private static boolean handleAllowedContainerVouchResponse(ServerPlayer player, Villager vouchingVillager, ForcedDialogueSession session) {
+        FORCED_SESSIONS.remove(player.getUUID());
+        VillagerConversationService.endForPlayer(player, true);
+        sendAllowedContainerVouchOriginalResponse(player, vouchingVillager, session);
+        openAllowedVouchContainer(player, session);
+        return true;
     }
 
     private static boolean handleSelectedOption(
@@ -1993,6 +2018,9 @@ public final class ForcedDialogueService {
             Villager currentVillager,
             ForcedDialogueSession session) {
         ServerLevel level = player.serverLevel();
+        if (tryAdvanceHighReputationContainerVouch(level, player, currentVillager, session)) {
+            return true;
+        }
         Optional<ContainerWitnessCandidate> nextWitness = findAdditionalContainerWitness(level, player, session);
         if (nextWitness.isEmpty()) {
             return false;
@@ -2331,6 +2359,77 @@ public final class ForcedDialogueService {
                 level.getGameTime());
     }
 
+    private static boolean openAllowedVouchContainer(ServerPlayer player, ForcedDialogueSession session) {
+        ServerLevel level = player.getServer().getLevel(session.sourceContainerDimension());
+        if (level == null || player.level().dimension() != session.sourceContainerDimension()) {
+            return false;
+        }
+
+        BlockPos pos = session.sourceContainerPos();
+        BlockState state = level.getBlockState(pos);
+        MenuProvider menuProvider = state.getMenuProvider(level, pos);
+        if (menuProvider == null) {
+            return false;
+        }
+
+        RECENT_CONTAINER_CLICKS.remove(player.getUUID());
+        OPEN_CONTAINER_SNAPSHOTS.remove(player.getUUID());
+        return player.openMenu(menuProvider).isPresent();
+    }
+
+    private static void sendAllowedContainerVouchOriginalResponse(
+            ServerPlayer player,
+            Villager vouchingVillager,
+            ForcedDialogueSession session) {
+        Optional<UUID> responderId = parsedUuid(session.replacements().get(CONTAINER_OPENED_VOUCH_RESPONDER_ID_KEY));
+        if (responderId.isEmpty()) {
+            return;
+        }
+
+        ServerLevel level = player.serverLevel();
+        Entity entity = level.getEntity(responderId.get());
+        if (!(entity instanceof Villager responder) || !responder.isAlive()) {
+            return;
+        }
+
+        ContainerSnapshot snapshot = containerSnapshot(session, level);
+        DialogueContext context = VillagerInteractionService.createDialogueContext(level, player, responder);
+        String responderName = VillagerPresetNameRegistry.resolveDisplayName(responder).getString();
+        String voucherName = VillagerPresetNameRegistry.resolveDisplayName(vouchingVillager).getString();
+        Map<String, String> replacements = Map.of(
+                "container", snapshot.containerName().getString(),
+                "player", player.getDisplayName().getString(),
+                "villager", responderName,
+                "current_villager", responderName,
+                "original_villager", responderName,
+                "voucher", voucherName,
+                "previous_villager", voucherName,
+                "vouching_villager", voucherName);
+        String messageKey = Boolean.parseBoolean(session.replacements().getOrDefault(CONTAINER_OPENED_VOUCH_ROYALTY_KEY, "false"))
+                ? CONTAINER_OPENED_VOUCH_ORIGINAL_ROYALTY_RESPONSE_MESSAGE_KEY
+                : CONTAINER_OPENED_VOUCH_ORIGINAL_RESPONSE_MESSAGE_KEY;
+        String line = VillagerDialogueResources.message(context, messageKey, replacements).orElse("");
+        line = VillagerDialogueResources.resolveTemplate(line, replacements);
+        if (!line.isBlank()) {
+            VillagerInteractionService.broadcastForcedVillagerChat(
+                    level,
+                    responder,
+                    line,
+                    VillagerInteractionService.villagerSpeakerLabel(responder));
+        }
+    }
+
+    private static Optional<UUID> parsedUuid(String value) {
+        if (value == null || value.isBlank()) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(UUID.fromString(value));
+        } catch (IllegalArgumentException ignored) {
+            return Optional.empty();
+        }
+    }
+
     private static int stolenItemCount(ForcedDialogueSession session) {
         int removedCount = session.removedStacks().stream().mapToInt(ItemStack::getCount).sum();
         return removedCount > 0 ? removedCount : session.context().itemCount();
@@ -2661,9 +2760,6 @@ public final class ForcedDialogueService {
             ServerLevel level,
             ServerPlayer player,
             ContainerSnapshot snapshot) {
-        if (tryHighReputationContainerVouch(level, player, snapshot)) {
-            return;
-        }
         triggerContainerChat(level, player, snapshot, 0, List.of(), ForcedDialogueTrigger.CONTAINER_OPENED);
         ForcedDialogueResources
                 .selectCandidates(level.getServer(), ForcedDialogueTrigger.CONTAINER_OPENED, snapshot.lootTable())
@@ -2672,11 +2768,14 @@ public final class ForcedDialogueService {
                 .anyMatch(definition -> trigger(level, player, snapshot, 0, List.of(), definition));
     }
 
-    private static boolean tryHighReputationContainerVouch(
+    private static boolean tryAdvanceHighReputationContainerVouch(
             ServerLevel level,
             ServerPlayer player,
-            ContainerSnapshot snapshot) {
+            Villager currentVillager,
+            ForcedDialogueSession session) {
+        ContainerSnapshot snapshot = containerSnapshot(session, level);
         if (!VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()
+                || session.definition().trigger() != ForcedDialogueTrigger.CONTAINER_OPENED
                 || snapshot.lootTable() == null
                 || !snapshot.lootTable().getPath().startsWith("chests/village/")) {
             return false;
@@ -2686,6 +2785,7 @@ public final class ForcedDialogueService {
         double radiusSqr = radius * radius;
         AABB area = AABB.ofSize(Vec3.atCenterOf(snapshot.pos()), radius * 2.0D, radius * 2.0D, radius * 2.0D);
         Optional<ContainerVouchCandidate> voucher = level.getEntitiesOfClass(Villager.class, area, villager -> villager.isAlive() && !villager.isBaby()).stream()
+                .filter(villager -> !session.spokenVillagerIds().contains(villager.getUUID()))
                 .filter(villager -> villager.distanceToSqr(player) <= radiusSqr || villager.blockPosition().distSqr(snapshot.pos()) <= radiusSqr)
                 .filter(villager -> VillagerInteractionService.canUseForcedInteractionSystem(player, villager))
                 .filter(villager -> hasTheftLineOfSight(level, villager, player, snapshot.pos()))
@@ -2724,15 +2824,66 @@ public final class ForcedDialogueService {
         String line = VillagerDialogueResources.message(context, messageKey, replacements)
                 .orElse(messageKey);
         line = VillagerDialogueResources.resolveTemplate(line, replacements);
-        VillagerInteractionService.broadcastForcedVillagerChat(
-                level,
+
+        FORCED_SESSIONS.remove(player.getUUID());
+        VillagerConversationService.endForPlayer(player, false);
+        ForcedDialogueDefinition definition = forcedInterjectionDefinition(
+                allowed ? CONTAINER_OPENED_VOUCH_ALLOW_DEFINITION_ID : CONTAINER_OPENED_VOUCH_DEFINITION_ID,
+                line,
+                session.definition(),
+                allowed ? containerVouchAllowOptions() : containerWitnessInterjectionOptions(session.definition()));
+        ForcedDialogueContext interjectionContext = containerWitnessContext(level, villager, player, session);
+        if (VillagerInteractionService.openForcedDialogue(
+                player,
                 villager,
                 line,
-                VillagerInteractionService.villagerSpeakerLabel(villager));
-        if (!allowed) {
-            player.closeContainer();
+                forcedOptions(definition, level, villager, player, session),
+                definition.forceCameraTowardsVillager())) {
+            FORCED_SESSIONS.put(player.getUUID(), new ForcedDialogueSession(
+                    villager.getUUID(),
+                    definition,
+                    interjectionContext,
+                    session.sourceContainerDimension(),
+                    session.sourceContainerPos(),
+                    session.removedStacks(),
+                    level.getGameTime(),
+                    -1,
+                    "",
+                    false,
+                    allowed ? containerVouchResponseSessionReplacements(currentVillager, royalty) : Map.of(),
+                    appendedParticipantIds(session, villager),
+                    appendedSpokenVillagerIds(session, villager),
+                    session.stolenItemsResolved(),
+                    session.disabledOptionIds(),
+                    session.royaltyAggroBypass()));
+        } else if (!line.isBlank()) {
+            VillagerInteractionService.sendVillagerNotice(player, villager, line);
         }
         return true;
+    }
+
+    private static Map<String, String> containerVouchResponseSessionReplacements(Villager currentVillager, boolean royalty) {
+        return Map.of(
+                CONTAINER_OPENED_VOUCH_RESPONDER_ID_KEY, currentVillager.getUUID().toString(),
+                CONTAINER_OPENED_VOUCH_ROYALTY_KEY, Boolean.toString(royalty));
+    }
+
+    private static List<ForcedDialogueOption> containerVouchAllowOptions() {
+        return List.of(new ForcedDialogueOption(
+                CONTAINER_OPENED_VOUCH_ACCEPT_OPTION_ID,
+                "I'll be careful",
+                List.of(),
+                0,
+                false,
+                0.0D,
+                true,
+                0,
+                ForcedDialogueStolenItemReturn.empty(),
+                ForcedDialogueItemPayment.empty(),
+                VillagerReputationCondition.empty(),
+                SocialAttributeCondition.EMPTY,
+                List.of(),
+                ForcedDialogueFollowUp.empty()));
     }
 
     private static double containerVouchChance(ReputationSnapshot reputation) {

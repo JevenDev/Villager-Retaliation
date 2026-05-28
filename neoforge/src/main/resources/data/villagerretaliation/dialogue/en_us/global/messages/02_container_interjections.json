@@ -26,6 +26,24 @@
       ]
     },
     {
+      "key": "container_opened.vouch.original_response",
+      "lines": [
+        "If {previous_villager} vouches for you, then I will stand down. Keep the {container} tidy.",
+        "All right, {player}. {previous_villager} has spoken for you. Do not make them regret it.",
+        "Fine. I trust {previous_villager}'s word here. Treat the {container} with care.",
+        "Then take only what you need, {player}. {previous_villager}'s trust carries weight."
+      ]
+    },
+    {
+      "key": "container_opened.vouch.original_response.royalty",
+      "lines": [
+        "As you say. The {container} is open to our liege.",
+        "I will not stand in your way, {player}. Take what the village can offer.",
+        "Forgive me, my liege. I will step aside.",
+        "Then the village yields the {container}. Use it as you need."
+      ]
+    },
+    {
       "key": "container_theft.backup_interjection",
       "lines": [
         "Yeah, <aqua>{previous_villager}</aqua> is right. I saw you take {stolen_item_reference} too.",
