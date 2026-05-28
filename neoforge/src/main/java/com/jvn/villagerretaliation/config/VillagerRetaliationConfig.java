@@ -24,6 +24,7 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.BooleanValue SEPARATE_VILLAGER_CHAT_SPEAKERS;
     public static final ModConfigSpec.EnumValue<InteractionScreenStyle> INTERACTION_SCREEN_STYLE;
     public static final ModConfigSpec.EnumValue<InteractionChatPosition> INTERACTION_CHAT_POSITION;
+    public static final ModConfigSpec.EnumValue<InteractionSkillsPosition> INTERACTION_SKILLS_POSITION;
     public static final ModConfigSpec.DoubleValue DIALOGUE_CAMERA_ZOOM_AMOUNT;
     public static final ModConfigSpec.IntValue DIALOGUE_CAMERA_TRANSITION_TICKS;
     public static final ModConfigSpec.EnumValue<ReputationChangeDisplayMode> REPUTATION_CHANGE_DISPLAY_MODE;
@@ -290,6 +291,10 @@ public final class VillagerRetaliationConfig {
                 .comment("Where chat is anchored while the Villager Retaliation interaction menu is open.")
                 .translation("villagerretaliation.configuration.dialogue.interactionChatPosition")
                 .defineEnum("interactionChatPosition", InteractionChatPosition.BOTTOM_LEFT);
+        INTERACTION_SKILLS_POSITION = BUILDER
+                .comment("Where the villager skills panel is anchored while the interaction menu is open.")
+                .translation("villagerretaliation.configuration.dialogue.interactionSkillsPosition")
+                .defineEnum("interactionSkillsPosition", InteractionSkillsPosition.TOP_RIGHT);
         DIALOGUE_CAMERA_ZOOM_AMOUNT = BUILDER
                 .comment("FOV zoom amount used while the Villager Retaliation dialogue screen is open.")
                 .translation("villagerretaliation.configuration.dialogue.dialogueCameraZoomAmount")

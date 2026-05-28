@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
 import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
 import com.jvn.villagerretaliation.config.InteractionChatPosition;
 import com.jvn.villagerretaliation.config.InteractionScreenStyle;
+import com.jvn.villagerretaliation.config.InteractionSkillsPosition;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.DialogueDisposition;
 import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
@@ -66,7 +67,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final int VEIL_DITHER_START_OFFSET = OPTION_HEIGHT - 81;
     private static final int SCREEN_BOTTOM_MARGIN = 48;
     private static final int VEIL_TOP_DITHER_HEIGHT = 64;
-    private static final int SKILLS_RIGHT_MARGIN = 36;
+    private static final int SKILLS_EDGE_MARGIN = 10;
     private static final int SKILLS_CONTAINER_PADDING_X = 8;
     private static final int SKILLS_CONTAINER_PADDING_Y = 6;
     private static final int SKILLS_CONTAINER_BACKGROUND_COLOR = 0xA0101010;
@@ -1225,31 +1226,35 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private int skillsPanelTop() {
-        if (isExperimentalUi()) {
-            return chatRenderLayout().top();
+        InteractionSkillsPosition position = VillagerRetaliationConfig.INTERACTION_SKILLS_POSITION.get();
+        int containerHeight = skillsContainerHeight();
+        int targetTop;
+        if (position.anchorsBottom()) {
+            targetTop = this.height - containerHeight - SKILLS_EDGE_MARGIN;
+        } else if (position.anchorsMiddle()) {
+            targetTop = (this.height - containerHeight) / 2;
+        } else {
+            targetTop = SKILLS_EDGE_MARGIN;
         }
-        int panelHeight = skillsContainerHeight();
-        int minTop = 32;
-        int maxTop = Math.max(minTop, this.height - panelHeight - 32);
-        int centeredTop = (this.height - panelHeight) / 2;
-        int aboveInfoTop = interactionVeilTop() - panelHeight - 14;
-        return Mth.clamp(Math.min(centeredTop, aboveInfoTop), minTop, maxTop);
+        return Mth.clamp(targetTop, SKILLS_EDGE_MARGIN, Math.max(SKILLS_EDGE_MARGIN, this.height - containerHeight - SKILLS_EDGE_MARGIN));
     }
 
     private int skillsPanelLeft() {
-        if (isExperimentalUi()) {
-            return experimentalOptionsLeft();
+        InteractionSkillsPosition position = VillagerRetaliationConfig.INTERACTION_SKILLS_POSITION.get();
+        int panelWidth = skillsPanelWidth();
+        int targetLeft;
+        if (position.anchorsRight()) {
+            targetLeft = this.width - panelWidth - SKILLS_EDGE_MARGIN;
+        } else if (position.anchorsCenter()) {
+            int containerWidth = panelWidth + SKILLS_CONTAINER_PADDING_X;
+            targetLeft = (this.width - containerWidth) / 2 + SKILLS_CONTAINER_PADDING_X;
+        } else {
+            targetLeft = SKILLS_EDGE_MARGIN + SKILLS_CONTAINER_PADDING_X;
         }
-        int maxLeft = Math.max(8, this.width - OPTION_WIDTH - 8);
-        int preferredLeft = this.width - OPTION_WIDTH - SKILLS_RIGHT_MARGIN;
-        int minLeft = optionsLeft() + OPTION_WIDTH + 36;
-        return Math.min(maxLeft, Math.max(minLeft, preferredLeft));
+        return Mth.clamp(targetLeft, SKILLS_EDGE_MARGIN + SKILLS_CONTAINER_PADDING_X, Math.max(SKILLS_EDGE_MARGIN + SKILLS_CONTAINER_PADDING_X, this.width - panelWidth - SKILLS_EDGE_MARGIN));
     }
 
     private int skillsPanelWidth() {
-        if (isExperimentalUi()) {
-            return Math.max(optionWidth(), optionsScrollbarLeft() - skillsPanelLeft());
-        }
         return optionWidth();
     }
 
