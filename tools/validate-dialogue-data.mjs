@@ -6,9 +6,9 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const textTokenPattern = /\{([a-zA-Z0-9_]+)\}/g;
 
 const roots = {
-  dialogue: "common/src/main/resources/data/villagerretaliation/dialogue/en_us",
-  forcedDialogue: "common/src/main/resources/data/villagerretaliation/forced_dialogue",
-  notifications: "common/src/main/resources/data/villagerretaliation/notifications/en_us"
+  dialogue: "neoforge/src/main/resources/data/villagerretaliation/dialogue/en_us",
+  forcedDialogue: "neoforge/src/main/resources/data/villagerretaliation/forced_dialogue",
+  notifications: "neoforge/src/main/resources/data/villagerretaliation/notifications/en_us"
 };
 
 const legacyLineFields = new Set([

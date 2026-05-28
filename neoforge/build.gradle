@@ -15,7 +15,6 @@ java {
 }
 
 sourceSets.main.resources {
-    srcDir(rootProject.project(':common').file('src/main/resources'))
     srcDir('src/generated/resources')
     exclude('**/*.bbmodel')
     exclude('src/generated/**/.cache')
@@ -50,8 +49,7 @@ neoForge {
             data()
             programArguments.addAll '--mod', rootProject.mod_id, '--all',
                     '--output', file('src/generated/resources/').absolutePath,
-                    '--existing', file('src/main/resources/').absolutePath,
-                    '--existing', rootProject.project(':common').file('src/main/resources/').absolutePath
+                    '--existing', file('src/main/resources/').absolutePath
         }
 
         configureEach {

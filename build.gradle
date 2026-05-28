@@ -1,16 +1,9 @@
 plugins {
-    id 'architectury-plugin' version '3.4-SNAPSHOT'
-    id 'dev.architectury.loom' version '1.11-SNAPSHOT' apply false
-    id 'com.gradleup.shadow' version '8.3.6' apply false
     id 'net.neoforged.moddev' version '2.0.141' apply false
 }
 
 tasks.named('wrapper', Wrapper).configure {
     distributionType = Wrapper.DistributionType.BIN
-}
-
-architectury {
-    minecraft = rootProject.minecraft_version
 }
 
 allprojects {
@@ -23,14 +16,6 @@ allprojects {
         }
 
         mavenCentral()
-        maven {
-            name = 'Architectury'
-            url = 'https://maven.architectury.dev/'
-        }
-        maven {
-            name = 'Fabric'
-            url = 'https://maven.fabricmc.net/'
-        }
         maven {
             name = 'NeoForge'
             url = 'https://maven.neoforged.net/releases/'
@@ -59,51 +44,6 @@ allprojects {
             }
             filter {
                 includeGroup 'curse.maven'
-            }
-        }
-    }
-}
-
-configure(subprojects.findAll { it.name != 'neoforge' }) {
-    apply plugin: 'java-library'
-    apply plugin: 'maven-publish'
-    apply plugin: 'dev.architectury.loom'
-
-    base {
-        archivesName = "${rootProject.archives_base_name}-${project.name}-${rootProject.minecraft_version}"
-    }
-
-    java {
-        toolchain.languageVersion = JavaLanguageVersion.of(rootProject.java_version.toInteger())
-        withSourcesJar()
-    }
-
-    loom {
-        silentMojangMappingsLicense()
-    }
-
-    dependencies {
-        minecraft "com.mojang:minecraft:${rootProject.minecraft_version}"
-        mappings loom.layered {
-            officialMojangMappings()
-            parchment("org.parchmentmc.data:parchment-${rootProject.parchment_minecraft_version}:${rootProject.parchment_mappings_version}@zip")
-        }
-    }
-
-    tasks.withType(JavaCompile).configureEach {
-        options.encoding = 'UTF-8'
-        options.release = rootProject.java_version.toInteger()
-    }
-
-    publishing {
-        publications {
-            register('mavenJava', MavenPublication) {
-                from components.java
-            }
-        }
-        repositories {
-            maven {
-                url = rootProject.file('repo').toURI()
             }
         }
     }
