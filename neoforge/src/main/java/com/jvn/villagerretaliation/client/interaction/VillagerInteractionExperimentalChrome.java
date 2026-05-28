@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.List;
 import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
@@ -17,8 +18,11 @@ final class VillagerInteractionExperimentalChrome {
     private static final int NAME_LINE_GAP = 5;
     private static final float OVERLAY_SOURCE_WIDTH = 1920.0F;
     private static final float OVERLAY_SOURCE_HEIGHT = 1080.0F;
+    private static final float EXIT_DURATION_MILLIS = 860.0F;
+    private static final float TEXT_FADE_IN_DURATION_MILLIS = 320.0F;
+    private static final float TEXT_ALPHA_DRAW_THRESHOLD = 0.04F;
     private static final OverlayLayer[] BACKDROP_LAYERS = {
-            new OverlayLayer("lower-veil", 0, 260, -0.04F, 0.16F, 1.025F, new OverlayShape[] {
+            new OverlayLayer("lower-veil", 0, 260, -0.04F, 0.16F, 1.025F, 80, -0.10F, 1.02F, new OverlayShape[] {
                     OverlayShape.quad(
                             0x63000000,
                             -560.0F, 867.0F,
@@ -26,7 +30,7 @@ final class VillagerInteractionExperimentalChrome {
                             2480.0F, 1360.0F,
                             -560.0F, 1360.0F)
             }),
-            new OverlayLayer("lower-shadow", 90, 240, -0.06F, 0.30F, 1.04F, new OverlayShape[] {
+            new OverlayLayer("lower-shadow", 90, 240, -0.06F, 0.30F, 1.04F, 0, -0.16F, 1.12F, new OverlayShape[] {
                     OverlayShape.quad(
                             0xFF000000,
                             -560.0F, 1053.0F,
@@ -34,14 +38,14 @@ final class VillagerInteractionExperimentalChrome {
                             2480.0F, 1360.0F,
                             -560.0F, 1360.0F)
             }),
-            new OverlayLayer("right-shadow", 210, 250, 0.34F, -0.05F, 1.03F, new OverlayShape[] {
+            new OverlayLayer("right-shadow", 210, 250, 0.34F, -0.05F, 1.03F, 170, 0.18F, 1.18F, new OverlayShape[] {
                     OverlayShape.triangle(
                             0xFF101010,
                             2280.0F, 183.0F,
                             2280.0F, 1360.0F,
                             682.0F, 1360.0F)
             }),
-            new OverlayLayer("right-highlight", 340, 180, 0.22F, 0.02F, 0.98F, new OverlayShape[] {
+            new OverlayLayer("right-highlight", 340, 180, 0.22F, 0.02F, 0.98F, 260, 0.30F, 1.28F, new OverlayShape[] {
                     OverlayShape.triangle(
                             0xFF323232,
                             2280.0F, 138.0F,
@@ -52,12 +56,41 @@ final class VillagerInteractionExperimentalChrome {
     private static final long BACKDROP_IDLE_AFTER_MILLIS = 900L;
 
     private static long backdropAnimationStartMillis = -1L;
+    private static long backdropExitStartMillis = -1L;
+    private static List<ExitTextElement> exitTextElements = List.of();
+    private static List<ExitFadeTextElement> exitFadeTextElements = List.of();
+    private static List<ExitFadeRectElement> exitFadeRectElements = List.of();
 
     private VillagerInteractionExperimentalChrome() {
     }
 
     static void resetAnimation() {
         backdropAnimationStartMillis = Util.getMillis();
+        backdropExitStartMillis = -1L;
+        exitTextElements = List.of();
+        exitFadeTextElements = List.of();
+        exitFadeRectElements = List.of();
+    }
+
+    static void startExitAnimation(
+            List<ExitTextElement> textElements,
+            List<ExitFadeTextElement> fadeTextElements,
+            List<ExitFadeRectElement> fadeRectElements) {
+        if (backdropExitStartMillis < 0L) {
+            backdropExitStartMillis = Util.getMillis();
+            exitTextElements = new ArrayList<>(textElements);
+            exitFadeTextElements = new ArrayList<>(fadeTextElements);
+            exitFadeRectElements = new ArrayList<>(fadeRectElements);
+        }
+    }
+
+    static boolean exitAnimationRunning() {
+        return backdropExitStartMillis >= 0L && !exitAnimationComplete();
+    }
+
+    static boolean exitAnimationComplete() {
+        return backdropExitStartMillis >= 0L
+                && Util.getMillis() - backdropExitStartMillis >= EXIT_DURATION_MILLIS;
     }
 
     static void renderBackdrop(GuiGraphics graphics, int width, int height, float veilTop, int mouseX, int mouseY) {
@@ -66,12 +99,17 @@ final class VillagerInteractionExperimentalChrome {
             backdropAnimationStartMillis = now;
         }
         float elapsedMillis = now - backdropAnimationStartMillis;
+        float exitElapsedMillis = backdropExitStartMillis < 0L ? -1.0F : now - backdropExitStartMillis;
 
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         for (OverlayLayer layer : BACKDROP_LAYERS) {
-            layer.render(graphics, width, height, elapsedMillis, mouseX, mouseY);
+            layer.render(graphics, width, height, elapsedMillis, exitElapsedMillis, mouseX, mouseY);
+        }
+        if (exitElapsedMillis >= 0.0F) {
+            renderExitText(graphics, exitElapsedMillis);
+            renderExitFadeChrome(graphics, exitElapsedMillis);
         }
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         RenderSystem.disableBlend();
@@ -87,9 +125,33 @@ final class VillagerInteractionExperimentalChrome {
         int professionY = reputationY - lineGap - Math.round(font.lineHeight * detailScale);
         int nameY = professionY - lineGap - Math.round(font.lineHeight * nameScale);
 
-        drawRightAlignedScaled(graphics, font, context.villagerName(), right, nameY, context.moodColor(), nameScale);
-        drawRightAlignedScaled(graphics, font, context.professionName(), right, professionY, context.infoSecondaryColor(), detailScale);
-        drawRightAlignedScaled(graphics, font, context.reputationText(), right, reputationY, context.infoLabelColor(), detailScale);
+        drawAnimatedRightAlignedScaled(
+                graphics,
+                font,
+                context.villagerName(),
+                right,
+                nameY,
+                context.moodColor(),
+                nameScale,
+                textFadeInAlpha());
+        drawAnimatedRightAlignedScaled(
+                graphics,
+                font,
+                context.professionName(),
+                right,
+                professionY,
+                context.infoSecondaryColor(),
+                detailScale,
+                textFadeInAlpha());
+        drawAnimatedRightAlignedScaled(
+                graphics,
+                font,
+                context.reputationText(),
+                right,
+                reputationY,
+                context.infoLabelColor(),
+                detailScale,
+                textFadeInAlpha());
     }
 
     static void renderNameTooltip(Context context, GuiGraphics graphics, int mouseX, int mouseY) {
@@ -121,13 +183,86 @@ final class VillagerInteractionExperimentalChrome {
                 && mouseY <= nameTop + nameHeight + 3;
     }
 
-    private static void drawRightAlignedScaled(GuiGraphics graphics, Font font, String text, int right, int y, int color, float scale) {
+    private static void drawAnimatedRightAlignedScaled(
+            GuiGraphics graphics,
+            Font font,
+            String text,
+            int right,
+            int y,
+            int color,
+            float scale,
+            float alpha) {
+        if (!shouldDrawText(alpha)) {
+            return;
+        }
+
+        int animatedColor = multiplyAlpha(color, alpha);
         float scaledWidth = font.width(text) * scale;
         graphics.pose().pushPose();
         graphics.pose().translate(right - scaledWidth, y, 0.0F);
         graphics.pose().scale(scale, scale, 1.0F);
-        graphics.drawString(font, text, 0, 0, color, false);
+        graphics.drawString(font, text, 0, 0, animatedColor, false);
         graphics.pose().popPose();
+    }
+
+    private static void renderExitText(GuiGraphics graphics, float exitElapsedMillis) {
+        if (exitTextElements.isEmpty()) {
+            return;
+        }
+
+        Font font = Minecraft.getInstance().font;
+        float progress = normalizedProgress(exitElapsedMillis, 0.0F, 540.0F);
+        if (progress <= 0.0F) {
+            return;
+        }
+
+        float fall = easeInCubic(progress);
+        float fade = 1.0F - smoothstep(normalizedProgress(exitElapsedMillis, 650.0F, 170.0F));
+        if (!shouldDrawText(fade)) {
+            return;
+        }
+
+        for (ExitTextElement element : exitTextElements) {
+            int color = multiplyAlpha(element.color(), fade);
+            float x = element.x();
+            if (element.rightAligned()) {
+                x -= font.width(element.text()) * element.scale();
+            }
+            float y = element.y() + element.fallDistance() * fall;
+            float scale = element.scale() * (1.0F + progress * 0.035F);
+            graphics.pose().pushPose();
+            graphics.pose().translate(x, y, 0.0F);
+            graphics.pose().scale(scale, scale, 1.0F);
+            graphics.drawString(font, element.text(), 0, 0, color, false);
+            graphics.pose().popPose();
+        }
+    }
+
+    private static void renderExitFadeChrome(GuiGraphics graphics, float exitElapsedMillis) {
+        float alpha = 1.0F - smoothstep(normalizedProgress(exitElapsedMillis, 0.0F, 260.0F));
+        if (alpha <= 0.0F) {
+            return;
+        }
+
+        Font font = Minecraft.getInstance().font;
+        for (ExitFadeRectElement element : exitFadeRectElements) {
+            graphics.fill(
+                    element.left(),
+                    element.top(),
+                    element.right(),
+                    element.bottom(),
+                    multiplyAlpha(element.color(), alpha * element.alpha()));
+        }
+        for (ExitFadeTextElement element : exitFadeTextElements) {
+            if (!shouldDrawText(alpha)) {
+                continue;
+            }
+            graphics.pose().pushPose();
+            graphics.pose().translate(element.x(), element.y(), 0.0F);
+            graphics.pose().scale(element.scale(), element.scale(), 1.0F);
+            graphics.drawString(font, element.text(), 0, 0, multiplyAlpha(element.color(), alpha), false);
+            graphics.pose().popPose();
+        }
     }
 
     private record OverlayLayer(
@@ -137,8 +272,18 @@ final class VillagerInteractionExperimentalChrome {
             float startXRatio,
             float startYRatio,
             float startScale,
+            float exitDelayMillis,
+            float exitXRatio,
+            float exitFallRatio,
             OverlayShape[] shapes) {
-        private void render(GuiGraphics graphics, int width, int height, float elapsedMillis, int mouseX, int mouseY) {
+        private void render(
+                GuiGraphics graphics,
+                int width,
+                int height,
+                float elapsedMillis,
+                float exitElapsedMillis,
+                int mouseX,
+                int mouseY) {
             float progress = normalizedProgress(elapsedMillis, this.delayMillis, this.durationMillis);
             if (progress <= 0.0F) {
                 return;
@@ -162,6 +307,16 @@ final class VillagerInteractionExperimentalChrome {
             offsetX += mouseXRatio * layerDepth * 5.0F * mouseSettle;
             offsetY += mouseYRatio * layerDepth * 3.0F * mouseSettle;
 
+            if (exitElapsedMillis >= 0.0F) {
+                float exitProgress = normalizedProgress(exitElapsedMillis, this.exitDelayMillis, 290.0F);
+                float fall = easeInBack(exitProgress);
+                float fade = 1.0F - smoothstep(normalizedProgress(exitElapsedMillis, this.exitDelayMillis + 120.0F, 180.0F));
+                alpha *= fade;
+                offsetX += this.exitXRatio * width * fall;
+                offsetY += this.exitFallRatio * height * fall;
+                scale += 0.045F * fall;
+            }
+
             for (OverlayShape shape : this.shapes) {
                 shape.render(graphics, width, height, alpha, offsetX, offsetY, scale);
             }
@@ -170,6 +325,44 @@ final class VillagerInteractionExperimentalChrome {
 
     private static float normalizedProgress(float elapsedMillis, float delayMillis, float durationMillis) {
         return Mth.clamp((elapsedMillis - delayMillis) / durationMillis, 0.0F, 1.0F);
+    }
+
+    static float textEntranceProgress(float delayMillis, float durationMillis) {
+        long now = Util.getMillis();
+        if (backdropAnimationStartMillis < 0L) {
+            backdropAnimationStartMillis = now;
+        }
+        return normalizedProgress(now - backdropAnimationStartMillis, delayMillis, durationMillis);
+    }
+
+    static float textFadeInAlpha() {
+        return smoothstep(textEntranceProgress(0.0F, TEXT_FADE_IN_DURATION_MILLIS));
+    }
+
+    static float chromeAlpha() {
+        return textFadeInAlpha();
+    }
+
+    static boolean shouldDrawText(float alpha) {
+        return alpha > TEXT_ALPHA_DRAW_THRESHOLD;
+    }
+
+    record ExitTextElement(
+            String text,
+            int x,
+            int y,
+            int color,
+            float scale,
+            float delayMillis,
+            float driftX,
+            float fallDistance,
+            boolean rightAligned) {
+    }
+
+    record ExitFadeTextElement(String text, int x, int y, int color, float scale) {
+    }
+
+    record ExitFadeRectElement(int left, int top, int right, int bottom, int color, float alpha) {
     }
 
     private static float easeOutCubic(float progress) {
@@ -181,6 +374,19 @@ final class VillagerInteractionExperimentalChrome {
         float inverseProgress = progress - 1.0F;
         float overshoot = 1.45F;
         return 1.0F + inverseProgress * inverseProgress * ((overshoot + 1.0F) * inverseProgress + overshoot);
+    }
+
+    private static float easeInBack(float progress) {
+        float overshoot = 1.25F;
+        return progress * progress * ((overshoot + 1.0F) * progress - overshoot);
+    }
+
+    private static float easeInCubic(float progress) {
+        return progress * progress * progress;
+    }
+
+    static float smoothstep(float progress) {
+        return progress * progress * (3.0F - 2.0F * progress);
     }
 
     private static float idlePulse(float elapsedMillis) {
@@ -318,6 +524,10 @@ final class VillagerInteractionExperimentalChrome {
         int infoRight();
 
         int infoBottom();
+
+        int screenWidth();
+
+        int screenHeight();
 
         String villagerName();
 

@@ -17,9 +17,13 @@ final class VillagerInteractionNavigationChrome {
         int top = context.topBackTop();
         int bottom = context.topBackBottom();
         float scale = context.textScale();
+        float alpha = context.chromeAlpha();
+        if (!VillagerInteractionExperimentalChrome.shouldDrawText(alpha)) {
+            return;
+        }
         boolean hovered = context.topBackButtonHovered(mouseX, mouseY);
-        int textColor = hovered ? 0xFFF8F8F4 : 0xCFC7C8C5;
-        int backgroundColor = hovered ? 0x30000000 : 0x18000000;
+        int textColor = withAlpha(hovered ? 0xFFF8F8F4 : 0xCFC7C8C5, alpha);
+        int backgroundColor = withAlpha(hovered ? 0x30000000 : 0x18000000, alpha);
         int horizontalPad = Math.round(6.0F * scale);
         int rightPad = Math.round(4.0F * scale);
         int verticalPad = Math.round(2.0F * scale);
@@ -32,9 +36,26 @@ final class VillagerInteractionNavigationChrome {
         String hintText = context.hintText();
         Font font = context.font();
         float scale = context.textScale();
+        float alpha = context.chromeAlpha();
+        if (!VillagerInteractionExperimentalChrome.shouldDrawText(alpha)) {
+            return;
+        }
         int width = Math.round(font.width(hintText) * scale);
         int height = Math.round(font.lineHeight * scale);
-        VillagerInteractionUiUtil.drawScaledString(graphics, font, hintText, context.screenWidth() - width - 8, context.screenHeight() - height - 5, 0x66FFFFFF, scale);
+        VillagerInteractionUiUtil.drawScaledString(
+                graphics,
+                font,
+                hintText,
+                context.screenWidth() - width - 8,
+                context.screenHeight() - height - 5,
+                withAlpha(0x66FFFFFF, alpha),
+                scale);
+    }
+
+    private static int withAlpha(int color, float alphaFactor) {
+        int alpha = Math.round(((color >>> 24) & 0xFF) * alphaFactor);
+        alpha = Math.max(0, Math.min(255, alpha));
+        return (color & 0x00FFFFFF) | (alpha << 24);
     }
 
     interface Context {
@@ -61,5 +82,7 @@ final class VillagerInteractionNavigationChrome {
         String hintText();
 
         float textScale();
+
+        float chromeAlpha();
     }
 }

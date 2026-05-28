@@ -132,19 +132,24 @@ final class VillagerInteractionOptionList {
         float cursorShiftY = isHovered ? context.hoverShift(mouseY, y, context.optionHeight(), 1.6F * textScale) * hoverMix : 0.0F;
         float edgeAlpha = context.edgeFadeAlpha(y, viewportTop, viewportBottom);
         int textColor = optionTextColor(selected, isHovered);
+        float textFadeInAlpha = VillagerInteractionExperimentalChrome.textFadeInAlpha();
+        if (!VillagerInteractionExperimentalChrome.shouldDrawText(textFadeInAlpha)) {
+            return;
+        }
+        float textAlpha = edgeAlpha * textFadeInAlpha;
 
-        renderExperimentalOptionBackground(context, graphics, isHovered, left, y, edgeAlpha);
+        renderExperimentalOptionBackground(context, graphics, isHovered, left, y, textAlpha);
         graphics.pose().pushPose();
         applyExperimentalOptionTransform(context, graphics, left, y, scale, cursorShiftX, cursorShiftY);
         if (selected) {
-            graphics.drawString(context.font(), ">", left - 7, Mth.floor(y + optionTextYOffset(context)), VillagerInteractionUiUtil.withAlpha(0xFFFFFFFF, edgeAlpha), false);
+            graphics.drawString(context.font(), ">", left - 7, Mth.floor(y + optionTextYOffset(context)), VillagerInteractionUiUtil.withAlpha(0xFFFFFFFF, textAlpha), false);
         }
         graphics.drawString(
                 context.font(),
                 context.optionLabel(index),
                 left + context.optionTextInset(),
                 Mth.floor(y + optionTextYOffset(context)),
-                VillagerInteractionUiUtil.withAlpha(textColor, edgeAlpha),
+                VillagerInteractionUiUtil.withAlpha(textColor, textAlpha),
                 false);
         graphics.pose().popPose();
     }

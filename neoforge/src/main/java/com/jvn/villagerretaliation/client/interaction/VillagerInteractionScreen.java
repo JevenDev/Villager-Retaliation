@@ -736,7 +736,118 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void leaveConversation() {
+        if (isExperimentalUi()) {
+            VillagerInteractionExperimentalChrome.startExitAnimation(
+                    buildExperimentalExitTextElements(),
+                    buildExperimentalExitFadeTextElements(),
+                    buildExperimentalExitFadeRectElements());
+        }
         this.minecraft.setScreen(null);
+    }
+
+    private List<VillagerInteractionExperimentalChrome.ExitTextElement> buildExperimentalExitTextElements() {
+        List<VillagerInteractionExperimentalChrome.ExitTextElement> textElements = new ArrayList<>();
+        float textScale = experimentalScaleFactor();
+        float nameScale = 1.85F * textScale;
+        float detailScale = 1.4F * textScale;
+        int lineGap = experimentalUnit(5);
+        int reputationY = experimentalInfoBottom() - Math.round(this.font.lineHeight * detailScale);
+        int professionY = reputationY - lineGap - Math.round(this.font.lineHeight * detailScale);
+        int nameY = professionY - lineGap - Math.round(this.font.lineHeight * nameScale);
+        int right = experimentalInfoRight();
+        textElements.add(new VillagerInteractionExperimentalChrome.ExitTextElement(
+                this.villagerName, right, nameY, moodColor(this.primaryMood), nameScale, 0.0F, -18.0F, this.height + 96.0F, true));
+        textElements.add(new VillagerInteractionExperimentalChrome.ExitTextElement(
+                this.professionName, right, professionY, INFO_SECONDARY_COLOR, detailScale, 45.0F, -10.0F, this.height + 82.0F, true));
+        textElements.add(new VillagerInteractionExperimentalChrome.ExitTextElement(
+                reputationText(), right, reputationY, INFO_LABEL_COLOR, detailScale, 90.0F, -6.0F, this.height + 74.0F, true));
+
+        int optionLeft = experimentalOptionsLeft();
+        int textLeft = optionLeft + optionTextInset();
+        int top = optionsTop();
+        int viewportTop = top;
+        int viewportBottom = top + optionViewportHeight();
+        for (int index = 0; index < this.options.size(); index++) {
+            float y = top + index * optionStride() - this.optionScroll;
+            if (y + optionHeight() < viewportTop || y > viewportBottom) {
+                continue;
+            }
+
+            boolean selected = index == this.selectedOption;
+            int color = selected ? 0xFFF8F8F4 : 0xCFC7C8C5;
+            float scale = (1.48F + (selected ? OPTION_SELECTED_SCALE : 0.0F)) * textScale;
+            float delay = 120.0F + index * 28.0F;
+            int textY = Mth.floor(y + optionTextYOffset());
+            if (selected) {
+                textElements.add(new VillagerInteractionExperimentalChrome.ExitTextElement(
+                        ">", textLeft - optionTextInset() - 7, textY, 0xFFFFFFFF, scale, delay, 0.0F, this.height - textY + 72.0F, false));
+            }
+            textElements.add(new VillagerInteractionExperimentalChrome.ExitTextElement(
+                    this.options.get(index).label(),
+                    textLeft,
+                    textY,
+                    color,
+                    scale,
+                    delay + 24.0F,
+                    0.0F,
+                    this.height - textY + 88.0F,
+                    false));
+        }
+        return textElements;
+    }
+
+    private List<VillagerInteractionExperimentalChrome.ExitFadeTextElement> buildExperimentalExitFadeTextElements() {
+        List<VillagerInteractionExperimentalChrome.ExitFadeTextElement> textElements = new ArrayList<>();
+        String hintText = translate(canNavigateBack() ? "hint.back" : "hint.leave");
+        float scale = experimentalScaleFactor();
+        int width = Math.round(this.font.width(hintText) * scale);
+        int height = Math.round(this.font.lineHeight * scale);
+        textElements.add(new VillagerInteractionExperimentalChrome.ExitFadeTextElement(
+                hintText,
+                this.width - width - 8,
+                this.height - height - 5,
+                0x66FFFFFF,
+                scale));
+        return textElements;
+    }
+
+    private List<VillagerInteractionExperimentalChrome.ExitFadeRectElement> buildExperimentalExitFadeRectElements() {
+        List<VillagerInteractionExperimentalChrome.ExitFadeRectElement> rectElements = new ArrayList<>();
+        addScrollbarExitFadeRects(rectElements, scrollbarThumb(), this.optionScroll, maxOptionScroll());
+        if (this.page == DialoguePage.SKILLS) {
+            addScrollbarExitFadeRects(rectElements, skillInfoScrollbarThumb(), this.skillScroll, maxSkillScroll());
+        }
+        return rectElements;
+    }
+
+    private void addScrollbarExitFadeRects(
+            List<VillagerInteractionExperimentalChrome.ExitFadeRectElement> rectElements,
+            VillagerInteractionUiUtil.ScrollbarThumb scrollbarThumb,
+            float currentScroll,
+            float maxScroll) {
+        if (scrollbarThumb == null) {
+            return;
+        }
+
+        boolean canScrollUp = currentScroll > 0.75F;
+        boolean canScrollDown = currentScroll < maxScroll - 0.75F;
+        int fadeLength = Math.min(8, Math.max(3, scrollbarThumb.height() / 3));
+        for (int y = scrollbarThumb.top(); y < scrollbarThumb.bottom(); y++) {
+            float alphaFactor = 1.0F;
+            if (canScrollUp && y < scrollbarThumb.top() + fadeLength) {
+                alphaFactor = Math.min(alphaFactor, (y - scrollbarThumb.top() + 1.0F) / fadeLength);
+            }
+            if (canScrollDown && y >= scrollbarThumb.bottom() - fadeLength) {
+                alphaFactor = Math.min(alphaFactor, (scrollbarThumb.bottom() - y) / (float) fadeLength);
+            }
+            rectElements.add(new VillagerInteractionExperimentalChrome.ExitFadeRectElement(
+                    scrollbarThumb.left(),
+                    y,
+                    scrollbarThumb.right(),
+                    y + 1,
+                    0xBFFFFFFF,
+                    alphaFactor));
+        }
     }
 
     private void activateSelected() {
@@ -1480,7 +1591,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             if (canScrollDown && y >= scrollbarThumb.bottom() - fadeLength) {
                 alphaFactor = Math.min(alphaFactor, (scrollbarThumb.bottom() - y) / (float) fadeLength);
             }
-            graphics.fill(scrollbarThumb.left(), y, scrollbarThumb.right(), y + 1, VillagerInteractionUiUtil.withAlpha(0xBFFFFFFF, alphaFactor));
+            float chromeAlpha = isExperimentalUi() ? VillagerInteractionExperimentalChrome.chromeAlpha() : 1.0F;
+            graphics.fill(scrollbarThumb.left(), y, scrollbarThumb.right(), y + 1, VillagerInteractionUiUtil.withAlpha(0xBFFFFFFF, alphaFactor * chromeAlpha));
         }
     }
 
@@ -1878,6 +1990,16 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
 
         @Override
+        public int screenWidth() {
+            return VillagerInteractionScreen.this.width;
+        }
+
+        @Override
+        public int screenHeight() {
+            return VillagerInteractionScreen.this.height;
+        }
+
+        @Override
         public String villagerName() {
             return VillagerInteractionScreen.this.villagerName;
         }
@@ -1987,6 +2109,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         @Override
         public float textScale() {
             return VillagerInteractionScreen.this.isExperimentalUi() ? VillagerInteractionScreen.this.experimentalScaleFactor() : 1.0F;
+        }
+
+        @Override
+        public float chromeAlpha() {
+            return VillagerInteractionScreen.this.isExperimentalUi() ? VillagerInteractionExperimentalChrome.chromeAlpha() : 1.0F;
         }
     }
 
