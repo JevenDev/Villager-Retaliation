@@ -131,7 +131,7 @@ public final class VillagerQuestResources {
                 parent,
                 readOffer(location, root),
                 readTarget(root),
-                readRules(root),
+                readRules(location, root),
                 readTracker(root),
                 readTriggers(location, root),
                 readRewards(root),
@@ -267,7 +267,7 @@ public final class VillagerQuestResources {
         );
     }
 
-    private static QuestDefinition.Rules readRules(JsonObject root) {
+    private static QuestDefinition.Rules readRules(ResourceLocation location, JsonObject root) {
         JsonObject rules = DatapackJsonReader.readObject(root, "rules");
         if (rules == null) {
             return QuestDefinition.Rules.DEFAULT;
@@ -287,8 +287,113 @@ public final class VillagerQuestResources {
                         DatapackJsonReader.readString(rules, "abandonment", "abandonment_policy", "drop_policy")),
                 readDurationTicks(rules, "abandonment_cooldown", 0L),
                 DatapackJsonReader.readBoolean(rules, "consume_on_completion", false),
-                DatapackJsonReader.readBoolean(rules, "consume_on_abandonment", false)
+                DatapackJsonReader.readBoolean(rules, "consume_on_abandonment", false),
+                readActiveState(location, rules),
+                readExpiration(location, rules)
         );
+    }
+
+    private static QuestDefinition.ActiveState readActiveState(ResourceLocation location, JsonObject rules) {
+        JsonObject active = firstObject(rules, "active", "active_state", "active_visibility");
+        List<DialogueCondition> conditions = active == null
+                ? readConditionsFromArray(location, "quest active state", rules, "active_conditions", "active_when")
+                : DialogueCondition.readList(location, "quest active state", active);
+        boolean hideWhenUnmet = active == null
+                ? readBoolean(rules, false, "hide_when_inactive", "hide_when_active_conditions_unmet")
+                : readBoolean(active, false, "hide_when_unmet", "hide_when_inactive");
+        boolean pauseProgressWhenUnmet = active == null
+                ? readBoolean(rules, true, "pause_progress_when_inactive", "pause_progress_when_active_conditions_unmet")
+                : readBoolean(active, true, "pause_progress_when_unmet", "pause_progress_when_inactive");
+        return new QuestDefinition.ActiveState(conditions, hideWhenUnmet, pauseProgressWhenUnmet);
+    }
+
+    private static QuestDefinition.Expiration readExpiration(ResourceLocation location, JsonObject rules) {
+        JsonObject expiration = firstObject(rules, "expiration", "expires");
+        if (expiration == null && !hasAny(rules,
+                "expires_after_ticks",
+                "expires_after_seconds",
+                "expires_after_days",
+                "expiration_conditions",
+                "expires_when")) {
+            return QuestDefinition.Expiration.DEFAULT;
+        }
+
+        JsonObject source = expiration == null ? rules : expiration;
+        long afterTicks = readDurationTicks(source, "after", 0L);
+        if (afterTicks <= 0L) {
+            afterTicks = readDurationTicks(source, "duration", 0L);
+        }
+        if (afterTicks <= 0L) {
+            afterTicks = readDurationTicks(source, "expires_after", 0L);
+        }
+        List<DialogueCondition> conditions = DialogueCondition.readList(location, "quest expiration", source);
+        if (conditions.isEmpty()) {
+            conditions = readConditionsFromArray(location, "quest expiration", source, "expiration_conditions", "expires_when");
+        }
+        if (conditions.isEmpty() && source != rules) {
+            conditions = readConditionsFromArray(location, "quest expiration", rules, "expiration_conditions", "expires_when");
+        }
+        return new QuestDefinition.Expiration(
+                afterTicks,
+                conditions,
+                readBoolean(source, false, "consume", "consume_on_expiration"),
+                readBoolean(source, true, "allow_repickup", "allow_repick_up"),
+                readBoolean(source, true, "notify", "send_notification"),
+                firstNonBlank(
+                        DatapackJsonReader.readString(source, "notification", "notification_trigger"),
+                        "quest.expired"),
+                firstNonBlank(
+                        DatapackJsonReader.readString(source, "text", "fallback", "fallback_text", "notification_text"),
+                        "Quest expired: {quest}")
+        );
+    }
+
+    private static List<DialogueCondition> readConditionsFromArray(
+            ResourceLocation location,
+            String context,
+            JsonObject owner,
+            String... keys) {
+        for (String key : keys) {
+            JsonElement element = owner.get(key);
+            if (element == null || element.isJsonNull()) {
+                continue;
+            }
+            JsonObject wrapper = new JsonObject();
+            wrapper.add("conditions", element);
+            List<DialogueCondition> conditions = DialogueCondition.readList(location, context, wrapper);
+            if (!conditions.isEmpty()) {
+                return conditions;
+            }
+        }
+        return List.of();
+    }
+
+    private static JsonObject firstObject(JsonObject object, String... keys) {
+        for (String key : keys) {
+            JsonObject child = DatapackJsonReader.readObject(object, key);
+            if (child != null) {
+                return child;
+            }
+        }
+        return null;
+    }
+
+    private static boolean readBoolean(JsonObject object, boolean fallback, String... keys) {
+        for (String key : keys) {
+            if (object.has(key)) {
+                return DatapackJsonReader.readBoolean(object, key, fallback);
+            }
+        }
+        return fallback;
+    }
+
+    private static boolean hasAny(JsonObject object, String... keys) {
+        for (String key : keys) {
+            if (object.has(key)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static long readDurationTicks(JsonObject object, String baseName, long fallback) {
@@ -395,6 +500,16 @@ public final class VillagerQuestResources {
         if (actions.isEmpty()) {
             return Optional.empty();
         }
+        boolean repeatable = defaultTriggerRepeatable(actions);
+        if (trigger.has("repeatable")) {
+            repeatable = DatapackJsonReader.readBoolean(trigger, "repeatable", repeatable);
+        }
+        if (trigger.has("once")) {
+            repeatable = !DatapackJsonReader.readBoolean(trigger, "once", false);
+        }
+        if (trigger.has("run_once")) {
+            repeatable = !DatapackJsonReader.readBoolean(trigger, "run_once", false);
+        }
 
         return Optional.of(new QuestDefinition.Trigger(
                 id,
@@ -402,8 +517,13 @@ public final class VillagerQuestResources {
                 DialogueCondition.readList(location, "quest trigger \"" + id + "\"", trigger),
                 actions,
                 readDurationTicks(trigger, "cooldown", defaultTriggerCooldown(event)),
-                DatapackJsonReader.readDouble(trigger, "radius", 10.0D)
+                DatapackJsonReader.readDouble(trigger, "radius", 10.0D),
+                repeatable
         ));
+    }
+
+    private static boolean defaultTriggerRepeatable(List<QuestDefinition.TriggerAction> actions) {
+        return actions.stream().noneMatch(action -> action.type() == QuestDefinition.TriggerActionType.FORCED_DIALOGUE);
     }
 
     private static long defaultTriggerCooldown(QuestDefinition.TriggerEvent event) {
@@ -508,6 +628,7 @@ public final class VillagerQuestResources {
                 readLines(dialogue, "turn_in"),
                 readLines(dialogue, "already_completed"),
                 readLines(dialogue, "unavailable"),
+                readLines(dialogue, "inactive"),
                 readLines(dialogue, "missing_target"),
                 readLines(dialogue, "missing_proof"),
                 readLines(dialogue, "locate_failed")

@@ -581,7 +581,7 @@ Condition blocks support:
 | `social_attribute` / `stat` | `attribute`, `attributes`, `stat`, `stats`, `min`, `max` | Matches villager profile Social Attribute scores from 1-100. Attribute values are `knowledge`, `guts`, `proficiency`, `kindness`, and `charm`; `intellect` and `intelligence` are aliases for `knowledge`. If several attributes are listed, any one matching attribute passes. |
 | `skill` | `skill`, `skills`, `min`, `max`, `min_rank`, `max_rank` | Matches villager skill scores from 1-100 or ranks `novice`, `apprentice`, `skilled`, `expert`, and `master`. If several skills are listed, any one matching skill passes. Use `all_of` if several skills must match at once. |
 | `villager_level` / `trade_level` | `level`, `levels`, `min`, `max` | Matches the vanilla villager trade level. Values can be `novice`, `apprentice`, `journeyman`, `expert`, `master`, or `1`-`5`. |
-| `quest` | `quest`, `quest_id`, `state`, `states` | Matches a loaded quest state. Useful states are `available`, `not_started`, `active`, `in_progress`, `ready`, `completed`, `abandoned`, `consumed`, `unavailable`, and `not_completed`. |
+| `quest` | `quest`, `quest_id`, `state`, `states` | Matches a loaded quest state. Useful states are `available`, `not_started`, `active`, `active_visible`, `inactive`, `in_progress`, `ready`, `completed`, `abandoned`, `expired`, `consumed`, `unavailable`, and `not_completed`. |
 | `weather` | `state`, `states`, `weather`, `weathers` | Uses `clear`, `rain`, or `thunder`. |
 | `time` / `time_of_day` | `value`, `values`, `time`, `times` | Uses `morning`, `afternoon`, `evening`, or `night`. |
 

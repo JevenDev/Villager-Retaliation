@@ -74,6 +74,7 @@
       "id": "storm_reminder",
       "event": "proximity",
       "radius": 10,
+      "once": true,
       "cooldown_seconds": 120,
       "conditions": [
         {

@@ -19,6 +19,7 @@
 - Added built-in dialogue data validation and datapack-builder wiki snapshot checks to catch schema/docs drift during development, including deep validation for beta.12 `conditions` blocks.
 - Added beta.12 datapack builder and website wiki support while keeping the beta.11 wiki snapshot separate for beta.11 pack authors.
 - Added a downloadable beta.12 dialogue folder template at `example-packs/dialogue-folder-template/`, plus a Datapack Generator `Preset` picker for choosing between the editable starter pack and the full folderized template.
+- Added quest lifecycle controls for conditional active states, quest expiration by time or conditions, and one-shot quest forced-dialogue triggers.
 - Added trade-refresh buttons to villager trade slots so players can ask a villager to replace a specific trade on the next Minecraft day when an eligible skill-trade replacement exists.
 - Added data-driven forced dialogue for trade-refresh results, including accepted, already-pending, unavailable, and not-ready responses with reputation-specific option replies.
 - Added trade-refresh ready follow-up dialogue with `trade_refresh.ready` message lines and `trade_refresh.ready_options` forced-dialogue options, including placeholders for restocked trade summaries.
@@ -51,6 +52,7 @@
 - Forced conversation request validation now keeps active forced-dialogue sessions attached to their villager target while forced-session distance and availability rules are still met.
 - Forced-dialogue response templates now merge session-scoped replacements with option/payment-specific replacements, so follow-up responses can keep trade-refresh, theft, and interjection placeholders after the active session advances.
 - The default diamond-sword proximity forced-dialogue witness radius was reduced from 8 blocks to 4 blocks.
+- The built-in Lost Civilization quest now keeps `Abandon quest` inside the active quest conversation, directly above `Never mind`, instead of exposing a separate top-level abandon option.
 - Built-in container-theft leave outcomes now default to response arrays (`responses`, `success_responses`, `failure_responses`) for more varied short reactions.
 - Built-in normal dialogue lines now use beta.12 `conditions` for migrated memory, family, relationship, and recruitment filters.
 - Built-in family and relationship dialogue options now use beta.12 `conditions`.

@@ -37,7 +37,7 @@
     },
     {
       "id": "reminder",
-      "label": "Lost Civilization",
+      "label": "About Lost Civilization",
       "request": "story",
       "order": -20,
       "profession": "minecraft:cartographer",
@@ -49,11 +49,11 @@
           "state": "in_progress"
         }
       ],
-      "start": "reminder"
+      "start": "active_menu"
     },
     {
       "id": "turn_in",
-      "label": "Lost Civilization",
+      "label": "About Lost Civilization",
       "request": "story",
       "order": -20,
       "profession": "minecraft:cartographer",
@@ -66,22 +66,6 @@
         }
       ],
       "start": "turn_in"
-    },
-    {
-      "id": "abandon",
-      "label": "Abandon Lost Civilization",
-      "request": "story",
-      "order": -19,
-      "profession": "minecraft:cartographer",
-      "show_for_babies": false,
-      "conditions": [
-        {
-          "type": "quest",
-          "quest": "villagerretaliation:tales_of_a_lost_civilization",
-          "state": "active"
-        }
-      ],
-      "start": "abandon_confirm"
     }
   ],
   "nodes": {
@@ -93,12 +77,12 @@
       "responses": [
         {
           "id": "accept",
-          "label": "Tell me where to go.",
+          "label": "Tell me where to go",
           "next": "start_quest"
         },
         {
           "id": "decline",
-          "label": "Another time.",
+          "label": "Another time",
           "next": "decline"
         }
       ]
@@ -139,7 +123,33 @@
       ],
       "end": true
     },
-    "reminder": {
+    "active_menu": {
+      "lines": [
+        "About the old city? I can mark the road again, or fold the map if you are done carrying it.",
+        "The map is still yours to follow. Ask for the mark again, or I can put the route away."
+      ],
+      "responses": [
+        {
+          "id": "directions",
+          "label": "Remind me where to go.",
+          "next": "reminder_details",
+          "order": 0
+        },
+        {
+          "id": "abandon",
+          "label": "Abandon quest",
+          "next": "abandon_confirm",
+          "order": 90
+        },
+        {
+          "id": "never_mind",
+          "label": "Never mind",
+          "next": "active_cancel",
+          "order": 100
+        }
+      ]
+    },
+    "reminder_details": {
       "actions": [
         {
           "type": "quest",
@@ -160,6 +170,13 @@
       ],
       "end": true
     },
+    "active_cancel": {
+      "lines": [
+        "Then keep the map close until the road starts speaking again.",
+        "Fair. Some maps are better carried quietly."
+      ],
+      "end": true
+    },
     "turn_in": {
       "lines": [
         "You came back carrying the quiet with you. Tell me you stood in the center, not just the shadow of the place.",
@@ -169,12 +186,20 @@
         {
           "id": "complete",
           "label": "Show the Echo Shard.",
-          "next": "complete_quest"
+          "next": "complete_quest",
+          "order": 0
         },
         {
-          "id": "wait",
-          "label": "Not yet.",
-          "next": "turn_in_wait"
+          "id": "abandon",
+          "label": "Abandon quest",
+          "next": "abandon_confirm",
+          "order": 90
+        },
+        {
+          "id": "never_mind",
+          "label": "Never mind",
+          "next": "turn_in_wait",
+          "order": 100
         }
       ]
     },
@@ -222,12 +247,12 @@
       "responses": [
         {
           "id": "confirm",
-          "label": "Put the map away.",
+          "label": "Put the map away",
           "next": "abandon_quest"
         },
         {
           "id": "cancel",
-          "label": "Keep the quest.",
+          "label": "Keep the quest",
           "next": "abandon_cancel"
         }
       ]

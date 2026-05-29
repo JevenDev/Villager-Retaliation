@@ -24,6 +24,8 @@ Use `rules` to control whether a player can retake or farm a quest.
 | `abandonment_cooldown_ticks` / `_seconds` / `_days` | duration | `0` | Wait after abandoning before the quest can be accepted again. |
 | `consume_on_completion` | boolean | `false` | Marks the quest permanently consumed after completion. |
 | `consume_on_abandonment` | boolean | `false` | Marks the quest permanently consumed after abandonment. |
+| `active` | object | none | Optional active-state gate with `conditions`, `hide_when_unmet`, and `pause_progress_when_unmet`. |
+| `expiration` | object | none | Optional expiry rule with `after_ticks` / `_seconds` / `_days`, `conditions`, `consume`, and notification fields. |
 
 Example:
 
@@ -41,6 +43,52 @@ Example:
   }
 }
 ```
+
+### Conditional Active State
+
+Use `rules.active` when an accepted quest should only behave as active while conditions match. Conditions use the same `conditions` array format as dialogue.
+
+```json
+{
+  "rules": {
+    "active": {
+      "hide_when_unmet": false,
+      "pause_progress_when_unmet": true,
+      "conditions": [
+        { "type": "weather", "state": "thunder" }
+      ]
+    }
+  }
+}
+```
+
+When `hide_when_unmet` is `false`, the quest can still appear in dialogue and tracker UI, but quest state conditions can target `inactive` or `paused` for "come back when it thunders again" dialogue. When it is `true`, normal `active`, `in_progress`, and `ready` quest conditions stop matching until the active conditions return.
+
+### Expiration
+
+Use `rules.expiration` to expire an active quest after a duration or when conditions match. Expired quests match the `expired` quest condition state.
+
+```json
+{
+  "rules": {
+    "expiration": {
+      "after_days": 3,
+      "conditions": [
+        {
+          "type": "not",
+          "condition": { "type": "weather", "state": "thunder" }
+        }
+      ],
+      "consume": false,
+      "allow_repickup": true,
+      "notification": "quest.expired",
+      "text": "Quest expired: {quest}"
+    }
+  }
+}
+```
+
+`consume: true` moves the quest to the permanent `consumed` state with an expiration reason. `allow_repickup` lets expired quests become available again if the normal start limits also allow another start.
 
 ## Tracker Text
 
@@ -77,7 +125,7 @@ Use `tracker` to define the middle-left quest tracker copy. The runtime chooses 
 }
 ```
 
-Tracker text supports `{quest}`, `{quest_id}`, `{target}`, `{target_x}`, `{target_z}`, `{direction}`, `{distance}`, `{proof_item}`, `{visited_target}`, and `{has_proof}`.
+Tracker text supports `{quest}`, `{quest_id}`, `{target}`, `{target_x}`, `{target_z}`, `{direction}`, `{distance}`, `{proof_item}`, `{visited_target}`, `{has_proof}`, and `{active_conditions}`.
 
 ## Quest Triggers
 
@@ -92,6 +140,7 @@ The event says when the trigger is checked. The conditions reuse the same condit
       "id": "storm_reminder",
       "event": "proximity",
       "radius": 10,
+      "once": true,
       "cooldown_seconds": 120,
       "conditions": [
         {
@@ -129,6 +178,7 @@ Events:
 | `progress` | Immediately after objective progress changes, such as proof collected or target visited. |
 | `completed` | Immediately after turn-in succeeds. |
 | `abandoned` | Immediately after the quest is dropped. |
+| `expired` | Immediately after the quest expires. |
 
 Actions:
 
@@ -139,3 +189,5 @@ Actions:
 | `forced_dialogue` | `forced_dialogue` | Runs a matching forced-dialogue entry with `trigger: "quest"`. This supports proximity dialogue, reminder scenes, and future event-driven quest scenes. |
 
 Continuous triggers default to a 30-second cooldown if no `cooldown_ticks`, `cooldown_seconds`, or `cooldown_days` value is set. Lifecycle triggers default to no cooldown.
+
+Forced-dialogue triggers default to one-shot behavior so a villager does not keep re-opening the same authored scene after a cooldown. Set `repeatable: true` to allow repeats, or use `once: true` / `run_once: true` explicitly for other trigger types.

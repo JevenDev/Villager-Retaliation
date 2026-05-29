@@ -84,6 +84,8 @@ Responses contain a player-facing `label` and either `next`/`next_node` or `end:
 
 If a node has responses, the conversation stays inside the tree and the response labels replace the normal Talk options. If a node has `end: true` or no available responses, the tree session ends and the normal Talk options return.
 
+For active quest menu nodes, keep destructive choices near the bottom: use an `Abandon quest` response just above the final `Never mind` response so datapack authors can insert extra quest-specific choices between the ordinary quest details and the exit.
+
 ## Actions
 
 Actions let dialogue mutate game state without adding new Java handlers for every feature.
@@ -92,14 +94,14 @@ Supported action types:
 
 | Type | Fields |
 | --- | --- |
-| `quest` | `quest`, `action`: `start`, `remind`, or `turn_in`; optional status-keyed `lines`. |
+| `quest` | `quest`, `action`: `start`, `remind`, `turn_in`, or `abandon`; optional status-keyed `lines`. |
 | `experience` / `xp` | `amount` |
 | `reputation` | `amount` |
 | `gossip` / `gossip_reputation` | `amount` |
 | `memory` / `village_memory` | `memory` or `tag` |
 | `loot` / `give_loot` | `loot` or `loot_table` |
 
-Quest actions return a status such as `started`, `reminder`, `completed`, `missing_target`, `missing_proof`, `unavailable`, `already_completed`, or `locate_failed`. When an action defines `lines`, the matching status selects the spoken line.
+Quest actions return a status such as `started`, `reminder`, `inactive`, `completed`, `missing_target`, `missing_proof`, `abandoned`, `abandoned_cooldown`, `abandoned_forever`, `unavailable`, `already_completed`, or `locate_failed`. When an action defines `lines`, the matching status selects the spoken line.
 
 ## Placeholders
 
@@ -123,4 +125,5 @@ Dialogue trees support the shared dialogue placeholders plus quest placeholders 
 {proof_item}
 {visited_target}
 {has_proof}
+{active_conditions}
 ```

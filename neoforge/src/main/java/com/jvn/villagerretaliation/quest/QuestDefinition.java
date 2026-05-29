@@ -115,9 +115,24 @@ public record QuestDefinition(
             AbandonmentMode abandonment,
             long abandonmentCooldownTicks,
             boolean consumeOnCompletion,
-            boolean consumeOnAbandonment
+            boolean consumeOnAbandonment,
+            ActiveState activeState,
+            Expiration expiration
     ) {
-        public static final Rules DEFAULT = new Rules(false, true, false, 1, 1, 0L, AbandonmentMode.ALLOW_REPICKUP, 0L, false, false);
+        public static final Rules DEFAULT = new Rules(
+                false,
+                true,
+                false,
+                1,
+                1,
+                0L,
+                AbandonmentMode.ALLOW_REPICKUP,
+                0L,
+                false,
+                false,
+                ActiveState.DEFAULT,
+                Expiration.DEFAULT
+        );
 
         public Rules {
             maxStarts = Math.max(0, maxStarts);
@@ -125,6 +140,59 @@ public record QuestDefinition(
             completionCooldownTicks = Math.max(0L, completionCooldownTicks);
             abandonment = abandonment == null ? AbandonmentMode.ALLOW_REPICKUP : abandonment;
             abandonmentCooldownTicks = Math.max(0L, abandonmentCooldownTicks);
+            activeState = activeState == null ? ActiveState.DEFAULT : activeState;
+            expiration = expiration == null ? Expiration.DEFAULT : expiration;
+        }
+    }
+
+    public record ActiveState(
+            List<DialogueCondition> conditions,
+            boolean hideWhenUnmet,
+            boolean pauseProgressWhenUnmet
+    ) {
+        public static final ActiveState DEFAULT = new ActiveState(List.of(), false, true);
+
+        public ActiveState {
+            conditions = conditions == null ? List.of() : List.copyOf(conditions);
+        }
+
+        public boolean hasConditions() {
+            return !this.conditions.isEmpty();
+        }
+    }
+
+    public record Expiration(
+            long afterTicks,
+            List<DialogueCondition> conditions,
+            boolean consume,
+            boolean allowRepickup,
+            boolean sendNotification,
+            String notificationTrigger,
+            String notificationText
+    ) {
+        public static final Expiration DEFAULT = new Expiration(
+                0L,
+                List.of(),
+                false,
+                true,
+                true,
+                "quest.expired",
+                "Quest expired: {quest}"
+        );
+
+        public Expiration {
+            afterTicks = Math.max(0L, afterTicks);
+            conditions = conditions == null ? List.of() : List.copyOf(conditions);
+            notificationTrigger = notificationTrigger == null || notificationTrigger.isBlank()
+                    ? "quest.expired"
+                    : notificationTrigger;
+            notificationText = notificationText == null || notificationText.isBlank()
+                    ? "Quest expired: {quest}"
+                    : notificationText;
+        }
+
+        public boolean enabled() {
+            return this.afterTicks > 0L || !this.conditions.isEmpty();
         }
     }
 
@@ -185,7 +253,8 @@ public record QuestDefinition(
             List<DialogueCondition> conditions,
             List<TriggerAction> actions,
             long cooldownTicks,
-            double radius
+            double radius,
+            boolean repeatable
     ) {
         private static final double DEFAULT_RADIUS = 10.0D;
 
@@ -205,7 +274,8 @@ public record QuestDefinition(
         STARTED,
         PROGRESS,
         COMPLETED,
-        ABANDONED;
+        ABANDONED,
+        EXPIRED;
 
         public static TriggerEvent bySerializedName(String value) {
             String normalized = value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
@@ -216,6 +286,7 @@ public record QuestDefinition(
                 case "progress", "updated", "quest_progress", "quest_updated" -> PROGRESS;
                 case "complete", "completed", "quest_completed", "turn_in", "turned_in" -> COMPLETED;
                 case "abandon", "abandoned", "drop", "dropped", "quest_abandoned" -> ABANDONED;
+                case "expire", "expired", "quest_expired" -> EXPIRED;
                 default -> PLAYER_TICK;
             };
         }
@@ -261,6 +332,7 @@ public record QuestDefinition(
             List<String> turnIn,
             List<String> alreadyCompleted,
             List<String> unavailable,
+            List<String> inactive,
             List<String> missingTarget,
             List<String> missingProof,
             List<String> locateFailed
@@ -270,6 +342,7 @@ public record QuestDefinition(
                 List.of("I do not have the details for that quest."),
                 List.of("Thank you."),
                 List.of("That matter is already settled."),
+                List.of("This is not the right moment."),
                 List.of("This is not the right moment."),
                 List.of("You have not reached the place I marked yet."),
                 List.of("Bring back proof that you found it."),
@@ -282,6 +355,7 @@ public record QuestDefinition(
             turnIn = normalize(turnIn, List.of("Thank you."));
             alreadyCompleted = normalize(alreadyCompleted, List.of("That matter is already settled."));
             unavailable = normalize(unavailable, List.of("This is not the right moment."));
+            inactive = normalize(inactive, List.of("This is not the right moment."));
             missingTarget = normalize(missingTarget, List.of("You have not reached the place I marked yet."));
             missingProof = normalize(missingProof, List.of("Bring back proof that you found it."));
             locateFailed = normalize(locateFailed, List.of("I cannot get a clear reading on that place."));
@@ -305,6 +379,10 @@ public record QuestDefinition(
 
         public String selectUnavailable(RandomSource random) {
             return select(this.unavailable, random);
+        }
+
+        public String selectInactive(RandomSource random) {
+            return select(this.inactive, random);
         }
 
         public String selectMissingTarget(RandomSource random) {

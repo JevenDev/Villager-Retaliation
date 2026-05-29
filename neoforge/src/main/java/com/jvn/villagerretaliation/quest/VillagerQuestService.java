@@ -145,6 +145,16 @@ public final class VillagerQuestService {
                 continue;
             }
             VillagerQuestSavedData.QuestProgress progress = entry.getValue();
+            DialogueContext questContext = contextForStartedVillager(level, player, progress).orElse(null);
+            if (expireQuestIfNeeded(player, definition, progress, questContext)) {
+                changed = true;
+                progressNotice = true;
+                continue;
+            }
+            if (definition.rules().activeState().pauseProgressWhenUnmet()
+                    && !activeConditionsMet(questContext, definition)) {
+                continue;
+            }
             boolean questProgressChanged = false;
             if (definition.target().hasProofItem() && hasRequiredProof(player, definition) && progress.markHasProof()) {
                 changed = true;
@@ -252,6 +262,13 @@ public final class VillagerQuestService {
                     definition.dialogue().selectUnavailable(context.random()),
                     replacements(context, definition, progress));
         }
+        if (!activeConditionsMet(context, definition)) {
+            return result(
+                    "inactive",
+                    lineId(definition, "inactive"),
+                    definition.dialogue().selectInactive(context.random()),
+                    replacements(context, definition, progress));
+        }
         return result(
                 "reminder",
                 lineId(definition, "reminder"),
@@ -267,6 +284,13 @@ public final class VillagerQuestService {
                     "unavailable",
                     lineId(definition, "unavailable"),
                     definition.dialogue().selectUnavailable(context.random()),
+                    replacements(context, definition, progress));
+        }
+        if (!activeConditionsMet(context, definition)) {
+            return result(
+                    "inactive",
+                    lineId(definition, "inactive"),
+                    definition.dialogue().selectInactive(context.random()),
                     replacements(context, definition, progress));
         }
         if (!progress.visitedTarget()) {
@@ -357,6 +381,7 @@ public final class VillagerQuestService {
             case ACTIVE, CONSUMED -> false;
             case COMPLETED -> definition.rules().repeatable()
                     && cooldownElapsed(context.level().getGameTime(), progress.completedGameTime(), definition.rules().completionCooldownTicks());
+            case EXPIRED -> definition.rules().expiration().allowRepickup();
             case ABANDONED -> switch (definition.rules().abandonment()) {
                 case REMOVE_FOREVER -> false;
                 case ALLOW_REPICKUP -> true;
@@ -397,6 +422,89 @@ public final class VillagerQuestService {
                 || progress.startedVillagerId().equals(context.villager().getUUID());
     }
 
+    private static boolean activeConditionsMet(DialogueContext context, QuestDefinition definition) {
+        QuestDefinition.ActiveState activeState = definition.rules().activeState();
+        if (!activeState.hasConditions()) {
+            return true;
+        }
+        if (context == null) {
+            return false;
+        }
+        for (DialogueCondition condition : activeState.conditions()) {
+            if (!condition.matches(context)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean expirationConditionsMet(DialogueContext context, QuestDefinition definition) {
+        QuestDefinition.Expiration expiration = definition.rules().expiration();
+        if (expiration.conditions().isEmpty()) {
+            return false;
+        }
+        if (context == null) {
+            return false;
+        }
+        for (DialogueCondition condition : expiration.conditions()) {
+            if (!condition.matches(context)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static Optional<DialogueContext> contextForStartedVillager(
+            ServerLevel level,
+            ServerPlayer player,
+            VillagerQuestSavedData.QuestProgress progress) {
+        Villager villager = startedVillager(level, progress);
+        if (villager == null || !villager.isAlive()) {
+            return Optional.empty();
+        }
+        return Optional.of(VillagerInteractionService.createDialogueContext(level, player, villager));
+    }
+
+    private static boolean activeConditionsMetForPlayer(
+            ServerPlayer player,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress) {
+        if (!definition.rules().activeState().hasConditions()) {
+            return true;
+        }
+        if (!(player.level() instanceof ServerLevel level)) {
+            return false;
+        }
+        return activeConditionsMet(contextForStartedVillager(level, player, progress).orElse(null), definition);
+    }
+
+    private static boolean expireQuestIfNeeded(
+            ServerPlayer player,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress,
+            DialogueContext context) {
+        QuestDefinition.Expiration expiration = definition.rules().expiration();
+        if (!expiration.enabled()) {
+            return false;
+        }
+        long gameTime = player.level().getGameTime();
+        boolean expiredByTime = expiration.afterTicks() > 0L
+                && progress.startedGameTime() > 0L
+                && gameTime - progress.startedGameTime() >= expiration.afterTicks();
+        if (!expiredByTime && !expirationConditionsMet(context, definition)) {
+            return false;
+        }
+
+        progress.expire(gameTime, expiration.consume());
+        if (expiration.sendNotification()) {
+            sendQuestExpiredNotification(player, context, definition, progress);
+        }
+        if (context != null) {
+            dispatchQuestTriggers(context, definition, progress, QuestDefinition.TriggerEvent.EXPIRED);
+        }
+        return true;
+    }
+
     private static String startBlockedStatus(QuestDefinition definition, VillagerQuestSavedData.QuestProgress progress) {
         if (progress == null) {
             return "unavailable";
@@ -421,6 +529,9 @@ public final class VillagerQuestService {
         if (progress.state() == VillagerQuestSavedData.QuestState.ABANDONED
                 && definition.rules().abandonment() == QuestDefinition.AbandonmentMode.COOLDOWN) {
             return "abandoned_cooldown";
+        }
+        if (progress.state() == VillagerQuestSavedData.QuestState.EXPIRED) {
+            return "expired";
         }
         if (progress.state() == VillagerQuestSavedData.QuestState.COMPLETED
                 && definition.rules().completionCooldownTicks() > 0L) {
@@ -458,21 +569,27 @@ public final class VillagerQuestService {
             String state) {
         String normalized = state == null ? "" : state.trim().toLowerCase(Locale.ROOT);
         boolean completed = progress != null && progress.completionCount() > 0;
-        boolean active = progress != null
+        boolean rawActive = progress != null
                 && progress.state() == VillagerQuestSavedData.QuestState.ACTIVE
                 && matchesVillagerLock(context, definition, progress);
-        boolean ready = active && isReadyToTurnIn(context, definition, progress);
+        boolean activeConditionsMet = rawActive && activeConditionsMet(context, definition);
+        boolean active = rawActive && (activeConditionsMet || !definition.rules().activeState().hideWhenUnmet());
+        boolean ready = activeConditionsMet && isReadyToTurnIn(context, definition, progress);
         boolean notStarted = progress == null || progress.state() == VillagerQuestSavedData.QuestState.NOT_STARTED;
         boolean abandoned = progress != null && progress.state() == VillagerQuestSavedData.QuestState.ABANDONED;
+        boolean expired = progress != null && progress.state() == VillagerQuestSavedData.QuestState.EXPIRED;
         boolean consumed = progress != null && progress.state() == VillagerQuestSavedData.QuestState.CONSUMED;
         return switch (normalized) {
             case "available" -> canStart(context, definition, progress);
             case "not_started", "locked" -> notStarted;
             case "active", "started" -> active;
-            case "in_progress", "incomplete" -> active && !ready;
+            case "active_visible", "active_available", "active_conditions_met" -> activeConditionsMet;
+            case "active_hidden", "active_unavailable", "inactive", "paused", "active_conditions_unmet" -> rawActive && !activeConditionsMet;
+            case "in_progress", "incomplete" -> activeConditionsMet && !ready;
             case "ready", "turn_in", "turnin", "completeable", "completable" -> ready;
             case "completed", "complete" -> completed;
             case "abandoned", "dropped" -> abandoned;
+            case "expired", "timed_out", "time_out" -> expired;
             case "consumed", "removed", "removed_forever" -> consumed;
             case "unavailable" -> !canStart(context, definition, progress) && !active;
             case "not_completed" -> !completed;
@@ -486,6 +603,7 @@ public final class VillagerQuestService {
             VillagerQuestSavedData.QuestProgress progress) {
         return progress != null
                 && progress.state() == VillagerQuestSavedData.QuestState.ACTIVE
+                && activeConditionsMet(context, definition)
                 && progress.visitedTarget()
                 && hasRequiredProof(context.player(), definition);
     }
@@ -676,7 +794,7 @@ public final class VillagerQuestService {
             QuestDefinition definition,
             long gameTime) {
         for (QuestDefinition.Trigger trigger : definition.triggers()) {
-            if (trigger.event().isContinuous() && trigger.cooldownTicks() > 0L) {
+            if (trigger.repeatable() && trigger.event().isContinuous() && trigger.cooldownTicks() > 0L) {
                 progress.markTriggerUsed(trigger.id(), gameTime);
             }
         }
@@ -692,9 +810,18 @@ public final class VillagerQuestService {
                 return false;
             }
         }
+        long lastTriggered = progress.lastTriggerGameTime(trigger.id());
+        if (!trigger.repeatable() && lastTriggered > 0L) {
+            return false;
+        }
         if (trigger.cooldownTicks() > 0L) {
-            long lastTriggered = progress.lastTriggerGameTime(trigger.id());
             if (lastTriggered > 0L && context.level().getGameTime() - lastTriggered < trigger.cooldownTicks()) {
+                return false;
+            }
+            if (lastTriggered <= 0L
+                    && trigger.event().isContinuous()
+                    && progress.startedGameTime() > 0L
+                    && context.level().getGameTime() - progress.startedGameTime() < trigger.cooldownTicks()) {
                 return false;
             }
         }
@@ -779,7 +906,11 @@ public final class VillagerQuestService {
         if (!(player.level() instanceof ServerLevel level)) {
             return;
         }
-        Map<String, String> replacements = trackerReplacements(player, definition, progress);
+        Map<String, String> replacements = trackerReplacements(
+                player,
+                definition,
+                progress,
+                activeConditionsMetForPlayer(player, definition, progress));
         String fallback = VillagerDialogueResources.resolveTemplate(fallbackText, replacements);
         Villager villager = startedVillager(level, progress);
         if (villager == null) {
@@ -795,6 +926,28 @@ public final class VillagerQuestService {
                 fallback,
                 VillagerReputationNoticeKind.QUEST
         );
+    }
+
+    private static void sendQuestExpiredNotification(
+            ServerPlayer player,
+            DialogueContext context,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress) {
+        QuestDefinition.Expiration expiration = definition.rules().expiration();
+        if (context != null) {
+            sendQuestNotification(
+                    context,
+                    expiration.notificationTrigger(),
+                    definition,
+                    progress,
+                    expiration.notificationText());
+            return;
+        }
+        Map<String, String> replacements = trackerReplacements(player, definition, progress, true);
+        VillagerReputationNetworking.sendNotice(
+                player,
+                VillagerDialogueResources.resolveTemplate(expiration.notificationText(), replacements),
+                VillagerReputationNoticeKind.QUEST);
     }
 
     private static Villager startedVillager(ServerLevel level, VillagerQuestSavedData.QuestProgress progress) {
@@ -823,7 +976,11 @@ public final class VillagerQuestService {
             }
             QuestDefinition definition = VillagerQuestResources.quest(level.getServer(), entry.getKey()).orElse(null);
             if (definition != null) {
-                entries.add(trackerEntry(player, definition, entry.getValue()));
+                boolean activeConditionsMet = activeConditionsMetForPlayer(player, definition, entry.getValue());
+                if (!activeConditionsMet && definition.rules().activeState().hideWhenUnmet()) {
+                    continue;
+                }
+                entries.add(trackerEntry(player, definition, entry.getValue(), activeConditionsMet));
             }
         }
         PacketDistributor.sendToPlayer(player, new QuestTrackerSyncPayload(entries, flash));
@@ -832,9 +989,10 @@ public final class VillagerQuestService {
     private static QuestTrackerSyncPayload.Entry trackerEntry(
             ServerPlayer player,
             QuestDefinition definition,
-            VillagerQuestSavedData.QuestProgress progress) {
-        String stepKey = trackerStepKey(player, definition, progress);
-        Map<String, String> replacements = trackerReplacements(player, definition, progress);
+            VillagerQuestSavedData.QuestProgress progress,
+            boolean activeConditionsMet) {
+        String stepKey = trackerStepKey(player, definition, progress, activeConditionsMet);
+        Map<String, String> replacements = trackerReplacements(player, definition, progress, activeConditionsMet);
         QuestDefinition.Step fallback = new QuestDefinition.Step(
                 trackerFallbackText(stepKey),
                 true,
@@ -859,7 +1017,11 @@ public final class VillagerQuestService {
     private static String trackerStepKey(
             ServerPlayer player,
             QuestDefinition definition,
-            VillagerQuestSavedData.QuestProgress progress) {
+            VillagerQuestSavedData.QuestProgress progress,
+            boolean activeConditionsMet) {
+        if (!activeConditionsMet) {
+            return "inactive";
+        }
         if (progress == null || !progress.visitedTarget()) {
             return "travel";
         }
@@ -871,6 +1033,7 @@ public final class VillagerQuestService {
 
     private static String trackerFallbackText(String stepKey) {
         return switch (stepKey) {
+            case "inactive" -> "Return when this quest's conditions are right again.";
             case "proof" -> "Obtain {proof_item} as proof of the journey.";
             case "return" -> "Return to the villager who gave you the quest.";
             default -> "Reach the center of {target} near {target_x}, {target_z}.";
@@ -879,6 +1042,7 @@ public final class VillagerQuestService {
 
     private static float trackerFallbackProgress(String stepKey) {
         return switch (stepKey) {
+            case "inactive" -> 0.0F;
             case "proof" -> 0.66F;
             case "return" -> 1.0F;
             default -> 0.25F;
@@ -888,7 +1052,8 @@ public final class VillagerQuestService {
     private static Map<String, String> trackerReplacements(
             ServerPlayer player,
             QuestDefinition definition,
-            VillagerQuestSavedData.QuestProgress progress) {
+            VillagerQuestSavedData.QuestProgress progress,
+            boolean activeConditionsMet) {
         Map<String, String> values = new LinkedHashMap<>();
         values.put("quest", definition.title());
         values.put("quest_id", definition.id().toString());
@@ -896,6 +1061,7 @@ public final class VillagerQuestService {
         values.put("proof_item", proofItemName(definition));
         values.put("visited_target", progress != null && progress.visitedTarget() ? "yes" : "no");
         values.put("has_proof", hasRequiredProof(player, definition) ? "yes" : "no");
+        values.put("active_conditions", activeConditionsMet ? "met" : "unmet");
 
         BlockPos targetPos = progress == null ? null : progress.targetPos();
         if (targetPos != null) {
@@ -948,6 +1114,7 @@ public final class VillagerQuestService {
         values.put("proof_item", proofItemName(definition));
         values.put("visited_target", progress != null && progress.visitedTarget() ? "yes" : "no");
         values.put("has_proof", hasRequiredProof(context.player(), definition) ? "yes" : "no");
+        values.put("active_conditions", activeConditionsMet(context, definition) ? "met" : "unmet");
 
         BlockPos targetPos = progress == null ? null : progress.targetPos();
         if (targetPos != null) {

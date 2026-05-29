@@ -28,6 +28,7 @@ public class VillagerQuestSavedData extends SavedData {
     private static final String TAG_STARTED_TIME = "StartedGameTime";
     private static final String TAG_COMPLETED_TIME = "CompletedGameTime";
     private static final String TAG_ABANDONED_TIME = "AbandonedGameTime";
+    private static final String TAG_EXPIRED_TIME = "ExpiredGameTime";
     private static final String TAG_VISITED_TARGET = "VisitedTarget";
     private static final String TAG_HAS_PROOF = "HasProof";
     private static final String TAG_TARGET_DIMENSION = "TargetDimension";
@@ -111,6 +112,7 @@ public class VillagerQuestSavedData extends SavedData {
         ACTIVE,
         COMPLETED,
         ABANDONED,
+        EXPIRED,
         CONSUMED;
 
         public static QuestState byName(String value) {
@@ -131,6 +133,7 @@ public class VillagerQuestSavedData extends SavedData {
         private long startedGameTime;
         private long completedGameTime;
         private long abandonedGameTime;
+        private long expiredGameTime;
         private boolean visitedTarget;
         private boolean hasProof;
         private ResourceKey<Level> targetDimension;
@@ -150,6 +153,7 @@ public class VillagerQuestSavedData extends SavedData {
             progress.startedGameTime = tag.getLong(TAG_STARTED_TIME);
             progress.completedGameTime = tag.getLong(TAG_COMPLETED_TIME);
             progress.abandonedGameTime = tag.getLong(TAG_ABANDONED_TIME);
+            progress.expiredGameTime = tag.getLong(TAG_EXPIRED_TIME);
             progress.visitedTarget = tag.getBoolean(TAG_VISITED_TARGET);
             progress.hasProof = tag.getBoolean(TAG_HAS_PROOF);
             progress.startCount = tag.getInt(TAG_START_COUNT);
@@ -182,6 +186,7 @@ public class VillagerQuestSavedData extends SavedData {
             tag.putLong(TAG_STARTED_TIME, this.startedGameTime);
             tag.putLong(TAG_COMPLETED_TIME, this.completedGameTime);
             tag.putLong(TAG_ABANDONED_TIME, this.abandonedGameTime);
+            tag.putLong(TAG_EXPIRED_TIME, this.expiredGameTime);
             tag.putBoolean(TAG_VISITED_TARGET, this.visitedTarget);
             tag.putBoolean(TAG_HAS_PROOF, this.hasProof);
             tag.putInt(TAG_START_COUNT, this.startCount);
@@ -228,6 +233,10 @@ public class VillagerQuestSavedData extends SavedData {
             return this.abandonedGameTime;
         }
 
+        public long expiredGameTime() {
+            return this.expiredGameTime;
+        }
+
         public boolean visitedTarget() {
             return this.visitedTarget;
         }
@@ -268,6 +277,7 @@ public class VillagerQuestSavedData extends SavedData {
             this.startedGameTime = gameTime;
             this.completedGameTime = 0L;
             this.abandonedGameTime = 0L;
+            this.expiredGameTime = 0L;
             this.visitedTarget = false;
             this.hasProof = false;
             this.consumedReason = "";
@@ -291,6 +301,16 @@ public class VillagerQuestSavedData extends SavedData {
             this.targetDimension = null;
             this.targetPos = null;
             this.consumedReason = consume ? "abandonment" : "";
+        }
+
+        public void expire(long gameTime, boolean consume) {
+            this.state = consume ? QuestState.CONSUMED : QuestState.EXPIRED;
+            this.expiredGameTime = gameTime;
+            this.visitedTarget = false;
+            this.hasProof = false;
+            this.targetDimension = null;
+            this.targetPos = null;
+            this.consumedReason = consume ? "expiration" : "";
         }
 
         public boolean markVisitedTarget() {
