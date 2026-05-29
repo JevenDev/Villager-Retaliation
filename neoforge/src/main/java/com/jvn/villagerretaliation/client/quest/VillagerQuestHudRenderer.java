@@ -22,8 +22,6 @@ final class VillagerQuestHudRenderer {
     private static final int LINE_STEP = 10;
     private static final float QUEST_PANEL_SLANT = 0.0F;
     private static final int BACKGROUND_COLOR = 0xC00B0D12;
-    private static final int SECONDARY_BACKGROUND_COLOR = 0x9A0B0D12;
-    private static final int PANEL_SHADOW_COLOR = 0x8A000000;
     private static final int TEXT_Z = 210;
 
     private VillagerQuestHudRenderer() {
@@ -143,7 +141,7 @@ final class VillagerQuestHudRenderer {
             float alpha,
             boolean primary,
             int age) {
-        boolean rendered = VillagerInteractionScreenShaderRenderer.renderExperimentalNotification(
+        VillagerInteractionScreenShaderRenderer.renderExperimentalNotification(
                 graphics,
                 new ExperimentalNotificationPanel(
                         new ShaderRect(x, y, x + width, y + height),
@@ -152,16 +150,6 @@ final class VillagerQuestHudRenderer {
                         age,
                         1.0F,
                         QUEST_PANEL_SLANT));
-        if (rendered) {
-            return;
-        }
-
-        int background = VillagerClientUiUtil.withAlphaRound(primary ? BACKGROUND_COLOR : SECONDARY_BACKGROUND_COLOR, alpha);
-        graphics.fill(x, y, x + width, y + height, background);
-        int accentWidth = VillagerAdaptiveGuiScale.unitAtLeast(7, 1);
-        graphics.fill(x, y, x + accentWidth, y + height, VillagerClientUiUtil.withAlphaRound(VillagerQuestUi.ACCENT_COLOR, alpha * 0.82F));
-        graphics.fill(x + accentWidth, y, x + width, y + VillagerAdaptiveGuiScale.unitAtLeast(1, 1), VillagerClientUiUtil.withAlphaRound(VillagerQuestUi.EDGE_HIGHLIGHT_COLOR, alpha));
-        graphics.fill(x, y + height, x + width, y + height + VillagerAdaptiveGuiScale.unitAtLeast(1, 1), VillagerClientUiUtil.withAlphaRound(PANEL_SHADOW_COLOR, alpha));
     }
 
     private static void renderWrappedText(

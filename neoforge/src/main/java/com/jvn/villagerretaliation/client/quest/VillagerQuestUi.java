@@ -11,7 +11,6 @@ public final class VillagerQuestUi {
     public static final int TITLE_COLOR = 0xFFFFF0C8;
     public static final int TEXT_COLOR = 0xFFE9EEF5;
     public static final int MUTED_TEXT_COLOR = 0xFFB8C3D0;
-    public static final int PANEL_FALLBACK_COLOR = 0xC0000000;
     public static final int BAR_BACKGROUND_COLOR = 0x80373A42;
     public static final int EDGE_HIGHLIGHT_COLOR = 0x2CFFFFFF;
 
@@ -31,7 +30,7 @@ public final class VillagerQuestUi {
             return;
         }
 
-        if (!VillagerInteractionScreenShaderRenderer.renderExperimentalSkillBar(
+        VillagerInteractionScreenShaderRenderer.renderExperimentalSkillBar(
                 graphics,
                 left,
                 top,
@@ -41,9 +40,7 @@ public final class VillagerQuestUi {
                 1.0F,
                 alpha,
                 elapsedTicks,
-                hovered)) {
-            graphics.fill(left, top, right, bottom, VillagerClientUiUtil.withAlphaRound(ACCENT_COLOR, alpha));
-        }
+                hovered);
     }
 
     public static void renderProgressBar(

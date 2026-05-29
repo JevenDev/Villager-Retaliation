@@ -215,7 +215,7 @@ public final class VillagerReputationNotificationOverlay {
             case TOP_RIGHT, MID_RIGHT -> -1.0F;
             default -> 1.0F;
         };
-        boolean rendered = VillagerInteractionScreenShaderRenderer.renderExperimentalNotification(
+        VillagerInteractionScreenShaderRenderer.renderExperimentalNotification(
                 graphics,
                 new ExperimentalNotificationPanel(
                         new ShaderRect(x, y, x + width, y + height),
@@ -223,10 +223,6 @@ public final class VillagerReputationNotificationOverlay {
                         alpha,
                         elapsedTicks,
                         direction));
-        if (!rendered) {
-            renderEntry(graphics, font, entry, x, y, width, height, alpha);
-            return;
-        }
 
         int textColor = VillagerClientUiUtil.withAlphaRound(textColor(entry), alpha);
         RenderSystem.enableBlend();

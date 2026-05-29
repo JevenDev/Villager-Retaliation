@@ -164,7 +164,6 @@ public final class VillagerInteractionScreenShaderRenderer {
 
     public static void renderInteractionVeil(GuiGraphics graphics, int width, int height, float veilTop, float fadeHeight) {
         if (interactionVeilShader == null) {
-            graphics.fill(0, Math.max(0, Math.round(veilTop + fadeHeight)), width, height, 0xFF000000);
             return;
         }
 

@@ -269,18 +269,18 @@ final class VillagerInteractionSkillsPage {
     private static void renderSkillBar(Context context, GuiGraphics graphics, int left, int top, int width, int value, VillagerSkillRank rank, boolean hovered) {
         int fillWidth = Mth.clamp(Math.round(width * value / 100.0F), 1, width);
         int rankColor = skillRankColor(rank);
-        if (context.experimentalUi()
-                && VillagerInteractionScreenShaderRenderer.renderExperimentalSkillBar(
-                graphics,
-                left,
-                top,
-                left + width,
-                top + context.profileSkillBarHeight(),
-                rankColor,
-                Mth.clamp(value / 100.0F, 0.0F, 1.0F),
-                context.experimentalChromeAlpha(),
-                experimentalTicks(),
-                hovered)) {
+        if (context.experimentalUi()) {
+            VillagerInteractionScreenShaderRenderer.renderExperimentalSkillBar(
+                    graphics,
+                    left,
+                    top,
+                    left + width,
+                    top + context.profileSkillBarHeight(),
+                    rankColor,
+                    Mth.clamp(value / 100.0F, 0.0F, 1.0F),
+                    context.experimentalChromeAlpha(),
+                    experimentalTicks(),
+                    hovered);
             return;
         }
         graphics.fill(left, top, left + width, top + context.profileSkillBarHeight(), 0x55332F2A);

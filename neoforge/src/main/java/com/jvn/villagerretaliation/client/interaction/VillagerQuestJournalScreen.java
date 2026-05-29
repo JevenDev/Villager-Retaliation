@@ -152,7 +152,7 @@ public final class VillagerQuestJournalScreen extends Screen {
     }
 
     private void renderExperimentalSkillsBackdrop(GuiGraphics graphics, int mouseX, int mouseY) {
-        if (!VillagerInteractionScreenShaderRenderer.renderExperimentalSkillsPanel(
+        VillagerInteractionScreenShaderRenderer.renderExperimentalSkillsPanel(
                 graphics,
                 skillsBackdropLeft(),
                 skillsBackdropTop(),
@@ -168,9 +168,7 @@ public final class VillagerQuestJournalScreen extends Screen {
                 this.height,
                 mouseX,
                 mouseY,
-                false)) {
-            graphics.fill(skillsBackdropLeft(), skillsBackdropTop(), skillsBackdropRight(), skillsBackdropBottom(), VillagerQuestUi.PANEL_FALLBACK_COLOR);
-        }
+                false);
     }
 
     private void renderSelectedUnderline(GuiGraphics graphics, int mouseX, int mouseY) {
