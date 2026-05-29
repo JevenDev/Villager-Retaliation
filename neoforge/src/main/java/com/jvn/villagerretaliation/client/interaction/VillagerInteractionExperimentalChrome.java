@@ -55,6 +55,7 @@ final class VillagerInteractionExperimentalChrome {
     private static List<ExitTextElement> exitTextElements = List.of();
     private static List<ExitFadeTextElement> exitFadeTextElements = List.of();
     private static List<ExitFadeRectElement> exitFadeRectElements = List.of();
+    private static ExitSkillsPanel exitSkillsPanel;
 
     private VillagerInteractionExperimentalChrome() {
     }
@@ -65,17 +66,27 @@ final class VillagerInteractionExperimentalChrome {
         exitTextElements = List.of();
         exitFadeTextElements = List.of();
         exitFadeRectElements = List.of();
+        exitSkillsPanel = null;
     }
 
     static void startExitAnimation(
             List<ExitTextElement> textElements,
             List<ExitFadeTextElement> fadeTextElements,
             List<ExitFadeRectElement> fadeRectElements) {
+        startExitAnimation(textElements, fadeTextElements, fadeRectElements, null);
+    }
+
+    static void startExitAnimation(
+            List<ExitTextElement> textElements,
+            List<ExitFadeTextElement> fadeTextElements,
+            List<ExitFadeRectElement> fadeRectElements,
+            ExitSkillsPanel skillsPanel) {
         if (backdropExitStartMillis < 0L) {
             backdropExitStartMillis = Util.getMillis();
             exitTextElements = new ArrayList<>(textElements);
             exitFadeTextElements = new ArrayList<>(fadeTextElements);
             exitFadeRectElements = new ArrayList<>(fadeRectElements);
+            exitSkillsPanel = skillsPanel;
         }
     }
 
@@ -99,7 +110,9 @@ final class VillagerInteractionExperimentalChrome {
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-        if (!VillagerInteractionScreenShaderRenderer.renderExperimentalChrome(graphics, width, height, elapsedMillis, exitElapsedMillis, mouseX, mouseY)) {
+        if (exitSkillsPanel != null && exitElapsedMillis >= 0.0F) {
+            renderExitSkillsPanel(graphics, exitSkillsPanel, width, height, elapsedMillis, exitElapsedMillis, mouseX, mouseY);
+        } else if (!VillagerInteractionScreenShaderRenderer.renderExperimentalChrome(graphics, width, height, elapsedMillis, exitElapsedMillis, mouseX, mouseY)) {
             renderBackdropFallback(graphics, width, height, elapsedMillis, exitElapsedMillis, mouseX, mouseY);
         }
         RenderSystem.enableBlend();
@@ -110,6 +123,36 @@ final class VillagerInteractionExperimentalChrome {
         }
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         RenderSystem.disableBlend();
+    }
+
+    private static void renderExitSkillsPanel(
+            GuiGraphics graphics,
+            ExitSkillsPanel panel,
+            int width,
+            int height,
+            float elapsedMillis,
+            float exitElapsedMillis,
+            int mouseX,
+            int mouseY) {
+        if (!VillagerInteractionScreenShaderRenderer.renderExperimentalSkillsPanel(
+                graphics,
+                panel.left(),
+                panel.top(),
+                panel.right(),
+                panel.bottom(),
+                chromeAlpha(),
+                (Util.getMillis() % 1_000_000L) / 50.0F,
+                panel.elapsedMillis(),
+                exitElapsedMillis,
+                elapsedMillis,
+                exitElapsedMillis,
+                width,
+                height,
+                mouseX,
+                mouseY,
+                false)) {
+            graphics.fill(panel.left(), panel.top(), panel.right(), panel.bottom(), 0xC0000000);
+        }
     }
 
     private static void renderBackdropFallback(
@@ -389,6 +432,9 @@ final class VillagerInteractionExperimentalChrome {
     }
 
     record ExitFadeRectElement(int left, int top, int right, int bottom, int color, float alpha) {
+    }
+
+    record ExitSkillsPanel(int left, int top, int right, int bottom, float elapsedMillis) {
     }
 
     private record OverlayLayer(

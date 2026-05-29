@@ -1,6 +1,7 @@
 {
   "villagerretaliation.mod_name": "VillagerRetaliation",
   "key.categories.villagerretaliation": "Villager Retaliation",
+  "key.villagerretaliation.open_quest_journal": "Open Quest Journal",
   "key.villagerretaliation.toggle_quest_tracker": "Toggle Quest Tracker",
   "item.villagerretaliation.villager_breeding_stick": "Villager Breeding Stick",
   "item.villagerretaliation.villager_maturity_emerald": "Villager Maturity Emerald",

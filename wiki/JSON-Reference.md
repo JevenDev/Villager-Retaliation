@@ -78,7 +78,9 @@ Selection is entry-first: filters and `chance` are checked, `weight` chooses a m
 
 ## Quests
 
-Quest files live in `data/<namespace>/quests/`. They combine advancement-like `criteria` with explicit offer, target, and reward sections. Dialogue trees run quest actions and show or hide entries with `conditions` using `type: "quest"`.
+Quest files live in `data/<namespace>/quests/`. They combine advancement-like `criteria` with explicit offer, target, reward, tracker, lifecycle rule, and trigger sections. Dialogue trees run quest actions and show or hide entries with `conditions` using `type: "quest"`.
+
+Quest `triggers` provide the reusable event foundation for later quest features. A trigger can watch quest lifecycle events, active-player ticks, or proximity to the starting villager, then stack existing dialogue conditions such as time, weather, memory, reputation, skill, and quest state before running notification, tracker, or `trigger: "quest"` forced-dialogue actions.
 
 See [Quest JSON](Quests.md) for the first supported quest schema and the built-in `Tales of a Lost Civilization` pattern.
 

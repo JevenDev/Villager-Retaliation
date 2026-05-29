@@ -14,7 +14,7 @@
       "id": "offer",
       "label": "Lost Civilization",
       "request": "story",
-      "order": 18,
+      "order": -20,
       "profession": "minecraft:cartographer",
       "show_for_babies": false,
       "conditions": [
@@ -39,7 +39,7 @@
       "id": "reminder",
       "label": "Lost Civilization",
       "request": "story",
-      "order": 18,
+      "order": -20,
       "profession": "minecraft:cartographer",
       "show_for_babies": false,
       "conditions": [
@@ -55,7 +55,7 @@
       "id": "turn_in",
       "label": "Lost Civilization",
       "request": "story",
-      "order": 18,
+      "order": -20,
       "profession": "minecraft:cartographer",
       "show_for_babies": false,
       "conditions": [
@@ -71,7 +71,7 @@
       "id": "abandon",
       "label": "Abandon Lost Civilization",
       "request": "story",
-      "order": 19,
+      "order": -19,
       "profession": "minecraft:cartographer",
       "show_for_babies": false,
       "conditions": [

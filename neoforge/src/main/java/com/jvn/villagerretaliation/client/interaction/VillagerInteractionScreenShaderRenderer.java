@@ -135,6 +135,30 @@ public final class VillagerInteractionScreenShaderRenderer {
             float alpha,
             float elapsedTicks,
             float direction) {
+        return renderExperimentalNotification(
+                graphics,
+                left,
+                top,
+                right,
+                bottom,
+                accentColor,
+                alpha,
+                elapsedTicks,
+                direction,
+                9.0F);
+    }
+
+    public static boolean renderExperimentalNotification(
+            GuiGraphics graphics,
+            int left,
+            int top,
+            int right,
+            int bottom,
+            int accentColor,
+            float alpha,
+            float elapsedTicks,
+            float direction,
+            float slant) {
         if (experimentalNotificationShader == null) {
             return false;
         }
@@ -149,6 +173,7 @@ public final class VillagerInteractionScreenShaderRenderer {
         setUniform(experimentalNotificationShader, "Alpha", alpha);
         setUniform(experimentalNotificationShader, "ElapsedTicks", elapsedTicks);
         setUniform(experimentalNotificationShader, "Direction", direction);
+        setUniform(experimentalNotificationShader, "Slant", slant);
 
         Matrix4f pose = graphics.pose().last().pose();
         RenderSystem.enableBlend();
@@ -182,6 +207,42 @@ public final class VillagerInteractionScreenShaderRenderer {
             int screenHeight,
             int mouseX,
             int mouseY) {
+        return renderExperimentalSkillsPanel(
+                graphics,
+                left,
+                top,
+                right,
+                bottom,
+                alpha,
+                elapsedTicks,
+                elapsedMillis,
+                exitElapsedMillis,
+                chromeElapsedMillis,
+                chromeExitElapsedMillis,
+                screenWidth,
+                screenHeight,
+                mouseX,
+                mouseY,
+                true);
+    }
+
+    public static boolean renderExperimentalSkillsPanel(
+            GuiGraphics graphics,
+            int left,
+            int top,
+            int right,
+            int bottom,
+            float alpha,
+            float elapsedTicks,
+            float elapsedMillis,
+            float exitElapsedMillis,
+            float chromeElapsedMillis,
+            float chromeExitElapsedMillis,
+            int screenWidth,
+            int screenHeight,
+            int mouseX,
+            int mouseY,
+            boolean clipMainChrome) {
         return renderExperimentalSkills(
                 graphics,
                 left,
@@ -200,6 +261,7 @@ public final class VillagerInteractionScreenShaderRenderer {
                 screenHeight,
                 mouseX,
                 mouseY,
+                clipMainChrome,
                 false);
     }
 
@@ -214,7 +276,7 @@ public final class VillagerInteractionScreenShaderRenderer {
             float alpha,
             float elapsedTicks,
             boolean hovered) {
-        return renderExperimentalSkills(graphics, left, top, right, bottom, accentColor, fillProgress, alpha, elapsedTicks, 0.0F, -1.0F, 0.0F, -1.0F, 1, 1, 0, 0, hovered);
+        return renderExperimentalSkills(graphics, left, top, right, bottom, accentColor, fillProgress, alpha, elapsedTicks, 0.0F, -1.0F, 0.0F, -1.0F, 1, 1, 0, 0, true, hovered);
     }
 
     private static boolean renderExperimentalSkills(
@@ -235,6 +297,7 @@ public final class VillagerInteractionScreenShaderRenderer {
             int screenHeight,
             int mouseX,
             int mouseY,
+            boolean clipMainChrome,
             boolean hovered) {
         if (experimentalSkillsShader == null) {
             return false;
@@ -260,6 +323,7 @@ public final class VillagerInteractionScreenShaderRenderer {
         setUniform(experimentalSkillsShader, "MouseY", (float) mouseY);
         setUniform(experimentalSkillsShader, "Hovered", hovered ? 1.0F : 0.0F);
         setUniform(experimentalSkillsShader, "Mode", accentColor == 0 ? 0.0F : 1.0F);
+        setUniform(experimentalSkillsShader, "ClipMainChrome", clipMainChrome ? 1.0F : 0.0F);
 
         Matrix4f pose = graphics.pose().last().pose();
         RenderSystem.enableBlend();

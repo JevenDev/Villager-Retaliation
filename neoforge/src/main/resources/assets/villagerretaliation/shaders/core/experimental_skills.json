@@ -42,6 +42,7 @@
     { "name": "MouseX", "type": "float", "count": 1, "values": [ 0.0 ] },
     { "name": "MouseY", "type": "float", "count": 1, "values": [ 0.0 ] },
     { "name": "Hovered", "type": "float", "count": 1, "values": [ 0.0 ] },
-    { "name": "Mode", "type": "float", "count": 1, "values": [ 0.0 ] }
+    { "name": "Mode", "type": "float", "count": 1, "values": [ 0.0 ] },
+    { "name": "ClipMainChrome", "type": "float", "count": 1, "values": [ 1.0 ] }
   ]
 }

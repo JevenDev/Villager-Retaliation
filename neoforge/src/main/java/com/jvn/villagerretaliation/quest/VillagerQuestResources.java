@@ -4,6 +4,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
+import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.DatapackJsonReader;
@@ -132,6 +133,7 @@ public final class VillagerQuestResources {
                 readTarget(root),
                 readRules(root),
                 readTracker(root),
+                readTriggers(location, root),
                 readRewards(root),
                 readDialogue(root)
         );
@@ -360,6 +362,127 @@ public final class VillagerQuestResources {
             }
         }
         return Map.copyOf(values);
+    }
+
+    private static List<QuestDefinition.Trigger> readTriggers(ResourceLocation location, JsonObject root) {
+        JsonElement element = root.get("triggers");
+        if (element == null || element.isJsonNull()) {
+            return List.of();
+        }
+        if (!element.isJsonArray()) {
+            return List.of();
+        }
+
+        List<QuestDefinition.Trigger> triggers = new ArrayList<>();
+        int index = 0;
+        for (JsonElement child : element.getAsJsonArray()) {
+            if (child.isJsonObject()) {
+                readTrigger(location, child.getAsJsonObject(), index).ifPresent(triggers::add);
+            }
+            index++;
+        }
+        return List.copyOf(triggers);
+    }
+
+    private static Optional<QuestDefinition.Trigger> readTrigger(ResourceLocation location, JsonObject trigger, int index) {
+        QuestDefinition.TriggerEvent event = QuestDefinition.TriggerEvent.bySerializedName(
+                DatapackJsonReader.readString(trigger, "event", "trigger"));
+        String id = DatapackJsonReader.readString(trigger, "id");
+        if (id.isBlank()) {
+            id = event.name().toLowerCase(Locale.ROOT) + "_" + index;
+        }
+        List<QuestDefinition.TriggerAction> actions = readTriggerActions(trigger);
+        if (actions.isEmpty()) {
+            return Optional.empty();
+        }
+
+        return Optional.of(new QuestDefinition.Trigger(
+                id,
+                event,
+                DialogueCondition.readList(location, "quest trigger \"" + id + "\"", trigger),
+                actions,
+                readDurationTicks(trigger, "cooldown", defaultTriggerCooldown(event)),
+                DatapackJsonReader.readDouble(trigger, "radius", 10.0D)
+        ));
+    }
+
+    private static long defaultTriggerCooldown(QuestDefinition.TriggerEvent event) {
+        return event.isContinuous() ? 20L * 30L : 0L;
+    }
+
+    private static List<QuestDefinition.TriggerAction> readTriggerActions(JsonObject trigger) {
+        JsonElement element = trigger.get("actions");
+        if (element == null || element.isJsonNull()) {
+            if (!hasInlineTriggerAction(trigger)) {
+                return List.of();
+            }
+            QuestDefinition.TriggerAction inferred = readTriggerAction(trigger);
+            return inferred == null ? List.of() : List.of(inferred);
+        }
+        if (!element.isJsonArray()) {
+            return List.of();
+        }
+
+        List<QuestDefinition.TriggerAction> actions = new ArrayList<>();
+        for (JsonElement child : element.getAsJsonArray()) {
+            if (child.isJsonObject()) {
+                QuestDefinition.TriggerAction action = readTriggerAction(child.getAsJsonObject());
+                if (action != null) {
+                    actions.add(action);
+                }
+            }
+        }
+        return List.copyOf(actions);
+    }
+
+    private static boolean hasInlineTriggerAction(JsonObject trigger) {
+        return trigger.has("type")
+                || trigger.has("action")
+                || trigger.has("notification")
+                || trigger.has("notification_trigger")
+                || trigger.has("message")
+                || trigger.has("message_key")
+                || trigger.has("text")
+                || trigger.has("fallback")
+                || trigger.has("fallback_text")
+                || trigger.has("forced_dialogue")
+                || trigger.has("forced_dialogue_id")
+                || trigger.has("dialogue")
+                || trigger.has("dialogue_id")
+                || trigger.has("tracker")
+                || trigger.has("flash_tracker");
+    }
+
+    private static QuestDefinition.TriggerAction readTriggerAction(JsonObject action) {
+        QuestDefinition.TriggerActionType type = inferTriggerActionType(action);
+        String notificationTrigger = firstNonBlank(
+                DatapackJsonReader.readString(action, "notification", "notification_trigger"),
+                DatapackJsonReader.readString(action, "message", "message_key"));
+        notificationTrigger = firstNonBlank(notificationTrigger, DatapackJsonReader.readString(action, "trigger"));
+        String text = DatapackJsonReader.readString(action, "text", "fallback", "fallback_text");
+        String forcedDialogue = DatapackJsonReader.readString(action, "forced_dialogue", "forced_dialogue_id", "dialogue", "dialogue_id");
+        boolean flashTracker = DatapackJsonReader.readBoolean(action, "flash_tracker", true);
+        if (type == QuestDefinition.TriggerActionType.FORCED_DIALOGUE && forcedDialogue.isBlank()) {
+            return null;
+        }
+        if (type == QuestDefinition.TriggerActionType.NOTIFICATION && notificationTrigger.isBlank() && text.isBlank()) {
+            return null;
+        }
+        return new QuestDefinition.TriggerAction(type, notificationTrigger, text, forcedDialogue, flashTracker);
+    }
+
+    private static QuestDefinition.TriggerActionType inferTriggerActionType(JsonObject action) {
+        String explicit = DatapackJsonReader.readString(action, "type", "action");
+        if (!explicit.isBlank()) {
+            return QuestDefinition.TriggerActionType.bySerializedName(explicit);
+        }
+        if (!DatapackJsonReader.readString(action, "forced_dialogue", "forced_dialogue_id", "dialogue", "dialogue_id").isBlank()) {
+            return QuestDefinition.TriggerActionType.FORCED_DIALOGUE;
+        }
+        if (action.has("flash_tracker") || action.has("tracker")) {
+            return QuestDefinition.TriggerActionType.TRACKER;
+        }
+        return QuestDefinition.TriggerActionType.NOTIFICATION;
     }
 
     private static VillageEventMemory.EventTag readMemoryEvent(JsonObject rewards) {

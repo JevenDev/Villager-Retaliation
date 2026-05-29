@@ -763,8 +763,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         int viewportTop = top;
         int viewportBottom = top + optionViewportHeight();
         for (int index = 0; index < this.options.size(); index++) {
-            float y = top + index * optionStride() - this.state.optionScroll();
-            if (y + optionHeight() < viewportTop || y > viewportBottom) {
+            float y = top + VillagerInteractionOptionList.optionOffset(this.optionListContext, index) - this.state.optionScroll();
+            if (y + VillagerInteractionOptionList.optionHeight(this.optionListContext, index) < viewportTop || y > viewportBottom) {
                 continue;
             }
 
@@ -777,16 +777,20 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 textElements.add(new VillagerInteractionExperimentalChrome.ExitTextElement(
                         ">", textLeft - optionTextInset() - 7, textY, 0xFFFFFFFF, scale, delay, 0.0F, this.height - textY + 72.0F, false));
             }
-            textElements.add(new VillagerInteractionExperimentalChrome.ExitTextElement(
-                    this.options.get(index).label(),
-                    textLeft,
-                    textY,
-                    color,
-                    scale,
-                    delay + 24.0F,
-                    0.0F,
-                    this.height - textY + 88.0F,
-                    false));
+            List<String> labelLines = VillagerInteractionOptionList.wrappedOptionLabelLines(this.optionListContext, this.options.get(index).label(), scale);
+            for (int lineIndex = 0; lineIndex < labelLines.size(); lineIndex++) {
+                int lineY = textY + lineIndex * optionHeight();
+                textElements.add(new VillagerInteractionExperimentalChrome.ExitTextElement(
+                        labelLines.get(lineIndex),
+                        textLeft,
+                        lineY,
+                        color,
+                        scale,
+                        delay + 24.0F,
+                        0.0F,
+                        this.height - lineY + 88.0F,
+                        false));
+            }
         }
         return textElements;
     }
@@ -1547,7 +1551,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private float optionContentHeight() {
-        return VillagerInteractionLayoutMetrics.optionContentHeight(isExperimentalUi(), this.options.size());
+        return VillagerInteractionOptionList.optionContentHeight(this.optionListContext);
     }
 
     private int optionStride() {
@@ -1559,8 +1563,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             return;
         }
 
-        float optionTop = this.state.selectedOption() * optionStride();
-        float optionBottom = optionTop + optionHeight();
+        float optionTop = VillagerInteractionOptionList.optionOffset(this.optionListContext, this.state.selectedOption());
+        float optionBottom = optionTop + VillagerInteractionOptionList.optionHeight(this.optionListContext, this.state.selectedOption());
         float viewportTop = this.state.targetOptionScroll();
         float viewportBottom = viewportTop + optionViewportHeight();
         int padding = 6;

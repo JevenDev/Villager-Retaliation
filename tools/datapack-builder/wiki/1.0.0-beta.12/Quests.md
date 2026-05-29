@@ -6,7 +6,7 @@ Quests live under:
 data/<namespace>/quests/<quest_id>.json
 ```
 
-Each quest is one JSON file with a stable `id`, an advancement-like `criteria` block for author clarity, and explicit runtime sections for offer rules, target tracking, and rewards. Put authored quest conversations in [Dialogue Tree JSON](Dialogue-Trees.md), where entries can start, remind, and turn in the quest.
+Each quest is one JSON file with a stable `id`, an advancement-like `criteria` block for author clarity, and explicit runtime sections for offer rules, target tracking, lifecycle rules, rewards, tracker text, and event triggers. Put authored quest conversations in [Dialogue Tree JSON](Dialogue-Trees.md), where entries can start, remind, turn in, and abandon the quest.
 
 ## Minimal Shape
 
@@ -87,7 +87,7 @@ Inside tree nodes, run the quest with an action:
 }
 ```
 
-Supported quest actions are `start`, `remind`, and `turn_in`. Pair entries with quest states:
+Supported quest actions are `start`, `remind`, `turn_in`, and `abandon`. Pair entries with quest states:
 
 ```text
 available
@@ -97,6 +97,67 @@ ready
 completed
 not_completed
 ```
+
+## Quest Triggers
+
+Use `triggers` when a quest should react to world state or quest lifecycle events without hardcoding a new Java hook each time. A trigger has an `event`, optional `conditions`, a cooldown, and one or more `actions`.
+
+The event says when the trigger is checked. The conditions reuse the same condition objects as dialogue and dialogue trees, so authors can combine gates such as night, thunder, reputation, skill, memories, and quest state.
+
+```json
+{
+  "triggers": [
+    {
+      "id": "storm_reminder",
+      "event": "proximity",
+      "radius": 10,
+      "cooldown_seconds": 120,
+      "conditions": [
+        {
+          "type": "quest",
+          "quest": "villagerretaliation:tales_of_a_lost_civilization",
+          "state": "active"
+        },
+        {
+          "type": "time",
+          "value": "night"
+        },
+        {
+          "type": "weather",
+          "state": "thunder"
+        }
+      ],
+      "actions": [
+        {
+          "type": "forced_dialogue",
+          "forced_dialogue": "quest.lost_civilization.storm_reminder"
+        }
+      ]
+    }
+  ]
+}
+```
+
+Events:
+
+| Event | When it is checked |
+| --- | --- |
+| `player_tick` | Periodically while the quest is active and the starting villager is loaded. Aliases: `tick`, `while_active`. |
+| `proximity` | Periodically while the quest is active and the player is within `radius` blocks of the starting villager. Aliases: `villager_proximity`, `near_villager`. |
+| `started` | Immediately after the quest is accepted. |
+| `progress` | Immediately after objective progress changes, such as proof collected or target visited. |
+| `completed` | Immediately after turn-in succeeds. |
+| `abandoned` | Immediately after the quest is dropped. |
+
+Actions:
+
+| Type | Fields | Behavior |
+| --- | --- | --- |
+| `notification` | `notification` or `trigger`, optional `text` | Sends a quest-styled HUD notification through the normal notification system. |
+| `tracker` | optional `flash_tracker` | Syncs the quest tracker and optionally flashes it. |
+| `forced_dialogue` | `forced_dialogue` | Runs a matching forced-dialogue entry with `trigger: "quest"`. This supports proximity dialogue, reminder scenes, and future event-driven quest scenes. |
+
+Continuous triggers default to a 30-second cooldown if no `cooldown_ticks`, `cooldown_seconds`, or `cooldown_days` value is set. Lifecycle triggers default to no cooldown.
 
 ## Runtime Notes
 

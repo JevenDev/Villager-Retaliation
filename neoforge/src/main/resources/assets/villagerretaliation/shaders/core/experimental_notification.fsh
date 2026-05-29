@@ -10,6 +10,7 @@ uniform float AccentBlue;
 uniform float Alpha;
 uniform float ElapsedTicks;
 uniform float Direction;
+uniform float Slant;
 
 in vec2 vertexScreenPos;
 
@@ -32,7 +33,7 @@ bool insideQuad(vec2 p, vec2 a, vec2 b, vec2 c, vec2 d) {
 }
 
 float lineBand(float value, float center, float halfWidth) {
-    return 1.0 - smoothstep(halfWidth, halfWidth + 1.0, abs(value - center));
+    return 1.0 - smoothstep(halfWidth, halfWidth + 0.18, abs(value - center));
 }
 
 void composite(vec3 sourceColor, float sourceAlpha, inout vec3 premultipliedColor, inout float alpha) {
@@ -46,7 +47,7 @@ void main() {
     vec2 p = vertexScreenPos - vec2(RectLeft, RectTop);
     vec2 uv = p / size;
     float dir = Direction < 0.0 ? -1.0 : 1.0;
-    float slant = 9.0;
+    float slant = max(0.0, Slant);
 
     vec2 a = vec2(dir > 0.0 ? slant : 0.0, 0.0);
     vec2 b = vec2(size.x - (dir > 0.0 ? 0.0 : slant), 0.0);
@@ -57,9 +58,9 @@ void main() {
     }
 
     vec3 accent = vec3(AccentRed, AccentGreen, AccentBlue);
-    float sweep = fract(ElapsedTicks * 0.035);
+    float sweep = fract(ElapsedTicks * 0.018);
     float diagonal = uv.x * dir + uv.y * 0.42;
-    float shine = lineBand(fract(diagonal - sweep + 1.0), 0.12, 0.035);
+    float shine = lineBand(fract(diagonal - sweep + 1.0), 0.12, 0.055);
     float lowerSlash = smoothstep(0.45, 1.0, uv.x) * (1.0 - smoothstep(0.0, 0.22, abs(uv.y - (0.74 - uv.x * 0.18))));
     float topEdge = 1.0 - smoothstep(0.0, 1.0, p.y);
     float bottomEdge = 1.0 - smoothstep(0.0, 1.0, size.y - p.y);
@@ -72,8 +73,8 @@ void main() {
     composite(color, alpha, premultipliedColor, composedAlpha);
     composite(accent, accentBar * 0.82, premultipliedColor, composedAlpha);
     composite(accent, (topEdge + bottomEdge) * 0.18, premultipliedColor, composedAlpha);
-    composite(accent, lowerSlash * 0.24, premultipliedColor, composedAlpha);
-    composite(vec3(1.0), shine * 0.06, premultipliedColor, composedAlpha);
+    composite(accent, lowerSlash * 0.18, premultipliedColor, composedAlpha);
+    composite(vec3(1.0), shine * 0.025, premultipliedColor, composedAlpha);
 
     fragColor = vec4(premultipliedColor / max(composedAlpha, 0.001), composedAlpha * clamp(Alpha, 0.0, 1.0));
 }

@@ -23,6 +23,7 @@ uniform float MouseX;
 uniform float MouseY;
 uniform float Hovered;
 uniform float Mode;
+uniform float ClipMainChrome;
 
 in vec2 vertexScreenPos;
 
@@ -267,7 +268,7 @@ vec4 panelColor(vec2 p, vec2 size, vec2 uv) {
     ) ? 1.0 : 0.0;
 
     float lowerVeilAlpha = lowerVeil * 0.3882353 * lowerVeilLayer.w;
-    if (insideMainTransparentChrome(vertexScreenPos)) {
+    if (ClipMainChrome > 0.5 && insideMainTransparentChrome(vertexScreenPos)) {
         lowerVeilAlpha = 0.0;
     }
 

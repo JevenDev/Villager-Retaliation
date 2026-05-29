@@ -2564,6 +2564,157 @@ public final class ForcedDialogueService {
         }
     }
 
+    public static boolean tryTriggerQuestDialogue(
+            ServerLevel level,
+            Villager villager,
+            ServerPlayer player,
+            String forcedDialogueId,
+            Map<String, String> replacements) {
+        if (!VillagerRetaliationConfig.ENABLE_FORCED_DIALOGUE.get()
+                || villager == null
+                || player == null
+                || !villager.isAlive()
+                || villager.isBaby()
+                || !player.isAlive()
+                || player.isSpectator()
+                || FORCED_SESSIONS.containsKey(player.getUUID())
+                || !VillagerInteractionService.canUseForcedInteractionSystem(player, villager)) {
+            return false;
+        }
+
+        for (ForcedDialogueDefinition definition : ForcedDialogueResources
+                .selectCandidates(level.getServer(), ForcedDialogueTrigger.QUEST, null)) {
+            if (!matchesQuestForcedDialogueId(definition, forcedDialogueId)
+                    || !definition.matchesWitness(villager)
+                    || !definitionMatchesReputation(level, villager, player, definition)
+                    || (definition.requiresLineOfSight() && !villager.hasLineOfSight(player))) {
+                continue;
+            }
+            return triggerQuestDialogue(level, villager, player, definition, replacements);
+        }
+        return false;
+    }
+
+    private static boolean matchesQuestForcedDialogueId(ForcedDialogueDefinition definition, String forcedDialogueId) {
+        if (forcedDialogueId == null || forcedDialogueId.isBlank()) {
+            return true;
+        }
+        String normalized = forcedDialogueId.trim();
+        return definition.id().equals(normalized) || definition.source().toString().equals(normalized);
+    }
+
+    private static boolean triggerQuestDialogue(
+            ServerLevel level,
+            Villager villager,
+            ServerPlayer player,
+            ForcedDialogueDefinition definition,
+            Map<String, String> replacements) {
+        if (!rollChance(level, definition.chance())) {
+            return true;
+        }
+        Map<String, String> safeReplacements = replacements == null ? Map.of() : replacements;
+        ForcedDialogueContext context = questDialogueContext(villager, player, safeReplacements);
+        if (definition.reputationDelta() != 0 && VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()) {
+            VillagerReputationManager.addWitnessedReputation(level, villager, player.getUUID(), definition.reputationDelta(), villager.blockPosition());
+            VillagerGossipHooks.spreadReputation(level, villager, player.getUUID(), definition.reputationDelta());
+        }
+
+        String line = ForcedDialogueResources.resolveTemplate(
+                definition.selectLine(level.getRandom()),
+                context,
+                safeReplacements);
+        if (isChatOutput(definition)) {
+            if (!line.isBlank()) {
+                VillagerInteractionService.broadcastForcedVillagerChat(
+                        level,
+                        villager,
+                        line,
+                        VillagerInteractionService.villagerSpeakerLabel(villager),
+                        outputRadius(definition)
+                );
+            }
+            return true;
+        }
+        if (definition.aggroImmediately()) {
+            if (!line.isBlank()) {
+                VillagerInteractionService.sendVillagerNotice(player, villager, line);
+            }
+            if (isRoyaltyFor(level, villager, player)) {
+                sendRoyaltyAggroBypassNotice(player, villager);
+                return true;
+            }
+            VillagerRetaliationHandler.forceAnger(villager, player);
+            return true;
+        }
+        if (!definition.initiateDialogue()) {
+            if (!line.isBlank()) {
+                VillagerInteractionService.sendVillagerNotice(player, villager, line);
+            }
+            return true;
+        }
+
+        ForcedDialogueSession session = new ForcedDialogueSession(
+                villager.getUUID(),
+                definition,
+                context,
+                level.dimension(),
+                villager.blockPosition().immutable(),
+                List.of(),
+                level.getGameTime(),
+                -1,
+                "",
+                false,
+                safeReplacements,
+                List.of(villager.getUUID()),
+                List.of(villager.getUUID()),
+                false,
+                List.of(),
+                isRoyaltyFor(level, villager, player)
+        );
+        if (VillagerInteractionService.openForcedDialogue(
+                player,
+                villager,
+                line,
+                forcedOptions(definition, level, villager, player, session),
+                definition.forceCameraTowardsVillager())) {
+            FORCED_SESSIONS.put(player.getUUID(), session);
+        } else if (!line.isBlank()) {
+            VillagerInteractionService.sendVillagerNotice(player, villager, line);
+        }
+        return true;
+    }
+
+    private static ForcedDialogueContext questDialogueContext(
+            Villager villager,
+            ServerPlayer player,
+            Map<String, String> replacements) {
+        String villagerName = VillagerPresetNameRegistry.resolveDisplayName(villager).getString();
+        String playerName = player.getDisplayName().getString();
+        String quest = replacements.getOrDefault("quest", "quest");
+        String questId = replacements.getOrDefault("quest_id", "");
+        String target = replacements.getOrDefault("target", quest);
+        String proofItem = replacements.getOrDefault("proof_item", target);
+        return new ForcedDialogueContext(
+                villagerName,
+                playerName,
+                target,
+                "quest",
+                questId,
+                proofItem,
+                questId,
+                1,
+                proofItem,
+                proofItem,
+                quest,
+                "",
+                0,
+                0,
+                villager.blockPosition().getX(),
+                villager.blockPosition().getY(),
+                villager.blockPosition().getZ()
+        );
+    }
+
     public static void maybeTriggerPlayerItemProximity(ServerLevel level, Villager villager) {
         if (!playerItemProximityForcedDialogueEnabled()
                 || !villager.isAlive()

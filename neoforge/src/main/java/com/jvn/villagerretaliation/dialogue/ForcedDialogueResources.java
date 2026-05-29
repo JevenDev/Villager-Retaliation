@@ -62,7 +62,7 @@ public final class ForcedDialogueResources {
             "min_knowledge", "max_knowledge", "min_guts", "max_guts", "min_proficiency", "max_proficiency",
             "min_kindness", "max_kindness", "min_charm", "max_charm");
     private static final Set<String> NOTIFICATION_TRIGGER_PREFIXES = Set.of(
-            "ambient.", "alert.", "combat.", "dialogue.", "gift.", "recruitment.", "reputation.", "trade.");
+            "ambient.", "alert.", "combat.", "dialogue.", "gift.", "quest.", "recruitment.", "reputation.", "trade.");
     private static final Comparator<ForcedDialogueDefinition> CANDIDATE_ORDER =
             Comparator.comparingInt(ForcedDialogueDefinition::priority)
                     .thenComparing(definition -> definition.lootTables().isEmpty() ? 1 : 0);
@@ -689,7 +689,7 @@ public final class ForcedDialogueResources {
                     "forced dialogue",
                     entryContext(entry, index),
                     trigger,
-                    "Use forced dialogue triggers: container_theft, container_opened, container_broken, retaliation_started, low_guts_rally, player_item_proximity, or trade_refresh.");
+                    "Use forced dialogue triggers: container_theft, container_opened, container_broken, retaliation_started, low_guts_rally, player_item_proximity, trade_refresh, or quest.");
         }
     }
 
@@ -752,7 +752,8 @@ public final class ForcedDialogueResources {
         RETALIATION_STARTED,
         LOW_GUTS_RALLY,
         PLAYER_ITEM_PROXIMITY,
-        TRADE_REFRESH
+        TRADE_REFRESH,
+        QUEST
     }
 
     public enum ForcedDialogueOutputMode {

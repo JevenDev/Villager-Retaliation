@@ -17,6 +17,8 @@ Forced dialogue text is server-side datapack text. Button labels and villager re
 
 The built-in trade-refresh UI also uses forced-dialogue data for its locked follow-up conversations. Those entries live under the same `forced_dialogue` path and use `trigger: "trade_refresh"`, but they are selected by the trade-refresh service rather than by a world event witness search.
 
+Quest triggers can also call forced-dialogue entries. Use `trigger: "quest"` on the forced-dialogue entry, then reference its `id` from a quest trigger action. The quest decides when the scene is eligible, such as proximity, night, thunder, completion, or another condition stack; the forced-dialogue entry decides what the villager says and which locked options appear.
+
 ## Top-Level Shape
 
 A forced dialogue file can be a single entry:
@@ -118,11 +120,15 @@ container_theft
 container_opened
 container_broken
 retaliation_started
+low_guts_rally
 player_item_proximity
 trade_refresh
+quest
 ```
 
 `trade_refresh` is an internal forced-dialogue option-template trigger used by the villager trade refresh button. It does not fire from a generic world event by itself.
+
+`quest` entries are selected by [Quest JSON](Quests.md) trigger actions. They do not fire on their own.
 
 ## Output Modes
 

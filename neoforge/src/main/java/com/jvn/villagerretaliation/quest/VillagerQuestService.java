@@ -1,8 +1,10 @@
 package com.jvn.villagerretaliation.quest;
 
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
+import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueQuestAction;
+import com.jvn.villagerretaliation.dialogue.ForcedDialogueService;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueResources;
 import com.jvn.villagerretaliation.dialogue.VillagerDialogueService;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
@@ -143,9 +145,11 @@ public final class VillagerQuestService {
                 continue;
             }
             VillagerQuestSavedData.QuestProgress progress = entry.getValue();
+            boolean questProgressChanged = false;
             if (definition.target().hasProofItem() && hasRequiredProof(player, definition) && progress.markHasProof()) {
                 changed = true;
                 progressNotice = true;
+                questProgressChanged = true;
                 sendQuestProgressNotification(
                         player,
                         definition,
@@ -156,6 +160,7 @@ public final class VillagerQuestService {
             if (!progress.visitedTarget() && isAtQuestTarget(level, player.blockPosition(), definition, progress) && progress.markVisitedTarget()) {
                 changed = true;
                 progressNotice = true;
+                questProgressChanged = true;
                 sendQuestProgressNotification(
                         player,
                         definition,
@@ -163,6 +168,11 @@ public final class VillagerQuestService {
                         "quest.location_reached",
                         "Quest location reached: {quest}");
             }
+            if (questProgressChanged) {
+                changed |= dispatchQuestTriggers(player, definition, progress, QuestDefinition.TriggerEvent.PROGRESS);
+            }
+            changed |= dispatchQuestTriggers(player, definition, progress, QuestDefinition.TriggerEvent.PLAYER_TICK);
+            changed |= dispatchQuestTriggers(player, definition, progress, QuestDefinition.TriggerEvent.PROXIMITY);
         }
         if (changed) {
             data.setDirty();
@@ -213,12 +223,16 @@ public final class VillagerQuestService {
 
         VillagerQuestSavedData.QuestProgress started = data.getOrCreate(context.player().getUUID(), definition.id());
         started.start(context.villager().getUUID(), context.level().dimension(), target.pos(), context.level().getGameTime());
+        markContinuousTriggersUsed(started, definition, context.level().getGameTime());
         if (definition.target().hasProofItem() && hasRequiredProof(context.player(), definition)) {
             started.markHasProof();
         }
         data.setDirty();
         rememberQuestStoryHint(context, definition, target.pos());
         sendQuestNotification(context, "quest.started", definition, started, "Quest started: {quest}");
+        if (dispatchQuestTriggers(context, definition, started, QuestDefinition.TriggerEvent.STARTED)) {
+            data.setDirty();
+        }
         sendTrackerSync(context.player(), true);
 
         return result(
@@ -275,6 +289,9 @@ public final class VillagerQuestService {
         data.setDirty();
         awardRewards(context, definition);
         sendQuestNotification(context, "quest.completed", definition, progress, "Quest completed: {quest}");
+        if (dispatchQuestTriggers(context, definition, progress, QuestDefinition.TriggerEvent.COMPLETED)) {
+            data.setDirty();
+        }
         sendTrackerSync(context.player(), true);
 
         return result(
@@ -300,6 +317,9 @@ public final class VillagerQuestService {
         progress.abandon(context.level().getGameTime(), consume);
         data.setDirty();
         sendQuestNotification(context, "quest.abandoned", definition, progress, "Quest abandoned: {quest}");
+        if (dispatchQuestTriggers(context, definition, progress, QuestDefinition.TriggerEvent.ABANDONED)) {
+            data.setDirty();
+        }
         sendTrackerSync(context.player(), true);
         String status = consume
                 ? "abandoned_forever"
@@ -613,6 +633,125 @@ public final class VillagerQuestService {
         );
     }
 
+    private static boolean dispatchQuestTriggers(
+            ServerPlayer player,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress,
+            QuestDefinition.TriggerEvent event) {
+        if (!(player.level() instanceof ServerLevel level) || definition.triggers().isEmpty()) {
+            return false;
+        }
+        Villager villager = startedVillager(level, progress);
+        if (villager == null || !villager.isAlive()) {
+            return false;
+        }
+        DialogueContext context = VillagerInteractionService.createDialogueContext(level, player, villager);
+        return dispatchQuestTriggers(context, definition, progress, event);
+    }
+
+    private static boolean dispatchQuestTriggers(
+            DialogueContext context,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress,
+            QuestDefinition.TriggerEvent event) {
+        if (definition.triggers().isEmpty() || progress == null) {
+            return false;
+        }
+
+        boolean dirty = false;
+        for (QuestDefinition.Trigger trigger : definition.triggers()) {
+            if (trigger.event() != event || !questTriggerMatches(context, progress, trigger)) {
+                continue;
+            }
+            if (runQuestTriggerActions(context, definition, progress, trigger)) {
+                progress.markTriggerUsed(trigger.id(), context.level().getGameTime());
+                dirty = true;
+            }
+        }
+        return dirty;
+    }
+
+    private static void markContinuousTriggersUsed(
+            VillagerQuestSavedData.QuestProgress progress,
+            QuestDefinition definition,
+            long gameTime) {
+        for (QuestDefinition.Trigger trigger : definition.triggers()) {
+            if (trigger.event().isContinuous() && trigger.cooldownTicks() > 0L) {
+                progress.markTriggerUsed(trigger.id(), gameTime);
+            }
+        }
+    }
+
+    private static boolean questTriggerMatches(
+            DialogueContext context,
+            VillagerQuestSavedData.QuestProgress progress,
+            QuestDefinition.Trigger trigger) {
+        if (trigger.event() == QuestDefinition.TriggerEvent.PROXIMITY) {
+            double radius = trigger.radius();
+            if (context.player().distanceToSqr(context.villager()) > radius * radius) {
+                return false;
+            }
+        }
+        if (trigger.cooldownTicks() > 0L) {
+            long lastTriggered = progress.lastTriggerGameTime(trigger.id());
+            if (lastTriggered > 0L && context.level().getGameTime() - lastTriggered < trigger.cooldownTicks()) {
+                return false;
+            }
+        }
+        for (DialogueCondition condition : trigger.conditions()) {
+            if (!condition.matches(context)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean runQuestTriggerActions(
+            DialogueContext context,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress,
+            QuestDefinition.Trigger trigger) {
+        boolean ranAction = false;
+        Map<String, String> replacements = replacements(context, definition, progress);
+        for (QuestDefinition.TriggerAction action : trigger.actions()) {
+            ranAction |= runQuestTriggerAction(context, definition, action, replacements);
+        }
+        return ranAction;
+    }
+
+    private static boolean runQuestTriggerAction(
+            DialogueContext context,
+            QuestDefinition definition,
+            QuestDefinition.TriggerAction action,
+            Map<String, String> replacements) {
+        return switch (action.type()) {
+            case NOTIFICATION -> {
+                String trigger = action.trigger().isBlank() ? "quest.trigger" : action.trigger();
+                String fallback = action.text().isBlank() ? "Quest updated: {quest}" : action.text();
+                VillagerNotifications.sendHud(
+                        context.player(),
+                        context.level(),
+                        context.villager(),
+                        trigger,
+                        replacements,
+                        VillagerDialogueResources.resolveTemplate(fallback, replacements),
+                        VillagerReputationNoticeKind.QUEST
+                );
+                yield true;
+            }
+            case TRACKER -> {
+                sendTrackerSync(context.player(), action.flashTracker());
+                yield true;
+            }
+            case FORCED_DIALOGUE -> ForcedDialogueService.tryTriggerQuestDialogue(
+                    context.level(),
+                    context.villager(),
+                    context.player(),
+                    action.forcedDialogue(),
+                    replacements);
+        };
+    }
+
     private static void sendQuestNotification(
             DialogueContext context,
             String trigger,
@@ -673,11 +812,13 @@ public final class VillagerQuestService {
         VillagerQuestSavedData data = VillagerQuestSavedData.get(level);
         List<Map.Entry<ResourceLocation, VillagerQuestSavedData.QuestProgress>> active =
                 new ArrayList<>(data.activeProgress(player.getUUID()));
-        active.sort(Comparator.comparingLong(entry -> entry.getValue().startedGameTime()));
+        active.sort(Comparator.comparingLong(
+                (Map.Entry<ResourceLocation, VillagerQuestSavedData.QuestProgress> entry) -> entry.getValue().startedGameTime())
+                .reversed());
 
         List<QuestTrackerSyncPayload.Entry> entries = new ArrayList<>();
         for (Map.Entry<ResourceLocation, VillagerQuestSavedData.QuestProgress> entry : active) {
-            if (entries.size() >= QuestTrackerSyncPayload.MAX_ENTRIES) {
+            if (entries.size() >= QuestTrackerSyncPayload.MAX_SYNC_ENTRIES) {
                 break;
             }
             QuestDefinition definition = VillagerQuestResources.quest(level.getServer(), entry.getKey()).orElse(null);
@@ -709,7 +850,7 @@ public final class VillagerQuestService {
                 definition.id().toString(),
                 VillagerDialogueResources.resolveTemplate(title, replacements),
                 VillagerDialogueResources.resolveTemplate(step.text(), replacements),
-                metadataText(definition.tracker().metadata(), step.metadata(), replacements),
+                metadataText(step.metadata(), replacements),
                 Mth.clamp(progressValue, 0.0F, 1.0F),
                 showProgress
         );
@@ -771,21 +912,11 @@ public final class VillagerQuestService {
         return Map.copyOf(values);
     }
 
-    private static String metadataText(
-            Map<String, String> questMetadata,
-            Map<String, String> stepMetadata,
-            Map<String, String> replacements) {
-        Map<String, String> merged = new LinkedHashMap<>();
-        if (questMetadata != null) {
-            merged.putAll(questMetadata);
-        }
-        if (stepMetadata != null) {
-            merged.putAll(stepMetadata);
-        }
-        if (merged.isEmpty()) {
+    private static String metadataText(Map<String, String> metadata, Map<String, String> replacements) {
+        if (metadata == null || metadata.isEmpty()) {
             return "";
         }
-        return merged.values().stream()
+        return metadata.values().stream()
                 .filter(value -> value != null && !value.isBlank())
                 .map(value -> VillagerDialogueResources.resolveTemplate(value, replacements))
                 .reduce((left, right) -> left + " · " + right)

@@ -36,6 +36,7 @@ public class VillagerQuestSavedData extends SavedData {
     private static final String TAG_COMPLETION_COUNT = "CompletionCount";
     private static final String TAG_ABANDON_COUNT = "AbandonCount";
     private static final String TAG_CONSUMED_REASON = "ConsumedReason";
+    private static final String TAG_TRIGGER_TIMES = "TriggerTimes";
 
     private final Map<UUID, Map<ResourceLocation, QuestProgress>> entries = new HashMap<>();
 
@@ -138,6 +139,7 @@ public class VillagerQuestSavedData extends SavedData {
         private int completionCount;
         private int abandonCount;
         private String consumedReason = "";
+        private final Map<String, Long> triggerTimes = new HashMap<>();
 
         private static QuestProgress load(CompoundTag tag) {
             QuestProgress progress = new QuestProgress();
@@ -154,6 +156,12 @@ public class VillagerQuestSavedData extends SavedData {
             progress.completionCount = tag.getInt(TAG_COMPLETION_COUNT);
             progress.abandonCount = tag.getInt(TAG_ABANDON_COUNT);
             progress.consumedReason = tag.getString(TAG_CONSUMED_REASON);
+            if (tag.contains(TAG_TRIGGER_TIMES, Tag.TAG_COMPOUND)) {
+                CompoundTag triggerTimesTag = tag.getCompound(TAG_TRIGGER_TIMES);
+                for (String key : triggerTimesTag.getAllKeys()) {
+                    progress.triggerTimes.put(key, triggerTimesTag.getLong(key));
+                }
+            }
             ResourceLocation dimensionId = ResourceLocation.tryParse(tag.getString(TAG_TARGET_DIMENSION));
             if (dimensionId != null) {
                 progress.targetDimension = ResourceKey.create(Registries.DIMENSION, dimensionId);
@@ -180,6 +188,13 @@ public class VillagerQuestSavedData extends SavedData {
             tag.putInt(TAG_COMPLETION_COUNT, this.completionCount);
             tag.putInt(TAG_ABANDON_COUNT, this.abandonCount);
             tag.putString(TAG_CONSUMED_REASON, this.consumedReason);
+            if (!this.triggerTimes.isEmpty()) {
+                CompoundTag triggerTimesTag = new CompoundTag();
+                for (Map.Entry<String, Long> entry : this.triggerTimes.entrySet()) {
+                    triggerTimesTag.putLong(entry.getKey(), entry.getValue());
+                }
+                tag.put(TAG_TRIGGER_TIMES, triggerTimesTag);
+            }
             if (this.targetDimension != null) {
                 tag.putString(TAG_TARGET_DIMENSION, this.targetDimension.location().toString());
             }
@@ -256,6 +271,7 @@ public class VillagerQuestSavedData extends SavedData {
             this.visitedTarget = false;
             this.hasProof = false;
             this.consumedReason = "";
+            this.triggerTimes.clear();
             this.startCount++;
         }
 
@@ -291,6 +307,20 @@ public class VillagerQuestSavedData extends SavedData {
             }
             this.hasProof = true;
             return true;
+        }
+
+        public long lastTriggerGameTime(String triggerId) {
+            if (triggerId == null || triggerId.isBlank()) {
+                return 0L;
+            }
+            return this.triggerTimes.getOrDefault(triggerId, 0L);
+        }
+
+        public void markTriggerUsed(String triggerId, long gameTime) {
+            if (triggerId == null || triggerId.isBlank()) {
+                return;
+            }
+            this.triggerTimes.put(triggerId, gameTime);
         }
     }
 }

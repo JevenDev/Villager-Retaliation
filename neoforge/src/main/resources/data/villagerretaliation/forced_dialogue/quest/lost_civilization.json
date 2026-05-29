@@ -1,0 +1,40 @@
+{
+  "entries": [
+    {
+      "id": "quest.lost_civilization.storm_reminder",
+      "trigger": "quest",
+      "output": {
+        "mode": "forced_dialogue"
+      },
+      "witness_profession": "minecraft:cartographer",
+      "requires_line_of_sight": true,
+      "force_camera_towards_villager": true,
+      "lines": [
+        "Storms have a way of waking old stone, {player}. If you still mean to follow {quest}, keep your wits near {target_x}, {target_z}.",
+        "A night like this makes the deep roads restless. Your map still points {direction}, toward {target_x}, {target_z}.",
+        "Thunder carries strangely over ancient cities. Bring back {proof_item}, and I will know the trail was true."
+      ],
+      "options": [
+        {
+          "id": "quest.lost_civilization.remember",
+          "label": "I remember",
+          "response": "Then go carefully. Some places were lost for a reason.",
+          "end_conversation": true,
+          "order": 0
+        },
+        {
+          "id": "quest.lost_civilization.directions",
+          "label": "Mark it again",
+          "response": "My notes put it about {distance} blocks {direction}, near {target_x}, {target_z}. Look for the city center, then bring back {proof_item}.",
+          "end_conversation": true,
+          "order": 10
+        }
+      ],
+      "leave_option": {
+        "label": "Leave",
+        "response": "The map will wait. The storm may not.",
+        "end_conversation": true
+      }
+    }
+  ]
+}

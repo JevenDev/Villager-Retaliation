@@ -69,6 +69,35 @@
       }
     }
   },
+  "triggers": [
+    {
+      "id": "storm_reminder",
+      "event": "proximity",
+      "radius": 10,
+      "cooldown_seconds": 120,
+      "conditions": [
+        {
+          "type": "quest",
+          "quest": "villagerretaliation:tales_of_a_lost_civilization",
+          "state": "active"
+        },
+        {
+          "type": "time",
+          "value": "night"
+        },
+        {
+          "type": "weather",
+          "state": "thunder"
+        }
+      ],
+      "actions": [
+        {
+          "type": "forced_dialogue",
+          "forced_dialogue": "quest.lost_civilization.storm_reminder"
+        }
+      ]
+    }
+  ],
   "criteria": {
     "visit_city_center": {
       "trigger": "villagerretaliation:structure_piece",

@@ -1,9 +1,11 @@
 package com.jvn.villagerretaliation.quest;
 
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
+import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.skill.VillagerSkillSet;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
+import java.util.Locale;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -21,6 +23,7 @@ public record QuestDefinition(
         Target target,
         Rules rules,
         Tracker tracker,
+        List<Trigger> triggers,
         Rewards rewards,
         Dialogue dialogue
 ) {
@@ -32,6 +35,7 @@ public record QuestDefinition(
         target = target == null ? Target.EMPTY : target;
         rules = rules == null ? Rules.DEFAULT : rules;
         tracker = tracker == null ? Tracker.EMPTY : tracker;
+        triggers = triggers == null ? List.of() : List.copyOf(triggers);
         rewards = rewards == null ? Rewards.EMPTY : rewards;
         dialogue = dialogue == null ? Dialogue.EMPTY : dialogue;
     }
@@ -172,6 +176,82 @@ public record QuestDefinition(
             text = text == null ? "" : text;
             progress = Math.max(0.0F, Math.min(1.0F, progress));
             metadata = metadata == null ? java.util.Map.of() : java.util.Map.copyOf(metadata);
+        }
+    }
+
+    public record Trigger(
+            String id,
+            TriggerEvent event,
+            List<DialogueCondition> conditions,
+            List<TriggerAction> actions,
+            long cooldownTicks,
+            double radius
+    ) {
+        private static final double DEFAULT_RADIUS = 10.0D;
+
+        public Trigger {
+            id = id == null || id.isBlank() ? "trigger" : id;
+            event = event == null ? TriggerEvent.PLAYER_TICK : event;
+            conditions = conditions == null ? List.of() : List.copyOf(conditions);
+            actions = actions == null ? List.of() : List.copyOf(actions);
+            cooldownTicks = Math.max(0L, cooldownTicks);
+            radius = Double.isFinite(radius) && radius > 0.0D ? radius : DEFAULT_RADIUS;
+        }
+    }
+
+    public enum TriggerEvent {
+        PLAYER_TICK,
+        PROXIMITY,
+        STARTED,
+        PROGRESS,
+        COMPLETED,
+        ABANDONED;
+
+        public static TriggerEvent bySerializedName(String value) {
+            String normalized = value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
+            return switch (normalized) {
+                case "tick", "player_tick", "while_active" -> PLAYER_TICK;
+                case "proximity", "villager_proximity", "near_villager", "nearby" -> PROXIMITY;
+                case "start", "started", "quest_started", "accepted" -> STARTED;
+                case "progress", "updated", "quest_progress", "quest_updated" -> PROGRESS;
+                case "complete", "completed", "quest_completed", "turn_in", "turned_in" -> COMPLETED;
+                case "abandon", "abandoned", "drop", "dropped", "quest_abandoned" -> ABANDONED;
+                default -> PLAYER_TICK;
+            };
+        }
+
+        public boolean isContinuous() {
+            return this == PLAYER_TICK || this == PROXIMITY;
+        }
+    }
+
+    public record TriggerAction(
+            TriggerActionType type,
+            String trigger,
+            String text,
+            String forcedDialogue,
+            boolean flashTracker
+    ) {
+        public TriggerAction {
+            type = type == null ? TriggerActionType.NOTIFICATION : type;
+            trigger = trigger == null ? "" : trigger;
+            text = text == null ? "" : text;
+            forcedDialogue = forcedDialogue == null ? "" : forcedDialogue;
+        }
+    }
+
+    public enum TriggerActionType {
+        NOTIFICATION,
+        TRACKER,
+        FORCED_DIALOGUE;
+
+        public static TriggerActionType bySerializedName(String value) {
+            String normalized = value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
+            return switch (normalized) {
+                case "tracker", "quest_tracker", "flash_tracker" -> TRACKER;
+                case "forced_dialogue", "dialogue", "forced" -> FORCED_DIALOGUE;
+                default -> NOTIFICATION;
+            };
         }
     }
 

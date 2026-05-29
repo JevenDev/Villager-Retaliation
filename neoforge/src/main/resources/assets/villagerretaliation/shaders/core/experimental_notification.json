@@ -32,6 +32,7 @@
     { "name": "AccentBlue", "type": "float", "count": 1, "values": [ 1.0 ] },
     { "name": "Alpha", "type": "float", "count": 1, "values": [ 1.0 ] },
     { "name": "ElapsedTicks", "type": "float", "count": 1, "values": [ 0.0 ] },
-    { "name": "Direction", "type": "float", "count": 1, "values": [ 1.0 ] }
+    { "name": "Direction", "type": "float", "count": 1, "values": [ 1.0 ] },
+    { "name": "Slant", "type": "float", "count": 1, "values": [ 9.0 ] }
   ]
 }

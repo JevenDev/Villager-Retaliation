@@ -9,6 +9,7 @@ Villager Retaliation is data-driven in the places pack makers usually want to to
 - [Pack Format Changes](Pack-Format-Changes.md) - pack-facing added, modified, deprecated, and removed fields, tags, triggers, paths, and manual retargeting notes.
 - [JSON Reference](JSON-Reference.md) - shared conventions, text/line variation rules, enum values, filters, ids, weights, colors, and common pitfalls.
 - [Dialogue JSON](Dialogue.md) - conversation options, dialogue lines, line variations, openings, closings, pacify lines, keyed messages, localization overlays, and story placeholders.
+- [Quest JSON](Quests.md) - quest lifecycle rules, repeat limits, abandonment policies, rewards, tracker text, and event triggers.
 - [Forced Dialogue JSON](Forced-Dialogue.md) - event-driven locked dialogue moments, including witnessed container theft outcomes and aggro choices.
 - [Dialogue Requests](Dialogue-Requests.md) - every current dialogue `request` value, with simple and expanded dropdown examples.
 - [Event Tags](Event-Tags.md) - every current `event_tags` / `player_event_tags` value, with simple and expanded dropdown examples.

@@ -107,8 +107,10 @@ const CONSTANTS = {
     "container_opened",
     "container_broken",
     "retaliation_started",
+    "low_guts_rally",
     "player_item_proximity",
-    "trade_refresh"
+    "trade_refresh",
+    "quest"
   ],
   forcedOutputModes: ["forced_dialogue", "chat"],
   reputationLevels: ["royalty", "revered", "respected", "trusted", "neutral", "suspicious", "hostile", "despised", "feared"],
