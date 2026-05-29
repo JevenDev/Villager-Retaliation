@@ -20,11 +20,4 @@ public final class VillagerAdaptiveGuiScale {
         return ToucanGuiScale.unitAtLeast(guiScaleThreeValue, minimum, BASE_GUI_SCALE);
     }
 
-    public static int unitIf(boolean adaptive, int guiScaleThreeValue) {
-        return adaptive ? unit(guiScaleThreeValue) : guiScaleThreeValue;
-    }
-
-    public static int unitAtLeastIf(boolean adaptive, int guiScaleThreeValue, int minimum) {
-        return adaptive ? unitAtLeast(guiScaleThreeValue, minimum) : guiScaleThreeValue;
-    }
 }

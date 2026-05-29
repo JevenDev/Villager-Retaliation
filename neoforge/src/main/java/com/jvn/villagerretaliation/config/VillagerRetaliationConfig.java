@@ -23,7 +23,6 @@ public final class VillagerRetaliationConfig {
     public static final ModConfigSpec.BooleanValue ENABLE_PLAYER_ITEM_PROXIMITY_FORCED_DIALOGUE;
     public static final ModConfigSpec.BooleanValue SEPARATE_VILLAGER_CHAT_MESSAGES;
     public static final ModConfigSpec.BooleanValue SEPARATE_VILLAGER_CHAT_SPEAKERS;
-    public static final ModConfigSpec.EnumValue<InteractionScreenStyle> INTERACTION_SCREEN_STYLE;
     public static final ModConfigSpec.EnumValue<InteractionChatPosition> INTERACTION_CHAT_POSITION;
     public static final ModConfigSpec.DoubleValue DIALOGUE_CAMERA_ZOOM_AMOUNT;
     public static final ModConfigSpec.IntValue DIALOGUE_CAMERA_TRANSITION_TICKS;
@@ -296,10 +295,6 @@ public final class VillagerRetaliationConfig {
                 .comment("Adds a blank chat line before a villager dialogue header when the speaker changes.")
                 .translation("villagerretaliation.configuration.dialogue.separateVillagerChatSpeakers")
                 .define("separateVillagerChatSpeakers", true);
-        INTERACTION_SCREEN_STYLE = BUILDER
-                .comment("Visual style used by Villager Retaliation's interaction screen.")
-                .translation("villagerretaliation.configuration.dialogue.interactionScreenStyle")
-                .defineEnum("interactionScreenStyle", InteractionScreenStyle.DEFAULT);
         INTERACTION_CHAT_POSITION = BUILDER
                 .comment("Where chat is anchored while the Villager Retaliation interaction menu is open.")
                 .translation("villagerretaliation.configuration.dialogue.interactionChatPosition")

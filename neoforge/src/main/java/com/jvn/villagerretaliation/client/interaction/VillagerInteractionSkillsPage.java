@@ -27,7 +27,6 @@ final class VillagerInteractionSkillsPage {
 
         int left = context.skillsPanelLeft();
         int top = context.skillsPanelTop();
-        renderSkillsContainerBackground(context, graphics, left, top);
 
         Optional<VillagerProfileClientCache.DisplayEntry> entry = context.profileEntry();
         if (entry.isEmpty()) {
@@ -106,19 +105,6 @@ final class VillagerInteractionSkillsPage {
         y = wrappedInfoLineBottom(context.font(), Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.trade"), y, width, scale);
         y = wrappedInfoLineBottom(context.font(), Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.specialty"), y + context.experimentalUnit(4), width, scale);
         return wrappedInfoLineBottom(context.font(), Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.recruit"), y + context.experimentalUnit(4), width, scale);
-    }
-
-    private static void renderSkillsContainerBackground(Context context, GuiGraphics graphics, int left, int top) {
-        int containerLeft = left - context.skillsContainerPaddingX();
-        int containerTop = top;
-        int containerRight = left + context.skillsPanelWidth();
-        int containerBottom = top + context.skillsContainerHeight();
-        if (context.experimentalUi()) {
-            return;
-        }
-        graphics.fill(containerLeft, containerTop, containerRight, containerBottom, context.skillsContainerBackgroundColor());
-        graphics.fill(containerLeft, containerTop, containerLeft + context.experimentalUnit(2), containerBottom, context.skillsContainerStripeColor());
-        graphics.fill(containerLeft, containerBottom, containerRight, containerBottom + 1, context.skillsContainerShadowColor());
     }
 
     private static void renderSkillsInfo(Context context, GuiGraphics graphics) {
@@ -221,14 +207,6 @@ final class VillagerInteractionSkillsPage {
                     && mouseY <= y + context.profileSkillRowHeight() - verticalHitPadding;
             if (rowHovered) {
                 hovered = skill;
-                if (!context.experimentalUi()) {
-                    graphics.fill(
-                            rowLeft - horizontalHitPadding,
-                            y - verticalHitPadding,
-                            rowLeft + columnWidth + horizontalHitPadding,
-                            y + context.profileSkillRowHeight() - verticalHitPadding,
-                            0x22FFFFFF);
-                }
             }
 
             int labelWrapWidth = VillagerInteractionUiUtil.scaledWrapWidth(columnWidth, scale);
@@ -267,25 +245,18 @@ final class VillagerInteractionSkillsPage {
     }
 
     private static void renderSkillBar(Context context, GuiGraphics graphics, int left, int top, int width, int value, VillagerSkillRank rank, boolean hovered) {
-        int fillWidth = Mth.clamp(Math.round(width * value / 100.0F), 1, width);
         int rankColor = skillRankColor(rank);
-        if (context.experimentalUi()) {
-            VillagerInteractionScreenShaderRenderer.renderExperimentalSkillBar(
-                    graphics,
-                    left,
-                    top,
-                    left + width,
-                    top + context.profileSkillBarHeight(),
-                    rankColor,
-                    Mth.clamp(value / 100.0F, 0.0F, 1.0F),
-                    context.experimentalChromeAlpha(),
-                    experimentalTicks(),
-                    hovered);
-            return;
-        }
-        graphics.fill(left, top, left + width, top + context.profileSkillBarHeight(), 0x55332F2A);
-        graphics.fill(left, top, left + fillWidth, top + context.profileSkillBarHeight(), rankColor);
-        graphics.fill(left, top, left + width, top + 1, 0x40FFFFFF);
+        VillagerInteractionScreenShaderRenderer.renderExperimentalSkillBar(
+                graphics,
+                left,
+                top,
+                left + width,
+                top + context.profileSkillBarHeight(),
+                rankColor,
+                Mth.clamp(value / 100.0F, 0.0F, 1.0F),
+                context.experimentalChromeAlpha(),
+                experimentalTicks(),
+                hovered);
     }
 
     private static float experimentalTicks() {
@@ -339,12 +310,6 @@ final class VillagerInteractionSkillsPage {
 
         int skillsContainerPaddingY();
 
-        int skillsContainerBackgroundColor();
-
-        int skillsContainerStripeColor();
-
-        int skillsContainerShadowColor();
-
         int profileSkillRowHeight();
 
         int profileSkillRowGap();
@@ -354,8 +319,6 @@ final class VillagerInteractionSkillsPage {
         int profileSkillColumns();
 
         int profileSkillColumnGap();
-
-        boolean experimentalUi();
 
         float experimentalChromeAlpha();
 

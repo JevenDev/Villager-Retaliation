@@ -468,23 +468,23 @@ public final class VillagerQuestJournalScreen extends Screen {
     }
 
     private int optionWidth() {
-        return VillagerInteractionLayoutMetrics.optionWidth(true);
+        return VillagerInteractionLayoutMetrics.optionWidth();
     }
 
     private int optionHeight() {
-        return VillagerInteractionLayoutMetrics.optionHeight(true);
+        return VillagerInteractionLayoutMetrics.optionHeight();
     }
 
     private int optionTextInset() {
-        return VillagerInteractionLayoutMetrics.optionTextInset(true);
+        return VillagerInteractionLayoutMetrics.optionTextInset();
     }
 
     private int optionViewportHeight() {
-        return VillagerInteractionLayoutMetrics.fullOptionViewportHeight(true);
+        return VillagerInteractionLayoutMetrics.fullOptionViewportHeight();
     }
 
     private int optionStride() {
-        return VillagerInteractionLayoutMetrics.optionStride(true);
+        return VillagerInteractionLayoutMetrics.optionStride();
     }
 
     private int optionsLeft() {
@@ -509,12 +509,12 @@ public final class VillagerQuestJournalScreen extends Screen {
     }
 
     private int skillsPanelTop() {
-        return VillagerInteractionLayoutMetrics.skillsPanelTop(this.height, skillsContainerHeight(), true);
+        return VillagerInteractionLayoutMetrics.skillsPanelTop(this.height, skillsContainerHeight());
     }
 
     private int skillsPanelLeft() {
         int panelWidth = skillsPanelWidth();
-        return VillagerInteractionLayoutMetrics.skillsPanelLeft(this.width, panelWidth, scrollbarRight() - panelWidth, true);
+        return VillagerInteractionLayoutMetrics.skillsPanelLeft(this.width, panelWidth, scrollbarRight() - panelWidth);
     }
 
     private int skillsPanelWidth() {
@@ -522,19 +522,19 @@ public final class VillagerQuestJournalScreen extends Screen {
     }
 
     private int skillsContainerHeight() {
-        return VillagerInteractionLayoutMetrics.skillsContainerHeight(skillsPanelHeight(), true);
+        return VillagerInteractionLayoutMetrics.skillsContainerHeight(skillsPanelHeight());
     }
 
     private int skillsPanelHeight() {
-        return VillagerInteractionLayoutMetrics.skillsPanelHeight(this.font, true);
+        return VillagerInteractionLayoutMetrics.skillsPanelHeight(this.font);
     }
 
     private int skillsContainerPaddingX() {
-        return VillagerInteractionLayoutMetrics.skillsContainerPaddingX(true);
+        return VillagerInteractionLayoutMetrics.skillsContainerPaddingX();
     }
 
     private int skillsContainerPaddingY() {
-        return VillagerInteractionLayoutMetrics.skillsContainerPaddingY(true);
+        return VillagerInteractionLayoutMetrics.skillsContainerPaddingY();
     }
 
     private int skillsBackdropLeft() {
@@ -554,15 +554,15 @@ public final class VillagerQuestJournalScreen extends Screen {
     }
 
     private int optionScrollbarOffset() {
-        return VillagerInteractionLayoutMetrics.optionScrollbarOffset(true);
+        return VillagerInteractionLayoutMetrics.optionScrollbarOffset();
     }
 
     private int optionScrollbarWidth() {
-        return VillagerInteractionLayoutMetrics.optionScrollbarWidth(true);
+        return VillagerInteractionLayoutMetrics.optionScrollbarWidth();
     }
 
     private int optionScrollbarHitWidth() {
-        return VillagerInteractionLayoutMetrics.optionScrollbarHitWidth(true);
+        return VillagerInteractionLayoutMetrics.optionScrollbarHitWidth();
     }
 
     private int experimentalUnit(int value) {
@@ -676,11 +676,6 @@ public final class VillagerQuestJournalScreen extends Screen {
         @Override
         public float optionSelectedScale() {
             return OPTION_SELECTED_SCALE;
-        }
-
-        @Override
-        public boolean experimentalStyle() {
-            return true;
         }
 
         @Override
