@@ -1,19 +1,19 @@
 {
-    "closings": [
-        {
-            "id": "toolsmith_closing",
-            "lines": [
-                "I should get back to the vice and the anvil, where the work makes sense.",
-                "Best I finish polishing those edges before rust gets any ideas.",
-                "There are handles that still need balancing.",
-                "I promised a farmer a new hoe head by sunset.",
-                "<pulse>Back</pulse> to the stack of repairs before it grows taller.",
-                "I have filings to clear and bolts to check.",
-                "A tool keeps its edge only when someone cares for it.",
-                "I still need to test that new pattern properly.",
-                "I should get back before the workbench gets ahead of me.",
-                "I will return to the shop, where metal answers best."
-            ]
-        }
-    ]
+  "closings": [
+    {
+      "id": "toolsmith_closing",
+      "lines": [
+        "I should get back to the vice and the anvil, where the work makes sense.",
+        "Best I finish polishing those edges before rust gets any ideas.",
+        "There are handles that still need balancing.",
+        "I promised a farmer a new hoe head by sunset.",
+        "<pulse>Back</pulse> to the stack of repairs before it grows taller.",
+        "I have filings to clear and bolts to check.",
+        "A tool keeps its edge only when someone cares for it.",
+        "I still need to test that new pattern properly.",
+        "I should get back before the workbench gets ahead of me.",
+        "I'll return to the shop, where metal answers best."
+      ]
+    }
+  ]
 }

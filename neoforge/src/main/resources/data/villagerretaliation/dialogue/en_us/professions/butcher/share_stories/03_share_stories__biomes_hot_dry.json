@@ -7,10 +7,15 @@
       "story_biome": "minecraft:badlands",
       "lines": [
         "{target}? Dry cliffs make every mistake echo. I would pack food for the road.",
-        "If anyone heads for Badlands, tell them: Carry water and watch the ledges. I will be at the smoker.",
-        "Red sand and terracotta do not soften a fall. I will remember that when I pack food.",
+        "If anyone heads for Badlands, tell them: Carry water and watch the ledges. I'll be at the smoker.",
+        "Red sand and terracotta do not soften a fall. I'll remember that when I pack food.",
         "Badlands is no small story. Hungry folk make poor choices.",
-        "I will remember Badlands as hard country with old color in its bones. I will keep stew warm for anyone who comes back shaking."
+        "I will remember Badlands as hard country with old color in its bones. I will keep stew warm for anyone who comes back shaking.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     },
@@ -22,9 +27,14 @@
       "lines": [
         "{target}? Heat makes thirst louder than judgment. I would pack food for the road.",
         "If anyone heads for Desert, tell them: Carry water and travel by shade when you can. I will be at the smoker.",
-        "Sand hides holes, husks, and bad footing. I will remember that when I pack food.",
+        "Sand hides holes, husks, and bad footing. I'll remember that when I pack food.",
         "Desert is no small story. Hungry folk make poor choices.",
-        "I will remember Desert as dry land that asks too much of the mouth. I will keep stew warm for anyone who comes back shaking."
+        "I will remember Desert as dry land that asks too much of the mouth. I will keep stew warm for anyone who comes back shaking.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     },
@@ -36,9 +46,14 @@
       "lines": [
         "{target}? Wind has carved the land into bad footing. I would pack food for the road.",
         "If anyone heads for Eroded Badlands, tell them: Stay off narrow spires unless you can fly. I will be at the smoker.",
-        "Red towers look sturdy until the path narrows. I will remember that when I pack food.",
+        "Red towers look sturdy until the path narrows. I'll remember that when I pack food.",
         "Eroded Badlands is no small story. Hungry folk make poor choices.",
-        "I will remember Eroded Badlands as badlands worn sharp by weather. I will keep stew warm for anyone who comes back shaking."
+        "I will remember Eroded Badlands as badlands worn sharp by weather. I will keep stew warm for anyone who comes back shaking.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     },
@@ -50,9 +65,14 @@
       "lines": [
         "{target}? Dry grass takes warning from the wind. I would pack food for the road.",
         "If anyone heads for Savanna, tell them: Mind fire and travel while the sun is kind. I will be at the smoker.",
-        "Acacia trees lean like they heard bad news. I will remember that when I pack food.",
+        "Acacia trees lean like they heard bad news. I'll remember that when I pack food.",
         "Savanna is no small story. Hungry folk make poor choices.",
-        "I will remember Savanna as warm grassland where the wind talks first. I will keep stew warm for anyone who comes back shaking."
+        "I will remember Savanna as warm grassland where the wind talks first. I will keep stew warm for anyone who comes back shaking.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     },
@@ -64,9 +84,14 @@
       "lines": [
         "{target}? High dry ground lets trouble see far. I would pack food for the road.",
         "If anyone heads for Savanna Plateau, tell them: Watch cliffs and keep water close. I will be at the smoker.",
-        "Acacia shade is thin comfort. I will remember that when I pack food.",
+        "Acacia shade is thin comfort. I'll remember that when I pack food.",
         "Savanna Plateau is no small story. Hungry folk make poor choices.",
-        "I will remember Savanna Plateau as dry high land with a long view of danger. I will keep stew warm for anyone who comes back shaking."
+        "I will remember Savanna Plateau as dry high land with a long view of danger. I will keep stew warm for anyone who comes back shaking.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     },
@@ -78,9 +103,14 @@
       "lines": [
         "{target}? Dry grass and hard wind share the same warning. I would pack food for the road.",
         "If anyone heads for Windswept Savanna, tell them: Mind fire, cliffs, and the road back. I will be at the smoker.",
-        "Acacia trees look like they are leaning away from trouble. I will remember that when I pack food.",
+        "Acacia trees look like they are leaning away from trouble. I'll remember that when I pack food.",
         "Windswept Savanna is no small story. Hungry folk make poor choices.",
-        "I will remember Windswept Savanna as savanna country pulled sharp by wind. I will keep stew warm for anyone who comes back shaking."
+        "I will remember Windswept Savanna as savanna country pulled sharp by wind. I will keep stew warm for anyone who comes back shaking.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     },
@@ -92,9 +122,14 @@
       "lines": [
         "{target}? Trees on badlands still grow in hard country. I would pack food for the road.",
         "If anyone heads for Wooded Badlands, tell them: Watch the drops between trunks. I will be at the smoker.",
-        "Wood and red stone make strange neighbors. I will remember that when I pack food.",
+        "Wood and red stone make strange neighbors. I'll remember that when I pack food.",
         "Wooded Badlands is no small story. Hungry folk make poor choices.",
-        "I will remember Wooded Badlands as badlands with enough trees to hide the edge. I will keep stew warm for anyone who comes back shaking."
+        "I will remember Wooded Badlands as badlands with enough trees to hide the edge. I will keep stew warm for anyone who comes back shaking.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     }

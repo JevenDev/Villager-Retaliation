@@ -12,7 +12,12 @@
         "I checked doors, beds, and hiding places after the lightning, then counted heads. No one should be alone after a sky like that.",
         "By the bell, the thunder made the whole square flinch. I stayed inside and kept away from windows.",
         "That thunder made everyone quiet. I checked my hiding spot twice.",
-        "The sky can keep its lightning. I have a safe corner to find."
+        "The sky can keep its lightning. I have a safe corner to find.",
+        "The village has been noisy lately, and not in the harmless market-day way.",
+        "I heard about that. Around here, news grows legs before breakfast.",
+        "People are pretending they are calm. That usually means they are not.",
+        "One event becomes ten versions by sunset. I am trying to remember the first one.",
+        "The bell, the gossip, the running feet... it all leaves a mark."
       ],
       "weight": 170
     },
@@ -28,7 +33,12 @@
         "We passed water hand to hand and kept people away from the smoke. I carried the bucket after.",
         "My chores can wait. People come first.",
         "We saved what we could near the bell, then made sure no one was still coughing alone.",
-        "The smoke is thinner now, but I keep smelling my sleeves to make sure it is really gone."
+        "The smoke is thinner now, but I keep smelling my sleeves to make sure it is really gone.",
+        "The village has been noisy lately, and not in the harmless market-day way.",
+        "I heard about that. Around here, news grows legs before breakfast.",
+        "People are pretending they are calm. That usually means they are not.",
+        "One event becomes ten versions by sunset. I am trying to remember the first one.",
+        "The bell, the gossip, the running feet... it all leaves a mark."
       ],
       "weight": 170
     },
@@ -43,9 +53,14 @@
       "lines": [
         "During a raid, whatever i was doing can wait; who makes it behind a door matters more.",
         "The horns stopped, but I still keep looking at the road like it might shout again.",
-        "We counted living neighbors before doors, beds, and hiding places. That is the only count worth starting with.",
+        "We counted living neighbors before doors, beds, and hiding places. That's the only count worth starting with.",
         "Raiders came looking for easy emeralds. They found barred doors near the bell and a bell that would not stop ringing.",
-        "From the bell, I saw fear cross the square; then I saw courage get there first."
+        "From the bell, I saw fear cross the square; then I saw courage get there first.",
+        "Fine. I can let this cool, but do not mistake calm for forgetting.",
+        "That helps. Keep your hands peaceful and we may still end this properly.",
+        "Not enough. If you want peace, bring {emerald_cost} {emeralds} and mean it.",
+        "You are short. A nervous apology does not settle a public mistake.",
+        "No. I am too angry to bargain while you are standing there like that."
       ],
       "weight": 170
     },
@@ -61,7 +76,12 @@
         "I stayed near the dark between houses and listened for anyone calling from the dark.",
         "Dawn made it easier to see who was missing, which is not the same as making it easier.",
         "The dark tested everyone. Most of us passed by keeping both hands free between us and teeth.",
-        "We are safe enough, but I still look twice at anything shaped like a monster."
+        "We are safe enough, but I still look twice at anything shaped like a monster.",
+        "The village has been noisy lately, and not in the harmless market-day way.",
+        "I heard about that. Around here, news grows legs before breakfast.",
+        "People are pretending they are calm. That usually means they are not.",
+        "One event becomes ten versions by sunset. I am trying to remember the first one.",
+        "The bell, the gossip, the running feet... it all leaves a mark."
       ],
       "weight": 170
     },
@@ -77,7 +97,12 @@
         "I checked doors, beds, and hiding places, then checked who was coughing too hard to answer.",
         "Sand got in my sleeves, my mouth, and places sand should not know about. No one is missing, though.",
         "A hard wind teaches a nitwit which doors actually close and which ones only pretend.",
-        "We are safe enough, but every step sounds crunchy and everyone is blinking too much."
+        "We are safe enough, but every step sounds crunchy and everyone is blinking too much.",
+        "The village has been noisy lately, and not in the harmless market-day way.",
+        "I heard about that. Around here, news grows legs before breakfast.",
+        "People are pretending they are calm. That usually means they are not.",
+        "One event becomes ten versions by sunset. I am trying to remember the first one.",
+        "The bell, the gossip, the running feet... it all leaves a mark."
       ],
       "weight": 170
     },
@@ -93,7 +118,12 @@
         "Snow piled against the doors, but everyone near the bell found shelter.",
         "Cold is sneaky. I am checking on anyone who stopped complaining about it.",
         "I am clearing snow out of my shoes and watching for footprints that stop too soon.",
-        "We are alright for now. I am keeping close to smoke, soup, and shoveled paths."
+        "We are alright for now. I am keeping close to smoke, soup, and shoveled paths.",
+        "The village has been noisy lately, and not in the harmless market-day way.",
+        "I heard about that. Around here, news grows legs before breakfast.",
+        "People are pretending they are calm. That usually means they are not.",
+        "One event becomes ten versions by sunset. I am trying to remember the first one.",
+        "The bell, the gossip, the running feet... it all leaves a mark."
       ],
       "weight": 170
     }

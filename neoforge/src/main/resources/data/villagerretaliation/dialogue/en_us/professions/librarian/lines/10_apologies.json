@@ -6,14 +6,16 @@
       "option": "apologize_for_harm",
       "show_for_babies": false,
       "lines": [
-        "I will file that apology carefully. The follow-up is the part worth reading.",
-        "I will not erase the record. I may add this to it.",
+        "I'll file that apology carefully. The follow-up is the part worth reading.",
+        "I'll not erase the record. I may add this to it.",
         "Your apology is noted. The revision will be in your behavior.",
         "I dislike repeat offenses in any edition.",
-        "Words can clarify. They cannot replace the missing page.",
-        "I will not close the book on you yet. Do not make me regret the bookmark.",
+        "Words can clarify. They can't replace the missing page.",
+        "I'll not close the book on you yet. Don't make me regret the bookmark.",
         "The statement is clear. The evidence must follow.",
-        "I accept the correction. Now avoid making an errata list."
+        "I accept the correction. Now avoid making an errata list.",
+        "I was wrong. I would rather say it plainly than dress it up.",
+        "That came out sharper than it should have. I am sorry."
       ],
       "weight": 234
     }

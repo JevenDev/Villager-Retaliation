@@ -7,10 +7,15 @@
       "story_biome": "minecraft:bamboo_jungle",
       "lines": [
         "{target}? Green stalks can hide quick trouble. I would tighten a shield strap.",
-        "If anyone heads for Bamboo Jungle, tell them: Keep a path cut behind you. I will be at the forge.",
-        "Bamboo crowds the eye and the feet. I will remember that when I check the shields.",
+        "If anyone heads for Bamboo Jungle, tell them: Keep a path cut behind you. I'll be at the forge.",
+        "Bamboo crowds the eye and the feet. I'll remember that when I check the shields.",
         "Bamboo Jungle is no small story. Good armor does not make a fool safe.",
-        "I will remember Bamboo Jungle as a green wall that rustles like whispers. I will keep a shield by the door."
+        "I will remember Bamboo Jungle as a green wall that rustles like whispers. I will keep a shield by the door.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     },
@@ -22,9 +27,14 @@
       "lines": [
         "{target}? Leaves crowd close enough to hide anything. I would tighten a shield strap.",
         "If anyone heads for Jungle, tell them: Cut a path and remember which vines you passed. I will be at the forge.",
-        "The green is loud even when nothing moves. I will remember that when I check the shields.",
+        "The green is loud even when nothing moves. I'll remember that when I check the shields.",
         "Jungle is no small story. Good armor does not make a fool safe.",
-        "I will remember Jungle as a hot forest that keeps secrets well. I will keep a shield by the door."
+        "I'll remember Jungle as a hot forest that keeps secrets well. I'll keep a shield by the door.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     },
@@ -36,9 +46,14 @@
       "lines": [
         "{target}? Mud holds boots longer than plans. I would tighten a shield strap.",
         "If anyone heads for Mangrove Swamp, tell them: Step on roots and keep slime in mind. I will be at the forge.",
-        "Thick roots make every hurry foolish. I will remember that when I check the shields.",
+        "Thick roots make every hurry foolish. I'll remember that when I check the shields.",
         "Mangrove Swamp is no small story. Good armor does not make a fool safe.",
-        "I will remember Mangrove Swamp as muddy water with a grip on your ankles. I will keep a shield by the door."
+        "I will remember Mangrove Swamp as muddy water with a grip on your ankles. I will keep a shield by the door.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     },
@@ -49,10 +64,15 @@
       "story_biome": "minecraft:sparse_jungle",
       "lines": [
         "{target}? Thin jungle still keeps thick surprises. I would tighten a shield strap.",
-        "If anyone heads for Sparse Jungle, tell them: Do not trust open patches too quickly. I will be at the forge.",
-        "Vines and shadows take turns hiding things. I will remember that when I check the shields.",
+        "If anyone heads for Sparse Jungle, tell them: Don't trust open patches too quickly. I will be at the forge.",
+        "Vines and shadows take turns hiding things. I'll remember that when I check the shields.",
         "Sparse Jungle is no small story. Good armor does not make a fool safe.",
-        "I will remember Sparse Jungle as green country pretending to be easier than it is. I will keep a shield by the door."
+        "I will remember Sparse Jungle as green country pretending to be easier than it is. I will keep a shield by the door.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     },
@@ -64,9 +84,14 @@
       "lines": [
         "{target}? Mud and water both remember footsteps. I would tighten a shield strap.",
         "If anyone heads for Swamp, tell them: Watch slimes, witches, and the slow ground. I will be at the forge.",
-        "Fog makes close things feel far. I will remember that when I check the shields.",
+        "Fog makes close things feel far. I'll remember that when I check the shields.",
         "Swamp is no small story. Good armor does not make a fool safe.",
-        "I will remember Swamp as wet land that grabs at ankles and plans. I will keep a shield by the door."
+        "I'll remember Swamp as wet land that grabs at ankles and plans. I'll keep a shield by the door.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     }

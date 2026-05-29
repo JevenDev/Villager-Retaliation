@@ -8,9 +8,14 @@
       "lines": [
         "{target}? Green stalks can hide quick trouble. I would keep milk and bottles ready.",
         "If anyone heads for Bamboo Jungle, tell them: Keep a path cut behind you. I will be at the brewing stand.",
-        "Bamboo crowds the eye and the feet. I will remember that when I set out the bottles.",
+        "Bamboo crowds the eye and the feet. I'll remember that when I set out the bottles.",
         "Bamboo Jungle is no small story. Some hurts reach deeper than skin.",
-        "I will remember Bamboo Jungle as a green wall that rustles like whispers. I will keep a remedy close."
+        "I will remember Bamboo Jungle as a green wall that rustles like whispers. I will keep a remedy close.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     },
@@ -22,9 +27,14 @@
       "lines": [
         "{target}? Leaves crowd close enough to hide anything. I would keep milk and bottles ready.",
         "If anyone heads for Jungle, tell them: Cut a path and remember which vines you passed. I will be at the brewing stand.",
-        "The green is loud even when nothing moves. I will remember that when I set out the bottles.",
+        "The green is loud even when nothing moves. I'll remember that when I set out the bottles.",
         "Jungle is no small story. Some hurts reach deeper than skin.",
-        "I will remember Jungle as a hot forest that keeps secrets well. I will keep a remedy close."
+        "I'll remember Jungle as a hot forest that keeps secrets well. I'll keep a remedy close.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     },
@@ -36,9 +46,14 @@
       "lines": [
         "{target}? Mud holds boots longer than plans. I would keep milk and bottles ready.",
         "If anyone heads for Mangrove Swamp, tell them: Step on roots and keep slime in mind. I will be at the brewing stand.",
-        "Thick roots make every hurry foolish. I will remember that when I set out the bottles.",
+        "Thick roots make every hurry foolish. I'll remember that when I set out the bottles.",
         "Mangrove Swamp is no small story. Some hurts reach deeper than skin.",
-        "I will remember Mangrove Swamp as muddy water with a grip on your ankles. I will keep a remedy close."
+        "I will remember Mangrove Swamp as muddy water with a grip on your ankles. I will keep a remedy close.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     },
@@ -49,10 +64,15 @@
       "story_biome": "minecraft:sparse_jungle",
       "lines": [
         "{target}? Thin jungle still keeps thick surprises. I would keep milk and bottles ready.",
-        "If anyone heads for Sparse Jungle, tell them: Do not trust open patches too quickly. I will be at the brewing stand.",
-        "Vines and shadows take turns hiding things. I will remember that when I set out the bottles.",
+        "If anyone heads for Sparse Jungle, tell them: Don't trust open patches too quickly. I will be at the brewing stand.",
+        "Vines and shadows take turns hiding things. I'll remember that when I set out the bottles.",
         "Sparse Jungle is no small story. Some hurts reach deeper than skin.",
-        "I will remember Sparse Jungle as green country pretending to be easier than it is. I will keep a remedy close."
+        "I will remember Sparse Jungle as green country pretending to be easier than it is. I will keep a remedy close.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     },
@@ -64,9 +84,14 @@
       "lines": [
         "{target}? Mud and water both remember footsteps. I would keep milk and bottles ready.",
         "If anyone heads for Swamp, tell them: Watch slimes, witches, and the slow ground. I will be at the brewing stand.",
-        "Fog makes close things feel far. I will remember that when I set out the bottles.",
+        "Fog makes close things feel far. I'll remember that when I set out the bottles.",
         "Swamp is no small story. Some hurts reach deeper than skin.",
-        "I will remember Swamp as wet land that grabs at ankles and plans. I will keep a remedy close."
+        "I'll remember Swamp as wet land that grabs at ankles and plans. I'll keep a remedy close.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     }

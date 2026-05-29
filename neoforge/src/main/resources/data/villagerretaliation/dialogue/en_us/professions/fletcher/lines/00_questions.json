@@ -6,10 +6,14 @@
       "lines": [
         "Clean feathers and straight shafts make trouble keep its distance.",
         "A good bow <pulse>hears trouble</pulse> before the bell does.",
-        "A crooked feather makes a promise the arrow cannot keep.",
+        "A crooked feather makes a promise the arrow can't keep.",
         "Distance changes everything. Trouble looks smaller until it arrives.",
         "The best warning is the one that reaches trouble before trouble reaches us.",
-        "Aim is not just the hand. It is patience deciding not to flinch."
+        "Aim is not just the hand. It is patience deciding not to flinch.",
+        "Most days, I am at the fletching table, trying to keep straight shafts from becoming everyone else's problem.",
+        "People think arrows is simple until something goes wrong and suddenly it is very important.",
+        "A village runs on small work. Nobody praises it until it stops happening.",
+        "I trust a good knife more than a loud promise. The knife has less to prove."
       ],
       "weight": 172
     },
@@ -22,7 +26,14 @@
       "lines": [
         "That route you took me on flew about as straight as a warped arrow.",
         "I remember following you through that road. My feet remember it even better.",
-        "That trip across that road taught me to ask more questions before walking."
+        "That trip across that road taught me to ask more questions before walking.",
+        "Following you taught me that plans sound much safer before anyone starts walking.",
+        "I kept up, mostly. My feet have a harsher opinion of the trip.",
+        "Next time, warn me before the road becomes a test of character.",
+        "I learned two things out there: stay close, and ask better questions earlier.",
+        "You move like danger is a normal part of the route. I am still adjusting to that.",
+        "It was not all bad. Some views are worth sore legs and nervous glances.",
+        "If I followed you again, I would pack more food and fewer assumptions."
       ],
       "conditions": [
         {
@@ -39,7 +50,14 @@
       "lines": [
         "That boat did not fly straight, but at least it floated straight enough.",
         "That boat trip still sits oddly in my memory, but at least it floated.",
-        "A boat can make a bad plan quieter. It cannot make me forget it."
+        "A boat can make a bad plan quieter. It can't make me forget it.",
+        "Following you taught me that plans sound much safer before anyone starts walking.",
+        "I kept up, mostly. My feet have a harsher opinion of the trip.",
+        "Next time, warn me before the road becomes a test of character.",
+        "I learned two things out there: stay close, and ask better questions earlier.",
+        "You move like danger is a normal part of the route. I am still adjusting to that.",
+        "It was not all bad. Some views are worth sore legs and nervous glances.",
+        "If I followed you again, I would pack more food and fewer assumptions."
       ],
       "conditions": [
         {
@@ -55,7 +73,14 @@
       "lines": [
         "A bowstring complains before it betrays you. Most people do the opposite.",
         "Straight arrows are made from crooked material and stubborn hands.",
-        "When the bell rings, I learn which arrows were practice and which were promises."
+        "When the bell rings, I learn which arrows were practice and which were promises.",
+        "Most days, I am at the fletching table, trying to keep straight shafts from becoming everyone else's problem.",
+        "People think arrows is simple until something goes wrong and suddenly it is very important.",
+        "A village runs on small work. Nobody praises it until it stops happening.",
+        "I trust a good knife more than a loud promise. The knife has less to prove.",
+        "If you want my honest answer, slow down first. Rushed questions usually hide worse ones.",
+        "The village looks calm from a distance. Up close, it is mostly chores arguing with weather.",
+        "I notice the little things. That is either a skill or what the fletching table has done to me."
       ],
       "weight": 18
     }

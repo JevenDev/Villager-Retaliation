@@ -7,10 +7,15 @@
       "story_biome": "minecraft:birch_forest",
       "lines": [
         "{target}? Bright trunks can make shadows easy to miss. I would keep milk and bottles ready.",
-        "If anyone heads for Birch Forest, tell them: Do not let the pretty light lower your guard. I will be at the brewing stand.",
-        "White bark shows marks, but not always danger. I will remember that when I set out the bottles.",
+        "If anyone heads for Birch Forest, tell them: Don't let the pretty light lower your guard. I will be at the brewing stand.",
+        "White bark shows marks, but not always danger. I'll remember that when I set out the bottles.",
         "Birch Forest is no small story. Some hurts reach deeper than skin.",
-        "I will remember Birch Forest as a pale forest with quiet steps under it. I will keep a remedy close."
+        "I will remember Birch Forest as a pale forest with quiet steps under it. I will keep a remedy close.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     },
@@ -24,7 +29,12 @@
         "If anyone heads for Cherry Grove, tell them: Enjoy the flowers before dark, not after. I will be at the brewing stand.",
         "Pink leaves can make folk forget the sword at their side. I will remember that when I set out the bottles.",
         "Cherry Grove is no small story. Some hurts reach deeper than skin.",
-        "I will remember Cherry Grove as a beautiful hill that still needs torches. I will keep a remedy close."
+        "I will remember Cherry Grove as a beautiful hill that still needs torches. I will keep a remedy close.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     },
@@ -36,9 +46,14 @@
       "lines": [
         "{target}? Thick leaves make noon feel late. I would keep milk and bottles ready.",
         "If anyone heads for Dark Forest, tell them: Place torches before you need them. I will be at the brewing stand.",
-        "Mushrooms grow big where sunlight gives up. I will remember that when I set out the bottles.",
+        "Mushrooms grow big where sunlight gives up. I'll remember that when I set out the bottles.",
         "Dark Forest is no small story. Some hurts reach deeper than skin.",
-        "I will remember Dark Forest as a forest that keeps its own night. I will keep a remedy close."
+        "I'll remember Dark Forest as a forest that keeps its own night. I'll keep a remedy close.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     },
@@ -50,9 +65,14 @@
       "lines": [
         "{target}? Flowers make poor armor. I would keep milk and bottles ready.",
         "If anyone heads for Flower Forest, tell them: Enjoy daylight and leave before monsters admire it too. I will be at the brewing stand.",
-        "Bees and blossoms do not stop arrows. I will remember that when I set out the bottles.",
+        "Bees and blossoms do not stop arrows. I'll remember that when I set out the bottles.",
         "Flower Forest is no small story. Some hurts reach deeper than skin.",
-        "I will remember Flower Forest as a soft-looking forest that still needs caution. I will keep a remedy close."
+        "I will remember Flower Forest as a soft-looking forest that still needs caution. I will keep a remedy close.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     },
@@ -64,9 +84,14 @@
       "lines": [
         "{target}? Trees hide both roads and trouble. I would keep milk and bottles ready.",
         "If anyone heads for Forest, tell them: Keep the sun or a torch in mind. I will be at the brewing stand.",
-        "Leaves make every sound arrive late. I will remember that when I set out the bottles.",
+        "Leaves make every sound arrive late. I'll remember that when I set out the bottles.",
         "Forest is no small story. Some hurts reach deeper than skin.",
-        "I will remember Forest as ordinary woods, which is how they fool people. I will keep a remedy close."
+        "I will remember Forest as ordinary woods, which is how they fool people. I will keep a remedy close.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     },
@@ -80,7 +105,12 @@
         "If anyone heads for Old Growth Birch Forest, tell them: Mark trunks and do not wander by moonlight. I will be at the brewing stand.",
         "Big birches make folk feel smaller than they expect. I will remember that when I set out the bottles.",
         "Old Growth Birch Forest is no small story. Some hurts reach deeper than skin.",
-        "I will remember Old Growth Birch Forest as pale old trees standing too quietly. I will keep a remedy close."
+        "I will remember Old Growth Birch Forest as pale old trees standing too quietly. I will keep a remedy close.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     },
@@ -92,9 +122,14 @@
       "lines": [
         "{target}? Old pines make deep shadows. I would keep milk and bottles ready.",
         "If anyone heads for Old Growth Pine Taiga, tell them: Follow torchlight and watch for wolves. I will be at the brewing stand.",
-        "The trunks rise like walls without doors. I will remember that when I set out the bottles.",
+        "The trunks rise like walls without doors. I'll remember that when I set out the bottles.",
         "Old Growth Pine Taiga is no small story. Some hurts reach deeper than skin.",
-        "I will remember Old Growth Pine Taiga as cold old trees with a long memory. I will keep a remedy close."
+        "I will remember Old Growth Pine Taiga as cold old trees with a long memory. I will keep a remedy close.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     },
@@ -106,9 +141,14 @@
       "lines": [
         "{target}? Spruce shade keeps danger close. I would keep milk and bottles ready.",
         "If anyone heads for Old Growth Spruce Taiga, tell them: Move slow and keep the path marked. I will be at the brewing stand.",
-        "Moss and roots make quiet footing treacherous. I will remember that when I set out the bottles.",
+        "Moss and roots make quiet footing treacherous. I'll remember that when I set out the bottles.",
         "Old Growth Spruce Taiga is no small story. Some hurts reach deeper than skin.",
-        "I will remember Old Growth Spruce Taiga as old spruce country where paths vanish fast. I will keep a remedy close."
+        "I will remember Old Growth Spruce Taiga as old spruce country where paths vanish fast. I will keep a remedy close.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     },
@@ -120,9 +160,14 @@
       "lines": [
         "{target}? Cold trees make every path look alike. I would keep milk and bottles ready.",
         "If anyone heads for Taiga, tell them: Mark the way and listen for wolves. I will be at the brewing stand.",
-        "Spruce needles keep secrets on the ground. I will remember that when I set out the bottles.",
+        "Spruce needles keep secrets on the ground. I'll remember that when I set out the bottles.",
         "Taiga is no small story. Some hurts reach deeper than skin.",
-        "I will remember Taiga as cold woods where a bell would sound small. I will keep a remedy close."
+        "I'll remember Taiga as cold woods where a bell would sound small. I'll keep a remedy close.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     },
@@ -134,9 +179,14 @@
       "lines": [
         "{target}? Hard wind makes trees and cliffs argue. I would keep milk and bottles ready.",
         "If anyone heads for Windswept Forest, tell them: Watch branches, slopes, and sudden drops. I will be at the brewing stand.",
-        "The forest leans like it is bracing itself. I will remember that when I set out the bottles.",
+        "The forest leans like it is bracing itself. I'll remember that when I set out the bottles.",
         "Windswept Forest is no small story. Some hurts reach deeper than skin.",
-        "I will remember Windswept Forest as trees holding on to rough ground. I will keep a remedy close."
+        "I'll remember Windswept Forest as trees holding on to rough ground. I'll keep a remedy close.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     }

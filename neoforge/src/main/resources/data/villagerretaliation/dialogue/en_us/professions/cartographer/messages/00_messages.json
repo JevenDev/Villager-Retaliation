@@ -5,7 +5,14 @@
       "lines": [
         "Bring me news from the mark first. A map is not a story until someone walks it.",
         "I will mark {target_article} with a steadier hand now that you came back.",
-        "Good. {target_article} is no longer just ink and rumor."
+        "Good. {target_article} is no longer just ink and rumor.",
+        "Good. A marked place is safer than a rumored one, even when the place itself is not safe at all.",
+        "I will redraw that route with a firmer hand now that someone has actually walked it.",
+        "Maps lie less when people come back to correct them. That is the whole craft, really.",
+        "I will add a note in the margin: confirmed, but not necessarily friendly.",
+        "The parchment needed truth more than decoration. This helps.",
+        "Now the next traveler has warning instead of guesswork. That matters.",
+        "I will mark the road, the risk, and the part where returning was the impressive bit."
       ]
     },
     {
@@ -14,7 +21,14 @@
       "lines": [
         "You found {target_article}? Good. A village that can be reached can also be warned.",
         "{target_article}, then. I will mark the road in softer ink. People live at the end of that line.",
-        "I will mark {target_article} with a steadier hand now that you came back."
+        "I will mark {target_article} with a steadier hand now that you came back.",
+        "Good. A marked place is safer than a rumored one, even when the place itself is not safe at all.",
+        "I will redraw that route with a firmer hand now that someone has actually walked it.",
+        "Maps lie less when people come back to correct them. That is the whole craft, really.",
+        "I will add a note in the margin: confirmed, but not necessarily friendly.",
+        "The parchment needed truth more than decoration. This helps.",
+        "Now the next traveler has warning instead of guesswork. That matters.",
+        "I will mark the road, the risk, and the part where returning was the impressive bit."
       ],
       "weight": 46
     },
@@ -24,7 +38,14 @@
       "lines": [
         "So {target_article} still stands. Old stone keeps old trouble, but now the way there is honest.",
         "{target_article}. Hm. I will note the hazards twice and the treasure not at all.",
-        "I will mark {target_article} with a steadier hand now that you came back."
+        "I will mark {target_article} with a steadier hand now that you came back.",
+        "Good. A marked place is safer than a rumored one, even when the place itself is not safe at all.",
+        "I will redraw that route with a firmer hand now that someone has actually walked it.",
+        "Maps lie less when people come back to correct them. That is the whole craft, really.",
+        "I will add a note in the margin: confirmed, but not necessarily friendly.",
+        "The parchment needed truth more than decoration. This helps.",
+        "Now the next traveler has warning instead of guesswork. That matters.",
+        "I will mark the road, the risk, and the part where returning was the impressive bit."
       ],
       "weight": 46
     },
@@ -32,9 +53,16 @@
       "id": "cartographer_cartographer_map_report_structure_mansion_variants",
       "key": "cartographer_map_report.structure.mansion",
       "lines": [
-        "You reached {target_article} and came back speaking. That is worth a darker border.",
+        "You reached {target_article} and came back speaking. That's worth a darker border.",
         "{target_article}, confirmed. Some roofs are warnings. I will draw that one like it bites.",
-        "I will mark {target_article} with a steadier hand now that you came back."
+        "I will mark {target_article} with a steadier hand now that you came back.",
+        "Good. A marked place is safer than a rumored one, even when the place itself is not safe at all.",
+        "I will redraw that route with a firmer hand now that someone has actually walked it.",
+        "Maps lie less when people come back to correct them. That is the whole craft, really.",
+        "I will add a note in the margin: confirmed, but not necessarily friendly.",
+        "The parchment needed truth more than decoration. This helps.",
+        "Now the next traveler has warning instead of guesswork. That matters.",
+        "I will mark the road, the risk, and the part where returning was the impressive bit."
       ],
       "weight": 46
     },
@@ -44,7 +72,14 @@
       "lines": [
         "{target_article} under open water. Good work. The sea hides landmarks better than any fog.",
         "You found {target_article}? Then the waves were telling the truth for once.",
-        "I will mark {target_article} with a steadier hand now that you came back."
+        "I will mark {target_article} with a steadier hand now that you came back.",
+        "Good. A marked place is safer than a rumored one, even when the place itself is not safe at all.",
+        "I will redraw that route with a firmer hand now that someone has actually walked it.",
+        "Maps lie less when people come back to correct them. That is the whole craft, really.",
+        "I will add a note in the margin: confirmed, but not necessarily friendly.",
+        "The parchment needed truth more than decoration. This helps.",
+        "Now the next traveler has warning instead of guesswork. That matters.",
+        "I will mark the road, the risk, and the part where returning was the impressive bit."
       ],
       "weight": 46
     },
@@ -54,7 +89,14 @@
       "lines": [
         "{target_article}. Timber below ground means somebody trusted the dark too much.",
         "You found {target_article}. I will mark the descent and leave room for cave-ins.",
-        "I will mark {target_article} with a steadier hand now that you came back."
+        "I will mark {target_article} with a steadier hand now that you came back.",
+        "Good. A marked place is safer than a rumored one, even when the place itself is not safe at all.",
+        "I will redraw that route with a firmer hand now that someone has actually walked it.",
+        "Maps lie less when people come back to correct them. That is the whole craft, really.",
+        "I will add a note in the margin: confirmed, but not necessarily friendly.",
+        "The parchment needed truth more than decoration. This helps.",
+        "Now the next traveler has warning instead of guesswork. That matters.",
+        "I will mark the road, the risk, and the part where returning was the impressive bit."
       ],
       "weight": 46
     },
@@ -64,7 +106,14 @@
       "lines": [
         "{target_article}. Keep your voice low even in the telling. Some places listen after you leave.",
         "You came back from {target_article}. I will mark it, but not invite anyone there lightly.",
-        "I will mark {target_article} with a steadier hand now that you came back."
+        "I will mark {target_article} with a steadier hand now that you came back.",
+        "Good. A marked place is safer than a rumored one, even when the place itself is not safe at all.",
+        "I will redraw that route with a firmer hand now that someone has actually walked it.",
+        "Maps lie less when people come back to correct them. That is the whole craft, really.",
+        "I will add a note in the margin: confirmed, but not necessarily friendly.",
+        "The parchment needed truth more than decoration. This helps.",
+        "Now the next traveler has warning instead of guesswork. That matters.",
+        "I will mark the road, the risk, and the part where returning was the impressive bit."
       ],
       "weight": 46
     },
@@ -72,9 +121,16 @@
       "id": "cartographer_cartographer_map_report_structure_stronghold_variants",
       "key": "cartographer_map_report.structure.stronghold",
       "lines": [
-        "{target_article}, found at last. That is not a road; it is a question carved into stone.",
+        "{target_article}, found at last. That's not a road; it is a question carved into stone.",
         "You found {target_article}. Some maps point outward. That one points beneath everything.",
-        "I will mark {target_article} with a steadier hand now that you came back."
+        "I will mark {target_article} with a steadier hand now that you came back.",
+        "Good. A marked place is safer than a rumored one, even when the place itself is not safe at all.",
+        "I will redraw that route with a firmer hand now that someone has actually walked it.",
+        "Maps lie less when people come back to correct them. That is the whole craft, really.",
+        "I will add a note in the margin: confirmed, but not necessarily friendly.",
+        "The parchment needed truth more than decoration. This helps.",
+        "Now the next traveler has warning instead of guesswork. That matters.",
+        "I will mark the road, the risk, and the part where returning was the impressive bit."
       ],
       "weight": 46
     },
@@ -84,7 +140,14 @@
       "lines": [
         "{target_article}. Even the name makes the parchment feel warmer.",
         "You found {target_article} and returned. I will not ask what followed you in memory.",
-        "I will mark {target_article} with a steadier hand now that you came back."
+        "I will mark {target_article} with a steadier hand now that you came back.",
+        "Good. A marked place is safer than a rumored one, even when the place itself is not safe at all.",
+        "I will redraw that route with a firmer hand now that someone has actually walked it.",
+        "Maps lie less when people come back to correct them. That is the whole craft, really.",
+        "I will add a note in the margin: confirmed, but not necessarily friendly.",
+        "The parchment needed truth more than decoration. This helps.",
+        "Now the next traveler has warning instead of guesswork. That matters.",
+        "I will mark the road, the risk, and the part where returning was the impressive bit."
       ],
       "weight": 46
     },
@@ -94,7 +157,14 @@
       "lines": [
         "{target_article}. I will mark patrol risk on every road that brushes near it.",
         "You found {target_article}. Good. A tower seen on a map is a tower avoided in time.",
-        "I will mark {target_article} with a steadier hand now that you came back."
+        "I will mark {target_article} with a steadier hand now that you came back.",
+        "Good. A marked place is safer than a rumored one, even when the place itself is not safe at all.",
+        "I will redraw that route with a firmer hand now that someone has actually walked it.",
+        "Maps lie less when people come back to correct them. That is the whole craft, really.",
+        "I will add a note in the margin: confirmed, but not necessarily friendly.",
+        "The parchment needed truth more than decoration. This helps.",
+        "Now the next traveler has warning instead of guesswork. That matters.",
+        "I will mark the road, the risk, and the part where returning was the impressive bit."
       ],
       "weight": 46
     },
@@ -104,7 +174,14 @@
       "lines": [
         "{target_article}. Ruins are never as empty as hopeful travelers claim.",
         "You found {target_article}. I will draw it lightly. The past dislikes being pinned down.",
-        "I will mark {target_article} with a steadier hand now that you came back."
+        "I will mark {target_article} with a steadier hand now that you came back.",
+        "Good. A marked place is safer than a rumored one, even when the place itself is not safe at all.",
+        "I will redraw that route with a firmer hand now that someone has actually walked it.",
+        "Maps lie less when people come back to correct them. That is the whole craft, really.",
+        "I will add a note in the margin: confirmed, but not necessarily friendly.",
+        "The parchment needed truth more than decoration. This helps.",
+        "Now the next traveler has warning instead of guesswork. That matters.",
+        "I will mark the road, the risk, and the part where returning was the impressive bit."
       ],
       "weight": 46
     },
@@ -114,7 +191,14 @@
       "lines": [
         "{target_article}. A place built to test feet, nerve, and poor judgment.",
         "You found {target_article}. I will mark it as useful, dangerous, and not for the overconfident.",
-        "I will mark {target_article} with a steadier hand now that you came back."
+        "I will mark {target_article} with a steadier hand now that you came back.",
+        "Good. A marked place is safer than a rumored one, even when the place itself is not safe at all.",
+        "I will redraw that route with a firmer hand now that someone has actually walked it.",
+        "Maps lie less when people come back to correct them. That is the whole craft, really.",
+        "I will add a note in the margin: confirmed, but not necessarily friendly.",
+        "The parchment needed truth more than decoration. This helps.",
+        "Now the next traveler has warning instead of guesswork. That matters.",
+        "I will mark the road, the risk, and the part where returning was the impressive bit."
       ],
       "weight": 46
     },
@@ -124,7 +208,14 @@
       "lines": [
         "You found {target_article}. Good. The map was a promise; now it is a record.",
         "{target_article}, confirmed. I will clean up the linework and pretend I was certain all along.",
-        "I will mark {target_article} with a steadier hand now that you came back."
+        "I will mark {target_article} with a steadier hand now that you came back.",
+        "Good. A marked place is safer than a rumored one, even when the place itself is not safe at all.",
+        "I will redraw that route with a firmer hand now that someone has actually walked it.",
+        "Maps lie less when people come back to correct them. That is the whole craft, really.",
+        "I will add a note in the margin: confirmed, but not necessarily friendly.",
+        "The parchment needed truth more than decoration. This helps.",
+        "Now the next traveler has warning instead of guesswork. That matters.",
+        "I will mark the road, the risk, and the part where returning was the impressive bit."
       ],
       "weight": 46
     }

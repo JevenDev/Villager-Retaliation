@@ -10,7 +10,14 @@
       "lines": [
         "I lost every road for a while. You <pulse>marked the way back</pulse>.",
         "I remember your face like a landmark after a long, wrong journey.",
-        "You helped pull me back when even my name felt far away."
+        "You helped pull me back when even my name felt far away.",
+        "I remember cold, hunger, and then your face cutting through the fog.",
+        "Being cured is not like waking from sleep. It is more like being returned piece by piece.",
+        "Some part of me still listens for that old <shake>groan</shake>. I hate that part.",
+        "You helped me back. I may not say it gracefully, but I know what that means.",
+        "The village feels different now. Brighter, maybe. Or maybe I can finally notice it again.",
+        "I owe you more than a discount and less than my whole life. I am still deciding where that lands.",
+        "Do not make a ceremony of it. Just know I remember."
       ],
       "weight": 60
     },
@@ -24,7 +31,14 @@
       "lines": [
         "The map of that memory is torn, but your name sits near the center.",
         "I remember wandering inside myself. Then a path opened, and you were beside it.",
-        "The memory is rough around the edges, but your face stayed in it."
+        "The memory is rough around the edges, but your face stayed in it.",
+        "I remember cold, hunger, and then your face cutting through the fog.",
+        "Being cured is not like waking from sleep. It is more like being returned piece by piece.",
+        "Some part of me still listens for that old <shake>groan</shake>. I hate that part.",
+        "You helped me back. I may not say it gracefully, but I know what that means.",
+        "The village feels different now. Brighter, maybe. Or maybe I can finally notice it again.",
+        "I owe you more than a discount and less than my whole life. I am still deciding where that lands.",
+        "Do not make a ceremony of it. Just know I remember."
       ],
       "weight": 60
     },
@@ -40,7 +54,14 @@
       "lines": [
         "I remember you, yes. Some routes back home still pass through frightening country.",
         "I know you helped. I also remember why my hands still shake.",
-        "The cure left echoes behind. Stand where I can breathe around them."
+        "The cure left echoes behind. Stand where I can breathe around them.",
+        "You walk in like trouble forgot to close the door behind it.",
+        "I have seen broken cartography with better instincts than you.",
+        "Careful. The village has long memories and very little patience today.",
+        "You are not as frightening as you think. That may be the problem.",
+        "If foolishness made noise, you would drown out the bell.",
+        "Do not test me just because I am speaking in complete sentences.",
+        "Your confidence is <shake>louder</shake> than your sense."
       ]
     }
   ]

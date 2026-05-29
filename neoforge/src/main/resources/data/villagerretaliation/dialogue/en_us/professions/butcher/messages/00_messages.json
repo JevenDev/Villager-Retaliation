@@ -6,7 +6,14 @@
       "lines": [
         "Take {gift_item}. A good village keeps its friends fed and standing.",
         "Here, {gift_item}. It is honest work to send someone off with provisions.",
-        "Take {gift_item}. It is not much, but it is given with care."
+        "Take {gift_item}. It is not much, but it is given with care.",
+        "Most days, I am at the smoker, trying to keep clean cuts from becoming everyone else's problem.",
+        "People think meat is simple until something goes wrong and suddenly it is very important.",
+        "A village runs on small work. Nobody praises it until it stops happening.",
+        "I trust a good cleaver more than a loud promise. The cleaver has less to prove.",
+        "If you want my honest answer, slow down first. Rushed questions usually hide worse ones.",
+        "The village looks calm from a distance. Up close, it is mostly chores arguing with weather.",
+        "I notice the little things. That is either a skill or what the smoker has done to me."
       ],
       "weight": 48
     },
@@ -16,7 +23,14 @@
       "lines": [
         "Good. {tested_villager} has a sound nose for {gift_item}. Fresh advice, clean cut.",
         "If {tested_villager} liked {gift_item}, then the cut was right.",
-        "Good. {gift_item} suited {tested_villager}; I like advice that holds up."
+        "Good. {gift_item} suited {tested_villager}; I like advice that holds up.",
+        "Following you taught me that plans sound much safer before anyone starts walking.",
+        "I kept up, mostly. My feet have a harsher opinion of the trip.",
+        "Next time, warn me before the road becomes a test of character.",
+        "I learned two things out there: stay close, and ask better questions earlier.",
+        "You move like danger is a normal part of the route. I am still adjusting to that.",
+        "It was not all bad. Some views are worth sore legs and nervous glances.",
+        "If I followed you again, I would pack more food and fewer assumptions."
       ],
       "weight": 44
     },
@@ -26,7 +40,14 @@
       "lines": [
         "Bad cut, then. For {gift_subject}, I would set down {gift_item} and bring {alternative_gift}.",
         "Some gifts spoil in the telling. Try {alternative_gift}; that should suit {gift_subject} better.",
-        "{gift_item} missed the mark for {gift_subject}. Try {alternative_gift} instead."
+        "{gift_item} missed the mark for {gift_subject}. Try {alternative_gift} instead.",
+        "Following you taught me that plans sound much safer before anyone starts walking.",
+        "I kept up, mostly. My feet have a harsher opinion of the trip.",
+        "Next time, warn me before the road becomes a test of character.",
+        "I learned two things out there: stay close, and ask better questions earlier.",
+        "You move like danger is a normal part of the route. I am still adjusting to that.",
+        "It was not all bad. Some views are worth sore legs and nervous glances.",
+        "If I followed you again, I would pack more food and fewer assumptions."
       ],
       "weight": 44
     },
@@ -42,7 +63,14 @@
       "lines": [
         "You got a tough cut of advice. Next time, bring {alternative_gift}.",
         "Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
-        "Then we correct the guess: {alternative_gift} next time."
+        "Then we correct the guess: {alternative_gift} next time.",
+        "You walk in like trouble forgot to close the door behind it.",
+        "I have seen broken meat with better instincts than you.",
+        "Careful. The village has long memories and very little patience today.",
+        "You are not as frightening as you think. That may be the problem.",
+        "If foolishness made noise, you would drown out the bell.",
+        "Do not test me just because I am speaking in complete sentences.",
+        "Your confidence is <shake>louder</shake> than your sense."
       ]
     },
     {
@@ -55,7 +83,14 @@
       "lines": [
         "{gift_item} went over badly? Then trim your losses and try {alternative_gift}.",
         "Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
-        "Then we correct the guess: {alternative_gift} next time."
+        "Then we correct the guess: {alternative_gift} next time.",
+        "You walk in like trouble forgot to close the door behind it.",
+        "I have seen broken meat with better instincts than you.",
+        "Careful. The village has long memories and very little patience today.",
+        "You are not as frightening as you think. That may be the problem.",
+        "If foolishness made noise, you would drown out the bell.",
+        "Do not test me just because I am speaking in complete sentences.",
+        "Your confidence is <shake>louder</shake> than your sense."
       ]
     }
   ]

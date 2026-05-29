@@ -9,7 +9,11 @@
         "Clean wool is quiet proof that somebody did the dull work well.",
         "Warmth is easy to praise after someone else made it.",
         "A good blanket is village peace you can fold.",
-        "Patterns are easier to see when you stop yanking the thread."
+        "Patterns are easier to see when you stop yanking the thread.",
+        "Most days, I am at the loom, trying to keep flocks and weather from becoming everyone else's problem.",
+        "People think wool is simple until something goes wrong and suddenly it is very important.",
+        "A village runs on small work. Nobody praises it until it stops happening.",
+        "I trust a good shears more than a loud promise. The shears has less to prove."
       ],
       "weight": 172
     },
@@ -22,7 +26,14 @@
       "lines": [
         "That boat ride was calm enough, until I remembered I was trusting you with the shore.",
         "That boat trip still sits oddly in my memory, but at least it floated.",
-        "A boat can make a bad plan quieter. It cannot make me forget it."
+        "A boat can make a bad plan quieter. It can't make me forget it.",
+        "Following you taught me that plans sound much safer before anyone starts walking.",
+        "I kept up, mostly. My feet have a harsher opinion of the trip.",
+        "Next time, warn me before the road becomes a test of character.",
+        "I learned two things out there: stay close, and ask better questions earlier.",
+        "You move like danger is a normal part of the route. I am still adjusting to that.",
+        "It was not all bad. Some views are worth sore legs and nervous glances.",
+        "If I followed you again, I would pack more food and fewer assumptions."
       ],
       "conditions": [
         {
@@ -40,7 +51,14 @@
       "lines": [
         "When I followed you through {follow_biome}, I finally understood why sheep wander off quietly.",
         "I remember following you through {follow_biome}. My feet remember it even better.",
-        "That trip across {follow_biome} taught me to ask more questions before walking."
+        "That trip across {follow_biome} taught me to ask more questions before walking.",
+        "Following you taught me that plans sound much safer before anyone starts walking.",
+        "I kept up, mostly. My feet have a harsher opinion of the trip.",
+        "Next time, warn me before the road becomes a test of character.",
+        "I learned two things out there: stay close, and ask better questions earlier.",
+        "You move like danger is a normal part of the route. I am still adjusting to that.",
+        "It was not all bad. Some views are worth sore legs and nervous glances.",
+        "If I followed you again, I would pack more food and fewer assumptions."
       ],
       "conditions": [
         {
@@ -56,7 +74,14 @@
       "lines": [
         "A flock knows danger before pride admits it. I listen to the woolly experts.",
         "Dye work teaches patience. So does convincing sheep that the gate is not a puzzle.",
-        "Warm beds start as quiet animals and careful hands."
+        "Warm beds start as quiet animals and careful hands.",
+        "Most days, I am at the loom, trying to keep flocks and weather from becoming everyone else's problem.",
+        "People think wool is simple until something goes wrong and suddenly it is very important.",
+        "A village runs on small work. Nobody praises it until it stops happening.",
+        "I trust a good shears more than a loud promise. The shears has less to prove.",
+        "If you want my honest answer, slow down first. Rushed questions usually hide worse ones.",
+        "The village looks calm from a distance. Up close, it is mostly chores arguing with weather.",
+        "I notice the little things. That is either a skill or what the loom has done to me."
       ],
       "weight": 18
     }

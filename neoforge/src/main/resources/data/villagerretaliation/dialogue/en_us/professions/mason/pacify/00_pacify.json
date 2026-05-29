@@ -7,9 +7,16 @@
       ],
       "weight": 26,
       "lines": [
-        "Fine. I will set this stone down carefully.",
-        "Fine. I will lower this like a heavy block.",
-        "Fine. I can set the anger down, but not forget where it was."
+        "Fine. I'll set this stone down carefully.",
+        "Fine. I'll lower this like a heavy block.",
+        "Fine. I can set the anger down, but not forget where it was.",
+        "Fine. I can let this cool, but do not mistake calm for forgetting.",
+        "That helps. Keep your hands peaceful and we may still end this properly.",
+        "Not enough. If you want peace, bring {emerald_cost} {emeralds} and mean it.",
+        "You are short. A nervous apology does not settle a public mistake.",
+        "No. I am too angry to bargain while you are standing there like that.",
+        "Put the weapon away first. I will not discuss peace with steel in my face.",
+        "This can still end quietly. Do not make me <shake>regret</shake> offering that chance."
       ]
     },
     {
@@ -21,7 +28,14 @@
       "lines": [
         "That foundation will not hold. Bring {emerald_cost} {emeralds}.",
         "That offer is short by enough to crack. Bring {emerald_cost} {emeralds}.",
-        "Not enough mortar for this repair. Bring {emerald_cost} {emeralds}."
+        "Not enough mortar for this repair. Bring {emerald_cost} {emeralds}.",
+        "Fine. I can let this cool, but do not mistake calm for forgetting.",
+        "That helps. Keep your hands peaceful and we may still end this properly.",
+        "Not enough. If you want peace, bring {emerald_cost} {emeralds} and mean it.",
+        "You are short. A nervous apology does not settle a public mistake.",
+        "No. I am too angry to bargain while you are standing there like that.",
+        "Put the weapon away first. I will not discuss peace with steel in my face.",
+        "This can still end quietly. Do not make me <shake>regret</shake> offering that chance."
       ]
     },
     {
@@ -33,7 +47,14 @@
       "lines": [
         "No. Some cracks keep spreading after the offer is made.",
         "No. This crack is still moving, and I am not building on it.",
-        "No. Some damage has to stop spreading before payment matters."
+        "No. Some damage has to stop spreading before payment matters.",
+        "Fine. I can let this cool, but do not mistake calm for forgetting.",
+        "That helps. Keep your hands peaceful and we may still end this properly.",
+        "Not enough. If you want peace, bring {emerald_cost} {emeralds} and mean it.",
+        "You are short. A nervous apology does not settle a public mistake.",
+        "No. I am too angry to bargain while you are standing there like that.",
+        "Put the weapon away first. I will not discuss peace with steel in my face.",
+        "This can still end quietly. Do not make me <shake>regret</shake> offering that chance."
       ]
     }
   ]

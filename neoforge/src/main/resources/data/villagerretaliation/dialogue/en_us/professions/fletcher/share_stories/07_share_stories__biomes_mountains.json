@@ -8,9 +8,14 @@
       "lines": [
         "{target}? Gentle ground can make travelers careless. I would count arrows and find cover.",
         "If anyone heads for Meadow, tell them: Rest there, but do not forget night comes. I will be at the fletching table.",
-        "Flowers and bees do not bar the dark. I will remember that when I count arrows.",
+        "Flowers and bees do not bar the dark. I'll remember that when I count arrows.",
         "Meadow is no small story. Range helps only if you see trouble first.",
-        "I will remember Meadow as soft grass that still needs a lantern. I will keep dry string and straight arrows ready."
+        "I will remember Meadow as soft grass that still needs a lantern. I will keep dry string and straight arrows ready.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     },
@@ -22,9 +27,14 @@
       "lines": [
         "{target}? Stone peaks make every fall honest. I would count arrows and find cover.",
         "If anyone heads for Stony Peaks, tell them: Bring blocks and stop before your legs shake. I will be at the fletching table.",
-        "Bare rock gives little cover and no softness. I will remember that when I count arrows.",
+        "Bare rock gives little cover and no softness. I'll remember that when I count arrows.",
         "Stony Peaks is no small story. Range helps only if you see trouble first.",
-        "I will remember Stony Peaks as high stone with hard answers. I will keep dry string and straight arrows ready."
+        "I will remember Stony Peaks as high stone with hard answers. I will keep dry string and straight arrows ready.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     },
@@ -36,9 +46,14 @@
       "lines": [
         "{target}? Gravel moves when you most need it still. I would count arrows and find cover.",
         "If anyone heads for Windswept Gravelly Hills, tell them: Test every slope before trusting it. I will be at the fletching table.",
-        "Loose stone tells lies under boots. I will remember that when I count arrows.",
+        "Loose stone tells lies under boots. I'll remember that when I count arrows.",
         "Windswept Gravelly Hills is no small story. Range helps only if you see trouble first.",
-        "I will remember Windswept Gravelly Hills as windy hills that slide under pressure. I will keep dry string and straight arrows ready."
+        "I will remember Windswept Gravelly Hills as windy hills that slide under pressure. I will keep dry string and straight arrows ready.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     },
@@ -50,9 +65,14 @@
       "lines": [
         "{target}? Hard wind turns every edge into advice. I would count arrows and find cover.",
         "If anyone heads for Windswept Hills, tell them: Keep low and do not race the mountain. I will be at the fletching table.",
-        "Clouds move fast up there and so can mistakes. I will remember that when I count arrows.",
+        "Clouds move fast up there and so can mistakes. I'll remember that when I count arrows.",
         "Windswept Hills is no small story. Range helps only if you see trouble first.",
-        "I will remember Windswept Hills as high rough land that talks in gusts. I will keep dry string and straight arrows ready."
+        "I will remember Windswept Hills as high rough land that talks in gusts. I will keep dry string and straight arrows ready.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     }

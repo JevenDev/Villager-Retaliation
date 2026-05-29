@@ -9,7 +9,11 @@
         "The edge of a map is not the edge of the world. It is the edge of our <pulse>nerve</pulse>.",
         "Roads look straight until you have to walk them tired.",
         "Borders are lines people draw so fear has somewhere neat to stand.",
-        "A compass helps with north. It says nothing about wisdom."
+        "A compass helps with north. It says nothing about wisdom.",
+        "Most days, I am at the map table, trying to keep roads and borders from becoming everyone else's problem.",
+        "People think cartography is simple until something goes wrong and suddenly it is very important.",
+        "A village runs on small work. Nobody praises it until it stops happening.",
+        "I trust a good compass more than a loud promise. The compass has less to prove."
       ],
       "weight": 172
     },
@@ -25,7 +29,14 @@
       "lines": [
         "I do not mark every path for every traveler. Some maps are earned.",
         "Keep your voice even. I am measuring more than your words.",
-        "Some questions are safer when they stand a little farther away."
+        "Some questions are safer when they stand a little farther away.",
+        "You walk in like trouble forgot to close the door behind it.",
+        "I have seen broken cartography with better instincts than you.",
+        "Careful. The village has long memories and very little patience today.",
+        "You are not as frightening as you think. That may be the problem.",
+        "If foolishness made noise, you would drown out the bell.",
+        "Do not test me just because I am speaking in complete sentences.",
+        "Your confidence is <shake>louder</shake> than your sense."
       ]
     },
     {
@@ -37,7 +48,14 @@
       "lines": [
         "That boat route would look peaceful on a map. The lived version was wetter.",
         "That boat trip still sits oddly in my memory, but at least it floated.",
-        "A boat can make a bad plan quieter. It cannot make me forget it."
+        "A boat can make a bad plan quieter. It can't make me forget it.",
+        "Following you taught me that plans sound much safer before anyone starts walking.",
+        "I kept up, mostly. My feet have a harsher opinion of the trip.",
+        "Next time, warn me before the road becomes a test of character.",
+        "I learned two things out there: stay close, and ask better questions earlier.",
+        "You move like danger is a normal part of the route. I am still adjusting to that.",
+        "It was not all bad. Some views are worth sore legs and nervous glances.",
+        "If I followed you again, I would pack more food and fewer assumptions."
       ],
       "conditions": [
         {
@@ -55,7 +73,14 @@
       "lines": [
         "I could map the route you dragged me along, but I would mark several parts as questionable.",
         "I remember following you through that road. My feet remember it even better.",
-        "That trip across that road taught me to ask more questions before walking."
+        "That trip across that road taught me to ask more questions before walking.",
+        "Following you taught me that plans sound much safer before anyone starts walking.",
+        "I kept up, mostly. My feet have a harsher opinion of the trip.",
+        "Next time, warn me before the road becomes a test of character.",
+        "I learned two things out there: stay close, and ask better questions earlier.",
+        "You move like danger is a normal part of the route. I am still adjusting to that.",
+        "It was not all bad. Some views are worth sore legs and nervous glances.",
+        "If I followed you again, I would pack more food and fewer assumptions."
       ],
       "conditions": [
         {
@@ -72,7 +97,14 @@
       "lines": [
         "The ocean crossing by boat would make a fine blue line on a map. I would label it 'questionable judgment.'",
         "That ocean crossing worked because the boat did. I noticed.",
-        "The sea made the route look simple. My nerves disagreed."
+        "The sea made the route look simple. My nerves disagreed.",
+        "Following you taught me that plans sound much safer before anyone starts walking.",
+        "I kept up, mostly. My feet have a harsher opinion of the trip.",
+        "Next time, warn me before the road becomes a test of character.",
+        "I learned two things out there: stay close, and ask better questions earlier.",
+        "You move like danger is a normal part of the route. I am still adjusting to that.",
+        "It was not all bad. Some views are worth sore legs and nervous glances.",
+        "If I followed you again, I would pack more food and fewer assumptions."
       ],
       "conditions": [
         {
@@ -89,7 +121,14 @@
       "lines": [
         "Maps have edges because paper gives up. The world rarely does.",
         "I mark roads, ruins, and the little places where people decided not to be lost.",
-        "A good map tells you where to go. A better one tells you when to turn back."
+        "A good map tells you where to go. A better one tells you when to turn back.",
+        "Most days, I am at the map table, trying to keep roads and borders from becoming everyone else's problem.",
+        "People think cartography is simple until something goes wrong and suddenly it is very important.",
+        "A village runs on small work. Nobody praises it until it stops happening.",
+        "I trust a good compass more than a loud promise. The compass has less to prove.",
+        "If you want my honest answer, slow down first. Rushed questions usually hide worse ones.",
+        "The village looks calm from a distance. Up close, it is mostly chores arguing with weather.",
+        "I notice the little things. That is either a skill or what the map table has done to me."
       ],
       "weight": 18
     }

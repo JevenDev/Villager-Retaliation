@@ -12,7 +12,12 @@
         "Mushroom Fields sounds scary because strange quiet can make a place feel too safe. I would stay near a grown-up.",
         "If I saw Mushroom Fields, I would hold my bread tight and keep the village bell in mind.",
         "Please tell the story of Mushroom Fields from the safe part, where you got home.",
-        "I am not going to Mushroom Fields. I am very good at not going there."
+        "I am not going to Mushroom Fields. I am very good at not going there.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 140
     },
@@ -28,7 +33,12 @@
         "Plains sounds scary because open ground shows you to everything else. I would stay near a grown-up.",
         "If I saw Plains, I would hold my bread tight and keep the village bell in mind.",
         "Please tell the story of Plains from the safe part, where you got home.",
-        "I am not going to Plains. I am very good at not going there."
+        "I am not going to Plains. I am very good at not going there.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 140
     },
@@ -44,7 +54,12 @@
         "Sunflower Plains sounds scary because sunny fields can still point toward trouble. I would stay near a grown-up.",
         "If I saw Sunflower Plains, I would hold my bread tight and keep the village bell in mind.",
         "Please tell the story of Sunflower Plains from the safe part, where you got home.",
-        "I am not going to Sunflower Plains. I am very good at not going there."
+        "I am not going to Sunflower Plains. I am very good at not going there.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 140
     }

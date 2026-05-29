@@ -6,7 +6,14 @@
       "lines": [
         "Here, {gift_item}. Strong villages are built one fair exchange at a time.",
         "Take {gift_item}. A steady hand deserves steady thanks.",
-        "Take {gift_item}. A steady hand deserves more than words."
+        "Take {gift_item}. A steady hand deserves more than words.",
+        "Most days, I am at the stonecutter, trying to keep cracks and foundations from becoming everyone else's problem.",
+        "People think stonework is simple until something goes wrong and suddenly it is very important.",
+        "A village runs on small work. Nobody praises it until it stops happening.",
+        "I trust a good chisel more than a loud promise. The chisel has less to prove.",
+        "If you want my honest answer, slow down first. Rushed questions usually hide worse ones.",
+        "The village looks calm from a distance. Up close, it is mostly chores arguing with weather.",
+        "I notice the little things. That is either a skill or what the stonecutter has done to me."
       ],
       "weight": 48
     },
@@ -16,7 +23,14 @@
       "lines": [
         "Good. {gift_item} sat square with {tested_villager}.",
         "Then the advice was level. {tested_villager} liked {gift_item}.",
-        "That advice held plumb. {tested_villager} liked {gift_item}."
+        "That advice held plumb. {tested_villager} liked {gift_item}.",
+        "Following you taught me that plans sound much safer before anyone starts walking.",
+        "I kept up, mostly. My feet have a harsher opinion of the trip.",
+        "Next time, warn me before the road becomes a test of character.",
+        "I learned two things out there: stay close, and ask better questions earlier.",
+        "You move like danger is a normal part of the route. I am still adjusting to that.",
+        "It was not all bad. Some views are worth sore legs and nervous glances.",
+        "If I followed you again, I would pack more food and fewer assumptions."
       ],
       "weight": 44
     },
@@ -26,7 +40,14 @@
       "lines": [
         "That foundation cracked. For {gift_subject}, set {alternative_gift} instead.",
         "{gift_item} did not bear weight there? Try {alternative_gift}; sturdier choice.",
-        "That gift settled wrong. Set {alternative_gift} in its place for {gift_subject}."
+        "That gift settled wrong. Set {alternative_gift} in its place for {gift_subject}.",
+        "Following you taught me that plans sound much safer before anyone starts walking.",
+        "I kept up, mostly. My feet have a harsher opinion of the trip.",
+        "Next time, warn me before the road becomes a test of character.",
+        "I learned two things out there: stay close, and ask better questions earlier.",
+        "You move like danger is a normal part of the route. I am still adjusting to that.",
+        "It was not all bad. Some views are worth sore legs and nervous glances.",
+        "If I followed you again, I would pack more food and fewer assumptions."
       ],
       "weight": 44
     },
@@ -42,7 +63,14 @@
       "lines": [
         "That advice cracked under pressure. Set {alternative_gift} in its place.",
         "The first plan crumbled. Use {alternative_gift} before it falls again.",
-        "Set {alternative_gift} instead. This wall needs better stone."
+        "Set {alternative_gift} instead. This wall needs better stone.",
+        "You walk in like trouble forgot to close the door behind it.",
+        "I have seen broken stonework with better instincts than you.",
+        "Careful. The village has long memories and very little patience today.",
+        "You are not as frightening as you think. That may be the problem.",
+        "If foolishness made noise, you would drown out the bell.",
+        "Do not test me just because I am speaking in complete sentences.",
+        "Your confidence is <shake>louder</shake> than your sense."
       ]
     },
     {
@@ -55,7 +83,14 @@
       "lines": [
         "You built on weak stone. Use {alternative_gift} if you want it to stand.",
         "Try {alternative_gift}; even your mistakes need a better base.",
-        "If you want that gift to stand, stop stacking bad choices on it."
+        "If you want that gift to stand, stop stacking bad choices on it.",
+        "You walk in like trouble forgot to close the door behind it.",
+        "I have seen broken stonework with better instincts than you.",
+        "Careful. The village has long memories and very little patience today.",
+        "You are not as frightening as you think. That may be the problem.",
+        "If foolishness made noise, you would drown out the bell.",
+        "Do not test me just because I am speaking in complete sentences.",
+        "Your confidence is <shake>louder</shake> than your sense."
       ]
     }
   ]

@@ -12,7 +12,12 @@
         "Bamboo Jungle sounds scary because green stalks can hide quick trouble. I would stay near a grown-up.",
         "If I saw Bamboo Jungle, I would hold my bread tight and keep the village bell in mind.",
         "Please tell the story of Bamboo Jungle from the safe part, where you got home.",
-        "I am not going to Bamboo Jungle. I am very good at not going there."
+        "I am not going to Bamboo Jungle. I am very good at not going there.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 140
     },
@@ -28,7 +33,12 @@
         "Jungle sounds scary because leaves crowd close enough to hide anything. I would stay near a grown-up.",
         "If I saw Jungle, I would hold my bread tight and keep the village bell in mind.",
         "Please tell the story of Jungle from the safe part, where you got home.",
-        "I am not going to Jungle. I am very good at not going there."
+        "I am not going to Jungle. I am very good at not going there.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 140
     },
@@ -44,7 +54,12 @@
         "Mangrove Swamp sounds scary because mud holds boots longer than plans. I would stay near a grown-up.",
         "If I saw Mangrove Swamp, I would hold my bread tight and keep the village bell in mind.",
         "Please tell the story of Mangrove Swamp from the safe part, where you got home.",
-        "I am not going to Mangrove Swamp. I am very good at not going there."
+        "I am not going to Mangrove Swamp. I am very good at not going there.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 140
     },
@@ -60,7 +75,12 @@
         "Sparse Jungle sounds scary because thin jungle still keeps thick surprises. I would stay near a grown-up.",
         "If I saw Sparse Jungle, I would hold my bread tight and keep the village bell in mind.",
         "Please tell the story of Sparse Jungle from the safe part, where you got home.",
-        "I am not going to Sparse Jungle. I am very good at not going there."
+        "I am not going to Sparse Jungle. I am very good at not going there.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 140
     },
@@ -76,7 +96,12 @@
         "Swamp sounds scary because mud and water both remember footsteps. I would stay near a grown-up.",
         "If I saw Swamp, I would hold my bread tight and keep the village bell in mind.",
         "Please tell the story of Swamp from the safe part, where you got home.",
-        "I am not going to Swamp. I am very good at not going there."
+        "I am not going to Swamp. I am very good at not going there.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 140
     }

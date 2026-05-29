@@ -9,7 +9,11 @@
         "I found a button once. No wall, just ambition.",
         "Where am I going? Usually somewhere nearby, once I remember why.",
         "I tried following my shadow, but it got behind me somehow.",
-        "A job sounds useful. I am saving usefulness for the right moment."
+        "A job sounds useful. I am saving usefulness for the right moment.",
+        "Most days, I am at the wherever people are busy, trying to keep being blamed for things from becoming everyone else's problem.",
+        "People think opinions is simple until something goes wrong and suddenly it is very important.",
+        "A village runs on small work. Nobody praises it until it stops happening.",
+        "I trust a good nothing official more than a loud promise. The nothing official has less to prove."
       ],
       "weight": 172
     },
@@ -24,7 +28,14 @@
       "lines": [
         "I can be <jump>silly</jump> from over here. Over here feels better.",
         "Keep your voice even. I am measuring more than your words.",
-        "Some questions are safer when they stand a little farther away."
+        "Some questions are safer when they stand a little farther away.",
+        "Most days, I am at the wherever people are busy, trying to keep being blamed for things from becoming everyone else's problem.",
+        "People think opinions is simple until something goes wrong and suddenly it is very important.",
+        "A village runs on small work. Nobody praises it until it stops happening.",
+        "I trust a good nothing official more than a loud promise. The nothing official has less to prove.",
+        "If you want my honest answer, slow down first. Rushed questions usually hide worse ones.",
+        "The village looks calm from a distance. Up close, it is mostly chores arguing with weather.",
+        "I notice the little things. That is either a skill or what the wherever people are busy has done to me."
       ]
     },
     {
@@ -36,7 +47,14 @@
       "lines": [
         "Remember when I followed you? I thought we were going somewhere. We sure did.",
         "I remember following you through that road. My feet remember it even better.",
-        "That trip across that road taught me to ask more questions before walking."
+        "That trip across that road taught me to ask more questions before walking.",
+        "Following you taught me that plans sound much safer before anyone starts walking.",
+        "I kept up, mostly. My feet have a harsher opinion of the trip.",
+        "Next time, warn me before the road becomes a test of character.",
+        "I learned two things out there: stay close, and ask better questions earlier.",
+        "You move like danger is a normal part of the route. I am still adjusting to that.",
+        "It was not all bad. Some views are worth sore legs and nervous glances.",
+        "If I followed you again, I would pack more food and fewer assumptions."
       ],
       "conditions": [
         {
@@ -53,7 +71,14 @@
       "lines": [
         "Remember the boat? I sat down and the world moved. Very clever.",
         "That boat trip still sits oddly in my memory, but at least it floated.",
-        "A boat can make a bad plan quieter. It cannot make me forget it."
+        "A boat can make a bad plan quieter. It can't make me forget it.",
+        "Following you taught me that plans sound much safer before anyone starts walking.",
+        "I kept up, mostly. My feet have a harsher opinion of the trip.",
+        "Next time, warn me before the road becomes a test of character.",
+        "I learned two things out there: stay close, and ask better questions earlier.",
+        "You move like danger is a normal part of the route. I am still adjusting to that.",
+        "It was not all bad. Some views are worth sore legs and nervous glances.",
+        "If I followed you again, I would pack more food and fewer assumptions."
       ],
       "conditions": [
         {

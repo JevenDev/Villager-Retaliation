@@ -8,9 +8,14 @@
       "lines": [
         "{target}? Sound itself can <shake>wake trouble</shake>. I would help whoever is closest.",
         "If anyone heads for Ancient City, tell them: <pulse>Step softly</pulse> and leave the shiny things alone. I will be at the square.",
-        "Sculk does not need eyes to notice you. I will keep that in mind by the square.",
+        "Sculk does not need eyes to notice you. I'll keep that in mind by the square.",
         "Ancient City is no small story. A village survives by hands, not titles.",
-        "I will remember Ancient City as a city where <pulse>silence matters</pulse> more than armor. I will keep my hands free to help."
+        "I will remember Ancient City as a city where <pulse>silence matters</pulse> more than armor. I will keep my hands free to help.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     },
@@ -22,9 +27,14 @@
       "lines": [
         "{target}? Old gold still has guards. I would help whoever is closest.",
         "If anyone heads for Bastion Remnant, tell them: Do not touch <color:gold>gold</color> unless you are ready for angry piglins. I will be at the square.",
-        "Blackstone halls do not forgive greed. I will keep that in mind by the square.",
+        "Blackstone halls do not forgive greed. I'll keep that in mind by the square.",
         "Bastion Remnant is no small story. A village survives by hands, not titles.",
-        "I will remember Bastion Remnant as a broken stronghold where greed still has teeth. I will keep my hands free to help."
+        "I will remember Bastion Remnant as a broken stronghold where greed still has teeth. I will keep my hands free to help.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     },
@@ -36,9 +46,14 @@
       "lines": [
         "{target}? Treasure makes people dig past good sense. I would help whoever is closest.",
         "If anyone heads for Buried Treasure, tell them: Watch the <wavy>tide</wavy> and the shovel both. I will be at the square.",
-        "Sand hides holes as well as chests. I will keep that in mind by the square.",
+        "Sand hides holes as well as chests. I'll keep that in mind by the square.",
         "Buried Treasure is no small story. A village survives by hands, not titles.",
-        "I will remember Buried Treasure as a chest under sand that can make friends argue. I will keep my hands free to help."
+        "I will remember Buried Treasure as a chest under sand that can make friends argue. I will keep my hands free to help.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     },
@@ -50,9 +65,14 @@
       "lines": [
         "{target}? Sandstone can hide a trap under your feet. I would help whoever is closest.",
         "If anyone heads for Desert Pyramid, tell them: Break floors carefully and listen before stepping down. I will be at the square.",
-        "Old pressure plates wait patiently. I will keep that in mind by the square.",
+        "Old pressure plates wait patiently. I'll keep that in mind by the square.",
         "Desert Pyramid is no small story. A village survives by hands, not titles.",
-        "I will remember Desert Pyramid as a quiet pyramid with a loud mistake under it. I will keep my hands free to help."
+        "I will remember Desert Pyramid as a quiet pyramid with a loud mistake under it. I will keep my hands free to help.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     },
@@ -64,9 +84,14 @@
       "lines": [
         "{target}? The sky is open and the ground is not always there. I would help whoever is closest.",
         "If anyone heads for End City, tell them: Watch every <shake>bridge</shake> and every shulker box. I will be at the square.",
-        "Purple towers make falling feel too easy. I will keep that in mind by the square.",
+        "Purple towers make falling feel too easy. I'll keep that in mind by the square.",
         "End City is no small story. A village survives by hands, not titles.",
-        "I will remember End City as a tall city built where home feels very far away. I will keep my hands free to help."
+        "I will remember End City as a tall city built where home feels very far away. I will keep my hands free to help.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     },
@@ -78,9 +103,14 @@
       "lines": [
         "{target}? Bridges hang over lava and worse things patrol them. I would help whoever is closest.",
         "If anyone heads for Nether Fortress, tell them: Keep <color:red>fire protection</color> close and pride far away. I will be at the square.",
-        "Blazes turn hallways into ovens. I will keep that in mind by the square.",
+        "Blazes turn hallways into ovens. I'll keep that in mind by the square.",
         "Nether Fortress is no small story. A village survives by hands, not titles.",
-        "I will remember Nether Fortress as a black bridge where the air itself wants a fight. I will keep my hands free to help."
+        "I will remember Nether Fortress as a black bridge where the air itself wants a fight. I will keep my hands free to help.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     },
@@ -92,9 +122,14 @@
       "lines": [
         "{target}? A little shelter can keep a strange secret below. I would help whoever is closest.",
         "If anyone heads for Igloo, tell them: Check the trapdoor before trusting the bed. I will be at the square.",
-        "Snow can cover kindness and trouble both. I will keep that in mind by the square.",
+        "Snow can cover kindness and trouble both. I'll keep that in mind by the square.",
         "Igloo is no small story. A village survives by hands, not titles.",
-        "I will remember Igloo as a small white house with more beneath it than above it. I will keep my hands free to help."
+        "I will remember Igloo as a small white house with more beneath it than above it. I will keep my hands free to help.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     },
@@ -106,9 +141,14 @@
       "lines": [
         "{target}? Vines and stone hide tripwires well. I would help whoever is closest.",
         "If anyone heads for Jungle Pyramid, tell them: Move slow and keep hands off strange levers. I will be at the square.",
-        "Mossy stone is good at pretending nothing happened. I will keep that in mind by the square.",
+        "Mossy stone is good at pretending nothing happened. I'll keep that in mind by the square.",
         "Jungle Pyramid is no small story. A village survives by hands, not titles.",
-        "I will remember Jungle Pyramid as a jungle ruin that waits with string pulled tight. I will keep my hands free to help."
+        "I will remember Jungle Pyramid as a jungle ruin that waits with string pulled tight. I will keep my hands free to help.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     },
@@ -120,9 +160,14 @@
       "lines": [
         "{target}? Old supports and cave spiders both like the dark. I would help whoever is closest.",
         "If anyone heads for Mineshaft, tell them: Mind the webs and never trust quiet rails. I will be at the square.",
-        "Wood below ground means someone left in a hurry. I will keep that in mind by the square.",
+        "Wood below ground means someone left in a hurry. I'll keep that in mind by the square.",
         "Mineshaft is no small story. A village survives by hands, not titles.",
-        "I will remember Mineshaft as a tunnel where every beam sounds tired. I will keep my hands free to help."
+        "I will remember Mineshaft as a tunnel where every beam sounds tired. I will keep my hands free to help.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     },
@@ -134,9 +179,14 @@
       "lines": [
         "{target}? Gold country draws danger underground. I would help whoever is closest.",
         "If anyone heads for Mesa Mineshaft, tell them: Watch the rails and the drops between red stone walls. I will be at the square.",
-        "Badlands dust follows you into every tunnel. I will keep that in mind by the square.",
+        "Badlands dust follows you into every tunnel. I'll keep that in mind by the square.",
         "Mesa Mineshaft is no small story. A village survives by hands, not titles.",
-        "I will remember Mesa Mineshaft as a red-earth mine where greed dug too deep. I will keep my hands free to help."
+        "I will remember Mesa Mineshaft as a red-earth mine where greed dug too deep. I will keep my hands free to help.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     },
@@ -148,9 +198,14 @@
       "lines": [
         "{target}? Guardians watch the water from every side. I would help whoever is closest.",
         "If anyone heads for Ocean Monument, tell them: Bring milk, doors, and enough air to regret nothing. I will be at the square.",
-        "Prismarine looks pretty until the beams start. I will keep that in mind by the square.",
+        "Prismarine looks pretty until the beams start. I'll keep that in mind by the square.",
         "Ocean Monument is no small story. A village survives by hands, not titles.",
-        "I will remember Ocean Monument as a drowned temple with eyes in the walls. I will keep my hands free to help."
+        "I will remember Ocean Monument as a drowned temple with eyes in the walls. I will keep my hands free to help.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     },
@@ -162,9 +217,14 @@
       "lines": [
         "{target}? Even old bones can sit in bad air. I would help whoever is closest.",
         "If anyone heads for Nether Fossil, tell them: Mind the soul sand and anything burning nearby. I will be at the square.",
-        "White bone in the Nether never feels peaceful. I will keep that in mind by the square.",
+        "White bone in the Nether never feels peaceful. I'll keep that in mind by the square.",
         "Nether Fossil is no small story. A village survives by hands, not titles.",
-        "I will remember Nether Fossil as a dead thing the Nether refused to bury kindly. I will keep my hands free to help."
+        "I will remember Nether Fossil as a dead thing the Nether refused to bury kindly. I will keep my hands free to help.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     },
@@ -176,9 +236,14 @@
       "lines": [
         "{target}? Cold water steals strength fast. I would help whoever is closest.",
         "If anyone heads for Cold Ocean Ruin, tell them: Watch for <shake>drowned hands</shake> below the stone. I will be at the square.",
-        "Ruined blocks under ice do not mean empty blocks. I will keep that in mind by the square.",
+        "Ruined blocks under ice do not mean empty blocks. I'll keep that in mind by the square.",
         "Cold Ocean Ruin is no small story. A village survives by hands, not titles.",
-        "I will remember Cold Ocean Ruin as a sunken ruin where the water bites first. I will keep my hands free to help."
+        "I will remember Cold Ocean Ruin as a sunken ruin where the water bites first. I will keep my hands free to help.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     },
@@ -189,10 +254,15 @@
       "story_structure": "minecraft:ocean_ruin_warm",
       "lines": [
         "{target}? Warm water can still hide drowned trouble. I would help whoever is closest.",
-        "If anyone heads for Warm Ocean Ruin, tell them: Do not mistake coral colors for safety. I will be at the square.",
-        "Bright water makes danger look inviting. I will keep that in mind by the square.",
+        "If anyone heads for Warm Ocean Ruin, tell them: Don't mistake coral colors for safety. I will be at the square.",
+        "Bright water makes danger look inviting. I'll keep that in mind by the square.",
         "Warm Ocean Ruin is no small story. A village survives by hands, not titles.",
-        "I will remember Warm Ocean Ruin as a pretty ruin with lungs full of warning. I will keep my hands free to help."
+        "I will remember Warm Ocean Ruin as a pretty ruin with lungs full of warning. I will keep my hands free to help.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     },
@@ -204,9 +274,14 @@
       "lines": [
         "{target}? Banners mean <shake>crossbows</shake> are near. I would help whoever is closest.",
         "If anyone heads for Pillager Outpost, tell them: Stay low and do not let patrols follow you home. I will be at the square.",
-        "A tower sees farther than a villager wants. I will keep that in mind by the square.",
+        "A tower sees farther than a villager wants. I'll keep that in mind by the square.",
         "Pillager Outpost is no small story. A village survives by hands, not titles.",
-        "I will remember Pillager Outpost as a wooden tower that points trouble at villages. I will keep my hands free to help."
+        "I will remember Pillager Outpost as a wooden tower that points trouble at villages. I will keep my hands free to help.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     },
@@ -218,9 +293,14 @@
       "lines": [
         "{target}? Broken obsidian still remembers the Nether. I would help whoever is closest.",
         "If anyone heads for Ruined Portal, tell them: Keep clear of lava and do not rebuild it casually. I will be at the square.",
-        "Even cold portal stones make the air feel warmer. I will keep that in mind by the square.",
+        "Even cold portal stones make the air feel warmer. I'll keep that in mind by the square.",
         "Ruined Portal is no small story. A village survives by hands, not titles.",
-        "I will remember Ruined Portal as a broken doorway that still points somewhere bad. I will keep my hands free to help."
+        "I will remember Ruined Portal as a broken doorway that still points somewhere bad. I will keep my hands free to help.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     },
@@ -232,9 +312,14 @@
       "lines": [
         "{target}? Nether heat and desert heat make poor company. I would help whoever is closest.",
         "If anyone heads for Desert Ruined Portal, tell them: Watch lava pockets and broken obsidian. I will be at the square.",
-        "Sand around a portal never feels innocent. I will keep that in mind by the square.",
+        "Sand around a portal never feels innocent. I'll keep that in mind by the square.",
         "Desert Ruined Portal is no small story. A village survives by hands, not titles.",
-        "I will remember Desert Ruined Portal as a hot ruin with one foot in a worse world. I will keep my hands free to help."
+        "I will remember Desert Ruined Portal as a hot ruin with one foot in a worse world. I will keep my hands free to help.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 120
     }

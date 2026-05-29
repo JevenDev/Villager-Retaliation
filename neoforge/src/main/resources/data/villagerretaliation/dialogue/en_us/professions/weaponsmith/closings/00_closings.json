@@ -1,19 +1,19 @@
 {
-    "closings": [
-        {
-            "id": "weaponsmith_closing",
-            "lines": [
-                "I should get back to edges and balance. A blade owes someone its <pulse>truth</pulse>.",
-                "Best I return to sharpening before the forge turns cold.",
-                "There is a handle and guard waiting for their final fit.",
-                "I promised to finish one clean edge before the hour is out.",
-                "I have steel to listen to and tools to quiet.",
-                "<pulse>Back</pulse> to the bellows, the files, and the mess on my bench.",
-                "I need to check a few blades for hidden chips.",
-                "A customer asked for a cleaner strike. I intend to give them one.",
-                "The fire cools if I wander too long.",
-                "<pulse>Back</pulse> to forging calm, one strike at a time."
-            ]
-        }
-    ]
+  "closings": [
+    {
+      "id": "weaponsmith_closing",
+      "lines": [
+        "I should get back to edges and balance. A blade owes someone its <pulse>truth</pulse>.",
+        "Best I return to sharpening before the forge turns cold.",
+        "There is a handle and guard waiting for their final fit.",
+        "I promised to finish one clean edge before the hour is out.",
+        "I have steel to listen to and tools to quiet.",
+        "<pulse>Back</pulse> to the bellows, the files, and the mess on my bench.",
+        "I need to check a few blades for hidden chips.",
+        "A customer asked for a cleaner strike. I intend to give them one.",
+        "The fire cools if I wander too long.",
+        "<pulse>Back</pulse> to forging calm, one strike at a time."
+      ]
+    }
+  ]
 }

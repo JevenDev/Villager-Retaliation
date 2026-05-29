@@ -12,7 +12,12 @@
         "Ancient City sounds scary because sound itself can wake trouble. I would stay near a grown-up.",
         "If I saw Ancient City, I would hold my bread tight and keep the village bell in mind.",
         "Please tell the story of Ancient City from the safe part, where you got home.",
-        "I am not going to Ancient City. I am very good at not going there."
+        "I am not going to Ancient City. I am very good at not going there.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 140
     },
@@ -28,7 +33,12 @@
         "Bastion Remnant sounds scary because old gold still has guards. I would stay near a grown-up.",
         "If I saw Bastion Remnant, I would hold my bread tight and keep the village bell in mind.",
         "Please tell the story of Bastion Remnant from the safe part, where you got home.",
-        "I am not going to Bastion Remnant. I am very good at not going there."
+        "I am not going to Bastion Remnant. I am very good at not going there.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 140
     },
@@ -44,7 +54,12 @@
         "Buried Treasure sounds scary because treasure makes people dig past good sense. I would stay near a grown-up.",
         "If I saw Buried Treasure, I would hold my bread tight and keep the village bell in mind.",
         "Please tell the story of Buried Treasure from the safe part, where you got home.",
-        "I am not going to Buried Treasure. I am very good at not going there."
+        "I am not going to Buried Treasure. I am very good at not going there.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 140
     },
@@ -60,7 +75,12 @@
         "Desert Pyramid sounds scary because sandstone can hide a trap under your feet. I would stay near a grown-up.",
         "If I saw Desert Pyramid, I would hold my bread tight and keep the village bell in mind.",
         "Please tell the story of Desert Pyramid from the safe part, where you got home.",
-        "I am not going to Desert Pyramid. I am very good at not going there."
+        "I am not going to Desert Pyramid. I am very good at not going there.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 140
     },
@@ -76,7 +96,12 @@
         "End City sounds scary because the sky is open and the ground is not always there. I would stay near a grown-up.",
         "If I saw End City, I would hold my bread tight and keep the village bell in mind.",
         "Please tell the story of End City from the safe part, where you got home.",
-        "I am not going to End City. I am very good at not going there."
+        "I am not going to End City. I am very good at not going there.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 140
     },
@@ -92,7 +117,12 @@
         "Nether Fortress sounds scary because bridges hang over lava and worse things patrol them. I would stay near a grown-up.",
         "If I saw Nether Fortress, I would hold my bread tight and keep the village bell in mind.",
         "Please tell the story of Nether Fortress from the safe part, where you got home.",
-        "I am not going to Nether Fortress. I am very good at not going there."
+        "I am not going to Nether Fortress. I am very good at not going there.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 140
     },
@@ -108,7 +138,12 @@
         "Igloo sounds scary because a little shelter can keep a strange secret below. I would stay near a grown-up.",
         "If I saw Igloo, I would hold my bread tight and keep the village bell in mind.",
         "Please tell the story of Igloo from the safe part, where you got home.",
-        "I am not going to Igloo. I am very good at not going there."
+        "I am not going to Igloo. I am very good at not going there.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 140
     },
@@ -124,7 +159,12 @@
         "Jungle Pyramid sounds scary because vines and stone hide tripwires well. I would stay near a grown-up.",
         "If I saw Jungle Pyramid, I would hold my bread tight and keep the village bell in mind.",
         "Please tell the story of Jungle Pyramid from the safe part, where you got home.",
-        "I am not going to Jungle Pyramid. I am very good at not going there."
+        "I am not going to Jungle Pyramid. I am very good at not going there.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 140
     },
@@ -140,7 +180,12 @@
         "Mineshaft sounds scary because old supports and cave spiders both like the dark. I would stay near a grown-up.",
         "If I saw Mineshaft, I would hold my bread tight and keep the village bell in mind.",
         "Please tell the story of Mineshaft from the safe part, where you got home.",
-        "I am not going to Mineshaft. I am very good at not going there."
+        "I am not going to Mineshaft. I am very good at not going there.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 140
     },
@@ -156,7 +201,12 @@
         "Mesa Mineshaft sounds scary because gold country draws danger underground. I would stay near a grown-up.",
         "If I saw Mesa Mineshaft, I would hold my bread tight and keep the village bell in mind.",
         "Please tell the story of Mesa Mineshaft from the safe part, where you got home.",
-        "I am not going to Mesa Mineshaft. I am very good at not going there."
+        "I am not going to Mesa Mineshaft. I am very good at not going there.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 140
     },
@@ -172,7 +222,12 @@
         "Ocean Monument sounds scary because guardians watch the water from every side. I would stay near a grown-up.",
         "If I saw Ocean Monument, I would hold my bread tight and keep the village bell in mind.",
         "Please tell the story of Ocean Monument from the safe part, where you got home.",
-        "I am not going to Ocean Monument. I am very good at not going there."
+        "I am not going to Ocean Monument. I am very good at not going there.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 140
     },
@@ -188,7 +243,12 @@
         "Nether Fossil sounds scary because even old bones can sit in bad air. I would stay near a grown-up.",
         "If I saw Nether Fossil, I would hold my bread tight and keep the village bell in mind.",
         "Please tell the story of Nether Fossil from the safe part, where you got home.",
-        "I am not going to Nether Fossil. I am very good at not going there."
+        "I am not going to Nether Fossil. I am very good at not going there.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 140
     },
@@ -204,7 +264,12 @@
         "Cold Ocean Ruin sounds scary because cold water steals strength fast. I would stay near a grown-up.",
         "If I saw Cold Ocean Ruin, I would hold my bread tight and keep the village bell in mind.",
         "Please tell the story of Cold Ocean Ruin from the safe part, where you got home.",
-        "I am not going to Cold Ocean Ruin. I am very good at not going there."
+        "I am not going to Cold Ocean Ruin. I am very good at not going there.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 140
     },
@@ -220,7 +285,12 @@
         "Warm Ocean Ruin sounds scary because warm water can still hide drowned trouble. I would stay near a grown-up.",
         "If I saw Warm Ocean Ruin, I would hold my bread tight and keep the village bell in mind.",
         "Please tell the story of Warm Ocean Ruin from the safe part, where you got home.",
-        "I am not going to Warm Ocean Ruin. I am very good at not going there."
+        "I am not going to Warm Ocean Ruin. I am very good at not going there.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 140
     },
@@ -236,7 +306,12 @@
         "Pillager Outpost sounds scary because banners mean crossbows are near. I would stay near a grown-up.",
         "If I saw Pillager Outpost, I would hold my bread tight and keep the village bell in mind.",
         "Please tell the story of Pillager Outpost from the safe part, where you got home.",
-        "I am not going to Pillager Outpost. I am very good at not going there."
+        "I am not going to Pillager Outpost. I am very good at not going there.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 140
     },
@@ -252,7 +327,12 @@
         "Ruined Portal sounds scary because broken obsidian still remembers the Nether. I would stay near a grown-up.",
         "If I saw Ruined Portal, I would hold my bread tight and keep the village bell in mind.",
         "Please tell the story of Ruined Portal from the safe part, where you got home.",
-        "I am not going to Ruined Portal. I am very good at not going there."
+        "I am not going to Ruined Portal. I am very good at not going there.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 140
     },
@@ -268,7 +348,12 @@
         "Desert Ruined Portal sounds scary because Nether heat and desert heat make poor company. I would stay near a grown-up.",
         "If I saw Desert Ruined Portal, I would hold my bread tight and keep the village bell in mind.",
         "Please tell the story of Desert Ruined Portal from the safe part, where you got home.",
-        "I am not going to Desert Ruined Portal. I am very good at not going there."
+        "I am not going to Desert Ruined Portal. I am very good at not going there.",
+        "{target}? I would not rush toward it without telling someone where you are going first.",
+        "That kind of place makes a simple walk feel like a decision. Pack food, count your torches, and keep your head clear.",
+        "I have heard enough about {target} to know the quiet parts are usually the ones to worry about.",
+        "If you go there, come back with the story and not just the scratches. The village remembers both.",
+        "A place like {target} can turn confidence into <shake>panic</shake> very quickly."
       ],
       "weight": 140
     }
