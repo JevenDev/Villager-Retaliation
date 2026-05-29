@@ -150,15 +150,21 @@ function testTypedFolderOutput(app) {
     conditions: [{ type: "weather", weather: "rain" }],
     priority: 30,
     category: "weather_reply",
+    topic: "market rumors",
+    tags: ["rumor", "weather"],
+    questline: "market_board",
+    quest: "ask_weather",
+    stage: "intro",
     weight: 4
   });
 
   const path = "data/villagerretaliation/dialogue/en_us/my_pack/lines/00_question.json";
   const line = jsonFile(app.generatedFiles(), path);
-  for (const key of ["text_key", "conditions", "priority", "category"]) {
+  for (const key of ["text_key", "conditions", "priority", "category", "topic", "tags", "questline", "quest", "stage"]) {
     assert(Object.hasOwn(line, key), `Generated typed line lost ${key}.`);
   }
   assert(line.category === "weather_reply", "Generated typed line category changed.");
+  assert(line.questline === "market_board", "Generated typed line questline changed.");
 }
 
 function testTypedImportAndProfessionDefaults(app) {
@@ -170,6 +176,11 @@ function testTypedImportAndProfessionDefaults(app) {
     conditions: [{ type: "family", relation: "parent" }],
     priority: 8,
     category: "alchemy_reply",
+    topic: "alchemy reagents",
+    tags: ["alchemy", "quest"],
+    questline: "apprentice_alchemist",
+    quest: "find_reagents",
+    stage: "rumor",
     weight: 1
   };
   assert(app.ingestKnownJson(path, JSON.stringify(input)), "Typed line import returned false.");
@@ -180,12 +191,16 @@ function testTypedImportAndProfessionDefaults(app) {
   assert(imported.category === "alchemy_reply", "Imported category changed.");
   assert(imported.priority === 8, "Imported priority changed.");
   assert(imported.text_key === "alchemy.message", "Imported text_key changed.");
+  assert(imported.questline === "apprentice_alchemist", "Imported questline changed.");
+  assert(imported.tags?.[0] === "alchemy", "Imported tags changed.");
 
   const output = jsonFile(app.generatedFiles(), path);
   assert(!Object.hasOwn(output, "professions"), "Re-export should omit a profession implied by the typed folder path.");
   assert(output.category === "alchemy_reply", "Re-exported category changed.");
   assert(output.priority === 8, "Re-exported priority changed.");
   assert(output.text_key === "alchemy.message", "Re-exported text_key changed.");
+  assert(output.quest === "find_reagents", "Re-exported quest changed.");
+  assert(output.stage === "rumor", "Re-exported stage changed.");
 
   const info = app.dialoguePathInfo(path);
   assert(info.kind === "lines", "Typed path kind was not inferred.");

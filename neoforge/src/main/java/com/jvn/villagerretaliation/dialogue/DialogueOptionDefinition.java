@@ -5,10 +5,13 @@ import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
 import com.jvn.villagerretaliation.util.VillagerReputationCondition;
 import java.util.List;
 import java.util.Set;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.npc.VillagerProfession;
 
 public record DialogueOptionDefinition(
         String id,
+        ResourceLocation source,
+        DialogueEntryMetadata metadata,
         String label,
         DialogueRequestType requestType,
         boolean showForAdults,
@@ -62,6 +65,7 @@ public record DialogueOptionDefinition(
     private static final String LEFT_BEHIND_SCENARIO = "left_behind";
 
     public DialogueOptionDefinition {
+        metadata = metadata == null ? DialogueEntryMetadata.EMPTY : metadata;
         conditions = conditions == null ? List.of() : List.copyOf(conditions);
     }
 
@@ -205,6 +209,8 @@ public record DialogueOptionDefinition(
     public static DialogueOptionDefinition simple(String id, String label, DialogueRequestType requestType, int order) {
         return new DialogueOptionDefinition(
                 id,
+                null,
+                DialogueEntryMetadata.EMPTY,
                 label,
                 requestType,
                 true,

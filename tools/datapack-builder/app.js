@@ -396,6 +396,12 @@ const FIELD_TOOLTIPS = {
   "dialogue-give_items": "Optional item hand-in for this option. Use item/items or tag/tags plus count. destination can be discard, villager_inventory, or drop_at_villager.",
   "dialogue-text": "Localized villager text. Enter one variation per line. Placeholder support depends on type and filters, such as {target}, {held_item}, family names, or recruitment values.",
   "dialogue-text_key": "Beta.12+. Optional message key for line text. Use this to keep line filters separate from localized text variants in messages.",
+  "dialogue-topic": "Optional author metadata. Groups related dialogue without changing runtime selection.",
+  "dialogue-tags": "Optional author metadata tags for searching, organizing story packs, and future quest hooks.",
+  "dialogue-questline": "Optional narrative metadata id. The current runtime records it for authoring and future quest systems.",
+  "dialogue-quest": "Optional quest metadata id. It does not affect current dialogue matching.",
+  "dialogue-stage": "Optional narrative stage or chapter id. It does not affect current dialogue matching.",
+  "dialogue-notes": "Optional author notes kept in JSON for pack maintainers.",
   "dialogue-option": "Restricts a line to option id(s), including custom ids or built-ins such as adult_share_story.",
   "dialogue-weather": "Weather filter for lines: clear, rain, or thunder.",
   "dialogue-times": "Time filter for lines: morning, afternoon, evening, or night.",
@@ -663,6 +669,12 @@ const TAG_SUGGESTIONS = {
 };
 
 const BETA_12_ONLY_DIALOGUE_KEYS = [
+  "topic",
+  "tags",
+  "questline",
+  "quest",
+  "stage",
+  "notes",
   "mood",
   "moods",
   "min_mood_intensity",
@@ -688,10 +700,22 @@ const BETA_12_ONLY_DIALOGUE_KEYS = [
 ];
 
 const BETA_12_ONLY_DIALOGUE_OPTION_KEYS = [
-  "conditions"
+  "conditions",
+  "topic",
+  "tags",
+  "questline",
+  "quest",
+  "stage",
+  "notes"
 ];
 
 const BETA_12_ONLY_DIALOGUE_LINE_KEYS = [
+  "topic",
+  "tags",
+  "questline",
+  "quest",
+  "stage",
+  "notes",
   "mood",
   "moods",
   "min_mood_intensity",
@@ -4575,7 +4599,7 @@ function validate() {
       break;
     }
   }
-  const blankDialogueList = firstBlankListValue(allDialogueEntries, ["professions", "dispositions", "mood", "moods", "reputation_level", "reputation_levels", "player_items", "player_item_slots", "weather", "times", "event_tags", "player_event_tags", "retaliation_target_entity_types", "story_structures", "story_biomes", "outcomes"]);
+  const blankDialogueList = firstBlankListValue(allDialogueEntries, ["professions", "dispositions", "tags", "mood", "moods", "reputation_level", "reputation_levels", "player_items", "player_item_slots", "weather", "times", "event_tags", "player_event_tags", "retaliation_target_entity_types", "story_structures", "story_biomes", "outcomes"]);
   if (blankDialogueList) {
     addCheck(checks, "warning", "Dialogue list", `${humanize(blankDialogueList)} contains a blank value.`);
   }
@@ -6454,6 +6478,18 @@ function beta12DialogueLineMetadataFields(entry) {
   `;
 }
 
+function dialogueNarrativeMetadataFields(entry) {
+  if (!supportsBeta12DialogueFields()) return "";
+  return `
+    ${field({ id: "dialogue-topic", label: "Topic", value: entry.topic ?? entry.metadata?.topic ?? "" })}
+    ${listField({ id: "dialogue-tags", label: "Tags", value: entry.tags ?? entry.metadata?.tags })}
+    ${field({ id: "dialogue-questline", label: "Questline", value: entry.questline ?? entry.questline_id ?? entry.metadata?.questline ?? entry.metadata?.questline_id ?? "" })}
+    ${field({ id: "dialogue-quest", label: "Quest", value: entry.quest ?? entry.quest_id ?? entry.metadata?.quest ?? entry.metadata?.quest_id ?? "" })}
+    ${field({ id: "dialogue-stage", label: "Stage", value: entry.stage ?? entry.chapter ?? entry.metadata?.stage ?? entry.metadata?.chapter ?? "" })}
+    ${textareaField({ id: "dialogue-notes", label: "Notes", value: entry.notes ?? entry.author_notes ?? entry.metadata?.notes ?? entry.metadata?.author_notes ?? "", className: "full", rows: 2 })}
+  `;
+}
+
 function dialogueDeprecationAlert(kind, entry) {
   const message = dialogueDeprecationMessage(kind, entry);
   if (!message) return "";
@@ -6776,6 +6812,7 @@ function renderDialogueForm(kind, entry) {
         ${field({ id: "dialogue-label", label: "Button label", value: entry.label })}
         ${selectField({ id: "dialogue-type", label: "Request", value: entry.request ?? "", options: CONSTANTS.dialogueTypes })}
         ${field({ id: "dialogue-order", label: "Order", value: entry.order ?? "", type: "number" })}
+        ${dialogueNarrativeMetadataFields(entry)}
         ${commonFilters}
         ${reputationFilters}
         ${dialogueConditionsField(entry)}
@@ -6798,6 +6835,7 @@ function renderDialogueForm(kind, entry) {
         ${selectField({ id: "dialogue-type", label: "Request", value: entry.request ?? "", options: CONSTANTS.dialogueTypes })}
         ${textareaField({ id: "dialogue-text", label: "Line(s)", value: dialogueTextValue(entry), help: "One variation per line.", className: "full", rows: 3 })}
         ${beta12DialogueLineMetadataFields(entry)}
+        ${dialogueNarrativeMetadataFields(entry)}
         ${listField({ id: "dialogue-option", label: "Option id(s)", value: entry.option ?? entry.option_ids, help: "Link to a custom or built-in talk option." })}
         ${commonFilters}
         ${reputationFilters}
@@ -6832,6 +6870,7 @@ function renderDialogueForm(kind, entry) {
         ${field({ id: "dialogue-id", label: "Message id", value: entry.id })}
         ${field({ id: "dialogue-key", label: "Message key", value: entry.key, help: "Gift rules can point response_key at custom message keys." })}
         ${textareaField({ id: "dialogue-text", label: "Message text variation(s)", value: dialogueTextValue(entry), help: "One variation per line.", className: "full", rows: 3 })}
+        ${dialogueNarrativeMetadataFields(entry)}
         ${commonFilters}
         ${field({ id: "dialogue-weight", label: "Weight", value: entry.weight ?? "", type: "number" })}
         ${toggleGrid([], entry, "message")}
@@ -6845,6 +6884,7 @@ function renderDialogueForm(kind, entry) {
       <div class="form-grid">
         ${field({ id: "dialogue-id", label: "Pacify line id", value: entry.id })}
         ${textareaField({ id: "dialogue-text", label: "Pacify line(s)", value: dialogueTextValue(entry), help: "One variation per line.", className: "full", rows: 3 })}
+        ${dialogueNarrativeMetadataFields(entry)}
         ${listField({ id: "dialogue-outcomes", label: "Outcomes", value: entry.outcomes, help: CONSTANTS.pacifyOutcomes.join(", ") })}
         ${commonFilters}
         ${field({ id: "dialogue-weight", label: "Weight", value: entry.weight ?? "", type: "number" })}
@@ -6858,6 +6898,7 @@ function renderDialogueForm(kind, entry) {
     <div class="form-grid">
       ${field({ id: "dialogue-id", label: `${capitalize(kind.slice(0, -1))} id`, value: entry.id })}
       ${textareaField({ id: "dialogue-text", label: "Text variation(s)", value: dialogueTextValue(entry), help: "One variation per line.", className: "full", rows: 3 })}
+      ${dialogueNarrativeMetadataFields(entry)}
       ${commonFilters}
       ${field({ id: "dialogue-weight", label: "Weight", value: entry.weight ?? "", type: "number" })}
       ${toggleGrid(["first_conversation_only", "first_village_interaction_only"], entry, "opening")}
@@ -7209,6 +7250,18 @@ function readDialogueTextFields() {
   return { text: lines[0] || "" };
 }
 
+function readDialogueNarrativeMetadata() {
+  if (!supportsBeta12DialogueFields()) return {};
+  return {
+    topic: readValue("dialogue-topic").trim(),
+    tags: readList("dialogue-tags"),
+    questline: readValue("dialogue-questline").trim(),
+    quest: readValue("dialogue-quest").trim(),
+    stage: readValue("dialogue-stage").trim(),
+    notes: readValue("dialogue-notes").trim()
+  };
+}
+
 function readNotificationTextFields() {
   const lines = readValue("notification-text")
     .split(/\r?\n/)
@@ -7308,6 +7361,7 @@ function readDialogueEntry() {
       type: "dialogue_option",
       request: readValue("dialogue-type"),
       order: parseInteger(readValue("dialogue-order")),
+      ...readDialogueNarrativeMetadata(),
       professions: readList("dialogue-professions"),
       dispositions: readList("dialogue-dispositions"),
       ...readVillagerEquipment("dialogue"),
@@ -7330,6 +7384,7 @@ function readDialogueEntry() {
       request: readValue("dialogue-type"),
       ...readDialogueTextFields(),
       text_key: readValue("dialogue-text_key").trim(),
+      ...readDialogueNarrativeMetadata(),
       option: optionIds.length <= 1 ? optionIds[0] : optionIds,
       professions: readList("dialogue-professions"),
       dispositions: readList("dialogue-dispositions"),
@@ -7364,6 +7419,7 @@ function readDialogueEntry() {
       id: readValue("dialogue-id").trim(),
       key: readValue("dialogue-key").trim(),
       ...readDialogueTextFields(),
+      ...readDialogueNarrativeMetadata(),
       professions: readList("dialogue-professions"),
       dispositions: readList("dialogue-dispositions"),
       ...readVillagerEquipment("dialogue"),
@@ -7373,6 +7429,7 @@ function readDialogueEntry() {
     entry = readBooleans("pacify", [], {
       id: readValue("dialogue-id").trim(),
       ...readDialogueTextFields(),
+      ...readDialogueNarrativeMetadata(),
       outcomes: readList("dialogue-outcomes"),
       professions: readList("dialogue-professions"),
       dispositions: readList("dialogue-dispositions"),
@@ -7383,6 +7440,7 @@ function readDialogueEntry() {
     entry = readBooleans("opening", ["first_conversation_only", "first_village_interaction_only"], {
       id: readValue("dialogue-id").trim(),
       ...readDialogueTextFields(),
+      ...readDialogueNarrativeMetadata(),
       professions: readList("dialogue-professions"),
       dispositions: readList("dialogue-dispositions"),
       ...readVillagerEquipment("dialogue"),

@@ -127,10 +127,37 @@ const conditionKeys = {
   attribute: new Set(["type", "attribute", "attributes", "stat", "stats", "min", "max"]),
   stat: new Set(["type", "attribute", "attributes", "stat", "stats", "min", "max"]),
   skill: new Set(["type", "skill", "skills", "min", "max", "min_rank", "max_rank"]),
-  weather: new Set(["type", "state", "states"]),
-  time: new Set(["type", "value", "values"]),
-  time_of_day: new Set(["type", "value", "values"])
+  weather: new Set(["type", "state", "states", "weather", "weathers"]),
+  time: new Set(["type", "value", "values", "time", "times"]),
+  time_of_day: new Set(["type", "value", "values", "time", "times"])
 };
+
+const dialogueMetadataKeys = new Set([
+  "metadata",
+  "topic",
+  "tags",
+  "questline",
+  "questline_id",
+  "quest",
+  "quest_id",
+  "stage",
+  "chapter",
+  "notes",
+  "author_notes"
+]);
+
+const nestedDialogueMetadataKeys = new Set([
+  "topic",
+  "tags",
+  "questline",
+  "questline_id",
+  "quest",
+  "quest_id",
+  "stage",
+  "chapter",
+  "notes",
+  "author_notes"
+]);
 
 const reputationLevels = new Set(["royalty", "revered", "respected", "trusted", "neutral", "suspicious", "hostile", "despised", "feared"]);
 const socialAttributes = new Set(["knowledge", "intellect", "intelligence", "guts", "proficiency", "kindness", "charm"]);
@@ -383,6 +410,9 @@ const knownPlaceholders = new Set([
   "trade_word",
   "vague_direction",
   "vertical",
+  "victim",
+  "victim_name",
+  "victim_profession",
   "villager",
   "villager_name",
   "villager_possessive",
@@ -464,6 +494,12 @@ function checkDialogue(file, data) {
   checkDialogueIds(file, sections.openings, "opening", dialogueIdScopes.openings);
   checkDialogueIds(file, sections.closings, "closing", dialogueIdScopes.closings);
   checkDialogueIds(file, sections.pacify, "pacify line", dialogueIdScopes.pacify);
+
+  for (const [section, entries] of Object.entries(sections)) {
+    for (const [index, entry] of entries.entries()) {
+      checkDialogueMetadata(file, entry, `${section}[${index}]`);
+    }
+  }
 
   for (const [index, option] of sections.options.entries()) {
     for (const field of legacyOptionFields) {
@@ -601,6 +637,47 @@ function inferDialogueSection(data) {
   return undefined;
 }
 
+function checkDialogueMetadata(file, entry, location) {
+  if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+    return;
+  }
+  for (const key of dialogueMetadataKeys) {
+    if (!Object.hasOwn(entry, key)) {
+      continue;
+    }
+    if (key === "metadata") {
+      checkNestedDialogueMetadata(file, entry.metadata, `${location}.metadata`);
+    } else {
+      checkDialogueMetadataField(file, entry, location, key);
+    }
+  }
+}
+
+function checkNestedDialogueMetadata(file, metadata, location) {
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
+    errors.push(`${relative(file)}: ${location} must be an object.`);
+    return;
+  }
+  for (const key of Object.keys(metadata)) {
+    if (!nestedDialogueMetadataKeys.has(key)) {
+      errors.push(`${relative(file)}: ${location}.${key} is not supported dialogue metadata.`);
+      continue;
+    }
+    checkDialogueMetadataField(file, metadata, location, key);
+  }
+}
+
+function checkDialogueMetadataField(file, entry, location, key) {
+  if (key === "tags") {
+    checkStringList(file, entry, location, [key], "metadata tag");
+    return;
+  }
+  const value = entry[key];
+  if (value !== undefined && typeof value !== "string") {
+    errors.push(`${relative(file)}: ${location}.${key} must be a string.`);
+  }
+}
+
 function checkConditions(file, entry, location) {
   if (!Object.hasOwn(entry, "conditions")) {
     return;
@@ -677,9 +754,9 @@ function checkCondition(file, condition, location) {
     checkOptionalInteger(file, condition, location, "max", { min: 1, max: 100 });
     checkStringValues(file, condition, location, ["min_rank", "max_rank"], skillRanks, "villager skill rank");
   } else if (type === "weather") {
-    checkStringValues(file, condition, location, ["state", "states"], weatherStates, "weather state", { requireAny: true });
+    checkStringValues(file, condition, location, ["state", "states", "weather", "weathers"], weatherStates, "weather state", { requireAny: true });
   } else if (type === "time" || type === "time_of_day") {
-    checkStringValues(file, condition, location, ["value", "values"], timesOfDay, "time of day", { requireAny: true });
+    checkStringValues(file, condition, location, ["value", "values", "time", "times"], timesOfDay, "time of day", { requireAny: true });
   }
 }
 

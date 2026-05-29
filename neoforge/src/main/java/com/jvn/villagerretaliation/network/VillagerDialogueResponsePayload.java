@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.network;
 
 import com.jvn.villagerretaliation.dialogue.DialogueDisposition;
+import com.jvn.villagerretaliation.dialogue.DialogueEntryMetadata;
 import com.jvn.villagerretaliation.dialogue.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueRequestType;
 import com.jvn.villagerretaliation.mood.VillagerMood;
@@ -73,6 +74,8 @@ public record VillagerDialogueResponsePayload(
         for (int i = 0; i < size; i++) {
             options.add(new DialogueOptionDefinition(
                     buffer.readUtf(128),
+                    null,
+                    DialogueEntryMetadata.EMPTY,
                     buffer.readUtf(128),
                     buffer.readEnum(DialogueRequestType.class),
                     true,

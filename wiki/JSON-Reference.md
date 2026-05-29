@@ -380,7 +380,7 @@ For the full current list, when each value is remembered, and dropdown examples 
 
 `weight` controls weighted random selection among matching entries. Higher values are more likely. Missing weights usually default to `10`, and values below `1` are clamped or ignored depending on the system.
 
-Normal dialogue `lines` also support `priority`, `category`, and `text_key` in beta.12+. Higher `priority` values narrow the candidate pool before weighted random selection. `category` is only an author/debug label surfaced by `/villagerretaliation dialogue explain`. `text_key` resolves the line text from a keyed dialogue message, which lets locale packs override wording without copying the line's rule filters.
+Normal dialogue `lines` also support `priority`, `category`, and `text_key` in beta.12+. Higher `priority` values narrow the candidate pool before weighted random selection. `category` is only an author/debug label surfaced by `/villagerretaliation dialogue explain`. `text_key` resolves the line text from a keyed dialogue message, which lets locale packs override wording without copying the line's rule filters. Explain output also reports candidate source files and line metadata when present.
 
 Notifications also support `chance`, a number from `0.0` to `1.0`:
 
@@ -391,6 +391,27 @@ Notifications also support `chance`, a number from `0.0` to `1.0`:
 ```
 
 That entry passes its random chance gate roughly 25 percent of the time before weighted selection.
+
+## Dialogue Narrative Metadata
+
+Dialogue options, lines, messages, openings, closings, and pacify entries can include beta.12 author metadata. These fields are inert today: they help pack maintainers group story material and prepare stable ids for future quest systems, but they do not change matching or selection.
+
+Accepted fields are `topic`, `tags`, `questline` / `questline_id`, `quest` / `quest_id`, `stage` / `chapter`, and `notes` / `author_notes`. You can place them directly on an entry or under a nested `metadata` object.
+
+```json
+{
+  "id": "my_pack.old_road.rumor_01",
+  "request": "story",
+  "metadata": {
+    "topic": "Old Road",
+    "tags": ["old_road", "rumor"],
+    "questline": "old_road",
+    "quest": "find_the_bridge",
+    "stage": "rumors"
+  },
+  "text": "The old road still remembers who crossed it."
+}
+```
 
 ## Adult And Baby Filters
 

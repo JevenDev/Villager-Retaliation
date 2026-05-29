@@ -17,6 +17,8 @@ import net.minecraft.world.entity.npc.VillagerProfession;
 
 public record DialogueLine(
         String id,
+        ResourceLocation source,
+        DialogueEntryMetadata metadata,
         List<String> lines,
         String textKey,
         DialogueRequestType requestType,
@@ -84,6 +86,12 @@ public record DialogueLine(
         String category,
         int weight
 ) {
+    public DialogueLine {
+        metadata = metadata == null ? DialogueEntryMetadata.EMPTY : metadata;
+        lines = lines == null ? List.of() : List.copyOf(lines);
+        conditions = conditions == null ? List.of() : List.copyOf(conditions);
+    }
+
     public String text() {
         return this.lines.isEmpty() ? "" : this.lines.getFirst();
     }
@@ -463,6 +471,8 @@ public record DialogueLine(
         private final String id;
         private final DialogueRequestType requestType;
         private final List<String> lines;
+        private ResourceLocation source;
+        private DialogueEntryMetadata metadata = DialogueEntryMetadata.EMPTY;
         private String textKey = "";
         private final Set<String> optionIds = new java.util.HashSet<>();
         private boolean showForAdults = true;
@@ -554,6 +564,16 @@ public record DialogueLine(
 
         public Builder textKey(String textKey) {
             this.textKey = textKey == null ? "" : textKey.trim();
+            return this;
+        }
+
+        public Builder source(ResourceLocation source) {
+            this.source = source;
+            return this;
+        }
+
+        public Builder metadata(DialogueEntryMetadata metadata) {
+            this.metadata = metadata == null ? DialogueEntryMetadata.EMPTY : metadata;
             return this;
         }
 
@@ -915,6 +935,8 @@ public record DialogueLine(
         public DialogueLine build() {
             return new DialogueLine(
                     this.id,
+                    this.source,
+                    this.metadata,
                     this.lines,
                     this.textKey,
                     this.requestType,

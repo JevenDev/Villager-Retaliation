@@ -41,37 +41,16 @@ public final class VillagerDialogueService {
             DialogueRequestType requestType,
             String requestedOptionId,
             List<String> recentDialogueIds) {
-        DialogueDisposition disposition = moodFor(context);
-        List<DialogueLine> availableLines = availableLines(context);
-        List<DialogueLine> matched = availableLines.stream()
-                .filter(line -> line.matches(context, requestType, requestedOptionId, disposition))
-                .toList();
-        boolean usedNeutralFallback = false;
-        if (matched.isEmpty() && disposition != DialogueDisposition.NEUTRAL) {
-            List<DialogueLine> neutralMatches = availableLines.stream()
-                    .filter(line -> line.matches(context, requestType, requestedOptionId, DialogueDisposition.NEUTRAL))
-                    .toList();
-            if (!neutralMatches.isEmpty()) {
-                matched = neutralMatches;
-                usedNeutralFallback = true;
-            }
-        }
+        LineCandidatePool pool = lineCandidatePool(context, requestType, requestedOptionId, recentDialogueIds);
 
-        List<DialogueLine> weightedPool = matched;
-        List<DialogueLine> freshCandidates = weightedPool.stream()
-                .filter(line -> line.hasFreshVariant(recentDialogueIds))
-                .toList();
-        if (!freshCandidates.isEmpty()) {
-            weightedPool = freshCandidates;
-        }
-        List<DialogueLine> priorityPool = preferHighestPriority(weightedPool);
-
-        List<DialogueCandidateExplanation> candidates = priorityPool.stream()
+        List<DialogueCandidateExplanation> candidates = pool.candidates().stream()
                 .sorted(Comparator.comparingInt(DialogueLine::priority).reversed()
                         .thenComparing(Comparator.comparingInt(VillagerDialogueService::effectiveWeight).reversed())
                         .thenComparing(DialogueLine::id))
                 .map(line -> new DialogueCandidateExplanation(
                         line.id(),
+                        line.source() == null ? "" : line.source().toString(),
+                        line.metadata(),
                         line.priority(),
                         line.category(),
                         line.weight(),
@@ -83,37 +62,37 @@ public final class VillagerDialogueService {
         Set<String> candidateIds = candidates.stream()
                 .map(DialogueCandidateExplanation::id)
                 .collect(java.util.stream.Collectors.toSet());
-        Set<String> matchedIds = matched.stream()
+        Set<String> matchedIds = pool.matched().stream()
                 .map(DialogueLine::id)
                 .collect(java.util.stream.Collectors.toSet());
-        Set<String> weightedIds = weightedPool.stream()
+        Set<String> weightedIds = pool.weightedPool().stream()
                 .map(DialogueLine::id)
                 .collect(java.util.stream.Collectors.toSet());
-        Map<String, Long> rejectionCounts = availableLines.stream()
+        Map<String, Long> rejectionCounts = pool.availableLines().stream()
                 .filter(line -> !candidateIds.contains(line.id()))
                 .map(line -> {
                     if (matchedIds.contains(line.id()) && !weightedIds.contains(line.id())) {
-                        return "recently used";
+                        return pool.preferredIds().contains(line.id()) ? "recently used" : "lower preference";
                     }
                     if (weightedIds.contains(line.id())) {
                         return "lower priority";
                     }
-                    return rejectionReason(line, context, requestType, requestedOptionId, disposition);
+                    return rejectionReason(line, context, requestType, requestedOptionId, pool.disposition());
                 })
                 .collect(java.util.stream.Collectors.groupingBy(reason -> reason, java.util.LinkedHashMap::new, java.util.stream.Collectors.counting()));
-        int totalWeight = priorityPool.stream().mapToInt(VillagerDialogueService::effectiveWeight).sum();
+        int totalWeight = pool.candidates().stream().mapToInt(VillagerDialogueService::effectiveWeight).sum();
         String fallbackReason = candidates.isEmpty()
                 ? "No weighted line matched; dialogue.fallback will be used."
-                : usedNeutralFallback
-                        ? "No line matched current disposition " + disposition.name().toLowerCase(Locale.ROOT) + "; using neutral fallback pool."
+                : pool.usedNeutralFallback()
+                        ? "No line matched current disposition " + pool.disposition().name().toLowerCase(Locale.ROOT) + "; using neutral fallback pool."
                         : "";
         return new DialogueExplanation(
-                availableLines.size(),
+                pool.availableLines().size(),
                 candidates,
                 rejectionCounts,
                 totalWeight,
-                disposition,
-                usedNeutralFallback,
+                pool.disposition(),
+                pool.usedNeutralFallback(),
                 fallbackReason);
     }
 
@@ -137,34 +116,11 @@ public final class VillagerDialogueService {
             return containerTheftMemory.get();
         }
 
-        DialogueDisposition disposition = moodFor(context);
-        List<DialogueLine> availableLines = availableLines(context);
-        List<DialogueLine> candidates = availableLines.stream()
-                .filter(line -> line.matches(context, requestType, requestedOptionId, disposition))
-                .sorted(Comparator.comparingInt(line -> line.recentlyUsed(recentDialogueIds) ? 1 : 0))
-                .toList();
-        candidates = preferRequestedOptionCandidates(requestedOptionId, candidates);
-        candidates = preferDirectHitMemoryCandidates(context, requestType, candidates);
-        candidates = preferBrokenBedMemoryCandidates(context, requestType, candidates);
-        if (candidates.isEmpty()) {
-            candidates = availableLines.stream()
-                    .filter(line -> line.matches(context, requestType, requestedOptionId, DialogueDisposition.NEUTRAL))
-                    .toList();
-            candidates = preferRequestedOptionCandidates(requestedOptionId, candidates);
-            candidates = preferDirectHitMemoryCandidates(context, requestType, candidates);
-            candidates = preferBrokenBedMemoryCandidates(context, requestType, candidates);
-        }
+        LineCandidatePool pool = lineCandidatePool(context, requestType, requestedOptionId, recentDialogueIds);
+        List<DialogueLine> candidates = pool.candidates();
         if (candidates.isEmpty()) {
             return new DialogueResult("fallback", VillagerDialogueResources.message(context, "dialogue.fallback").orElse(""));
         }
-
-        List<DialogueLine> freshCandidates = candidates.stream()
-                .filter(line -> line.hasFreshVariant(recentDialogueIds))
-                .toList();
-        if (!freshCandidates.isEmpty()) {
-            candidates = freshCandidates;
-        }
-        candidates = preferHighestPriority(candidates);
 
         int totalWeight = candidates.stream().mapToInt(VillagerDialogueService::effectiveWeight).sum();
         int selected = context.random().nextInt(Math.max(1, totalWeight));
@@ -407,8 +363,70 @@ public final class VillagerDialogueService {
                 .toList();
     }
 
+    private static LineCandidatePool lineCandidatePool(
+            DialogueContext context,
+            DialogueRequestType requestType,
+            String requestedOptionId,
+            List<String> recentDialogueIds) {
+        List<String> recentIds = recentDialogueIds == null ? List.of() : recentDialogueIds;
+        DialogueDisposition disposition = moodFor(context);
+        List<DialogueLine> availableLines = availableLines(context);
+        List<DialogueLine> matched = matchingLines(availableLines, context, requestType, requestedOptionId, disposition, recentIds);
+        boolean usedNeutralFallback = false;
+        if (matched.isEmpty() && disposition != DialogueDisposition.NEUTRAL) {
+            List<DialogueLine> neutralMatches = matchingLines(
+                    availableLines,
+                    context,
+                    requestType,
+                    requestedOptionId,
+                    DialogueDisposition.NEUTRAL,
+                    recentIds);
+            if (!neutralMatches.isEmpty()) {
+                matched = neutralMatches;
+                usedNeutralFallback = true;
+            }
+        }
+
+        List<DialogueLine> preferred = preferRequestedOptionCandidates(requestedOptionId, matched);
+        preferred = preferDirectHitMemoryCandidates(context, requestType, preferred);
+        preferred = preferBrokenBedMemoryCandidates(context, requestType, preferred);
+        Set<String> preferredIds = preferred.stream()
+                .map(DialogueLine::id)
+                .collect(java.util.stream.Collectors.toCollection(java.util.LinkedHashSet::new));
+
+        List<DialogueLine> weightedPool = preferred;
+        List<DialogueLine> freshCandidates = weightedPool.stream()
+                .filter(line -> line.hasFreshVariant(recentIds))
+                .toList();
+        if (!freshCandidates.isEmpty()) {
+            weightedPool = freshCandidates;
+        }
+        return new LineCandidatePool(
+                availableLines,
+                matched,
+                preferredIds,
+                weightedPool,
+                preferHighestPriority(weightedPool),
+                disposition,
+                usedNeutralFallback);
+    }
+
+    private static List<DialogueLine> matchingLines(
+            List<DialogueLine> availableLines,
+            DialogueContext context,
+            DialogueRequestType requestType,
+            String requestedOptionId,
+            DialogueDisposition disposition,
+            List<String> recentDialogueIds) {
+        List<String> recentIds = recentDialogueIds == null ? List.of() : recentDialogueIds;
+        return availableLines.stream()
+                .filter(line -> line.matches(context, requestType, requestedOptionId, disposition))
+                .sorted(Comparator.comparingInt(line -> line.recentlyUsed(recentIds) ? 1 : 0))
+                .toList();
+    }
+
     private static List<DialogueLine> availableLines(DialogueContext context) {
-        return VillagerDialogueResources.lines(context.level().getServer());
+        return VillagerDialogueResources.lines(context);
     }
 
     private static String rejectionReason(
@@ -896,6 +914,8 @@ public final class VillagerDialogueService {
 
     public record DialogueCandidateExplanation(
             String id,
+            String source,
+            DialogueEntryMetadata metadata,
             int priority,
             String category,
             int weight,
@@ -903,5 +923,15 @@ public final class VillagerDialogueService {
             int effectiveWeight,
             boolean recentlyUsed,
             boolean hasFreshVariant) {
+    }
+
+    private record LineCandidatePool(
+            List<DialogueLine> availableLines,
+            List<DialogueLine> matched,
+            Set<String> preferredIds,
+            List<DialogueLine> weightedPool,
+            List<DialogueLine> candidates,
+            DialogueDisposition disposition,
+            boolean usedNeutralFallback) {
     }
 }

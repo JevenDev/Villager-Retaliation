@@ -253,6 +253,12 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
         for (String value : readStringList(condition, "states")) {
             readEnum(value, DialogueContext.WeatherState.class).ifPresent(states::add);
         }
+        for (String value : readStringList(condition, "weather")) {
+            readEnum(value, DialogueContext.WeatherState.class).ifPresent(states::add);
+        }
+        for (String value : readStringList(condition, "weathers")) {
+            readEnum(value, DialogueContext.WeatherState.class).ifPresent(states::add);
+        }
         return states.isEmpty() ? Optional.empty() : Optional.of(new Weather(Set.copyOf(states)));
     }
 
@@ -262,6 +268,12 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
             readEnum(value, DialogueContext.TimeOfDay.class).ifPresent(times::add);
         }
         for (String value : readStringList(condition, "values")) {
+            readEnum(value, DialogueContext.TimeOfDay.class).ifPresent(times::add);
+        }
+        for (String value : readStringList(condition, "time")) {
+            readEnum(value, DialogueContext.TimeOfDay.class).ifPresent(times::add);
+        }
+        for (String value : readStringList(condition, "times")) {
             readEnum(value, DialogueContext.TimeOfDay.class).ifPresent(times::add);
         }
         return times.isEmpty() ? Optional.empty() : Optional.of(new Time(Set.copyOf(times)));
