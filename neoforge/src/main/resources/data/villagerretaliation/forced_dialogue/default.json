@@ -296,7 +296,127 @@
       }
     },
     {
-      "id": "repeated_village_container_theft_final_warning",
+      "id": "low_guts_rally_player_hit_confrontation",
+      "trigger": "low_guts_rally",
+      "priority": -35,
+      "target_entity_types": [
+        "minecraft:player"
+      ],
+      "witness_radius": 16,
+      "requires_line_of_sight": true,
+      "initiate_dialogue": true,
+      "aggro_immediately": false,
+      "reputation": -8,
+      "force_camera_towards_villager": true,
+      "lines": [
+        "{victim} came to us shaking. Why did you hit them, {player}?",
+        "Stop right there, {player}. {victim} says you struck them.",
+        "We heard what happened to {victim}. You should explain yourself.",
+        "{victim} ran for help before you found another reason to swing. Talk.",
+        "Do not walk past me like nothing happened. {victim} is frightened because of you.",
+        "Someone with less nerve than you still had enough courage to ask for help.",
+        "This village may look quiet, but we notice when one of us is hurt.",
+        "{victim} says your hand landed first. I want to hear why.",
+        "You have a moment to make this sound less ugly than it looks.",
+        "<shake>{player}</shake>, answer carefully. The whole village is listening now."
+      ],
+      "options": [
+        {
+          "id": "low_guts_rally_apologize",
+          "label": "Apologize",
+          "responses": [
+            "Then keep your hands down. I will tell {victim} you owned the harm.",
+            "An apology is a start. Let it be the last time {victim} has to run from you.",
+            "Good. Words are cheaper than trust, but they are better than another bruise.",
+            "I will pass that on. Do not make {victim} regret believing you.",
+            "Fine. I hear you. Now prove it by leaving them in peace.",
+            "{victim} deserves more than words, but words are where repair begins.",
+            "That is the right answer. Make sure your actions follow it.",
+            "I will not call this settled, but I will call it a start.",
+            "Apologizing does not erase it. It does give you a chance not to become worse.",
+            "<pulse>Good.</pulse> Let the next thing this village remembers be restraint."
+          ],
+          "reputation": 2,
+          "aggro": false,
+          "end_conversation": true,
+          "order": 0
+        },
+        {
+          "id": "low_guts_rally_accident",
+          "label": "It was an accident",
+          "responses": [
+            "Accidents still leave people scared. Watch your reach around us.",
+            "Maybe. But {victim} believed it enough to run for help.",
+            "Then be more careful. The village will remember whether this becomes a pattern.",
+            "An accident is still your responsibility when someone else gets hurt.",
+            "I will accept that for now, but careless hands are still dangerous hands.",
+            "{victim} did not feel like an accident when they came to us.",
+            "Then slow down before your mistakes start looking like choices.",
+            "Fine. But if it happens again, no one will care what you meant.",
+            "You may not have meant harm, but harm still arrived.",
+            "Be careful, {player}. Around here, <wavy>accidents</wavy> have a way of becoming reputations."
+          ],
+          "reputation": 0,
+          "aggro": false,
+          "aggro_chance": 0.15,
+          "end_conversation": true,
+          "order": 1
+        },
+        {
+          "id": "low_guts_rally_refuse",
+          "label": "Refuse to explain",
+          "responses": [
+            "Then you have chosen the hard answer.",
+            "No explanation, no trust.",
+            "Silence after a hit is still an answer.",
+            "If you will not speak for yourself, we will believe {victim}.",
+            "That tells me enough.",
+            "You hurt someone and now offer nothing. Do not expect patience.",
+            "A closed mouth does not make the bruise disappear.",
+            "Fine. The village can live without your excuse.",
+            "Then we settle this without your side of the story.",
+            "<shake>Wrong choice.</shake>"
+          ],
+          "reputation": -8,
+          "aggro": true,
+          "end_conversation": true,
+          "order": 2
+        },
+        {
+          "id": "low_guts_rally_threaten",
+          "label": "Threaten them",
+          "responses": [
+            "You do not get another warning.",
+            "Threaten one of us and you answer to more than one.",
+            "That was the wrong thing to say in a village that listens.",
+            "So that is who you are when someone asks a fair question.",
+            "You came close to making this worse. Then you stepped all the way in.",
+            "You should have apologized. Instead, you made yourself a danger.",
+            "Say another word like that and you will wish you had stayed silent.",
+            "The village heard you. That was your last mistake here.",
+            "You threaten the frightened and call it strength. Pathetic.",
+            "<shake><color:red>Enough.</color></shake>"
+          ],
+          "reputation": -14,
+          "aggro": true,
+          "end_conversation": true,
+          "order": 3
+        }
+      ],
+      "leave_option": {
+        "id": "leave",
+        "label": "Leave",
+        "response": "Walk away if you want. <pulse>{victim}</pulse> will still remember who made them run.",
+        "reputation": -4,
+        "aggro": true,
+        "end_conversation": true
+      },
+      "output": {
+        "mode": "forced_dialogue"
+      }
+    },
+    {
+    "id": "repeated_village_container_theft_final_warning",
       "trigger": "container_theft",
       "priority": -40,
       "witness_radius": 16,

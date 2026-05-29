@@ -8,6 +8,7 @@ import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.mood.VillagerMoodService;
+import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttributeBehavior;
 import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
 import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
@@ -83,6 +84,10 @@ public final class VillagerRetaliationHandler {
     private static final double SMITH_IRON_GOLEM_REPAIR_REACH_SQR = 9.0D;
     private static final float SMITH_IRON_GOLEM_REPAIR_HEAL_AMOUNT = 25.0F;
     private static final long ROYALTY_AGGRO_BYPASS_NOTICE_COOLDOWN_TICKS = 20L * 5L;
+    private static final int VERY_LOW_GUTS_RALLY_THRESHOLD = 20;
+    private static final int LOW_GUTS_FLEE_THRESHOLD = 34;
+    private static final int WAVERING_GUTS_COUNTER_THRESHOLD = 49;
+    private static final long WAVERING_UNARMED_COUNTER_GIVE_UP_TICKS = 80L;
     private static final String ROYALTY_AGGRO_BYPASS_MESSAGE_KEY = "retaliation.royalty_aggro_bypass";
     private static final String PERSISTENT_TAG_ROOT = "VillagerRetaliationPersistentHostility";
     private static final String PERSISTENT_ARMORER_SHIELD_ROLLED_TAG = "VillagerRetaliationArmorerShieldRolled";
@@ -98,6 +103,8 @@ public final class VillagerRetaliationHandler {
     private static final Map<UUID, Long> ARMORER_COUNTER_ATTACK_READY_TICKS = new HashMap<>();
     private static final Map<UUID, Long> NEXT_IRON_GOLEM_REPAIR_TICKS = new HashMap<>();
     private static final Map<PlayerVillagerKey, Long> NEXT_ROYALTY_AGGRO_BYPASS_NOTICE_TICKS = new HashMap<>();
+    private static final Map<PlayerVillagerKey, Long> WAVERING_UNARMED_COUNTERS = new HashMap<>();
+    private static final Map<PlayerVillagerKey, Long> LOW_GUTS_RALLY_USED_UNTIL_TICKS = new HashMap<>();
 
     private VillagerRetaliationHandler() {
     }
@@ -257,6 +264,9 @@ public final class VillagerRetaliationHandler {
                 rallyNearbyVillagers(villager, attacker, VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get());
                 return;
             }
+            if (tryHandleUnarmedLowGutsPlayerHit(villager, attacker)) {
+                return;
+            }
 
             anger(villager, attacker);
             if (!VillagerRetaliationConfig.ATTACK_AGGROS_ONLY_HIT_VILLAGER.get()) {
@@ -397,6 +407,14 @@ public final class VillagerRetaliationHandler {
             handlePassivePotionState(villager);
             return;
         }
+        boolean waveringUnarmedCounter = isWaveringUnarmedCounter(villager, target, gameTime);
+        if (shouldGiveUpWaveringUnarmedCounter(villager, target, gameTime)) {
+            clearWaveringUnarmedCounter(villager, target);
+            clearAnger(villager, false);
+            enterFleeState(villager, target, gameTime);
+            handlePassivePotionState(villager);
+            return;
+        }
 
         suppressVanillaPanic(villager);
         villager.setAggressive(true);
@@ -414,12 +432,14 @@ public final class VillagerRetaliationHandler {
             return;
         }
 
-        tryBorrowInventoryCombatWeapon(villager);
-        if (tryAcquireGroundWeapon(villager, gameTime)) {
-            return;
-        }
+        if (!waveringUnarmedCounter) {
+            tryBorrowInventoryCombatWeapon(villager);
+            if (tryAcquireGroundWeapon(villager, gameTime)) {
+                return;
+            }
 
-        equipCombatWeapon(villager);
+            equipCombatWeapon(villager);
+        }
         VillagerInteractionTracker.markGearReportsUsedInCombat(level, villager, hasEquippedWeaponGear(villager), hasEquippedArmorGear(villager));
         VillagerRetaliationRetaliationUtil.boostCombatMovement(villager);
 
@@ -467,6 +487,14 @@ public final class VillagerRetaliationHandler {
                     )
             );
             onArmorerMeleeAttackCommitted(villager);
+            if (waveringUnarmedCounter) {
+                clearWaveringUnarmedCounter(villager, target);
+                clearAnger(villager, false, false);
+                enterFleeState(villager, target, gameTime);
+                if (target instanceof ServerPlayer player) {
+                    tryTellNearbyVillagersAboutPlayerHit(villager, player, gameTime);
+                }
+            }
         }
     }
 
@@ -778,6 +806,96 @@ public final class VillagerRetaliationHandler {
                 || !isHostileMobAttacker(villager, attacker);
     }
 
+    private static boolean tryHandleUnarmedLowGutsPlayerHit(Villager villager, LivingEntity attacker) {
+        if (!(attacker instanceof ServerPlayer player)
+                || !(villager.level() instanceof ServerLevel level)
+                || !VillagerSocialAttributeBehavior.enabled(VillagerRetaliationConfig.ENABLE_SOCIAL_ATTRIBUTE_RETALIATION_EFFECTS)
+                || !isUnarmedForGutsResponse(villager)) {
+            return false;
+        }
+
+        int guts = VillagerSocialAttributeBehavior.value(level, villager, VillagerSocialAttribute.GUTS);
+        if (guts <= VERY_LOW_GUTS_RALLY_THRESHOLD) {
+            long gameTime = level.getGameTime();
+            tryTellNearbyVillagersAboutPlayerHit(villager, player, gameTime);
+            clearAnger(villager, false);
+            enterFleeState(villager, player, level.getGameTime());
+            return true;
+        }
+
+        if (guts <= LOW_GUTS_FLEE_THRESHOLD) {
+            clearAnger(villager, false);
+            enterFleeState(villager, player, level.getGameTime());
+            return true;
+        }
+
+        if (guts <= WAVERING_GUTS_COUNTER_THRESHOLD) {
+            WAVERING_UNARMED_COUNTERS.put(
+                    new PlayerVillagerKey(player.getUUID(), villager.getUUID()),
+                    level.getGameTime() + WAVERING_UNARMED_COUNTER_GIVE_UP_TICKS);
+            anger(villager, player, false, true);
+            return true;
+        }
+
+        return false;
+    }
+
+    private static boolean tryTellNearbyVillagersAboutPlayerHit(Villager villager, ServerPlayer player, long gameTime) {
+        if (!(villager.level() instanceof ServerLevel level)) {
+            return false;
+        }
+
+        PlayerVillagerKey key = new PlayerVillagerKey(player.getUUID(), villager.getUUID());
+        if (gameTime < LOW_GUTS_RALLY_USED_UNTIL_TICKS.getOrDefault(key, 0L)) {
+            return false;
+        }
+
+        boolean confronted = ForcedDialogueService.triggerLowGutsRetaliationRally(level, villager, player);
+        boolean rallied = confronted;
+        if (!confronted && !VillagerRetaliationConfig.ATTACK_AGGROS_ONLY_HIT_VILLAGER.get()) {
+            rallied = angerNearbyVillagersIfAny(villager, player, VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get());
+        }
+        if (rallied) {
+            LOW_GUTS_RALLY_USED_UNTIL_TICKS.put(
+                    key,
+                    gameTime + Math.max(20L, VillagerRetaliationConfig.AGGRO_DURATION_TICKS.get()));
+        }
+        pruneLowGutsRallyState(gameTime);
+        return rallied;
+    }
+
+    private static boolean isUnarmedForGutsResponse(Villager villager) {
+        return !VillagerRetaliationVillagerWeapons.hasUsableWeapon(villager)
+                && !VillagerInventoryAccess.hasBorrowedCombatWeapon(villager)
+                && !VillagerInventoryAccess.hasUsableWeapon(villager);
+    }
+
+    private static boolean isWaveringUnarmedCounter(Villager villager, LivingEntity target, long gameTime) {
+        if (!(target instanceof Player player)) {
+            return false;
+        }
+        Long giveUpTick = WAVERING_UNARMED_COUNTERS.get(new PlayerVillagerKey(player.getUUID(), villager.getUUID()));
+        return giveUpTick != null && gameTime <= giveUpTick;
+    }
+
+    private static boolean shouldGiveUpWaveringUnarmedCounter(Villager villager, LivingEntity target, long gameTime) {
+        if (!(target instanceof Player player)) {
+            return false;
+        }
+        Long giveUpTick = WAVERING_UNARMED_COUNTERS.get(new PlayerVillagerKey(player.getUUID(), villager.getUUID()));
+        return giveUpTick != null && gameTime > giveUpTick;
+    }
+
+    private static void clearWaveringUnarmedCounter(Villager villager, LivingEntity target) {
+        if (target instanceof Player player) {
+            WAVERING_UNARMED_COUNTERS.remove(new PlayerVillagerKey(player.getUUID(), villager.getUUID()));
+        }
+    }
+
+    private static void pruneLowGutsRallyState(long gameTime) {
+        LOW_GUTS_RALLY_USED_UNTIL_TICKS.entrySet().removeIf(entry -> entry.getValue() < gameTime);
+    }
+
     private static boolean isHostileMobAttacker(Villager villager, LivingEntity attacker) {
         if (attacker instanceof Creeper) {
             return true;
@@ -826,6 +944,25 @@ public final class VillagerRetaliationHandler {
 
     private static void angerNearbyVillagers(Entity sourceEntity, LivingEntity attacker, double radius) {
         angerNearbyVillagers(sourceEntity, attacker, radius, false, true);
+    }
+
+    private static boolean angerNearbyVillagersIfAny(Entity sourceEntity, LivingEntity attacker, double radius) {
+        if (!(sourceEntity.level() instanceof ServerLevel level)) {
+            return false;
+        }
+
+        boolean angeredAny = false;
+        AABB area = sourceEntity.getBoundingBox().inflate(radius);
+        for (Villager nearby : level.getEntitiesOfClass(Villager.class, area)) {
+            if (nearby != sourceEntity
+                    && !nearby.isBaby()
+                    && canWitnessRetaliationEvent(nearby, sourceEntity)
+                    && shouldAggroFromWitness(nearby, attacker, false)) {
+                anger(nearby, attacker);
+                angeredAny = true;
+            }
+        }
+        return angeredAny;
     }
 
     private static void angerNearbyVillagers(Entity sourceEntity, LivingEntity attacker, double radius, boolean witnessedVillagerKill) {
@@ -1359,6 +1496,8 @@ public final class VillagerRetaliationHandler {
         NEXT_CREEPER_AVOIDANCE_SCAN_TICKS.remove(villager.getUUID());
         NEXT_HOSTILE_HARASS_THROW_TICKS.remove(villager.getUUID());
         NEXT_IRON_GOLEM_REPAIR_TICKS.remove(villager.getUUID());
+        WAVERING_UNARMED_COUNTERS.keySet().removeIf(key -> key.villagerId().equals(villager.getUUID()));
+        LOW_GUTS_RALLY_USED_UNTIL_TICKS.keySet().removeIf(key -> key.villagerId().equals(villager.getUUID()));
         if (villager.isAlive()) {
             VillagerRetaliationVillagerWeapons.clearTrackedPickupCache(villager);
         } else {

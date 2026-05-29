@@ -2682,6 +2682,30 @@ public final class ForcedDialogueService {
         return false;
     }
 
+    public static boolean triggerLowGutsRetaliationRally(ServerLevel level, Villager victim, ServerPlayer player) {
+        if (!retaliationForcedDialogueEnabled()) {
+            return false;
+        }
+
+        ResourceLocation targetTypeId = BuiltInRegistries.ENTITY_TYPE.getKey(player.getType());
+        List<ForcedDialogueDefinition> candidates = ForcedDialogueResources
+                .selectCandidates(level.getServer(), ForcedDialogueTrigger.LOW_GUTS_RALLY, null, targetTypeId)
+                .stream()
+                .filter(definition -> !isChatOutput(definition))
+                .toList();
+        if (candidates.isEmpty()) {
+            return false;
+        }
+
+        for (ForcedDialogueDefinition definition : candidates) {
+            Villager witness = findLowGutsRallyWitness(level, victim, player, definition).orElse(null);
+            if (witness != null && triggerLowGutsRally(level, witness, victim, player, definition, targetTypeId)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static void triggerRetaliationChat(ServerLevel level, Villager villager, LivingEntity target) {
         if (target instanceof ServerPlayer || !retaliationForcedDialogueEnabled()) {
             return;
@@ -3366,6 +3390,100 @@ public final class ForcedDialogueService {
         return true;
     }
 
+    private static boolean triggerLowGutsRally(
+            ServerLevel level,
+            Villager witness,
+            Villager victim,
+            ServerPlayer player,
+            ForcedDialogueDefinition definition,
+            ResourceLocation targetTypeId) {
+        if (!rollChance(level, definition.chance())) {
+            return true;
+        }
+
+        String witnessName = VillagerPresetNameRegistry.resolveDisplayName(witness).getString();
+        String victimName = VillagerPresetNameRegistry.resolveDisplayName(victim).getString();
+        String targetName = player.getDisplayName().getString();
+        String targetKind = player.getType().getDescription().getString().toLowerCase(Locale.ROOT);
+        Map<String, String> replacements = lowGutsRallyReplacements(victim, victimName);
+        ForcedDialogueContext context = new ForcedDialogueContext(
+                witnessName,
+                player.getDisplayName().getString(),
+                targetName,
+                targetKind,
+                targetTypeId == null ? "" : targetTypeId.toString(),
+                victimName,
+                "",
+                1,
+                victimName,
+                victimName,
+                victimProfessionName(victim),
+                "",
+                0,
+                0,
+                victim.blockPosition().getX(),
+                victim.blockPosition().getY(),
+                victim.blockPosition().getZ()
+        );
+        if (definition.reputationDelta() != 0 && VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()) {
+            VillagerReputationManager.addWitnessedReputation(level, witness, player.getUUID(), definition.reputationDelta(), victim.blockPosition());
+            VillagerGossipHooks.spreadReputation(level, witness, player.getUUID(), definition.reputationDelta());
+        }
+
+        String line = ForcedDialogueResources.resolveTemplate(
+                definition.selectLine(level.getRandom()),
+                context,
+                replacements);
+        if (definition.aggroImmediately()) {
+            if (!line.isBlank()) {
+                VillagerInteractionService.sendVillagerNotice(player, witness, line);
+            }
+            if (isRoyaltyFor(level, witness, player)) {
+                sendRoyaltyAggroBypassNotice(player, witness);
+                return true;
+            }
+            VillagerRetaliationHandler.forceAnger(witness, player);
+            return true;
+        }
+
+        if (!definition.initiateDialogue()) {
+            if (!line.isBlank()) {
+                VillagerInteractionService.sendVillagerNotice(player, witness, line);
+            }
+            return true;
+        }
+
+        boolean royaltyAggroBypass = isRoyaltyFor(level, witness, player);
+        if (VillagerInteractionService.openForcedDialogue(
+                player,
+                witness,
+                line,
+                forcedOptions(definition, level, witness, player),
+                definition.forceCameraTowardsVillager())) {
+            FORCED_SESSIONS.put(player.getUUID(), new ForcedDialogueSession(
+                    witness.getUUID(),
+                    definition,
+                    context,
+                    level.dimension(),
+                    victim.blockPosition().immutable(),
+                    List.of(),
+                    level.getGameTime(),
+                    -1,
+                    "",
+                    false,
+                    replacements,
+                    List.of(witness.getUUID()),
+                    List.of(witness.getUUID()),
+                    false,
+                    List.of(),
+                    royaltyAggroBypass
+            ));
+        } else if (!line.isBlank()) {
+            VillagerInteractionService.sendVillagerNotice(player, witness, line);
+        }
+        return true;
+    }
+
     private static void triggerRetaliationChat(
             ServerLevel level,
             Villager villager,
@@ -3491,6 +3609,37 @@ public final class ForcedDialogueService {
                 .filter(villager -> villager.distanceToSqr(player) <= radiusSqr || villager.blockPosition().distSqr(pos) <= radiusSqr)
                 .filter(villager -> !definition.requiresLineOfSight() || hasTheftLineOfSight(level, villager, player, pos))
                 .min(Comparator.comparingDouble(villager -> villager.distanceToSqr(player)));
+    }
+
+    private static Optional<Villager> findLowGutsRallyWitness(
+            ServerLevel level,
+            Villager victim,
+            ServerPlayer player,
+            ForcedDialogueDefinition definition) {
+        double radius = definition.witnessRadius();
+        double radiusSqr = radius * radius;
+        AABB area = victim.getBoundingBox().inflate(radius);
+        return level.getEntitiesOfClass(Villager.class, area, villager -> villager.isAlive() && !villager.isBaby()).stream()
+                .filter(villager -> villager != victim)
+                .filter(definition::matchesWitness)
+                .filter(villager -> villager.distanceToSqr(player) <= radiusSqr || villager.distanceToSqr(victim) <= radiusSqr)
+                .filter(villager -> VillagerInteractionService.canUseForcedInteractionSystem(player, villager))
+                .filter(villager -> definitionMatchesReputation(level, villager, player, definition))
+                .filter(villager -> !definition.requiresLineOfSight()
+                        || villager.hasLineOfSight(player) && villager.hasLineOfSight(victim))
+                .min(Comparator.comparingDouble(villager -> villager.distanceToSqr(player)));
+    }
+
+    private static Map<String, String> lowGutsRallyReplacements(Villager victim, String victimName) {
+        return Map.of(
+                "victim", victimName,
+                "victim_name", victimName,
+                "victim_profession", victimProfessionName(victim));
+    }
+
+    private static String victimProfessionName(Villager victim) {
+        ResourceLocation professionId = BuiltInRegistries.VILLAGER_PROFESSION.getKey(victim.getVillagerData().getProfession());
+        return professionId == null ? "villager" : professionId.getPath().replace('_', ' ');
     }
 
     private static boolean hasTheftLineOfSight(ServerLevel level, Villager villager, ServerPlayer player, BlockPos pos) {
