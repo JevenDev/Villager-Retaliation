@@ -1,16 +1,13 @@
 package com.jvn.villagerretaliation.client.quest;
 
-import com.jvn.villagerretaliation.client.interaction.VillagerInteractionScreenShaderRenderer;
 import com.jvn.villagerretaliation.client.interaction.VillagerQuestJournalScreen;
-import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
+import com.jvn.villagerretaliation.client.ui.VillagerAdaptiveGuiScale;
 import com.jvn.villagerretaliation.network.QuestTrackerSyncPayload;
 import com.mojang.blaze3d.systems.RenderSystem;
 import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.network.chat.Component;
-import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
@@ -19,24 +16,6 @@ import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 
 public final class VillagerQuestTrackerOverlay {
     private static final int FLASH_LIFETIME_TICKS = 96;
-    private static final int PANEL_GAP = 4;
-    private static final int NOTIFICATION_HEIGHT = 26;
-    private static final int PRIMARY_HEIGHT = 76;
-    private static final int SECONDARY_HEIGHT = 44;
-    private static final int PADDING_X = 10;
-    private static final int PADDING_Y = 7;
-    private static final int LINE_STEP = 10;
-    private static final int SLIDE_DISTANCE = 8;
-    private static final float QUEST_PANEL_SLANT = 0.0F;
-    private static final int BACKGROUND_COLOR = 0xC00B0D12;
-    private static final int SECONDARY_BACKGROUND_COLOR = 0x9A0B0D12;
-    private static final int ACCENT_COLOR = 0xFFFFD166;
-    private static final int TITLE_COLOR = 0xFFFFF0C8;
-    private static final int TEXT_COLOR = 0xFFE9EEF5;
-    private static final int MUTED_TEXT_COLOR = 0xFFB8C3D0;
-    private static final int BAR_BACKGROUND_COLOR = 0x80373A42;
-    private static final int PANEL_SHADOW_COLOR = 0x8A000000;
-    private static final int EDGE_HIGHLIGHT_COLOR = 0x2CFFFFFF;
 
     private static List<QuestTrackerSyncPayload.Entry> entries = List.of();
     private static int flashTicks;
@@ -146,19 +125,19 @@ public final class VillagerQuestTrackerOverlay {
         if (entries.isEmpty() || alpha <= 0.01F) {
             return;
         }
-        int width = Math.max(176, Math.min(Math.max(204, screenWidth / 4), screenWidth - 24));
-        int count = showRecentQuests ? Math.min(QuestTrackerSyncPayload.MAX_TRACKER_ENTRIES, entries.size()) : 1;
-        int totalHeight = PRIMARY_HEIGHT + (count - 1) * (SECONDARY_HEIGHT + PANEL_GAP);
-        int x = 12;
-        int y = Math.max(10, (screenHeight - totalHeight) / 2);
+        int width = VillagerQuestHudRenderer.trackerWidth(screenWidth);
+        int count = VillagerQuestHudRenderer.visibleTrackerEntryCount(showRecentQuests, entries.size());
+        int totalHeight = VillagerQuestHudRenderer.trackerHeight(count);
+        int x = VillagerAdaptiveGuiScale.unit(12);
+        int y = Math.max(VillagerAdaptiveGuiScale.unit(10), (screenHeight - totalHeight) / 2);
         for (int index = 0; index < count; index++) {
             QuestTrackerSyncPayload.Entry entry = entries.get(index);
             boolean primary = index == 0;
-            int height = primary ? PRIMARY_HEIGHT : SECONDARY_HEIGHT;
+            int height = primary ? VillagerQuestHudRenderer.primaryHeight() : VillagerQuestHudRenderer.secondaryHeight();
             float entryAlpha = alpha * (primary ? 1.0F : 0.76F);
-            int slide = Math.round((1.0F - entryAlpha) * SLIDE_DISTANCE);
-            renderEntry(graphics, font, entry, x - slide, y, width, height, entryAlpha, primary, renderAge + index * 13);
-            y += height + PANEL_GAP;
+            int slide = Math.round((1.0F - entryAlpha) * VillagerQuestHudRenderer.slideDistance());
+            VillagerQuestHudRenderer.renderEntry(graphics, font, entry, x - slide, y, width, height, entryAlpha, primary, renderAge + index * 13);
+            y += height + VillagerQuestHudRenderer.panelGap();
         }
     }
 
@@ -191,141 +170,11 @@ public final class VillagerQuestTrackerOverlay {
             Font font,
             QuestTrackerSyncPayload.Entry entry,
             int screenHeight) {
-        int textWidth = font.width(entry.title());
-        int width = Math.max(112, Math.min(204, textWidth + PADDING_X * 2 + 4));
-        int x = 12 - Math.round((1.0F - notificationAlpha) * SLIDE_DISTANCE);
-        int y = Math.max(10, screenHeight / 2 - NOTIFICATION_HEIGHT / 2);
+        int width = VillagerQuestHudRenderer.notificationWidth(font, entry);
+        int x = VillagerAdaptiveGuiScale.unit(12) - Math.round((1.0F - notificationAlpha) * VillagerQuestHudRenderer.slideDistance());
+        int y = Math.max(VillagerAdaptiveGuiScale.unit(10), screenHeight / 2 - VillagerQuestHudRenderer.notificationHeight() / 2);
         float alpha = notificationAlpha;
 
-        graphics.fill(x, y, x + width, y + NOTIFICATION_HEIGHT, VillagerClientUiUtil.withAlphaRound(BACKGROUND_COLOR, alpha * 0.82F));
-        graphics.fill(x, y, x + 4, y + NOTIFICATION_HEIGHT, VillagerClientUiUtil.withAlphaRound(ACCENT_COLOR, alpha));
-        graphics.fill(x + 4, y, x + width, y + 1, VillagerClientUiUtil.withAlphaRound(EDGE_HIGHLIGHT_COLOR, alpha * 0.72F));
-
-        int contentLeft = x + PADDING_X;
-        int titleColor = VillagerClientUiUtil.withAlphaRound(TEXT_COLOR, alpha);
-        renderSingleLine(graphics, font, entry.title(), contentLeft, y + 6, width - PADDING_X * 2, titleColor, true);
-        if (entry.showProgress()) {
-            int barLeft = contentLeft;
-            int barRight = x + width - PADDING_X;
-            int barTop = y + NOTIFICATION_HEIGHT - 4;
-            graphics.fill(barLeft, barTop, barRight, barTop + 2, VillagerClientUiUtil.withAlphaRound(BAR_BACKGROUND_COLOR, alpha));
-            graphics.fill(barLeft, barTop, barLeft + Math.round((barRight - barLeft) * entry.progress()), barTop + 2,
-                    VillagerClientUiUtil.withAlphaRound(ACCENT_COLOR, alpha));
-        }
-    }
-
-    private static void renderEntry(
-            GuiGraphics graphics,
-            Font font,
-            QuestTrackerSyncPayload.Entry entry,
-            int x,
-            int y,
-            int width,
-            int height,
-            float alpha,
-            boolean primary,
-            int age) {
-        int accent = VillagerClientUiUtil.withAlphaRound(ACCENT_COLOR, alpha);
-        int titleColor = VillagerClientUiUtil.withAlphaRound(primary ? TITLE_COLOR : TEXT_COLOR, alpha);
-        int textColor = VillagerClientUiUtil.withAlphaRound(primary ? TEXT_COLOR : MUTED_TEXT_COLOR, alpha);
-        int metadataColor = VillagerClientUiUtil.withAlphaRound(MUTED_TEXT_COLOR, alpha * 0.88F);
-        renderPanelChrome(graphics, x, y, width, height, alpha, primary, age);
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-
-        int contentLeft = x + PADDING_X;
-        int contentWidth = width - PADDING_X * 2;
-        int cursorY = y + PADDING_Y;
-        renderSingleLine(graphics, font, entry.title(), contentLeft, cursorY, contentWidth, titleColor, true);
-        cursorY += 13;
-
-        int objectiveLines = primary ? 3 : 2;
-        renderWrappedText(graphics, font, entry.objective(), contentLeft, cursorY, contentWidth, objectiveLines, textColor);
-
-        if (primary && !entry.metadata().isBlank()) {
-            renderSingleLine(graphics, font, entry.metadata(), contentLeft, y + height - 25, contentWidth, metadataColor, false);
-        }
-        if (entry.showProgress()) {
-            int barLeft = contentLeft;
-            int barRight = x + width - PADDING_X;
-            int barTop = y + height - 6;
-            graphics.fill(barLeft, barTop, barRight, barTop + 2, VillagerClientUiUtil.withAlphaRound(BAR_BACKGROUND_COLOR, alpha));
-            graphics.fill(barLeft, barTop, barLeft + Math.round((barRight - barLeft) * entry.progress()), barTop + 2, accent);
-            graphics.fill(barLeft, barTop - 1, barRight, barTop, VillagerClientUiUtil.withAlphaRound(EDGE_HIGHLIGHT_COLOR, alpha * 0.35F));
-        }
-    }
-
-    private static void renderPanelChrome(
-            GuiGraphics graphics,
-            int x,
-            int y,
-            int width,
-            int height,
-            float alpha,
-            boolean primary,
-            int age) {
-        boolean rendered = VillagerInteractionScreenShaderRenderer.renderExperimentalNotification(
-                graphics,
-                x,
-                y,
-                x + width,
-                y + height,
-                ACCENT_COLOR,
-                alpha * (primary ? 0.98F : 0.72F),
-                age,
-                1.0F,
-                QUEST_PANEL_SLANT);
-        if (rendered) {
-            return;
-        }
-
-        int background = VillagerClientUiUtil.withAlphaRound(primary ? BACKGROUND_COLOR : SECONDARY_BACKGROUND_COLOR, alpha);
-        int accent = VillagerClientUiUtil.withAlphaRound(ACCENT_COLOR, alpha);
-        graphics.fill(x, y, x + width, y + height, background);
-        graphics.fill(x, y, x + 7, y + height, VillagerClientUiUtil.withAlphaRound(ACCENT_COLOR, alpha * 0.82F));
-        graphics.fill(x + 7, y, x + width, y + 1, VillagerClientUiUtil.withAlphaRound(EDGE_HIGHLIGHT_COLOR, alpha));
-        graphics.fill(x, y + height, x + width, y + height + 1, VillagerClientUiUtil.withAlphaRound(PANEL_SHADOW_COLOR, alpha));
-    }
-
-    private static void renderWrappedText(
-            GuiGraphics graphics,
-            Font font,
-            String text,
-            int x,
-            int y,
-            int width,
-            int maxLines,
-            int color) {
-        if (text == null || text.isBlank() || width <= 0 || maxLines <= 0) {
-            return;
-        }
-        List<FormattedCharSequence> lines = font.split(Component.literal(text), width);
-        graphics.pose().pushPose();
-        graphics.pose().translate(0.0F, 0.0F, 210.0F);
-        int visibleLines = Math.min(maxLines, lines.size());
-        for (int index = 0; index < visibleLines; index++) {
-            graphics.drawString(font, lines.get(index), x, y + index * LINE_STEP, color, false);
-        }
-        graphics.pose().popPose();
-    }
-
-    private static void renderSingleLine(
-            GuiGraphics graphics,
-            Font font,
-            String text,
-            int x,
-            int y,
-            int width,
-            int color,
-            boolean shadow) {
-        if (text == null || text.isBlank() || width <= 0) {
-            return;
-        }
-        graphics.enableScissor(x, y, x + width, y + LINE_STEP);
-        graphics.pose().pushPose();
-        graphics.pose().translate(0.0F, 0.0F, 210.0F);
-        graphics.drawString(font, text, x, y, color, shadow);
-        graphics.pose().popPose();
-        graphics.disableScissor();
+        VillagerQuestHudRenderer.renderNotification(graphics, font, entry, x, y, width, alpha);
     }
 }

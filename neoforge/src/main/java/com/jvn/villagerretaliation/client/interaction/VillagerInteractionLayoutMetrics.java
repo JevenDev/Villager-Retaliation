@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.client.interaction;
 
 import com.jvn.toucanlib.client.ToucanScrollState;
+import com.jvn.villagerretaliation.client.ui.VillagerAdaptiveGuiScale;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import net.minecraft.client.gui.Font;
 import net.minecraft.util.Mth;
@@ -22,6 +23,8 @@ final class VillagerInteractionLayoutMetrics {
     private static final int SKILLS_CONTAINER_PADDING_Y = 6;
     private static final int PROFILE_SKILL_ROW_HEIGHT = 16;
     private static final int PROFILE_SKILL_ROW_GAP = 2;
+    private static final int PROFILE_SKILL_BAR_HEIGHT = 4;
+    private static final int PROFILE_SKILL_COLUMN_GAP = 8;
     private static final int PROFILE_SKILL_COLUMNS = 2;
 
     private VillagerInteractionLayoutMetrics() {
@@ -91,28 +94,60 @@ final class VillagerInteractionLayoutMetrics {
         return ToucanScrollState.maxScroll(optionContentHeight, optionViewportHeight);
     }
 
-    static int skillsPanelHeight(Font font) {
+    static int skillsPanelHeight(Font font, boolean experimentalUi) {
         int rows = (VillagerSkill.values().length + PROFILE_SKILL_COLUMNS - 1) / PROFILE_SKILL_COLUMNS;
-        return font.lineHeight + 4
-                + rows * PROFILE_SKILL_ROW_HEIGHT
-                + Math.max(0, rows - 1) * PROFILE_SKILL_ROW_GAP;
+        int titleHeight = experimentalUi ? Math.round(font.lineHeight * VillagerAdaptiveGuiScale.scaleFactor()) : font.lineHeight;
+        return titleHeight + VillagerAdaptiveGuiScale.unitIf(experimentalUi, 4)
+                + rows * profileSkillRowHeight(experimentalUi)
+                + Math.max(0, rows - 1) * profileSkillRowGap(experimentalUi);
     }
 
-    static int skillsContainerHeight(int skillsPanelHeight) {
-        return skillsPanelHeight + SKILLS_CONTAINER_PADDING_Y * 2;
+    static int skillsContainerPaddingX(boolean experimentalUi) {
+        return VillagerAdaptiveGuiScale.unitIf(experimentalUi, SKILLS_CONTAINER_PADDING_X);
     }
 
-    static int skillsPanelTop(int screenHeight, int skillsContainerHeight) {
+    static int skillsContainerPaddingY(boolean experimentalUi) {
+        return VillagerAdaptiveGuiScale.unitIf(experimentalUi, SKILLS_CONTAINER_PADDING_Y);
+    }
+
+    static int skillsContainerHeight(int skillsPanelHeight, boolean experimentalUi) {
+        return skillsPanelHeight + skillsContainerPaddingY(experimentalUi) * 2;
+    }
+
+    static int skillsPanelTop(int screenHeight, int skillsContainerHeight, boolean experimentalUi) {
+        int edgeMargin = VillagerAdaptiveGuiScale.unitIf(experimentalUi, SKILLS_EDGE_MARGIN);
         return Mth.clamp(
-                SKILLS_EDGE_MARGIN,
-                SKILLS_EDGE_MARGIN,
-                Math.max(SKILLS_EDGE_MARGIN, screenHeight - skillsContainerHeight - SKILLS_EDGE_MARGIN));
+                edgeMargin,
+                edgeMargin,
+                Math.max(edgeMargin, screenHeight - skillsContainerHeight - edgeMargin));
     }
 
-    static int skillsPanelLeft(int screenWidth, int panelWidth, int targetLeft) {
+    static int skillsPanelLeft(int screenWidth, int panelWidth, int targetLeft, boolean experimentalUi) {
+        int edgeMargin = VillagerAdaptiveGuiScale.unitIf(experimentalUi, SKILLS_EDGE_MARGIN);
+        int paddingX = skillsContainerPaddingX(experimentalUi);
         return Mth.clamp(
                 targetLeft,
-                SKILLS_EDGE_MARGIN + SKILLS_CONTAINER_PADDING_X,
-                Math.max(SKILLS_EDGE_MARGIN + SKILLS_CONTAINER_PADDING_X, screenWidth - panelWidth - SKILLS_EDGE_MARGIN));
+                edgeMargin + paddingX,
+                Math.max(edgeMargin + paddingX, screenWidth - panelWidth - edgeMargin));
+    }
+
+    static int skillsEdgeMargin(boolean experimentalUi) {
+        return VillagerAdaptiveGuiScale.unitIf(experimentalUi, SKILLS_EDGE_MARGIN);
+    }
+
+    static int profileSkillRowHeight(boolean experimentalUi) {
+        return VillagerAdaptiveGuiScale.unitIf(experimentalUi, PROFILE_SKILL_ROW_HEIGHT);
+    }
+
+    static int profileSkillRowGap(boolean experimentalUi) {
+        return VillagerAdaptiveGuiScale.unitAtLeastIf(experimentalUi, PROFILE_SKILL_ROW_GAP, 1);
+    }
+
+    static int profileSkillBarHeight(boolean experimentalUi) {
+        return VillagerAdaptiveGuiScale.unitAtLeastIf(experimentalUi, PROFILE_SKILL_BAR_HEIGHT, 1);
+    }
+
+    static int profileSkillColumnGap(boolean experimentalUi) {
+        return VillagerAdaptiveGuiScale.unitIf(experimentalUi, PROFILE_SKILL_COLUMN_GAP);
     }
 }

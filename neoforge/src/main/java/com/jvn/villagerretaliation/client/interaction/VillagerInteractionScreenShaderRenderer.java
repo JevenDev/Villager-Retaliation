@@ -25,6 +25,104 @@ public final class VillagerInteractionScreenShaderRenderer {
     private VillagerInteractionScreenShaderRenderer() {
     }
 
+    public record ShaderRect(float left, float top, float right, float bottom) {
+        public ShaderRect(int left, int top, int right, int bottom) {
+            this((float) left, (float) top, (float) right, (float) bottom);
+        }
+    }
+
+    public record ExperimentalNotificationPanel(
+            ShaderRect rect,
+            int accentColor,
+            float alpha,
+            float elapsedTicks,
+            float direction,
+            float slant) {
+        private static final float DEFAULT_SLANT = 9.0F;
+
+        public ExperimentalNotificationPanel(
+                ShaderRect rect,
+                int accentColor,
+                float alpha,
+                float elapsedTicks,
+                float direction) {
+            this(rect, accentColor, alpha, elapsedTicks, direction, DEFAULT_SLANT);
+        }
+    }
+
+    public record ExperimentalSkillsPanel(
+            ShaderRect rect,
+            int accentColor,
+            float fillProgress,
+            float alpha,
+            float elapsedTicks,
+            float elapsedMillis,
+            float exitElapsedMillis,
+            float chromeElapsedMillis,
+            float chromeExitElapsedMillis,
+            int screenWidth,
+            int screenHeight,
+            int mouseX,
+            int mouseY,
+            boolean clipMainChrome,
+            boolean hovered) {
+        public static ExperimentalSkillsPanel backdrop(
+                ShaderRect rect,
+                float alpha,
+                float elapsedTicks,
+                float elapsedMillis,
+                float exitElapsedMillis,
+                float chromeElapsedMillis,
+                float chromeExitElapsedMillis,
+                int screenWidth,
+                int screenHeight,
+                int mouseX,
+                int mouseY,
+                boolean clipMainChrome) {
+            return new ExperimentalSkillsPanel(
+                    rect,
+                    0,
+                    1.0F,
+                    alpha,
+                    elapsedTicks,
+                    elapsedMillis,
+                    exitElapsedMillis,
+                    chromeElapsedMillis,
+                    chromeExitElapsedMillis,
+                    screenWidth,
+                    screenHeight,
+                    mouseX,
+                    mouseY,
+                    clipMainChrome,
+                    false);
+        }
+
+        public static ExperimentalSkillsPanel bar(
+                ShaderRect rect,
+                int accentColor,
+                float fillProgress,
+                float alpha,
+                float elapsedTicks,
+                boolean hovered) {
+            return new ExperimentalSkillsPanel(
+                    rect,
+                    accentColor,
+                    fillProgress,
+                    alpha,
+                    elapsedTicks,
+                    0.0F,
+                    -1.0F,
+                    0.0F,
+                    -1.0F,
+                    1,
+                    1,
+                    0,
+                    0,
+                    true,
+                    hovered);
+        }
+    }
+
     public static void registerShaders(RegisterShadersEvent event) {
         try {
             event.registerShader(
@@ -75,19 +173,7 @@ public final class VillagerInteractionScreenShaderRenderer {
         setUniform(interactionVeilShader, "CellSize", DITHER_CELL_SIZE);
         setUniform(interactionVeilShader, "ScreenWidth", (float) width);
         setUniform(interactionVeilShader, "ArcDepth", DITHER_ARC_DEPTH);
-        Matrix4f pose = graphics.pose().last().pose();
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-        RenderSystem.setShader(() -> interactionVeilShader);
-
-        BufferBuilder bufferBuilder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
-        bufferBuilder.addVertex(pose, 0.0F, height, 0.0F);
-        bufferBuilder.addVertex(pose, width, height, 0.0F);
-        bufferBuilder.addVertex(pose, width, Math.max(0.0F, veilTop), 0.0F);
-        bufferBuilder.addVertex(pose, 0.0F, Math.max(0.0F, veilTop), 0.0F);
-        BufferUploader.drawWithShader(bufferBuilder.buildOrThrow());
-
-        RenderSystem.disableBlend();
+        drawQuad(graphics, interactionVeilShader, new ShaderRect(0.0F, Math.max(0.0F, veilTop), width, height));
     }
 
     public static boolean renderExperimentalChrome(
@@ -109,19 +195,7 @@ public final class VillagerInteractionScreenShaderRenderer {
         setUniform(experimentalChromeShader, "ElapsedMillis", elapsedMillis);
         setUniform(experimentalChromeShader, "ExitElapsedMillis", exitElapsedMillis);
 
-        Matrix4f pose = graphics.pose().last().pose();
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-        RenderSystem.setShader(() -> experimentalChromeShader);
-
-        BufferBuilder bufferBuilder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
-        bufferBuilder.addVertex(pose, 0.0F, height, 0.0F);
-        bufferBuilder.addVertex(pose, width, height, 0.0F);
-        bufferBuilder.addVertex(pose, width, 0.0F, 0.0F);
-        bufferBuilder.addVertex(pose, 0.0F, 0.0F, 0.0F);
-        BufferUploader.drawWithShader(bufferBuilder.buildOrThrow());
-
-        RenderSystem.disableBlend();
+        drawQuad(graphics, experimentalChromeShader, new ShaderRect(0, 0, width, height));
         return true;
     }
 
@@ -159,35 +233,32 @@ public final class VillagerInteractionScreenShaderRenderer {
             float elapsedTicks,
             float direction,
             float slant) {
+        return renderExperimentalNotification(
+                graphics,
+                new ExperimentalNotificationPanel(
+                        new ShaderRect(left, top, right, bottom),
+                        accentColor,
+                        alpha,
+                        elapsedTicks,
+                        direction,
+                        slant));
+    }
+
+    public static boolean renderExperimentalNotification(
+            GuiGraphics graphics,
+            ExperimentalNotificationPanel panel) {
         if (experimentalNotificationShader == null) {
             return false;
         }
 
-        setUniform(experimentalNotificationShader, "RectLeft", (float) left);
-        setUniform(experimentalNotificationShader, "RectTop", (float) top);
-        setUniform(experimentalNotificationShader, "RectRight", (float) right);
-        setUniform(experimentalNotificationShader, "RectBottom", (float) bottom);
-        setUniform(experimentalNotificationShader, "AccentRed", ((accentColor >> 16) & 0xFF) / 255.0F);
-        setUniform(experimentalNotificationShader, "AccentGreen", ((accentColor >> 8) & 0xFF) / 255.0F);
-        setUniform(experimentalNotificationShader, "AccentBlue", (accentColor & 0xFF) / 255.0F);
-        setUniform(experimentalNotificationShader, "Alpha", alpha);
-        setUniform(experimentalNotificationShader, "ElapsedTicks", elapsedTicks);
-        setUniform(experimentalNotificationShader, "Direction", direction);
-        setUniform(experimentalNotificationShader, "Slant", slant);
+        setRectUniforms(experimentalNotificationShader, panel.rect());
+        setAccentUniforms(experimentalNotificationShader, panel.accentColor());
+        setUniform(experimentalNotificationShader, "Alpha", panel.alpha());
+        setUniform(experimentalNotificationShader, "ElapsedTicks", panel.elapsedTicks());
+        setUniform(experimentalNotificationShader, "Direction", panel.direction());
+        setUniform(experimentalNotificationShader, "Slant", panel.slant());
 
-        Matrix4f pose = graphics.pose().last().pose();
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-        RenderSystem.setShader(() -> experimentalNotificationShader);
-
-        BufferBuilder bufferBuilder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
-        bufferBuilder.addVertex(pose, left, bottom, 0.0F);
-        bufferBuilder.addVertex(pose, right, bottom, 0.0F);
-        bufferBuilder.addVertex(pose, right, top, 0.0F);
-        bufferBuilder.addVertex(pose, left, top, 0.0F);
-        BufferUploader.drawWithShader(bufferBuilder.buildOrThrow());
-
-        RenderSystem.disableBlend();
+        drawQuad(graphics, experimentalNotificationShader, panel.rect());
         return true;
     }
 
@@ -243,26 +314,21 @@ public final class VillagerInteractionScreenShaderRenderer {
             int mouseX,
             int mouseY,
             boolean clipMainChrome) {
-        return renderExperimentalSkills(
+        return renderExperimentalSkillsPanel(
                 graphics,
-                left,
-                top,
-                right,
-                bottom,
-                0,
-                1.0F,
-                alpha,
-                elapsedTicks,
-                elapsedMillis,
-                exitElapsedMillis,
-                chromeElapsedMillis,
-                chromeExitElapsedMillis,
-                screenWidth,
-                screenHeight,
-                mouseX,
-                mouseY,
-                clipMainChrome,
-                false);
+                ExperimentalSkillsPanel.backdrop(
+                        new ShaderRect(left, top, right, bottom),
+                        alpha,
+                        elapsedTicks,
+                        elapsedMillis,
+                        exitElapsedMillis,
+                        chromeElapsedMillis,
+                        chromeExitElapsedMillis,
+                        screenWidth,
+                        screenHeight,
+                        mouseX,
+                        mouseY,
+                        clipMainChrome));
     }
 
     public static boolean renderExperimentalSkillBar(
@@ -276,69 +342,72 @@ public final class VillagerInteractionScreenShaderRenderer {
             float alpha,
             float elapsedTicks,
             boolean hovered) {
-        return renderExperimentalSkills(graphics, left, top, right, bottom, accentColor, fillProgress, alpha, elapsedTicks, 0.0F, -1.0F, 0.0F, -1.0F, 1, 1, 0, 0, true, hovered);
+        return renderExperimentalSkillsPanel(
+                graphics,
+                ExperimentalSkillsPanel.bar(
+                        new ShaderRect(left, top, right, bottom),
+                        accentColor,
+                        fillProgress,
+                        alpha,
+                        elapsedTicks,
+                        hovered));
     }
 
-    private static boolean renderExperimentalSkills(
+    public static boolean renderExperimentalSkillsPanel(
             GuiGraphics graphics,
-            int left,
-            int top,
-            int right,
-            int bottom,
-            int accentColor,
-            float fillProgress,
-            float alpha,
-            float elapsedTicks,
-            float elapsedMillis,
-            float exitElapsedMillis,
-            float chromeElapsedMillis,
-            float chromeExitElapsedMillis,
-            int screenWidth,
-            int screenHeight,
-            int mouseX,
-            int mouseY,
-            boolean clipMainChrome,
-            boolean hovered) {
+            ExperimentalSkillsPanel panel) {
         if (experimentalSkillsShader == null) {
             return false;
         }
 
-        setUniform(experimentalSkillsShader, "RectLeft", (float) left);
-        setUniform(experimentalSkillsShader, "RectTop", (float) top);
-        setUniform(experimentalSkillsShader, "RectRight", (float) right);
-        setUniform(experimentalSkillsShader, "RectBottom", (float) bottom);
-        setUniform(experimentalSkillsShader, "AccentRed", ((accentColor >> 16) & 0xFF) / 255.0F);
-        setUniform(experimentalSkillsShader, "AccentGreen", ((accentColor >> 8) & 0xFF) / 255.0F);
-        setUniform(experimentalSkillsShader, "AccentBlue", (accentColor & 0xFF) / 255.0F);
-        setUniform(experimentalSkillsShader, "FillProgress", fillProgress);
-        setUniform(experimentalSkillsShader, "Alpha", alpha);
-        setUniform(experimentalSkillsShader, "ElapsedTicks", elapsedTicks);
-        setUniform(experimentalSkillsShader, "ElapsedMillis", elapsedMillis);
-        setUniform(experimentalSkillsShader, "ExitElapsedMillis", exitElapsedMillis);
-        setUniform(experimentalSkillsShader, "ChromeElapsedMillis", chromeElapsedMillis);
-        setUniform(experimentalSkillsShader, "ChromeExitElapsedMillis", chromeExitElapsedMillis);
-        setUniform(experimentalSkillsShader, "ScreenWidth", (float) screenWidth);
-        setUniform(experimentalSkillsShader, "ScreenHeight", (float) screenHeight);
-        setUniform(experimentalSkillsShader, "MouseX", (float) mouseX);
-        setUniform(experimentalSkillsShader, "MouseY", (float) mouseY);
-        setUniform(experimentalSkillsShader, "Hovered", hovered ? 1.0F : 0.0F);
-        setUniform(experimentalSkillsShader, "Mode", accentColor == 0 ? 0.0F : 1.0F);
-        setUniform(experimentalSkillsShader, "ClipMainChrome", clipMainChrome ? 1.0F : 0.0F);
+        setRectUniforms(experimentalSkillsShader, panel.rect());
+        setAccentUniforms(experimentalSkillsShader, panel.accentColor());
+        setUniform(experimentalSkillsShader, "FillProgress", panel.fillProgress());
+        setUniform(experimentalSkillsShader, "Alpha", panel.alpha());
+        setUniform(experimentalSkillsShader, "ElapsedTicks", panel.elapsedTicks());
+        setUniform(experimentalSkillsShader, "ElapsedMillis", panel.elapsedMillis());
+        setUniform(experimentalSkillsShader, "ExitElapsedMillis", panel.exitElapsedMillis());
+        setUniform(experimentalSkillsShader, "ChromeElapsedMillis", panel.chromeElapsedMillis());
+        setUniform(experimentalSkillsShader, "ChromeExitElapsedMillis", panel.chromeExitElapsedMillis());
+        setUniform(experimentalSkillsShader, "ScreenWidth", (float) panel.screenWidth());
+        setUniform(experimentalSkillsShader, "ScreenHeight", (float) panel.screenHeight());
+        setUniform(experimentalSkillsShader, "MouseX", (float) panel.mouseX());
+        setUniform(experimentalSkillsShader, "MouseY", (float) panel.mouseY());
+        setUniform(experimentalSkillsShader, "Hovered", panel.hovered() ? 1.0F : 0.0F);
+        setUniform(experimentalSkillsShader, "Mode", panel.accentColor() == 0 ? 0.0F : 1.0F);
+        setUniform(experimentalSkillsShader, "ClipMainChrome", panel.clipMainChrome() ? 1.0F : 0.0F);
 
+        drawQuad(graphics, experimentalSkillsShader, panel.rect());
+        return true;
+    }
+
+    private static void setRectUniforms(ShaderInstance shader, ShaderRect rect) {
+        setUniform(shader, "RectLeft", rect.left());
+        setUniform(shader, "RectTop", rect.top());
+        setUniform(shader, "RectRight", rect.right());
+        setUniform(shader, "RectBottom", rect.bottom());
+    }
+
+    private static void setAccentUniforms(ShaderInstance shader, int accentColor) {
+        setUniform(shader, "AccentRed", ((accentColor >> 16) & 0xFF) / 255.0F);
+        setUniform(shader, "AccentGreen", ((accentColor >> 8) & 0xFF) / 255.0F);
+        setUniform(shader, "AccentBlue", (accentColor & 0xFF) / 255.0F);
+    }
+
+    private static void drawQuad(GuiGraphics graphics, ShaderInstance shader, ShaderRect rect) {
         Matrix4f pose = graphics.pose().last().pose();
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-        RenderSystem.setShader(() -> experimentalSkillsShader);
+        RenderSystem.setShader(() -> shader);
 
         BufferBuilder bufferBuilder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
-        bufferBuilder.addVertex(pose, left, bottom, 0.0F);
-        bufferBuilder.addVertex(pose, right, bottom, 0.0F);
-        bufferBuilder.addVertex(pose, right, top, 0.0F);
-        bufferBuilder.addVertex(pose, left, top, 0.0F);
+        bufferBuilder.addVertex(pose, rect.left(), rect.bottom(), 0.0F);
+        bufferBuilder.addVertex(pose, rect.right(), rect.bottom(), 0.0F);
+        bufferBuilder.addVertex(pose, rect.right(), rect.top(), 0.0F);
+        bufferBuilder.addVertex(pose, rect.left(), rect.top(), 0.0F);
         BufferUploader.drawWithShader(bufferBuilder.buildOrThrow());
 
         RenderSystem.disableBlend();
-        return true;
     }
 
     private static void setUniform(ShaderInstance shader, String name, float value) {

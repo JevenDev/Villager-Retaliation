@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.client.interaction;
 import com.jvn.toucanlib.client.ToucanScrollbarThumb;
 import com.jvn.toucanlib.client.ToucanScrollState;
 import com.jvn.toucanlib.client.ToucanScrollbars;
+import com.jvn.villagerretaliation.client.quest.VillagerQuestUi;
 import com.jvn.villagerretaliation.client.quest.VillagerQuestTrackerOverlay;
 import com.jvn.villagerretaliation.network.QuestTrackerSyncPayload;
 import java.util.ArrayList;
@@ -22,13 +23,6 @@ public final class VillagerQuestJournalScreen extends Screen {
     private static final float OPTION_SCROLL_STEP = 12.0F;
     private static final float OPTION_HOVER_SCALE = 0.055F;
     private static final float OPTION_SELECTED_SCALE = 0.02F;
-    private static final int QUEST_ACCENT_COLOR = 0xFFFFD166;
-    private static final int TITLE_COLOR = 0xFFFFF0C8;
-    private static final int TEXT_COLOR = 0xFFE9EEF5;
-    private static final int MUTED_TEXT_COLOR = 0xFFB8C3D0;
-    private static final int PANEL_FALLBACK_COLOR = 0xC0000000;
-    private static final int SKILLS_CONTAINER_PADDING_X = 8;
-    private static final int SKILLS_CONTAINER_PADDING_Y = 6;
 
     private final VillagerInteractionScreenState state = new VillagerInteractionScreenState();
     private final OptionListContext optionListContext = new OptionListContext();
@@ -175,7 +169,7 @@ public final class VillagerQuestJournalScreen extends Screen {
                 mouseX,
                 mouseY,
                 false)) {
-            graphics.fill(skillsBackdropLeft(), skillsBackdropTop(), skillsBackdropRight(), skillsBackdropBottom(), PANEL_FALLBACK_COLOR);
+            graphics.fill(skillsBackdropLeft(), skillsBackdropTop(), skillsBackdropRight(), skillsBackdropBottom(), VillagerQuestUi.PANEL_FALLBACK_COLOR);
         }
     }
 
@@ -199,25 +193,13 @@ public final class VillagerQuestJournalScreen extends Screen {
         float shiftX = hoverMix > 0.0F ? this.optionListContext.hoverShift(mouseX, optionsLeft(), optionWidth(), 3.2F * textScale) * hoverMix : 0.0F;
         float shiftY = hoverMix > 0.0F ? this.optionListContext.hoverShift(mouseY, rowTop, rowHeight, 1.6F * textScale) * hoverMix : 0.0F;
         int left = Mth.floor(optionsLeft() - experimentalUnitAtLeast(12, 8) + shiftX);
-        int top = Mth.floor(rowTop + rowHeight - experimentalUnitAtLeast(1, 1) + shiftY) + 2;
+        int top = Mth.floor(rowTop + rowHeight - experimentalUnitAtLeast(1, 1) + shiftY) + experimentalUnitAtLeast(2, 1);
         int right = Mth.floor(Math.min(optionsScrollbarLeft() - experimentalUnitAtLeast(8, 5), optionsLeft() + optionWidth() - experimentalUnitAtLeast(8, 5)) + shiftX);
         int bottom = top + experimentalUnitAtLeast(2, 1);
         if (right <= left) {
             return;
         }
-        if (!VillagerInteractionScreenShaderRenderer.renderExperimentalSkillBar(
-                graphics,
-                left,
-                top,
-                right,
-                bottom,
-                QUEST_ACCENT_COLOR,
-                1.0F,
-                alpha,
-                experimentalTicks(),
-                false)) {
-            graphics.fill(left, top, right, bottom, VillagerInteractionUiUtil.withAlpha(QUEST_ACCENT_COLOR, alpha));
-        }
+        VillagerQuestUi.renderAccentBar(graphics, left, top, right, bottom, alpha, experimentalTicks(), false);
     }
 
     private void renderQuestDetails(GuiGraphics graphics) {
@@ -227,9 +209,9 @@ public final class VillagerQuestJournalScreen extends Screen {
         }
 
         int left = skillsPanelLeft();
-        int top = skillsPanelTop() + SKILLS_CONTAINER_PADDING_Y;
+        int top = skillsPanelTop() + skillsContainerPaddingY();
         int right = Math.min(this.width - experimentalUnitAtLeast(10, 6), left + skillsPanelWidth());
-        int bottom = Math.min(this.height - experimentalUnitAtLeast(10, 6), skillsPanelTop() + skillsContainerHeight() - SKILLS_CONTAINER_PADDING_Y);
+        int bottom = Math.min(this.height - experimentalUnitAtLeast(10, 6), skillsPanelTop() + skillsContainerHeight() - skillsContainerPaddingY());
         if (right <= left || bottom <= top) {
             return;
         }
@@ -238,36 +220,25 @@ public final class VillagerQuestJournalScreen extends Screen {
         if (!VillagerInteractionExperimentalChrome.shouldDrawText(alpha)) {
             return;
         }
-        float scale = 1.0F;
+        float scale = VillagerInteractionExperimentalLayout.scaleFactor();
         int wrapWidth = VillagerInteractionUiUtil.scaledWrapWidth(right - left, scale);
         int progressReservedHeight = selected.showProgress() ? experimentalUnitAtLeast(16, 8) : 0;
         int textBottom = bottom - progressReservedHeight;
-        graphics.enableScissor(left - SKILLS_CONTAINER_PADDING_X, top - SKILLS_CONTAINER_PADDING_Y, right + 4, bottom);
-        VillagerInteractionUiUtil.drawScaledString(graphics, this.font, selected.title(), left, top, VillagerInteractionUiUtil.withAlpha(TITLE_COLOR, alpha), scale);
+        graphics.enableScissor(left - skillsContainerPaddingX(), top - skillsContainerPaddingY(), right + experimentalUnitAtLeast(4, 2), bottom);
+        VillagerInteractionUiUtil.drawScaledString(graphics, this.font, selected.title(), left, top, VillagerInteractionUiUtil.withAlpha(VillagerQuestUi.TITLE_COLOR, alpha), scale);
         int y = top + VillagerInteractionUiUtil.scaledLineStep(this.font, scale) + experimentalUnitAtLeast(8, 4);
-        y = renderWrappedLine(graphics, selected.objective(), left, y, wrapWidth, VillagerInteractionUiUtil.withAlpha(TEXT_COLOR, alpha), scale, textBottom);
+        y = renderWrappedLine(graphics, selected.objective(), left, y, wrapWidth, VillagerInteractionUiUtil.withAlpha(VillagerQuestUi.TEXT_COLOR, alpha), scale, textBottom);
         if (!selected.metadata().isBlank()) {
             y += experimentalUnitAtLeast(8, 4);
-            renderWrappedLine(graphics, selected.metadata(), left, y, wrapWidth, VillagerInteractionUiUtil.withAlpha(MUTED_TEXT_COLOR, alpha), scale, textBottom);
+            renderWrappedLine(graphics, selected.metadata(), left, y, wrapWidth, VillagerInteractionUiUtil.withAlpha(VillagerQuestUi.MUTED_TEXT_COLOR, alpha), scale, textBottom);
         }
         graphics.disableScissor();
 
         if (selected.showProgress()) {
             int barHeight = experimentalUnitAtLeast(2, 1);
-            int barTop = Math.min(bottom - barHeight, y + experimentalUnitAtLeast(8, 4) + 2);
+            int barTop = Math.min(bottom - barHeight, y + experimentalUnitAtLeast(8, 4) + experimentalUnitAtLeast(2, 1));
             int barRight = right;
-            graphics.fill(left, barTop, barRight, barTop + barHeight, VillagerInteractionUiUtil.withAlpha(0x80373A42, alpha));
-            VillagerInteractionScreenShaderRenderer.renderExperimentalSkillBar(
-                    graphics,
-                    left,
-                    barTop,
-                    left + Math.round((barRight - left) * selected.progress()),
-                    barTop + barHeight,
-                    QUEST_ACCENT_COLOR,
-                    1.0F,
-                    alpha,
-                    experimentalTicks(),
-                    false);
+            VillagerQuestUi.renderProgressBar(graphics, left, barTop, barRight, barHeight, selected.progress(), alpha, experimentalTicks(), true, false);
         }
     }
 
@@ -430,7 +401,8 @@ public final class VillagerQuestJournalScreen extends Screen {
         int right = optionsLeft() + optionWidth() + experimentalUnitAtLeast(4, 2);
         int top = optionsTop();
         int bottom = top + optionViewportHeight();
-        return mouseX >= left && mouseX <= right && mouseY >= top - 4 && mouseY <= bottom + 4;
+        int verticalPadding = experimentalUnitAtLeast(4, 2);
+        return mouseX >= left && mouseX <= right && mouseY >= top - verticalPadding && mouseY <= bottom + verticalPadding;
     }
 
     private void clampSelectedOption() {
@@ -539,12 +511,12 @@ public final class VillagerQuestJournalScreen extends Screen {
     }
 
     private int skillsPanelTop() {
-        return VillagerInteractionLayoutMetrics.skillsPanelTop(this.height, skillsContainerHeight());
+        return VillagerInteractionLayoutMetrics.skillsPanelTop(this.height, skillsContainerHeight(), true);
     }
 
     private int skillsPanelLeft() {
         int panelWidth = skillsPanelWidth();
-        return VillagerInteractionLayoutMetrics.skillsPanelLeft(this.width, panelWidth, scrollbarRight() - panelWidth);
+        return VillagerInteractionLayoutMetrics.skillsPanelLeft(this.width, panelWidth, scrollbarRight() - panelWidth, true);
     }
 
     private int skillsPanelWidth() {
@@ -552,15 +524,23 @@ public final class VillagerQuestJournalScreen extends Screen {
     }
 
     private int skillsContainerHeight() {
-        return VillagerInteractionLayoutMetrics.skillsContainerHeight(skillsPanelHeight());
+        return VillagerInteractionLayoutMetrics.skillsContainerHeight(skillsPanelHeight(), true);
     }
 
     private int skillsPanelHeight() {
-        return VillagerInteractionLayoutMetrics.skillsPanelHeight(this.font);
+        return VillagerInteractionLayoutMetrics.skillsPanelHeight(this.font, true);
+    }
+
+    private int skillsContainerPaddingX() {
+        return VillagerInteractionLayoutMetrics.skillsContainerPaddingX(true);
+    }
+
+    private int skillsContainerPaddingY() {
+        return VillagerInteractionLayoutMetrics.skillsContainerPaddingY(true);
     }
 
     private int skillsBackdropLeft() {
-        return Math.max(0, skillsPanelLeft() - SKILLS_CONTAINER_PADDING_X - experimentalUnit(118));
+        return Math.max(0, skillsPanelLeft() - skillsContainerPaddingX() - experimentalUnit(118));
     }
 
     private int skillsBackdropTop() {

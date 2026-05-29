@@ -62,9 +62,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final int VEIL_TOP_DITHER_HEIGHT = 64;
     private static final float EXPERIMENTAL_INFO_NAME_SCALE = 1.85F;
     private static final float EXPERIMENTAL_INFO_DETAIL_SCALE = 1.4F;
-    private static final int SKILLS_EDGE_MARGIN = 10;
-    private static final int SKILLS_CONTAINER_PADDING_X = 8;
-    private static final int SKILLS_CONTAINER_PADDING_Y = 6;
     private static final int SKILLS_CONTAINER_BACKGROUND_COLOR = 0xA0101010;
     private static final int SKILLS_CONTAINER_STRIPE_COLOR = 0xCCECECEC;
     private static final int SKILLS_CONTAINER_SHADOW_COLOR = 0xB0000000;
@@ -91,11 +88,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final int PROFILE_CHART_POINT_COLOR = 0xFFFFF3B0;
     private static final int PROFILE_CHART_POINT_HOVER_COLOR = 0xFFFFFFFF;
     private static final int PROFILE_CHART_POINT_HIT_RADIUS = 6;
-    private static final int PROFILE_SKILL_ROW_HEIGHT = 16;
-    private static final int PROFILE_SKILL_ROW_GAP = 2;
-    private static final int PROFILE_SKILL_BAR_HEIGHT = 4;
     private static final int PROFILE_SKILL_COLUMNS = 2;
-    private static final int PROFILE_SKILL_COLUMN_GAP = 8;
     private static final Runnable NO_ACTION = () -> {
     };
 
@@ -958,7 +951,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void renderExperimentalSkillsBackdrop(GuiGraphics graphics) {
-        int left = Math.max(0, skillsPanelLeft() - SKILLS_CONTAINER_PADDING_X - experimentalUnit(118));
+        int left = Math.max(0, skillsPanelLeft() - skillsContainerPaddingX() - experimentalUnit(118));
         int top = Math.max(0, skillsPanelTop() - experimentalUnit(26));
         int right = Math.min(this.width, skillsPanelLeft() + skillsPanelWidth() + experimentalUnit(46));
         int bottom = Math.min(this.height, skillsPanelTop() + skillsContainerHeight() + experimentalUnit(74));
@@ -1266,13 +1259,13 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private int skillsPanelTop() {
         int containerHeight = skillsContainerHeight();
-        return VillagerInteractionLayoutMetrics.skillsPanelTop(this.height, containerHeight);
+        return VillagerInteractionLayoutMetrics.skillsPanelTop(this.height, containerHeight, isExperimentalUi());
     }
 
     private int skillsPanelLeft() {
         int panelWidth = skillsPanelWidth();
-        int targetLeft = isExperimentalUi() ? scrollbarRight() - panelWidth : this.width - panelWidth - SKILLS_EDGE_MARGIN;
-        return VillagerInteractionLayoutMetrics.skillsPanelLeft(this.width, panelWidth, targetLeft);
+        int targetLeft = isExperimentalUi() ? scrollbarRight() - panelWidth : this.width - panelWidth - skillsEdgeMargin();
+        return VillagerInteractionLayoutMetrics.skillsPanelLeft(this.width, panelWidth, targetLeft, isExperimentalUi());
     }
 
     private int skillsPanelWidth() {
@@ -1280,11 +1273,39 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private int skillsContainerHeight() {
-        return VillagerInteractionLayoutMetrics.skillsContainerHeight(skillsPanelHeight());
+        return VillagerInteractionLayoutMetrics.skillsContainerHeight(skillsPanelHeight(), isExperimentalUi());
     }
 
     private int skillsPanelHeight() {
-        return VillagerInteractionLayoutMetrics.skillsPanelHeight(this.font);
+        return VillagerInteractionLayoutMetrics.skillsPanelHeight(this.font, isExperimentalUi());
+    }
+
+    private int skillsEdgeMargin() {
+        return VillagerInteractionLayoutMetrics.skillsEdgeMargin(isExperimentalUi());
+    }
+
+    private int skillsContainerPaddingX() {
+        return VillagerInteractionLayoutMetrics.skillsContainerPaddingX(isExperimentalUi());
+    }
+
+    private int skillsContainerPaddingY() {
+        return VillagerInteractionLayoutMetrics.skillsContainerPaddingY(isExperimentalUi());
+    }
+
+    private int profileSkillRowHeight() {
+        return VillagerInteractionLayoutMetrics.profileSkillRowHeight(isExperimentalUi());
+    }
+
+    private int profileSkillRowGap() {
+        return VillagerInteractionLayoutMetrics.profileSkillRowGap(isExperimentalUi());
+    }
+
+    private int profileSkillBarHeight() {
+        return VillagerInteractionLayoutMetrics.profileSkillBarHeight(isExperimentalUi());
+    }
+
+    private int profileSkillColumnGap() {
+        return VillagerInteractionLayoutMetrics.profileSkillColumnGap(isExperimentalUi());
     }
 
     private float maxSkillScroll() {
@@ -2483,12 +2504,12 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
         @Override
         public int skillsContainerPaddingX() {
-            return SKILLS_CONTAINER_PADDING_X;
+            return VillagerInteractionScreen.this.skillsContainerPaddingX();
         }
 
         @Override
         public int skillsContainerPaddingY() {
-            return SKILLS_CONTAINER_PADDING_Y;
+            return VillagerInteractionScreen.this.skillsContainerPaddingY();
         }
 
         @Override
@@ -2508,17 +2529,17 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
         @Override
         public int profileSkillRowHeight() {
-            return PROFILE_SKILL_ROW_HEIGHT;
+            return VillagerInteractionScreen.this.profileSkillRowHeight();
         }
 
         @Override
         public int profileSkillRowGap() {
-            return PROFILE_SKILL_ROW_GAP;
+            return VillagerInteractionScreen.this.profileSkillRowGap();
         }
 
         @Override
         public int profileSkillBarHeight() {
-            return PROFILE_SKILL_BAR_HEIGHT;
+            return VillagerInteractionScreen.this.profileSkillBarHeight();
         }
 
         @Override
@@ -2528,7 +2549,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
         @Override
         public int profileSkillColumnGap() {
-            return PROFILE_SKILL_COLUMN_GAP;
+            return VillagerInteractionScreen.this.profileSkillColumnGap();
         }
 
         @Override

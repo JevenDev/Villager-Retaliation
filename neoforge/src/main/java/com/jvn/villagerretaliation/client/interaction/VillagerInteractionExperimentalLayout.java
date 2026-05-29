@@ -1,10 +1,9 @@
 package com.jvn.villagerretaliation.client.interaction;
 
-import com.jvn.toucanlib.client.ToucanGuiScale;
+import com.jvn.villagerretaliation.client.ui.VillagerAdaptiveGuiScale;
 import net.minecraft.util.Mth;
 
 final class VillagerInteractionExperimentalLayout {
-    private static final double BASE_GUI_SCALE = 3.0D;
     private static final float OPTIONS_LEFT_RATIO = 0.7F;
     private static final float OPTIONS_TOP_RATIO = 0.9F;
     private static final float PAGE_LEFT_RATIO = 0.7F;
@@ -19,15 +18,15 @@ final class VillagerInteractionExperimentalLayout {
     }
 
     static float scaleFactor() {
-        return ToucanGuiScale.scaleFactor(BASE_GUI_SCALE);
+        return VillagerAdaptiveGuiScale.scaleFactor();
     }
 
     static int unit(int guiScaleThreeValue) {
-        return ToucanGuiScale.unit(guiScaleThreeValue, BASE_GUI_SCALE);
+        return VillagerAdaptiveGuiScale.unit(guiScaleThreeValue);
     }
 
     static int unitAtLeast(int guiScaleThreeValue, int minimum) {
-        return ToucanGuiScale.unitAtLeast(guiScaleThreeValue, minimum, BASE_GUI_SCALE);
+        return VillagerAdaptiveGuiScale.unitAtLeast(guiScaleThreeValue, minimum);
     }
 
     static int optionsLeft(int screenWidth, int optionWidth) {

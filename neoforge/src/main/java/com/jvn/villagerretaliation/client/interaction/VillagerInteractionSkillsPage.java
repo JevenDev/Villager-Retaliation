@@ -32,7 +32,14 @@ final class VillagerInteractionSkillsPage {
         Optional<VillagerProfileClientCache.DisplayEntry> entry = context.profileEntry();
         if (entry.isEmpty()) {
             context.requestProfileRefresh();
-            graphics.drawString(context.font(), context.translate("profile.loading"), left, top + 32, context.infoSecondaryColor(), false);
+            VillagerInteractionUiUtil.drawScaledString(
+                    graphics,
+                    context.font(),
+                    context.translate("profile.loading"),
+                    left,
+                    top + context.experimentalUnit(32),
+                    context.infoSecondaryColor(),
+                    context.experimentalTextScale());
             return;
         }
 
@@ -54,11 +61,13 @@ final class VillagerInteractionSkillsPage {
             int column = index % context.profileSkillColumns();
             int row = index / context.profileSkillColumns();
             int rowLeft = left + column * (columnWidth + context.profileSkillColumnGap());
-            int y = top + context.font().lineHeight + 4 + row * (context.profileSkillRowHeight() + context.profileSkillRowGap());
-            boolean rowHovered = mouseX >= rowLeft - 2
-                    && mouseX <= rowLeft + columnWidth + 2
-                    && mouseY >= y - 1
-                    && mouseY <= y + context.profileSkillRowHeight() - 1;
+            int y = skillRowTop(context, top, row);
+            int horizontalHitPadding = context.experimentalUnit(2);
+            int verticalHitPadding = context.experimentalUnit(1);
+            boolean rowHovered = mouseX >= rowLeft - horizontalHitPadding
+                    && mouseX <= rowLeft + columnWidth + horizontalHitPadding
+                    && mouseY >= y - verticalHitPadding
+                    && mouseY <= y + context.profileSkillRowHeight() - verticalHitPadding;
             if (rowHovered) {
                 return skillValue.skill();
             }
@@ -68,7 +77,7 @@ final class VillagerInteractionSkillsPage {
 
     static int skillsInfoContentHeight(Context context) {
         float scale = context.experimentalTextScale();
-        int width = VillagerInteractionUiUtil.scaledWrapWidth(context.optionWidth() - 12, scale);
+        int width = VillagerInteractionUiUtil.scaledWrapWidth(context.optionWidth() - context.experimentalUnit(12), scale);
         int y = context.optionStride();
         Optional<VillagerProfileClientCache.DisplayEntry> entry = context.profileEntry();
         if (context.selectedSkillDetails() != null && entry.isPresent()) {
@@ -84,19 +93,19 @@ final class VillagerInteractionSkillsPage {
             y = wrappedInfoLineBottom(
                     context.font(),
                     Component.translatable(GUI_KEY_PREFIX + "profile.tooltip.score", profile.skillValue(context.selectedSkillDetails())),
-                    y + 2,
+                    y + context.experimentalUnit(2),
                     width,
                     scale);
             return wrappedInfoLineBottom(
                     context.font(),
                     Component.literal(context.localizedExpandedSkillDescription(context.selectedSkillDetails())),
-                    y + 4,
+                    y + context.experimentalUnit(4),
                     width,
                     scale);
         }
         y = wrappedInfoLineBottom(context.font(), Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.trade"), y, width, scale);
-        y = wrappedInfoLineBottom(context.font(), Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.specialty"), y + 4, width, scale);
-        return wrappedInfoLineBottom(context.font(), Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.recruit"), y + 4, width, scale);
+        y = wrappedInfoLineBottom(context.font(), Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.specialty"), y + context.experimentalUnit(4), width, scale);
+        return wrappedInfoLineBottom(context.font(), Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.recruit"), y + context.experimentalUnit(4), width, scale);
     }
 
     private static void renderSkillsContainerBackground(Context context, GuiGraphics graphics, int left, int top) {
@@ -108,7 +117,7 @@ final class VillagerInteractionSkillsPage {
             return;
         }
         graphics.fill(containerLeft, containerTop, containerRight, containerBottom, context.skillsContainerBackgroundColor());
-        graphics.fill(containerLeft, containerTop, containerLeft + 2, containerBottom, context.skillsContainerStripeColor());
+        graphics.fill(containerLeft, containerTop, containerLeft + context.experimentalUnit(2), containerBottom, context.skillsContainerStripeColor());
         graphics.fill(containerLeft, containerBottom, containerRight, containerBottom + 1, context.skillsContainerShadowColor());
     }
 
@@ -118,7 +127,7 @@ final class VillagerInteractionSkillsPage {
         int viewportBottom = context.skillInfoViewportBottom();
         int top = Mth.floor(viewportTop + context.optionTextYOffset() - context.skillScroll());
         float scale = context.experimentalTextScale();
-        int width = VillagerInteractionUiUtil.scaledWrapWidth(context.optionWidth() - 12, scale);
+        int width = VillagerInteractionUiUtil.scaledWrapWidth(context.optionWidth() - context.experimentalUnit(12), scale);
         graphics.enableScissor(context.skillInfoScissorLeft(), viewportTop, context.skillInfoScissorRight(), viewportBottom);
         VillagerInteractionUiUtil.drawScaledString(
                 graphics,
@@ -148,19 +157,19 @@ final class VillagerInteractionSkillsPage {
                     graphics,
                     Component.translatable(GUI_KEY_PREFIX + "profile.tooltip.score", profile.skillValue(context.selectedSkillDetails())),
                     left,
-                    y + 2,
+                    y + context.experimentalUnit(2),
                     width);
             renderWrappedSkillInfoLine(
                     context,
                     graphics,
                     Component.literal(context.localizedExpandedSkillDescription(context.selectedSkillDetails())),
                     left,
-                    y + 4,
+                    y + context.experimentalUnit(4),
                     width);
         } else {
             y = renderWrappedSkillInfoLine(context, graphics, Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.trade"), left, y, width);
-            y = renderWrappedSkillInfoLine(context, graphics, Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.specialty"), left, y + 4, width);
-            renderWrappedSkillInfoLine(context, graphics, Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.recruit"), left, y + 4, width);
+            y = renderWrappedSkillInfoLine(context, graphics, Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.specialty"), left, y + context.experimentalUnit(4), width);
+            renderWrappedSkillInfoLine(context, graphics, Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.recruit"), left, y + context.experimentalUnit(4), width);
         }
         graphics.disableScissor();
         context.renderSkillInfoScrollbar(graphics);
@@ -194,7 +203,8 @@ final class VillagerInteractionSkillsPage {
             int mouseY) {
         List<VillagerSkillValue> highlights = profile.bestSkills(VillagerSkill.values().length);
         int columnWidth = (context.skillsPanelWidth() - context.profileSkillColumnGap()) / context.profileSkillColumns();
-        graphics.drawString(context.font(), context.translate("profile.skills"), left, top, context.infoValueColor(), false);
+        float scale = context.experimentalTextScale();
+        VillagerInteractionUiUtil.drawScaledString(graphics, context.font(), context.translate("profile.skills"), left, top, context.infoValueColor(), scale);
         VillagerSkill hovered = null;
         for (int index = 0; index < highlights.size(); index++) {
             VillagerSkillValue skillValue = highlights.get(index);
@@ -202,21 +212,37 @@ final class VillagerInteractionSkillsPage {
             int column = index % context.profileSkillColumns();
             int row = index / context.profileSkillColumns();
             int rowLeft = left + column * (columnWidth + context.profileSkillColumnGap());
-            int y = top + context.font().lineHeight + 4 + row * (context.profileSkillRowHeight() + context.profileSkillRowGap());
-            boolean rowHovered = mouseX >= rowLeft - 2
-                    && mouseX <= rowLeft + columnWidth + 2
-                    && mouseY >= y - 1
-                    && mouseY <= y + context.profileSkillRowHeight() - 1;
+            int y = skillRowTop(context, top, row);
+            int horizontalHitPadding = context.experimentalUnit(2);
+            int verticalHitPadding = context.experimentalUnit(1);
+            boolean rowHovered = mouseX >= rowLeft - horizontalHitPadding
+                    && mouseX <= rowLeft + columnWidth + horizontalHitPadding
+                    && mouseY >= y - verticalHitPadding
+                    && mouseY <= y + context.profileSkillRowHeight() - verticalHitPadding;
             if (rowHovered) {
                 hovered = skill;
                 if (!context.experimentalUi()) {
-                    graphics.fill(rowLeft - 2, y - 1, rowLeft + columnWidth + 2, y + context.profileSkillRowHeight() - 1, 0x22FFFFFF);
+                    graphics.fill(
+                            rowLeft - horizontalHitPadding,
+                            y - verticalHitPadding,
+                            rowLeft + columnWidth + horizontalHitPadding,
+                            y + context.profileSkillRowHeight() - verticalHitPadding,
+                            0x22FFFFFF);
                 }
             }
 
-            String label = ToucanGuiText.fitText(context.font(), context.localizedSkill(skill), columnWidth);
-            graphics.drawString(context.font(), label, rowLeft, y, context.infoSecondaryColor(), false);
-            renderSkillBar(context, graphics, rowLeft, y + context.font().lineHeight + 1, columnWidth, skillValue.value(), skillValue.rank(), rowHovered);
+            int labelWrapWidth = VillagerInteractionUiUtil.scaledWrapWidth(columnWidth, scale);
+            String label = ToucanGuiText.fitText(context.font(), context.localizedSkill(skill), labelWrapWidth);
+            VillagerInteractionUiUtil.drawScaledString(graphics, context.font(), label, rowLeft, y, context.infoSecondaryColor(), scale);
+            renderSkillBar(
+                    context,
+                    graphics,
+                    rowLeft,
+                    y + VillagerInteractionUiUtil.scaledLineStep(context.font(), scale) + context.experimentalUnit(1),
+                    columnWidth,
+                    skillValue.value(),
+                    skillValue.rank(),
+                    rowHovered);
         }
         return hovered;
     }
@@ -264,6 +290,13 @@ final class VillagerInteractionSkillsPage {
 
     private static float experimentalTicks() {
         return (Util.getMillis() % 1_000_000L) / 50.0F;
+    }
+
+    private static int skillRowTop(Context context, int contentTop, int row) {
+        return contentTop
+                + VillagerInteractionUiUtil.scaledLineStep(context.font(), context.experimentalTextScale())
+                + context.experimentalUnit(4)
+                + row * (context.profileSkillRowHeight() + context.profileSkillRowGap());
     }
 
     private static int skillRankColor(VillagerSkillRank rank) {

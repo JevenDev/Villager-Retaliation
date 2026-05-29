@@ -1,6 +1,9 @@
 package com.jvn.villagerretaliation.client.reputation;
 
 import com.jvn.villagerretaliation.client.interaction.VillagerInteractionScreenShaderRenderer;
+import com.jvn.villagerretaliation.client.interaction.VillagerInteractionScreenShaderRenderer.ExperimentalNotificationPanel;
+import com.jvn.villagerretaliation.client.interaction.VillagerInteractionScreenShaderRenderer.ShaderRect;
+import com.jvn.villagerretaliation.client.ui.VillagerAdaptiveGuiScale;
 import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
 import com.jvn.villagerretaliation.config.ReputationChangeDisplayMode;
 import com.jvn.villagerretaliation.config.ReputationChangeHudPosition;
@@ -121,7 +124,7 @@ public final class VillagerReputationNotificationOverlay {
         int screenHeight = minecraft.getWindow().getGuiScaledHeight();
         ReputationChangeHudPosition position = VillagerRetaliationConfig.REPUTATION_CHANGE_HUD_POSITION.get();
         ReputationChangeNotificationStyle style = VillagerRetaliationConfig.REPUTATION_CHANGE_NOTIFICATION_STYLE.get();
-        int entryHeight = entryHeight(style);
+        int entryHeight = entryHeight(style, font);
         for (NotificationEntry entry : ACTIVE_ENTRIES) {
             float alpha = entry.alpha(partialTick);
             if (alpha <= 0.01F) {
@@ -130,20 +133,19 @@ public final class VillagerReputationNotificationOverlay {
             }
 
             String text = entry.text;
-            int textWidth = font.width(text);
-            int width = entryWidth(style, textWidth);
+            int width = entryWidth(style, font, text);
             Anchor anchor = anchor(position, screenWidth, screenHeight, width, entryHeight);
-            int horizontalSlide = Math.round((1.0F - alpha) * SLIDE_DISTANCE);
+            int horizontalSlide = Math.round((1.0F - alpha) * slideDistance());
             int x = switch (position) {
                 case TOP_LEFT, MID_LEFT -> anchor.x() - horizontalSlide;
                 case TOP_RIGHT, MID_RIGHT -> anchor.x() + horizontalSlide;
                 case MID_TOP -> anchor.x();
             };
-            int y = anchor.y() + index * (entryHeight + ENTRY_GAP);
+            int y = anchor.y() + index * (entryHeight + entryGap());
             if (style.experimental()) {
                 renderExperimentalEntry(graphics, font, entry, x, y, width, entryHeight, alpha, entry.age + partialTick, position);
             } else {
-                renderEntry(graphics, font, entry, x, y, width, alpha);
+                renderEntry(graphics, font, entry, x, y, width, entryHeight, alpha);
             }
             index++;
         }
@@ -170,25 +172,30 @@ public final class VillagerReputationNotificationOverlay {
         }
     }
 
-    private static int entryHeight(ReputationChangeNotificationStyle style) {
-        return style.experimental() ? EXPERIMENTAL_ENTRY_HEIGHT : ENTRY_HEIGHT;
+    private static int entryHeight(ReputationChangeNotificationStyle style, Font font) {
+        int baseHeight = style.experimental() ? EXPERIMENTAL_ENTRY_HEIGHT : ENTRY_HEIGHT;
+        int textPadding = style.experimental() ? experimentalTextPaddingY() : textPaddingY();
+        return Math.max(
+                VillagerAdaptiveGuiScale.unit(baseHeight),
+                VillagerClientUiUtil.scaledLineStep(font, textScale()) + textPadding * 2);
     }
 
-    private static int entryWidth(ReputationChangeNotificationStyle style, int textWidth) {
+    private static int entryWidth(ReputationChangeNotificationStyle style, Font font, String text) {
+        int textWidth = VillagerClientUiUtil.scaledTextWidth(font, text, textScale());
         if (style.experimental()) {
-            return textWidth + EXPERIMENTAL_TEXT_PADDING_X * 2 + EXPERIMENTAL_EXTRA_WIDTH;
+            return textWidth + experimentalTextPaddingX() * 2 + VillagerAdaptiveGuiScale.unit(EXPERIMENTAL_EXTRA_WIDTH);
         }
-        return textWidth + TEXT_PADDING_X * 2 + 4;
+        return textWidth + textPaddingX() * 2 + VillagerAdaptiveGuiScale.unit(4);
     }
 
     private static Anchor anchor(ReputationChangeHudPosition position, int screenWidth, int screenHeight, int width, int entryHeight) {
-        int totalHeight = MAX_ENTRIES * entryHeight + (MAX_ENTRIES - 1) * ENTRY_GAP;
+        int totalHeight = MAX_ENTRIES * entryHeight + (MAX_ENTRIES - 1) * entryGap();
         return switch (position) {
-            case TOP_LEFT -> new Anchor(PADDING_X, PADDING_Y);
-            case MID_LEFT -> new Anchor(PADDING_X, Math.max(PADDING_Y, (screenHeight - totalHeight) / 2));
-            case MID_TOP -> new Anchor((screenWidth - width) / 2, PADDING_Y);
-            case TOP_RIGHT -> new Anchor(screenWidth - width - PADDING_X, PADDING_Y);
-            case MID_RIGHT -> new Anchor(screenWidth - width - PADDING_X, Math.max(PADDING_Y, (screenHeight - totalHeight) / 2));
+            case TOP_LEFT -> new Anchor(paddingX(), paddingY());
+            case MID_LEFT -> new Anchor(paddingX(), Math.max(paddingY(), (screenHeight - totalHeight) / 2));
+            case MID_TOP -> new Anchor((screenWidth - width) / 2, paddingY());
+            case TOP_RIGHT -> new Anchor(screenWidth - width - paddingX(), paddingY());
+            case MID_RIGHT -> new Anchor(screenWidth - width - paddingX(), Math.max(paddingY(), (screenHeight - totalHeight) / 2));
         };
     }
 
@@ -210,29 +217,33 @@ public final class VillagerReputationNotificationOverlay {
         };
         boolean rendered = VillagerInteractionScreenShaderRenderer.renderExperimentalNotification(
                 graphics,
-                x,
-                y,
-                x + width,
-                y + height,
-                accentColor,
-                alpha,
-                elapsedTicks,
-                direction);
+                new ExperimentalNotificationPanel(
+                        new ShaderRect(x, y, x + width, y + height),
+                        accentColor,
+                        alpha,
+                        elapsedTicks,
+                        direction));
         if (!rendered) {
-            renderEntry(graphics, font, entry, x, y, width, alpha);
+            renderEntry(graphics, font, entry, x, y, width, height, alpha);
             return;
         }
 
         int textColor = VillagerClientUiUtil.withAlphaRound(textColor(entry), alpha);
-        graphics.pose().pushPose();
-        graphics.pose().translate(0.0F, 0.0F, 200.0F);
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-        graphics.drawString(font, entry.text, x + EXPERIMENTAL_TEXT_PADDING_X, y + EXPERIMENTAL_TEXT_PADDING_Y, textColor, true);
-        graphics.pose().popPose();
+        VillagerClientUiUtil.drawScaledStringAtZ(
+                graphics,
+                font,
+                entry.text,
+                x + experimentalTextPaddingX(),
+                y + experimentalTextPaddingY(),
+                textColor,
+                true,
+                textScale(),
+                200.0F);
     }
 
-    private static void renderEntry(GuiGraphics graphics, Font font, NotificationEntry entry, int x, int y, int width, float alpha) {
+    private static void renderEntry(GuiGraphics graphics, Font font, NotificationEntry entry, int x, int y, int width, int height, float alpha) {
         int background = VillagerClientUiUtil.withAlphaRound(BACKGROUND_COLOR, alpha);
         int stripe = VillagerClientUiUtil.withAlphaRound(
                 entry.kind == VillagerReputationNoticeKind.QUEST ? QUEST_STRIPE_COLOR : STRIPE_COLOR,
@@ -240,19 +251,66 @@ public final class VillagerReputationNotificationOverlay {
         int shadow = VillagerClientUiUtil.withAlphaRound(SHADOW_COLOR, alpha);
         int textColor = VillagerClientUiUtil.withAlphaRound(textColor(entry), alpha);
 
-        graphics.fill(x, y, x + width, y + ENTRY_HEIGHT, background);
-        graphics.fill(x, y, x + 2, y + ENTRY_HEIGHT, stripe);
+        graphics.fill(x, y, x + width, y + height, background);
+        graphics.fill(x, y, x + VillagerAdaptiveGuiScale.unitAtLeast(2, 1), y + height, stripe);
         if (entry.kind == VillagerReputationNoticeKind.QUEST) {
-            graphics.fill(x + 4, y + ENTRY_HEIGHT - 2, x + width - 4, y + ENTRY_HEIGHT - 1, stripe);
+            graphics.fill(
+                    x + VillagerAdaptiveGuiScale.unit(4),
+                    y + height - VillagerAdaptiveGuiScale.unitAtLeast(2, 1),
+                    x + width - VillagerAdaptiveGuiScale.unit(4),
+                    y + height - VillagerAdaptiveGuiScale.unitAtLeast(1, 1),
+                    stripe);
         }
-        graphics.fill(x, y + ENTRY_HEIGHT, x + width, y + ENTRY_HEIGHT + 1, shadow);
+        graphics.fill(x, y + height, x + width, y + height + VillagerAdaptiveGuiScale.unitAtLeast(1, 1), shadow);
 
-        graphics.pose().pushPose();
-        graphics.pose().translate(0.0F, 0.0F, 200.0F);
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-        graphics.drawString(font, entry.text, x + TEXT_PADDING_X, y + TEXT_PADDING_Y, textColor, true);
-        graphics.pose().popPose();
+        VillagerClientUiUtil.drawScaledStringAtZ(
+                graphics,
+                font,
+                entry.text,
+                x + textPaddingX(),
+                y + textPaddingY(),
+                textColor,
+                true,
+                textScale(),
+                200.0F);
+    }
+
+    private static int paddingX() {
+        return VillagerAdaptiveGuiScale.unit(PADDING_X);
+    }
+
+    private static int paddingY() {
+        return VillagerAdaptiveGuiScale.unit(PADDING_Y);
+    }
+
+    private static int entryGap() {
+        return VillagerAdaptiveGuiScale.unitAtLeast(ENTRY_GAP, 1);
+    }
+
+    private static int experimentalTextPaddingX() {
+        return VillagerAdaptiveGuiScale.unit(EXPERIMENTAL_TEXT_PADDING_X);
+    }
+
+    private static int experimentalTextPaddingY() {
+        return VillagerAdaptiveGuiScale.unit(EXPERIMENTAL_TEXT_PADDING_Y);
+    }
+
+    private static int textPaddingX() {
+        return VillagerAdaptiveGuiScale.unit(TEXT_PADDING_X);
+    }
+
+    private static int textPaddingY() {
+        return VillagerAdaptiveGuiScale.unit(TEXT_PADDING_Y);
+    }
+
+    private static int slideDistance() {
+        return VillagerAdaptiveGuiScale.unit(SLIDE_DISTANCE);
+    }
+
+    private static float textScale() {
+        return VillagerAdaptiveGuiScale.scaleFactor();
     }
 
     private static int textColor(NotificationEntry entry) {
